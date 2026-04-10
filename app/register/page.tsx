@@ -2,93 +2,47 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 
 export default function Register() {
   const router = useRouter();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
 
   const handleRegister = () => {
-    console.log("CLICK REGISTER");
+    alert("CLICK REGISTER");
 
-    if (!email || !password) {
-      alert("Vui lòng nhập đầy đủ thông tin!");
-      return;
-    }
+    if (!email || !password) return;
 
-    // lưu trạng thái login
     localStorage.setItem("user", "true");
-
-    // chuyển trang
     router.replace("/tasks");
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 px-4 pt-10 pb-24 flex justify-center">
-      
-      {/* 🔥 wrapper chống bị đè click */}
-      <div className="relative z-20 w-full max-w-md bg-white p-6 rounded-2xl shadow-lg">
-        
-        <h2 className="text-2xl font-bold text-center mb-2">
-          Đăng ký
-        </h2>
+    <div className="min-h-screen bg-gray-100 p-4">
+      <div className="max-w-md mx-auto mt-20 bg-white p-6 rounded-2xl shadow-lg relative z-50">
+        <h2 className="text-xl font-bold mb-4">Đăng ký</h2>
 
-        <p className="text-center text-gray-500 mb-6">
-          Tạo tài khoản mới
-        </p>
+        <input
+          placeholder="Email"
+          className="w-full border p-2 mb-3"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
-        {/* Email */}
-        <div className="flex items-center border p-3 rounded-lg mb-4">
-          <FiMail className="mr-2 text-gray-500" />
-          <input
-            type="email"
-            placeholder="Email"
-            className="w-full outline-none"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
+        <input
+          placeholder="Password"
+          type="password"
+          className="w-full border p-2 mb-3"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
-        {/* Password */}
-        <div className="flex items-center border p-3 rounded-lg mb-4">
-          <FiLock className="mr-2 text-gray-500" />
-
-          <input
-            type={showPassword ? "text" : "password"}
-            placeholder="Mật khẩu"
-            className="w-full outline-none"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="ml-2 text-gray-500"
-          >
-            {showPassword ? <FiEyeOff /> : <FiEye />}
-          </button>
-        </div>
-
-        {/* Button */}
         <button
           onClick={handleRegister}
-          className="w-full bg-green-500 text-white p-3 rounded-lg font-semibold hover:bg-green-600 transition active:scale-95"
+          className="w-full bg-green-500 text-white p-2 rounded"
         >
-          Đăng ký
+          Register
         </button>
-
-        {/* Login */}
-        <p className="text-center text-sm mt-4">
-          Đã có tài khoản?{" "}
-          <Link href="/login" className="text-blue-500 font-semibold">
-            Đăng nhập
-          </Link>
-        </p>
       </div>
     </div>
   );
