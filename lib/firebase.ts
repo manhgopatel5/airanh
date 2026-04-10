@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
@@ -11,7 +11,11 @@ const firebaseConfig = {
   appId: "1:236839124077:web:bcf03a9721d45386f2d364",
 };
 
-const app = initializeApp(firebaseConfig);
+// ✅ tránh bị initialize nhiều lần (rất quan trọng khi dùng Next.js)
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+
+// ✅ export đầy đủ
+export { app };
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
