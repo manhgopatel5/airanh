@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { db } from "@/lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
 import { getAuth, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { app } from "@/lib/firebase";
 
@@ -24,6 +26,13 @@ export default function Register() {
     }
 
     try {
+      const user = userCredential.user;
+
+// 🔥 LƯU FIRESTORE
+await setDoc(doc(db, "users", user.uid), {
+  email: user.email,
+  createdAt: new Date(),
+});
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -54,21 +63,27 @@ export default function Register() {
         Đăng ký tài khoản
       </h1>
 
-      <input
-        type="email"
-        placeholder="Email"
-        className="border p-3 rounded-lg"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
+      <div className="flex items-center border p-3 rounded-lg">
+  <span className="mr-2">📧</span>
+  <input
+    type="email"
+    placeholder="Email"
+    className="outline-none w-full"
+    value={email}
+    onChange={(e) => setEmail(e.target.value)}
+  />
+</div>
 
-      <input
-        type="password"
-        placeholder="Mật khẩu"
-        className="border p-3 rounded-lg"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
+      <div className="flex items-center border p-3 rounded-lg">
+  <span className="mr-2">🔒</span>
+  <input
+    type="password"
+    placeholder="Mật khẩu"
+    className="outline-none w-full"
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
+  />
+</div>
 
       <button
         type="submit"
