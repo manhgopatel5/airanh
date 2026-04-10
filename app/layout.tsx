@@ -1,21 +1,12 @@
-"use client";
+import "./globals.css";
+import ClientLayout from "@/components/ClientLayout";
 
-import { usePathname } from "next/navigation";
-import BottomNav from "@/components/BottomNav";
-
-export default function ClientLayout({ children }: any) {
-  const pathname = usePathname();
-
-  // ❌ Ẩn navbar ở các trang auth
-  const hideNav =
-    pathname === "/login" ||
-    pathname === "/register" ||
-    pathname === "/forgot-password";
-
+export default function RootLayout({ children }: any) {
   return (
-    <>
-      {children}
-      {!hideNav && <BottomNav />}
-    </>
+    <html lang="vi">
+      <body className="max-w-md mx-auto pb-24">
+        <ClientLayout>{children}</ClientLayout>
+      </body>
+    </html>
   );
 }
