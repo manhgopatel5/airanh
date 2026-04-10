@@ -1,6 +1,6 @@
 
 {
-  "name": "airanh-app",
+  "name": "airanh",
   "private": true,
   "scripts": {
     "dev": "next dev",
