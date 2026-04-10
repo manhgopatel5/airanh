@@ -12,15 +12,16 @@ export default function ClientLayout({ children }: any) {
   useEffect(() => {
     const user = localStorage.getItem("user");
 
-    // Nếu chưa login → chặn
+    // 🚨 chưa login → chặn
     if (!user && pathname !== "/login" && pathname !== "/register") {
       router.replace("/login");
-    } else {
-      setIsLogin(true);
+      return; // 🔥 QUAN TRỌNG
     }
+
+    setIsLogin(true);
   }, [pathname]);
 
-  // ⛔ chưa xác định login → không render gì
+  // ⛔ chưa check xong → không render
   if (isLogin === null) return null;
 
   const hideNav =
