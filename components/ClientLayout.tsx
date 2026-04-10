@@ -12,7 +12,6 @@ export default function ClientLayout({ children }: any) {
   useEffect(() => {
     const user = localStorage.getItem("user");
 
-    // 🚨 CHẶN khi chưa login
     if (!user && !["/login", "/register"].includes(pathname)) {
       router.replace("/login");
       return;
@@ -21,10 +20,8 @@ export default function ClientLayout({ children }: any) {
     setReady(true);
   }, [pathname]);
 
-  // ⛔ chưa check xong
   if (!ready) return null;
 
-  // 🔥 ẨN NAVBAR Ở LOGIN/REGISTER
   const hideNav = ["/login", "/register"].includes(pathname);
 
   return (
