@@ -7,22 +7,24 @@ import BottomNav from "@/components/BottomNav";
 export default function ClientLayout({ children }: any) {
   const pathname = usePathname();
   const router = useRouter();
-  const [checked, setChecked] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const user = localStorage.getItem("user");
 
-    // 🔥 CHỈ redirect khi thực sự cần
+    // 🚨 CHẶN khi chưa login
     if (!user && !["/login", "/register"].includes(pathname)) {
       router.replace("/login");
+      return;
     }
 
-    setChecked(true);
+    setReady(true);
   }, [pathname]);
 
-  // ⛔ tránh render sớm gây lỗi
-  if (!checked) return null;
+  // ⛔ chưa check xong
+  if (!ready) return null;
 
+  // 🔥 ẨN NAVBAR Ở LOGIN/REGISTER
   const hideNav = ["/login", "/register"].includes(pathname);
 
   return (
