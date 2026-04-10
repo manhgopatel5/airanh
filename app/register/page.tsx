@@ -1,102 +1,69 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  sendEmailVerification,
-} from "firebase/auth";
-import { app, db } from "@/lib/firebase";
-import { doc, setDoc } from "firebase/firestore";
+import Link from "next/link";
+import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 
 export default function Register() {
-  const router = useRouter();
-  const auth = getAuth(app);
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!email || !password) {
-      alert("Nhập email và password");
-      return;
-    }
-
-    try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-
-      const user = userCredential.user;
-
-      // 🔥 Lưu Firestore
-      await setDoc(doc(db, "users", user.uid), {
-        email: user.email,
-        createdAt: new Date(),
-      });
-
-      await sendEmailVerification(user);
-
-      alert("Đăng ký thành công!");
-      router.push("/login");
-    } catch (error: any) {
-      alert(error.message);
-    }
-  };
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-200">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-2xl shadow-xl w-96 flex flex-col gap-4"
-      >
-        <h1 className="text-2xl font-bold text-center text-blue-600">
-          Đăng ký tài khoản
-        </h1>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+      <div className="w-full max-w-md bg-white p-6 rounded-2xl shadow-lg">
+        
+        <h2 className="text-2xl font-bold text-center mb-2">
+          Đăng ký
+        </h2>
+        <p className="text-center text-gray-500 mb-6">
+          Tạo tài khoản mới
+        </p>
 
-        {/* EMAIL */}
-        <div className="flex items-center border p-3 rounded-lg">
-          <span className="mr-2">📧</span>
+        {/* Email */}
+        <div className="flex items-center border p-3 rounded-lg mb-4">
+          <FiMail className="mr-2 text-gray-500" />
           <input
             type="email"
             placeholder="Email"
-            className="outline-none w-full"
+            className="w-full outline-none"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
 
-        {/* PASSWORD */}
-        <div className="flex items-center border p-3 rounded-lg">
-          <span className="mr-2">🔒</span>
+        {/* Password */}
+        <div className="flex items-center border p-3 rounded-lg mb-4">
+          <FiLock className="mr-2 text-gray-500" />
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="Mật khẩu"
-            className="outline-none w-full"
+            className="w-full outline-none"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? <FiEyeOff /> : <FiEye />}
+          </button>
         </div>
 
-        <button
-          type="submit"
-          className="bg-gradient-to-r from-blue-500 to-purple-500 text-white p-3 rounded-lg"
-        >
+        {/* Button */}
+        <button className="w-full bg-green-500 text-white p-3 rounded-lg font-semibold hover:bg-green-600 transition">
           Đăng ký
         </button>
 
-        <p className="text-sm text-center">
+        {/* Login */}
+        <p className="text-center text-sm mt-4">
           Đã có tài khoản?{" "}
-          <a href="/login" className="text-blue-600 underline">
+          <Link href="/login" className="text-blue-500 font-semibold">
             Đăng nhập
-          </a>
+          </Link>
         </p>
-      </form>
+      </div>
     </div>
   );
 }
