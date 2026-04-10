@@ -62,12 +62,18 @@ export default function Login() {
           </Link>
         </div>
 
-        <button
+       <button
   onClick={() => {
-    localStorage.setItem("user", "true"); // ✅ lưu trạng thái login
-    router.push("/"); // ✅ chuyển về trang chính
+    if (!email || !password) {
+      alert("Vui lòng nhập email và mật khẩu!");
+      return;
+    }
+
+    localStorage.setItem("user", "true");
+    router.push("/");
   }}
-  className="w-full bg-blue-500 text-white p-3 rounded-lg font-semibold hover:bg-blue-600 transition"
+  disabled={!email || !password}
+  className="w-full bg-blue-500 text-white p-3 rounded-lg font-semibold hover:bg-blue-600 transition disabled:opacity-50"
 >
   Đăng nhập
 </button>
