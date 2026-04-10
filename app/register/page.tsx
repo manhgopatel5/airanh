@@ -13,7 +13,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleRegister = () => {
-    if (!email || !password) {
+    if (!email || !password) 
       alert("Vui lòng nhập đầy đủ thông tin!");
       return;
     }
@@ -21,7 +21,7 @@ export default function Register() {
     localStorage.setItem("user", "true");
 
     // ✅ FIX 404
-    router.push("/tasks");
+    router.replace("/tasks");
   };
 
   return (
