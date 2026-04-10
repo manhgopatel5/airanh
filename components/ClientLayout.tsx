@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import BottomBar from "./BottomBar";
+import BottomNav from "@/components/BottomNav";
 
 export default function ClientLayout({ children }) {
   const pathname = usePathname();
@@ -13,7 +13,7 @@ export default function ClientLayout({ children }) {
   return (
     <>
       {children}
-      {!hideNavbar && <BottomBar />}
+      {!hideNavbar && <BottomNav />}
     </>
   );
 }
