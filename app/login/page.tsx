@@ -6,13 +6,14 @@ import { useEffect } from "react";
 import { useAuth } from "@/lib/useAuth";
 
 export default function Profile() {
-  const router = useRouter(); // 👈 PHẢI CÓ DÒNG NÀY
+  const router = useRouter(); // ✅ phải nằm trong component
   const { user, loading } = useAuth();
 
+  // ✅ function phải nằm TRONG component
   const handleLogout = async () => {
     const auth = getAuth();
     await signOut(auth);
-    router.push("/login"); // 👈 giờ sẽ không lỗi nữa
+    router.push("/login");
   };
 
   useEffect(() => {
