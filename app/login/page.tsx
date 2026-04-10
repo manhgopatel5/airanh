@@ -7,12 +7,26 @@ import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 
 export default function Login() {
   const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  const handleLogin = () => {
+    if (!email || !password) {
+      alert("Vui lòng nhập email và mật khẩu!");
+      return;
+    }
+
+    // giả lập login
+    localStorage.setItem("user", "true");
+
+    // 🔥 chuyển sang trang có thật
+    router.push("/tasks");
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4 pb-24">
       <div className="w-full max-w-md bg-white p-6 rounded-2xl shadow-lg">
         
         {/* Title */}
@@ -46,10 +60,10 @@ export default function Login() {
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          {/* Show/Hide */}
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
+            className="ml-2 text-gray-500"
           >
             {showPassword ? <FiEyeOff /> : <FiEye />}
           </button>
@@ -62,21 +76,14 @@ export default function Login() {
           </Link>
         </div>
 
-       <button
-  onClick={() => {
-    if (!email || !password) {
-      alert("Vui lòng nhập email và mật khẩu!");
-      return;
-    }
-
-    localStorage.setItem("user", "true");
-    router.push("/");
-  }}
-  disabled={!email || !password}
-  className="w-full bg-blue-500 text-white p-3 rounded-lg font-semibold hover:bg-blue-600 transition disabled:opacity-50"
->
-  Đăng nhập
-</button>
+        {/* Button */}
+        <button
+          onClick={handleLogin}
+          disabled={!email || !password}
+          className="w-full bg-blue-500 text-white p-3 rounded-lg font-semibold hover:bg-blue-600 transition disabled:opacity-50"
+        >
+          Đăng nhập
+        </button>
 
         {/* Register */}
         <p className="text-center text-sm mt-4">
