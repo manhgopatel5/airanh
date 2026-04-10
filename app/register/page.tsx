@@ -1,5 +1,5 @@
 "use client";
-
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
@@ -8,6 +8,7 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
@@ -52,9 +53,20 @@ export default function Register() {
         </div>
 
         {/* Button */}
-        <button className="w-full bg-green-500 text-white p-3 rounded-lg font-semibold hover:bg-green-600 transition">
-          Đăng ký
-        </button>
+        <button
+  onClick={() => {
+    if (!email || !password) {
+      alert("Nhập đầy đủ email và mật khẩu!");
+      return;
+    }
+
+    localStorage.setItem("user", "true"); // lưu trạng thái login
+    router.push("/"); // chuyển về trang chính
+  }}
+  className="w-full bg-green-500 text-white p-3 rounded-lg font-semibold hover:bg-green-600 transition"
+>
+  Đăng ký
+</button>
 
         {/* Login */}
         <p className="text-center text-sm mt-4">
