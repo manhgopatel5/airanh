@@ -1,9 +1,25 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useAuth } from "@/lib/useAuth";
 
 export default function Profile() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [user, loading]);
+
+  if (loading) return <p>Loading...</p>;
+
   return (
-    <div className="p-4 text-center">
-      <div className="w-24 h-24 bg-gray-300 rounded-full mx-auto" />
-      <h2 className="text-xl font-bold mt-3">User</h2>
+    <div>
+      <h1>Profile</h1>
+      <p>Email: {user?.email}</p>
     </div>
   );
 }
