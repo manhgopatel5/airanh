@@ -11,10 +11,9 @@ const firebaseConfig = {
   appId: "1:236839124077:web:bcf03a9721d45386f2d364",
 };
 
-// ✅ tránh bị initialize nhiều lần (rất quan trọng khi dùng Next.js)
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-// ✅ export đầy đủ
+// 👇 QUAN TRỌNG NHẤT
 export { app };
 
 export const auth = getAuth(app);
