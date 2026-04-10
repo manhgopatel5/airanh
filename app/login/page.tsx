@@ -22,19 +22,27 @@ export default function Profile() {
     }
   }, [user, loading]);
 
-  if (loading) return <p>Loading...</p>;
+ if (loading) return <p>Loading...</p>;
+if (!user) return null;
 
-  return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold">Profile</h1>
-      <p>Email: {user?.email}</p>
+return (
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-200">
+    <div className="bg-white p-8 rounded-2xl shadow-xl w-96 text-center">
+      
+      <h1 className="text-2xl font-bold text-blue-600 mb-4">
+        Profile
+      </h1>
+
+      <p className="mb-6 text-gray-700">
+        Email: <span className="font-semibold">{user.email}</span>
+      </p>
 
       <button
         onClick={handleLogout}
-        className="mt-4 bg-black text-white px-4 py-2 rounded"
+        className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-lg w-full"
       >
         Logout
       </button>
     </div>
-  );
-}
+  </div>
+);
