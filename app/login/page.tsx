@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 
 export default function Login() {
@@ -60,10 +61,15 @@ export default function Login() {
           </Link>
         </div>
 
-        {/* Button */}
-        <button className="w-full bg-blue-500 text-white p-3 rounded-lg font-semibold hover:bg-blue-600 transition">
-          Đăng nhập
-        </button>
+        <button
+  onClick={() => {
+    localStorage.setItem("user", "true"); // ✅ lưu trạng thái login
+    router.push("/"); // ✅ chuyển về trang chính
+  }}
+  className="w-full bg-blue-500 text-white p-3 rounded-lg font-semibold hover:bg-blue-600 transition"
+>
+  Đăng nhập
+</button>
 
         {/* Register */}
         <p className="text-center text-sm mt-4">
