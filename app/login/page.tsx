@@ -18,10 +18,9 @@ export default function Login() {
       return;
     }
 
-    // giả lập login
     localStorage.setItem("user", "true");
 
-    // 🔥 chuyển sang trang có thật
+    // ✅ chuyển sang trang có thật
     router.push("/tasks");
   };
 
@@ -29,7 +28,6 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4 pb-24">
       <div className="w-full max-w-md bg-white p-6 rounded-2xl shadow-lg">
         
-        {/* Title */}
         <h2 className="text-2xl font-bold text-center mb-2">
           Đăng nhập
         </h2>
@@ -69,14 +67,12 @@ export default function Login() {
           </button>
         </div>
 
-        {/* Forgot password */}
         <div className="text-right mb-4">
           <Link href="/forgot-password" className="text-sm text-blue-500">
             Quên mật khẩu?
           </Link>
         </div>
 
-        {/* Button */}
         <button
           onClick={handleLogin}
           disabled={!email || !password}
@@ -85,7 +81,6 @@ export default function Login() {
           Đăng nhập
         </button>
 
-        {/* Register */}
         <p className="text-center text-sm mt-4">
           Chưa có tài khoản?{" "}
           <Link href="/register" className="text-blue-500 font-semibold">
