@@ -1,76 +1,78 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { app } from "@/lib/firebase";
+import Link from "next/link";
+import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 
 export default function Login() {
-  const router = useRouter();
-  const auth = getAuth(app);
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push("/profile");
-    } catch (error: any) {
-      alert(error.message);
-    }
-  };
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-200">
-      <form
-        onSubmit={handleLogin}
-        className="bg-white p-8 rounded-2xl shadow-xl w-96 flex flex-col gap-4"
-      >
-        <h1 className="text-2xl font-bold text-center text-blue-600">
-          Đăng nhập tài khoản
-        </h1>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+      <div className="w-full max-w-md bg-white p-6 rounded-2xl shadow-lg">
+        
+        {/* Title */}
+        <h2 className="text-2xl font-bold text-center mb-2">
+          Đăng nhập
+        </h2>
+        <p className="text-center text-gray-500 mb-6">
+          Chào mừng bạn quay lại!
+        </p>
 
-        {/* EMAIL */}
-        <div className="flex items-center border p-3 rounded-lg">
-          <span className="mr-2">📧</span>
+        {/* Email */}
+        <div className="flex items-center border p-3 rounded-lg mb-4">
+          <FiMail className="mr-2 text-gray-500" />
           <input
             type="email"
             placeholder="Email"
-            className="outline-none w-full"
+            className="w-full outline-none"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
 
-        {/* PASSWORD */}
-        <div className="flex items-center border p-3 rounded-lg">
-          <span className="mr-2">🔒</span>
+        {/* Password */}
+        <div className="flex items-center border p-3 rounded-lg mb-2">
+          <FiLock className="mr-2 text-gray-500" />
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="Mật khẩu"
-            className="outline-none w-full"
+            className="w-full outline-none"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+
+          {/* Show/Hide */}
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? <FiEyeOff /> : <FiEye />}
+          </button>
         </div>
 
-        <button
-          type="submit"
-          className="bg-gradient-to-r from-blue-500 to-purple-500 text-white p-3 rounded-lg"
-        >
+        {/* Forgot password */}
+        <div className="text-right mb-4">
+          <Link href="/forgot-password" className="text-sm text-blue-500">
+            Quên mật khẩu?
+          </Link>
+        </div>
+
+        {/* Button */}
+        <button className="w-full bg-blue-500 text-white p-3 rounded-lg font-semibold hover:bg-blue-600 transition">
           Đăng nhập
         </button>
 
-        <p className="text-sm text-center">
+        {/* Register */}
+        <p className="text-center text-sm mt-4">
           Chưa có tài khoản?{" "}
-          <a href="/register" className="text-blue-600 underline">
+          <Link href="/register" className="text-blue-500 font-semibold">
             Đăng ký
-          </a>
+          </Link>
         </p>
-      </form>
+      </div>
     </div>
   );
 }
