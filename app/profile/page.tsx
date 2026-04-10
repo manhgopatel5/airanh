@@ -8,6 +8,7 @@ export default function Profile() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
+  // 🔥 CHẶN USER
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
@@ -17,8 +18,8 @@ export default function Profile() {
   if (loading) return <p>Loading...</p>;
 
   return (
-    <div>
-      <h1>Profile</h1>
+    <div className="p-6">
+      <h1 className="text-xl font-bold">Profile</h1>
       <p>Email: {user?.email}</p>
     </div>
   );
