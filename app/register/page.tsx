@@ -1,35 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { getAuth, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { app } from "@/lib/firebase";
 
 export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const router = useRouter();
 
   const auth = getAuth(app);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
+    console.log("CLICK REGISTER"); // 👈 check
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(
+      const user = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
 
-      // 📧 gửi email xác minh
-      await sendEmailVerification(userCredential.user);
-
-      alert("Đăng ký thành công! Check email để xác minh.");
-
-      router.push("/login");
-    } catch (error: any) {
-      alert(error.message);
+      console.log("SUCCESS:", user);
+      alert("Đăng ký thành công");
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message);
     }
   };
 
