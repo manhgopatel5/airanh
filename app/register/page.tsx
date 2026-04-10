@@ -13,15 +13,16 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleRegister = () => {
-    if (!email || !password) 
+    console.log("CLICK REGISTER"); // 🔥 debug
+
+    if (!email || !password) {
       alert("Vui lòng nhập đầy đủ thông tin!");
       return;
     }
 
     localStorage.setItem("user", "true");
 
-    // ✅ FIX 404
-    router.replace("/tasks");
+    router.replace("/tasks"); // ✅ không 404
   };
 
   return (
@@ -69,8 +70,7 @@ export default function Register() {
 
         <button
           onClick={handleRegister}
-          disabled={!email || !password}
-          className="w-full bg-green-500 text-white p-3 rounded-lg font-semibold hover:bg-green-600 transition disabled:opacity-50"
+          className="w-full bg-green-500 text-white p-3 rounded-lg font-semibold hover:bg-green-600 transition"
         >
           Đăng ký
         </button>
