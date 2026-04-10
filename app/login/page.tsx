@@ -48,32 +48,32 @@ export default function Login() {
     <div className="flex items-center justify-center min-h-screen">
       <form
         onSubmit={handleLogin}
-        className="flex flex-col gap-4 p-6 border rounded w-80"
+        className="flex flex-col gap-4 p-8 rounded-2xl shadow-lg w-96 bg-white"
       >
         <h1 className="text-xl font-bold text-center">Đăng nhập</h1>
 
         <input
-          type="email"
-          placeholder="Email"
-          className="border p-2"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+  type="email"
+  placeholder="Email"
+  className="border p-3 rounded-lg"
+  value={email}
+  onChange={(e) => setEmail(e.target.value)}
+/>
 
         <input
-          type="password"
-          placeholder="Mật khẩu"
-          className="border p-2"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+  type="password"
+  placeholder="Mật khẩu"
+  className="border p-3 rounded-lg"
+  value={password}
+  onChange={(e) => setPassword(e.target.value)}
+/>
 
-        <button
-          type="submit"
-          className="bg-black text-white p-2 rounded"
-        >
-          Đăng nhập
-        </button>
+       <button
+  type="submit"
+  className="bg-black text-white p-3 rounded-lg hover:opacity-80 transition"
+>
+  Đăng nhập
+</button>
       </form>
     </div>
   );
