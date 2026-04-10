@@ -1,41 +1,66 @@
 "use client";
 
-import { getAuth, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { getAuth, signOut } from "firebase/auth";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/useAuth";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function Profile() {
-  const { user, loading } = useAuth();
   const router = useRouter();
+  const { user, loading } = useAuth();
 
-  // ✅ ĐẶT Ở ĐÂY (TRONG COMPONENT)
+  const [userData, setUserData] = useState<any>(null);
+
   const handleLogout = async () => {
     const auth = getAuth();
     await signOut(auth);
     router.push("/login");
   };
 
-  // 🔥 CHẶN USER
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
     }
   }, [user, loading, router]);
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (user) {
+        const docRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          setUserData(docSnap.data());
+        }
+      }
+    };
+
+    fetchUser();
+  }, [user]);
+
   if (loading) return <p>Loading...</p>;
+  if (!user) return null;
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold">Profile</h1>
-      <p>Email: {user?.email}</p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-200">
+      <div className="bg-white p-8 rounded-2xl shadow-xl w-96 text-center">
+        <h1 className="text-2xl font-bold text-blue-600 mb-4">
+          Profile
+        </h1>
 
-      <button
-        onClick={handleLogout}
-        className="mt-4 bg-black text-white px-4 py-2 rounded"
-      >
-        Logout
-      </button>
+        <p className="mb-6">
+          Email: <b>{userData?.email}</b>
+        </p>
+
+        <button
+          onClick={handleLogout}
+          className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-lg w-full"
+        >
+          Logout
+        </button>
+      </div>
     </div>
   );
 }
