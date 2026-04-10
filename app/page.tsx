@@ -10,9 +10,9 @@ export default function Home() {
     const isLogin = localStorage.getItem("user");
 
     if (!isLogin) {
-      router.push("/login");
+      router.replace("/login"); // 🔥 dùng replace thay vì push
     }
   }, []);
 
-  return <div>Loading...</div>;
+  return null;
 }
