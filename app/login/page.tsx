@@ -1,64 +1,80 @@
 "use client";
+
 import { useState } from "react";
-import { FiMail, FiLock } from "react-icons/fi";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { app } from "@/lib/firebase";
 
 export default function Login() {
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const auth = getAuth(app);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    console.log("CLICK LOGIN");
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      console.log("LOGIN SUCCESS:", userCredential.user);
+
+      alert("Đăng nhập thành công");
+
+      router.push("/profile"); // hoặc dashboard
+    } catch (error: any) {
+      console.error(error);
+
+      // xử lý lỗi dễ hiểu
+      if (error.code === "auth/user-not-found") {
+        alert("Email chưa đăng ký");
+      } else if (error.code === "auth/wrong-password") {
+        alert("Sai mật khẩu");
+      } else {
+        alert(error.message);
+      }
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-100 to-white px-4">
-      <div className="w-full max-w-md space-y-5">
+    <div className="flex items-center justify-center min-h-screen">
+      <form
+        onSubmit={handleLogin}
+        className="flex flex-col gap-4 p-6 border rounded w-80"
+      >
+        <h1 className="text-xl font-bold text-center">Đăng nhập</h1>
 
-        {/* Title */}
-        <div className="text-center space-y-1">
-          <h1 className="text-2xl font-bold text-blue-600">
-            Đăng nhập tài khoản
-          </h1>
-          <p className="text-gray-500 text-sm">
-            Chào mừng bạn quay lại JodoJob!
-          </p>
-        </div>
+        <input
+          type="email"
+          placeholder="Email"
+          className="border p-2"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
-        {/* Email */}
-        <div className="flex items-center bg-white rounded-2xl px-4 py-3 shadow">
-          <FiMail className="text-blue-500 mr-2" />
-          <input
-            className="w-full outline-none"
-            placeholder="Email"
-            onChange={(e)=>setEmail(e.target.value)}
-          />
-        </div>
+        <input
+          type="password"
+          placeholder="Mật khẩu"
+          className="border p-2"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
-        {/* Password */}
-        <div className="flex items-center bg-white rounded-2xl px-4 py-3 shadow">
-          <FiLock className="text-blue-500 mr-2" />
-          <input
-            type="password"
-            className="w-full outline-none"
-            placeholder="Mật khẩu"
-            onChange={(e)=>setPassword(e.target.value)}
-          />
-        </div>
-
-        {/* Button */}
-        <button className="w-full py-3 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-purple-500">
+        <button
+          type="submit"
+          className="bg-black text-white p-2 rounded"
+        >
           Đăng nhập
         </button>
-
-        {/* Links */}
-        <div className="text-center text-sm space-y-1">
-          <p>
-            Chưa có tài khoản?{" "}
-            <Link href="/register" className="text-blue-500 font-medium">
-              Đăng ký
-            </Link>
-          </p>
-          <p className="text-blue-500">Quên mật khẩu?</p>
-        </div>
-
-      </div>
+      </form>
     </div>
   );
 }
