@@ -13,14 +13,17 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = () => {
+    console.log("CLICK LOGIN"); // 🔥 debug
+
     if (!email || !password) {
       alert("Vui lòng nhập email và mật khẩu!");
       return;
     }
 
+    // giả lập login
     localStorage.setItem("user", "true");
 
-    // ✅ chuyển sang trang có thật
+    // chuyển trang (không bị lỗi 404)
     router.replace("/tasks");
   };
 
@@ -28,6 +31,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4 pb-24">
       <div className="w-full max-w-md bg-white p-6 rounded-2xl shadow-lg">
         
+        {/* Title */}
         <h2 className="text-2xl font-bold text-center mb-2">
           Đăng nhập
         </h2>
@@ -50,6 +54,7 @@ export default function Login() {
         {/* Password */}
         <div className="flex items-center border p-3 rounded-lg mb-2">
           <FiLock className="mr-2 text-gray-500" />
+
           <input
             type={showPassword ? "text" : "password"}
             placeholder="Mật khẩu"
@@ -67,20 +72,22 @@ export default function Login() {
           </button>
         </div>
 
+        {/* Forgot */}
         <div className="text-right mb-4">
           <Link href="/forgot-password" className="text-sm text-blue-500">
             Quên mật khẩu?
           </Link>
         </div>
 
+        {/* Button */}
         <button
           onClick={handleLogin}
-          disabled={!email || !password}
-          className="w-full bg-blue-500 text-white p-3 rounded-lg font-semibold hover:bg-blue-600 transition disabled:opacity-50"
+          className="w-full bg-blue-500 text-white p-3 rounded-lg font-semibold hover:bg-blue-600 transition"
         >
           Đăng nhập
         </button>
 
+        {/* Register */}
         <p className="text-center text-sm mt-4">
           Chưa có tài khoản?{" "}
           <Link href="/register" className="text-blue-500 font-semibold">
