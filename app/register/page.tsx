@@ -13,25 +13,30 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleRegister = () => {
-    console.log("CLICK REGISTER"); // 🔥 debug
+    console.log("CLICK REGISTER");
 
     if (!email || !password) {
       alert("Vui lòng nhập đầy đủ thông tin!");
       return;
     }
 
+    // lưu trạng thái login
     localStorage.setItem("user", "true");
 
-    router.replace("/tasks"); // ✅ không 404
+    // chuyển trang
+    router.replace("/tasks");
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4 pb-24">
-      <div className="w-full max-w-md bg-white p-6 rounded-2xl shadow-lg">
+    <div className="min-h-screen bg-gray-100 px-4 pt-10 pb-24 flex justify-center">
+      
+      {/* 🔥 wrapper chống bị đè click */}
+      <div className="relative z-20 w-full max-w-md bg-white p-6 rounded-2xl shadow-lg">
         
         <h2 className="text-2xl font-bold text-center mb-2">
           Đăng ký
         </h2>
+
         <p className="text-center text-gray-500 mb-6">
           Tạo tài khoản mới
         </p>
@@ -51,6 +56,7 @@ export default function Register() {
         {/* Password */}
         <div className="flex items-center border p-3 rounded-lg mb-4">
           <FiLock className="mr-2 text-gray-500" />
+
           <input
             type={showPassword ? "text" : "password"}
             placeholder="Mật khẩu"
@@ -68,13 +74,15 @@ export default function Register() {
           </button>
         </div>
 
+        {/* Button */}
         <button
           onClick={handleRegister}
-          className="w-full bg-green-500 text-white p-3 rounded-lg font-semibold hover:bg-green-600 transition"
+          className="w-full bg-green-500 text-white p-3 rounded-lg font-semibold hover:bg-green-600 transition active:scale-95"
         >
           Đăng ký
         </button>
 
+        {/* Login */}
         <p className="text-center text-sm mt-4">
           Đã có tài khoản?{" "}
           <Link href="/login" className="text-blue-500 font-semibold">
