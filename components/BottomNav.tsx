@@ -22,11 +22,10 @@ export default function BottomNav() {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-3 z-10 shadow-md pointer-events-auto">
+    <div className="fixed bottom-0 left-0 right-0 h-16 flex items-center justify-around bg-white border-t z-0 shadow-md">
       {navItem("/", "🏠")}
       {navItem("/tasks", "📋")}
 
-      {/* Nút giữa */}
       <button className="text-2xl bg-green-500 text-white px-3 py-1 rounded-full -mt-6 shadow-lg">
         ➕
       </button>
