@@ -21,7 +21,7 @@ export default function Login() {
     localStorage.setItem("user", "true");
 
     // ✅ chuyển sang trang có thật
-    router.push("/tasks");
+    router.replace("/tasks");
   };
 
   return (
