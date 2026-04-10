@@ -1,1 +1,15 @@
-@import "../styles/globals.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background: #f8fafc;
+}
+
+.input {
+  @apply w-full p-3 rounded-xl border bg-gray-50;
+}
+
+.btn {
+  @apply bg-green-500 text-white px-4 py-2 rounded-xl;
+}
