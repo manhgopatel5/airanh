@@ -1,12 +1,18 @@
+"use client";
 
-import TaskCard from "@/components/TaskCard";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  return (
-    <div className="p-4 space-y-4">
-      <h1 className="text-xl font-bold">🔥 Hot Tasks</h1>
-      <TaskCard />
-      <TaskCard />
-    </div>
-  );
+  const router = useRouter();
+
+  useEffect(() => {
+    const isLogin = localStorage.getItem("user");
+
+    if (!isLogin) {
+      router.push("/login");
+    }
+  }, []);
+
+  return <div>Loading...</div>;
 }
