@@ -3,17 +3,18 @@
 import { usePathname } from "next/navigation";
 import BottomNav from "@/components/BottomNav";
 
-export default function ClientLayout({ children }) {
+export default function ClientLayout({ children }: any) {
   const pathname = usePathname();
 
-  // ❌ Ẩn ở login/register
-  const hideNavbar =
-    pathname === "/login" || pathname === "/register";
+  const hideNav =
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/forgot-password";
 
   return (
     <>
       {children}
-      {!hideNavbar && <BottomNav />}
+      {!hideNav && <BottomNav />}
     </>
   );
 }
