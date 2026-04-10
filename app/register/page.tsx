@@ -45,36 +45,43 @@ export default function Register() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col gap-4 p-6 border rounded w-80"
-      >
-        <h1 className="text-xl font-bold text-center">Đăng ký</h1>
+   <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-200">
+  <form
+    onSubmit={handleSubmit}
+    className="bg-white p-8 rounded-2xl shadow-xl w-96 flex flex-col gap-4"
+  >
+    <h1 className="text-2xl font-bold text-center text-blue-600">
+      Đăng ký tài khoản
+    </h1>
 
-        <input
-          type="email"
-          placeholder="Email"
-          className="border p-2"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+    <input
+      type="email"
+      placeholder="Email"
+      className="border p-3 rounded-lg"
+      value={email}
+      onChange={(e) => setEmail(e.target.value)}
+    />
 
-        <input
-          type="password"
-          placeholder="Mật khẩu"
-          className="border p-2"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+    <input
+      type="password"
+      placeholder="Mật khẩu"
+      className="border p-3 rounded-lg"
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+    />
 
-        <button
-          type="submit"
-          className="bg-black text-white p-2 rounded"
-        >
-          Đăng ký
-        </button>
-      </form>
-    </div>
-  );
-}
+    <button
+      type="submit"
+      className="bg-gradient-to-r from-blue-500 to-purple-500 text-white p-3 rounded-lg"
+    >
+      Đăng ký
+    </button>
+
+    <p className="text-sm text-center">
+      Đã có tài khoản?{" "}
+      <a href="/login" className="text-blue-600 underline">
+        Đăng nhập
+      </a>
+    </p>
+  </form>
+</div>
