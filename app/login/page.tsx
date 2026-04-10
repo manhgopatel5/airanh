@@ -1,49 +1,76 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAuth, signOut } from "firebase/auth";
-import { useEffect } from "react";
-import { useAuth } from "@/lib/useAuth";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { app } from "@/lib/firebase";
 
-export default function Profile() {
-  const router = useRouter(); // ✅ phải nằm trong component
-  const { user, loading } = useAuth();
+export default function Login() {
+  const router = useRouter();
+  const auth = getAuth(app);
 
-  // ✅ function phải nằm TRONG component
-  const handleLogout = async () => {
-    const auth = getAuth();
-    await signOut(auth);
-    router.push("/login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      router.push("/profile");
+    } catch (error: any) {
+      alert(error.message);
+    }
   };
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login");
-    }
-  }, [user, loading]);
-
- if (loading) return <p>Loading...</p>;
-if (!user) return null;
-
-return (
-  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-200">
-    <div className="bg-white p-8 rounded-2xl shadow-xl w-96 text-center">
-      
-      <h1 className="text-2xl font-bold text-blue-600 mb-4">
-        Profile
-      </h1>
-
-      <p className="mb-6 text-gray-700">
-        Email: <span className="font-semibold">{user.email}</span>
-      </p>
-
-      <button
-        onClick={handleLogout}
-        className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-lg w-full"
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-200">
+      <form
+        onSubmit={handleLogin}
+        className="bg-white p-8 rounded-2xl shadow-xl w-96 flex flex-col gap-4"
       >
-        Logout
-      </button>
+        <h1 className="text-2xl font-bold text-center text-blue-600">
+          Đăng nhập tài khoản
+        </h1>
+
+        {/* EMAIL */}
+        <div className="flex items-center border p-3 rounded-lg">
+          <span className="mr-2">📧</span>
+          <input
+            type="email"
+            placeholder="Email"
+            className="outline-none w-full"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+
+        {/* PASSWORD */}
+        <div className="flex items-center border p-3 rounded-lg">
+          <span className="mr-2">🔒</span>
+          <input
+            type="password"
+            placeholder="Mật khẩu"
+            className="outline-none w-full"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+
+        <button
+          type="submit"
+          className="bg-gradient-to-r from-blue-500 to-purple-500 text-white p-3 rounded-lg"
+        >
+          Đăng nhập
+        </button>
+
+        <p className="text-sm text-center">
+          Chưa có tài khoản?{" "}
+          <a href="/register" className="text-blue-600 underline">
+            Đăng ký
+          </a>
+        </p>
+      </form>
     </div>
-  </div>
-);
+  );
 }
