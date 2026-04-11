@@ -13,14 +13,14 @@ export default function ClientLayout({ children }: any) {
   const publicRoutes = ["/login", "/register"];
 
   useEffect(() => {
-    // ❌ chưa login → đá về login
+    // ❌ chưa login → về login
     if (!user && !publicRoutes.includes(pathname)) {
       router.replace("/login");
     }
 
-    // ✅ đã login → không cho vào login/register
+    // ✅ đã login → nếu đang ở login/register thì về HOME "/"
     if (user && publicRoutes.includes(pathname)) {
-      router.replace("/tasks");
+      router.replace("/"); // 🔥 FIX Ở ĐÂY
     }
   }, [user, pathname]);
 
