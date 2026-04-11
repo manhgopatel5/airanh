@@ -17,16 +17,20 @@ export default function Login() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      alert("Nhập đầy đủ!");
+      alert("Nhập đầy đủ thông tin!");
       return;
     }
 
     try {
       setLoading(true);
+
       await signInWithEmailAndPassword(auth, email, password);
+
+      alert("Đăng nhập thành công 🎉");
+
       router.replace("/tasks");
     } catch (err: any) {
-      alert(err.message);
+      alert("Sai tài khoản hoặc mật khẩu!");
     } finally {
       setLoading(false);
     }
@@ -36,17 +40,17 @@ export default function Login() {
     <div className="min-h-screen bg-[#f3f6fb] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         
-        {/* Title */}
         <h1 className="text-center text-2xl font-bold text-blue-600 mb-2">
           Đăng nhập tài khoản
         </h1>
+
         <p className="text-center text-gray-500 mb-6">
-          Chào mừng bạn quay lại JodoJob!
+          Chào mừng bạn quay lại!
         </p>
 
         {/* Email */}
         <div className="flex items-center bg-white rounded-full px-4 py-3 mb-4 shadow">
-          <FiMail className="text-gray-400 mr-2" />
+          <FiMail className="mr-2 text-gray-400" />
           <input
             type="email"
             placeholder="Email"
@@ -58,7 +62,7 @@ export default function Login() {
 
         {/* Password */}
         <div className="flex items-center bg-white rounded-full px-4 py-3 mb-4 shadow">
-          <FiLock className="text-gray-400 mr-2" />
+          <FiLock className="mr-2 text-gray-400" />
           <input
             type={show ? "text" : "password"}
             placeholder="Mật khẩu"
@@ -76,19 +80,14 @@ export default function Login() {
           onClick={handleLogin}
           className="w-full py-3 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-purple-500"
         >
-          {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+          {loading ? "Đang xử lý..." : "Đăng nhập"}
         </button>
 
-        {/* Links */}
         <p className="text-center mt-4 text-sm">
           Chưa có tài khoản?{" "}
           <Link href="/register" className="text-blue-500">
             Đăng ký
           </Link>
-        </p>
-
-        <p className="text-center text-sm text-blue-500 mt-1">
-          Quên mật khẩu?
         </p>
       </div>
     </div>
