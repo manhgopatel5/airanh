@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
@@ -62,5 +62,4 @@ export default function BottomNav() {
     </div>
   );
 }
-=======
->>>>>>> 1027c13 (update bottom nav UI)
+
