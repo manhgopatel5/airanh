@@ -1,28 +1,30 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import BottomNav from "@/components/BottomNav";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function ClientLayout({ children }: any) {
   const pathname = usePathname();
   const router = useRouter();
-  const [ready, setReady] = useState(false);
+  const { user } = useAuth();
+
+  const publicRoutes = ["/login", "/register"];
 
   useEffect(() => {
-    const user = localStorage.getItem("user");
-
-    if (!user && !["/login", "/register"].includes(pathname)) {
+    // ❌ chưa login → đá về login
+    if (!user && !publicRoutes.includes(pathname)) {
       router.replace("/login");
-      return;
     }
 
-    setReady(true);
-  }, [pathname]);
+    // ✅ đã login → không cho vào login/register
+    if (user && publicRoutes.includes(pathname)) {
+      router.replace("/tasks");
+    }
+  }, [user, pathname]);
 
-  if (!ready) return null;
-
-  const hideNav = ["/login", "/register"].includes(pathname);
+  const hideNav = publicRoutes.includes(pathname);
 
   return (
     <>
