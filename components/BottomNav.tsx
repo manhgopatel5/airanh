@@ -42,7 +42,7 @@ export default function BottomNav() {
       {/* NAV */}
       <div className="mx-4 mb-4 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg flex items-center px-4 py-3">
 
-        {navItem("/", Home, "Trang chủ")}
+        {navItem("/", Home, "🔥 NEW NAV")}
         {navItem("/friends", User, "Bạn bè")}
 
         {/* FLOAT BUTTON */}
