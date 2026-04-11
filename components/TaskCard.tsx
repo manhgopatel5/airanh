@@ -11,14 +11,14 @@ type Task = {
   user: string;
   userId: string;
   avatar: string;
-  time: string;
+  time?: string;
   title: string;
   description: string;
-  images: string[];
+  images?: string[];
   price: number;
   totalSlots: number;
   joined: number;
-  deadline: number;
+  deadline: any; // 🔥 cho phép Timestamp
   likes: number;
 };
 
@@ -26,10 +26,16 @@ export default function TaskCard({ task }: { task: Task }) {
   const router = useRouter();
   const [timeLeft, setTimeLeft] = useState("");
 
+  /* ================= FIX DEADLINE ================= */
+  const deadline =
+    typeof task.deadline === "number"
+      ? task.deadline
+      : task.deadline?.toMillis?.() || 0;
+
   /* ================= COUNTDOWN ================= */
   useEffect(() => {
     const update = () => {
-      const diff = task.deadline - Date.now();
+      const diff = deadline - Date.now();
 
       if (diff <= 0) {
         setTimeLeft("Hết hạn");
@@ -38,15 +44,16 @@ export default function TaskCard({ task }: { task: Task }) {
 
       const h = Math.floor(diff / (1000 * 60 * 60));
       const m = Math.floor((diff / (1000 * 60)) % 60);
+      const s = Math.floor((diff / 1000) % 60);
 
-      setTimeLeft(`${h}h ${m}m`);
+      setTimeLeft(`${h}h ${m}m ${s}s`);
     };
 
     update();
     const interval = setInterval(update, 1000);
 
     return () => clearInterval(interval);
-  }, [task.deadline]);
+  }, [deadline]);
 
   /* ================= JOIN TASK ================= */
   const handleJoin = async () => {
@@ -58,8 +65,12 @@ export default function TaskCard({ task }: { task: Task }) {
         return;
       }
 
-      const chatId = await joinTask(task, user);
+      if (deadline <= Date.now()) {
+        alert("Task đã hết hạn");
+        return;
+      }
 
+      const chatId = await joinTask(task, user);
       router.push(`/chat/${chatId}`);
     } catch (err: any) {
       alert(err);
@@ -67,6 +78,12 @@ export default function TaskCard({ task }: { task: Task }) {
   };
 
   const isFull = task.joined >= task.totalSlots;
+  const isExpired = deadline <= Date.now();
+
+  const progress =
+    task.totalSlots > 0
+      ? (task.joined / task.totalSlots) * 100
+      : 0;
 
   return (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden border">
@@ -78,7 +95,9 @@ export default function TaskCard({ task }: { task: Task }) {
         />
         <div className="ml-3">
           <p className="font-semibold text-sm">{task.user}</p>
-          <p className="text-xs text-gray-400">{task.time}</p>
+          <p className="text-xs text-gray-400">
+            {task.time || "Vừa xong"}
+          </p>
         </div>
       </div>
 
@@ -95,7 +114,7 @@ export default function TaskCard({ task }: { task: Task }) {
       </div>
 
       {/* IMAGES */}
-      {task.images?.length > 0 && (
+      {task.images && task.images.length > 0 && (
         <div className="flex overflow-x-auto space-x-2 px-3 pb-2">
           {task.images.map((img, i) => (
             <img
@@ -107,9 +126,8 @@ export default function TaskCard({ task }: { task: Task }) {
         </div>
       )}
 
-      {/* INFO BAR */}
+      {/* INFO */}
       <div className="px-3 py-2 space-y-1">
-        {/* money + people + time */}
         <div className="flex justify-between text-sm">
           <span className="text-green-600 font-semibold">
             💰 {task.price.toLocaleString()}đ
@@ -120,19 +138,21 @@ export default function TaskCard({ task }: { task: Task }) {
             {task.joined}/{task.totalSlots}
           </span>
 
-          <span className="flex items-center gap-1 text-red-500">
+          <span
+            className={`flex items-center gap-1 ${
+              isExpired ? "text-gray-400" : "text-red-500"
+            }`}
+          >
             <Clock size={16} />
             {timeLeft}
           </span>
         </div>
 
-        {/* PROGRESS BAR */}
+        {/* PROGRESS */}
         <div className="h-2 bg-gray-200 rounded-full">
           <div
-            className="h-2 bg-blue-500 rounded-full"
-            style={{
-              width: `${(task.joined / task.totalSlots) * 100}%`,
-            }}
+            className="h-2 bg-blue-500 rounded-full transition-all"
+            style={{ width: `${progress}%` }}
           />
         </div>
       </div>
@@ -146,14 +166,18 @@ export default function TaskCard({ task }: { task: Task }) {
 
         <button
           onClick={handleJoin}
-          disabled={isFull}
-          className={`px-4 py-1.5 rounded-lg text-sm ${
-            isFull
+          disabled={isFull || isExpired}
+          className={`px-4 py-1.5 rounded-lg text-sm transition ${
+            isFull || isExpired
               ? "bg-gray-300 text-gray-500"
-              : "bg-black text-white"
+              : "bg-black text-white hover:opacity-80"
           }`}
         >
-          {isFull ? "Đã đủ" : "Nhận task"}
+          {isExpired
+            ? "Hết hạn"
+            : isFull
+            ? "Đã đủ"
+            : "Nhận task"}
         </button>
       </div>
     </div>
