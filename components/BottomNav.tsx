@@ -1,37 +1,62 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
+import { Home, ClipboardList, MessageCircle, User, Plus } from "lucide-react";
 
 export default function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const navItem = (path: string, icon: string) => {
+  const navItem = (path: string, icon: any, label: string) => {
+    const Icon = icon;
     const active = pathname === path;
 
     return (
       <button
         onClick={() => router.push(path)}
-        className={`text-xl ${
-          active ? "text-blue-500" : "text-gray-400"
-        }`}
+        className="flex flex-col items-center justify-center flex-1"
       >
-        {icon}
+        <Icon
+          size={22}
+          className={`transition ${
+            active
+              ? "text-green-500 scale-110"
+              : "text-gray-400"
+          }`}
+        />
+        <span
+          className={`text-xs mt-1 ${
+            active ? "text-green-500" : "text-gray-400"
+          }`}
+        >
+          {label}
+        </span>
       </button>
     );
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-16 flex items-center justify-around bg-white border-t z-0 shadow-md">
-      {navItem("/", "🏠")}
-      {navItem("/tasks", "📋")}
+    <div className="fixed bottom-0 left-0 right-0 z-50">
+      
+      {/* NAV */}
+      <div className="mx-4 mb-4 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg flex items-center px-4 py-3">
 
-      <button className="text-2xl bg-green-500 text-white px-3 py-1 rounded-full -mt-6 shadow-lg">
-        ➕
-      </button>
+        {navItem("/", Home, "Trang chủ")}
+        {navItem("/friends", User, "Bạn bè")}
 
-      {navItem("/chat", "💬")}
-      {navItem("/profile", "👤")}
+        {/* FLOAT BUTTON */}
+        <div className="flex-1 flex justify-center">
+          <button
+            onClick={() => router.push("/create")}
+            className="bg-gradient-to-r from-green-400 to-green-600 text-white p-4 rounded-full shadow-xl -mt-8 scale-110 active:scale-95 transition"
+          >
+            <Plus size={24} />
+          </button>
+        </div>
+
+        {navItem("/tasks", ClipboardList, "Task")}
+        {navItem("/profile", User, "Hồ sơ")}
+      </div>
     </div>
   );
 }
