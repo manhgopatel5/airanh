@@ -6,7 +6,6 @@ import Link from "next/link";
 import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { setCookie } from "cookies-next";
 
 export default function Login() {
   const router = useRouter();
@@ -25,15 +24,12 @@ export default function Login() {
     try {
       setLoading(true);
 
-      const res = await signInWithEmailAndPassword(auth, email, password);
-      const token = await res.user.getIdToken();
+      await signInWithEmailAndPassword(auth, email, password);
 
-      setCookie("token", token, {
-        maxAge: 60 * 60 * 24 * 7,
-        path: "/", // 🔥 QUAN TRỌNG
-      });
+      // ❌ KHÔNG dùng cookie nữa
+      // ❌ KHÔNG get token nữa
 
-      router.replace("/");
+      router.replace("/"); // 👉 về home
     } catch (err) {
       alert("Sai tài khoản hoặc mật khẩu!");
     } finally {
@@ -52,6 +48,7 @@ export default function Login() {
           Chào mừng bạn quay lại!
         </p>
 
+        {/* Email */}
         <div className="flex items-center bg-white rounded-full px-4 py-3 mb-4 shadow">
           <FiMail className="mr-2 text-gray-400" />
           <input
@@ -63,6 +60,7 @@ export default function Login() {
           />
         </div>
 
+        {/* Password */}
         <div className="flex items-center bg-white rounded-full px-4 py-3 mb-4 shadow">
           <FiLock className="mr-2 text-gray-400" />
           <input
@@ -77,6 +75,7 @@ export default function Login() {
           </button>
         </div>
 
+        {/* Button */}
         <button
           onClick={handleLogin}
           disabled={loading}
