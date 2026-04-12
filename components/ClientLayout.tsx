@@ -11,7 +11,7 @@ export default function ClientLayout({ children }: any) {
   const publicRoutes = ["/login", "/register"];
   const isPublic = publicRoutes.includes(pathname);
 
-  // ⏳ loading
+  // ⏳ loading thật sự
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -20,19 +20,19 @@ export default function ClientLayout({ children }: any) {
     );
   }
 
-  // ❌ chưa login → show login luôn
-  if (!user && !isPublic) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <p>Vui lòng đăng nhập</p>
-      </div>
-    );
-  }
-
   return (
     <div className="pb-20">
-      {children}
-      {!isPublic && <BottomNav />}
+      {/* ❌ chưa login */}
+      {!user && !isPublic ? (
+        <div className="h-screen flex items-center justify-center">
+          <p>Vui lòng đăng nhập</p>
+        </div>
+      ) : (
+        children
+      )}
+
+      {/* navbar */}
+      {!isPublic && user && <BottomNav />}
     </div>
   );
 }
