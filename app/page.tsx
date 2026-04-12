@@ -1,14 +1,64 @@
 "use client";
 
-import { Task } from "../types/task";
-import { useState } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Flame, Clock, Sparkles, Users } from "lucide-react";
+import Link from "next/link";
+
+import { db } from "@/lib/firebase";
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+} from "firebase/firestore";
+
 import TaskCard from "@/components/TaskCard";
-import useTasks from "@/hooks/useTasks";
+import PostCard from "@/components/PostCard";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("hot");
+
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [posts, setPosts] = useState<any[]>([]);
+
+  /* ================= FETCH FIRESTORE ================= */
+
+  useEffect(() => {
+    // 📌 TASKS
+    const qTasks = query(
+      collection(db, "tasks"),
+      orderBy("createdAt", "desc")
+    );
+
+    const unsubTasks = onSnapshot(qTasks, (snap) => {
+      const data = snap.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setTasks(data);
+    });
+
+    // 📝 POSTS
+    const qPosts = query(
+      collection(db, "posts"),
+      orderBy("createdAt", "desc")
+    );
+
+    const unsubPosts = onSnapshot(qPosts, (snap) => {
+      const data = snap.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setPosts(data);
+    });
+
+    return () => {
+      unsubTasks();
+      unsubPosts();
+    };
+  }, []);
+
+  /* ================= TABS ================= */
 
   const tabs = [
     { id: "hot", label: "Hot", icon: Flame },
@@ -17,11 +67,8 @@ export default function Home() {
     { id: "friends", label: "Bạn bè", icon: Users },
   ];
 
-  const tasks = useTasks() as Task[];
-
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-
       {/* 🔥 TOP NAV */}
       <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b">
         <div className="pt-[env(safe-area-inset-top)]" />
@@ -55,10 +102,19 @@ export default function Home() {
 
       {/* 📦 CONTENT */}
       <div className="max-w-xl mx-auto p-3 space-y-3">
-        {activeTab === "hot" && <HotTab tasks={tasks} />}
-        {activeTab === "recent" && <RecentTab tasks={tasks} />}
+        {activeTab === "hot" && (
+          <HotTab tasks={tasks} posts={posts} />
+        )}
+
+        {activeTab === "recent" && (
+          <RecentTab tasks={tasks} posts={posts} />
+        )}
+
         {activeTab === "new" && <NewTaskTab />}
-        {activeTab === "friends" && <FriendsTab tasks={tasks} />}
+
+        {activeTab === "friends" && (
+          <FriendsTab tasks={tasks} posts={posts} />
+        )}
       </div>
     </div>
   );
@@ -66,34 +122,56 @@ export default function Home() {
 
 /* ================= TAB ================= */
 
-function HotTab({ tasks }: { tasks: Task[] }) {
-  const sorted = [...tasks].sort(
+function HotTab({
+  tasks,
+  posts,
+}: {
+  tasks: any[];
+  posts: any[];
+}) {
+  const sortedTasks = [...tasks].sort(
     (a, b) => (b.likes || 0) - (a.likes || 0)
   );
 
-  if (!sorted.length) return <EmptyState />;
+  const sortedPosts = [...posts].sort(
+    (a, b) => (b.likes || 0) - (a.likes || 0)
+  );
+
+  if (!sortedTasks.length && !sortedPosts.length)
+    return <EmptyState />;
 
   return (
     <>
-      {sorted.map((task) => (
+      {/* 🔥 POSTS */}
+      {sortedPosts.map((post) => (
+        <PostCard key={post.id} post={post} />
+      ))}
+
+      {/* 📌 TASKS */}
+      {sortedTasks.map((task) => (
         <TaskCard key={task.id} task={task} />
       ))}
     </>
   );
 }
 
-function RecentTab({ tasks }: { tasks: Task[] }) {
-  const sorted = [...tasks].sort(
-    (a, b) =>
-      (b.createdAt?.seconds || 0) -
-      (a.createdAt?.seconds || 0)
-  );
-
-  if (!sorted.length) return <EmptyState />;
+function RecentTab({
+  tasks,
+  posts,
+}: {
+  tasks: any[];
+  posts: any[];
+}) {
+  if (!tasks.length && !posts.length)
+    return <EmptyState />;
 
   return (
     <>
-      {sorted.map((task) => (
+      {posts.map((post) => (
+        <PostCard key={post.id} post={post} />
+      ))}
+
+      {tasks.map((task) => (
         <TaskCard key={task.id} task={task} />
       ))}
     </>
@@ -117,11 +195,23 @@ function NewTaskTab() {
   );
 }
 
-function FriendsTab({ tasks }: { tasks: Task[] }) {
-  if (!tasks.length) return <EmptyState />;
+function FriendsTab({
+  tasks,
+  posts,
+}: {
+  tasks: any[];
+  posts: any[];
+}) {
+  // 👉 sau này filter theo friends
+  if (!tasks.length && !posts.length)
+    return <EmptyState />;
 
   return (
     <>
+      {posts.map((post) => (
+        <PostCard key={post.id} post={post} />
+      ))}
+
       {tasks.map((task) => (
         <TaskCard key={task.id} task={task} />
       ))}
@@ -132,7 +222,7 @@ function FriendsTab({ tasks }: { tasks: Task[] }) {
 function EmptyState() {
   return (
     <div className="text-center text-gray-400 mt-10">
-      Chưa có task nào
+      Chưa có dữ liệu
     </div>
   );
 }
