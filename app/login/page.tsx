@@ -28,7 +28,7 @@ export default function Login() {
 
       alert("Đăng nhập thành công 🎉");
 
-      router.replace("/tasks");
+      router.replace("/"); // ✅ về trang chủ
     } catch (err: any) {
       alert("Sai tài khoản hoặc mật khẩu!");
     } finally {
