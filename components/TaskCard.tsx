@@ -25,6 +25,7 @@ type Task = {
 export default function TaskCard({ task }: { task: Task }) {
   const router = useRouter();
   const [timeLeft, setTimeLeft] = useState("");
+  const [isExpired, setIsExpired] = useState(false);
 
   /* ================= FIX DEADLINE ================= */
   const deadline =
@@ -32,10 +33,14 @@ export default function TaskCard({ task }: { task: Task }) {
       ? task.deadline
       : task.deadline?.toMillis?.() || 0;
 
-  /* ================= COUNTDOWN ================= */
+  const priceFormatted = task.price.toLocaleString("vi-VN");
+
+  /* ================= COUNTDOWN (client-only; avoids SSR/client Date mismatch) ================= */
   useEffect(() => {
     const update = () => {
-      const diff = deadline - Date.now();
+      const now = Date.now();
+      setIsExpired(deadline <= now);
+      const diff = deadline - now;
 
       if (diff <= 0) {
         setTimeLeft("Hết hạn");
@@ -78,7 +83,6 @@ export default function TaskCard({ task }: { task: Task }) {
   };
 
   const isFull = task.joined >= task.totalSlots;
-  const isExpired = deadline <= Date.now();
 
   const progress =
     task.totalSlots > 0
@@ -130,7 +134,7 @@ export default function TaskCard({ task }: { task: Task }) {
       <div className="px-3 py-2 space-y-1">
         <div className="flex justify-between text-sm">
           <span className="text-green-600 font-semibold">
-            💰 {task.price.toLocaleString()}đ
+            💰 {priceFormatted}đ
           </span>
 
           <span className="flex items-center gap-1 text-gray-500">

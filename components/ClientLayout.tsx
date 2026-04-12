@@ -13,17 +13,9 @@ export default function ClientLayout({ children }: any) {
   const publicRoutes = ["/login", "/register"];
   const isPublic = publicRoutes.includes(pathname);
 
-  // ⏳ chờ Firebase load xong
-  if (loading) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        Loading...
-      </div>
-    );
-  }
-
-  // 🔥 redirect chuẩn (KHÔNG loop)
   useEffect(() => {
+    if (loading) return;
+
     if (!user && !isPublic) {
       router.replace("/login");
     }
@@ -31,7 +23,15 @@ export default function ClientLayout({ children }: any) {
     if (user && isPublic) {
       router.replace("/");
     }
-  }, [user, pathname]);
+  }, [user, loading, isPublic, pathname, router]);
+
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <div className="pb-20">
