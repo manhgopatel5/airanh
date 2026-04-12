@@ -1,19 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Login() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  /* 🔥 AUTO REDIRECT KHI ĐÃ LOGIN */
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace("/");
+    }
+  }, [user, authLoading]);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -26,10 +35,8 @@ export default function Login() {
 
       await signInWithEmailAndPassword(auth, email, password);
 
-      // ❌ KHÔNG dùng cookie nữa
-      // ❌ KHÔNG get token nữa
-
-      router.replace("/"); // 👉 về home
+      // ❌ KHÔNG redirect ở đây nữa
+      // 👉 để AuthContext xử lý
     } catch (err) {
       alert("Sai tài khoản hoặc mật khẩu!");
     } finally {
