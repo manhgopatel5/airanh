@@ -3,18 +3,19 @@
 import { Task } from "../types/task";
 import { useState } from "react";
 import Link from "next/link";
-import { Flame, Clock, Sparkles, MessageCircle } from "lucide-react";
+import { Flame, Clock, Sparkles, Users } from "lucide-react";
 import TaskCard from "@/components/TaskCard";
 import useTasks from "@/hooks/useTasks";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("hot");
 
+  // 🔥 FIX: đổi messages -> friends
   const tabs = [
     { id: "hot", label: "Hot", icon: Flame },
     { id: "recent", label: "Gần đây", icon: Clock },
     { id: "new", label: "New", icon: Sparkles },
-    { id: "messages", label: "Tin nhắn", icon: MessageCircle },
+    { id: "friends", label: "Bạn bè", icon: Users },
   ];
 
   const tasks = useTasks() as Task[];
@@ -22,13 +23,12 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
 
-      {/* 🔥 TOP NAV FULL */}
+      {/* 🔥 TOP NAV */}
       <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b">
 
-        {/* Safe area (fix notch iPhone) */}
+        {/* fix notch iPhone */}
         <div className="pt-[env(safe-area-inset-top)]" />
 
-        {/* TAB */}
         <div className="flex justify-around">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -48,7 +48,7 @@ export default function Home() {
                   {tab.label}
                 </span>
 
-                {/* underline animation */}
+                {/* underline */}
                 <div
                   className={`mt-1 h-[2px] w-6 rounded-full transition-all duration-200 ${
                     active ? "bg-black" : "bg-transparent"
@@ -62,10 +62,12 @@ export default function Home() {
 
       {/* 📦 CONTENT */}
       <div className="max-w-xl mx-auto p-3 space-y-3">
+
         {activeTab === "hot" && <HotTab tasks={tasks} />}
         {activeTab === "recent" && <RecentTab tasks={tasks} />}
         {activeTab === "new" && <NewTaskTab />}
-        {activeTab === "messages" && <MessagesTab />}
+        {activeTab === "friends" && <FriendsTab tasks={tasks} />}
+
       </div>
     </div>
   );
@@ -78,7 +80,7 @@ function HotTab({ tasks }: { tasks: Task[] }) {
     (a, b) => (b.likes || 0) - (a.likes || 0)
   );
 
-  if (sorted.length === 0) return <EmptyState />;
+  if (!sorted.length) return <EmptyState />;
 
   return (
     <>
@@ -96,7 +98,7 @@ function RecentTab({ tasks }: { tasks: Task[] }) {
       (a.createdAt?.seconds || 0)
   );
 
-  if (sorted.length === 0) return <EmptyState />;
+  if (!sorted.length) return <EmptyState />;
 
   return (
     <>
@@ -116,7 +118,7 @@ function NewTaskTab() {
 
       <Link
         href="/create"
-        className="bg-black text-white px-5 py-2 rounded-xl shadow"
+        className="bg-black text-white px-5 py-2 rounded-xl shadow active:scale-95 transition"
       >
         Tạo Task
       </Link>
@@ -124,11 +126,16 @@ function NewTaskTab() {
   );
 }
 
-function MessagesTab() {
+// 🔥 NEW: FriendsTab thay cho MessagesTab
+function FriendsTab({ tasks }: { tasks: Task[] }) {
+  if (!tasks.length) return <EmptyState />;
+
   return (
-    <div className="flex flex-col items-center justify-center h-[60vh] text-center text-gray-400">
-      Chưa có tin nhắn
-    </div>
+    <>
+      {tasks.map((task) => (
+        <TaskCard key={task.id} task={task} />
+      ))}
+    </>
   );
 }
 
