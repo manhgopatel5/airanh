@@ -25,20 +25,8 @@ export const AuthProvider = ({ children }: any) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let isMounted = true;
-
-    // 🔥 fallback chống treo
-    const timeout = setTimeout(() => {
-      if (isMounted) {
-        console.warn("Auth timeout fallback");
-        setLoading(false);
-      }
-    }, 5000);
-
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
-        if (!isMounted) return;
-
         if (firebaseUser) {
           const ref = doc(db, "users", firebaseUser.uid);
           const snap = await getDoc(ref);
@@ -60,15 +48,10 @@ export const AuthProvider = ({ children }: any) => {
         console.error("Auth error:", err);
       }
 
-      clearTimeout(timeout);
-      setLoading(false);
+      setLoading(false); // ✅ chỉ set ở đây
     });
 
-    return () => {
-      isMounted = false;
-      unsubscribe();
-      clearTimeout(timeout);
-    };
+    return () => unsubscribe();
   }, []);
 
   return (
