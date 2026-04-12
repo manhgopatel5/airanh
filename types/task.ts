@@ -14,4 +14,6 @@ export type Task = {
   avatar?: string;
   description?: string;
   deadline?: number;
+
+  images?: string[]; // 👈 thêm dòng này
 };
