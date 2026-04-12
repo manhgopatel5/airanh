@@ -6,6 +6,7 @@ import Link from "next/link";
 import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { setCookie } from "cookies-next"; // 🔥 thêm dòng này
 
 export default function Login() {
   const router = useRouter();
@@ -24,11 +25,19 @@ export default function Login() {
     try {
       setLoading(true);
 
-      await signInWithEmailAndPassword(auth, email, password);
+      const res = await signInWithEmailAndPassword(auth, email, password);
+
+      // 🔥 LẤY TOKEN FIREBASE
+      const token = await res.user.getIdToken();
+
+      // 🔥 LƯU COOKIE (middleware sẽ đọc)
+      setCookie("token", token, {
+        maxAge: 60 * 60 * 24 * 7, // 7 ngày
+      });
 
       alert("Đăng nhập thành công 🎉");
 
-      router.replace("/"); // ✅ về trang chủ
+      router.replace("/"); // 👉 về home
     } catch (err: any) {
       alert("Sai tài khoản hoặc mật khẩu!");
     } finally {
@@ -70,7 +79,7 @@ export default function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <button onClick={() => setShow(!show)}>
+          <button type="button" onClick={() => setShow(!show)}>
             {show ? <FiEyeOff /> : <FiEye />}
           </button>
         </div>
@@ -78,7 +87,8 @@ export default function Login() {
         {/* Button */}
         <button
           onClick={handleLogin}
-          className="w-full py-3 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-purple-500"
+          disabled={loading}
+          className="w-full py-3 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-purple-500 disabled:opacity-50"
         >
           {loading ? "Đang xử lý..." : "Đăng nhập"}
         </button>
