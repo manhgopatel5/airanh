@@ -10,6 +10,7 @@ export default function ClientLayout({ children }: any) {
   const router = useRouter();
   const { user, loading } = useAuth();
 
+  
   const publicRoutes = ["/login", "/register"];
   const isPublic = publicRoutes.includes(pathname);
 
