@@ -2,9 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Flame, Clock, Sparkles, Users } from "lucide-react";
-import UserSearch from "@/components/UserSearch";
-import FriendList from "@/components/FriendList";
-import FriendRequests from "@/components/FriendRequests";
 import Link from "next/link";
 
 import { db } from "@/lib/firebase";
@@ -17,6 +14,11 @@ import {
 
 import TaskCard from "@/components/TaskCard";
 import PostCard from "@/components/PostCard";
+
+// 🔥 FRIEND SYSTEM
+import UserSearch from "@/components/UserSearch";
+import FriendRequests from "@/components/FriendRequests";
+import FriendList from "@/components/FriendList";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("hot");
@@ -115,9 +117,8 @@ export default function Home() {
 
         {activeTab === "new" && <NewTaskTab />}
 
-        {activeTab === "friends" && (
-          <FriendsTab tasks={tasks} posts={posts} />
-        )}
+        {/* 🔥 FRIEND TAB FIXED */}
+        {activeTab === "friends" && <FriendsTab />}
       </div>
     </div>
   );
@@ -145,12 +146,10 @@ function HotTab({
 
   return (
     <>
-      {/* 🔥 POSTS */}
       {sortedPosts.map((post) => (
         <PostCard key={post.id} post={post} />
       ))}
 
-      {/* 📌 TASKS */}
       {sortedTasks.map((task) => (
         <TaskCard key={task.id} task={task} />
       ))}
@@ -181,6 +180,8 @@ function RecentTab({
   );
 }
 
+/* ================= NEW TASK ================= */
+
 function NewTaskTab() {
   return (
     <div className="flex flex-col items-center justify-center h-[60vh] text-center">
@@ -198,29 +199,19 @@ function NewTaskTab() {
   );
 }
 
-function FriendsTab({
-  tasks,
-  posts,
-}: {
-  tasks: any[];
-  posts: any[];
-}) {
-  // 👉 sau này filter theo friends
-  if (!tasks.length && !posts.length)
-    return <EmptyState />;
+/* ================= FRIEND TAB (🔥 MỚI) ================= */
 
+function FriendsTab() {
   return (
-    <>
-      {posts.map((post) => (
-        <PostCard key={post.id} post={post} />
-      ))}
-
-      {tasks.map((task) => (
-        <TaskCard key={task.id} task={task} />
-      ))}
-    </>
+    <div className="space-y-4">
+      <UserSearch />
+      <FriendRequests />
+      <FriendList />
+    </div>
   );
 }
+
+/* ================= EMPTY ================= */
 
 function EmptyState() {
   return (
