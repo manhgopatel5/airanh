@@ -48,7 +48,7 @@ export default function ClientLayout({
   return (
     <div className="min-h-screen bg-gray-50 relative">
 
-      {/* 🔥 CONTENT */}
+      {/* 🔥 CONTENT  */}
       <div className="pb-20">
         {children}
       </div>
