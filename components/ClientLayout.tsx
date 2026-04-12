@@ -1,17 +1,19 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function ClientLayout({ children }: any) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, loading } = useAuth();
 
   const publicRoutes = ["/login", "/register"];
   const isPublic = publicRoutes.includes(pathname);
 
-  // ⏳ loading thật sự
+  // ⏳ chờ Firebase load xong
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -20,18 +22,20 @@ export default function ClientLayout({ children }: any) {
     );
   }
 
+  // 🔥 redirect chuẩn (KHÔNG loop)
+  useEffect(() => {
+    if (!user && !isPublic) {
+      router.replace("/login");
+    }
+
+    if (user && isPublic) {
+      router.replace("/");
+    }
+  }, [user, pathname]);
+
   return (
     <div className="pb-20">
-      {/* ❌ chưa login */}
-      {!user && !isPublic ? (
-        <div className="h-screen flex items-center justify-center">
-          <p>Vui lòng đăng nhập</p>
-        </div>
-      ) : (
-        children
-      )}
-
-      {/* navbar */}
+      {children}
       {!isPublic && user && <BottomNav />}
     </div>
   );
