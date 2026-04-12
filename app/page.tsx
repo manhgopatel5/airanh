@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Flame, Clock, Sparkles, Users } from "lucide-react";
+import UserSearch from "@/components/UserSearch";
+import FriendList from "@/components/FriendList";
+import FriendRequests from "@/components/FriendRequests";
 import Link from "next/link";
 
 import { db } from "@/lib/firebase";
