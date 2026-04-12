@@ -15,23 +15,16 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export const AuthProvider = ({ children }: any) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(undefined as any); // 🔥 khác ở đây
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let isMounted = true;
-
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (!isMounted) return;
-
       setUser(firebaseUser);
-      setLoading(false); // 🔥 chỉ set 1 lần sau khi Firebase trả kết quả
+      setLoading(false);
     });
 
-    return () => {
-      isMounted = false;
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 
   return (
