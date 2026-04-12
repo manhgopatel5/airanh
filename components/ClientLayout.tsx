@@ -8,35 +8,44 @@ import { useAuth } from "@/lib/AuthContext";
 export default function ClientLayout({ children }: any) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, loading } = useAuth(); // 🔥 cần loading
+  const { user, loading } = useAuth();
 
   const publicRoutes = ["/login", "/register"];
 
   useEffect(() => {
-    if (loading) return; // 🔥 CHẶN redirect khi chưa load xong
+    if (loading) return;
 
-    // ❌ chưa login → về login
+    // ❌ Chưa login → về login
     if (!user && !publicRoutes.includes(pathname)) {
       router.replace("/login");
       return;
     }
 
-    // ✅ đã login → nếu đang ở login/register → về HOME
+    // ✅ Đã login → không cho quay lại login/register
     if (user && publicRoutes.includes(pathname)) {
       router.replace("/");
       return;
     }
-  }, [user, loading, pathname]);
+  }, [user, loading]); // ❗ bỏ pathname để tránh loop
 
   const hideNav = publicRoutes.includes(pathname);
 
-  // 🔥 tránh render khi chưa biết trạng thái auth
-  if (loading) return null;
+  // 🔥 loading tránh flicker + tránh bug redirect
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    );
+  }
 
   return (
-    <>
+    <div className="pb-20">
+      {/* CONTENT */}
       {children}
+
+      {/* NAVBAR */}
       {!hideNav && <BottomNav />}
-    </>
+    </div>
   );
 }
