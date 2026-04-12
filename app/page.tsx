@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link"; // 🔥 thêm
 import { Flame, Clock, PlusSquare, Users } from "lucide-react";
 import TaskCard from "@/components/TaskCard";
 import useTasks from "@/hooks/useTasks";
@@ -65,8 +66,11 @@ export default function Home() {
 /* ================= TAB LOGIC ================= */
 
 function HotTab({ tasks }: any) {
-  // 🔥 sort theo likes
   const sorted = [...tasks].sort((a, b) => b.likes - a.likes);
+
+  if (sorted.length === 0) {
+    return <EmptyState />;
+  }
 
   return (
     <>
@@ -78,11 +82,14 @@ function HotTab({ tasks }: any) {
 }
 
 function RecentTab({ tasks }: any) {
-  // 🕒 sort theo mới nhất
   const sorted = [...tasks].sort(
     (a, b) =>
       (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)
   );
+
+  if (sorted.length === 0) {
+    return <EmptyState />;
+  }
 
   return (
     <>
@@ -100,23 +107,37 @@ function NewTaskTab() {
         Tạo task mới
       </h2>
 
-      <a
+      {/* 🔥 FIX CHUẨN NEXT */}
+      <Link
         href="/create"
         className="bg-black text-white px-5 py-2 rounded-lg"
       >
         + Tạo Task
-      </a>
+      </Link>
     </div>
   );
 }
 
 function FriendsTab({ tasks }: any) {
-  // 👥 demo: lọc task có user khác (sau này thay bằng friend list)
+  if (tasks.length === 0) {
+    return <EmptyState />;
+  }
+
   return (
     <>
       {tasks.map((task) => (
         <TaskCard key={task.id} task={task} />
       ))}
     </>
+  );
+}
+
+/* ================= UI ================= */
+
+function EmptyState() {
+  return (
+    <div className="text-center text-gray-400 mt-10">
+      Chưa có task nào
+    </div>
   );
 }
