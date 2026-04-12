@@ -5,7 +5,7 @@ import { AuthProvider } from "@/lib/AuthContext";
 export default function RootLayout({ children }: any) {
   return (
     <html lang="vi">
-      <body className="max-w-md mx-auto">
+      <body className="bg-gray-50">
         <AuthProvider>
           <ClientLayout>{children}</ClientLayout>
         </AuthProvider>
