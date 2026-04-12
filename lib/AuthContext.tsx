@@ -10,34 +10,39 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 
-/* ================= TYPES ================= */
-
 type AuthContextType = {
   user: User | null;
   loading: boolean;
 };
-
-/* ================= CONTEXT ================= */
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
 });
 
-/* ================= PROVIDER ================= */
-
 export const AuthProvider = ({ children }: any) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
+    // 🔥 fallback chống treo
+    const timeout = setTimeout(() => {
+      if (isMounted) {
+        console.warn("Auth timeout fallback");
+        setLoading(false);
+      }
+    }, 5000);
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
+      try {
+        if (!isMounted) return;
+
+        if (firebaseUser) {
           const ref = doc(db, "users", firebaseUser.uid);
           const snap = await getDoc(ref);
 
-          // ✅ Nếu chưa có user → tạo mới
           if (!snap.exists()) {
             await setDoc(ref, {
               uid: firebaseUser.uid,
@@ -48,16 +53,22 @@ export const AuthProvider = ({ children }: any) => {
               createdAt: serverTimestamp(),
             });
           }
-        } catch (err) {
-          console.error("Lỗi tạo user:", err);
         }
+
+        setUser(firebaseUser);
+      } catch (err) {
+        console.error("Auth error:", err);
       }
 
-      setUser(firebaseUser);
+      clearTimeout(timeout);
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      isMounted = false;
+      unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
   return (
@@ -66,7 +77,5 @@ export const AuthProvider = ({ children }: any) => {
     </AuthContext.Provider>
   );
 };
-
-/* ================= HOOK ================= */
 
 export const useAuth = () => useContext(AuthContext);
