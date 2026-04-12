@@ -1,10 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link"; // 🔥 thêm
+import Link from "next/link";
 import { Flame, Clock, PlusSquare, Users } from "lucide-react";
 import TaskCard from "@/components/TaskCard";
 import useTasks from "@/hooks/useTasks";
+
+/* ================= TYPE ================= */
+
+type Task = {
+  id: string;
+  title?: string;
+  price?: number;
+  likes?: number;
+  joined?: number;
+  totalSlots?: number;
+  createdAt?: {
+    seconds: number;
+  };
+};
+
+/* ================= MAIN ================= */
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("hot");
@@ -16,7 +32,7 @@ export default function Home() {
     { id: "friends", label: "Bạn bè", icon: Users },
   ];
 
-  const tasks = useTasks();
+  const tasks = useTasks() as Task[];
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -65,8 +81,10 @@ export default function Home() {
 
 /* ================= TAB LOGIC ================= */
 
-function HotTab({ tasks }: any) {
-  const sorted = [...tasks].sort((a, b) => b.likes - a.likes);
+function HotTab({ tasks }: { tasks: Task[] }) {
+  const sorted = [...tasks].sort(
+    (a, b) => (b.likes || 0) - (a.likes || 0)
+  );
 
   if (sorted.length === 0) {
     return <EmptyState />;
@@ -81,10 +99,11 @@ function HotTab({ tasks }: any) {
   );
 }
 
-function RecentTab({ tasks }: any) {
+function RecentTab({ tasks }: { tasks: Task[] }) {
   const sorted = [...tasks].sort(
     (a, b) =>
-      (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)
+      (b.createdAt?.seconds || 0) -
+      (a.createdAt?.seconds || 0)
   );
 
   if (sorted.length === 0) {
@@ -107,7 +126,6 @@ function NewTaskTab() {
         Tạo task mới
       </h2>
 
-      {/* 🔥 FIX CHUẨN NEXT */}
       <Link
         href="/create"
         className="bg-black text-white px-5 py-2 rounded-lg"
@@ -118,7 +136,7 @@ function NewTaskTab() {
   );
 }
 
-function FriendsTab({ tasks }: any) {
+function FriendsTab({ tasks }: { tasks: Task[] }) {
   if (tasks.length === 0) {
     return <EmptyState />;
   }
