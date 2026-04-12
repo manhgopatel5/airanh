@@ -1,4 +1,5 @@
 "use client";
+
 import { Task } from "@/types/task";
 import { useEffect, useState } from "react";
 import { Heart, Users, Clock } from "lucide-react";
@@ -6,21 +7,31 @@ import { joinTask } from "@/lib/joinTask";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 
-
 export default function TaskCard({ task }: { task: Task }) {
   const router = useRouter();
   const [timeLeft, setTimeLeft] = useState("");
   const [isExpired, setIsExpired] = useState(false);
 
-  /* ================= FIX DEADLINE ================= */
+  /* ================= SAFE DATA ================= */
+  const price = task.price || 0;
+  const joined = task.joined || 0;
+  const totalSlots = task.totalSlots || 0;
+  const likes = task.likes || 0;
+
+  const avatar = task.avatar || "/default-avatar.png";
+  const userName = task.user || "Unknown";
+  const title = task.title || "No title";
+  const description = task.description || "";
+
+  /* ================= DEADLINE ================= */
   const deadline =
     typeof task.deadline === "number"
       ? task.deadline
-      : task.deadline?.toMillis?.() || 0;
+      : (task.deadline as any)?.toMillis?.() || 0;
 
-  const priceFormatted = task.price.toLocaleString("vi-VN");
+  const priceFormatted = price.toLocaleString("vi-VN");
 
-  /* ================= COUNTDOWN (client-only; avoids SSR/client Date mismatch) ================= */
+  /* ================= COUNTDOWN ================= */
   useEffect(() => {
     const update = () => {
       const now = Date.now();
@@ -41,7 +52,6 @@ export default function TaskCard({ task }: { task: Task }) {
 
     update();
     const interval = setInterval(update, 1000);
-
     return () => clearInterval(interval);
   }, [deadline]);
 
@@ -63,27 +73,25 @@ export default function TaskCard({ task }: { task: Task }) {
       const chatId = await joinTask(task, user);
       router.push(`/chat/${chatId}`);
     } catch (err: any) {
-      alert(err);
+      alert(err?.message || "Có lỗi xảy ra");
     }
   };
 
-  const isFull = task.joined >= task.totalSlots;
+  const isFull = joined >= totalSlots;
 
   const progress =
-    task.totalSlots > 0
-      ? (task.joined / task.totalSlots) * 100
-      : 0;
+    totalSlots > 0 ? (joined / totalSlots) * 100 : 0;
 
   return (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden border">
       {/* HEADER */}
       <div className="flex items-center p-3">
         <img
-          src={task.avatar}
+          src={avatar}
           className="w-10 h-10 rounded-full object-cover"
         />
         <div className="ml-3">
-          <p className="font-semibold text-sm">{task.user}</p>
+          <p className="font-semibold text-sm">{userName}</p>
           <p className="text-xs text-gray-400">
             {task.time || "Vừa xong"}
           </p>
@@ -92,20 +100,20 @@ export default function TaskCard({ task }: { task: Task }) {
 
       {/* TITLE */}
       <div className="px-3">
-        <p className="font-semibold text-[15px]">{task.title}</p>
+        <p className="font-semibold text-[15px]">{title}</p>
       </div>
 
       {/* DESCRIPTION */}
       <div className="px-3 py-2">
         <p className="text-sm text-gray-600 line-clamp-3">
-          {task.description}
+          {description}
         </p>
       </div>
 
       {/* IMAGES */}
       {task.images && task.images.length > 0 && (
         <div className="flex overflow-x-auto space-x-2 px-3 pb-2">
-          {task.images.map((img, i) => (
+          {task.images.map((img: string, i: number) => (
             <img
               key={i}
               src={img}
@@ -124,7 +132,7 @@ export default function TaskCard({ task }: { task: Task }) {
 
           <span className="flex items-center gap-1 text-gray-500">
             <Users size={16} />
-            {task.joined}/{task.totalSlots}
+            {joined}/{totalSlots}
           </span>
 
           <span
@@ -150,7 +158,7 @@ export default function TaskCard({ task }: { task: Task }) {
       <div className="flex justify-between items-center p-3 pt-1">
         <button className="flex items-center gap-1 text-gray-500">
           <Heart size={18} />
-          <span>{task.likes}</span>
+          <span>{likes}</span>
         </button>
 
         <button
