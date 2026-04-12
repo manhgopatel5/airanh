@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -10,41 +10,42 @@ export default function ClientLayout({ children }: any) {
   const router = useRouter();
   const { user, loading } = useAuth();
 
+  const didRedirect = useRef(false); // 🔥 chống redirect nhiều lần
+
   const publicRoutes = ["/login", "/register"];
 
   useEffect(() => {
     if (loading) return;
+    if (didRedirect.current) return;
 
-    // ❌ Chưa login → về login
+    // ❌ chưa login
     if (!user && !publicRoutes.includes(pathname)) {
+      didRedirect.current = true;
       router.replace("/login");
       return;
     }
 
-    // ✅ Đã login → không cho quay lại login/register
+    // ✅ đã login
     if (user && publicRoutes.includes(pathname)) {
+      didRedirect.current = true;
       router.replace("/");
       return;
     }
-  }, [user, loading]); // ❗ bỏ pathname để tránh loop
+  }, [user, loading]);
 
   const hideNav = publicRoutes.includes(pathname);
 
-  // 🔥 loading tránh flicker + tránh bug redirect
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
+        Loading...
       </div>
     );
   }
 
   return (
     <div className="pb-20">
-      {/* CONTENT */}
       {children}
-
-      {/* NAVBAR */}
       {!hideNav && <BottomNav />}
     </div>
   );
