@@ -3,10 +3,10 @@
 import { useRouter, usePathname } from "next/navigation";
 import {
   Home,
+  MessageCircle,
   ClipboardList,
   User,
   Plus,
-  MessageCircle,
 } from "lucide-react";
 
 export default function BottomNav() {
@@ -34,10 +34,8 @@ export default function BottomNav() {
       >
         <Icon
           size={22}
-          className={`transition ${
-            active
-              ? "text-green-500 scale-110"
-              : "text-gray-400"
+          className={`${
+            active ? "text-green-500 scale-110" : "text-gray-400"
           }`}
         />
         <span
@@ -53,24 +51,22 @@ export default function BottomNav() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50">
-
-      {/* NAV BAR */}
-      <div className="mx-4 mb-4 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg flex items-center px-4 py-3 relative">
+      <div className="mx-4 mb-4 bg-white/90 backdrop-blur-xl rounded-2xl shadow-lg flex items-center px-2 py-2">
 
         {navItem("/", Home, "Trang chủ")}
-        {navItem("/friends", User, "Bạn bè")}
-
-        {/* 🔥 FLOAT BUTTON CHUẨN CENTER */}
-        <div className="absolute left-1/2 -translate-x-1/2 -top-6">
-          <button
-            onClick={() => handleNav("/create")}
-            className="bg-gradient-to-r from-green-400 to-green-600 text-white p-4 rounded-full shadow-xl active:scale-95 transition"
-          >
-            <Plus size={24} />
-          </button>
-        </div>
-
         {navItem("/messages", MessageCircle, "Tin nhắn")}
+
+        {/* ➕ CENTER */}
+        <button
+          onClick={() => handleNav("/create")}
+          className="flex flex-col items-center justify-center flex-1"
+        >
+          <div className="bg-green-500 text-white p-3 rounded-full shadow-md active:scale-95 transition">
+            <Plus size={20} />
+          </div>
+        </button>
+
+        {navItem("/tasks", ClipboardList, "Nhiệm vụ")}
         {navItem("/profile", User, "Hồ sơ")}
       </div>
     </div>
