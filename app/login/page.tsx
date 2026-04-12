@@ -6,7 +6,7 @@ import Link from "next/link";
 import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { setCookie } from "cookies-next"; // 🔥 thêm dòng này
+import { setCookie } from "cookies-next";
 
 export default function Login() {
   const router = useRouter();
@@ -26,19 +26,15 @@ export default function Login() {
       setLoading(true);
 
       const res = await signInWithEmailAndPassword(auth, email, password);
-
-      // 🔥 LẤY TOKEN FIREBASE
       const token = await res.user.getIdToken();
 
-      // 🔥 LƯU COOKIE (middleware sẽ đọc)
       setCookie("token", token, {
-        maxAge: 60 * 60 * 24 * 7, // 7 ngày
+        maxAge: 60 * 60 * 24 * 7,
+        path: "/", // 🔥 QUAN TRỌNG
       });
 
-      alert("Đăng nhập thành công 🎉");
-
-      router.replace("/"); // 👉 về home
-    } catch (err: any) {
+      router.replace("/");
+    } catch (err) {
       alert("Sai tài khoản hoặc mật khẩu!");
     } finally {
       setLoading(false);
@@ -48,7 +44,6 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-[#f3f6fb] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        
         <h1 className="text-center text-2xl font-bold text-blue-600 mb-2">
           Đăng nhập tài khoản
         </h1>
@@ -57,7 +52,6 @@ export default function Login() {
           Chào mừng bạn quay lại!
         </p>
 
-        {/* Email */}
         <div className="flex items-center bg-white rounded-full px-4 py-3 mb-4 shadow">
           <FiMail className="mr-2 text-gray-400" />
           <input
@@ -69,7 +63,6 @@ export default function Login() {
           />
         </div>
 
-        {/* Password */}
         <div className="flex items-center bg-white rounded-full px-4 py-3 mb-4 shadow">
           <FiLock className="mr-2 text-gray-400" />
           <input
@@ -84,7 +77,6 @@ export default function Login() {
           </button>
         </div>
 
-        {/* Button */}
         <button
           onClick={handleLogin}
           disabled={loading}
