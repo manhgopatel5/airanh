@@ -19,12 +19,10 @@ export default function ClientLayout({
   const publicRoutes = ["/login", "/register"];
   const isPublic = publicRoutes.includes(pathname);
 
-  // ✅ đảm bảo chỉ render sau khi client mount (fix hydration)
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // ✅ xử lý redirect auth
   useEffect(() => {
     if (!mounted || loading) return;
 
@@ -37,10 +35,8 @@ export default function ClientLayout({
     }
   }, [user, loading, isPublic, pathname, router, mounted]);
 
-  // ❗ QUAN TRỌNG: tránh mismatch server/client
   if (!mounted) return null;
 
-  // ✅ loading UI
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -50,9 +46,16 @@ export default function ClientLayout({
   }
 
   return (
-    <div className="pb-20">
-      {children}
+    <div className="min-h-screen bg-gray-50 relative">
+
+      {/* 🔥 CONTENT */}
+      <div className="pb-20">
+        {children}
+      </div>
+
+      {/* 🔥 BOTTOM NAV */}
       {!isPublic && user && <BottomNav />}
+
     </div>
   );
 }
