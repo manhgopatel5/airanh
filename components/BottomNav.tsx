@@ -1,20 +1,31 @@
-
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
-import { Home, ClipboardList, MessageCircle, User, Plus } from "lucide-react";
+import { Home, ClipboardList, User, Plus } from "lucide-react";
 
 export default function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
 
+  const handleNav = (path: string) => {
+    // 🔥 nếu đang ở path rồi thì không push nữa
+    if (pathname === path) return;
+
+    router.push(path);
+  };
+
+  const isActive = (path: string) => {
+    if (path === "/") return pathname === "/";
+    return pathname.startsWith(path);
+  };
+
   const navItem = (path: string, icon: any, label: string) => {
     const Icon = icon;
-    const active = pathname === path;
+    const active = isActive(path);
 
     return (
       <button
-        onClick={() => router.push(path)}
+        onClick={() => handleNav(path)}
         className="flex flex-col items-center justify-center flex-1"
       >
         <Icon
@@ -38,18 +49,15 @@ export default function BottomNav() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50">
-      
-      
-      {/* NAV */}
       <div className="mx-4 mb-4 bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg flex items-center px-4 py-3">
 
-        {navItem("/", Home, "🔥 NEW NAV")}
+        {navItem("/", Home, "Trang chủ")}
         {navItem("/friends", User, "Bạn bè")}
 
         {/* FLOAT BUTTON */}
         <div className="flex-1 flex justify-center">
           <button
-            onClick={() => router.push("/create")}
+            onClick={() => handleNav("/create")}
             className="bg-gradient-to-r from-green-400 to-green-600 text-white p-4 rounded-full shadow-xl -mt-8 scale-110 active:scale-95 transition"
           >
             <Plus size={24} />
@@ -62,4 +70,3 @@ export default function BottomNav() {
     </div>
   );
 }
-
