@@ -93,7 +93,7 @@ export default function TaskCard({ task }: { task: Task }) {
         <div className="ml-3">
           <p className="font-semibold text-sm">{userName}</p>
           <p className="text-xs text-gray-400">
-            {task.time || "Vừa xong"}
+            {"Vừa xong"}
           </p>
         </div>
       </div>
