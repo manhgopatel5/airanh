@@ -1,26 +1,11 @@
 "use client";
-
+import { Task } from "@/types/task";
 import { useEffect, useState } from "react";
 import { Heart, Users, Clock } from "lucide-react";
 import { joinTask } from "@/lib/joinTask";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 
-type Task = {
-  id: string;
-  user: string;
-  userId: string;
-  avatar: string;
-  time?: string;
-  title: string;
-  description: string;
-  images?: string[];
-  price: number;
-  totalSlots: number;
-  joined: number;
-  deadline: any; // 🔥 cho phép Timestamp
-  likes: number;
-};
 
 export default function TaskCard({ task }: { task: Task }) {
   const router = useRouter();
