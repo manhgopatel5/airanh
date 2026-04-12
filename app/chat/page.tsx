@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
+import { useEffect, useRef, useState } from "react";
+import { db, serverTimestamp } from "@/lib/firebase";
 import {
   collection,
   addDoc,
@@ -13,46 +13,112 @@ import { useAuth } from "@/lib/AuthContext";
 
 export default function Chat() {
   const { user } = useAuth();
+
   const [msg, setMsg] = useState("");
   const [messages, setMessages] = useState<any[]>([]);
 
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  // 👉 ID phòng chat (tạm 1 room)
+  const conversationId = "global-chat";
+
+  /* ================= REALTIME ================= */
   useEffect(() => {
-    const q = query(collection(db, "messages"), orderBy("createdAt"));
+    const q = query(
+      collection(db, "conversations", conversationId, "messages"),
+      orderBy("createdAt")
+    );
 
     const unsub = onSnapshot(q, (snap) => {
-      setMessages(snap.docs.map((doc) => doc.data()));
+      const data = snap.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setMessages(data);
     });
 
     return () => unsub();
   }, []);
 
-  const send = async () => {
-    if (!msg) return;
+  /* ================= AUTO SCROLL ================= */
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-    await addDoc(collection(db, "messages"), {
-      text: msg,
-      user: user?.email,
-      createdAt: Date.now(),
-    });
+  /* ================= SEND ================= */
+  const send = async () => {
+    if (!msg.trim() || !user) return;
+
+    await addDoc(
+      collection(db, "conversations", conversationId, "messages"),
+      {
+        text: msg,
+        senderId: user.uid,
+        senderName: user.email,
+        createdAt: serverTimestamp(), // 🔥 FIX
+      }
+    );
 
     setMsg("");
   };
 
+  /* ================= UI ================= */
   return (
-    <div className="p-4 space-y-2">
-      {messages.map((m, i) => (
-        <div key={i} className="bg-gray-200 p-2 rounded">
-          {m.user}: {m.text}
-        </div>
-      ))}
+    <div className="flex flex-col h-screen bg-gray-50">
+      {/* HEADER */}
+      <div className="p-4 border-b bg-white font-semibold">
+        Chat
+      </div>
 
-      <div className="flex gap-2 mt-4">
+      {/* MESSAGES */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+        {messages.map((m) => {
+          const isMe = m.senderId === user?.uid;
+
+          return (
+            <div
+              key={m.id}
+              className={`flex ${
+                isMe ? "justify-end" : "justify-start"
+              }`}
+            >
+              <div
+                className={`px-3 py-2 rounded-2xl max-w-[70%] text-sm ${
+                  isMe
+                    ? "bg-black text-white"
+                    : "bg-gray-200 text-black"
+                }`}
+              >
+                {!isMe && (
+                  <div className="text-xs text-gray-500 mb-1">
+                    {m.senderName}
+                  </div>
+                )}
+
+                {m.text}
+              </div>
+            </div>
+          );
+        })}
+
+        <div ref={bottomRef} />
+      </div>
+
+      {/* INPUT */}
+      <div className="p-3 border-t bg-white flex gap-2">
         <input
           value={msg}
           onChange={(e) => setMsg(e.target.value)}
-          className="border p-2 flex-1"
+          placeholder="Nhắn gì đó..."
+          className="flex-1 border rounded-full px-4 py-2 outline-none"
         />
-        <button onClick={send}>Gửi</button>
+
+        <button
+          onClick={send}
+          className="bg-black text-white px-4 rounded-full"
+        >
+          Gửi
+        </button>
       </div>
     </div>
   );
