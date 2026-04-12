@@ -1,26 +1,25 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, serverTimestamp } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
-// 🔥 config
+// 🔐 CONFIG (ENV - CHUẨN PRODUCTION)
 const firebaseConfig = {
-  apiKey: "AIzaSyB-mUYa7_t4lrePwI5GGCYWGxnKcGOzc_0",
-  authDomain: "airanh-ba64c.firebaseapp.com",
-  projectId: "airanh-ba64c",
-  storageBucket: "airanh-ba64c.firebasestorage.app",
-  messagingSenderId: "236839124077",
-  appId: "1:236839124077:web:bcf03a9721d45386f2d364",
-  measurementId: "G-L8WCT3BRWJ",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!, // ✅ FIX bucket
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
 };
 
-// ✅ KHỞI TẠO APP TRƯỚC
+// 🚀 INIT APP (tránh init nhiều lần)
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-// ✅ EXPORT
-export { app };
+// 🔥 SERVICES
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
 
-// ✅ INIT SAU KHI CÓ app
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
+// 📦 EXPORT
+export { app, auth, db, storage, serverTimestamp };
