@@ -1,5 +1,5 @@
 "use client";
-
+import { Task } from "../types/task";
 import { useState } from "react";
 import Link from "next/link";
 import { Flame, Clock, PlusSquare, Users } from "lucide-react";
@@ -8,17 +8,6 @@ import useTasks from "@/hooks/useTasks";
 
 /* ================= TYPE ================= */
 
-type Task = {
-  id: string;
-  title?: string;
-  price?: number;
-  likes?: number;
-  joined?: number;
-  totalSlots?: number;
-  createdAt?: {
-    seconds: number;
-  };
-};
 
 /* ================= MAIN ================= */
 
