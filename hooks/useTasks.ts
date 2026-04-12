@@ -6,7 +6,6 @@ import {
   onSnapshot,
   query,
   orderBy,
-  where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -14,24 +13,31 @@ export default function useTasks() {
   const [tasks, setTasks] = useState<any[]>([]);
 
   useEffect(() => {
-    const now = new Date(); // 🔥 thời gian hiện tại
+    try {
+      const q = query(
+        collection(db, "tasks"),
+        orderBy("createdAt", "desc") // ✅ đơn giản, không lỗi
+      );
 
-    const q = query(
-      collection(db, "tasks"),
-      where("deadline", ">", now), // 🔥 lọc task chưa hết hạn
-      orderBy("deadline", "asc") // 🔥 task sắp hết hạn lên đầu
-    );
+      const unsub = onSnapshot(
+        q,
+        (snapshot) => {
+          const data = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
 
-    const unsub = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+          setTasks(data);
+        },
+        (error) => {
+          console.error("🔥 Firestore error:", error);
+        }
+      );
 
-      setTasks(data);
-    });
-
-    return () => unsub();
+      return () => unsub();
+    } catch (err) {
+      console.error("🔥 Hook crash:", err);
+    }
   }, []);
 
   return tasks;
