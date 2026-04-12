@@ -6,7 +6,7 @@ import Link from "next/link";
 import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { setCookie } from "cookies-next"; // 🔥 thêm dòng này
+import { setCookie } from "cookies-next";
 
 export default function Login() {
   const router = useRouter();
@@ -27,15 +27,17 @@ export default function Login() {
 
       const res = await signInWithEmailAndPassword(auth, email, password);
 
-      // 🔥 LẤY TOKEN FIREBASE
+      // 🔥 lấy token Firebase
       const token = await res.user.getIdToken();
 
-      // 🔥 LƯU COOKIE (middleware sẽ đọc)
+      // 🔥 lưu cookie (IMPORTANT)
       setCookie("token", token, {
-        maxAge: 60 * 60 * 24 * 7, // 7 ngày
+        maxAge: 60 * 60 * 24 * 7,
+        path: "/", // ✅ QUAN TRỌNG (fix middleware đọc được)
       });
 
-      alert("Đăng nhập thành công 🎉");
+      // ❌ bỏ alert (gây delay + bug mobile)
+      // alert("Đăng nhập thành công 🎉");
 
       router.replace("/"); // 👉 về home
     } catch (err: any) {
