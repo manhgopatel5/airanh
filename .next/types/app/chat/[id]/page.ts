@@ -1,4 +1,4 @@
-// File: C:\Users\dazisignature\airanh\app\chat\[id]\page.tsx
+// File: /workspaces/airanh/app/chat/[id]/page.tsx
 import * as entry from '../../../../../app/chat/[id]/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
