@@ -7,57 +7,72 @@ import {
   doc,
   setDoc,
   getDoc,
+  updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
 
-/* ================= TYPES ================= */
-
 type AuthContextType = {
-  user: User | null;
+  user: User | null | undefined; // 🔥 FIX: thêm undefined
   loading: boolean;
 };
 
-/* ================= CONTEXT ================= */
-
 const AuthContext = createContext<AuthContextType>({
-  user: null,
+  user: undefined, // 🔥 FIX
   loading: true,
 });
 
-/* ================= PROVIDER ================= */
-
 export const AuthProvider = ({ children }: any) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null | undefined>(() => {
+    // 🔥 LOAD CACHE NGAY
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("user");
+      return cached ? JSON.parse(cached) : undefined; // 🔥 FIX
+    }
+    return undefined; // 🔥 FIX
+  });
+
+  const [loading, setLoading] = useState(true); // 🔥 FIX
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
-          const ref = doc(db, "users", firebaseUser.uid);
-          const snap = await getDoc(ref);
-
-          // ✅ Nếu chưa có user → tạo mới
-          if (!snap.exists()) {
-            await setDoc(ref, {
-              uid: firebaseUser.uid,
-              name: firebaseUser.displayName || "User",
-              email: firebaseUser.email || "",
-              avatar: firebaseUser.photoURL || "",
-              friends: [],
-              createdAt: serverTimestamp(),
-            });
-          }
-        } catch (err) {
-          console.error("Lỗi tạo user:", err);
-        }
-      }
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+      console.log("🔥 AUTH STATE:", firebaseUser);
 
       setUser(firebaseUser);
       setLoading(false);
+
+      // 🔥 CACHE USER (FIX THÊM)
+      if (typeof window !== "undefined") {
+        if (firebaseUser) {
+          localStorage.setItem("user", JSON.stringify(firebaseUser));
+        } else {
+          localStorage.removeItem("user");
+        }
+      }
+
+      if (firebaseUser) {
+        const ref = doc(db, "users", firebaseUser.uid);
+
+        getDoc(ref)
+          .then((snap) => {
+            if (!snap.exists()) {
+              setDoc(ref, {
+                uid: firebaseUser.uid,
+                name: firebaseUser.displayName || "User",
+                email: firebaseUser.email || "",
+                avatar: firebaseUser.photoURL || "",
+                friends: [],
+                isOnline: true,
+                createdAt: serverTimestamp(),
+              });
+            } else {
+              updateDoc(ref, { isOnline: true });
+            }
+          })
+          .catch(console.error);
+      }
     });
 
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
   return (
@@ -66,7 +81,5 @@ export const AuthProvider = ({ children }: any) => {
     </AuthContext.Provider>
   );
 };
-
-/* ================= HOOK ================= */
 
 export const useAuth = () => useContext(AuthContext);
