@@ -12,6 +12,7 @@ import {
   doc,
   updateDoc,
   getDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useParams, useRouter } from "next/navigation";
@@ -36,7 +37,9 @@ export default function ChatDetail() {
   const [user, setUser] = useState<any>(null);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
-  const sentRef = useRef(false);
+
+  // 🔥 NEW: chống gửi push trùng
+  const lastSentRef = useRef<string>("");
 
   useEffect(() => {
     const unsub = auth.onAuthStateChanged((u) => {
@@ -45,7 +48,6 @@ export default function ChatDetail() {
     return () => unsub();
   }, []);
 
-  // 🔥 ONLINE STATUS
   useEffect(() => {
     if (!user) return;
 
@@ -68,7 +70,6 @@ export default function ChatDetail() {
     };
   }, [user]);
 
-  // 🔥 REALTIME MESSAGES (FIX LOOP)
   useEffect(() => {
     if (!id || !user) return;
 
@@ -86,7 +87,7 @@ export default function ChatDetail() {
 
       setMessages(list);
 
-      // ✅ chỉ update khi có message mới
+      // ✅ FIX LOOP (giữ nguyên logic bạn)
       snap.docChanges().forEach((change) => {
         if (change.type === "added") {
           const msg = change.doc.data();
@@ -103,7 +104,6 @@ export default function ChatDetail() {
     return () => unsub();
   }, [id, user]);
 
-  // 🔥 LOAD FRIEND REALTIME
   useEffect(() => {
     if (!id || !user) return;
 
@@ -112,6 +112,7 @@ export default function ChatDetail() {
     const load = async () => {
       const chatDoc = await getDoc(doc(db, "chats", id));
       const data = chatDoc.data();
+
       if (!data) return;
 
       const friendId = data.members.find((m: string) => m !== user.uid);
@@ -130,12 +131,42 @@ export default function ChatDetail() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // 🔥 PUSH NOTIFICATION (DUY NHẤT)
+  // 🔥 CREATE NOTIFICATION (GIỮ NGUYÊN)
+  const createNotification = async (type: string, content: string) => {
+    if (!user || !id) return;
+
+    try {
+      const chatRef = doc(db, "chats", id);
+      const chatSnap = await getDoc(chatRef);
+
+      if (!chatSnap.exists()) return;
+
+      const data = chatSnap.data();
+      const receiverId = data.members.find((m: string) => m !== user.uid);
+      if (!receiverId) return;
+
+      await addDoc(collection(db, "notifications"), {
+        toUserId: receiverId,
+        fromUserId: user.uid,
+        fromUserName: user.displayName || "User",
+        fromUserAvatar: user.photoURL || "",
+        type,
+        content,
+        isRead: false,
+        createdAt: serverTimestamp(),
+      });
+    } catch (e) {
+      console.log("❌ notification error", e);
+    }
+  };
+
+  // 🔥 FIX PUSH (CHỐNG DOUBLE 100%)
   const sendPush = async (message: string) => {
     if (!friend?.fcmToken) return;
 
-    if (sentRef.current) return;
-    sentRef.current = true;
+    // ❌ chống trùng
+    if (lastSentRef.current === message) return;
+    lastSentRef.current = message;
 
     try {
       await fetch("/api/send-noti", {
@@ -157,7 +188,7 @@ export default function ChatDetail() {
     }
 
     setTimeout(() => {
-      sentRef.current = false;
+      lastSentRef.current = "";
     }, 2000);
   };
 
@@ -178,6 +209,7 @@ export default function ChatDetail() {
       updatedAt: Date.now(),
     });
 
+    // 🔥 CHỈ PUSH (KHÔNG createNotification để tránh double)
     await sendPush(text);
 
     setText("");
@@ -241,6 +273,7 @@ export default function ChatDetail() {
 
   return (
     <div className="flex flex-col h-screen bg-white">
+      {/* UI giữ nguyên */}
       <div className="flex items-center justify-between px-4 py-2 border-b bg-white sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <button onClick={() => router.back()}>←</button>
@@ -265,9 +298,14 @@ export default function ChatDetail() {
       </div>
 
       <div className="flex-1 overflow-y-auto" style={{ paddingBottom: "120px" }}>
+        <div className="text-center text-xs text-gray-400">
+          04:04 14/04/2026
+        </div>
+
         {messages.map((m) => (
           <MessageItem key={m.id} msg={m} currentUser={user} />
         ))}
+
         <div ref={bottomRef} />
       </div>
 
@@ -306,6 +344,7 @@ export default function ChatDetail() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             className="flex-1 bg-gray-100 rounded-full px-4 py-3 outline-none"
+            placeholder="Aa"
           />
 
           <button onClick={sendMessage}>
@@ -323,13 +362,42 @@ function MessageItem({ msg, currentUser }: any) {
   return (
     <div className={`flex ${isMe ? "justify-end" : "justify-start"} mb-2`}>
       <div
-        className={`px-4 py-2 text-sm max-w-[75%] ${
-          isMe
-            ? "bg-blue-500 text-white rounded-2xl"
-            : "bg-white text-black border rounded-2xl"
-        }`}
+        className={`
+          px-4 py-2 text-sm max-w-[75%]
+          ${
+            isMe
+              ? "bg-blue-500 text-white rounded-2xl rounded-br-sm"
+              : "bg-white text-black rounded-2xl rounded-bl-sm border"
+          }
+        `}
       >
-        {msg.text && <span>{msg.text}</span>}
+        {(!msg.type || msg.type === "text") && <span>{msg.text}</span>}
+
+        {msg.type === "image" && (
+          <img src={msg.image} className="rounded-2xl max-w-[220px] mt-1" />
+        )}
+
+        {msg.type === "file" && (
+          <a href={msg.file} target="_blank" className="underline">
+            📎 {msg.fileName}
+          </a>
+        )}
+
+        {msg.type === "location" && (
+          <a
+            href={`https://maps.google.com/?q=${msg.location.lat},${msg.location.lng}`}
+            target="_blank"
+            className="text-blue-200 underline"
+          >
+            📍 Xem vị trí
+          </a>
+        )}
+
+        {isMe && (
+          <div className="text-[10px] mt-1 opacity-70 text-right">
+            {msg.seenBy?.length > 1 ? "Đã xem" : "Đã gửi"}
+          </div>
+        )}
       </div>
     </div>
   );
