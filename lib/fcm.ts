@@ -12,9 +12,8 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-export const messaging = typeof window !== "undefined"
-  ? getMessaging(app)
-  : null;
+export const messaging =
+  typeof window !== "undefined" ? getMessaging(app) : null;
 
 export const initFCM = async (userId: string) => {
   if (!messaging) return;
@@ -28,7 +27,8 @@ export const initFCM = async (userId: string) => {
     }
 
     const token = await getToken(messaging, {
-      vapidKey: "BNtLKVLAr2GZL6KI8iD7omomOGwWbQw1w-IxAw061Do7loEcELfkyNIzLzgDsg9GRGVvwChReYcTqDdwrNGOv38",
+      vapidKey:
+        "BNtLKVLAr2GZL6KI8iD7omomOGwWbQw1w-IxAw061Do7loEcELfkyNIzLzgDsg9GRGVvwChReYcTqDdwrNGOv38",
     });
 
     console.log("🔥 FCM TOKEN:", token);
@@ -37,17 +37,31 @@ export const initFCM = async (userId: string) => {
     const { doc, setDoc } = await import("firebase/firestore");
     const { db } = await import("@/lib/firebase");
 
-    await setDoc(doc(db, "users", userId), {
-      fcmToken: token,
-    }, { merge: true });
+    await setDoc(
+      doc(db, "users", userId),
+      {
+        fcmToken: token,
+      },
+      { merge: true }
+    );
 
-    // foreground notification
+    // 🔥 FIX: foreground notification chuẩn (KHÔNG bị x2)
     onMessage(messaging, (payload) => {
       console.log("🔥 foreground:", payload);
 
-      alert(payload.notification?.title + "\n" + payload.notification?.body);
-    });
+      if (!payload.data) return;
 
+      const title = payload.data.title || "Thông báo";
+      const body = payload.data.body || "";
+
+      // ❌ nếu đang mở app → KHÔNG hiện (tránh trùng)
+      if (document.visibilityState === "visible") return;
+
+      // ✅ chỉ hiện khi app nền
+      new Notification(title, {
+        body,
+      });
+    });
   } catch (e) {
     console.log("❌ FCM error", e);
   }
