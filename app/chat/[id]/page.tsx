@@ -249,8 +249,8 @@ async function sendMessage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white">
-      <div className="flex items-center justify-between px-4 py-2 border-b bg-white sticky top-0 z-10">
+    <div className="flex flex-col h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+      <div className="flex items-center justify-between px-4 py-3 border-b bg-white sticky top-0 z-10 shadow-sm">
         <div className="flex items-center gap-3">
           <button onClick={() => router.back()}>←</button>
 
@@ -273,7 +273,7 @@ async function sendMessage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto" style={{ paddingBottom: "120px" }}>
+     <div className="flex-1 overflow-y-auto px-2 py-3 space-y-1 scroll-smooth" style={{ paddingBottom: "120px" }}>
         <div className="text-center text-xs text-gray-400">
           04:04 14/04/2026
         </div>
@@ -285,7 +285,7 @@ async function sendMessage() {
         <div ref={bottomRef} />
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t">
+     <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-md">
         <div className="flex items-center gap-2 px-3 py-2">
           <input
             type="file"
@@ -316,16 +316,19 @@ async function sendMessage() {
             <Paperclip className="text-blue-500 w-6 h-6" />
           </label>
 
-          <input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            className="flex-1 bg-gray-100 rounded-full px-4 py-3 outline-none"
-            placeholder="Aa"
-          />
+         <input
+  value={text}
+  onChange={(e) => setText(e.target.value)}
+  className="flex-1 bg-gray-100 rounded-full px-4 py-2 outline-none text-sm focus:ring-2 focus:ring-blue-200"
+  placeholder="Aa"
+/>
 
-          <button onClick={sendMessage}>
-            <Send className="text-blue-500 w-6 h-6" />
-          </button>
+          <button
+  onClick={sendMessage}
+  className="bg-blue-500 p-2 rounded-full hover:bg-blue-600 transition"
+>
+  <Send className="text-white w-5 h-5" />
+</button>
         </div>
       </div>
     </div>
@@ -336,25 +339,28 @@ function MessageItem({ msg, currentUser }: any) {
   const isMe = msg.senderId === currentUser?.uid;
 
   return (
-    <div className={`flex ${isMe ? "justify-end" : "justify-start"} mb-2`}>
+    <div className={`flex px-3 ${isMe ? "justify-end" : "justify-start"}`}>
       <div
         className={`
-          px-4 py-2 text-sm max-w-[75%]
+          px-4 py-2 text-sm max-w-[75%] shadow-sm transition-all duration-200
           ${
             isMe
-              ? "bg-blue-500 text-white rounded-2xl rounded-br-sm"
-              : "bg-white text-black rounded-2xl rounded-bl-sm border"
+              ? "bg-blue-500 text-white rounded-2xl rounded-br-md"
+              : "bg-white text-gray-800 rounded-2xl rounded-bl-md border"
           }
         `}
       >
         {(!msg.type || msg.type === "text") && <span>{msg.text}</span>}
 
         {msg.type === "image" && (
-          <img src={msg.image} className="rounded-2xl max-w-[220px] mt-1" />
+          <img
+            src={msg.image}
+            className="rounded-2xl max-w-[220px] mt-1"
+          />
         )}
 
         {msg.type === "file" && (
-          <a href={msg.file} target="_blank" className="underline">
+          <a href={msg.file} target="_blank" className="underline text-blue-500">
             📎 {msg.fileName}
           </a>
         )}
