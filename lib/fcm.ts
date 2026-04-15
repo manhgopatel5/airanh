@@ -15,13 +15,12 @@ const app = initializeApp(firebaseConfig);
 export const messaging =
   typeof window !== "undefined" ? getMessaging(app) : null;
 
-// 🔥 FIX QUAN TRỌNG: chỉ init 1 lần
+// 🔥 chỉ init 1 lần
 let fcmInitialized = false;
 
 export const initFCM = async (userId: string) => {
   if (!messaging) return;
 
-  // ❌ chặn gọi nhiều lần (NGUYÊN NHÂN GÂY X2)
   if (fcmInitialized) {
     console.log("⚠️ FCM already initialized");
     return;
@@ -44,19 +43,17 @@ export const initFCM = async (userId: string) => {
 
     console.log("🔥 FCM TOKEN:", token);
 
-    // 🔥 lưu token vào Firestore
+    // 🔥 lưu token
     const { doc, setDoc } = await import("firebase/firestore");
     const { db } = await import("@/lib/firebase");
 
     await setDoc(
       doc(db, "users", userId),
-      {
-        fcmToken: token,
-      },
+      { fcmToken: token },
       { merge: true }
     );
 
-    // 🔥 FIX: chỉ có 1 listener duy nhất
+    // 🔥 FIX DỨT ĐIỂM: KHÔNG dùng Notification nữa
     onMessage(messaging, (payload) => {
       console.log("🔥 foreground:", payload);
 
@@ -65,14 +62,13 @@ export const initFCM = async (userId: string) => {
       const title = payload.data.title || "Thông báo";
       const body = payload.data.body || "";
 
-      // ❌ nếu đang mở app → không hiện (tránh trùng)
-      if (document.visibilityState === "visible") return;
+      // 🔥 CHỈ xử lý trong app (không show system notification)
+      console.log("📩 IN-APP:", title, body);
 
-      // ✅ chỉ hiện khi app nền
-      new Notification(title, {
-        body,
-      });
+      // 👉 sau này bạn có thể thay bằng toast UI đẹp hơn
+      // ví dụ: showToast(title, body)
     });
+
   } catch (e) {
     console.log("❌ FCM error", e);
   }
