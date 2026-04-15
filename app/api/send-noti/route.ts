@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { adminMessaging } from "@/lib/firebase-admin";
 
+// 🔥 cache chống gửi trùng (runtime)
+const sentCache = new Set<string>();
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -9,6 +12,7 @@ export async function POST(req: Request) {
     const message = body?.message || "";
     const chatId = body?.chatId || "";
     const senderName = body?.senderName || "User";
+    const messageId = body?.messageId || ""; // 🔥 QUAN TRỌNG
 
     if (!token) {
       console.log("❌ Missing token");
@@ -18,10 +22,26 @@ export async function POST(req: Request) {
       );
     }
 
+    // 🔥 CHẶN TRÙNG (CORE FIX)
+    if (messageId && sentCache.has(messageId)) {
+      console.log("⚠️ Duplicate push blocked:", messageId);
+      return NextResponse.json({ skipped: true });
+    }
+
+    if (messageId) {
+      sentCache.add(messageId);
+
+      // 🔥 auto clear sau 5s (tránh memory leak)
+      setTimeout(() => {
+        sentCache.delete(messageId);
+      }, 5000);
+    }
+
     console.log("📩 SEND PUSH:", {
       to: token,
       chatId,
       sender: senderName,
+      messageId,
     });
 
     await adminMessaging.send({
@@ -33,9 +53,9 @@ export async function POST(req: Request) {
         title: `${senderName} đã gửi tin nhắn`,
         body: String(message),
         chatId: String(chatId),
+        messageId: String(messageId),
       },
 
-      // 🔥 đảm bảo không bị duplicate hệ thống
       android: {
         priority: "high",
       },
