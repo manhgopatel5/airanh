@@ -1,7 +1,8 @@
 "use client";
 
+import { initFCM } from "@/lib/fcm";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react"; // ✅ thêm useState
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -12,49 +13,63 @@ export default function ClientLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
 
-  const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true); // ✅ FIX AUTH DELAY
 
+  /* ================= PUBLIC ROUTES ================= */
   const publicRoutes = ["/login", "/register"];
-  const isPublic = publicRoutes.includes(pathname);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const isPublic = useMemo(() => {
+    return publicRoutes.some((route) =>
+      pathname.startsWith(route)
+    );
+  }, [pathname]);
 
+  /* ================= HIDE NAV ================= */
+  const isChatDetail = pathname.startsWith("/chat/");
+
+  /* ================= REDIRECT (FIX NOTIFICATION BUG) ================= */
   useEffect(() => {
-    if (!mounted || loading) return;
+    // 🔥 nếu auth chưa load xong → không làm gì
+    if (user === undefined) return;
+
+    // ✅ auth đã xong
+    setLoading(false);
 
     if (!user && !isPublic) {
       router.replace("/login");
+      return;
     }
 
     if (user && isPublic) {
       router.replace("/");
+      return;
     }
-  }, [user, loading, isPublic, pathname, router, mounted]);
+  }, [user, isPublic, router]);
 
-  if (!mounted) return null;
+  /* ================= FCM INIT ================= */
+  useEffect(() => {
+    if (user?.uid) {
+      initFCM(user.uid);
+    }
+  }, [user]);
 
-  if (loading) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        Loading...
-      </div>
-    );
-  }
+  /* ================= BLOCK RENDER KHI CHƯA LOAD ================= */
+  if (loading) return null; // 🔥 QUAN TRỌNG
+
+  /* ================= RENDER ================= */
 
   return (
-    <div className="min-h-screen bg-gray-50 relative">
+    <div className="min-h-screen bg-gray-50">
 
-      {/* 🔥 CONTENT  */}
-      <div className="pb-20">
+      {/* CONTENT */}
+      <div className={!isChatDetail ? "pb-20" : ""}>
         {children}
       </div>
 
-      {/* 🔥 BOTTOM NAV */}
-      {!isPublic && user && <BottomNav />}
+      {/* NAV */}
+      {!isPublic && user && !isChatDetail && <BottomNav />}
 
     </div>
   );
