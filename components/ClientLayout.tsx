@@ -2,7 +2,7 @@
 
 import { initFCM } from "@/lib/fcm";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useRef } from "react"; // 🔥 thêm useRef
+import { useEffect, useMemo, useState, useRef } from "react";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -17,8 +17,8 @@ export default function ClientLayout({
 
   const [loading, setLoading] = useState(true);
 
-  // 🔥 FIX: chặn initFCM gọi nhiều lần
-  const fcmCalledRef = useRef(false);
+  // 🔥 lưu userId đã init
+  const lastUserRef = useRef<string | null>(null);
 
   /* ================= PUBLIC ROUTES ================= */
   const publicRoutes = ["/login", "/register"];
@@ -49,14 +49,17 @@ export default function ClientLayout({
     }
   }, [user, isPublic, router]);
 
-  /* ================= FCM INIT (FIX X2) ================= */
+  /* ================= FCM INIT (FIX CHUẨN) ================= */
   useEffect(() => {
-    if (!user?.uid || fcmCalledRef.current) return;
+    if (!user?.uid) return;
 
-    fcmCalledRef.current = true;
+    // 🔥 chỉ init khi user mới
+    if (lastUserRef.current === user.uid) return;
+
+    lastUserRef.current = user.uid;
 
     initFCM(user.uid);
-  }, [user]);
+  }, [user?.uid]);
 
   /* ================= BLOCK RENDER ================= */
   if (loading) return null;
