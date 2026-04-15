@@ -1,9 +1,9 @@
-{
-  uid: string,
-  name: string,
-  email: string,
-  avatar: string,
-  friends: string[],
-  isOnline: boolean,     // 🔥 NEW
-  lastSeen: Timestamp    // 🔥 NEW
-}
+type User = {
+  uid: string;
+  name: string;
+  email: string;
+  avatar: string;
+  friends: string[];
+  isOnline: boolean;
+  lastSeen: Timestamp;
+};
