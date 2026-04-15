@@ -6,7 +6,11 @@ import Link from "next/link";
 import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+
+// ✅ tạo userId đẹp
+const generateUserId = () =>
+  "AIR" + Math.floor(100000 + Math.random() * 900000);
 
 export default function Register() {
   const router = useRouter();
@@ -28,16 +32,25 @@ export default function Register() {
         password
       );
 
-      // ✅ lưu vào Firestore
-      await setDoc(doc(db, "users", userCred.user.uid), {
+      const user = userCred.user;
+
+      // ✅ tạo ID riêng
+      const userId = generateUserId();
+
+      // ✅ TẠO USER DOCUMENT (QUAN TRỌNG)
+      await setDoc(doc(db, "users", user.uid), {
         email,
-        createdAt: new Date(),
+        name: "Người dùng", // 👈 thêm name luôn
+        userId,
+        avatar: "", // 👈 chuẩn bị cho avatar sau này
+        createdAt: serverTimestamp(), // 👈 chuẩn hơn new Date()
       });
 
       alert("Đăng ký thành công 🎉");
 
       router.replace("/tasks");
     } catch (err: any) {
+      console.error(err); // 👈 debug dễ hơn
       alert(err.message);
     }
   };
