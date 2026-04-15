@@ -178,6 +178,7 @@ export default function ChatDetail() {
           title: "Tin nhắn mới",
           message,
           chatId: id,
+          messageId, // 🔥 THÊM DÒNG NÀY
         }),
       });
 
