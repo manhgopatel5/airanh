@@ -161,39 +161,36 @@ export default function ChatDetail() {
     }, 2000);
   };
 
-  async function sendMessage() {
-    // 🔥 FIX DỨT ĐIỂM
-    if (sendingRef.current) return;
-    sendingRef.current = true;
+async function sendMessage() {
+  if (!user || !text.trim() || !id) return;
 
-    try {
-      if (!user || !text.trim() || !id) return;
+  if (sendingRef.current) return;
+  sendingRef.current = true;
 
-      const docRef = await addDoc(collection(db, "messages"), {
-        chatId: id,
-        senderId: user.uid,
-        text,
-        type: "text",
-        createdAt: Date.now(),
-        seenBy: [user.uid],
-      });
+  try {
+    const docRef = await addDoc(collection(db, "messages"), {
+      chatId: id,
+      senderId: user.uid,
+      text,
+      type: "text",
+      createdAt: Date.now(),
+      seenBy: [user.uid],
+    });
 
-      await updateDoc(doc(db, "chats", id), {
-        lastMessage: text,
-        updatedAt: Date.now(),
-      });
+    await updateDoc(doc(db, "chats", id), {
+      lastMessage: text,
+      updatedAt: Date.now(),
+    });
 
-      await sendPush(text, docRef.id);
+    await sendPush(text, docRef.id);
 
-      setText("");
-    } catch (e) {
-      console.log("❌ sendMessage error", e);
-    }
-
-    setTimeout(() => {
-      sendingRef.current = false;
-    }, 500);
+    setText("");
+  } catch (e) {
+    console.log("❌ sendMessage error", e);
   }
+
+  sendingRef.current = false;
+}
 
   const sendImage = async (file: File) => {
     if (!user) return;
