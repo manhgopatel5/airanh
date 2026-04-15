@@ -15,8 +15,19 @@ const app = initializeApp(firebaseConfig);
 export const messaging =
   typeof window !== "undefined" ? getMessaging(app) : null;
 
+// 🔥 FIX QUAN TRỌNG: chỉ init 1 lần
+let fcmInitialized = false;
+
 export const initFCM = async (userId: string) => {
   if (!messaging) return;
+
+  // ❌ chặn gọi nhiều lần (NGUYÊN NHÂN GÂY X2)
+  if (fcmInitialized) {
+    console.log("⚠️ FCM already initialized");
+    return;
+  }
+
+  fcmInitialized = true;
 
   try {
     const permission = await Notification.requestPermission();
@@ -45,7 +56,7 @@ export const initFCM = async (userId: string) => {
       { merge: true }
     );
 
-    // 🔥 FIX: foreground notification chuẩn (KHÔNG bị x2)
+    // 🔥 FIX: chỉ có 1 listener duy nhất
     onMessage(messaging, (payload) => {
       console.log("🔥 foreground:", payload);
 
@@ -54,7 +65,7 @@ export const initFCM = async (userId: string) => {
       const title = payload.data.title || "Thông báo";
       const body = payload.data.body || "";
 
-      // ❌ nếu đang mở app → KHÔNG hiện (tránh trùng)
+      // ❌ nếu đang mở app → không hiện (tránh trùng)
       if (document.visibilityState === "visible") return;
 
       // ✅ chỉ hiện khi app nền
