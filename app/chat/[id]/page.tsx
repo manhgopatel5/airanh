@@ -38,7 +38,7 @@ export default function ChatDetail() {
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  // 🔥 NEW: chống gửi push trùng
+  // 🔥 FIX: chống duplicate bằng messageId
   const lastSentRef = useRef<string>("");
 
   useEffect(() => {
@@ -87,7 +87,6 @@ export default function ChatDetail() {
 
       setMessages(list);
 
-      // ✅ FIX LOOP (giữ nguyên logic bạn)
       snap.docChanges().forEach((change) => {
         if (change.type === "added") {
           const msg = change.doc.data();
@@ -131,7 +130,7 @@ export default function ChatDetail() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // 🔥 CREATE NOTIFICATION (GIỮ NGUYÊN)
+  // 🔥 GIỮ NGUYÊN (không đụng)
   const createNotification = async (type: string, content: string) => {
     if (!user || !id) return;
 
@@ -160,13 +159,13 @@ export default function ChatDetail() {
     }
   };
 
-  // 🔥 FIX PUSH (CHỐNG DOUBLE 100%)
-  const sendPush = async (message: string) => {
+  // 🔥 FIX CHUẨN: dùng messageId
+  const sendPush = async (message: string, messageId: string) => {
     if (!friend?.fcmToken) return;
 
-    // ❌ chống trùng
-    if (lastSentRef.current === message) return;
-    lastSentRef.current = message;
+    // ❌ chống trùng theo ID
+    if (lastSentRef.current === messageId) return;
+    lastSentRef.current = messageId;
 
     try {
       await fetch("/api/send-noti", {
@@ -195,7 +194,7 @@ export default function ChatDetail() {
   async function sendMessage() {
     if (!user || !text.trim() || !id) return;
 
-    await addDoc(collection(db, "messages"), {
+    const docRef = await addDoc(collection(db, "messages"), {
       chatId: id,
       senderId: user.uid,
       text,
@@ -209,8 +208,7 @@ export default function ChatDetail() {
       updatedAt: Date.now(),
     });
 
-    // 🔥 CHỈ PUSH (KHÔNG createNotification để tránh double)
-    await sendPush(text);
+    await sendPush(text, docRef.id);
 
     setText("");
   }
@@ -222,7 +220,7 @@ export default function ChatDetail() {
     await uploadBytes(storageRef, file);
     const url = await getDownloadURL(storageRef);
 
-    await addDoc(collection(db, "messages"), {
+    const docRef = await addDoc(collection(db, "messages"), {
       chatId: id,
       senderId: user.uid,
       image: url,
@@ -231,7 +229,7 @@ export default function ChatDetail() {
       seenBy: [user.uid],
     });
 
-    await sendPush("Đã gửi 1 ảnh 📷");
+    await sendPush("Đã gửi 1 ảnh 📷", docRef.id);
   };
 
   const sendFile = async (file: File) => {
@@ -241,7 +239,7 @@ export default function ChatDetail() {
     await uploadBytes(storageRef, file);
     const url = await getDownloadURL(storageRef);
 
-    await addDoc(collection(db, "messages"), {
+    const docRef = await addDoc(collection(db, "messages"), {
       chatId: id,
       senderId: user.uid,
       file: url,
@@ -251,14 +249,14 @@ export default function ChatDetail() {
       seenBy: [user.uid],
     });
 
-    await sendPush("Đã gửi file 📎");
+    await sendPush("Đã gửi file 📎", docRef.id);
   };
 
   const sendLocation = () => {
     navigator.geolocation.getCurrentPosition(async (pos) => {
       const { latitude, longitude } = pos.coords;
 
-      await addDoc(collection(db, "messages"), {
+      const docRef = await addDoc(collection(db, "messages"), {
         chatId: id,
         senderId: user.uid,
         type: "location",
@@ -267,13 +265,12 @@ export default function ChatDetail() {
         seenBy: [user.uid],
       });
 
-      await sendPush("Đã gửi vị trí 📍");
+      await sendPush("Đã gửi vị trí 📍", docRef.id);
     });
   };
 
   return (
     <div className="flex flex-col h-screen bg-white">
-      {/* UI giữ nguyên */}
       <div className="flex items-center justify-between px-4 py-2 border-b bg-white sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <button onClick={() => router.back()}>←</button>
