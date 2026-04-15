@@ -38,8 +38,10 @@ export default function ChatDetail() {
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  // 🔥 FIX: chống duplicate bằng messageId
   const lastSentRef = useRef<string>("");
+
+  // 🔥 FIX CHÍNH (chống gọi 2 lần)
+  const sendingRef = useRef(false);
 
   useEffect(() => {
     const unsub = auth.onAuthStateChanged((u) => {
@@ -130,40 +132,9 @@ export default function ChatDetail() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // 🔥 GIỮ NGUYÊN (không đụng)
-  const createNotification = async (type: string, content: string) => {
-    if (!user || !id) return;
-
-    try {
-      const chatRef = doc(db, "chats", id);
-      const chatSnap = await getDoc(chatRef);
-
-      if (!chatSnap.exists()) return;
-
-      const data = chatSnap.data();
-      const receiverId = data.members.find((m: string) => m !== user.uid);
-      if (!receiverId) return;
-
-      await addDoc(collection(db, "notifications"), {
-        toUserId: receiverId,
-        fromUserId: user.uid,
-        fromUserName: user.displayName || "User",
-        fromUserAvatar: user.photoURL || "",
-        type,
-        content,
-        isRead: false,
-        createdAt: serverTimestamp(),
-      });
-    } catch (e) {
-      console.log("❌ notification error", e);
-    }
-  };
-
-  // 🔥 FIX CHUẨN: dùng messageId
   const sendPush = async (message: string, messageId: string) => {
     if (!friend?.fcmToken) return;
 
-    // ❌ chống trùng theo ID
     if (lastSentRef.current === messageId) return;
     lastSentRef.current = messageId;
 
@@ -178,11 +149,9 @@ export default function ChatDetail() {
           title: "Tin nhắn mới",
           message,
           chatId: id,
-          messageId, // 🔥 THÊM DÒNG NÀY
+          messageId,
         }),
       });
-
-      console.log("✅ push sent");
     } catch (e) {
       console.log("❌ push error", e);
     }
@@ -193,25 +162,37 @@ export default function ChatDetail() {
   };
 
   async function sendMessage() {
-    if (!user || !text.trim() || !id) return;
+    // 🔥 FIX DỨT ĐIỂM
+    if (sendingRef.current) return;
+    sendingRef.current = true;
 
-    const docRef = await addDoc(collection(db, "messages"), {
-      chatId: id,
-      senderId: user.uid,
-      text,
-      type: "text",
-      createdAt: Date.now(),
-      seenBy: [user.uid],
-    });
+    try {
+      if (!user || !text.trim() || !id) return;
 
-    await updateDoc(doc(db, "chats", id), {
-      lastMessage: text,
-      updatedAt: Date.now(),
-    });
+      const docRef = await addDoc(collection(db, "messages"), {
+        chatId: id,
+        senderId: user.uid,
+        text,
+        type: "text",
+        createdAt: Date.now(),
+        seenBy: [user.uid],
+      });
 
-    await sendPush(text, docRef.id);
+      await updateDoc(doc(db, "chats", id), {
+        lastMessage: text,
+        updatedAt: Date.now(),
+      });
 
-    setText("");
+      await sendPush(text, docRef.id);
+
+      setText("");
+    } catch (e) {
+      console.log("❌ sendMessage error", e);
+    }
+
+    setTimeout(() => {
+      sendingRef.current = false;
+    }, 500);
   }
 
   const sendImage = async (file: File) => {
