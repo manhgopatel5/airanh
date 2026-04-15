@@ -2,7 +2,7 @@
 
 import { initFCM } from "@/lib/fcm";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react"; // ✅ thêm useState
+import { useEffect, useMemo, useState, useRef } from "react"; // 🔥 thêm useRef
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -15,7 +15,10 @@ export default function ClientLayout({
   const router = useRouter();
   const { user } = useAuth();
 
-  const [loading, setLoading] = useState(true); // ✅ FIX AUTH DELAY
+  const [loading, setLoading] = useState(true);
+
+  // 🔥 FIX: chặn initFCM gọi nhiều lần
+  const fcmCalledRef = useRef(false);
 
   /* ================= PUBLIC ROUTES ================= */
   const publicRoutes = ["/login", "/register"];
@@ -29,12 +32,10 @@ export default function ClientLayout({
   /* ================= HIDE NAV ================= */
   const isChatDetail = pathname.startsWith("/chat/");
 
-  /* ================= REDIRECT (FIX NOTIFICATION BUG) ================= */
+  /* ================= REDIRECT ================= */
   useEffect(() => {
-    // 🔥 nếu auth chưa load xong → không làm gì
     if (user === undefined) return;
 
-    // ✅ auth đã xong
     setLoading(false);
 
     if (!user && !isPublic) {
@@ -48,15 +49,17 @@ export default function ClientLayout({
     }
   }, [user, isPublic, router]);
 
-  /* ================= FCM INIT ================= */
+  /* ================= FCM INIT (FIX X2) ================= */
   useEffect(() => {
-    if (user?.uid) {
-      initFCM(user.uid);
-    }
+    if (!user?.uid || fcmCalledRef.current) return;
+
+    fcmCalledRef.current = true;
+
+    initFCM(user.uid);
   }, [user]);
 
-  /* ================= BLOCK RENDER KHI CHƯA LOAD ================= */
-  if (loading) return null; // 🔥 QUAN TRỌNG
+  /* ================= BLOCK RENDER ================= */
+  if (loading) return null;
 
   /* ================= RENDER ================= */
 
