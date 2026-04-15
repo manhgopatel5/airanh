@@ -7,21 +7,15 @@ export async function POST(req: Request) {
 
     const token = body?.token;
     const message = body?.message || "";
-    const chatId = body?.chatId;
-    const senderName = body?.senderName || "User"; // 🔥 thêm
+    const chatId = body?.chatId || "";
+    const senderName = body?.senderName || "User";
 
-    // ❌ thiếu token → bỏ
     if (!token) {
       console.log("❌ Missing token");
       return NextResponse.json(
         { error: "Missing token" },
         { status: 400 }
       );
-    }
-
-    // ❌ thiếu chatId → vẫn gửi nhưng warn
-    if (!chatId) {
-      console.log("⚠️ Missing chatId");
     }
 
     console.log("📩 SEND PUSH:", {
@@ -33,12 +27,25 @@ export async function POST(req: Request) {
     await adminMessaging.send({
       token,
 
-      // 🔥 QUAN TRỌNG: chỉ dùng data
+      // 🔥 chỉ dùng data (KHÔNG dùng notification)
       data: {
-        // ✅ FIX CHÍNH Ở ĐÂY
+        type: "chat",
         title: `${senderName} đã gửi tin nhắn`,
         body: String(message),
-        chatId: String(chatId || ""),
+        chatId: String(chatId),
+      },
+
+      // 🔥 đảm bảo không bị duplicate hệ thống
+      android: {
+        priority: "high",
+      },
+
+      apns: {
+        payload: {
+          aps: {
+            contentAvailable: true,
+          },
+        },
       },
     });
 
