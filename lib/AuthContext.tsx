@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import {
@@ -10,28 +10,31 @@ import {
   updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
+import { initFCM } from "@/lib/fcm"; // 🔥 thêm
 
 type AuthContextType = {
-  user: User | null | undefined; // 🔥 FIX: thêm undefined
+  user: User | null | undefined;
   loading: boolean;
 };
 
 const AuthContext = createContext<AuthContextType>({
-  user: undefined, // 🔥 FIX
+  user: undefined,
   loading: true,
 });
 
 export const AuthProvider = ({ children }: any) => {
   const [user, setUser] = useState<User | null | undefined>(() => {
-    // 🔥 LOAD CACHE NGAY
     if (typeof window !== "undefined") {
       const cached = localStorage.getItem("user");
-      return cached ? JSON.parse(cached) : undefined; // 🔥 FIX
+      return cached ? JSON.parse(cached) : undefined;
     }
-    return undefined; // 🔥 FIX
+    return undefined;
   });
 
-  const [loading, setLoading] = useState(true); // 🔥 FIX
+  const [loading, setLoading] = useState(true);
+
+  // 🔥 FIX: chống initFCM nhiều lần
+  const lastFcmUserRef = useRef<string | null>(null);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
@@ -40,7 +43,7 @@ export const AuthProvider = ({ children }: any) => {
       setUser(firebaseUser);
       setLoading(false);
 
-      // 🔥 CACHE USER (FIX THÊM)
+      // 🔥 CACHE USER
       if (typeof window !== "undefined") {
         if (firebaseUser) {
           localStorage.setItem("user", JSON.stringify(firebaseUser));
@@ -49,6 +52,15 @@ export const AuthProvider = ({ children }: any) => {
         }
       }
 
+      // 🔥 INIT FCM CHUẨN (KHÔNG X2, KHÔNG MẤT)
+      if (firebaseUser?.uid) {
+        if (lastFcmUserRef.current !== firebaseUser.uid) {
+          lastFcmUserRef.current = firebaseUser.uid;
+          initFCM(firebaseUser.uid);
+        }
+      }
+
+      // 🔥 FIRESTORE USER
       if (firebaseUser) {
         const ref = doc(db, "users", firebaseUser.uid);
 
