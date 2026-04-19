@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase.client";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
 // ✅ tạo userId đẹp

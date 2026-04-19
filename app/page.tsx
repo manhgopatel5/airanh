@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Flame, Clock, Sparkles, Users } from "lucide-react";
 import Link from "next/link";
 
-import { db } from "@/lib/firebase";
+import { db } from "@/lib/firebase.client";
 import {
   collection,
   query,

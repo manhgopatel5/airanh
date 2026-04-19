@@ -1,7 +1,8 @@
 "use client";
 
+import MessageItem from "@/components/MessageItem";
 import { useEffect, useRef, useState } from "react";
-import { db, auth, storage } from "@/lib/firebase";
+import { db, auth, storage } from "@/lib/firebase.client";
 import {
   collection,
   addDoc,

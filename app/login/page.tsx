@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase.client";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import InstallPrompt from "@/components/InstallPrompt"; // ✅ THÊM
 
