@@ -45,7 +45,7 @@ export const initFCM = async (userId: string) => {
 
     // 🔥 lưu token
     const { doc, setDoc } = await import("firebase/firestore");
-    const { db } = await import("@/lib/firebase.client");
+    const { db } = await import("@/lib/firebase");
 
     await setDoc(
       doc(db, "users", userId),

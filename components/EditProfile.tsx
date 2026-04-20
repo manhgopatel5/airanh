@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { db } from "@/lib/firebase.client";
+import { db } from "@/lib/firebase";
 import { doc, updateDoc } from "firebase/firestore";
 
 export default function EditProfile({ currentName }: any) {

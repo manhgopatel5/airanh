@@ -4,7 +4,7 @@ import { Task } from "@/types/task";
 import { useEffect, useState } from "react";
 import { Heart, Users, Clock } from "lucide-react";
 import { joinTask } from "@/lib/joinTask";
-import { auth } from "@/lib/firebase.client";
+import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 
 export default function TaskCard({ task }: { task: Task }) {

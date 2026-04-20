@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { auth, db } from "@/lib/firebase.client";
+import { auth, db } from "@/lib/firebase";
 import {
   doc,
   setDoc,

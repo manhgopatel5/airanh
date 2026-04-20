@@ -10,7 +10,7 @@ import {
   updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import { db, auth, storage } from "@/lib/firebase.client";
+import { db, auth, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import {
   HelpCircle,

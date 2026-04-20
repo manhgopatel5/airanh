@@ -2,7 +2,7 @@
 
 import MessageItem from "@/components/MessageItem";
 import { useEffect, useRef, useState } from "react";
-import { db, auth, storage } from "@/lib/firebase.client";
+import { db, auth, storage } from "@/lib/firebase";
 import {
   collection,
   addDoc,

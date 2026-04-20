@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminMessaging } from "@/lib/firebase.client";
+import { adminMessaging } from "@/lib/firebase";
 
 // 🔥 cache chống gửi trùng (runtime)
 const sentCache = new Set<string>();
