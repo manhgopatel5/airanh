@@ -11,12 +11,14 @@
   },
   "dependencies": {
     "browser-image-compression": "^2.0.2",
+    "date-fns": "^4.1.0",
     "firebase": "^10.12.0",
     "firebase-admin": "^12.0.0",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.8.0",
     "next": "14.2.3",
     "react": "18.2.0",
+    "react-day-picker": "^9.14.0",
     "react-dom": "18.2.0",
     "react-icons": "^5.2.1",
     "zustand": "^4.5.2"
