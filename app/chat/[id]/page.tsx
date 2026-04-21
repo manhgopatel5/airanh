@@ -1,6 +1,6 @@
 "use client";
 
-import MessageItem from "@/components/MessageItem";
+import ChatBubble from "@/components/ChatBubble";
 import { useEffect, useRef, useState } from "react";
 import { db, auth, storage } from "@/lib/firebase";
 import {
@@ -280,7 +280,7 @@ async function sendMessage() {
         </div>
 
         {messages.map((m) => (
-          <MessageItem key={m.id} msg={m} currentUser={user} />
+          <ChatBubble key={m.id} msg={m} currentUser={user} />
         ))}
 
         <div ref={bottomRef} />

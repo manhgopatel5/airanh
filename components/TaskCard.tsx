@@ -18,7 +18,7 @@ export default function TaskCard({ task }: { task: Task }) {
   const totalSlots = task.totalSlots || 0;
   const likes = task.likes || 0;
 
-  const avatar = task.avatar || "/default-avatar.png";
+  const avatar = task.avatar || "/default-avatar.jfif";
   const userName = task.user || "Unknown";
   const title = task.title || "No title";
   const description = task.description || "";

@@ -2,7 +2,7 @@ import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
 import { AuthProvider } from "@/lib/AuthContext";
 
-export const metadata = {
+export const viewport = {
   title: "Airanh",
   description: "Social task app",
   manifest: "/manifest.json",
