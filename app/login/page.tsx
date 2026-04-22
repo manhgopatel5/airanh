@@ -1,139 +1,241 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle } from "react-icons/fi";
+import {
+  signInWithEmailAndPassword,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
+  sendEmailVerification,
+  onAuthStateChanged,
+} from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import InstallPrompt from "@/components/InstallPrompt"; // ✅ THÊM
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { nanoid } from "nanoid";
+import { toast, Toaster } from "sonner";
+import InstallPrompt from "@/components/InstallPrompt";
 
 export default function Login() {
   const router = useRouter();
-
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [form, setForm] = useState({ email: "", password: "", honeypot: "" });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [remember, setRemember] = useState(true);
+  const failedAttempts = useRef(0);
+  const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleLogin = async () => {
-    console.log("CLICK LOGIN");
+  /* ================= REDIRECT IF LOGGED IN ================= */
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user?.emailVerified) router.replace("/");
+      else if (user &&!user.emailVerified) router.replace("/verify-email");
+    });
+    return () => unsub();
+  }, [router]);
 
-    if (!email || !password) {
-      alert("Nhập đầy đủ thông tin!");
+  // Cleanup timeout khi unmount
+  useEffect(() => {
+    return () => {
+      if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
+    };
+  }, []);
+
+  const validateField = (field: string, value: string) => {
+    if (field === "email") {
+      if (!value) return "Vui lòng nhập email";
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Email không hợp lệ";
+    }
+    if (field === "password" &&!value) return "Vui lòng nhập mật khẩu";
+    return "";
+  };
+
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    (["email", "password"] as const).forEach((key) => {
+      const err = validateField(key, form[key]);
+      if (err) newErrors[key] = err;
+    });
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleLogin = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (form.honeypot) return; // Bot detected
+
+    // Rate limit: 3 lần/30s
+    const lastFail = localStorage.getItem("login_fail_time");
+    if (failedAttempts.current >= 3 && lastFail && Date.now() - parseInt(lastFail) < 30000) {
+      setErrors({ submit: "Thử quá nhiều lần, đợi 30s" });
       return;
     }
 
+    if (!validate()) return;
+
     try {
       setLoading(true);
+      setErrors({});
 
-      const res = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      // ✅ FIX: Dùng browserSessionPersistence khi không tick "Ghi nhớ"
+      await setPersistence(auth, remember? browserLocalPersistence : browserSessionPersistence);
+      const res = await signInWithEmailAndPassword(auth, form.email, form.password);
+      const user = res.user;
 
-      console.log("LOGIN SUCCESS:", res.user);
-
-      if (res.user) {
-        const userRef = doc(db, "users", res.user.uid);
-        const snap = await getDoc(userRef);
-
-        // 🆕 nếu chưa có user trong Firestore
-        if (!snap.exists()) {
-          await setDoc(userRef, {
-            uid: res.user.uid,
-            name: res.user.email || "User",
-            avatar: "",
-            shortId: res.user.uid.slice(0, 6),
-            online: true,
-            createdAt: Date.now(),
-          });
-        } else {
-          const data = snap.data();
-
-          if (!data.shortId) {
-            await updateDoc(userRef, {
-              shortId: res.user.uid.slice(0, 6),
-            });
-          }
-
-          await updateDoc(userRef, {
-            online: true,
-          });
-        }
-
-        router.replace("/");
+      if (!user.emailVerified) {
+        toast.warning("Vui lòng xác thực email trước");
+        await sendEmailVerification(user).catch(() => {});
+        router.replace("/verify-email");
+        return;
       }
+
+      const userRef = doc(db, "users", user.uid);
+      const snap = await getDoc(userRef).catch(() => null);
+
+      if (!snap ||!snap.exists()) {
+        await setDoc(userRef, {
+          uid: user.uid,
+          email: user.email,
+          name: user.email?.split("@")[0] || "User",
+          avatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || "U")}&background=random`,
+          shortId: nanoid(6).toUpperCase(),
+          online: true,
+          lastSeen: serverTimestamp(),
+          createdAt: serverTimestamp(),
+        });
+      } else {
+        const data = snap.data();
+        const updates: any = { online: true, lastSeen: serverTimestamp() };
+        if (!data.shortId) updates.shortId = nanoid(6).toUpperCase();
+        await updateDoc(userRef, updates); // ✅ FIX: Bỏ merge: true
+      }
+
+      failedAttempts.current = 0;
+      localStorage.removeItem("login_fail_time");
+      toast.success("Đăng nhập thành công");
+      router.replace("/");
     } catch (err: any) {
-      console.error("LOGIN ERROR:", err);
-      alert(err.message);
+      failedAttempts.current++;
+      localStorage.setItem("login_fail_time", Date.now().toString());
+      const errorMap: Record<string, string> = {
+        "auth/invalid-credential": "Email hoặc mật khẩu không đúng",
+        "auth/user-not-found": "Tài khoản không tồn tại",
+        "auth/wrong-password": "Mật khẩu không đúng",
+        "auth/too-many-requests": "Thử quá nhiều lần, đợi 1 phút",
+        "auth/network-request-failed": "Lỗi mạng, kiểm tra kết nối",
+        "auth/user-disabled": "Tài khoản đã bị khóa",
+        "auth/invalid-email": "Email không hợp lệ",
+      };
+      setErrors({ submit: errorMap[err.code] || "Đăng nhập thất bại" });
     } finally {
       setLoading(false);
     }
   };
 
+  const handleShowPass = () => {
+    setShow(!show);
+    if (!show) {
+      // Tự ẩn sau 3s
+      if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
+      showTimeoutRef.current = setTimeout(() => setShow(false), 3000);
+    }
+  };
+
   return (
     <>
-      {/* 🔥 PWA Install Prompt */}
+      <Toaster richColors position="top-center" />
       <InstallPrompt />
 
-      <div className="min-h-screen bg-[#f3f6fb] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-zinc-950 dark:to-zinc-900 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-md">
-          <h1 className="text-center text-2xl font-bold text-blue-600 mb-2">
-            Đăng nhập tài khoản
-          </h1>
-
-          <p className="text-center text-gray-500 mb-6">
-            Chào mừng bạn quay lại!
-          </p>
-
-          {/* Email */}
-          <div className="flex items-center bg-white rounded-full px-4 py-3 mb-4 shadow">
-            <FiMail className="mr-2 text-gray-400" />
-            <input
-              type="email"
-              placeholder="Email"
-              className="w-full outline-none"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-3xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <span className="text-white text-3xl font-bold">A</span>
+            </div>
+            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 mb-2">Chào mừng trở lại</h1>
+            <p className="text-gray-500 dark:text-zinc-400">Đăng nhập để tiếp tục</p>
           </div>
 
-          {/* Password */}
-          <div className="flex items-center bg-white rounded-full px-4 py-3 mb-4 shadow">
-            <FiLock className="mr-2 text-gray-400" />
+          {errors.submit && (
+            <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 px-4 py-3 rounded-2xl mb-4 flex items-center gap-2 text-sm">
+              <FiAlertCircle size={18} />
+              {errors.submit}
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            {/* HONEYPOT */}
             <input
-              type={show ? "text" : "password"}
-              placeholder="Mật khẩu"
-              className="w-full outline-none"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              type="text"
+              name="website"
+              value={form.honeypot}
+              onChange={(e) => setForm({...form, honeypot: e.target.value })}
+              className="hidden"
+              tabIndex={-1}
+              autoComplete="off"
             />
-            <button
-              type="button"
-              onClick={() => setShow(!show)}
-              className="ml-2"
-            >
-              {show ? <FiEyeOff /> : <FiEye />}
+
+            <div>
+              <div className="flex items-center bg-white dark:bg-zinc-900 rounded-2xl px-4 py-3.5 shadow-sm border border-gray-100 dark:border-zinc-800 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+                <FiMail className="mr-3 text-gray-400 dark:text-zinc-500" size={20} />
+                <input
+                  type="email"
+                  placeholder="Email"
+                  autoComplete="email"
+                  aria-invalid={!!errors.email}
+                  className="w-full outline-none bg-transparent text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500"
+                  value={form.email}
+                  onChange={(e) => {
+                    setForm({...form, email: e.target.value });
+                    if (errors.email) setErrors({...errors, email: "" });
+                  }}
+                  onBlur={() => setErrors({...errors, email: validateField("email", form.email) })}
+                />
+              </div>
+              {errors.email && <p className="text-red-500 text-xs mt-1.5 ml-1">{errors.email}</p>}
+            </div>
+
+            <div>
+              <div className="flex items-center bg-white dark:bg-zinc-900 rounded-2xl px-4 py-3.5 shadow-sm border border-gray-100 dark:border-zinc-800 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+                <FiLock className="mr-3 text-gray-400 dark:text-zinc-500" size={20} />
+                <input
+                  type={show? "text" : "password"}
+                  placeholder="Mật khẩu"
+                  autoComplete="current-password"
+                  aria-invalid={!!errors.password}
+                  className="w-full outline-none bg-transparent text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500"
+                  value={form.password}
+                  onChange={(e) => {
+                    setForm({...form, password: e.target.value });
+                    if (errors.password) setErrors({...errors, password: "" });
+                  }}
+                  onBlur={() => setErrors({...errors, password: validateField("password", form.password) })}
+                />
+                <button type="button" onClick={handleShowPass} className="ml-2 text-gray-400 dark:text-zinc-500" aria-label="Hiện mật khẩu">
+                  {show? <FiEyeOff size={20} /> : <FiEye size={20} />}
+                </button>
+              </div>
+              {errors.password && <p className="text-red-500 text-xs mt-1.5 ml-1">{errors.password}</p>}
+            </div>
+
+            <div className="flex items-center justify-between text-sm">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="w-4 h-4 text-blue-500 rounded focus:ring-2 focus:ring-blue-500/20" />
+                <span className="text-gray-600 dark:text-zinc-400">Ghi nhớ</span>
+              </label>
+              <Link href="/forgot-password" className="text-blue-500 font-semibold">Quên mật khẩu?</Link>
+            </div>
+
+            <button type="submit" disabled={loading} className="w-full py-3.5 rounded-2xl text-white font-semibold bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/30 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              {loading? <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Đang đăng nhập...</> : "Đăng nhập"}
             </button>
-          </div>
+          </form>
 
-          {/* Button */}
-          <button
-            onClick={handleLogin}
-            disabled={loading}
-            className="w-full py-3 rounded-full text-white font-semibold bg-gradient-to-r from-blue-500 to-purple-500 disabled:opacity-50"
-          >
-            {loading ? "Đang xử lý..." : "Đăng nhập"}
-          </button>
-
-          <p className="text-center mt-4 text-sm">
-            Chưa có tài khoản?{" "}
-            <Link href="/register" className="text-blue-500">
-              Đăng ký
-            </Link>
+          <p className="text-center mt-6 text-sm text-gray-600 dark:text-zinc-400">
+            Chưa có tài khoản? <Link href="/register" className="text-blue-500 font-semibold">Đăng ký ngay</Link>
           </p>
         </div>
       </div>
