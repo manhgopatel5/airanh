@@ -40,7 +40,6 @@
     "noEmit": true,
     "incremental": true,
     "tsBuildInfoFile": ".next/tsconfig.tsbuildinfo",
-    ".next/tsconfig.tsbuildinfo",
 
     /* Next.js */
     "plugins": [{ "name": "next" }]
