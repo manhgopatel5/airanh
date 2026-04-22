@@ -1,17 +1,21 @@
 import { NextResponse } from "next/server";
 
-export const revalidate = 604800; // ✅ 7 ngày
+export const revalidate = 604800; // 7 ngày
+
+type Province = {
+  id: number;
+  name: string;
+  code: string;
+};
 
 export async function GET() {
   try {
-    // ✅ FIX 1: Check env
     const token = process.env.GHN_TOKEN;
     if (!token) {
       console.error("GHN_TOKEN missing");
       return NextResponse.json({ error: "Server config error" }, { status: 500 });
     }
 
-    // ✅ FIX 2: Timeout 8s
     const res = await fetch(
       "https://online-gateway.ghn.vn/shiip/public-api/master-data/province",
       {
@@ -28,22 +32,22 @@ export async function GET() {
     const data = await res.json();
     console.log("GHN PROVINCE:", { code: data.code, count: data.data?.length });
 
-    if (data.code!== 200) {
+    if (data.code !== 200) {
       return NextResponse.json({ error: data.message || "GHN error" }, { status: 400 });
     }
 
-    // ✅ Nâng cấp 3+4: Transform + Sort
-    const provinces = (data.data || [])
+    const provinces: Province[] = (data.data || [])
       .map((p: any) => ({
         id: p.ProvinceID,
         name: p.ProvinceName,
         code: p.Code,
       }))
-      .sort((a, b) => a.name.localeCompare(b.name, "vi")); // Sort A-Z tiếng Việt
+      .sort((a: Province, b: Province) =>
+        a.name.localeCompare(b.name, "vi")
+      );
 
     return NextResponse.json(provinces, {
       headers: {
-        // ✅ Nâng cấp 1+5: Cache 7 ngày, SWR 3 ngày
         "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=259200",
       },
     });

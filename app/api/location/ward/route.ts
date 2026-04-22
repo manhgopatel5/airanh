@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 
-export const revalidate = 86400; // ✅ Cache 24h
+export const revalidate = 86400; // Cache 24h
 
 // Rate limit: 50 req/phút/IP
 const rateLimit = new Map<string, number[]>();
@@ -15,30 +15,34 @@ function isRateLimited(ip: string): boolean {
   return false;
 }
 
+type Ward = {
+  id: string;
+  name: string;
+};
+
 export async function POST(req: Request) {
   try {
-    // Rate limit
-    const ip = headers().get("x-forwarded-for") || "unknown";
+    // ✅ FIX Next 15: headers() là async
+    const h = await headers();
+    const ip = h.get("x-forwarded-for") || "unknown";
+    
     if (isRateLimited(ip)) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
     const { districtId } = await req.json();
 
-    // ✅ FIX 1: Validate
     const id = Number(districtId);
     if (!districtId || isNaN(id) || id <= 0) {
       return NextResponse.json({ error: "Invalid districtId" }, { status: 400 });
     }
 
-    // ✅ FIX 2: Check env
     const token = process.env.GHN_TOKEN;
     if (!token) {
       console.error("GHN_TOKEN missing");
       return NextResponse.json({ error: "Server config error" }, { status: 500 });
     }
 
-    // ✅ FIX 3: Timeout 8s
     const res = await fetch(
       "https://online-gateway.ghn.vn/shiip/public-api/master-data/ward",
       {
@@ -60,21 +64,19 @@ export async function POST(req: Request) {
     const data = await res.json();
     console.log("GHN WARD:", { code: data.code, count: data.data?.length, districtId: id });
 
-    if (data.code!== 200) {
+    if (data.code !== 200) {
       return NextResponse.json({ error: data.message || "GHN error" }, { status: 400 });
     }
 
-    // ✅ Nâng cấp 3: Transform + Sort A-Z
-    const wards = (data.data || [])
+    const wards: Ward[] = (data.data || [])
       .map((w: any) => ({
-        id: w.WardCode, // GHN dùng WardCode làm ID
+        id: w.WardCode,
         name: w.WardName,
       }))
-      .sort((a, b) => a.name.localeCompare(b.name, "vi"));
+      .sort((a: Ward, b: Ward) => a.name.localeCompare(b.name, "vi"));
 
     return NextResponse.json(wards, {
       headers: {
-        // Cache 24h, SWR 12h
         "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=43200",
       },
     });
