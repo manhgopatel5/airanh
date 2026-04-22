@@ -1,4 +1,4 @@
-type InterestGroup = {
+export type InterestGroup = {
   group: string;
   base: string[];
   variants?: string[];
@@ -127,6 +127,7 @@ const groups: InterestGroup[] = [
     variants: ["tự học", "chuyên sâu", "ứng dụng"],
   },
 ];
+
 export const generateInterests = () => {
   const result: { [key: string]: string[] } = {};
 
@@ -149,4 +150,62 @@ export const generateInterests = () => {
 
   return result;
 };
+
 export const interestGroups = generateInterests();
+
+/* ================= HELPERS - Dùng cho matching ================= */
+export type InterestCategory = keyof typeof interestGroups;
+
+// 1. Tất cả interest phẳng, dedupe
+export const allInterests = Array.from(
+  new Set(Object.values(interestGroups).flat())
+).sort((a, b) => a.localeCompare(b, "vi"));
+
+// 2. Tất cả category
+export const allInterestCategories = Object.keys(interestGroups) as InterestCategory[];
+
+// 3. Tìm category từ interest
+export const getInterestCategory = (interest: string): InterestCategory | null => {
+  const i = interest.trim();
+  for (const [cat, items] of Object.entries(interestGroups)) {
+    if (items.includes(i)) return cat as InterestCategory;
+  }
+  return null;
+};
+
+// 4. Validate interest có hợp lệ không
+export const isValidInterest = (interest: string): boolean => {
+  return allInterests.includes(interest.trim());
+};
+
+// 5. Gợi ý interest theo keyword - dùng cho search/autocomplete
+export const suggestInterests = (keyword: string, limit = 10): string[] => {
+  const k = keyword.toLowerCase().trim();
+  if (!k) return [];
+  return allInterests.filter(i => i.toLowerCase().includes(k)).slice(0, limit);
+};
+
+// 6. Lấy interest theo category
+export const getInterestsByCategory = (category: InterestCategory): string[] => {
+  return interestGroups[category] || [];
+};
+
+// 7. Match 2 user: trả về số interest chung
+export const matchInterests = (user1: string[], user2: string[]): number => {
+  const set1 = new Set(user1);
+  return user2.filter(i => set1.has(i)).length;
+};
+
+// 8. Slug để lưu Firestore - không dấu, lowercase
+const slugify = (str: string): string =>
+  str
+   .toLowerCase()
+   .normalize("NFD")
+   .replace(/[\u0300-\u036f]/g, "")
+   .replace(/[^a-z0-9]+/g, "-");
+
+export const interestSlugs = allInterests.map(slugify);
+export const slugToInterest = (slug: string): string | null => {
+  const idx = interestSlugs.indexOf(slug);
+  return idx >= 0? allInterests[idx] : null;
+};
