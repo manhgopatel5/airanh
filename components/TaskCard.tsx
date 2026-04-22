@@ -1,182 +1,225 @@
 "use client";
 
-import { Task } from "@/types/task";
-import { useEffect, useState } from "react";
-import { Heart, Users, Clock } from "lucide-react";
-import { joinTask } from "@/lib/joinTask";
-import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
+import { FiHeart, FiMessageCircle, FiShare2, FiClock, FiUsers } from "react-icons/fi";
+import { FaHeart } from "react-icons/fa";
+import { useEffect, useState, useCallback, memo } from "react";
+import { doc, updateDoc, arrayUnion, arrayRemove, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { onAuthStateChanged, User } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { Timestamp } from "firebase/firestore";
+import { incrementTaskView } from "@/lib/task"; // đổi từ taskService
+import { TaskListItem } from "@/types/task";
+import { toast } from "sonner";
 
-export default function TaskCard({ task }: { task: Task }) {
+function TaskCard({ task }: { task: TaskListItem }) {
   const router = useRouter();
-  const [timeLeft, setTimeLeft] = useState("");
-  const [isExpired, setIsExpired] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [liking, setLiking] = useState(false);
+  const [localLikes, setLocalLikes] = useState<string[]>(task.likes || []);
 
-  /* ================= SAFE DATA ================= */
-  const price = task.price || 0;
-  const joined = task.joined || 0;
-  const totalSlots = task.totalSlots || 0;
-  const likes = task.likes || 0;
+  useEffect(() => onAuthStateChanged(auth, setCurrentUser), []);
 
-  const avatar = task.avatar || "/default-avatar.jfif";
-  const userName = task.user || "Unknown";
-  const title = task.title || "No title";
-  const description = task.description || "";
+  if (!task) return <Skeleton />;
 
-  /* ================= DEADLINE ================= */
-  const deadline =
-    typeof task.deadline === "number"
-      ? task.deadline
-      : (task.deadline as any)?.toMillis?.() || 0;
+  const isPlan = task.budgetType === "fixed" && task.price === 0;
+  const liked = currentUser && localLikes.includes(currentUser.uid);
+  const likeCount = localLikes.length;
 
-  const priceFormatted = price.toLocaleString("vi-VN");
+  const statusConfig = {
+    open: { text: "Đang tuyển", color: "emerald" },
+    full: { text: "Đã đủ", color: "amber" },
+    completed: { text: "Hoàn thành", color: "blue" },
+    cancelled: { text: "Đã hủy", color: "gray" },
+  } as const;
+  const status = statusConfig[task.status || "open"];
 
-  /* ================= COUNTDOWN ================= */
-  useEffect(() => {
-    const update = () => {
-      const now = Date.now();
-      setIsExpired(deadline <= now);
-      const diff = deadline - now;
+  const handleLike = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!currentUser) return router.push("/login");
+    if (liking) return;
 
-      if (diff <= 0) {
-        setTimeLeft("Hết hạn");
-        return;
-      }
+    setLiking(true);
+    const newLikes = liked
+      ? localLikes.filter((id) => id !== currentUser.uid)
+      : [...localLikes, currentUser.uid];
 
-      const h = Math.floor(diff / (1000 * 60 * 60));
-      const m = Math.floor((diff / (1000 * 60)) % 60);
-      const s = Math.floor((diff / 1000) % 60);
+    setLocalLikes(newLikes);
 
-      setTimeLeft(`${h}h ${m}m ${s}s`);
-    };
-
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
-  }, [deadline]);
-
-  /* ================= JOIN TASK ================= */
-  const handleJoin = async () => {
     try {
-      const user = auth.currentUser;
-
-      if (!user) {
-        alert("Bạn cần đăng nhập");
-        return;
-      }
-
-      if (deadline <= Date.now()) {
-        alert("Task đã hết hạn");
-        return;
-      }
-
-      const chatId = await joinTask(task, user);
-      router.push(`/chat/${chatId}`);
-    } catch (err: any) {
-      alert(err?.message || "Có lỗi xảy ra");
+      await updateDoc(doc(db, "tasks", task.id), {
+        likes: liked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid),
+        likeCount: newLikes.length,
+      });
+    } catch (err) {
+      setLocalLikes(task.likes || []);
+      toast.error("Thao tác thất bại");
+    } finally {
+      setLiking(false);
     }
+  }, [currentUser, liked, liking, localLikes, task.id, task.likes, router]);
+
+  const handleShare = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/task/${task.slug}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: task.title, url });
+      } catch {}
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast.success("Đã sao chép link");
+    }
+  }, [task.slug, task.title]);
+
+  const handleClick = useCallback(() => {
+    incrementTaskView(task.id);
+    router.push(`/task/${task.slug}`);
+  }, [router, task.id, task.slug]);
+
+  const goToProfile = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (task.userId) router.push(`/user/${task.userId}`);
+  }, [router, task.userId]);
+
+  const handleMouseEnter = useCallback(() => {
+    router.prefetch(`/task/${task.slug}`);
+  }, [router, task.slug]);
+
+  const timeAgo = (seconds?: number) => {
+    if (!seconds) return "";
+    const diff = Date.now() / 1000 - seconds;
+    if (diff < 60) return "Vừa xong";
+    if (diff < 3600) return `${Math.floor(diff / 60)} phút`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} giờ`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)} ngày`;
+    return new Date(seconds * 1000).toLocaleDateString("vi-VN");
   };
 
-  const isFull = joined >= totalSlots;
-
-  const progress =
-    totalSlots > 0 ? (joined / totalSlots) * 100 : 0;
+  const formatPrice = (price: number, currency = "VND") =>
+    new Intl.NumberFormat("vi-VN", { style: "currency", currency, maximumFractionDigits: 0 }).format(price);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm overflow-hidden border">
-      {/* HEADER */}
-      <div className="flex items-center p-3">
-        <img
-          src={avatar}
-          className="w-10 h-10 rounded-full object-cover"
-        />
-        <div className="ml-3">
-          <p className="font-semibold text-sm">{userName}</p>
-          <p className="text-xs text-gray-400">
-            {"Vừa xong"}
-          </p>
-        </div>
-      </div>
-
-      {/* TITLE */}
-      <div className="px-3">
-        <p className="font-semibold text-[15px]">{title}</p>
-      </div>
-
-      {/* DESCRIPTION */}
-      <div className="px-3 py-2">
-        <p className="text-sm text-gray-600 line-clamp-3">
-          {description}
-        </p>
-      </div>
-
-      {/* IMAGES */}
-      {task.images && task.images.length > 0 && (
-        <div className="flex overflow-x-auto space-x-2 px-3 pb-2">
-          {task.images.map((img: string, i: number) => (
+    <div
+      onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
+      className="bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm shadow-gray-100/50 dark:shadow-black/20 active:scale-[0.98] transition-all duration-200 cursor-pointer overflow-hidden group hover:shadow-lg hover:shadow-gray-200/50 dark:hover:shadow-black/40"
+    >
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <button onClick={goToProfile} className="flex items-center gap-3 flex-1 min-w-0">
             <img
-              key={i}
-              src={img}
-              className="w-40 h-32 object-cover rounded-lg flex-shrink-0"
+              src={task.userAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(task.userName || "U")}&background=random`}
+              alt={task.userName || "User"}
+              className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-50 dark:ring-zinc-800"
             />
-          ))}
+            <div className="flex-1 min-w-0 text-left">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">
+                  {task.userName || "User"}
+                </span>
+                {isPlan ? (
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-lg">
+                    PLAN
+                  </span>
+                ) : (
+                  <span className={`text-xs font-bold text-${status.color}-600 dark:text-${status.color}-400 bg-${status.color}-50 dark:bg-${status.color}-950/50 px-2 py-0.5 rounded-lg`}>
+                    {status.text}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-zinc-400">
+                <FiClock size={12} />
+                {timeAgo(task.createdAt?.seconds)}
+              </div>
+            </div>
+          </button>
+
+          <div className="flex items-center gap-4 text-gray-400 dark:text-zinc-500">
+            <button onClick={handleLike} disabled={liking} className="flex items-center gap-1 active:scale-90 transition disabled:opacity-50">
+              {liked ? <FaHeart className="text-red-500" size={16} /> : <FiHeart className="group-hover:text-red-400" size={16} />}
+              <span className="text-xs font-medium">{likeCount}</span>
+            </button>
+
+            <div className="flex items-center gap-1">
+              <FiMessageCircle size={16} className="group-hover:text-blue-400" />
+              <span className="text-xs font-medium">{task.commentCount || 0}</span>
+            </div>
+
+            <button onClick={handleShare} className="active:scale-90 transition">
+              <FiShare2 size={16} className="group-hover:text-emerald-400" />
+            </button>
+          </div>
         </div>
-      )}
 
-      {/* INFO */}
-      <div className="px-3 py-2 space-y-1">
-        <div className="flex justify-between text-sm">
-          <span className="text-green-600 font-semibold">
-            💰 {priceFormatted}đ
-          </span>
+        <div className="space-y-2">
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="font-bold text-base text-gray-900 dark:text-gray-100 leading-snug flex-1">
+              {task.title}
+            </h3>
+            {!isPlan && task.price !== undefined && (
+              <div className="shrink-0 text-right">
+                <div className="text-lg font-extrabold bg-gradient-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent">
+                  {formatPrice(task.price, task.currency)}
+                </div>
+                {task.totalSlots && (
+                  <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-zinc-400 justify-end">
+                    <FiUsers size={12} />
+                    {task.joined || 0}/{task.totalSlots}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
-          <span className="flex items-center gap-1 text-gray-500">
-            <Users size={16} />
-            {joined}/{totalSlots}
-          </span>
+          {task.description && (
+            <p className="text-sm text-gray-600 dark:text-zinc-400 leading-relaxed line-clamp-2 whitespace-pre-wrap">
+              {task.description}
+            </p>
+          )}
 
-          <span
-            className={`flex items-center gap-1 ${
-              isExpired ? "text-gray-400" : "text-red-500"
-            }`}
-          >
-            <Clock size={16} />
-            {timeLeft}
-          </span>
+          {task.images && task.images.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 pt-1">
+              {task.images.slice(0, 3).map((img, i) => (
+                <img
+                  key={i}
+                  src={img}
+                  alt={`Image ${i + 1}`}
+                  loading="lazy"
+                  className="w-full h-24 object-cover rounded-2xl bg-gray-200 dark:bg-zinc-800"
+                  onError={(e) => { e.currentTarget.src = "/placeholder.png"; }}
+                />
+              ))}
+            </div>
+          )}
         </div>
-
-        {/* PROGRESS */}
-        <div className="h-2 bg-gray-200 rounded-full">
-          <div
-            className="h-2 bg-blue-500 rounded-full transition-all"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
-
-      {/* ACTION */}
-      <div className="flex justify-between items-center p-3 pt-1">
-        <button className="flex items-center gap-1 text-gray-500">
-          <Heart size={18} />
-          <span>{likes}</span>
-        </button>
-
-        <button
-          onClick={handleJoin}
-          disabled={isFull || isExpired}
-          className={`px-4 py-1.5 rounded-lg text-sm transition ${
-            isFull || isExpired
-              ? "bg-gray-300 text-gray-500"
-              : "bg-black text-white hover:opacity-80"
-          }`}
-        >
-          {isExpired
-            ? "Hết hạn"
-            : isFull
-            ? "Đã đủ"
-            : "Nhận task"}
-        </button>
       </div>
     </div>
   );
 }
+
+function Skeleton() {
+  return (
+    <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800 p-4 animate-pulse">
+      <div className="flex gap-3 mb-3">
+        <div className="w-10 h-10 bg-gray-200 dark:bg-zinc-800 rounded-full" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
+          <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/3" />
+        </div>
+      </div>
+      <div className="h-5 bg-gray-200 dark:bg-zinc-800 rounded w-3/4 mb-2" />
+      <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-full" />
+    </div>
+  );
+}
+
+export default memo(TaskCard, (prev, next) => {
+  return (
+    prev.task.id === next.task.id &&
+    prev.task.likeCount === next.task.likeCount &&
+    prev.task.commentCount === next.task.commentCount &&
+    prev.task.joined === next.task.joined
+  );
+});
