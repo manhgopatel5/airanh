@@ -5,6 +5,7 @@ import ClientLayout from "@/components/ClientLayout";
 import { AuthProvider } from "@/lib/AuthContext";
 import { Toaster } from "react-hot-toast";
 
+
 const inter = Inter({
   subsets: ["latin", "vietnamese"],
   display: "swap",
