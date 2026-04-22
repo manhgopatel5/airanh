@@ -1,5 +1,4 @@
 export const skillGroups: Record<string, string[]> = {
-
   // ================= ĂN UỐNG =================
   "Dịch vụ ăn uống": [
     "đầu bếp","phụ bếp","pha chế","barista","bưng bê","phục vụ quán cafe",
@@ -15,8 +14,6 @@ export const skillGroups: Record<string, string[]> = {
     "chăm sóc khách hàng","trưng bày sản phẩm","PG","PB",
     "mời khách","phát tờ rơi","đứng quầy","order shop",
     "kiểm hàng","đóng gói","soạn đơn","giao hàng",
-
-    // bổ sung
     "đăng sản phẩm","viết mô tả sản phẩm","quản lý đơn",
     "xử lý đơn","tele sale","upsell","cross sell",
     "chăm sóc khách cũ","quản lý kho","kiểm kê",
@@ -30,8 +27,6 @@ export const skillGroups: Record<string, string[]> = {
     "tổ chức sự kiện","setup sân khấu","trang trí sự kiện",
     "hậu cần sự kiện","chụp ảnh sự kiện","quay phim sự kiện",
     "phục vụ sự kiện","check-in","soát vé","điều phối",
-
-    // bổ sung
     "setup âm thanh","setup ánh sáng","điều phối chương trình",
     "quản lý sân khấu","hỗ trợ hậu cần","biên đạo",
     "dẫn team","tổ chức team building"
@@ -44,8 +39,6 @@ export const skillGroups: Record<string, string[]> = {
     "chống thấm","khoan bê tông","đục phá","lợp mái",
     "sửa cửa","lắp cửa","thi công nội thất","giám sát công trình",
     "đo đạc","thiết kế xây dựng","dọn công trình",
-
-    // bổ sung
     "đổ bê tông","lắp giàn giáo","trộn vữa","cắt gạch",
     "ốp lát","chà ron","lắp trần thạch cao",
     "thi công sàn gỗ","lắp cửa cuốn","đi dây điện",
@@ -59,8 +52,6 @@ export const skillGroups: Record<string, string[]> = {
     "vệ sinh bếp","vệ sinh máy lạnh","dọn sau xây dựng",
     "dọn nhà cuối tuần","lau nhà","quét dọn","hút bụi",
     "vệ sinh văn phòng","vệ sinh công trình","khử mùi","diệt côn trùng",
-
-    // bổ sung
     "lau kính cao tầng","giặt nệm","vệ sinh nhà xưởng",
     "khử khuẩn","diệt khuẩn","đánh bóng sàn",
     "tẩy rửa","giặt ghế xe","khử mùi phòng",
@@ -83,8 +74,6 @@ export const skillGroups: Record<string, string[]> = {
     "giặt ủi","chăm người bệnh","trông nhà","chăm cây",
     "giữ nhà","nấu tiệc","dọn theo giờ","chăm bé",
     "dạy trẻ","chơi với trẻ","trông thú","dọn sân",
-
-    // bổ sung
     "trông trẻ sơ sinh","chăm mẹ sau sinh","tắm bé",
     "cho bé ăn","ru ngủ","huấn luyện chó",
     "cắt tỉa lông thú","vệ sinh chuồng",
@@ -98,8 +87,6 @@ export const skillGroups: Record<string, string[]> = {
     "lắp phụ kiện xe","dọn nội thất xe","đánh bóng xe",
     "rửa xe tại nhà","kiểm tra xe","thay lốp","sửa điện xe",
     "lắp camera xe","độ xe","bọc ghế","làm sạch xe","phủ ceramic",
-
-    // bổ sung
     "cân chỉnh bánh xe","kiểm tra động cơ","thay bugi",
     "sửa phanh","sửa giảm xóc","dán phim cách nhiệt",
     "vệ sinh kim phun","bảo dưỡng tổng thể"
@@ -122,8 +109,6 @@ export const skillGroups: Record<string, string[]> = {
     "quản lý shopee","automation","chatbot",
     "data entry online","app mobile","ui ux",
     "backend","frontend","deploy","hosting",
-
-    // bổ sung
     "firebase","linux","bảo mật web","tối ưu tốc độ",
     "ads google","ads facebook","tracking pixel",
     "chatbot facebook","crawl data"
@@ -160,5 +145,46 @@ export const skillGroups: Record<string, string[]> = {
     "làm theo giờ","việc gấp","việc online",
     "việc tại nhà","việc ngoài trời","việc linh hoạt"
   ]
-
 };
+
+/* ================= HELPERS ================= */
+export type SkillGroup = keyof typeof skillGroups;
+
+// 1. Lấy tất cả skill phẳng, dedupe
+export const allSkills = Array.from(
+  new Set(Object.values(skillGroups).flat())
+).sort();
+
+// 2. Lấy tất cả category
+export const allCategories = Object.keys(skillGroups);
+
+// 3. Tìm category từ skill
+export const getCategoryBySkill = (skill: string): SkillGroup | null => {
+  const s = skill.toLowerCase().trim();
+  for (const [cat, skills] of Object.entries(skillGroups)) {
+    if (skills.includes(s)) return cat as SkillGroup;
+  }
+  return null;
+};
+
+// 4. Validate skill có hợp lệ không
+export const isValidSkill = (skill: string): boolean => {
+  return allSkills.includes(skill.toLowerCase().trim());
+};
+
+// 5. Gợi ý skill theo keyword
+export const suggestSkills = (keyword: string, limit = 10): string[] => {
+  const k = keyword.toLowerCase().trim();
+  if (!k) return [];
+  return allSkills.filter(s => s.includes(k)).slice(0, limit);
+};
+
+// 6. Slug để search không dấu
+const slugify = (str: string): string =>
+  str
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-");
+
+export const allSkillsSlug = allSkills.map(slugify);
