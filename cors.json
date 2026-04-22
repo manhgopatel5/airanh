@@ -1,7 +1,21 @@
 [
   {
     "origin": ["*"],
-    "method": ["GET", "POST", "PUT"],
+    "method": ["GET", "HEAD", "PUT", "POST", "DELETE", "OPTIONS"],
+    "responseHeader": [
+      "Content-Type",
+      "Content-Length", 
+      "Content-Encoding",
+      "Content-Disposition",
+      "Cache-Control",
+      "ETag",
+      "x-goog-generation",
+      "x-goog-metageneration",
+      "x-goog-storage-class",
+      "x-goog-hash",
+      "x-goog-meta-*",
+      "Authorization"
+    ],
     "maxAgeSeconds": 3600
   }
 ]
