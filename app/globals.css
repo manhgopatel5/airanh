@@ -2,14 +2,243 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background: #f8fafc;
+/* ================= CSS VARIABLES ================= */
+
+@layer base {
+  :root {
+    --color-primary: 59 130 246;
+    --color-primary-dark: 37 99 235;
+    --header-height: 60px;
+    --bottom-nav-height: 70px;
+    --radius-sm: 0.75rem;
+    --radius-md: 1rem;
+    --radius-lg: 1.5rem;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    color-scheme: light dark; /* ✅ FIX 4 */
+  }
+
+  .dark {
+    --color-primary: 96 165 250;
+    --color-primary-dark: 59 130 246;
+  }
 }
 
-.input {
-  @apply w-full p-3 rounded-xl border bg-gray-50;
+/* ================= BASE ================= */
+
+@layer base {
+    * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button,
+  a {
+    touch-action: manipulation;
+  }
+
+  html,
+  body {
+    height: 100%;
+    @apply bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'tnum' 1; /* ✅ FIX 5: Số monospaced */
+    scrollbar-gutter: stable; /* ✅ FIX 6: Không nhảy layout */
+    /* ❌ BỎ overscroll-behavior: none ở body ✅ FIX 2 */
+  }
+
+  body {
+    margin: 0;
+  }
+
+  /* ✅ FIX 3: @apply không dùng trong base, chuyển sang class thường */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+    background-color: theme('colors.white');
+    color: theme('colors.gray.900');
+  }
+
+  .dark input,
+  .dark textarea,
+  .dark select {
+    background-color: theme('colors.zinc.900');
+    color: theme('colors.gray.100');
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-zinc-700 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400 dark:bg-zinc-600;
+  }
+
+    * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(209 213 219) transparent;
+  }
+
+  .dark * {
+    scrollbar-color: rgb(63 63 70) transparent;
+  }
+
+  /* ✅ FIX 8: Focus visible cho a11y */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible {
+    @apply outline-none ring-2 ring-blue-500/50 ring-offset-2 ring-offset-white dark:ring-offset-zinc-950;
+  }
 }
 
-.btn {
-  @apply bg-green-500 text-white px-4 py-2 rounded-xl;
+/* ================= CHAT LAYOUT ================= */
+
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* ✅ FIX 1: Fallback */
+  @apply bg-gray-50 dark:bg-zinc-950;
+  overscroll-behavior: none; /* ✅ FIX 2: Chỉ chat không bounce */
+}
+
+@supports (height: 100dvh) { /* ✅ FIX 1 */
+  .chat-container {
+    height: 100dvh;
+  }
+}
+
+.chat-header {
+  flex-shrink: 0;
+  height: var(--header-height);
+}
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  contain: layout style paint; /* ✅ FIX 10: Tối ưu render */
+}
+
+.input-bar {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  @apply bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl;
+  @apply border-t border-gray-100 dark:border-zinc-800;
+  padding: 8px;
+  min-height: 56px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+}
+
+/* ================= COMPONENTS ================= */
+
+@layer components {
+  .input {
+    @apply w-full px-4 py-3 rounded-2xl border border-gray-200 dark:border-zinc-700;
+    @apply bg-gray-50 dark:bg-zinc-900 text-gray-900 dark:text-gray-100;
+    @apply placeholder:text-gray-400 dark:placeholder:text-zinc-500;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500; /* ✅ FIX 8 */
+    @apply transition-all duration-200;
+  }
+
+  .btn {
+    @apply bg-gradient-to-r from-blue-500 to-indigo-600 text-white;
+    @apply px-6 py-3 rounded-2xl font-semibold text-sm;
+    @apply shadow-lg shadow-blue-500/30 active:scale-[0.98];
+    @apply transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100;
+    @apply px-6 py-3 rounded-2xl font-semibold text-sm;
+    @apply active:scale-[0.98] transition-all duration-200;
+  }
+
+  .card {
+    @apply bg-white dark:bg-zinc-900 rounded-3xl;
+    @apply border border-gray-100 dark:border-zinc-800;
+    @apply shadow-sm shadow-gray-100/50 dark:shadow-black/20;
+    @apply p-4;
+  }
+
+  .glass {
+    @apply bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl;
+    @apply border border-gray-100/50 dark:border-zinc-800/50;
+  }
+}
+
+/* ================= UTILITIES ================= */
+
+@layer utilities {
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* ✅ FIX 9: will-change cho GPU */
+  .animate-in {
+    will-change: transform, opacity;
+    animation: slideIn 0.3s ease-out;
+  }
+
+  /* ✅ FIX 7: Tôn trọng prefers-reduced-motion */
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideFromBottom {
+      from {
+        opacity: 0;
+        transform: translateY(100%);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  }
+
+  .slide-in-from-bottom {
+    will-change: transform, opacity;
+    animation: slideFromBottom 0.3s ease-out;
+  }
 }
