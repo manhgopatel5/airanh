@@ -1,16 +1,229 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background: #f8fafc;
+/* ================= CSS VARIABLES ================= */
+@layer base {
+  :root {
+    /* Light */
+    --bg: 248 250 252;
+    --bg-secondary: 241 245 249;
+    --bg-card: 255 255 255;
+    --text: 15 23 42;
+    --text-secondary: 100 116 139;
+    --border: 226 232 240;
+    --primary: 34 197 94;
+    --primary-hover: 22 163 74;
+    --primary-active: 21 128 61;
+    --danger: 239 68 68;
+    --danger-hover: 220 38 38;
+    --ring: 34 197 94;
+    --ring-offset: 248 250 252;
+  }
+
+ .dark {
+    /* Dark */
+    --bg: 15 23 42;
+    --bg-secondary: 30 41 59;
+    --bg-card: 30 41 59;
+    --text: 241 245 249;
+    --text-secondary: 148 163 184;
+    --border: 51 65 85;
+    --primary: 34 197 94;
+    --primary-hover: 22 163 74;
+    --primary-active: 21 128 61;
+    --danger: 239 68 68;
+    --danger-hover: 220 38 38;
+    --ring: 34 197 94;
+    --ring-offset: 15 23 42;
+  }
+
+    * {
+    @apply border-border;
+  }
+
+  /* Color scheme cho scrollbar + form control */
+  :root {
+    color-scheme: light;
+  }
+ .dark {
+    color-scheme: dark;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-[rgb(var(--bg))] text-[rgb(var(--text))] antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Checkbox/radio dùng primary */
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: rgb(var(--primary));
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-[rgb(var(--border))] rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-[rgb(var(--text-secondary))];
+  }
+
+  /* Selection */
+  ::selection {
+    @apply bg-[rgb(var(--primary))] text-white;
+  }
+
+  /* Autofill Chrome dark mode */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: rgb(var(--text));
+    -webkit-box-shadow: 0 0 0px 1000px rgb(var(--bg-card)) inset;
+    transition: background-color 5000s ease-in-out 0s;
+  }
 }
 
-.input {
-  @apply w-full p-3 rounded-xl border bg-gray-50;
+/* ================= COMPONENTS ================= */
+@layer components {
+  :where(.input) {
+    @apply w-full px-4 py-3 rounded-xl
+           bg-[rgb(var(--bg-card))]
+           border border-[rgb(var(--border))]
+           text-[rgb(var(--text))]
+           placeholder:text-[rgb(var(--text-secondary))]
+           transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))]
+           focus:ring-offset-2 focus:ring-offset-[rgb(var(--ring-offset))]
+           disabled:opacity-50 disabled:cursor-not-allowed
+           invalid:border-[rgb(var(--danger))] invalid:ring-[rgb(var(--danger))];
+  }
+
+  :where(.textarea) {
+    @apply input min-h-[120px] resize-y;
+  }
+
+  :where(.btn) {
+    @apply inline-flex items-center justify-center gap-2
+           px-4 py-2.5 rounded-xl font-medium
+           transition-all duration-200
+           focus-visible:outline-none focus-visible:ring-2
+           focus-visible:ring-[rgb(var(--ring))]
+           focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--ring-offset))]
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none
+           active:scale-95;
+  }
+
+  :where(.btn-primary) {
+    @apply btn bg-[rgb(var(--primary))] text-white
+           hover:bg-[rgb(var(--primary-hover))]
+           active:bg-[rgb(var(--primary-active))];
+  }
+
+  :where(.btn-secondary) {
+    @apply btn bg-[rgb(var(--bg-secondary))] text-[rgb(var(--text))]
+           hover:bg-[rgb(var(--border))];
+  }
+
+  :where(.btn-danger) {
+    @apply btn bg-[rgb(var(--danger))] text-white
+           hover:bg-[rgb(var(--danger-hover))];
+  }
+
+  :where(.btn-ghost) {
+    @apply btn bg-transparent text-[rgb(var(--text))]
+           hover:bg-[rgb(var(--bg-secondary))];
+  }
+
+  :where(.card) {
+    @apply bg-[rgb(var(--bg-card))]
+           border border-[rgb(var(--border))]
+           rounded-2xl p-6
+           shadow-sm hover:shadow-md
+           transition-shadow duration-200;
+  }
+
+  :where(.badge) {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+           bg-[rgb(var(--bg-secondary))] text-[rgb(var(--text-secondary))];
+  }
+
+  :where(.badge-primary) {
+    @apply badge bg-[rgb(var(--primary))]/10 text-[rgb(var(--primary))];
+  }
+
+  :where(.skeleton) {
+    @apply animate-pulse bg-[rgb(var(--bg-secondary))] rounded-xl;
+  }
 }
 
-.btn {
-  @apply bg-green-500 text-white px-4 py-2 rounded-xl;
+/* ================= UTILITIES ================= */
+@layer utilities {
+ .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2
+           focus-visible:ring-[rgb(var(--ring))]
+           focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--ring-offset))];
+  }
+
+ .text-gradient {
+    @apply bg-gradient-to-r from-[rgb(var(--primary))] to-blue-500 bg-clip-text text-transparent;
+  }
+
+ .glass {
+    @apply bg-[rgb(var(--bg-card))]/80 backdrop-blur-lg border border-[rgb(var(--border))]/50;
+  }
+
+ .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+ .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+ .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+ .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+ .text-balance {
+    text-wrap: balance;
+  }
+
+ .overscroll-contain {
+    overscroll-behavior: contain;
+  }
+
+  @media print {
+   .print-hidden {
+      display: none!important;
+    }
+  }
+}
+
+/* ================= ANIMATIONS ================= */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms!important;
+    animation-iteration-count: 1!important;
+    transition-duration: 0.01ms!important;
+    scroll-behavior: auto!important;
+  }
 }
