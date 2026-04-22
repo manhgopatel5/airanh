@@ -29,4 +29,40 @@ const config: Config = {
       variants: ["sm", "md", "lg", "xl", "2xl"],
     },
     "animate-shimmer",
-  ],
+        borderRadius: {
+        xl: "0.75rem",
+        "2xl": "1rem",
+        "3xl": "1.5rem",
+      },
+
+      boxShadow: {
+        sm: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        DEFAULT: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+        md: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+        lg: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+        "dark-sm": "0 1px 2px 0 rgb(0 0 0 / 0.3)",
+        "dark-md": "0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3)",
+      },
+
+      willChange: {
+        transform: "transform",
+        opacity: "opacity",
+        scroll: "scroll-position",
+      },
+    },
+  },
+
+  plugins: [forms, typography, containerQueries, animate],
+
+  corePlugins: {
+    aspectRatio: false,
+    touchAction: false,
+    scrollSnapType: false,
+  },
+
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
+};
+
+export default config;
