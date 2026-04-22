@@ -80,7 +80,7 @@ const nextConfig = {
     ];
   },
   
-  // Turbopack config riêng, không nằm trong experimental
+  // Turbopack config (Next 15)
   turbopack: {
     rules: {
       '*.svg': {
@@ -98,7 +98,6 @@ const nextConfig = {
       'date-fns',
       'lodash-es',
     ],
-    
     serverActions: {
       bodySizeLimit: '2mb',
       allowedOrigins: [
@@ -106,14 +105,11 @@ const nextConfig = {
         process.env.NEXT_PUBLIC_APP_URL?.replace('https://', ''),
       ].filter(Boolean),
     },
-    
     webVitalsAttribution: ['CLS', 'LCP'],
-    instrumentationHook: true,
+    // instrumentationHook đã xóa - Next 15 bật mặc định
   },
   
-  // Webpack chỉ chạy khi không dùng --turbo
   webpack: (config, { isServer, dev }) => {
-    // SVG as React Component cho webpack
     config.module.rules.push({
       test: /\.svg$/i,
       issuer: /\.[jt]sx?$/,
