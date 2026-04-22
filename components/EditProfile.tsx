@@ -1,37 +1,142 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { db } from "@/lib/firebase";
-import { doc, updateDoc } from "firebase/firestore";
+import { db, auth } from "@/lib/firebase";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { updateProfile } from "firebase/auth"; // ✅ FIX 1
+import { FiCheck, FiLoader } from "react-icons/fi";
 
-export default function EditProfile({ currentName }: any) {
+type Props = {
+  currentName: string;
+  onClose?: () => void;
+};
+
+const BAD_WORDS = ["admin", "mod", "support", "đm", "vcl", "dm"]; // ✅ FIX 3
+
+export default function EditProfile({ currentName, onClose }: Props) {
   const { user } = useAuth();
-  const [name, setName] = useState(currentName);
+  const [name, setName] = useState(currentName || "");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [touched, setTouched] = useState(false); // ✅ FIX 2
 
-  const save = async () => {
-    if (!user) return;
+  // ✅ FIX 2: Validate chỉ khi touched
+  const validate = useCallback((val: string): string => {
+    const trimmed = val.trim();
+    if (!trimmed) return "Tên không được để trống";
+    if (trimmed.length < 2) return "Tên phải có ít nhất 2 ký tự";
+    if (trimmed.length > 30) return "Tên không quá 30 ký tự";
+    if (BAD_WORDS.some((w) => trimmed.toLowerCase().includes(w))) {
+      return "Tên chứa từ không phù hợp";
+    }
+    return "";
+  }, []);
 
-    await updateDoc(doc(db, "users", user.uid), {
-      name,
-    });
+  const errorMsg = touched ? validate(name) : "";
 
-    alert("Đã cập nhật!");
-  };
+  const save = useCallback(async () => {
+    const trimmed = name.trim();
+    const err = validate(trimmed);
+
+    if (err) {
+      setError(err);
+      setTouched(true);
+      return;
+    }
+    if (trimmed === currentName) {
+      onClose?.();
+      return;
+    }
+    if (!user) {
+      setError("Bạn chưa đăng nhập");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      // ✅ FIX 1: Update cả Auth + Firestore
+      await Promise.all([
+        updateProfile(auth.currentUser!, { displayName: trimmed }),
+        setDoc(
+          doc(db, "users", user.uid),
+          {
+            name: trimmed,
+            searchKeywords: trimmed.toLowerCase().split(" "), // ✅ FIX 4
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        ),
+      ]);
+
+      setSuccess(true);
+      setTimeout(() => onClose?.(), 800);
+    } catch (err) {
+      setError("Có lỗi xảy ra, thử lại sau");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [name, currentName, user, validate, onClose]);
+
+  const isValid = !validate(name.trim()) && name.trim() !== currentName;
 
   return (
-    <div className="space-y-2">
-      <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="border p-2 w-full rounded"
-      />
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
+          Tên hiển thị
+        </label>
+        <input
+          value={name}
+          onChange={(e) => {
+            setName(e.target.value);
+            setSuccess(false);
+          }}
+          onBlur={() => setTouched(true)} // ✅ FIX 2
+          onKeyDown={(e) => e.key === "Enter" && save()}
+          placeholder="Nhập tên của bạn"
+          maxLength={30}
+          autoFocus // ✅ FIX 7
+          className={`w-full px-4 py-3 rounded-2xl border bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 transition-all ${
+            errorMsg
+              ? "border-red-500 focus:ring-red-500/20 focus:border-red-500"
+              : "border-gray-200 dark:border-zinc-700 focus:ring-blue-500/20 focus:border-blue-500"
+          }`}
+        />
+        <div className="flex items-center justify-between mt-1.5 px-1">
+          <p className="text-xs text-red-500 h-4">{errorMsg || error}</p>
+          <p className="text-xs text-gray-400 dark:text-zinc-500">{name.length}/30</p>
+        </div>
+      </div>
 
       <button
         onClick={save}
-        className="bg-black text-white px-3 py-2 rounded"
+        disabled={loading || success || !isValid}
+        className={`w-full py-3 rounded-2xl font-semibold text-sm transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 ${
+          success
+            ? "bg-emerald-500 text-white"
+            : loading || !isValid
+            ? "bg-gray-300 dark:bg-zinc-700 text-gray-500 dark:text-zinc-400 cursor-not-allowed"
+            : "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
+        }`}
       >
-        Lưu
+        {loading ? (
+          <>
+            <FiLoader className="animate-spin" size={18} />
+            Đang lưu...
+          </>
+        ) : success ? (
+          <>
+            <FiCheck size={18} />
+            Đã cập nhật
+          </>
+        ) : (
+          "Lưu thay đổi"
+        )}
       </button>
     </div>
   );
