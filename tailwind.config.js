@@ -29,7 +29,83 @@ const config: Config = {
       variants: ["sm", "md", "lg", "xl", "2xl"],
     },
     "animate-shimmer",
-        borderRadius: {
+  ],
+
+  theme: {
+    container: {
+      center: true,
+      padding: "1rem",
+      screens: {
+        "2xl": "1400px",
+      },
+    },
+
+    screens: {
+      xs: "475px",
+      ...defaultTheme.screens, // ✅ FIX: Dùng import thay vì require()
+      "3xl": "1600px",
+    },
+
+    extend: {
+      colors: {
+        border: "rgb(var(--border) / <alpha-value>)",
+        bg: "rgb(var(--bg) / <alpha-value>)",
+        "bg-secondary": "rgb(var(--bg-secondary) / <alpha-value>)",
+        "bg-card": "rgb(var(--bg-card) / <alpha-value>)",
+        text: "rgb(var(--text) / <alpha-value>)",
+        "text-secondary": "rgb(var(--text-secondary) / <alpha-value>)",
+        primary: {
+          DEFAULT: "rgb(var(--primary) / <alpha-value>)",
+          hover: "rgb(var(--primary-hover) / <alpha-value>)",
+          active: "rgb(var(--primary-active) / <alpha-value>)",
+        },
+        danger: {
+          DEFAULT: "rgb(var(--danger) / <alpha-value>)",
+          hover: "rgb(var(--danger-hover) / <alpha-value>)",
+        },
+        success: "rgb(var(--success) / <alpha-value>)",
+        warning: "rgb(var(--warning) / <alpha-value>)",
+      },
+
+      fontFamily: {
+        sans: ["var(--font-sans)", ...defaultTheme.fontFamily.sans], // ✅ FIX: Dùng defaultTheme
+        mono: ["var(--font-mono)", ...defaultTheme.fontFamily.mono],
+      },
+
+      keyframes: {
+        "slide-up": {
+          from: { opacity: "0", transform: "translateY(10px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "slide-down": {
+          from: { opacity: "0", transform: "translateY(-10px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+        "scale-in": {
+          from: { opacity: "0", transform: "scale(0.95)" },
+          to: { opacity: "1", transform: "scale(1)" },
+        },
+        shimmer: {
+          "100%": { transform: "translateX(100%)" },
+        },
+        spin: {
+          to: { transform: "rotate(360deg)" },
+        },
+      },
+      animation: {
+        "slide-up": "slide-up 0.3s ease-out",
+        "slide-down": "slide-down 0.3s ease-out",
+        "fade-in": "fade-in 0.2s ease-out",
+        "scale-in": "scale-in 0.2s ease-out",
+        shimmer: "shimmer 2s infinite",
+        spin: "spin 1s linear infinite",
+      },
+
+      borderRadius: {
         xl: "0.75rem",
         "2xl": "1rem",
         "3xl": "1.5rem",
