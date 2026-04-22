@@ -1,19 +1,254 @@
-import admin from "firebase-admin";
+import { initializeApp, getApps, cert, App, ServiceAccount } from "firebase-admin/app";
+import { getMessaging, Messaging, BatchResponse, Message } from "firebase-admin/messaging";
+import { getFirestore, Firestore, FieldValue } from "firebase-admin/firestore";
+import { getAuth, Auth } from "firebase-admin/auth";
 
-const serviceAccount = {
-  type: "service_account",
-  project_id: "airanh-ba64c",
-  private_key_id: "d937d07d871b1d9603765665d88c978a22d2966e",
-  private_key: `-----BEGIN PRIVATE KEY-----
-MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQC8+IaEt0Vss0y1\nswJqriVCtej7vUDwtEIaNmY4V71ZjTMy3T/sPmQ6AaOqH59fEnLWbxhfLz/HJROl\nuSTH7zszPeyX0GhqqVtN2QxYrnRshNQPEVZCCST+UqQpViLz9HPCtc9Duw1lH+Mh\nHPwfF7SjCugSzmroZyDIKoDzdn0mZdAF6OgNXCtebsTaB1dXThJ9Kf6HmFiWCqHd\nwuD6/WwUD0wGonmnCMZna/UKOV5BvOrurFWuej4C8rOU4xRV7GUF7FlLL0dHs38e\nk3mRDzxLz2rBrIm7pZGcBrHWvFBoJ/wfO1ntR+EmQyYQ8+CLJfXDtshpGhba7kS/\nGC7WaRPhAgMBAAECggEACZGnCUO8ihIUP7ktcfwKhVA29RRrqnn+ROndgSLGCht1\nJb9jmzUs7VEHYP8nff7KjHEeDf0v591I1D5wcd1e+o9XkoX/orMNgPDUcrh954bc\nXssuAZ8JQVrygXbobd17U2HusmfRW+G33yIbqY68BhY3k3LiE42jG2F88SVeQKh6\nUmZFDZwnxJFvMf7xVroYJ29oukbhxCrD3P86ZqGcECj3oQJR4SbiQ3lpA+t2c7Zg\n8IV5RD0TQsBvHTvraYay82aHZUMfO6Le+5mujTSfgnYzHBXk3zKPz+HQRlpqpcW1\nm019Yi2jPx3buN+h9Y+qQVsJQ7VIPQYI+fGw8hzitwKBgQDlK/5ojNvxJ9GnT7it\nTf73NKdfyetJwKLCGlLpQbYe3xwu5tbgo/Hw3AsjJ0tBHWlFKCfR8qGkPuW6bXDC\nV/PhAqGWGfzLU9wi3jAq7xR1+2UR9ayQkc60lCH+4BG2rWQ0TNIgBl9bYpnFzOUv\nVRCU66flI67bnBliQ2qiYltTWwKBgQDTF8Edn7xAlf7XRlXutnk/WCBY74fLr/tF\nPkSw6BSoFWAWRfrIOW+ZgXGStEUwmz5e51obm4Gf4tp18jrPf/lpw7VPPF5PHj07\njOPlxvayAJ94SW9HG2gAviQ1Q0Pla4W1ccE/GsZ0HAXCm01HcwLDUjE4D1kkSz41\nHYKvHhOGcwKBgQC0/98qUf4wZGOowkU4035JXpPHCuJDWNrzdPkA835UuaA3xuf1\nembO9evx8snz/rezADkbD4ftAiRM7rz9MZwTnhFjTNkk+fHGtDfU4QkG+evkmGWX\ntSFN7CVBeVVkM2QODpJy6rWLpr+OwvpMPOIgzFLJnjovhwVhX5+r6wT4OwKBgQCZ\n1wwEnO9DWo1ZModZ6149zen1Jsweo+hJtHG3Q8waG0nlsaZs2X79rpqowfxSyjEQ\nVScUS6aScW+o2ZoGs0t/ywON9X79xhn2Fl3YjcIoQ8/0iAAzIEQRloEo2BbZUh0l\n+PtPFCJhaDLCexA87BKtam84XecnTjbN2u3s1cyBBQKBgQDB0vj15QfoUnD1TSlL\njzI8GZ97Mb+ZEU/FJQ46dlJk5QjuJodJKqc0Tsz3rx7PhOJ2CiPCFA2NWGJCZe/W\nSp9wIEOIUN94hzk49Cm0TU9JmG/0Kl2ik9tfnNMv9q/BH6cqPncgN2j3ezKRHhfn\nO88N4dXNcRbgUB2LpwPrCJufEg==\n-----END PRIVATE KEY-----`,
-  client_email: "firebase-adminsdk-fbsvc@airanh-ba64c.iam.gserviceaccount.com",
-  client_id: "109299895659273947882",
-};
+/* ================= VALIDATE ENV ================= */
+const requiredEnvs = [
+  "FIREBASE_PROJECT_ID",
+  "FIREBASE_CLIENT_EMAIL",
+  "FIREBASE_PRIVATE_KEY",
+] as const;
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount as any),
-  });
+for (const env of requiredEnvs) {
+  if (!process.env[env]) {
+    throw new Error(`Missing environment variable: ${env}`);
+  }
 }
 
-export const adminMessaging = admin.messaging();
+/* ================= SERVICE ACCOUNT ================= */
+const serviceAccount: ServiceAccount = {
+  projectId: process.env.FIREBASE_PROJECT_ID!,
+  clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
+  privateKey: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, "\n"),
+};
+
+/* ================= LAZY INIT ================= */
+let app: App;
+let messaging: Messaging;
+let db: Firestore;
+let auth: Auth;
+
+function getFirebaseAdmin() {
+  if (!getApps().length) {
+    try {
+      app = initializeApp({
+        credential: cert(serviceAccount),
+   ...(process.env.FIREBASE_DATABASE_URL && {
+          databaseURL: process.env.FIREBASE_DATABASE_URL,
+        }),
+      });
+      if (process.env.DEBUG) console.log("✅ Firebase Admin initialized");
+    } catch (e) {
+      console.error("❌ Firebase Admin init failed:", e);
+      throw e;
+    }
+  } else {
+    app = getApps()[0];
+  }
+
+  if (!messaging) messaging = getMessaging(app);
+  if (!db) db = getFirestore(app);
+  if (!auth) auth = getAuth(app);
+
+  return { app, messaging, db, auth };
+}
+
+/* ================= EXPORTS ================= */
+export const adminApp = () => getFirebaseAdmin().app;
+export const adminMessaging = () => getFirebaseAdmin().messaging;
+export const adminDb = () => getFirebaseAdmin().db;
+export const adminAuth = () => getFirebaseAdmin().auth;
+
+/* ================= TYPE ================= */
+export type SendNotificationPayload = {
+  token: string | string[];
+  title: string;
+  body: string;
+  imageUrl?: string;
+  data?: Record<string, any>;
+  link?: string;
+  priority?: "high" | "normal";
+  ttl?: number; // seconds
+  dryRun?: boolean;
+};
+
+export type SendNotificationResult = {
+  successCount: number;
+  failureCount: number;
+  failedTokens: string[];
+  messageId?: string;
+  errors?: { token: string; error: string }[];
+};
+
+/* ================= HELPER ================= */
+const stringifyData = (data?: Record<string, any>): Record<string, string> => {
+  if (!data) return {};
+  return Object.fromEntries(
+    Object.entries(data).map(([k, v]) => [k, typeof v === "string"? v : JSON.stringify(v)])
+  );
+};
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/* ================= SEND NOTIFICATION ================= */
+export async function sendNotification(
+  payload: SendNotificationPayload
+): Promise<SendNotificationResult> {
+  const { token, title, body, imageUrl, data, link, priority = "high", ttl = 86400, dryRun = false } = payload;
+  const msg = getFirebaseAdmin().messaging;
+
+  const baseMessage: Omit<Message, "token" | "topic" | "condition"> = {
+    notification: { title, body,...(imageUrl && { imageUrl }) },
+    data: stringifyData(data),
+    webpush: {
+      fcmOptions: { link: link || "/" },
+      notification: {
+        icon: "/icon-192.png",
+        badge: "/icon-192.png",
+        requireInteraction: priority === "high",
+      },
+      headers: { TTL: ttl.toString() },
+    },
+    android: {
+      priority: priority === "high"? "high" : "normal",
+      ttl: ttl * 1000,
+      notification: {
+        icon: "ic_notification",
+        color: "#3B82F6",
+        sound: priority === "high"? "default" : undefined,
+      },
+    },
+    apns: {
+      headers: { "apns-priority": priority === "high"? "10" : "5" },
+      payload: {
+        aps: {
+          badge: 1,
+          sound: priority === "high"? "default" : undefined,
+          "content-available": 1,
+        },
+      },
+    },
+  };
+
+  const sendWithRetry = async (sendFn: () => Promise<any>, retries = 2): Promise<any> => {
+    for (let i = 0; i <= retries; i++) {
+      try {
+        return await sendFn();
+      } catch (e: any) {
+        if (e.code === "messaging/server-unavailable" && i < retries) {
+          await sleep(1000 * (i + 1));
+          continue;
+        }
+        throw e;
+      }
+    }
+  };
+
+  try {
+    if (Array.isArray(token)) {
+      const tokens = [...new Set(token)];
+      const chunks: string[][] = [];
+      for (let i = 0; i < tokens.length; i += 500) {
+        chunks.push(tokens.slice(i, i + 500));
+      }
+
+      const results: BatchResponse[] = await Promise.all(
+        chunks.map((t) =>
+          sendWithRetry(() =>
+            msg.sendEachForMulticast({ tokens: t,...baseMessage }, dryRun)
+          )
+        )
+      );
+
+      const failedTokens: string[] = [];
+      const errors: { token: string; error: string }[] = [];
+      let successCount = 0;
+      let failureCount = 0;
+
+      results.forEach((r, chunkIdx) => {
+        successCount += r.successCount;
+        failureCount += r.failureCount;
+        r.responses.forEach((resp, idx) => {
+          if (!resp.success) {
+            const tk = chunks[chunkIdx][idx];
+            failedTokens.push(tk);
+            errors.push({ token: tk, error: resp.error?.message || "unknown" });
+          }
+        });
+      });
+
+      return { successCount, failureCount, failedTokens, errors };
+    } else {
+      const res = await sendWithRetry(() => msg.send({...baseMessage, token }, dryRun));
+      return { successCount: 1, failureCount: 0, failedTokens: [], messageId: res };
+    }
+  } catch (e: any) {
+    console.error("Send notification error:", e);
+    if (e.code === "messaging/registration-token-not-registered") {
+      const tk = Array.isArray(token)? token[0] : token;
+      return {
+        successCount: 0,
+        failureCount: 1,
+        failedTokens: Array.isArray(token)? token : [token],
+        errors: [{ token: tk, error: e.message }],
+      };
+    }
+    throw e;
+  }
+}
+
+/* ================= VERIFY ID TOKEN ================= */
+export async function verifyIdToken(idToken: string, checkRevoked = false) {
+  try {
+    const decoded = await getFirebaseAdmin().auth.verifyIdToken(idToken, checkRevoked);
+    return decoded;
+  } catch (e) {
+    console.error("Verify token error:", e);
+    return null;
+  }
+}
+
+/* ================= DELETE TOKENS ================= */
+export async function deleteInvalidTokens(userTokenMap: Map<string, string[]>): Promise<number> {
+  const { db } = getFirebaseAdmin();
+  let totalDeleted = 0;
+
+  const entries = [...userTokenMap.entries()];
+  for (let i = 0; i < entries.length; i += 500) {
+    const batch = db.batch();
+    const chunk = entries.slice(i, i + 500);
+
+    for (const [uid, tokens] of chunk) {
+      const ref = db.doc(`users/${uid}`);
+      batch.update(ref, {
+        fcmTokens: FieldValue.arrayRemove(...tokens),
+        fcmToken: null,
+        fcmTokenUpdatedAt: null,
+      });
+    }
+
+    await batch.commit();
+    totalDeleted += chunk.length;
+  }
+
+  return totalDeleted;
+}
+
+/* ================= SEND TO TOPIC ================= */
+export async function sendToTopic(
+  topic: string,
+  payload: Omit<SendNotificationPayload, "token">
+): Promise<string> {
+  const { title, body, imageUrl, data, link, priority = "normal", ttl = 86400 } = payload;
+  const msg = getFirebaseAdmin().messaging;
+
+  return msg.send({
+    topic,
+    notification: { title, body,...(imageUrl && { imageUrl }) },
+    data: stringifyData(data),
+    webpush: { fcmOptions: { link: link || "/" } },
+    android: { priority: priority === "high"? "high" : "normal", ttl: ttl * 1000 },
+    apns: { headers: { "apns-priority": priority === "high"? "10" : "5" } },
+  });
+}
