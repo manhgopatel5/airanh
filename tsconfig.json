@@ -40,3 +40,35 @@
     "noEmit": true,
     "incremental": true,
     "tsBuildInfoFile": ".next/tsconfig.tsbuildinfo",
+    ".next/tsconfig.tsbuildinfo",
+
+    /* Next.js */
+    "plugins": [{ "name": "next" }]
+
+    /* Bỏ types: [] để auto detect @types/node, @types/react */
+  },
+  "include": [
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "components/**/*.ts",
+    "components/**/*.tsx",
+    "lib/**/*.ts",
+    "hooks/**/*.ts",
+    "types/**/*.ts",
+    "utils/**/*.ts",
+    "middleware.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "out",
+    "build",
+    "dist",
+    "functions",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/*.stories.tsx"
+  ]
+}
