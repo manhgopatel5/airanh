@@ -1,97 +1,209 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useRef } from "react";
+import { createContext, useEffect, useState, useRef, useMemo, ReactNode } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
+import { auth, db, rtdb } from "@/lib/firebase";
 import {
   doc,
   setDoc,
   getDoc,
   updateDoc,
   serverTimestamp,
+  onSnapshot,
+  Timestamp,
+  runTransaction,
 } from "firebase/firestore";
-import { initFCM } from "@/lib/fcm"; // 🔥 thêm
+import { ref, onValue, set, onDisconnect, serverTimestamp as rtdbTimestamp } from "firebase/database";
+import { initFCM, clearFCMToken } from "@/lib/fcm";
+import { nanoid } from "nanoid";
+
+/* ================= TYPES ================= */
+export type AppUser = {
+  uid: string;
+  name: string;
+  username: string;
+  email: string;
+  emailVerified: boolean;
+  avatar: string;
+  shortId: string;
+  isOnline: boolean;
+  lastSeen: Timestamp;
+  fcmTokens?: string[];
+};
 
 type AuthContextType = {
-  user: User | null | undefined;
+  user: User | null;
+  userData: AppUser | null;
   loading: boolean;
+  error: string | null;
 };
 
 const AuthContext = createContext<AuthContextType>({
-  user: undefined,
+  user: null,
+  userData: null,
   loading: true,
+  error: null,
 });
 
-export const AuthProvider = ({ children }: any) => {
-  const [user, setUser] = useState<User | null | undefined>(() => {
-    if (typeof window !== "undefined") {
-      const cached = localStorage.getItem("user");
-      return cached ? JSON.parse(cached) : undefined;
-    }
-    return undefined;
-  });
-
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [userData, setUserData] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // 🔥 FIX: chống initFCM nhiều lần
-  const lastFcmUserRef = useRef<string | null>(null);
+  const fcmInitializedFor = useRef<Set<string>>(new Set());
+  const userDataUnsub = useRef<(() => void) | null>(null);
+  const presenceUnsub = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
-      console.log("🔥 AUTH STATE:", firebaseUser);
+    const unsubAuth = onAuthStateChanged(
+      auth,
+      async (firebaseUser) => {
+        setUser(firebaseUser);
+        setError(null);
 
-      setUser(firebaseUser);
-      setLoading(false);
-
-      // 🔥 CACHE USER
-      if (typeof window !== "undefined") {
-        if (firebaseUser) {
-          localStorage.setItem("user", JSON.stringify(firebaseUser));
-        } else {
-          localStorage.removeItem("user");
+        if (userDataUnsub.current) {
+          userDataUnsub.current();
+          userDataUnsub.current = null;
         }
-      }
-
-      // 🔥 INIT FCM CHUẨN (KHÔNG X2, KHÔNG MẤT)
-      if (firebaseUser?.uid) {
-        if (lastFcmUserRef.current !== firebaseUser.uid) {
-          lastFcmUserRef.current = firebaseUser.uid;
-          initFCM(firebaseUser.uid);
+        if (presenceUnsub.current) {
+          presenceUnsub.current();
+          presenceUnsub.current = null;
         }
-      }
 
-      // 🔥 FIRESTORE USER
-      if (firebaseUser) {
-        const ref = doc(db, "users", firebaseUser.uid);
+        if (!firebaseUser) {
+          setUserData(null);
+          setLoading(false);
+          fcmInitializedFor.current.clear();
+          return;
+        }
 
-        getDoc(ref)
-          .then((snap) => {
-            if (!snap.exists()) {
-              setDoc(ref, {
-                uid: firebaseUser.uid,
-                name: firebaseUser.displayName || "User",
-                email: firebaseUser.email || "",
-                avatar: firebaseUser.photoURL || "",
-                friends: [],
-                isOnline: true,
-                createdAt: serverTimestamp(),
-              });
-            } else {
-              updateDoc(ref, { isOnline: true });
+        try {
+          const userRef = doc(db, "users", firebaseUser.uid);
+          const snap = await getDoc(userRef);
+
+          if (!snap.exists()) {
+            // Tạo shortId unique
+            let shortId = "";
+            for (let i = 0; i < 3; i++) {
+              shortId = nanoid(8).toUpperCase();
+              const q = await getDoc(doc(db, "shortIds", shortId));
+              if (!q.exists()) break;
+              if (i === 2) throw new Error("Không thể tạo shortId");
             }
-          })
-          .catch(console.error);
-      }
-    });
 
-    return () => unsub();
+            // Tạo username unique từ email
+            const baseUsername = firebaseUser.email?.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "") || "user";
+            let username = baseUsername;
+            let suffix = 0;
+            while (true) {
+              const q = await getDoc(doc(db, "usernames", username));
+              if (!q.exists()) break;
+              suffix++;
+              username = `${baseUsername}${suffix}`;
+              if (suffix > 100) throw new Error("Không thể tạo username");
+            }
+
+            const newUser: AppUser = {
+              uid: firebaseUser.uid,
+              name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User",
+              username,
+              email: firebaseUser.email || "",
+              emailVerified: firebaseUser.emailVerified,
+              avatar: firebaseUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(firebaseUser.email || "U")}&background=random`,
+              shortId,
+              isOnline: true,
+              lastSeen: serverTimestamp() as Timestamp,
+              fcmTokens: [],
+            };
+
+            await runTransaction(db, async (transaction) => {
+              transaction.set(userRef, newUser);
+              transaction.set(doc(db, "shortIds", shortId), { uid: firebaseUser.uid });
+              transaction.set(doc(db, "usernames", username), { uid: firebaseUser.uid });
+            });
+          } else {
+            await updateDoc(userRef, {
+              isOnline: true,
+              lastSeen: serverTimestamp(),
+              emailVerified: firebaseUser.emailVerified,
+            });
+          }
+
+          userDataUnsub.current = onSnapshot(userRef, (docSnap) => {
+            if (docSnap.exists()) {
+              setUserData({...docSnap.data() } as AppUser);
+            }
+          });
+
+          // RTDB presence - chuẩn hơn visibilitychange
+          const userStatusRef = ref(rtdb, `/status/${firebaseUser.uid}`);
+          const connectedRef = ref(rtdb, ".info/connected");
+
+          presenceUnsub.current = onValue(connectedRef, (snap) => {
+            if (snap.val() === false) return;
+            onDisconnect(userStatusRef).set({
+              isOnline: false,
+              lastSeen: rtdbTimestamp(),
+            }).then(() => {
+              set(userStatusRef, {
+                isOnline: true,
+                lastSeen: rtdbTimestamp(),
+              });
+            });
+          });
+
+          if (!fcmInitializedFor.current.has(firebaseUser.uid)) {
+            fcmInitializedFor.current.add(firebaseUser.uid);
+            initFCM(firebaseUser.uid).catch((e) => {
+              console.warn("FCM init failed:", e);
+              fcmInitializedFor.current.delete(firebaseUser.uid);
+            });
+          }
+        } catch (e: any) {
+          console.error("Auth error:", e);
+          setError(e.message || "Lỗi khởi tạo tài khoản");
+        } finally {
+          setLoading(false);
+        }
+      },
+      (err) => {
+        console.error("onAuthStateChanged error:", err);
+        setError("Lỗi xác thực");
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      unsubAuth();
+      if (userDataUnsub.current) userDataUnsub.current();
+      if (presenceUnsub.current) presenceUnsub.current();
+    };
   }, []);
 
+  const value = useMemo(
+    () => ({ user, userData, loading, error }),
+    [user, userData, loading, error]
+  );
+
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
+};
+
+// Hook logout để clear FCM
+export const useLogout = () => {
+  const { user } = useAuth();
+  return async () => {
+    if (user) await clearFCMToken(user.uid);
+    await auth.signOut();
+  };
+};
