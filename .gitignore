@@ -1,4 +1,115 @@
-node_modules
-.vercel
+# Dependencies
+node_modules/
+.pnp/
+.pnp.*
+.yarn/install-state.gz
+
+# Testing
+coverage/
+*.lcov
+.nyc_output/
+/playwright-report/
+/playwright/.cache/
+/test-results/
+
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# Vercel
+.vercel/
+.vercelignore
+
+# Env files
+.env
 .env*.local
-.next
+.env.development
+.env.production
+.env.test
+
+# Debug logs
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+vite.log
+eslint.log
+
+# Firebase
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+firestore-debug.*.log
+ui-debug.log
+.firebaserc
+*.cache
+functions/lib/
+functions/node_modules/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+.Spotlight-V100
+.Trashes
+
+# Netlify
+.netlify/
+
+# Turbo/Nx
+.turbo/
+.nx/
+
+# Secrets
+*.pem
+*.key
+*.cert
+*.p12
+service-account*.json
+*-key.json
+secrets/
+
+# Uploads local test
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# TypeScript
+*.tsbuildinfo
+
+# Misc
+.cache/
+.temp/
+.tmp/
+*.pid
+*.seed
+*.pid.lock
+
+# Storybook
+storybook-static/
+
+# Optional: Local DB
+*.sqlite
+*.sqlite3
+*.db
