@@ -41,7 +41,8 @@ export async function POST(req: Request) {
     }
 
     const idToken = authHeader.split("Bearer ")[1];
-    const decoded = await adminAuth.verifyIdToken(idToken).catch(() => null);
+    // FIX: gọi adminAuth()
+    const decoded = await adminAuth().verifyIdToken(idToken).catch(() => null);
     if (!decoded) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
@@ -64,8 +65,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ skipped: true });
     }
 
-    // ✅ FIX 3: Check quyền chatId
-    const chatSnap = await adminDb.doc(`chats/${chatId}`).get();
+    // ✅ FIX 3: Check quyền chatId - FIX: gọi adminDb()
+    const chatSnap = await adminDb().doc(`chats/${chatId}`).get();
     if (!chatSnap.exists) {
       return NextResponse.json({ error: "Chat not found" }, { status: 404 });
     }
@@ -86,7 +87,7 @@ export async function POST(req: Request) {
 
     console.log("📩 SEND PUSH:", {
       from: senderUid,
-      to: token.slice(0, 10) + "...", // ✅ FIX 4: Che token
+      to: token.slice(0, 10) + "...",
       chatId,
       messageId,
     });
@@ -94,7 +95,8 @@ export async function POST(req: Request) {
     if (dryRun) return NextResponse.json({ success: true, dryRun: true });
 
     try {
-      await adminMessaging.send({
+      // FIX: gọi adminMessaging()
+      await adminMessaging().send({
         token,
         notification: {
           title: senderName,
@@ -105,12 +107,12 @@ export async function POST(req: Request) {
           chatId: String(chatId),
           messageId: String(messageId),
           click_action: "FLUTTER_NOTIFICATION_CLICK",
-          link: `/chat/${chatId}`, // ✅ Web: mở đúng chat
+          link: `/chat/${chatId}`,
         },
         android: {
           priority: "high",
-          ttl: 3600 * 1000, // 1h
-          collapseKey: chatId, // ✅ FIX 5: Gộp noti cùng chat
+          ttl: 3600 * 1000,
+          collapseKey: chatId,
           notification: {
             sound: "default",
             channelId: "chat_messages",
@@ -121,7 +123,7 @@ export async function POST(req: Request) {
           payload: {
             aps: {
               sound: "default",
-              badge: 1, // TODO: Lấy unread count thật
+              badge: 1,
               "thread-id": chatId,
             },
           },
@@ -135,12 +137,12 @@ export async function POST(req: Request) {
     } catch (err: any) {
       console.error("❌ FCM error:", err.code);
 
-      // ✅ FIX 6: Xóa token die
+      // ✅ FIX 6: Xóa token die - FIX: gọi adminDb()
       if (
         err.code === "messaging/registration-token-not-registered" ||
         err.code === "messaging/invalid-registration-token"
       ) {
-        await adminDb.doc(`users/${recipientId}`).update({
+        await adminDb().doc(`users/${recipientId}`).update({
           fcmToken: FieldValue.delete(),
         });
         return NextResponse.json({ error: "Token removed", code: err.code }, { status: 410 });
