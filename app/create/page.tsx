@@ -203,20 +203,24 @@ const result = await createTask({
   visibility: form.visibility,
   deadline,
   applicationDeadline: deadline,
-  startDate: Timestamp.now(), // ✅ FIX 1
+  startDate: Timestamp.now(),
   category: form.category,
   tags,
   images: imageUrls,
-  attachments: [], // ✅ FIX 2
+  attachments: [],
   requirements: form.requirements || "",
+
 location: form.isRemote
   ? undefined
   : {
       address: form.address,
       city: form.city,
-      lat: form.lat ?? undefined,
-      lng: form.lng ?? undefined,
+      ...(form.lat != null && { lat: form.lat }),
+      ...(form.lng != null && { lng: form.lng }),
     },
+
+  isRemote: form.isRemote, // ❗ THIẾU DÒNG NÀY
+}, user);
 
       localStorage.setItem("last_task_create", Date.now().toString());
       toast.success("Tạo công việc thành công!");
