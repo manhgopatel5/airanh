@@ -193,13 +193,13 @@ export default function CreateTaskPage() {
 
       const tags = form.tags.split(",").map(t => t.trim()).filter(Boolean).slice(0, 10);
 
-const result = await createTask({
+const payload = {
   title: form.title,
   description: form.description,
-  price: form.budgetType === "negotiable" ? 0 : parseInt(form.price),
+  price: form.budgetType === "negotiable" ? 0 : parseInt(form.price, 10),
   currency: form.currency,
   budgetType: form.budgetType,
-  totalSlots: parseInt(form.totalSlots),
+  totalSlots: parseInt(form.totalSlots, 10),
   visibility: form.visibility,
   deadline,
   applicationDeadline: deadline,
@@ -209,19 +209,18 @@ const result = await createTask({
   images: imageUrls,
   attachments: [],
   requirements: form.requirements || "",
+  isRemote: form.isRemote,
 
-location: form.isRemote
-  ? undefined
-  : {
+  ...( !form.isRemote && {
+    location: {
       address: form.address,
       city: form.city,
       ...(form.lat != null && { lat: form.lat }),
       ...(form.lng != null && { lng: form.lng }),
-    },
-
-  isRemote: form.isRemote, // ❗ THIẾU DÒNG NÀY
-}, user);
-
+    }
+  })
+};
+const result = await createTask(payload, user);
       localStorage.setItem("last_task_create", Date.now().toString());
       toast.success("Tạo công việc thành công!");
       router.push(`/task/${result.slug}`);
