@@ -193,31 +193,32 @@ export default function CreateTaskPage() {
 
       const tags = form.tags.split(",").map(t => t.trim()).filter(Boolean).slice(0, 10);
 
-      const result = await createTask(
-        {
-          title: form.title,
-          description: form.description,
-          price: form.budgetType === "negotiable"? 0 : parseInt(form.price),
-          currency: form.currency,
-          budgetType: form.budgetType,
-          totalSlots: parseInt(form.totalSlots),
-          visibility: form.visibility,
-          deadline,
-          applicationDeadline: deadline, // Mặc định bằng deadline
-          category: form.category,
-          tags,
-          images: imageUrls,
-          requirements: form.requirements || "",
-          location: form.isRemote ? undefined : {
-            address: form.address,
-            city: form.city,
-            lat: form.lat || 0,
-            lng: form.lng || 0,
-          },
-          isRemote: form.isRemote,
-        },
-        user
-      );
+const result = await createTask({
+  title: form.title,
+  description: form.description,
+  price: form.budgetType === "negotiable" ? 0 : parseInt(form.price),
+  currency: form.currency,
+  budgetType: form.budgetType,
+  totalSlots: parseInt(form.totalSlots),
+  visibility: form.visibility,
+  deadline,
+  applicationDeadline: deadline,
+  startDate: Timestamp.now(), // ✅ FIX 1
+  category: form.category,
+  tags,
+  images: imageUrls,
+  attachments: [], // ✅ FIX 2
+  requirements: form.requirements || "",
+  location: form.isRemote
+    ? null
+    : {
+        address: form.address,
+        city: form.city,
+        lat: form.lat || 0,
+        lng: form.lng || 0,
+      },
+  isRemote: form.isRemote,
+}, user);
 
       localStorage.setItem("last_task_create", Date.now().toString());
       toast.success("Tạo công việc thành công!");
