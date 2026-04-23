@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
@@ -15,7 +14,10 @@ import {
   Image as ImageIcon, MapPin, Paperclip, Phone, Info, Send,
   ArrowLeft, Loader2, X, Video
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast, Toaster } from "sonner";
+import imageCompression from "browser-image-compression"; // ✅ Fix lỗi chính
+import ChatBubble from "@/components/ChatBubble"; // ✅ Đảm bảo bạn có component này
+import EmojiPicker from "@/components/EmojiPicker"; // ✅ Đảm bảo bạn có component này
 
 type Message = {
   id: string;
@@ -242,24 +244,23 @@ export default function ChatDetail() {
   };
 
   /* ================= ADD REACTION ================= */
-const addReaction = useCallback(
-  async (messageId: string, emoji: string) => {
-    // ✅ Check đầy đủ
-    if (!user || !id || !messageId) return;
+  const addReaction = useCallback(
+    async (messageId: string, emoji: string) => {
+      if (!user ||!id ||!messageId) return;
 
-    try {
-      await updateDoc(
-        doc(db, "chats", id, "messages", messageId),
-        {
-          [`reactions.${user.uid}`]: emoji,
-        }
-      );
-    } catch (_e) {
-      toast.error("Lỗi thêm reaction");
-    }
-  },
-  [user, id]
-);
+      try {
+        await updateDoc(
+          doc(db, "chats", id, "messages", messageId),
+          {
+            [`reactions.${user.uid}`]: emoji,
+          }
+        );
+      } catch (_e) {
+        toast.error("Lỗi thêm reaction");
+      }
+    },
+    [user, id]
+  );
 
   /* ================= SEND MESSAGE ================= */
   const sendMessage = useCallback(async () => {
@@ -267,23 +268,22 @@ const addReaction = useCallback(
 
     const messageText = text.trim();
     const tempId = `temp_${Date.now()}`;
-const optimisticMsg: Message = {
-  id: tempId,
-  chatId: id,
-  senderId: user.uid,
-  text: messageText,
-  type: "text",
-  createdAt: Timestamp.now(),
-  seenBy: [user.uid],
-
-  ...(replyTo && {
-    replyTo: {
-      id: replyTo.id,
-      text: replyTo.text || "",
-      senderId: replyTo.senderId,
-    },
-  }),
-}; // ✅ THIẾU CÁI NÀY
+    const optimisticMsg: Message = {
+      id: tempId,
+      chatId: id,
+      senderId: user.uid,
+      text: messageText,
+      type: "text",
+      createdAt: Timestamp.now(),
+      seenBy: [user.uid],
+     ...(replyTo && {
+        replyTo: {
+          id: replyTo.id,
+          text: replyTo.text || "",
+          senderId: replyTo.senderId,
+        },
+      }),
+    }; // ✅ Đã fix thiếu dấu }
 
     setMessages((prev) => [...prev, optimisticMsg]);
     setText("");
@@ -313,7 +313,7 @@ const optimisticMsg: Message = {
         { merge: true }
       );
 
-      setMessages((prev) => prev.map((m) => m.id === tempId? {...optimisticMsg, id: docRef.id } : m));
+      setMessages((prev) => prev.map((m) => (m.id === tempId? {...optimisticMsg, id: docRef.id } : m)));
       await sendPush(messageText, docRef.id);
     } catch (e) {
       console.error("Send error", e);
@@ -387,7 +387,7 @@ const optimisticMsg: Message = {
       );
     } catch (err) {
       console.error(err);
-      toast.error("Lỗi gửi ảnh");
+      toast.error("Lỗi nén ảnh");
       setUploading(false);
       setUploadProgress(0);
     }
