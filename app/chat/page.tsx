@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { db } from "@/lib/firebase";
 import {
   collection, query, where, onSnapshot, doc, getDoc, getDocs,
-  orderBy, limit, addDoc, serverTimestamp, updateDoc, Timestamp, setDoc, writeBatch
+  orderBy, limit, addDoc, serverTimestamp, Timestamp, setDoc, writeBatch
 } from "firebase/firestore";
 import { FiSearch, FiSend, FiChevronLeft, FiMoreVertical, FiUsers } from "react-icons/fi";
 import { toast, Toaster } from "sonner";
