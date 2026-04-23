@@ -14,11 +14,7 @@ import {
   Image as ImageIcon, MapPin, Paperclip, Phone, Info, Send,
   ArrowLeft, Loader2, X, Video
 } from "lucide-react";
-import { toast, Toaster } from "sonner";
-import { vi } from "date-fns/locale";
-import imageCompression from "browser-image-compression";
-import ChatBubble from "@/components/ChatBubble";
-import EmojiPicker from "@/components/EmojiPicker";
+import { toast } from "sonner";
 
 type Message = {
   id: string;
