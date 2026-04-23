@@ -207,8 +207,8 @@ export default function CreateTaskPage() {
           category: form.category,
           tags,
           images: imageUrls,
-          requirements: form.requirements || ""
-          location: form.isRemote? undefined : {
+          requirements: form.requirements || "",
+          location: form.isRemote ? undefined : {
             address: form.address,
             city: form.city,
             lat: form.lat || 0,
