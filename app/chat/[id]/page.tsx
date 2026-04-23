@@ -275,8 +275,13 @@ const addReaction = useCallback(
       type: "text",
       createdAt: Timestamp.now(),
       seenBy: [user.uid],
-      replyTo: replyTo? { id: replyTo.id, text: replyTo.text || "", senderId: replyTo.senderId } : undefined,
-    };
+    ...(replyTo && {
+  replyTo: {
+    id: replyTo.id,
+    text: replyTo.text || "",
+    senderId: replyTo.senderId,
+  },
+}),
 
     setMessages((prev) => [...prev, optimisticMsg]);
     setText("");
