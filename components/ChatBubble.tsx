@@ -2,25 +2,10 @@
 
 import { useState, useCallback } from "react";
 import { FiDownload, FiMapPin, FiFile } from "react-icons/fi";
-import { Timestamp } from "firebase/firestore";
 import Linkify from "linkify-react";
 import EmojiPicker from "./EmojiPicker";
 
-type Message = {
-  id?: string;
-  senderId: string;
-  text?: string;
-  type?: "text" | "image" | "video" | "file" | "location";
-  image?: string;
-  video?: string;
-  file?: string;
-  fileName?: string;
-  location?: { lat: number; lng: number; address?: string };
-  createdAt?: Timestamp | null;
-  status?: "sending" | "sent" | "read";
-  replyTo?: { id: string; text: string; userName: string };
-  reactions?: Record<string, string>;
-};
+import type { Message } from "@/types/message";
 
 type Friend = {
   id: string;
@@ -57,8 +42,11 @@ export default function ChatBubble({
   const [showCopied, setShowCopied] = useState(false);
   const isMe = msg.senderId === currentUser?.uid;
 
-  const time = msg?.createdAt?.seconds
-? new Date(msg.createdAt.seconds * 1000).toLocaleTimeString([], {
+const time =
+  msg.createdAt &&
+  typeof msg.createdAt === "object" &&
+  "seconds" in msg.createdAt
+    ? new Date(msg.createdAt.seconds * 1000).toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
       })
@@ -110,7 +98,7 @@ export default function ChatBubble({
           </div>
         )}
 
-        {(!msg.type || msg.type === "text") && msg.text && (
+       {msg.type === "text" && msg.text && (
           <div
             onContextMenu={handleCopy}
             onDoubleClick={() => onReply?.(msg)}
@@ -199,7 +187,7 @@ export default function ChatBubble({
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold">Vị trí</p>
               <p className={`text-xs truncate ${isMe? "text-white/70" : "text-gray-500 dark:text-zinc-400"}`}>
-                {msg.location.address || "Mở trong Google Maps"}
+                {msg.location?.address || "Mở trong Google Maps"}
               </p>
             </div>
           </a>
@@ -235,7 +223,7 @@ export default function ChatBubble({
       {msg.id && (
         <div className={`opacity-0 group-hover:opacity-100 transition ${isMe? "order-first mr-2" : "ml-2"}`}>
           <EmojiPicker
-            onSelect={(e) => onReaction?.(msg.id!, e)} // ✅ FIX: Check msg.id
+            onSelect={(e) => msg.id && onReaction?.(msg.id, e)}
             align={isMe? "right" : "left"}
           />
         </div>
