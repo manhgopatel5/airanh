@@ -107,28 +107,50 @@ export default function ChatDetail() {
     );
 
     const unsub = onSnapshot(q, (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id,...d.data() } as Message));
-      setMessages(list);
-      setLoading(false);
+  const list: Message[] = snap.docs.map((d) => {
+    const data = d.data();
 
-      const unread = snap.docs.filter((d) => {
-        const data = d.data();
-        return!data.seenBy?.includes(user.uid);
+    return {
+      id: d.id,
+      chatId: data.chatId || id,
+      senderId: data.senderId || "",
+      text: data.text,
+      image: data.image,
+      video: data.video,
+      file: data.file,
+      fileName: data.fileName,
+      location: data.location,
+      type: data.type || "text",
+      createdAt: data.createdAt || null,
+      seenBy: Array.isArray(data.seenBy) ? data.seenBy : [],
+      replyTo: data.replyTo,
+      reactions: data.reactions,
+      status: data.status,
+    };
+  });
+
+  setMessages(list);
+  setLoading(false);
+
+  const unread = snap.docs.filter((d) => {
+    const data = d.data();
+    return !data.seenBy?.includes(user.uid);
+  });
+
+  if (unread.length > 0) {
+    const batch = writeBatch(db);
+
+    unread.forEach((d) => {
+      const data = d.data();
+
+      batch.update(doc(db, "chats", id, "messages", d.id), {
+        seenBy: [...(data.seenBy || []), user.uid],
       });
-
-      if (unread.length > 0) {
-        const batch = writeBatch(db);
-        unread.forEach((d) => {
-          batch.update(doc(db, "chats", id, "messages", d.id), {
-            seenBy: [...(d.data().seenBy || []), user.uid],
-          });
-        });
-        batch.commit().catch(() => {});
-      }
     });
 
-    return () => unsub();
-  }, [id, user]);
+    batch.commit().catch(() => {});
+  }
+});
 
   /* ================= LOAD FRIEND ================= */
   useEffect(() => {
