@@ -31,7 +31,7 @@ type Message = {
   type: "text" | "image" | "file" | "location";
   createdAt: Timestamp | null;
   seenBy: string[];
-  replyTo?: { id: string; text: string; senderId: string };
+  replyTo?: { id: string; text: string; userName: string };
   reactions?: Record<string, string>;
 };
 
@@ -107,7 +107,7 @@ export default function ChatDetail() {
         observerRef.current = null;
       }
     };
-  }, );
+  }, [user]);
 
   /* ================= LOAD MESSAGES ================= */
   useEffect(() => {
@@ -276,11 +276,11 @@ export default function ChatDetail() {
       type: "text",
       createdAt: Timestamp.now(),
       seenBy: [user.uid],
-    ...(replyTo && {
+     ...(replyTo && {
         replyTo: {
           id: replyTo.id,
           text: replyTo.text || "",
-          senderId: replyTo.senderId,
+          userName: replyTo.senderId === user.uid? user.displayName || "Bạn" : friend?.name || "User",
         },
       }),
     };
@@ -297,8 +297,12 @@ export default function ChatDetail() {
         type: "text",
         createdAt: serverTimestamp(),
         seenBy: [user.uid],
-      ...(replyTo && {
-          replyTo: { id: replyTo.id, text: replyTo.text || "", senderId: replyTo.senderId },
+       ...(replyTo && {
+          replyTo: {
+            id: replyTo.id,
+            text: replyTo.text || "",
+            userName: replyTo.senderId === user.uid? user.displayName || "Bạn" : friend?.name || "User"
+          },
         }),
       });
 
@@ -321,7 +325,7 @@ export default function ChatDetail() {
       setMessages((prev) => prev.filter((m) => m.id!== tempId));
       setText(messageText);
     }
-  }, [user, text, id, replyTo, friend?.id]);
+  }, [user, text, id, replyTo, friend?.id, friend?.name]);
 
   /* ================= SEND IMAGE ================= */
   const sendImage = async (file: File) => {
@@ -493,25 +497,24 @@ export default function ChatDetail() {
     }
   };
 
-  // ✅ Fix: bỏ param messageId không dùng
-const setObserver = useCallback((node: HTMLDivElement | null, isRead: boolean) => {
-  if (!node || isRead || !id) return;
-  if (!observerRef.current) {
-    observerRef.current = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const notifId = entry.target.getAttribute("data-id");
-          if (notifId && user) {
-            updateDoc(doc(db, "chats", id, "messages", notifId), {
-              seenBy: [...(messages.find(m => m.id === notifId)?.seenBy || []), user.uid],
-            }).catch(() => {});
+  const setObserver = useCallback((node: HTMLDivElement | null, isRead: boolean) => {
+    if (!node || isRead ||!id) return;
+    if (!observerRef.current) {
+      observerRef.current = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const notifId = entry.target.getAttribute("data-id");
+            if (notifId && user) {
+              updateDoc(doc(db, "chats", id, "messages", notifId), {
+                seenBy: [...(messages.find(m => m.id === notifId)?.seenBy || []), user.uid],
+              }).catch(() => {});
+            }
           }
-        }
-      });
-    }, { threshold: 0.5 });
-  }
-  observerRef.current.observe(node);
-}, [id, user, messages]);
+        });
+      }, { threshold: 0.5 });
+    }
+    observerRef.current.observe(node);
+  }, [id, user, messages]);
 
   if (!user ||!id) return null;
 
