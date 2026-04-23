@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { db, auth, storage } from "@/lib/firebase";
 import {
   collection, query, where, onSnapshot, doc, getDoc,
-  orderBy, limit, addDoc, serverTimestamp, updateDoc, Timestamp,
+  orderBy, limit, addDoc, serverTimestamp, Timestamp,
   writeBatch, setDoc
 } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
