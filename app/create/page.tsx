@@ -8,6 +8,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { createTask } from "@/lib/task";
 import { User } from "@/types/task";
 import { toast, Toaster } from "sonner";
+import type { CreateTaskInput } from "@/types/task";
 import {
   FiUpload,
   FiX,
@@ -193,7 +194,7 @@ export default function CreateTaskPage() {
 
       const tags = form.tags.split(",").map(t => t.trim()).filter(Boolean).slice(0, 10);
 
-const payload = {
+const payload: CreateTaskInput = {
   title: form.title,
   description: form.description,
   price: form.budgetType === "negotiable" ? 0 : parseInt(form.price, 10),
@@ -211,14 +212,15 @@ const payload = {
   requirements: form.requirements || "",
   isRemote: form.isRemote,
 
-  ...( !form.isRemote && {
-    location: {
-      address: form.address,
-      city: form.city,
-      ...(form.lat != null && { lat: form.lat }),
-      ...(form.lng != null && { lng: form.lng }),
-    }
-  })
+  // 👇 QUAN TRỌNG: luôn truyền object, KHÔNG undefined
+  location: form.isRemote
+    ? {}
+    : {
+        address: form.address,
+        city: form.city,
+        ...(form.lat != null && { lat: form.lat }),
+        ...(form.lng != null && { lng: form.lng }),
+      },
 };
 const result = await createTask(payload, user);
       localStorage.setItem("last_task_create", Date.now().toString());
