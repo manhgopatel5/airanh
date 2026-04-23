@@ -8,9 +8,20 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { createTask } from "@/lib/task";
 import { User } from "@/types/task";
 import { toast, Toaster } from "sonner";
-import { FiUpload, FiX, FiMapPin, FiDollarSign, FiUsers, FiClock, FiTag, FiFileText, FiEye, FiEyeOff, FiUsers as FiGlobe } from "react-icons/fi";
+import {
+  FiUpload,
+  FiX,
+  FiMapPin,
+  FiDollarSign,
+  FiUsers,
+  FiClock,
+  FiTag,
+  FiFileText,
+  FiEye,
+  FiEyeOff
+} from "react-icons/fi";
 import { Timestamp } from "firebase/firestore";
-import Link from "next/link";
+
 
 const CATEGORIES = [
   { id: "delivery", name: "Giao hàng", icon: "🚚" },
@@ -461,9 +472,9 @@ export default function CreateTaskPage() {
             </label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { id: "public", name: "Công khai", icon: FiGlobe },
-                { id: "friends", name: "Bạn bè", icon: FiUsers },
-                { id: "private", name: "Riêng tư", icon: FiEyeOff },
+                { id: "public", name: "Công khai", icon: FiUsers },
+{ id: "friends", name: "Bạn bè", icon: FiUsers },
+{ id: "private", name: "Riêng tư", icon: FiEyeOff },
               ].map((vis) => (
                 <button
                   key={vis.id}
