@@ -214,11 +214,9 @@ location: form.isRemote
   : {
       address: form.address,
       city: form.city,
-      lat: form.lat || 0,
-      lng: form.lng || 0,
+      lat: form.lat ?? undefined,
+      lng: form.lng ?? undefined,
     },
-  isRemote: form.isRemote,
-}, user);
 
       localStorage.setItem("last_task_create", Date.now().toString());
       toast.success("Tạo công việc thành công!");
