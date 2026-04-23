@@ -107,7 +107,7 @@ export default function ChatDetail() {
         observerRef.current = null;
       }
     };
-  }, [user]);
+  }, );
 
   /* ================= LOAD MESSAGES ================= */
   useEffect(() => {
@@ -276,7 +276,7 @@ export default function ChatDetail() {
       type: "text",
       createdAt: Timestamp.now(),
       seenBy: [user.uid],
-     ...(replyTo && {
+   ...(replyTo && {
         replyTo: {
           id: replyTo.id,
           text: replyTo.text || "",
@@ -297,7 +297,7 @@ export default function ChatDetail() {
         type: "text",
         createdAt: serverTimestamp(),
         seenBy: [user.uid],
-       ...(replyTo && {
+     ...(replyTo && {
           replyTo: {
             id: replyTo.id,
             text: replyTo.text || "",
@@ -516,6 +516,10 @@ export default function ChatDetail() {
     observerRef.current.observe(node);
   }, [id, user, messages]);
 
+  const handleReply = useCallback((msg: Message) => {
+    setReplyTo(msg);
+  }, []);
+
   if (!user ||!id) return null;
 
   return (
@@ -575,7 +579,7 @@ export default function ChatDetail() {
                       currentUser={user}
                       friend={friend}
                       isLastOfGroup={isLastOfGroup}
-                      onReply={setReplyTo}
+                      onReply={handleReply}
                       onReaction={addReaction}
                     />
                   </div>
