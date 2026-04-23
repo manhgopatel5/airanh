@@ -15,9 +15,9 @@ import {
   ArrowLeft, Loader2, X, Video
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
-import imageCompression from "browser-image-compression"; // ✅ Fix lỗi chính
-import ChatBubble from "@/components/ChatBubble"; // ✅ Đảm bảo bạn có component này
-import EmojiPicker from "@/components/EmojiPicker"; // ✅ Đảm bảo bạn có component này
+import imageCompression from "browser-image-compression";
+import ChatBubble from "@/components/ChatBubble";
+import EmojiPicker from "@/components/EmojiPicker";
 
 type Message = {
   id: string;
@@ -47,7 +47,7 @@ type Friend = {
 
 export default function ChatDetail() {
   const params = useParams();
-  const id = Array.isArray(params.id)? params.id[0] : params.id || "";
+  const id = typeof params.id === "string"? params.id : Array.isArray(params.id)? params.id[0] : "";
   const router = useRouter();
   const { user } = useAuth();
 
@@ -217,7 +217,7 @@ export default function ChatDetail() {
 
   /* ================= PUSH NOTIFICATION ================= */
   const sendPush = async (message: string, messageId: string) => {
-    if (!friend?.fcmToken || lastSentRef.current === messageId ||!user) return;
+    if (!friend?.fcmToken || lastSentRef.current === messageId ||!user ||!id) return;
     lastSentRef.current = messageId;
 
     try {
@@ -283,7 +283,7 @@ export default function ChatDetail() {
           senderId: replyTo.senderId,
         },
       }),
-    }; // ✅ Đã fix thiếu dấu }
+    };
 
     setMessages((prev) => [...prev, optimisticMsg]);
     setText("");
@@ -321,11 +321,11 @@ export default function ChatDetail() {
       setMessages((prev) => prev.filter((m) => m.id!== tempId));
       setText(messageText);
     }
-  }, [user, text, id, replyTo, friend?.fcmToken, friend?.name, friend?.id]);
+  }, [user, text, id, replyTo, friend?.id]);
 
   /* ================= SEND IMAGE ================= */
   const sendImage = async (file: File) => {
-    if (!user) return;
+    if (!user ||!id) return; // ✅ Fix: guard id
 
     setUploading(true);
     setUploadProgress(0);
@@ -395,7 +395,7 @@ export default function ChatDetail() {
 
   /* ================= SEND FILE ================= */
   const sendFile = async (file: File) => {
-    if (!user) return;
+    if (!user ||!id) return; // ✅ Fix: guard id
 
     if (file.size > 10 * 1024 * 1024) {
       toast.error("File không được vượt quá 10MB");
@@ -444,6 +444,7 @@ export default function ChatDetail() {
       toast.error("Trình duyệt không hỗ trợ định vị");
       return;
     }
+    if (!user ||!id) return; // ✅ Fix: guard id
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -493,7 +494,7 @@ export default function ChatDetail() {
   };
 
   const setObserver = useCallback((node: HTMLDivElement | null, messageId: string, isRead: boolean) => {
-    if (!node || isRead) return;
+    if (!node || isRead ||!id) return;
     if (!observerRef.current) {
       observerRef.current = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
@@ -511,7 +512,7 @@ export default function ChatDetail() {
     observerRef.current.observe(node);
   }, [id, user, messages]);
 
-  if (!user) return null;
+  if (!user ||!id) return null;
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 dark:bg-zinc-950">
@@ -646,7 +647,7 @@ export default function ChatDetail() {
             onKeyDown={handleKeyDown}
             onBlur={() => {
               if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-              updateDoc(doc(db, "chats", id), { [`typing.${user?.uid}`]: false });
+              if (id && user) updateDoc(doc(db, "chats", id), { [`typing.${user.uid}`]: false });
             }}
             maxLength={5000}
             className="flex-1 bg-gray-100 dark:bg-zinc-800 rounded-full px-4 py-2 outline-none text-sm focus:ring-2 focus:ring-blue-400 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500"
