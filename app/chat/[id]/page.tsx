@@ -19,21 +19,7 @@ import imageCompression from "browser-image-compression";
 import ChatBubble from "@/components/ChatBubble";
 import EmojiPicker from "@/components/EmojiPicker";
 
-type Message = {
-  id: string;
-  chatId: string;
-  senderId: string;
-  text?: string;
-  image?: string;
-  file?: string;
-  fileName?: string;
-  location?: { lat: number; lng: number };
-  type: "text" | "image" | "file" | "location";
-  createdAt: Timestamp | null;
-  seenBy: string[];
-  replyTo?: { id: string; text: string; userName: string };
-  reactions?: Record<string, string>;
-};
+import type { Message } from "@/types/message";
 
 type Friend = {
   id: string;
