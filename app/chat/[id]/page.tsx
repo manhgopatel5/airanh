@@ -267,21 +267,23 @@ const addReaction = useCallback(
 
     const messageText = text.trim();
     const tempId = `temp_${Date.now()}`;
-    const optimisticMsg: Message = {
-      id: tempId,
-      chatId: id,
-      senderId: user.uid,
-      text: messageText,
-      type: "text",
-      createdAt: Timestamp.now(),
-      seenBy: [user.uid],
-    ...(replyTo && {
-  replyTo: {
-    id: replyTo.id,
-    text: replyTo.text || "",
-    senderId: replyTo.senderId,
-  },
-}),
+const optimisticMsg: Message = {
+  id: tempId,
+  chatId: id,
+  senderId: user.uid,
+  text: messageText,
+  type: "text",
+  createdAt: Timestamp.now(),
+  seenBy: [user.uid],
+
+  ...(replyTo && {
+    replyTo: {
+      id: replyTo.id,
+      text: replyTo.text || "",
+      senderId: replyTo.senderId,
+    },
+  }),
+}; // ✅ THIẾU CÁI NÀY
 
     setMessages((prev) => [...prev, optimisticMsg]);
     setText("");
