@@ -107,7 +107,7 @@ export default function ChatDetail() {
         observerRef.current = null;
       }
     };
-  }, [user]);
+  }, );
 
   /* ================= LOAD MESSAGES ================= */
   useEffect(() => {
@@ -276,7 +276,7 @@ export default function ChatDetail() {
       type: "text",
       createdAt: Timestamp.now(),
       seenBy: [user.uid],
-     ...(replyTo && {
+    ...(replyTo && {
         replyTo: {
           id: replyTo.id,
           text: replyTo.text || "",
@@ -297,7 +297,7 @@ export default function ChatDetail() {
         type: "text",
         createdAt: serverTimestamp(),
         seenBy: [user.uid],
-       ...(replyTo && {
+      ...(replyTo && {
           replyTo: { id: replyTo.id, text: replyTo.text || "", senderId: replyTo.senderId },
         }),
       });
@@ -325,7 +325,7 @@ export default function ChatDetail() {
 
   /* ================= SEND IMAGE ================= */
   const sendImage = async (file: File) => {
-    if (!user ||!id) return; // ✅ Fix: guard id
+    if (!user ||!id) return;
 
     setUploading(true);
     setUploadProgress(0);
@@ -395,7 +395,7 @@ export default function ChatDetail() {
 
   /* ================= SEND FILE ================= */
   const sendFile = async (file: File) => {
-    if (!user ||!id) return; // ✅ Fix: guard id
+    if (!user ||!id) return;
 
     if (file.size > 10 * 1024 * 1024) {
       toast.error("File không được vượt quá 10MB");
@@ -444,7 +444,7 @@ export default function ChatDetail() {
       toast.error("Trình duyệt không hỗ trợ định vị");
       return;
     }
-    if (!user ||!id) return; // ✅ Fix: guard id
+    if (!user ||!id) return;
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -493,24 +493,25 @@ export default function ChatDetail() {
     }
   };
 
-  const setObserver = useCallback((node: HTMLDivElement | null, messageId: string, isRead: boolean) => {
-    if (!node || isRead ||!id) return;
-    if (!observerRef.current) {
-      observerRef.current = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const notifId = entry.target.getAttribute("data-id");
-            if (notifId && user) {
-              updateDoc(doc(db, "chats", id, "messages", notifId), {
-                seenBy: [...(messages.find(m => m.id === notifId)?.seenBy || []), user.uid],
-              }).catch(() => {});
-            }
+  // ✅ Fix: bỏ param messageId không dùng
+const setObserver = useCallback((node: HTMLDivElement | null, isRead: boolean) => {
+  if (!node || isRead || !id) return;
+  if (!observerRef.current) {
+    observerRef.current = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const notifId = entry.target.getAttribute("data-id");
+          if (notifId && user) {
+            updateDoc(doc(db, "chats", id, "messages", notifId), {
+              seenBy: [...(messages.find(m => m.id === notifId)?.seenBy || []), user.uid],
+            }).catch(() => {});
           }
-        });
-      }, { threshold: 0.5 });
-    }
-    observerRef.current.observe(node);
-  }, [id, user, messages]);
+        }
+      });
+    }, { threshold: 0.5 });
+  }
+  observerRef.current.observe(node);
+}, [id, user, messages]);
 
   if (!user ||!id) return null;
 
@@ -565,7 +566,7 @@ export default function ChatDetail() {
                 const next = msgs[idx + 1];
                 const isLastOfGroup =!next || next.senderId!== m.senderId;
                 return (
-                  <div key={m.id} data-id={m.id} ref={(node) => setObserver(node, m.id, m.seenBy.includes(user?.uid || ""))}>
+                  <div key={m.id} data-id={m.id} ref={(node) => setObserver(node, m.seenBy.includes(user?.uid || ""))}>
                     <ChatBubble
                       msg={m}
                       currentUser={user}
