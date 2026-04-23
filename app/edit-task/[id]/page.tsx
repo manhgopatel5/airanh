@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { getTaskById, updateTask, deleteTask } from "@/lib/task";
 import { Task, UpdateTaskInput } from "@/types/task";
 import { toast, Toaster } from "sonner";
-import { FiArrowLeft, FiTrash2, FiSave, FiImage, FiX } from "react-icons/fi";
+import { FiArrowLeft, FiTrash2, FiSave, FiX } from "react-icons/fi";
 import Link from "next/link";
 
 export default function EditTaskPage() {
