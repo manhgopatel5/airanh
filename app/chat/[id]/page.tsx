@@ -242,16 +242,24 @@ export default function ChatDetail() {
   };
 
   /* ================= ADD REACTION ================= */
-  const addReaction = useCallback(async (messageId: string, emoji: string) => {
-    if (!user) return;
+const addReaction = useCallback(
+  async (messageId: string, emoji: string) => {
+    // ✅ Check đầy đủ
+    if (!user || !id || !messageId) return;
+
     try {
-      await updateDoc(doc(db, "chats", id, "messages", messageId), {
-        [`reactions.${user.uid}`]: emoji,
-      });
-    } catch (e) {
+      await updateDoc(
+        doc(db, "chats", id, "messages", messageId),
+        {
+          [`reactions.${user.uid}`]: emoji,
+        }
+      );
+    } catch (_e) {
       toast.error("Lỗi thêm reaction");
     }
-  }, [user, id]);
+  },
+  [user, id]
+);
 
   /* ================= SEND MESSAGE ================= */
   const sendMessage = useCallback(async () => {
