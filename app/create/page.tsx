@@ -209,14 +209,14 @@ const result = await createTask({
   images: imageUrls,
   attachments: [], // ✅ FIX 2
   requirements: form.requirements || "",
-  location: form.isRemote
-    ? null
-    : {
-        address: form.address,
-        city: form.city,
-        lat: form.lat || 0,
-        lng: form.lng || 0,
-      },
+location: form.isRemote
+  ? undefined
+  : {
+      address: form.address,
+      city: form.city,
+      lat: form.lat || 0,
+      lng: form.lng || 0,
+    },
   isRemote: form.isRemote,
 }, user);
 
