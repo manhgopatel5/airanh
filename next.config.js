@@ -80,7 +80,6 @@ const nextConfig = {
     ];
   },
   
-  // Turbopack config (Next 15)
   turbopack: {
     rules: {
       '*.svg': {
@@ -90,8 +89,14 @@ const nextConfig = {
     },
   },
   
-  // ✅ FIX: Đổi tên + xóa khỏi transpilePackages
-  serverExternalPackages: ['framer-motion'],
+  // ✅ THÊM TẤT CẢ PACKAGE CLIENT-ONLY VÀO ĐÂY
+  serverExternalPackages: [
+    'framer-motion',
+    'react-hot-toast',
+    'sonner',
+    'linkify-react',
+    'browser-image-compression',
+  ],
   
   experimental: {
     optimizePackageImports: [
@@ -109,7 +114,6 @@ const nextConfig = {
       ].filter(Boolean),
     },
     webVitalsAttribution: ['CLS', 'LCP'],
-    // ❌ ĐÃ XÓA: serverComponentsExternalPackages
   },
   
   webpack: (config, { isServer, dev }) => {
@@ -152,7 +156,6 @@ const nextConfig = {
   
   eslint: { ignoreDuringBuilds: false },
   typescript: { ignoreBuildErrors: false },
-  // ✅ SỬA: Bỏ framer-motion khỏi đây
   transpilePackages: ['lucide-react', '@radix-ui/react-icons'],
   
   logging: {
