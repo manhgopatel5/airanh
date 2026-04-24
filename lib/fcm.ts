@@ -201,7 +201,7 @@ export const clearFCMToken = async (userId: string): Promise<void> => {
   const token = storage.get(`fcm_token_${userId}`);
   try {
     if (token) {
-      await deleteToken(token);
+      await deleteToken(msg, token);
       await updateDoc(doc(db, "users", userId), {
         fcmTokens: arrayRemove(token),
       });
