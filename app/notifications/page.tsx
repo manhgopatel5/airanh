@@ -92,7 +92,7 @@ export default function NotificationsPage() {
     }
     const newNotifs = snap.docs.map((d) => ({ id: d.id,...d.data() } as Notification));
     setNotifications((prev) => [...prev,...newNotifs]);
-    setLastDoc(snap.docs[snap.docs.length - 1]);
+    setLastDoc(snap.docs[snap.docs.length - 1] ?? null);
     setLoadingMore(false);
   }, [lastDoc, loadingMore, user?.uid]);
 
