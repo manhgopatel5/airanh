@@ -115,6 +115,7 @@ const nextConfig = {
     optimizePackageImports: [
       'date-fns',
       'lodash-es',
+      '@radix-ui/react-icons',
     ],
     serverActions: {
       bodySizeLimit: '2mb',
@@ -170,7 +171,7 @@ const nextConfig = {
   
   eslint: { ignoreDuringBuilds: false },
   typescript: { ignoreBuildErrors: false },
-  transpilePackages: [],
+  transpilePackages: [], // ✅ XÓA HẾT - lucide-react đã ở serverExternalPackages
   
   logging: {
     fetches: {
