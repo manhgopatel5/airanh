@@ -21,7 +21,6 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { FiSend, FiMessageCircle, FiTrash2, FiCornerUpLeft, FiX } from "react-icons/fi";
-import { useAuth } from "@/lib/AuthContext";
 
 type UserType = {
   uid: string;
@@ -64,7 +63,6 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
   const lastDocRef = useRef<QueryDocumentSnapshot<DocumentData> | null>(null);
   const lastSentRef = useRef<number>(0);
 
-  // Check quyền comment
   useEffect(() => {
     getDoc(doc(db, "tasks", taskId)).then((snap) => {
       const data = snap.data();
@@ -73,7 +71,6 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
     });
   }, [taskId, currentUser.uid]);
 
-  // REALTIME LISTEN
   useEffect(() => {
     const q = query(
       collection(db, "tasks", taskId, "messages"),
@@ -96,7 +93,6 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
     return () => unsub();
   }, [taskId, currentUser.uid]);
 
-  // Load more
   const loadMore = async () => {
     if (!lastDocRef.current || loadingMore) return;
     setLoadingMore(true);
@@ -114,14 +110,12 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
     setLoadingMore(false);
   };
 
-  // AUTO SCROLL
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages.length]);
 
-  // SEND MESSAGE
   const sendMessage = async () => {
     const trimmed = text.trim();
     if (!trimmed || sending || !canComment) return;
@@ -161,7 +155,6 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
     }
   };
 
-  // Delete message
   const deleteMessage = async (msgId: string) => {
     await updateDoc(doc(db, "tasks", taskId, "messages", msgId), {
       deletedFor: arrayUnion(currentUser.uid),
