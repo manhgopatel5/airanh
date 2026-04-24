@@ -6,15 +6,15 @@ import { HiPlus } from "react-icons/hi";
 import { useEffect, useTransition, useCallback } from "react";
 
 type Props = {
-  unreadCount?: number; // ✅ FIX 2
+  unreadCount?: number;
 };
 
 export default function BottomNav({ unreadCount = 0 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isPending, startTransition] = useTransition(); // ✅ FIX 6
+  const [, startTransition] = useTransition();
 
-  /* ================= PREFETCH ✅ FIX 3 + 10 ================= */
+  /* ================= PREFETCH ================= */
   useEffect(() => {
     router.prefetch("/");
     router.prefetch("/messages");
@@ -24,9 +24,9 @@ export default function BottomNav({ unreadCount = 0 }: Props) {
 
   const handleNav = useCallback((path: string) => {
     if (pathname === path) return;
-    if ("vibrate" in navigator) navigator.vibrate(10); // ✅ FIX 5
+    if ("vibrate" in navigator) navigator.vibrate(10);
 
-    startTransition(() => { // ✅ FIX 6
+    startTransition(() => {
       router.push(path);
     });
   }, [pathname, router]);
@@ -52,20 +52,19 @@ export default function BottomNav({ unreadCount = 0 }: Props) {
     return (
       <button
         onClick={() => handleNav(path)}
-        onMouseEnter={() => router.prefetch(path)} // ✅ FIX 3
-        aria-current={active? "page" : undefined} // ✅ FIX 4
-        className="flex flex-col items-center justify-center flex-1 py-1 active:scale-[0.98] active:bg-gray-100 dark:active:bg-zinc-800 rounded-2xl transition-all relative" // ✅ FIX 7
+        onMouseEnter={() => router.prefetch(path)}
+        aria-current={active? "page" : undefined}
+        className="flex flex-col items-center justify-center flex-1 py-1 active:scale-[0.98] active:bg-gray-100 dark:active:bg-zinc-800 rounded-2xl transition-all relative"
       >
         <div className="relative">
           <Icon
             size={24}
             className={`transition-all duration-200 ${
               active
-              ? "text-blue-600 dark:text-blue-400 scale-110"
+               ? "text-blue-600 dark:text-blue-400 scale-110"
                 : "text-gray-400 dark:text-zinc-500"
             }`}
           />
-          {/* ✅ FIX 2: Badge */}
           {badge && badge > 0 && (
             <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center">
               {badge > 9? "9+" : badge}
@@ -75,7 +74,7 @@ export default function BottomNav({ unreadCount = 0 }: Props) {
         <span
           className={`text-xs font-semibold mt-1 transition-colors ${
             active
-            ? "text-blue-600 dark:text-blue-400"
+             ? "text-blue-600 dark:text-blue-400"
               : "text-gray-400 dark:text-zinc-500"
           }`}
         >
@@ -91,7 +90,6 @@ export default function BottomNav({ unreadCount = 0 }: Props) {
   };
 
   return (
-    // ✅ FIX 1: Safe area
     <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
       <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-lg shadow-gray-200/50 dark:shadow-black/30 flex items-center px-2 py-2.5">
         <NavItem path="/" icon={FiHome} label="Trang chủ" />
