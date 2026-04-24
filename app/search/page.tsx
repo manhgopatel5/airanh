@@ -15,10 +15,11 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
+import { QueryConstraint } from "firebase/firestore";
 import { TaskListItem } from "@/types/task";
 import TaskCard from "@/components/TaskCard";
 import { FiSearch, FiX, FiMapPin } from "react-icons/fi";
-import { HiFire, HiClock, HiSparkles, HiUsers } from "react-icons/hi";
+import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 import { toast, Toaster } from "sonner";
 
 type TabId = "hot" | "near" | "friends" | "new";
@@ -41,8 +42,11 @@ export default function SearchPage() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [friendIds, setFriendIds] = useState<string[]>([]);
 
-  const locationCache = useRef<{ coords: any; time: number } | null>(null);
-  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const locationCache = useRef<{
+  coords: { lat: number; lng: number };
+  time: number;
+} | null>(null);
+ const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const friendIdsRef = useRef<string[]>([]);
 
   /* ================= GET FRIENDS - Cache ================= */
@@ -102,7 +106,7 @@ export default function SearchPage() {
         baseConstraints.push(where("searchKeywords", "array-contains", keyword.toLowerCase().trim()));
       }
 
-      let constraints: any[] = [...baseConstraints];
+      let constraints: QueryConstraint[] = [...baseConstraints];
 
       if (activeTab === "hot") {
         constraints.push(orderBy("likeCount", "desc"));
