@@ -1,5 +1,3 @@
-"use client";
-
 import {
   ref,
   uploadBytesResumable,
@@ -17,9 +15,8 @@ export class UploadError extends Error {
   }
 }
 
-/* ================= CONFIG ================= */
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+const MAX_FILE_SIZE = 20 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const ALLOWED_FILE_TYPES = [
   "application/pdf",
@@ -42,49 +39,6 @@ export type UploadResult = {
   type: string;
 };
 
-/* ================= COMPRESS IMAGE ================= */
-const compressImage = async (file: File, maxWidth = 1920, quality = 0.8): Promise<File> => {
-  if (typeof window === 'undefined') return file;
-  if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
-
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    const objectUrl = URL.createObjectURL(file);
-
-    img.onload = () => {
-      let { width, height } = img;
-      if (width > maxWidth) {
-        height = (height * maxWidth) / width;
-        width = maxWidth;
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-      ctx?.drawImage(img, 0, 0, width, height);
-
-      canvas.toBlob(
-        (blob) => {
-          URL.revokeObjectURL(objectUrl);
-          if (!blob) return reject(new UploadError("Compress thất bại"));
-          const compressed = new File([blob], file.name, { type: "image/jpeg" });
-          resolve(compressed);
-        },
-        "image/jpeg",
-        quality
-      );
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      reject(new UploadError("Đọc ảnh thất bại"));
-    };
-    img.src = objectUrl;
-  });
-};
-
-/* ================= VALIDATE FILE ================= */
 const validateFile = (file: File, type: "image" | "file") => {
   const isImage = type === "image";
   const maxSize = isImage? MAX_IMAGE_SIZE : MAX_FILE_SIZE;
@@ -105,7 +59,6 @@ const validateFile = (file: File, type: "image" | "file") => {
   }
 };
 
-/* ================= UPLOAD SINGLE FILE ================= */
 export const uploadFile = async (
   file: File,
   path: "posts" | "tasks" | "avatars" | "chat" | "attachments",
@@ -115,7 +68,12 @@ export const uploadFile = async (
   const isImage = file.type.startsWith("image/");
   validateFile(file, isImage? "image" : "file");
 
-  const fileToUpload = isImage? await compressImage(file) : file;
+  // Dynamic import chỉ chạy ở client
+  let fileToUpload = file;
+  if (isImage && typeof window!== 'undefined') {
+    const { compressImageClient } = await import('./upload.client');
+    fileToUpload = await compressImageClient(file);
+  }
 
   const ext = file.name.split(".").pop() || "bin";
   const fileName = `${nanoid(16)}.${ext}`;
@@ -157,7 +115,6 @@ export const uploadFile = async (
   });
 };
 
-/* ================= UPLOAD MULTIPLE FILES ================= */
 export const uploadMultipleFiles = async (
   files: File[],
   path: "posts" | "tasks" | "avatars" | "chat" | "attachments",
@@ -172,7 +129,6 @@ export const uploadMultipleFiles = async (
   return Promise.all(uploadPromises);
 };
 
-/* ================= DELETE FILE ================= */
 export const deleteFile = async (path: string): Promise<void> => {
   if (!path) return;
   try {
@@ -186,7 +142,6 @@ export const deleteFile = async (path: string): Promise<void> => {
   }
 };
 
-/* ================= GET FILE INFO ================= */
 export const getFileType = (file: File): "image" | "file" => {
   return file.type.startsWith("image/")? "image" : "file";
 };
