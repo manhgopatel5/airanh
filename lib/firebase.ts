@@ -29,6 +29,7 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
+  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL, // ✅ Thêm dòng này cho RTDB
 };
 
 /* ================= SINGLETONS ================= */
@@ -42,7 +43,7 @@ let rtdb: Database | null = null;
 /* ================= INIT ================= */
 
 function initFirebase() {
-  // 🔥 CHẶN SERVER 100%
+  // Chặn server 100%
   if (typeof window === "undefined") return;
 
   if (!app) {
@@ -53,7 +54,7 @@ function initFirebase() {
     storage = getStorage(app);
     rtdb = getDatabase(app);
 
-    // lưu login
+    // Lưu login
     setPersistence(auth, browserLocalPersistence).catch(() => {});
   }
 }
