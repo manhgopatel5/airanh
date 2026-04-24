@@ -8,7 +8,7 @@ import {
   type FriendRequest,
 } from "@/lib/friendService";
 import { useAuth } from "@/lib/AuthContext";
-import { getFirebaseDB } from "@/lib/firebase"; // ✅ FIX
+import { getFirebaseDB } from "@/lib/firebase";
 import { collection, query, where, getDocs, documentId } from "firebase/firestore";
 import { FiUserPlus, FiCheck, FiX, FiClock } from "react-icons/fi";
 import { HiSparkles } from "react-icons/hi";
@@ -37,14 +37,14 @@ export default function FriendRequests() {
       return;
     }
 
-    const db = getFirebaseDB(); // ✅ FIX DUY NHẤT
+    const db = getFirebaseDB();
 
     const unsub = listenFriendRequests(user.uid, async (data: FriendRequest[]) => {
       setList(data);
       setLoading(false);
 
       const newIds = [...new Set(data.map((r) => r.fromUserId))].filter(
-        (id) => !userMapRef.current[id]
+        (id) =>!userMapRef.current[id]
       );
 
       if (newIds.length === 0) return;
@@ -65,14 +65,14 @@ export default function FriendRequests() {
           snap.forEach((doc) => {
             newUsers[doc.id] = {
               uid: doc.id,
-              ...(doc.data() as any),
+             ...(doc.data() as any),
             };
           });
         })
       );
 
-      userMapRef.current = { ...userMapRef.current, ...newUsers };
-      setUserMap({ ...userMapRef.current });
+      userMapRef.current = {...userMapRef.current,...newUsers };
+      setUserMap({...userMapRef.current });
     });
 
     return () => unsub();
@@ -84,7 +84,7 @@ export default function FriendRequests() {
       if (processing) return;
 
       setProcessing(req.id);
-      setList((prev) => prev.filter((r) => r.id !== req.id));
+      setList((prev) => prev.filter((r) => r.id!== req.id));
 
       try {
         await acceptRequest(req);
@@ -101,12 +101,12 @@ export default function FriendRequests() {
   /* ================= REJECT ================= */
   const handleReject = useCallback(
     async (id: string) => {
-      if (processing || !user?.uid) return;
+      if (processing ||!user?.uid) return;
 
       setProcessing(id);
 
       const req = list.find((r) => r.id === id);
-      setList((prev) => prev.filter((r) => r.id !== id));
+      setList((prev) => prev.filter((r) => r.id!== id));
 
       try {
         await rejectRequest(id, user.uid);
@@ -205,7 +205,7 @@ export default function FriendRequests() {
                   disabled={isProcessing}
                   className="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-sm"
                 >
-                  {isProcessing ? "..." : <FiCheck />}
+                  {isProcessing? "..." : <FiCheck />}
                 </button>
 
                 <button
