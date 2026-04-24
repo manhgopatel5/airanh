@@ -149,12 +149,15 @@ export default function Register() {
     "auth/too-many-requests": "Thử quá nhiều lần, thử lại sau",
   };
 
-  setErrors({
-    submit: errorMap[error.code ?? ""] || "Đăng ký thất bại, thử lại sau",
-  });
+  const message =
+    (error.code && errorMap[error.code]) ||
+    "Đăng ký thất bại, thử lại sau";
+
+  setErrors({ submit: message });
 } finally {
   setLoading(false);
-}; // ✅ THÊM DÒNG NÀY (CỰC QUAN TRỌNG
+}
+};
 
 
   const handleChange = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
