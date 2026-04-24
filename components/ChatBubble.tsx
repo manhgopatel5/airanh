@@ -46,7 +46,7 @@ export default function ChatBubble({
     msg.createdAt &&
     typeof msg.createdAt === "object" &&
     "seconds" in msg.createdAt
-     ? new Date(msg.createdAt.seconds * 1000).toLocaleTimeString([], {
+    ? new Date(msg.createdAt.seconds * 1000).toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
         })
@@ -64,10 +64,13 @@ export default function ChatBubble({
     [msg.text]
   );
 
-  const reactionList = msg.reactions && Object.keys(msg.reactions).length > 0
-   ? Object.entries(
+  // ✅ FIX: handle cả object lẫn array
+  const reactionList = msg.reactions
+  ? Object.entries(
         Object.values(msg.reactions).reduce((acc, emoji) => {
-          acc[emoji] = (acc[emoji] || 0) + 1;
+          if (typeof emoji === 'string') {
+            acc[emoji] = (acc[emoji] || 0) + 1;
+          }
           return acc;
         }, {} as Record<string, number>)
       )
@@ -88,7 +91,7 @@ export default function ChatBubble({
           <div
             className={`text-xs mb-1 px-3 py-1.5 rounded-2xl max-w-full truncate ${
               isMe
-               ? "bg-blue-400/30 text-white/80"
+              ? "bg-blue-400/30 text-white/80"
                 : "bg-gray-200 dark:bg-zinc-700 text-gray-600 dark:text-zinc-300"
             }`}
           >
@@ -103,7 +106,7 @@ export default function ChatBubble({
             onDoubleClick={() => onReply?.(msg)}
             className={`px-4 py-2.5 rounded-3xl text-sm shadow-sm leading-relaxed break-words relative ${
               isMe
-               ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-br-lg"
+              ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-br-lg"
                 : "bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100 rounded-bl-lg"
             }`}
           >
@@ -152,7 +155,7 @@ export default function ChatBubble({
             rel="noopener noreferrer"
             className={`flex items-center gap-3 px-4 py-3 rounded-3xl shadow-sm transition active:scale-[0.98] ${
               isMe
-               ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+              ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
                 : "bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
             }`}
           >
@@ -176,7 +179,7 @@ export default function ChatBubble({
             rel="noopener noreferrer"
             className={`flex items-center gap-3 px-4 py-3 rounded-3xl shadow-sm transition active:scale-[0.98] ${
               isMe
-               ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+              ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
                 : "bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
             }`}
           >
