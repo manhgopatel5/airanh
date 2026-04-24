@@ -1,7 +1,15 @@
 import { Timestamp } from "firebase/firestore";
 
 /* ================= ENUMS ================= */
-export type TaskStatus = "open" | "full" | "in_progress" | "completed" | "cancelled" | "deleted" | "expired";
+export type TaskStatus =
+  | "open"
+  | "full"
+  | "in_progress"
+  | "completed"
+  | "cancelled"
+  | "deleted"
+  | "expired";
+
 export type TaskVisibility = "public" | "private" | "friends";
 export type BudgetType = "fixed" | "hourly" | "negotiable";
 
@@ -36,29 +44,31 @@ export type Task = {
   userShortId?: string;
   userUsername?: string;
 
-  // Time
+  // Time (⚠️ optional theo createTask)
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  applicationDeadline: Timestamp | null;
-  deadline: Timestamp | null;
-  startDate: Timestamp | null;
+  applicationDeadline?: Timestamp | null;
+  deadline?: Timestamp | null;
+  startDate?: Timestamp | null;
   edited?: boolean;
   editedAt?: Timestamp;
   deletedAt?: Timestamp;
 
-  // Meta
-  category: string;
+  // Meta (⚠️ FIX chính ở đây)
+  category?: string;
   tags: string[];
   images: string[];
-  attachments: string[];
-  requirements: string;
-  location?: { 
-    country?: string; 
+  attachments?: string[];
+  requirements?: string;
+
+  location?: {
+    country?: string;
     city?: string;
     address?: string;
     lat?: number;
     lng?: number;
   };
+
   isRemote: boolean;
 
   // Search
@@ -84,12 +94,28 @@ export type Task = {
 };
 
 /* ================= CREATE DTO ================= */
-export type CreateTaskInput = Pick<Task, 
-  | "title" | "description" | "price" | "currency" | "budgetType" 
-  | "totalSlots" | "visibility" | "category" | "tags" | "images" 
-  | "attachments" | "requirements" | "location" | "isRemote"
-  | "applicationDeadline" | "deadline" | "startDate"
-> & {
+export type CreateTaskInput = {
+  title: string;
+  description: string;
+  price: number;
+  currency?: string;
+  budgetType?: BudgetType;
+  totalSlots: number;
+  visibility?: TaskVisibility;
+
+  category?: string;
+  tags?: string[];
+  images?: string[];
+  attachments?: string[];
+  requirements?: string;
+
+  location?: Task["location"];
+  isRemote?: boolean;
+
+  applicationDeadline?: Timestamp | null;
+  deadline?: Timestamp | null;
+  startDate?: Timestamp | null;
+
   featured?: boolean;
 };
 
@@ -97,15 +123,33 @@ export type CreateTaskInput = Pick<Task,
 export type UpdateTaskInput = Partial<CreateTaskInput>;
 
 /* ================= LIST ITEM ================= */
-export type TaskListItem = Pick<Task,
-  | "id" | "slug" | "title" | "price" | "currency" | "totalSlots" 
-  | "joined" | "status" | "userName" | "userAvatar" | "userShortId"
-  | "userUsername" | "createdAt" | "category" | "tags" | "images"
-  | "viewCount" | "likeCount" | "commentCount" | "location" | "isRemote"
+export type TaskListItem = Pick<
+  Task,
+  | "id"
+  | "slug"
+  | "title"
+  | "price"
+  | "currency"
+  | "totalSlots"
+  | "joined"
+  | "status"
+  | "userName"
+  | "userAvatar"
+  | "userShortId"
+  | "userUsername"
+  | "createdAt"
+  | "category"
+  | "tags"
+  | "images"
+  | "viewCount"
+  | "likeCount"
+  | "commentCount"
+  | "location"
+  | "isRemote"
   | "likes"
   | "budgetType"
   | "userId"
-  | "description" // <-- thêm dòng này
+  | "description"
 >;
 
 /* ================= PARTICIPANT ================= */
@@ -163,7 +207,10 @@ export const generateTaskSearchKeywords = ({
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
-  return [...new Set(text.split(/[\s,.-]+/).filter((w) => w.length > 2))].slice(0, 20);
+  return [...new Set(text.split(/[\s,.-]+/).filter((w) => w.length > 2))].slice(
+    0,
+    20
+  );
 };
 
 export const isTaskOpen = (task: Task): boolean => {
@@ -175,11 +222,20 @@ export const isTaskOpen = (task: Task): boolean => {
   return true;
 };
 
-export const formatTaskPrice = (price: number, currency = "VND"): string => {
-  return new Intl.NumberFormat("vi-VN", { style: "currency", currency, maximumFractionDigits: 0 }).format(price);
+export const formatTaskPrice = (
+  price: number,
+  currency = "VND"
+): string => {
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(price);
 };
 
-export const formatTaskDeadline = (deadline: Timestamp | null | undefined): string => {
+export const formatTaskDeadline = (
+  deadline: Timestamp | null | undefined
+): string => {
   if (!deadline) return "";
   const date = deadline.toDate();
   return date.toLocaleDateString("vi-VN", {
