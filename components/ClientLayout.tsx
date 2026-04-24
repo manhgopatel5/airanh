@@ -18,7 +18,8 @@ export default function ClientLayout({ children }: Props) {
   const [loading, setLoading] = useState(true);
 
   /* ================= ROUTE ================= */
-  const publicRoutes = ["/login", "/register", "/reset-password"];
+  // ✅ SỬA: Đổi /reset-password thành /forgot-password
+  const publicRoutes = ["/login", "/register", "/forgot-password", "/verify-email"];
   const isPublic = useMemo(() => publicRoutes.some((r) => pathname.startsWith(r)), [pathname]);
   const isChatDetail = /^\/chat\/[^/]+$/.test(pathname);
   const isCreate = pathname.startsWith("/create");
