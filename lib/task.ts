@@ -46,7 +46,7 @@ const slugify = (str: string): string =>
  .slice(0, 50);
 
 const generateUniqueShortId = async (): Promise<string> => {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   let attempts = 0;
   while (attempts < 10) {
@@ -80,7 +80,7 @@ export async function createTask(
   data: CreateTaskInput,
   user: User
 ): Promise<{ id: string; slug: string }> {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   if (!user?.uid) throw new TaskError("Bạn cần đăng nhập để tạo công việc");
   if (!data.title?.trim()) throw new TaskError("Tiêu đề không được để trống");
@@ -128,22 +128,22 @@ export async function createTask(
       `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || "U")}&background=random`,
     createdAt: serverTimestamp() as Timestamp,
     updatedAt: serverTimestamp() as Timestamp,
-   ...(data.deadline && { deadline: data.deadline }),
-   ...(data.applicationDeadline && { applicationDeadline: data.applicationDeadline }),
-   ...(data.startDate && { startDate: data.startDate }),
-   ...(data.category && { category: data.category }),
+  ...(data.deadline && { deadline: data.deadline }),
+  ...(data.applicationDeadline && { applicationDeadline: data.applicationDeadline }),
+  ...(data.startDate && { startDate: data.startDate }),
+  ...(data.category && { category: data.category }),
     tags,
     images: validImages,
-   ...(data.attachments && { attachments: data.attachments }),
-   ...(data.requirements?.trim() && { requirements: data.requirements.trim() }),
-   ...(data.location && { location: data.location }),
+  ...(data.attachments && { attachments: data.attachments }),
+  ...(data.requirements?.trim() && { requirements: data.requirements.trim() }),
+  ...(data.location && { location: data.location }),
     isRemote: data.isRemote || false,
     searchKeywords: generateTaskSearchKeywords({
       title: data.title,
       description: data.description,
       tags,
-     ...(data.category && { category: data.category }),
-     ...(data.location && { location: data.location }),
+    ...(data.category && { category: data.category }),
+    ...(data.location && { location: data.location }),
     }),
     viewCount: 0,
     likeCount: 0,
@@ -170,7 +170,7 @@ export async function updateTask(
   userId: string,
   updates: UpdateTaskInput
 ): Promise<void> {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   if (!taskId ||!userId) throw new TaskError("Thiếu thông tin");
 
@@ -193,7 +193,7 @@ export async function updateTask(
     if (updates.images && updates.images.length > 5) throw new TaskError("Tối đa 5 ảnh");
 
     const newTags = updates.title || updates.description || updates.category
-     ? cleanTags(updates.tags || data.tags || [], updates.title || data.title, updates.category || data.category)
+    ? cleanTags(updates.tags || data.tags || [], updates.title || data.title, updates.category || data.category)
       : data.tags;
 
     const updateData: any = {
@@ -202,8 +202,8 @@ export async function updateTask(
         title: updates.title || data.title,
         description: updates.description || data.description,
         tags: newTags,
-       ...(updates.category? { category: updates.category } : data.category? { category: data.category } : {}),
-       ...(updates.location? { location: updates.location } : data.location? { location: data.location } : {}),
+      ...(updates.category? { category: updates.category } : data.category? { category: data.category } : {}),
+      ...(updates.location? { location: updates.location } : data.location? { location: data.location } : {}),
       }),
       edited: true,
       editedAt: serverTimestamp(),
@@ -233,7 +233,7 @@ export async function updateTask(
 
 /* ================= DELETE TASK ================= */
 export async function deleteTask(taskId: string, userId: string): Promise<void> {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   if (!taskId ||!userId) throw new TaskError("Thiếu thông tin");
 
@@ -267,17 +267,17 @@ export async function deleteTask(taskId: string, userId: string): Promise<void> 
 
 /* ================= GET TASK ================= */
 export async function getTaskById(id: string): Promise<Task | null> {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   const snap = await getDoc(doc(db, "tasks", id));
   if (!snap.exists()) return null;
-  const data = snap.data() as Task;
+  const { id: _,...data } = snap.data() as Task; // ✅ FIX: bỏ id khỏi data
   if (data.banned || data.hidden) return null;
   return { id: snap.id,...data };
 }
 
 export async function getTaskBySlug(slug: string): Promise<Task | null> {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   const q = query(
     collection(db, "tasks"),
@@ -288,13 +288,13 @@ export async function getTaskBySlug(slug: string): Promise<Task | null> {
   const snap = await getDocs(q);
   if (snap.empty) return null;
   const docSnap = snap.docs[0]!;
-  const data = docSnap.data() as Task;
+  const { id: _,...data } = docSnap.data() as Task; // ✅ FIX: bỏ id khỏi data
   if (data.banned || data.hidden) return null;
   return { id: docSnap.id,...data };
 }
 
 export async function getTaskByShortId(shortId: string): Promise<Task | null> {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   const q = query(
     collection(db, "tasks"),
@@ -305,7 +305,7 @@ export async function getTaskByShortId(shortId: string): Promise<Task | null> {
   const snap = await getDocs(q);
   if (snap.empty) return null;
   const docSnap = snap.docs[0]!;
-  const data = docSnap.data() as Task;
+  const { id: _,...data } = docSnap.data() as Task; // ✅ FIX: bỏ id khỏi data
   if (data.banned || data.hidden) return null;
   return { id: docSnap.id,...data };
 }
@@ -322,7 +322,7 @@ export function listenTasks(
     featured?: boolean;
   }
 ): Unsubscribe {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   const constraints: any[] = [
     where("status", "in", options?.status || ["open", "full"]),
@@ -348,7 +348,10 @@ export function listenTasks(
   return onSnapshot(
     q,
     (snap) => {
-      const data = snap.docs.map((d) => ({ id: d.id,...d.data() } as TaskListItem));
+      const data = snap.docs.map((d) => {
+        const { id: _,...taskData } = d.data() as Task; // ✅ FIX: bỏ id khỏi data
+        return { id: d.id,...taskData } as TaskListItem;
+      });
       callback(data);
     },
     (err) => {
@@ -360,7 +363,7 @@ export function listenTasks(
 
 /* ================= JOIN TASK ================= */
 export async function joinTask(taskId: string, user: User): Promise<void> {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   if (!taskId ||!user?.uid) throw new TaskError("Thiếu thông tin");
 
@@ -401,7 +404,7 @@ export async function joinTask(taskId: string, user: User): Promise<void> {
 
 /* ================= INCREMENT VIEW ================= */
 export async function incrementTaskView(taskId: string): Promise<void> {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   if (!taskId) return;
   try {
@@ -413,7 +416,7 @@ export async function incrementTaskView(taskId: string): Promise<void> {
 
 /* ================= AUTO EXPIRE ================= */
 export async function expireTasks(): Promise<void> {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   const q = query(
     collection(db, "tasks"),
@@ -430,7 +433,7 @@ export async function expireTasks(): Promise<void> {
 
 /* ================= LIKE & REACTION ================= */
 export async function toggleLikeTask(taskId: string, userId: string): Promise<boolean> {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   if (!taskId ||!userId) throw new TaskError("Thiếu thông tin");
 
