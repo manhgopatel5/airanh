@@ -44,10 +44,13 @@ export default function UserSearch() {
     const timer = setTimeout(async () => {
       try {
         const res = await searchUsers(keyword);
+        const filtered = res.users.filter((u: UserResult) => u.uid !== user?.uid);
         
+        // ✅ Fix: Batch get status để tránh spam request
         const withStatus = await Promise.all(
-          res.users.filter((u: UserResult) => u.uid !== user?.uid).map(async (u: UserResult) => {
-            const friendStatus = await getFriendStatus(user!.uid, u.uid);
+          filtered.map(async (u: UserResult) => {
+            if (!user?.uid) return { ...u, status: "none" as const };
+            const friendStatus = await getFriendStatus(user.uid, u.uid);
             let status: UserResult["status"] = "none";
             if (friendStatus === "friends") status = "friends";
             else if (friendStatus === "pending_sent") status = "requested";
