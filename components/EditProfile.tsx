@@ -17,7 +17,6 @@ const BAD_WORDS = ["admin", "mod", "support", "đm", "vcl", "dm"];
 export default function EditProfile({ currentName, onClose }: Props) {
   const { user } = useAuth();
 
-  // 🔥 lấy firebase đúng cách
   const auth = getFirebaseAuth();
   const db = getFirebaseDB();
 
@@ -38,7 +37,7 @@ export default function EditProfile({ currentName, onClose }: Props) {
     return "";
   }, []);
 
-  const errorMsg = touched ? validate(name) : "";
+  const errorMsg = touched? validate(name) : "";
 
   const save = useCallback(async () => {
     const trimmed = name.trim();
@@ -55,7 +54,7 @@ export default function EditProfile({ currentName, onClose }: Props) {
       return;
     }
 
-    if (!user) {
+    if (!user ||!auth.currentUser) {
       setError("Bạn chưa đăng nhập");
       return;
     }
@@ -65,7 +64,7 @@ export default function EditProfile({ currentName, onClose }: Props) {
 
     try {
       await Promise.all([
-        updateProfile(auth.currentUser!, { displayName: trimmed }),
+        updateProfile(auth.currentUser, { displayName: trimmed }),
         setDoc(
           doc(db, "users", user.uid),
           {
@@ -87,7 +86,7 @@ export default function EditProfile({ currentName, onClose }: Props) {
     }
   }, [name, currentName, user, validate, onClose, auth, db]);
 
-  const isValid = !validate(name.trim()) && name.trim() !== currentName;
+  const isValid = !validate(name.trim()) && name.trim()!== currentName;
 
   return (
     <div className="space-y-4">
@@ -109,7 +108,7 @@ export default function EditProfile({ currentName, onClose }: Props) {
           autoFocus
           className={`w-full px-4 py-3 rounded-2xl border bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 transition-all ${
             errorMsg
-              ? "border-red-500 focus:ring-red-500/20 focus:border-red-500"
+             ? "border-red-500 focus:ring-red-500/20 focus:border-red-500"
               : "border-gray-200 dark:border-zinc-700 focus:ring-blue-500/20 focus:border-blue-500"
           }`}
         />
@@ -124,21 +123,21 @@ export default function EditProfile({ currentName, onClose }: Props) {
 
       <button
         onClick={save}
-        disabled={loading || success || !isValid}
+        disabled={loading || success ||!isValid}
         className={`w-full py-3 rounded-2xl font-semibold text-sm transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 ${
           success
-            ? "bg-emerald-500 text-white"
-            : loading || !isValid
-            ? "bg-gray-300 dark:bg-zinc-700 text-gray-500 dark:text-zinc-400 cursor-not-allowed"
+           ? "bg-emerald-500 text-white"
+            : loading ||!isValid
+           ? "bg-gray-300 dark:bg-zinc-700 text-gray-500 dark:text-zinc-400 cursor-not-allowed"
             : "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
         }`}
       >
-        {loading ? (
+        {loading? (
           <>
             <FiLoader className="animate-spin" size={18} />
             Đang lưu...
           </>
-        ) : success ? (
+        ) : success? (
           <>
             <FiCheck size={18} />
             Đã cập nhật
