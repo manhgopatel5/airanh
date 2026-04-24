@@ -329,7 +329,7 @@ export default function TaskDetailPage() {
         <div className="p-4 space-y-4 bg-white dark:bg-zinc-900 mt-2">
           <div className="font-semibold">Bình luận ({comments.length})</div>
           {parentComments.map((c) => {
-            const liked = c.likedBy?.includes(currentUser?.uid || "") ?? false;
+            const liked = false;
             return (
               <div key={c.id} className="flex gap-2 text-sm">
                 <Image
