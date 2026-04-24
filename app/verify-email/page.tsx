@@ -2,29 +2,36 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { sendEmailVerification, reload } from "firebase/auth";
+import { sendEmailVerification, reload, signOut } from "firebase/auth"; // ✅ THÊM signOut
 import { getFirebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { toast, Toaster } from "sonner";
-import { FiMail, FiCheckCircle, FiRefreshCw } from "react-icons/fi";
+import { FiMail, FiCheckCircle, FiRefreshCw, FiLogOut } from "react-icons/fi"; // ✅ THÊM FiLogOut
 
 export default function VerifyEmailPage() {
-  const auth = getFirebaseAuth(); // 👈 THÊM DÒNG NÀY
+  const auth = getFirebaseAuth();
   const router = useRouter();
   const { user } = useAuth();
   const [sending, setSending] = useState(false);
   const [checking, setChecking] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [loggingOut, setLoggingOut] = useState(false); // ✅ THÊM STATE
 
   useEffect(() => {
-    if (!user) {
+    let isMounted = true; // ✅ CHỐNG RACE CONDITION
+
+    if (!user && isMounted) {
       router.replace("/login");
       return;
     }
-    if (user.emailVerified) {
+    if (user?.emailVerified && isMounted) {
       router.replace("/");
       return;
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [user, router]);
 
   useEffect(() => {
@@ -69,6 +76,20 @@ export default function VerifyEmailPage() {
     }
   };
 
+  // ✅ HÀM ĐĂNG XUẤT ĐÚNG - FIX CHÍNH Ở ĐÂY
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true);
+      await signOut(auth); // ✅ BẮT BUỘC PHẢI CÓ DÒNG NÀY
+      toast.success("Đã đăng xuất");
+      router.replace("/login"); // ✅ DÙNG replace KHÔNG DÙNG push
+    } catch (err) {
+      toast.error("Đăng xuất thất bại");
+    } finally {
+      setLoggingOut(false);
+    }
+  };
+
   if (!user) return null;
 
   return (
@@ -108,18 +129,21 @@ export default function VerifyEmailPage() {
               className="w-full py-3 rounded-xl font-semibold bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 active:scale-[0.98] transition-all disabled:opacity-50"
             >
               {sending
-              ? "Đang gửi..."
+             ? "Đang gửi..."
                 : cooldown > 0
-              ? `Gửi lại sau ${cooldown}s`
+             ? `Gửi lại sau ${cooldown}s`
                 : "Gửi lại email"}
             </button>
           </div>
 
+          {/* ✅ NÚT ĐĂNG XUẤT ĐÃ SỬA */}
           <button
-            onClick={() => router.push("/login")}
-            className="text-sm text-gray-500 dark:text-zinc-400 mt-6 hover:text-gray-900 dark:hover:text-gray-100"
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="text-sm text-gray-500 dark:text-zinc-400 mt-6 hover:text-gray-900 dark:hover:text-gray-100 flex items-center justify-center gap-1.5 mx-auto disabled:opacity-50"
           >
-            Đăng xuất và đăng nhập tài khoản khác
+            <FiLogOut size={14} />
+            {loggingOut? "Đang đăng xuất..." : "Đăng xuất và đăng nhập tài khoản khác"}
           </button>
         </div>
       </div>
