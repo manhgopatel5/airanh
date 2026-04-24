@@ -15,7 +15,6 @@ import {
 import {
   createComment,
   listenComments,
-  deleteComment,
   toggleLikeComment,
   Comment as TaskComment,
 } from "@/lib/taskCommentService";
