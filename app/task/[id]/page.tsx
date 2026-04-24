@@ -20,12 +20,11 @@ import {
 
 import type { TaskComment } from "@/lib/taskCommentService";
 import { Task } from "@/types/task";
-import { FiChevronLeft, FiSend, FiHeart, FiShare2, FiClock, FiMapPin, FiUsers, FiX, FiCheck } from "react-icons/fi";
+import { FiChevronLeft, FiSend, FiHeart, FiShare2, FiClock, FiMapPin, FiUsers, FiX } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
 import { HiSparkles } from "react-icons/hi";
 import DOMPurify from "isomorphic-dompurify";
 import { toast, Toaster } from "sonner";
-import { Timestamp } from "firebase/firestore";
 
 type UserData = { uid: string; name: string; avatar: string; online?: boolean };
 
@@ -149,14 +148,6 @@ useEffect(() => {
     }
   };
 
-  const handleLike = async () => {
-    if (!currentUser ||!task) return;
-    try {
-      await toggleLikeTask(task.id, currentUser.uid);
-    } catch (err) {
-      toast.error("Thao tác thất bại");
-    }
-  };
 
   const handleReaction = async (type: string) => {
     if (!currentUser ||!task) return;
