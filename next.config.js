@@ -10,31 +10,19 @@ const nextConfig = {
   compress: true,
   output: 'standalone',
   poweredByHeader: false,
-  
+
   images: {
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'firebasestorage.googleapis.com',
-        pathname: '/v0/b/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'lh3.googleusercontent.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'ui-avatars.com',
-      },
+      { protocol: 'https', hostname: 'firebasestorage.googleapis.com', pathname: '/v0/b/**' },
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+      { protocol: 'https', hostname: 'ui-avatars.com' },
     ],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256],
   },
-  
+
   async headers() {
     const csp = [
       "default-src 'self'",
@@ -53,129 +41,49 @@ const nextConfig = {
       {
         source: '/(.*)',
         headers: [
+          { key: 'Content-Security-Policy', value: csp },
           { key: 'X-DNS-Prefetch-Control', value: 'on' },
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
-          { key: 'Content-Security-Policy', value: csp },
         ],
       },
-      {
-        source: '/_next/static/(.*)',
-        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
-      },
-      {
-        source: '/(.*).(jpg|jpeg|png|webp|avif|ico|svg|woff|woff2)',
-        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
-      },
     ];
   },
-  
-  async redirects() {
-    return [
-      { source: '/home', destination: '/', permanent: true },
-      { source: '/login', destination: '/auth/login', permanent: false },
-    ];
-  },
-  
-  turbopack: {
-    rules: {
-      '*.svg': {
-        loaders: ['@svgr/webpack'],
-        as: '*.js',
-      },
-    },
-  },
-  
-  serverExternalPackages: [
-    'framer-motion',
-    'react-hot-toast',
-    'sonner',
-    'linkify-react',
-    'browser-image-compression',
-    'isomorphic-dompurify',
-    'firebase',
-    'nanoid',
-    'zustand',
-    'next-themes',
-    '@vercel/analytics',
-    '@vercel/speed-insights',
-    'clsx',
-    'tailwind-merge',
-    'zod',
-    '@hookform/resolvers',
-    'react-hook-form',
-    'react-icons',
-    
-  ],
-  
+
+  // THAY ĐỔI QUAN TRỌNG TẠI ĐÂY
+  // Chỉ để các gói thực sự là Node-only ở đây (ví dụ: firebase-admin)
+  // Xóa bỏ browser-image-compression, framer-motion... khỏi danh sách này
+  serverExternalPackages: ['firebase-admin', 'sharp'],
+
   experimental: {
     optimizePackageImports: [
       'date-fns',
-      'lodash-es',
-      '@radix-ui/react-icons',
+      'lucide-react', // Thêm cái này vì bạn dùng nhiều icon
+      'framer-motion',
+      'zustand',
     ],
     serverActions: {
       bodySizeLimit: '2mb',
-      allowedOrigins: [
-        'localhost:3000',
-        process.env.NEXT_PUBLIC_APP_URL?.replace('https://', ''),
-      ].filter(Boolean),
     },
-    webVitalsAttribution: ['CLS', 'LCP'],
   },
-  
-  webpack: (config, { isServer, dev }) => {
-    if (isServer && !dev) {
-      config.optimization.minimize = false;
-    }
-    
+
+  webpack: (config, { isServer }) => {
+    // Xử lý SVG
     config.module.rules.push({
       test: /\.svg$/i,
       issuer: /\.[jt]sx?$/,
       use: ['@svgr/webpack'],
     });
-    
-    if (!dev && !process.env.TURBOPACK) {
-      config.optimization.splitChunks = {
-        chunks: 'all',
-        cacheGroups: {
-          firebase: {
-            test: /[\\/]node_modules[\\/](firebase|@firebase)[\\/]/,
-            name: 'firebase',
-            priority: 20,
-          },
-          react: {
-            test: /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/,
-            name: 'react',
-            priority: 15,
-          },
-          commons: {
-            test: /[\\/]node_modules[\\/]/,
-            name: 'vendors',
-            priority: 10,
-          },
-        },
-      };
+
+    // Fix lỗi 'self is not defined' bằng cách giả lập window/self phía server 
+    // Nếu một số thư viện bên thứ 3 vẫn cố truy cập chúng khi build
+    if (isServer) {
+      config.output.globalObject = 'self';
     }
-    
+
     return config;
-  },
-  
-  env: {
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-    NEXT_PUBLIC_APP_VERSION: process.env.npm_package_version,
-  },
-  
-  eslint: { ignoreDuringBuilds: false },
-  typescript: { ignoreBuildErrors: false },
-  
-  logging: {
-    fetches: {
-      fullUrl: process.env.NODE_ENV === 'development',
-    },
   },
 };
 
