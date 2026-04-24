@@ -5,7 +5,6 @@ import {
   onSnapshot,
   serverTimestamp,
   doc,
-  updateDoc,
   Timestamp,
   Unsubscribe,
   limit,
@@ -194,12 +193,12 @@ export const listenComments = (
     constraints.push(startAfter(options.startAfterDoc));
   }
 
-  const q = query(collection(db, "task_comments"), ...constraints);
+  const q = query(collection(db, "task_comments"),...constraints);
 
   return onSnapshot(
     q,
     (snapshot) => {
-      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as TaskComment));
+      const data = snapshot.docs.map((d) => ({ id: d.id,...d.data() } as TaskComment));
       callback(data, snapshot.docs.length === (options?.limit || 50));
     },
     (err) => {
@@ -257,7 +256,7 @@ export const getCommentById = async (commentId: string): Promise<TaskComment | n
   if (!commentId) return null;
   const snap = await getDoc(doc(db, "task_comments", commentId));
   if (!snap.exists() || snap.data().deleted) return null;
-  return { id: snap.id, ...snap.data() } as TaskComment;
+  return { id: snap.id,...snap.data() } as TaskComment;
 };
 
 /* ================= GET COMMENTS COUNT ================= */
