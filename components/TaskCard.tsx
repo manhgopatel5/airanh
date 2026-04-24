@@ -1,183 +1,241 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { db } from "@/lib/firebase";
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
-  addDoc,
-  serverTimestamp,
-  limit,
-} from "firebase/firestore";
-import { useAuth } from "@/lib/AuthContext";
-import { FiSend, FiLoader } from "react-icons/fi";
-import { formatDistanceToNow } from "date-fns";
-import { vi } from "date-fns/locale";
-
-type Message = {
-  id: string;
-  taskId: string;
-  userId: string;
-  userName: string;
-  userAvatar?: string;
-  text: string;
-  createdAt: any;
-};
+import { useRouter } from "next/navigation";
+import { FiHeart, FiShare2, FiMessageCircle, FiUsers, FiClock } from "react-icons/fi";
+import { FaHeart } from "react-icons/fa";
+import { useEffect, useState, useCallback, memo } from "react";
+import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { db, auth } from "@/lib/firebase";
+import { onAuthStateChanged, User } from "firebase/auth";
+import { incrementTaskView } from "@/lib/task";
+import { TaskListItem } from "@/types/task";
+import { toast } from "sonner";
 
 type Props = {
-  taskId: string;
+  task: TaskListItem;
+  onDelete?: (id: string) => void;
 };
 
-export default function TaskChat({ taskId }: Props) {
-  const { user } = useAuth();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [text, setText] = useState("");
-  const [sending, setSending] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const scrollRef = useRef<HTMLDivElement>(null);
+function TaskCard({ task, onDelete }: Props) {
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [liking, setLiking] = useState(false);
+  const [localLikes, setLocalLikes] = useState<string[]>(task.likes || []);
 
-  /* ================= LOAD MESSAGES ================= */
-  useEffect(() => {
-    if (!taskId) return;
+  useEffect(() => onAuthStateChanged(auth, setCurrentUser), []);
 
-    const q = query(
-      collection(db, "taskMessages"),
-      where("taskId", "==", taskId),
-      orderBy("createdAt", "asc"),
-      limit(100)
-    );
+  if (!task) return <Skeleton />;
 
-    const unsub = onSnapshot(q, (snap) => {
-      const list: Message[] = [];
-      snap.forEach((doc) => {
-        list.push({ id: doc.id,...doc.data() } as Message);
-      });
-      setMessages(list);
-      setLoading(false);
-      setTimeout(() => {
-        scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
-    });
+  const isPlan = task.budgetType === "fixed" && task.price === 0;
+  const liked = currentUser && localLikes.includes(currentUser.uid);
+  const likeCount = localLikes.length;
 
-    return () => unsub();
-  }, [taskId]);
+  const statusConfig = {
+    open: { text: "Đang tuyển", color: "emerald" },
+    full: { text: "Đã đủ", color: "amber" },
+    completed: { text: "Hoàn thành", color: "blue" },
+    cancelled: { text: "Đã hủy", color: "gray" },
+  } as const;
 
-  /* ================= SEND MESSAGE ================= */
-  const sendMessage = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!user ||!text.trim() || sending) return;
+  const status = statusConfig[task.status || "open"];
 
-    const msg = text.trim();
-    setText("");
-    setSending(true);
+  /* ================= LIKE ================= */
+  const handleLike = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!currentUser) return router.push("/login");
+    if (liking) return;
+
+    setLiking(true);
+
+    const newLikes = liked
+      ? localLikes.filter((id) => id !== currentUser.uid)
+      : [...localLikes, currentUser.uid];
+
+    setLocalLikes(newLikes);
 
     try {
-      await addDoc(collection(db, "taskMessages"), {
-        taskId,
-        userId: user.uid,
-        userName: user.displayName || "User",
-        userAvatar: user.photoURL || "",
-        text: msg,
-        createdAt: serverTimestamp(),
+      await updateDoc(doc(db, "tasks", task.id), {
+        likes: liked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid),
+        likeCount: newLikes.length,
       });
-    } catch (err) {
-      console.error("Lỗi gửi tin:", err);
-      setText(msg);
+    } catch {
+      setLocalLikes(task.likes || []);
+      toast.error("Thao tác thất bại");
     } finally {
-      setSending(false);
+      setLiking(false);
     }
+  }, [currentUser, liked, liking, localLikes, task.id, task.likes, router]);
+
+  /* ================= SHARE ================= */
+  const handleShare = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    const url = `${window.location.origin}/task/${task.slug}`;
+    const title = task.title || "Xem công việc";
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, url });
+      } catch {}
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast.success("Đã sao chép link");
+    }
+  }, [task.slug, task.title]);
+
+  /* ================= NAV ================= */
+  const handleClick = useCallback(() => {
+    incrementTaskView(task.id);
+    router.push(`/task/${task.slug}`);
+  }, [router, task.id, task.slug]);
+
+  const goToProfile = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (task.userId) router.push(`/user/${task.userId}`);
+  }, [router, task.userId]);
+
+  const handleMouseEnter = useCallback(() => {
+    router.prefetch(`/task/${task.slug}`);
+  }, [router, task.slug]);
+
+  /* ================= TIME ================= */
+  const timeAgo = (seconds?: number) => {
+    if (!seconds) return "";
+    const diff = Date.now() / 1000 - seconds;
+    if (diff < 60) return "Vừa xong";
+    if (diff < 3600) return `${Math.floor(diff / 60)} phút`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} giờ`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)} ngày`;
+    return new Date(seconds * 1000).toLocaleDateString("vi-VN");
   };
 
-  const timeAgo = (timestamp: any) => {
-    if (!timestamp?.seconds) return "";
-    return formatDistanceToNow(new Date(timestamp.seconds * 1000), {
-      addSuffix: true,
-      locale: vi,
-    });
-  };
-
-  if (!taskId) return null;
+  const formatPrice = (price: number, currency = "VND") =>
+    new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(price);
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800">
-      {/* MESSAGES */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {loading && (
-          <div className="space-y-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="flex gap-3 animate-pulse">
-                <div className="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded-full" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/4" />
-                  <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4" />
-                </div>
+    <div
+      onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
+      className="bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm shadow-gray-100/50 dark:shadow-black/20 active:scale-[0.98] transition-all duration-200 cursor-pointer overflow-hidden group hover:shadow-lg hover:shadow-gray-200/50 dark:hover:shadow-black/40"
+    >
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <button onClick={goToProfile} className="flex items-center gap-3 flex-1 min-w-0">
+            <img
+              src={task.userAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(task.userName || "U")}&background=random`}
+              alt="avatar"
+              className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-50 dark:ring-zinc-800"
+            />
+            <div className="flex-1 min-w-0 text-left">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">
+                  {task.userName || "User"}
+                </span>
+                {isPlan ? (
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-lg">
+                    PLAN
+                  </span>
+                ) : (
+                  <span className={`text-xs font-bold text-${status.color}-600 dark:text-${status.color}-400 bg-${status.color}-50 dark:bg-${status.color}-950/50 px-2 py-0.5 rounded-lg`}>
+                    {status.text}
+                  </span>
+                )}
               </div>
-            ))}
-          </div>
-        )}
-
-        {!loading && messages.length === 0 && (
-          <div className="flex items-center justify-center h-full text-gray-400 dark:text-zinc-500 text-sm">
-            Chưa có tin nhắn nào. Bắt đầu trò chuyện!
-          </div>
-        )}
-
-        {messages.map((msg) => {
-          const isMe = msg.userId === user?.uid;
-          return (
-            <div key={msg.id} className={`flex gap-3 ${isMe? "flex-row-reverse" : ""}`}>
-              <img
-                src={msg.userAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.userName)}&background=random`}
-                alt=""
-                className="w-8 h-8 rounded-full object-cover"
-              />
-              <div className={`flex-1 ${isMe? "text-right" : ""}`}>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-                    {msg.userName}
-                  </span>
-                  <span className="text-xs text-gray-400 dark:text-zinc-500">
-                    {timeAgo(msg.createdAt)}
-                  </span>
-                </div>
-                <div
-                  className={`inline-block px-3 py-2 rounded-2xl text-sm ${
-                    isMe
-                     ? "bg-blue-500 text-white"
-                      : "bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
-                  }`}
-                >
-                  {msg.text}
-                </div>
+              <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-zinc-400">
+                <FiClock size={12} />
+                {timeAgo(task.createdAt?.seconds)}
               </div>
             </div>
-          );
-        })}
-        <div ref={scrollRef} />
-      </div>
-
-      {/* INPUT */}
-      <form onSubmit={sendMessage} className="p-3 border-t border-gray-100 dark:border-zinc-800">
-        <div className="flex items-center gap-2">
-          <input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Nhập tin nhắn..."
-            disabled={!user || sending}
-            className="flex-1 px-4 py-2.5 rounded-2xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm disabled:opacity-50"
-          />
-          <button
-            type="submit"
-            disabled={!text.trim() ||!user || sending}
-            className="p-2.5 bg-blue-500 text-white rounded-2xl active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {sending? <FiLoader className="animate-spin" size={18} /> : <FiSend size={18} />}
           </button>
+
+          <div className="flex items-center gap-4 text-gray-400 dark:text-zinc-500">
+            <button onClick={handleLike} disabled={liking} className="flex items-center gap-1 active:scale-90 transition disabled:opacity-50">
+              {liked ? <FaHeart className="text-red-500" size={16} /> : <FiHeart className="group-hover:text-red-400" size={16} />}
+              <span className="text-xs font-medium">{likeCount}</span>
+            </button>
+
+            <div className="flex items-center gap-1">
+              <FiMessageCircle size={16} className="group-hover:text-blue-400" />
+              <span className="text-xs font-medium">{task.commentCount || 0}</span>
+            </div>
+
+            <button onClick={handleShare} className="active:scale-90 transition">
+              <FiShare2 size={16} className="group-hover:text-emerald-400" />
+            </button>
+          </div>
         </div>
-      </form>
+
+        <div className="space-y-2">
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="font-bold text-base text-gray-900 dark:text-gray-100 leading-snug flex-1">
+              {task.title}
+            </h3>
+            {!isPlan && task.price !== undefined && (
+              <div className="shrink-0 text-right">
+                <div className="text-lg font-extrabold bg-gradient-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent">
+                  {formatPrice(task.price, task.currency)}
+                </div>
+                {task.totalSlots && (
+                  <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-zinc-400 justify-end">
+                    <FiUsers size={12} />
+                    {task.joined || 0}/{task.totalSlots}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {task.description && (
+            <p className="text-sm text-gray-600 dark:text-zinc-400 leading-relaxed line-clamp-2 whitespace-pre-wrap">
+              {task.description}
+            </p>
+          )}
+
+          {task.images && task.images.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 pt-1">
+              {task.images.slice(0, 3).map((img, i) => (
+                <img
+                  key={i}
+                  src={img}
+                  alt={`Image ${i + 1}`}
+                  loading="lazy"
+                  className="w-full h-24 object-cover rounded-2xl bg-gray-200 dark:bg-zinc-800"
+                  onError={(e) => { e.currentTarget.src = "/placeholder.png"; }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
+
+function Skeleton() {
+  return (
+    <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800 p-4 animate-pulse">
+      <div className="flex gap-3 mb-3">
+        <div className="w-10 h-10 bg-gray-200 dark:bg-zinc-800 rounded-full" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
+          <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/3" />
+        </div>
+      </div>
+      <div className="h-5 bg-gray-200 dark:bg-zinc-800 rounded w-3/4 mb-2" />
+      <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-full" />
+    </div>
+  );
+}
+
+export default memo(TaskCard, (prev, next) => {
+  return (
+    prev.task.id === next.task.id &&
+    prev.task.likeCount === next.task.likeCount &&
+    prev.task.commentCount === next.task.commentCount &&
+    prev.task.joined === next.task.joined
+  );
+});
