@@ -47,7 +47,11 @@ export default function UserSearch() {
         
         const withStatus = await Promise.all(
           res.users.filter((u: UserResult) => u.uid !== user?.uid).map(async (u: UserResult) => {
-            const status = await getFriendStatus(user!.uid, u.uid);
+            const friendStatus = await getFriendStatus(user!.uid, u.uid);
+            let status: UserResult["status"] = "none";
+            if (friendStatus === "friends") status = "friends";
+            else if (friendStatus === "pending_sent") status = "requested";
+            else if (friendStatus === "pending_received") status = "pending";
             return { ...u, status };
           })
         );
