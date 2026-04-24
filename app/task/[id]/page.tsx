@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo, useCallback } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
@@ -9,7 +9,6 @@ import {
   getTaskBySlug,
   joinTask,
   incrementTaskView,
-  addReactionToTask,
 } from "@/lib/task";
 import {
   createComment,
@@ -22,17 +21,14 @@ import { Task } from "@/types/task";
 import {
   FiChevronLeft,
   FiSend,
-  FiHeart,
-  FiShare2,
   FiClock,
-  FiMapPin,
   FiUsers,
   FiX,
 } from "react-icons/fi";
-import { FaHeart } from "react-icons/fa";
-import { HiSparkles } from "react-icons/hi";
+import { FaRegHeart, FaHeart } from "react-icons/fa";
 import DOMPurify from "isomorphic-dompurify";
 import { toast, Toaster } from "sonner";
+import Image from "next/image";
 
 type UserData = {
   uid: string;
@@ -46,7 +42,6 @@ export default function TaskDetailPage() {
   const router = useRouter();
 
   const bottomRef = useRef<HTMLDivElement>(null);
-  const reactRef = useRef<HTMLDivElement>(null);
 
   const [task, setTask] = useState<Task | null>(null);
   const [owner, setOwner] = useState<UserData | null>(null);
@@ -56,14 +51,12 @@ export default function TaskDetailPage() {
 
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<TaskComment | null>(null);
-  const [showReactBox, setShowReactBox] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
   const [joining, setJoining] = useState(false);
 
-  // ✅ FIX CHÍNH: luôn đảm bảo array
   const applicants = task?.applicants ?? [];
 
   const isFull = useMemo(
@@ -135,21 +128,20 @@ export default function TaskDetailPage() {
   useEffect(() => {
     if (!task?.deadline?.seconds) return;
 
-    const interval = setInterval(() => {
+    const tick = () => {
       const diff = task.deadline!.seconds * 1000 - Date.now();
-
       if (diff <= 0) {
         setTimeLeft("Đã hết hạn");
         return;
       }
-
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
       const s = Math.floor((diff % 60000) / 1000);
-
       setTimeLeft(`${h}h ${m}m ${s}s`);
-    }, 1000);
+    };
 
+    tick();
+    const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
   }, [task?.deadline]);
 
@@ -161,7 +153,6 @@ export default function TaskDetailPage() {
       task.id,
       (data) => {
         setComments(data);
-
         setTimeout(() => {
           bottomRef.current?.scrollIntoView({ behavior: "smooth" });
         }, 100);
@@ -175,19 +166,16 @@ export default function TaskDetailPage() {
   }, [task?.id]);
 
   /* ================= ACTIONS ================= */
-
   const handleJoinTask = async () => {
-    if (!currentUser || !task || isApplied || isFull || joining) return;
+    if (!currentUser || !task || isApplied || isFull || joining || isOwner) return;
 
     try {
       setJoining(true);
-
       await joinTask(task.id, {
         uid: currentUser.uid,
         displayName: currentUser.displayName,
         photoURL: currentUser.photoURL,
       });
-
       toast.success("Ứng tuyển thành công!");
     } catch (err: any) {
       toast.error(err.message || "Ứng tuyển thất bại");
@@ -196,24 +184,11 @@ export default function TaskDetailPage() {
     }
   };
 
-  const handleReaction = async (type: string) => {
-    if (!currentUser || !task) return;
-
-    setShowReactBox(false);
-
-    try {
-      await addReactionToTask(task.id, currentUser.uid, type);
-    } catch {
-      toast.error("Thao tác thất bại");
-    }
-  };
-
   const handleSendComment = async () => {
     if (!currentUser || !task || !text.trim() || sending) return;
 
     setSending(true);
     const temp = text;
-
     setText("");
     setReplyTo(null);
 
@@ -242,43 +217,23 @@ export default function TaskDetailPage() {
     }
   };
 
-  const handleLikeComment = async (id: string) => {
+  const handleLikeComment = async (commentId: string) => {
     if (!currentUser) return;
-
     try {
-      await toggleLikeComment(id, currentUser.uid);
+      await toggleLikeComment(commentId, currentUser.uid);
     } catch {
       toast.error("Lỗi");
     }
   };
 
-  const reactionIcon: Record<string, string> = {
-    like: "👍",
-    love: "❤️",
-    haha: "😂",
-    wow: "😮",
-    sad: "😢",
-  };
-
-  const getTopReactions = useCallback(() => {
-    const r = task?.reactions || {};
-    return Object.entries(r)
-      .map(([k, v]: any) => [k, v?.length || 0])
-      .filter(([, v]) => v > 0)
-      .sort((a, b) => (b[1] as number) - (a[1] as number))
-      .slice(0, 3);
-  }, [task?.reactions]);
-
   /* ================= RENDER ================= */
-
   if (loading)
-    return <div className="p-4 animate-pulse">Loading...</div>;
+    return <div className="p-4 animate-pulse">Đang tải...</div>;
 
   if (!task)
-    return <div className="p-4">Không tìm thấy</div>;
+    return <div className="p-4">Không tìm thấy task</div>;
 
   const parentComments = comments.filter((c) => !c.parentId);
-  const childComments = comments.filter((c) => c.parentId);
 
   return (
     <>
@@ -286,48 +241,156 @@ export default function TaskDetailPage() {
 
       <div className="max-w-xl mx-auto bg-gray-50 dark:bg-zinc-950 min-h-screen pb-24">
         {/* HEADER */}
-        <div className="sticky top-0 z-30 bg-white border-b px-4 py-3 flex gap-3">
+        <div className="sticky top-0 z-30 bg-white dark:bg-zinc-900 border-b px-4 py-3 flex gap-3 items-center">
           <button onClick={() => router.back()}>
             <FiChevronLeft size={24} />
           </button>
-          <h1 className="font-bold truncate">{task.title}</h1>
+          <h1 className="font-bold truncate flex-1">{task.title}</h1>
+          {isOwner && (
+            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+              Của bạn
+            </span>
+          )}
         </div>
 
         {/* OWNER */}
-        <div className="p-4 flex justify-between">
-          <div>{owner?.name}</div>
-          <button onClick={handleJoinTask} disabled={isFull || isApplied}>
-            {isApplied ? "Đã ứng tuyển" : "Ứng tuyển"}
-          </button>
+        <div className="p-4 flex items-center justify-between bg-white dark:bg-zinc-900">
+          <div className="flex items-center gap-3">
+            {owner?.avatar && (
+              <Image
+                src={owner.avatar}
+                alt={owner.name || "Owner avatar"}
+                width={40}
+                height={40}
+                className="rounded-full"
+              />
+            )}
+            <div>
+              <div className="font-semibold">{owner?.name}</div>
+              <div className="text-xs text-gray-500">Chủ task</div>
+            </div>
+          {!isOwner && (
+            <button
+              onClick={handleJoinTask}
+              disabled={isFull || isApplied || joining}
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-medium"
+            >
+              {joining
+                ? "Đang xử lý..."
+                : isApplied
+                ? "Đã ứng tuyển"
+                : isFull
+                ? "Đã đủ người"
+                : "Ứng tuyển"}
+            </button>
+          )}
         </div>
 
         {/* META */}
-        <div className="p-4 grid grid-cols-2 gap-4 text-sm">
-          <div>{applicants.length} ứng tuyển</div>
-          <div>{timeLeft}</div>
+        <div className="p-4 grid grid-cols-2 gap-4 text-sm bg-white dark:bg-zinc-900 mt-2">
+          <div className="flex items-center gap-2">
+            <FiUsers className="text-gray-500" />
+            <span>
+              {applicants.length}/{task.totalSlots ?? 1} ứng tuyển
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <FiClock className="text-gray-500" />
+            <span>{timeLeft}</span>
+          </div>
         </div>
 
         {/* APPLICANTS */}
-        {applicants.length > 5 && (
-          <div>+{applicants.length - 5}</div>
+        {applicantsData.length > 0 && (
+          <div className="p-4 bg-white dark:bg-zinc-900 mt-2">
+            <div className="text-sm font-semibold mb-2">Đã ứng tuyển</div>
+            <div className="flex -space-x-2">
+              {applicantsData.slice(0, 5).map((u) => (
+                <Image
+                  key={u.uid}
+                  src={u.avatar || "/default-avatar.png"}
+                  alt={u.name || "Applicant avatar"}
+                  width={32}
+                  height={32}
+                  className="rounded-full border-2 border-white dark:border-zinc-900"
+                />
+              ))}
+              {applicantsData.length > 5 && (
+                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-zinc-700 border-2 border-white dark:border-zinc-900 flex items-center justify-center text-xs">
+                  +{applicantsData.length - 5}
+                </div>
+              )}
+            </div>
+          </div>
         )}
 
         {/* COMMENTS */}
-        <div className="p-4">
-          {parentComments.map((c) => (
-            <div key={c.id}>{c.text}</div>
-          ))}
+        <div className="p-4 space-y-4 bg-white dark:bg-zinc-900 mt-2">
+          <div className="font-semibold">Bình luận ({comments.length})</div>
+          {parentComments.map((c) => {
+            const liked = c.likes?.includes(currentUser?.uid || "");
+            return (
+              <div key={c.id} className="flex gap-2 text-sm">
+                <Image
+                  src={c.userAvatar || "/default-avatar.png"}
+                  alt={c.userName || "User avatar"}
+                  width={32}
+                  height={32}
+                  className="rounded-full h-8 w-8"
+                />
+                <div className="flex-1">
+                  <div className="bg-gray-100 dark:bg-zinc-800 rounded-lg px-3 py-2">
+                    <div className="font-semibold">{c.userName}</div>
+                    <div>{c.text}</div>
+                  </div>
+                  <div className="flex gap-4 mt-1 text-xs text-gray-500">
+                    <button
+                      onClick={() => handleLikeComment(c.id)}
+                      className="flex items-center gap-1"
+                    >
+                      {liked ? (
+                        <FaHeart className="text-red-500" />
+                      ) : (
+                        <FaRegHeart />
+                      )}
+                      {c.likes?.length || 0}
+                    </button>
+                    <button onClick={() => setReplyTo(c)}>Trả lời</button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          <div ref={bottomRef} />
         </div>
 
         {/* INPUT */}
-        <div className="p-4">
-          <input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-          />
-          <button onClick={handleSendComment}>
-            <FiSend />
-          </button>
+        <div className="fixed bottom-0 left-0 right-0 max-w-xl mx-auto bg-white dark:bg-zinc-900 border-t p-3">
+          {replyTo && (
+            <div className="text-xs text-gray-500 mb-2 flex items-center justify-between bg-gray-50 dark:bg-zinc-800 p-2 rounded">
+              <span>Đang trả lời {replyTo.userName}</span>
+              <button onClick={() => setReplyTo(null)}>
+                <FiX />
+              </button>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSendComment()}
+              placeholder="Viết bình luận..."
+              className="flex-1 px-3 py-2 rounded-lg bg-gray-100 dark:bg-zinc-800 outline-none text-sm"
+              disabled={sending}
+            />
+            <button
+              onClick={handleSendComment}
+              disabled={!text.trim() || sending}
+              className="p-2 rounded-lg bg-blue-600 text-white disabled:bg-gray-300"
+            >
+              <FiSend />
+            </button>
+          </div>
         </div>
       </div>
     </>
