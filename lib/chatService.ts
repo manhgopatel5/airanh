@@ -26,7 +26,6 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { User } from "@/types/task";
-import { initFCM } from "./fcm";
 import { toast } from "sonner"; // ← Lib này cần "use client"
 
 export class ChatError extends Error {
@@ -429,7 +428,7 @@ export const removeReaction = async (
 
 /* ================= FCM TOPIC ================= */
 export const subscribeToTopic = async (userId: string, topic: string): Promise<void> => {
-  const token = await initFCM(userId);
+  const token = storage.get(`fcm_token_${userId}`);
   if (!token) throw new ChatError("Không lấy được FCM token");
 
   const res = await fetch("/api/fcm/topic", {
@@ -437,6 +436,7 @@ export const subscribeToTopic = async (userId: string, topic: string): Promise<v
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ token, topic, action: "subscribe" }),
   });
+
   if (!res.ok) throw new ChatError("Subscribe topic thất bại");
 };
 
