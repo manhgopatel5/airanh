@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   onAuthStateChanged,
   User,
@@ -8,7 +8,7 @@ import {
   getIdTokenResult,
   IdTokenResult,
 } from "firebase/auth";
-import { auth, db, rtdb, authReady } from "@/lib/firebase"; // ✅ FIX 7: Thêm rtdb
+import { auth, db, rtdb, authReady } from "@/lib/firebase";
 import {
   doc,
   onSnapshot,
@@ -28,14 +28,14 @@ export type UserProfile = {
   uid: string;
   name: string;
   email: string;
-  emailVerified: boolean; // ✅ FIX 6
+  emailVerified: boolean;
   avatar: string;
   shortId: string;
   username?: string;
   bio?: string;
   isOnline: boolean;
   lastSeen: Timestamp;
-  role: "user" | "admin" | "moderator"; // ✅ FIX 6
+  role: "user" | "admin" | "moderator";
   createdAt: Timestamp;
   updatedAt?: Timestamp;
   postsCount?: number;
@@ -46,15 +46,15 @@ export type UserProfile = {
 export type UseAuthReturn = {
   user: User | null;
   profile: UserProfile | null;
-  claims: IdTokenResult["claims"] | null; // ✅ FIX 8
+  claims: IdTokenResult["claims"] | null;
   loading: boolean;
   loadingProfile: boolean;
   error: string | null;
   isAuthenticated: boolean;
-  isAdmin: boolean; // ✅ FIX 6
+  isAdmin: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-  refreshClaims: () => Promise<void>; // ✅ FIX 8
+  refreshClaims: () => Promise<void>;
 };
 
 /* ================= SINGLETON STORE ================= */
@@ -75,7 +75,7 @@ function initAuthStore() {
   let profile: UserProfile | null = null;
   let claims: IdTokenResult["claims"] | null = null;
   let loading = true;
-  let loadingProfile = false; // ✅ FIX 10: Mặc định false
+  let loadingProfile = false;
   let error: string | null = null;
 
   const updateStore = () => {
@@ -87,9 +87,8 @@ function initAuthStore() {
       loadingProfile,
       error,
       isAuthenticated:!!user &&!loading,
-      isAdmin: profile?.role === "admin" || claims?.admin === true, // ✅ FIX 6
+      isAdmin: profile?.role === "admin" || claims?.admin === true,
       signOut: async () => {
-        // ✅ FIX 2: Set offline trước khi logout
         if (user) {
           try {
             await updateDoc(doc(db, "users", user.uid), {
@@ -109,7 +108,7 @@ function initAuthStore() {
             updateStore();
           }
         } catch (e) {
-          error = "Không thể tải profile"; // ✅ FIX 9
+          error = "Không thể tải profile";
           updateStore();
         }
       },
@@ -126,7 +125,6 @@ function initAuthStore() {
     listeners.forEach((l) => l(state));
   };
 
-  // ✅ FIX 3: Presence system
   const setupPresence = (uid: string) => {
     if (!rtdb) return;
     const userStatusRef = ref(rtdb, `/status/${uid}`);
@@ -143,14 +141,13 @@ function initAuthStore() {
       set(userStatusRef, isOnline);
     });
 
-    // Update Firestore mỗi 2 phút
     heartbeatInterval = setInterval(() => {
       if (document.visibilityState === "visible") {
         updateDoc(doc(db, "users", uid), {
           lastSeen: serverTimestamp(),
         }).catch(() => {});
       }
-    }, 120000); // ✅ FIX 11
+    }, 120000);
   };
 
   const cleanupPresence = () => {
@@ -176,13 +173,12 @@ function initAuthStore() {
           unsubProfile();
           unsubProfile = null;
         }
-        cleanupPresence(); // ✅ FIX 3
+        cleanupPresence();
 
         if (u) {
           loadingProfile = true;
           updateStore();
 
-          // ✅ FIX 8: Lấy claims
           try {
             const token = await getIdTokenResult(u);
             claims = token.claims;
@@ -195,13 +191,13 @@ function initAuthStore() {
             const newProfile: Omit<UserProfile, "uid"> = {
               name: u.displayName || u.email?.split("@")[0] || "User",
               email: u.email || "",
-              emailVerified: u.emailVerified, // ✅ FIX 6
+              emailVerified: u.emailVerified,
               avatar: u.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.email || "U")}`,
               shortId: nanoid(8).toUpperCase(),
               bio: "",
               isOnline: true,
-              lastSeen: Timestamp.now(), // ✅ FIX 4: Dùng now() local
-              role: "user", // ✅ FIX 6
+              lastSeen: Timestamp.now(),
+              role: "user",
               createdAt: serverTimestamp() as Timestamp,
               postsCount: 0,
               tasksJoined: 0,
@@ -210,7 +206,6 @@ function initAuthStore() {
             await setDoc(userRef, newProfile);
           }
 
-          // ✅ FIX 12: Chỉ listen field cần thiết
           unsubProfile = onSnapshot(
             userRef,
             (snap) => {
@@ -234,12 +229,12 @@ function initAuthStore() {
             }
           );
 
-          setupPresence(u.uid); // ✅ FIX 3
+          setupPresence(u.uid);
         } else {
           profile = null;
           claims = null;
           loading = false;
-          loadingProfile = false; // ✅ FIX 10
+          loadingProfile = false;
           updateStore();
         }
       },
@@ -255,7 +250,6 @@ function initAuthStore() {
     );
   });
 
-  // ✅ FIX 1: Cleanup khi không còn listener
   const checkCleanup = () => {
     if (listeners.size === 0) {
       unsubAuth?.();
@@ -267,7 +261,6 @@ function initAuthStore() {
     }
   };
 
-  // Gọi mỗi 5s để check
   setInterval(checkCleanup, 5000);
 }
 
@@ -280,7 +273,7 @@ export function useAuth(): UseAuthReturn {
       profile: null,
       claims: null,
       loading: true,
-      loadingProfile: false, // ✅ FIX 10
+      loadingProfile: false,
       error: null,
       isAuthenticated: false,
       isAdmin: false,
@@ -291,7 +284,7 @@ export function useAuth(): UseAuthReturn {
   );
 
   useEffect(() => {
-    if (typeof window === "undefined") return; // ✅ FIX 13: SSR guard
+    if (typeof window === "undefined") return;
     initAuthStore();
     const listener = (s: UseAuthReturn) => {
       setState(s);
@@ -305,7 +298,6 @@ export function useAuth(): UseAuthReturn {
     };
   }, []);
 
-  // ✅ FIX 5: Memo từng field thay vì cả object
   return useMemo(
     () => state,
     [
@@ -337,7 +329,7 @@ export function useRequireAuth(redirectTo = "/login") {
     }
   }, [user, loading, redirectTo, router]);
 
-  return { user, loading, isAuthenticated:!!user &&!loading }; // ✅ FIX 8
+  return { user, loading, isAuthenticated:!!user &&!loading };
 }
 
 export function useRequireAdmin(redirectTo = "/") {
