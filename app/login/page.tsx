@@ -30,6 +30,7 @@ export default function Login() {
   const [remember, setRemember] = useState(true);
   const failedAttempts = useRef(0);
   const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isNavigating = useRef(false); // ✅ THÊM FLAG NÀY
 
   /* ================= KHÓA SCROLL ================= */
   useEffect(() => {
@@ -61,12 +62,13 @@ export default function Login() {
     };
   }, []);
 
-  /* ================= REDIRECT IF LOGGED IN ================= */
+  /* ================= REDIRECT IF LOGGED IN - FIX LOOP ================= */
   useEffect(() => {
     let isMounted = true;
     const unsub = onAuthStateChanged(auth, (user) => {
       if (!isMounted) return;
       if (pathname!== "/login") return;
+      if (isNavigating.current) return; // ✅ FIX: Đang bấm link thì bỏ qua redirect
 
       if (user?.emailVerified) {
         router.replace("/");
@@ -204,18 +206,17 @@ export default function Login() {
               <div className="relative w-full h-full bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-500/40 ring-1 ring-white/30">
                 <span className="text-white text-5xl font-black tracking-tighter">A</span>
               </div>
-            </div>
-            <h1 className="text-[32px] font-black text-gray-900 dark:text-white mb-2 tracking-tight">
+            <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">
               Chào mừng trở lại
             </h1>
-            <p className="text-[15px] text-gray-500 dark:text-zinc-400 font-medium">
+            <p className="text-base text-gray-500 dark:text-zinc-400 font-medium">
               Đăng nhập để tiếp tục hành trình
             </p>
           </div>
 
           {/* ERROR */}
           {errors.submit && (
-            <div className="bg-red-500/10 dark:bg-red-500/20 backdrop-blur-xl border border-red-500/20 dark:border-red-500/30 text-red-600 dark:text-red-400 px-4 py-3.5 rounded-2xl mb-5 flex items-center gap-3 text-[15px] font-medium animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="bg-red-500/10 dark:bg-red-500/20 backdrop-blur-xl border border-red-500/20 dark:border-red-500/30 text-red-600 dark:text-red-400 px-4 py-3.5 rounded-2xl mb-5 flex items-center gap-3 text-sm font-medium animate-in fade-in slide-in-from-top-2 duration-300">
               <FiAlertCircle size={20} className="flex-shrink-0" />
               {errors.submit}
             </div>
@@ -232,7 +233,7 @@ export default function Login() {
               autoComplete="off"
             />
 
-            {/* EMAIL - BỎ VIỀN ĐEN TRONG */}
+            {/* EMAIL */}
             <div>
               <div className={`group relative flex items-center bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl rounded-2xl px-4 h-14 shadow-xl shadow-gray-900/5 dark:shadow-black/30 border-2 transition-all duration-300 ${errors.email? 'border-red-400 dark:border-red-500' : 'border-white/60 dark:border-zinc-800/60 focus-within:border-blue-500 dark:focus-within:border-blue-500 focus-within:shadow-blue-500/20'}`}>
                 <FiMail className={`mr-3.5 flex-shrink-0 transition-colors ${errors.email? 'text-red-500' : 'text-gray-400 dark:text-zinc-500 group-focus-within:text-blue-500'}`} size={22} />
@@ -240,7 +241,7 @@ export default function Login() {
                   type="email"
                   placeholder="Email của bạn"
                   autoComplete="email"
-                  className="w-full outline-none bg-transparent text-[16px] text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 font-medium border-none focus:ring-0"
+                  className="w-full outline-none bg-transparent text-base text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 font-medium border-none focus:ring-0"
                   value={form.email}
                   onChange={(e) => {
                     setForm({...form, email: e.target.value });
@@ -249,10 +250,10 @@ export default function Login() {
                   onBlur={() => setErrors({...errors, email: validateField("email", form.email) })}
                 />
               </div>
-              {errors.email && <p className="text-red-500 text-[13px] mt-2 ml-1 font-medium animate-in fade-in slide-in-from-top-1">{errors.email}</p>}
+              {errors.email && <p className="text-red-500 text-sm mt-2 ml-1 font-medium animate-in fade-in slide-in-from-top-1">{errors.email}</p>}
             </div>
 
-            {/* PASSWORD - NÚT CON MẮT NẰM TRONG Ô */}
+            {/* PASSWORD */}
             <div>
               <div className={`group relative flex items-center bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl rounded-2xl px-4 h-14 shadow-xl shadow-gray-900/5 dark:shadow-black/30 border-2 transition-all duration-300 ${errors.password? 'border-red-400 dark:border-red-500' : 'border-white/60 dark:border-zinc-800/60 focus-within:border-blue-500 dark:focus-within:border-blue-500 focus-within:shadow-blue-500/20'}`}>
                 <FiLock className={`mr-3.5 flex-shrink-0 transition-colors ${errors.password? 'text-red-500' : 'text-gray-400 dark:text-zinc-500 group-focus-within:text-blue-500'}`} size={22} />
@@ -260,7 +261,7 @@ export default function Login() {
                   type={show? "text" : "password"}
                   placeholder="Mật khẩu"
                   autoComplete="current-password"
-                  className="w-full outline-none bg-transparent text-[16px] text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 font-medium border-none focus:ring-0 pr-2"
+                  className="w-full outline-none bg-transparent text-base text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 font-medium border-none focus:ring-0 pr-2"
                   value={form.password}
                   onChange={(e) => {
                     setForm({...form, password: e.target.value });
@@ -276,11 +277,11 @@ export default function Login() {
                   {show? <FiEyeOff size={22} /> : <FiEye size={22} />}
                 </button>
               </div>
-              {errors.password && <p className="text-red-500 text-[13px] mt-2 ml-1 font-medium animate-in fade-in slide-in-from-top-1">{errors.password}</p>}
+              {errors.password && <p className="text-red-500 text-sm mt-2 ml-1 font-medium animate-in fade-in slide-in-from-top-1">{errors.password}</p>}
             </div>
 
             {/* REMEMBER + FORGOT */}
-            <div className="flex items-center justify-between text-[15px] pt-1.5">
+            <div className="flex items-center justify-between text-sm pt-1.5">
               <label className="flex items-center gap-2.5 cursor-pointer select-none group">
                 <input
                   type="checkbox"
@@ -290,7 +291,11 @@ export default function Login() {
                 />
                 <span className="text-gray-600 dark:text-zinc-400 font-medium group-hover:text-gray-900 dark:group-hover:text-zinc-200 transition-colors">Ghi nhớ đăng nhập</span>
               </label>
-              <Link href="/forgot-password" className="text-blue-600 dark:text-blue-500 font-bold hover:text-blue-700 dark:hover:text-blue-400 active:opacity-70 transition-all">
+              <Link
+                href="/forgot-password"
+                onClick={() => { isNavigating.current = true; }} // ✅ FIX: Đánh dấu đang chuyển trang
+                className="text-blue-600 dark:text-blue-500 font-bold hover:text-blue-700 dark:hover:text-blue-400 active:opacity-70 transition-all"
+              >
                 Quên mật khẩu?
               </Link>
             </div>
@@ -299,7 +304,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="relative w-full h-14 rounded-2xl text-white text-[17px] font-bold bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/40 active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 mt-7 overflow-hidden group"
+              className="relative w-full h-14 rounded-2xl text-white text-base font-bold bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/40 active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 mt-7 overflow-hidden group"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <div className="relative flex items-center gap-2.5">
@@ -316,9 +321,13 @@ export default function Login() {
           </form>
 
           {/* REGISTER */}
-          <p className="text-center mt-8 text-[15px] text-gray-600 dark:text-zinc-400 font-medium">
+          <p className="text-center mt-8 text-base text-gray-600 dark:text-zinc-400 font-medium">
             Chưa có tài khoản?{" "}
-            <Link href="/register" className="text-blue-600 dark:text-blue-500 font-bold hover:text-blue-700 dark:hover:text-blue-400 active:opacity-70 transition-all">
+            <Link
+              href="/register"
+              onClick={() => { isNavigating.current = true; }} // ✅ FIX: Tương tự cho link đăng ký
+              className="text-blue-600 dark:text-blue-500 font-bold hover:text-blue-700 dark:hover:text-blue-400 active:opacity-70 transition-all"
+            >
               Đăng ký ngay
             </Link>
           </p>
