@@ -25,15 +25,6 @@ function TaskCard({ task }: { task: TaskListItem }) {
   const liked = currentUser && localLikes.includes(currentUser.uid);
   const likeCount = localLikes.length;
 
-  const statusConfig = {
-    open: { text: "Đang tuyển", color: "emerald" },
-    full: { text: "Đã đủ", color: "amber" },
-    completed: { text: "Hoàn thành", color: "blue" },
-    cancelled: { text: "Đã hủy", color: "gray" },
-  } as const;
-
-  const status = statusConfig[task.status || "open"];
-
   /* ================= LIKE ================= */
   const handleLike = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
