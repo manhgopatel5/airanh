@@ -178,7 +178,7 @@ export default function UserProfilePage() {
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100 line-clamp-1">{task.title}</h3>
                 <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-zinc-400">
-                  <span className="font-bold text-emerald-600">{formatTaskPrice(task)}</span>
+                  <span className="font-bold text-emerald-600">{formatTaskPrice(task.price, task.currency)}</span>
                   <span>•</span>
                   <span>{task.joined}/{task.totalSlots} người</span>
                 </div>
