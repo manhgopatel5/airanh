@@ -31,7 +31,7 @@ export default function Login() {
   const failedAttempts = useRef(0);
   const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  /* ================= KHÓA SCROLL 100% ================= */
+  /* ================= KHÓA SCROLL ================= */
   useEffect(() => {
     const originalOverflow = document.body.style.overflow;
     const originalPosition = document.body.style.position;
@@ -200,8 +200,8 @@ export default function Login() {
           {/* LOGO */}
           <div className="text-center mb-10">
             <div className="relative w-24 h-24 mx-auto mb-6">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-[28px] blur-2xl opacity-50 animate-pulse" />
-              <div className="relative w-full h-full bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-[28px] flex items-center justify-center shadow-2xl shadow-blue-500/40 ring-1 ring-white/30">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl blur-2xl opacity-50" />
+              <div className="relative w-full h-full bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-500/40 ring-1 ring-white/30">
                 <span className="text-white text-5xl font-black tracking-tighter">A</span>
               </div>
             </div>
@@ -232,15 +232,15 @@ export default function Login() {
               autoComplete="off"
             />
 
-            {/* EMAIL */}
+            {/* EMAIL - BỎ VIỀN ĐEN TRONG */}
             <div>
-              <div className={`group relative flex items-center bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl rounded-2xl px-4 h-[56px] shadow-xl shadow-gray-900/5 dark:shadow-black/30 border-2 transition-all duration-300 ${errors.email? 'border-red-400 dark:border-red-500' : 'border-white/60 dark:border-zinc-800/60 focus-within:border-blue-500 dark:focus-within:border-blue-500 focus-within:shadow-blue-500/20'}`}>
+              <div className={`group relative flex items-center bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl rounded-2xl px-4 h-14 shadow-xl shadow-gray-900/5 dark:shadow-black/30 border-2 transition-all duration-300 ${errors.email? 'border-red-400 dark:border-red-500' : 'border-white/60 dark:border-zinc-800/60 focus-within:border-blue-500 dark:focus-within:border-blue-500 focus-within:shadow-blue-500/20'}`}>
                 <FiMail className={`mr-3.5 flex-shrink-0 transition-colors ${errors.email? 'text-red-500' : 'text-gray-400 dark:text-zinc-500 group-focus-within:text-blue-500'}`} size={22} />
                 <input
                   type="email"
                   placeholder="Email của bạn"
                   autoComplete="email"
-                  className="w-full outline-none bg-transparent text-[16px] text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 font-medium"
+                  className="w-full outline-none bg-transparent text-[16px] text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 font-medium border-none focus:ring-0"
                   value={form.email}
                   onChange={(e) => {
                     setForm({...form, email: e.target.value });
@@ -252,15 +252,15 @@ export default function Login() {
               {errors.email && <p className="text-red-500 text-[13px] mt-2 ml-1 font-medium animate-in fade-in slide-in-from-top-1">{errors.email}</p>}
             </div>
 
-            {/* PASSWORD */}
+            {/* PASSWORD - NÚT CON MẮT NẰM TRONG Ô */}
             <div>
-              <div className={`group relative flex items-center bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl rounded-2xl px-4 h-[56px] shadow-xl shadow-gray-900/5 dark:shadow-black/30 border-2 transition-all duration-300 ${errors.password? 'border-red-400 dark:border-red-500' : 'border-white/60 dark:border-zinc-800/60 focus-within:border-blue-500 dark:focus-within:border-blue-500 focus-within:shadow-blue-500/20'}`}>
+              <div className={`group relative flex items-center bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl rounded-2xl px-4 h-14 shadow-xl shadow-gray-900/5 dark:shadow-black/30 border-2 transition-all duration-300 ${errors.password? 'border-red-400 dark:border-red-500' : 'border-white/60 dark:border-zinc-800/60 focus-within:border-blue-500 dark:focus-within:border-blue-500 focus-within:shadow-blue-500/20'}`}>
                 <FiLock className={`mr-3.5 flex-shrink-0 transition-colors ${errors.password? 'text-red-500' : 'text-gray-400 dark:text-zinc-500 group-focus-within:text-blue-500'}`} size={22} />
                 <input
                   type={show? "text" : "password"}
                   placeholder="Mật khẩu"
                   autoComplete="current-password"
-                  className="w-full outline-none bg-transparent text-[16px] text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 font-medium"
+                  className="w-full outline-none bg-transparent text-[16px] text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 font-medium border-none focus:ring-0 pr-2"
                   value={form.password}
                   onChange={(e) => {
                     setForm({...form, password: e.target.value });
@@ -268,7 +268,11 @@ export default function Login() {
                   }}
                   onBlur={() => setErrors({...errors, password: validateField("password", form.password) })}
                 />
-                <button type="button" onClick={handleShowPass} className="ml-2 text-gray-400 dark:text-zinc-500 hover:text-blue-500 active:scale-90 transition-all">
+                <button
+                  type="button"
+                  onClick={handleShowPass}
+                  className="ml-2 text-gray-400 dark:text-zinc-500 hover:text-blue-500 active:scale-90 transition-all flex-shrink-0"
+                >
                   {show? <FiEyeOff size={22} /> : <FiEye size={22} />}
                 </button>
               </div>
@@ -282,7 +286,7 @@ export default function Login() {
                   type="checkbox"
                   checked={remember}
                   onChange={(e) => setRemember(e.target.checked)}
-                  className="w-[18px] h-[18px] text-blue-500 rounded-md border-2 border-gray-300 dark:border-zinc-700 focus:ring-2 focus:ring-blue-500/30 focus:ring-offset-0 transition-all cursor-pointer"
+                  className="w-5 h-5 text-blue-500 rounded-md border-2 border-gray-300 dark:border-zinc-700 focus:ring-2 focus:ring-blue-500/30 focus:ring-offset-0 transition-all cursor-pointer"
                 />
                 <span className="text-gray-600 dark:text-zinc-400 font-medium group-hover:text-gray-900 dark:group-hover:text-zinc-200 transition-colors">Ghi nhớ đăng nhập</span>
               </label>
@@ -295,7 +299,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="relative w-full h-[56px] rounded-2xl text-white text-[17px] font-bold bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/40 active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 mt-7 overflow-hidden group"
+              className="relative w-full h-14 rounded-2xl text-white text-[17px] font-bold bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/40 active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 mt-7 overflow-hidden group"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <div className="relative flex items-center gap-2.5">
