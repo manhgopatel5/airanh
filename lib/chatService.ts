@@ -82,10 +82,6 @@ export type Chat = {
 };
 
 /* ================= HELPERS ================= */
-const getChatId = (uid1: string, uid2: string): string => {
-  return [uid1, uid2].sort().join("_");
-};
-
 const validateUser = (user?: User | null) => {
   if (!user?.uid) throw new ChatError("Bạn cần đăng nhập");
 };
@@ -218,9 +214,9 @@ export const listenMessages = (
     q,
     (snapshot) => {
       const data = snapshot.docs
-   .map((d) => ({ id: d.id,...d.data() } as Message))
-   .filter((m) =>!m.deletedFor?.includes(userId))
-   .reverse();
+  .map((d) => ({ id: d.id,...d.data() } as Message))
+  .filter((m) =>!m.deletedFor?.includes(userId))
+  .reverse();
       callback(data, snapshot.docs.length === (options?.limit || 50));
     },
     (err) => {
