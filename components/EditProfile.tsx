@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { db, auth } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { updateProfile } from "firebase/auth"; // ✅ FIX 1
+import { updateProfile } from "firebase/auth";
 import { FiCheck, FiLoader } from "react-icons/fi";
 
 type Props = {
@@ -12,7 +12,7 @@ type Props = {
   onClose?: () => void;
 };
 
-const BAD_WORDS = ["admin", "mod", "support", "đm", "vcl", "dm"]; // ✅ FIX 3
+const BAD_WORDS = ["admin", "mod", "support", "đm", "vcl", "dm"];
 
 export default function EditProfile({ currentName, onClose }: Props) {
   const { user } = useAuth();
@@ -20,9 +20,8 @@ export default function EditProfile({ currentName, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const [touched, setTouched] = useState(false); // ✅ FIX 2
+  const [touched, setTouched] = useState(false);
 
-  // ✅ FIX 2: Validate chỉ khi touched
   const validate = useCallback((val: string): string => {
     const trimmed = val.trim();
     if (!trimmed) return "Tên không được để trống";
@@ -58,14 +57,13 @@ export default function EditProfile({ currentName, onClose }: Props) {
     setError("");
 
     try {
-      // ✅ FIX 1: Update cả Auth + Firestore
       await Promise.all([
         updateProfile(auth.currentUser!, { displayName: trimmed }),
         setDoc(
           doc(db, "users", user.uid),
           {
             name: trimmed,
-            searchKeywords: trimmed.toLowerCase().split(" "), // ✅ FIX 4
+            searchKeywords: trimmed.toLowerCase().split(" "),
             updatedAt: serverTimestamp(),
           },
           { merge: true }
@@ -96,11 +94,11 @@ export default function EditProfile({ currentName, onClose }: Props) {
             setName(e.target.value);
             setSuccess(false);
           }}
-          onBlur={() => setTouched(true)} // ✅ FIX 2
+          onBlur={() => setTouched(true)}
           onKeyDown={(e) => e.key === "Enter" && save()}
           placeholder="Nhập tên của bạn"
           maxLength={30}
-          autoFocus // ✅ FIX 7
+          autoFocus
           className={`w-full px-4 py-3 rounded-2xl border bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 transition-all ${
             errorMsg
               ? "border-red-500 focus:ring-red-500/20 focus:border-red-500"
