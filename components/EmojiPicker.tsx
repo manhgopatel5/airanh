@@ -27,7 +27,7 @@ export default function EmojiPicker({ onSelect, align = "left" }: Props) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
-  // ✅ FIX: preventDefault + stopPropagation để không trigger parent
+  // preventDefault + stopPropagation để không trigger parent
   const toggleOpen = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
