@@ -8,9 +8,9 @@ import {
   where,
   onSnapshot,
   doc,
-  getDoc,
   or,
   documentId,
+  getDocs,
 } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthContext";
 import { useRouter } from "next/navigation";
@@ -34,7 +34,7 @@ export default function FriendList() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [chattingId, setChattingId] = useState<string | null>(null);
-  const presenceUnsubs = useRef<Record<string, () => void>>({}); // ✅ FIX 2
+  const presenceUnsubs = useRef<Record<string, () => void>>({});
 
   /* ================= LOAD FRIENDS + PRESENCE ================= */
   useEffect(() => {
@@ -63,7 +63,7 @@ export default function FriendList() {
           return;
         }
 
-        // 2. Batch get users - ✅ FIX 1: Dùng documentId in
+        // 2. Batch get users - dùng documentId in
         const ids = Array.from(friendIds);
         const batches: string[][] = [];
         for (let i = 0; i < ids.length; i += 10) {
@@ -86,7 +86,7 @@ export default function FriendList() {
             const data = u.data();
             list.push({ uid: u.id, ...data } as Friend);
 
-            // ✅ FIX 2: Listen online status realtime
+            // Listen online status realtime
             presenceUnsubs.current[u.id] = onSnapshot(doc(db, "users", u.id), (userSnap) => {
               const userData = userSnap.data();
               setFriends((prev) =>
@@ -100,7 +100,7 @@ export default function FriendList() {
           });
         });
 
-        // ✅ FIX 4: Sort online trước, rồi theo tên
+        // Sort online trước, rồi theo tên
         list.sort((a, b) => {
           if (a.online && !b.online) return -1;
           if (!a.online && b.online) return 1;
@@ -142,7 +142,7 @@ export default function FriendList() {
     }
   }, [user?.uid, chattingId, router]);
 
-  /* ================= PREFETCH ✅ FIX 8 ================= */
+  /* ================= PREFETCH ================= */
   const handleMouseEnter = useCallback(async (fid: string) => {
     if (!user?.uid) return;
     const id = await getOrCreateConversation(user.uid, fid);
@@ -211,7 +211,7 @@ export default function FriendList() {
         {filtered.map((f) => (
           <div
             key={f.uid}
-            onMouseEnter={() => handleMouseEnter(f.uid)} // ✅ FIX 8
+            onMouseEnter={() => handleMouseEnter(f.uid)}
             className="bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm shadow-gray-100/50 dark:shadow-black/20 p-3 flex items-center justify-between gap-3 group hover:shadow-lg hover:shadow-gray-200/50 dark:hover:shadow-black/40 transition-all duration-200"
           >
             <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -232,7 +232,6 @@ export default function FriendList() {
                 <div className="text-xs text-gray-500 dark:text-zinc-400">
                   {f.online ? "Đang hoạt động" : "Offline"}
                 </div>
-                {/* ✅ FIX 7: Last message preview */}
                 {f.lastMessage && (
                   <div className="text-xs text-gray-400 dark:text-zinc-500 truncate mt-0.5">
                     {f.lastMessage}
@@ -252,7 +251,6 @@ export default function FriendList() {
                 <FiMessageSquare size={16} />
               )}
               Nhắn tin
-              {/* ✅ FIX 5: Unread badge */}
               {f.unreadCount ? (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                   {f.unreadCount > 9 ? "9+" : f.unreadCount}
