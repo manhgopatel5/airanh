@@ -5,7 +5,7 @@ import FCMProvider from "@/components/FCMProvider";
 import { useEffect, useMemo, useState, useRef } from "react";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/lib/AuthContext";
-import toast, { Toaster } from "react-hot-toast";
+import { Toaster } from "react-hot-toast";
 
 type Props = {
   children: React.ReactNode;
