@@ -44,7 +44,7 @@ function getFirebaseAdmin() {
       throw e;
     }
   } else {
-    app = getApps()[0];
+    app = getApps()[0]!;
   }
 
   if (!messaging) messaging = getMessaging(app);
