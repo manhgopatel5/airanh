@@ -329,7 +329,7 @@ export default function TaskDetailPage() {
         <div className="p-4 space-y-4 bg-white dark:bg-zinc-900 mt-2">
           <div className="font-semibold">Bình luận ({comments.length})</div>
           {parentComments.map((c) => {
-            const liked = c.likes?.includes(currentUser?.uid || "");
+            const liked = c.likedBy?.includes(currentUser?.uid || "") ?? false;
             return (
               <div key={c.id} className="flex gap-2 text-sm">
                 <Image
@@ -342,22 +342,24 @@ export default function TaskDetailPage() {
                 <div className="flex-1">
                   <div className="bg-gray-100 dark:bg-zinc-800 rounded-lg px-3 py-2">
                     <div className="font-semibold">{c.userName}</div>
-                    <div>{c.text}</div>
+                    <div>{c.deleted ? <i className="text-gray-500">Bình luận đã bị xóa</i> : c.text}</div>
                   </div>
-                  <div className="flex gap-4 mt-1 text-xs text-gray-500">
-                    <button
-                      onClick={() => handleLikeComment(c.id)}
-                      className="flex items-center gap-1"
-                    >
-                      {liked ? (
-                        <FaHeart className="text-red-500" />
-                      ) : (
-                        <FaRegHeart />
-                      )}
-                      {c.likes?.length || 0}
-                    </button>
-                    <button onClick={() => setReplyTo(c)}>Trả lời</button>
-                  </div>
+                  {!c.deleted && (
+                    <div className="flex gap-4 mt-1 text-xs text-gray-500">
+                      <button
+                        onClick={() => handleLikeComment(c.id)}
+                        className="flex items-center gap-1"
+                      >
+                        {liked ? (
+                          <FaHeart className="text-red-500" />
+                        ) : (
+                          <FaRegHeart />
+                        )}
+                        {c.likeCount || 0}
+                      </button>
+                      <button onClick={() => setReplyTo(c)}>Trả lời</button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
