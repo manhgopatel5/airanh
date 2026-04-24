@@ -25,6 +25,8 @@ type UserProfile = {
 export default function UserProfilePage() {
   const { uid } = useParams();
   const router = useRouter();
+  const db = getFirebaseDB(); // ✅ Dùng db ở đây
+  
   const [user, setUser] = useState<UserProfile | null>(null);
   const [tasks, setTasks] = useState<TaskListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,7 +63,7 @@ export default function UserProfilePage() {
     };
 
     loadData();
-  }, [uid, router]);
+  }, [uid, router, db]);
 
   const filteredTasks = tasks.filter((t) =>
     tab === "open" ? ["open", "full"].includes(t.status) : t.status === "completed"
@@ -140,7 +142,7 @@ export default function UserProfilePage() {
             onClick={() => setTab(t.key as any)}
             className={`py-3 text-sm font-semibold border-b-2 transition ${
               tab === t.key
-               ? "border-blue-500 text-blue-500"
+             ? "border-blue-500 text-blue-500"
                 : "border-transparent text-gray-500 dark:text-zinc-400"
             }`}
           >
@@ -177,8 +179,8 @@ export default function UserProfilePage() {
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100 line-clamp-1">{task.title}</h3>
                 <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-zinc-400">
                   <span className="font-bold text-emerald-600">
-  {formatTaskPrice(task.price)}
-</span>
+                    {formatTaskPrice(task.price)}
+                  </span>
                   <span>•</span>
                   <span>{task.joined}/{task.totalSlots} người</span>
                 </div>
