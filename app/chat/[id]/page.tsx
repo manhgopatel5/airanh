@@ -158,7 +158,7 @@ export default function ChatDetailPage() {
         createdAt: serverTimestamp(),
         seenBy: [user.uid],
         type: "text",
-...(tempReply && {
+ ...(tempReply && {
           replyTo: {
             id: tempReply.id,
             text: tempReply.text,
@@ -378,7 +378,7 @@ export default function ChatDetailPage() {
           const isFirstInGroup =!prev || prev.senderId!== m.senderId;
           const isLastInGroup =!next || next.senderId!== m.senderId;
           const showDate =
-      !prev ||
+       !prev ||
             (m.createdAt &&
               prev.createdAt &&
               m.createdAt.toDate().toDateString()!== prev.createdAt.toDate().toDateString());
@@ -417,22 +417,22 @@ export default function ChatDetailPage() {
                     onClick={() => setReplyTo(m)}
                     className={`px-4 py-2.5 shadow-sm cursor-pointer ${
                       isMe
-              ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
+               ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
                             isFirstInGroup && isLastInGroup
-                    ? "rounded-3xl"
+                     ? "rounded-3xl"
                               : isFirstInGroup
-                    ? "rounded-3xl rounded-br-lg"
+                     ? "rounded-3xl rounded-br-lg"
                               : isLastInGroup
-                    ? "rounded-3xl rounded-tr-lg"
+                     ? "rounded-3xl rounded-tr-lg"
                               : "rounded-r-lg rounded-l-3xl"
                           }`
                         : `bg-white dark:bg-zinc-800 text-gray-900 dark:text-white ${
                             isFirstInGroup && isLastInGroup
-                    ? "rounded-3xl"
+                     ? "rounded-3xl"
                               : isFirstInGroup
-                    ? "rounded-3xl rounded-bl-lg"
+                     ? "rounded-3xl rounded-bl-lg"
                               : isLastInGroup
-                    ? "rounded-3xl rounded-tl-lg"
+                     ? "rounded-3xl rounded-tl-lg"
                               : "rounded-l-lg rounded-r-3xl"
                           }`
                     }`}
