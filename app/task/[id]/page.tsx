@@ -165,16 +165,22 @@ useEffect(() => {
     setText("");
     setReplyTo(null);
     try {
-      await createComment(task.id, {
-        uid: currentUser.uid,
-        displayName: currentUser.displayName,
-        photoURL: currentUser.photoURL,
-      }, {
-        text: DOMPurify.sanitize(tempText),
-        parentId: replyTo?.id,
-        replyToUserId: replyTo?.userId,
-        replyToUserName: replyTo?.userName,
-      });
+     await createComment(
+  task.id,
+  {
+    uid: currentUser.uid,
+    displayName: currentUser.displayName,
+    photoURL: currentUser.photoURL,
+  },
+  {
+    text: DOMPurify.sanitize(tempText),
+    ...(replyTo && {
+      parentId: replyTo.id,
+      replyToUserId: replyTo.userId,
+      replyToUserName: replyTo.userName,
+    }),
+  }
+);
     } catch (err: any) {
       setText(tempText);
       toast.error(err.message || "Gửi bình luận thất bại");
