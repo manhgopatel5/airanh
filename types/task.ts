@@ -5,7 +5,7 @@ export type TaskStatus = "open" | "full" | "in_progress" | "completed" | "cancel
 export type TaskVisibility = "public" | "private" | "friends";
 export type BudgetType = "fixed" | "hourly" | "negotiable";
 
-/* ================= USER (thiếu) ================= */
+/* ================= USER ================= */
 export type User = {
   uid: string;
   email?: string | null;
@@ -18,7 +18,7 @@ export type User = {
 export type Task = {
   id: string;
   slug: string;
-  shortId: string; // thêm
+  shortId: string;
   title: string;
   description: string;
   price: number;
@@ -79,6 +79,7 @@ export type Task = {
 
   // Relations
   applicants?: string[];
+  likes?: string[]; // <-- thêm dòng này để lưu userId đã like
   reactions?: Record<string, string[]>;
 };
 
@@ -101,6 +102,9 @@ export type TaskListItem = Pick<Task,
   | "joined" | "status" | "userName" | "userAvatar" | "userShortId"
   | "userUsername" | "createdAt" | "category" | "tags" | "images"
   | "viewCount" | "likeCount" | "commentCount" | "location" | "isRemote"
+  | "likes" // <-- thêm dòng này
+  | "budgetType" // <-- thêm để fix lỗi isPlan
+  | "userId" // <-- thêm để fix lỗi goToProfile
 >;
 
 /* ================= PARTICIPANT ================= */
@@ -129,7 +133,7 @@ export type TaskComment = {
   likeCount: number;
 };
 
-/* ================= HELPERS (FIX BUILD) ================= */
+/* ================= HELPERS ================= */
 export const generateTaskSearchKeywords = ({
   title,
   description,
@@ -170,8 +174,8 @@ export const isTaskOpen = (task: Task): boolean => {
   return true;
 };
 
-export const formatTaskPrice = (price: number): string => {
-  return new Intl.NumberFormat("vi-VN").format(price) + "đ";
+export const formatTaskPrice = (price: number, currency = "VND"): string => {
+  return new Intl.NumberFormat("vi-VN", { style: "currency", currency, maximumFractionDigits: 0 }).format(price);
 };
 
 export const formatTaskDeadline = (deadline: Timestamp | null | undefined): string => {
