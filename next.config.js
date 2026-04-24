@@ -171,7 +171,6 @@ const nextConfig = {
   
   eslint: { ignoreDuringBuilds: false },
   typescript: { ignoreBuildErrors: false },
-  transpilePackages: [], // ✅ XÓA HẾT - lucide-react đã ở serverExternalPackages
   
   logging: {
     fetches: {
