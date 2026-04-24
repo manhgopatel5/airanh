@@ -1,4 +1,4 @@
-"use client"; // ✅ THÊM DÒNG NÀY
+
 
 import {
   collection,
@@ -26,7 +26,6 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { User } from "@/types/task";
-import { toast } from "sonner"; // ← Lib này cần "use client"
 
 export class ChatError extends Error {
   constructor(message: string, public code?: string) {
@@ -223,7 +222,7 @@ export const listenMessages = (
     },
     (err) => {
       console.error("listenMessages error:", err);
-      toast.error("Không thể tải tin nhắn");
+      console.error("Không thể tải tin nhắn");
       callback([], false);
     }
   );
