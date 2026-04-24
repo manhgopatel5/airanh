@@ -57,7 +57,7 @@ const userConverter: FirestoreDataConverter<SearchUser> = {
   },
   fromFirestore: (snap) => ({
     uid: snap.id,
-  ...snap.data(),
+   ...snap.data(),
   } as SearchUser),
 };
 
@@ -80,7 +80,9 @@ class LRUCache<K, V> {
     this.cache.set(key, { v, ts: Date.now() });
     if (this.cache.size > this.max) {
       const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
+      if (firstKey!== undefined) {
+        this.cache.delete(firstKey);
+      }
     }
   }
 }
@@ -100,7 +102,7 @@ const batchGetDocs = async <T>(
     const q = query(
       collection(db, col),
       where(field, "in", chunk),
-    ...extraConstraints
+     ...extraConstraints
     );
     chunks.push(getDocs(q));
   }
@@ -130,7 +132,7 @@ export const searchUsers = async (
       ]),
       where("status", "==", "active"),
       orderBy("nameLower"),
-    ...(cursor? [startAfter(cursor)] : []),
+     ...(cursor? [startAfter(cursor)] : []),
       limit(maxResults + 1),
     ];
 
@@ -148,18 +150,18 @@ export const searchUsers = async (
 
     const [friends, blocksFrom, blocksTo] = await Promise.all([
       currentUserId
-      ? batchGetDocs<{ friendId: string }>("friends", "friendId", uids, [
+       ? batchGetDocs<{ friendId: string }>("friends", "friendId", uids, [
             where("userId", "==", currentUserId),
             where("status", "==", "accepted"),
           ])
         : [],
       currentUserId
-      ? batchGetDocs<{ toUserId: string }>("blocks", "toUserId", uids, [
+       ? batchGetDocs<{ toUserId: string }>("blocks", "toUserId", uids, [
             where("fromUserId", "==", currentUserId),
           ])
         : [],
       currentUserId
-      ? batchGetDocs<{ fromUserId: string }>("blocks", "fromUserId", uids, [
+       ? batchGetDocs<{ fromUserId: string }>("blocks", "fromUserId", uids, [
             where("toUserId", "==", currentUserId),
           ])
         : [],
@@ -167,12 +169,12 @@ export const searchUsers = async (
 
     const friendSet = new Set(friends.map((f) => f.friendId));
     const blockSet = new Set([
-    ...blocksFrom.map((b) => b.toUserId),
-    ...blocksTo.map((b) => b.fromUserId),
+     ...blocksFrom.map((b) => b.toUserId),
+     ...blocksTo.map((b) => b.fromUserId),
     ]);
 
     const users: SearchResult[] = docs
-    .map((d) => {
+     .map((d) => {
         const data = d.data();
         if (data.uid === currentUserId || blockSet.has(data.uid)) return null;
         if (data.hidden || data.deletedAt) return null;
@@ -195,7 +197,7 @@ export const searchUsers = async (
           email: isFriend? data.email : undefined,
         };
       })
-    .filter(Boolean) as SearchResult[];
+     .filter(Boolean) as SearchResult[];
 
     return { users, lastDoc, hasMore };
   } catch (e: any) {
