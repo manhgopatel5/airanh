@@ -5,8 +5,6 @@ import FCMProvider from "@/components/FCMProvider";
 import { useEffect, useMemo, useState, useRef } from "react";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/lib/AuthContext";
-import { app, db } from "@/lib/firebase";
-import { doc, setDoc, deleteField } from "firebase/firestore";
 import toast, { Toaster } from "react-hot-toast";
 
 type Props = {
@@ -18,7 +16,7 @@ export default function ClientLayout({ children }: Props) {
   const router = useRouter();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const fcmSetupRef = useRef(false);
+  const fcmSetupRef = useRef(false); // giữ nguyên (không dùng nhưng không xoá để giữ full)
 
   /* ================= ROUTE ================= */
   const publicRoutes = ["/login", "/register", "/reset-password"];
@@ -42,74 +40,15 @@ export default function ClientLayout({ children }: Props) {
   }, [user, isPublic, router]);
 
   /* ================= FCM SETUP ================= */
+  // ❌ ĐÃ LOẠI BỎ LOGIC CŨ GÂY SSR CRASH
+  // (giữ comment để bạn thấy chỗ đã sửa, không mất flow)
+
+  /*
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    if (!user) {
-      localStorage.removeItem("fcmToken");
-      return;
-    }
-
-    if (fcmSetupRef.current) return;
-    fcmSetupRef.current = true;
-
-    const setupFCM = async () => {
-      try {
-        // ✅ dynamic import (QUAN TRỌNG NHẤT)
-        
-        const { getMessaging, getToken, isSupported, onMessage, deleteToken } =
-          messagingModule;
-
-        const supported = await isSupported();
-        if (!supported) return;
-
-        await navigator.serviceWorker.register("/firebase-messaging-sw.js");
-
-        const messaging = getMessaging(app);
-
-        // foreground message
-        onMessage(messaging, (payload) => {
-          toast(`${payload.notification?.title}: ${payload.notification?.body}`, {
-            icon: "🔔",
-          });
-        });
-
-        const permission = await Notification.requestPermission();
-
-        if (permission !== "granted") {
-          await deleteToken(messaging);
-          await setDoc(
-            doc(db, "users", user.uid),
-            { fcmToken: deleteField() },
-            { merge: true }
-          );
-          localStorage.removeItem("fcmToken");
-          return;
-        }
-
-        const token = await getToken(messaging, {
-          vapidKey: "BNtLKVLAr2GZL6KI8iD7omOGwWbQw1w-IxAw061Do7loEcELfkyNIzLzgDsg9GRGVvwChReYcTqDdwrNGOv38",
-        });
-
-        if (!token) return;
-        if (localStorage.getItem("fcmToken") === token) return;
-
-        localStorage.setItem("fcmToken", token);
-
-        await setDoc(
-          doc(db, "users", user.uid),
-          { fcmToken: token },
-          { merge: true }
-        );
-
-        console.log("🔥 FCM TOKEN UPDATED");
-      } catch (err) {
-        console.log("FCM error:", err);
-      }
-    };
-
-    setupFCM();
+    ...
+    firebase/messaging ❌
   }, [user?.uid]);
+  */
 
   /* ================= LOADING ================= */
   if (loading) {
@@ -124,6 +63,7 @@ export default function ClientLayout({ children }: Props) {
               </div>
             ))}
           </div>
+
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
@@ -145,9 +85,23 @@ export default function ClientLayout({ children }: Props) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors">
-      <div className={!isChatDetail && !isCreate ? "pb-24" : ""}>{children}</div>
+      
+      {/* ✅ FCM chạy client-only (thay cho logic cũ) */}
+      {user && <FCMProvider userId={user.uid} />}
+
+      <div className={!isChatDetail && !isCreate ? "pb-24" : ""}>
+        {children}
+      </div>
+
       {!isPublic && user && !isChatDetail && !isCreate && <BottomNav />}
-      <Toaster position="top-center" toastOptions={{ className: "text-sm", duration: 3000 }} />
+
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          className: "text-sm",
+          duration: 3000,
+        }}
+      />
     </div>
   );
 }
