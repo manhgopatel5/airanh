@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { getFirebaseDB } from "@/lib/firebase"; // ✅ FIX
+import { getFirebaseDB } from "@/lib/firebase";
 import {
   collection,
   query,
@@ -43,7 +43,7 @@ export default function FriendList() {
       return;
     }
 
-    const db = getFirebaseDB(); // ✅ FIX DUY NHẤT
+    const db = getFirebaseDB();
 
     const q = query(
       collection(db, "friends"),
@@ -55,7 +55,7 @@ export default function FriendList() {
         const friendIds = new Set<string>();
         snap.docs.forEach((d) => {
           const data = d.data();
-          friendIds.add(data.userId === user.uid ? data.friendId : data.userId);
+          friendIds.add(data.userId === user.uid? data.friendId : data.userId);
         });
 
         if (friendIds.size === 0) {
@@ -83,14 +83,14 @@ export default function FriendList() {
         userDocs.forEach((snap) => {
           snap.forEach((u) => {
             const data = u.data();
-            list.push({ uid: u.id, ...data } as Friend);
+            list.push({ uid: u.id,...data } as Friend);
 
             presenceUnsubs.current[u.id] = onSnapshot(doc(db, "users", u.id), (userSnap) => {
               const userData = userSnap.data();
               setFriends((prev) =>
                 prev.map((f) =>
                   f.uid === u.id
-                    ? { ...f, online: userData?.online, lastSeen: userData?.lastSeen }
+                   ? {...f, online: userData?.online, lastSeen: userData?.lastSeen }
                     : f
                 )
               );
@@ -99,7 +99,7 @@ export default function FriendList() {
         });
 
         list.sort((a, b) => {
-          if (a.online && !b.online) return -1;
+          if (a.online &&!b.online) return -1;
           if (!a.online && b.online) return 1;
           return (a.name || "").localeCompare(b.name || "", "vi");
         });
@@ -225,7 +225,7 @@ export default function FriendList() {
                   {f.name || "User"}
                 </div>
                 <div className="text-xs text-gray-500 dark:text-zinc-400">
-                  {f.online ? "Đang hoạt động" : "Offline"}
+                  {f.online? "Đang hoạt động" : "Offline"}
                 </div>
                 {f.lastMessage && (
                   <div className="text-xs text-gray-400 dark:text-zinc-500 truncate mt-0.5">
@@ -240,15 +240,15 @@ export default function FriendList() {
               disabled={!user || chattingId === f.uid}
               className="shrink-0 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-blue-500/30 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 relative"
             >
-              {chattingId === f.uid ? (
+              {chattingId === f.uid? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <FiMessageSquare size={16} />
               )}
               Nhắn tin
-              {f.unreadCount ? (
+              {f.unreadCount? (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                  {f.unreadCount > 9 ? "9+" : f.unreadCount}
+                  {f.unreadCount > 9? "9+" : f.unreadCount}
                 </span>
               ) : null}
             </button>
