@@ -213,7 +213,6 @@ const groupedNotifs = useMemo(() => {
     observerRef.current.observe(node);
   }, [markAsRead]);
 
-  const toggleSelect = (id: string) => setSelectedIds((prev) => prev.includes(id)? prev.filter((i) => i!== id) : [...prev, id]);
 
   const formatTime = (time: Timestamp | null) => {
     if (!time) return "";
