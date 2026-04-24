@@ -57,7 +57,7 @@ const userConverter: FirestoreDataConverter<SearchUser> = {
   },
   fromFirestore: (snap) => ({
     uid: snap.id,
-   ...snap.data(),
+  ...snap.data(),
   } as SearchUser),
 };
 
@@ -102,7 +102,7 @@ const batchGetDocs = async <T>(
     const q = query(
       collection(db, col),
       where(field, "in", chunk),
-     ...extraConstraints
+    ...extraConstraints
     );
     chunks.push(getDocs(q));
   }
@@ -115,9 +115,9 @@ export const searchUsers = async (
   keyword: string,
   currentUserId?: string,
   maxResults = 10,
-  cursor?: QueryDocumentSnapshot<DocumentData>,
+  cursor?: QueryDocumentSnapshot<SearchUser>,
   signal?: AbortSignal
-): Promise<{ users: SearchResult[]; lastDoc: QueryDocumentSnapshot<DocumentData> | null; hasMore: boolean }> => {
+): Promise<{ users: SearchResult[]; lastDoc: QueryDocumentSnapshot<SearchUser> | null; hasMore: boolean }> => {
   const trimmed = keyword.trim().toLowerCase();
   if (!trimmed) return { users: [], lastDoc: null, hasMore: false };
   if (trimmed.length < 2) throw new SearchError("Từ khóa tối thiểu 2 ký tự", "TOO_SHORT");
@@ -132,7 +132,7 @@ export const searchUsers = async (
       ]),
       where("status", "==", "active"),
       orderBy("nameLower"),
-     ...(cursor? [startAfter(cursor)] : []),
+    ...(cursor? [startAfter(cursor)] : []),
       limit(maxResults + 1),
     ];
 
@@ -143,25 +143,25 @@ export const searchUsers = async (
 
     const docs = snap.docs.slice(0, maxResults);
     const hasMore = snap.docs.length > maxResults;
-    const lastDoc = hasMore? docs[docs.length - 1] : null;
+    const lastDoc = hasMore? docs[docs.length - 1] || null : null;
 
     const uids = docs.map((d) => d.id).filter((id) => id!== currentUserId);
     if (uids.length === 0) return { users: [], lastDoc: null, hasMore: false };
 
     const [friends, blocksFrom, blocksTo] = await Promise.all([
       currentUserId
-       ? batchGetDocs<{ friendId: string }>("friends", "friendId", uids, [
+      ? batchGetDocs<{ friendId: string }>("friends", "friendId", uids, [
             where("userId", "==", currentUserId),
             where("status", "==", "accepted"),
           ])
         : [],
       currentUserId
-       ? batchGetDocs<{ toUserId: string }>("blocks", "toUserId", uids, [
+      ? batchGetDocs<{ toUserId: string }>("blocks", "toUserId", uids, [
             where("fromUserId", "==", currentUserId),
           ])
         : [],
       currentUserId
-       ? batchGetDocs<{ fromUserId: string }>("blocks", "fromUserId", uids, [
+      ? batchGetDocs<{ fromUserId: string }>("blocks", "fromUserId", uids, [
             where("toUserId", "==", currentUserId),
           ])
         : [],
@@ -169,12 +169,12 @@ export const searchUsers = async (
 
     const friendSet = new Set(friends.map((f) => f.friendId));
     const blockSet = new Set([
-     ...blocksFrom.map((b) => b.toUserId),
-     ...blocksTo.map((b) => b.fromUserId),
+    ...blocksFrom.map((b) => b.toUserId),
+    ...blocksTo.map((b) => b.fromUserId),
     ]);
 
     const users: SearchResult[] = docs
-     .map((d) => {
+    .map((d) => {
         const data = d.data();
         if (data.uid === currentUserId || blockSet.has(data.uid)) return null;
         if (data.hidden || data.deletedAt) return null;
@@ -197,7 +197,7 @@ export const searchUsers = async (
           email: isFriend? data.email : undefined,
         };
       })
-     .filter(Boolean) as SearchResult[];
+    .filter(Boolean) as SearchResult[];
 
     return { users, lastDoc, hasMore };
   } catch (e: any) {
