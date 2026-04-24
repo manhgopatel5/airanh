@@ -17,36 +17,33 @@ export default function FCMProvider({ userId }: { userId: string }) {
         const supported = await isSupported();
         if (!supported) return;
 
-        // 🔐 check VAPID KEY (fix lỗi TypeScript + tránh crash runtime)
         const vapidKey = process.env.NEXT_PUBLIC_FCM_VAPID_KEY;
         if (!vapidKey) {
-          console.error("❌ Missing NEXT_PUBLIC_FCM_VAPID_KEY");
+          console.error("Missing VAPID KEY");
           return;
         }
 
         const messaging = getMessaging(app);
 
-        // 🔔 xin quyền notification
         const permission = await Notification.requestPermission();
         if (permission !== "granted") return;
 
-        // 🔑 lấy token
-        const token = await getToken(messaging, {
-          vapidKey,
-        });
-
+        const token = await getToken(messaging, { vapidKey });
         if (!token) return;
 
         console.log("🔥 FCM TOKEN:", token);
 
-        // 🔔 nhận notification khi đang mở app
         onMessage(messaging, (payload) => {
           console.log("📩 FCM foreground:", payload);
 
           if (payload.notification) {
-            new Notification(payload.notification.title ?? "Notification", {
-              body: payload.notification.body ?? "",
-            });
+            new Notification(
+              payload.notification.title ?? "Notification",
+              {
+                // 🔥 FIX QUAN TRỌNG
+                body: payload.notification.body ?? "",
+              }
+            );
           }
         });
 
