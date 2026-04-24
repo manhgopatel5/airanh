@@ -237,80 +237,117 @@ const groupedNotifs = useMemo(() => {
   if (loading) return <Skeleton />;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-zinc-950">
-      <Toaster richColors position="top-center" />
-      <div className="sticky top-0 z-50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="font-bold text-xl text-gray-900 dark:text-gray-100">Thông báo</h1>
-            {unreadCount > 0 && <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">{unreadCount} chưa đọc</p>}
-          </div>
-          {selectedIds.length > 0? (
-            <div className="flex gap-2">
-              <button onClick={deleteSelected} className="p-2 bg-red-50 dark:bg-red-950/30 text-red-500 rounded-xl active:scale-90" aria-label="Xóa đã chọn">
-                <FiTrash2 size={20} />
-              </button>
-              <button onClick={() => setSelectedIds([])} className="px-3 py-2 text-sm font-semibold text-gray-600 dark:text-zinc-400">Hủy</button>
-            </div>
-          ) : (
-            unreadCount > 0 && <button onClick={markAllAsRead} className="text-sm font-semibold text-blue-500 active:scale-95 flex items-center gap-1.5"><FiCheck size={18} />Đọc tất cả</button>
+  <div className="min-h-screen bg-gray-50 dark:bg-zinc-950">
+    <Toaster richColors position="top-center" />
+
+    {/* HEADER */}
+    <div className="sticky top-0 z-50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800">
+      <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div>
+          <h1 className="font-bold text-xl text-gray-900 dark:text-gray-100">
+            Thông báo
+          </h1>
+          {unreadCount > 0 && (
+            <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
+              {unreadCount} chưa đọc
+            </p>
           )}
         </div>
-      </div>
 
-      <div className="max-w-2xl mx-auto pb-24">
-        {notifications.length === 0? (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-400 dark:text-zinc-500">
-            <FiBell size={64} className="mb-4 opacity-50" />
-            <p className="font-semibold">Chưa có thông báo</p>
+        {selectedIds.length > 0 ? (
+          <div className="flex gap-2">
+            <button
+              onClick={deleteSelected}
+              className="p-2 bg-red-50 dark:bg-red-950/30 text-red-500 rounded-xl"
+            >
+              <FiTrash2 size={20} />
+            </button>
+            <button
+              onClick={() => setSelectedIds([])}
+              className="px-3 py-2 text-sm font-semibold"
+            >
+              Hủy
+            </button>
           </div>
         ) : (
-          Object.entries(groupedNotifs).map(([date, items]) => {
-            if (!items.length) return null;
-            return (
-              <div key={date}>
-                <div className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-zinc-500 uppercase tracking-wide">{date}</div>
-                <div className="space-y-2 px-4">
-                  {items.map((n) => (
-                    <div
-                      key={n.id}
-                      data-id={n.id}
-                      ref={(node) => setObserver(node, n.id, n.isRead)}
-                      className={`bg-white dark:bg-zinc-900 rounded-3xl p-4 border transition-all ${selectedIds.includes(n.id)? "border-blue-500 ring-2 ring-blue-500/20" : "border-gray-100 dark:border-zinc-800"} ${!n.isRead? "shadow-sm shadow-blue-100/50 dark:shadow-blue-900/20" : ""}`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <button onClick={() => toggleSelect(n.id)} className="mt-1" aria-label="Chọn">
-                          <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${selectedIds.includes(n.id)? "bg-blue-500 border-blue-500" : "border-gray-300 dark:border-zinc-600"}`}>
-                            {selectedIds.includes(n.id) && <FiCheck size={14} className="text-white" />}
-                          </div>
-                        </button>
-                        <div className="relative">
-                          <img src={n.fromUserAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(n.fromUserName)}`} className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-50 dark:ring-zinc-800" />
-                          <div className="absolute -bottom-1 -right-1 text-lg">{getIcon(n.type)}</div>
-                        </div>
-                        <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handleClickNotif(n)}>
-                          <p className="text-sm text-gray-900 dark:text-gray-100"><span className="font-semibold">{n.fromUserName}</span> {n.content}</p>
-                          <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">{formatTime(n.createdAt)}</p>
-                        </div>
-                        {!n.isRead && <div className="w-2.5 h-2.5 bg-blue-500 rounded-full mt-2 shrink-0" />}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })
-        )}
-        {lastDoc && (
-          <button onClick={loadMore} disabled={loadingMore} className="w-full py-3 text-sm text-blue-500 font-semibold disabled:opacity-50">
-            {loadingMore? "Đang tải..." : "Tải thêm"}
-          </button>
+          unreadCount > 0 && (
+            <button
+              onClick={markAllAsRead}
+              className="text-sm font-semibold text-blue-500 flex items-center gap-1.5"
+            >
+              <FiCheck size={18} />
+              Đọc tất cả
+            </button>
+          )
         )}
       </div>
     </div>
-  );
-}
 
+    {/* LIST */}
+    <div className="max-w-2xl mx-auto pb-24">
+      {notifications.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+          <FiBell size={64} className="mb-4 opacity-50" />
+          <p className="font-semibold">Chưa có thông báo</p>
+        </div>
+      ) : (
+        Object.entries(groupedNotifs).map(([date, items]) => {
+          if (!items.length) return null;
+
+          return (
+            <div key={date}>
+              <div className="px-4 py-3 text-xs font-bold text-gray-500 uppercase">
+                {date}
+              </div>
+
+              <div className="space-y-2 px-4">
+                {items.map((n) => (
+                  <div key={n.id} className="group bg-white rounded-3xl p-4 border">
+                    <div className="flex items-start gap-3">
+
+                      {/* CONTENT */}
+                      <div
+                        className="flex-1 cursor-pointer"
+                        onClick={() => handleClickNotif(n)}
+                      >
+                        <p className="text-sm">
+                          <span className="font-semibold">{n.fromUserName}</span> {n.content}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {formatTime(n.createdAt)}
+                        </p>
+                      </div>
+
+                      {/* DELETE */}
+                      <button
+                        onClick={() => deleteNotif(n.id)}
+                        className="opacity-0 group-hover:opacity-100 p-2 text-red-500"
+                      >
+                        <FiTrash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })
+      )}
+
+      {/* ✅ LOAD MORE PHẢI Ở TRONG RETURN */}
+      {lastDoc && (
+        <button
+          onClick={loadMore}
+          disabled={loadingMore}
+          className="w-full py-3 text-sm text-blue-500 font-semibold"
+        >
+          {loadingMore ? "Đang tải..." : "Tải thêm"}
+        </button>
+      )}
+    </div>
+  </div>
+);
+}   // ❗ THÊM DÒNG NÀY
 function Skeleton() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950">
