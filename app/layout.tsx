@@ -10,6 +10,9 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
+// ✅ THÊM DÒNG NÀY - TẮT PRERENDER ĐỂ FIX LỖI self is not defined
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://airanh.com"),
   title: {
