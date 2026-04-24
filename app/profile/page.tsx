@@ -2,15 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { signOut, deleteUser } from "firebase/auth";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import {
-  doc, onSnapshot, updateDoc, serverTimestamp, Timestamp, getDoc, setDoc, deleteDoc
+  doc, onSnapshot, updateDoc, serverTimestamp, getDoc, setDoc, deleteDoc
 } from "firebase/firestore";
+import { LucideIcon } from "lucide-react";
+import type { Timestamp } from "firebase/firestore";
 import { db, auth, storage } from "@/lib/firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { HelpCircle, LogOut, Trash2, User, Star, Users, Shield, Lock, Camera, Check, X } from "lucide-react";
 import { toast, Toaster } from "sonner";
+import type { UploadTask } from "firebase/storage";
 import { nanoid } from "nanoid";
 
 type UserData = {
@@ -37,7 +40,7 @@ export default function Profile() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const hasCheckedId = useRef(false); // ✅ FIX 1
-  const uploadTaskRef = useRef<any>(null); // ✅ FIX 2
+  const uploadTaskRef = useRef<UploadTask | null>(null);
 
   useEffect(() => {
     if (user === null) router.replace("/login");
@@ -52,7 +55,7 @@ export default function Profile() {
         setUserData(data);
         setName(data.name || "");
         // ✅ FIX 8: Check verify
-        if (!user.emailVerified &&!data.emailVerified) {
+        if (user && !user.emailVerified && !data.emailVerified) {
           router.replace("/verify-email");
         }
       }
@@ -62,7 +65,7 @@ export default function Profile() {
 
   /* ================= AUTO CREATE USERID ✅ FIX 1+7 ================= */
   useEffect(() => {
-    if (!user ||!userData || hasCheckedId.current) return;
+    if (!user || !userData || hasCheckedId.current) return;
     if (userData.userId) {
       hasCheckedId.current = true;
       return;
@@ -188,35 +191,47 @@ export default function Profile() {
       await deleteUser(user);
       toast.success("Đã xóa tài khoản");
       window.location.href = "/register";
-    } catch (err: any) {
-      if (err.code === "auth/requires-recent-login") {
-        toast.error("Vui lòng đăng nhập lại để xóa tài khoản");
-        await signOut(auth);
-        router.push("/login");
-      } else {
-        toast.error("Xóa thất bại");
-      }
-    }
+  } catch (err: unknown) {
+  const error = err as { code?: string };
+
+  if (error.code === "auth/requires-recent-login") {
+    toast.error("Vui lòng đăng nhập lại để xóa tài khoản");
+    await signOut(auth);
+    router.push("/login");
+  } else {
+    toast.error("Xóa thất bại");
+  }
+}
   };
 
   /* ================= ONLINE STATUS ✅ FIX 6 ================= */
-  useEffect(() => {
-    if (!user) return;
-    const updateOnline = () => updateDoc(doc(db, "users", user.uid), { online: true }).catch(() => {});
-    const updateOffline = () => updateDoc(doc(db, "users", user.uid), { online: false, lastSeen: serverTimestamp() }).catch(() => {});
+useEffect(() => {
+  if (!user) return;
 
-    updateOnline();
-    window.addEventListener("beforeunload", updateOffline);
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) updateOffline();
-      else updateOnline();
-    });
+  const updateOnline = () =>
+    updateDoc(doc(db, "users", user.uid), { online: true }).catch(() => {});
 
-    return () => {
-      updateOffline();
-      window.removeEventListener("beforeunload", updateOffline);
-    };
-  }, [user]);
+  const updateOffline = () =>
+    updateDoc(doc(db, "users", user.uid), {
+      online: false,
+      lastSeen: serverTimestamp(),
+    }).catch(() => {});
+
+  const handleVisibility = () => {
+    if (document.hidden) updateOffline();
+    else updateOnline();
+  };
+
+  updateOnline();
+  window.addEventListener("beforeunload", updateOffline);
+  document.addEventListener("visibilitychange", handleVisibility);
+
+  return () => {
+    updateOffline();
+    window.removeEventListener("beforeunload", updateOffline);
+    document.removeEventListener("visibilitychange", handleVisibility);
+  };
+}, [user]);
 
   /* ================= ESC CLOSE MODAL ✅ FIX 9 ================= */
   useEffect(() => {
@@ -334,10 +349,30 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
-function Item({ label, onClick, danger, icon: Icon }: { label: string; onClick?: () => void; danger?: boolean; icon: any }) {
+function Item({
+  label,
+  onClick,
+  danger,
+  icon: Icon,
+}: {
+  label: string;
+  onClick?: () => void;
+  danger?: boolean;
+  icon: LucideIcon;
+}) {
   return (
-    <div onClick={onClick} className={`flex items-center justify-between py-3.5 px-3 rounded-2xl cursor-pointer transition-colors ${danger? "text-red-500 active:bg-red-50 dark:active:bg-red-950/30" : "text-gray-900 dark:text-gray-100 active:bg-gray-50 dark:active:bg-zinc-800"}`}>
-      <div className="flex items-center gap-3"><Icon size={20} /><span className="font-medium">{label}</span></div>
+    <div
+      onClick={onClick}
+      className={`flex items-center justify-between py-3.5 px-3 rounded-2xl cursor-pointer transition-colors ${
+        danger
+          ? "text-red-500 active:bg-red-50 dark:active:bg-red-950/30"
+          : "text-gray-900 dark:text-gray-100 active:bg-gray-50 dark:active:bg-zinc-800"
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <Icon size={20} />
+        <span className="font-medium">{label}</span>
+      </div>
       <span className="text-gray-400 dark:text-zinc-500">›</span>
     </div>
   );
