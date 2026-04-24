@@ -16,7 +16,7 @@ type Props = {
   onDelete?: (id: string) => void;
 };
 
-function TaskCard({ task, onDelete }: Props) {
+function TaskCard({ task }: Props) {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [liking, setLiking] = useState(false);
