@@ -7,7 +7,6 @@ import {
   query,
   orderBy,
   where,
-  Unsubscribe,
   QueryConstraint,
   limit,
   doc,
@@ -88,7 +87,7 @@ export default function useTasks(filter?: TaskFilter): UseTasksReturn {
       (snapshot) => {
         const data = snapshot.docs.map((doc) => ({
           id: doc.id,
-         ...doc.data(),
+        ...doc.data(),
         } as Task));
         setTasks(data);
         setLastDoc(snapshot.docs[snapshot.docs.length - 1] || null);
@@ -107,7 +106,6 @@ export default function useTasks(filter?: TaskFilter): UseTasksReturn {
 
   const loadMore = () => {
     if (!lastDoc ||!hasMore) return;
-    // TODO: Dùng startAfter(lastDoc) để load trang tiếp
   };
 
   return { tasks, loading, error, hasMore, loadMore };
