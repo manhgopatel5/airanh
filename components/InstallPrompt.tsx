@@ -5,7 +5,7 @@ import { FiShare, FiPlusSquare, FiX, FiDownload } from "react-icons/fi";
 import { HiDevicePhoneMobile } from "react-icons/hi2";
 
 const DISMISS_KEY = "installPromptDismissed";
-const DISMISS_DAYS = 7; // ✅ FIX 2: Hiện lại sau 7 ngày
+const DISMISS_DAYS = 7;
 
 export default function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -14,7 +14,7 @@ export default function InstallPrompt() {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // ✅ FIX 3: Check standalone mỗi lần mount
+    // Check standalone mỗi lần mount
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       (window.navigator as any).standalone === true;
@@ -24,7 +24,7 @@ export default function InstallPrompt() {
       return;
     }
 
-    // ✅ FIX 2: Check dismiss có hết hạn chưa
+    // Check dismiss có hết hạn chưa
     const dismissed = localStorage.getItem(DISMISS_KEY);
     if (dismissed) {
       const dismissedTime = parseInt(dismissed);
@@ -50,7 +50,7 @@ export default function InstallPrompt() {
       setShow(true);
     };
 
-    // ✅ FIX 1: Ẩn khi đã cài xong
+    // Ẩn khi đã cài xong
     const handleAppInstalled = () => {
       setShow(false);
       setDeferredPrompt(null);
@@ -70,7 +70,7 @@ export default function InstallPrompt() {
   const handleInstall = useCallback(async () => {
     if (!deferredPrompt) return;
 
-    // ✅ FIX 6: Analytics
+    // Analytics
     if (typeof window!== "undefined" && (window as any).gtag) {
       (window as any).gtag("event", "pwa_install_prompt_shown");
     }
@@ -78,7 +78,7 @@ export default function InstallPrompt() {
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
 
-    // ✅ FIX 5: Dismiss nếu user bấm Hủy
+    // Dismiss nếu user bấm Hủy
     if (outcome === "accepted") {
       setShow(false);
       if ((window as any).gtag) (window as any).gtag("event", "pwa_installed");
@@ -90,7 +90,7 @@ export default function InstallPrompt() {
 
   const handleDismiss = useCallback(() => {
     setShow(false);
-    localStorage.setItem(DISMISS_KEY, Date.now().toString()); // ✅ FIX 2
+    localStorage.setItem(DISMISS_KEY, Date.now().toString());
   }, []);
 
   if (!show) return null;
@@ -118,7 +118,6 @@ export default function InstallPrompt() {
             {isIOS? (
               <div className="text-sm text-gray-600 dark:text-zinc-400 space-y-2">
                 <p>Thêm vào màn hình chính để dùng như app:</p>
-                {/* ✅ FIX 7: Thêm hình minh họa */}
                 <div className="flex items-center gap-2 text-xs bg-gray-100 dark:bg-zinc-800 rounded-xl px-3 py-2">
                   <FiShare size={14} className="text-blue-500" />
                   <span>Nhấn</span>
