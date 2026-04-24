@@ -50,7 +50,6 @@ class TaskCommentError extends Error {
 
 /* ================= CREATE COMMENT ================= */
 export const createComment = async (
-  const db = getFirebaseDB();
   taskId: string,
   user: User,
   data: {
@@ -60,7 +59,9 @@ export const createComment = async (
     replyToUserName?: string;
   }
 ): Promise<string> => {
-  if (!taskId ||!user?.uid) throw new TaskCommentError("Thiếu thông tin");
+  const db = getFirebaseDB(); // ✅ Đặt đúng chỗ
+  
+  if (!taskId || !user?.uid) throw new TaskCommentError("Thiếu thông tin");
   if (!data.text.trim()) throw new TaskCommentError("Nội dung trống");
   if (data.text.length > 1000) throw new TaskCommentError("Tối đa 1000 ký tự");
 
@@ -96,7 +97,9 @@ export const editComment = async (
   userId: string,
   newText: string
 ): Promise<void> => {
-  if (!commentId ||!userId) throw new TaskCommentError("Thiếu thông tin");
+  const db = getFirebaseDB(); // ✅ Thêm db
+  
+  if (!commentId || !userId) throw new TaskCommentError("Thiếu thông tin");
   if (!newText.trim()) throw new TaskCommentError("Nội dung trống");
   if (newText.length > 1000) throw new TaskCommentError("Tối đa 1000 ký tự");
 
@@ -106,7 +109,7 @@ export const editComment = async (
     const snap = await transaction.get(commentRef);
     if (!snap.exists()) throw new TaskCommentError("Comment không tồn tại");
     const data = snap.data() as TaskComment;
-    if (data.userId!== userId) throw new TaskCommentError("Không có quyền sửa", "FORBIDDEN");
+    if (data.userId !== userId) throw new TaskCommentError("Không có quyền sửa", "FORBIDDEN");
     if (data.deleted) throw new TaskCommentError("Comment đã xóa");
 
     transaction.update(commentRef, {
@@ -119,14 +122,16 @@ export const editComment = async (
 
 /* ================= DELETE COMMENT ================= */
 export const deleteComment = async (commentId: string, userId: string): Promise<void> => {
-  if (!commentId ||!userId) throw new TaskCommentError("Thiếu thông tin");
+  const db = getFirebaseDB(); // ✅ Thêm db
+  
+  if (!commentId || !userId) throw new TaskCommentError("Thiếu thông tin");
 
   const commentRef = doc(db, "task_comments", commentId);
   const snap = await getDoc(commentRef);
 
   if (!snap.exists()) throw new TaskCommentError("Comment không tồn tại");
   const data = snap.data() as TaskComment;
-  if (data.userId!== userId) throw new TaskCommentError("Không có quyền xóa", "FORBIDDEN");
+  if (data.userId !== userId) throw new TaskCommentError("Không có quyền xóa", "FORBIDDEN");
   if (data.deleted) return;
 
   const batch = writeBatch(db);
@@ -172,6 +177,8 @@ export const listenComments = (
     onError?: (err: Error) => void;
   }
 ): Unsubscribe => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+  
   if (!taskId) return () => {};
 
   const constraints: QueryConstraint[] = [
@@ -185,12 +192,12 @@ export const listenComments = (
     constraints.push(startAfter(options.startAfterDoc));
   }
 
-  const q = query(collection(db, "task_comments"),...constraints);
+  const q = query(collection(db, "task_comments"), ...constraints);
 
   return onSnapshot(
     q,
     (snapshot) => {
-      const data = snapshot.docs.map((d) => ({ id: d.id,...d.data() } as TaskComment));
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as TaskComment));
       callback(data, snapshot.docs.length === (options?.limit || 50));
     },
     (err) => {
@@ -205,7 +212,9 @@ export const toggleLikeComment = async (
   commentId: string,
   userId: string
 ): Promise<{ liked: boolean; newCount: number }> => {
-  if (!commentId ||!userId) throw new TaskCommentError("Thiếu thông tin");
+  const db = getFirebaseDB(); // ✅ Thêm db
+  
+  if (!commentId || !userId) throw new TaskCommentError("Thiếu thông tin");
 
   const commentRef = doc(db, "task_comments", commentId);
   let liked = false;
@@ -222,7 +231,7 @@ export const toggleLikeComment = async (
     if (likedBy.includes(userId)) {
       // Unlike
       transaction.update(commentRef, {
-        likedBy: likedBy.filter((id) => id!== userId),
+        likedBy: likedBy.filter((id) => id !== userId),
         likeCount: Math.max(0, currentCount - 1),
       });
       liked = false;
@@ -243,8 +252,10 @@ export const toggleLikeComment = async (
 
 /* ================= GET COMMENT BY ID ================= */
 export const getCommentById = async (commentId: string): Promise<TaskComment | null> => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+  
   if (!commentId) return null;
   const snap = await getDoc(doc(db, "task_comments", commentId));
   if (!snap.exists()) return null;
-  return { id: snap.id,...snap.data() } as TaskComment;
+  return { id: snap.id, ...snap.data() } as TaskComment;
 };
