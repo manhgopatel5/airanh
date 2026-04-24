@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -18,9 +18,9 @@ import {
   updateDoc,
   arrayUnion,
   getDoc,
-  where,
+  getDocs,
 } from "firebase/firestore";
-import { FiSend, FiMessageCircle, FiTrash2, FiCornerUpLeft, FiImage } from "react-icons/fi";
+import { FiSend, FiMessageCircle, FiTrash2, FiCornerUpLeft, FiX } from "react-icons/fi";
 import { useAuth } from "@/lib/AuthContext";
 
 type UserType = {
@@ -48,7 +48,7 @@ type TaskChatProps = {
 };
 
 const MSG_LIMIT = 50;
-const RATE_LIMIT_MS = 2000; // ✅ FIX 3: 1 tin/2s
+const RATE_LIMIT_MS = 2000;
 
 export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
   const [messages, setMessages] = useState<MessageType[]>([]);
@@ -58,13 +58,13 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
   const [sending, setSending] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [replyingTo, setReplyingTo] = useState<MessageType | null>(null);
-  const [canComment, setCanComment] = useState(false); // ✅ FIX 2
+  const [canComment, setCanComment] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastDocRef = useRef<QueryDocumentSnapshot<DocumentData> | null>(null);
-  const lastSentRef = useRef<number>(0); // ✅ FIX 3: Rate limit
+  const lastSentRef = useRef<number>(0);
 
-  // ✅ FIX 2: Check quyền comment
+  // Check quyền comment
   useEffect(() => {
     getDoc(doc(db, "tasks", taskId)).then((snap) => {
       const data = snap.data();
@@ -73,19 +73,19 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
     });
   }, [taskId, currentUser.uid]);
 
-  // 🔥 REALTIME LISTEN - ✅ FIX 1 + FIX 4
+  // REALTIME LISTEN
   useEffect(() => {
     const q = query(
       collection(db, "tasks", taskId, "messages"),
-      orderBy("createdAt", "desc"), // ✅ FIX 4: desc để lấy mới nhất
+      orderBy("createdAt", "desc"),
       limit(MSG_LIMIT)
     );
 
     const unsub = onSnapshot(q, (snap) => {
       const data: MessageType[] = snap.docs
         .map((doc) => ({ id: doc.id, ...(doc.data() as Omit<MessageType, "id">) }))
-        .filter((m) => !m.deletedFor?.includes(currentUser.uid)) // Filter đã xóa
-        .reverse(); // Đảo lại asc để hiển thị
+        .filter((m) => !m.deletedFor?.includes(currentUser.uid))
+        .reverse();
 
       setMessages(data);
       lastDocRef.current = snap.docs[snap.docs.length - 1] || null;
@@ -96,7 +96,7 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
     return () => unsub();
   }, [taskId, currentUser.uid]);
 
-  // ✅ FIX 7: Load more
+  // Load more
   const loadMore = async () => {
     if (!lastDocRef.current || loadingMore) return;
     setLoadingMore(true);
@@ -106,13 +106,12 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
       startAfter(lastDocRef.current),
       limit(MSG_LIMIT)
     );
-    const snap = await onSnapshot(q, (s) => {
-      const older = s.docs.map((d) => ({ id: d.id, ...d.data() } as MessageType)).reverse();
-      setMessages((prev) => [...older, ...prev]);
-      lastDocRef.current = s.docs[s.docs.length - 1] || null;
-      setHasMore(s.docs.length === MSG_LIMIT);
-      setLoadingMore(false);
-    });
+    const snap = await getDocs(q);
+    const older = snap.docs.map((d) => ({ id: d.id, ...d.data() } as MessageType)).reverse();
+    setMessages((prev) => [...older, ...prev]);
+    lastDocRef.current = snap.docs[snap.docs.length - 1] || null;
+    setHasMore(snap.docs.length === MSG_LIMIT);
+    setLoadingMore(false);
   };
 
   // AUTO SCROLL
@@ -122,19 +121,17 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
     }
   }, [messages.length]);
 
-  // SEND MESSAGE - ✅ FIX 3 + FIX 5
+  // SEND MESSAGE
   const sendMessage = async () => {
     const trimmed = text.trim();
     if (!trimmed || sending || !canComment) return;
 
-    // ✅ FIX 3: Rate limit
     const now = Date.now();
     if (now - lastSentRef.current < RATE_LIMIT_MS) {
       alert(`Chờ ${Math.ceil((RATE_LIMIT_MS - (now - lastSentRef.current)) / 1000)}s nữa`);
       return;
     }
 
-    // ✅ FIX 10: Filter từ cấm cơ bản
     const badWords = ["đm", "vcl", "clgt"];
     if (badWords.some((w) => trimmed.toLowerCase().includes(w))) {
       alert("Tin nhắn chứa từ ngữ không phù hợp");
@@ -164,7 +161,7 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
     }
   };
 
-  // ✅ FIX 5: Delete message
+  // Delete message
   const deleteMessage = async (msgId: string) => {
     await updateDoc(doc(db, "tasks", taskId, "messages", msgId), {
       deletedFor: arrayUnion(currentUser.uid),
@@ -199,7 +196,6 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
         ref={scrollRef}
         className="max-h-80 overflow-y-auto space-y-2 mb-3 pr-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-zinc-700"
       >
-        {/* ✅ FIX 7: Load more */}
         {hasMore && !loading && (
           <button
             onClick={loadMore}
@@ -250,7 +246,6 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
                       {msg.userName}
                     </span>
                   )}
-                  {/* ✅ FIX 5: Reply preview */}
                   {msg.replyTo && (
                     <div className="text-xs text-gray-500 dark:text-zinc-400 mb-1 px-2 py-1 bg-gray-100 dark:bg-zinc-800 rounded-lg border-l-2 border-blue-500">
                       <FiCornerUpLeft size={12} className="inline mr-1" />
@@ -265,7 +260,6 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
                     }`}
                   >
                     {msg.text}
-                    {/* ✅ FIX 5: Delete button */}
                     {isMe && (
                       <button
                         onClick={() => deleteMessage(msg.id)}
@@ -292,14 +286,12 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
           })}
       </div>
 
-      {/* ✅ FIX 2: Không cho comment nếu không join */}
       {!canComment ? (
         <div className="text-center text-xs text-gray-400 dark:text-zinc-500 py-2">
           Tham gia công việc để bình luận
         </div>
       ) : (
         <>
-          {/* Reply preview */}
           {replyingTo && (
             <div className="flex items-center justify-between text-xs bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg mb-2">
               <span className="text-blue-600 dark:text-blue-400">
