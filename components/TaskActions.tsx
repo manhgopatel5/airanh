@@ -5,7 +5,7 @@ import { FiHeart, FiMessageCircle, FiShare2 } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { doc, onSnapshot, runTransaction, arrayUnion, arrayRemove } from "firebase/firestore";
-import { getFirebaseDB } from "@/lib/firebase"; // ✅ FIX
+import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { incrementTaskView } from "@/lib/taskService";
 
@@ -18,7 +18,7 @@ export default function TaskActions({ taskId, chatCount = 0 }: Props) {
   const router = useRouter();
   const { user } = useAuth();
 
-  const db = getFirebaseDB(); // ✅ FIX DUY NHẤT
+  const db = getFirebaseDB();
 
   const [likes, setLikes] = useState<string[]>([]);
   const [liking, setLiking] = useState(false);
@@ -33,7 +33,7 @@ export default function TaskActions({ taskId, chatCount = 0 }: Props) {
     const unsub = onSnapshot(doc(db, "tasks", taskId), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
-        setLikes(Array.isArray(data.likes) ? data.likes : []);
+        setLikes(Array.isArray(data.likes)? data.likes : []);
       }
     });
 
@@ -49,7 +49,7 @@ export default function TaskActions({ taskId, chatCount = 0 }: Props) {
     setLiking(true);
 
     const newLikes = liked
-      ? likes.filter((id) => id !== user.uid)
+     ? likes.filter((id) => id!== user.uid)
       : [...likes, user.uid];
 
     setLikes(newLikes);
@@ -66,7 +66,7 @@ export default function TaskActions({ taskId, chatCount = 0 }: Props) {
 
         transaction.update(ref, {
           likes: hasLiked
-            ? arrayRemove(user.uid)
+           ? arrayRemove(user.uid)
             : arrayUnion(user.uid),
         });
       });
@@ -112,7 +112,7 @@ export default function TaskActions({ taskId, chatCount = 0 }: Props) {
         disabled={liking}
         className="flex items-center gap-1.5 active:scale-90 transition group/like disabled:opacity-50"
       >
-        {liked ? (
+        {liked? (
           <FaHeart className="text-red-500" size={20} />
         ) : (
           <FiHeart className="group-hover/like:text-red-400" size={20} />
