@@ -30,7 +30,7 @@ export type TaskComment = {
   userName: string;
   userAvatar: string;
   text: string;
-  parentId?: string | null; // null = comment gốc, có id = reply
+  parentId?: string | null;
   replyToUserId?: string;
   replyToUserName?: string;
   likeCount: number;
@@ -41,7 +41,7 @@ export type TaskComment = {
   deleted?: boolean;
 };
 
-class TaskCommentError extends Error {
+export class TaskCommentError extends Error {
   constructor(message: string, public code?: string) {
     super(message);
     this.name = "TaskCommentError";
@@ -54,12 +54,12 @@ export const createComment = async (
   user: User,
   data: {
     text: string;
-    parentId?: string; // reply cho comment nào
+    parentId?: string;
     replyToUserId?: string;
     replyToUserName?: string;
   }
 ): Promise<string> => {
-  const db = getFirebaseDB(); // ✅ Đặt đúng chỗ
+  const db = getFirebaseDB();
   
   if (!taskId || !user?.uid) throw new TaskCommentError("Thiếu thông tin");
   if (!data.text.trim()) throw new TaskCommentError("Nội dung trống");
@@ -84,7 +84,6 @@ export const createComment = async (
     deleted: false,
   });
 
-  // Tăng commentCount của task
   batch.update(taskRef, { commentCount: increment(1) });
 
   await batch.commit();
@@ -97,7 +96,7 @@ export const editComment = async (
   userId: string,
   newText: string
 ): Promise<void> => {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
   
   if (!commentId || !userId) throw new TaskCommentError("Thiếu thông tin");
   if (!newText.trim()) throw new TaskCommentError("Nội dung trống");
@@ -122,49 +121,52 @@ export const editComment = async (
 
 /* ================= DELETE COMMENT ================= */
 export const deleteComment = async (commentId: string, userId: string): Promise<void> => {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
   
   if (!commentId || !userId) throw new TaskCommentError("Thiếu thông tin");
 
-  const commentRef = doc(db, "task_comments", commentId);
-  const snap = await getDoc(commentRef);
+  await runTransaction(db, async (transaction) => {
+    const commentRef = doc(db, "task_comments", commentId);
+    const snap = await transaction.get(commentRef);
 
-  if (!snap.exists()) throw new TaskCommentError("Comment không tồn tại");
-  const data = snap.data() as TaskComment;
-  if (data.userId !== userId) throw new TaskCommentError("Không có quyền xóa", "FORBIDDEN");
-  if (data.deleted) return;
+    if (!snap.exists()) throw new TaskCommentError("Comment không tồn tại");
+    const data = snap.data() as TaskComment;
+    if (data.userId !== userId) throw new TaskCommentError("Không có quyền xóa", "FORBIDDEN");
+    if (data.deleted) return;
 
-  const batch = writeBatch(db);
-  const taskRef = doc(db, "tasks", data.taskId);
+    const taskRef = doc(db, "tasks", data.taskId);
 
-  // Soft delete: đánh dấu deleted=true thay vì xóa hẳn để giữ reply
-  batch.update(commentRef, {
-    text: "Bình luận đã bị xóa",
-    deleted: true,
-    updatedAt: serverTimestamp(),
-  });
+    // Soft delete comment gốc
+    transaction.update(commentRef, {
+      text: "Bình luận đã bị xóa",
+      deleted: true,
+      updatedAt: serverTimestamp(),
+    });
 
-  // Giảm commentCount
-  batch.update(taskRef, { commentCount: increment(-1) });
+    let deleteCount = 1;
 
-  await batch.commit();
-
-  // Nếu là comment gốc, xóa luôn các reply con
-  if (!data.parentId) {
-    const repliesQuery = query(
-      collection(db, "task_comments"),
-      where("parentId", "==", commentId),
-      limit(500)
-    );
-    const repliesSnap = await getDocs(repliesQuery);
-    if (!repliesSnap.empty) {
-      const deleteBatch = writeBatch(db);
-      repliesSnap.docs.forEach((d) => deleteBatch.delete(d.ref));
-      await deleteBatch.commit();
-      // Giảm thêm commentCount cho số reply bị xóa
-      await updateDoc(taskRef, { commentCount: increment(-repliesSnap.size) });
+    // Nếu là comment gốc, xóa reply con trong cùng transaction
+    if (!data.parentId) {
+      const repliesQuery = query(
+        collection(db, "task_comments"),
+        where("parentId", "==", commentId),
+        where("deleted", "==", false)
+      );
+      const repliesSnap = await getDocs(repliesQuery);
+      
+      repliesSnap.docs.forEach((d) => {
+        transaction.update(d.ref, { 
+          deleted: true, 
+          updatedAt: serverTimestamp(),
+          text: "Bình luận đã bị xóa"
+        });
+        deleteCount++;
+      });
     }
-  }
+
+    // Giảm commentCount đúng số lượng đã xóa
+    transaction.update(taskRef, { commentCount: increment(-deleteCount) });
+  });
 };
 
 /* ================= LISTEN COMMENTS ================= */
@@ -177,14 +179,14 @@ export const listenComments = (
     onError?: (err: Error) => void;
   }
 ): Unsubscribe => {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
   
   if (!taskId) return () => {};
 
   const constraints: QueryConstraint[] = [
     where("taskId", "==", taskId),
     where("deleted", "==", false),
-    orderBy("createdAt", "asc"), // asc để comment cũ lên trước
+    orderBy("createdAt", "asc"),
     limit(options?.limit || 50),
   ];
 
@@ -212,7 +214,7 @@ export const toggleLikeComment = async (
   commentId: string,
   userId: string
 ): Promise<{ liked: boolean; newCount: number }> => {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
   
   if (!commentId || !userId) throw new TaskCommentError("Thiếu thông tin");
 
@@ -229,7 +231,6 @@ export const toggleLikeComment = async (
     const currentCount = data.likeCount || 0;
 
     if (likedBy.includes(userId)) {
-      // Unlike
       transaction.update(commentRef, {
         likedBy: likedBy.filter((id) => id !== userId),
         likeCount: Math.max(0, currentCount - 1),
@@ -237,7 +238,6 @@ export const toggleLikeComment = async (
       liked = false;
       newCount = Math.max(0, currentCount - 1);
     } else {
-      // Like
       transaction.update(commentRef, {
         likedBy: [...likedBy, userId],
         likeCount: currentCount + 1,
@@ -252,10 +252,19 @@ export const toggleLikeComment = async (
 
 /* ================= GET COMMENT BY ID ================= */
 export const getCommentById = async (commentId: string): Promise<TaskComment | null> => {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
   
   if (!commentId) return null;
   const snap = await getDoc(doc(db, "task_comments", commentId));
-  if (!snap.exists()) return null;
+  if (!snap.exists() || snap.data().deleted) return null;
   return { id: snap.id, ...snap.data() } as TaskComment;
+};
+
+/* ================= GET COMMENTS COUNT ================= */
+export const getTaskCommentsCount = async (taskId: string): Promise<number> => {
+  const db = getFirebaseDB();
+  
+  const snap = await getDoc(doc(db, "tasks", taskId));
+  if (!snap.exists()) return 0;
+  return (snap.data() as any).commentCount || 0;
 };
