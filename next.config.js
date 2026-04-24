@@ -89,7 +89,7 @@ const nextConfig = {
     },
   },
   
-  // ✅ EXTERNAL TẤT CẢ PACKAGE CLIENT-ONLY + THÊM MỚI
+  // ✅ BỎ date-fns RA KHỎI ĐÂY - NÓ CHẠY ĐƯỢC TRÊN SERVER
   serverExternalPackages: [
     'framer-motion',
     'react-hot-toast',
@@ -103,7 +103,6 @@ const nextConfig = {
     'next-themes',
     '@vercel/analytics',
     '@vercel/speed-insights',
-    'date-fns',
     'clsx',
     'tailwind-merge',
     'zod',
@@ -116,6 +115,8 @@ const nextConfig = {
       'lucide-react',
       'react-icons',
       '@radix-ui/react-icons',
+      'date-fns', // ✅ GIỮ date-fns Ở ĐÂY
+      'lodash-es',
     ],
     serverActions: {
       bodySizeLimit: '2mb',
@@ -128,7 +129,7 @@ const nextConfig = {
   },
   
   webpack: (config, { isServer, dev }) => {
-    // ✅ TẮT MINIFY ĐỂ DEBUG - XÓA DÒNG NÀY SAU KHI BUILD XANH
+    // Tắt minify để debug - XÓA SAU KHI BUILD XANH
     if (isServer && !dev) {
       config.optimization.minimize = false;
     }
