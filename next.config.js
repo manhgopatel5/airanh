@@ -108,7 +108,7 @@ const nextConfig = {
     '@hookform/resolvers',
     'react-hook-form',
     'react-icons',
-    'lucide-react',
+    
   ],
   
   experimental: {
