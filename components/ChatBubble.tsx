@@ -186,7 +186,7 @@ export default function ChatBubble({
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold">Vị trí</p>
               <p className={`text-xs truncate ${isMe? "text-white/70" : "text-gray-500 dark:text-zinc-400"}`}>
-                {msg.location?.address || "Mở trong Google Maps"}
+                Mở trong Google Maps
               </p>
             </div>
           </a>
