@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { getMessaging, getToken, isSupported, onMessage, deleteToken } from "firebase/messaging";
 import { app, db } from "@/lib/firebase";
 import { doc, setDoc, deleteField } from "firebase/firestore";
-import toast from "react-hot-toast"; // ✅ FIX 4: npm i react-hot-toast
+import toast, { Toaster } from "react-hot-toast";
 
 type Props = {
   children: React.ReactNode;
@@ -18,7 +18,7 @@ export default function ClientLayout({ children }: Props) {
   const router = useRouter();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const fcmSetupRef = useRef(false); // ✅ FIX 1: Chỉ chạy 1 lần
+  const fcmSetupRef = useRef(false);
 
   /* ================= ROUTE ================= */
   const publicRoutes = ["/login", "/register", "/reset-password"];
@@ -28,7 +28,7 @@ export default function ClientLayout({ children }: Props) {
 
   /* ================= REDIRECT ================= */
   useEffect(() => {
-    if (user === undefined) return; // Đang load auth
+    if (user === undefined) return;
     setLoading(false);
 
     if (!user &&!isPublic) {
@@ -41,17 +41,15 @@ export default function ClientLayout({ children }: Props) {
     }
   }, [user, isPublic, router]);
 
-  /* ================= FCM SETUP + CLEANUP ✅ FIX 1 + 2 + 5 ================= */
+  /* ================= FCM SETUP + CLEANUP ================= */
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // ✅ FIX 2: Xóa token khi logout
     if (!user) {
       localStorage.removeItem("fcmToken");
       return;
     }
 
-    // ✅ FIX 1: Chỉ chạy 1 lần mỗi user
     if (fcmSetupRef.current) return;
     fcmSetupRef.current = true;
 
@@ -60,11 +58,9 @@ export default function ClientLayout({ children }: Props) {
         const supported = await isSupported();
         if (!supported) return;
 
-        // ✅ FIX 6: Register SW trước
         await navigator.serviceWorker.register("/firebase-messaging-sw.js");
         const messaging = getMessaging(app);
 
-        // ✅ FIX 4: Listen foreground message
         onMessage(messaging, (payload) => {
           toast(`${payload.notification?.title}: ${payload.notification?.body}`, {
             icon: "🔔",
@@ -73,7 +69,6 @@ export default function ClientLayout({ children }: Props) {
 
         const permission = await Notification.requestPermission();
 
-        // ✅ FIX 5: Xóa token nếu bị revoke
         if (permission!== "granted") {
           await deleteToken(messaging);
           await setDoc(doc(db, "users", user.uid), { fcmToken: deleteField() }, { merge: true });
@@ -97,7 +92,7 @@ export default function ClientLayout({ children }: Props) {
     };
 
     setupFCM();
-  }, [user?.uid]); // ✅ Chỉ chạy khi uid đổi
+  }, [user?.uid]);
 
   /* ================= LOADING ================= */
   if (loading) {
@@ -132,6 +127,13 @@ export default function ClientLayout({ children }: Props) {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors">
       <div className={!isChatDetail &&!isCreate? "pb-24" : ""}>{children}</div>
       {!isPublic && user &&!isChatDetail &&!isCreate && <BottomNav />}
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          className: 'text-sm',
+          duration: 3000,
+        }}
+      />
     </div>
   );
 }
