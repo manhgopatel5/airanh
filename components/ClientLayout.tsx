@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import FCMProvider from "@/components/FCMProvider";
 import { useEffect, useMemo, useState, useRef } from "react";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/lib/AuthContext";
@@ -55,7 +56,7 @@ export default function ClientLayout({ children }: Props) {
     const setupFCM = async () => {
       try {
         // ✅ dynamic import (QUAN TRỌNG NHẤT)
-        const messagingModule = await import("firebase/messaging");
+        
         const { getMessaging, getToken, isSupported, onMessage, deleteToken } =
           messagingModule;
 
