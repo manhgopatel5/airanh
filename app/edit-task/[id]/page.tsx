@@ -242,9 +242,23 @@ export default function EditTaskPage() {
             </div>
           )}
 
-          <button type="submit" disabled={saving}>
-            {saving ? "Đang lưu..." : "Lưu thay đổi"}
-          </button>
+         <button
+  type="submit"
+  disabled={saving}
+  className="w-full py-3.5 rounded-2xl text-white font-semibold bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center gap-2"
+>
+  {saving ? (
+    <>
+      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+      Đang lưu...
+    </>
+  ) : (
+    <>
+      <FiSave />
+      Lưu thay đổi
+    </>
+  )}
+</button>
         </form>
       </div>
     </>
