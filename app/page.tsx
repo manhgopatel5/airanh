@@ -219,14 +219,12 @@ export default function Home() {
   }, [lastDoc, loadingMore, hasMore, buildQuery, activeTab, userLocation]);
 
   /* ================= TABS ================= */
-  const tabs: { id: TabId; label: string; icon: any }[] = [
+const tabs: { id: TabId; label: string; icon: any }[] = [
   { id: "hot", label: "Hot", icon: HiFire },
   { id: "near", label: "Gần", icon: HiClock },
   { id: "new", label: "Mới", icon: HiSparkles },
   { id: "friends", label: "Bạn bè", icon: HiUsers },
 ];
-    []
-  );
 
   return (
     <div className="min-h-screen pb-24">
