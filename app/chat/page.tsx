@@ -40,7 +40,6 @@ export default function ChatPage() {
   const [friends, setFriends] = useState<FriendItem[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [searching, setSearching] = useState(false);
   const [focused, setFocused] = useState(false);
 
   useEffect(() => {
@@ -56,8 +55,8 @@ export default function ChatPage() {
         );
         const snap = await getDocs(q);
         const list: FriendItem[] = snap.docs.map((d) => ({
-         ...(d.data() as FriendItem),
-          unreadCount: Math.floor(Math.random() * 3), // Mock, sau thay bằng data thật
+        ...(d.data() as FriendItem),
+          unreadCount: Math.floor(Math.random() * 3),
         }));
         setFriends(list);
       } catch (e) {
@@ -68,13 +67,12 @@ export default function ChatPage() {
       }
     };
     loadFriends();
-  }, );
+  }, []);
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!search.trim()) return;
     const keyword = search.trim().toUpperCase();
-    setSearching(true);
     try {
       const shortIdRef = doc(db, "shortIds", keyword);
       const shortIdSnap = await getDoc(shortIdRef);
@@ -93,8 +91,6 @@ export default function ChatPage() {
       toast.error("Không tìm thấy người dùng");
     } catch (e) {
       toast.error("Lỗi tìm kiếm");
-    } finally {
-      setSearching(false);
     }
   };
 
@@ -189,7 +185,7 @@ export default function ChatPage() {
               </h3>
               <p className="text-sm text-gray-500 dark:text-zinc-400 font-medium max-w-[240px]">
                 {search
-               ? `Không có kết quả cho "${search}"`
+              ? `Không có kết quả cho "${search}"`
                   : "Tìm bạn bè bằng ID hoặc username để bắt đầu trò chuyện"}
               </p>
             </div>
