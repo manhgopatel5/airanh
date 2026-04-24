@@ -131,37 +131,38 @@ export default function UploadAvatar() {
     });
   };
 
-  const compressImage = (file: File): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          const ctx = canvas.getContext("2d")!;
+const compressImage = (file: File): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d")!;
 
-          const size = Math.min(img.width, img.height, 800);
-          canvas.width = size;
-          canvas.height = size;
+        const size: number = Math.min(img.width, img.height, 800);
+        canvas.width = size;
+        canvas.height = size;
 
-          const offsetX = (img.width - size) / 2;
-          const offsetY = (img.height - size) / 2;
+        const offsetX: number = (img.width - size) / 2;
+        const offsetY: number = (img.height - size) / 2;
 
-          ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, size);
+        ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, size, size);
 
-          canvas.toBlob(
-            (blob) => blob? resolve(blob) : reject(new Error("Compress failed")),
-            "image/jpeg",
-            0.85
-          );
-        };
-        img.onerror = () => reject(new Error("Không đọc được ảnh"));
-        img.src = e.target?.result as string;
+        canvas.toBlob(
+          (blob) => blob ? resolve(blob) : reject(new Error("Compress failed")),
+          "image/jpeg",
+          0.85
+        );
       };
-      reader.onerror = () => reject(new Error("Không đọc được file"));
-      reader.readAsDataURL(file);
-    });
-  };
+      img.onerror = () => reject(new Error("Không đọc được ảnh"));
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => reject(new Error("Không đọc được file"));
+    reader.readAsDataURL(file);
+  });
+};
+
 
   const handleCancel = () => {
     uploadTaskRef.current?.cancel();
