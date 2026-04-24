@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { db, auth } from "@/lib/firebase";
+import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
 import { FiCheck, FiLoader } from "react-icons/fi";
@@ -16,6 +16,11 @@ const BAD_WORDS = ["admin", "mod", "support", "đm", "vcl", "dm"];
 
 export default function EditProfile({ currentName, onClose }: Props) {
   const { user } = useAuth();
+
+  // 🔥 lấy firebase đúng cách
+  const auth = getFirebaseAuth();
+  const db = getFirebaseDB();
+
   const [name, setName] = useState(currentName || "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -44,10 +49,12 @@ export default function EditProfile({ currentName, onClose }: Props) {
       setTouched(true);
       return;
     }
+
     if (trimmed === currentName) {
       onClose?.();
       return;
     }
+
     if (!user) {
       setError("Bạn chưa đăng nhập");
       return;
@@ -78,7 +85,7 @@ export default function EditProfile({ currentName, onClose }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [name, currentName, user, validate, onClose]);
+  }, [name, currentName, user, validate, onClose, auth, db]);
 
   const isValid = !validate(name.trim()) && name.trim() !== currentName;
 
@@ -88,6 +95,7 @@ export default function EditProfile({ currentName, onClose }: Props) {
         <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
           Tên hiển thị
         </label>
+
         <input
           value={name}
           onChange={(e) => {
@@ -105,9 +113,12 @@ export default function EditProfile({ currentName, onClose }: Props) {
               : "border-gray-200 dark:border-zinc-700 focus:ring-blue-500/20 focus:border-blue-500"
           }`}
         />
+
         <div className="flex items-center justify-between mt-1.5 px-1">
           <p className="text-xs text-red-500 h-4">{errorMsg || error}</p>
-          <p className="text-xs text-gray-400 dark:text-zinc-500">{name.length}/30</p>
+          <p className="text-xs text-gray-400 dark:text-zinc-500">
+            {name.length}/30
+          </p>
         </div>
       </div>
 

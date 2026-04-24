@@ -13,7 +13,7 @@ import {
   QueryConstraint,
   FirestoreDataConverter,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { getFirebaseDB } from "./firebase";
 
 /* ================= TYPES ================= */
 export type SearchUser = {
@@ -44,6 +44,7 @@ export type SearchResult = {
 };
 
 export class SearchError extends Error {
+  const db = getFirebaseDB();
   constructor(message: string, public code?: string) {
     super(message);
     this.name = "SearchError";

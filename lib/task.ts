@@ -16,7 +16,7 @@ import {
   orderBy,
   Unsubscribe,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { getFirebaseDB } from "./firebase";
 import { nanoid } from "nanoid";
 import {
   Task,
@@ -49,6 +49,7 @@ const generateUniqueShortId = async (): Promise<string> => {
   let attempts = 0;
   while (attempts < 10) {
     const shortId = nanoid(8).toUpperCase();
+    const db = getFirebaseDB();
     const snap = await getDoc(doc(db, "shortIds", shortId));
     if (!snap.exists()) return shortId;
     attempts++;

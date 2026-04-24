@@ -8,7 +8,7 @@ import {
   getIdTokenResult,
   IdTokenResult,
 } from "firebase/auth";
-import { auth, db, rtdb, authReady } from "@/lib/firebase";
+import { getFirebaseAuth, getFirebaseDB, getFirebaseRTDB } from "@/lib/firebase";
 import {
   doc,
   onSnapshot,
@@ -70,6 +70,10 @@ let heartbeatInterval: NodeJS.Timeout | null = null;
 function initAuthStore() {
   if (initialized) return;
   initialized = true;
+
+  const auth = getFirebaseAuth();   // ✅ FIX
+  const db = getFirebaseDB();       // ✅ FIX
+  const rtdb = getFirebaseRTDB();   // ✅ FIX
 
   let user: User | null = null;
   let profile: UserProfile | null = null;
@@ -161,94 +165,93 @@ function initAuthStore() {
     }
   };
 
-  authReady.then(() => {
-    unsubAuth = onAuthStateChanged(
-      auth,
-      async (u) => {
-        user = u;
-        error = null;
-        claims = null;
+  // ✅ FIX: BỎ authReady.then
+  unsubAuth = onAuthStateChanged(
+    auth,
+    async (u) => {
+      user = u;
+      error = null;
+      claims = null;
 
-        if (unsubProfile) {
-          unsubProfile();
-          unsubProfile = null;
+      if (unsubProfile) {
+        unsubProfile();
+        unsubProfile = null;
+      }
+      cleanupPresence();
+
+      if (u) {
+        loadingProfile = true;
+        updateStore();
+
+        try {
+          const token = await getIdTokenResult(u);
+          claims = token.claims;
+        } catch {}
+
+        const userRef = doc(db, "users", u.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+          const newProfile: Omit<UserProfile, "uid"> = {
+            name: u.displayName || u.email?.split("@")[0] || "User",
+            email: u.email || "",
+            emailVerified: u.emailVerified,
+            avatar: u.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.email || "U")}`,
+            shortId: nanoid(8).toUpperCase(),
+            bio: "",
+            isOnline: true,
+            lastSeen: Timestamp.now(),
+            role: "user",
+            createdAt: serverTimestamp() as Timestamp,
+            postsCount: 0,
+            tasksJoined: 0,
+            friendRequestsUnread: 0,
+          };
+          await setDoc(userRef, newProfile);
         }
-        cleanupPresence();
 
-        if (u) {
-          loadingProfile = true;
-          updateStore();
-
-          try {
-            const token = await getIdTokenResult(u);
-            claims = token.claims;
-          } catch {}
-
-          const userRef = doc(db, "users", u.uid);
-          const userSnap = await getDoc(userRef);
-
-          if (!userSnap.exists()) {
-            const newProfile: Omit<UserProfile, "uid"> = {
-              name: u.displayName || u.email?.split("@")[0] || "User",
-              email: u.email || "",
-              emailVerified: u.emailVerified,
-              avatar: u.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.email || "U")}`,
-              shortId: nanoid(8).toUpperCase(),
-              bio: "",
-              isOnline: true,
-              lastSeen: Timestamp.now(),
-              role: "user",
-              createdAt: serverTimestamp() as Timestamp,
-              postsCount: 0,
-              tasksJoined: 0,
-              friendRequestsUnread: 0,
-            };
-            await setDoc(userRef, newProfile);
-          }
-
-          unsubProfile = onSnapshot(
-            userRef,
-            (snap) => {
-              if (snap.exists()) {
-                profile = { uid: snap.id, ...snap.data() } as UserProfile;
-                error = null;
-              } else {
-                profile = null;
-              }
-              loading = false;
-              loadingProfile = false;
-              updateStore();
-            },
-            (err) => {
-              console.error("Profile listener:", err);
-              error = "Không thể tải thông tin";
+        unsubProfile = onSnapshot(
+          userRef,
+          (snap) => {
+            if (snap.exists()) {
+              profile = { uid: snap.id, ...snap.data() } as UserProfile;
+              error = null;
+            } else {
               profile = null;
-              loading = false;
-              loadingProfile = false;
-              updateStore();
             }
-          );
+            loading = false;
+            loadingProfile = false;
+            updateStore();
+          },
+          (err) => {
+            console.error("Profile listener:", err);
+            error = "Không thể tải thông tin";
+            profile = null;
+            loading = false;
+            loadingProfile = false;
+            updateStore();
+          }
+        );
 
-          setupPresence(u.uid);
-        } else {
-          profile = null;
-          claims = null;
-          loading = false;
-          loadingProfile = false;
-          updateStore();
-        }
-      },
-      (err) => {
-        console.error("Auth error:", err);
-        error = "Lỗi xác thực";
-        user = null;
+        setupPresence(u.uid);
+      } else {
         profile = null;
+        claims = null;
         loading = false;
         loadingProfile = false;
         updateStore();
       }
-    );
-  });
+    },
+    (err) => {
+      console.error("Auth error:", err);
+      error = "Lỗi xác thực";
+      user = null;
+      profile = null;
+      loading = false;
+      loadingProfile = false;
+      updateStore();
+    }
+  );
 
   const checkCleanup = () => {
     if (listeners.size === 0) {

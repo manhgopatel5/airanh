@@ -2,7 +2,7 @@
 
 import { createContext, useEffect, useState, useRef, useMemo, ReactNode, useContext } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { auth, db, rtdb } from "@/lib/firebase";
+import { getFirebaseAuth, getFirebaseDB, getFirebaseRTDB } from "@/lib/firebase";
 import {
   doc,
   getDoc,
@@ -44,6 +44,9 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const auth = getFirebaseAuth();
+  const db = getFirebaseDB();
+  const rtdb = getFirebaseRTDB();
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -195,6 +198,6 @@ export const useAuth = () => {
 // ================= LOGOUT =================
 export const useLogout = () => {
   return async () => {
-    await auth.signOut();
+    await getFirebaseAuth().signOut();
   };
 };

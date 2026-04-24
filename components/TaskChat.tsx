@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { db } from "@/lib/firebase";
+import { getFirebaseDB } from "@/lib/firebase";
 import {
   collection,
   addDoc,
@@ -50,6 +50,8 @@ const MSG_LIMIT = 50;
 const RATE_LIMIT_MS = 2000;
 
 export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
+  const db = getFirebaseDB();
+
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);

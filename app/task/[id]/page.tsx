@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
+import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import {
   getTaskBySlug,
@@ -38,6 +38,8 @@ type UserData = {
 };
 
 export default function TaskDetailPage() {
+  const auth = getFirebaseAuth();
+  const db = getFirebaseDB();
   const { id } = useParams();
   const router = useRouter();
 

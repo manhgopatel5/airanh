@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { db, auth, storage } from "@/lib/firebase";
+import { getFirebaseDB, getFirebaseAuth, getFirebaseStorage } from "@/lib/firebase";
 import {
   collection, query, updateDoc, where, onSnapshot, doc, getDoc,
   orderBy, limit, addDoc, serverTimestamp, Timestamp,
@@ -32,6 +32,9 @@ type Friend = {
 };
 
 export default function ChatDetail() {
+  const db = getFirebaseDB();
+  const auth = getFirebaseAuth();
+  const storage = getFirebaseStorage();
   const params = useParams();
   const id = typeof params.id === "string"? params.id : Array.isArray(params.id)? params.id[0] : "";
   const router = useRouter();
@@ -93,7 +96,7 @@ export default function ChatDetail() {
         observerRef.current = null;
       }
     };
-  }, );
+  }, [user]);
 
   /* ================= LOAD MESSAGES ================= */
   useEffect(() => {

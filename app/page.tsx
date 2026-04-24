@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { db } from "@/lib/firebase";
+import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
 import {
   collection,
   query,
@@ -16,7 +16,6 @@ import {
   QueryConstraint,
 } from "firebase/firestore";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { FiPlus } from "react-icons/fi";
 import { HiFire, HiClock, HiSparkles, HiUsers } from "react-icons/hi";
@@ -27,6 +26,9 @@ type TabId = "hot" | "near" | "new" | "friends";
 const PAGE_SIZE = 15;
 
 export default function Home() {
+  const db = getFirebaseDB();
+  const auth = getFirebaseAuth();
+
   const [activeTab, setActiveTab] = useState<TabId>("hot");
   const [tasks, setTasks] = useState<TaskListItem[]>([]);
   const [friendIds, setFriendIds] = useState<string[]>([]);
@@ -42,13 +44,11 @@ export default function Home() {
 
   const router = useRouter();
 
-  /* ================= AUTH ================= */
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, setCurrentUser);
     return () => unsub();
   }, []);
 
-  /* ================= FRIENDS ================= */
   useEffect(() => {
     if (!currentUser?.uid) {
       setFriendIds([]);
@@ -70,7 +70,6 @@ export default function Home() {
     return () => unsub();
   }, [currentUser?.uid]);
 
-  /* ================= GPS ================= */
   useEffect(() => {
     if (activeTab !== "near" || !navigator.geolocation) return;
 
@@ -95,7 +94,6 @@ export default function Home() {
     );
   }, [activeTab]);
 
-  /* ================= BUILD QUERY ================= */
   const buildQuery = useCallback(
     (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
       const constraints: QueryConstraint[] = [
@@ -123,7 +121,6 @@ export default function Home() {
     [activeTab, friendIds]
   );
 
-  /* ================= FETCH ================= */
   useEffect(() => {
     if (unsubRef.current) unsubRef.current();
 
@@ -180,7 +177,6 @@ export default function Home() {
     return () => unsub();
   }, [activeTab, friendIds, userLocation, buildQuery, currentUser]);
 
-  /* ================= LOAD MORE ================= */
   const loadMore = useCallback(async () => {
     if (!lastDoc || loadingMore || !hasMore) return;
 
@@ -218,36 +214,34 @@ export default function Home() {
     }
   }, [lastDoc, loadingMore, hasMore, buildQuery, activeTab, userLocation]);
 
-  /* ================= TABS ================= */
-const tabs: { id: TabId; label: string; icon: any }[] = [
-  { id: "hot", label: "Hot", icon: HiFire },
-  { id: "near", label: "Gần", icon: HiClock },
-  { id: "new", label: "Mới", icon: HiSparkles },
-  { id: "friends", label: "Bạn bè", icon: HiUsers },
-];
+  const tabs: { id: TabId; label: string; icon: any }[] = [
+    { id: "hot", label: "Hot", icon: HiFire },
+    { id: "near", label: "Gần", icon: HiClock },
+    { id: "new", label: "Mới", icon: HiSparkles },
+    { id: "friends", label: "Bạn bè", icon: HiUsers },
+  ];
 
   return (
     <div className="min-h-screen pb-24">
       <div className="sticky top-0 bg-white border-b">
         <div className="flex justify-around">
-        {tabs.map((tab) => {
-  const Icon = tab.icon;
-
-  return (
-    <button
-      key={tab.id}
-      onClick={() => setActiveTab(tab.id)}
-      className={
-        activeTab === tab.id
-          ? "text-blue-500 font-bold"
-          : "text-gray-400"
-      }
-    >
-      <Icon size={20} />
-      {tab.label}
-    </button>
-  );
-})}
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={
+                  activeTab === tab.id
+                    ? "text-blue-500 font-bold"
+                    : "text-gray-400"
+                }
+              >
+                <Icon size={20} />
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -292,7 +286,7 @@ function SkeletonList() {
     </div>
   );
 }
-/* ================= UTILS ================= */
+
 function getDistance(
   p1: { lat: number; lng: number },
   p2: { lat: number; lng: number }

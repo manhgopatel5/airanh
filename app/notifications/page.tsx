@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { db } from "@/lib/firebase";
+import { getFirebaseDB } from "@/lib/firebase";
 import {
   collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, orderBy,
   Timestamp, writeBatch, limit, startAfter, getDocs
@@ -28,6 +28,7 @@ type Notification = {
 };
 
 export default function NotificationsPage() {
+  const db = getFirebaseDB();
   const { user } = useAuth();
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);

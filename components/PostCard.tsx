@@ -5,7 +5,7 @@ import { FiHeart, FiMessageCircle, FiShare2, FiMoreHorizontal, FiTrash2 } from "
 import { FaHeart } from "react-icons/fa";
 import { useState, useCallback } from "react";
 import { doc, runTransaction, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { Timestamp } from "firebase/firestore";
 import Linkify from "linkify-react";
@@ -30,6 +30,8 @@ type Props = {
 export default function PostCard({ post, onDelete }: Props) {
   const router = useRouter();
   const { user } = useAuth();
+  const db = getFirebaseDB();
+
   const [localLikes, setLocalLikes] = useState<string[]>(post.likes || []);
   const [liking, setLiking] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -39,7 +41,6 @@ export default function PostCard({ post, onDelete }: Props) {
   const liked = user && localLikes.includes(user.uid);
   const isOwner = user?.uid === post.userId;
 
-  /* ================= LIKE - OPTIMISTIC + TRANSACTION ================= */
   const handleLike = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user) return router.push("/login");
@@ -72,25 +73,23 @@ export default function PostCard({ post, onDelete }: Props) {
     }
   }, [user, liked, liking, localLikes, post.id, post.likes, router]);
 
-  /* ================= SHARE ================= */
-const handleShare = useCallback(async (e: React.MouseEvent) => {
-  e.stopPropagation();
+  const handleShare = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
 
-  const url = `${window.location.origin}/post/${post.id}`;
-  const title = post.content?.slice(0, 50) || "Xem bài viết";
+    const url = `${window.location.origin}/post/${post.id}`;
+    const title = post.content?.slice(0, 50) || "Xem bài viết";
 
-  if (navigator.share) {
-    try {
-      await navigator.share({ title, url });
-    } catch (err) {
-      console.warn("Share cancelled");
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, url });
+      } catch (err) {
+        console.warn("Share cancelled");
+      }
+    } else {
+      await navigator.clipboard.writeText(url);
     }
-  } else {
-    await navigator.clipboard.writeText(url);
-  }
-}, [post.id, post.content]);
+  }, [post.id, post.content]);
 
-  /* ================= DELETE ================= */
   const handleDelete = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isOwner) return;
@@ -99,19 +98,16 @@ const handleShare = useCallback(async (e: React.MouseEvent) => {
     onDelete?.(post.id);
   }, [isOwner, post.id, onDelete]);
 
-  /* ================= NAVIGATE ================= */
   const goToPost = useCallback(() => router.push(`/post/${post.id}`), [router, post.id]);
   const goToProfile = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     router.push(`/profile/${post.userId}`);
   }, [router, post.userId]);
 
-  /* ================= PREFETCH ================= */
   const handleMouseEnter = useCallback(() => {
     router.prefetch(`/post/${post.id}`);
   }, [router, post.id]);
 
-  /* ================= TIME AGO ================= */
   const timeAgo = (seconds?: number) => {
     if (!seconds) return "";
     const diff = Date.now() / 1000 - seconds;
@@ -129,7 +125,6 @@ const handleShare = useCallback(async (e: React.MouseEvent) => {
       className="bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm shadow-gray-100/50 dark:shadow-black/20 active:scale-[0.98] transition-all duration-200 cursor-pointer overflow-hidden group hover:shadow-lg hover:shadow-gray-200/50 dark:hover:shadow-black/40"
     >
       <div className="p-4 space-y-3">
-        {/* HEADER */}
         <div className="flex items-center justify-between gap-3">
           <button onClick={goToProfile} className="flex items-center gap-3 flex-1 min-w-0">
             <img
@@ -172,7 +167,6 @@ const handleShare = useCallback(async (e: React.MouseEvent) => {
           )}
         </div>
 
-        {/* CONTENT */}
         {post.content && (
           <Linkify
             options={{
@@ -186,7 +180,6 @@ const handleShare = useCallback(async (e: React.MouseEvent) => {
           </Linkify>
         )}
 
-        {/* IMAGES GRID */}
         {post.images && post.images.length > 0 && (
           <div
             className={`grid gap-1.5 rounded-2xl overflow-hidden ${
@@ -218,7 +211,6 @@ const handleShare = useCallback(async (e: React.MouseEvent) => {
           </div>
         )}
 
-        {/* ACTIONS */}
         <div className="flex items-center gap-5 pt-1 text-gray-500 dark:text-zinc-400">
           <button
             onClick={handleLike}

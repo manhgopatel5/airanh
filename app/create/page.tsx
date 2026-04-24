@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth, storage } from "@/lib/firebase";
+import { getFirebaseAuth, getFirebaseStorage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { createTask } from "@/lib/task";
 import { User } from "@/types/task";
@@ -36,6 +36,8 @@ const CATEGORIES = [
 ];
 
 export default function CreateTaskPage() {
+  const auth = getFirebaseAuth();
+  const storage = getFirebaseStorage();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);

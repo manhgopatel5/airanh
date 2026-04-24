@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { db } from "@/lib/firebase";
+import { getFirebaseDB } from "@/lib/firebase"; // ✅ FIX
 import {
   collection,
   query,
@@ -43,6 +43,8 @@ export default function FriendList() {
       return;
     }
 
+    const db = getFirebaseDB(); // ✅ FIX DUY NHẤT
+
     const q = query(
       collection(db, "friends"),
       or(where("userId", "==", user.uid), where("friendId", "==", user.uid))
@@ -50,7 +52,6 @@ export default function FriendList() {
 
     const unsub = onSnapshot(q, async (snap) => {
       try {
-        // 1. Lấy friendIds unique
         const friendIds = new Set<string>();
         snap.docs.forEach((d) => {
           const data = d.data();
@@ -63,7 +64,6 @@ export default function FriendList() {
           return;
         }
 
-        // 2. Batch get users - dùng documentId in
         const ids = Array.from(friendIds);
         const batches: string[][] = [];
         for (let i = 0; i < ids.length; i += 10) {
@@ -76,7 +76,6 @@ export default function FriendList() {
           )
         );
 
-        // 3. Cleanup presence listener cũ
         Object.values(presenceUnsubs.current).forEach((unsub) => unsub());
         presenceUnsubs.current = {};
 
@@ -86,7 +85,6 @@ export default function FriendList() {
             const data = u.data();
             list.push({ uid: u.id, ...data } as Friend);
 
-            // Listen online status realtime
             presenceUnsubs.current[u.id] = onSnapshot(doc(db, "users", u.id), (userSnap) => {
               const userData = userSnap.data();
               setFriends((prev) =>
@@ -100,7 +98,6 @@ export default function FriendList() {
           });
         });
 
-        // Sort online trước, rồi theo tên
         list.sort((a, b) => {
           if (a.online && !b.online) return -1;
           if (!a.online && b.online) return 1;
@@ -186,7 +183,6 @@ export default function FriendList() {
 
   return (
     <div className="p-4 space-y-4">
-      {/* HEADER + SEARCH */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Bạn bè</h2>
@@ -206,7 +202,6 @@ export default function FriendList() {
         </div>
       </div>
 
-      {/* LIST */}
       <div className="space-y-2">
         {filtered.map((f) => (
           <div

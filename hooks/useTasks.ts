@@ -13,7 +13,7 @@ import {
   QueryDocumentSnapshot,
   DocumentData,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getFirebaseDB } from "@/lib/firebase";
 import { Task } from "@/types/task";
 
 /* ================= TYPES ================= */
@@ -37,6 +37,8 @@ type UseTasksReturn = {
 
 /* ================= HOOK LIST ================= */
 export default function useTasks(filter?: TaskFilter): UseTasksReturn {
+  const db = getFirebaseDB(); // ✅ FIX 1 (THÊM)
+
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +52,7 @@ export default function useTasks(filter?: TaskFilter): UseTasksReturn {
     const hasPriceFilter = filter?.minPrice || filter?.maxPrice;
 
     if (filter?.status) {
-      const statuses = Array.isArray(filter.status)? filter.status : [filter.status];
+      const statuses = Array.isArray(filter.status) ? filter.status : [filter.status];
       constraints.push(where("status", "in", statuses));
     } else {
       constraints.push(where("status", "in", ["open", "full"]));
@@ -79,14 +81,14 @@ export default function useTasks(filter?: TaskFilter): UseTasksReturn {
     setTasks([]);
     setLastDoc(null);
 
-    const q = query(collection(db, "tasks"),...queryConstraints);
+    const q = query(collection(db, "tasks"), ...queryConstraints);
 
     const unsub = onSnapshot(
       q,
       (snapshot) => {
         const data = snapshot.docs.map((doc) => ({
           id: doc.id,
-       ...doc.data(),
+          ...doc.data(),
         } as Task));
         setTasks(data);
         setLastDoc(snapshot.docs[snapshot.docs.length - 1] || null);
@@ -101,10 +103,10 @@ export default function useTasks(filter?: TaskFilter): UseTasksReturn {
     );
 
     return () => unsub();
-  }, [queryConstraints]);
+  }, [queryConstraints, db]); // ✅ FIX 2 (THÊM db)
 
   const loadMore = () => {
-    if (!lastDoc ||!hasMore) return;
+    if (!lastDoc || !hasMore) return;
   };
 
   return { tasks, loading, error, hasMore, loadMore };
@@ -112,6 +114,8 @@ export default function useTasks(filter?: TaskFilter): UseTasksReturn {
 
 /* ================= HOOK 1 TASK ================= */
 export function useTask(taskId: string | null) {
+  const db = getFirebaseDB(); // ✅ FIX 3 (THÊM)
+
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -128,7 +132,7 @@ export function useTask(taskId: string | null) {
       doc(db, "tasks", taskId),
       (snap) => {
         if (snap.exists()) {
-          setTask({ id: snap.id,...snap.data() } as Task);
+          setTask({ id: snap.id, ...snap.data() } as Task);
           setError(null);
         } else {
           setTask(null);
@@ -144,7 +148,7 @@ export function useTask(taskId: string | null) {
     );
 
     return () => unsub();
-  }, [taskId]);
+  }, [taskId, db]); // ✅ FIX 4 (THÊM db)
 
   return { task, loading, error };
 }

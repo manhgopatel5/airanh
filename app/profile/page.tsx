@@ -9,7 +9,11 @@ import {
 } from "firebase/firestore";
 import { LucideIcon } from "lucide-react";
 import type { Timestamp } from "firebase/firestore";
-import { db, auth, storage } from "@/lib/firebase";
+import {
+  getFirebaseDB,
+  getFirebaseAuth,
+  getFirebaseStorage
+} from "@/lib/firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { HelpCircle, LogOut, Trash2, User, Star, Users, Shield, Lock, Camera, Check, X } from "lucide-react";
 import { toast, Toaster } from "sonner";
@@ -29,6 +33,9 @@ type UserData = {
 };
 
 export default function Profile() {
+  const db = getFirebaseDB();
+  const auth = getFirebaseAuth();
+  const storage = getFirebaseStorage();
   const router = useRouter();
   const { user } = useAuth();
 

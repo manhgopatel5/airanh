@@ -7,10 +7,11 @@ import {
   deleteObject,
   UploadTaskSnapshot,
 } from "firebase/storage";
-import { storage } from "./firebase";
+import { getFirebaseStorage } from "./firebase";
 import { nanoid } from "nanoid";
 
 export class UploadError extends Error {
+  const storage = getFirebaseStorage();
   constructor(message: string, public code?: string) {
     super(message);
     this.name = "UploadError";

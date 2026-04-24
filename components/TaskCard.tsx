@@ -5,7 +5,7 @@ import { FiHeart, FiShare2, FiMessageCircle, FiUsers, FiClock } from "react-icon
 import { FaHeart } from "react-icons/fa";
 import { useEffect, useState, useCallback, memo } from "react";
 import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
-import { db, auth } from "@/lib/firebase";
+import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase"; // ✅ FIX
 import { onAuthStateChanged, User } from "firebase/auth";
 import { incrementTaskView } from "@/lib/task";
 import { TaskListItem } from "@/types/task";
@@ -18,11 +18,20 @@ type Props = {
 
 function TaskCard({ task }: Props) {
   const router = useRouter();
+
+  // ✅ FIX: dùng getter thay vì import trực tiếp
+  const db = getFirebaseDB();
+  const auth = getFirebaseAuth();
+
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [liking, setLiking] = useState(false);
   const [localLikes, setLocalLikes] = useState<string[]>(task.likes || []);
 
-  useEffect(() => onAuthStateChanged(auth, setCurrentUser), []);
+  // ✅ FIX: cleanup listener
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, setCurrentUser);
+    return () => unsub();
+  }, [auth]);
 
   if (!task) return <Skeleton />;
 
@@ -33,16 +42,16 @@ function TaskCard({ task }: Props) {
   const statusConfig = {
     open: { text: "Đang tuyển", color: "emerald" },
     full: { text: "Đã đủ", color: "amber" },
-    in_progress: { text: "Đang làm", color: "blue" }, // <-- thêm dòng này
+    in_progress: { text: "Đang làm", color: "blue" },
     completed: { text: "Hoàn thành", color: "blue" },
     cancelled: { text: "Đã hủy", color: "gray" },
   } as const;
 
   const safeStatus = (task.status && task.status in statusConfig
-  ? task.status
-  : "open") as keyof typeof statusConfig;
+    ? task.status
+    : "open") as keyof typeof statusConfig;
 
-const status = statusConfig[safeStatus];
+  const status = statusConfig[safeStatus];
 
   /* ================= LIKE ================= */
   const handleLike = useCallback(async (e: React.MouseEvent) => {
@@ -60,7 +69,9 @@ const status = statusConfig[safeStatus];
 
     try {
       await updateDoc(doc(db, "tasks", task.id), {
-        likes: liked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid),
+        likes: liked
+          ? arrayRemove(currentUser.uid)
+          : arrayUnion(currentUser.uid),
         likeCount: newLikes.length,
       });
     } catch {
@@ -69,11 +80,14 @@ const status = statusConfig[safeStatus];
     } finally {
       setLiking(false);
     }
-  }, [currentUser, liked, liking, localLikes, task.id, task.likes, router]);
+  }, [currentUser, liked, liking, localLikes, task.id, task.likes, router, db]);
 
   /* ================= SHARE ================= */
   const handleShare = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    // ✅ FIX: SSR safe
+    if (typeof window === "undefined") return;
 
     const url = `${window.location.origin}/task/${task.slug}`;
     const title = task.title || "Xem công việc";

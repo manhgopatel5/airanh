@@ -20,7 +20,7 @@ import {
   DocumentData,
   QueryConstraint,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { getFirebaseDB } from "./firebase";
 import { User } from "@/types/task";
 
 export type TaskComment = {
@@ -50,6 +50,7 @@ class TaskCommentError extends Error {
 
 /* ================= CREATE COMMENT ================= */
 export const createComment = async (
+  const db = getFirebaseDB();
   taskId: string,
   user: User,
   data: {

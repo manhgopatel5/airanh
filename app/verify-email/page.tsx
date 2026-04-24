@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { sendEmailVerification, reload } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { getFirebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { toast, Toaster } from "sonner";
 import { FiMail, FiCheckCircle, FiRefreshCw } from "react-icons/fi";
 
 export default function VerifyEmailPage() {
+  const auth = getFirebaseAuth(); // 👈 THÊM DÒNG NÀY
   const router = useRouter();
   const { user } = useAuth();
   const [sending, setSending] = useState(false);

@@ -1,6 +1,6 @@
 "use client";
 
-import { storage, db, auth } from "@/lib/firebase";
+import { getFirebaseStorage, getFirebaseDB, getFirebaseAuth } from "@/lib/firebase"; // ✅ FIX
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
@@ -8,6 +8,10 @@ import { useRef, useState, useEffect } from "react";
 import { FiCamera, FiLoader, FiCheck, FiX } from "react-icons/fi";
 
 export default function UploadAvatar() {
+  const storage = getFirebaseStorage(); // ✅ FIX
+  const db = getFirebaseDB(); // ✅ FIX
+  const auth = getFirebaseAuth(); // ✅ FIX
+
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [success, setSuccess] = useState(false);
@@ -27,7 +31,7 @@ export default function UploadAvatar() {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     const user = auth.currentUser;
-    if (!file ||!user) return;
+    if (!file || !user) return;
 
     if (!user.uid) {
       setError("Vui lòng đăng nhập lại");
@@ -55,7 +59,7 @@ export default function UploadAvatar() {
       if (!processFile.type.startsWith("image/")) {
         throw new Error("Chỉ chấp nhận file ảnh");
       }
-      if (processFile.size > 5 * 1024) {
+      if (processFile.size > 5 * 1024 * 1024) {
         throw new Error("Ảnh không được vượt quá 5MB");
       }
 
@@ -100,7 +104,7 @@ export default function UploadAvatar() {
           setProgress(Math.round(prog));
         },
         async (err) => {
-          if (attempt < 2 && err.code!== "storage/canceled") {
+          if (attempt < 2 && err.code !== "storage/canceled") {
             console.warn(`Upload fail lần ${attempt}, retry...`);
             await new Promise(r => setTimeout(r, 1000 * attempt));
             return uploadWithRetry(storageRef, blob, user, attempt + 1).then(resolve).catch(reject);
@@ -132,7 +136,6 @@ export default function UploadAvatar() {
 
   const compressImage = (file: File): Promise<Blob> => {
     return new Promise((resolve, reject) => {
-      // FIX: Guard để không chạy ở server
       if (typeof window === 'undefined') {
         return reject(new Error("Compress chỉ chạy ở client"));
       }
@@ -154,7 +157,7 @@ export default function UploadAvatar() {
           ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, size, size);
 
           canvas.toBlob(
-            (blob) => blob? resolve(blob) : reject(new Error("Compress failed")),
+            (blob) => blob ? resolve(blob) : reject(new Error("Compress failed")),
             "image/jpeg",
             0.85
           );
@@ -208,12 +211,12 @@ export default function UploadAvatar() {
           />
 
           <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            {uploading? (
+            {uploading ? (
               <div className="text-white text-center">
                 <FiLoader className="animate-spin mx-auto mb-1" size={20} />
                 <span className="text-xs font-bold">{progress}%</span>
               </div>
-            ) : success? (
+            ) : success ? (
               <FiCheck className="text-white" size={24} />
             ) : (
               <FiCamera className="text-white" size={24} />

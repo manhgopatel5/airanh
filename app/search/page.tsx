@@ -13,7 +13,7 @@ import {
   QueryDocumentSnapshot,
   DocumentData,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { QueryConstraint } from "firebase/firestore";
 import { TaskListItem } from "@/types/task";
@@ -26,6 +26,7 @@ type TabId = "hot" | "near" | "friends" | "new";
 const PAGE_SIZE = 15;
 
 export default function SearchPage() {
+  const db = getFirebaseDB();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useAuth();

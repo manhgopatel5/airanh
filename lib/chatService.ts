@@ -24,8 +24,9 @@ import {
   deleteField,
   QueryConstraint,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { getFirebaseDB } from "./firebase";
 import { User } from "@/types/task";
+
 
 export class ChatError extends Error {
   constructor(message: string, public code?: string) {
@@ -250,7 +251,7 @@ export const listenConversations = (
 /* ================= MARK AS READ ================= */
 export const markChatAsRead = async (chatId: string, userId: string): Promise<void> => {
   if (!chatId ||!userId) return;
-
+  const db = getFirebaseDB(); 
   const batch = writeBatch(db);
   const chatRef = doc(db, "chats", chatId);
 

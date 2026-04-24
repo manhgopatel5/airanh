@@ -12,13 +12,15 @@ import {
   sendEmailVerification,
   onAuthStateChanged,
 } from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
+import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { nanoid } from "nanoid";
 import { toast, Toaster } from "sonner";
 import InstallPrompt from "@/components/InstallPrompt";
 
 export default function Login() {
+  const auth = getFirebaseAuth();
+  const db = getFirebaseDB();
   const router = useRouter();
   const [form, setForm] = useState({ email: "", password: "", honeypot: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});

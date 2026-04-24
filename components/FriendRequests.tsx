@@ -8,7 +8,7 @@ import {
   type FriendRequest,
 } from "@/lib/friendService";
 import { useAuth } from "@/lib/AuthContext";
-import { db } from "@/lib/firebase";
+import { getFirebaseDB } from "@/lib/firebase"; // ✅ FIX
 import { collection, query, where, getDocs, documentId } from "firebase/firestore";
 import { FiUserPlus, FiCheck, FiX, FiClock } from "react-icons/fi";
 import { HiSparkles } from "react-icons/hi";
@@ -37,11 +37,12 @@ export default function FriendRequests() {
       return;
     }
 
+    const db = getFirebaseDB(); // ✅ FIX DUY NHẤT
+
     const unsub = listenFriendRequests(user.uid, async (data: FriendRequest[]) => {
       setList(data);
       setLoading(false);
 
-      // ✅ FIX: dùng fromUserId
       const newIds = [...new Set(data.map((r) => r.fromUserId))].filter(
         (id) => !userMapRef.current[id]
       );
@@ -108,7 +109,6 @@ export default function FriendRequests() {
       setList((prev) => prev.filter((r) => r.id !== id));
 
       try {
-        // ✅ FIX: truyền userId
         await rejectRequest(id, user.uid);
       } catch (err) {
         console.error("❌ lỗi reject:", err);
@@ -146,7 +146,6 @@ export default function FriendRequests() {
         )}
       </div>
 
-      {/* LOADING */}
       {loading && (
         <div className="space-y-3">
           {Array.from({ length: 2 }).map((_, i) => (
@@ -161,7 +160,6 @@ export default function FriendRequests() {
         </div>
       )}
 
-      {/* EMPTY */}
       {!loading && list.length === 0 && (
         <div className="flex flex-col items-center py-8 text-gray-400">
           <HiSparkles size={40} className="mb-2" />
@@ -169,10 +167,8 @@ export default function FriendRequests() {
         </div>
       )}
 
-      {/* LIST */}
       <div className="space-y-2">
         {list.map((req) => {
-          // ✅ FIX CHÍNH
           const u = userMap[req.fromUserId];
           const isProcessing = processing === req.id;
 

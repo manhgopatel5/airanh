@@ -12,13 +12,14 @@ import {
   doc,
   getDoc,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getFirebaseDB } from "@/lib/firebase";
 import { TaskListItem } from "@/types/task";
 import TaskCard from "@/components/TaskCard";
 import { FiBookmark, FiArrowLeft } from "react-icons/fi";
 import Link from "next/link";
 
 export default function BookmarksPage() {
+  const db = getFirebaseDB();
   const router = useRouter();
   const { user } = useAuth();
   const [tasks, setTasks] = useState<TaskListItem[]>([]);

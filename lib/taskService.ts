@@ -21,11 +21,12 @@ import {
   DocumentData,
   QueryConstraint,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { getFirebaseDB } from "./firebase";
 import { nanoid } from "nanoid";
 import { Task, CreateTaskInput, UpdateTaskInput, TaskListItem, TaskStatus } from "@/types/task";
 
 export class TaskError extends Error {
+  const db = getFirebaseDB();
   constructor(message: string, public code?: string) {
     super(message);
     this.name = "TaskError";

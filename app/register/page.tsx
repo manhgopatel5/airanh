@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FiMail, FiLock, FiEyeOff, FiEye, FiUser, FiAlertCircle } from "react-icons/fi";
 import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
+import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore";
 import { nanoid } from "nanoid";
 
 export default function Register() {
   const router = useRouter();
+  const auth = getFirebaseAuth();
+  const db = getFirebaseDB();
 
   const [form, setForm] = useState({
     name: "",

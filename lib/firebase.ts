@@ -6,55 +6,22 @@ import {
   setPersistence,
   browserLocalPersistence,
   Auth,
-  connectAuthEmulator,
 } from "firebase/auth";
 import {
   getFirestore,
-  serverTimestamp,
   Firestore,
-  connectFirestoreEmulator,
-  initializeFirestore,
-  persistentLocalCache,
-  persistentMultipleTabManager,
-  CACHE_SIZE_UNLIMITED,
-  increment,
-  arrayUnion,
-  arrayRemove,
 } from "firebase/firestore";
 import {
   getStorage,
   FirebaseStorage,
-  connectStorageEmulator,
 } from "firebase/storage";
 import {
-  getAnalytics,
-  Analytics,
-  isSupported as isAnalyticsSupported,
-} from "firebase/analytics";
-import { getDatabase, Database } from "firebase/database";
-import {
-  initializeAppCheck,
-  ReCaptchaV3Provider,
-  AppCheck,
-} from "firebase/app-check";
-
-/* ================= VALIDATE ENV ================= */
-const requiredEnvs = [
-  "NEXT_PUBLIC_FIREBASE_API_KEY",
-  "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN",
-  "NEXT_PUBLIC_FIREBASE_PROJECT_ID",
-  "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET",
-  "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",
-  "NEXT_PUBLIC_FIREBASE_APP_ID",
-] as const;
-
-for (const env of requiredEnvs) {
-  if (!process.env[env]) {
-    throw new Error(`Missing Firebase env: ${env}`);
-  }
-}
+  getDatabase,
+  Database,
+} from "firebase/database";
 
 /* ================= CONFIG ================= */
+
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
@@ -62,114 +29,63 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
-  ...(process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID && {
-    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-  }),
-  ...(process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL && {
-    databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
-  }),
 };
 
-/* ================= INIT APP ================= */
-const app: FirebaseApp =
-  getApps().length ? getApp() : initializeApp(firebaseConfig);
+/* ================= SINGLETONS ================= */
 
-/* ================= APP CHECK ================= */
-let appCheck: AppCheck | null = null;
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+let db: Firestore | null = null;
+let storage: FirebaseStorage | null = null;
+let rtdb: Database | null = null;
 
-if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
-  appCheck = initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider(
-      process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
-    ),
-    isTokenAutoRefreshEnabled: true,
-  });
-}
+/* ================= INIT ================= */
 
-/* ================= AUTH ================= */
-const auth: Auth = getAuth(app);
+function initFirebase() {
+  // 🔥 CHẶN SERVER 100%
+  if (typeof window === "undefined") return;
 
-export const authReady: Promise<void> =
-  typeof window !== "undefined"
-    ? setPersistence(auth, browserLocalPersistence).catch(() => {})
-    : Promise.resolve();
+  if (!app) {
+    app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-if (
-  typeof window !== "undefined" &&
-  process.env.NODE_ENV === "development" &&
-  process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true"
-) {
-  connectAuthEmulator(auth, "http://localhost:9099", {
-    disableWarnings: true,
-  });
-}
-
-/* ================= FIRESTORE ================= */
-let db: Firestore;
-
-if (typeof window === "undefined") {
-  db = getFirestore(app);
-} else {
-  try {
-    db = initializeFirestore(app, {
-      localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager(),
-        cacheSizeBytes: CACHE_SIZE_UNLIMITED,
-      }),
-    });
-  } catch {
+    auth = getAuth(app);
     db = getFirestore(app);
-  }
+    storage = getStorage(app);
+    rtdb = getDatabase(app);
 
-  if (
-    process.env.NODE_ENV === "development" &&
-    process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true"
-  ) {
-    connectFirestoreEmulator(db, "localhost", 8080);
+    // lưu login
+    setPersistence(auth, browserLocalPersistence).catch(() => {});
   }
 }
 
-/* ================= RTDB ================= */
-const rtdb: Database = getDatabase(app);
+/* ================= GETTERS ================= */
 
-/* ================= STORAGE ================= */
-const storage: FirebaseStorage = getStorage(app);
-
-if (
-  typeof window !== "undefined" &&
-  process.env.NODE_ENV === "development" &&
-  process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true"
-) {
-  connectStorageEmulator(storage, "localhost", 9199);
+export function getFirebaseApp(): FirebaseApp {
+  initFirebase();
+  if (!app) throw new Error("Firebase not initialized");
+  return app;
 }
 
-/* ================= ANALYTICS ================= */
-let analyticsInstance: Analytics | null = null;
+export function getFirebaseAuth(): Auth {
+  initFirebase();
+  if (!auth) throw new Error("Auth not initialized");
+  return auth;
+}
 
-export const getAnalyticsInstance = async (): Promise<Analytics | null> => {
-  if (typeof window === "undefined") return null;
-  if (analyticsInstance) return analyticsInstance;
+export function getFirebaseDB(): Firestore {
+  initFirebase();
+  if (!db) throw new Error("Firestore not initialized");
+  return db;
+}
 
-  try {
-    if (await isAnalyticsSupported()) {
-      analyticsInstance = getAnalytics(app);
-      return analyticsInstance;
-    }
-  } catch {}
+export function getFirebaseStorage(): FirebaseStorage {
+  initFirebase();
+  if (!storage) throw new Error("Storage not initialized");
+  return storage;
+}
 
-  return null;
-};
-
-/* ================= EXPORT ================= */
-export {
-  app,
-  auth,
-  db,
-  rtdb,
-  storage,
-  appCheck,
-  serverTimestamp,
-  increment,
-  arrayUnion,
-  arrayRemove,
-};
+export function getFirebaseRTDB(): Database {
+  initFirebase();
+  if (!rtdb) throw new Error("RTDB not initialized");
+  return rtdb;
+}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { db } from "@/lib/firebase";
+import { getFirebaseDB } from "@/lib/firebase";
 import {
   collection, query, where, onSnapshot, doc, getDoc, getDocs,
   orderBy, limit, addDoc, serverTimestamp, Timestamp, setDoc, writeBatch
@@ -33,6 +33,7 @@ type Message = {
 };
 
 export default function ChatPage() {
+  const db = getFirebaseDB();
   const { user } = useAuth();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
