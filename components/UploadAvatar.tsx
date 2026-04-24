@@ -1,26 +1,22 @@
 "use client";
 
-import { useAuth } from "@/lib/AuthContext";
 import { storage, db, auth } from "@/lib/firebase";
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
 import { useRef, useState, useEffect } from "react";
 import { FiCamera, FiLoader, FiCheck, FiX } from "react-icons/fi";
-import heic2any from "heic2any"; // ✅ FIX 2: npm i heic2any
 
 export default function UploadAvatar() {
-  const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const uploadTaskRef = useRef<ReturnType<typeof uploadBytesResumable> | null>(null); // ✅ FIX 5
-  const previewUrlRef = useRef<string | null>(null); // ✅ FIX 4
+  const uploadTaskRef = useRef<ReturnType<typeof uploadBytesResumable> | null>(null);
+  const previewUrlRef = useRef<string | null>(null);
 
-  // ✅ FIX 5: Cleanup khi unmount
   useEffect(() => {
     return () => {
       uploadTaskRef.current?.cancel();
@@ -30,9 +26,9 @@ export default function UploadAvatar() {
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    const user = auth.currentUser;
     if (!file ||!user) return;
 
-    // ✅ FIX 9: Guard
     if (!user.uid) {
       setError("Vui lòng đăng nhập lại");
       return;
@@ -43,7 +39,6 @@ export default function UploadAvatar() {
     setSuccess(false);
     setProgress(0);
 
-    // Hủy upload cũ nếu có
     uploadTaskRef.current?.cancel();
     if (previewUrlRef.current) {
       URL.revokeObjectURL(previewUrlRef.current);
@@ -51,32 +46,26 @@ export default function UploadAvatar() {
     }
 
     try {
-      // ✅ FIX 2: Convert HEIC → JPEG
       let processFile = file;
-      if (file.type === "image/heic" || file.type === "image/heif" || file.name.endsWith(".heic")) {
-        const converted = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
-        processFile = new File([converted as Blob], file.name.replace(/\.heic$/i, ".jpg"), {
-          type: "image/jpeg",
-        });
+
+      // Check HEIC/HEIF - cần cài heic2any hoặc bỏ check này nếu không dùng
+      if (file.type === "image/heic" || file.type === "image/heif" || file.name.toLowerCase().endsWith(".heic")) {
+        throw new Error("File HEIC chưa được hỗ trợ. Vui lòng chọn JPG/PNG");
       }
 
-      // Validate
       if (!processFile.type.startsWith("image/")) {
         throw new Error("Chỉ chấp nhận file ảnh");
       }
-      if (processFile.size > 5 * 1024) {
+      if (processFile.size > 5 * 1024 * 1024) {
         throw new Error("Ảnh không được vượt quá 5MB");
       }
 
-      // Preview
       const previewUrl = URL.createObjectURL(processFile);
       previewUrlRef.current = previewUrl;
       setPreview(previewUrl);
 
-      // Compress
       const compressed = await compressImage(processFile);
 
-      // ✅ FIX 1: Xóa avatar cũ trước
       const userDoc = await getDoc(doc(db, "users", user.uid));
       const oldAvatar = userDoc.data()?.avatar;
       if (oldAvatar && oldAvatar.includes("firebasestorage.googleapis.com")) {
@@ -87,9 +76,8 @@ export default function UploadAvatar() {
         }
       }
 
-      // Upload với retry
       const storageRef = ref(storage, `avatars/${user.uid}_${Date.now()}.jpg`);
-      await uploadWithRetry(storageRef, compressed);
+      await uploadWithRetry(storageRef, compressed, user);
 
     } catch (err: any) {
       console.error(err);
@@ -101,8 +89,7 @@ export default function UploadAvatar() {
     }
   };
 
-  // ✅ FIX 7: Upload với retry 2 lần
-  const uploadWithRetry = async (storageRef: any, blob: Blob, attempt = 1): Promise<void> => {
+  const uploadWithRetry = async (storageRef: any, blob: Blob, user: any, attempt = 1): Promise<void> => {
     return new Promise((resolve, reject) => {
       const task = uploadBytesResumable(storageRef, blob);
       uploadTaskRef.current = task;
@@ -117,7 +104,7 @@ export default function UploadAvatar() {
           if (attempt < 2 && err.code!== "storage/canceled") {
             console.warn(`Upload fail lần ${attempt}, retry...`);
             await new Promise(r => setTimeout(r, 1000 * attempt));
-            return uploadWithRetry(storageRef, blob, attempt + 1).then(resolve).catch(reject);
+            return uploadWithRetry(storageRef, blob, user, attempt + 1).then(resolve).catch(reject);
           }
           setError("Upload thất bại");
           setUploading(false);
@@ -127,10 +114,9 @@ export default function UploadAvatar() {
           try {
             const url = await getDownloadURL(task.snapshot.ref);
 
-            // Update Firestore + Auth
             await Promise.all([
-              updateDoc(doc(db, "users", user!.uid), { avatar: url }),
-              updateProfile(auth.currentUser!, { photoURL: url }), // ✅ FIX 3
+              updateDoc(doc(db, "users", user.uid), { avatar: url }),
+              updateProfile(auth.currentUser!, { photoURL: url }),
             ]);
 
             setSuccess(true);
@@ -145,7 +131,6 @@ export default function UploadAvatar() {
     });
   };
 
-  // Compress + Crop vuông center
   const compressImage = (file: File): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -155,7 +140,6 @@ export default function UploadAvatar() {
           const canvas = document.createElement("canvas");
           const ctx = canvas.getContext("2d")!;
 
-          // ✅ FIX 6: Crop vuông center
           const size = Math.min(img.width, img.height, 800);
           canvas.width = size;
           canvas.height = size;
@@ -163,7 +147,7 @@ export default function UploadAvatar() {
           const offsetX = (img.width - size) / 2;
           const offsetY = (img.height - size) / 2;
 
-          ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, size, size);
+          ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, size);
 
           canvas.toBlob(
             (blob) => blob? resolve(blob) : reject(new Error("Compress failed")),
@@ -179,7 +163,6 @@ export default function UploadAvatar() {
     });
   };
 
-  // ✅ FIX 5: Cancel khi bấm X
   const handleCancel = () => {
     uploadTaskRef.current?.cancel();
     setUploading(false);
@@ -191,12 +174,14 @@ export default function UploadAvatar() {
     }
   };
 
+  const user = auth.currentUser;
+
   return (
     <div className="relative">
       <input
         ref={inputRef}
         type="file"
-        accept="image/*,.heic,.heif"
+        accept="image/*"
         hidden
         onChange={handleUpload}
         disabled={uploading}
