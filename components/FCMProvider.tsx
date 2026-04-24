@@ -45,7 +45,7 @@ export default function FCMProvider({ userId }: { userId: string }) {
 
           if (payload.notification) {
             new Notification(payload.notification.title ?? "Notification", {
-              body: payload.notification.body,
+              body: payload.notification.body ?? "",
             });
           }
         });
