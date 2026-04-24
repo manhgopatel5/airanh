@@ -13,7 +13,6 @@ import {
   runTransaction,
 } from "firebase/firestore";
 import { ref, onValue, set, onDisconnect, serverTimestamp as rtdbTimestamp } from "firebase/database";
-import { initFCM, clearFCMToken } from "@/lib/fcm";
 import { nanoid } from "nanoid";
 
 /* ================= TYPES ================= */
@@ -50,7 +49,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fcmInitializedFor = useRef<Set<string>>(new Set());
   const userDataUnsub = useRef<(() => void) | null>(null);
   const presenceUnsub = useRef<(() => void) | null>(null);
 
@@ -73,7 +71,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (!firebaseUser) {
           setUserData(null);
           setLoading(false);
-          fcmInitializedFor.current.clear();
           return;
         }
 
@@ -91,11 +88,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               if (i === 2) throw new Error("Không thể tạo shortId");
             }
 
-            // Tạo username unique từ email - FIX TS ERROR
+            // Tạo username unique
             const emailPrefix = firebaseUser.email?.split("@")[0] || "user";
             const baseUsername = emailPrefix.toLowerCase().replace(/[^a-z0-9]/g, "") || "user";
             let username = baseUsername;
             let suffix = 0;
+
             while (true) {
               const q = await getDoc(doc(db, "usernames", username));
               if (!q.exists()) break;
@@ -110,7 +108,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               username,
               email: firebaseUser.email || "",
               emailVerified: firebaseUser.emailVerified,
-              avatar: firebaseUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(firebaseUser.email || "U")}&background=random`,
+              avatar:
+                firebaseUser.photoURL ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(firebaseUser.email || "U")}&background=random`,
               shortId,
               isOnline: true,
               lastSeen: serverTimestamp() as Timestamp,
@@ -132,33 +132,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
           userDataUnsub.current = onSnapshot(userRef, (docSnap) => {
             if (docSnap.exists()) {
-              setUserData({...docSnap.data() } as AppUser);
+              setUserData({ ...docSnap.data() } as AppUser);
             }
           });
 
+          // ================= PRESENCE =================
           const userStatusRef = ref(rtdb, `/status/${firebaseUser.uid}`);
           const connectedRef = ref(rtdb, ".info/connected");
 
           presenceUnsub.current = onValue(connectedRef, (snap) => {
             if (snap.val() === false) return;
-            onDisconnect(userStatusRef).set({
-              isOnline: false,
-              lastSeen: rtdbTimestamp(),
-            }).then(() => {
-              set(userStatusRef, {
-                isOnline: true,
+
+            onDisconnect(userStatusRef)
+              .set({
+                isOnline: false,
                 lastSeen: rtdbTimestamp(),
+              })
+              .then(() => {
+                set(userStatusRef, {
+                  isOnline: true,
+                  lastSeen: rtdbTimestamp(),
+                });
               });
-            });
           });
 
-          if (!fcmInitializedFor.current.has(firebaseUser.uid)) {
-            fcmInitializedFor.current.add(firebaseUser.uid);
-            initFCM(firebaseUser.uid).catch((e) => {
-              console.warn("FCM init failed:", e);
-              fcmInitializedFor.current.delete(firebaseUser.uid);
-            });
-          }
+          // ❌ ĐÃ XÓA initFCM (chuyển sang FCMProvider)
         } catch (e: any) {
           console.error("Auth error:", e);
           setError(e.message || "Lỗi khởi tạo tài khoản");
@@ -185,11 +183,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     [user, userData, loading, error]
   );
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
@@ -198,11 +192,9 @@ export const useAuth = () => {
   return ctx;
 };
 
-// Hook logout để clear FCM
+// ================= LOGOUT =================
 export const useLogout = () => {
-  const { user } = useAuth();
   return async () => {
-    if (user) await clearFCMToken(user.uid);
     await auth.signOut();
   };
 };
