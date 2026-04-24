@@ -19,6 +19,7 @@ import {
   startAfter,
   QueryDocumentSnapshot,
   DocumentData,
+  QueryConstraint,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { nanoid } from "nanoid";
@@ -34,20 +35,32 @@ export class TaskError extends Error {
 /* ================= HELPERS ================= */
 const slugify = (str: string): string =>
   str
-  .toLowerCase()
-  .normalize("NFD")
-  .replace(/[\u0300-\u036f]/g, "")
-  .replace(/[^a-z0-9]+/g, "-")
-  .replace(/^-|-$/g, "")
-  .slice(0, 60);
+.toLowerCase()
+.normalize("NFD")
+.replace(/[\u0300-\u036f]/g, "")
+.replace(/[^a-z0-9]+/g, "-")
+.replace(/^-|-$/g, "")
+.slice(0, 60);
 
 const generateSearchKeywords = (title: string, description?: string, tags?: string[]): string[] => {
   const words = [
-  ...title.toLowerCase().split(" "),
-  ...(description?.toLowerCase().split(" ").slice(0, 20) || []),
-  ...(tags?.map((t) => t.toLowerCase()) || []),
+...title.toLowerCase().split(" "),
+...(description?.toLowerCase().split(" ").slice(0, 20) || []),
+...(tags?.map((t) => t.toLowerCase()) || []),
   ].filter(Boolean);
   return [...new Set(words)].slice(0, 20);
+};
+
+const generateUniqueShortId = async (): Promise<string> => {
+  let attempts = 0;
+  while (attempts < 10) {
+    const shortId = nanoid(8).toUpperCase();
+    const q = query(collection(db, "tasks"), where("shortId", "==", shortId), limit(1));
+    const snap = await getDocs(q);
+    if (snap.empty) return shortId;
+    attempts++;
+  }
+  throw new TaskError("Không tạo được shortId duy nhất");
 };
 
 /* ================= CREATE TASK ================= */
@@ -76,12 +89,15 @@ export const createTask = async (
     if (attempts === 3) throw new TaskError("Không tạo được slug duy nhất");
   }
 
+  const shortId = await generateUniqueShortId();
+
   const taskId = await runTransaction(db, async (transaction) => {
     const taskRef = doc(collection(db, "tasks"));
     const now = serverTimestamp() as Timestamp;
 
     const taskData: Omit<Task, "id"> = {
       slug,
+      shortId,
       title: data.title.trim(),
       description: data.description?.trim() || "",
       price: data.price,
@@ -152,7 +168,7 @@ export const updateTask = async (
     if (data.banned) throw new TaskError("Task đã bị cấm");
 
     const newSearchKeywords = updates.title || updates.description || updates.tags
-    ? generateSearchKeywords(
+  ? generateSearchKeywords(
           updates.title || data.title,
           updates.description || data.description,
           updates.tags || data.tags
@@ -160,7 +176,7 @@ export const updateTask = async (
       : data.searchKeywords;
 
     transaction.update(taskRef, {
-    ...updates,
+  ...updates,
       searchKeywords: newSearchKeywords,
       edited: true,
       editedAt: serverTimestamp(),
@@ -225,7 +241,7 @@ export const listenTasks = (
     onError?: (err: Error) => void;
   }
 ): Unsubscribe => {
-  const constraints: any[] = [
+  const constraints: QueryConstraint[] = [
     where("status", "==", options?.status || "open"),
     where("visibility", "==", "public"),
     where("banned", "==", false),
