@@ -38,12 +38,12 @@ class TaskError extends Error {
 /* ================= HELPERS ================= */
 const slugify = (str: string): string =>
   str
- .toLowerCase()
- .normalize("NFD")
- .replace(/[\u0300-\u036f]/g, "")
- .replace(/[^a-z0-9]+/g, "-")
- .replace(/^-|-$/g, "")
- .slice(0, 50);
+.toLowerCase()
+.normalize("NFD")
+.replace(/[\u0300-\u036f]/g, "")
+.replace(/[^a-z0-9]+/g, "-")
+.replace(/^-|-$/g, "")
+.slice(0, 50);
 
 const generateUniqueShortId = async (): Promise<string> => {
   let attempts = 0;
@@ -138,8 +138,8 @@ export async function createTask(
       title: data.title,
       description: data.description,
       tags,
-  ...(data.category && { category: data.category }),
-  ...(data.location && { location: data.location }),
+ ...(data.category && { category: data.category }),
+ ...(data.location && { location: data.location }),
     }),
     viewCount: 0,
     likeCount: 0,
@@ -187,7 +187,7 @@ export async function updateTask(
     if (updates.images && updates.images.length > 5) throw new TaskError("Tối đa 5 ảnh");
 
     const newTags = updates.title || updates.description || updates.category
-  ? cleanTags(updates.tags || data.tags || [], updates.title || data.title, updates.category || data.category)
+ ? cleanTags(updates.tags || data.tags || [], updates.title || data.title, updates.category || data.category)
       : data.tags;
 
     const updateData: any = {
@@ -196,8 +196,8 @@ export async function updateTask(
         title: updates.title || data.title,
         description: updates.description || data.description,
         tags: newTags,
-    ...(updates.category? { category: updates.category } : data.category? { category: data.category } : {}),
-    ...(updates.location? { location: updates.location } : data.location? { location: data.location } : {}),
+   ...(updates.category? { category: updates.category } : data.category? { category: data.category } : {}),
+   ...(updates.location? { location: updates.location } : data.location? { location: data.location } : {}),
       }),
       edited: true,
       editedAt: serverTimestamp(),
@@ -443,6 +443,6 @@ export async function toggleLikeTask(taskId: string, userId: string): Promise<bo
   });
 }
 
-export async function addReactionToTask(taskId: string, userId: string, type: string = "like"): Promise<void> {
+export async function addReactionToTask(taskId: string, userId: string, _type: string = "like"): Promise<void> {
   await toggleLikeTask(taskId, userId);
 }
