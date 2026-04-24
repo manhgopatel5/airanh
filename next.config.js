@@ -90,6 +90,9 @@ const nextConfig = {
     },
   },
   
+  // ✅ FIX: Đổi tên + xóa khỏi transpilePackages
+  serverExternalPackages: ['framer-motion'],
+  
   experimental: {
     optimizePackageImports: [
       'lucide-react',
@@ -106,8 +109,7 @@ const nextConfig = {
       ].filter(Boolean),
     },
     webVitalsAttribution: ['CLS', 'LCP'],
-    // ✅ THÊM DÒNG NÀY - Fix self is not defined
-    serverComponentsExternalPackages: ['framer-motion'],
+    // ❌ ĐÃ XÓA: serverComponentsExternalPackages
   },
   
   webpack: (config, { isServer, dev }) => {
@@ -150,8 +152,8 @@ const nextConfig = {
   
   eslint: { ignoreDuringBuilds: false },
   typescript: { ignoreBuildErrors: false },
-  // ✅ SỬA DÒNG NÀY - thêm framer-motion
-  transpilePackages: ['lucide-react', '@radix-ui/react-icons', 'framer-motion'],
+  // ✅ SỬA: Bỏ framer-motion khỏi đây
+  transpilePackages: ['lucide-react', '@radix-ui/react-icons'],
   
   logging: {
     fetches: {
