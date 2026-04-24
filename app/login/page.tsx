@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation"; // ✅ THÊM usePathname
 import Link from "next/link";
 import { FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle } from "react-icons/fi";
 import {
@@ -22,6 +22,7 @@ export default function Login() {
   const auth = getFirebaseAuth();
   const db = getFirebaseDB();
   const router = useRouter();
+  const pathname = usePathname(); // ✅ THÊM DÒNG NÀY
   const [form, setForm] = useState({ email: "", password: "", honeypot: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [show, setShow] = useState(false);
@@ -30,14 +31,29 @@ export default function Login() {
   const failedAttempts = useRef(0);
   const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  /* ================= REDIRECT IF LOGGED IN ================= */
+  /* ================= REDIRECT IF LOGGED IN - ĐÃ FIX ================= */
   useEffect(() => {
+    let isMounted = true; // ✅ THÊM FLAG CHỐNG RACE CONDITION
+
     const unsub = onAuthStateChanged(auth, (user) => {
-      if (user?.emailVerified) router.replace("/");
-      else if (user &&!user.emailVerified) router.replace("/verify-email");
+      // ✅ FIX 1: Nếu component unmount rồi thì bỏ qua
+      if (!isMounted) return;
+      
+      // ✅ FIX 2: Chỉ redirect khi đang thực sự ở trang /login
+      if (pathname!== '/login') return;
+
+      if (user?.emailVerified) {
+        router.replace("/");
+      } else if (user &&!user.emailVerified) {
+        router.replace("/verify-email");
+      }
     });
-    return () => unsub();
-  }, [router]);
+
+    return () => {
+      isMounted = false; // ✅ CLEANUP
+      unsub();
+    };
+  }, [router, pathname]); // ✅ THÊM pathname VÀO DEPS
 
   // Cleanup timeout khi unmount
   useEffect(() => {
@@ -82,7 +98,6 @@ export default function Login() {
       setLoading(true);
       setErrors({});
 
-      // ✅ FIX: Dùng browserSessionPersistence khi không tick "Ghi nhớ"
       await setPersistence(auth, remember? browserLocalPersistence : browserSessionPersistence);
       const res = await signInWithEmailAndPassword(auth, form.email, form.password);
       const user = res.user;
@@ -112,7 +127,7 @@ export default function Login() {
         const data = snap.data();
         const updates: any = { online: true, lastSeen: serverTimestamp() };
         if (!data.shortId) updates.shortId = nanoid(6).toUpperCase();
-        await updateDoc(userRef, updates); // ✅ FIX: Bỏ merge: true
+        await updateDoc(userRef, updates);
       }
 
       failedAttempts.current = 0;
@@ -140,7 +155,6 @@ export default function Login() {
   const handleShowPass = () => {
     setShow(!show);
     if (!show) {
-      // Tự ẩn sau 3s
       if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
       showTimeoutRef.current = setTimeout(() => setShow(false), 3000);
     }
@@ -169,7 +183,6 @@ export default function Login() {
           )}
 
           <form onSubmit={handleLogin} className="space-y-4">
-            {/* HONEYPOT */}
             <input
               type="text"
               name="website"
