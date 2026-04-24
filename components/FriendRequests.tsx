@@ -5,19 +5,13 @@ import {
   listenFriendRequests,
   acceptRequest,
   rejectRequest,
+  type FriendRequest,
 } from "@/lib/friendService";
 import { useAuth } from "@/lib/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, documentId } from "firebase/firestore";
 import { FiUserPlus, FiCheck, FiX, FiClock } from "react-icons/fi";
 import { HiSparkles } from "react-icons/hi";
-
-type FriendRequest = {
-  id: string;
-  from: string;
-  to: string;
-  createdAt?: { seconds: number };
-};
 
 type UserData = {
   uid: string;
