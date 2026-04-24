@@ -1,5 +1,4 @@
 import {
-  addDoc,
   collection,
   query,
   orderBy,
@@ -14,11 +13,9 @@ import {
   Timestamp,
   Unsubscribe,
   writeBatch,
-  deleteDoc,
   limit,
   increment,
   arrayUnion,
-  arrayRemove,
   startAfter,
   QueryDocumentSnapshot,
   DocumentData,
@@ -156,19 +153,19 @@ export const sendMessage = async (
 
   const lastMessageText =
     payload.type === "text"
- ? payload.text!.slice(0, 50)
+? payload.text!.slice(0, 50)
       : payload.type === "image"
- ? "📷 Ảnh"
+? "📷 Ảnh"
       : payload.type === "file"
- ? `📎 Tệp đính kèm`
+? `📎 Tệp đính kèm`
       : payload.type === "location"
- ? "📍 Vị trí"
+? "📍 Vị trí"
       : "";
 
   batch.set(msgRef, {
     chatId,
     senderId: user.uid,
- ...payload,
+...payload,
     text: payload.text?.trim() || "",
     createdAt: serverTimestamp(),
     seenBy: [user.uid],
@@ -221,9 +218,9 @@ export const listenMessages = (
     q,
     (snapshot) => {
       const data = snapshot.docs
-     .map((d) => ({ id: d.id,...d.data() } as Message))
-     .filter((m) =>!m.deletedFor?.includes(userId))
-     .reverse();
+   .map((d) => ({ id: d.id,...d.data() } as Message))
+   .filter((m) =>!m.deletedFor?.includes(userId))
+   .reverse();
       callback(data, snapshot.docs.length === (options?.limit || 50));
     },
     (err) => {
