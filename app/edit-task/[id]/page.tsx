@@ -157,12 +157,12 @@ export default function EditTaskPage() {
   };
 
   // 🔥 FIX CHUẨN TYPE
-  const removeImage = (index: number) => {
-    setForm((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
-  };
+ const removeImage = (index: number) => {
+  setForm((prev) => ({
+    ...prev,
+    images: (prev.images ?? []).filter((_, i) => i !== index),
+  }));
+};
 
   if (loading) {
     return (
