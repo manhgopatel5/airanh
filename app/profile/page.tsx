@@ -138,12 +138,15 @@ export default function Profile() {
         (err) => {
           if (err.code!== "storage/canceled") toast.error("Upload thất bại");
         },
-        async () => {
-          const url = await getDownloadURL(uploadTaskRef.current.snapshot.ref);
-          await updateDoc(doc(db, "users", user.uid), { avatar: url });
-          toast.success("Cập nhật avatar thành công");
-          setUploading(false);
-        }
+       async () => {
+  const task = uploadTaskRef.current;
+  if (!task) return;
+
+  const url = await getDownloadURL(task.snapshot.ref);
+  await updateDoc(doc(db, "users", user.uid), { avatar: url });
+  toast.success("Cập nhật avatar thành công");
+  setUploading(false);
+}
       );
     } catch {
       toast.error("Upload lỗi");
