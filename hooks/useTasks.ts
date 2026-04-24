@@ -10,7 +10,6 @@ import {
   QueryConstraint,
   limit,
   doc,
-  startAfter,
   QueryDocumentSnapshot,
   DocumentData,
 } from "firebase/firestore";
@@ -87,7 +86,7 @@ export default function useTasks(filter?: TaskFilter): UseTasksReturn {
       (snapshot) => {
         const data = snapshot.docs.map((doc) => ({
           id: doc.id,
-        ...doc.data(),
+       ...doc.data(),
         } as Task));
         setTasks(data);
         setLastDoc(snapshot.docs[snapshot.docs.length - 1] || null);
