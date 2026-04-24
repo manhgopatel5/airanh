@@ -28,7 +28,7 @@ export default function ClientLayout({ children }: Props) {
     if (user === undefined) return;
     setLoading(false);
 
-    if (!user && !isPublic) {
+    if (!user &&!isPublic) {
       router.replace("/login");
       return;
     }
@@ -37,17 +37,6 @@ export default function ClientLayout({ children }: Props) {
       return;
     }
   }, [user, isPublic, router]);
-
-  /* ================= FCM SETUP ================= */
-  // ❌ ĐÃ LOẠI BỎ LOGIC CŨ GÂY SSR CRASH
-  // (giữ comment để bạn thấy chỗ đã sửa, không mất flow)
-
-  /*
-  useEffect(() => {
-    ...
-    firebase/messaging ❌
-  }, [user?.uid]);
-  */
 
   /* ================= LOADING ================= */
   if (loading) {
@@ -84,15 +73,15 @@ export default function ClientLayout({ children }: Props) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors">
-      
-      {/* ✅ FCM chạy client-only (thay cho logic cũ) */}
+
+      {/* FCM chạy client-only */}
       {user && <FCMProvider userId={user.uid} />}
 
-      <div className={!isChatDetail && !isCreate ? "pb-24" : ""}>
+      <div className={!isChatDetail &&!isCreate? "pb-24" : ""}>
         {children}
       </div>
 
-      {!isPublic && user && !isChatDetail && !isCreate && <BottomNav />}
+      {!isPublic && user &&!isChatDetail &&!isCreate && <BottomNav />}
 
       <Toaster
         position="top-center"
