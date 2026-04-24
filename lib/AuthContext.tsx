@@ -82,45 +82,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const snap = await getDoc(userRef);
 
           if (!snap.exists()) {
-            // Tạo shortId unique
-            let shortId = "";
-            for (let i = 0; i < 3; i++) {
-              shortId = nanoid(8).toUpperCase();
-              const q = await getDoc(doc(db, "shortIds", shortId));
-              if (!q.exists()) break;
-              if (i === 2) throw new Error("Không thể tạo shortId");
-            }
-
-            // Tạo username unique
-            const emailPrefix = firebaseUser.email?.split("@")[0] || "user";
-            const baseUsername = emailPrefix.toLowerCase().replace(/[^a-z0-9]/g, "") || "user";
-            let username = baseUsername;
-            let suffix = 0;
-
-            while (true) {
-              const q = await getDoc(doc(db, "usernames", username));
-              if (!q.exists()) break;
-              suffix++;
-              username = `${baseUsername}${suffix}`;
-              if (suffix > 100) throw new Error("Không thể tạo username");
-            }
-
-            const newUser: AppUser = {
-              uid: firebaseUser.uid,
-              name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User",
-              username,
-              email: firebaseUser.email || "",
-              emailVerified: firebaseUser.emailVerified,
-              avatar:
-                firebaseUser.photoURL ||
-                `https://ui-avatars.com/api/?name=${encodeURIComponent(firebaseUser.email || "U")}&background=random`,
-              shortId,
-              isOnline: true,
-              lastSeen: serverTimestamp() as Timestamp,
-              fcmTokens: [],
-            };
-
+            // Tạo user mới trong transaction để tránh race condition
             await runTransaction(db, async (transaction) => {
+              // Tạo shortId unique
+              let shortId = "";
+              for (let i = 0; i < 5; i++) {
+                shortId = nanoid(8).toUpperCase();
+                const q = await transaction.get(doc(db, "shortIds", shortId));
+                if (!q.exists()) break;
+                if (i === 4) throw new Error("Không thể tạo shortId");
+              }
+
+              // Tạo username unique
+              const emailPrefix = firebaseUser.email?.split("@")[0] || "user";
+              const baseUsername = emailPrefix.toLowerCase().replace(/[^a-z0-9]/g, "") || "user";
+              let username = baseUsername;
+              let suffix = 0;
+
+              while (true) {
+                const q = await transaction.get(doc(db, "usernames", username));
+                if (!q.exists()) break;
+                suffix++;
+                username = `${baseUsername}${suffix}`;
+                if (suffix > 100) throw new Error("Không thể tạo username");
+              }
+
+              const newUser: AppUser = {
+                uid: firebaseUser.uid,
+                name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User",
+                username,
+                email: firebaseUser.email || "",
+                emailVerified: firebaseUser.emailVerified,
+                avatar:
+                  firebaseUser.photoURL ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(firebaseUser.email || "U")}&background=random`,
+                shortId,
+                isOnline: true,
+                lastSeen: serverTimestamp() as Timestamp,
+                fcmTokens: [],
+              };
+
               transaction.set(userRef, newUser);
               transaction.set(doc(db, "shortIds", shortId), { uid: firebaseUser.uid });
               transaction.set(doc(db, "usernames", username), { uid: firebaseUser.uid });
@@ -135,7 +136,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
           userDataUnsub.current = onSnapshot(userRef, (docSnap) => {
             if (docSnap.exists()) {
-              setUserData({ ...docSnap.data() } as AppUser);
+              setUserData({...docSnap.data() } as AppUser);
             }
           });
 
@@ -147,11 +148,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (snap.val() === false) return;
 
             onDisconnect(userStatusRef)
-              .set({
+             .set({
                 isOnline: false,
                 lastSeen: rtdbTimestamp(),
               })
-              .then(() => {
+             .then(() => {
                 set(userStatusRef, {
                   isOnline: true,
                   lastSeen: rtdbTimestamp(),
@@ -159,7 +160,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               });
           });
 
-          // ❌ ĐÃ XÓA initFCM (chuyển sang FCMProvider)
         } catch (e: any) {
           console.error("Auth error:", e);
           setError(e.message || "Lỗi khởi tạo tài khoản");
@@ -197,7 +197,20 @@ export const useAuth = () => {
 
 // ================= LOGOUT =================
 export const useLogout = () => {
+  const auth = getFirebaseAuth(); // ✅ Fix: lấy auth ở đây
+  const db = getFirebaseDB();
+
   return async () => {
-    await getFirebaseAuth().signOut();
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        // Set offline trước khi signOut
+        await updateDoc(doc(db, "users", user.uid), {
+          isOnline: false,
+          lastSeen: serverTimestamp(),
+        });
+      } catch {}
+    }
+    await auth.signOut();
   };
 };
