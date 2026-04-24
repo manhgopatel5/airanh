@@ -5,7 +5,7 @@ import { FiHeart, FiShare2, FiMessageCircle, FiUsers, FiClock } from "react-icon
 import { FaHeart } from "react-icons/fa";
 import { useEffect, useState, useCallback, memo } from "react";
 import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
-import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase"; // ✅ FIX
+import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { incrementTaskView } from "@/lib/task";
 import { TaskListItem } from "@/types/task";
@@ -19,7 +19,6 @@ type Props = {
 function TaskCard({ task }: Props) {
   const router = useRouter();
 
-  // ✅ FIX: dùng getter thay vì import trực tiếp
   const db = getFirebaseDB();
   const auth = getFirebaseAuth();
 
@@ -27,7 +26,6 @@ function TaskCard({ task }: Props) {
   const [liking, setLiking] = useState(false);
   const [localLikes, setLocalLikes] = useState<string[]>(task.likes || []);
 
-  // ✅ FIX: cleanup listener
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, setCurrentUser);
     return () => unsub();
@@ -48,7 +46,7 @@ function TaskCard({ task }: Props) {
   } as const;
 
   const safeStatus = (task.status && task.status in statusConfig
-    ? task.status
+   ? task.status
     : "open") as keyof typeof statusConfig;
 
   const status = statusConfig[safeStatus];
@@ -62,7 +60,7 @@ function TaskCard({ task }: Props) {
     setLiking(true);
 
     const newLikes = liked
-      ? localLikes.filter((id) => id !== currentUser.uid)
+     ? localLikes.filter((id) => id!== currentUser.uid)
       : [...localLikes, currentUser.uid];
 
     setLocalLikes(newLikes);
@@ -70,7 +68,7 @@ function TaskCard({ task }: Props) {
     try {
       await updateDoc(doc(db, "tasks", task.id), {
         likes: liked
-          ? arrayRemove(currentUser.uid)
+         ? arrayRemove(currentUser.uid)
           : arrayUnion(currentUser.uid),
         likeCount: newLikes.length,
       });
@@ -86,7 +84,6 @@ function TaskCard({ task }: Props) {
   const handleShare = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    // ✅ FIX: SSR safe
     if (typeof window === "undefined") return;
 
     const url = `${window.location.origin}/task/${task.slug}`;
@@ -154,7 +151,7 @@ function TaskCard({ task }: Props) {
                 <span className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">
                   {task.userName || "User"}
                 </span>
-                {isPlan ? (
+                {isPlan? (
                   <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-lg">
                     PLAN
                   </span>
@@ -173,7 +170,7 @@ function TaskCard({ task }: Props) {
 
           <div className="flex items-center gap-4 text-gray-400 dark:text-zinc-500">
             <button onClick={handleLike} disabled={liking} className="flex items-center gap-1 active:scale-90 transition disabled:opacity-50">
-              {liked ? <FaHeart className="text-red-500" size={16} /> : <FiHeart className="group-hover:text-red-400" size={16} />}
+              {liked? <FaHeart className="text-red-500" size={16} /> : <FiHeart className="group-hover:text-red-400" size={16} />}
               <span className="text-xs font-medium">{likeCount}</span>
             </button>
 
@@ -193,7 +190,7 @@ function TaskCard({ task }: Props) {
             <h3 className="font-bold text-base text-gray-900 dark:text-gray-100 leading-snug flex-1">
               {task.title}
             </h3>
-            {!isPlan && task.price !== undefined && (
+            {!isPlan && task.price!== undefined && (
               <div className="shrink-0 text-right">
                 <div className="text-lg font-extrabold bg-gradient-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent">
                   {formatPrice(task.price, task.currency)}
