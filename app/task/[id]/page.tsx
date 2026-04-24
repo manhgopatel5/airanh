@@ -16,8 +16,9 @@ import {
   createComment,
   listenComments,
   toggleLikeComment,
-  Comment as TaskComment,
 } from "@/lib/taskCommentService";
+
+import type { TaskComment } from "@/lib/taskCommentService";
 import { Task } from "@/types/task";
 import { FiChevronLeft, FiSend, FiHeart, FiShare2, FiClock, FiMapPin, FiUsers, FiX, FiCheck } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
@@ -106,14 +107,29 @@ export default function TaskDetailPage() {
   }, [task?.deadline]);
 
   /* ================= COMMENTS - Dùng taskCommentService ================= */
-  useEffect(() => {
-    if (!task?.id) return;
-    const unsub = listenComments(task.id, (data) => {
+useEffect(() => {
+  if (!task?.id) return;
+
+  const unsub = listenComments(
+    task.id,
+    (data, _hasMore) => {
       setComments(data);
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-    });
-    return () => unsub();
-  }, [task?.id]);
+
+      setTimeout(() => {
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    },
+    {
+      onError: (err) => {
+        console.error("listenComments error:", err);
+      },
+    }
+  );
+
+  return () => {
+    unsub && unsub();
+  };
+}, [task?.id]);
 
   /* ================= ACTIONS ================= */
   const handleJoinTask = async () => {
