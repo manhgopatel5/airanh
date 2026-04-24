@@ -1,3 +1,5 @@
+"use client"; // ✅ THÊM DÒNG NÀY
+
 import {
   collection,
   query,
@@ -25,7 +27,7 @@ import {
 import { db } from "./firebase";
 import { User } from "@/types/task";
 import { initFCM } from "./fcm";
-import { toast } from "sonner";
+import { toast } from "sonner"; // ← Lib này cần "use client"
 
 export class ChatError extends Error {
   constructor(message: string, public code?: string) {
@@ -57,7 +59,7 @@ export type Message = {
   type: "text" | "image" | "file" | "location" | "system";
   createdAt: Timestamp | null;
   seenBy: string[];
-  reactions?: Record<string, string>; // { userId: "❤️" }
+  reactions?: Record<string, string>;
   replyTo?: {
     id: string;
     text: string;
@@ -215,9 +217,9 @@ export const listenMessages = (
     q,
     (snapshot) => {
       const data = snapshot.docs
- .map((d) => ({ id: d.id,...d.data() } as Message))
- .filter((m) =>!m.deletedFor?.includes(userId))
- .reverse();
+.map((d) => ({ id: d.id,...d.data() } as Message))
+.filter((m) =>!m.deletedFor?.includes(userId))
+.reverse();
       callback(data, snapshot.docs.length === (options?.limit || 50));
     },
     (err) => {
