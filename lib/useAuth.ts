@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   onAuthStateChanged,
   User,
@@ -108,7 +108,7 @@ function initAuthStore() {
         try {
           const snap = await getDoc(doc(db, "users", user.uid));
           if (snap.exists()) {
-            profile = { uid: snap.id, ...snap.data() } as UserProfile;
+            profile = { uid: snap.id,...snap.data() } as UserProfile;
             updateStore();
           }
         } catch (e) {
@@ -215,7 +215,7 @@ function initAuthStore() {
           userRef,
           (snap) => {
             if (snap.exists()) {
-              profile = { uid: snap.id, ...snap.data() } as UserProfile;
+              profile = { uid: snap.id,...snap.data() } as UserProfile;
               error = null;
             } else {
               profile = null;
