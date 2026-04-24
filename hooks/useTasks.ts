@@ -37,7 +37,7 @@ type UseTasksReturn = {
 
 /* ================= HOOK LIST ================= */
 export default function useTasks(filter?: TaskFilter): UseTasksReturn {
-  const db = getFirebaseDB(); // ✅ FIX 1 (THÊM)
+  const db = getFirebaseDB();
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,10 +103,11 @@ export default function useTasks(filter?: TaskFilter): UseTasksReturn {
     );
 
     return () => unsub();
-  }, [queryConstraints, db]); // ✅ FIX 2 (THÊM db)
+  }, [queryConstraints, db]);
 
   const loadMore = () => {
     if (!lastDoc || !hasMore) return;
+    // TODO: Implement pagination với startAfter(lastDoc)
   };
 
   return { tasks, loading, error, hasMore, loadMore };
@@ -114,7 +115,7 @@ export default function useTasks(filter?: TaskFilter): UseTasksReturn {
 
 /* ================= HOOK 1 TASK ================= */
 export function useTask(taskId: string | null) {
-  const db = getFirebaseDB(); // ✅ FIX 3 (THÊM)
+  const db = getFirebaseDB();
 
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
@@ -148,7 +149,7 @@ export function useTask(taskId: string | null) {
     );
 
     return () => unsub();
-  }, [taskId, db]); // ✅ FIX 4 (THÊM db)
+  }, [taskId, db]);
 
   return { task, loading, error };
 }
