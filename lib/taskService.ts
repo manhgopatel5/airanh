@@ -26,7 +26,6 @@ import { nanoid } from "nanoid";
 import { Task, CreateTaskInput, UpdateTaskInput, TaskListItem, TaskStatus } from "@/types/task";
 
 export class TaskError extends Error {
-  const db = getFirebaseDB();
   constructor(message: string, public code?: string) {
     super(message);
     this.name = "TaskError";
@@ -36,23 +35,25 @@ export class TaskError extends Error {
 /* ================= HELPERS ================= */
 const slugify = (str: string): string =>
   str
-.toLowerCase()
-.normalize("NFD")
-.replace(/[\u0300-\u036f]/g, "")
-.replace(/[^a-z0-9]+/g, "-")
-.replace(/^-|-$/g, "")
-.slice(0, 60);
+  .toLowerCase()
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .replace(/[^a-z0-9]+/g, "-")
+  .replace(/^-|-$/g, "")
+  .slice(0, 60);
 
 const generateSearchKeywords = (title: string, description?: string, tags?: string[]): string[] => {
   const words = [
-...title.toLowerCase().split(" "),
-...(description?.toLowerCase().split(" ").slice(0, 20) || []),
-...(tags?.map((t) => t.toLowerCase()) || []),
+  ...title.toLowerCase().split(" "),
+  ...(description?.toLowerCase().split(" ").slice(0, 20) || []),
+  ...(tags?.map((t) => t.toLowerCase()) || []),
   ].filter(Boolean);
   return [...new Set(words)].slice(0, 20);
 };
 
 const generateUniqueShortId = async (): Promise<string> => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   let attempts = 0;
   while (attempts < 10) {
     const shortId = nanoid(8).toUpperCase();
@@ -69,6 +70,8 @@ export const createTask = async (
   user: { uid: string; displayName?: string | null; photoURL?: string | null; shortId?: string; username?: string },
   data: CreateTaskInput
 ): Promise<{ id: string; slug: string }> => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   if (!user?.uid) throw new TaskError("Bạn cần đăng nhập");
   if (!data.title?.trim()) throw new TaskError("Tiêu đề không được trống");
   if (data.title.length > 100) throw new TaskError("Tiêu đề tối đa 100 ký tự");
@@ -156,6 +159,8 @@ export const updateTask = async (
   userId: string,
   updates: UpdateTaskInput
 ): Promise<void> => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   if (!taskId ||!userId) throw new TaskError("Thiếu thông tin");
 
   const taskRef = doc(db, "tasks", taskId);
@@ -169,7 +174,7 @@ export const updateTask = async (
     if (data.banned) throw new TaskError("Task đã bị cấm");
 
     const newSearchKeywords = updates.title || updates.description || updates.tags
-? generateSearchKeywords(
+    ? generateSearchKeywords(
           updates.title || data.title,
           updates.description || data.description,
           updates.tags || data.tags
@@ -177,7 +182,7 @@ export const updateTask = async (
       : data.searchKeywords;
 
     transaction.update(taskRef, {
-...updates,
+    ...updates,
       searchKeywords: newSearchKeywords,
       edited: true,
       editedAt: serverTimestamp(),
@@ -188,6 +193,8 @@ export const updateTask = async (
 
 /* ================= DELETE TASK ================= */
 export const deleteTask = async (taskId: string, userId: string): Promise<void> => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   if (!taskId ||!userId) throw new TaskError("Thiếu thông tin");
 
   const taskRef = doc(db, "tasks", taskId);
@@ -219,6 +226,8 @@ export const deleteTask = async (taskId: string, userId: string): Promise<void> 
 
 /* ================= GET BY SLUG ================= */
 export const getTaskBySlug = async (slug: string): Promise<Task | null> => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   const q = query(
     collection(db, "tasks"),
     where("slug", "==", slug),
@@ -243,6 +252,8 @@ export const listenTasks = (
     onError?: (err: Error) => void;
   }
 ): Unsubscribe => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   const constraints: QueryConstraint[] = [
     where("status", "==", options?.status || "open"),
     where("visibility", "==", "public"),
@@ -275,13 +286,15 @@ export const joinTask = async (
   taskId: string,
   user: { uid: string; displayName?: string | null; photoURL?: string | null }
 ): Promise<void> => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   if (!taskId ||!user?.uid) throw new TaskError("Thiếu thông tin");
 
   const taskRef = doc(db, "tasks", taskId);
   const participantRef = doc(db, "task_participants", `${taskId}_${user.uid}`);
 
   await runTransaction(db, async (transaction) => {
-    const [taskSnap, participantSnap] = await Promise.all([transaction.get(taskRef), transaction.get(participantRef)]);
+    const [taskSnap, participantSnap] = await Promise.all();
     if (!taskSnap.exists()) throw new TaskError("Task không tồn tại");
 
     const task = taskSnap.data() as Task;
@@ -309,12 +322,14 @@ export const joinTask = async (
 
 /* ================= LIKE/REACTION ================= */
 export const toggleLikeTask = async (taskId: string, userId: string): Promise<void> => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   if (!taskId ||!userId) throw new TaskError("Thiếu thông tin");
   const likeRef = doc(db, "task_likes", `${taskId}_${userId}`);
   const taskRef = doc(db, "tasks", taskId);
 
   await runTransaction(db, async (transaction) => {
-    const [likeSnap, taskSnap] = await Promise.all([transaction.get(likeRef), transaction.get(taskRef)]);
+    const [likeSnap, taskSnap] = await Promise.all();
     if (!taskSnap.exists()) throw new TaskError("Task không tồn tại");
 
     const currentCount = (taskSnap.data() as Task).likeCount || 0;
@@ -330,6 +345,8 @@ export const toggleLikeTask = async (taskId: string, userId: string): Promise<vo
 };
 
 export const addReactionToTask = async (taskId: string, userId: string, type: string): Promise<void> => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   if (!taskId ||!userId) throw new TaskError("Thiếu thông tin");
   const taskRef = doc(db, "tasks", taskId);
 
@@ -353,6 +370,8 @@ export const addReactionToTask = async (taskId: string, userId: string, type: st
 
 /* ================= VIEW ================= */
 export const incrementTaskView = async (taskId: string): Promise<void> => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   if (!taskId) return;
   await updateDoc(doc(db, "tasks", taskId), { viewCount: increment(1) }).catch(() => {});
 };
