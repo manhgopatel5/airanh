@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { searchUsers } from "@/lib/userService";
 import { sendFriendRequest, cancelFriendRequest, getFriendStatus } from "@/lib/friendService";
 import { useAuth } from "@/lib/AuthContext";
@@ -31,7 +31,6 @@ export default function UserSearch() {
     return () => { mountedRef.current = false; };
   }, []);
 
-  /* ================= DEBOUNCE SEARCH + CANCEL ================= */
   useEffect(() => {
     if (!keyword.trim()) {
       setResults([]);
@@ -68,7 +67,6 @@ export default function UserSearch() {
     };
   }, [keyword, user?.uid]);
 
-  /* ================= ADD FRIEND ================= */
   const handleAddFriend = async (targetId: string) => {
     if (!user?.uid || sending) return;
 
@@ -87,7 +85,6 @@ export default function UserSearch() {
     }
   };
 
-  /* ================= CANCEL REQUEST ================= */
   const handleCancelRequest = async (targetId: string) => {
     if (!user?.uid || sending) return;
     setSending(targetId);
@@ -105,7 +102,6 @@ export default function UserSearch() {
     }
   };
 
-  /* ================= HIGHLIGHT ================= */
   const highlightText = (text: string, keyword: string) => {
     if (!keyword.trim()) return text;
     const parts = text.split(new RegExp(`(${keyword})`, "gi"));
@@ -120,7 +116,6 @@ export default function UserSearch() {
     );
   };
 
-  /* ================= UI BUTTON ================= */
   const renderButton = (u: UserResult) => {
     const isSending = sending === u.uid;
 
@@ -180,7 +175,7 @@ export default function UserSearch() {
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
           placeholder="Tìm theo tên, email, @username..."
-          className="w-full pl-10 pr-10 py-3 rounded-2xl border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+          className="w-full pl-10 pr-10 py-3 rounded-2xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
         />
         {keyword && (
           <button
@@ -226,7 +221,7 @@ export default function UserSearch() {
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <img
-                  src={u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || "U")}&background=random`}
+                  src={u.avatar || `https:                                                                                   
                   className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-50 dark:ring-zinc-800"
                   alt="avatar"
                 />
@@ -239,7 +234,6 @@ export default function UserSearch() {
                     {highlightText(u.email || "", keyword)}
                   </p>
                 </div>
-              </div>
               <div className="shrink-0">{renderButton(u)}</div>
             </div>
           ))}
