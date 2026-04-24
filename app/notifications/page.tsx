@@ -302,7 +302,12 @@ const groupedNotifs = useMemo(() => {
 
               <div className="space-y-2 px-4">
                 {items.map((n) => (
-                  <div key={n.id} className="group bg-white rounded-3xl p-4 border">
+  <div
+    key={n.id}
+    data-id={n.id}
+    ref={(node) => setObserver(node, n.id, n.isRead)}
+    className="group bg-white rounded-3xl p-4 border"
+  >
                     <div className="flex items-start gap-3">
 
                       {/* CONTENT */}
