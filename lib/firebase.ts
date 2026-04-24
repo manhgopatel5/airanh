@@ -20,14 +20,6 @@ import {
   arrayRemove,
 } from "firebase/firestore";
 import { getStorage, FirebaseStorage, connectStorageEmulator } from "firebase/storage";
-import {
-  getMessaging,
-  isSupported,
-  Messaging,
-  getToken,
-  onMessage,
-  MessagePayload,
-} from "firebase/messaging";
 import { getAnalytics, Analytics, isSupported as isAnalyticsSupported } from "firebase/analytics";
 import { getDatabase, Database } from "firebase/database";
 import { initializeAppCheck, ReCaptchaV3Provider, AppCheck } from "firebase/app-check";
@@ -44,7 +36,7 @@ const requiredEnvs = [
 
 for (const env of requiredEnvs) {
   if (!process.env[env]) {
-    throw new Error(`Missing Firebase env: ${env}. Check.env.local`);
+    throw new Error(`Missing Firebase env: ${env}. Check .env.local`);
   }
 }
 
@@ -56,20 +48,20 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
- ...(process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID && {
+  ...(process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID && {
     measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
   }),
- ...(process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL && {
+  ...(process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL && {
     databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
   }),
 };
 
 /* ================= INIT APP ================= */
-const app: FirebaseApp = getApps().length? getApp() : initializeApp(firebaseConfig);
+const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 /* ================= APP CHECK ================= */
 let appCheck: AppCheck | null = null;
-if (typeof window!== "undefined" && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
+if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
   appCheck = initializeAppCheck(app, {
     provider: new ReCaptchaV3Provider(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY),
     isTokenAutoRefreshEnabled: true,
@@ -80,14 +72,14 @@ if (typeof window!== "undefined" && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) 
 const auth: Auth = getAuth(app);
 
 export const authReady: Promise<void> =
-  typeof window!== "undefined"
-? setPersistence(auth, browserLocalPersistence).catch((e) => {
+  typeof window !== "undefined"
+    ? setPersistence(auth, browserLocalPersistence).catch((e) => {
         console.error("Set persistence failed:", e);
       })
     : Promise.resolve();
 
 if (
-  typeof window!== "undefined" &&
+  typeof window !== "undefined" &&
   process.env.NODE_ENV === "development" &&
   process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true"
 ) {
@@ -134,34 +126,34 @@ const rtdb: Database = getDatabase(app);
 const storage: FirebaseStorage = getStorage(app);
 
 if (
-  typeof window!== "undefined" &&
+  typeof window !== "undefined" &&
   process.env.NODE_ENV === "development" &&
   process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true"
 ) {
   connectStorageEmulator(storage, "localhost", 9199);
 }
 
-/* ================= FCM ================= */
-let messagingInstance: Messaging | null = null;
-let messagingPromise: Promise<Messaging | null> | null = null;
+/* ================= FCM (FIX SSR) ================= */
+type MessagingType = any;
+type MessagePayloadType = any;
 
-export const getMessagingInstance = async (): Promise<Messaging | null> => {
+let messagingInstance: MessagingType | null = null;
+let messagingPromise: Promise<MessagingType | null> | null = null;
+
+export const getMessagingInstance = async (): Promise<MessagingType | null> => {
   if (typeof window === "undefined") return null;
   if (messagingInstance) return messagingInstance;
   if (messagingPromise) return messagingPromise;
 
   messagingPromise = (async () => {
     try {
-      if (!("serviceWorker" in navigator) ||!("Notification" in window)) return null;
+      const messagingModule = await import("firebase/messaging");
+      const { getMessaging, isSupported } = messagingModule;
+
+      if (!("serviceWorker" in navigator) || !("Notification" in window)) return null;
       if (!(await isSupported())) return null;
 
-      const registration = await Promise.race([
-        navigator.serviceWorker.ready,
-        new Promise<ServiceWorkerRegistration>((_, reject) =>
-          setTimeout(() => reject(new Error("SW timeout")), 3000)
-        ),
-      ]).catch(() => null);
-
+      const registration = await navigator.serviceWorker.ready.catch(() => null);
       if (!registration?.active) {
         console.warn("Service worker not active");
         return null;
@@ -207,14 +199,21 @@ export const getFCMToken = async (vapidKey: string, retries = 3): Promise<string
   const msg = await getMessagingInstance();
   if (!msg) return null;
 
+  const { getToken } = await import("firebase/messaging");
+
   for (let i = 0; i < retries; i++) {
     try {
       const registration = await navigator.serviceWorker.ready;
-      const token = await getToken(msg, { vapidKey, serviceWorkerRegistration: registration });
+      const token = await getToken(msg, {
+        vapidKey,
+        serviceWorkerRegistration: registration,
+      });
       if (token) return token;
     } catch (e) {
       console.error(`Get FCM token attempt ${i + 1}:`, e);
-      if (i < retries - 1) await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
+      if (i < retries - 1) {
+        await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
+      }
     }
   }
   return null;
@@ -222,12 +221,17 @@ export const getFCMToken = async (vapidKey: string, retries = 3): Promise<string
 
 /* ================= FOREGROUND MESSAGE ================= */
 export const onForegroundMessage = (
-  callback: (payload: MessagePayload) => void
+  callback: (payload: MessagePayloadType) => void
 ): (() => void) => {
   let unsubscribe: (() => void) | null = null;
-  getMessagingInstance().then((msg) => {
-    if (msg) unsubscribe = onMessage(msg, callback);
+
+  getMessagingInstance().then(async (msg) => {
+    if (!msg) return;
+
+    const { onMessage } = await import("firebase/messaging");
+    unsubscribe = onMessage(msg, callback);
   });
+
   return () => unsubscribe?.();
 };
 
