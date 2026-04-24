@@ -101,7 +101,7 @@ const batchGetDocs = async <T>(
     const q = query(
       collection(db, col),
       where(field, "in", chunk),
-   ...extraConstraints
+  ...extraConstraints
     );
     chunks.push(getDocs(q));
   }
@@ -131,7 +131,7 @@ export const searchUsers = async (
       ]),
       where("status", "==", "active"),
       orderBy("nameLower"),
-   ...(cursor? [startAfter(cursor)] : []),
+  ...(cursor? [startAfter(cursor)] : []),
       limit(maxResults + 1),
     ];
 
@@ -149,18 +149,18 @@ export const searchUsers = async (
 
     const [friends, blocksFrom, blocksTo] = await Promise.all([
       currentUserId
-     ? batchGetDocs<{ friendId: string }>("friends", "friendId", uids, [
+    ? batchGetDocs<{ friendId: string }>("friends", "friendId", uids, [
             where("userId", "==", currentUserId),
             where("status", "==", "accepted"),
           ])
         : [],
       currentUserId
-     ? batchGetDocs<{ toUserId: string }>("blocks", "toUserId", uids, [
+    ? batchGetDocs<{ toUserId: string }>("blocks", "toUserId", uids, [
             where("fromUserId", "==", currentUserId),
           ])
         : [],
       currentUserId
-     ? batchGetDocs<{ fromUserId: string }>("blocks", "fromUserId", uids, [
+    ? batchGetDocs<{ fromUserId: string }>("blocks", "fromUserId", uids, [
             where("toUserId", "==", currentUserId),
           ])
         : [],
@@ -168,12 +168,12 @@ export const searchUsers = async (
 
     const friendSet = new Set(friends.map((f) => f.friendId));
     const blockSet = new Set([
-   ...blocksFrom.map((b) => b.toUserId),
-   ...blocksTo.map((b) => b.fromUserId),
+  ...blocksFrom.map((b) => b.toUserId),
+  ...blocksTo.map((b) => b.fromUserId),
     ]);
 
     const users: SearchResult[] = docs
-   .map((d) => {
+  .map((d) => {
         const data = d.data();
         if (data.uid === currentUserId || blockSet.has(data.uid)) return null;
         if (data.hidden || data.deletedAt) return null;
@@ -184,19 +184,20 @@ export const searchUsers = async (
 
         const isFriend = friendSet.has(data.uid);
 
-        return {
+        const result: SearchResult = {
           uid: data.uid,
           name: data.name,
           avatar: data.avatar,
           shortId: data.shortId,
-          username: data.username,
-          bio: data.bio,
+        ...(data.username && { username: data.username }),
+        ...(data.bio && { bio: data.bio }),
           isFriend,
           matchedField,
-          email: isFriend? data.email : undefined,
+        ...(isFriend && data.email && { email: data.email }),
         };
+        return result;
       })
-   .filter(Boolean) as SearchResult[];
+  .filter(Boolean) as SearchResult[];
 
     return { users, lastDoc, hasMore };
   } catch (e: any) {
@@ -237,8 +238,8 @@ export const getUserByShortId = async (shortId: string): Promise<SearchResult | 
     name: data.name,
     avatar: data.avatar,
     shortId: data.shortId,
-    username: data.username,
-    bio: data.bio,
+  ...(data.username && { username: data.username }),
+  ...(data.bio && { bio: data.bio }),
   };
 
   userCache.set(key, result);
