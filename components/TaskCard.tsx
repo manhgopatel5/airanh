@@ -132,8 +132,9 @@ function TaskCard({ task }: { task: TaskListItem }) {
         </button>
 
         <div className="flex items-center gap-3">
-          <button onClick={handleLike}>
+          <button onClick={handleLike} disabled={liking} className="flex items-center gap-1 active:scale-90 transition disabled:opacity-50">
             {liked ? <FaHeart className="text-red-500" /> : <FiHeart />}
+            <span className="text-xs">{likeCount}</span>
           </button>
           <button onClick={handleShare}>
             <FiShare2 />
