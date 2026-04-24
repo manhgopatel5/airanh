@@ -73,7 +73,7 @@ const getMessagingInstance = async (): Promise<Messaging | null> => {
       if (!getApps().length) {
         app = initializeApp(firebaseConfig);
       } else {
-        app = getApps()[0];
+        app = getApps()[0]!;
       }
 
       messaging = getMessaging(app);
