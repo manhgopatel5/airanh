@@ -50,7 +50,7 @@ const MSG_LIMIT = 50;
 const RATE_LIMIT_MS = 2000;
 
 export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
-  const db = getFirebaseDB();
+  const db = getFirebaseDB(); // ✅ FIX 1
 
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [text, setText] = useState("");
@@ -71,7 +71,7 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
       const allowed = data?.userId === currentUser.uid || data?.applicants?.includes(currentUser.uid);
       setCanComment(!!allowed);
     });
-  }, [taskId, currentUser.uid]);
+  }, [taskId, currentUser.uid, db]); // ✅ Thêm db vào deps
 
   useEffect(() => {
     const q = query(
@@ -93,7 +93,7 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
     });
 
     return () => unsub();
-  }, [taskId, currentUser.uid]);
+  }, [taskId, currentUser.uid, db]); // ✅ Thêm db vào deps
 
   const loadMore = async () => {
     if (!lastDocRef.current || loadingMore) return;
