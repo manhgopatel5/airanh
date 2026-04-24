@@ -61,7 +61,7 @@ export default function BottomNav({ unreadCount = 0 }: Props) {
             size={24}
             className={`transition-all duration-200 ${
               active
-               ? "text-blue-600 dark:text-blue-400 scale-110"
+             ? "text-blue-600 dark:text-blue-400 scale-110"
                 : "text-gray-400 dark:text-zinc-500"
             }`}
           />
@@ -74,7 +74,7 @@ export default function BottomNav({ unreadCount = 0 }: Props) {
         <span
           className={`text-xs font-semibold mt-1 transition-colors ${
             active
-             ? "text-blue-600 dark:text-blue-400"
+           ? "text-blue-600 dark:text-blue-400"
               : "text-gray-400 dark:text-zinc-500"
           }`}
         >
