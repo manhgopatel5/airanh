@@ -33,6 +33,7 @@ function TaskCard({ task }: Props) {
   const statusConfig = {
     open: { text: "Đang tuyển", color: "emerald" },
     full: { text: "Đã đủ", color: "amber" },
+    in_progress: { text: "Đang làm", color: "blue" }, // <-- thêm dòng này
     completed: { text: "Hoàn thành", color: "blue" },
     cancelled: { text: "Đã hủy", color: "gray" },
   } as const;
