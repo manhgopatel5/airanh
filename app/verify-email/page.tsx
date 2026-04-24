@@ -41,10 +41,10 @@ export default function VerifyEmailPage() {
       toast.success("Đã gửi email xác thực");
       setCooldown(60);
     } catch (err: any) {
-      const msg = {
+      const msg: Record<string, string> = {
         "auth/too-many-requests": "Gửi quá nhiều lần. Thử lại sau",
-      }[err.code] || "Gửi email thất bại";
-      toast.error(msg);
+      };
+      toast.error(msg[err.code] || "Gửi email thất bại");
     } finally {
       setSending(false);
     }
@@ -107,9 +107,9 @@ export default function VerifyEmailPage() {
               className="w-full py-3 rounded-xl font-semibold bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 active:scale-[0.98] transition-all disabled:opacity-50"
             >
               {sending
-               ? "Đang gửi..."
+              ? "Đang gửi..."
                 : cooldown > 0
-               ? `Gửi lại sau ${cooldown}s`
+              ? `Gửi lại sau ${cooldown}s`
                 : "Gửi lại email"}
             </button>
           </div>
