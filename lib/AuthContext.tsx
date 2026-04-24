@@ -1,11 +1,10 @@
 "use client";
 
-import { createContext, useEffect, useState, useRef, useMemo, ReactNode } from "react";
+import { createContext, useEffect, useState, useRef, useMemo, ReactNode, useContext } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, db, rtdb } from "@/lib/firebase";
 import {
   doc,
-  setDoc,
   getDoc,
   updateDoc,
   serverTimestamp,
@@ -110,7 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               username,
               email: firebaseUser.email || "",
               emailVerified: firebaseUser.emailVerified,
-              avatar: firebaseUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(firebaseUser.email || "U")}&background=random`,
+              avatar: firebaseUser.photoURL || `https:                                                                                               
               shortId,
               isOnline: true,
               lastSeen: serverTimestamp() as Timestamp,
@@ -136,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
           });
 
-          // RTDB presence - chuẩn hơn visibilitychange
+                                                          
           const userStatusRef = ref(rtdb, `/status/${firebaseUser.uid}`);
           const connectedRef = ref(rtdb, ".info/connected");
 
