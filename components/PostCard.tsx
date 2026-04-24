@@ -47,8 +47,9 @@ export default function PostCard({ post, onDelete }: Props) {
     if (liking) return;
 
     setLiking(true);
+
     const newLikes = liked
-      ? localLikes.filter((id) => id !== user.uid)
+     ? localLikes.filter((id) => id!== user.uid)
       : [...localLikes, user.uid];
     setLocalLikes(newLikes);
 
@@ -62,7 +63,7 @@ export default function PostCard({ post, onDelete }: Props) {
         const hasLiked = currentLikes.includes(user.uid);
 
         transaction.update(ref, {
-          likes: hasLiked ? arrayRemove(user.uid) : arrayUnion(user.uid),
+          likes: hasLiked? arrayRemove(user.uid) : arrayUnion(user.uid),
         });
       });
     } catch (err) {
@@ -71,7 +72,7 @@ export default function PostCard({ post, onDelete }: Props) {
     } finally {
       setLiking(false);
     }
-  }, [user, liked, liking, localLikes, post.id, post.likes, router]);
+  }, [user, liked, liking, localLikes, post.id, post.likes, router, db]);
 
   const handleShare = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -96,7 +97,7 @@ export default function PostCard({ post, onDelete }: Props) {
     if (!confirm("Xóa bài viết này?")) return;
     await deleteDoc(doc(db, "posts", post.id));
     onDelete?.(post.id);
-  }, [isOwner, post.id, onDelete]);
+  }, [isOwner, post.id, onDelete, db]);
 
   const goToPost = useCallback(() => router.push(`/post/${post.id}`), [router, post.id]);
   const goToProfile = useCallback((e: React.MouseEvent) => {
@@ -183,7 +184,7 @@ export default function PostCard({ post, onDelete }: Props) {
         {post.images && post.images.length > 0 && (
           <div
             className={`grid gap-1.5 rounded-2xl overflow-hidden ${
-              post.images.length === 1 ? "grid-cols-1" : post.images.length === 2 ? "grid-cols-2" : "grid-cols-2"
+              post.images.length === 1? "grid-cols-1" : post.images.length === 2? "grid-cols-2" : "grid-cols-2"
             }`}
           >
             {post.images.slice(0, 4).map((img, i) => (
@@ -194,9 +195,9 @@ export default function PostCard({ post, onDelete }: Props) {
                   onError={(e) => { e.currentTarget.src = "/placeholder.png"; }}
                   className={`w-full object-cover bg-gray-200 dark:bg-zinc-800 ${
                     post.images!.length === 1
-                      ? "max-h-[400px]"
+                     ? "max-h-[400px]"
                       : post.images!.length === 3 && i === 0
-                      ? "row-span-2 h-full"
+                     ? "row-span-2 h-full"
                       : "h-40"
                   }`}
                   alt=""
@@ -217,7 +218,7 @@ export default function PostCard({ post, onDelete }: Props) {
             disabled={liking}
             className="flex items-center gap-1.5 active:scale-90 transition group/like disabled:opacity-50"
           >
-            {liked ? <FaHeart className="text-red-500" size={18} /> : <FiHeart className="group-hover/like:text-red-400" size={18} />}
+            {liked? <FaHeart className="text-red-500" size={18} /> : <FiHeart className="group-hover/like:text-red-400" size={18} />}
             <span className="text-xs font-semibold">{localLikes.length}</span>
           </button>
 
