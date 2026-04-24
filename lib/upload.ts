@@ -1,3 +1,5 @@
+"use client"; // ✅ THÊM DÒNG NÀY
+
 import {
   ref,
   uploadBytesResumable,
@@ -149,5 +151,5 @@ export const getFileType = (file: File): "image" | "file" => {
 export const formatFileSize = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${(bytes / 1024).toFixed(1)} MB`;
 };
