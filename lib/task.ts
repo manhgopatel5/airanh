@@ -1,5 +1,4 @@
 import {
-  addDoc,
   collection,
   serverTimestamp,
   Timestamp,
@@ -39,12 +38,12 @@ class TaskError extends Error {
 /* ================= HELPERS ================= */
 const slugify = (str: string): string =>
   str
-  .toLowerCase()
-  .normalize("NFD")
-  .replace(/[\u0300-\u036f]/g, "")
-  .replace(/[^a-z0-9]+/g, "-")
-  .replace(/^-|-$/g, "")
-  .slice(0, 50);
+.toLowerCase()
+ .normalize("NFD")
+ .replace(/[\u0300-\u036f]/g, "")
+ .replace(/[^a-z0-9]+/g, "-")
+ .replace(/^-|-$/g, "")
+ .slice(0, 50);
 
 const generateUniqueShortId = async (): Promise<string> => {
   let attempts = 0;
@@ -59,9 +58,9 @@ const generateUniqueShortId = async (): Promise<string> => {
 
 const cleanTags = (tags: string[], title: string, category?: string): string[] => {
   const all = [...tags, category || "",...slugify(title).split("-")]
-  .map((t) => t.trim().toLowerCase())
-  .filter((t) => t.length >= 2 && t.length <= 20)
-  .slice(0, 10);
+.map((t) => t.trim().toLowerCase())
+ .filter((t) => t.length >= 2 && t.length <= 20)
+ .slice(0, 10);
   return [...new Set(all)];
 };
 
@@ -189,11 +188,11 @@ export async function updateTask(
     if (updates.images && updates.images.length > 5) throw new TaskError("Tối đa 5 ảnh");
 
     const newTags = updates.title || updates.description || updates.category
-    ? cleanTags(updates.tags || data.tags || [], updates.title || data.title, updates.category || data.category)
+ ? cleanTags(updates.tags || data.tags || [], updates.title || data.title, updates.category || data.category)
       : data.tags;
 
     transaction.update(taskRef, {
-    ...updates,
+ ...updates,
       tags: newTags,
       searchKeywords: generateTaskSearchKeywords({
         title: updates.title || data.title,
@@ -388,7 +387,7 @@ export async function expireTasks(): Promise<void> {
   await batch.commit();
 }
 
-/* ================= LIKE & REACTION (FIX BUILD) ================= */
+/* ================= LIKE & REACTION ================= */
 export async function toggleLikeTask(taskId: string, userId: string): Promise<boolean> {
   if (!taskId ||!userId) throw new TaskError("Thiếu thông tin");
 
