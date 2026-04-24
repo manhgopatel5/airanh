@@ -8,6 +8,7 @@ import { TaskListItem } from "@/types/task";
 import { FiChevronLeft, FiMapPin, FiCalendar, FiBriefcase } from "react-icons/fi";
 import { formatTaskPrice, formatTaskDeadline } from "@/types/task";
 import Link from "next/link";
+import Image from "next/image";
 
 type UserProfile = {
   uid: string;
@@ -82,8 +83,11 @@ export default function UserProfilePage() {
       {/* PROFILE CARD */}
       <div className="bg-white dark:bg-zinc-900 p-6 border-b border-gray-100 dark:border-zinc-800">
         <div className="flex items-start gap-4">
-          <img
+          <Image
             src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || "U")}&size=128`}
+            alt={user.displayName || "User avatar"}
+            width={80}
+            height={80}
             className="w-20 h-20 rounded-full object-cover ring-4 ring-gray-50 dark:ring-zinc-800"
           />
           <div className="flex-1">
@@ -163,12 +167,18 @@ export default function UserProfilePage() {
           >
             <div className="flex gap-3">
               {task.images?.[0] && (
-                <img src={task.images[0]} className="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
+                <Image 
+                  src={task.images[0]} 
+                  alt={task.title || "Task image"}
+                  width={64}
+                  height={64}
+                  className="w-16 h-16 rounded-xl object-cover flex-shrink-0" 
+                />
               )}
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100 line-clamp-1">{task.title}</h3>
                 <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-zinc-400">
-                  <span className="font-bold text-emerald-600">{formatTaskPrice(task.price, task.currency)}</span>
+                  <span className="font-bold text-emerald-600">{formatTaskPrice(task)}</span>
                   <span>•</span>
                   <span>{task.joined}/{task.totalSlots} người</span>
                 </div>
