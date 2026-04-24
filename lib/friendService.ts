@@ -17,6 +17,9 @@ import {
   addDoc,
   getCountFromServer,
   updateDoc,
+  deleteDoc,
+  QueryDocumentSnapshot,
+  DocumentData,
 } from "firebase/firestore";
 import { db } from "./firebase";
 
@@ -74,7 +77,7 @@ const batchGetUsers = async (uids: string[]): Promise<Map<string, User>> => {
   const snaps = await Promise.all(chunks);
   const map = new Map<string, User>();
   snaps.forEach(snap => {
-    snap.docs.forEach(d => map.set(d.id, { uid: d.id, ...d.data() } as User));
+    snap.docs.forEach((d: QueryDocumentSnapshot<DocumentData>) => map.set(d.id, { uid: d.id, ...d.data() } as User));
   });
   return map;
 };
@@ -277,7 +280,7 @@ export const rejectRequest = async (id: string, userId: string): Promise<void> =
   });
 };
 
-/* ================= CANCEL REQUEST - EXPORT ĐÚNG TÊN ================= */
+/* ================= CANCEL REQUEST ================= */
 export const cancelFriendRequest = async (from: string, to: string): Promise<void> => {
   if (!from || !to) throw new FriendError("Thiếu thông tin");
   const requestId = [from, to].sort().join("_");
