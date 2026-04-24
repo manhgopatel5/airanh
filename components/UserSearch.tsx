@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { searchUsers } from "@/lib/userService";
 import { sendFriendRequest, cancelFriendRequest, getFriendStatus } from "@/lib/friendService";
 import { useAuth } from "@/lib/AuthContext";
@@ -10,7 +10,7 @@ import { HiSparkles } from "react-icons/hi";
 type UserResult = {
   uid: string;
   name?: string;
-  username?: string; // ✅ FIX 4
+  username?: string;
   email?: string;
   avatar?: string;
   status?: "none" | "friends" | "requested" | "pending";
@@ -23,8 +23,8 @@ export default function UserSearch() {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState<string | null>(null);
   
-  const abortRef = useRef<AbortController | null>(null); // ✅ FIX 1
-  const mountedRef = useRef(true); // ✅ FIX 3
+  const abortRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -39,14 +39,13 @@ export default function UserSearch() {
     }
 
     setLoading(true);
-    if (abortRef.current) abortRef.current.abort(); // ✅ FIX 1: Hủy request cũ
+    if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
 
     const timer = setTimeout(async () => {
       try {
-        const res = await searchUsers(keyword, { signal: abortRef.current?.signal }); // ✅ FIX 5: limit
+        const res = await searchUsers(keyword, { signal: abortRef.current?.signal });
         
-        // ✅ FIX 2: Lấy status cho từng user
         const withStatus = await Promise.all(
           res.filter((u: UserResult) => u.uid !== user?.uid).map(async (u: UserResult) => {
             const status = await getFriendStatus(user!.uid, u.uid);
@@ -88,7 +87,7 @@ export default function UserSearch() {
     }
   };
 
-  /* ================= CANCEL REQUEST - ✅ FIX 7 ================= */
+  /* ================= CANCEL REQUEST ================= */
   const handleCancelRequest = async (targetId: string) => {
     if (!user?.uid || sending) return;
     setSending(targetId);
@@ -106,7 +105,7 @@ export default function UserSearch() {
     }
   };
 
-  /* ================= HIGHLIGHT - ✅ FIX 6 ================= */
+  /* ================= HIGHLIGHT ================= */
   const highlightText = (text: string, keyword: string) => {
     if (!keyword.trim()) return text;
     const parts = text.split(new RegExp(`(${keyword})`, "gi"));
@@ -175,14 +174,13 @@ export default function UserSearch() {
 
   return (
     <div className="p-4 space-y-4">
-      {/* INPUT SEARCH */}
       <div className="relative">
         <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500" size={18} />
         <input
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
           placeholder="Tìm theo tên, email, @username..."
-          className="w-full pl-10 pr-10 py-3 rounded-2xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+          className="w-full pl-10 pr-10 py-3 rounded-2xl border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
         />
         {keyword && (
           <button
@@ -194,7 +192,6 @@ export default function UserSearch() {
         )}
       </div>
 
-      {/* LOADING */}
       {loading && (
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -212,7 +209,6 @@ export default function UserSearch() {
         </div>
       )}
 
-      {/* EMPTY */}
       {!loading && keyword && results.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-zinc-500">
           <HiSparkles size={48} className="mb-3" />
@@ -221,7 +217,6 @@ export default function UserSearch() {
         </div>
       )}
 
-      {/* RESULTS */}
       {!loading && (
         <div className="space-y-2">
           {results.map((u) => (
@@ -237,7 +232,7 @@ export default function UserSearch() {
                 />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">
-                    {highlightText(u.name || "User", keyword)} {/* ✅ FIX 6 */}
+                    {highlightText(u.name || "User", keyword)}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-zinc-400 truncate">
                     {u.username && `@${highlightText(u.username, keyword)} · `}
