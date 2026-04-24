@@ -86,7 +86,7 @@ function initAuthStore() {
       loading,
       loadingProfile,
       error,
-      isAuthenticated:!!user &&!loading,
+      isAuthenticated: !!user && !loading,
       isAdmin: profile?.role === "admin" || claims?.admin === true,
       signOut: async () => {
         if (user) {
@@ -104,7 +104,7 @@ function initAuthStore() {
         try {
           const snap = await getDoc(doc(db, "users", user.uid));
           if (snap.exists()) {
-            profile = { uid: snap.id,...snap.data() } as UserProfile;
+            profile = { uid: snap.id, ...snap.data() } as UserProfile;
             updateStore();
           }
         } catch (e) {
@@ -210,7 +210,7 @@ function initAuthStore() {
             userRef,
             (snap) => {
               if (snap.exists()) {
-                profile = { uid: snap.id,...snap.data() } as UserProfile;
+                profile = { uid: snap.id, ...snap.data() } as UserProfile;
                 error = null;
               } else {
                 profile = null;
@@ -316,7 +316,7 @@ export function useAuth(): UseAuthReturn {
 /* ================= BONUS HOOKS ================= */
 export function useIsOwner(ownerId?: string): boolean {
   const { user } = useAuth();
-  return useMemo(() =>!!user &&!!ownerId && user.uid === ownerId, [user, ownerId]);
+  return useMemo(() => !!user && !!ownerId && user.uid === ownerId, [user, ownerId]);
 }
 
 export function useRequireAuth(redirectTo = "/login") {
@@ -324,12 +324,12 @@ export function useRequireAuth(redirectTo = "/login") {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading &&!user) {
+    if (!loading && !user) {
       router.replace(redirectTo);
     }
   }, [user, loading, redirectTo, router]);
 
-  return { user, loading, isAuthenticated:!!user &&!loading };
+  return { user, loading, isAuthenticated: !!user && !loading };
 }
 
 export function useRequireAdmin(redirectTo = "/") {
@@ -337,7 +337,7 @@ export function useRequireAdmin(redirectTo = "/") {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading &&!isAdmin) {
+    if (!loading && !isAdmin) {
       router.replace(redirectTo);
     }
   }, [isAdmin, loading, redirectTo, router]);
