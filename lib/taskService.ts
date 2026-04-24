@@ -125,7 +125,7 @@ export const createTask = async (
       images: data.images || [],
       attachments: data.attachments || [],
       requirements: data.requirements || "",
-      location: data.location || undefined,
+     ...(data.location && { location: data.location }),
       isRemote: data.isRemote || false,
 
       searchKeywords: generateSearchKeywords(data.title, data.description, data.tags),
@@ -168,7 +168,7 @@ export const updateTask = async (
     if (data.banned) throw new TaskError("Task đã bị cấm");
 
     const newSearchKeywords = updates.title || updates.description || updates.tags
-  ? generateSearchKeywords(
+ ? generateSearchKeywords(
           updates.title || data.title,
           updates.description || data.description,
           updates.tags || data.tags
@@ -176,7 +176,7 @@ export const updateTask = async (
       : data.searchKeywords;
 
     transaction.update(taskRef, {
-  ...updates,
+ ...updates,
       searchKeywords: newSearchKeywords,
       edited: true,
       editedAt: serverTimestamp(),
