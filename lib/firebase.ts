@@ -1,6 +1,6 @@
 "use client";
 
-import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { initializeApp, getApps, getApp, FirebaseApp, FirebaseOptions } from "firebase/app";
 import {
   getAuth,
   setPersistence,
@@ -22,14 +22,17 @@ import {
 
 /* ================= CONFIG ================= */
 
-const firebaseConfig = {
+const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
-  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL, // ✅ Thêm dòng này cho RTDB
+  // ✅ FIX: Chỉ thêm databaseURL nếu có
+  ...(process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL && {
+    databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
+  }),
 };
 
 /* ================= SINGLETONS ================= */
@@ -52,7 +55,11 @@ function initFirebase() {
     auth = getAuth(app);
     db = getFirestore(app);
     storage = getStorage(app);
-    rtdb = getDatabase(app);
+    
+    // ✅ Chỉ init RTDB nếu có databaseURL
+    if (firebaseConfig.databaseURL) {
+      rtdb = getDatabase(app);
+    }
 
     // Lưu login
     setPersistence(auth, browserLocalPersistence).catch(() => {});
@@ -87,6 +94,6 @@ export function getFirebaseStorage(): FirebaseStorage {
 
 export function getFirebaseRTDB(): Database {
   initFirebase();
-  if (!rtdb) throw new Error("RTDB not initialized");
+  if (!rtdb) throw new Error("RTDB not initialized. Check NEXT_PUBLIC_FIREBASE_DATABASE_URL");
   return rtdb;
 }
