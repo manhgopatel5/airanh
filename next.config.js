@@ -106,7 +106,8 @@ const nextConfig = {
       ].filter(Boolean),
     },
     webVitalsAttribution: ['CLS', 'LCP'],
-    // instrumentationHook đã xóa - Next 15 bật mặc định
+    // ✅ THÊM DÒNG NÀY - Fix self is not defined
+    serverComponentsExternalPackages: ['framer-motion'],
   },
   
   webpack: (config, { isServer, dev }) => {
@@ -149,7 +150,8 @@ const nextConfig = {
   
   eslint: { ignoreDuringBuilds: false },
   typescript: { ignoreBuildErrors: false },
-  transpilePackages: ['lucide-react', '@radix-ui/react-icons'],
+  // ✅ SỬA DÒNG NÀY - thêm framer-motion
+  transpilePackages: ['lucide-react', '@radix-ui/react-icons', 'framer-motion'],
   
   logging: {
     fetches: {
