@@ -42,15 +42,15 @@ export default function ChatBubble({
   const [showCopied, setShowCopied] = useState(false);
   const isMe = msg.senderId === currentUser?.uid;
 
-const time =
-  msg.createdAt &&
-  typeof msg.createdAt === "object" &&
-  "seconds" in msg.createdAt
-    ? new Date(msg.createdAt.seconds * 1000).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "Đang gửi...";
+  const time =
+    msg.createdAt &&
+    typeof msg.createdAt === "object" &&
+    "seconds" in msg.createdAt
+     ? new Date(msg.createdAt.seconds * 1000).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "Đang gửi...";
 
   const handleCopy = useCallback(
     (e: React.MouseEvent) => {
@@ -64,9 +64,8 @@ const time =
     [msg.text]
   );
 
-  // ✅ FIX: Check reactions tồn tại + có key
   const reactionList = msg.reactions && Object.keys(msg.reactions).length > 0
-? Object.entries(
+   ? Object.entries(
         Object.values(msg.reactions).reduce((acc, emoji) => {
           acc[emoji] = (acc[emoji] || 0) + 1;
           return acc;
@@ -89,7 +88,7 @@ const time =
           <div
             className={`text-xs mb-1 px-3 py-1.5 rounded-2xl max-w-full truncate ${
               isMe
-           ? "bg-blue-400/30 text-white/80"
+               ? "bg-blue-400/30 text-white/80"
                 : "bg-gray-200 dark:bg-zinc-700 text-gray-600 dark:text-zinc-300"
             }`}
           >
@@ -98,13 +97,13 @@ const time =
           </div>
         )}
 
-       {msg.type === "text" && msg.text && (
+        {msg.type === "text" && msg.text && (
           <div
             onContextMenu={handleCopy}
             onDoubleClick={() => onReply?.(msg)}
             className={`px-4 py-2.5 rounded-3xl text-sm shadow-sm leading-relaxed break-words relative ${
               isMe
-           ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-br-lg"
+               ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-br-lg"
                 : "bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100 rounded-bl-lg"
             }`}
           >
@@ -136,9 +135,9 @@ const time =
           </div>
         )}
 
-        {msg.type === "video" && msg.video && (
+        {(msg.type as string) === "video" && (msg as any).video && (
           <video
-            src={msg.video}
+            src={(msg as any).video}
             controls
             playsInline
             className="max-w-[220px] max-h-[300px] rounded-3xl shadow-sm bg-black"
@@ -153,7 +152,7 @@ const time =
             rel="noopener noreferrer"
             className={`flex items-center gap-3 px-4 py-3 rounded-3xl shadow-sm transition active:scale-[0.98] ${
               isMe
-           ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+               ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
                 : "bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
             }`}
           >
@@ -177,7 +176,7 @@ const time =
             rel="noopener noreferrer"
             className={`flex items-center gap-3 px-4 py-3 rounded-3xl shadow-sm transition active:scale-[0.98] ${
               isMe
-           ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+               ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
                 : "bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
             }`}
           >
@@ -197,7 +196,7 @@ const time =
           <div className={`flex gap-1 mt-1 ${isMe? "justify-end" : "justify-start"}`}>
             {reactionList.map(([emoji, count]) => (
               <div
-                key={emoji} // ✅ FIX: Thêm key
+                key={emoji}
                 className="bg-white dark:bg-zinc-700 text-xs px-1.5 py-0.5 rounded-full shadow border border-gray-200 dark:border-zinc-600"
               >
                 {emoji} {count > 1 && count}
@@ -219,7 +218,6 @@ const time =
         )}
       </div>
 
-      {/* ✅ EMOJI REACTION BUTTON - FIX: Check msg.id */}
       {msg.id && (
         <div className={`opacity-0 group-hover:opacity-100 transition ${isMe? "order-first mr-2" : "ml-2"}`}>
           <EmojiPicker
