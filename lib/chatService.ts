@@ -20,6 +20,7 @@ import {
   QueryDocumentSnapshot,
   DocumentData,
   deleteField,
+  QueryConstraint,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { User } from "@/types/task";
@@ -198,7 +199,7 @@ export const listenMessages = (
 ): Unsubscribe => {
   if (!chatId ||!userId) return () => {};
 
-  const constraints = [
+  const constraints: QueryConstraint[] = [
     where("createdAt", "!=", null),
     orderBy("createdAt", "desc"),
     limit(options?.limit || 50),
@@ -214,9 +215,9 @@ export const listenMessages = (
     q,
     (snapshot) => {
       const data = snapshot.docs
-  .map((d) => ({ id: d.id,...d.data() } as Message))
-  .filter((m) =>!m.deletedFor?.includes(userId))
-  .reverse();
+ .map((d) => ({ id: d.id,...d.data() } as Message))
+ .filter((m) =>!m.deletedFor?.includes(userId))
+ .reverse();
       callback(data, snapshot.docs.length === (options?.limit || 50));
     },
     (err) => {
