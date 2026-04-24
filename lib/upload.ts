@@ -1,4 +1,4 @@
-"use client"; // ✅ THÊM DÒNG NÀY
+"use client";
 
 import {
   ref,
@@ -11,7 +11,6 @@ import { getFirebaseStorage } from "./firebase";
 import { nanoid } from "nanoid";
 
 export class UploadError extends Error {
-  const storage = getFirebaseStorage();
   constructor(message: string, public code?: string) {
     super(message);
     this.name = "UploadError";
@@ -68,6 +67,8 @@ export const uploadFile = async (
   userId: string,
   onProgress?: (progress: UploadProgress) => void
 ): Promise<UploadResult> => {
+  const storage = getFirebaseStorage(); // ✅ Thêm storage
+  
   const isImage = file.type.startsWith("image/");
   validateFile(file, isImage? "image" : "file");
 
@@ -133,6 +134,8 @@ export const uploadMultipleFiles = async (
 };
 
 export const deleteFile = async (path: string): Promise<void> => {
+  const storage = getFirebaseStorage(); // ✅ Thêm storage
+  
   if (!path) return;
   try {
     const fileRef = ref(storage, path);
@@ -152,5 +155,5 @@ export const getFileType = (file: File): "image" | "file" => {
 export const formatFileSize = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1024).toFixed(1)} MB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 };
