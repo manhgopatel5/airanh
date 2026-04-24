@@ -48,7 +48,6 @@ export default function UploadAvatar() {
     try {
       let processFile = file;
 
-      // Check HEIC/HEIF - cần cài heic2any hoặc bỏ check này nếu không dùng
       if (file.type === "image/heic" || file.type === "image/heif" || file.name.toLowerCase().endsWith(".heic")) {
         throw new Error("File HEIC chưa được hỗ trợ. Vui lòng chọn JPG/PNG");
       }
@@ -56,7 +55,7 @@ export default function UploadAvatar() {
       if (!processFile.type.startsWith("image/")) {
         throw new Error("Chỉ chấp nhận file ảnh");
       }
-      if (processFile.size > 5 * 1024 * 1024) {
+      if (processFile.size > 5 * 1024) {
         throw new Error("Ảnh không được vượt quá 5MB");
       }
 
@@ -131,38 +130,42 @@ export default function UploadAvatar() {
     });
   };
 
-const compressImage = (file: File): Promise<Blob> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d")!;
+  const compressImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      // FIX: Guard để không chạy ở server
+      if (typeof window === 'undefined') {
+        return reject(new Error("Compress chỉ chạy ở client"));
+      }
 
-        const size: number = Math.min(img.width, img.height, 800);
-        canvas.width = size;
-        canvas.height = size;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d")!;
 
-        const offsetX: number = (img.width - size) / 2;
-        const offsetY: number = (img.height - size) / 2;
+          const size: number = Math.min(img.width, img.height, 800);
+          canvas.width = size;
+          canvas.height = size;
 
-        ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, size, size);
+          const offsetX: number = (img.width - size) / 2;
+          const offsetY: number = (img.height - size) / 2;
 
-        canvas.toBlob(
-          (blob) => blob ? resolve(blob) : reject(new Error("Compress failed")),
-          "image/jpeg",
-          0.85
-        );
+          ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, size, size);
+
+          canvas.toBlob(
+            (blob) => blob? resolve(blob) : reject(new Error("Compress failed")),
+            "image/jpeg",
+            0.85
+          );
+        };
+        img.onerror = () => reject(new Error("Không đọc được ảnh"));
+        img.src = e.target?.result as string;
       };
-      img.onerror = () => reject(new Error("Không đọc được ảnh"));
-      img.src = e.target?.result as string;
-    };
-    reader.onerror = () => reject(new Error("Không đọc được file"));
-    reader.readAsDataURL(file);
-  });
-};
-
+      reader.onerror = () => reject(new Error("Không đọc được file"));
+      reader.readAsDataURL(file);
+    });
+  };
 
   const handleCancel = () => {
     uploadTaskRef.current?.cancel();
