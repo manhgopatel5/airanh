@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FiHeart, FiMessageCircle, FiShare2, FiClock, FiUsers } from "react-icons/fi";
+import { FiHeart, FiShare2 } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
 import { useEffect, useState, useCallback, memo } from "react";
 import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
