@@ -8,7 +8,6 @@ import { doc, getDoc } from "firebase/firestore";
 import {
   getTaskBySlug,
   joinTask,
-  toggleLikeTask,
   incrementTaskView,
   addReactionToTask,
 } from "@/lib/task";
