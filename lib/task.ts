@@ -38,12 +38,12 @@ class TaskError extends Error {
 /* ================= HELPERS ================= */
 const slugify = (str: string): string =>
   str
-  .toLowerCase()
-  .normalize("NFD")
-  .replace(/[\u0300-\u036f]/g, "")
-  .replace(/[^a-z0-9]+/g, "-")
-  .replace(/^-|-$/g, "")
-  .slice(0, 50);
+ .toLowerCase()
+ .normalize("NFD")
+ .replace(/[\u0300-\u036f]/g, "")
+ .replace(/[^a-z0-9]+/g, "-")
+ .replace(/^-|-$/g, "")
+ .slice(0, 50);
 
 const generateUniqueShortId = async (): Promise<string> => {
   let attempts = 0;
@@ -58,9 +58,9 @@ const generateUniqueShortId = async (): Promise<string> => {
 
 const cleanTags = (tags: string[], title: string, category?: string): string[] => {
   const all = [...tags, category || "",...slugify(title).split("-")]
-  .map((t) => t.trim().toLowerCase())
-  .filter((t) => t.length >= 2 && t.length <= 20)
-  .slice(0, 10);
+ .map((t) => t.trim().toLowerCase())
+ .filter((t) => t.length >= 2 && t.length <= 20)
+ .slice(0, 10);
   return [...new Set(all)];
 };
 
@@ -124,22 +124,22 @@ export async function createTask(
       `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || "U")}&background=random`,
     createdAt: serverTimestamp() as Timestamp,
     updatedAt: serverTimestamp() as Timestamp,
-  ...(data.deadline && { deadline: data.deadline }),
-  ...(data.applicationDeadline && { applicationDeadline: data.applicationDeadline }),
-  ...(data.startDate && { startDate: data.startDate }),
-  ...(data.category && { category: data.category }),
+ ...(data.deadline && { deadline: data.deadline }),
+ ...(data.applicationDeadline && { applicationDeadline: data.applicationDeadline }),
+ ...(data.startDate && { startDate: data.startDate }),
+ ...(data.category && { category: data.category }),
     tags,
     images: validImages,
-  ...(data.attachments && { attachments: data.attachments }),
-  ...(data.requirements?.trim() && { requirements: data.requirements.trim() }),
-  ...(data.location && { location: data.location }),
+ ...(data.attachments && { attachments: data.attachments }),
+ ...(data.requirements?.trim() && { requirements: data.requirements.trim() }),
+ ...(data.location && { location: data.location }),
     isRemote: data.isRemote || false,
     searchKeywords: generateTaskSearchKeywords({
       title: data.title,
       description: data.description,
       tags,
-    ...(data.category && { category: data.category }),
-    ...(data.location && { location: data.location }),
+   ...(data.category && { category: data.category }),
+   ...(data.location && { location: data.location }),
     }),
     viewCount: 0,
     likeCount: 0,
@@ -187,7 +187,7 @@ export async function updateTask(
     if (updates.images && updates.images.length > 5) throw new TaskError("Tối đa 5 ảnh");
 
     const newTags = updates.title || updates.description || updates.category
-    ? cleanTags(updates.tags || data.tags || [], updates.title || data.title, updates.category || data.category)
+   ? cleanTags(updates.tags || data.tags || [], updates.title || data.title, updates.category || data.category)
       : data.tags;
 
     const updateData: any = {
@@ -196,8 +196,8 @@ export async function updateTask(
         title: updates.title || data.title,
         description: updates.description || data.description,
         tags: newTags,
-      ...(updates.category? { category: updates.category } : data.category? { category: data.category } : {}),
-      ...(updates.location? { location: updates.location } : data.location? { location: data.location } : {}),
+     ...(updates.category? { category: updates.category } : data.category? { category: data.category } : {}),
+     ...(updates.location? { location: updates.location } : data.location? { location: data.location } : {}),
       }),
       edited: true,
       editedAt: serverTimestamp(),
@@ -261,7 +261,7 @@ export async function deleteTask(taskId: string, userId: string): Promise<void> 
 export async function getTaskById(id: string): Promise<Task | null> {
   const snap = await getDoc(doc(db, "tasks", id));
   if (!snap.exists()) return null;
-  const data = snap.data() as Task;
+  const { id: _,...data } = snap.data() as Task;
   if (data.banned || data.hidden) return null;
   return { id: snap.id,...data };
 }
@@ -275,7 +275,7 @@ export async function getTaskBySlug(slug: string): Promise<Task | null> {
   );
   const snap = await getDocs(q);
   if (snap.empty) return null;
-  const data = snap.docs[0].data() as Task;
+  const { id: _,...data } = snap.docs[0].data() as Task;
   if (data.banned || data.hidden) return null;
   return { id: snap.docs[0].id,...data };
 }
@@ -289,7 +289,7 @@ export async function getTaskByShortId(shortId: string): Promise<Task | null> {
   );
   const snap = await getDocs(q);
   if (snap.empty) return null;
-  const data = snap.docs[0].data() as Task;
+  const { id: _,...data } = snap.docs[0].data() as Task;
   if (data.banned || data.hidden) return null;
   return { id: snap.docs[0].id,...data };
 }
