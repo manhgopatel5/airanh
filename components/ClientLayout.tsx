@@ -4,7 +4,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useRef } from "react";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/lib/AuthContext";
-import { getMessaging, getToken, isSupported, onMessage, deleteToken } from "firebase/messaging";
 import { app, db } from "@/lib/firebase";
 import { doc, setDoc, deleteField } from "firebase/firestore";
 import toast, { Toaster } from "react-hot-toast";
@@ -31,7 +30,7 @@ export default function ClientLayout({ children }: Props) {
     if (user === undefined) return;
     setLoading(false);
 
-    if (!user &&!isPublic) {
+    if (!user && !isPublic) {
       router.replace("/login");
       return;
     }
@@ -41,7 +40,7 @@ export default function ClientLayout({ children }: Props) {
     }
   }, [user, isPublic, router]);
 
-  /* ================= FCM SETUP + CLEANUP ================= */
+  /* ================= FCM SETUP ================= */
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -55,12 +54,19 @@ export default function ClientLayout({ children }: Props) {
 
     const setupFCM = async () => {
       try {
+        // ✅ dynamic import (QUAN TRỌNG NHẤT)
+        const messagingModule = await import("firebase/messaging");
+        const { getMessaging, getToken, isSupported, onMessage, deleteToken } =
+          messagingModule;
+
         const supported = await isSupported();
         if (!supported) return;
 
         await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+
         const messaging = getMessaging(app);
 
+        // foreground message
         onMessage(messaging, (payload) => {
           toast(`${payload.notification?.title}: ${payload.notification?.body}`, {
             icon: "🔔",
@@ -69,9 +75,13 @@ export default function ClientLayout({ children }: Props) {
 
         const permission = await Notification.requestPermission();
 
-        if (permission!== "granted") {
+        if (permission !== "granted") {
           await deleteToken(messaging);
-          await setDoc(doc(db, "users", user.uid), { fcmToken: deleteField() }, { merge: true });
+          await setDoc(
+            doc(db, "users", user.uid),
+            { fcmToken: deleteField() },
+            { merge: true }
+          );
           localStorage.removeItem("fcmToken");
           return;
         }
@@ -84,7 +94,13 @@ export default function ClientLayout({ children }: Props) {
         if (localStorage.getItem("fcmToken") === token) return;
 
         localStorage.setItem("fcmToken", token);
-        await setDoc(doc(db, "users", user.uid), { fcmToken: token }, { merge: true });
+
+        await setDoc(
+          doc(db, "users", user.uid),
+          { fcmToken: token },
+          { merge: true }
+        );
+
         console.log("🔥 FCM TOKEN UPDATED");
       } catch (err) {
         console.log("FCM error:", err);
@@ -108,7 +124,10 @@ export default function ClientLayout({ children }: Props) {
             ))}
           </div>
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="bg-white dark:bg-zinc-900 rounded-3xl p-4 animate-pulse border border-gray-100 dark:border-zinc-800">
+            <div
+              key={i}
+              className="bg-white dark:bg-zinc-900 rounded-3xl p-4 animate-pulse border border-gray-100 dark:border-zinc-800"
+            >
               <div className="flex gap-3">
                 <div className="w-10 h-10 bg-gray-200 dark:bg-zinc-800 rounded-full" />
                 <div className="flex-1 space-y-2">
@@ -125,15 +144,9 @@ export default function ClientLayout({ children }: Props) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors">
-      <div className={!isChatDetail &&!isCreate? "pb-24" : ""}>{children}</div>
-      {!isPublic && user &&!isChatDetail &&!isCreate && <BottomNav />}
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          className: 'text-sm',
-          duration: 3000,
-        }}
-      />
+      <div className={!isChatDetail && !isCreate ? "pb-24" : ""}>{children}</div>
+      {!isPublic && user && !isChatDetail && !isCreate && <BottomNav />}
+      <Toaster position="top-center" toastOptions={{ className: "text-sm", duration: 3000 }} />
     </div>
   );
 }
