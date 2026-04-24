@@ -1,103 +1,182 @@
-{
-  "name": "airanh-app",
-  "version": "1.0.0",
-  "private": true,
-  "type": "module",
-  "packageManager": "pnpm@9.12.3",
-  "engines": {
-    "node": "20.x",
-    "pnpm": ">=9"
-  },
-  "scripts": {
-    "dev": "next dev --turbo",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint --max-warnings 0",
-    "lint:fix": "next lint --fix",
-    "typecheck": "tsc --noEmit",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "clean": "rimraf .next out node_modules/.cache .turbo",
-    "analyze": "ANALYZE=true next build",
-    "prepare": "husky",
-    "test": "vitest",
-    "test:e2e": "playwright test"
-  },
-  "dependencies": {
-    "@hookform/resolvers": "^3.9.0",
-    "@vercel/analytics": "^2.0.1",
-    "@vercel/speed-insights": "^2.0.0",
-    "browser-image-compression": "^2.0.2",
-    "clsx": "^2.1.1",
-    "date-fns": "^4.1.0",
-    "firebase": "^12.12.1",
-    "framer-motion": "^11.11.11",
-    "isomorphic-dompurify": "^3.9.0",
-    "linkify-react": "^4.3.2",
-    "lucide-react": "^0.453.0",
-    "nanoid": "^5.0.7",
-    "next": "^15.5.15",
-    "next-themes": "^0.3.0",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "react-hook-form": "^7.53.1",
-    "react-hot-toast": "^2.6.0",
-    "react-icons": "^5.3.0",
-    "sharp": "^0.33.5",
-    "sonner": "^1.5.0",
-    "tailwind-merge": "^2.5.4",
-    "zod": "^3.23.8",
-    "zustand": "^4.5.5"
-  },
-  "devDependencies": {
-    "@next/bundle-analyzer": "^15.5.15",
-    "@playwright/test": "^1.48.2",
-    "@tailwindcss/container-queries": "^0.1.1",
-    "@tailwindcss/forms": "^0.5.9",
-    "@tailwindcss/typography": "^0.5.15",
-    "@types/node": "^20.17.6",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.1",
-    "autoprefixer": "^10.4.20",
-    "cssnano": "^7.0.6",
-    "encoding": "^0.1.13",
-    "eslint": "^9.19.0",
-    "eslint-config-next": "^15.5.15",
-    "firebase-admin": "^12.7.0",
-    "husky": "^9.1.6",
-    "jsdom": "^25.0.1",
-    "lint-staged": "^15.2.10",
-    "postcss": "^8.4.47",
-    "postcss-flexbugs-fixes": "^5.0.2",
-    "postcss-focus-visible": "^8.0.2",
-    "postcss-import": "^16.1.0",
-    "postcss-preset-env": "^10.1.1",
-    "postcss-reporter": "^7.0.5",
-    "prettier": "^3.3.3",
-    "prettier-plugin-tailwindcss": "^0.6.8",
-    "rimraf": "^6.0.1",
-    "tailwindcss": "^3.4.14",
-    "tailwindcss-animate": "^1.0.7",
-    "typescript": "^5.6.3",
-    "vite": "6.4.2",
-    "vitest": "^3.2.4"
-  },
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
+import bundleAnalyzer from '@next/bundle-analyzer';
+
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  compress: true,
+  output: 'standalone',
+  poweredByHeader: false,
+  
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'firebasestorage.googleapis.com',
+        pathname: '/v0/b/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ui-avatars.com',
+      },
     ],
-    "*.{json,md,css}": [
-      "prettier --write"
-    ]
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60,
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256],
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "sharp"
+  
+  async headers() {
+    const csp = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://apis.google.com",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://lh3.googleusercontent.com https://ui-avatars.com",
+      "font-src 'self' data:",
+      "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://fcm.googleapis.com",
+      "frame-src 'self' https://*.firebaseapp.com https://accounts.google.com",
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join('; ');
+
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          { key: 'X-DNS-Prefetch-Control', value: 'on' },
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
+          { key: 'Content-Security-Policy', value: csp },
+        ],
+      },
+      {
+        source: '/_next/static/(.*)',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+      {
+        source: '/(.*).(jpg|jpeg|png|webp|avif|ico|svg|woff|woff2)',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+    ];
+  },
+  
+  async redirects() {
+    return [
+      { source: '/home', destination: '/', permanent: true },
+      { source: '/login', destination: '/auth/login', permanent: false },
+    ];
+  },
+  
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
+      },
+    },
+  },
+  
+  serverExternalPackages: [
+    'framer-motion',
+    'react-hot-toast',
+    'sonner',
+    'linkify-react',
+    'browser-image-compression',
+    'isomorphic-dompurify',
+    'firebase',
+    'nanoid',
+    'zustand',
+    'next-themes',
+    '@vercel/analytics',
+    '@vercel/speed-insights',
+    'clsx',
+    'tailwind-merge',
+    'zod',
+    '@hookform/resolvers',
+    'react-hook-form',
+    'react-icons',
+    'lucide-react',
+  ],
+  
+  experimental: {
+    optimizePackageImports: [
+      'date-fns',
+      'lodash-es',
+      '@radix-ui/react-icons',
     ],
-    "overrides": {
-      "@tootallnate/once": "^3.0.1"
+    serverActions: {
+      bodySizeLimit: '2mb',
+      allowedOrigins: [
+        'localhost:3000',
+        process.env.NEXT_PUBLIC_APP_URL?.replace('https://', ''),
+      ].filter(Boolean),
+    },
+    webVitalsAttribution: ['CLS', 'LCP'],
+  },
+  
+  webpack: (config, { isServer, dev }) => {
+    if (isServer && !dev) {
+      config.optimization.minimize = false;
     }
-  }
-}
+    
+    config.module.rules.push({
+      test: /\.svg$/i,
+      issuer: /\.[jt]sx?$/,
+      use: ['@svgr/webpack'],
+    });
+    
+    if (!dev && !process.env.TURBOPACK) {
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          firebase: {
+            test: /[\\/]node_modules[\\/](firebase|@firebase)[\\/]/,
+            name: 'firebase',
+            priority: 20,
+          },
+          react: {
+            test: /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/,
+            name: 'react',
+            priority: 15,
+          },
+          commons: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            priority: 10,
+          },
+        },
+      };
+    }
+    
+    return config;
+  },
+  
+  env: {
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_APP_VERSION: process.env.npm_package_version,
+  },
+  
+  eslint: { ignoreDuringBuilds: false },
+  typescript: { ignoreBuildErrors: false },
+  
+  logging: {
+    fetches: {
+      fullUrl: process.env.NODE_ENV === 'development',
+    },
+  },
+};
+
+export default withBundleAnalyzer(nextConfig);
