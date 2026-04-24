@@ -194,12 +194,12 @@ export async function updateTask(
     const updateData: any = {
       tags: newTags,
       searchKeywords: generateTaskSearchKeywords({
-        title: updates.title || data.title,
-        description: updates.description || data.description,
-        tags: newTags || [],
-        category: updates.category || data.category,
-        location: updates.location || data.location,
-      }),
+  title: data.title,
+  description: data.description,
+  tags,
+  ...(data.category && { category: data.category }),
+  ...(data.location && { location: data.location }),
+}),
       edited: true,
       editedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
