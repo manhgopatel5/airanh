@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle } from "react-icons/fi";
 import {
@@ -10,7 +10,6 @@ import {
   browserLocalPersistence,
   browserSessionPersistence,
   sendEmailVerification,
-  onAuthStateChanged,
 } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
@@ -22,7 +21,6 @@ export default function Login() {
   const auth = getFirebaseAuth();
   const db = getFirebaseDB();
   const router = useRouter();
-  const pathname = usePathname();
   const [form, setForm] = useState({ email: "", password: "", honeypot: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [show, setShow] = useState(false);
@@ -30,7 +28,6 @@ export default function Login() {
   const [remember, setRemember] = useState(true);
   const failedAttempts = useRef(0);
   const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isNavigating = useRef(false);
 
   /* ================= KHÓA SCROLL ================= */
   useEffect(() => {
@@ -62,25 +59,8 @@ export default function Login() {
     };
   }, []);
 
-  /* ================= REDIRECT IF LOGGED IN - FIX LOOP ================= */
-  useEffect(() => {
-    let isMounted = true;
-    const unsub = onAuthStateChanged(auth, (user) => {
-      if (!isMounted) return;
-      if (pathname!== "/login") return;
-      if (isNavigating.current) return;
-
-      if (user?.emailVerified) {
-        router.replace("/");
-      } else if (user &&!user.emailVerified) {
-        router.replace("/verify-email");
-      }
-    });
-    return () => {
-      isMounted = false;
-      unsub();
-    };
-  }, [router, pathname]);
+  // ✅ BỎ HOÀN TOÀN useEffect redirect. Chỉ check khi submit thôi
+  // Nếu bạn muốn auto redirect khi đã login thì làm ở layout.tsx hoặc middleware.tsx
 
   useEffect(() => {
     return () => {
@@ -294,7 +274,6 @@ export default function Login() {
               </label>
               <Link
                 href="/forgot-password"
-                onClick={() => { isNavigating.current = true; }}
                 className="text-blue-600 dark:text-blue-500 font-bold hover:text-blue-700 dark:hover:text-blue-400 active:opacity-70 transition-all"
               >
                 Quên mật khẩu?
@@ -326,7 +305,6 @@ export default function Login() {
             Chưa có tài khoản?{" "}
             <Link
               href="/register"
-              onClick={() => { isNavigating.current = true; }}
               className="text-blue-600 dark:text-blue-500 font-bold hover:text-blue-700 dark:hover:text-blue-400 active:opacity-70 transition-all"
             >
               Đăng ký ngay
