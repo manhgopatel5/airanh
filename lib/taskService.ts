@@ -110,9 +110,9 @@ export const createTask = async (
 
       userId: user.uid,
       userName: user.displayName || "Ẩn danh",
-      userAvatar: user.photoURL || `https:                                                                           
-     ...(user.shortId && { userShortId: user.shortId }),
-     ...(user.username && { userUsername: user.username }),
+      userAvatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || "U")}`,
+      ...(user.shortId && { userShortId: user.shortId }),
+      ...(user.username && { userUsername: user.username }),
 
       createdAt: now,
       updatedAt: now,
@@ -120,12 +120,12 @@ export const createTask = async (
       deadline: data.deadline || null,
       startDate: data.startDate || null,
 
-     ...(data.category && { category: data.category }),
+      ...(data.category && { category: data.category }),
       tags: data.tags || [],
       images: data.images || [],
       attachments: data.attachments || [],
       requirements: data.requirements || "",
-     ...(data.location && { location: data.location }),
+      ...(data.location && { location: data.location }),
       isRemote: data.isRemote || false,
 
       searchKeywords: generateSearchKeywords(data.title, data.description, data.tags),
@@ -149,7 +149,7 @@ export const createTask = async (
   return { id: taskId, slug };
 };
 
-                                                     
+/* ================= UPDATE TASK ================= */
 export const updateTask = async (
   taskId: string,
   userId: string,
@@ -185,7 +185,7 @@ export const updateTask = async (
   });
 };
 
-                                                     
+/* ================= DELETE TASK ================= */
 export const deleteTask = async (taskId: string, userId: string): Promise<void> => {
   if (!taskId ||!userId) throw new TaskError("Thiếu thông tin");
 
@@ -204,7 +204,7 @@ export const deleteTask = async (taskId: string, userId: string): Promise<void> 
     deletedAt: serverTimestamp(),
   });
 
-                                                
+  // Xóa cascade: comments, likes, participants
   const collections = ["task_comments", "task_likes", "task_participants"];
   for (const col of collections) {
     const q = query(collection(db, col), where("taskId", "==", taskId), limit(500));
@@ -216,7 +216,7 @@ export const deleteTask = async (taskId: string, userId: string): Promise<void> 
   await deleteDoc(taskRef);
 };
 
-                                                     
+/* ================= GET BY SLUG ================= */
 export const getTaskBySlug = async (slug: string): Promise<Task | null> => {
   const q = query(
     collection(db, "tasks"),
@@ -229,7 +229,7 @@ export const getTaskBySlug = async (slug: string): Promise<Task | null> => {
   return { id: snap.docs[0].id,...snap.docs[0].data() } as Task;
 };
 
-                                                      
+/* ================= LISTEN TASKS ================= */
 export const listenTasks = (
   callback: (tasks: TaskListItem[]) => void,
   options?: {
@@ -268,7 +268,7 @@ export const listenTasks = (
   );
 };
 
-                                                   
+/* ================= JOIN TASK ================= */
 export const joinTask = async (
   taskId: string,
   user: { uid: string; displayName?: string | null; photoURL?: string | null }
