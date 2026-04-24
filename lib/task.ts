@@ -58,9 +58,9 @@ const generateUniqueShortId = async (): Promise<string> => {
 
 const cleanTags = (tags: string[], title: string, category?: string): string[] => {
   const all = [...tags, category || "",...slugify(title).split("-")]
- .map((t) => t.trim().toLowerCase())
- .filter((t) => t.length >= 2 && t.length <= 20)
- .slice(0, 10);
+.map((t) => t.trim().toLowerCase())
+.filter((t) => t.length >= 2 && t.length <= 20)
+.slice(0, 10);
   return [...new Set(all)];
 };
 
@@ -138,8 +138,8 @@ export async function createTask(
       title: data.title,
       description: data.description,
       tags,
-   ...(data.category && { category: data.category }),
-   ...(data.location && { location: data.location }),
+  ...(data.category && { category: data.category }),
+  ...(data.location && { location: data.location }),
     }),
     viewCount: 0,
     likeCount: 0,
@@ -187,7 +187,7 @@ export async function updateTask(
     if (updates.images && updates.images.length > 5) throw new TaskError("Tối đa 5 ảnh");
 
     const newTags = updates.title || updates.description || updates.category
-   ? cleanTags(updates.tags || data.tags || [], updates.title || data.title, updates.category || data.category)
+  ? cleanTags(updates.tags || data.tags || [], updates.title || data.title, updates.category || data.category)
       : data.tags;
 
     const updateData: any = {
@@ -196,8 +196,8 @@ export async function updateTask(
         title: updates.title || data.title,
         description: updates.description || data.description,
         tags: newTags,
-     ...(updates.category? { category: updates.category } : data.category? { category: data.category } : {}),
-     ...(updates.location? { location: updates.location } : data.location? { location: data.location } : {}),
+    ...(updates.category? { category: updates.category } : data.category? { category: data.category } : {}),
+    ...(updates.location? { location: updates.location } : data.location? { location: data.location } : {}),
       }),
       edited: true,
       editedAt: serverTimestamp(),
@@ -275,9 +275,10 @@ export async function getTaskBySlug(slug: string): Promise<Task | null> {
   );
   const snap = await getDocs(q);
   if (snap.empty) return null;
-  const { id: _,...data } = snap.docs[0].data() as Task;
+  const docSnap = snap.docs[0]!;
+  const { id: _,...data } = docSnap.data() as Task;
   if (data.banned || data.hidden) return null;
-  return { id: snap.docs[0].id,...data };
+  return { id: docSnap.id,...data };
 }
 
 export async function getTaskByShortId(shortId: string): Promise<Task | null> {
@@ -289,9 +290,10 @@ export async function getTaskByShortId(shortId: string): Promise<Task | null> {
   );
   const snap = await getDocs(q);
   if (snap.empty) return null;
-  const { id: _,...data } = snap.docs[0].data() as Task;
+  const docSnap = snap.docs[0]!;
+  const { id: _,...data } = docSnap.data() as Task;
   if (data.banned || data.hidden) return null;
-  return { id: snap.docs[0].id,...data };
+  return { id: docSnap.id,...data };
 }
 
 /* ================= LISTEN TASKS ================= */
