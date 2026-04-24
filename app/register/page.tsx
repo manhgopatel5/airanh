@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { FiMail, FiLock, FiEyeOff, FiUser, FiAlertCircle, FiCheck } from "react-icons/fi";
+import { FiMail, FiLock, FiEyeOff, FiEye, FiUser, FiAlertCircle } from "react-icons/fi";
 import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore";
@@ -64,7 +64,7 @@ export default function Register() {
         if (getPasswordStrength(value) < 3) return "Mật khẩu quá yếu: cần chữ hoa, thường, số";
         return "";
       case "confirmPassword":
-        if (value!== form.password) return "Mật khẩu không khớp";
+        if (value !== form.password) return "Mật khẩu không khớp";
         return "";
       default:
         return "";
@@ -91,7 +91,7 @@ export default function Register() {
 
     // ✅ FIX 1: Rate limit 60s
     const lastAttempt = localStorage.getItem("last_register_attempt");
-    if (lastAttempt && Date.now() - parseInt(lastAttempt) < 60000) {
+    if (lastAttempt && Date.now() - parseInt(lastAttempt, 10) < 60000) {
       setErrors({ submit: "Vui lòng chờ 1 phút trước khi thử lại" });
       return;
     }
@@ -138,19 +138,23 @@ export default function Register() {
       }
 
       router.replace("/verify-email"); // Chuyển trang verify
-    } catch (err: any) {
-      const errorMap: Record<string, string> = {
-        "auth/email-already-in-use": "Email đã được sử dụng",
-        "auth/invalid-email": "Email không hợp lệ",
-        "auth/weak-password": "Mật khẩu quá yếu",
-        "auth/network-request-failed": "Lỗi mạng, thử lại sau",
-        "auth/too-many-requests": "Thử quá nhiều lần, thử lại sau",
-      };
-      setErrors({ submit: errorMap[err.code] || "Đăng ký thất bại, thử lại sau" });
-    } finally {
-      setLoading(false);
-    }
+} catch (err: unknown) {
+  const error = err as { code?: string };
+
+  const errorMap: Record<string, string> = {
+    "auth/email-already-in-use": "Email đã được sử dụng",
+    "auth/invalid-email": "Email không hợp lệ",
+    "auth/weak-password": "Mật khẩu quá yếu",
+    "auth/network-request-failed": "Lỗi mạng, thử lại sau",
+    "auth/too-many-requests": "Thử quá nhiều lần, thử lại sau",
   };
+
+  setErrors({
+    submit: errorMap[error.code ?? ""] || "Đăng ký thất bại, thử lại sau",
+  });
+} finally {
+  setLoading(false);
+}
 
   const handleChange = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({...form, [field]: e.target.value });
