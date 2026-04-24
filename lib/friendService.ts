@@ -21,7 +21,7 @@ import {
   QueryDocumentSnapshot,
   DocumentData,
 } from "firebase/firestore";
-import { getFirebaseDB } from "./firebase"; // ✅ FIX
+import { getFirebaseDB } from "./firebase";
 
 /* ================= TYPES ================= */
 export type FriendRequest = {
@@ -71,7 +71,7 @@ class FriendError extends Error {
 
 /* ================= HELPER: BATCH GET USERS ================= */
 const batchGetUsers = async (uids: string[]): Promise<Map<string, User>> => {
-  /const db = getFirebaseDB(); / ✅ ADD
+  const db = getFirebaseDB(); // ✅ Fix
 
   if (uids.length === 0) return new Map();
   const chunks: Promise<any>[] = [];
@@ -96,7 +96,7 @@ const getMutualFriendsCount = async (
   userId1: string,
   userId2: string
 ): Promise<number> => {
-   
+  const db = getFirebaseDB(); // ✅ Fix
 
   if (!userId1 || !userId2 || userId1 === userId2) return 0;
 
@@ -132,7 +132,7 @@ export const sendFriendRequest = async (
   from: string,
   to: string
 ): Promise<void> => {
-  const db = getFirebaseDB(); // ✅ ADD
+  const db = getFirebaseDB();
 
   if (!from || !to) throw new FriendError("Thiếu thông tin người dùng");
   if (from === to)
@@ -211,7 +211,7 @@ export const listenFriendRequests = (
   callback: (data: FriendRequest[]) => void,
   onError?: (err: Error) => void
 ): Unsubscribe => {
-  const db = getFirebaseDB(); // ✅ ADD
+  const db = getFirebaseDB();
 
   if (!userId) return () => {};
   const q = query(
@@ -240,7 +240,7 @@ export const listenFriendRequests = (
 export const markFriendRequestsAsRead = async (
   userId: string
 ): Promise<void> => {
-  const db = getFirebaseDB(); // ✅ ADD
+  const db = getFirebaseDB();
 
   if (!userId) return;
   await updateDoc(doc(db, "users", userId), {
@@ -252,7 +252,7 @@ export const markFriendRequestsAsRead = async (
 export const acceptRequest = async (
   req: FriendRequest
 ): Promise<void> => {
-  const db = getFirebaseDB(); // ✅ ADD
+  const db = getFirebaseDB();
 
   if (!req?.id || !req.fromUserId || !req.toUserId) {
     throw new FriendError("Thông tin lời mời không hợp lệ");
@@ -331,7 +331,7 @@ export const rejectRequest = async (
   id: string,
   userId: string
 ): Promise<void> => {
-  const db = getFirebaseDB(); // ✅ ADD
+  const db = getFirebaseDB();
 
   if (!id || !userId) throw new FriendError("Thiếu thông tin");
 
@@ -362,7 +362,7 @@ export const cancelFriendRequest = async (
   from: string,
   to: string
 ): Promise<void> => {
-  const db = getFirebaseDB(); // ✅ ADD
+  const db = getFirebaseDB();
 
   if (!from || !to) throw new FriendError("Thiếu thông tin");
   const requestId = [from, to].sort().join("_");
@@ -377,7 +377,7 @@ export const unfriend = async (
   friendId: string,
   deleteChat = false
 ): Promise<void> => {
-  const db = getFirebaseDB(); // ✅ ADD
+  const db = getFirebaseDB();
 
   if (!userId || !friendId)
     throw new FriendError("Thiếu thông tin");
@@ -396,7 +396,7 @@ export const listenFriendsWithUser = (
   userId: string,
   callback: (data: FriendWithUser[]) => void
 ): Unsubscribe => {
-  const db = getFirebaseDB(); // ✅ ADD
+  const db = getFirebaseDB();
 
   if (!userId) return () => {};
   const q = query(
@@ -440,7 +440,7 @@ export const getFriendStatus = async (
   user1: string,
   user2: string
 ): Promise<FriendStatus> => {
-  const db = getFirebaseDB(); // ✅ ADD
+  const db = getFirebaseDB();
 
   if (!user1 || !user2 || user1 === user2) return "none";
 
@@ -482,7 +482,7 @@ export const blockUser = async (
   from: string,
   to: string
 ): Promise<void> => {
-  const db = getFirebaseDB(); // ✅ ADD
+  const db = getFirebaseDB();
 
   if (!from || !to || from === to)
     throw new FriendError("Thiếu thông tin");
@@ -504,6 +504,6 @@ export const unblockUser = async (
   from: string,
   to: string
 ): Promise<void> => {
-  const db = getFirebaseDB(); // ✅ ADD
+  const db = getFirebaseDB();
   await deleteDoc(doc(db, "blocks", `${from}_${to}`));
 };
