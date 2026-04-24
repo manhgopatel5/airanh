@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { searchUsers } from "@/lib/userService";
 import { sendFriendRequest, cancelFriendRequest, getFriendStatus } from "@/lib/friendService";
 import { useAuth } from "@/lib/AuthContext";
-import { FiSearch, FiUserPlus, FiClock, FiCheck, FiX, FiUserX } from "react-icons/fi";
+import { FiSearch, FiUserPlus, FiCheck, FiX, FiUserX } from "react-icons/fi";
 import { HiSparkles } from "react-icons/hi";
 
 type UserResult = {
@@ -221,7 +221,7 @@ export default function UserSearch() {
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <img
-                  src={u.avatar || `https:                                                                                   
+                  src={u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || "U")}&background=random`}
                   className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-50 dark:ring-zinc-800"
                   alt="avatar"
                 />
@@ -234,6 +234,7 @@ export default function UserSearch() {
                     {highlightText(u.email || "", keyword)}
                   </p>
                 </div>
+              </div>
               <div className="shrink-0">{renderButton(u)}</div>
             </div>
           ))}
