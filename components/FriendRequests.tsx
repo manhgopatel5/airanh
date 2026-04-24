@@ -8,7 +8,7 @@ import {
 } from "@/lib/friendService";
 import { useAuth } from "@/lib/AuthContext";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, collection, query, where, getDocs, documentId } from "firebase/firestore";
+import { collection, query, where, getDocs, documentId } from "firebase/firestore";
 import { FiUserPlus, FiCheck, FiX, FiClock } from "react-icons/fi";
 import { HiSparkles } from "react-icons/hi";
 
@@ -33,9 +33,9 @@ export default function FriendRequests() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
 
-  const userMapRef = useRef<Record<string, UserData>>({}); // ✅ FIX 1: Cache bằng ref
+  const userMapRef = useRef<Record<string, UserData>>({});
 
-  /* ================= LOAD REQUEST + BATCH USERS ✅ FIX 1 + 2 ================= */
+  /* ================= LOAD REQUEST + BATCH USERS ================= */
   useEffect(() => {
     if (!user?.uid) {
       setList([]);
@@ -54,7 +54,7 @@ export default function FriendRequests() {
 
       if (newIds.length === 0) return;
 
-      // ✅ FIX 2: Batch get tối đa 10 id/lần
+      // Batch get tối đa 10 id/lần
       const batches = [];
       for (let i = 0; i < newIds.length; i += 10) {
         batches.push(newIds.slice(i, i + 10));
@@ -73,29 +73,29 @@ export default function FriendRequests() {
       );
 
       userMapRef.current = {...userMapRef.current,...newUsers };
-      setUserMap({...userMapRef.current }); // Trigger re-render
+      setUserMap({...userMapRef.current });
     });
 
     return () => unsub();
-  }, [user?.uid]); // ✅ FIX 1: Bỏ userMap khỏi deps
+  }, [user?.uid]);
 
-  /* ================= ACCEPT - OPTIMISTIC ✅ FIX 5 ================= */
+  /* ================= ACCEPT - OPTIMISTIC ================= */
   const handleAccept = useCallback(async (req: FriendRequest) => {
     if (processing) return;
     setProcessing(req.id);
-    setList((prev) => prev.filter((r) => r.id!== req.id)); // Xóa ngay
+    setList((prev) => prev.filter((r) => r.id!== req.id));
 
     try {
       await acceptRequest(req);
     } catch (err) {
       console.error("❌ lỗi accept:", err);
-      setList((prev) => [...prev, req]); // Rollback
+      setList((prev) => [...prev, req]);
     } finally {
       setProcessing(null);
     }
   }, [processing]);
 
-  /* ================= REJECT - OPTIMISTIC ✅ FIX 5 ================= */
+  /* ================= REJECT - OPTIMISTIC ================= */
   const handleReject = useCallback(async (id: string) => {
     if (processing) return;
     setProcessing(id);
@@ -106,7 +106,7 @@ export default function FriendRequests() {
       await rejectRequest(id);
     } catch (err) {
       console.error("❌ lỗi reject:", err);
-      if (req) setList((prev) => [...prev, req]); // Rollback
+      if (req) setList((prev) => [...prev, req]);
     } finally {
       setProcessing(null);
     }
@@ -181,6 +181,7 @@ export default function FriendRequests() {
                 <img
                   src={u?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u?.name || "U")}&background=random`}
                   className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-50 dark:ring-zinc-800"
+                  alt=""
                 />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">
