@@ -3,8 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
 import { AuthProvider } from "@/lib/AuthContext";
-import { Toaster } from "react-hot-toast";
-
 
 const inter = Inter({
   subsets: ["latin", "vietnamese"],
@@ -127,7 +125,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none">
         <AuthProvider>
           <ClientLayout>{children}</ClientLayout>
-          <Toaster position="top-center" />
         </AuthProvider>
       </body>
     </html>
