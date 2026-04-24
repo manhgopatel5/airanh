@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB, getFirebaseAuth, getFirebaseStorage } from "@/lib/firebase";
 import {
-  collection, query, where, onSnapshot, doc, getDoc,
+  collection, query, where, onSnapshot, doc,
   orderBy, limit, addDoc, serverTimestamp, Timestamp,
   writeBatch, setDoc, updateDoc
 } from "firebase/firestore";
@@ -14,7 +14,6 @@ import {
   Image as ImageIcon, MapPin, Paperclip, Phone, Info, Send,
   ArrowLeft, Loader2, X, Video, Smile, Check, CheckCheck
 } from "lucide-react";
-import { IoSparkles } from "react-icons/io5";
 import { toast, Toaster } from "sonner";
 import imageCompression from "browser-image-compression";
 import { formatDistanceToNow, format } from "date-fns";
@@ -161,7 +160,7 @@ export default function ChatDetailPage() {
         createdAt: serverTimestamp(),
         seenBy: [user.uid],
         type: "text",
-    ...(tempReply && {
+   ...(tempReply && {
           replyTo: {
             id: tempReply.id,
             text: tempReply.text,
@@ -330,7 +329,7 @@ export default function ChatDetailPage() {
           <ArrowLeft size={24} className="text-gray-900 dark:text-white" />
         </button>
         <div className="relative">
-          <img src={friend.avatar} className="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-zinc-950 shadow-lg" />
+          <img src={friend.avatar} className="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-zinc-950 shadow-lg" alt={friend.name} />
           {friend.online && (
             <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full ring-[3px] ring-white dark:ring-zinc-950">
               <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75" />
@@ -381,7 +380,7 @@ export default function ChatDetailPage() {
           const isFirstInGroup =!prev || prev.senderId!== m.senderId;
           const isLastInGroup =!next || next.senderId!== m.senderId;
           const showDate =
-          !prev ||
+         !prev ||
             (m.createdAt &&
               prev.createdAt &&
               m.createdAt.toDate().toDateString()!== prev.createdAt.toDate().toDateString());
@@ -401,7 +400,7 @@ export default function ChatDetailPage() {
               <div className={`flex items-end gap-2 ${isMe? "justify-end" : "justify-start"} ${isFirstInGroup? "mt-3" : ""}`}>
                 {!isMe && (
                   <div className="w-7 flex-shrink-0">
-                    {showAvatar && <img src={friend.avatar} className="w-7 h-7 rounded-full shadow-sm" />}
+                    {showAvatar && <img src={friend.avatar} className="w-7 h-7 rounded-full shadow-sm" alt={friend.name} />}
                   </div>
                 )}
                 <div className={`group max-w-[75%] flex flex-col ${isMe? "items-end" : "items-start"}`}>
@@ -420,22 +419,22 @@ export default function ChatDetailPage() {
                     onClick={() => setReplyTo(m)}
                     className={`px-4 py-2.5 shadow-sm cursor-pointer ${
                       isMe
-                  ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
+                 ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
                             isFirstInGroup && isLastInGroup
-                        ? "rounded-3xl"
+                       ? "rounded-3xl"
                               : isFirstInGroup
-                        ? "rounded-3xl rounded-br-lg"
+                       ? "rounded-3xl rounded-br-lg"
                               : isLastInGroup
-                        ? "rounded-3xl rounded-tr-lg"
+                       ? "rounded-3xl rounded-tr-lg"
                               : "rounded-r-lg rounded-l-3xl"
                           }`
                         : `bg-white dark:bg-zinc-800 text-gray-900 dark:text-white ${
                             isFirstInGroup && isLastInGroup
-                        ? "rounded-3xl"
+                       ? "rounded-3xl"
                               : isFirstInGroup
-                        ? "rounded-3xl rounded-bl-lg"
+                       ? "rounded-3xl rounded-bl-lg"
                               : isLastInGroup
-                        ? "rounded-3xl rounded-tl-lg"
+                       ? "rounded-3xl rounded-tl-lg"
                               : "rounded-l-lg rounded-r-3xl"
                           }`
                     }`}
