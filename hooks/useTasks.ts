@@ -7,17 +7,16 @@ import {
   query,
   orderBy,
   where,
-  Timestamp,
   Unsubscribe,
   QueryConstraint,
   limit,
-  doc, // ✅ FIX 3
+  doc,
   startAfter,
   QueryDocumentSnapshot,
   DocumentData,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Task } from "@/types/task"; // ✅ FIX 2: Import type chung
+import { Task } from "@/types/task";
 
 /* ================= TYPES ================= */
 export type TaskFilter = {
@@ -26,8 +25,8 @@ export type TaskFilter = {
   category?: string;
   minPrice?: number;
   maxPrice?: number;
-  keyword?: string; // ✅ FIX 6
-  limit?: number; // ✅ FIX 4
+  keyword?: string;
+  limit?: number;
 };
 
 type UseTasksReturn = {
@@ -46,28 +45,25 @@ export default function useTasks(filter?: TaskFilter): UseTasksReturn {
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [hasMore, setHasMore] = useState(true);
 
-  // ✅ Memo filter để tránh re-subscribe thừa
   const queryConstraints = useMemo(() => {
     const constraints: QueryConstraint[] = [];
-    const limitCount = filter?.limit || 20; // ✅ FIX 4
+    const limitCount = filter?.limit || 20;
 
-    // ✅ FIX 1: Nếu filter price thì orderBy price trước
     const hasPriceFilter = filter?.minPrice || filter?.maxPrice;
 
     if (filter?.status) {
       const statuses = Array.isArray(filter.status)? filter.status : [filter.status];
       constraints.push(where("status", "in", statuses));
     } else {
-      constraints.push(where("status", "in", ["open", "full"])); // ✅ FIX 7: Default
+      constraints.push(where("status", "in", ["open", "full"]));
     }
 
     if (filter?.userId) constraints.push(where("userId", "==", filter.userId));
     if (filter?.category) constraints.push(where("category", "==", filter.category));
-    if (filter?.keyword) constraints.push(where("searchKeywords", "array-contains", filter.keyword.toLowerCase())); // ✅ FIX 6
+    if (filter?.keyword) constraints.push(where("searchKeywords", "array-contains", filter.keyword.toLowerCase()));
     if (filter?.minPrice) constraints.push(where("price", ">=", filter.minPrice));
     if (filter?.maxPrice) constraints.push(where("price", "<=", filter.maxPrice));
 
-    // ✅ FIX 1: OrderBy phải theo field có inequality
     if (hasPriceFilter) {
       constraints.push(orderBy("price", "asc"));
       constraints.push(orderBy("createdAt", "desc"));
@@ -132,7 +128,7 @@ export function useTask(taskId: string | null) {
 
     setLoading(true);
     const unsub = onSnapshot(
-      doc(db, "tasks", taskId), // ✅ FIX 3: doc đã import
+      doc(db, "tasks", taskId),
       (snap) => {
         if (snap.exists()) {
           setTask({ id: snap.id,...snap.data() } as Task);
