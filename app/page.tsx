@@ -219,13 +219,12 @@ export default function Home() {
   }, [lastDoc, loadingMore, hasMore, buildQuery, activeTab, userLocation]);
 
   /* ================= TABS ================= */
-  const tabs = useMemo(
-    () => [
-      { id: "hot", label: "Hot", icon: HiFire },
-      { id: "near", label: "Gần", icon: HiClock },
-      { id: "new", label: "Mới", icon: HiSparkles },
-      { id: "friends", label: "Bạn bè", icon: HiUsers },
-    ],
+  const tabs: { id: TabId; label: string; icon: any }[] = [
+  { id: "hot", label: "Hot", icon: HiFire },
+  { id: "near", label: "Gần", icon: HiClock },
+  { id: "new", label: "Mới", icon: HiSparkles },
+  { id: "friends", label: "Bạn bè", icon: HiUsers },
+];
     []
   );
 
