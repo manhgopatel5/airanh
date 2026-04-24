@@ -52,6 +52,8 @@ export type FriendWithUser = Friend & {
   mutualFriendsCount?: number;
 };
 
+export type FriendStatus = "none" | "friends" | "pending_sent" | "pending_received" | "blocked";
+
 class FriendError extends Error {
   constructor(message: string, public code?: string) {
     super(message);
@@ -72,14 +74,14 @@ const batchGetUsers = async (uids: string[]): Promise<Map<string, User>> => {
   const snaps = await Promise.all(chunks);
   const map = new Map<string, User>();
   snaps.forEach(snap => {
-    snap.docs.forEach(d => map.set(d.id, { uid: d.id,...d.data() } as User));
+    snap.docs.forEach(d => map.set(d.id, { uid: d.id, ...d.data() } as User));
   });
   return map;
 };
 
-/* ================= HELPER: MUTUAL FRIENDS COUNT - THÊM MỚI ================= */
+/* ================= HELPER: MUTUAL FRIENDS COUNT ================= */
 const getMutualFriendsCount = async (userId1: string, userId2: string): Promise<number> => {
-  if (!userId1 ||!userId2 || userId1 === userId2) return 0;
+  if (!userId1 || !userId2 || userId1 === userId2) return 0;
   
   const [friends1Snap, friends2Snap] = await Promise.all([
     getDocs(query(collection(db, "friends"), where("userId", "==", userId1), limit(500))),
@@ -98,7 +100,7 @@ const getMutualFriendsCount = async (userId1: string, userId2: string): Promise<
 
 /* ================= SEND REQUEST ================= */
 export const sendFriendRequest = async (from: string, to: string): Promise<void> => {
-  if (!from ||!to) throw new FriendError("Thiếu thông tin người dùng");
+  if (!from || !to) throw new FriendError("Thiếu thông tin người dùng");
   if (from === to) throw new FriendError("Không thể kết bạn với chính mình");
 
   const requestId = [from, to].sort().join("_");
@@ -176,7 +178,7 @@ export const listenFriendRequests = (
   return onSnapshot(
     q,
     (snap) => {
-      const data = snap.docs.map((d) => ({ id: d.id,...d.data() } as FriendRequest));
+      const data = snap.docs.map((d) => ({ id: d.id, ...d.data() } as FriendRequest));
       callback(data);
     },
     (err) => {
@@ -194,7 +196,7 @@ export const markFriendRequestsAsRead = async (userId: string): Promise<void> =>
 
 /* ================= ACCEPT ================= */
 export const acceptRequest = async (req: FriendRequest): Promise<void> => {
-  if (!req?.id ||!req.fromUserId ||!req.toUserId) {
+  if (!req?.id || !req.fromUserId || !req.toUserId) {
     throw new FriendError("Thông tin lời mời không hợp lệ");
   }
 
@@ -211,7 +213,7 @@ export const acceptRequest = async (req: FriendRequest): Promise<void> => {
       transaction.get(toUserRef),
     ]);
 
-    if (!reqSnap.exists() || reqSnap.data().status!== "pending") {
+    if (!reqSnap.exists() || reqSnap.data().status !== "pending") {
       throw new FriendError("Lời mời không tồn tại");
     }
     if (friendSnap.exists()) {
@@ -255,7 +257,7 @@ export const acceptRequest = async (req: FriendRequest): Promise<void> => {
 
 /* ================= REJECT ================= */
 export const rejectRequest = async (id: string, userId: string): Promise<void> => {
-  if (!id ||!userId) throw new FriendError("Thiếu thông tin");
+  if (!id || !userId) throw new FriendError("Thiếu thông tin");
 
   await runTransaction(db, async (transaction) => {
     const reqRef = doc(db, "friendRequests", id);
@@ -275,13 +277,22 @@ export const rejectRequest = async (id: string, userId: string): Promise<void> =
   });
 };
 
+/* ================= CANCEL REQUEST - EXPORT ĐÚNG TÊN ================= */
+export const cancelFriendRequest = async (from: string, to: string): Promise<void> => {
+  if (!from || !to) throw new FriendError("Thiếu thông tin");
+  const requestId = [from, to].sort().join("_");
+  const batch = writeBatch(db);
+  batch.delete(doc(db, "friendRequests", requestId));
+  await batch.commit();
+};
+
 /* ================= UNFRIEND ================= */
 export const unfriend = async (
   userId: string,
   friendId: string,
   deleteChat = false
 ): Promise<void> => {
-  if (!userId ||!friendId) throw new FriendError("Thiếu thông tin");
+  if (!userId || !friendId) throw new FriendError("Thiếu thông tin");
   const batch = writeBatch(db);
   batch.delete(doc(db, "friends", `${userId}_${friendId}`));
   batch.delete(doc(db, "friends", `${friendId}_${userId}`));
@@ -292,7 +303,7 @@ export const unfriend = async (
   await batch.commit();
 };
 
-/* ================= LIST FRIENDS - CÓ MUTUAL ================= */
+/* ================= LIST FRIENDS ================= */
 export const listenFriendsWithUser = (
   userId: string,
   callback: (data: FriendWithUser[]) => void
@@ -306,15 +317,15 @@ export const listenFriendsWithUser = (
   );
 
   return onSnapshot(q, async (snap) => {
-    const friends = snap.docs.map((d) => ({ id: d.id,...d.data() } as Friend));
+    const friends = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Friend));
     const userIds = [...new Set(friends.map((f) => f.friendId))];
     const userMap = await batchGetUsers(userIds);
 
     const data: FriendWithUser[] = await Promise.all(
       friends.map(async (f) => ({
-       ...f,
+        ...f,
         user: userMap.get(f.friendId) || { uid: f.friendId, name: "Đã xóa", avatar: "", shortId: "" },
-        mutualFriendsCount: await getMutualFriendsCount(userId, f.friendId), // ✅ THÊM
+        mutualFriendsCount: await getMutualFriendsCount(userId, f.friendId),
       }))
     );
     callback(data);
@@ -322,11 +333,11 @@ export const listenFriendsWithUser = (
 };
 
 /* ================= CHECK STATUS ================= */
-export const getFriendshipStatus = async (
+export const getFriendStatus = async (
   user1: string,
   user2: string
-): Promise<"none" | "friends" | "pending_sent" | "pending_received" | "blocked"> => {
-  if (!user1 ||!user2 || user1 === user2) return "none";
+): Promise<FriendStatus> => {
+  if (!user1 || !user2 || user1 === user2) return "none";
 
   const [friendSnap, reqSent, reqReceived, block1, block2] = await Promise.all([
     getDoc(doc(db, "friends", `${user1}_${user2}`)),
@@ -345,7 +356,7 @@ export const getFriendshipStatus = async (
 
 /* ================= BLOCK/UNBLOCK ================= */
 export const blockUser = async (from: string, to: string): Promise<void> => {
-  if (!from ||!to || from === to) throw new FriendError("Thiếu thông tin");
+  if (!from || !to || from === to) throw new FriendError("Thiếu thông tin");
   const batch = writeBatch(db);
   batch.set(doc(db, "blocks", `${from}_${to}`), {
     fromUserId: from,
