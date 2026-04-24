@@ -223,7 +223,6 @@ const groupedNotifs = useMemo(() => {
     }
   };
 
-  const getIcon = (type: Notification["type"]) => ({ like: "❤️", comment: "💬", friend_request: "👥", task_apply: "📋", system: "🔔" }[type] || "🔔");
 
   const handleClickNotif = useCallback((n: Notification) => {
     if (!n.isRead) markAsRead(n.id);
