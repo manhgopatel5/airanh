@@ -269,6 +269,7 @@ export default function TaskDetailPage() {
               <div className="font-semibold">{owner?.name}</div>
               <div className="text-xs text-gray-500">Chủ task</div>
             </div>
+          </div>
           {!isOwner && (
             <button
               onClick={handleJoinTask}
