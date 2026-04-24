@@ -154,7 +154,8 @@ export default function Register() {
   });
 } finally {
   setLoading(false);
-}
+}; // ✅ THÊM DÒNG NÀY (CỰC QUAN TRỌNG
+
 
   const handleChange = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({...form, [field]: e.target.value });
