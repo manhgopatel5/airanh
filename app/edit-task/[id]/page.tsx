@@ -12,7 +12,7 @@ import Link from "next/link";
 export default function EditTaskPage() {
   const router = useRouter();
   const params = useParams();
-  const { user, userData } = useAuth();
+  const { user } = useAuth();
   const taskId = params.id as string;
 
   const [task, setTask] = useState<Task | null>(null);
