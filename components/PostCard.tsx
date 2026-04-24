@@ -73,17 +73,22 @@ export default function PostCard({ post, onDelete }: Props) {
   }, [user, liked, liking, localLikes, post.id, post.likes, router]);
 
   /* ================= SHARE ================= */
-  const handleShare = useCallback(async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const url = `${window.location.origin}/post/${post.id}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: post.content?.slice(0, 50), url });
-      } catch {}
-    } else {
-      await navigator.clipboard.writeText(url);
+const handleShare = useCallback(async (e: React.MouseEvent) => {
+  e.stopPropagation();
+
+  const url = `${window.location.origin}/post/${post.id}`;
+  const title = post.content?.slice(0, 50) || "Xem bài viết";
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, url });
+    } catch (err) {
+      console.warn("Share cancelled");
     }
-  }, [post.id, post.content]);
+  } else {
+    await navigator.clipboard.writeText(url);
+  }
+}, [post.id, post.content]);
 
   /* ================= DELETE ================= */
   const handleDelete = useCallback(async (e: React.MouseEvent) => {
