@@ -10,7 +10,6 @@ import {
   QueryDocumentSnapshot,
   DocumentData,
   QueryConstraint,
-  doc,
   getDoc,
   FirestoreDataConverter,
 } from "firebase/firestore";
@@ -53,8 +52,14 @@ export class SearchError extends Error {
 
 /* ================= CONVERTER ================= */
 const userConverter: FirestoreDataConverter<SearchUser> = {
-  toFirestore: (user) => user,
-  fromFirestore: (snap) => snap.data() as SearchUser,
+  toFirestore: (user) => {
+    const { uid,...data } = user;
+    return data;
+  },
+  fromFirestore: (snap) => ({
+    uid: snap.id,
+   ...snap.data(),
+  } as SearchUser),
 };
 
 /* ================= CACHE LRU ================= */
@@ -68,7 +73,7 @@ class LRUCache<K, V> {
       return null;
     }
     this.cache.delete(key);
-    this.cache.set(key, item); // Move to end
+    this.cache.set(key, item);
     return item.v;
   }
   set(key: K, v: V) {
@@ -83,7 +88,6 @@ class LRUCache<K, V> {
 const userCache = new LRUCache<string, SearchResult>(100);
 
 /* ================= HELPER: BATCH IN QUERY ================= */
-// ✅ FIX: Dùng Promise.all cho đúng, không bị race condition
 const batchGetDocs = async <T>(
   col: string,
   field: string,
@@ -97,7 +101,7 @@ const batchGetDocs = async <T>(
     const q = query(
       collection(db, col),
       where(field, "in", chunk),
-    ...extraConstraints
+     ...extraConstraints
     );
     chunks.push(getDocs(q));
   }
@@ -123,16 +127,11 @@ export const searchUsers = async (
         trimmed,
         trimmed.replace(/\s/g, ""),
         trimmed.split(" ")[0],
-        trimmed.toUpperCase(), // Cho shortId
+        trimmed.toUpperCase(),
       ]),
       where("status", "==", "active"),
-      where("hidden", "!=", true),
-      where("deletedAt", "==", null),
-      orderBy("hidden"),
-      orderBy("status"),
-      orderBy("deletedAt"),
       orderBy("nameLower"),
-    ...(cursor? [startAfter(cursor)] : []),
+     ...(cursor? [startAfter(cursor)] : []),
       limit(maxResults + 1),
     ];
 
@@ -148,38 +147,37 @@ export const searchUsers = async (
     const uids = docs.map((d) => d.id).filter((id) => id!== currentUserId);
     if (uids.length === 0) return { users: [], lastDoc: null, hasMore: false };
 
-    // Batch query friends + blocks 2 chiều
     const [friends, blocksFrom, blocksTo] = await Promise.all([
       currentUserId
-    ? batchGetDocs<{ friendId: string }>("friends", "friendId", uids, [
+       ? batchGetDocs<{ friendId: string }>("friends", "friendId", uids, [
             where("userId", "==", currentUserId),
             where("status", "==", "accepted"),
           ])
         : [],
       currentUserId
-    ? batchGetDocs<{ toUserId: string }>("blocks", "toUserId", uids, [
+       ? batchGetDocs<{ toUserId: string }>("blocks", "toUserId", uids, [
             where("fromUserId", "==", currentUserId),
           ])
         : [],
       currentUserId
-    ? batchGetDocs<{ fromUserId: string }>("blocks", "fromUserId", uids, [
-            where("toUserId", "==", currentUserId), // Block 2 chiều
+       ? batchGetDocs<{ fromUserId: string }>("blocks", "fromUserId", uids, [
+            where("toUserId", "==", currentUserId),
           ])
         : [],
     ]);
 
     const friendSet = new Set(friends.map((f) => f.friendId));
     const blockSet = new Set([
-   ...blocksFrom.map((b) => b.toUserId),
-   ...blocksTo.map((b) => b.fromUserId),
+     ...blocksFrom.map((b) => b.toUserId),
+     ...blocksTo.map((b) => b.fromUserId),
     ]);
 
     const users: SearchResult[] = docs
-  .map((d) => {
+     .map((d) => {
         const data = d.data();
         if (data.uid === currentUserId || blockSet.has(data.uid)) return null;
+        if (data.hidden || data.deletedAt) return null;
 
-        // Detect matched field
         let matchedField: SearchResult["matchedField"] = "name";
         if (data.shortId.toLowerCase().includes(trimmed.toUpperCase())) matchedField = "shortId";
         else if (data.username?.toLowerCase().includes(trimmed)) matchedField = "username";
@@ -195,15 +193,15 @@ export const searchUsers = async (
           bio: data.bio,
           isFriend,
           matchedField,
-          email: isFriend? data.email : undefined, // Chỉ lộ nếu là bạn
+          email: isFriend? data.email : undefined,
         };
       })
-  .filter(Boolean) as SearchResult[];
+     .filter(Boolean) as SearchResult[];
 
     return { users, lastDoc, hasMore };
   } catch (e: any) {
     if (e.code === "failed-precondition") {
-      throw new SearchError("Thiếu index Firestore", "INDEX");
+      throw new SearchError("Thiếu index Firestore: searchKeywords + status + nameLower", "INDEX");
     }
     if (e.name === "AbortError" || e.code === "ABORTED") {
       throw new SearchError("Aborted", "ABORTED");
@@ -225,15 +223,15 @@ export const getUserByShortId = async (shortId: string): Promise<SearchResult | 
     collection(db, "users").withConverter(userConverter),
     where("shortId", "==", key),
     where("status", "==", "active"),
-    where("hidden", "!=", true),
-    where("deletedAt", "==", null),
     limit(1)
   );
 
   const snap = await getDocs(q);
   if (snap.empty) return null;
 
-  const data = snap.docs[0].data();
+  const data = snap.docs[0]!.data();
+  if (data.hidden || data.deletedAt) return null;
+
   const result: SearchResult = {
     uid: data.uid,
     name: data.name,
