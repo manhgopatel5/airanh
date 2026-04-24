@@ -1,14 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FiHeart, FiMessageCircle, FiShare2, FiMoreHorizontal, FiTrash2, FiEdit2 } from "react-icons/fi";
+import { FiHeart, FiMessageCircle, FiShare2, FiMoreHorizontal, FiTrash2 } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { doc, runTransaction, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { useAuth } from "@/lib/AuthContext"; // ✅ FIX 2
+import { useAuth } from "@/lib/AuthContext";
 import { Timestamp } from "firebase/firestore";
-import Linkify from "linkify-react"; // ✅ FIX 3: npm i linkify-react
+import Linkify from "linkify-react";
 
 type Post = {
   id: string;
@@ -24,13 +24,13 @@ type Post = {
 
 type Props = {
   post: Post;
-  onDelete?: (id: string) => void; // ✅ FIX 7
+  onDelete?: (id: string) => void;
 };
 
 export default function PostCard({ post, onDelete }: Props) {
   const router = useRouter();
-  const { user } = useAuth(); // ✅ FIX 2
-  const [localLikes, setLocalLikes] = useState<string[]>(post.likes || []); // ✅ FIX 1: Optimistic
+  const { user } = useAuth();
+  const [localLikes, setLocalLikes] = useState<string[]>(post.likes || []);
   const [liking, setLiking] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
@@ -39,7 +39,7 @@ export default function PostCard({ post, onDelete }: Props) {
   const liked = user && localLikes.includes(user.uid);
   const isOwner = user?.uid === post.userId;
 
-  /* ================= LIKE - OPTIMISTIC + TRANSACTION ✅ FIX 1 ================= */
+  /* ================= LIKE - OPTIMISTIC + TRANSACTION ================= */
   const handleLike = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user) return router.push("/login");
@@ -49,7 +49,7 @@ export default function PostCard({ post, onDelete }: Props) {
     const newLikes = liked
       ? localLikes.filter((id) => id !== user.uid)
       : [...localLikes, user.uid];
-    setLocalLikes(newLikes); // Update UI ngay
+    setLocalLikes(newLikes);
 
     try {
       await runTransaction(db, async (transaction) => {
@@ -66,7 +66,7 @@ export default function PostCard({ post, onDelete }: Props) {
       });
     } catch (err) {
       console.error("Lỗi like:", err);
-      setLocalLikes(post.likes || []); // Rollback
+      setLocalLikes(post.likes || []);
     } finally {
       setLiking(false);
     }
@@ -85,7 +85,7 @@ export default function PostCard({ post, onDelete }: Props) {
     }
   }, [post.id, post.content]);
 
-  /* ================= DELETE ✅ FIX 7 ================= */
+  /* ================= DELETE ================= */
   const handleDelete = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isOwner) return;
@@ -101,7 +101,7 @@ export default function PostCard({ post, onDelete }: Props) {
     router.push(`/profile/${post.userId}`);
   }, [router, post.userId]);
 
-  /* ================= PREFETCH ✅ FIX 6 ================= */
+  /* ================= PREFETCH ================= */
   const handleMouseEnter = useCallback(() => {
     router.prefetch(`/post/${post.id}`);
   }, [router, post.id]);
@@ -130,6 +130,7 @@ export default function PostCard({ post, onDelete }: Props) {
             <img
               src={post.userAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.userName || "U")}&background=random`}
               className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-50 dark:ring-zinc-800"
+              alt=""
             />
             <div className="flex-1 min-w-0 text-left">
               <p className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">
@@ -141,7 +142,6 @@ export default function PostCard({ post, onDelete }: Props) {
             </div>
           </button>
 
-          {/* ✅ FIX 7: Menu 3 chấm */}
           {isOwner && (
             <div className="relative">
               <button
@@ -167,7 +167,7 @@ export default function PostCard({ post, onDelete }: Props) {
           )}
         </div>
 
-        {/* CONTENT - ✅ FIX 3: Linkify + escape */}
+        {/* CONTENT */}
         {post.content && (
           <Linkify
             options={{
@@ -181,7 +181,7 @@ export default function PostCard({ post, onDelete }: Props) {
           </Linkify>
         )}
 
-        {/* IMAGES GRID - ✅ FIX 4: Bỏ state */}
+        {/* IMAGES GRID */}
         {post.images && post.images.length > 0 && (
           <div
             className={`grid gap-1.5 rounded-2xl overflow-hidden ${
@@ -201,6 +201,7 @@ export default function PostCard({ post, onDelete }: Props) {
                       ? "row-span-2 h-full"
                       : "h-40"
                   }`}
+                  alt=""
                 />
                 {i === 3 && post.images!.length > 4 && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold text-xl">
