@@ -198,7 +198,7 @@ const groupedNotifs = useMemo(() => {
   }, [selectedIds]);
 
   /* ================= AUTO MARK READ ON VIEW ================= */
-  const setObserver = useCallback((node: HTMLDivElement | null, id: string, isRead: boolean) => {
+  const setObserver = useCallback((node: HTMLDivElement | null, isRead: boolean) => {
     if (!node || isRead) return;
     if (!observerRef.current) {
       observerRef.current = new IntersectionObserver((entries) => {
