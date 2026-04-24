@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import FCMProvider from "@/components/FCMProvider";
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/lib/AuthContext";
 import { Toaster } from "react-hot-toast";
@@ -16,7 +16,6 @@ export default function ClientLayout({ children }: Props) {
   const router = useRouter();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const fcmSetupRef = useRef(false); // giữ nguyên (không dùng nhưng không xoá để giữ full)
 
   /* ================= ROUTE ================= */
   const publicRoutes = ["/login", "/register", "/reset-password"];
