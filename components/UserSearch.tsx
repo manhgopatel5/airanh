@@ -234,6 +234,7 @@ export default function UserSearch() {
                     {highlightText(u.email || "", keyword)}
                   </p>
                 </div>
+              </div>
               <div className="shrink-0">{renderButton(u)}</div>
             </div>
           ))}
