@@ -233,17 +233,24 @@ export default function Home() {
     <div className="min-h-screen pb-24">
       <div className="sticky top-0 bg-white border-b">
         <div className="flex justify-around">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const active = activeTab === tab.id;
+        {tabs.map((tab) => {
+  const Icon = tab.icon;
 
-            return (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)}>
-                <Icon size={20} />
-                {tab.label}
-              </button>
-            );
-          })}
+  return (
+    <button
+      key={tab.id}
+      onClick={() => setActiveTab(tab.id)}
+      className={
+        activeTab === tab.id
+          ? "text-blue-500 font-bold"
+          : "text-gray-400"
+      }
+    >
+      <Icon size={20} />
+      {tab.label}
+    </button>
+  );
+})}
         </div>
       </div>
 
