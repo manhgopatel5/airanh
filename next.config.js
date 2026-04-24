@@ -80,7 +80,6 @@ const nextConfig = {
     ];
   },
   
-  // Turbopack config (Next 15)
   turbopack: {
     rules: {
       '*.svg': {
@@ -90,7 +89,7 @@ const nextConfig = {
     },
   },
   
-  // ✅ FIX LỖI self is not defined - TẤT CẢ PACKAGE CLIENT-ONLY
+  // ✅ FINAL - TẤT CẢ PACKAGE CLIENT-ONLY
   serverExternalPackages: [
     'framer-motion',
     'react-hot-toast',
@@ -98,6 +97,7 @@ const nextConfig = {
     'linkify-react',
     'browser-image-compression',
     'isomorphic-dompurify',
+    'firebase',
   ],
   
   experimental: {
