@@ -91,8 +91,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               if (i === 2) throw new Error("Không thể tạo shortId");
             }
 
-            // Tạo username unique từ email
-            const baseUsername = firebaseUser.email?.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "") || "user";
+            // Tạo username unique từ email - FIX TS ERROR
+            const emailPrefix = firebaseUser.email?.split("@")[0] || "user";
+            const baseUsername = emailPrefix.toLowerCase().replace(/[^a-z0-9]/g, "") || "user";
             let username = baseUsername;
             let suffix = 0;
             while (true) {
