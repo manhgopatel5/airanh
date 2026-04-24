@@ -1,3 +1,5 @@
+"use client";
+
 import {
   ref,
   uploadBytesResumable,
@@ -16,9 +18,8 @@ export class UploadError extends Error {
 }
 
 /* ================= CONFIG ================= */
-// ✅ FIX 1: Sửa MAX_IMAGE_SIZE từ 5KB thành 5MB
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_FILE_SIZE = 20 * 1024; // 20MB
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const ALLOWED_FILE_TYPES = [
   "application/pdf",
@@ -30,7 +31,7 @@ const ALLOWED_FILE_TYPES = [
 export type UploadProgress = {
   bytesTransferred: number;
   totalBytes: number;
-  progress: number; // 0-100
+  progress: number;
 };
 
 export type UploadResult = {
@@ -43,13 +44,14 @@ export type UploadResult = {
 
 /* ================= COMPRESS IMAGE ================= */
 const compressImage = async (file: File, maxWidth = 1920, quality = 0.8): Promise<File> => {
+  if (typeof window === 'undefined') return file;
   if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
 
   return new Promise((resolve, reject) => {
     const img = new Image();
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
-    const objectUrl = URL.createObjectURL(file); // ✅ FIX 2: Tạo biến để revoke
+    const objectUrl = URL.createObjectURL(file);
 
     img.onload = () => {
       let { width, height } = img;
@@ -64,7 +66,7 @@ const compressImage = async (file: File, maxWidth = 1920, quality = 0.8): Promis
 
       canvas.toBlob(
         (blob) => {
-          URL.revokeObjectURL(objectUrl); // ✅ FIX 2: Revoke tránh leak memory
+          URL.revokeObjectURL(objectUrl);
           if (!blob) return reject(new UploadError("Compress thất bại"));
           const compressed = new File([blob], file.name, { type: "image/jpeg" });
           resolve(compressed);
@@ -75,7 +77,7 @@ const compressImage = async (file: File, maxWidth = 1920, quality = 0.8): Promis
     };
 
     img.onerror = () => {
-      URL.revokeObjectURL(objectUrl); // ✅ FIX 2: Revoke khi lỗi
+      URL.revokeObjectURL(objectUrl);
       reject(new UploadError("Đọc ảnh thất bại"));
     };
     img.src = objectUrl;
@@ -113,7 +115,6 @@ export const uploadFile = async (
   const isImage = file.type.startsWith("image/");
   validateFile(file, isImage? "image" : "file");
 
-  // Compress nếu là ảnh
   const fileToUpload = isImage? await compressImage(file) : file;
 
   const ext = file.name.split(".").pop() || "bin";
@@ -165,7 +166,6 @@ export const uploadMultipleFiles = async (
 ): Promise<UploadResult[]> => {
   if (files.length > 10) throw new UploadError("Tối đa 10 file", "TOO_MANY_FILES");
 
-  // ✅ FIX 3: Upload song song thay vì tuần tự cho nhanh
   const uploadPromises = files.map((file, i) =>
     uploadFile(file, path, userId, (p) => onProgress?.(i, p))
   );
@@ -179,7 +179,6 @@ export const deleteFile = async (path: string): Promise<void> => {
     const fileRef = ref(storage, path);
     await deleteObject(fileRef);
   } catch (err: any) {
-    // Bỏ qua lỗi file không tồn tại
     if (err.code!== "storage/object-not-found") {
       console.error("Delete file error:", err);
       throw new UploadError("Xóa file thất bại");
