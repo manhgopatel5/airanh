@@ -229,18 +229,18 @@ export default function EditTaskPage() {
           </div>
 
           {/* IMAGES */}
-          {form.images.length > 0 && (
-            <div className="grid grid-cols-3 gap-2">
-              {form.images.map((img, i) => (
-                <div key={i} className="relative">
-                  <img src={img} alt="task image" />
-                  <button type="button" onClick={() => removeImage(i)}>
-                    <FiX />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+       {(form.images ?? []).length > 0 && (
+  <div className="grid grid-cols-3 gap-2">
+    {(form.images ?? []).map((img, i) => (
+      <div key={i} className="relative">
+        <img src={img} alt="task image" />
+        <button type="button" onClick={() => removeImage(i)}>
+          <FiX />
+        </button>
+      </div>
+    ))}
+  </div>
+)}
 
        <button
   type="submit"
