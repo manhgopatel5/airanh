@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { getFirebaseApp } from "@/lib/firebase"; // ✅ FIX
+import { getFirebaseApp } from "@/lib/firebase";
 
 export default function FCMProvider({ userId }: { userId: string }) {
   useEffect(() => {
@@ -23,11 +23,11 @@ export default function FCMProvider({ userId }: { userId: string }) {
           return;
         }
 
-        const app = getFirebaseApp(); // ✅ FIX DUY NHẤT
+        const app = getFirebaseApp();
         const messaging = getMessaging(app);
 
         const permission = await Notification.requestPermission();
-        if (permission !== "granted") return;
+        if (permission!== "granted") return;
 
         const token = await getToken(messaging, { vapidKey });
         if (!token) return;
@@ -39,9 +39,9 @@ export default function FCMProvider({ userId }: { userId: string }) {
 
           if (payload.notification) {
             new Notification(
-              payload.notification.title ?? "Notification",
+              payload.notification.title?? "Notification",
               {
-                body: payload.notification.body ?? "",
+                body: payload.notification.body?? "",
               }
             );
           }
