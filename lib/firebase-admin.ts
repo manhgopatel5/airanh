@@ -34,7 +34,7 @@ function getFirebaseAdmin() {
     try {
       app = initializeApp({
         credential: cert(serviceAccount),
-...(process.env.FIREBASE_DATABASE_URL && {
+      ...(process.env.FIREBASE_DATABASE_URL && {
           databaseURL: process.env.FIREBASE_DATABASE_URL,
         }),
       });
@@ -116,7 +116,7 @@ export async function sendNotification(
       notification: {
         icon: "ic_notification",
         color: "#3B82F6",
-     ...(priority === "high" && { sound: "default" }),
+    ...(priority === "high" && { sound: "default" }),
       },
     },
     apns: {
@@ -124,7 +124,7 @@ export async function sendNotification(
       payload: {
         aps: {
           badge: 1,
-       ...(priority === "high" && { sound: "default" }),
+      ...(priority === "high" && { sound: "default" }),
           "content-available": 1,
         },
       },
