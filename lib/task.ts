@@ -39,11 +39,11 @@ class TaskError extends Error {
 const slugify = (str: string): string =>
   str
 .toLowerCase()
- .normalize("NFD")
- .replace(/[\u0300-\u036f]/g, "")
- .replace(/[^a-z0-9]+/g, "-")
- .replace(/^-|-$/g, "")
- .slice(0, 50);
+.normalize("NFD")
+.replace(/[\u0300-\u036f]/g, "")
+.replace(/[^a-z0-9]+/g, "-")
+.replace(/^-|-$/g, "")
+.slice(0, 50);
 
 const generateUniqueShortId = async (): Promise<string> => {
   let attempts = 0;
@@ -59,8 +59,8 @@ const generateUniqueShortId = async (): Promise<string> => {
 const cleanTags = (tags: string[], title: string, category?: string): string[] => {
   const all = [...tags, category || "",...slugify(title).split("-")]
 .map((t) => t.trim().toLowerCase())
- .filter((t) => t.length >= 2 && t.length <= 20)
- .slice(0, 10);
+.filter((t) => t.length >= 2 && t.length <= 20)
+.slice(0, 10);
   return [...new Set(all)];
 };
 
@@ -124,15 +124,15 @@ export async function createTask(
       `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || "U")}&background=random`,
     createdAt: serverTimestamp() as Timestamp,
     updatedAt: serverTimestamp() as Timestamp,
-    deadline: data.deadline,
-    applicationDeadline: data.applicationDeadline,
-    startDate: data.startDate,
-    category: data.category,
+  ...(data.deadline && { deadline: data.deadline }),
+  ...(data.applicationDeadline && { applicationDeadline: data.applicationDeadline }),
+  ...(data.startDate && { startDate: data.startDate }),
+  ...(data.category && { category: data.category }),
     tags,
     images: validImages,
-    attachments: data.attachments,
-    requirements: data.requirements?.trim(),
-    location: data.location,
+  ...(data.attachments && { attachments: data.attachments }),
+  ...(data.requirements?.trim() && { requirements: data.requirements.trim() }),
+  ...(data.location && { location: data.location }),
     isRemote: data.isRemote || false,
     searchKeywords: generateTaskSearchKeywords({
       title: data.title,
@@ -188,11 +188,10 @@ export async function updateTask(
     if (updates.images && updates.images.length > 5) throw new TaskError("Tối đa 5 ảnh");
 
     const newTags = updates.title || updates.description || updates.category
- ? cleanTags(updates.tags || data.tags || [], updates.title || data.title, updates.category || data.category)
+? cleanTags(updates.tags || data.tags || [], updates.title || data.title, updates.category || data.category)
       : data.tags;
 
-    transaction.update(taskRef, {
- ...updates,
+    const updateData: any = {
       tags: newTags,
       searchKeywords: generateTaskSearchKeywords({
         title: updates.title || data.title,
@@ -204,7 +203,26 @@ export async function updateTask(
       edited: true,
       editedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    });
+    };
+
+    if (updates.title) updateData.title = updates.title;
+    if (updates.description) updateData.description = updates.description;
+    if (updates.price) updateData.price = updates.price;
+    if (updates.currency) updateData.currency = updates.currency;
+    if (updates.budgetType) updateData.budgetType = updates.budgetType;
+    if (updates.totalSlots) updateData.totalSlots = updates.totalSlots;
+    if (updates.deadline) updateData.deadline = updates.deadline;
+    if (updates.applicationDeadline) updateData.applicationDeadline = updates.applicationDeadline;
+    if (updates.startDate) updateData.startDate = updates.startDate;
+    if (updates.category) updateData.category = updates.category;
+    if (updates.images) updateData.images = updates.images;
+    if (updates.attachments) updateData.attachments = updates.attachments;
+    if (updates.requirements) updateData.requirements = updates.requirements;
+    if (updates.location) updateData.location = updates.location;
+    if (updates.isRemote!== undefined) updateData.isRemote = updates.isRemote;
+    if (updates.visibility) updateData.visibility = updates.visibility;
+
+    transaction.update(taskRef, updateData);
   });
 }
 
