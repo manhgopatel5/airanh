@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter, usePathname } from "next/navigation"; // ✅ THÊM usePathname
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle } from "react-icons/fi";
 import {
@@ -22,7 +22,7 @@ export default function Login() {
   const auth = getFirebaseAuth();
   const db = getFirebaseDB();
   const router = useRouter();
-  const pathname = usePathname(); // ✅ THÊM DÒNG NÀY
+  const pathname = usePathname();
   const [form, setForm] = useState({ email: "", password: "", honeypot: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [show, setShow] = useState(false);
@@ -31,16 +31,42 @@ export default function Login() {
   const failedAttempts = useRef(0);
   const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  /* ================= REDIRECT IF LOGGED IN - ĐÃ FIX ================= */
+  /* ================= KHÓA SCROLL 100% ================= */
   useEffect(() => {
-    let isMounted = true; // ✅ THÊM FLAG CHỐNG RACE CONDITION
+    const originalOverflow = document.body.style.overflow;
+    const originalPosition = document.body.style.position;
+    const originalWidth = document.body.style.width;
+    const originalHeight = document.body.style.height;
 
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.width = "100%";
+    document.body.style.height = "100%";
+    document.body.style.overscrollBehavior = "none";
+    document.documentElement.style.overflow = "hidden";
+
+    const preventDefault = (e: TouchEvent) => {
+      if (e.touches.length > 1) e.preventDefault();
+    };
+    document.addEventListener("touchmove", preventDefault, { passive: false });
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.body.style.position = originalPosition;
+      document.body.style.width = originalWidth;
+      document.body.style.height = originalHeight;
+      document.body.style.overscrollBehavior = "";
+      document.documentElement.style.overflow = "";
+      document.removeEventListener("touchmove", preventDefault);
+    };
+  }, []);
+
+  /* ================= REDIRECT IF LOGGED IN ================= */
+  useEffect(() => {
+    let isMounted = true;
     const unsub = onAuthStateChanged(auth, (user) => {
-      // ✅ FIX 1: Nếu component unmount rồi thì bỏ qua
       if (!isMounted) return;
-      
-      // ✅ FIX 2: Chỉ redirect khi đang thực sự ở trang /login
-      if (pathname!== '/login') return;
+      if (pathname!== "/login") return;
 
       if (user?.emailVerified) {
         router.replace("/");
@@ -48,14 +74,12 @@ export default function Login() {
         router.replace("/verify-email");
       }
     });
-
     return () => {
-      isMounted = false; // ✅ CLEANUP
+      isMounted = false;
       unsub();
     };
-  }, [router, pathname]); // ✅ THÊM pathname VÀO DEPS
+  }, [router, pathname]);
 
-  // Cleanup timeout khi unmount
   useEffect(() => {
     return () => {
       if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
@@ -83,9 +107,8 @@ export default function Login() {
 
   const handleLogin = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (form.honeypot) return; // Bot detected
+    if (form.honeypot) return;
 
-    // Rate limit: 3 lần/30s
     const lastFail = localStorage.getItem("login_fail_time");
     if (failedAttempts.current >= 3 && lastFail && Date.now() - parseInt(lastFail) < 30000) {
       setErrors({ submit: "Thử quá nhiều lần, đợi 30s" });
@@ -165,19 +188,35 @@ export default function Login() {
       <Toaster richColors position="top-center" />
       <InstallPrompt />
 
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-zinc-950 dark:to-zinc-900 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-3xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-blue-500/30">
-              <span className="text-white text-3xl font-bold">A</span>
+      {/* BACKGROUND */}
+      <div className="h-screen w-screen fixed inset-0 bg-gradient-to-br from-[#E8F1FF] via-[#F0F7FF] to-[#F8FBFF] dark:from-[#0A0A0F] dark:via-[#0F0F1A] dark:to-[#14141F]">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIiB4PSIwIiB5PSIwIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjwvZmlsdGVyPjxwYXRoIGQ9Ik0wIDBoMzAwdjMwMEgweiIgZmlsdGVyPSJ1cmwoI2EpIiBvcGFjaXR5PSIuMDUiLz48L3N2Zz4=')] opacity-40" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-400/20 rounded-full blur-3xl" />
+      </div>
+
+      <div className="h-screen w-screen flex items-center justify-center px-5 font-sans relative z-10">
+        <div className="w-full max-w-[400px]">
+          {/* LOGO */}
+          <div className="text-center mb-10">
+            <div className="relative w-24 h-24 mx-auto mb-6">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-[28px] blur-2xl opacity-50 animate-pulse" />
+              <div className="relative w-full h-full bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-[28px] flex items-center justify-center shadow-2xl shadow-blue-500/40 ring-1 ring-white/30">
+                <span className="text-white text-5xl font-black tracking-tighter">A</span>
+              </div>
             </div>
-            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 mb-2">Chào mừng trở lại</h1>
-            <p className="text-gray-500 dark:text-zinc-400">Đăng nhập để tiếp tục</p>
+            <h1 className="text-[32px] font-black text-gray-900 dark:text-white mb-2 tracking-tight">
+              Chào mừng trở lại
+            </h1>
+            <p className="text-[15px] text-gray-500 dark:text-zinc-400 font-medium">
+              Đăng nhập để tiếp tục hành trình
+            </p>
           </div>
 
+          {/* ERROR */}
           {errors.submit && (
-            <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 px-4 py-3 rounded-2xl mb-4 flex items-center gap-2 text-sm">
-              <FiAlertCircle size={18} />
+            <div className="bg-red-500/10 dark:bg-red-500/20 backdrop-blur-xl border border-red-500/20 dark:border-red-500/30 text-red-600 dark:text-red-400 px-4 py-3.5 rounded-2xl mb-5 flex items-center gap-3 text-[15px] font-medium animate-in fade-in slide-in-from-top-2 duration-300">
+              <FiAlertCircle size={20} className="flex-shrink-0" />
               {errors.submit}
             </div>
           )}
@@ -193,15 +232,15 @@ export default function Login() {
               autoComplete="off"
             />
 
+            {/* EMAIL */}
             <div>
-              <div className="flex items-center bg-white dark:bg-zinc-900 rounded-2xl px-4 py-3.5 shadow-sm border border-gray-100 dark:border-zinc-800 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
-                <FiMail className="mr-3 text-gray-400 dark:text-zinc-500" size={20} />
+              <div className={`group relative flex items-center bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl rounded-2xl px-4 h-[56px] shadow-xl shadow-gray-900/5 dark:shadow-black/30 border-2 transition-all duration-300 ${errors.email? 'border-red-400 dark:border-red-500' : 'border-white/60 dark:border-zinc-800/60 focus-within:border-blue-500 dark:focus-within:border-blue-500 focus-within:shadow-blue-500/20'}`}>
+                <FiMail className={`mr-3.5 flex-shrink-0 transition-colors ${errors.email? 'text-red-500' : 'text-gray-400 dark:text-zinc-500 group-focus-within:text-blue-500'}`} size={22} />
                 <input
                   type="email"
-                  placeholder="Email"
+                  placeholder="Email của bạn"
                   autoComplete="email"
-                  aria-invalid={!!errors.email}
-                  className="w-full outline-none bg-transparent text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500"
+                  className="w-full outline-none bg-transparent text-[16px] text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 font-medium"
                   value={form.email}
                   onChange={(e) => {
                     setForm({...form, email: e.target.value });
@@ -210,18 +249,18 @@ export default function Login() {
                   onBlur={() => setErrors({...errors, email: validateField("email", form.email) })}
                 />
               </div>
-              {errors.email && <p className="text-red-500 text-xs mt-1.5 ml-1">{errors.email}</p>}
+              {errors.email && <p className="text-red-500 text-[13px] mt-2 ml-1 font-medium animate-in fade-in slide-in-from-top-1">{errors.email}</p>}
             </div>
 
+            {/* PASSWORD */}
             <div>
-              <div className="flex items-center bg-white dark:bg-zinc-900 rounded-2xl px-4 py-3.5 shadow-sm border border-gray-100 dark:border-zinc-800 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
-                <FiLock className="mr-3 text-gray-400 dark:text-zinc-500" size={20} />
+              <div className={`group relative flex items-center bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl rounded-2xl px-4 h-[56px] shadow-xl shadow-gray-900/5 dark:shadow-black/30 border-2 transition-all duration-300 ${errors.password? 'border-red-400 dark:border-red-500' : 'border-white/60 dark:border-zinc-800/60 focus-within:border-blue-500 dark:focus-within:border-blue-500 focus-within:shadow-blue-500/20'}`}>
+                <FiLock className={`mr-3.5 flex-shrink-0 transition-colors ${errors.password? 'text-red-500' : 'text-gray-400 dark:text-zinc-500 group-focus-within:text-blue-500'}`} size={22} />
                 <input
                   type={show? "text" : "password"}
                   placeholder="Mật khẩu"
                   autoComplete="current-password"
-                  aria-invalid={!!errors.password}
-                  className="w-full outline-none bg-transparent text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500"
+                  className="w-full outline-none bg-transparent text-[16px] text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 font-medium"
                   value={form.password}
                   onChange={(e) => {
                     setForm({...form, password: e.target.value });
@@ -229,28 +268,55 @@ export default function Login() {
                   }}
                   onBlur={() => setErrors({...errors, password: validateField("password", form.password) })}
                 />
-                <button type="button" onClick={handleShowPass} className="ml-2 text-gray-400 dark:text-zinc-500" aria-label="Hiện mật khẩu">
-                  {show? <FiEyeOff size={20} /> : <FiEye size={20} />}
+                <button type="button" onClick={handleShowPass} className="ml-2 text-gray-400 dark:text-zinc-500 hover:text-blue-500 active:scale-90 transition-all">
+                  {show? <FiEyeOff size={22} /> : <FiEye size={22} />}
                 </button>
               </div>
-              {errors.password && <p className="text-red-500 text-xs mt-1.5 ml-1">{errors.password}</p>}
+              {errors.password && <p className="text-red-500 text-[13px] mt-2 ml-1 font-medium animate-in fade-in slide-in-from-top-1">{errors.password}</p>}
             </div>
 
-            <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="w-4 h-4 text-blue-500 rounded focus:ring-2 focus:ring-blue-500/20" />
-                <span className="text-gray-600 dark:text-zinc-400">Ghi nhớ</span>
+            {/* REMEMBER + FORGOT */}
+            <div className="flex items-center justify-between text-[15px] pt-1.5">
+              <label className="flex items-center gap-2.5 cursor-pointer select-none group">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                  className="w-[18px] h-[18px] text-blue-500 rounded-md border-2 border-gray-300 dark:border-zinc-700 focus:ring-2 focus:ring-blue-500/30 focus:ring-offset-0 transition-all cursor-pointer"
+                />
+                <span className="text-gray-600 dark:text-zinc-400 font-medium group-hover:text-gray-900 dark:group-hover:text-zinc-200 transition-colors">Ghi nhớ đăng nhập</span>
               </label>
-              <Link href="/forgot-password" className="text-blue-500 font-semibold">Quên mật khẩu?</Link>
+              <Link href="/forgot-password" className="text-blue-600 dark:text-blue-500 font-bold hover:text-blue-700 dark:hover:text-blue-400 active:opacity-70 transition-all">
+                Quên mật khẩu?
+              </Link>
             </div>
 
-            <button type="submit" disabled={loading} className="w-full py-3.5 rounded-2xl text-white font-semibold bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/30 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-              {loading? <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Đang đăng nhập...</> : "Đăng nhập"}
+            {/* BUTTON */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="relative w-full h-[56px] rounded-2xl text-white text-[17px] font-bold bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/40 active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 mt-7 overflow-hidden group"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center gap-2.5">
+                {loading? (
+                  <>
+                    <div className="w-5 h-5 border-[3px] border-white/30 border-t-white rounded-full animate-spin" />
+                    Đang xử lý...
+                  </>
+                ) : (
+                  "Đăng nhập"
+                )}
+              </div>
             </button>
           </form>
 
-          <p className="text-center mt-6 text-sm text-gray-600 dark:text-zinc-400">
-            Chưa có tài khoản? <Link href="/register" className="text-blue-500 font-semibold">Đăng ký ngay</Link>
+          {/* REGISTER */}
+          <p className="text-center mt-8 text-[15px] text-gray-600 dark:text-zinc-400 font-medium">
+            Chưa có tài khoản?{" "}
+            <Link href="/register" className="text-blue-600 dark:text-blue-500 font-bold hover:text-blue-700 dark:hover:text-blue-400 active:opacity-70 transition-all">
+              Đăng ký ngay
+            </Link>
           </p>
         </div>
       </div>
