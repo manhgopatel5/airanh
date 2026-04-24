@@ -18,6 +18,7 @@ import {
   startAfter,
   QueryDocumentSnapshot,
   DocumentData,
+  QueryConstraint,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { User } from "@/types/task";
@@ -172,7 +173,7 @@ export const listenComments = (
 ): Unsubscribe => {
   if (!taskId) return () => {};
 
-  const constraints = [
+  const constraints: QueryConstraint[] = [
     where("taskId", "==", taskId),
     where("deleted", "==", false),
     orderBy("createdAt", "asc"), // asc để comment cũ lên trước
