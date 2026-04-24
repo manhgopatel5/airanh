@@ -43,7 +43,7 @@ export default function UserSearch() {
 
     const timer = setTimeout(async () => {
       try {
-        const res = await searchUsers(keyword, { signal: abortRef.current?.signal });
+        const res = await searchUsers(keyword);
         
         const withStatus = await Promise.all(
           res.filter((u: UserResult) => u.uid !== user?.uid).map(async (u: UserResult) => {
@@ -234,7 +234,6 @@ export default function UserSearch() {
                     {highlightText(u.email || "", keyword)}
                   </p>
                 </div>
-              </div>
               <div className="shrink-0">{renderButton(u)}</div>
             </div>
           ))}
