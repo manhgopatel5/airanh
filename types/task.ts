@@ -79,7 +79,7 @@ export type Task = {
 
   // Relations
   applicants?: string[];
-  likes?: string[]; // <-- thêm dòng này để lưu userId đã like
+  likes?: string[];
   reactions?: Record<string, string[]>;
 };
 
@@ -102,9 +102,10 @@ export type TaskListItem = Pick<Task,
   | "joined" | "status" | "userName" | "userAvatar" | "userShortId"
   | "userUsername" | "createdAt" | "category" | "tags" | "images"
   | "viewCount" | "likeCount" | "commentCount" | "location" | "isRemote"
-  | "likes" // <-- thêm dòng này
-  | "budgetType" // <-- thêm để fix lỗi isPlan
-  | "userId" // <-- thêm để fix lỗi goToProfile
+  | "likes"
+  | "budgetType"
+  | "userId"
+  | "description" // <-- thêm dòng này
 >;
 
 /* ================= PARTICIPANT ================= */
