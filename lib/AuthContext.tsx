@@ -109,7 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               username,
               email: firebaseUser.email || "",
               emailVerified: firebaseUser.emailVerified,
-              avatar: firebaseUser.photoURL || `https:                                                                                               
+              avatar: firebaseUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(firebaseUser.email || "U")}&background=random`,
               shortId,
               isOnline: true,
               lastSeen: serverTimestamp() as Timestamp,
@@ -135,7 +135,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
           });
 
-                                                          
           const userStatusRef = ref(rtdb, `/status/${firebaseUser.uid}`);
           const connectedRef = ref(rtdb, ".info/connected");
 
