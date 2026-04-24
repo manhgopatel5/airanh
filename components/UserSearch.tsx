@@ -46,7 +46,7 @@ export default function UserSearch() {
         const res = await searchUsers(keyword);
         
         const withStatus = await Promise.all(
-          res.filter((u: UserResult) => u.uid !== user?.uid).map(async (u: UserResult) => {
+          res.users.filter((u: UserResult) => u.uid !== user?.uid).map(async (u: UserResult) => {
             const status = await getFriendStatus(user!.uid, u.uid);
             return { ...u, status };
           })
