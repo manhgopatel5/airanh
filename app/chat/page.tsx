@@ -8,13 +8,15 @@ import {
   collection,
   query,
   where,
+  onSnapshot,
+  doc,
+  getDoc,
   getDocs,
   orderBy,
   limit,
-  doc,
-  getDoc,
+  setDoc,
 } from "firebase/firestore";
-import { FiSearch, FiMessageSquare, FiUserPlus, FiX } from "react-icons/fi";
+import { FiSearch, FiMessageSquare, FiUserPlus, FiX, FiPlus } from "react-icons/fi";
 import { IoSparkles } from "react-icons/io5";
 import Link from "next/link";
 import { toast, Toaster } from "sonner";
@@ -41,23 +43,54 @@ export default function ChatPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [focused, setFocused] = useState(false);
+  const [adding, setAdding] = useState(false);
 
+  /* ================= LOAD FRIENDS - FIX LỖI QUYỀN ================= */
   useEffect(() => {
     if (!user) return;
-    const loadFriends = async () => {
+
+    // ✅ FIX: Load từ subcollection friends thay vì query all users
+    const q = query(collection(db, "friends"), where("userId", "==", user.uid));
+    const unsub = onSnapshot(q, async (snap) => {
       try {
         setLoading(true);
-        const q = query(
-          collection(db, "users"),
-          where("uid", "!=", user.uid),
-          orderBy("lastSeen", "desc"),
-          limit(30)
+        const friendIds = snap.docs.map((d) => d.data().friendId);
+
+        if (!friendIds.length) {
+          setFriends([]);
+          setLoading(false);
+          return;
+        }
+
+        // Batch get 10 user/lần để tránh vượt limit
+        const chunks: string[][] = [];
+        for (let i = 0; i < friendIds.length; i += 10) {
+          chunks.push(friendIds.slice(i, i + 10));
+        }
+
+        const userSnaps = await Promise.all(
+          chunks.map((chunk) =>
+            Promise.all(chunk.map((id) => getDoc(doc(db, "users", id))))
+          )
         );
-        const snap = await getDocs(q);
-        const list: FriendItem[] = snap.docs.map((d) => ({
-        ...(d.data() as FriendItem),
-          unreadCount: Math.floor(Math.random() * 3),
-        }));
+
+        const list: FriendItem[] = userSnaps
+         .flat()
+         .filter((s) => s.exists())
+         .map((s) => {
+            const data = s.data();
+            return {
+              uid: s.id,
+              name: data.name || "User",
+              username: data.username || "",
+              avatar: data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name)}&background=random`,
+              shortId: data.shortId || "",
+              lastSeen: data.lastSeen,
+              isOnline: data.online || false,
+              unreadCount: 0, // TODO: query từ chats
+            };
+          });
+
         setFriends(list);
       } catch (e) {
         console.error(e);
@@ -65,32 +98,81 @@ export default function ChatPage() {
       } finally {
         setLoading(false);
       }
-    };
-    loadFriends();
+    });
+
+    return () => unsub();
   }, []);
 
+  /* ================= TÌM & ADD BẠN BẰNG ID/USERNAME ================= */
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!search.trim()) return;
+    if (!search.trim() ||!user) return;
+
     const keyword = search.trim().toUpperCase();
+    setAdding(true);
+
     try {
+      let targetUid = "";
+
+      // 1. Thử tìm bằng shortId
       const shortIdRef = doc(db, "shortIds", keyword);
       const shortIdSnap = await getDoc(shortIdRef);
       if (shortIdSnap.exists()) {
-        router.push(`/chat/${shortIdSnap.data().uid}`);
+        targetUid = shortIdSnap.data().uid;
+      } else {
+        // 2. Thử tìm bằng username
+        const usernameRef = doc(db, "usernames", keyword.toLowerCase());
+        const usernameSnap = await getDoc(usernameRef);
+        if (usernameSnap.exists()) {
+          targetUid = usernameSnap.data().uid;
+        }
+      }
+
+      if (!targetUid) {
+        toast.error("Không tìm thấy người dùng");
         return;
       }
 
-      const usernameRef = doc(db, "usernames", keyword.toLowerCase());
-      const usernameSnap = await getDoc(usernameRef);
-      if (usernameSnap.exists()) {
-        router.push(`/chat/${usernameSnap.data().uid}`);
+      if (targetUid === user.uid) {
+        toast.error("Không thể thêm chính mình");
         return;
       }
 
-      toast.error("Không tìm thấy người dùng");
+      // 3. Check đã là bạn chưa
+      const friendRef = doc(db, "friends", `${user.uid}_${targetUid}`);
+      const friendSnap = await getDoc(friendRef);
+      if (friendSnap.exists()) {
+        router.push(`/chat/${targetUid}`);
+        return;
+      }
+
+      // 4. Add bạn
+      await setDoc(friendRef, {
+        userId: user.uid,
+        friendId: targetUid,
+        createdAt: new Date(),
+      });
+
+      // 5. Tạo chat
+      const chatId = [user.uid, targetUid].sort().join("_");
+      await setDoc(
+        doc(db, "chats", chatId),
+        {
+          members: [user.uid, targetUid],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        { merge: true }
+      );
+
+      toast.success("Đã thêm bạn bè");
+      router.push(`/chat/${targetUid}`);
+      setSearch("");
     } catch (e) {
+      console.error(e);
       toast.error("Lỗi tìm kiếm");
+    } finally {
+      setAdding(false);
     }
   };
 
@@ -105,40 +187,44 @@ export default function ChatPage() {
     <>
       <Toaster richColors position="top-center" />
       <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50 dark:from-zinc-950 dark:via-zinc-950 dark:to-black">
-        {/* HEADER GLASS */}
+        {/* HEADER GLASS + NÚT ĐẸP */}
         <div className="sticky top-0 z-20 backdrop-blur-2xl bg-white/70 dark:bg-zinc-950/70 border-b border-gray-200/50 dark:border-zinc-800/50">
           <div className="px-5 pt-7 pb-4">
             <div className="flex items-center justify-between mb-5">
-              <h1 className="text-[32px] font-black tracking-tight text-gray-900 dark:text-white">
+              <h1 className="text- font-black tracking-tight text-gray-900 dark:text-white">
                 Tin nhắn
               </h1>
-              <button className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30 active:scale-90 transition-transform">
-                <FiUserPlus className="text-white" size={20} />
+              <button
+                onClick={() => toast.info("Tính năng đang phát triển")}
+                className="relative w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30 active:scale-90 transition-all duration-200 group"
+              >
+                <div className="absolute inset-0 bg-white/20 rounded-full scale-0 group-active:scale-100 transition-transform duration-300" />
+                <FiUserPlus className="text-white relative" size={20} />
               </button>
             </div>
 
-            {/* SEARCH BAR */}
+            {/* SEARCH BAR PRO */}
             <form onSubmit={handleSearch} className="relative group">
               <div
-                className={`absolute inset-0 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 rounded-2xl blur-xl transition-opacity ${
+                className={`absolute -inset-1 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 rounded-2xl blur-xl transition-opacity duration-300 ${
                   focused? "opacity-100" : "opacity-0"
                 }`}
               />
-              <div className="relative flex items-center h-12 bg-gray-100/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border-2 border-transparent focus-within:border-blue-500/50 focus-within:bg-white dark:focus-within:bg-zinc-900 transition-all">
+              <div className="relative flex items-center h-12 bg-gray-100/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border-2 border-transparent focus-within:border-blue-500/50 focus-within:bg-white dark:focus-within:bg-zinc-900 transition-all duration-200">
                 <FiSearch
-                  className={`ml-4 transition-colors ${
+                  className={`ml-4 transition-colors duration-200 ${
                     focused? "text-blue-500" : "text-gray-400 dark:text-zinc-500"
                   }`}
                   size={20}
                 />
                 <input
                   type="text"
-                  placeholder="Tìm bạn bè, ID..."
+                  placeholder="Tìm bạn bè bằng ID hoặc username..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   onFocus={() => setFocused(true)}
                   onBlur={() => setFocused(false)}
-                  className="w-full h-full px-3 bg-transparent text-[15px] font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 outline-none"
+                  className="w-full h-full px-3 bg-transparent text- font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 outline-none"
                 />
                 {search && (
                   <button
@@ -160,7 +246,7 @@ export default function ChatPage() {
             <div className="space-y-2">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-4 p-3 animate-pulse">
-                  <div className="w-[56px] h-[56px] bg-gray-200 dark:bg-zinc-800 rounded-full" />
+                  <div className="w- h- bg-gray-200 dark:bg-zinc-800 rounded-full" />
                   <div className="flex-1 space-y-2.5">
                     <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded-lg w-1/3" />
                     <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded-lg w-2/3" />
@@ -183,11 +269,20 @@ export default function ChatPage() {
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                 {search? "Không tìm thấy" : "Chưa có tin nhắn"}
               </h3>
-              <p className="text-sm text-gray-500 dark:text-zinc-400 font-medium max-w-[240px]">
+              <p className="text-sm text-gray-500 dark:text-zinc-400 font-medium max-w-[240px] mb-6">
                 {search
-              ? `Không có kết quả cho "${search}"`
+             ? `Không có kết quả cho "${search}"`
                   : "Tìm bạn bè bằng ID hoặc username để bắt đầu trò chuyện"}
               </p>
+              {search && (
+                <button
+                  onClick={handleSearch}
+                  disabled={adding}
+                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/30 active:scale-95 transition-all disabled:opacity-50"
+                >
+                  {adding? "Đang tìm..." : `Thêm ${search}`}
+                </button>
+              )}
             </div>
           ) : (
             <div className="space-y-1">
@@ -198,7 +293,7 @@ export default function ChatPage() {
                   className="group flex items-center gap-4 p-3 rounded-3xl hover:bg-white dark:hover:bg-zinc-900/60 active:scale-[0.98] transition-all duration-200"
                 >
                   <div className="relative flex-shrink-0">
-                    <div className="w-[56px] h-[56px] rounded-full ring-2 ring-white dark:ring-zinc-950 shadow-lg shadow-gray-900/5 overflow-hidden">
+                    <div className="w- h- rounded-full ring-2 ring-white dark:ring-zinc-950 shadow-lg shadow-gray-900/5 overflow-hidden">
                       <img src={f.avatar} alt={f.name} className="w-full h-full object-cover" />
                     </div>
                     {f.isOnline && (
@@ -211,7 +306,7 @@ export default function ChatPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-0.5">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <p className="font-bold text-[15px] text-gray-900 dark:text-white truncate">
+                        <p className="font-bold text- text-gray-900 dark:text-white truncate">
                           {f.name}
                         </p>
                         {f.unreadCount? (
@@ -220,7 +315,7 @@ export default function ChatPage() {
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         {f.lastSeen && (
-                          <p className="text-[13px] text-gray-400 dark:text-zinc-500 font-medium">
+                          <p className="text- text-gray-400 dark:text-zinc-500 font-medium">
                             {formatDistanceToNow(f.lastSeen.toDate(), {
                               addSuffix: true,
                               locale: vi,
@@ -228,13 +323,13 @@ export default function ChatPage() {
                           </p>
                         )}
                         {f.unreadCount? (
-                          <div className="min-w-[20px] h-5 px-1.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-                            <span className="text-[11px] font-bold text-white">{f.unreadCount}</span>
+                          <div className="min-w- h-5 px-1.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30">
+                            <span className="text- font-bold text-white">{f.unreadCount}</span>
                           </div>
                         ) : null}
                       </div>
                     </div>
-                    <p className="text-[14px] text-gray-500 dark:text-zinc-400 font-medium truncate">
+                    <p className="text- text-gray-500 dark:text-zinc-400 font-medium truncate">
                       {f.lastMessage || `@${f.username} · ${f.shortId}`}
                     </p>
                   </div>
