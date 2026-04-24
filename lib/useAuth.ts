@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import {
   onAuthStateChanged,
   User,
@@ -19,7 +19,7 @@ import {
   getDoc,
   updateDoc,
 } from "firebase/firestore";
-import { ref, onDisconnect, set, serverTimestamp as rtdbServerTimestamp } from "firebase/database";
+import { ref, onDisconnect, set, serverTimestamp as rtdbServerTimestamp, DatabaseReference } from "firebase/database";
 import { useRouter } from "next/navigation";
 import { nanoid } from "nanoid";
 
@@ -64,16 +64,16 @@ const listeners = new Set<(state: UseAuthReturn) => void>();
 let initialized = false;
 let unsubAuth: Unsubscribe | null = null;
 let unsubProfile: Unsubscribe | null = null;
-let presenceRef: any = null;
+let presenceRef: DatabaseReference | null = null;
 let heartbeatInterval: NodeJS.Timeout | null = null;
 
 function initAuthStore() {
   if (initialized) return;
   initialized = true;
 
-  const auth = getFirebaseAuth();   // ✅ FIX
-  const db = getFirebaseDB();       // ✅ FIX
-  const rtdb = getFirebaseRTDB();   // ✅ FIX
+  const auth = getFirebaseAuth();
+  const db = getFirebaseDB();
+  const rtdb = getFirebaseRTDB();
 
   let user: User | null = null;
   let profile: UserProfile | null = null;
@@ -132,6 +132,8 @@ function initAuthStore() {
   const setupPresence = (uid: string) => {
     if (!rtdb) return;
     const userStatusRef = ref(rtdb, `/status/${uid}`);
+    presenceRef = userStatusRef;
+    
     const isOffline = {
       isOnline: false,
       lastSeen: rtdbServerTimestamp(),
@@ -160,12 +162,11 @@ function initAuthStore() {
       heartbeatInterval = null;
     }
     if (presenceRef) {
-      set(presenceRef, { isOnline: false, lastSeen: rtdbServerTimestamp() });
+      set(presenceRef, { isOnline: false, lastSeen: rtdbServerTimestamp() }).catch(() => {});
       presenceRef = null;
     }
   };
 
-  // ✅ FIX: BỎ authReady.then
   unsubAuth = onAuthStateChanged(
     auth,
     async (u) => {
@@ -307,7 +308,6 @@ export function useAuth(): UseAuthReturn {
       state.user,
       state.profile,
       state.claims,
-      state.loading,
       state.loadingProfile,
       state.error,
       state.isAuthenticated,
