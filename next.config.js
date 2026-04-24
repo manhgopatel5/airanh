@@ -89,7 +89,7 @@ const nextConfig = {
     },
   },
   
-  // ✅ FINAL - TẤT CẢ PACKAGE CLIENT-ONLY
+  // ✅ FINAL LIST - EXTERNAL TẤT CẢ PACKAGE CÓ THỂ GÂY LỖI
   serverExternalPackages: [
     'framer-motion',
     'react-hot-toast',
@@ -98,6 +98,11 @@ const nextConfig = {
     'browser-image-compression',
     'isomorphic-dompurify',
     'firebase',
+    'nanoid',
+    'zustand',
+    'next-themes',
+    '@vercel/analytics',
+    '@vercel/speed-insights',
   ],
   
   experimental: {
