@@ -89,7 +89,7 @@ const nextConfig = {
     },
   },
   
-  // ✅ FINAL LIST - EXTERNAL TẤT CẢ PACKAGE CÓ THỂ GÂY LỖI
+  // ✅ EXTERNAL TẤT CẢ PACKAGE CLIENT-ONLY + THÊM MỚI
   serverExternalPackages: [
     'framer-motion',
     'react-hot-toast',
@@ -103,6 +103,12 @@ const nextConfig = {
     'next-themes',
     '@vercel/analytics',
     '@vercel/speed-insights',
+    'date-fns',
+    'clsx',
+    'tailwind-merge',
+    'zod',
+    '@hookform/resolvers',
+    'react-hook-form',
   ],
   
   experimental: {
@@ -110,8 +116,6 @@ const nextConfig = {
       'lucide-react',
       'react-icons',
       '@radix-ui/react-icons',
-      'date-fns',
-      'lodash-es',
     ],
     serverActions: {
       bodySizeLimit: '2mb',
@@ -124,6 +128,11 @@ const nextConfig = {
   },
   
   webpack: (config, { isServer, dev }) => {
+    // ✅ TẮT MINIFY ĐỂ DEBUG - XÓA DÒNG NÀY SAU KHI BUILD XANH
+    if (isServer && !dev) {
+      config.optimization.minimize = false;
+    }
+    
     config.module.rules.push({
       test: /\.svg$/i,
       issuer: /\.[jt]sx?$/,
