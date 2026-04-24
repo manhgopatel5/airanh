@@ -38,7 +38,11 @@ function TaskCard({ task }: Props) {
     cancelled: { text: "Đã hủy", color: "gray" },
   } as const;
 
-  const status = statusConfig[task.status || "open"];
+  const safeStatus = (task.status && task.status in statusConfig
+  ? task.status
+  : "open") as keyof typeof statusConfig;
+
+const status = statusConfig[safeStatus];
 
   /* ================= LIKE ================= */
   const handleLike = useCallback(async (e: React.MouseEvent) => {
