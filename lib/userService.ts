@@ -1,5 +1,3 @@
-"use client"; // ✅ THÊM DÒNG NÀY
-
 import { useState, useEffect } from "react";
 import {
   collection,
@@ -44,7 +42,6 @@ export type SearchResult = {
 };
 
 export class SearchError extends Error {
-  const db = getFirebaseDB();
   constructor(message: string, public code?: string) {
     super(message);
     this.name = "SearchError";
@@ -59,7 +56,7 @@ const userConverter: FirestoreDataConverter<SearchUser> = {
   },
   fromFirestore: (snap) => ({
     uid: snap.id,
-...snap.data(),
+   ...snap.data(),
   } as SearchUser),
 };
 
@@ -97,6 +94,8 @@ const batchGetDocs = async <T>(
   ids: string[],
   extraConstraints: QueryConstraint[] = []
 ): Promise<T[]> => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   if (ids.length === 0) return [];
   const chunks = [];
   for (let i = 0; i < ids.length; i += 10) {
@@ -104,7 +103,7 @@ const batchGetDocs = async <T>(
     const q = query(
       collection(db, col),
       where(field, "in", chunk),
-...extraConstraints
+     ...extraConstraints
     );
     chunks.push(getDocs(q));
   }
@@ -120,6 +119,8 @@ export const searchUsers = async (
   cursor?: QueryDocumentSnapshot<SearchUser>,
   signal?: AbortSignal
 ): Promise<{ users: SearchResult[]; lastDoc: QueryDocumentSnapshot<SearchUser> | null; hasMore: boolean }> => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   const trimmed = keyword.trim().toLowerCase();
   if (!trimmed) return { users: [], lastDoc: null, hasMore: false };
   if (trimmed.length < 2) throw new SearchError("Từ khóa tối thiểu 2 ký tự", "TOO_SHORT");
@@ -134,7 +135,7 @@ export const searchUsers = async (
       ]),
       where("status", "==", "active"),
       orderBy("nameLower"),
-...(cursor? [startAfter(cursor)] : []),
+     ...(cursor? [startAfter(cursor)] : []),
       limit(maxResults + 1),
     ];
 
@@ -152,18 +153,18 @@ export const searchUsers = async (
 
     const [friends, blocksFrom, blocksTo] = await Promise.all([
       currentUserId
-   ? batchGetDocs<{ friendId: string }>("friends", "friendId", uids, [
+       ? batchGetDocs<{ friendId: string }>("friends", "friendId", uids, [
             where("userId", "==", currentUserId),
             where("status", "==", "accepted"),
           ])
         : [],
       currentUserId
-   ? batchGetDocs<{ toUserId: string }>("blocks", "toUserId", uids, [
+       ? batchGetDocs<{ toUserId: string }>("blocks", "toUserId", uids, [
             where("fromUserId", "==", currentUserId),
           ])
         : [],
       currentUserId
-   ? batchGetDocs<{ fromUserId: string }>("blocks", "fromUserId", uids, [
+       ? batchGetDocs<{ fromUserId: string }>("blocks", "fromUserId", uids, [
             where("toUserId", "==", currentUserId),
           ])
         : [],
@@ -171,12 +172,12 @@ export const searchUsers = async (
 
     const friendSet = new Set(friends.map((f) => f.friendId));
     const blockSet = new Set([
-...blocksFrom.map((b) => b.toUserId),
-...blocksTo.map((b) => b.fromUserId),
+     ...blocksFrom.map((b) => b.toUserId),
+     ...blocksTo.map((b) => b.fromUserId),
     ]);
 
     const users: SearchResult[] = docs
-.map((d) => {
+     .map((d) => {
         const data = d.data();
         if (data.uid === currentUserId || blockSet.has(data.uid)) return null;
         if (data.hidden || data.deletedAt) return null;
@@ -192,15 +193,15 @@ export const searchUsers = async (
           name: data.name,
           avatar: data.avatar,
           shortId: data.shortId,
-       ...(data.username && { username: data.username }),
-       ...(data.bio && { bio: data.bio }),
+         ...(data.username && { username: data.username }),
+         ...(data.bio && { bio: data.bio }),
           isFriend,
           matchedField,
-       ...(isFriend && data.email && { email: data.email }),
+         ...(isFriend && data.email && { email: data.email }),
         };
         return result;
       })
-.filter(Boolean) as SearchResult[];
+     .filter(Boolean) as SearchResult[];
 
     return { users, lastDoc, hasMore };
   } catch (e: any) {
@@ -217,6 +218,8 @@ export const searchUsers = async (
 
 /* ================= GET BY SHORTID ================= */
 export const getUserByShortId = async (shortId: string): Promise<SearchResult | null> => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   if (!shortId) return null;
   const key = shortId.toUpperCase();
 
@@ -241,8 +244,8 @@ export const getUserByShortId = async (shortId: string): Promise<SearchResult | 
     name: data.name,
     avatar: data.avatar,
     shortId: data.shortId,
- ...(data.username && { username: data.username }),
- ...(data.bio && { bio: data.bio }),
+   ...(data.username && { username: data.username }),
+   ...(data.bio && { bio: data.bio }),
   };
 
   userCache.set(key, result);
