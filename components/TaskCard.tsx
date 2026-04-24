@@ -4,12 +4,12 @@ import { useRouter } from "next/navigation";
 import { FiHeart, FiMessageCircle, FiShare2, FiClock, FiUsers } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
 import { useEffect, useState, useCallback, memo } from "react";
-import { doc, updateDoc, arrayUnion, arrayRemove, getDoc } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { Timestamp } from "firebase/firestore";
-import { incrementTaskView } from "@/lib/task"; // đổi từ taskService
+import { incrementTaskView } from "@/lib/task";
 import { TaskListItem } from "@/types/task";
 import { toast } from "sonner";
 
