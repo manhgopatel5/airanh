@@ -1,5 +1,3 @@
-
-
 import {
   collection,
   query,
@@ -27,16 +25,12 @@ import {
 import { getFirebaseDB } from "./firebase";
 import { User } from "@/types/task";
 
-
 export class ChatError extends Error {
   constructor(message: string, public code?: string) {
     super(message);
     this.name = "ChatError";
   }
 }
-
-// Storage đơn giản cho FCM token
-
 
 /* ================= TYPES ================= */
 export type Message = {
@@ -84,6 +78,8 @@ export const getOrCreateConversation = async (
   user1: string,
   user2: string
 ): Promise<string | null> => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   if (!user1 ||!user2 || user1 === user2) return null;
 
   const [block1, block2] = await Promise.all([
@@ -126,6 +122,8 @@ export const sendMessage = async (
     replyTo?: Message["replyTo"];
   }
 ): Promise<string | null> => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   validateUser(user);
   if (!chatId ||!payload.type) throw new ChatError("Thiếu dữ liệu");
   if (payload.type === "text" &&!payload.text?.trim()) throw new ChatError("Tin nhắn trống");
@@ -142,19 +140,19 @@ export const sendMessage = async (
 
   const lastMessageText =
     payload.type === "text"
-? payload.text!.slice(0, 50)
+     ? payload.text!.slice(0, 50)
       : payload.type === "image"
-? "📷 Ảnh"
+     ? "📷 Ảnh"
       : payload.type === "file"
-? `📎 Tệp đính kèm`
+     ? `📎 Tệp đính kèm`
       : payload.type === "location"
-? "📍 Vị trí"
+     ? "📍 Vị trí"
       : "";
 
   batch.set(msgRef, {
     chatId,
     senderId: user.uid,
-...payload,
+   ...payload,
     text: payload.text?.trim() || "",
     createdAt: serverTimestamp(),
     seenBy: [user.uid],
@@ -189,6 +187,8 @@ export const listenMessages = (
   callback: (msgs: Message[], hasMore: boolean) => void,
   options?: { limit?: number; startAfterDoc?: QueryDocumentSnapshot<DocumentData> }
 ): Unsubscribe => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   if (!chatId ||!userId) return () => {};
 
   const constraints: QueryConstraint[] = [
@@ -207,14 +207,13 @@ export const listenMessages = (
     q,
     (snapshot) => {
       const data = snapshot.docs
-.map((d) => ({ id: d.id,...d.data() } as Message))
-.filter((m) =>!m.deletedFor?.includes(userId))
-.reverse();
+       .map((d) => ({ id: d.id,...d.data() } as Message))
+       .filter((m) =>!m.deletedFor?.includes(userId))
+       .reverse();
       callback(data, snapshot.docs.length === (options?.limit || 50));
     },
     (err) => {
       console.error("listenMessages error:", err);
-      console.error("Không thể tải tin nhắn");
       callback([], false);
     }
   );
@@ -226,6 +225,8 @@ export const listenConversations = (
   callback: (data: Chat[]) => void,
   onError?: (err: Error) => void
 ): Unsubscribe => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   if (!userId) return () => {};
 
   const q = query(
@@ -250,8 +251,9 @@ export const listenConversations = (
 
 /* ================= MARK AS READ ================= */
 export const markChatAsRead = async (chatId: string, userId: string): Promise<void> => {
+  const db = getFirebaseDB();
+
   if (!chatId ||!userId) return;
-  const db = getFirebaseDB(); 
   const batch = writeBatch(db);
   const chatRef = doc(db, "chats", chatId);
 
@@ -284,6 +286,8 @@ export const setTyping = async (
   userId: string,
   isTyping: boolean
 ): Promise<void> => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   if (!chatId ||!userId) return;
   const key = `${chatId}_${userId}`;
 
@@ -318,6 +322,8 @@ export const editMessage = async (
   messageId: string,
   newText: string
 ): Promise<void> => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   if (!chatId ||!messageId ||!newText.trim()) throw new ChatError("Dữ liệu không hợp lệ");
 
   const msgRef = doc(db, "chats", chatId, "messages", messageId);
@@ -344,6 +350,8 @@ export const deleteMessage = async (
   userId: string,
   deleteForEveryone: boolean = false
 ): Promise<void> => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   if (!chatId ||!messageId ||!userId) throw new ChatError("Thiếu thông tin");
 
   const msgRef = doc(db, "chats", chatId, "messages", messageId);
@@ -398,6 +406,8 @@ export const addReaction = async (
   userId: string,
   emoji: string
 ): Promise<void> => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   if (!chatId ||!messageId ||!userId) return;
   const msgRef = doc(db, "chats", chatId, "messages", messageId);
   await updateDoc(msgRef, {
@@ -410,10 +420,11 @@ export const removeReaction = async (
   messageId: string,
   userId: string
 ): Promise<void> => {
+  const db = getFirebaseDB(); // ✅ Thêm db
+
   if (!chatId ||!messageId ||!userId) return;
   const msgRef = doc(db, "chats", chatId, "messages", messageId);
   await updateDoc(msgRef, {
     [`reactions.${userId}`]: deleteField(),
   });
 };
-
