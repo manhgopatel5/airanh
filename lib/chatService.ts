@@ -35,16 +35,7 @@ export class ChatError extends Error {
 }
 
 // Storage đơn giản cho FCM token
-const storage = {
-  get: (key: string): string | null => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(key);
-  },
-  set: (key: string, value: string): void => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem(key, value);
-  },
-};
+
 
 /* ================= TYPES ================= */
 export type Message = {
@@ -425,27 +416,3 @@ export const removeReaction = async (
   });
 };
 
-/* ================= FCM TOPIC ================= */
-export const subscribeToTopic = async (userId: string, topic: string): Promise<void> => {
-  const token = storage.get(`fcm_token_${userId}`);
-  if (!token) throw new ChatError("Không lấy được FCM token");
-
-  const res = await fetch("/api/fcm/topic", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token, topic, action: "subscribe" }),
-  });
-
-  if (!res.ok) throw new ChatError("Subscribe topic thất bại");
-};
-
-export const unsubscribeFromTopic = async (userId: string, topic: string): Promise<void> => {
-  const token = storage.get(`fcm_token_${userId}`);
-  if (!token) return;
-
-  await fetch("/api/fcm/topic", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token, topic, action: "unsubscribe" }),
-  });
-};
