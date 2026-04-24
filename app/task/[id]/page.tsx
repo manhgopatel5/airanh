@@ -255,17 +255,49 @@ useEffect(() => {
         </div>
 
         {/* META */}
-        <div className="bg-white dark:bg-zinc-900 p-4 grid grid-cols-2 gap-4 text-sm border-b border-gray-100 dark:border-zinc-800">
-          {[{ icon: FiMapPin, label: "Địa chỉ", value: task.address || "Remote" }, { icon: FiClock, label: "Thời hạn", value: timeLeft }, { icon: FiUsers, label: "Tuyển", value: `${task.totalSlots} người` }, { icon: FiHeart, label: "Ứng tuyển", value: task.applicants?.length || 0 }].map(({ icon: Icon, label, value }) => (
-            <div key={label} className="flex items-start gap-2">
-              <Icon className="text-gray-400 dark:text-zinc-500 mt-0.5" size={16} />
-              <div>
-                <div className="text-gray-400 dark:text-zinc-500 text-xs">{label}</div>
-                <div className="font-semibold text-gray-900 dark:text-gray-100">{value}</div>
-              </div>
-            </div>
-          ))}
+<div className="bg-white dark:bg-zinc-900 p-4 grid grid-cols-2 gap-4 text-sm border-b border-gray-100 dark:border-zinc-800">
+  {[
+    {
+      icon: FiMapPin,
+      label: "Địa chỉ",
+      value:
+        task.location?.address ||
+        task.location?.city ||
+        task.location?.country ||
+        "Remote",
+    },
+    {
+      icon: FiClock,
+      label: "Thời hạn",
+      value: timeLeft || "Không xác định",
+    },
+    {
+      icon: FiUsers,
+      label: "Tuyển",
+      value: `${task.totalSlots ?? 0} người`,
+    },
+    {
+      icon: FiHeart,
+      label: "Ứng tuyển",
+      value: task.applicants?.length ?? 0,
+    },
+  ].map(({ icon: Icon, label, value }) => (
+    <div key={label} className="flex items-start gap-2">
+      <Icon
+        className="text-gray-400 dark:text-zinc-500 mt-0.5"
+        size={16}
+      />
+      <div>
+        <div className="text-gray-400 dark:text-zinc-500 text-xs">
+          {label}
         </div>
+        <div className="font-semibold text-gray-900 dark:text-gray-100">
+          {value}
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
 
         {/* APPLICANTS */}
         {applicantsData.length > 0 && (
