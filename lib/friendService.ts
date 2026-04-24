@@ -207,7 +207,6 @@ export const acceptRequest = async (req: FriendRequest): Promise<void> => {
     const requestRef = doc(db, "friendRequests", req.id);
     const friend1Ref = doc(db, "friends", `${req.fromUserId}_${req.toUserId}`);
     const friend2Ref = doc(db, "friends", `${req.toUserId}_${req.fromUserId}`);
-    const fromUserRef = doc(db, "users", req.fromUserId);
     const toUserRef = doc(db, "users", req.toUserId);
 
     const [reqSnap, friendSnap, toUserSnap] = await Promise.all([
