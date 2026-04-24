@@ -110,9 +110,9 @@ export default function EditTaskPage() {
     if (!form.totalSlots || form.totalSlots < 1)
       newErrors.totalSlots = "Số người tối thiểu 1";
 
-    if (task && form.totalSlots < task.joined) {
-      newErrors.totalSlots = `Không được nhỏ hơn ${task.joined} người đã tham gia`;
-    }
+    if (task && form.totalSlots !== undefined && form.totalSlots < task.joined) {
+  newErrors.totalSlots = `Không được nhỏ hơn ${task.joined} người đã tham gia`;
+}
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
