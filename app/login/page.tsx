@@ -30,7 +30,7 @@ export default function Login() {
   const [remember, setRemember] = useState(true);
   const failedAttempts = useRef(0);
   const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isNavigating = useRef(false); // ✅ THÊM FLAG NÀY
+  const isNavigating = useRef(false);
 
   /* ================= KHÓA SCROLL ================= */
   useEffect(() => {
@@ -68,7 +68,7 @@ export default function Login() {
     const unsub = onAuthStateChanged(auth, (user) => {
       if (!isMounted) return;
       if (pathname!== "/login") return;
-      if (isNavigating.current) return; // ✅ FIX: Đang bấm link thì bỏ qua redirect
+      if (isNavigating.current) return;
 
       if (user?.emailVerified) {
         router.replace("/");
@@ -206,6 +206,7 @@ export default function Login() {
               <div className="relative w-full h-full bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-500/40 ring-1 ring-white/30">
                 <span className="text-white text-5xl font-black tracking-tighter">A</span>
               </div>
+            </div>
             <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">
               Chào mừng trở lại
             </h1>
@@ -293,7 +294,7 @@ export default function Login() {
               </label>
               <Link
                 href="/forgot-password"
-                onClick={() => { isNavigating.current = true; }} // ✅ FIX: Đánh dấu đang chuyển trang
+                onClick={() => { isNavigating.current = true; }}
                 className="text-blue-600 dark:text-blue-500 font-bold hover:text-blue-700 dark:hover:text-blue-400 active:opacity-70 transition-all"
               >
                 Quên mật khẩu?
@@ -325,7 +326,7 @@ export default function Login() {
             Chưa có tài khoản?{" "}
             <Link
               href="/register"
-              onClick={() => { isNavigating.current = true; }} // ✅ FIX: Tương tự cho link đăng ký
+              onClick={() => { isNavigating.current = true; }}
               className="text-blue-600 dark:text-blue-500 font-bold hover:text-blue-700 dark:hover:text-blue-400 active:opacity-70 transition-all"
             >
               Đăng ký ngay
