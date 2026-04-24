@@ -97,21 +97,38 @@ export default function NotificationsPage() {
   }, [lastDoc, loadingMore, user?.uid]);
 
   /* ================= GROUP BY DATE ================= */
-  const groupedNotifs = useMemo(() => {
-    const groups: Record<string, Notification[]> = { "Hôm nay": [], "Hôm qua": [], "Cũ hơn": [] };
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+const groupedNotifs = useMemo(() => {
+  const groups: {
+    "Hôm nay": Notification[];
+    "Hôm qua": Notification[];
+    "Cũ hơn": Notification[];
+  } = {
+    "Hôm nay": [],
+    "Hôm qua": [],
+    "Cũ hơn": [],
+  };
 
-    notifications.forEach((n) => {
-      const date = n.createdAt?.toDate() || new Date();
-      if (date >= today) groups["Hôm nay"].push(n);
-      else if (date >= yesterday) groups["Hôm qua"].push(n);
-      else groups["Cũ hơn"].push(n);
-    });
-    return groups;
-  }, [notifications]);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  notifications.forEach((n) => {
+    // 🔥 tránh undefined + logic rõ ràng
+    const date = n.createdAt ? n.createdAt.toDate() : new Date(0);
+
+    if (date >= today) {
+      groups["Hôm nay"].push(n);
+    } else if (date >= yesterday) {
+      groups["Hôm qua"].push(n);
+    } else {
+      groups["Cũ hơn"].push(n);
+    }
+  });
+
+  return groups;
+}, [notifications]);
 
   const unreadCount = useMemo(() => notifications.filter((n) =>!n.isRead).length, [notifications]);
 
