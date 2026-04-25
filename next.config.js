@@ -21,7 +21,7 @@ const nextConfig = {
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
 
-    // ⚠️ cái này giữ nguyên (chỉ cho image)
+    // ⚠️ chỉ áp dụng cho image
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
@@ -29,7 +29,7 @@ const nextConfig = {
     const csp = [
       "default-src 'self'",
 
-      // ✅ FULL SCRIPT (fix lỗi bị block)
+      // 🔥 FIX SCRIPT FULL (Firebase + Google)
       [
         "script-src",
         "'self'",
@@ -39,6 +39,8 @@ const nextConfig = {
         "https://www.gstatic.com",
         "https://www.googleapis.com",
         "https://*.firebaseapp.com",
+        "https://*.firebaseio.com",
+        "https://*.firebasedatabase.app", // 🔥 QUAN TRỌNG NHẤT
       ].join(' '),
 
       "style-src 'self' 'unsafe-inline'",
@@ -55,7 +57,7 @@ const nextConfig = {
 
       "font-src 'self' data:",
 
-      // ✅ QUAN TRỌNG NHẤT (Firebase fix full)
+      // 🔥 CONNECT FULL (Firestore + RTDB + WebSocket)
       [
         "connect-src",
         "'self'",
@@ -68,7 +70,6 @@ const nextConfig = {
         "https://fcm.googleapis.com",
       ].join(' '),
 
-      // ✅ thêm gstatic vào frame (auth popup)
       [
         "frame-src",
         "'self'",
@@ -117,7 +118,6 @@ const nextConfig = {
       use: ['@svgr/webpack'],
     });
 
-    // ⚠️ fix SSR lib bị lỗi window/self
     if (isServer) {
       config.output.globalObject = 'self';
     }
