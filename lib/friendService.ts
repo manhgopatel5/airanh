@@ -199,9 +199,7 @@ export const sendFriendRequest = async (
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
-  batch.update(toUserRef, {
-    friendRequestsUnread: increment(1),
-  });
+
   await batch.commit();
 };
 
