@@ -264,13 +264,12 @@ export const acceptRequest = async (
       "friends",
       `${req.toUserId}_${req.fromUserId}`
     );
-    const toUserRef = doc(db, "users", req.toUserId);
+    
 
-    const [reqSnap, friendSnap, toUserSnap] = await Promise.all([
-      transaction.get(requestRef),
-      transaction.get(friend1Ref),
-      transaction.get(toUserRef),
-    ]);
+const [reqSnap, friendSnap] = await Promise.all([
+  transaction.get(requestRef),
+  transaction.get(friend1Ref),
+]);
 
     if (!reqSnap.exists() || reqSnap.data().status !== "pending") {
       throw new FriendError("Lời mời không tồn tại");
