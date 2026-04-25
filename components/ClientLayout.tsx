@@ -4,7 +4,6 @@ import { usePathname, useRouter } from "next/navigation";
 import FCMProvider from "@/components/FCMProvider";
 import { useEffect, useMemo, useState } from "react";
 import BottomNav from "@/components/BottomNav";
-import { useAuth } from "@/lib/AuthContext";
 import { Toaster } from "react-hot-toast";
 
 type Props = {
