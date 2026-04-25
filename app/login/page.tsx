@@ -213,6 +213,7 @@ export default function Login() {
 
           <form onSubmit={handleLogin} className="space-y-4">
 
+
             <input
               type="text"
               className="hidden"
@@ -234,6 +235,7 @@ export default function Login() {
               />
             </div>
 
+
             <div className="flex items-center border p-3 rounded">
               <FiLock />
               <input
@@ -249,6 +251,17 @@ export default function Login() {
                 {show ? <FiEyeOff /> : <FiEye />}
               </button>
             </div>
+            <div className="flex items-center justify-between text-sm pt-1.5">
+  <label className="flex items-center gap-2.5 cursor-pointer select-none">
+    <input
+      type="checkbox"
+      checked={remember}
+      onChange={(e) => setRemember(e.target.checked)}
+      className="w-4 h-4"
+    />
+    <span>Ghi nhớ đăng nhập</span>
+  </label>
+</div>
 
             <button
               type="submit"
