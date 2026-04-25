@@ -7,7 +7,6 @@ import {
   getDoc,
   getDocs,
   writeBatch,
-  increment,
   limit,
   orderBy,
   query,
