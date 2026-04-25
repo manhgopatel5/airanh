@@ -26,8 +26,8 @@ type TabId = "hot" | "near" | "new" | "friends";
 const PAGE_SIZE = 15;
 
 export default function Home() {
-  const db = getFirebaseDB();
-  const auth = getFirebaseAuth();
+  const [db, setDb] = useState<any>(null);
+  const [auth, setAuth] = useState<any>(null);
 
   const [activeTab, setActiveTab] = useState<TabId>("hot");
   const [tasks, setTasks] = useState<TaskListItem[]>([]);
@@ -44,13 +44,27 @@ export default function Home() {
 
   const router = useRouter();
 
+  // 🔥 INIT FIREBASE (CHỈ CLIENT)
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, setCurrentUser);
-    return () => unsub();
+    try {
+      setDb(getFirebaseDB());
+      setAuth(getFirebaseAuth());
+    } catch (e) {
+      console.error("Firebase init error:", e);
+    }
   }, []);
 
+  // 🔥 AUTH LISTENER
   useEffect(() => {
-    if (!currentUser?.uid) {
+    if (!auth) return;
+
+    const unsub = onAuthStateChanged(auth, setCurrentUser);
+    return () => unsub();
+  }, [auth]);
+
+  // 🔥 FRIEND IDS
+  useEffect(() => {
+    if (!db || !currentUser?.uid) {
       setFriendIds([]);
       return;
     }
@@ -68,8 +82,9 @@ export default function Home() {
     );
 
     return () => unsub();
-  }, [currentUser?.uid]);
+  }, [db, currentUser?.uid]);
 
+  // 🔥 GEOLOCATION
   useEffect(() => {
     if (activeTab !== "near" || !navigator.geolocation) return;
 
@@ -94,8 +109,11 @@ export default function Home() {
     );
   }, [activeTab]);
 
+  // 🔥 BUILD QUERY
   const buildQuery = useCallback(
     (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
+      if (!db) return null;
+
       const constraints: QueryConstraint[] = [
         where("status", "in", ["open", "full"]),
         where("visibility", "==", "public"),
@@ -118,10 +136,13 @@ export default function Home() {
 
       return query(collection(db, "tasks"), ...constraints);
     },
-    [activeTab, friendIds]
+    [db, activeTab, friendIds]
   );
 
+  // 🔥 LOAD DATA
   useEffect(() => {
+    if (!db) return;
+
     if (unsubRef.current) unsubRef.current();
 
     setLoading(true);
@@ -140,6 +161,7 @@ export default function Home() {
     }
 
     const q = buildQuery();
+    if (!q) return;
 
     const unsub = onSnapshot(
       q,
@@ -148,22 +170,6 @@ export default function Home() {
           id: doc.id,
           ...doc.data(),
         })) as TaskListItem[];
-
-        if (activeTab === "near" && userLocation) {
-          data = data
-            .map((t) => ({
-              ...t,
-              distance:
-                t.location?.lat && t.location?.lng
-                  ? getDistance(userLocation, {
-                      lat: t.location.lat,
-                      lng: t.location.lng,
-                    })
-                  : 9999,
-            }))
-            .filter((t: any) => t.distance < 50)
-            .sort((a: any, b: any) => a.distance - b.distance);
-        }
 
         setTasks(data);
         setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -175,36 +181,23 @@ export default function Home() {
 
     unsubRef.current = unsub;
     return () => unsub();
-  }, [activeTab, friendIds, userLocation, buildQuery, currentUser]);
+  }, [db, activeTab, friendIds, userLocation, buildQuery, currentUser]);
 
   const loadMore = useCallback(async () => {
-    if (!lastDoc || loadingMore || !hasMore) return;
+    if (!db || !lastDoc || loadingMore || !hasMore) return;
 
     setLoadingMore(true);
 
     try {
       const q = buildQuery(lastDoc);
+      if (!q) return;
+
       const snap = await getDocs(q);
 
-      let newTasks = snap.docs.map((doc) => ({
+      const newTasks = snap.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })) as TaskListItem[];
-
-      if (activeTab === "near" && userLocation) {
-        newTasks = newTasks
-          .map((t) => ({
-            ...t,
-            distance:
-              t.location?.lat && t.location?.lng
-                ? getDistance(userLocation, {
-                    lat: t.location.lat,
-                    lng: t.location.lng,
-                  })
-                : 9999,
-          }))
-          .filter((t: any) => t.distance < 50);
-      }
 
       setTasks((prev) => [...prev, ...newTasks]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -212,9 +205,9 @@ export default function Home() {
     } finally {
       setLoadingMore(false);
     }
-  }, [lastDoc, loadingMore, hasMore, buildQuery, activeTab, userLocation]);
+  }, [db, lastDoc, loadingMore, hasMore, buildQuery]);
 
-  const tabs: { id: TabId; label: string; icon: any }[] = [
+  const tabs = [
     { id: "hot", label: "Hot", icon: HiFire },
     { id: "near", label: "Gần", icon: HiClock },
     { id: "new", label: "Mới", icon: HiSparkles },
@@ -230,7 +223,7 @@ export default function Home() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => setActiveTab(tab.id as TabId)}
                 className={
                   activeTab === tab.id
                     ? "text-blue-500 font-bold"
@@ -263,44 +256,4 @@ export default function Home() {
       </button>
     </div>
   );
-}
-
-function SkeletonList() {
-  return (
-    <div className="space-y-3">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-white rounded-3xl p-4 animate-pulse border">
-          <div className="flex gap-3 mb-3">
-            <div className="w-10 h-10 bg-gray-200 rounded-full" />
-            <div className="flex-1 space-y-2">
-              <div className="h-4 bg-gray-200 rounded w-1/3" />
-              <div className="h-3 bg-gray-200 rounded w-1/4" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <div className="h-4 bg-gray-200 rounded w-3/4" />
-            <div className="h-20 bg-gray-200 rounded-2xl" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function getDistance(
-  p1: { lat: number; lng: number },
-  p2: { lat: number; lng: number }
-) {
-  const R = 6371;
-  const dLat = ((p2.lat - p1.lat) * Math.PI) / 180;
-  const dLng = ((p2.lng - p1.lng) * Math.PI) / 180;
-
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((p1.lat * Math.PI) / 180) *
-      Math.cos((p2.lat * Math.PI) / 180) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
-
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
