@@ -11,12 +11,11 @@ import {
   onSnapshot,
   doc,
   getDoc,
-  getDocs,
   orderBy,
   limit,
   setDoc,
 } from "firebase/firestore";
-import { FiSearch, FiMessageSquare, FiUserPlus, FiX, FiPlus } from "react-icons/fi";
+import { FiSearch, FiMessageSquare, FiUserPlus, FiX } from "react-icons/fi";
 import { IoSparkles } from "react-icons/io5";
 import Link from "next/link";
 import { toast, Toaster } from "sonner";
@@ -45,11 +44,10 @@ export default function ChatPage() {
   const [focused, setFocused] = useState(false);
   const [adding, setAdding] = useState(false);
 
-  /* ================= LOAD FRIENDS - FIX LỖI QUYỀN ================= */
+  /* ================= LOAD FRIENDS ================= */
   useEffect(() => {
     if (!user) return;
 
-    // ✅ FIX: Load từ subcollection friends thay vì query all users
     const q = query(collection(db, "friends"), where("userId", "==", user.uid));
     const unsub = onSnapshot(q, async (snap) => {
       try {
@@ -62,7 +60,6 @@ export default function ChatPage() {
           return;
         }
 
-        // Batch get 10 user/lần để tránh vượt limit
         const chunks: string[][] = [];
         for (let i = 0; i < friendIds.length; i += 10) {
           chunks.push(friendIds.slice(i, i + 10));
@@ -75,9 +72,9 @@ export default function ChatPage() {
         );
 
         const list: FriendItem[] = userSnaps
-         .flat()
-         .filter((s) => s.exists())
-         .map((s) => {
+       .flat()
+       .filter((s) => s.exists())
+       .map((s) => {
             const data = s.data();
             return {
               uid: s.id,
@@ -87,7 +84,7 @@ export default function ChatPage() {
               shortId: data.shortId || "",
               lastSeen: data.lastSeen,
               isOnline: data.online || false,
-              unreadCount: 0, // TODO: query từ chats
+              unreadCount: 0,
             };
           });
 
@@ -114,13 +111,11 @@ export default function ChatPage() {
     try {
       let targetUid = "";
 
-      // 1. Thử tìm bằng shortId
       const shortIdRef = doc(db, "shortIds", keyword);
       const shortIdSnap = await getDoc(shortIdRef);
       if (shortIdSnap.exists()) {
         targetUid = shortIdSnap.data().uid;
       } else {
-        // 2. Thử tìm bằng username
         const usernameRef = doc(db, "usernames", keyword.toLowerCase());
         const usernameSnap = await getDoc(usernameRef);
         if (usernameSnap.exists()) {
@@ -138,7 +133,6 @@ export default function ChatPage() {
         return;
       }
 
-      // 3. Check đã là bạn chưa
       const friendRef = doc(db, "friends", `${user.uid}_${targetUid}`);
       const friendSnap = await getDoc(friendRef);
       if (friendSnap.exists()) {
@@ -146,14 +140,12 @@ export default function ChatPage() {
         return;
       }
 
-      // 4. Add bạn
       await setDoc(friendRef, {
         userId: user.uid,
         friendId: targetUid,
         createdAt: new Date(),
       });
 
-      // 5. Tạo chat
       const chatId = [user.uid, targetUid].sort().join("_");
       await setDoc(
         doc(db, "chats", chatId),
@@ -187,7 +179,7 @@ export default function ChatPage() {
     <>
       <Toaster richColors position="top-center" />
       <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50 dark:from-zinc-950 dark:via-zinc-950 dark:to-black">
-        {/* HEADER GLASS + NÚT ĐẸP */}
+        {/* HEADER GLASS */}
         <div className="sticky top-0 z-20 backdrop-blur-2xl bg-white/70 dark:bg-zinc-950/70 border-b border-gray-200/50 dark:border-zinc-800/50">
           <div className="px-5 pt-7 pb-4">
             <div className="flex items-center justify-between mb-5">
@@ -271,7 +263,7 @@ export default function ChatPage() {
               </h3>
               <p className="text-sm text-gray-500 dark:text-zinc-400 font-medium max-w-[240px] mb-6">
                 {search
-             ? `Không có kết quả cho "${search}"`
+           ? `Không có kết quả cho "${search}"`
                   : "Tìm bạn bè bằng ID hoặc username để bắt đầu trò chuyện"}
               </p>
               {search && (
