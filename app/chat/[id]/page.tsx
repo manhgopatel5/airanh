@@ -50,12 +50,13 @@ type Message = {
 
 export default function ChatDetailPage() {
   const params = useParams();
+const idFromUrl = Array.isArray(params?.id)
+  ? params.id[0]
+  : params?.id || null;
   const router = useRouter();
   const db = getFirebaseDB();
   const storage = getFirebaseStorage();
   const { user, loading: authLoading } = useAuth();
-  const idFromUrl = params.id as string;
-
   const [friend, setFriend] = useState<UserData | null>(null);
   const [friendId, setFriendId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -77,7 +78,8 @@ export default function ChatDetailPage() {
 
   /* ================= LOAD FRIEND - FIX PVT331HC ================= */
   useEffect(() => {
-    if (!idFromUrl || authLoading) return;
+    if (!idFromUrl) return;
+if (authLoading) return;
     if (!user) {
       router.replace("/chat");
       return;
