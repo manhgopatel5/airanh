@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
+import { getFirebaseDB } from "@/lib/firebase";
 import {
   collection,
   query,
