@@ -2,7 +2,6 @@
 
 import { createContext, useEffect, useState, useRef, useMemo, ReactNode, useContext } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { getFirebaseAuth, getFirebaseDB, getFirebaseRTDB } from "@/lib/firebase";
 import {
   doc,
   getDoc,
@@ -77,9 +76,21 @@ const generateSearchKeywords = (name: string, userId: string, username?: string)
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const auth = getFirebaseAuth();
-  const db = getFirebaseDB();
-  const rtdb = getFirebaseRTDB();
+const [auth, setAuth] = useState<any>(null);
+const [db, setDb] = useState<any>(null);
+const [rtdb, setRtdb] = useState<any>(null);
+
+useEffect(() => {
+  const init = async () => {
+    const firebase = await import("@/lib/firebase");
+
+    setAuth(firebase.getFirebaseAuth());
+    setDb(firebase.getFirebaseDB());
+    setRtdb(firebase.getFirebaseRTDB());
+  };
+
+  init();
+}, []);
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,10 +99,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const userDataUnsub = useRef<(() => void) | null>(null);
   const presenceUnsub = useRef<(() => void) | null>(null);
 
-  useEffect(() => {
-    const unsubAuth = onAuthStateChanged(
-      auth,
-      async (firebaseUser) => {
+useEffect(() => {
+  if (!auth || !db || !rtdb) return;
+
+  const unsubAuth = onAuthStateChanged(auth, async (firebaseUser) => {
         setUser(firebaseUser);
         setError(null);
 
@@ -244,7 +255,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (userDataUnsub.current) userDataUnsub.current();
       if (presenceUnsub.current) presenceUnsub.current();
     };
-  }, []);
+  }, [auth, db, rtdb]);
 
   const value = useMemo(
     () => ({ user, userData, loading, error }),
@@ -262,11 +273,14 @@ export const useAuth = () => {
 
 // ================= LOGOUT =================
 export const useLogout = () => {
-  const auth = getFirebaseAuth();
-  const db = getFirebaseDB();
-
   return async () => {
+    const firebase = await import("@/lib/firebase");
+
+    const auth = firebase.getFirebaseAuth();
+    const db = firebase.getFirebaseDB();
+
     const user = auth.currentUser;
+
     if (user) {
       try {
         await updateDoc(doc(db, "users", user.uid), {
@@ -275,6 +289,7 @@ export const useLogout = () => {
         });
       } catch {}
     }
+
     await auth.signOut();
   };
 };
