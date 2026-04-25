@@ -237,12 +237,12 @@ userDataUnsub.current = onSnapshot(userRef, (docSnap) => {
               });
           });
 
-        } catch (e: any) {
-          console.error("Auth error:", e);
-          setError(e.message || "Lỗi khởi tạo tài khoản");
-
-      },
-      (err) => {
+} catch (e: any) {
+  console.error("Auth error:", e);
+  setError(e.message || "Lỗi khởi tạo tài khoản");
+}
+,
+(err) => {
         console.error("onAuthStateChanged error:", err);
         setError("Lỗi xác thực");
         setLoading(false);
