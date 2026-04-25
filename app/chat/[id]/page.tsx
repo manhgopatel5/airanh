@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB, getFirebaseStorage } from "@/lib/firebase";
 import {
-  collection, query, where, onSnapshot, doc,
+  collection, query, onSnapshot, doc,
   orderBy, limit, addDoc, serverTimestamp, Timestamp,
   writeBatch, setDoc, updateDoc, getDoc
 } from "firebase/firestore";
@@ -53,7 +53,8 @@ export default function ChatDetailPage() {
   const db = getFirebaseDB();
   const storage = getFirebaseStorage();
   const { user, loading: authLoading } = useAuth();
-  const friendId = params.uid as string;
+  // ✅ FIX 1: Route /chat/[id] nên dùng params.id
+  const friendId = params.id as string;
 
   const [friend, setFriend] = useState<UserData | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -73,7 +74,7 @@ export default function ChatDetailPage() {
 
   const chatId = user && friendId? [user.uid, friendId].sort().join("_") : null;
 
-  /* ================= LOAD FRIEND - FIX CRASH ================= */
+  /* ================= LOAD FRIEND ================= */
   useEffect(() => {
     if (!friendId || authLoading) return;
     if (!user) {
@@ -101,28 +102,30 @@ export default function ChatDetailPage() {
 
     loadFriend();
 
-    // Realtime online status
     const unsub = onSnapshot(doc(db, "users", friendId), (snap) => {
       if (snap.exists()) {
         setFriend({ uid: snap.id,...snap.data() } as UserData);
       }
     });
     return () => unsub();
-  }, [friendId, user, authLoading, router]); // ✅ Thêm deps đầy đủ
+  }, [friendId, user, authLoading, router, db]);
 
-  /* ================= LOAD MESSAGES ================= */
+  /* ================= LOAD MESSAGES - FIX 4: Bỏ where!= null ================= */
   useEffect(() => {
     if (!chatId ||!user ||!friend) return;
 
     const q = query(
       collection(db, "chats", chatId, "messages"),
-      where("createdAt", "!=", null),
       orderBy("createdAt", "asc"),
       limit(500)
     );
 
     const unsub = onSnapshot(q, (snap) => {
-      const msgs = snap.docs.map((d) => ({ id: d.id,...d.data() } as Message));
+      // ✅ Filter null ở client thay vì query where!= null
+      const msgs = snap.docs
+       .map((d) => ({ id: d.id,...d.data() } as Message))
+       .filter((m) => m.createdAt!== null);
+
       setMessages(msgs);
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
 
@@ -143,26 +146,42 @@ export default function ChatDetailPage() {
     });
 
     return () => unsub();
-  }, [chatId, user, friendId, friend]);
+  }, [chatId, user, friendId, friend, db]);
 
-  /* ================= TYPING INDICATOR ================= */
+  /* ================= TYPING INDICATOR - FIX 3: Check exists ================= */
   useEffect(() => {
     if (!chatId) return;
     const unsub = onSnapshot(doc(db, "chats", chatId), (snap) => {
-      const data = snap.data();
-      setIsTyping(data?.typing?.[friendId] === true);
+      // ✅ FIX 3: Check exists trước khi.data()
+      if (snap.exists()) {
+        const data = snap.data();
+        setIsTyping(data?.typing?.[friendId] === true);
+      } else {
+        setIsTyping(false);
+      }
     });
     return () => unsub();
-  }, [chatId, friendId]);
+  }, [chatId, friendId, db]);
 
+  /* ================= FIX 2: Dùng setDoc merge thay vì updateDoc ================= */
   const handleTyping = useCallback(async () => {
     if (!user ||!chatId) return;
-    await updateDoc(doc(db, "chats", chatId), { [`typing.${user.uid}`]: true });
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    typingTimeoutRef.current = setTimeout(async () => {
-      await updateDoc(doc(db, "chats", chatId), { [`typing.${user.uid}`]: false });
-    }, 3000);
-  }, [user, chatId]);
+    try {
+      await setDoc(doc(db, "chats", chatId), {
+        [`typing.${user.uid}`]: true
+      }, { merge: true });
+
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(async () => {
+        await setDoc(doc(db, "chats", chatId), {
+          [`typing.${user.uid}`]: false
+        }, { merge: true });
+      }, 3000);
+    } catch (e) {
+      // Im lặng nếu chat chưa tạo
+      console.log("Typing error:", e);
+    }
+  }, [user, chatId, db]);
 
   /* ================= SEND MESSAGE ================= */
   const sendMessage = useCallback(async () => {
@@ -182,7 +201,7 @@ export default function ChatDetailPage() {
         createdAt: serverTimestamp(),
         seenBy: [user.uid],
         type: "text",
-       ...(tempReply && {
+      ...(tempReply && {
           replyTo: {
             id: tempReply.id,
             text: tempReply.text,
@@ -209,7 +228,7 @@ export default function ChatDetailPage() {
     } finally {
       setSending(false);
     }
-  }, [user, text, friend, chatId, sending, replyTo, friendId]);
+  }, [user, text, friend, chatId, sending, replyTo, friendId, db]);
 
   /* ================= SEND IMAGE ================= */
   const sendImage = async (file: File) => {
@@ -373,8 +392,8 @@ export default function ChatDetailPage() {
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text- text-gray-900 dark:text-white truncate">{friend.name}</p>
-          <p className="text- text-gray-500 dark:text-zinc-400 font-medium">
+          <p className="font-bold text-gray-900 dark:text-white truncate">{friend.name}</p>
+          <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">
             {isTyping? (
               <span className="flex items-center gap-1">
                 Đang nhập
@@ -416,7 +435,7 @@ export default function ChatDetailPage() {
           const isFirstInGroup =!prev || prev.senderId!== m.senderId;
           const isLastInGroup =!next || next.senderId!== m.senderId;
           const showDate =
-           !prev ||
+          !prev ||
             (m.createdAt &&
               prev.createdAt &&
               m.createdAt.toDate().toDateString()!== prev.createdAt.toDate().toDateString());
@@ -426,7 +445,7 @@ export default function ChatDetailPage() {
               {showDate && m.createdAt && (
                 <div className="flex items-center justify-center my-6">
                   <div className="px-4 py-1.5 bg-gray-200/60 dark:bg-zinc-800/60 backdrop-blur-xl rounded-full">
-                    <p className="text- font-bold text-gray-600 dark:text-zinc-400">
+                    <p className="text-xs font-bold text-gray-600 dark:text-zinc-400">
                       {formatDateDivider(m.createdAt)}
                     </p>
                   </div>
@@ -442,11 +461,11 @@ export default function ChatDetailPage() {
                 <div className={`group max-w-[75%] flex flex-col ${isMe? "items-end" : "items-start"}`}>
                   {m.replyTo && (
                     <div
-                      className={`px-3 py-1.5 mb-1 rounded-2xl text- ${
+                      className={`px-3 py-1.5 mb-1 rounded-2xl text-xs ${
                         isMe? "bg-blue-400/30 text-white/80" : "bg-gray-200/60 dark:bg-zinc-700/60 text-gray-600 dark:text-zinc-300"
                       }`}
                     >
-                      <p className="font-bold text-">{m.replyTo.senderName}</p>
+                      <p className="font-bold text-xs">{m.replyTo.senderName}</p>
                       <p className="truncate">{m.replyTo.text}</p>
                     </div>
                   )}
@@ -455,22 +474,22 @@ export default function ChatDetailPage() {
                     onClick={() => setReplyTo(m)}
                     className={`px-4 py-2.5 shadow-sm cursor-pointer ${
                       isMe
-                       ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
+                      ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
                             isFirstInGroup && isLastInGroup
-                             ? "rounded-3xl"
+                            ? "rounded-3xl"
                               : isFirstInGroup
-                             ? "rounded-3xl rounded-br-lg"
+                            ? "rounded-3xl rounded-br-lg"
                               : isLastInGroup
-                             ? "rounded-3xl rounded-tr-lg"
+                            ? "rounded-3xl rounded-tr-lg"
                               : "rounded-r-lg rounded-l-3xl"
                           }`
                         : `bg-white dark:bg-zinc-800 text-gray-900 dark:text-white ${
                             isFirstInGroup && isLastInGroup
-                             ? "rounded-3xl"
+                            ? "rounded-3xl"
                               : isFirstInGroup
-                             ? "rounded-3xl rounded-bl-lg"
+                            ? "rounded-3xl rounded-bl-lg"
                               : isLastInGroup
-                             ? "rounded-3xl rounded-tl-lg"
+                            ? "rounded-3xl rounded-tl-lg"
                               : "rounded-l-lg rounded-r-3xl"
                           }`
                     }`}
@@ -479,7 +498,7 @@ export default function ChatDetailPage() {
                     {m.file && (
                       <a href={m.file} target="_blank" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl">
                         <Paperclip size={16} />
-                        <span className="text- truncate">{m.fileName}</span>
+                        <span className="text-sm truncate">{m.fileName}</span>
                       </a>
                     )}
                     {m.location && (
@@ -489,14 +508,14 @@ export default function ChatDetailPage() {
                         className="flex items-center gap-2 p-2 bg-black/10 rounded-xl"
                       >
                         <MapPin size={16} />
-                        <span className="text-">Xem vị trí</span>
+                        <span className="text-sm">Xem vị trí</span>
                       </a>
                     )}
-                    {m.text && <p className="text- leading-relaxed whitespace-pre-wrap break-words">{m.text}</p>}
+                    {m.text && <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{m.text}</p>}
                   </div>
                   {isLastInGroup && (
                     <div className={`flex items-center gap-1 mt-1 px-1 ${isMe? "flex-row-reverse" : ""}`}>
-                      <p className="text- text-gray-400 dark:text-zinc-500 font-medium">{formatTime(m.createdAt)}</p>
+                      <p className="text-xs text-gray-400 dark:text-zinc-500 font-medium">{formatTime(m.createdAt)}</p>
                       {isMe && m.seenBy && m.seenBy.length > 1 && <CheckCheck className="text-blue-500" size={14} />}
                       {isMe && (!m.seenBy || m.seenBy.length <= 1) && <Check className="text-gray-400" size={14} />}
                     </div>
@@ -514,10 +533,10 @@ export default function ChatDetailPage() {
         <div className="px-4 pt-2 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-2xl border-t border-gray-200/50 dark:border-zinc-800/50">
           <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-2xl">
             <div className="flex-1 min-w-0">
-              <p className="text- font-bold text-blue-600 dark:text-blue-400">
+              <p className="text-xs font-bold text-blue-600 dark:text-blue-400">
                 Trả lời {replyTo.senderId === user.uid? "bạn" : friend.name}
               </p>
-              <p className="text- text-gray-600 dark:text-zinc-400 truncate">{replyTo.text}</p>
+              <p className="text-sm text-gray-600 dark:text-zinc-400 truncate">{replyTo.text}</p>
             </div>
             <button onClick={() => setReplyTo(null)} className="p-1.5 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-full transition-colors">
               <X size={18} className="text-blue-600 dark:text-blue-400" />
@@ -557,7 +576,7 @@ export default function ChatDetailPage() {
               }}
               onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && (e.preventDefault(), sendMessage())}
               placeholder="Nhắn tin..."
-              className="w-full px-5 py-3 bg-gray-100 dark:bg-zinc-900 rounded-3xl outline-none focus:ring-2 focus:ring-blue-500/30 text- font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 transition-all"
+              className="w-full px-5 py-3 bg-gray-100 dark:bg-zinc-900 rounded-3xl outline-none focus:ring-2 focus:ring-blue-500/30 text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 transition-all"
             />
           </div>
           <button
