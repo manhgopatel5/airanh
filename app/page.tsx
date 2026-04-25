@@ -14,7 +14,7 @@ import {
   QueryDocumentSnapshot,
   DocumentData,
 } from "firebase/firestore";
-import { onAuthStateChanged, User } from "firebase/auth";
+
 import { useRouter } from "next/navigation";
 import { FiPlus } from "react-icons/fi";
 import { HiFire, HiClock, HiSparkles, HiUsers } from "react-icons/hi";
