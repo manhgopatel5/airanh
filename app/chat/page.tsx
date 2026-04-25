@@ -43,95 +43,88 @@ export default function ChatPage() {
   const [focused, setFocused] = useState(false);
   const [adding, setAdding] = useState(false);
 
-useEffect(() => {
-  if (!user?.uid) {
-    setLoading(false);
-    return;
-  }
+  useEffect(() => {
+    if (!user?.uid) {
+      setLoading(false);
+      return;
+    }
 
-  const q = query(
-    collection(db, "friends"),
-    where("userId", "==", user.uid)
-  );
+    const q = query(
+      collection(db, "friends"),
+      where("userId", "==", user.uid)
+    );
 
-  const unsub = onSnapshot(
-    q,
-    async (snap) => {
-      try {
-        setLoading(true);
+    const unsub = onSnapshot(
+      q,
+      async (snap) => {
+        try {
+          setLoading(true);
 
-        const friendIds = snap.docs
-          .map((d) => d.data().friendId)
-          .filter((item): item is FriendItem => item !== null)
+          const friendIds = snap.docs
+           .map((d) => d.data().friendId)
+           .filter((id): id is string => typeof id === "string" &&!!id);
 
-        if (!friendIds.length) {
-          setFriends([]);
-          setLoading(false);
-          return;
-        }
+          if (!friendIds.length) {
+            setFriends([]);
+            setLoading(false);
+            return;
+          }
 
-        const chunks: string[][] = [];
-        for (let i = 0; i < friendIds.length; i += 10) {
-          chunks.push(friendIds.slice(i, i + 10));
-        }
+          const chunks: string[][] = [];
+          for (let i = 0; i < friendIds.length; i += 10) {
+            chunks.push(friendIds.slice(i, i + 10));
+          }
 
-        const userSnaps = await Promise.all(
-          chunks.map((chunk) =>
-            Promise.all(
-              chunk.map((id) =>
-                id ? getDoc(doc(db, "users", id)) : null
+          const userSnaps = await Promise.all(
+            chunks.map((chunk) =>
+              Promise.all(
+                chunk.map((id) => getDoc(doc(db, "users", id)))
               )
             )
-          )
-        );
+          );
 
-        const list: FriendItem[] = userSnaps
-          .flat()
-          .filter((s) => s && s.exists())
-.map((s) => {
-  if (!s) return null;
+          const list: FriendItem[] = userSnaps
+           .flat()
+           .filter((s): s is NonNullable<typeof s> => s!== null && s.exists())
+           .map((s) => {
+              const data = s.data();
+              return {
+                uid: s.id,
+                name: data?.name || "User",
+                username: data?.username || "",
+                avatar:
+                  data?.avatar ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    data?.name || "User"
+                  )}&background=random`,
+                userId: data?.userId || "",
+                lastSeen: data?.lastSeen,
+                isOnline: data?.isOnline || false,
+                unreadCount: 0,
+              };
+            });
 
-  const data = s.data();
-  if (!data) return null;
-
-  return {
-    uid: s.id,
-    name: data?.name || "User",
-    username: data?.username || "",
-    avatar:
-      data?.avatar ||
-      `https://ui-avatars.com/api/?name=${encodeURIComponent(
-        data?.name || "User"
-      )}&background=random`,
-    userId: data?.userId || "",
-    lastSeen: data?.lastSeen,
-    isOnline: data?.isOnline || false,
-    unreadCount: 0,
-  };
-})
-.filter(Boolean)
-
-        setFriends(list);
-      } catch (e) {
-        console.error(e);
+          setFriends(list);
+        } catch (e) {
+          console.error(e);
+          toast.error("Lỗi tải danh sách");
+        } finally {
+          setLoading(false);
+        }
+      },
+      (error) => {
+        console.error(error);
         toast.error("Lỗi tải danh sách");
-      } finally {
         setLoading(false);
       }
-    },
-    (error) => {
-      console.error(error);
-      toast.error("Lỗi tải danh sách");
-      setLoading(false);
-    }
-  );
+    );
 
-  return () => unsub();
-}, [user?.uid]); // ✅ FIX dependency
+    return () => unsub();
+  }, [user?.uid, db]);
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!search.trim() || !user?.uid) return;
+    if (!search.trim() ||!user?.uid) return;
 
     const keyword = search.trim();
     setAdding(true);
