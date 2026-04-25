@@ -125,8 +125,6 @@ export default function UserSearch() {
     }
   };
 
-  // ❌ XÓA HÀM highlightText vì không dùng
-
   const renderButton = (u: UserResult) => {
     const isSending = sending === u.uid;
 
@@ -220,13 +218,14 @@ export default function UserSearch() {
                   u.avatar ||
                   `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || "U")}`
                 }
-                alt={u.name || "User avatar"} // ✅ Thêm alt
+                alt={u.name || "User avatar"}
                 className="w-10 h-10 rounded-full"
               />
               <div>
                 <p>{u.name || "User"}</p>
                 <p className="text-xs text-gray-500">{u.email}</p>
               </div>
+            </div>
             {renderButton(u)}
           </div>
         ))}
