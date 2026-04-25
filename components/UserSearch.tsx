@@ -5,7 +5,6 @@ import { searchUsers } from "@/lib/userService";
 import { sendFriendRequest, cancelFriendRequest, getFriendStatus } from "@/lib/friendService";
 import { useAuth } from "@/lib/AuthContext";
 import { FiSearch, FiUserPlus, FiCheck, FiX, FiUserX } from "react-icons/fi";
-import { HiSparkles } from "react-icons/hi";
 
 type UserResult = {
   uid: string;
