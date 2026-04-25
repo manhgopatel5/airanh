@@ -54,7 +54,6 @@ function SkeletonList() {
 
 export default function Home() {
   const [db, setDb] = useState<any>(null);
-  const [auth, setAuth] = useState<any>(null);
 
   const [activeTab, setActiveTab] = useState<TabId>("hot");
   const [tasks, setTasks] = useState<any[]>([]);
@@ -72,11 +71,8 @@ export default function Home() {
 
   useEffect(() => {
     try {
-      const _db = getFirebaseDB();
-      const _auth = getFirebaseAuth();
-
-      setDb(_db);
-      setAuth(_auth);
+const _db = getFirebaseDB();
+setDb(_db);
     } catch (err) {
       console.error("Firebase init error:", err);
     }
