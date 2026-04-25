@@ -59,7 +59,8 @@ export default function Home() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [lastDoc, setLastDoc] =
+    useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
@@ -70,14 +71,15 @@ export default function Home() {
   /* ================= INIT FIREBASE ================= */
 
   useEffect(() => {
+    if (db) return;
+
     try {
-const _db = getFirebaseDB();
-setDb(_db);
+      const _db = getFirebaseDB();
+      setDb(_db);
     } catch (err) {
       console.error("Firebase init error:", err);
     }
-  }, []);
-
+  }, [db]);
 
   /* ================= BUILD QUERY ================= */
 
@@ -111,7 +113,10 @@ setDb(_db);
   /* ================= LOAD DATA ================= */
 
   useEffect(() => {
-    if (!db) return;
+    if (!db) {
+      console.log("DB chưa sẵn sàng");
+      return;
+    }
 
     if (unsubRef.current) {
       unsubRef.current();
@@ -124,36 +129,46 @@ setDb(_db);
     setHasMore(true);
 
     const q = buildQuery();
-    if (!q) return;
 
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        const data = snap.docs
-          .map((doc) => {
-            if (!doc.exists()) return null;
+    if (!q) {
+      console.log("Query null");
+      return;
+    }
 
-            return {
-              id: doc.id,
-              ...doc.data(),
-            };
-          })
-          .filter(Boolean);
+    let unsub: any;
 
-        setTasks(data);
-        setLastDoc(snap.docs[snap.docs.length - 1] || null);
-        setHasMore(snap.docs.length === PAGE_SIZE);
-        setLoading(false);
-      },
-      (err) => {
-        console.error("Firestore error:", err);
-        setLoading(false);
-      }
-    );
+    try {
+      unsub = onSnapshot(
+        q,
+        (snap) => {
+          const data = snap.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+
+          setTasks(data);
+          setLastDoc(snap.docs[snap.docs.length - 1] || null);
+          setHasMore(snap.docs.length === PAGE_SIZE);
+          setLoading(false);
+        },
+        (err) => {
+          console.error("Firestore error:", err);
+          setTasks([]);
+          setHasMore(false);
+          setLoading(false);
+        }
+      );
+    } catch (err) {
+      console.error("Snapshot crash:", err);
+      setLoading(false);
+      return;
+    }
 
     unsubRef.current = unsub;
 
-    return () => unsub();
+    return () => {
+      if (unsub) unsub();
+    };
   }, [db, buildQuery]);
 
   /* ================= LOAD MORE ================= */
@@ -169,16 +184,10 @@ setDb(_db);
 
       const snap = await getDocs(q);
 
-      const newTasks = snap.docs
-        .map((doc) => {
-          if (!doc.exists()) return null;
-
-          return {
-            id: doc.id,
-            ...doc.data(),
-          };
-        })
-        .filter(Boolean);
+      const newTasks = snap.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
 
       setTasks((prev) => [...prev, ...newTasks]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
