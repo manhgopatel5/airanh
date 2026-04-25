@@ -5,20 +5,19 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { sendEmailVerification } from "firebase/auth";
 import { toast } from "sonner";
-import { FiMail, FiX, FiLoader } from "react-icons/fi";
+import { FiMail, FiLoader } from "react-icons/fi"; // ✅ Bỏ FiX
 
 export default function EmailGuard({ children }: { children: React.ReactNode }) {
-  const { user, userData, loading } = useAuth();
+  const { user, loading } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [sending, setSending] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
-  // Các route public không cần verify
   const publicRoutes = ["/login", "/register", "/forgot-password"];
 
   useEffect(() => {
-    if (!loading && user &&!user.emailVerified &&!publicRoutes.includes(pathname)) {
+    if (!loading && user && !user.emailVerified && !publicRoutes.includes(pathname)) {
       setShowModal(true);
     } else {
       setShowModal(false);
@@ -44,7 +43,6 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
     router.push("/login");
   };
 
-  // Đang load hoặc route public thì render bình thường
   if (loading || publicRoutes.includes(pathname)) {
     return <>{children}</>;
   }
@@ -53,9 +51,8 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
     <>
       {children}
 
-      {/* Modal chặn toàn app */}
-      {showModal && user &&!user.emailVerified && (
-        <div className="fixed inset-0 z-[9999] backdrop-blur-2xl bg-black/60 flex items-center justify-center p-6">
+      {showModal && user && !user.emailVerified && (
+        <div className="fixed inset-0 z-50 backdrop-blur-2xl bg-black/60 flex items-center justify-center p-6">
           <div className="w-full max-w-sm bg-white dark:bg-zinc-900 rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-500/30">
               <FiMail className="text-white" size={32} />
@@ -64,19 +61,19 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
             <h2 className="text-2xl font-black text-center text-gray-900 dark:text-white mb-2">
               Xác minh email
             </h2>
-            <p className="text- text-gray-500 dark:text-zinc-400 text-center mb-2">
+            <p className="text-sm text-gray-500 dark:text-zinc-400 text-center mb-2">
               Vui lòng xác minh email để tiếp tục sử dụng
             </p>
-            <p className="text- font-bold text-blue-600 dark:text-blue-400 text-center mb-6">
+            <p className="text-sm font-bold text-blue-600 dark:text-blue-400 text-center mb-6">
               {user.email}
             </p>
 
             <button
               onClick={resendEmail}
               disabled={sending}
-              className="w-full h-14 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold text- rounded-2xl shadow-xl shadow-blue-500/40 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2 mb-3"
+              className="w-full h-14 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold text-base rounded-2xl shadow-xl shadow-blue-500/40 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2 mb-3"
             >
-              {sending? (
+              {sending ? (
                 <>
                   <FiLoader className="animate-spin" size={20} />
                   Đang gửi...
