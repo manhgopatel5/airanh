@@ -1,135 +1,101 @@
-import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import ClientLayout from "@/components/ClientLayout";
-import { AuthProvider } from "@/lib/AuthContext";
+"use client";
 
-const inter = Inter({
-  subsets: ["latin", "vietnamese"],
-  display: "swap",
-  variable: "--font-inter",
-});
+import { useAuth } from "@/lib/AuthContext";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { sendEmailVerification } from "firebase/auth";
+import { toast } from "sonner";
+import { FiMail, FiLoader } from "react-icons/fi"; // ✅ Bỏ FiX
 
-// ✅ THÊM DÒNG NÀY - TẮT PRERENDER ĐỂ FIX LỖI self is not defined
-export const dynamic = 'force-dynamic';
+export default function EmailGuard({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
+  const [sending, setSending] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
-export const metadata: Metadata = {
-  metadataBase: new URL("https://airanh.com"),
-  title: {
-    default: "Airanh",
-    template: "%s | Airanh",
-  },
-  description: "Kết nối, chia sẻ nhiệm vụ và kiếm tiền cùng bạn bè",
-  keywords: ["social", "task", "freelance", "vietnam", "kết nối", "airanh"],
-  authors: [{ name: "Airanh Team", url: "https://airanh.com" }],
-  creator: "Airanh",
-  publisher: "Airanh",
-  applicationName: "Airanh",
-  referrer: "origin-when-cross-origin",
-  formatDetection: { telephone: false, email: false, address: false },
+  const publicRoutes = ["/login", "/register", "/forgot-password"];
 
-  alternates: {
-    canonical: "/",
-  },
+  useEffect(() => {
+    if (!loading && user && !user.emailVerified && !publicRoutes.includes(pathname)) {
+      setShowModal(true);
+    } else {
+      setShowModal(false);
+    }
+  }, [user, loading, pathname]);
 
-  icons: {
-    icon: [
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-    ],
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
-    shortcut: "/favicon.ico",
-    other: [
-      { rel: "mask-icon", url: "/safari-pinned-tab.svg", color: "#3b82f6" },
-    ],
-  },
+  const resendEmail = async () => {
+    if (!user || sending) return;
+    setSending(true);
+    try {
+      await sendEmailVerification(user);
+      toast.success("Đã gửi lại email xác minh");
+    } catch (e: any) {
+      toast.error(e.message || "Gửi email thất bại");
+    } finally {
+      setSending(false);
+    }
+  };
 
-  manifest: "/manifest.json",
+  const handleLogout = async () => {
+    const { getFirebaseAuth } = await import("@/lib/firebase");
+    await getFirebaseAuth().signOut();
+    router.push("/login");
+  };
 
-  openGraph: {
-    type: "website",
-    locale: "vi_VN",
-    url: "https://airanh.com",
-    siteName: "Airanh",
-    title: "Airanh - Social Task App",
-    description: "Kết nối, chia sẻ nhiệm vụ và kiếm tiền cùng bạn bè",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Airanh",
-      },
-    ],
-  },
+  if (loading || publicRoutes.includes(pathname)) {
+    return <>{children}</>;
+  }
 
-  twitter: {
-    card: "summary_large_image",
-    title: "Airanh - Social Task App",
-    description: "Kết nối, chia sẻ nhiệm vụ và kiếm tiền cùng bạn bè",
-    images: ["/og-image.png"],
-    creator: "@airanh",
-  },
-
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "Airanh",
-    startupImage: [
-      {
-        url: "/splash-1170x2532.png",
-        media: "(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)",
-      },
-      {
-        url: "/splash-1284x2778.png",
-        media: "(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)",
-      },
-    ],
-  },
-
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
-
-  other: {
-    "msapplication-TileColor": "#3b82f6",
-    "msapplication-config": "/browserconfig.xml",
-  },
-};
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#09090b" },
-  ],
-  colorScheme: "light dark",
-};
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi" className={inter.variable} suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      </head>
-      <body className="bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none">
-        <AuthProvider>
-          <ClientLayout>{children}</ClientLayout>
-        </AuthProvider>
-      </body>
-    </html>
+    <>
+      {children}
+
+      {showModal && user && !user.emailVerified && (
+        <div className="fixed inset-0 z-50 backdrop-blur-2xl bg-black/60 flex items-center justify-center p-6">
+          <div className="w-full max-w-sm bg-white dark:bg-zinc-900 rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-500/30">
+              <FiMail className="text-white" size={32} />
+            </div>
+
+            <h2 className="text-2xl font-black text-center text-gray-900 dark:text-white mb-2">
+              Xác minh email
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-zinc-400 text-center mb-2">
+              Vui lòng xác minh email để tiếp tục sử dụng
+            </p>
+            <p className="text-sm font-bold text-blue-600 dark:text-blue-400 text-center mb-6">
+              {user.email}
+            </p>
+
+            <button
+              onClick={resendEmail}
+              disabled={sending}
+              className="w-full h-14 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold text-base rounded-2xl shadow-xl shadow-blue-500/40 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2 mb-3"
+            >
+              {sending ? (
+                <>
+                  <FiLoader className="animate-spin" size={20} />
+                  Đang gửi...
+                </>
+              ) : (
+                "Gửi lại email xác minh"
+              )}
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="w-full h-12 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold rounded-2xl active:scale-95 transition-all"
+            >
+              Đăng xuất
+            </button>
+
+            <p className="text-xs text-gray-400 dark:text-zinc-500 text-center mt-6">
+              Kiểm tra cả thư mục Spam nếu không thấy email
+            </p>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
