@@ -26,7 +26,7 @@ type FriendItem = {
   name: string;
   username: string;
   avatar: string;
-  userId: string; // ✅ Thay shortId
+  userId: string;
   lastMessage?: string;
   lastSeen?: any;
   isOnline?: boolean;
@@ -43,7 +43,6 @@ export default function ChatPage() {
   const [focused, setFocused] = useState(false);
   const [adding, setAdding] = useState(false);
 
-  /* ================= LOAD FRIENDS ================= */
   useEffect(() => {
     if (!user) {
       setLoading(false);
@@ -76,16 +75,16 @@ export default function ChatPage() {
           );
 
           const list: FriendItem[] = userSnaps
-          .flat()
-          .filter((s) => s.exists())
-          .map((s) => {
+           .flat()
+           .filter((s) => s.exists())
+           .map((s) => {
               const data = s.data();
               return {
                 uid: s.id,
                 name: data.name || "User",
                 username: data.username || "",
                 avatar: data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name)}&background=random`,
-                userId: data.userId || "", // ✅
+                userId: data.userId || "",
                 lastSeen: data.lastSeen,
                 isOnline: data.isOnline || false,
                 unreadCount: 0,
@@ -108,9 +107,8 @@ export default function ChatPage() {
     );
 
     return () => unsub();
-  }, [user]);
+  }, [user, db]);
 
-  /* ================= TÌM & ADD BẠN ================= */
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!search.trim() ||!user) return;
@@ -121,14 +119,12 @@ export default function ChatPage() {
     try {
       let targetUid: string | null = null;
 
-      // 1. Check userId
       const userIdRef = doc(db, "userIds", keyword.toUpperCase());
       const userIdSnap = await getDoc(userIdRef);
       if (userIdSnap.exists()) {
         targetUid = userIdSnap.data().uid;
       }
 
-      // 2. Check username
       if (!targetUid) {
         const usernameRef = doc(db, "usernames", keyword.toLowerCase());
         const usernameSnap = await getDoc(usernameRef);
@@ -188,7 +184,7 @@ export default function ChatPage() {
     (f) =>
       f.name.toLowerCase().includes(search.toLowerCase()) ||
       f.username.toLowerCase().includes(search.toLowerCase()) ||
-      f.userId.includes(search.toUpperCase()) // ✅
+      f.userId.includes(search.toUpperCase())
   );
 
   const formatTime = (time: any) => {
@@ -207,15 +203,14 @@ export default function ChatPage() {
     <>
       <Toaster richColors position="top-center" />
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-black dark:via-zinc-950 dark:to-blue-950/10">
-        {/* HEADER GLASS PRO */}
         <div className="sticky top-0 z-30 backdrop-blur-3xl bg-white/80 dark:bg-zinc-950/80 border-b border-gray-200/30 dark:border-zinc-800/30 shadow-sm shadow-gray-900/5">
           <div className="px-5 pt-8 pb-5">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h1 className="text-[34px] font-black tracking-tight bg-gradient-to-br from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent">
+                <h1 className="text-[32px] font-black tracking-tight bg-gradient-to-br from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent">
                   Tin nhắn
                 </h1>
-                <p className="text-[13px] font-medium text-gray-500 dark:text-zinc-500 mt-0.5">
+                <p className="text-[14px] font-medium text-gray-500 dark:text-zinc-500 mt-0.5">
                   {friends.length} cuộc trò chuyện
                 </p>
               </div>
@@ -229,14 +224,13 @@ export default function ChatPage() {
               </button>
             </div>
 
-            {/* SEARCH BAR PRO MAX */}
             <form onSubmit={handleSearch} className="relative group">
               <div
-                className={`absolute -inset-[2px] bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-[22px] blur-lg transition-opacity duration-500 ${
+                className={`absolute -inset-[2px] bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-3xl blur-lg transition-opacity duration-500 ${
                   focused? "opacity-40" : "opacity-0"
                 }`}
               />
-              <div className="relative flex items-center h-14 bg-gray-100/60 dark:bg-zinc-900/60 backdrop-blur-2xl rounded-[20px] border-[2.5px] border-transparent focus-within:border-blue-500/40 focus-within:bg-white dark:focus-within:bg-zinc-900 transition-all duration-300 shadow-lg shadow-gray-900/5">
+              <div className="relative flex items-center h-14 bg-gray-100/60 dark:bg-zinc-900/60 backdrop-blur-2xl rounded-3xl border-[2.5px] border-transparent focus-within:border-blue-500/40 focus-within:bg-white dark:focus-within:bg-zinc-900 transition-all duration-300 shadow-lg shadow-gray-900/5">
                 <FiSearch
                   className={`ml-5 transition-all duration-300 ${
                     focused? "text-blue-500 scale-110" : "text-gray-400 dark:text-zinc-500"
@@ -250,7 +244,7 @@ export default function ChatPage() {
                   onChange={(e) => setSearch(e.target.value)}
                   onFocus={() => setFocused(true)}
                   onBlur={() => setFocused(false)}
-                  className="w-full h-full px-4 bg-transparent text-[16px] font-semibold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 outline-none"
+                  className="w-full h-full px-4 bg-transparent text-[15px] font-semibold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 outline-none"
                 />
                 {search && (
                   <button
@@ -266,13 +260,12 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* LIST */}
         <div className="px-4 py-3">
           {loading? (
             <div className="space-y-3">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-4 p-4 animate-pulse">
-                  <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-900 rounded-[20px]" />
+                  <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-900 rounded-3xl" />
                   <div className="flex-1 space-y-3">
                     <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-900 rounded-lg w-1/3" />
                     <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-900 rounded-lg w-2/3" />
@@ -283,8 +276,8 @@ export default function ChatPage() {
           ) : filtered.length === 0? (
             <div className="flex flex-col items-center justify-center py-28 px-6 text-center">
               <div className="relative mb-8">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 to-indigo-500/30 rounded-[32px] blur-3xl" />
-                <div className="relative w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-zinc-900 dark:to-zinc-800 rounded-[28px] flex items-center justify-center shadow-2xl shadow-gray-900/10">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 to-indigo-500/30 rounded-3xl blur-3xl" />
+                <div className="relative w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-zinc-900 dark:to-zinc-800 rounded-3xl flex items-center justify-center shadow-2xl shadow-gray-900/10">
                   {search? (
                     <FiSearch className="text-gray-400 dark:text-zinc-600" size={36} />
                   ) : (
@@ -304,7 +297,7 @@ export default function ChatPage() {
                 <button
                   onClick={handleSearch}
                   disabled={adding}
-                  className="px-8 py-4 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 text-white font-bold text-[15px] rounded-[20px] shadow-2xl shadow-blue-500/40 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2.5 hover:shadow-blue-500/50"
+                  className="px-8 py-4 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 text-white font-bold text-[15px] rounded-3xl shadow-2xl shadow-blue-500/40 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2.5 hover:shadow-blue-500/50"
                 >
                   {adding? (
                     <>
@@ -326,10 +319,10 @@ export default function ChatPage() {
                 <Link
                   key={f.uid}
                   href={`/chat/${f.uid}`}
-                  className="group flex items-center gap-4 p-4 rounded-[24px] hover:bg-white dark:hover:bg-zinc-900/70 active:scale-[0.98] transition-all duration-300 hover:shadow-xl hover:shadow-gray-900/5"
+                  className="group flex items-center gap-4 p-4 rounded-3xl hover:bg-white dark:hover:bg-zinc-900/70 active:scale-[0.98] transition-all duration-300 hover:shadow-xl hover:shadow-gray-900/5"
                 >
                   <div className="relative flex-shrink-0">
-                    <div className="w-16 h-16 rounded-[20px] ring-[3px] ring-white dark:ring-zinc-950 shadow-xl shadow-gray-900/10 overflow-hidden group-hover:ring-blue-500/20 transition-all duration-300">
+                    <div className="w-16 h-16 rounded-3xl ring-[3px] ring-white dark:ring-zinc-950 shadow-xl shadow-gray-900/10 overflow-hidden group-hover:ring-blue-500/20 transition-all duration-300">
                       <img src={f.avatar} alt={f.name} className="w-full h-full object-cover" />
                     </div>
                     {f.isOnline && (
@@ -342,7 +335,7 @@ export default function ChatPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2 min-w-0">
-                        <p className="font-bold text-[16px] text-gray-900 dark:text-white truncate">
+                        <p className="font-bold text-[15px] text-gray-900 dark:text-white truncate">
                           {f.name}
                         </p>
                         {f.unreadCount? (
@@ -356,12 +349,13 @@ export default function ChatPage() {
                           </p>
                         )}
                         {f.unreadCount? (
-                          <div className="min-w-[22px] h-6 px-2 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/40">
+                          <div className="min-w-[24px] h-6 px-2 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/40">
                             <span className="text-[12px] font-black text-white">{f.unreadCount}</span>
                           </div>
                         ) : null}
                       </div>
-                    <p className="text-[15px] text-gray-500 dark:text-zinc-400 font-medium truncate">
+                    </div>
+                    <p className="text-[14px] text-gray-500 dark:text-zinc-400 font-medium truncate">
                       {f.lastMessage || `@${f.username} · ${f.userId}`}
                     </p>
                   </div>
