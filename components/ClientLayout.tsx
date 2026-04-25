@@ -75,7 +75,7 @@ export default function ClientLayout({ children }: Props) {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors">
 
       {/* FCM chạy client-only */}
-      {user && <FCMProvider userId={user.uid} />}
+      {user?.uid && <FCMProvider userId={user.uid} />}
 
       <div className={!isChatDetail &&!isCreate? "pb-24" : ""}>
         {children}
