@@ -26,12 +26,29 @@ const nextConfig = {
   async headers() {
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://apis.google.com",
+
+      // ✅ FIX SCRIPT
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://apis.google.com https://www.gstatic.com https://www.googleapis.com",
+
       "style-src 'self' 'unsafe-inline'",
+
       "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://lh3.googleusercontent.com https://ui-avatars.com",
+
       "font-src 'self' data:",
-      "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://fcm.googleapis.com",
+
+      // ✅ FIX QUAN TRỌNG NHẤT (Firebase + WebSocket)
+      [
+        "connect-src 'self'",
+        "https://*.googleapis.com",
+        "https://*.firebaseio.com",
+        "wss://*.firebaseio.com",
+        "https://*.firebasedatabase.app",
+        "wss://*.firebasedatabase.app",
+        "https://fcm.googleapis.com",
+      ].join(' '),
+
       "frame-src 'self' https://*.firebaseapp.com https://accounts.google.com",
+
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
@@ -52,15 +69,13 @@ const nextConfig = {
     ];
   },
 
-  // THAY ĐỔI QUAN TRỌNG TẠI ĐÂY
-  // Chỉ để các gói thực sự là Node-only ở đây (ví dụ: firebase-admin)
-  // Xóa bỏ browser-image-compression, framer-motion... khỏi danh sách này
+  // ✅ CHỈ GIỮ NODE-ONLY
   serverExternalPackages: ['firebase-admin', 'sharp'],
 
   experimental: {
     optimizePackageImports: [
       'date-fns',
-      'lucide-react', // Thêm cái này vì bạn dùng nhiều icon
+      'lucide-react',
       'framer-motion',
       'zustand',
     ],
@@ -70,15 +85,13 @@ const nextConfig = {
   },
 
   webpack: (config, { isServer }) => {
-    // Xử lý SVG
     config.module.rules.push({
       test: /\.svg$/i,
       issuer: /\.[jt]sx?$/,
       use: ['@svgr/webpack'],
     });
 
-    // Fix lỗi 'self is not defined' bằng cách giả lập window/self phía server 
-    // Nếu một số thư viện bên thứ 3 vẫn cố truy cập chúng khi build
+    // ⚠️ FIX SSR
     if (isServer) {
       config.output.globalObject = 'self';
     }
