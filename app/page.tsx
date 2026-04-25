@@ -13,56 +13,91 @@ import {
   getDocs,
   QueryDocumentSnapshot,
   DocumentData,
-  QueryConstraint,
 } from "firebase/firestore";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { FiPlus } from "react-icons/fi";
 import { HiFire, HiClock, HiSparkles, HiUsers } from "react-icons/hi";
 import TaskCard from "@/components/TaskCard";
-import { TaskListItem } from "@/types/task";
+
+/* ================= TYPES ================= */
 
 type TabId = "hot" | "near" | "new" | "friends";
 const PAGE_SIZE = 15;
+
+/* ================= SKELETON ================= */
+
+function SkeletonList() {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="bg-white rounded-3xl p-4 animate-pulse border">
+          <div className="flex gap-3 mb-3">
+            <div className="w-10 h-10 bg-gray-200 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 bg-gray-200 rounded w-1/3" />
+              <div className="h-3 bg-gray-200 rounded w-1/4" />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="h-4 bg-gray-200 rounded w-3/4" />
+            <div className="h-20 bg-gray-200 rounded-2xl" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ================= MAIN ================= */
 
 export default function Home() {
   const [db, setDb] = useState<any>(null);
   const [auth, setAuth] = useState<any>(null);
 
   const [activeTab, setActiveTab] = useState<TabId>("hot");
-  const [tasks, setTasks] = useState<TaskListItem[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
   const [friendIds, setFriendIds] = useState<string[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
-  const locationCache = useRef<{ coords: { lat: number; lng: number }; time: number } | null>(null);
   const unsubRef = useRef<(() => void) | null>(null);
 
   const router = useRouter();
 
-  // 🔥 INIT FIREBASE (CHỈ CLIENT)
+  /* ================= INIT FIREBASE ================= */
+
   useEffect(() => {
     try {
-      setDb(getFirebaseDB());
-      setAuth(getFirebaseAuth());
-    } catch (e) {
-      console.error("Firebase init error:", e);
+      const _db = getFirebaseDB();
+      const _auth = getFirebaseAuth();
+
+      setDb(_db);
+      setAuth(_auth);
+    } catch (err) {
+      console.error("Firebase init error:", err);
     }
   }, []);
 
-  // 🔥 AUTH LISTENER
+  /* ================= AUTH ================= */
+
   useEffect(() => {
     if (!auth) return;
 
-    const unsub = onAuthStateChanged(auth, setCurrentUser);
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+
     return () => unsub();
   }, [auth]);
 
-  // 🔥 FRIEND IDS
+  /* ================= FRIEND IDS ================= */
+
   useEffect(() => {
     if (!db || !currentUser?.uid) {
       setFriendIds([]);
@@ -76,45 +111,25 @@ export default function Home() {
         limit(10)
       ),
       (snap) => {
-        const ids = snap.docs.map((d) => d.data().friendId);
+        const ids = snap.docs
+          .map((d) => d.data()?.friendId)
+          .filter(Boolean);
+
         setFriendIds([currentUser.uid, ...ids]);
-      }
+      },
+      (err) => console.error(err)
     );
 
     return () => unsub();
   }, [db, currentUser?.uid]);
 
-  // 🔥 GEOLOCATION
-  useEffect(() => {
-    if (activeTab !== "near" || !navigator.geolocation) return;
+  /* ================= BUILD QUERY ================= */
 
-    const now = Date.now();
-
-    if (locationCache.current && now - locationCache.current.time < 10 * 60 * 1000) {
-      setUserLocation(locationCache.current.coords);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-        };
-        setUserLocation(coords);
-        locationCache.current = { coords, time: now };
-      },
-      () => setUserLocation(null),
-      { timeout: 5000 }
-    );
-  }, [activeTab]);
-
-  // 🔥 BUILD QUERY
   const buildQuery = useCallback(
     (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
       if (!db) return null;
 
-      const constraints: QueryConstraint[] = [
+      const constraints: any[] = [
         where("status", "in", ["open", "full"]),
         where("visibility", "==", "public"),
         where("banned", "==", false),
@@ -122,43 +137,35 @@ export default function Home() {
 
       if (activeTab === "hot") {
         constraints.push(orderBy("likeCount", "desc"));
-      } else if (activeTab === "new") {
-        constraints.push(orderBy("createdAt", "desc"));
-      } else if (activeTab === "friends" && friendIds.length > 0) {
-        constraints.push(where("userId", "in", friendIds.slice(0, 10)));
-        constraints.push(orderBy("createdAt", "desc"));
       } else {
         constraints.push(orderBy("createdAt", "desc"));
       }
 
       constraints.push(limit(PAGE_SIZE));
-      if (startAfterDoc) constraints.push(startAfter(startAfterDoc));
+
+      if (startAfterDoc) {
+        constraints.push(startAfter(startAfterDoc));
+      }
 
       return query(collection(db, "tasks"), ...constraints);
     },
-    [db, activeTab, friendIds]
+    [db, activeTab]
   );
 
-  // 🔥 LOAD DATA
+  /* ================= LOAD DATA ================= */
+
   useEffect(() => {
     if (!db) return;
 
-    if (unsubRef.current) unsubRef.current();
+    if (unsubRef.current) {
+      unsubRef.current();
+      unsubRef.current = null;
+    }
 
     setLoading(true);
     setTasks([]);
     setLastDoc(null);
     setHasMore(true);
-
-    if (activeTab === "friends" && friendIds.length === 0 && currentUser) {
-      setLoading(false);
-      return;
-    }
-
-    if (activeTab === "near" && !userLocation) {
-      setLoading(false);
-      return;
-    }
 
     const q = buildQuery();
     if (!q) return;
@@ -166,22 +173,34 @@ export default function Home() {
     const unsub = onSnapshot(
       q,
       (snap) => {
-        let data = snap.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as TaskListItem[];
+        const data = snap.docs
+          .map((doc) => {
+            if (!doc.exists()) return null;
+
+            return {
+              id: doc.id,
+              ...doc.data(),
+            };
+          })
+          .filter(Boolean);
 
         setTasks(data);
         setLastDoc(snap.docs[snap.docs.length - 1] || null);
         setHasMore(snap.docs.length === PAGE_SIZE);
         setLoading(false);
       },
-      () => setLoading(false)
+      (err) => {
+        console.error("Firestore error:", err);
+        setLoading(false);
+      }
     );
 
     unsubRef.current = unsub;
+
     return () => unsub();
-  }, [db, activeTab, friendIds, userLocation, buildQuery, currentUser]);
+  }, [db, buildQuery]);
+
+  /* ================= LOAD MORE ================= */
 
   const loadMore = useCallback(async () => {
     if (!db || !lastDoc || loadingMore || !hasMore) return;
@@ -194,32 +213,42 @@ export default function Home() {
 
       const snap = await getDocs(q);
 
-      const newTasks = snap.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as TaskListItem[];
+      const newTasks = snap.docs
+        .map((doc) => {
+          if (!doc.exists()) return null;
+
+          return {
+            id: doc.id,
+            ...doc.data(),
+          };
+        })
+        .filter(Boolean);
 
       setTasks((prev) => [...prev, ...newTasks]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
       setHasMore(snap.docs.length === PAGE_SIZE);
+    } catch (err) {
+      console.error("Load more error:", err);
     } finally {
       setLoadingMore(false);
     }
   }, [db, lastDoc, loadingMore, hasMore, buildQuery]);
 
-  const tabs = [
-    { id: "hot", label: "Hot", icon: HiFire },
-    { id: "near", label: "Gần", icon: HiClock },
-    { id: "new", label: "Mới", icon: HiSparkles },
-    { id: "friends", label: "Bạn bè", icon: HiUsers },
-  ];
+  /* ================= UI ================= */
 
   return (
     <div className="min-h-screen pb-24">
+      {/* Tabs */}
       <div className="sticky top-0 bg-white border-b">
-        <div className="flex justify-around">
-          {tabs.map((tab) => {
+        <div className="flex justify-around py-2">
+          {[
+            { id: "hot", label: "Hot", icon: HiFire },
+            { id: "near", label: "Gần", icon: HiClock },
+            { id: "new", label: "Mới", icon: HiSparkles },
+            { id: "friends", label: "Bạn bè", icon: HiUsers },
+          ].map((tab) => {
             const Icon = tab.icon;
+
             return (
               <button
                 key={tab.id}
@@ -231,50 +260,41 @@ export default function Home() {
                 }
               >
                 <Icon size={20} />
-                {tab.label}
+                <div>{tab.label}</div>
               </button>
             );
           })}
         </div>
       </div>
 
+      {/* List */}
       <div className="p-4 space-y-3">
         {loading && <SkeletonList />}
 
         {!loading &&
-          tasks.map((task) => <TaskCard key={task.id} task={task} />)}
+          Array.isArray(tasks) &&
+          tasks.map((task) => (
+            <TaskCard key={task.id} task={task} />
+          ))}
 
         {!loading && hasMore && tasks.length > 0 && (
-          <button onClick={loadMore} disabled={loadingMore}>
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="w-full py-2 text-blue-500"
+          >
             {loadingMore ? "Loading..." : "Load more"}
           </button>
         )}
       </div>
 
-      <button onClick={() => router.push("/create")}>
-        <FiPlus />
+      {/* Floating button */}
+      <button
+        onClick={() => router.push("/create")}
+        className="fixed bottom-20 right-5 bg-blue-500 text-white p-4 rounded-full shadow-lg"
+      >
+        <FiPlus size={20} />
       </button>
-    </div>
-  );
-}
-function SkeletonList() {
-  return (
-    <div className="space-y-3">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-white rounded-3xl p-4 animate-pulse border">
-          <div className="flex gap-3 mb-3">
-            <div className="w-10 h-10 bg-gray-200 rounded-full" />
-            <div className="flex-1 space-y-2">
-              <div className="h-4 bg-gray-200 rounded w-1/3" />
-              <div className="h-3 bg-gray-200 rounded w-1/4" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <div className="h-4 bg-gray-200 rounded w-3/4" />
-            <div className="h-20 bg-gray-200 rounded-2xl" />
-          </div>
-        </div>
-      ))}
     </div>
   );
 }
