@@ -2,9 +2,10 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import FCMProvider from "@/components/FCMProvider";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import BottomNav from "@/components/BottomNav";
 import { Toaster } from "react-hot-toast";
+import { useAuth } from "@/lib/AuthContext"; // ✅ QUAN TRỌNG
 
 type Props = {
   children: React.ReactNode;
@@ -14,10 +15,8 @@ export default function ClientLayout({ children }: Props) {
   const pathname = usePathname() || "";
   const router = useRouter();
 
-  // 🔥 FIX DỨT ĐIỂM: dùng any để phá TS inference lỗi
-  const user: any = null;
-
-  const [loading, setLoading] = useState(true);
+  // ✅ LẤY AUTH THẬT
+  const { user, userData, loading } = useAuth();
 
   /* ================= ROUTE ================= */
   const publicRoutes = ["/login", "/register", "/forgot-password", "/verify-email"];
@@ -31,33 +30,31 @@ export default function ClientLayout({ children }: Props) {
 
   /* ================= REDIRECT ================= */
   useEffect(() => {
-    setLoading(false);
+    if (loading) return;
 
+    // ❌ chưa login
     if (!user && !isPublic) {
       router.replace("/login");
       return;
     }
 
+    // ❌ đã login mà vào auth page
     if (user && isPublic) {
       router.replace("/");
       return;
     }
-  }, [user, isPublic, router]);
+
+    // 🔥 QUAN TRỌNG: chờ userData
+    if (user && !userData) {
+      return;
+    }
+  }, [user, userData, loading, isPublic, router]);
 
   /* ================= LOADING ================= */
-  if (loading) {
+  if (loading || (user && !userData)) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900">
         <div className="max-w-2xl mx-auto p-4 space-y-4 pt-8">
-          <div className="flex justify-around pb-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="flex flex-col items-center gap-2">
-                <div className="w-6 h-6 bg-gray-200 dark:bg-zinc-800 rounded-full animate-pulse" />
-                <div className="w-10 h-2 bg-gray-200 dark:bg-zinc-800 rounded animate-pulse" />
-              </div>
-            ))}
-          </div>
-
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
@@ -80,7 +77,7 @@ export default function ClientLayout({ children }: Props) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors">
 
-      {/* 🔥 KHÔNG CÒN LỖI TS */}
+      {/* ✅ FCM */}
       {user && <FCMProvider userId={user.uid} />}
 
       <div className={!isChatDetail && !isCreate ? "pb-24" : ""}>
