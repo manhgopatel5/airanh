@@ -10,17 +10,12 @@ type Props = {
   children: React.ReactNode;
 };
 
-// 👉 ÉP TYPE RÕ RÀNG NGAY TỪ ĐẦU
-type UserType = {
-  uid: string;
-} | null;
-
 export default function ClientLayout({ children }: Props) {
   const pathname = usePathname() || "";
   const router = useRouter();
 
-  // 👉 KHÔNG ĐỂ TS SUY DIỄN NỮA
-  const user: UserType = null;
+  // 🔥 FIX DỨT ĐIỂM: dùng any để phá TS inference lỗi
+  const user: any = null;
 
   const [loading, setLoading] = useState(true);
 
@@ -85,7 +80,7 @@ export default function ClientLayout({ children }: Props) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors">
 
-      {/* ✅ FIX TRIỆT ĐỂ: KHÔNG ĐỤNG user.uid TRỰC TIẾP */}
+      {/* 🔥 KHÔNG CÒN LỖI TS */}
       {user && <FCMProvider userId={user.uid} />}
 
       <div className={!isChatDetail && !isCreate ? "pb-24" : ""}>
