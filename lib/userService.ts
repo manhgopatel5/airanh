@@ -10,6 +10,8 @@ import {
   QueryDocumentSnapshot,
   QueryConstraint,
   FirestoreDataConverter,
+  doc,
+  getDoc,
 } from "firebase/firestore";
 import { getFirebaseDB } from "./firebase";
 
@@ -20,7 +22,7 @@ export type SearchUser = {
   nameLower: string;
   email: string;
   avatar: string;
-  shortId: string;
+  userId: string; // ✅ Đổi từ shortId
   username?: string;
   bio?: string;
   searchKeywords: string[];
@@ -33,11 +35,11 @@ export type SearchResult = {
   uid: string;
   name: string;
   avatar: string;
-  shortId: string;
+  userId: string; // ✅ Đổi từ shortId
   username?: string;
   bio?: string;
   isFriend?: boolean;
-  matchedField?: "name" | "shortId" | "username";
+  matchedField?: "name" | "userId" | "username"; // ✅ Thêm userId
   email?: string;
 };
 
@@ -94,7 +96,7 @@ const batchGetDocs = async <T>(
   ids: string[],
   extraConstraints: QueryConstraint[] = []
 ): Promise<T[]> => {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   if (ids.length === 0) return [];
   const chunks = [];
@@ -119,19 +121,87 @@ export const searchUsers = async (
   cursor?: QueryDocumentSnapshot<SearchUser>,
   signal?: AbortSignal
 ): Promise<{ users: SearchResult[]; lastDoc: QueryDocumentSnapshot<SearchUser> | null; hasMore: boolean }> => {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
-  const trimmed = keyword.trim().toLowerCase();
+  const trimmed = keyword.trim();
   if (!trimmed) return { users: [], lastDoc: null, hasMore: false };
   if (trimmed.length < 2) throw new SearchError("Từ khóa tối thiểu 2 ký tự", "TOO_SHORT");
 
   try {
+    // ✅ 1. ƯU TIÊN SEARCH THEO USERID - 8 ký tự viết hoa
+    if (/^[A-Z0-9]{8}$/.test(trimmed.toUpperCase())) {
+      const userIdDoc = await getDoc(doc(db, "userIds", trimmed.toUpperCase()));
+      if (userIdDoc.exists()) {
+        const { uid } = userIdDoc.data();
+        if (uid === currentUserId) return { users: [], lastDoc: null, hasMore: false };
+
+        const userSnap = await getDoc(doc(db, "users", uid));
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          if (data.status === "active" &&!data.hidden &&!data.deletedAt) {
+            const isFriend = currentUserId
+             ? (await getDoc(doc(db, "friends", `${currentUserId}_${uid}`))).exists()
+              : false;
+
+            return {
+              users: [{
+                uid: data.uid,
+                name: data.name,
+                avatar: data.avatar,
+                userId: data.userId,
+               ...(data.username && { username: data.username }),
+               ...(data.bio && { bio: data.bio }),
+                isFriend,
+                matchedField: "userId",
+               ...(isFriend && data.email && { email: data.email }),
+              }],
+              lastDoc: null,
+              hasMore: false
+            };
+          }
+        }
+      }
+    }
+
+    // ✅ 2. Search theo username
+    const usernameDoc = await getDoc(doc(db, "usernames", trimmed.toLowerCase()));
+    if (usernameDoc.exists()) {
+      const { uid } = usernameDoc.data();
+      if (uid!== currentUserId) {
+        const userSnap = await getDoc(doc(db, "users", uid));
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          if (data.status === "active" &&!data.hidden &&!data.deletedAt) {
+            const isFriend = currentUserId
+             ? (await getDoc(doc(db, "friends", `${currentUserId}_${uid}`))).exists()
+              : false;
+
+            return {
+              users: [{
+                uid: data.uid,
+                name: data.name,
+                avatar: data.avatar,
+                userId: data.userId,
+               ...(data.username && { username: data.username }),
+               ...(data.bio && { bio: data.bio }),
+                isFriend,
+                matchedField: "username",
+               ...(isFriend && data.email && { email: data.email }),
+              }],
+              lastDoc: null,
+              hasMore: false
+            };
+          }
+        }
+      }
+    }
+
+    // 3. Search theo name/email - fallback
     const constraints: QueryConstraint[] = [
       where("searchKeywords", "array-contains-any", [
-        trimmed,
-        trimmed.replace(/\s/g, ""),
-        trimmed.split(" ")[0],
-        trimmed.toUpperCase(),
+        trimmed.toLowerCase(),
+        trimmed.toLowerCase().replace(/\s/g, ""),
+        trimmed.toLowerCase().split(" ")[0],
       ]),
       where("status", "==", "active"),
       orderBy("nameLower"),
@@ -155,7 +225,6 @@ export const searchUsers = async (
       currentUserId
        ? batchGetDocs<{ friendId: string }>("friends", "friendId", uids, [
             where("userId", "==", currentUserId),
-            where("status", "==", "accepted"),
           ])
         : [],
       currentUserId
@@ -183,8 +252,8 @@ export const searchUsers = async (
         if (data.hidden || data.deletedAt) return null;
 
         let matchedField: SearchResult["matchedField"] = "name";
-        if (data.shortId.toLowerCase().includes(trimmed.toUpperCase())) matchedField = "shortId";
-        else if (data.username?.toLowerCase().includes(trimmed)) matchedField = "username";
+        if (data.userId?.toLowerCase().includes(trimmed.toLowerCase())) matchedField = "userId";
+        else if (data.username?.toLowerCase().includes(trimmed.toLowerCase())) matchedField = "username";
 
         const isFriend = friendSet.has(data.uid);
 
@@ -192,7 +261,7 @@ export const searchUsers = async (
           uid: data.uid,
           name: data.name,
           avatar: data.avatar,
-          shortId: data.shortId,
+          userId: data.userId, // ✅
          ...(data.username && { username: data.username }),
          ...(data.bio && { bio: data.bio }),
           isFriend,
@@ -216,34 +285,32 @@ export const searchUsers = async (
   }
 };
 
-/* ================= GET BY SHORTID ================= */
-export const getUserByShortId = async (shortId: string): Promise<SearchResult | null> => {
-  const db = getFirebaseDB(); // ✅ Thêm db
+/* ================= GET BY USERID ================= */
+export const getUserByUserId = async (userId: string): Promise<SearchResult | null> => {
+  const db = getFirebaseDB();
 
-  if (!shortId) return null;
-  const key = shortId.toUpperCase();
+  if (!userId) return null;
+  const key = userId.toUpperCase();
 
   const cached = userCache.get(key);
   if (cached) return cached;
 
-  const q = query(
-    collection(db, "users").withConverter(userConverter),
-    where("shortId", "==", key),
-    where("status", "==", "active"),
-    limit(1)
-  );
+  // ✅ Check mapping userIds trước
+  const userIdDoc = await getDoc(doc(db, "userIds", key));
+  if (!userIdDoc.exists()) return null;
 
-  const snap = await getDocs(q);
-  if (snap.empty) return null;
+  const { uid } = userIdDoc.data();
+  const userSnap = await getDoc(doc(db, "users", uid));
+  if (!userSnap.exists()) return null;
 
-  const data = snap.docs[0]!.data();
-  if (data.hidden || data.deletedAt) return null;
+  const data = userSnap.data();
+  if (data.hidden || data.deletedAt || data.status!== "active") return null;
 
   const result: SearchResult = {
     uid: data.uid,
     name: data.name,
     avatar: data.avatar,
-    shortId: data.shortId,
+    userId: data.userId, // ✅
    ...(data.username && { username: data.username }),
    ...(data.bio && { bio: data.bio }),
   };
