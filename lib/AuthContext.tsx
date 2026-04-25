@@ -210,11 +210,12 @@ useEffect(() => {
             await updateDoc(userRef, updates);
           }
 
-          userDataUnsub.current = onSnapshot(userRef, (docSnap) => {
-            if (docSnap.exists()) {
-              setUserData({...docSnap.data() } as AppUser);
-            }
-          });
+userDataUnsub.current = onSnapshot(userRef, (docSnap) => {
+  if (docSnap.exists()) {
+    setUserData({ ...docSnap.data() } as AppUser);
+    setLoading(false); // ✅ CHỈ ĐẶT Ở ĐÂY
+  }
+});
 
           // ================= PRESENCE =================
           const userStatusRef = ref(rtdb, `/status/${firebaseUser.uid}`);
@@ -239,9 +240,7 @@ useEffect(() => {
         } catch (e: any) {
           console.error("Auth error:", e);
           setError(e.message || "Lỗi khởi tạo tài khoản");
-        } finally {
-          setLoading(false);
-        }
+
       },
       (err) => {
         console.error("onAuthStateChanged error:", err);
