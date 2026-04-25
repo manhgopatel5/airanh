@@ -58,7 +58,6 @@ export default function Home() {
 
   const [activeTab, setActiveTab] = useState<TabId>("hot");
   const [tasks, setTasks] = useState<any[]>([]);
-  const [friendIds, setFriendIds] = useState<string[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -96,32 +95,6 @@ export default function Home() {
     return () => unsub();
   }, [auth]);
 
-  /* ================= FRIEND IDS ================= */
-
-  useEffect(() => {
-    if (!db || !currentUser?.uid) {
-      setFriendIds([]);
-      return;
-    }
-
-    const unsub = onSnapshot(
-      query(
-        collection(db, "friends"),
-        where("userId", "==", currentUser.uid),
-        limit(10)
-      ),
-      (snap) => {
-        const ids = snap.docs
-          .map((d) => d.data()?.friendId)
-          .filter(Boolean);
-
-        setFriendIds([currentUser.uid, ...ids]);
-      },
-      (err) => console.error(err)
-    );
-
-    return () => unsub();
-  }, [db, currentUser?.uid]);
 
   /* ================= BUILD QUERY ================= */
 
