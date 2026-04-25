@@ -20,13 +20,19 @@ export type AppUser = {
   uid: string;
   name: string;
   username: string;
-  userId: string; // ✅ Thay shortId
+  userId: string;
   email: string;
   emailVerified: boolean;
   avatar: string;
   isOnline: boolean;
   lastSeen: Timestamp;
   fcmTokens?: string[];
+  status: "active" | "banned" | "deleted" | "deactivated"; // ✅ Thêm status
+  searchKeywords: string[]; // ✅ Thêm searchKeywords
+  nameLower: string; // ✅ Thêm để sort
+  bio?: string;
+  hidden?: boolean;
+  deletedAt?: any;
 };
 
 type AuthContextType = {
@@ -42,6 +48,33 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   error: null,
 });
+
+// ✅ Helper tạo searchKeywords từ name + userId + username
+const generateSearchKeywords = (name: string, userId: string, username?: string): string[] => {
+  const keywords = new Set<string>();
+
+  const nameLower = name.toLowerCase().trim();
+  if (nameLower) {
+    keywords.add(nameLower); // "mạnh nguyễn"
+    keywords.add(nameLower.replace(/\s+/g, "")); // "mạnhnguyễn"
+
+    // Bỏ dấu tiếng Việt
+    const noDiacritics = nameLower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    keywords.add(noDiacritics); // "manh nguyen"
+    keywords.add(noDiacritics.replace(/\s+/g, "")); // "manhnguyen"
+
+    // Từng từ riêng
+    nameLower.split(" ").forEach(word => {
+      if (word.length >= 2) keywords.add(word);
+    });
+  }
+
+  // UserId + username
+  keywords.add(userId.toLowerCase());
+  if (username) keywords.add(username.toLowerCase());
+
+  return Array.from(keywords).filter(k => k.length >= 2);
+};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const auth = getFirebaseAuth();
@@ -107,32 +140,63 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 if (suffix > 100) throw new Error("Không thể tạo username");
               }
 
+              const name = firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User";
+              const searchKeywords = generateSearchKeywords(name, userId, username);
+
               const newUser: AppUser = {
                 uid: firebaseUser.uid,
-                name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User",
+                name: name,
+                nameLower: name.toLowerCase(), // ✅ Thêm để sort
                 username,
-                userId, // ✅ Dùng userId
+                userId,
                 email: firebaseUser.email || "",
                 emailVerified: firebaseUser.emailVerified,
                 avatar:
                   firebaseUser.photoURL ||
-                  `https://ui-avatars.com/api/?name=${encodeURIComponent(firebaseUser.email || "U")}&background=random`,
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
+                bio: "",
                 isOnline: true,
                 lastSeen: serverTimestamp() as Timestamp,
                 fcmTokens: [],
+                status: "active", // ✅ Thêm status mặc định
+                searchKeywords: searchKeywords, // ✅ Thêm searchKeywords
+                hidden: false,
+                deletedAt: null,
               };
 
               transaction.set(userRef, newUser);
-              transaction.set(doc(db, "userIds", userId), { uid: firebaseUser.uid }); // ✅
+              transaction.set(doc(db, "userIds", userId), { uid: firebaseUser.uid });
               transaction.set(doc(db, "usernames", username), { uid: firebaseUser.uid });
-              // ❌ Bỏ shortIds
             });
           } else {
-            await updateDoc(userRef, {
+            // ✅ Update user cũ: thêm status + searchKeywords nếu thiếu
+            const existingData = snap.data();
+            const updates: any = {
               isOnline: true,
               lastSeen: serverTimestamp(),
               emailVerified: firebaseUser.emailVerified,
-            });
+            };
+
+            // Thêm status nếu chưa có
+            if (!existingData.status) {
+              updates.status = "active";
+            }
+
+            // Thêm searchKeywords nếu chưa có
+            if (!existingData.searchKeywords || existingData.searchKeywords.length === 0) {
+              updates.searchKeywords = generateSearchKeywords(
+                existingData.name,
+                existingData.userId,
+                existingData.username
+              );
+            }
+
+            // Thêm nameLower nếu chưa có
+            if (!existingData.nameLower) {
+              updates.nameLower = existingData.name.toLowerCase();
+            }
+
+            await updateDoc(userRef, updates);
           }
 
           userDataUnsub.current = onSnapshot(userRef, (docSnap) => {
@@ -149,11 +213,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (snap.val() === false) return;
 
             onDisconnect(userStatusRef)
-             .set({
+           .set({
                 isOnline: false,
                 lastSeen: rtdbTimestamp(),
               })
-             .then(() => {
+           .then(() => {
                 set(userStatusRef, {
                   isOnline: true,
                   lastSeen: rtdbTimestamp(),
