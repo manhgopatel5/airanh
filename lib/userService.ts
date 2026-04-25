@@ -22,7 +22,7 @@ export type SearchUser = {
   nameLower: string;
   email: string;
   avatar: string;
-  userId: string; // ✅ Đổi từ shortId
+  userId: string;
   username?: string;
   bio?: string;
   searchKeywords: string[];
@@ -35,11 +35,11 @@ export type SearchResult = {
   uid: string;
   name: string;
   avatar: string;
-  userId: string; // ✅ Đổi từ shortId
+  userId: string;
   username?: string;
   bio?: string;
   isFriend?: boolean;
-  matchedField?: "name" | "userId" | "username"; // ✅ Thêm userId
+  matchedField?: "name" | "userId" | "username";
   email?: string;
 };
 
@@ -58,7 +58,7 @@ const userConverter: FirestoreDataConverter<SearchUser> = {
   },
   fromFirestore: (snap) => ({
     uid: snap.id,
-   ...snap.data(),
+  ...snap.data(),
   } as SearchUser),
 };
 
@@ -105,7 +105,7 @@ const batchGetDocs = async <T>(
     const q = query(
       collection(db, col),
       where(field, "in", chunk),
-     ...extraConstraints
+    ...extraConstraints
     );
     chunks.push(getDocs(q));
   }
@@ -138,9 +138,10 @@ export const searchUsers = async (
         const userSnap = await getDoc(doc(db, "users", uid));
         if (userSnap.exists()) {
           const data = userSnap.data();
-          if (data.status === "active" &&!data.hidden &&!data.deletedAt) {
+          // ✅ Fix: chấp nhận status undefined hoặc "active"
+          if ((!data.status || data.status === "active") &&!data.hidden &&!data.deletedAt) {
             const isFriend = currentUserId
-             ? (await getDoc(doc(db, "friends", `${currentUserId}_${uid}`))).exists()
+            ? (await getDoc(doc(db, "friends", `${currentUserId}_${uid}`))).exists()
               : false;
 
             return {
@@ -149,11 +150,11 @@ export const searchUsers = async (
                 name: data.name,
                 avatar: data.avatar,
                 userId: data.userId,
-               ...(data.username && { username: data.username }),
-               ...(data.bio && { bio: data.bio }),
+              ...(data.username && { username: data.username }),
+              ...(data.bio && { bio: data.bio }),
                 isFriend,
                 matchedField: "userId",
-               ...(isFriend && data.email && { email: data.email }),
+              ...(isFriend && data.email && { email: data.email }),
               }],
               lastDoc: null,
               hasMore: false
@@ -171,9 +172,10 @@ export const searchUsers = async (
         const userSnap = await getDoc(doc(db, "users", uid));
         if (userSnap.exists()) {
           const data = userSnap.data();
-          if (data.status === "active" &&!data.hidden &&!data.deletedAt) {
+          // ✅ Fix: chấp nhận status undefined hoặc "active"
+          if ((!data.status || data.status === "active") &&!data.hidden &&!data.deletedAt) {
             const isFriend = currentUserId
-             ? (await getDoc(doc(db, "friends", `${currentUserId}_${uid}`))).exists()
+            ? (await getDoc(doc(db, "friends", `${currentUserId}_${uid}`))).exists()
               : false;
 
             return {
@@ -182,11 +184,11 @@ export const searchUsers = async (
                 name: data.name,
                 avatar: data.avatar,
                 userId: data.userId,
-               ...(data.username && { username: data.username }),
-               ...(data.bio && { bio: data.bio }),
+              ...(data.username && { username: data.username }),
+              ...(data.bio && { bio: data.bio }),
                 isFriend,
                 matchedField: "username",
-               ...(isFriend && data.email && { email: data.email }),
+              ...(isFriend && data.email && { email: data.email }),
               }],
               lastDoc: null,
               hasMore: false
@@ -203,9 +205,9 @@ export const searchUsers = async (
         trimmed.toLowerCase().replace(/\s/g, ""),
         trimmed.toLowerCase().split(" ")[0],
       ]),
-      where("status", "==", "active"),
+      where("status", "==", "active"), // Chỗ này giữ nguyên vì query cần index
       orderBy("nameLower"),
-     ...(cursor? [startAfter(cursor)] : []),
+    ...(cursor? [startAfter(cursor)] : []),
       limit(maxResults + 1),
     ];
 
@@ -223,17 +225,17 @@ export const searchUsers = async (
 
     const [friends, blocksFrom, blocksTo] = await Promise.all([
       currentUserId
-       ? batchGetDocs<{ friendId: string }>("friends", "friendId", uids, [
+      ? batchGetDocs<{ friendId: string }>("friends", "friendId", uids, [
             where("userId", "==", currentUserId),
           ])
         : [],
       currentUserId
-       ? batchGetDocs<{ toUserId: string }>("blocks", "toUserId", uids, [
+      ? batchGetDocs<{ toUserId: string }>("blocks", "toUserId", uids, [
             where("fromUserId", "==", currentUserId),
           ])
         : [],
       currentUserId
-       ? batchGetDocs<{ fromUserId: string }>("blocks", "fromUserId", uids, [
+      ? batchGetDocs<{ fromUserId: string }>("blocks", "fromUserId", uids, [
             where("toUserId", "==", currentUserId),
           ])
         : [],
@@ -241,12 +243,12 @@ export const searchUsers = async (
 
     const friendSet = new Set(friends.map((f) => f.friendId));
     const blockSet = new Set([
-     ...blocksFrom.map((b) => b.toUserId),
-     ...blocksTo.map((b) => b.fromUserId),
+    ...blocksFrom.map((b) => b.toUserId),
+    ...blocksTo.map((b) => b.fromUserId),
     ]);
 
     const users: SearchResult[] = docs
-     .map((d) => {
+    .map((d) => {
         const data = d.data();
         if (data.uid === currentUserId || blockSet.has(data.uid)) return null;
         if (data.hidden || data.deletedAt) return null;
@@ -261,16 +263,16 @@ export const searchUsers = async (
           uid: data.uid,
           name: data.name,
           avatar: data.avatar,
-          userId: data.userId, // ✅
-         ...(data.username && { username: data.username }),
-         ...(data.bio && { bio: data.bio }),
+          userId: data.userId,
+        ...(data.username && { username: data.username }),
+        ...(data.bio && { bio: data.bio }),
           isFriend,
           matchedField,
-         ...(isFriend && data.email && { email: data.email }),
+        ...(isFriend && data.email && { email: data.email }),
         };
         return result;
       })
-     .filter(Boolean) as SearchResult[];
+    .filter(Boolean) as SearchResult[];
 
     return { users, lastDoc, hasMore };
   } catch (e: any) {
@@ -304,15 +306,16 @@ export const getUserByUserId = async (userId: string): Promise<SearchResult | nu
   if (!userSnap.exists()) return null;
 
   const data = userSnap.data();
-  if (data.hidden || data.deletedAt || data.status!== "active") return null;
+  // ✅ Fix: chấp nhận status undefined hoặc "active"
+  if (data.hidden || data.deletedAt || (data.status && data.status!== "active")) return null;
 
   const result: SearchResult = {
     uid: data.uid,
     name: data.name,
     avatar: data.avatar,
-    userId: data.userId, // ✅
-   ...(data.username && { username: data.username }),
-   ...(data.bio && { bio: data.bio }),
+    userId: data.userId,
+  ...(data.username && { username: data.username }),
+  ...(data.bio && { bio: data.bio }),
   };
 
   userCache.set(key, result);
