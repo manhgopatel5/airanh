@@ -85,7 +85,6 @@ export default function ChatDetailPage() {
 
     const loadFriend = async () => {
       try {
-        // PVT331HC là field userId, không phải doc ID
         const q = query(
           collection(db, "users"),
           where("userId", "==", idFromUrl),
@@ -139,8 +138,8 @@ export default function ChatDetailPage() {
 
     const unsub = onSnapshot(q, (snap) => {
       const msgs = snap.docs
-       .map((d) => ({ id: d.id,...d.data() } as Message))
-       .filter((m) => m.createdAt!== null);
+      .map((d) => ({ id: d.id,...d.data() } as Message))
+      .filter((m) => m.createdAt!== null);
 
       setMessages(msgs);
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
@@ -214,7 +213,7 @@ export default function ChatDetailPage() {
         createdAt: serverTimestamp(),
         seenBy: [user.uid],
         type: "text",
-       ...(tempReply && {
+      ...(tempReply && {
           replyTo: {
             id: tempReply.id,
             text: tempReply.text,
