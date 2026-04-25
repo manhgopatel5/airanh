@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useEffect, useState, useRef, useMemo, ReactNode, useContext } from "react";
+import {
+  createContext,
+  useEffect,
+  useState,
+  useRef,
+  useMemo,
+  ReactNode,
+  useContext,
+} from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import {
   doc,
@@ -11,7 +19,13 @@ import {
   Timestamp,
   runTransaction,
 } from "firebase/firestore";
-import { ref, onValue, set, onDisconnect, serverTimestamp as rtdbTimestamp } from "firebase/database";
+import {
+  ref,
+  onValue,
+  set,
+  onDisconnect,
+  serverTimestamp as rtdbTimestamp,
+} from "firebase/database";
 import { nanoid } from "nanoid";
 
 /* ================= TYPES ================= */
@@ -26,9 +40,9 @@ export type AppUser = {
   isOnline: boolean;
   lastSeen: Timestamp;
   fcmTokens?: string[];
-  status: "active" | "banned" | "deleted" | "deactivated"; // ✅ Thêm status
-  searchKeywords: string[]; // ✅ Thêm searchKeywords
-  nameLower: string; // ✅ Thêm để sort
+  status: "active" | "banned" | "deleted" | "deactivated";
+  searchKeywords: string[];
+  nameLower: string;
   bio?: string;
   hidden?: boolean;
   deletedAt?: any;
@@ -48,49 +62,40 @@ const AuthContext = createContext<AuthContextType>({
   error: null,
 });
 
-// ✅ Helper tạo searchKeywords từ name + userId + username
-const generateSearchKeywords = (name: string, userId: string, username?: string): string[] => {
+/* ================= HELPER ================= */
+const generateSearchKeywords = (
+  name: string,
+  userId: string,
+  username?: string
+): string[] => {
   const keywords = new Set<string>();
-
   const nameLower = name.toLowerCase().trim();
+
   if (nameLower) {
-    keywords.add(nameLower); // "mạnh nguyễn"
-    keywords.add(nameLower.replace(/\s+/g, "")); // "mạnhnguyễn"
+    keywords.add(nameLower);
+    keywords.add(nameLower.replace(/\s+/g, ""));
 
-    // Bỏ dấu tiếng Việt
-    const noDiacritics = nameLower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    keywords.add(noDiacritics); // "manh nguyen"
-    keywords.add(noDiacritics.replace(/\s+/g, "")); // "manhnguyen"
+    const no = nameLower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    keywords.add(no);
+    keywords.add(no.replace(/\s+/g, ""));
 
-    // Từng từ riêng
-    nameLower.split(" ").forEach(word => {
-      if (word.length >= 2) keywords.add(word);
+    nameLower.split(" ").forEach((w) => {
+      if (w.length >= 2) keywords.add(w);
     });
   }
 
-  // UserId + username
   keywords.add(userId.toLowerCase());
   if (username) keywords.add(username.toLowerCase());
 
-  return Array.from(keywords).filter(k => k.length >= 2);
+  return Array.from(keywords).filter((k) => k.length >= 2);
 };
 
+/* ================= PROVIDER ================= */
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-const [auth, setAuth] = useState<any>(null);
-const [db, setDb] = useState<any>(null);
-const [rtdb, setRtdb] = useState<any>(null);
+  const [auth, setAuth] = useState<any>(null);
+  const [db, setDb] = useState<any>(null);
+  const [rtdb, setRtdb] = useState<any>(null);
 
-useEffect(() => {
-  const init = async () => {
-    const firebase = await import("@/lib/firebase");
-
-    setAuth(firebase.getFirebaseAuth());
-    setDb(firebase.getFirebaseDB());
-    setRtdb(firebase.getFirebaseRTDB());
-  };
-
-  init();
-}, []);
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -99,21 +104,31 @@ useEffect(() => {
   const userDataUnsub = useRef<(() => void) | null>(null);
   const presenceUnsub = useRef<(() => void) | null>(null);
 
-useEffect(() => {
-  if (!auth || !db || !rtdb) return;
+  /* ================= INIT FIREBASE ================= */
+  useEffect(() => {
+    const init = async () => {
+      const firebase = await import("@/lib/firebase");
+      setAuth(firebase.getFirebaseAuth());
+      setDb(firebase.getFirebaseDB());
+      setRtdb(firebase.getFirebaseRTDB());
+    };
+    init();
+  }, []);
 
-  const unsubAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+  /* ================= AUTH ================= */
+  useEffect(() => {
+    if (!auth || !db || !rtdb) return;
+
+    const unsubAuth = onAuthStateChanged(
+      auth,
+
+      // ✅ SUCCESS CALLBACK
+      async (firebaseUser) => {
         setUser(firebaseUser);
         setError(null);
 
-        if (userDataUnsub.current) {
-          userDataUnsub.current();
-          userDataUnsub.current = null;
-        }
-        if (presenceUnsub.current) {
-          presenceUnsub.current();
-          presenceUnsub.current = null;
-        }
+        if (userDataUnsub.current) userDataUnsub.current();
+        if (presenceUnsub.current) presenceUnsub.current();
 
         if (!firebaseUser) {
           setUserData(null);
@@ -126,124 +141,98 @@ useEffect(() => {
           const snap = await getDoc(userRef);
 
           if (!snap.exists()) {
-            // Tạo user mới trong transaction để tránh race condition
-            await runTransaction(db, async (transaction) => {
-              // Tạo userId unique - 8 ký tự
+            await runTransaction(db, async (tx) => {
               let userId = "";
               for (let i = 0; i < 5; i++) {
                 userId = nanoid(8).toUpperCase();
-                const q = await transaction.get(doc(db, "userIds", userId));
+                const q = await tx.get(doc(db, "userIds", userId));
                 if (!q.exists()) break;
-                if (i === 4) throw new Error("Không thể tạo userId");
               }
 
-              // Tạo username unique
-              const emailPrefix = firebaseUser.email?.split("@")[0] || "user";
-              const baseUsername = emailPrefix.toLowerCase().replace(/[^a-z0-9]/g, "") || "user";
-              let username = baseUsername;
-              let suffix = 0;
+              const name =
+                firebaseUser.displayName ||
+                firebaseUser.email?.split("@")[0] ||
+                "User";
 
-              while (true) {
-                const q = await transaction.get(doc(db, "usernames", username));
-                if (!q.exists()) break;
-                suffix++;
-                username = `${baseUsername}${suffix}`;
-                if (suffix > 100) throw new Error("Không thể tạo username");
-              }
-
-              const name = firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User";
-              const searchKeywords = generateSearchKeywords(name, userId, username);
+              const username = name.toLowerCase().replace(/\s+/g, "");
+              const searchKeywords = generateSearchKeywords(
+                name,
+                userId,
+                username
+              );
 
               const newUser: AppUser = {
                 uid: firebaseUser.uid,
-                name: name,
-                nameLower: name.toLowerCase(), // ✅ Thêm để sort
+                name,
+                nameLower: name.toLowerCase(),
                 username,
                 userId,
                 email: firebaseUser.email || "",
                 emailVerified: firebaseUser.emailVerified,
                 avatar:
                   firebaseUser.photoURL ||
-                  `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    name
+                  )}`,
                 bio: "",
                 isOnline: true,
                 lastSeen: serverTimestamp() as Timestamp,
                 fcmTokens: [],
-                status: "active", // ✅ Thêm status mặc định
-                searchKeywords: searchKeywords, // ✅ Thêm searchKeywords
+                status: "active",
+                searchKeywords,
                 hidden: false,
                 deletedAt: null,
               };
 
-              transaction.set(userRef, newUser);
-              transaction.set(doc(db, "userIds", userId), { uid: firebaseUser.uid });
-              transaction.set(doc(db, "usernames", username), { uid: firebaseUser.uid });
+              tx.set(userRef, newUser);
+              tx.set(doc(db, "userIds", userId), { uid: firebaseUser.uid });
+              tx.set(doc(db, "usernames", username), {
+                uid: firebaseUser.uid,
+              });
             });
           } else {
-            // ✅ Update user cũ: thêm status + searchKeywords nếu thiếu
-            const existingData = snap.data();
-            const updates: any = {
+            await updateDoc(userRef, {
               isOnline: true,
               lastSeen: serverTimestamp(),
               emailVerified: firebaseUser.emailVerified,
-            };
-
-            // Thêm status nếu chưa có
-            if (!existingData.status) {
-              updates.status = "active";
-            }
-
-            // Thêm searchKeywords nếu chưa có
-            if (!existingData.searchKeywords || existingData.searchKeywords.length === 0) {
-              updates.searchKeywords = generateSearchKeywords(
-                existingData.name,
-                existingData.userId,
-                existingData.username
-              );
-            }
-
-            // Thêm nameLower nếu chưa có
-            if (!existingData.nameLower) {
-              updates.nameLower = existingData.name.toLowerCase();
-            }
-
-            await updateDoc(userRef, updates);
+            });
           }
 
-userDataUnsub.current = onSnapshot(userRef, (docSnap) => {
-  if (docSnap.exists()) {
-    setUserData({ ...docSnap.data() } as AppUser);
-    setLoading(false); // ✅ CHỈ ĐẶT Ở ĐÂY
-  }
-});
+          // ✅ SNAPSHOT (QUAN TRỌNG NHẤT)
+          userDataUnsub.current = onSnapshot(userRef, (docSnap) => {
+            if (docSnap.exists()) {
+              setUserData(docSnap.data() as AppUser);
+              setLoading(false);
+            }
+          });
 
-          // ================= PRESENCE =================
-          const userStatusRef = ref(rtdb, `/status/${firebaseUser.uid}`);
+          // ✅ PRESENCE
+          const statusRef = ref(rtdb, `/status/${firebaseUser.uid}`);
           const connectedRef = ref(rtdb, ".info/connected");
 
           presenceUnsub.current = onValue(connectedRef, (snap) => {
-            if (snap.val() === false) return;
+            if (!snap.val()) return;
 
-            onDisconnect(userStatusRef)
-           .set({
-                isOnline: false,
-                lastSeen: rtdbTimestamp(),
-              })
-           .then(() => {
-                set(userStatusRef, {
-                  isOnline: true,
-                  lastSeen: rtdbTimestamp(),
-                });
-              });
+            onDisconnect(statusRef).set({
+              isOnline: false,
+              lastSeen: rtdbTimestamp(),
+            });
+
+            set(statusRef, {
+              isOnline: true,
+              lastSeen: rtdbTimestamp(),
+            });
           });
+        } catch (e: any) {
+          console.error("Auth error:", e);
+          setError(e.message);
+          setLoading(false);
+        }
+      },
 
-} catch (e: any) {
-  console.error("Auth error:", e);
-  setError(e.message || "Lỗi khởi tạo tài khoản");
-}
-,
-(err) => {
-        console.error("onAuthStateChanged error:", err);
+      // ✅ ERROR CALLBACK (FIX CHUẨN SYNTAX)
+      (err) => {
+        console.error("Auth error:", err);
         setError("Lỗi xác thực");
         setLoading(false);
       }
@@ -264,17 +253,15 @@ userDataUnsub.current = onSnapshot(userRef, (docSnap) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+/* ================= HOOK ================= */
 export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-  return ctx;
+  return useContext(AuthContext);
 };
 
-// ================= LOGOUT =================
+/* ================= LOGOUT ================= */
 export const useLogout = () => {
   return async () => {
     const firebase = await import("@/lib/firebase");
-
     const auth = firebase.getFirebaseAuth();
     const db = firebase.getFirebaseDB();
 
