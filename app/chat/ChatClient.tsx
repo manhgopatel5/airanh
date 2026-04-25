@@ -63,8 +63,8 @@ export default function ChatClient() {
           setLoading(true);
 
           const friendIds = snap.docs
-        .map((d) => d.data().friendId)
-        .filter((id): id is string => typeof id === "string" &&!!id);
+       .map((d) => d.data().friendId)
+       .filter((id): id is string => typeof id === "string" &&!!id);
 
           if (!friendIds.length) {
             setFriends([]);
@@ -86,9 +86,9 @@ export default function ChatClient() {
           );
 
           const list: FriendItem[] = userSnaps
-        .flat()
-        .filter((s): s is NonNullable<typeof s> => s!== null && s.exists())
-        .map((s) => {
+       .flat()
+       .filter((s): s is NonNullable<typeof s> => s!== null && s.exists())
+       .map((s) => {
               const data = s.data();
               return {
                 uid: s.id,
@@ -150,11 +150,24 @@ export default function ChatClient() {
         }
       }
 
-      // 3. Query users collection theo field userId
+      // 3. Query users collection theo field userId - FIX LỖI GQXIFNWT
       if (!targetUid) {
         const q = query(
           collection(db, "users"),
           where("userId", "==", keyword.toUpperCase()),
+          limit(1)
+        );
+        const snap = await getDocs(q);
+        if (!snap.empty && snap.docs[0]) {
+          targetUid = snap.docs[0].id;
+        }
+      }
+
+      // 4. Query theo @username
+      if (!targetUid && keyword.startsWith("@")) {
+        const q = query(
+          collection(db, "users"),
+          where("username", "==", keyword.slice(1).toLowerCase()),
           limit(1)
         );
         const snap = await getDocs(q);
@@ -322,7 +335,7 @@ export default function ChatClient() {
               </h3>
               <p className="text-[15px] text-gray-500 dark:text-zinc-400 font-medium max-w-[260px] mb-8 leading-relaxed">
                 {search
-               ? `Không có kết quả cho "${search}"`
+              ? `Không có kết quả cho "${search}"`
                   : "Tìm bạn bè bằng User ID hoặc username để bắt đầu trò chuyện"}
               </p>
               {search && (
