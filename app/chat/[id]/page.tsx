@@ -5,9 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB, getFirebaseStorage } from "@/lib/firebase";
 import {
-  collection, query, onSnapshot, doc,
+  collection, query, onSnapshot, doc, getDocs,
   orderBy, limit, addDoc, serverTimestamp, Timestamp,
-  writeBatch, setDoc, getDoc
+  writeBatch, setDoc, getDoc, where
 } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
@@ -27,6 +27,7 @@ type UserData = {
   online: boolean;
   lastSeen?: Timestamp;
   shortId: string;
+  userId?: string;
 };
 
 type Message = {
@@ -53,10 +54,10 @@ export default function ChatDetailPage() {
   const db = getFirebaseDB();
   const storage = getFirebaseStorage();
   const { user, loading: authLoading } = useAuth();
-  // ✅ FIX 1: Route /chat/[id] nên dùng params.id
-  const friendId = params.id as string;
+  const idFromUrl = params.id as string;
 
   const [friend, setFriend] = useState<UserData | null>(null);
+  const [friendId, setFriendId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -74,9 +75,9 @@ export default function ChatDetailPage() {
 
   const chatId = user && friendId? [user.uid, friendId].sort().join("_") : null;
 
-  /* ================= LOAD FRIEND ================= */
+  /* ================= LOAD FRIEND - FIX PVT331HC ================= */
   useEffect(() => {
-    if (!friendId || authLoading) return;
+    if (!idFromUrl || authLoading) return;
     if (!user) {
       router.replace("/chat");
       return;
@@ -84,13 +85,25 @@ export default function ChatDetailPage() {
 
     const loadFriend = async () => {
       try {
-        const snap = await getDoc(doc(db, "users", friendId));
-        if (snap.exists()) {
-          setFriend({ uid: snap.id,...snap.data() } as UserData);
-        } else {
+        // PVT331HC là field userId, không phải doc ID
+        const q = query(
+          collection(db, "users"),
+          where("userId", "==", idFromUrl),
+          limit(1)
+        );
+        const snap = await getDocs(q);
+
+        if (snap.empty) {
           toast.error("Người dùng không tồn tại");
           setTimeout(() => router.replace("/chat"), 1500);
+          return;
         }
+
+        const userDoc = snap.docs[0];
+        const data = userDoc.data() as UserData;
+        setFriend({...data, uid: userDoc.id });
+        setFriendId(userDoc.id);
+
       } catch (e) {
         console.error(e);
         toast.error("Lỗi tải thông tin");
@@ -101,18 +114,22 @@ export default function ChatDetailPage() {
     };
 
     loadFriend();
+  }, [idFromUrl, user, authLoading, router, db]);
 
+  /* ================= REALTIME FRIEND STATUS ================= */
+  useEffect(() => {
+    if (!friendId) return;
     const unsub = onSnapshot(doc(db, "users", friendId), (snap) => {
       if (snap.exists()) {
         setFriend({ uid: snap.id,...snap.data() } as UserData);
       }
     });
     return () => unsub();
-  }, [friendId, user, authLoading, router, db]);
+  }, [friendId, db]);
 
-  /* ================= LOAD MESSAGES - FIX 4: Bỏ where!= null ================= */
+  /* ================= LOAD MESSAGES ================= */
   useEffect(() => {
-    if (!chatId ||!user ||!friend) return;
+    if (!chatId ||!user ||!friendId) return;
 
     const q = query(
       collection(db, "chats", chatId, "messages"),
@@ -121,7 +138,6 @@ export default function ChatDetailPage() {
     );
 
     const unsub = onSnapshot(q, (snap) => {
-      // ✅ Filter null ở client thay vì query where!= null
       const msgs = snap.docs
        .map((d) => ({ id: d.id,...d.data() } as Message))
        .filter((m) => m.createdAt!== null);
@@ -146,13 +162,12 @@ export default function ChatDetailPage() {
     });
 
     return () => unsub();
-  }, [chatId, user, friendId, friend, db]);
+  }, [chatId, user, friendId, db]);
 
-  /* ================= TYPING INDICATOR - FIX 3: Check exists ================= */
+  /* ================= TYPING INDICATOR ================= */
   useEffect(() => {
-    if (!chatId) return;
+    if (!chatId ||!friendId) return;
     const unsub = onSnapshot(doc(db, "chats", chatId), (snap) => {
-      // ✅ FIX 3: Check exists trước khi.data()
       if (snap.exists()) {
         const data = snap.data();
         setIsTyping(data?.typing?.[friendId] === true);
@@ -163,7 +178,6 @@ export default function ChatDetailPage() {
     return () => unsub();
   }, [chatId, friendId, db]);
 
-  /* ================= FIX 2: Dùng setDoc merge thay vì updateDoc ================= */
   const handleTyping = useCallback(async () => {
     if (!user ||!chatId) return;
     try {
@@ -178,14 +192,13 @@ export default function ChatDetailPage() {
         }, { merge: true });
       }, 3000);
     } catch (e) {
-      // Im lặng nếu chat chưa tạo
       console.log("Typing error:", e);
     }
   }, [user, chatId, db]);
 
   /* ================= SEND MESSAGE ================= */
   const sendMessage = useCallback(async () => {
-    if (!text.trim() ||!user ||!friend ||!chatId || sending) return;
+    if (!text.trim() ||!user ||!friend ||!chatId || sending ||!friendId) return;
 
     const tempText = text;
     const tempReply = replyTo;
@@ -201,7 +214,7 @@ export default function ChatDetailPage() {
         createdAt: serverTimestamp(),
         seenBy: [user.uid],
         type: "text",
-      ...(tempReply && {
+       ...(tempReply && {
           replyTo: {
             id: tempReply.id,
             text: tempReply.text,
@@ -232,7 +245,7 @@ export default function ChatDetailPage() {
 
   /* ================= SEND IMAGE ================= */
   const sendImage = async (file: File) => {
-    if (!user ||!chatId) return;
+    if (!user ||!chatId ||!friendId) return;
     setUploading(true);
     setUploadProgress(0);
 
@@ -294,7 +307,7 @@ export default function ChatDetailPage() {
 
   /* ================= SEND FILE ================= */
   const sendFile = async (file: File) => {
-    if (!user ||!chatId) return;
+    if (!user ||!chatId ||!friendId) return;
     if (file.size > 10 * 1024 * 1024) {
       toast.error("File không được vượt quá 10MB");
       return;
@@ -435,7 +448,7 @@ export default function ChatDetailPage() {
           const isFirstInGroup =!prev || prev.senderId!== m.senderId;
           const isLastInGroup =!next || next.senderId!== m.senderId;
           const showDate =
-          !prev ||
+           !prev ||
             (m.createdAt &&
               prev.createdAt &&
               m.createdAt.toDate().toDateString()!== prev.createdAt.toDate().toDateString());
@@ -474,22 +487,22 @@ export default function ChatDetailPage() {
                     onClick={() => setReplyTo(m)}
                     className={`px-4 py-2.5 shadow-sm cursor-pointer ${
                       isMe
-                      ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
+                       ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
                             isFirstInGroup && isLastInGroup
-                            ? "rounded-3xl"
+                             ? "rounded-3xl"
                               : isFirstInGroup
-                            ? "rounded-3xl rounded-br-lg"
+                             ? "rounded-3xl rounded-br-lg"
                               : isLastInGroup
-                            ? "rounded-3xl rounded-tr-lg"
+                             ? "rounded-3xl rounded-tr-lg"
                               : "rounded-r-lg rounded-l-3xl"
                           }`
                         : `bg-white dark:bg-zinc-800 text-gray-900 dark:text-white ${
                             isFirstInGroup && isLastInGroup
-                            ? "rounded-3xl"
+                             ? "rounded-3xl"
                               : isFirstInGroup
-                            ? "rounded-3xl rounded-bl-lg"
+                             ? "rounded-3xl rounded-bl-lg"
                               : isLastInGroup
-                            ? "rounded-3xl rounded-tl-lg"
+                             ? "rounded-3xl rounded-tl-lg"
                               : "rounded-l-lg rounded-r-3xl"
                           }`
                     }`}
@@ -503,7 +516,7 @@ export default function ChatDetailPage() {
                     )}
                     {m.location && (
                       <a
-                        href={`https://maps.google.com/?q=${m.location.lat},${m.location.lng}`}
+                        href={`https:                                                          
                         target="_blank"
                         className="flex items-center gap-2 p-2 bg-black/10 rounded-xl"
                       >
