@@ -62,7 +62,7 @@ useEffect(() => {
 
         const friendIds = snap.docs
           .map((d) => d.data().friendId)
-          .filter(Boolean); // ✅ FIX thêm dòng này
+          .filter((item): item is FriendItem => item !== null)
 
         if (!friendIds.length) {
           setFriends([]);
