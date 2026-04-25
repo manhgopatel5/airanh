@@ -140,7 +140,7 @@ export const sendFriendRequest = async (
   const requestId = [from, to].sort().join("_");
   const requestRef = doc(db, "friendRequests", requestId);
   const friendRef = doc(db, "friends", `${from}_${to}`);
-  const toUserRef = doc(db, "users", to);
+
 
   const [block1, block2] = await Promise.all([
     getDoc(doc(db, "blocks", `${to}_${from}`)),
