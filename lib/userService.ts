@@ -5,7 +5,6 @@ import {
   where,
   getDocs,
   limit,
-  orderBy,
   startAfter,
   QueryDocumentSnapshot,
   QueryConstraint,
@@ -53,12 +52,12 @@ export class SearchError extends Error {
 /* ================= CONVERTER ================= */
 const userConverter: FirestoreDataConverter<SearchUser> = {
   toFirestore: (user) => {
-    const { uid, ...data } = user;
+    const { uid,...data } = user;
     return data;
   },
   fromFirestore: (snap) => ({
     uid: snap.id,
-    ...snap.data(),
+   ...snap.data(),
   } as SearchUser),
 };
 
@@ -84,7 +83,7 @@ class LRUCache<K, V> {
 
     if (this.cache.size > this.max) {
       const firstKey = this.cache.keys().next().value;
-      if (firstKey !== undefined) this.cache.delete(firstKey);
+      if (firstKey!== undefined) this.cache.delete(firstKey);
     }
   }
 }
@@ -103,34 +102,30 @@ export const searchUsers = async (
 
   if (!trimmed) return { users: [], lastDoc: null, hasMore: false };
   if (trimmed.length < 2) throw new SearchError("Tối thiểu 2 ký tự");
+  if (!currentUserId) throw new SearchError("Chưa đăng nhập");
 
-  try {
-    // 🔥 1. SEARCH BY USERID
-    if (/^[A-Z0-9]{8}$/.test(trimmed.toUpperCase())) {
+  // 🔥 1. SEARCH BY USERID - PVT331HC
+  if (/^[A-Z0-9]{8}$/.test(trimmed.toUpperCase())) {
+    try {
       const idSnap = await getDoc(doc(db, "userIds", trimmed.toUpperCase()));
-
       if (idSnap.exists()) {
         const { uid } = idSnap.data();
-
         if (!uid || uid === currentUserId) {
           return { users: [], lastDoc: null, hasMore: false };
         }
 
         const userSnap = await getDoc(doc(db, "users", uid));
-
         if (userSnap.exists()) {
           const data = userSnap.data();
-          const realUid = userSnap.id; // ✅ FIX QUAN TRỌNG
-
-          if ((!data.status || data.status === "active") && !data.hidden && !data.deletedAt) {
+          if ((!data.status || data.status === "active") &&!data.hidden &&!data.deletedAt) {
             return {
               users: [{
-                uid: realUid,
+                uid: userSnap.id,
                 name: data.name,
                 avatar: data.avatar,
                 userId: data.userId,
-                ...(data.username && { username: data.username }),
-                ...(data.bio && { bio: data.bio }),
+               ...(data.username && { username: data.username }),
+               ...(data.bio && { bio: data.bio }),
                 isFriend: false,
                 matchedField: "userId",
                 email: data.email,
@@ -141,30 +136,30 @@ export const searchUsers = async (
           }
         }
       }
+    } catch (e) {
+      console.error("Search by userId error:", e);
+      // Fall through to next search
     }
+  }
 
-    // 🔥 2. SEARCH BY USERNAME
+  // 🔥 2. SEARCH BY USERNAME
+  try {
     const usernameSnap = await getDoc(doc(db, "usernames", trimmed.toLowerCase()));
-
     if (usernameSnap.exists()) {
       const { uid } = usernameSnap.data();
-
-      if (uid && uid !== currentUserId) {
+      if (uid && uid!== currentUserId) {
         const userSnap = await getDoc(doc(db, "users", uid));
-
         if (userSnap.exists()) {
           const data = userSnap.data();
-          const realUid = userSnap.id; // ✅ FIX
-
-          if ((!data.status || data.status === "active") && !data.hidden && !data.deletedAt) {
+          if ((!data.status || data.status === "active") &&!data.hidden &&!data.deletedAt) {
             return {
               users: [{
-                uid: realUid,
+                uid: userSnap.id,
                 name: data.name,
                 avatar: data.avatar,
                 userId: data.userId,
-                ...(data.username && { username: data.username }),
-                ...(data.bio && { bio: data.bio }),
+               ...(data.username && { username: data.username }),
+               ...(data.bio && { bio: data.bio }),
                 isFriend: false,
                 matchedField: "username",
                 email: data.email,
@@ -176,8 +171,12 @@ export const searchUsers = async (
         }
       }
     }
+  } catch (e) {
+    console.error("Search by username error:", e);
+  }
 
-    // 🔥 3. FALLBACK SEARCH
+  // 🔥 3. FALLBACK SEARCH - ĐÃ BỎ orderBy ĐỂ KHỎI CẦN INDEX
+  try {
     const constraints: QueryConstraint[] = [
       where("searchKeywords", "array-contains-any", [
         trimmed.toLowerCase(),
@@ -185,40 +184,44 @@ export const searchUsers = async (
         trimmed.toLowerCase().split(" ")[0],
       ]),
       where("status", "==", "active"),
-      orderBy("nameLower"),
-      ...(cursor ? [startAfter(cursor)] : []),
+      // orderBy("nameLower"), // BỎ DÒNG NÀY ĐỂ KHÔNG CẦN COMPOSITE INDEX
+     ...(cursor? [startAfter(cursor)] : []),
       limit(maxResults + 1),
     ];
 
-    const q = query(collection(db, "users").withConverter(userConverter), ...constraints);
+    const q = query(collection(db, "users").withConverter(userConverter),...constraints);
     const snap = await getDocs(q);
 
     const docs = snap.docs.slice(0, maxResults);
     const hasMore = snap.docs.length > maxResults;
 
-    const users: SearchResult[] = docs.map((d) => {
-      const data = d.data();
-
-      return {
-        uid: d.id, // ✅ FIX QUAN TRỌNG
-        name: data.name,
-        avatar: data.avatar,
-        userId: data.userId,
-        ...(data.username && { username: data.username }),
-        ...(data.bio && { bio: data.bio }),
-        isFriend: false,
-        email: data.email,
-      };
-    });
+    const users: SearchResult[] = docs
+     .map((d) => {
+        const data = d.data();
+        if (data.hidden || data.deletedAt || d.id === currentUserId) return null;
+        return {
+          uid: d.id,
+          name: data.name,
+          avatar: data.avatar,
+          userId: data.userId,
+         ...(data.username && { username: data.username }),
+         ...(data.bio && { bio: data.bio }),
+          isFriend: false,
+          email: data.email,
+        };
+      })
+     .filter(Boolean) as SearchResult[];
 
     return {
       users,
-      lastDoc: hasMore ? docs[docs.length - 1] : null,
+      lastDoc: hasMore? docs[docs.length - 1] : null,
       hasMore,
     };
-
-  } catch (e) {
-    console.error("searchUsers error:", e);
+  } catch (e: any) {
+    console.error("searchUsers fallback error:", e);
+    if (e.code === 'failed-precondition') {
+      throw new SearchError("Thiếu index. Liên hệ admin tạo index cho users");
+    }
     throw new SearchError("Search failed");
   }
 };
@@ -231,28 +234,31 @@ export const getUserByUserId = async (userId: string) => {
   const cached = userCache.get(key);
   if (cached) return cached;
 
-  const idSnap = await getDoc(doc(db, "userIds", key));
-  if (!idSnap.exists()) return null;
+  try {
+    const idSnap = await getDoc(doc(db, "userIds", key));
+    if (!idSnap.exists()) return null;
 
-  const { uid } = idSnap.data();
-  const userSnap = await getDoc(doc(db, "users", uid));
-  if (!userSnap.exists()) return null;
+    const { uid } = idSnap.data();
+    const userSnap = await getDoc(doc(db, "users", uid));
+    if (!userSnap.exists()) return null;
 
-  const data = userSnap.data();
-  const realUid = userSnap.id; // ✅ FIX
+    const data = userSnap.data();
+    const result: SearchResult = {
+      uid: userSnap.id,
+      name: data.name,
+      avatar: data.avatar,
+      userId: data.userId,
+     ...(data.username && { username: data.username }),
+     ...(data.bio && { bio: data.bio }),
+      email: data.email,
+    };
 
-  const result: SearchResult = {
-    uid: realUid,
-    name: data.name,
-    avatar: data.avatar,
-    userId: data.userId,
-    ...(data.username && { username: data.username }),
-    ...(data.bio && { bio: data.bio }),
-    email: data.email,
-  };
-
-  userCache.set(key, result);
-  return result;
+    userCache.set(key, result);
+    return result;
+  } catch (e) {
+    console.error("getUserByUserId error:", e);
+    return null;
+  }
 };
 
 /* ================= DEBOUNCE ================= */
