@@ -58,7 +58,7 @@ const userConverter: FirestoreDataConverter<SearchUser> = {
   },
   fromFirestore: (snap) => ({
     uid: snap.id,
-  ...snap.data(),
+ ...snap.data(),
   } as SearchUser),
 };
 
@@ -105,7 +105,7 @@ const batchGetDocs = async <T>(
     const q = query(
       collection(db, col),
       where(field, "in", chunk),
-    ...extraConstraints
+   ...extraConstraints
     );
     chunks.push(getDocs(q));
   }
@@ -138,11 +138,9 @@ export const searchUsers = async (
         const userSnap = await getDoc(doc(db, "users", uid));
         if (userSnap.exists()) {
           const data = userSnap.data();
-          // ✅ Fix: chấp nhận status undefined hoặc "active"
           if ((!data.status || data.status === "active") &&!data.hidden &&!data.deletedAt) {
-            const isFriend = currentUserId
-            ? (await getDoc(doc(db, "friends", `${currentUserId}_${uid}`))).exists()
-              : false;
+            // ✅ Bỏ check friends, luôn false
+            const isFriend = false;
 
             return {
               users: [{
@@ -150,11 +148,11 @@ export const searchUsers = async (
                 name: data.name,
                 avatar: data.avatar,
                 userId: data.userId,
-              ...(data.username && { username: data.username }),
-              ...(data.bio && { bio: data.bio }),
+             ...(data.username && { username: data.username }),
+             ...(data.bio && { bio: data.bio }),
                 isFriend,
                 matchedField: "userId",
-              ...(isFriend && data.email && { email: data.email }),
+                email: data.email, // ✅ Luôn trả email vì không check bạn bè
               }],
               lastDoc: null,
               hasMore: false
@@ -172,11 +170,9 @@ export const searchUsers = async (
         const userSnap = await getDoc(doc(db, "users", uid));
         if (userSnap.exists()) {
           const data = userSnap.data();
-          // ✅ Fix: chấp nhận status undefined hoặc "active"
           if ((!data.status || data.status === "active") &&!data.hidden &&!data.deletedAt) {
-            const isFriend = currentUserId
-            ? (await getDoc(doc(db, "friends", `${currentUserId}_${uid}`))).exists()
-              : false;
+            // ✅ Bỏ check friends, luôn false
+            const isFriend = false;
 
             return {
               users: [{
@@ -184,11 +180,11 @@ export const searchUsers = async (
                 name: data.name,
                 avatar: data.avatar,
                 userId: data.userId,
-              ...(data.username && { username: data.username }),
-              ...(data.bio && { bio: data.bio }),
+             ...(data.username && { username: data.username }),
+             ...(data.bio && { bio: data.bio }),
                 isFriend,
                 matchedField: "username",
-              ...(isFriend && data.email && { email: data.email }),
+                email: data.email, // ✅ Luôn trả email
               }],
               lastDoc: null,
               hasMore: false
@@ -205,9 +201,9 @@ export const searchUsers = async (
         trimmed.toLowerCase().replace(/\s/g, ""),
         trimmed.toLowerCase().split(" ")[0],
       ]),
-      where("status", "==", "active"), // Chỗ này giữ nguyên vì query cần index
+      where("status", "==", "active"),
       orderBy("nameLower"),
-    ...(cursor? [startAfter(cursor)] : []),
+   ...(cursor? [startAfter(cursor)] : []),
       limit(maxResults + 1),
     ];
 
@@ -223,32 +219,12 @@ export const searchUsers = async (
     const uids = docs.map((d) => d.id).filter((id) => id!== currentUserId);
     if (uids.length === 0) return { users: [], lastDoc: null, hasMore: false };
 
-    const [friends, blocksFrom, blocksTo] = await Promise.all([
-      currentUserId
-      ? batchGetDocs<{ friendId: string }>("friends", "friendId", uids, [
-            where("userId", "==", currentUserId),
-          ])
-        : [],
-      currentUserId
-      ? batchGetDocs<{ toUserId: string }>("blocks", "toUserId", uids, [
-            where("fromUserId", "==", currentUserId),
-          ])
-        : [],
-      currentUserId
-      ? batchGetDocs<{ fromUserId: string }>("blocks", "fromUserId", uids, [
-            where("toUserId", "==", currentUserId),
-          ])
-        : [],
-    ]);
-
-    const friendSet = new Set(friends.map((f) => f.friendId));
-    const blockSet = new Set([
-    ...blocksFrom.map((b) => b.toUserId),
-    ...blocksTo.map((b) => b.fromUserId),
-    ]);
+    // ✅ Bỏ batch check friends/blocks
+    const friendSet = new Set<string>();
+    const blockSet = new Set<string>();
 
     const users: SearchResult[] = docs
-    .map((d) => {
+   .map((d) => {
         const data = d.data();
         if (data.uid === currentUserId || blockSet.has(data.uid)) return null;
         if (data.hidden || data.deletedAt) return null;
@@ -257,22 +233,22 @@ export const searchUsers = async (
         if (data.userId?.toLowerCase().includes(trimmed.toLowerCase())) matchedField = "userId";
         else if (data.username?.toLowerCase().includes(trimmed.toLowerCase())) matchedField = "username";
 
-        const isFriend = friendSet.has(data.uid);
+        const isFriend = false; // ✅ Bỏ check friends
 
         const result: SearchResult = {
           uid: data.uid,
           name: data.name,
           avatar: data.avatar,
           userId: data.userId,
-        ...(data.username && { username: data.username }),
-        ...(data.bio && { bio: data.bio }),
+       ...(data.username && { username: data.username }),
+       ...(data.bio && { bio: data.bio }),
           isFriend,
           matchedField,
-        ...(isFriend && data.email && { email: data.email }),
+          email: data.email, // ✅ Luôn trả email
         };
         return result;
       })
-    .filter(Boolean) as SearchResult[];
+   .filter(Boolean) as SearchResult[];
 
     return { users, lastDoc, hasMore };
   } catch (e: any) {
@@ -297,7 +273,6 @@ export const getUserByUserId = async (userId: string): Promise<SearchResult | nu
   const cached = userCache.get(key);
   if (cached) return cached;
 
-  // ✅ Check mapping userIds trước
   const userIdDoc = await getDoc(doc(db, "userIds", key));
   if (!userIdDoc.exists()) return null;
 
@@ -306,7 +281,6 @@ export const getUserByUserId = async (userId: string): Promise<SearchResult | nu
   if (!userSnap.exists()) return null;
 
   const data = userSnap.data();
-  // ✅ Fix: chấp nhận status undefined hoặc "active"
   if (data.hidden || data.deletedAt || (data.status && data.status!== "active")) return null;
 
   const result: SearchResult = {
@@ -314,8 +288,10 @@ export const getUserByUserId = async (userId: string): Promise<SearchResult | nu
     name: data.name,
     avatar: data.avatar,
     userId: data.userId,
-  ...(data.username && { username: data.username }),
-  ...(data.bio && { bio: data.bio }),
+ ...(data.username && { username: data.username }),
+ ...(data.bio && { bio: data.bio }),
+    isFriend: false,
+    email: data.email,
   };
 
   userCache.set(key, result);
