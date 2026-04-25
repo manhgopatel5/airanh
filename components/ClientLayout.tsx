@@ -13,25 +13,34 @@ type Props = {
 export default function ClientLayout({ children }: Props) {
   const pathname = usePathname() || "";
   const router = useRouter();
+
+  // 👇 FIX TYPE CHUẨN
   const user: { uid: string } | null = null;
+
+  // 👇 FIX NEVER ERROR (QUAN TRỌNG NHẤT)
+  const userId = user?.uid;
+
   const [loading, setLoading] = useState(true);
 
   /* ================= ROUTE ================= */
-  // ✅ SỬA: Đổi /reset-password thành /forgot-password
   const publicRoutes = ["/login", "/register", "/forgot-password", "/verify-email"];
-  const isPublic = useMemo(() => publicRoutes.some((r) => pathname.startsWith(r)), [pathname]);
+  const isPublic = useMemo(
+    () => publicRoutes.some((r) => pathname.startsWith(r)),
+    [pathname]
+  );
+
   const isChatDetail = /^\/chat\/[^/]+$/.test(pathname);
   const isCreate = pathname.startsWith("/create");
 
   /* ================= REDIRECT ================= */
   useEffect(() => {
-    if (user === undefined) return;
     setLoading(false);
 
-    if (!user &&!isPublic) {
+    if (!user && !isPublic) {
       router.replace("/login");
       return;
     }
+
     if (user && isPublic) {
       router.replace("/");
       return;
@@ -74,14 +83,14 @@ export default function ClientLayout({ children }: Props) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors">
 
-      {/* FCM chạy client-only */}
-      {user?.uid && <FCMProvider userId={user.uid} />}
+      {/* ✅ FIX CRASH + TYPE */}
+      {userId && <FCMProvider userId={userId} />}
 
-      <div className={!isChatDetail &&!isCreate? "pb-24" : ""}>
+      <div className={!isChatDetail && !isCreate ? "pb-24" : ""}>
         {children}
       </div>
 
-      {!isPublic && user &&!isChatDetail &&!isCreate && <BottomNav />}
+      {!isPublic && user && !isChatDetail && !isCreate && <BottomNav />}
 
       <Toaster
         position="top-center"
