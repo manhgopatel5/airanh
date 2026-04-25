@@ -283,7 +283,6 @@ export const acceptRequest = async (
       return;
     }
 
-    const toUser = toUserSnap.data() as User;
 
     transaction.update(requestRef, {
       status: "accepted",
