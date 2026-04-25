@@ -29,11 +29,12 @@ export default function UserSearch() {
 
   useEffect(() => {
     mountedRef.current = true;
-    return () => { mountedRef.current = false; };
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   useEffect(() => {
-    // Fix 1: Không search khi chưa login hoặc keyword trống
     if (!keyword.trim() || !user?.uid) {
       setResults([]);
       setError(null);
@@ -48,7 +49,6 @@ export default function UserSearch() {
 
     const timer = setTimeout(async () => {
       try {
-        // Fix 2: Không toUpperCase toàn bộ, để service tự xử lý
         const res = await searchUsers(keyword.trim(), user.uid);
 
         console.log("SEARCH RESULT:", res);
@@ -77,7 +77,6 @@ export default function UserSearch() {
       } catch (err: any) {
         if (err.name !== "AbortError") {
           console.error("❌ Lỗi search:", err);
-          // Fix 3: Hiển thị lỗi cho user biết
           if (mountedRef.current) {
             setError(err.message || "Không thể tìm kiếm. Thử lại sau.");
             setResults([]);
@@ -225,7 +224,6 @@ export default function UserSearch() {
         )}
       </div>
 
-      {/* Fix 4: Hiển thị lỗi */}
       {error && (
         <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
           <FiAlertCircle size={16} />
@@ -233,7 +231,6 @@ export default function UserSearch() {
         </div>
       )}
 
-      {/* Fix 5: Báo user chưa login */}
       {!user?.uid && keyword && (
         <div className="text-center text-gray-400 text-sm">
           Vui lòng đăng nhập để tìm kiếm
@@ -255,7 +252,7 @@ export default function UserSearch() {
       {!loading &&
         results.map((u) => (
           <div key={u.uid} className="flex items-center justify-between p-3 border rounded-xl hover:bg-gray-50 transition-colors">
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <img
                 src={
                   u.avatar ||
@@ -264,7 +261,7 @@ export default function UserSearch() {
                 alt={u.name || "User avatar"}
                 className="w-10 h-10 rounded-full object-cover flex-shrink-0"
               />
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="font-medium truncate">{u.name || "User"}</p>
                 <p className="text-xs text-gray-500 truncate">
                   {u.userId ? `@${u.userId}` : u.email}
