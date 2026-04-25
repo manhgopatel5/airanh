@@ -44,10 +44,9 @@ export default function UserSearch() {
 
     const timer = setTimeout(async () => {
       try {
-        // 🔥 FIX QUAN TRỌNG NHẤT
         const res = await searchUsers(keyword.trim().toUpperCase(), user?.uid);
 
-        console.log("SEARCH RESULT:", res); // debug
+        console.log("SEARCH RESULT:", res);
 
         const filtered = res.users.filter((u: UserResult) => u.uid !== user?.uid);
 
@@ -126,21 +125,7 @@ export default function UserSearch() {
     }
   };
 
-  const highlightText = (text: string, keyword: string) => {
-    if (!keyword.trim()) return text;
-
-    const parts = text.split(new RegExp(`(${keyword})`, "gi"));
-
-    return parts.map((part, i) =>
-      part.toLowerCase() === keyword.toLowerCase() ? (
-        <span key={i} className="bg-yellow-200 dark:bg-yellow-900/50 font-semibold">
-          {part}
-        </span>
-      ) : (
-        part
-      )
-    );
-  };
+  // ❌ XÓA HÀM highlightText vì không dùng
 
   const renderButton = (u: UserResult) => {
     const isSending = sending === u.uid;
@@ -183,7 +168,7 @@ export default function UserSearch() {
           <button
             onClick={() => handleAddFriend(u.uid)}
             disabled={!user?.uid || isSending}
-            className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-semibold"
+            className="flex items-center gap-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-semibold"
           >
             {isSending ? (
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -201,7 +186,6 @@ export default function UserSearch() {
       <div className="relative">
         <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
 
-        {/* 🔥 FIX placeholder */}
         <input
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
@@ -236,13 +220,13 @@ export default function UserSearch() {
                   u.avatar ||
                   `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || "U")}`
                 }
+                alt={u.name || "User avatar"} // ✅ Thêm alt
                 className="w-10 h-10 rounded-full"
               />
               <div>
                 <p>{u.name || "User"}</p>
                 <p className="text-xs text-gray-500">{u.email}</p>
               </div>
-            </div>
             {renderButton(u)}
           </div>
         ))}
