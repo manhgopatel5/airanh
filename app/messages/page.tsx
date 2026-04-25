@@ -1,6 +1,8 @@
+"use client";
+
 import dynamic from "next/dynamic";
 
-// ✅ dùng chung component
+// ✅ giờ dùng ssr:false OK
 const ChatClient = dynamic(() => import("../chat/ChatClient"), {
   ssr: false,
 });
