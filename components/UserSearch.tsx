@@ -55,16 +55,19 @@ export default function UserSearch() {
 
         // ✅ BẬT LẠI getFriendStatus - GIỜ RULE ĐÃ ĐÚNG
         const withStatus = await Promise.all(
-          filtered.map(async (u: UserResult) => {
-            try {
-              const status = await getFriendStatus(user.uid, u.uid);
-              return { ...u, status };
-            } catch (e) {
-              console.error("Lỗi getFriendStatus:", e);
-              return { ...u, status: "none" as const };
-            }
-          })
-        );
+  filtered.map(async (u: UserResult) => {
+    try {
+      const status = await getFriendStatus(user.uid, u.uid);
+      // ✅ Map "blocked" về "none" vì UI không hiển thị blocked
+      const mappedStatus: UserResult["status"] = 
+        status === "blocked" ? "none" : status;
+      return { ...u, status: mappedStatus };
+    } catch (e) {
+      console.error("Lỗi getFriendStatus:", e);
+      return { ...u, status: "none" as const };
+    }
+  })
+);
 
         if (mountedRef.current) setResults(withStatus);
       } catch (err: any) {
