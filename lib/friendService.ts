@@ -284,7 +284,6 @@ export const acceptRequest = async (
     }
 
     const toUser = toUserSnap.data() as User;
-    const currentUnread = toUser.friendRequestsUnread || 0;
 
     transaction.update(requestRef, {
       status: "accepted",
