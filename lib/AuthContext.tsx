@@ -20,10 +20,10 @@ export type AppUser = {
   uid: string;
   name: string;
   username: string;
+  userId: string; // ✅ Thay shortId
   email: string;
   emailVerified: boolean;
   avatar: string;
-  shortId: string;
   isOnline: boolean;
   lastSeen: Timestamp;
   fcmTokens?: string[];
@@ -84,13 +84,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (!snap.exists()) {
             // Tạo user mới trong transaction để tránh race condition
             await runTransaction(db, async (transaction) => {
-              // Tạo shortId unique
-              let shortId = "";
+              // Tạo userId unique - 8 ký tự
+              let userId = "";
               for (let i = 0; i < 5; i++) {
-                shortId = nanoid(8).toUpperCase();
-                const q = await transaction.get(doc(db, "shortIds", shortId));
+                userId = nanoid(8).toUpperCase();
+                const q = await transaction.get(doc(db, "userIds", userId));
                 if (!q.exists()) break;
-                if (i === 4) throw new Error("Không thể tạo shortId");
+                if (i === 4) throw new Error("Không thể tạo userId");
               }
 
               // Tạo username unique
@@ -111,20 +111,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 uid: firebaseUser.uid,
                 name: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User",
                 username,
+                userId, // ✅ Dùng userId
                 email: firebaseUser.email || "",
                 emailVerified: firebaseUser.emailVerified,
                 avatar:
                   firebaseUser.photoURL ||
                   `https://ui-avatars.com/api/?name=${encodeURIComponent(firebaseUser.email || "U")}&background=random`,
-                shortId,
                 isOnline: true,
                 lastSeen: serverTimestamp() as Timestamp,
                 fcmTokens: [],
               };
 
               transaction.set(userRef, newUser);
-              transaction.set(doc(db, "shortIds", shortId), { uid: firebaseUser.uid });
+              transaction.set(doc(db, "userIds", userId), { uid: firebaseUser.uid }); // ✅
               transaction.set(doc(db, "usernames", username), { uid: firebaseUser.uid });
+              // ❌ Bỏ shortIds
             });
           } else {
             await updateDoc(userRef, {
@@ -197,14 +198,13 @@ export const useAuth = () => {
 
 // ================= LOGOUT =================
 export const useLogout = () => {
-  const auth = getFirebaseAuth(); // ✅ Fix: lấy auth ở đây
+  const auth = getFirebaseAuth();
   const db = getFirebaseDB();
 
   return async () => {
     const user = auth.currentUser;
     if (user) {
       try {
-        // Set offline trước khi signOut
         await updateDoc(doc(db, "users", user.uid), {
           isOnline: false,
           lastSeen: serverTimestamp(),
