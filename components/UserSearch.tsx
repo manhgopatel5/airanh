@@ -10,6 +10,7 @@ type UserResult = {
   uid: string;
   name?: string;
   username?: string;
+  userId?: string;
   email?: string;
   avatar?: string;
   status?: "none" | "friends" | "requested" | "pending";
@@ -267,6 +268,7 @@ export default function UserSearch() {
                   {u.userId ? `@${u.userId}` : u.email}
                 </p>
               </div>
+            </div>
             <div className="flex-shrink-0 ml-2">
               {renderButton(u)}
             </div>
