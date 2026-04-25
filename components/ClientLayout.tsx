@@ -14,7 +14,7 @@ type Props = {
 export default function ClientLayout({ children }: Props) {
   const pathname = usePathname() || "";
   const router = useRouter();
-  const { user } = useAuth();
+  const user = null;
   const [loading, setLoading] = useState(true);
 
   /* ================= ROUTE ================= */
