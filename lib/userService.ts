@@ -97,7 +97,6 @@ export const searchUsers = async (
   currentUserId?: string,
   maxResults = 10,
   cursor?: QueryDocumentSnapshot<SearchUser>,
-  signal?: AbortSignal
 ) => {
   const db = getFirebaseDB();
   const trimmed = keyword.trim();
