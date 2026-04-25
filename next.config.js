@@ -20,6 +20,8 @@ const nextConfig = {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
+
+    // ⚠️ cái này giữ nguyên (chỉ cho image)
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
@@ -27,27 +29,52 @@ const nextConfig = {
     const csp = [
       "default-src 'self'",
 
-      // ✅ FIX SCRIPT
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://apis.google.com https://www.gstatic.com https://www.googleapis.com",
+      // ✅ FULL SCRIPT (fix lỗi bị block)
+      [
+        "script-src",
+        "'self'",
+        "'unsafe-eval'",
+        "'unsafe-inline'",
+        "https://apis.google.com",
+        "https://www.gstatic.com",
+        "https://www.googleapis.com",
+        "https://*.firebaseapp.com",
+      ].join(' '),
 
       "style-src 'self' 'unsafe-inline'",
 
-      "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://lh3.googleusercontent.com https://ui-avatars.com",
+      [
+        "img-src",
+        "'self'",
+        "data:",
+        "blob:",
+        "https://firebasestorage.googleapis.com",
+        "https://lh3.googleusercontent.com",
+        "https://ui-avatars.com",
+      ].join(' '),
 
       "font-src 'self' data:",
 
-      // ✅ FIX QUAN TRỌNG NHẤT (Firebase + WebSocket)
+      // ✅ QUAN TRỌNG NHẤT (Firebase fix full)
       [
-        "connect-src 'self'",
+        "connect-src",
+        "'self'",
         "https://*.googleapis.com",
         "https://*.firebaseio.com",
         "wss://*.firebaseio.com",
         "https://*.firebasedatabase.app",
         "wss://*.firebasedatabase.app",
+        "https://*.googleusercontent.com",
         "https://fcm.googleapis.com",
       ].join(' '),
 
-      "frame-src 'self' https://*.firebaseapp.com https://accounts.google.com",
+      // ✅ thêm gstatic vào frame (auth popup)
+      [
+        "frame-src",
+        "'self'",
+        "https://*.firebaseapp.com",
+        "https://accounts.google.com",
+      ].join(' '),
 
       "frame-ancestors 'none'",
       "base-uri 'self'",
@@ -69,7 +96,6 @@ const nextConfig = {
     ];
   },
 
-  // ✅ CHỈ GIỮ NODE-ONLY
   serverExternalPackages: ['firebase-admin', 'sharp'],
 
   experimental: {
@@ -91,7 +117,7 @@ const nextConfig = {
       use: ['@svgr/webpack'],
     });
 
-    // ⚠️ FIX SSR
+    // ⚠️ fix SSR lib bị lỗi window/self
     if (isServer) {
       config.output.globalObject = 'self';
     }
