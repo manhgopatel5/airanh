@@ -58,7 +58,6 @@ export default function Home() {
 
   const [activeTab, setActiveTab] = useState<TabId>("hot");
   const [tasks, setTasks] = useState<any[]>([]);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
@@ -82,18 +81,6 @@ export default function Home() {
       console.error("Firebase init error:", err);
     }
   }, []);
-
-  /* ================= AUTH ================= */
-
-  useEffect(() => {
-    if (!auth) return;
-
-    const unsub = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-    });
-
-    return () => unsub();
-  }, [auth]);
 
 
   /* ================= BUILD QUERY ================= */
