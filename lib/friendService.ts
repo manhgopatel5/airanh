@@ -184,9 +184,6 @@ export const sendFriendRequest = async (
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      await updateDoc(toUserRef, {
-        friendRequestsUnread: increment(1),
-      });
       return;
     }
   }
@@ -304,9 +301,7 @@ export const acceptRequest = async (
       friendId: req.fromUserId,
       createdAt: serverTimestamp(),
     });
-    transaction.update(toUserRef, {
-      friendRequestsUnread: Math.max(0, currentUnread - 1),
-    });
+
   });
 
   const toUserSnap = await getDoc(doc(db, "users", req.toUserId));
