@@ -70,14 +70,14 @@ export default function UserSearch() {
 );
 
         if (mountedRef.current) setResults(withStatus);
-      } catch (err: any) {
-        if (err.name !== "AbortError") {
-          console.error("❌ Lỗi search:", err);
-          if (mountedRef.current) {
-            setError(err.message || "Không thể tìm kiếm. Thử lại sau.");
-            setResults([]);
-          }
-        }
+   } catch (err: any) {
+  if (err.name !== "AbortError") {
+    console.error("❌ Lỗi search chi tiết:", err.code, err.message, err);
+    if (mountedRef.current) {
+      setError(`${err.code || 'unknown'}: ${err.message || 'Lỗi không xác định'}`);
+      setResults([]);
+    }
+  }
       } finally {
         if (mountedRef.current) setLoading(false);
       }
