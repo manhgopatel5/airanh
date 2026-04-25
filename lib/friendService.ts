@@ -70,7 +70,7 @@ class FriendError extends Error {
 
 /* ================= HELPER: BATCH GET USERS ================= */
 const batchGetUsers = async (uids: string[]): Promise<Map<string, User>> => {
-  const db = getFirebaseDB(); // ✅ Fix
+  const db = getFirebaseDB();
 
   if (uids.length === 0) return new Map();
   const chunks: Promise<any>[] = [];
@@ -95,7 +95,7 @@ const getMutualFriendsCount = async (
   userId1: string,
   userId2: string
 ): Promise<number> => {
-  const db = getFirebaseDB(); // ✅ Fix
+  const db = getFirebaseDB();
 
   if (!userId1 || !userId2 || userId1 === userId2) return 0;
 
@@ -140,7 +140,6 @@ export const sendFriendRequest = async (
   const requestId = [from, to].sort().join("_");
   const requestRef = doc(db, "friendRequests", requestId);
   const friendRef = doc(db, "friends", `${from}_${to}`);
-
 
   const [block1, block2] = await Promise.all([
     getDoc(doc(db, "blocks", `${to}_${from}`)),
@@ -264,12 +263,11 @@ export const acceptRequest = async (
       "friends",
       `${req.toUserId}_${req.fromUserId}`
     );
-    
 
-const [reqSnap, friendSnap] = await Promise.all([
-  transaction.get(requestRef),
-  transaction.get(friend1Ref),
-]);
+    const [reqSnap, friendSnap] = await Promise.all([
+      transaction.get(requestRef),
+      transaction.get(friend1Ref),
+    ]);
 
     if (!reqSnap.exists() || reqSnap.data().status !== "pending") {
       throw new FriendError("Lời mời không tồn tại");
@@ -281,7 +279,6 @@ const [reqSnap, friendSnap] = await Promise.all([
       });
       return;
     }
-
 
     transaction.update(requestRef, {
       status: "accepted",
@@ -297,7 +294,6 @@ const [reqSnap, friendSnap] = await Promise.all([
       friendId: req.fromUserId,
       createdAt: serverTimestamp(),
     });
-
   });
 
   const toUserSnap = await getDoc(doc(db, "users", req.toUserId));
@@ -424,7 +420,7 @@ export const listenFriendsWithUser = (
   });
 };
 
-/* ================= CHECK STATUS ================= */
+/* ================= CHECK STATUS - FIXED ================= */
 export const getFriendStatus = async (
   user1: string,
   user2: string
@@ -433,36 +429,28 @@ export const getFriendStatus = async (
 
   if (!user1 || !user2 || user1 === user2) return "none";
 
-  const [friendSnap, reqSent, reqReceived, block1, block2] =
+  const requestId = [user1, user2].sort().join("_");
+  const friendId = `${user1}_${user2}`;
+  const blockId1 = `${user1}_${user2}`;
+  const blockId2 = `${user2}_${user1}`;
+
+  const [friendSnap, reqSnap, block1, block2] =
     await Promise.all([
-      getDoc(doc(db, "friends", `${user1}_${user2}`)),
-      getDoc(
-        doc(
-          db,
-          "friendRequests",
-          [user1, user2].sort().join("_")
-        )
-      ),
-      getDoc(
-        doc(
-          db,
-          "friendRequests",
-          [user2, user1].sort().join("_")
-        )
-      ),
-      getDoc(doc(db, "blocks", `${user1}_${user2}`)),
-      getDoc(doc(db, "blocks", `${user2}_${user1}`)),
+      getDoc(doc(db, "friends", friendId)),
+      getDoc(doc(db, "friendRequests", requestId)),
+      getDoc(doc(db, "blocks", blockId1)),
+      getDoc(doc(db, "blocks", blockId2)),
     ]);
 
   if (block1.exists() || block2.exists()) return "blocked";
   if (friendSnap.exists()) return "friends";
-  if (reqSent.exists() && reqSent.data().status === "pending")
-    return "pending_sent";
-  if (
-    reqReceived.exists() &&
-    reqReceived.data().status === "pending"
-  )
-    return "pending_received";
+  
+  if (reqSnap.exists()) {
+    const data = reqSnap.data();
+    if (data.status === "pending") {
+      return data.fromUserId === user1 ? "pending_sent" : "pending_received";
+    }
+  }
   return "none";
 };
 
