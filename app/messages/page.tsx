@@ -1,12 +1,10 @@
-"use client";
-
 import dynamic from "next/dynamic";
 
-// ⚠️ QUAN TRỌNG: disable SSR hoàn toàn
-const ChatPage = dynamic(() => import("../chat/page"), {
+// ✅ dùng chung component
+const ChatClient = dynamic(() => import("../chat/ChatClient"), {
   ssr: false,
 });
 
 export default function MessagesPage() {
-  return <ChatPage />;
+  return <ChatClient />;
 }
