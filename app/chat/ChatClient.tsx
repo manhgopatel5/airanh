@@ -62,7 +62,7 @@ export default function ChatPage() {
 
           const friendIds = snap.docs
            .map((d) => d.data().friendId)
-           .filter((id): id is string => typeof id === "string" &&!!id);
+           .filter((id): id is string => typeof id === "string" && !!id);
 
           if (!friendIds.length) {
             setFriends([]);
@@ -85,7 +85,7 @@ export default function ChatPage() {
 
           const list: FriendItem[] = userSnaps
            .flat()
-           .filter((s): s is NonNullable<typeof s> => s!== null && s.exists())
+           .filter((s): s is NonNullable<typeof s> => s !== null && s.exists())
            .map((s) => {
               const data = s.data();
               return {
@@ -124,7 +124,7 @@ export default function ChatPage() {
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!search.trim() ||!user?.uid) return;
+    if (!search.trim() || !user?.uid) return;
 
     const keyword = search.trim();
     setAdding(true);
@@ -156,10 +156,14 @@ export default function ChatPage() {
         return;
       }
 
+      // ✅ FIX 1: tạo chatId trước khi dùng
+      const chatId = [user.uid, targetUid].sort().join("_");
+
       const friendRef = doc(db, "friends", `${user.uid}_${targetUid}`);
       const friendSnap = await getDoc(friendRef);
+
       if (friendSnap.exists()) {
-        router.push(`/chat/${targetUid}`);
+        router.push(`/chat/${chatId}`);
         return;
       }
 
@@ -169,7 +173,6 @@ export default function ChatPage() {
         createdAt: new Date(),
       });
 
-      const chatId = [user.uid, targetUid].sort().join("_");
       await setDoc(
         doc(db, "chats", chatId),
         {
@@ -183,7 +186,10 @@ export default function ChatPage() {
       toast.success("Đã thêm bạn bè", {
         icon: <IoCheckmarkDone className="text-emerald-500" size={20} />,
       });
-      router.push(`/chat/${targetUid}`);
+
+      // ✅ FIX 2: không khai báo lại chatId
+      router.push(`/chat/${chatId}`);
+
       setSearch("");
     } catch (e) {
       console.error(e);
@@ -201,7 +207,7 @@ export default function ChatPage() {
   );
 
   const formatTime = (time: any) => {
-    if (!time ||!time.toDate) return "";
+    if (!time || !time.toDate) return "";
     try {
       return formatDistanceToNow(time.toDate(), {
         addSuffix: true,
@@ -240,13 +246,13 @@ export default function ChatPage() {
             <form onSubmit={handleSearch} className="relative group">
               <div
                 className={`absolute -inset-[2px] bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-3xl blur-lg transition-opacity duration-500 ${
-                  focused? "opacity-40" : "opacity-0"
+                  focused ? "opacity-40" : "opacity-0"
                 }`}
               />
               <div className="relative flex items-center h-14 bg-gray-100/60 dark:bg-zinc-900/60 backdrop-blur-2xl rounded-3xl border-[2.5px] border-transparent focus-within:border-blue-500/40 focus-within:bg-white dark:focus-within:bg-zinc-900 transition-all duration-300 shadow-lg shadow-gray-900/5">
                 <FiSearch
                   className={`ml-5 transition-all duration-300 ${
-                    focused? "text-blue-500 scale-110" : "text-gray-400 dark:text-zinc-500"
+                    focused ? "text-blue-500 scale-110" : "text-gray-400 dark:text-zinc-500"
                   }`}
                   size={22}
                 />
@@ -274,7 +280,7 @@ export default function ChatPage() {
         </div>
 
         <div className="px-4 py-3">
-          {loading? (
+          {loading ? (
             <div className="space-y-3">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-4 p-4 animate-pulse">
@@ -286,12 +292,12 @@ export default function ChatPage() {
                 </div>
               ))}
             </div>
-          ) : filtered.length === 0? (
+          ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-28 px-6 text-center">
               <div className="relative mb-8">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 to-indigo-500/30 rounded-3xl blur-3xl" />
                 <div className="relative w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-zinc-900 dark:to-zinc-800 rounded-3xl flex items-center justify-center shadow-2xl shadow-gray-900/10">
-                  {search? (
+                  {search ? (
                     <FiSearch className="text-gray-400 dark:text-zinc-600" size={36} />
                   ) : (
                     <FiMessageSquare className="text-gray-400 dark:text-zinc-600" size={36} />
@@ -299,11 +305,11 @@ export default function ChatPage() {
                 </div>
               </div>
               <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">
-                {search? "Không tìm thấy" : "Chưa có tin nhắn"}
+                {search ? "Không tìm thấy" : "Chưa có tin nhắn"}
               </h3>
               <p className="text-[15px] text-gray-500 dark:text-zinc-400 font-medium max-w-[260px] mb-8 leading-relaxed">
                 {search
-                 ? `Không có kết quả cho "${search}"`
+                  ? `Không có kết quả cho "${search}"`
                   : "Tìm bạn bè bằng User ID hoặc username để bắt đầu trò chuyện"}
               </p>
               {search && (
@@ -312,7 +318,7 @@ export default function ChatPage() {
                   disabled={adding}
                   className="px-8 py-4 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 text-white font-bold text-[15px] rounded-3xl shadow-2xl shadow-blue-500/40 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2.5 hover:shadow-blue-500/50"
                 >
-                  {adding? (
+                  {adding ? (
                     <>
                       <FiLoader className="animate-spin" size={20} />
                       Đang tìm...
@@ -331,7 +337,7 @@ export default function ChatPage() {
               {filtered.map((f) => (
                 <Link
                   key={f.uid}
-                  href={`/chat/${f.uid}`}
+                  href={`/chat/${[user?.uid, f.uid].sort().join("_")}`}
                   className="group flex items-center gap-4 p-4 rounded-3xl hover:bg-white dark:hover:bg-zinc-900/70 active:scale-[0.98] transition-all duration-300 hover:shadow-xl hover:shadow-gray-900/5"
                 >
                   <div className="relative flex-shrink-0">
@@ -351,7 +357,7 @@ export default function ChatPage() {
                         <p className="font-bold text-[15px] text-gray-900 dark:text-white truncate">
                           {f.name}
                         </p>
-                        {f.unreadCount? (
+                        {f.unreadCount ? (
                           <IoSparkles className="text-blue-500 flex-shrink-0" size={16} />
                         ) : null}
                       </div>
@@ -361,7 +367,7 @@ export default function ChatPage() {
                             {formatTime(f.lastSeen)}
                           </p>
                         )}
-                        {f.unreadCount? (
+                        {f.unreadCount ? (
                           <div className="min-w-[24px] h-6 px-2 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/40">
                             <span className="text-[12px] font-black text-white">{f.unreadCount}</span>
                           </div>
