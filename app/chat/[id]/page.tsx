@@ -89,7 +89,7 @@ if (authLoading) return;
       try {
         const q = query(
           collection(db, "users"),
-          where("userId", "==", idFromUrl),
+          where("uid", "==", idFromUrl),
           limit(1)
         );
         const snap = await getDocs(q);
