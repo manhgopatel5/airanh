@@ -11,7 +11,6 @@ import {
   onSnapshot,
   doc,
   getDoc,
-  orderBy,
   limit,
   setDoc,
 } from "firebase/firestore";
@@ -72,9 +71,9 @@ export default function ChatPage() {
         );
 
         const list: FriendItem[] = userSnaps
-       .flat()
-       .filter((s) => s.exists())
-       .map((s) => {
+      .flat()
+      .filter((s) => s.exists())
+      .map((s) => {
             const data = s.data();
             return {
               uid: s.id,
@@ -263,7 +262,7 @@ export default function ChatPage() {
               </h3>
               <p className="text-sm text-gray-500 dark:text-zinc-400 font-medium max-w-[240px] mb-6">
                 {search
-           ? `Không có kết quả cho "${search}"`
+          ? `Không có kết quả cho "${search}"`
                   : "Tìm bạn bè bằng ID hoặc username để bắt đầu trò chuyện"}
               </p>
               {search && (
