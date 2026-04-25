@@ -13,7 +13,7 @@ type UserResult = {
   userId?: string;
   email?: string;
   avatar?: string;
-  status?: "none" | "friends" | "requested" | "pending";
+  status?: "none" | "friends" | "pending_sent" | "pending_received";
 };
 
 export default function UserSearch() {
@@ -51,21 +51,13 @@ export default function UserSearch() {
     const timer = setTimeout(async () => {
       try {
         const res = await searchUsers(keyword.trim(), user.uid);
-
-        console.log("SEARCH RESULT:", res);
-
         const filtered = res.users.filter((u: UserResult) => u.uid !== user.uid);
 
+        // ✅ BẬT LẠI getFriendStatus - GIỜ RULE ĐÃ ĐÚNG
         const withStatus = await Promise.all(
           filtered.map(async (u: UserResult) => {
             try {
-              const friendStatus = await getFriendStatus(user.uid, u.uid);
-              let status: UserResult["status"] = "none";
-
-              if (friendStatus === "friends") status = "friends";
-              else if (friendStatus === "pending_sent") status = "requested";
-              else if (friendStatus === "pending_received") status = "pending";
-
+              const status = await getFriendStatus(user.uid, u.uid);
               return { ...u, status };
             } catch (e) {
               console.error("Lỗi getFriendStatus:", e);
@@ -102,11 +94,10 @@ export default function UserSearch() {
 
     try {
       await sendFriendRequest(user.uid, targetId);
-
       if (mountedRef.current) {
         setResults((prev) =>
           prev.map((u) =>
-            u.uid === targetId ? { ...u, status: "requested" } : u
+            u.uid === targetId ? { ...u, status: "pending_sent" } : u
           )
         );
       }
@@ -128,7 +119,6 @@ export default function UserSearch() {
 
     try {
       await cancelFriendRequest(user.uid, targetId);
-
       if (mountedRef.current) {
         setResults((prev) =>
           prev.map((u) =>
@@ -158,7 +148,7 @@ export default function UserSearch() {
           </div>
         );
 
-      case "requested":
+      case "pending_sent":
         return (
           <button
             onClick={() => handleCancelRequest(u.uid)}
@@ -174,7 +164,7 @@ export default function UserSearch() {
           </button>
         );
 
-      case "pending":
+      case "pending_received":
         return (
           <div className="flex items-center gap-1.5 text-blue-600 text-sm font-semibold">
             <FiUserPlus size={16} />
