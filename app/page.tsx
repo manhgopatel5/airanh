@@ -1,5 +1,6 @@
 "use client";
 
+export const runtime = "nodejs";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { getFirebaseDB } from "@/lib/firebase";
 import {
