@@ -88,23 +88,28 @@ useEffect(() => {
         const list: FriendItem[] = userSnaps
           .flat()
           .filter((s) => s && s.exists())
-          .map((s) => {
-            const data = s!.data();
-            return {
-              uid: s!.id,
-              name: data.name || "User",
-              username: data.username || "",
-              avatar:
-                data.avatar ||
-                `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                  data.name || "User"
-                )}&background=random`,
-              userId: data.userId || "",
-              lastSeen: data.lastSeen,
-              isOnline: data.isOnline || false,
-              unreadCount: 0,
-            };
-          });
+.map((s) => {
+  if (!s) return null;
+
+  const data = s.data();
+  if (!data) return null;
+
+  return {
+    uid: s.id,
+    name: data?.name || "User",
+    username: data?.username || "",
+    avatar:
+      data?.avatar ||
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(
+        data?.name || "User"
+      )}&background=random`,
+    userId: data?.userId || "",
+    lastSeen: data?.lastSeen,
+    isOnline: data?.isOnline || false,
+    unreadCount: 0,
+  };
+})
+.filter(Boolean)
 
         setFriends(list);
       } catch (e) {
