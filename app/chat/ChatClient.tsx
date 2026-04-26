@@ -37,7 +37,7 @@ type FriendItem = {
 };
 
 export default function ChatClient() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const db = getFirebaseDB();
   const router = useRouter();
   const [friends, setFriends] = useState<FriendItem[]>([]);
@@ -47,6 +47,7 @@ export default function ChatClient() {
   const [adding, setAdding] = useState(false);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user?.uid) {
       setLoading(false);
       return;
@@ -62,10 +63,9 @@ export default function ChatClient() {
       async (snap) => {
         try {
           setLoading(true);
-
           const friendIds = snap.docs
-           .map((d) => d.data().friendId)
-           .filter((id): id is string => typeof id === "string" &&!!id);
+          .map((d) => d.data().friendId)
+          .filter((id): id is string => typeof id === "string" &&!!id);
 
           if (!friendIds.length) {
             setFriends([]);
@@ -80,16 +80,14 @@ export default function ChatClient() {
 
           const userSnaps = await Promise.all(
             chunks.map((chunk) =>
-              Promise.all(
-                chunk.map((id) => getDoc(doc(db, "users", id)))
-              )
+              Promise.all(chunk.map((id) => getDoc(doc(db, "users", id))))
             )
           );
 
           const list: FriendItem[] = userSnaps
-           .flat()
-           .filter((s): s is NonNullable<typeof s> => s!== null && s.exists())
-           .map((s) => {
+          .flat()
+          .filter((s): s is NonNullable<typeof s> => s!== null && s.exists())
+          .map((s) => {
               const data = s.data();
               return {
                 uid: s.id,
@@ -123,7 +121,7 @@ export default function ChatClient() {
     );
 
     return () => unsub();
-  }, [user?.uid, db]);
+  }, [user?.uid, authLoading, db]);
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -132,8 +130,10 @@ export default function ChatClient() {
     await auth.authStateReady();
     const currentUser = auth.currentUser;
 
+    console.log("CurrentUser:", currentUser?.uid);
+
     if (!currentUser?.uid) {
-      toast.error("Chưa đăng nhập");
+      toast.error("Chưa đăng nhập. F5 lại trang");
       return;
     }
 
@@ -143,51 +143,42 @@ export default function ChatClient() {
 
     try {
       let targetUid: string | null = null;
+      const upperKeyword = keyword.toUpperCase();
+      const lowerKeyword = keyword.toLowerCase();
 
-      // 1. Check userIds collection: PVT331HC, GQXIFNWT
-      const userIdRef = doc(db, "userIds", keyword.toUpperCase());
-      const userIdSnap = await getDoc(userIdRef);
+      // 1. Ưu tiên userIds - có sẵn trong ảnh bạn gửi
+      const userIdSnap = await getDoc(doc(db, "userIds", upperKeyword));
       if (userIdSnap.exists()) {
         targetUid = userIdSnap.data().uid;
+        console.log("Found in userIds:", targetUid);
       }
 
-      // 2. Check usernames collection: dazinetflix07
+      // 2. Check usernames
       if (!targetUid) {
-        const usernameRef = doc(db, "usernames", keyword.toLowerCase());
-        const usernameSnap = await getDoc(usernameRef);
+        const usernameSnap = await getDoc(doc(db, "usernames", lowerKeyword));
         if (usernameSnap.exists()) {
           targetUid = usernameSnap.data().uid;
+          console.log("Found in usernames:", targetUid);
         }
       }
 
-      // 3. Query users collection theo searchKeywords - FIX GQXIFNWT
+      // 3. searchKeywords - đã có index
       if (!targetUid) {
         const q = query(
           collection(db, "users"),
-          where("searchKeywords", "array-contains", keyword.toLowerCase()),
+          where("searchKeywords", "array-contains", lowerKeyword),
           limit(1)
         );
         const snap = await getDocs(q);
-        if (!snap.empty && snap.docs[0]) {
+        console.log("searchKeywords empty:", snap.empty);
+        if (!snap.empty) {
           targetUid = snap.docs[0].id;
-        }
-      }
-
-      // 4. Query theo @username
-      if (!targetUid && keyword.startsWith("@")) {
-        const q = query(
-          collection(db, "users"),
-          where("username", "==", keyword.slice(1).toLowerCase()),
-          limit(1)
-        );
-        const snap = await getDocs(q);
-        if (!snap.empty && snap.docs[0]) {
-          targetUid = snap.docs[0].id;
+          console.log("Found in searchKeywords:", targetUid);
         }
       }
 
       if (!targetUid) {
-        toast.error("Không tìm thấy người dùng");
+        toast.error(`Không tìm thấy: ${keyword}`);
         return;
       }
 
@@ -198,42 +189,30 @@ export default function ChatClient() {
 
       const chatId = [currentUser.uid, targetUid].sort().join("_");
       const friendRef = doc(db, "friends", `${currentUser.uid}_${targetUid}`);
-      const friendSnap = await getDoc(friendRef);
 
-      if (friendSnap.exists()) {
-        router.push(`/chat/${chatId}`);
-        return;
-      }
-
-      await setDoc(friendRef, {
-        userId: currentUser.uid,
-        friendId: targetUid,
-        createdAt: new Date(),
-      });
-
-      await setDoc(
-        doc(db, "chats", chatId),
-        {
-          members: [currentUser.uid, targetUid],
+      if (!(await getDoc(friendRef)).exists()) {
+        await setDoc(friendRef, {
+          userId: currentUser.uid,
+          friendId: targetUid,
           createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        { merge: true }
-      );
-
-      toast.success("Đã thêm bạn bè", {
-        icon: <IoCheckmarkDone className="text-emerald-500" size={20} />,
-      });
+        });
+        await setDoc(
+          doc(db, "chats", chatId),
+          {
+            members: [currentUser.uid, targetUid],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          { merge: true }
+        );
+        toast.success("Đã thêm bạn bè");
+      }
 
       router.push(`/chat/${chatId}`);
       setSearch("");
     } catch (e: any) {
       console.error("Search error:", e.code, e.message);
-      if (e.code === "permission-denied") {
-        toast.error("Chưa đăng nhập hoặc hết phiên");
-      } else {
-        toast.error("Lỗi tìm kiếm");
-      }
+      toast.error(`Lỗi: ${e.code}`);
     } finally {
       setAdding(false);
     }
@@ -258,6 +237,14 @@ export default function ChatClient() {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-white dark:from-black dark:to-zinc-950">
+        <FiLoader className="animate-spin text-blue-500" size={32} />
+      </div>
+    );
+  }
+
   return (
     <>
       <Toaster richColors position="top-center" />
@@ -277,8 +264,6 @@ export default function ChatClient() {
                 onClick={() => toast.info("Tính năng đang phát triển")}
                 className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-xl shadow-blue-500/40 active:scale-90 transition-all duration-200 group overflow-hidden"
               >
-                <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors duration-200" />
-                <div className="absolute inset-0 bg-gradient-to-t from-white/0 to-white/20" />
                 <RiAddLine className="text-white relative z-10" size={24} />
               </button>
             </div>
@@ -298,7 +283,7 @@ export default function ChatClient() {
                 />
                 <input
                   type="text"
-                  placeholder="Nhập User ID hoặc username..."
+                  placeholder="Nhập User ID: GQXIFNWT"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   onFocus={() => setFocused(true)}
@@ -349,14 +334,14 @@ export default function ChatClient() {
               </h3>
               <p className="text-[15px] text-gray-500 dark:text-zinc-400 font-medium max-w-[260px] mb-8 leading-relaxed">
                 {search
-                 ? `Không có kết quả cho "${search}"`
-                  : "Tìm bạn bè bằng User ID hoặc username để bắt đầu trò chuyện"}
+                ? `Không có kết quả cho "${search}"`
+                  : "Tìm bạn bè bằng User ID để bắt đầu trò chuyện"}
               </p>
               {search && (
                 <button
                   onClick={handleSearch}
                   disabled={adding}
-                  className="px-8 py-4 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 text-white font-bold text-[15px] rounded-3xl shadow-2xl shadow-blue-500/40 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2.5 hover:shadow-blue-500/50"
+                  className="px-8 py-4 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 text-white font-bold text-[15px] rounded-3xl shadow-2xl shadow-blue-500/40 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2.5"
                 >
                   {adding? (
                     <>
