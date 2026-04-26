@@ -1,54 +1,52 @@
 "use client";
+import { HiFire, HiClock, HiSparkles, HiUsers } from "react-icons/hi";
 
-import { useState } from "react";
-import { FiTrendingUp, FiClock, FiZap, FiUsers } from "react-icons/fi";
-import { motion } from "framer-motion";
+type TabId = "hot" | "near" | "new" | "friends";
 
 const tabs = [
-  { name: "Hot", icon: FiTrendingUp },
-  { name: "Gần", icon: FiClock },
-  { name: "Mới", icon: FiZap },
-  { name: "Bạn bè", icon: FiUsers },
+  { id: "hot", label: "Hot", icon: HiFire },
+  { id: "near", label: "Gần", icon: HiClock },
+  { id: "new", label: "Mới", icon: HiSparkles },
+  { id: "friends", label: "Bạn bè", icon: HiUsers },
 ];
 
-export default function TopTabs() {
-  const [active, setActive] = useState("Hot");
+type Props = {
+  activeTab: TabId;
+  setActiveTab: (tab: TabId) => void;
+};
 
+export default function TopTabs({ activeTab, setActiveTab }: Props) {
   return (
-    <div className="sticky top-0 z-30 safe-top bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b border-gray-200/50 dark:border-zinc-800/50">
+    <div className="sticky top-0 z-30 safe-top bg-white/90 dark:bg-zinc-950/90 backdrop-blur-2xl border-b border-gray-200/50 dark:border-zinc-800/50">
       <div className="flex items-center justify-between px-4 h-12">
         {tabs.map((tab) => {
           const Icon = tab.icon;
-          const isActive = active === tab.name;
+          const isActive = activeTab === tab.id;
           return (
             <button
-              key={tab.name}
-              onClick={() => setActive(tab.name)}
-              className="relative flex-1 flex items-center justify-center gap-1.5 h-full group"
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className="relative flex-1 flex items-center justify-center gap-1.5 h-full group active:scale-95 transition-transform"
             >
               <Icon
                 size={18}
-                className={`transition-colors ${
+                className={`transition-colors duration-300 ${
                   isActive
-                ? "text-blue-600 dark:text-blue-400"
+               ? "text-blue-600 dark:text-blue-400 scale-110"
                     : "text-gray-400 dark:text-zinc-500 group-hover:text-gray-600 dark:group-hover:text-zinc-400"
                 }`}
               />
               <span
-                className={`text-sm font-bold tracking-tight transition-colors ${
+                className={`text-sm font-bold tracking-tight transition-colors duration-300 ${
                   isActive
-                ? "text-blue-600 dark:text-blue-400"
+               ? "text-blue-600 dark:text-blue-400"
                     : "text-gray-500 dark:text-zinc-400"
                 }`}
               >
-                {tab.name}
+                {tab.label}
               </span>
               {isActive && (
-                <motion.div
-                  layoutId="activeTopTab"
-                  className="absolute bottom-0 h-[3px] w-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"
-                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                />
+                <div className="absolute bottom-0 h-[3px] w-10 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full animate-in slide-in-from-bottom duration-300" />
               )}
             </button>
           );
