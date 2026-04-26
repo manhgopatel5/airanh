@@ -3,12 +3,13 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
 import { AuthProvider } from "@/lib/AuthContext";
-import EmailGuard from "@/components/EmailGuard"; // ✅ THÊM
+import EmailGuard from "@/components/EmailGuard";
 
 const inter = Inter({
   subsets: ["latin", "vietnamese"],
   display: "swap",
   variable: "--font-inter",
+  weight: ['400', '500', '600', '700', '800'], // ✅ THÊM: Grab dùng đủ weight
 });
 
 export const dynamic = 'force-dynamic';
@@ -125,7 +126,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body className="bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none">
+      <body className="font-sans bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight">
         <AuthProvider>
           <EmailGuard>
             <ClientLayout>{children}</ClientLayout>
