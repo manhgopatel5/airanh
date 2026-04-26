@@ -1,5 +1,5 @@
 import type { Config } from "tailwindcss";
-import defaultTheme from "tailwindcss/defaultTheme"; // ✅ FIX: ESM import thay vì require()
+import defaultTheme from "tailwindcss/defaultTheme";
 import forms from "@tailwindcss/forms";
 import typography from "@tailwindcss/typography";
 import containerQueries from "@tailwindcss/container-queries";
@@ -8,14 +8,12 @@ import animate from "tailwindcss-animate";
 const config: Config = {
   darkMode: "class",
 
-  // Chỉ scan file có JSX
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./ui/**/*.{js,ts,jsx,tsx,mdx}",
   ],
 
-  // Safelist cho class dynamic
   safelist: [
     {
       pattern: /^(bg|text|border)-(slate|gray|zinc|neutral|stone|red|green|blue|yellow|purple)-(50|100|200|300|400|500|600|700|800|900)$/,
@@ -42,7 +40,7 @@ const config: Config = {
 
     screens: {
       xs: "475px",
-      ...defaultTheme.screens, // ✅ FIX: Dùng import thay vì require()
+      ...defaultTheme.screens,
       "3xl": "1600px",
     },
 
@@ -68,8 +66,43 @@ const config: Config = {
       },
 
       fontFamily: {
-        sans: ["var(--font-sans)", ...defaultTheme.fontFamily.sans], // ✅ FIX: Dùng defaultTheme
+        sans: [
+          'var(--font-inter)',
+          '"SF Pro Rounded"',
+          '"SF Pro Display"',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          ...defaultTheme.fontFamily.sans,
+        ],
         mono: ["var(--font-mono)", ...defaultTheme.fontFamily.mono],
+      },
+
+      // ✅ GRAB STYLE: Font size + line-height + letter-spacing
+      fontSize: {
+        '2xs': ['10px', { lineHeight: '14px', letterSpacing: '-0.01em' }],
+        'xs': ['12px', { lineHeight: '16px', letterSpacing: '-0.01em' }],  // Label tab
+        'sm': ['13px', { lineHeight: '18px', letterSpacing: '-0.01em' }],  // Caption
+        'base': ['15px', { lineHeight: '22px', letterSpacing: '-0.015em' }], // Body Grab
+        'lg': ['17px', { lineHeight: '24px', letterSpacing: '-0.02em' }], // Button
+        'xl': ['20px', { lineHeight: '28px', letterSpacing: '-0.02em' }], // Subheading
+        '2xl': ['24px', { lineHeight: '32px', letterSpacing: '-0.025em' }], // Title
+        '3xl': ['30px', { lineHeight: '36px', letterSpacing: '-0.03em' }],
+      },
+
+      // ✅ GRAB STYLE: Spacing sát hơn
+      spacing: {
+        '0.5': '2px',
+        '1.5': '6px',
+        '2.5': '10px',
+        '3.5': '14px',
+      },
+
+      fontWeight: {
+        normal: '400',
+        medium: '500',  // Grab dùng medium cho body
+        semibold: '600', // Label
+        bold: '700',     // Button
+        extrabold: '800', // Title
       },
 
       keyframes: {
