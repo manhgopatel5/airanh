@@ -125,12 +125,11 @@ export default function ChatClient() {
     return () => unsub();
   }, [user?.uid, db]);
 
-  // SỬA HÀM NÀY - THÊM authStateReady() ĐỂ FIX PERMISSION-DENIED
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
 
     const auth = getAuth();
-    await auth.authStateReady(); // ĐỢI AUTH LOAD XONG
+    await auth.authStateReady();
     const currentUser = auth.currentUser;
 
     if (!currentUser?.uid) {
@@ -344,6 +343,7 @@ export default function ChatClient() {
                     <FiMessageSquare className="text-gray-400 dark:text-zinc-600" size={36} />
                   )}
                 </div>
+              </div>
               <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">
                 {search? "Không tìm thấy" : "Chưa có tin nhắn"}
               </h3>
