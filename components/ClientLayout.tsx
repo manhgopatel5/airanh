@@ -14,7 +14,7 @@ type Props = {
 export default function ClientLayout({ children }: Props) {
   const pathname = usePathname() || "";
   const router = useRouter();
-  const { user, userData, loading } = useAuth();
+  const { user, loading } = useAuth(); // ✅ Bỏ userData đi
 
   const publicRoutes = ["/login", "/register", "/forgot-password", "/verify-email"];
   const isPublic = useMemo(
@@ -72,9 +72,7 @@ export default function ClientLayout({ children }: Props) {
         {children}
       </div>
 
-      {!isPublic && user &&!isChatDetail &&!isCreate && (
-        <BottomNav />
-      )}
+      {!isPublic && user &&!isChatDetail &&!isCreate && <BottomNav />}
 
       <Toaster
         position="top-center"
