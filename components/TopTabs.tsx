@@ -38,62 +38,48 @@ type Props = {
 
 export default function TopTabs({ activeTab, setActiveTab, counts }: Props) {
   return (
-    <div className="sticky top-0 z-30 safe-top">
-      <div className="relative bg-white dark:bg-zinc-950 border-b border-gray-200 dark:border-zinc-800">
-        <div className="flex items-stretch justify-between px-1 h-16 max-w-2xl mx-auto">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            const count = counts?.[tab.id];
+    <div className="sticky top-0 z-30 bg-white border-b border-gray-100">
+      <div className="flex items-center justify-between px-3 h-14 max-w-2xl mx-auto gap-1">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          const count = counts?.[tab.id];
 
-            return (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setActiveTab(tab.id);
-                  if (navigator.vibrate) navigator.vibrate(8);
-                }}
-                className="relative flex-1 flex items-center justify-center py-2 touch-manipulation active:scale-95 transition-transform"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                {isActive && (
-                  <div
-                    className={`absolute inset-1 rounded-2xl bg-gradient-to-br ${tab.color}`}
-                  />
-                )}
+          return (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setActiveTab(tab.id);
+                if (navigator.vibrate) navigator.vibrate(8);
+              }}
+              className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-2xl active:scale-95 transition-transform ${
+                isActive? `bg-gradient-to-br ${tab.color}` : ""
+              }`}
+              style={{ WebkitTapHighlightColor: 'transparent' }}
+            >
+              <div className="relative h-5 flex items-center justify-center">
+                <Icon
+                  size={20}
+                  className={isActive? "text-white" : "text-gray-400"}
+                />
 
-                <div className="relative flex flex-col items-center justify-center gap-0.5 z-10">
-                  <div className="relative h-6 flex items-center justify-center">
-                    <Icon
-                      size={24}
-                      className={
-                        isActive
-                      ? "text-white"
-                          : "text-gray-400 dark:text-zinc-500"
-                      }
-                    />
-
-                    {count && count > 0 && (
-                      <div className="absolute -top-1.5 -right-2.5 min-w- h- px-1.5 rounded-full bg-red-500 text-white text- font-black flex items-center justify-center border-2 border-white dark:border-zinc-950">
-                        {count > 99? "99+" : count}
-                      </div>
-                    )}
+                {count && count > 0 && (
+                  <div className="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-2xs font-bold flex items-center justify-center">
+                    {count > 99? "99+" : count}
                   </div>
+                )}
+              </div>
 
-                  <span
-                    className={`text- font-sans ${
-                      isActive
-                  ? "text-white font-black"
-                        : "text-gray-500 dark:text-zinc-500 font-semibold"
-                    }`}
-                  >
-                    {tab.label}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+              <span
+                className={`text-xs font-semibold tracking-tight ${
+                  isActive? "text-white" : "text-gray-500"
+                }`}
+              >
+                {tab.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
