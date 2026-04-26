@@ -1,6 +1,5 @@
 "use client";
 import { HiFire, HiMapPin, HiSparkles, HiUsers } from "react-icons/hi2";
-import { motion } from "framer-motion";
 
 type TabId = "hot" | "near" | "new" | "friends";
 
@@ -54,7 +53,7 @@ export default function TopTabs({ activeTab, setActiveTab, counts }: Props) {
                   setActiveTab(tab.id);
                   if (navigator.vibrate) navigator.vibrate(8);
                 }}
-                className="relative flex-1 flex items-center justify-center py-2 touch-manipulation"
+                className="relative flex-1 flex items-center justify-center py-2 touch-manipulation active:scale-95 transition-transform"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {isActive && (
@@ -67,11 +66,11 @@ export default function TopTabs({ activeTab, setActiveTab, counts }: Props) {
                   <div className="relative h-6 flex items-center justify-center">
                     <Icon
                       size={24}
-                      className={`${
+                      className={
                         isActive
                       ? "text-white"
                           : "text-gray-400 dark:text-zinc-500"
-                      }`}
+                      }
                     />
 
                     {count && count > 0 && (
