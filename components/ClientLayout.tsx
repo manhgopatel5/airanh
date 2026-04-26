@@ -5,7 +5,7 @@ import FCMProvider from "@/components/FCMProvider";
 import { useEffect, useMemo } from "react";
 import BottomNav from "@/components/BottomNav";
 import { Toaster } from "react-hot-toast";
-import { useAuth } from "@/lib/AuthContext"; // ✅ QUAN TRỌNG
+import { useAuth } from "@/lib/AuthContext";
 
 type Props = {
   children: React.ReactNode;
@@ -14,11 +14,8 @@ type Props = {
 export default function ClientLayout({ children }: Props) {
   const pathname = usePathname() || "";
   const router = useRouter();
-
-  // ✅ LẤY AUTH THẬT
   const { user, userData, loading } = useAuth();
 
-  /* ================= ROUTE ================= */
   const publicRoutes = ["/login", "/register", "/forgot-password", "/verify-email"];
   const isPublic = useMemo(
     () => publicRoutes.some((r) => pathname.startsWith(r)),
@@ -32,28 +29,27 @@ export default function ClientLayout({ children }: Props) {
   useEffect(() => {
     if (loading) return;
 
-    // ❌ chưa login
-    if (!user && !isPublic) {
+    // Chưa login mà vào trang private
+    if (!user &&!isPublic) {
       router.replace("/login");
       return;
     }
 
-    // ❌ đã login mà vào auth page
+    // Đã login mà vào auth page
     if (user && isPublic) {
       router.replace("/");
       return;
     }
 
-    // 🔥 QUAN TRỌNG: chờ userData
-    if (user && !userData) {
-      return;
-    }
-  }, [user, userData, loading, isPublic, router]);
+    // ❌ BỎ ĐOẠN NÀY: không chờ userData nữa
+    // if (user &&!userData) return;
+  }, [user, loading, isPublic, router]);
 
   /* ================= LOADING ================= */
-  if (loading || (user && !userData)) {
+  // ✅ CHỈ check loading auth, không check userData
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900">
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900 font-sans">
         <div className="max-w-2xl mx-auto p-4 space-y-4 pt-8">
           {Array.from({ length: 3 }).map((_, i) => (
             <div
@@ -75,21 +71,21 @@ export default function ClientLayout({ children }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors">
-
-      {/* ✅ FCM */}
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors font-sans">
       {user && <FCMProvider userId={user.uid} />}
 
-      <div className={!isChatDetail && !isCreate ? "pb-24" : ""}>
+      <div className={!isChatDetail &&!isCreate? "pb-24" : ""}>
         {children}
       </div>
 
-      {!isPublic && user && !isChatDetail && !isCreate && <BottomNav />}
+      {!isPublic && user &&!isChatDetail &&!isCreate && (
+        <BottomNav unreadCount={userData?.unreadCount || 0} />
+      )}
 
       <Toaster
         position="top-center"
         toastOptions={{
-          className: "text-sm",
+          className: "text-sm font-sans",
           duration: 3000,
         }}
       />
