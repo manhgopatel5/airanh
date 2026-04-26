@@ -9,7 +9,7 @@ const inter = Inter({
   subsets: ["latin", "vietnamese"],
   display: "swap",
   variable: "--font-inter",
-  weight: ['400', '500', '600', '700', '800'], // ✅ THÊM: Grab dùng đủ weight
+  weight: ['400', '500', '600', '700', '800'],
 });
 
 export const dynamic = 'force-dynamic';
@@ -74,7 +74,7 @@ export const metadata: Metadata = {
 
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default", // ✅ ĐỔI: black-translucent sẽ làm status bar trong suốt đè lên
     title: "Airanh",
     startupImage: [
       {
@@ -111,7 +111,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  viewportFit: "cover",
+  viewportFit: "cover", // ✅ Đã đúng, bắt buộc để safe-area-inset chạy
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#09090b" },
