@@ -17,7 +17,7 @@ import {
   limit,
 } from "firebase/firestore";
 import { FiSearch, FiMessageSquare, FiUserPlus, FiX, FiLoader } from "react-icons/fi";
-import { IoSparkles, IoCheckmarkDone } from "react-icons/io5";
+import { IoSparkles } from "react-icons/io5";
 import { RiAddLine } from "react-icons/ri";
 import Link from "next/link";
 import { toast, Toaster } from "sonner";
@@ -64,8 +64,8 @@ export default function ChatClient() {
         try {
           setLoading(true);
           const friendIds = snap.docs
-          .map((d) => d.data().friendId)
-          .filter((id): id is string => typeof id === "string" &&!!id);
+         .map((d) => d.data().friendId)
+         .filter((id): id is string => typeof id === "string" &&!!id);
 
           if (!friendIds.length) {
             setFriends([]);
@@ -85,9 +85,9 @@ export default function ChatClient() {
           );
 
           const list: FriendItem[] = userSnaps
-          .flat()
-          .filter((s): s is NonNullable<typeof s> => s!== null && s.exists())
-          .map((s) => {
+         .flat()
+         .filter((s): s is NonNullable<typeof s> => s!== null && s.exists())
+         .map((s) => {
               const data = s.data();
               return {
                 uid: s.id,
@@ -146,14 +146,14 @@ export default function ChatClient() {
       const upperKeyword = keyword.toUpperCase();
       const lowerKeyword = keyword.toLowerCase();
 
-      // 1. Ưu tiên userIds - có sẵn trong ảnh bạn gửi
+      // 1. userIds - có sẵn
       const userIdSnap = await getDoc(doc(db, "userIds", upperKeyword));
       if (userIdSnap.exists()) {
         targetUid = userIdSnap.data().uid;
         console.log("Found in userIds:", targetUid);
       }
 
-      // 2. Check usernames
+      // 2. usernames
       if (!targetUid) {
         const usernameSnap = await getDoc(doc(db, "usernames", lowerKeyword));
         if (usernameSnap.exists()) {
@@ -162,7 +162,7 @@ export default function ChatClient() {
         }
       }
 
-      // 3. searchKeywords - đã có index
+      // 3. searchKeywords
       if (!targetUid) {
         const q = query(
           collection(db, "users"),
@@ -253,10 +253,10 @@ export default function ChatClient() {
           <div className="px-5 pt-8 pb-5">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h1 className="text-[32px] font-black tracking-tight bg-gradient-to-br from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent">
+                <h1 className="text- font-black tracking-tight bg-gradient-to-br from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent">
                   Tin nhắn
                 </h1>
-                <p className="text-[14px] font-medium text-gray-500 dark:text-zinc-500 mt-0.5">
+                <p className="text- font-medium text-gray-500 dark:text-zinc-500 mt-0.5">
                   {friends.length} cuộc trò chuyện
                 </p>
               </div>
@@ -288,7 +288,7 @@ export default function ChatClient() {
                   onChange={(e) => setSearch(e.target.value)}
                   onFocus={() => setFocused(true)}
                   onBlur={() => setFocused(false)}
-                  className="w-full h-full px-4 bg-transparent text-[15px] font-semibold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 outline-none"
+                  className="w-full h-full px-4 bg-transparent text- font-semibold text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 outline-none"
                 />
                 {search && (
                   <button
@@ -332,16 +332,16 @@ export default function ChatClient() {
               <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">
                 {search? "Không tìm thấy" : "Chưa có tin nhắn"}
               </h3>
-              <p className="text-[15px] text-gray-500 dark:text-zinc-400 font-medium max-w-[260px] mb-8 leading-relaxed">
+              <p className="text- text-gray-500 dark:text-zinc-400 font-medium max-w-[260px] mb-8 leading-relaxed">
                 {search
-                ? `Không có kết quả cho "${search}"`
+               ? `Không có kết quả cho "${search}"`
                   : "Tìm bạn bè bằng User ID để bắt đầu trò chuyện"}
               </p>
               {search && (
                 <button
                   onClick={handleSearch}
                   disabled={adding}
-                  className="px-8 py-4 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 text-white font-bold text-[15px] rounded-3xl shadow-2xl shadow-blue-500/40 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2.5"
+                  className="px-8 py-4 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 text-white font-bold text- rounded-3xl shadow-2xl shadow-blue-500/40 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2.5"
                 >
                   {adding? (
                     <>
@@ -379,7 +379,7 @@ export default function ChatClient() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2 min-w-0">
-                        <p className="font-bold text-[15px] text-gray-900 dark:text-white truncate">
+                        <p className="font-bold text- text-gray-900 dark:text-white truncate">
                           {f.name}
                         </p>
                         {f.unreadCount? (
@@ -388,18 +388,18 @@ export default function ChatClient() {
                       </div>
                       <div className="flex items-center gap-2.5 flex-shrink-0">
                         {f.lastSeen && (
-                          <p className="text-[13px] text-gray-400 dark:text-zinc-500 font-semibold">
+                          <p className="text- text-gray-400 dark:text-zinc-500 font-semibold">
                             {formatTime(f.lastSeen)}
                           </p>
                         )}
                         {f.unreadCount? (
-                          <div className="min-w-[24px] h-6 px-2 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/40">
-                            <span className="text-[12px] font-black text-white">{f.unreadCount}</span>
+                          <div className="min-w- h-6 px-2 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/40">
+                            <span className="text- font-black text-white">{f.unreadCount}</span>
                           </div>
                         ) : null}
                       </div>
                     </div>
-                    <p className="text-[14px] text-gray-500 dark:text-zinc-400 font-medium truncate">
+                    <p className="text- text-gray-500 dark:text-zinc-400 font-medium truncate">
                       {f.lastMessage || `@${f.username} · ${f.userId}`}
                     </p>
                   </div>
