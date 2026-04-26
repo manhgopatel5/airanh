@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
+import { getAuth } from "firebase/auth";
 import {
   collection,
   query,
@@ -63,8 +64,8 @@ export default function ChatClient() {
           setLoading(true);
 
           const friendIds = snap.docs
-       .map((d) => d.data().friendId)
-       .filter((id): id is string => typeof id === "string" &&!!id);
+           .map((d) => d.data().friendId)
+           .filter((id): id is string => typeof id === "string" &&!!id);
 
           if (!friendIds.length) {
             setFriends([]);
@@ -86,9 +87,9 @@ export default function ChatClient() {
           );
 
           const list: FriendItem[] = userSnaps
-       .flat()
-       .filter((s): s is NonNullable<typeof s> => s!== null && s.exists())
-       .map((s) => {
+           .flat()
+           .filter((s): s is NonNullable<typeof s> => s!== null && s.exists())
+           .map((s) => {
               const data = s.data();
               return {
                 uid: s.id,
@@ -124,11 +125,21 @@ export default function ChatClient() {
     return () => unsub();
   }, [user?.uid, db]);
 
+  // SỬA HÀM NÀY - THÊM authStateReady() ĐỂ FIX PERMISSION-DENIED
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!search.trim() ||!user?.uid) return;
+
+    const auth = getAuth();
+    await auth.authStateReady(); // ĐỢI AUTH LOAD XONG
+    const currentUser = auth.currentUser;
+
+    if (!currentUser?.uid) {
+      toast.error("Chưa đăng nhập");
+      return;
+    }
 
     const keyword = search.trim();
+    if (!keyword) return;
     setAdding(true);
 
     try {
@@ -150,11 +161,11 @@ export default function ChatClient() {
         }
       }
 
-      // 3. Query users collection theo field userId - FIX LỖI GQXIFNWT
+      // 3. Query users collection theo searchKeywords - FIX GQXIFNWT
       if (!targetUid) {
         const q = query(
           collection(db, "users"),
-          where("userId", "==", keyword.toUpperCase()),
+          where("searchKeywords", "array-contains", keyword.toLowerCase()),
           limit(1)
         );
         const snap = await getDocs(q);
@@ -181,13 +192,13 @@ export default function ChatClient() {
         return;
       }
 
-      if (targetUid === user.uid) {
+      if (targetUid === currentUser.uid) {
         toast.error("Không thể thêm chính mình");
         return;
       }
 
-      const chatId = [user.uid, targetUid].sort().join("_");
-      const friendRef = doc(db, "friends", `${user.uid}_${targetUid}`);
+      const chatId = [currentUser.uid, targetUid].sort().join("_");
+      const friendRef = doc(db, "friends", `${currentUser.uid}_${targetUid}`);
       const friendSnap = await getDoc(friendRef);
 
       if (friendSnap.exists()) {
@@ -196,7 +207,7 @@ export default function ChatClient() {
       }
 
       await setDoc(friendRef, {
-        userId: user.uid,
+        userId: currentUser.uid,
         friendId: targetUid,
         createdAt: new Date(),
       });
@@ -204,7 +215,7 @@ export default function ChatClient() {
       await setDoc(
         doc(db, "chats", chatId),
         {
-          members: [user.uid, targetUid],
+          members: [currentUser.uid, targetUid],
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -217,9 +228,13 @@ export default function ChatClient() {
 
       router.push(`/chat/${chatId}`);
       setSearch("");
-    } catch (e) {
-      console.error(e);
-      toast.error("Lỗi tìm kiếm");
+    } catch (e: any) {
+      console.error("Search error:", e.code, e.message);
+      if (e.code === "permission-denied") {
+        toast.error("Chưa đăng nhập hoặc hết phiên");
+      } else {
+        toast.error("Lỗi tìm kiếm");
+      }
     } finally {
       setAdding(false);
     }
@@ -329,13 +344,12 @@ export default function ChatClient() {
                     <FiMessageSquare className="text-gray-400 dark:text-zinc-600" size={36} />
                   )}
                 </div>
-              </div>
               <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">
                 {search? "Không tìm thấy" : "Chưa có tin nhắn"}
               </h3>
               <p className="text-[15px] text-gray-500 dark:text-zinc-400 font-medium max-w-[260px] mb-8 leading-relaxed">
                 {search
-              ? `Không có kết quả cho "${search}"`
+                 ? `Không có kết quả cho "${search}"`
                   : "Tìm bạn bè bằng User ID hoặc username để bắt đầu trò chuyện"}
               </p>
               {search && (
