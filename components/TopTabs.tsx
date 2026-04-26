@@ -196,4 +196,53 @@ export default function TopTabs({ activeTab, setActiveTab, counts }: Props) {
 
                   <motion.span
                     animate={{
-                      font
+                      fontWeight: isActive? 900 : 600,
+                      scale: isActive? 1.08 : 1,
+                      letterSpacing: isActive? "0.02em" : "0"
+                    }}
+                    className={`text- font-sans transition-all duration-300 ${
+                      isActive
+                      ? "text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]"
+                        : "text-gray-500 dark:text-zinc-500"
+                    }`}
+                  >
+                    {tab.label}
+                  </motion.span>
+                </motion.div>
+
+                {/* Explosion ripple */}
+                <AnimatePresence>
+                  {isActive && (
+                    <>
+                      {[0, 0.15, 0.3].map((delay, i) => (
+                        <motion.div
+                          key={`ripple-${i}`}
+                          initial={{ scale: 0.5, opacity: 0.8 }}
+                          animate={{ scale: 3, opacity: 0 }}
+                          transition={{
+                            duration: 0.8,
+                            delay,
+                            ease: "easeOut"
+                          }}
+                          className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${tab.color}`}
+                        />
+                      ))}
+                    </>
+                  )}
+                </AnimatePresence>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Bottom glow line */}
+        <motion.div
+          className="absolute bottom-0 left-0 right-0 h-px"
+          style={{
+            background: `linear-gradient(to right, transparent, ${tabs.find(t => t.id === activeTab)?.color.split(' ')[1] || 'transparent'}, transparent)`
+          }}
+        />
+      </div>
+    </div>
+  );
+}
