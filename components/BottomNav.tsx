@@ -48,22 +48,22 @@ export default function BottomNav() {
         onClick={() => handleNav(path)}
         onMouseEnter={() => router.prefetch(path)}
         aria-current={active? "page" : undefined}
-        className="relative flex flex-col items-center justify-center flex-1 h-16 active:scale-95 transition-transform"
+        className="relative flex flex-col items-center justify-center flex-1 h-14 active:scale-95 transition-transform min-w-"
+        style={{ WebkitTapHighlightColor: 'transparent' }}
       >
         {active && (
-          <div className="absolute inset-2 bg-blue-500/10 dark:bg-blue-500/20 rounded-2xl" />
+          <div className="absolute inset-1.5 bg-blue-500/10 dark:bg-blue-500/20 rounded-xl" />
         )}
-        <div className="relative z-10 flex flex-col items-center">
+        <div className="relative z-10 flex flex-col items-center gap-0.5">
           <Icon
-            size={24}
-            className={
+            className={`w-5 h-5 sm:w-6 sm:h-6 ${
               active
           ? "text-blue-600 dark:text-blue-400"
                 : "text-gray-500 dark:text-zinc-400"
-            }
+            }`}
           />
           <span
-            className={`text- font-bold mt-1.5 font-sans ${
+            className={`text-xs font-semibold tracking-tight leading-none ${
               active
           ? "text-blue-600 dark:text-blue-400"
                 : "text-gray-500 dark:text-zinc-400"
@@ -77,26 +77,29 @@ export default function BottomNav() {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 pb-safe">
-      <div className="mx-4 mb-4">
-        <div className="relative bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl">
-          <div className="flex items-center justify-around h-20 px-2">
-            <NavItem path="/" icon={HiHome} label="Trang chủ" />
-            <NavItem path="/messages" icon={FiMessageSquare} label="Tin nhắn" />
+    <div className="fixed bottom-0 left-0 right-0 z-50">
+      <div className="pb-safe px-safe">
+        <div className="mx-3 mb-2">
+          <div className="relative bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl shadow-lg shadow-gray-900/5 dark:shadow-black/20">
+            <div className="flex items-center justify-around h-16 px-1">
+              <NavItem path="/" icon={HiHome} label="Trang chủ" />
+              <NavItem path="/messages" icon={FiMessageSquare} label="Tin nhắn" />
 
-            <button
-              onClick={() => handleNav("/create")}
-              onMouseEnter={() => router.prefetch("/create")}
-              aria-label="Tạo mới"
-              className="relative -mt-8 active:scale-95 transition-transform"
-            >
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                <HiPlus className="text-white" size={28} strokeWidth={3} />
-              </div>
-            </button>
+              <button
+                onClick={() => handleNav("/create")}
+                onMouseEnter={() => router.prefetch("/create")}
+                aria-label="Tạo mới"
+                className="relative -mt-7 active:scale-95 transition-transform"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+              >
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                  <HiPlus className="text-white" size={26} strokeWidth={2.5} />
+                </div>
+              </button>
 
-            <NavItem path="/tasks" icon={FiClipboard} label="Nhiệm vụ" />
-            <NavItem path="/profile" icon={FiUser} label="Hồ sơ" />
+              <NavItem path="/tasks" icon={FiClipboard} label="Nhiệm vụ" />
+              <NavItem path="/profile" icon={FiUser} label="Hồ sơ" />
+            </div>
           </div>
         </div>
       </div>
