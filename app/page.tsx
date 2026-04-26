@@ -58,7 +58,6 @@ export default function Home() {
     useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [newCount, setNewCount] = useState(0);
   const unsubRef = useRef<(() => void) | null>(null);
 
   /* ================= INIT FIREBASE ================= */
@@ -114,7 +113,7 @@ export default function Home() {
       (snap) => {
         const data = snap.docs.map((doc) => ({
           id: doc.id,
-        ...doc.data(),
+       ...doc.data(),
         }));
         setTasks(data);
         setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -144,7 +143,7 @@ export default function Home() {
       const snap = await getDocs(q);
       const newTasks = snap.docs.map((doc) => ({
         id: doc.id,
-      ...doc.data(),
+     ...doc.data(),
       }));
       setTasks((prev) => [...prev,...newTasks]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -162,7 +161,6 @@ export default function Home() {
       <TopTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        counts={{ new: newCount }}
       />
 
       {/* List */}
