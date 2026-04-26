@@ -64,8 +64,8 @@ export default function ChatClient() {
         try {
           setLoading(true);
           const friendIds = snap.docs
-         .map((d) => d.data().friendId)
-         .filter((id): id is string => typeof id === "string" &&!!id);
+        .map((d) => d.data().friendId)
+        .filter((id): id is string => typeof id === "string" &&!!id);
 
           if (!friendIds.length) {
             setFriends([]);
@@ -85,9 +85,9 @@ export default function ChatClient() {
           );
 
           const list: FriendItem[] = userSnaps
-         .flat()
-         .filter((s): s is NonNullable<typeof s> => s!== null && s.exists())
-         .map((s) => {
+        .flat()
+        .filter((s): s is NonNullable<typeof s> => s!== null && s.exists())
+        .map((s) => {
               const data = s.data();
               return {
                 uid: s.id,
@@ -146,7 +146,7 @@ export default function ChatClient() {
       const upperKeyword = keyword.toUpperCase();
       const lowerKeyword = keyword.toLowerCase();
 
-      // 1. userIds - có sẵn
+      // 1. userIds
       const userIdSnap = await getDoc(doc(db, "userIds", upperKeyword));
       if (userIdSnap.exists()) {
         targetUid = userIdSnap.data().uid;
@@ -162,7 +162,7 @@ export default function ChatClient() {
         }
       }
 
-      // 3. searchKeywords
+      // 3. searchKeywords - FIX LỖI TS Ở ĐÂY
       if (!targetUid) {
         const q = query(
           collection(db, "users"),
@@ -171,8 +171,9 @@ export default function ChatClient() {
         );
         const snap = await getDocs(q);
         console.log("searchKeywords empty:", snap.empty);
-        if (!snap.empty) {
-          targetUid = snap.docs[0].id;
+        const firstDoc = snap.docs[0];
+        if (!snap.empty && firstDoc) {
+          targetUid = firstDoc.id;
           console.log("Found in searchKeywords:", targetUid);
         }
       }
@@ -334,7 +335,7 @@ export default function ChatClient() {
               </h3>
               <p className="text- text-gray-500 dark:text-zinc-400 font-medium max-w-[260px] mb-8 leading-relaxed">
                 {search
-               ? `Không có kết quả cho "${search}"`
+              ? `Không có kết quả cho "${search}"`
                   : "Tìm bạn bè bằng User ID để bắt đầu trò chuyện"}
               </p>
               {search && (
