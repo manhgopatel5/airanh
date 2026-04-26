@@ -41,38 +41,38 @@ export default function EmptyState({ tab, onRefresh }: Props) {
   const msg = messages[tab];
 
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-6 text-center min-h-">
-      <div className="mb-8 text-8xl">
+    <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+      <div className="mb-6 text-7xl">
         {msg.emoji}
       </div>
 
       <h3
-        className={`text-2xl font-black bg-gradient-to-r ${msg.gradient} bg-clip-text text-transparent mb-3 font-sans`}
+        className={`text-2xl font-extrabold bg-gradient-to-r ${msg.gradient} bg-clip-text text-transparent mb-2 tracking-tight`}
       >
         {msg.title}
       </h3>
 
-      <p className="text-sm text-gray-500 dark:text-zinc-400 mb-10 whitespace-pre-line leading-relaxed max-w-xs font-sans">
+      <p className="text-base text-gray-500 mb-8 whitespace-pre-line leading-relaxed max-w-xs font-medium">
         {msg.desc}
       </p>
 
-      <div className="flex gap-3 items-center">
+      <div className="flex gap-2 items-center">
         {onRefresh && (
           <button
             onClick={onRefresh}
-            className="px-5 py-3 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold text-sm flex items-center gap-2 active:scale-95 transition-transform font-sans"
+            className="px-6 py-3.5 rounded-full bg-gray-100 text-gray-700 font-semibold text-base flex items-center gap-2 active:scale-95 transition-transform"
           >
-            <HiArrowPath size={18} />
+            <HiArrowPath size={20} />
             Làm mới
           </button>
         )}
 
         <button
           onClick={() => router.push("/create")}
-          className={`px-7 py-3.5 rounded-full font-black text-sm text-white bg-gradient-to-r ${msg.gradient} active:scale-95 transition-transform font-sans`}
+          className={`px-8 py-3.5 rounded-full font-bold text-base text-white bg-gradient-to-r ${msg.gradient} active:scale-95 transition-transform`}
         >
           <span className="flex items-center gap-2">
-            <HiPlus size={20} strokeWidth={3} />
+            <HiPlus size={22} strokeWidth={2.5} />
             Đăng việc ngay
           </span>
         </button>
