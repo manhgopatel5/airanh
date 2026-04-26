@@ -4,11 +4,11 @@ import { HiFire, HiClock, HiSparkles, HiUsers } from "react-icons/hi";
 type TabId = "hot" | "near" | "new" | "friends";
 
 const tabs = [
-  { id: "hot", label: "Hot", icon: HiFire },
-  { id: "near", label: "Gần", icon: HiClock },
-  { id: "new", label: "Mới", icon: HiSparkles },
-  { id: "friends", label: "Bạn bè", icon: HiUsers },
-];
+  { id: "hot" as TabId, label: "Hot", icon: HiFire },
+  { id: "near" as TabId, label: "Gần", icon: HiClock },
+  { id: "new" as TabId, label: "Mới", icon: HiSparkles },
+  { id: "friends" as TabId, label: "Bạn bè", icon: HiUsers },
+] as const;
 
 type Props = {
   activeTab: TabId;
@@ -32,14 +32,14 @@ export default function TopTabs({ activeTab, setActiveTab }: Props) {
                 size={18}
                 className={`transition-colors duration-300 ${
                   isActive
-               ? "text-blue-600 dark:text-blue-400 scale-110"
+                  ? "text-blue-600 dark:text-blue-400 scale-110"
                     : "text-gray-400 dark:text-zinc-500 group-hover:text-gray-600 dark:group-hover:text-zinc-400"
                 }`}
               />
               <span
                 className={`text-sm font-bold tracking-tight transition-colors duration-300 ${
                   isActive
-               ? "text-blue-600 dark:text-blue-400"
+                  ? "text-blue-600 dark:text-blue-400"
                     : "text-gray-500 dark:text-zinc-400"
                 }`}
               >
