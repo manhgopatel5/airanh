@@ -1,5 +1,5 @@
 "use client";
-import { HiFire, HiClock, HiSparkles, HiUsers } from "react-icons/hi2";
+import { HiFire, HiMapPin, HiSparkles, HiUsers } from "react-icons/hi2";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 
@@ -12,15 +12,13 @@ const tabs = [
     icon: HiFire,
     color: "from-orange-500 via-red-500 to-pink-500",
     glow: "shadow-[0_8px_32px_rgba(249,115,22,0.4)]",
-    particles: "✨"
   },
   {
     id: "near" as TabId,
     label: "Gần",
-    icon: HiClock,
+    icon: HiMapPin, // Đổi thành ghim bản đồ
     color: "from-emerald-500 via-teal-500 to-cyan-500",
     glow: "shadow-[0_8px_32px_rgba(16,185,129,0.4)]",
-    particles: "📍"
   },
   {
     id: "new" as TabId,
@@ -28,7 +26,6 @@ const tabs = [
     icon: HiSparkles,
     color: "from-blue-500 via-indigo-500 to-violet-500",
     glow: "shadow-[0_8px_32px_rgba(59,130,246,0.4)]",
-    particles: "⚡"
   },
   {
     id: "friends" as TabId,
@@ -36,7 +33,6 @@ const tabs = [
     icon: HiUsers,
     color: "from-purple-500 via-pink-500 to-rose-500",
     glow: "shadow-[0_8px_32px_rgba(168,85,247,0.4)]",
-    particles: "💫"
   },
 ] as const;
 
@@ -68,94 +64,45 @@ export default function TopTabs({ activeTab, setActiveTab, counts }: Props) {
                 onMouseLeave={() => setHoveredTab(null)}
                 onClick={() => {
                   setActiveTab(tab.id);
-                  if (navigator.vibrate) navigator.vibrate([10, 5, 10]);
+                  if (navigator.vibrate) navigator.vibrate([8]);
                 }}
-                className="relative flex-1 flex items-center justify-center py-2 group perspective-1000"
+                className="relative flex-1 flex items-center justify-center py-2 group"
               >
                 <AnimatePresence>
                   {isActive && (
                     <motion.div
                       layoutId="liquidBg"
-                      className="absolute inset-1 overflow-hidden"
-                      initial={{ borderRadius: "16px" }}
-                      animate={{ borderRadius: "20px" }}
+                      className="absolute inset-1 overflow-hidden rounded-2xl"
                       transition={{ type: "spring", stiffness: 200, damping: 25 }}
                     >
                       <div className={`absolute inset-0 bg-gradient-to-br ${tab.color} ${tab.glow}`} />
-
-                      <motion.div
-                        animate={{
-                          background: [
-                            `radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 0%, transparent 50%)`,
-                            `radial-gradient(circle at 80% 50%, rgba(255,255,255,0.3) 0%, transparent 50%)`,
-                            `radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 0%, transparent 50%)`,
-                          ]
-                        }}
-                        transition={{ duration: 3, repeat: Infinity }}
-                        className="absolute inset-0"
-                      />
-
-                      <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent" />
-
-                      {[...Array(3)].map((_, i) => (
-                        <motion.div
-                          key={i}
-                          initial={{ y: 20, x: -10, opacity: 0 }}
-                          animate={{
-                            y: -20,
-                            x: 10,
-                            opacity: [0, 1, 0],
-                          }}
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            delay: i * 0.6,
-                            ease: "easeOut"
-                          }}
-                          className="absolute bottom-0 left-1/2 text-lg"
-                        >
-                          {tab.particles}
-                        </motion.div>
-                      ))}
+                      <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/25 to-transparent" />
                     </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <AnimatePresence>
-                  {isHovered &&!isActive && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className={`absolute inset-2 rounded-xl bg-gradient-to-br ${tab.color} blur-2xl opacity-20`}
-                    />
                   )}
                 </AnimatePresence>
 
                 <motion.div
                   className="relative flex flex-col items-center justify-center gap-0.5"
-                  whileTap={{ scale: 0.85, rotateX: 10 }}
+                  whileTap={{ scale: 0.9 }}
                   transition={{ type: "spring", stiffness: 400, damping: 17 }}
                 >
                   <div className="relative h-7 flex items-center justify-center">
                     <motion.div
                       animate={{
-                        scale: isActive? 1.25 : 1,
-                        rotateY: isActive? [0, 360] : 0,
-                        y: isActive? [0, -4, 0] : 0
+                        scale: isActive? 1.2 : 1,
+                        y: isActive? [0, -3, 0] : 0
                       }}
                       transition={{
                         scale: { type: "spring", stiffness: 400, damping: 15 },
-                        rotateY: { duration: 0.6, ease: "easeInOut" },
-                        y: { duration: 0.4, ease: "easeOut" }
+                        y: { duration: 0.3, ease: "easeOut" }
                       }}
                     >
                       <Icon
                         size={26}
                         className={`transition-all duration-300 ${
                           isActive
-                        ? "text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]"
-                            : "text-gray-400 dark:text-zinc-500 group-hover:text-gray-600 dark:group-hover:text-zinc-300 group-hover:scale-110"
+                       ? "text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]"
+                            : "text-gray-400 dark:text-zinc-500 group-hover:text-gray-600 dark:group-hover:text-zinc-300"
                         }`}
                       />
                     </motion.div>
@@ -163,18 +110,12 @@ export default function TopTabs({ activeTab, setActiveTab, counts }: Props) {
                     <AnimatePresence>
                       {count && count > 0 && (
                         <motion.div
-                          initial={{ scale: 0, rotate: -180 }}
-                          animate={{ scale: 1, rotate: 0 }}
-                          exit={{ scale: 0, rotate: 180 }}
-                          transition={{ type: "spring", stiffness: 500, damping: 15 }}
-                          className="absolute -top-1.5 -right-2.5"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          exit={{ scale: 0 }}
+                          className="absolute -top-1.5 -right-2.5 min-w- h- px-1.5 rounded-full bg-red-500 text-white text- font-black flex items-center justify-center border-2 border-white dark:border-zinc-950 shadow-lg"
                         >
-                          <div className="relative">
-                            <div className="absolute inset-0 bg-red-500 rounded-full animate-ping opacity-75" />
-                            <div className="relative min-w-[18px] h-[18px] px-1.5 rounded-full bg-gradient-to-br from-red-500 to-red-600 text-white text-[10px] font-black flex items-center justify-center border-2 border-white dark:border-zinc-950 shadow-xl">
-                              {count > 99? "99+" : count}
-                            </div>
-                          </div>
+                          {count > 99? "99+" : count}
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -183,12 +124,11 @@ export default function TopTabs({ activeTab, setActiveTab, counts }: Props) {
                   <motion.span
                     animate={{
                       fontWeight: isActive? 900 : 600,
-                      scale: isActive? 1.08 : 1,
-                      letterSpacing: isActive? "0.02em" : "0"
+                      scale: isActive? 1.05 : 1,
                     }}
-                    className={`text-[11px] font-sans transition-all duration-300 ${
+                    className={`text- font-sans transition-all duration-300 ${
                       isActive
-                    ? "text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]"
+                   ? "text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]"
                         : "text-gray-500 dark:text-zinc-500"
                     }`}
                   >
@@ -196,23 +136,16 @@ export default function TopTabs({ activeTab, setActiveTab, counts }: Props) {
                   </motion.span>
                 </motion.div>
 
+                {/* Ripple nhỏ xíu */}
                 <AnimatePresence>
                   {isActive && (
-                    <>
-                      {[0, 0.15, 0.3].map((delay, i) => (
-                        <motion.div
-                          key={`ripple-${i}`}
-                          initial={{ scale: 0.5, opacity: 0.8 }}
-                          animate={{ scale: 3, opacity: 0 }}
-                          transition={{
-                            duration: 0.8,
-                            delay,
-                            ease: "easeOut"
-                          }}
-                          className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${tab.color}`}
-                        />
-                      ))}
-                    </>
+                    <motion.div
+                      key={activeTab}
+                      initial={{ scale: 0.8, opacity: 0.5 }}
+                      animate={{ scale: 1.3, opacity: 0 }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
+                      className={`absolute inset-1 rounded-2xl bg-gradient-to-br ${tab.color}`}
+                    />
                   )}
                 </AnimatePresence>
               </button>
@@ -220,12 +153,7 @@ export default function TopTabs({ activeTab, setActiveTab, counts }: Props) {
           })}
         </div>
 
-        <motion.div
-          className="absolute bottom-0 left-0 right-0 h-px"
-          style={{
-            background: `linear-gradient(to right, transparent, ${tabs.find(t => t.id === activeTab)?.color.split(' ')[1] || 'transparent'}, transparent)`
-          }}
-        />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-300/30 to-transparent dark:via-zinc-700/30" />
       </div>
     </div>
   );
