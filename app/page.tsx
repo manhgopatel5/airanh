@@ -1,5 +1,4 @@
 "use client";
-
 export const runtime = "nodejs";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { getFirebaseDB } from "@/lib/firebase";
@@ -17,6 +16,7 @@ import {
 } from "firebase/firestore";
 import TaskCard from "@/components/TaskCard";
 import TopTabs from "@/components/TopTabs";
+import EmptyState from "@/components/EmptyState";
 
 /* ================= TYPES ================= */
 type TabId = "hot" | "near" | "new" | "friends";
@@ -58,6 +58,7 @@ export default function Home() {
     useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [newCount, setNewCount] = useState(0);
   const unsubRef = useRef<(() => void) | null>(null);
 
   /* ================= INIT FIREBASE ================= */
@@ -113,7 +114,7 @@ export default function Home() {
       (snap) => {
         const data = snap.docs.map((doc) => ({
           id: doc.id,
-         ...doc.data(),
+        ...doc.data(),
         }));
         setTasks(data);
         setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -143,7 +144,7 @@ export default function Home() {
       const snap = await getDocs(q);
       const newTasks = snap.docs.map((doc) => ({
         id: doc.id,
-       ...doc.data(),
+      ...doc.data(),
       }));
       setTasks((prev) => [...prev,...newTasks]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -158,8 +159,11 @@ export default function Home() {
   /* ================= UI ================= */
   return (
     <div className="min-h-screen pb-24 font-sans">
-      {/* ✅ DÙNG TOPTABS CHUẨN - ĐÃ CÓ SAFE-TOP + DARK MODE */}
-      <TopTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+      <TopTabs
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        counts={{ new: newCount }}
+      />
 
       {/* List */}
       <div className="pt-4 space-y-3">
@@ -185,20 +189,8 @@ export default function Home() {
           </div>
         )}
 
-        {!loading && tasks.length === 0 && (
-          <div className="text-center py-20 px-4">
-            <div className="text-6xl mb-4">📭</div>
-            <p className="text-gray-400 dark:text-zinc-500 font-bold text-lg">
-              Chưa có nhiệm vụ nào
-            </p>
-            <p className="text-gray-400 dark:text-zinc-600 text-sm mt-2">
-              Hãy quay lại sau nhé
-            </p>
-          </div>
-        )}
+        {!loading && tasks.length === 0 && <EmptyState tab={activeTab} />}
       </div>
-
-      {/* ❌ ĐÃ XOÁ FLOATING BUTTON - DÙNG NÚT + Ở BOTTOMNAV */}
     </div>
   );
 }
