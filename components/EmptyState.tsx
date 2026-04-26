@@ -1,5 +1,5 @@
 "use client";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { HiPlus, HiArrowPath } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -48,8 +48,7 @@ export default function EmptyState({ tab, onRefresh }: Props) {
   const [isPressed, setIsPressed] = useState(false);
 
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-6 text-center min-h-[60vh]">
-      {/* Floating emoji với shadow + float animation */}
+    <div className="flex flex-col items-center justify-center py-16 px-6 text-center min-h-">
       <motion.div
         initial={{ scale: 0, rotate: -180 }}
         animate={{ scale: 1, rotate: 0 }}
@@ -70,7 +69,6 @@ export default function EmptyState({ tab, onRefresh }: Props) {
           {msg.emoji}
         </motion.div>
 
-        {/* Particle orbit */}
         {[...Array(4)].map((_, i) => (
           <motion.div
             key={i}
@@ -92,7 +90,6 @@ export default function EmptyState({ tab, onRefresh }: Props) {
         ))}
       </motion.div>
 
-      {/* Title gradient với text shadow */}
       <motion.div
         initial={{ y: 30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -110,7 +107,6 @@ export default function EmptyState({ tab, onRefresh }: Props) {
         </h3>
       </motion.div>
 
-      {/* Description */}
       <motion.p
         initial={{ y: 30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -120,7 +116,6 @@ export default function EmptyState({ tab, onRefresh }: Props) {
         {msg.desc}
       </motion.p>
 
-      {/* Buttons */}
       <motion.div
         initial={{ y: 30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -151,20 +146,16 @@ export default function EmptyState({ tab, onRefresh }: Props) {
           onClick={() => router.push("/create")}
           className={`relative px-7 py-3.5 rounded-full font-black text-sm text-white overflow-hidden ${msg.shadow} transition-shadow duration-300`}
         >
-          {/* Gradient bg - không blur để bo tròn hẳn */}
           <div className={`absolute inset-0 bg-gradient-to-r ${msg.gradient}`} />
 
-          {/* Glass highlight top */}
           <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/25 to-transparent rounded-full" />
 
-          {/* Shine effect - nhỏ gọn */}
           <motion.div
             animate={{ x: isPressed? "200%" : "-200%" }}
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12"
           />
 
-          {/* Inner shadow để nổi khối */}
           <div className="absolute inset-0 rounded-full shadow-[inset_0_1px_2px_rgba(255,255,255,0.3),inset_0_-1px_2px_rgba(0,0,0,0.2)]" />
 
           <span className="relative flex items-center gap-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
@@ -179,7 +170,6 @@ export default function EmptyState({ tab, onRefresh }: Props) {
         </motion.button>
       </motion.div>
 
-      {/* Decorative dots với wave */}
       <div className="flex gap-2 mt-14">
         {[...Array(3)].map((_, i) => (
           <motion.div
