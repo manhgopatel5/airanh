@@ -1,7 +1,6 @@
 "use client";
 import { HiFire, HiMapPin, HiSparkles, HiUsers } from "react-icons/hi2";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { motion } from "framer-motion";
 
 type TabId = "hot" | "near" | "new" | "friends";
 
@@ -64,7 +63,6 @@ export default function TopTabs({ activeTab, setActiveTab, counts }: Props) {
                 className="relative flex-1 flex items-center justify-center py-2 group touch-manipulation"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                {/* Active BG - pointer-events-none để không chặn click */}
                 {isActive && (
                   <div
                     className={`absolute inset-1 rounded-2xl bg-gradient-to-br ${tab.color} ${tab.glow} pointer-events-none`}
@@ -91,30 +89,23 @@ export default function TopTabs({ activeTab, setActiveTab, counts }: Props) {
                         size={26}
                         className={`transition-colors duration-200 ${
                           isActive
-                       ? "text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]"
+                      ? "text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]"
                             : "text-gray-400 dark:text-zinc-500 group-hover:text-gray-600 dark:group-hover:text-zinc-300"
                         }`}
                       />
                     </motion.div>
 
-                    <AnimatePresence>
-                      {count && count > 0 && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          exit={{ scale: 0 }}
-                          className="absolute -top-1.5 -right-2.5 min-w- h- px-1.5 rounded-full bg-red-500 text-white text- font-black flex items-center justify-center border-2 border-white dark:border-zinc-950 shadow-lg pointer-events-none"
-                        >
-                          {count > 99? "99+" : count}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    {count && count > 0 && (
+                      <div className="absolute -top-1.5 -right-2.5 min-w- h- px-1.5 rounded-full bg-red-500 text-white text- font-black flex items-center justify-center border-2 border-white dark:border-zinc-950 shadow-lg pointer-events-none">
+                        {count > 99? "99+" : count}
+                      </div>
+                    )}
                   </div>
 
                   <span
                     className={`text- font-sans transition-all duration-200 ${
                       isActive
-                   ? "text-white font-black drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]"
+                  ? "text-white font-black drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]"
                         : "text-gray-500 dark:text-zinc-500 font-semibold"
                     }`}
                   >
