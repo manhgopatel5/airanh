@@ -74,7 +74,7 @@ export const metadata: Metadata = {
 
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default", // ✅ ĐỔI: black-translucent sẽ làm status bar trong suốt đè lên
+    statusBarStyle: "default", // ✅ Quan trọng: default mới đẩy content xuống
     title: "Airanh",
     startupImage: [
       {
@@ -84,6 +84,11 @@ export const metadata: Metadata = {
       {
         url: "/splash-1284x2778.png",
         media: "(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)",
+      },
+      // ✅ THÊM: iPhone 15 Pro Max
+      {
+        url: "/splash-1290x2796.png",
+        media: "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)",
       },
     ],
   },
@@ -103,6 +108,9 @@ export const metadata: Metadata = {
   other: {
     "msapplication-TileColor": "#3b82f6",
     "msapplication-config": "/browserconfig.xml",
+    // ✅ THÊM: Force iOS PWA full screen
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "default",
   },
 };
 
@@ -111,7 +119,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  viewportFit: "cover", // ✅ Đã đúng, bắt buộc để safe-area-inset chạy
+  viewportFit: "cover", // ✅ Bắt buộc cho env(safe-area-inset-*)
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#09090b" },
@@ -125,6 +133,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* ✅ THÊM: Meta tag backup cho iOS cũ */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
       <body className="font-sans bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight">
         <AuthProvider>
