@@ -1,5 +1,4 @@
 "use client";
-import { motion } from "framer-motion";
 import { HiPlus, HiArrowPath } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 
@@ -48,12 +47,12 @@ export default function EmptyState({ tab, onRefresh }: Props) {
       </div>
 
       <h3
-        className={`text-2xl font-black bg-gradient-to-r ${msg.gradient} bg-clip-text text-transparent mb-3`}
+        className={`text-2xl font-black bg-gradient-to-r ${msg.gradient} bg-clip-text text-transparent mb-3 font-sans`}
       >
         {msg.title}
       </h3>
 
-      <p className="text-sm text-gray-500 dark:text-zinc-400 mb-10 whitespace-pre-line leading-relaxed max-w-xs">
+      <p className="text-sm text-gray-500 dark:text-zinc-400 mb-10 whitespace-pre-line leading-relaxed max-w-xs font-sans">
         {msg.desc}
       </p>
 
@@ -61,7 +60,7 @@ export default function EmptyState({ tab, onRefresh }: Props) {
         {onRefresh && (
           <button
             onClick={onRefresh}
-            className="px-5 py-3 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold text-sm flex items-center gap-2 active:scale-95 transition-transform"
+            className="px-5 py-3 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold text-sm flex items-center gap-2 active:scale-95 transition-transform font-sans"
           >
             <HiArrowPath size={18} />
             Làm mới
@@ -70,7 +69,7 @@ export default function EmptyState({ tab, onRefresh }: Props) {
 
         <button
           onClick={() => router.push("/create")}
-          className={`relative px-7 py-3.5 rounded-full font-black text-sm text-white bg-gradient-to-r ${msg.gradient} active:scale-95 transition-transform`}
+          className={`px-7 py-3.5 rounded-full font-black text-sm text-white bg-gradient-to-r ${msg.gradient} active:scale-95 transition-transform font-sans`}
         >
           <span className="flex items-center gap-2">
             <HiPlus size={20} strokeWidth={3} />
