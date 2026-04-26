@@ -38,53 +38,50 @@ type Props = {
 
 export default function TopTabs({ activeTab, setActiveTab, counts }: Props) {
   return (
-    <div className="sticky top-0 z-30">
-      {/* ✅ THÊM: Wrapper này có bg để che Dynamic Island */}
-      <div className="bg-white dark:bg-zinc-950 pt-safe">
-        <div className="border-b border-gray-100 dark:border-zinc-800">
-          <div className="flex items-center justify-between px-3 h-12 max-w-2xl mx-auto gap-1">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              const count = counts?.[tab.id];
+    <div className="sticky top-0 z-30 bg-white dark:bg-zinc-950 mt-safe">
+      <div className="border-b border-gray-100 dark:border-zinc-800">
+        <div className="flex items-center justify-between px-3 h-12 max-w-2xl mx-auto gap-1">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            const count = counts?.[tab.id];
 
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                    if ("vibrate" in navigator) navigator.vibrate(8);
-                  }}
-                  className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 px-1 rounded-xl active:scale-95 transition-transform min-w- ${
-                    isActive? `bg-gradient-to-br ${tab.color}` : ""
-                  }`}
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
-                >
-                  <div className="relative flex items-center justify-center">
-                    <Icon
-                      className={`w- h- sm:w-5 sm:h-5 ${
-                        isActive? "text-white" : "text-gray-400 dark:text-zinc-500"
-                      }`}
-                    />
-
-                    {count && count > 0 && (
-                      <div className="absolute -top-1 -right-2 min-w- h-3.5 px-1 rounded-full bg-red-500 text-white text-2xs font-bold flex items-center justify-center">
-                        {count > 99? "99+" : count}
-                      </div>
-                    )}
-                  </div>
-
-                  <span
-                    className={`text-xs font-semibold tracking-tight leading-none ${
-                      isActive? "text-white" : "text-gray-500 dark:text-zinc-500"
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  if ("vibrate" in navigator) navigator.vibrate(8);
+                }}
+                className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 px-1 rounded-xl active:scale-95 transition-transform min-w-[60px] ${
+                  isActive? `bg-gradient-to-br ${tab.color}` : ""
+                }`}
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+              >
+                <div className="relative flex items-center justify-center">
+                  <Icon
+                    className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                      isActive? "text-white" : "text-gray-400 dark:text-zinc-500"
                     }`}
-                  >
-                    {tab.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                  />
+
+                  {count && count > 0 && (
+                    <div className="absolute -top-1 -right-2 min-w-[14px] h-3.5 px-1 rounded-full bg-red-500 text-white text-2xs font-bold flex items-center justify-center">
+                      {count > 99? "99+" : count}
+                    </div>
+                  )}
+                </div>
+
+                <span
+                  className={`text-xs font-semibold tracking-tight leading-none ${
+                    isActive? "text-white" : "text-gray-500 dark:text-zinc-500"
+                  }`}
+                >
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
