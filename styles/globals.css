@@ -5,11 +5,11 @@
 /* ================= CSS VARIABLES ================= */
 @layer base {
   :root {
-    /* Safe Area - Support mọi tai thỏ/notch */
-    --safe-top: env(safe-area-inset-top, 0px);
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-    --safe-left: env(safe-area-inset-left, 0px);
-    --safe-right: env(safe-area-inset-right, 0px);
+    /* Mặc định: Browser thường = 0 */
+    --safe-top: 0px;
+    --safe-bottom: 0px;
+    --safe-left: 0px;
+    --safe-right: 0px;
 
     /* Light - Blue theme cho đồng bộ BottomNav */
     --bg: 248 250 252;
@@ -18,26 +18,44 @@
     --text: 15 23 42;
     --text-secondary: 100 116 139;
     --border: 226 232 240;
-    --primary: 59 130 246; /* blue-500 */
-    --primary-hover: 37 99 235; /* blue-600 */
-    --primary-active: 29 78 216; /* blue-700 */
+    --primary: 59 130 246;
+    --primary-hover: 37 99 235;
+    --primary-active: 29 78 216;
     --danger: 239 68 68;
     --danger-hover: 220 38 38;
     --ring: 59 130 246;
     --ring-offset: 248 250 252;
   }
 
- .dark {
-    /* Dark - Blue theme */
-    --bg: 9 9 11; /* zinc-950 */
-    --bg-secondary: 24 24 27; /* zinc-900 */
-    --bg-card: 24 24 27; /* zinc-900 */
-    --text: 250 250 250; /* zinc-50 */
-    --text-secondary: 161 161 170; /* zinc-400 */
-    --border: 39 39 42; /* zinc-800 */
-    --primary: 59 130 246; /* blue-500 */
-    --primary-hover: 96 165 250; /* blue-400 */
-    --primary-active: 37 99 235; /* blue-600 */
+  /* ✅ PWA iOS/Android: lấy safe-area thật */
+  @media all and (display-mode: standalone) {
+    :root {
+      --safe-top: env(safe-area-inset-top);
+      --safe-bottom: env(safe-area-inset-bottom);
+      --safe-left: env(safe-area-inset-left);
+      --safe-right: env(safe-area-inset-right);
+    }
+  }
+
+  /* ✅ Safari iOS browser thường: fallback cứng */
+  @supports (-webkit-touch-callout: none) {
+    @media not all and (display-mode: standalone) {
+      :root {
+        --safe-top: 47px; /* Dynamic Island */
+      }
+    }
+  }
+
+.dark {
+    --bg: 9 9 11;
+    --bg-secondary: 24 24 27;
+    --bg-card: 24 24 27;
+    --text: 250 250 250;
+    --text-secondary: 161 161 170;
+    --border: 39 39 42;
+    --primary: 59 130 246;
+    --primary-hover: 96 165 250;
+    --primary-active: 37 99 235;
     --danger: 239 68 68;
     --danger-hover: 248 113 113;
     --ring: 59 130 246;
@@ -51,15 +69,15 @@
   :root {
     color-scheme: light;
   }
- .dark {
+.dark {
     color-scheme: dark;
   }
 
   html {
     height: 100%;
-    height: 100dvh; /* ✅ Fix 100vh trên mobile browser */
+    height: 100dvh;
     scroll-behavior: smooth;
-    scroll-padding-top: 5rem;
+    scroll-padding-top: calc(var(--safe-top) + 3rem);
     -webkit-tap-highlight-color: transparent;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -71,17 +89,15 @@
     font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
     text-rendering: optimizeLegibility;
     min-height: 100%;
-    min-height: 100dvh; /* ✅ Fix layout shift khi có browser bar */
+    min-height: 100dvh;
   }
 
-  /* Checkbox/radio dùng primary */
   input[type="checkbox"],
   input[type="radio"] {
     accent-color: rgb(var(--primary));
     @apply w-5 h-5 rounded-md;
   }
 
-  /* Scrollbar iOS style */
   ::-webkit-scrollbar {
     @apply w-1.5 h-1.5;
   }
@@ -92,12 +108,10 @@
     @apply bg-[rgb(var(--text-secondary))]/30 rounded-full hover:bg-[rgb(var(--text-secondary))]/50;
   }
 
-  /* Selection */
   ::selection {
     @apply bg-[rgb(var(--primary))]/20 text-[rgb(var(--primary))];
   }
 
-  /* Autofill Chrome dark mode */
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus {
@@ -186,82 +200,80 @@
 
 /* ================= UTILITIES ================= */
 @layer utilities {
- .focus-ring {
+.focus-ring {
     @apply focus-visible:outline-none focus-visible:ring-2
            focus-visible:ring-[rgb(var(--ring))]
            focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--ring-offset))];
   }
 
- .text-gradient {
+.text-gradient {
     @apply bg-gradient-to-br from-[rgb(var(--primary))] via-blue-600 to-indigo-600 bg-clip-text text-transparent;
   }
 
- .text-gradient-gray {
+.text-gradient-gray {
     @apply bg-gradient-to-br from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent;
   }
 
- .glass {
+.glass {
     @apply bg-[rgb(var(--bg-card))]/80 backdrop-blur-2xl border border-[rgb(var(--border))]/50;
   }
 
- .glass-strong {
+.glass-strong {
     @apply bg-white/90 dark:bg-zinc-900/90 backdrop-blur-3xl border border-gray-200/30 dark:border-zinc-800/30;
   }
 
-  /* ✅ Safe Area Utilities - Support mọi máy */
- .pt-safe {
+.pt-safe {
     padding-top: var(--safe-top);
   }
- .pb-safe {
+.pb-safe {
     padding-bottom: var(--safe-bottom);
   }
- .pl-safe {
+.pl-safe {
     padding-left: var(--safe-left);
   }
- .pr-safe {
+.pr-safe {
     padding-right: var(--safe-right);
   }
- .px-safe {
+.px-safe {
     padding-left: var(--safe-left);
     padding-right: var(--safe-right);
   }
- .py-safe {
+.py-safe {
     padding-top: var(--safe-top);
     padding-bottom: var(--safe-bottom);
   }
- .mt-safe {
+.mt-safe {
     margin-top: var(--safe-top);
   }
- .mb-safe {
+.mb-safe {
     margin-bottom: var(--safe-bottom);
   }
 
- .no-scrollbar::-webkit-scrollbar {
+.no-scrollbar::-webkit-scrollbar {
     display: none;
   }
- .no-scrollbar {
+.no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
 
- .text-balance {
+.text-balance {
     text-wrap: balance;
   }
 
- .overscroll-contain {
+.overscroll-contain {
     overscroll-behavior: contain;
   }
 
-  /* Pro shadow presets */
- .shadow-pro {
+.shadow-pro {
     box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   }
- .shadow-pro-lg {
+.shadow-pro-lg {
     box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
   }
 
   @media print {
-   .print-hidden {
+  .print-hidden {
       display: none!important;
     }
   }
@@ -279,7 +291,6 @@
   }
 }
 
-/* Keyframes cho custom animation */
 @keyframes shimmer {
   0% { background-position: -1000px 0; }
   100% { background-position: 1000px 0; }
