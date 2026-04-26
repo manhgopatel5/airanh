@@ -29,24 +29,18 @@ export default function ClientLayout({ children }: Props) {
   useEffect(() => {
     if (loading) return;
 
-    // Chưa login mà vào trang private
     if (!user &&!isPublic) {
       router.replace("/login");
       return;
     }
 
-    // Đã login mà vào auth page
     if (user && isPublic) {
       router.replace("/");
       return;
     }
-
-    // ❌ BỎ ĐOẠN NÀY: không chờ userData nữa
-    // if (user &&!userData) return;
   }, [user, loading, isPublic, router]);
 
   /* ================= LOADING ================= */
-  // ✅ CHỈ check loading auth, không check userData
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900 font-sans">
@@ -79,7 +73,7 @@ export default function ClientLayout({ children }: Props) {
       </div>
 
       {!isPublic && user &&!isChatDetail &&!isCreate && (
-        <BottomNav unreadCount={userData?.unreadCount || 0} />
+        <BottomNav />
       )}
 
       <Toaster
