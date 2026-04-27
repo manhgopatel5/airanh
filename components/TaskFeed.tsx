@@ -1,7 +1,6 @@
 "use client";
 import { TaskListItem } from "@/types/task";
 import TaskCard from "@/components/TaskCard";
-import { HiBolt } from "react-icons/hi2";
 
 type Props = {
   tasks: TaskListItem[];
