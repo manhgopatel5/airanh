@@ -13,7 +13,7 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
-import { TaskListItem } from "@/types/task";
+import { TaskListItem, isTask } from "@/types/task";
 import TaskCard from "@/components/TaskCard";
 import { FiBookmark, FiArrowLeft } from "react-icons/fi";
 import Link from "next/link";
@@ -49,7 +49,6 @@ export default function BookmarksPage() {
           return;
         }
 
-        // 🔥 chunk để tránh giới hạn Firestore (10 items/query)
         const chunks: string[][] = [];
         for (let i = 0; i < taskIds.length; i += 10) {
           chunks.push(taskIds.slice(i, i + 10));
@@ -78,7 +77,6 @@ export default function BookmarksPage() {
 
         const taskArrays = await Promise.all(taskPromises);
 
-        // 🔥 FIX crash createdAt undefined
         const allTasks = taskArrays
           .flat()
           .sort(
@@ -143,11 +141,11 @@ export default function BookmarksPage() {
             </div>
 
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-              Chưa có công việc nào
+              Chưa có mục nào
             </h2>
 
             <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">
-              Lưu các công việc bạn quan tâm để xem lại sau
+              Lưu các công việc và lịch hẹn bạn quan tâm để xem lại sau
             </p>
 
             <Link
@@ -163,7 +161,7 @@ export default function BookmarksPage() {
               <TaskCard 
                 key={task.id} 
                 task={task} 
-                mode={task.price === 0 ? "plan" : "task"} // ✅ Thêm dòng này
+                mode={task.type} // Fix: dùng task.type thay vì check price
               />
             ))}
           </div>
