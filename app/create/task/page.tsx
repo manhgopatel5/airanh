@@ -9,7 +9,7 @@ import { toast, Toaster } from "sonner";
 import type { CreatePlanInput } from "@/types/task";
 import {
   FiUpload, FiX, FiMapPin, FiUsers, FiClock,
-  FiTag, FiFileText, FiEye, FiEyeOff, FiNavigation,
+  FiTag, FiEyeOff, FiNavigation,
   FiCalendar, FiShare2, FiChevronLeft
 } from "react-icons/fi";
 import { Timestamp } from "firebase/firestore";
