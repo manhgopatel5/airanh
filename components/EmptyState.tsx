@@ -134,14 +134,14 @@ const THEME = {
     tabLine: "bg-sky-500",
   },
   plan: {
-    iconBg: "bg-blue-500/10 dark:bg-blue-400/15",
-    iconColor: "text-blue-600 dark:text-blue-400",
-    tagBg: "bg-blue-500/10 hover:bg-blue-500/20 dark:bg-blue-400/15 dark:hover:bg-blue-400/25",
-    tagText: "text-blue-700 dark:text-blue-300",
-    buttonBg: "bg-blue-500 hover:bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600",
+    iconBg: "bg-green-500/10 dark:bg-green-400/15",
+    iconColor: "text-green-600 dark:text-green-400",
+    tagBg: "bg-green-500/10 hover:bg-green-500/20 dark:bg-green-400/15 dark:hover:bg-green-400/25",
+    tagText: "text-green-700 dark:text-green-300",
+    buttonBg: "bg-green-500 hover:bg-green-600 dark:bg-green-500 dark:hover:bg-green-600",
     buttonText: "text-white",
-    tabActive: "text-blue-500",
-    tabLine: "bg-blue-500",
+    tabActive: "text-green-500",
+    tabLine: "bg-green-500",
   },
 };
 
