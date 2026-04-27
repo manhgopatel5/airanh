@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FiHeart, FiShare2, FiMessageCircle, FiUsers, FiClock } from "react-icons/fi";
+import { FiHeart, FiShare2, FiMessageCircle, FiUsers, FiClock, FiMapPin, FiCalendar } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
 import { useEffect, useState, useCallback, memo } from "react";
 import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
@@ -9,16 +9,29 @@ import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { incrementTaskView } from "@/lib/task";
 import { TaskListItem } from "@/types/task";
+import { AppMode } from "@/types/app"; // ✅ Thêm
 import { toast } from "sonner";
 
 type Props = {
   task: TaskListItem;
+  mode: AppMode; // ✅ Thêm prop này
   onDelete?: (id: string) => void;
 };
 
-function TaskCard({ task }: Props) {
-  const router = useRouter();
+const planCategoryEmoji: Record<string, string> = {
+  food: "🍜",
+  nightlife: "🎉",
+  outdoor: "🥾",
+  sightseeing: "🗺️",
+  entertainment: "🎬",
+  shopping: "🛍️",
+  wellness: "🧘",
+  social: "💬",
+  other: "✨",
+};
 
+function TaskCard({ task, mode }: Props) { // ✅ Nhận mode
+  const router = useRouter();
   const db = getFirebaseDB();
   const auth = getFirebaseAuth();
 
@@ -33,7 +46,7 @@ function TaskCard({ task }: Props) {
 
   if (!task) return <Skeleton />;
 
-  const isPlan = task.budgetType === "fixed" && task.price === 0;
+  const isPlanMode = mode === "plan"; // ✅ Dùng mode thay cho isPlan cũ
   const liked = currentUser && localLikes.includes(currentUser.uid);
   const likeCount = localLikes.length;
 
@@ -45,10 +58,7 @@ function TaskCard({ task }: Props) {
     cancelled: { text: "Đã hủy", color: "gray" },
   } as const;
 
-  const safeStatus = (task.status && task.status in statusConfig
-   ? task.status
-    : "open") as keyof typeof statusConfig;
-
+  const safeStatus = (task.status && task.status in statusConfig? task.status : "open") as keyof typeof statusConfig;
   const status = statusConfig[safeStatus];
 
   /* ================= LIKE ================= */
@@ -58,18 +68,14 @@ function TaskCard({ task }: Props) {
     if (liking) return;
 
     setLiking(true);
-
     const newLikes = liked
-     ? localLikes.filter((id) => id!== currentUser.uid)
+    ? localLikes.filter((id) => id!== currentUser.uid)
       : [...localLikes, currentUser.uid];
-
     setLocalLikes(newLikes);
 
     try {
       await updateDoc(doc(db, "tasks", task.id), {
-        likes: liked
-         ? arrayRemove(currentUser.uid)
-          : arrayUnion(currentUser.uid),
+        likes: liked? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid),
         likeCount: newLikes.length,
       });
     } catch {
@@ -83,9 +89,7 @@ function TaskCard({ task }: Props) {
   /* ================= SHARE ================= */
   const handleShare = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
-
     if (typeof window === "undefined") return;
-
     const url = `${window.location.origin}/task/${task.slug}`;
     const title = task.title || "Xem công việc";
 
@@ -151,9 +155,10 @@ function TaskCard({ task }: Props) {
                 <span className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">
                   {task.userName || "User"}
                 </span>
-                {isPlan? (
-                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-lg">
-                    PLAN
+                {/* ✅ Badge đổi theo mode */}
+                {isPlanMode? (
+                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-lg">
+                    {planCategoryEmoji[(task as any).planCategory || "other"]} PLAN
                   </span>
                 ) : (
                   <span className={`text-xs font-bold text-${status.color}-600 dark:text-${status.color}-400 bg-${status.color}-50 dark:bg-${status.color}-950/50 px-2 py-0.5 rounded-lg`}>
@@ -173,12 +178,10 @@ function TaskCard({ task }: Props) {
               {liked? <FaHeart className="text-red-500" size={16} /> : <FiHeart className="group-hover:text-red-400" size={16} />}
               <span className="text-xs font-medium">{likeCount}</span>
             </button>
-
             <div className="flex items-center gap-1">
               <FiMessageCircle size={16} className="group-hover:text-blue-400" />
               <span className="text-xs font-medium">{task.commentCount || 0}</span>
             </div>
-
             <button onClick={handleShare} className="active:scale-90 transition">
               <FiShare2 size={16} className="group-hover:text-emerald-400" />
             </button>
@@ -190,7 +193,9 @@ function TaskCard({ task }: Props) {
             <h3 className="font-bold text-base text-gray-900 dark:text-gray-100 leading-snug flex-1">
               {task.title}
             </h3>
-            {!isPlan && task.price!== undefined && (
+
+            {/* ✅ Task: hiện giá tiền */}
+            {!isPlanMode && task.price!== undefined && (
               <div className="shrink-0 text-right">
                 <div className="text-lg font-extrabold bg-gradient-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent">
                   {formatPrice(task.price, task.currency)}
@@ -203,12 +208,38 @@ function TaskCard({ task }: Props) {
                 )}
               </div>
             )}
+
+            {/* ✅ Plan: hiện nút join số người */}
+            {isPlanMode && task.totalSlots && (
+              <button className="shrink-0 px-3 py-1.5 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white text-sm font-bold flex items-center gap-1">
+                <FiUsers className="w-4 h-4" />
+                {task.joined || 0}/{task.totalSlots}
+              </button>
+            )}
           </div>
 
           {task.description && (
             <p className="text-sm text-gray-600 dark:text-zinc-400 leading-relaxed line-clamp-2 whitespace-pre-wrap">
               {task.description}
             </p>
+          )}
+
+          {/* ✅ Plan: hiện thêm thời gian + địa điểm */}
+          {isPlanMode && (
+            <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-zinc-400">
+              {(task as any).planTime && (
+                <span className="flex items-center gap-1">
+                  <FiCalendar className="w-3 h-3" />
+                  {(task as any).planTime}
+                </span>
+              )}
+              {task.location && (
+                <span className="flex items-center gap-1">
+                  <FiMapPin className="w-3 h-3" />
+                  {task.location}
+                </span>
+              )}
+            </div>
           )}
 
           {task.images && task.images.length > 0 && (
@@ -250,6 +281,7 @@ function Skeleton() {
 export default memo(TaskCard, (prev, next) => {
   return (
     prev.task.id === next.task.id &&
+    prev.mode === next.mode && // ✅ Thêm dòng này
     prev.task.likeCount === next.task.likeCount &&
     prev.task.commentCount === next.task.commentCount &&
     prev.task.joined === next.task.joined
