@@ -42,7 +42,7 @@ function TaskCard({ task, mode }: Props) {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, setCurrentUser);
     return () => unsub();
-  }, );
+  }, []);
 
   if (!task) return <Skeleton />;
 
@@ -193,24 +193,24 @@ function TaskCard({ task, mode }: Props) {
               {task.title}
             </h3>
 
-            {!isPlanMode && task.price!== undefined && (
+            {task.type === "task" && (task as any).price!== undefined && (
               <div className="shrink-0 text-right">
                 <div className="text-lg font-extrabold bg-gradient-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent">
-                  {formatPrice(task.price, task.currency)}
+                  {formatPrice((task as any).price, (task as any).currency)}
                 </div>
-                {task.totalSlots && (
+                {(task as any).totalSlots && (
                   <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-zinc-400 justify-end">
                     <FiUsers size={12} />
-                    {task.joined || 0}/{task.totalSlots}
+                    {(task as any).joined || 0}/{(task as any).totalSlots}
                   </div>
                 )}
               </div>
             )}
 
-            {isPlanMode && task.totalSlots && (
+            {isPlanMode && (task as any).totalSlots && (
               <button className="shrink-0 px-3 py-1.5 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white text-sm font-bold flex items-center gap-1">
                 <FiUsers className="w-4 h-4" />
-                {task.joined || 0}/{task.totalSlots}
+                {(task as any).joined || 0}/{(task as any).totalSlots}
               </button>
             )}
           </div>
