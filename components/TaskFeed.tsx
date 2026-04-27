@@ -1,4 +1,5 @@
 "use client";
+
 import { TaskListItem } from "@/types/task";
 import TaskCard from "@/components/TaskCard";
 import { AppMode } from "@/types/app";
@@ -114,15 +115,21 @@ export default function TaskFeed({ tasks, mode, activeTab }: Props) {
   const router = useRouter();
 
   if (tasks.length === 0) {
-    const config = emptyConfig[activeTab]?? emptyConfig.task.new;
+    const config =
+      emptyConfig[mode]?.[activeTab] ?? emptyConfig.task.new;
+
     return (
       <div className="flex flex-col items-center justify-center px-6 py-20 text-center animate-in fade-in duration-300">
-        <div className="text-6xl mb-4 animate-bounce select-none">{config.icon}</div>
+        <div className="text-6xl mb-4 animate-bounce select-none">
+          {config.icon}
+        </div>
+
         <h2
           className={`text-2xl font-extrabold bg-gradient-to-r ${config.gradient} bg-clip-text text-transparent`}
         >
           {config.title}
         </h2>
+
         <p className="text-gray-500 dark:text-zinc-400 mt-2 max-w-xs leading-relaxed">
           {config.desc}
         </p>
@@ -133,7 +140,9 @@ export default function TaskFeed({ tasks, mode, activeTab }: Props) {
               key={t}
               onClick={() => {
                 if ("vibrate" in navigator) navigator.vibrate(5);
-                router.push(`/create?mode=${mode}&suggest=${encodeURIComponent(t)}`);
+                router.push(
+                  `/create?mode=${mode}&suggest=${encodeURIComponent(t)}`
+                );
               }}
               className={`px-4 py-2 rounded-full ${config.tagBg} ${config.tagText} text-sm font-semibold active:scale-95 transition-all ${config.tagHover}`}
             >
@@ -149,7 +158,7 @@ export default function TaskFeed({ tasks, mode, activeTab }: Props) {
           }}
           className={`mt-8 px-6 py-3 rounded-2xl bg-gradient-to-r ${config.gradient} text-white font-bold text-sm shadow-lg active:scale-95 transition-all hover:shadow-xl`}
         >
-          {mode === "task"? "Đăng việc ngay" : "Tạo lịch hẹn"}
+          {mode === "task" ? "Đăng việc ngay" : "Tạo lịch hẹn"}
         </button>
       </div>
     );
