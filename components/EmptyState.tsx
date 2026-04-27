@@ -1,6 +1,9 @@
 "use client";
 import { HiPlus, HiArrowPath } from "react-icons/hi2";
-import { FiTrendingUp, FiNavigation, FiInbox, FiUsers, FiCalendar } from "react-icons/fi";
+import { 
+  FiTrendingUp, FiNavigation, FiInbox, FiUsers, FiCalendar,
+  FiZap, FiMapPin, FiClock, FiUserPlus // thêm 4 icon mới cho plan
+} from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
@@ -38,25 +41,25 @@ const MESSAGES = {
     hot: { 
       title: "Chưa có kế hoạch hot", 
       desc: "Tạo hoạt động đầu tiên để\nrủ mọi người tham gia", 
-      icon: FiTrendingUp,
+      icon: FiZap, // đổi từ FiTrendingUp
       suggests: ["Cafe sáng T7", "Nhậu tối nay Q1", "Boardgame 4 người", "Phượt Vũng Tàu"]
     },
     near: { 
       title: "Quanh đây chưa có hẹn", 
       desc: "Lên kèo gần bạn để offline\ncùng hàng xóm", 
-      icon: FiNavigation,
+      icon: FiMapPin, // đổi từ FiNavigation
       suggests: ["Cafe Landmark 81", "Chạy bộ công viên", "Bi-a gần đây", "Workshop vẽ"]
     },
     new: { 
       title: "Chưa có kế hoạch mới", 
       desc: "Tạo sự kiện đầu tiên\ntrong hôm nay", 
-      icon: FiCalendar,
+      icon: FiClock, // đổi từ FiCalendar
       suggests: ["Lên kèo tối nay", "Đặt bàn 6 người", "Xem phim CGV", "Đá banh sân 5"]
     },
     friends: { 
       title: "Bạn bè chưa lên kèo", 
       desc: "Rủ bạn bè tạo kế hoạch\nđi chơi chung", 
-      icon: FiUsers,
+      icon: FiUserPlus, // đổi từ FiUsers
       suggests: ["Sinh nhật team", "Tân gia nhà mới", "Đi Đà Lạt nhóm", "Team building"]
     },
   },
