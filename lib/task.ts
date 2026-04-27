@@ -139,12 +139,13 @@ export async function createTask(
 ...(data.attachments && { attachments: data.attachments }),
 ...(data.requirements?.trim() && { requirements: data.requirements.trim() }),
 ...(data.location && { location: data.location }),
+    isRemote:!data.location,
     searchKeywords: generateTaskSearchKeywords({
       title: data.title,
       description: data.description,
       tags,
-  ...(data.category && { category: data.category }),
-  ...(data.location && { location: data.location }),
+ ...(data.category && { category: data.category }),
+ ...(data.location && { location: data.location }),
     }),
     viewCount: 0,
     likeCount: 0,
@@ -194,7 +195,7 @@ export async function updateTask(
     if (updates.images && updates.images.length > 5) throw new TaskError("Tối đa 5 ảnh");
 
     const newTags = updates.title || updates.description || updates.category
-  ? cleanTags(updates.tags || data.tags || [], updates.title || data.title, updates.category || data.category)
+ ? cleanTags(updates.tags || data.tags || [], updates.title || data.title, updates.category || data.category)
       : data.tags;
 
     const updateData: any = {
@@ -203,8 +204,8 @@ export async function updateTask(
         title: updates.title || data.title,
         description: updates.description || data.description,
         tags: newTags,
-    ...(updates.category? { category: updates.category } : data.category? { category: data.category } : {}),
-    ...(updates.location? { location: updates.location } : data.location? { location: data.location } : {}),
+   ...(updates.category? { category: updates.category } : data.category? { category: data.category } : {}),
+   ...(updates.location? { location: updates.location } : data.location? { location: data.location } : {}),
       }),
       edited: true,
       editedAt: serverTimestamp(),
@@ -224,7 +225,10 @@ export async function updateTask(
     if (updates.images) updateData.images = updates.images;
     if (updates.attachments) updateData.attachments = updates.attachments;
     if (updates.requirements) updateData.requirements = updates.requirements;
-    if (updates.location) updateData.location = updates.location;
+    if (updates.location) {
+      updateData.location = updates.location;
+      updateData.isRemote = false;
+    }
     if (updates.visibility) updateData.visibility = updates.visibility;
 
     transaction.update(taskRef, updateData);
