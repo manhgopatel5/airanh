@@ -76,12 +76,11 @@ export default function Home() {
     }
   }, [db]);
 
-  // QUERY ĐƠN GIẢN NHẤT - KHÔNG CẦN INDEX
   const buildQuery = useCallback(
     (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
       if (!db) return null;
       const constraints: any[] = [
-        orderBy("createdAt", "desc"), // Chỉ 1 field, không where
+        orderBy("createdAt", "desc"),
         limit(PAGE_SIZE),
       ];
       if (startAfterDoc) {
@@ -95,13 +94,10 @@ export default function Home() {
   const loadData = useCallback(
     async (isRefresh = false) => {
       if (!db) return;
-
-      // Cleanup cũ trước
       if (unsubRef.current) {
         unsubRef.current();
         unsubRef.current = null;
       }
-
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
       setError(null);
@@ -119,25 +115,35 @@ export default function Home() {
       const unsub = onSnapshot(
         q,
         (snap) => {
+          console.log("Firestore success, docs:", snap.docs.length);
           const data = snap.docs.map((doc) => ({
             id: doc.id,
-           ...doc.data(),
+        ...doc.data(),
           }));
           setAllTasks(data);
           setLastDoc(snap.docs[snap.docs.length - 1] || null);
           setHasMore(snap.docs.length === PAGE_SIZE);
           setLoading(false);
           setRefreshing(false);
-          setError(null); // Clear error khi success
+          setError(null); // Rỗng cũng là thành công
         },
         (err) => {
-          console.error("Firestore error:", err);
-          setError("Lỗi tải dữ liệu");
+          console.error("Firestore error:", err.code, err.message);
+          if (err.code === "permission-denied") {
+            setError("Không có quyền truy cập dữ liệu");
+            toast.error("Check Firestore Rules");
+          } else if (err.code === "failed-precondition") {
+            setError("Thiếu index database");
+            toast.error("Tạo index trong Firebase Console");
+          } else {
+            // Lỗi khác: vẫn set error
+            setError("Lỗi tải dữ liệu");
+            toast.error("Không thể tải dữ liệu");
+          }
           setAllTasks([]);
           setHasMore(false);
           setLoading(false);
           setRefreshing(false);
-          toast.error("Không thể tải dữ liệu");
         }
       );
       unsubRef.current = unsub;
@@ -164,7 +170,7 @@ export default function Home() {
       const snap = await getDocs(q);
       const newTasks = snap.docs.map((doc) => ({
         id: doc.id,
-       ...doc.data(),
+    ...doc.data(),
       }));
       setAllTasks((prev) => [...prev,...newTasks]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -194,34 +200,27 @@ export default function Home() {
     return () => observerRef.current?.disconnect();
   }, [loading, hasMore, loadingMore, loadMore]);
 
-  // FILTER CLIENT-SIDE 100% - KHÔNG CẦN INDEX
   const filteredTasks = useMemo(() => {
     let result = [...allTasks];
 
-    // Filter cơ bản: status, visibility, banned
     result = result.filter(
       (t) =>
         (t.status === "open" || t.status === "full") &&
-        t.visibility === "public" &&
+        t.visibility!== "private" &&
         t.banned!== true
     );
 
-    // Filter theo mode
     if (mode === "task") {
       result = result.filter((t) => (t.price || 0) > 0);
     } else {
       result = result.filter((t) => (t.price || 0) === 0);
     }
 
-    // Filter theo tab
     if (activeTab === "hot") {
       result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-    } else if (activeTab === "near") {
-      result = []; // TODO: geolocation
-    } else if (activeTab === "friends") {
-      result = []; // TODO: following list
+    } else if (activeTab === "near" || activeTab === "friends") {
+      result = [];
     }
-    // new giữ nguyên createdAt desc
 
     return result;
   }, [allTasks, mode, activeTab]);
@@ -257,7 +256,7 @@ export default function Home() {
                   }}
                   className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
                     active
-                     ? `text-${tab.color}-600 dark:text-${tab.color}-400`
+                  ? `text-${tab.color}-600 dark:text-${tab.color}-400`
                       : "text-gray-400 dark:text-zinc-500"
                   }`}
                 >
@@ -282,6 +281,9 @@ export default function Home() {
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
               {error}
             </h2>
+            <p className="text-sm text-gray-500 dark:text-zinc-400 mb-4">
+              Mở Console F12 để xem lỗi chi tiết
+            </p>
             <button
               onClick={handleRefresh}
               className="mt-4 px-6 py-2.5 rounded-xl bg-blue-500 text-white font-bold active:scale-95 transition flex items-center gap-2"
