@@ -20,6 +20,7 @@ import { getFirebaseDB } from "./firebase";
 import { nanoid } from "nanoid";
 import {
   Task,
+  TaskItem,
   CreateTaskInput,
   UpdateTaskInput,
   TaskListItem,
@@ -109,7 +110,8 @@ export async function createTask(
   const shortId = await generateUniqueShortId();
   const tags = cleanTags(data.tags || [], data.title, data.category);
 
-  const taskData: Omit<Task, "id"> = {
+  const taskData: Omit<TaskItem, "id"> = {
+    type: "task",
     slug,
     shortId,
     title: data.title.trim(),
@@ -128,21 +130,21 @@ export async function createTask(
       `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || "U")}&background=random`,
     createdAt: serverTimestamp() as Timestamp,
     updatedAt: serverTimestamp() as Timestamp,
- ...(data.deadline && { deadline: data.deadline }),
- ...(data.applicationDeadline && { applicationDeadline: data.applicationDeadline }),
- ...(data.startDate && { startDate: data.startDate }),
- ...(data.category && { category: data.category }),
+...(data.deadline && { deadline: data.deadline }),
+...(data.applicationDeadline && { applicationDeadline: data.applicationDeadline }),
+...(data.startDate && { startDate: data.startDate }),
+...(data.category && { category: data.category }),
     tags,
     images: validImages,
- ...(data.attachments && { attachments: data.attachments }),
- ...(data.requirements?.trim() && { requirements: data.requirements.trim() }),
- ...(data.location && { location: data.location }),
+...(data.attachments && { attachments: data.attachments }),
+...(data.requirements?.trim() && { requirements: data.requirements.trim() }),
+...(data.location && { location: data.location }),
     searchKeywords: generateTaskSearchKeywords({
       title: data.title,
       description: data.description,
       tags,
-   ...(data.category && { category: data.category }),
-   ...(data.location && { location: data.location }),
+  ...(data.category && { category: data.category }),
+  ...(data.location && { location: data.location }),
     }),
     viewCount: 0,
     likeCount: 0,
@@ -192,7 +194,7 @@ export async function updateTask(
     if (updates.images && updates.images.length > 5) throw new TaskError("Tối đa 5 ảnh");
 
     const newTags = updates.title || updates.description || updates.category
-   ? cleanTags(updates.tags || data.tags || [], updates.title || data.title, updates.category || data.category)
+  ? cleanTags(updates.tags || data.tags || [], updates.title || data.title, updates.category || data.category)
       : data.tags;
 
     const updateData: any = {
@@ -201,8 +203,8 @@ export async function updateTask(
         title: updates.title || data.title,
         description: updates.description || data.description,
         tags: newTags,
-     ...(updates.category? { category: updates.category } : data.category? { category: data.category } : {}),
-     ...(updates.location? { location: updates.location } : data.location? { location: data.location } : {}),
+    ...(updates.category? { category: updates.category } : data.category? { category: data.category } : {}),
+    ...(updates.location? { location: updates.location } : data.location? { location: data.location } : {}),
       }),
       edited: true,
       editedAt: serverTimestamp(),
