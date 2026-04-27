@@ -7,8 +7,6 @@ import {
   FiCalendar,
   FiChevronDown,
   FiArrowLeft,
-  FiCheckCircle,
-  FiXCircle,
   FiZap,
   FiUsers,
   FiDollarSign,
@@ -132,7 +130,7 @@ export default function CreateHelpPage() {
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
                   activeTab === tab.id
-                   ? "bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-50 shadow-sm"
+                  ? "bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-50 shadow-sm"
                     : "text-gray-500 dark:text-zinc-400"
                 }`}
               >
@@ -200,7 +198,7 @@ export default function CreateHelpPage() {
                         <div
                           className={`w-10 h-10 rounded-xl ${
                             type === "task"
-                             ? "bg-blue-100 dark:bg-blue-900/40"
+                            ? "bg-blue-100 dark:bg-blue-900/40"
                               : "bg-violet-100 dark:bg-violet-900/40"
                           } flex items-center justify-center`}
                         >
@@ -246,7 +244,7 @@ export default function CreateHelpPage() {
                                 <div
                                   className={`flex-shrink-0 w-6 h-6 rounded-full ${
                                     type === "task"
-                                     ? "bg-blue-500"
+                                    ? "bg-blue-500"
                                       : "bg-violet-500"
                                   } text-white text-xs font-bold flex items-center justify-center`}
                                 >
@@ -303,9 +301,9 @@ export default function CreateHelpPage() {
                               {item.title}
                             </h3>
                             <span
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                                 item.type === "task"
-                                 ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400"
+                                ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400"
                                   : "bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400"
                               }`}
                             >
