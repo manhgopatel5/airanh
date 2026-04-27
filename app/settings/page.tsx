@@ -8,7 +8,7 @@ import { doc, updateDoc, onSnapshot, deleteDoc, serverTimestamp } from "firebase
 import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
 import { signOut, deleteUser } from "firebase/auth";
 import {
-  ChevronLeft, Moon, Sun, Palette, BellOff, Clock, Mail,
+  ChevronLeft, Moon, Sun, Palette, Bell, Clock, Mail,
   Eye, EyeOff, UserX, Shield, Lock, Smartphone, Key, Trash2,
   Globe, DollarSign, Download, Zap, Database, Info, LogOut,
   ChevronRight, Check, Monitor, Languages, MapPin, Calendar,
