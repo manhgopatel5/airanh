@@ -227,9 +227,14 @@ export default function Profile() {
   };
 
   const handleShare = async () => {
-    const url = `https://air.vn/u/${userData?.userId}`;
+    if (!userData) return;
+    const url = `https://air.vn/u/${userData.userId}`;
     if (navigator.share) {
-      await navigator.share({ title: userData?.name, text: `Kết nối với tôi`, url });
+      await navigator.share({
+        title: userData.name || "Người dùng AIR",
+        text: `Kết nối với tôi`,
+        url
+      });
     } else {
       navigator.clipboard.writeText(url);
       toast.success("Đã copy link hồ sơ");
@@ -299,7 +304,7 @@ export default function Profile() {
       window.removeEventListener("beforeunload", updateOffline);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [user]);
+  }, );
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -328,7 +333,7 @@ export default function Profile() {
           <div className="relative">
             <img
               src={userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&size=176`}
-              className="w-[88px] h-[88px] rounded-full border-2 border-white dark:border-black"
+              className="w- h- rounded-full border-2 border-white dark:border-black"
               alt="Avatar"
             />
             {userData.emailVerified && (
@@ -355,24 +360,24 @@ export default function Profile() {
                 onBlur={handleUpdateName}
                 onKeyDown={(e) => e.key === "Enter" && handleUpdateName()}
                 autoFocus
-                className="text-[28px] font-extrabold border-b-2 border-gray-300 dark:border-zinc-700 outline-none bg-transparent text-gray-900 dark:text-white flex-1 text-center tracking-tight"
+                className="text- font-extrabold border-b-2 border-gray-300 dark:border-zinc-700 outline-none bg-transparent text-gray-900 dark:text-white flex-1 text-center tracking-tight"
               />
               <button onClick={handleUpdateName} className={`p-1.5 bg-gradient-to-br ${accentGradient} rounded-full`}>
                 <Check size={16} className="text-white" />
               </button>
             </div>
           ) : (
-            <h1 onClick={() => setEditingName(true)} className="text-[28px] font-extrabold text-gray-900 dark:text-white mt-4 tracking-tight cursor-pointer">
+            <h1 onClick={() => setEditingName(true)} className="text- font-extrabold text-gray-900 dark:text-white mt-4 tracking-tight cursor-pointer">
               {userData.name}
             </h1>
           )}
-          <p className="text-[14px] text-gray-500 dark:text-zinc-400 mt-0.5">
+          <p className="text- text-gray-500 dark:text-zinc-400 mt-0.5">
             @{userData.userId}
           </p>
 
           <button
             onClick={copyId}
-            className="mt-3 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-zinc-900 text-[13px] font-semibold text-gray-700 dark:text-zinc-300 flex items-center gap-1.5 active:scale-95 transition"
+            className="mt-3 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-zinc-900 text- font-semibold text-gray-700 dark:text-zinc-300 flex items-center gap-1.5 active:scale-95 transition"
           >
             ID: {userData.userId}
             {copied? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -380,7 +385,7 @@ export default function Profile() {
 
           <div className="flex items-center gap-1.5 mt-2">
             <Circle className={`w-2 h-2 fill-current ${userData.online? "text-green-500" : "text-gray-400"}`} />
-            <span className="text-[13px] text-gray-500 dark:text-zinc-400 font-medium">
+            <span className="text- text-gray-500 dark:text-zinc-400 font-medium">
               {userData.online? "Đang hoạt động" : "Ngoại tuyến"}
             </span>
           </div>
@@ -394,10 +399,10 @@ export default function Profile() {
             { label: "RATING", value: userData.stats?.rating || 0 },
           ].map((stat) => (
             <div key={stat.label}>
-              <div className="text-[32px] font-black text-gray-900 dark:text-white tracking-tight">
+              <div className="text- font-black text-gray-900 dark:text-white tracking-tight">
                 {stat.value}{stat.label === "RATING" && "★"}
               </div>
-              <div className="text-[12px] font-semibold text-gray-500 dark:text-zinc-500 tracking-wider mt-0.5">
+              <div className="text- font-semibold text-gray-500 dark:text-zinc-500 tracking-wider mt-0.5">
                 {stat.label}
               </div>
             </div>
@@ -406,13 +411,13 @@ export default function Profile() {
 
         <div className="mt-8">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[14px] font-bold text-gray-900 dark:text-white">Giới thiệu</span>
+            <span className="text- font-bold text-gray-900 dark:text-white">Giới thiệu</span>
             {!editingBio? (
-              <button onClick={() => setEditingBio(true)} className={`text-[13px] font-semibold ${accentText}`}>
+              <button onClick={() => setEditingBio(true)} className={`text- font-semibold ${accentText}`}>
                 Sửa
               </button>
             ) : (
-              <button onClick={handleUpdateBio} className={`text-[13px] font-semibold ${accentText} flex items-center gap-1`}>
+              <button onClick={handleUpdateBio} className={`text- font-semibold ${accentText} flex items-center gap-1`}>
                 <Check className="w-3 h-3" />Lưu
               </button>
             )}
@@ -422,13 +427,13 @@ export default function Profile() {
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               placeholder="Viết gì đó về bạn..."
-              className="w-full text-[14px] text-gray-600 dark:text-zinc-400 bg-transparent border-none outline-none resize-none"
+              className="w-full text- text-gray-600 dark:text-zinc-400 bg-transparent border-none outline-none resize-none"
               rows={3}
               maxLength={150}
               autoFocus
             />
           ) : (
-            <p className="text-[14px] text-gray-600 dark:text-zinc-400 leading-relaxed">
+            <p className="text- text-gray-600 dark:text-zinc-400 leading-relaxed">
               {bio || "Chưa có giới thiệu"}
             </p>
           )}
@@ -437,9 +442,9 @@ export default function Profile() {
         <div className="mt-8 space-y-4">
           {userData.phone && (
             <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-zinc-900">
-              <span className="text-[14px] text-gray-500 dark:text-zinc-400">Số điện thoại</span>
+              <span className="text- text-gray-500 dark:text-zinc-400">Số điện thoại</span>
               <div className="flex items-center gap-2">
-                <span className="text-[14px] font-semibold text-gray-900 dark:text-white">
+                <span className="text- font-semibold text-gray-900 dark:text-white">
                   {userData.hidePhone? "••••••••••" : userData.phone}
                 </span>
                 <button onClick={toggleHidePhone}>
@@ -449,27 +454,27 @@ export default function Profile() {
             </div>
           )}
           <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-zinc-900">
-            <span className="text-[14px] text-gray-500 dark:text-zinc-400">Email</span>
-            <span className="text-[14px] font-semibold text-gray-900 dark:text-white">{userData.email}</span>
+            <span className="text- text-gray-500 dark:text-zinc-400">Email</span>
+            <span className="text- font-semibold text-gray-900 dark:text-white">{userData.email}</span>
           </div>
         </div>
 
         <div className="mt-8 space-y-6">
           <div>
-            <div className="text-[12px] font-bold text-gray-400 dark:text-zinc-600 tracking-wider mb-1">HỒ SƠ</div>
+            <div className="text- font-bold text-gray-400 dark:text-zinc-600 tracking-wider mb-1">HỒ SƠ</div>
             <Item label="Mã QR của tôi" icon={QrCode} onClick={() => setShowQR(true)} />
             <Item label="Chia sẻ hồ sơ" icon={Share2} onClick={handleShare} />
             <Item label="Thông tin cá nhân" icon={User} onClick={() => router.push("/profile/edit")} />
           </div>
 
           <div>
-            <div className="text-[12px] font-bold text-gray-400 dark:text-zinc-600 tracking-wider mb-1">BẢO MẬT</div>
+            <div className="text- font-bold text-gray-400 dark:text-zinc-600 tracking-wider mb-1">BẢO MẬT</div>
             <Item label="Xác thực CCCD" icon={Shield} />
             <Item label="Đổi mật khẩu" icon={Lock} />
           </div>
 
           <div>
-            <div className="text-[12px] font-bold text-gray-400 dark:text-zinc-600 tracking-wider mb-1">HỖ TRỢ</div>
+            <div className="text- font-bold text-gray-400 dark:text-zinc-600 tracking-wider mb-1">HỖ TRỢ</div>
             <Item label="Trung tâm trợ giúp" icon={HelpCircle} />
             <Item label="Đăng xuất" icon={LogOut} onClick={() => setShowLogoutModal(true)} danger />
             <Item label="Xoá tài khoản" icon={Trash2} onClick={() => setShowDeleteModal(true)} danger />
@@ -478,7 +483,7 @@ export default function Profile() {
 
         <button
           onClick={() => setShowLogoutModal(true)}
-          className="w-full py-4 mt-8 text-[15px] font-bold text-red-500 active:opacity-50 transition"
+          className="w-full py-4 mt-8 text- font-bold text-red-500 active:opacity-50 transition"
         >
           Đăng xuất
         </button>
@@ -539,8 +544,8 @@ function Item({
       className="w-full flex items-center justify-between py-4 active:opacity-50 transition"
     >
       <div className="flex items-center gap-3">
-        <Icon className={`w-[22px] h-[22px] ${danger? "text-red-500" : "text-gray-900 dark:text-white"}`} />
-        <span className={`text-[15px] font-semibold ${danger? "text-red-500" : "text-gray-900 dark:text-white"}`}>{label}</span>
+        <Icon className={`w- h- ${danger? "text-red-500" : "text-gray-900 dark:text-white"}`} />
+        <span className={`text- font-semibold ${danger? "text-red-500" : "text-gray-900 dark:text-white"}`}>{label}</span>
       </div>
       <ChevronRight className="w-4 h-4 text-gray-400" />
     </button>
