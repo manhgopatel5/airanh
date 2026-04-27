@@ -108,7 +108,8 @@ export async function createTask(
 
   const slug = `${slugify(data.title)}-${nanoid(6)}`;
   const shortId = await generateUniqueShortId();
-  const tags = cleanTags(data.tags || [], data.title, data.category);
+  const category = data.category || "other";
+  const tags = cleanTags(data.tags || [], data.title, category);
 
   const taskData: Omit<TaskItem, "id"> = {
     type: "task",
@@ -133,7 +134,7 @@ export async function createTask(
 ...(data.deadline && { deadline: data.deadline }),
 ...(data.applicationDeadline && { applicationDeadline: data.applicationDeadline }),
 ...(data.startDate && { startDate: data.startDate }),
-...(data.category && { category: data.category }),
+    category,
     tags,
     images: validImages,
 ...(data.attachments && { attachments: data.attachments }),
@@ -144,8 +145,8 @@ export async function createTask(
       title: data.title,
       description: data.description,
       tags,
- ...(data.category && { category: data.category }),
- ...(data.location && { location: data.location }),
+      category,
+...(data.location && { location: data.location }),
     }),
     viewCount: 0,
     likeCount: 0,
@@ -195,7 +196,7 @@ export async function updateTask(
     if (updates.images && updates.images.length > 5) throw new TaskError("Tối đa 5 ảnh");
 
     const newTags = updates.title || updates.description || updates.category
- ? cleanTags(updates.tags || data.tags || [], updates.title || data.title, updates.category || data.category)
+? cleanTags(updates.tags || data.tags || [], updates.title || data.title, updates.category || data.category)
       : data.tags;
 
     const updateData: any = {
@@ -204,8 +205,8 @@ export async function updateTask(
         title: updates.title || data.title,
         description: updates.description || data.description,
         tags: newTags,
-   ...(updates.category? { category: updates.category } : data.category? { category: data.category } : {}),
-   ...(updates.location? { location: updates.location } : data.location? { location: data.location } : {}),
+  ...(updates.category? { category: updates.category } : data.category? { category: data.category } : {}),
+  ...(updates.location? { location: updates.location } : data.location? { location: data.location } : {}),
       }),
       edited: true,
       editedAt: serverTimestamp(),
