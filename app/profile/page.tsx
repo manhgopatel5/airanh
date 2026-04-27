@@ -17,7 +17,8 @@ import {
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
   HelpCircle, LogOut, Trash2, User, Shield, Lock,
-  Camera, Check, QrCode, Share2, ChevronRight, Settings
+  Camera, Check, QrCode, Share2, ChevronRight, Settings,
+  Circle, Zap, ClipboardList, Star
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import type { UploadTask } from "firebase/storage";
@@ -277,9 +278,10 @@ export default function Profile() {
     <div className="min-h-screen bg-white dark:bg-black pb-24 font-sans">
       <Toaster richColors position="top-center" />
 
+      {/* HEADER FIX: Tap avatar = đổi ảnh, bỏ nút camera riêng */}
       <div className="px-6 pt-12 pb-6">
         <div className="flex items-center gap-4">
-          <div className="relative">
+          <label className="relative cursor-pointer group">
             <img
               src={userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&size=176`}
               className="w-16 h-16 rounded-full"
@@ -290,16 +292,16 @@ export default function Profile() {
                 <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
               </div>
             )}
-            <label className={`absolute -bottom-0.5 -right-6 w-7 h-7 rounded-full bg-gradient-to-br ${accentGradient} flex items-center justify-center cursor-pointer active:scale-90 transition shadow-lg`}>
-              <Camera size={13} className="text-white" />
-              <input type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
-            </label>
+            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-active:opacity-100 transition">
+              <Camera size={20} className="text-white" />
+            </div>
+            <input type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
             {uploading && (
               <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center backdrop-blur-sm">
                 <span className="text-white text-xs font-bold">{uploadProgress}%</span>
               </div>
             )}
-          </div>
+          </label>
 
           <div className="flex-1 min-w-0">
             {editingName? (
@@ -321,10 +323,37 @@ export default function Profile() {
                 {userData.name}
               </h1>
             )}
-            <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
-              {userData.online? "Đang hoạt động" : "Ngoại tuyến"}
-            </p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <Circle className={`w-2 h-2 fill-current ${userData.online? "text-green-500" : "text-gray-400"}`} />
+              <span className="text-sm text-gray-500 dark:text-zinc-400 font-medium">
+                {userData.online? "Đang hoạt động" : "Ngoại tuyến"}
+              </span>
+            </div>
           </div>
+        </div>
+
+        {/* QUICK STATS PILL - Mới */}
+        <div className="flex items-center gap-2 mt-5">
+          <button
+            onClick={() => router.push("/tasks")}
+            className="flex-1 py-2.5 rounded-2xl bg-gray-50 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95 transition"
+          >
+            <ClipboardList className="w-4 h-4 text-gray-600 dark:text-zinc-400" />
+            <span className="text-sm font-bold text-gray-900 dark:text-white">{userData.stats?.tasks || 0}</span>
+            <span className="text-xs text-gray-500 dark:text-zinc-500">Task</span>
+          </button>
+          <button
+            onClick={() => router.push("/plans")}
+            className="flex-1 py-2.5 rounded-2xl bg-gray-50 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95 transition"
+          >
+            <Zap className="w-4 h-4 text-gray-600 dark:text-zinc-400" />
+            <span className="text-sm font-bold text-gray-900 dark:text-white">{userData.stats?.plans || 0}</span>
+            <span className="text-xs text-gray-500 dark:text-zinc-500">Plan</span>
+          </button>
+          <button className="flex-1 py-2.5 rounded-2xl bg-gray-50 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95 transition">
+            <Star className="w-4 h-4 text-gray-600 dark:text-zinc-400" />
+            <span className="text-sm font-bold text-gray-900 dark:text-white">{userData.stats?.rating || 0}</span>
+          </button>
         </div>
       </div>
 
@@ -339,13 +368,13 @@ export default function Profile() {
         <div>
           <div className="text-xs font-bold text-gray-400 dark:text-zinc-600 tracking-wider mb-1">BẢO MẬT</div>
           <Item label="Xác thực CCCD" icon={Shield} />
-          <Item label="Đổi mật khẩu" icon={Lock} />
+          <Item label="Đổi mật khẩu" icon={Lock} onClick={() => router.push("/settings/change-password")} />
         </div>
 
         <div>
           <div className="text-xs font-bold text-gray-400 dark:text-zinc-600 tracking-wider mb-1">HỖ TRỢ</div>
           <Item label="Trung tâm trợ giúp" icon={HelpCircle} />
-          <Item label="Cài đặt" icon={Settings} />
+          <Item label="Cài đặt" icon={Settings} onClick={() => router.push("/settings")} />
           <Item label="Đăng xuất" icon={LogOut} onClick={() => setShowLogoutModal(true)} danger />
           <Item label="Xoá tài khoản" icon={Trash2} onClick={() => setShowDeleteModal(true)} danger />
         </div>
