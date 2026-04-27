@@ -107,6 +107,7 @@ export default function SessionsPage() {
                       Hoạt động: {new Date(session.lastActive).toLocaleString("vi-VN")}
                     </p>
                   </div>
+                </div>
                 {!session.current && (
                   <button
                     onClick={() => removeSession(session.id)}
