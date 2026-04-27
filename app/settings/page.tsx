@@ -12,7 +12,7 @@ import {
   Eye, EyeOff, UserX, Shield, Lock, Smartphone, Key, Trash2,
   Globe, DollarSign, Download, Zap, Database, Info, LogOut,
   ChevronRight, Monitor, Languages, MapPin, Calendar,
-  MessageSquare, Users, AtSign, SmartphoneNfc
+  MessageSquare, Users, AtSign
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 
