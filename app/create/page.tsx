@@ -10,10 +10,10 @@ const OPTIONS = [
     desc: "Thuê người làm, giao hàng, freelance, part-time...",
     icon: FiBriefcase,
     href: "/create/task",
-    gradient: "from-blue-500 to-indigo-600",
-    bg: "bg-blue-50 dark:bg-blue-950/30",
-    iconBg: "bg-blue-100 dark:bg-blue-900/50",
-    iconColor: "text-blue-600 dark:text-blue-400",
+    gradient: "from-sky-500 to-blue-600",
+    bg: "bg-sky-50 dark:bg-sky-950/30",
+    iconBg: "bg-sky-100 dark:bg-sky-900/50",
+    iconColor: "text-sky-600 dark:text-sky-400",
   },
   {
     id: "plan",
@@ -21,10 +21,10 @@ const OPTIONS = [
     desc: "Hẹn hò, offline, sự kiện, du lịch, workshop...",
     icon: FiCalendar,
     href: "/create/plan",
-    gradient: "from-violet-500 to-purple-600",
-    bg: "bg-violet-50 dark:bg-violet-950/30",
-    iconBg: "bg-violet-100 dark:bg-violet-900/50",
-    iconColor: "text-violet-600 dark:text-violet-400",
+    gradient: "from-green-500 to-emerald-500",
+    bg: "bg-green-50 dark:bg-green-950/30",
+    iconBg: "bg-green-100 dark:bg-green-900/50",
+    iconColor: "text-green-600 dark:text-green-400",
   },
 ];
 
@@ -38,9 +38,9 @@ export default function CreatePage() {
           transition={{ duration: 0.5 }}
           className="text-center mb-12"
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-blue-500/10 to-violet-500/10 border border-blue-500/20 mb-4">
-            <FiZap className="text-blue-500" size={16} />
-            <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-sky-500/10 to-green-500/10 border border-sky-500/20 mb-4">
+            <FiZap className="text-sky-500" size={16} />
+            <span className="text-xs font-semibold bg-gradient-to-r from-sky-600 to-green-600 bg-clip-text text-transparent">
               Bắt đầu ngay
             </span>
           </div>
@@ -62,7 +62,7 @@ export default function CreatePage() {
             >
               <Link href={opt.href} className="block group">
                 <div
-                  className={`relative p-5 rounded-2xl border-2 border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-transparent hover:shadow-xl hover:shadow-${opt.id === "task" ? "blue" : "violet"}-500/20 transition-all duration-300 active:scale-[0.98]`}
+                  className={`relative p-5 rounded-2xl border-2 border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-transparent hover:shadow-xl hover:shadow-${opt.id === "task" ? "sky" : "green"}-500/20 transition-all duration-300 active:scale-[0.98]`}
                 >
                   <div
                     className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${opt.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10 blur-xl`}
@@ -104,7 +104,7 @@ export default function CreatePage() {
             Không chắc chọn gì?{" "}
             <Link
               href="/help/create"
-              className="text-blue-500 hover:text-blue-600 font-medium"
+              className="text-sky-500 hover:text-sky-600 font-medium"
             >
               Xem hướng dẫn
             </Link>
