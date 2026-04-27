@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { getFirebaseDB } from "@/lib/firebase";
 import {
   collection,
@@ -20,7 +20,7 @@ import { FiMapPin, FiRefreshCw } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 import { toast } from "sonner";
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 20;
 type TabId = "hot" | "near" | "friends" | "new";
 
 /* ================= SKELETON ================= */
@@ -54,7 +54,7 @@ export default function Home() {
   const [db, setDb] = useState<any>(null);
   const [mode, setMode] = useState<AppMode>("task");
   const [activeTab, setActiveTab] = useState<TabId>("hot");
-  const [tasks, setTasks] = useState<any[]>([]);
+  const [allTasks, setAllTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastDoc, setLastDoc] =
@@ -78,7 +78,7 @@ export default function Home() {
     }
   }, [db]);
 
-  /* ================= BUILD QUERY ================= */
+  /* ================= BUILD QUERY - CHỈ QUERY CƠ BẢN ================= */
   const buildQuery = useCallback(
     (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
       if (!db) return null;
@@ -87,26 +87,16 @@ export default function Home() {
         where("visibility", "==", "public"),
         where("banned", "==", false),
         where("price", mode === "task"? ">" : "==", 0),
+        orderBy("createdAt", "desc"), // Chỉ orderBy 1 field để không cần index
+        limit(PAGE_SIZE),
       ];
 
-      if (activeTab === "hot") {
-        constraints.push(orderBy("likeCount", "desc"));
-        constraints.push(orderBy("createdAt", "desc"));
-      } else if (activeTab === "new") {
-        constraints.push(orderBy("createdAt", "desc"));
-      } else if (activeTab === "near") {
-        constraints.push(orderBy("createdAt", "desc"));
-      } else if (activeTab === "friends") {
-        constraints.push(orderBy("createdAt", "desc"));
-      }
-
-      constraints.push(limit(PAGE_SIZE));
       if (startAfterDoc) {
         constraints.push(startAfter(startAfterDoc));
       }
       return query(collection(db, "tasks"),...constraints);
     },
-    [db, mode, activeTab]
+    [db, mode]
   );
 
   /* ================= LOAD DATA ================= */
@@ -120,7 +110,7 @@ export default function Home() {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
       setError(null);
-      setTasks([]);
+      setAllTasks([]);
       setLastDoc(null);
       setHasMore(true);
 
@@ -132,9 +122,9 @@ export default function Home() {
         (snap) => {
           const data = snap.docs.map((doc) => ({
             id: doc.id,
-         ...doc.data(),
+       ...doc.data(),
           }));
-          setTasks(data);
+          setAllTasks(data);
           setLastDoc(snap.docs[snap.docs.length - 1] || null);
           setHasMore(snap.docs.length === PAGE_SIZE);
           setLoading(false);
@@ -143,7 +133,7 @@ export default function Home() {
         (err) => {
           console.error("Firestore error:", err);
           setError("Lỗi tải dữ liệu");
-          setTasks([]);
+          setAllTasks([]);
           setHasMore(false);
           setLoading(false);
           setRefreshing(false);
@@ -172,9 +162,9 @@ export default function Home() {
       const snap = await getDocs(q);
       const newTasks = snap.docs.map((doc) => ({
         id: doc.id,
-     ...doc.data(),
+   ...doc.data(),
       }));
-      setTasks((prev) => [...prev,...newTasks]);
+      setAllTasks((prev) => [...prev,...newTasks]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
       setHasMore(snap.docs.length === PAGE_SIZE);
     } catch (err) {
@@ -202,6 +192,25 @@ export default function Home() {
     observerRef.current.observe(loadMoreRef.current);
     return () => observerRef.current?.disconnect();
   }, [loading, hasMore, loadingMore, loadMore]);
+
+  /* ================= FILTER TASKS THEO TAB - CLIENT SIDE ================= */
+  const filteredTasks = useMemo(() => {
+    let result = [...allTasks];
+
+    if (activeTab === "hot") {
+      // Sort theo likeCount client-side
+      result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+    } else if (activeTab === "near") {
+      // TODO: filter theo location, tạm thời trả về rỗng để hiện empty state
+      result = [];
+    } else if (activeTab === "friends") {
+      // TODO: filter theo following, tạm thời trả về rỗng để hiện empty state
+      result = [];
+    }
+    // new thì giữ nguyên order createdAt
+
+    return result;
+  }, [allTasks, activeTab]);
 
   /* ================= PULL TO REFRESH ================= */
   const handleRefresh = () => {
@@ -239,7 +248,7 @@ export default function Home() {
                   }}
                   className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
                     active
-          ? `text-${tab.color}-600 dark:text-${tab.color}-400`
+        ? `text-${tab.color}-600 dark:text-${tab.color}-400`
                       : "text-gray-400 dark:text-zinc-500"
                   }`}
                 >
@@ -278,11 +287,11 @@ export default function Home() {
         {loading && <SkeletonList />}
 
         {!loading &&!error && (
-          <TaskFeed tasks={tasks} mode={mode} activeTab={activeTab} />
+          <TaskFeed tasks={filteredTasks} mode={mode} activeTab={activeTab} />
         )}
 
         {/* Infinite scroll trigger */}
-        {!loading && hasMore && tasks.length > 0 && (
+        {!loading && hasMore && allTasks.length > 0 && (
           <div ref={loadMoreRef} className="px-4 py-6 flex justify-center">
             {loadingMore && (
               <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
