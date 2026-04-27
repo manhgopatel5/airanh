@@ -42,7 +42,7 @@ function TaskCard({ task, mode }: Props) {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, setCurrentUser);
     return () => unsub();
-  }, [auth]);
+  }, );
 
   if (!task) return <Skeleton />;
 
@@ -267,6 +267,7 @@ function Skeleton() {
           <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
           <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/3" />
         </div>
+      </div>
       <div className="h-5 bg-gray-200 dark:bg-zinc-800 rounded w-3/4 mb-2" />
       <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-full" />
     </div>
