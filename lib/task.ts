@@ -510,14 +510,14 @@ export const listenTasks = (
   callback: (items: TaskListItem[]) => void,
   options?: Parameters<typeof listenItems>[1]
 ): Unsubscribe => {
-  return listenItems(callback, {...options, type: "task" }) as Unsubscribe;
+  return listenItems((items) => callback(items as TaskListItem[]), {...options, type: "task" });
 };
 
 export const listenPlans = (
   callback: (items: PlanListItem[]) => void,
   options?: Parameters<typeof listenItems>[1]
 ): Unsubscribe => {
-  return listenItems(callback, {...options, type: "plan" }) as Unsubscribe;
+  return listenItems((items) => callback(items as PlanListItem[]), {...options, type: "plan" });
 };
 
 /* ================= JOIN TASK ================= */
