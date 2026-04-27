@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { ChevronLeft, Database, Trash2, Image, MessageSquare, FileText } from "lucide-react";
 import { toast, Toaster } from "sonner";
 
