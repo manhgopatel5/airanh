@@ -103,7 +103,7 @@ export default function TaskFeed({ tasks, mode, activeTab }: Props) {
   const router = useRouter();
 
   if (tasks.length === 0) {
-    const config = emptyConfig[activeTab];
+    const config = emptyConfig[mode][activeTab];
     return (
       <div className="flex flex-col items-center justify-center px-6 py-20 text-center animate-in fade-in duration-300">
         <div className="text-6xl mb-4 animate-bounce">{config.icon}</div>
@@ -145,6 +145,4 @@ export default function TaskFeed({ tasks, mode, activeTab }: Props) {
           <TaskCard task={task} mode={mode} />
         </div>
       ))}
-    </div>
-  );
-}
+    </
