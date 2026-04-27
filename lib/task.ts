@@ -185,14 +185,18 @@ export async function updateTask(
 
     if (data.userId!== userId) throw new TaskError("Bạn không có quyền sửa");
     if (data.status!== "open") throw new TaskError("Chỉ sửa được công việc đang mở");
-    if (data.deadline && data.deadline.toMillis() < Date.now()) throw new TaskError("Công việc đã hết hạn");
-    if (data.banned) throw new TaskError("Công việc đã bị cấm");
+
+    if (data.type === "task") {
+      const taskData = data as TaskItem;
+      if (taskData.deadline && taskData.deadline.toMillis() < Date.now()) throw new TaskError("Công việc đã hết hạn");
+      if (taskData.banned) throw new TaskError("Công việc đã bị cấm");
+      if (updates.totalSlots && updates.totalSlots < taskData.joined) throw new TaskError("Số người không được nhỏ hơn đã tham gia");
+    }
 
     if (updates.title && updates.title.length < 10) throw new TaskError("Tiêu đề quá ngắn");
     if (updates.description && updates.description.length < 20) throw new TaskError("Mô tả quá ngắn");
     if (updates.price && (updates.price < 1000 || updates.price > 100000000)) throw new TaskError("Giá không hợp lệ");
     if (updates.totalSlots && (updates.totalSlots < 1 || updates.totalSlots > 100)) throw new TaskError("Số người không hợp lệ");
-    if (updates.totalSlots && updates.totalSlots < data.joined) throw new TaskError("Số người không được nhỏ hơn đã tham gia");
     if (updates.images && updates.images.length > 5) throw new TaskError("Tối đa 5 ảnh");
 
     const newTags = updates.title || updates.description || updates.category
@@ -205,8 +209,8 @@ export async function updateTask(
         title: updates.title || data.title,
         description: updates.description || data.description,
         tags: newTags,
-  ...(updates.category? { category: updates.category } : data.category? { category: data.category } : {}),
-  ...(updates.location? { location: updates.location } : data.location? { location: data.location } : {}),
+ ...(updates.category? { category: updates.category } : data.category? { category: data.category } : {}),
+ ...(updates.location? { location: updates.location } : data.location? { location: data.location } : {}),
       }),
       edited: true,
       editedAt: serverTimestamp(),
