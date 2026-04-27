@@ -14,7 +14,7 @@ import {
 } from "firebase/firestore";
 import TaskFeed from "@/components/TaskFeed";
 import ModeToggle from "@/components/ModeToggle";
-import { AppMode, Task, TaskItem, PlanItem, TaskListItem, PlanListItem, ItemListItem, isTask, isPlan } from "@/types/task";
+import { AppMode, Task, TaskItem, PlanItem, TaskListItem, PlanListItem, isTask, isPlan } from "@/types/task";
 import { FiMapPin, FiRefreshCw } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 import { toast } from "sonner";
@@ -36,7 +36,6 @@ function SkeletonList() {
               <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-1/3 animate-pulse" />
               <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-1/4 animate-pulse" />
             </div>
-          </div>
           <div className="space-y-2">
             <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-3/4 animate-pulse" />
             <div className="h-20 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded-2xl animate-pulse" />
@@ -118,7 +117,7 @@ export default function Home() {
           console.log("Firestore success, docs:", snap.docs.length);
           const data = snap.docs.map((doc) => ({
             id: doc.id,
-       ...doc.data(),
+      ...doc.data(),
           })) as Task[];
           setAllItems(data);
           setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -170,7 +169,7 @@ export default function Home() {
       const snap = await getDocs(q);
       const newItems = snap.docs.map((doc) => ({
         id: doc.id,
-   ...doc.data(),
+  ...doc.data(),
       })) as Task[];
       setAllItems((prev) => [...prev,...newItems]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -200,7 +199,7 @@ export default function Home() {
     return () => observerRef.current?.disconnect();
   }, [loading, hasMore, loadingMore, loadMore]);
 
-  const filteredItems: ItemListItem[] = useMemo(() => {
+  const filteredItems = useMemo(() => {
     let result = [...allItems];
 
     if (mode === "task") {
@@ -216,8 +215,8 @@ export default function Home() {
         t.banned!== true
     );
 
-    const listItems: ItemListItem[] = result.map((item) => {
-      if (isTask(item)) {
+    if (mode === "task") {
+      const taskListItems: TaskListItem[] = result.map((item) => {
         const task = item as TaskItem;
         return {
           id: task.id,
@@ -248,8 +247,17 @@ export default function Home() {
           type: task.type,
           deadline: task.deadline,
           startDate: task.startDate,
-        } as TaskListItem;
-      } else {
+        };
+      });
+
+      if (activeTab === "hot") {
+        taskListItems.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+      } else if (activeTab === "near" || activeTab === "friends") {
+        return [];
+      }
+      return taskListItems;
+    } else {
+      const planListItems: PlanListItem[] = result.map((item) => {
         const plan = item as PlanItem;
         return {
           id: plan.id,
@@ -279,19 +287,16 @@ export default function Home() {
           costType: plan.costType,
           costAmount: plan.costAmount,
           milestones: plan.milestones,
-        } as PlanListItem;
+        };
+      });
+
+      if (activeTab === "hot") {
+        planListItems.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+      } else if (activeTab === "near" || activeTab === "friends") {
+        return [];
       }
-    });
-
-    if (activeTab === "hot") {
-      listItems.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-    } else if (activeTab === "near") {
-      return [];
-    } else if (activeTab === "friends") {
-      return [];
+      return planListItems;
     }
-
-    return listItems;
   }, [allItems, mode, activeTab]);
 
   const handleRefresh = () => {
@@ -325,7 +330,7 @@ export default function Home() {
                   }}
                   className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
                     active
-               ? `text-${tab.color}-600 dark:text-${tab.color}-400`
+              ? `text-${tab.color}-600 dark:text-${tab.color}-400`
                       : "text-gray-400 dark:text-zinc-500"
                   }`}
                 >
