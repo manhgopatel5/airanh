@@ -117,7 +117,7 @@ export default function Home() {
           console.log("Firestore success, docs:", snap.docs.length);
           const data = snap.docs.map((doc) => ({
             id: doc.id,
-          ...doc.data(),
+         ...doc.data(),
           })) as Task[];
           setAllItems(data);
           setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -169,7 +169,7 @@ export default function Home() {
       const snap = await getDocs(q);
       const newItems = snap.docs.map((doc) => ({
         id: doc.id,
-      ...doc.data(),
+     ...doc.data(),
       })) as Task[];
       setAllItems((prev) => [...prev,...newItems]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -202,14 +202,12 @@ export default function Home() {
   const filteredItems: ItemListItem[] = useMemo(() => {
     let result = [...allItems];
 
-    // 1. Filter theo type
     if (mode === "task") {
       result = result.filter((t) => isTask(t));
     } else {
       result = result.filter((t) => isPlan(t));
     }
 
-    // 2. Filter chung
     result = result.filter(
       (t) =>
         (t.status === "open" || t.status === "full") &&
@@ -217,7 +215,6 @@ export default function Home() {
         t.banned!== true
     );
 
-    // 3. Map về ListItem để match TaskFeed props
     const listItems: ItemListItem[] = result.map((item) => {
       if (isTask(item)) {
         const task = item as TaskItem;
@@ -285,11 +282,8 @@ export default function Home() {
       }
     });
 
-    // 4. Sort theo tab
     if (activeTab === "hot") {
       listItems.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-    } else if (activeTab === "new") {
-      // Đã orderBy createdAt desc từ query
     } else if (activeTab === "near") {
       return [];
     } else if (activeTab === "friends") {
@@ -330,7 +324,7 @@ export default function Home() {
                   }}
                   className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
                     active
-                  ? `text-${tab.color}-600 dark:text-${tab.color}-400`
+                 ? `text-${tab.color}-600 dark:text-${tab.color}-400`
                       : "text-gray-400 dark:text-zinc-500"
                   }`}
                 >
