@@ -24,6 +24,7 @@ import {
 import { nanoid } from "nanoid";
 import { toast, Toaster } from "sonner";
 import InstallPrompt from "@/components/InstallPrompt";
+import { motion } from "framer-motion";
 
 export default function Login() {
   const router = useRouter();
@@ -45,27 +46,24 @@ export default function Login() {
   const failedAttempts = useRef(0);
   const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  /* INIT FIREBASE */
   useEffect(() => {
     authRef.current = getFirebaseAuth();
     dbRef.current = getFirebaseDB();
   }, []);
 
-  /* CLEANUP */
   useEffect(() => {
     return () => {
       if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
     };
   }, []);
 
-  /* VALIDATION */
   const validateField = (field: string, value: string) => {
     if (field === "email") {
       if (!value) return "Vui lòng nhập email";
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
         return "Email không hợp lệ";
     }
-    if (field === "password" && !value)
+    if (field === "password" &&!value)
       return "Vui lòng nhập mật khẩu";
     return "";
   };
@@ -80,7 +78,6 @@ export default function Login() {
     return Object.keys(newErrors).length === 0;
   };
 
-  /* LOGIN */
   const handleLogin = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (form.honeypot) return;
@@ -88,7 +85,7 @@ export default function Login() {
     const auth = authRef.current;
     const db = dbRef.current;
 
-    if (!auth || !db) {
+    if (!auth ||!db) {
       toast.error("Firebase chưa sẵn sàng");
       return;
     }
@@ -113,7 +110,7 @@ export default function Login() {
       await setPersistence(
         auth,
         remember
-          ? browserLocalPersistence
+         ? browserLocalPersistence
           : browserSessionPersistence
       );
 
@@ -135,7 +132,7 @@ export default function Login() {
       const userRef = doc(db, "users", user.uid);
       const snap = await getDoc(userRef).catch(() => null);
 
-      if (!snap || !snap.exists()) {
+      if (!snap ||!snap.exists()) {
         await setDoc(userRef, {
           uid: user.uid,
           email: user.email,
@@ -198,86 +195,104 @@ export default function Login() {
       <Toaster richColors position="top-center" />
       <InstallPrompt />
 
-      <div className="h-screen flex items-center justify-center px-5">
-        <div className="w-full max-w-[400px]">
+      <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex items-center justify-center px-4">
+        <div className="w-full max-w-sm">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-gray-100 mb-6">
+              Đăng nhập
+            </h1>
 
-          <h1 className="text-2xl font-bold text-center mb-6">
-            Đăng nhập
-          </h1>
+            {errors.submit && (
+              <div className="text-red-500 mb-4 flex items-center gap-2 text-sm">
+                <FiAlertCircle size={16} /> {errors.submit}
+              </div>
+            )}
 
-          {errors.submit && (
-            <div className="text-red-500 mb-4 flex items-center gap-2">
-              <FiAlertCircle /> {errors.submit}
-            </div>
-          )}
-
-          <form onSubmit={handleLogin} className="space-y-4">
-
-
-            <input
-              type="text"
-              className="hidden"
-              value={form.honeypot}
-              onChange={(e) =>
-                setForm({ ...form, honeypot: e.target.value })
-              }
-            />
-
-            <div className="flex items-center border p-3 rounded">
-              <FiMail />
+            <form onSubmit={handleLogin} className="space-y-4">
               <input
-                className="ml-2 w-full outline-none"
-                placeholder="Email"
-                value={form.email}
+                type="text"
+                className="hidden"
+                value={form.honeypot}
                 onChange={(e) =>
-                  setForm({ ...form, email: e.target.value })
+                  setForm({...form, honeypot: e.target.value })
                 }
               />
-            </div>
 
+              <div>
+                <div className="relative">
+                  <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    className={`w-full pl-10 pr-3 py-2.5 rounded-lg border text-sm ${
+                      errors.email? "border-red-500" : "border-gray-300 dark:border-zinc-700"
+                    } bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-400 outline-none transition-all`}
+                    placeholder="Email"
+                    value={form.email}
+                    onChange={(e) => {
+                      setForm({...form, email: e.target.value });
+                      if (errors.email) setErrors({...errors, email: "" });
+                    }}
+                  />
+                </div>
+                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+              </div>
 
-            <div className="flex items-center border p-3 rounded">
-              <FiLock />
-              <input
-                type={show ? "text" : "password"}
-                className="ml-2 w-full outline-none"
-                placeholder="Mật khẩu"
-                value={form.password}
-                onChange={(e) =>
-                  setForm({ ...form, password: e.target.value })
-                }
-              />
-              <button type="button" onClick={handleShowPass}>
-                {show ? <FiEyeOff /> : <FiEye />}
-              </button>
-            </div>
-            <div className="flex items-center justify-between text-sm pt-1.5">
-  <label className="flex items-center gap-2.5 cursor-pointer select-none">
-    <input
-      type="checkbox"
-      checked={remember}
-      onChange={(e) => setRemember(e.target.checked)}
-      className="w-4 h-4"
-    />
-    <span>Ghi nhớ đăng nhập</span>
-  </label>
-</div>
+              <div>
+                <div className="relative">
+                  <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    type={show? "text" : "password"}
+                    className={`w-full pl-10 pr-10 py-2.5 rounded-lg border text-sm ${
+                      errors.password? "border-red-500" : "border-gray-300 dark:border-zinc-700"
+                    } bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-400 outline-none transition-all`}
+                    placeholder="Mật khẩu"
+                    value={form.password}
+                    onChange={(e) => {
+                      setForm({...form, password: e.target.value });
+                      if (errors.password) setErrors({...errors, password: "" });
+                    }}
+                  />
+                  <button 
+                    type="button" 
+                    onClick={handleShowPass}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {show? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                  </button>
+                </div>
+                {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+              </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-500 text-white py-3 rounded"
-            >
-              {loading ? "Đang đăng nhập..." : "Đăng nhập"}
-            </button>
-          </form>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 dark:border-zinc-700 text-gray-900 focus:ring-gray-400"
+                />
+                <span className="text-sm text-gray-700 dark:text-zinc-300">Ghi nhớ đăng nhập</span>
+              </label>
 
-          <p className="text-center mt-4">
-            Chưa có tài khoản?{" "}
-            <Link href="/register" className="text-blue-500">
-              Đăng ký
-            </Link>
-          </p>
+              <motion.button
+                type="submit"
+                whileTap={{ scale: 0.98 }}
+                disabled={loading}
+                className="w-full py-3 rounded-lg text-white font-semibold text-sm bg-gray-900 dark:bg-gray-100 dark:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {loading? "Đang đăng nhập..." : "Đăng nhập"}
+              </motion.button>
+            </form>
+
+            <p className="text-center text-sm text-gray-600 dark:text-zinc-400 mt-4">
+              Chưa có tài khoản?{" "}
+              <Link href="/register" className="font-semibold text-gray-900 dark:text-gray-100 hover:underline">
+                Đăng ký
+              </Link>
+            </p>
+          </motion.div>
         </div>
       </div>
     </>
