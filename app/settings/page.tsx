@@ -11,7 +11,7 @@ import {
   ChevronLeft, Moon, Sun, Palette, Bell, Clock, Mail,
   Eye, EyeOff, UserX, Shield, Lock, Smartphone, Key, Trash2,
   Globe, DollarSign, Download, Zap, Database, Info, LogOut,
-  ChevronRight, Check, Monitor, Languages, MapPin, Calendar,
+  ChevronRight, Monitor, Languages, MapPin, Calendar,
   MessageSquare, Users, AtSign, UserCheck, SmartphoneNfc
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
