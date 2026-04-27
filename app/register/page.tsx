@@ -18,7 +18,8 @@ import {
   signInWithEmailLink,
   setPersistence,
   browserLocalPersistence,
-  onAuthStateChanged
+  onAuthStateChanged,
+  getAdditionalUserInfo
 } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore";
@@ -83,9 +84,15 @@ export default function Register() {
     getRedirectResult(authRef.current)
     .then(async (result) => {
         if (result) {
-          await updateUserDoc(result.user, true);
-          toast.success("Đăng nhập thành công");
-          router.replace(redirectTo);
+          const info = getAdditionalUserInfo(result);
+          await updateUserDoc(result.user, info?.isNewUser);
+          if (info?.isNewUser) {
+            toast.success("Chào mừng bạn đến Airanh!");
+            router.replace("/onboarding");
+          } else {
+            toast.success("Đăng nhập thành công");
+            router.replace(redirectTo);
+          }
         }
       })
     .catch(() => setErrors({ submit: "Đăng nhập Google thất bại" }));
@@ -198,10 +205,17 @@ export default function Register() {
         await signInWithRedirect(authRef.current, provider);
       } else {
         const res = await signInWithPopup(authRef.current, provider);
-        await updateUserDoc(res.user, true);
+        const info = getAdditionalUserInfo(res);
+        await updateUserDoc(res.user, info?.isNewUser);
         localStorage.setItem("last_email", res.user.email || "");
-        toast.success("Đăng ký thành công");
-        router.replace(redirectTo);
+
+        if (info?.isNewUser) {
+          toast.success("Chào mừng bạn đến Airanh!");
+          router.replace("/onboarding");
+        } else {
+          toast.success("Đăng nhập thành công");
+          router.replace(redirectTo);
+        }
       }
     } catch (err: any) {
       if (err.code === "auth/popup-blocked") {
@@ -232,7 +246,7 @@ export default function Register() {
       setErrors({});
 
       await sendSignInLinkToEmail(authRef.current, form.email, {
-        url: window.location.origin + "/login",
+        url: window.location.origin + "/register",
         handleCodeInApp: true,
       });
 
@@ -460,17 +474,50 @@ export default function Register() {
                 {touched.confirmPassword && errors.confirmPassword && <p className="text-red-500 text-xs mt-1.5 ml-1">{errors.confirmPassword}</p>}
               </div>
 
-              {/* TERMS + PRIVACY */}
+              {/* TERMS + PRIVACY - FIXED */}
               <div className="space-y-2">
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" checked={acceptTerms} onChange={(e) => { setAcceptTerms(e.target.checked); if (errors.terms) setErrors({...errors, terms: "" }); }} className="mt-0.5 w-4 h-4 text-sky-500 rounded focus:ring-2 focus:ring-sky-400/20" />
-                  <span className="text-sm text-gray-600">Tôi đồng ý với <Link href="/terms" className="text-sky-600 font-semibold hover:text-sky-700">Điều khoản</Link></span>
-                </label>
+                <div className="flex items-start gap-3">
+                  <input 
+                    type="checkbox" 
+                    id="terms"
+                    checked={acceptTerms} 
+                    onChange={(e) => { setAcceptTerms(e.target.checked); if (errors.terms) setErrors({...errors, terms: "" }); }} 
+                    className="mt-0.5 w-4 h-4 text-sky-500 rounded focus:ring-2 focus:ring-sky-400/20 cursor-pointer" 
+                  />
+                  <label htmlFor="terms" className="text-sm text-gray-600 cursor-pointer">
+                    Tôi đồng ý với{" "}
+                    <Link 
+                      href="/terms" 
+                      target="_blank" 
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-sky-600 font-semibold hover:text-sky-700 underline"
+                    >
+                      Điều khoản
+                    </Link>
+                  </label>
+                </div>
                 {errors.terms && <p className="text-red-500 text-xs">{errors.terms}</p>}
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" checked={acceptPrivacy} onChange={(e) => { setAcceptPrivacy(e.target.checked); if (errors.privacy) setErrors({...errors, privacy: "" }); }} className="mt-0.5 w-4 h-4 text-sky-500 rounded focus:ring-2 focus:ring-sky-400/20" />
-                  <span className="text-sm text-gray-600">Tôi đồng ý với <Link href="/privacy" className="text-sky-600 font-semibold hover:text-sky-700">Chính sách bảo mật</Link></span>
-                </label>
+                
+                <div className="flex items-start gap-3">
+                  <input 
+                    type="checkbox" 
+                    id="privacy"
+                    checked={acceptPrivacy} 
+                    onChange={(e) => { setAcceptPrivacy(e.target.checked); if (errors.privacy) setErrors({...errors, privacy: "" }); }} 
+                    className="mt-0.5 w-4 h-4 text-sky-500 rounded focus:ring-2 focus:ring-sky-400/20 cursor-pointer" 
+                  />
+                  <label htmlFor="privacy" className="text-sm text-gray-600 cursor-pointer">
+                    Tôi đồng ý với{" "}
+                    <Link 
+                      href="/privacy" 
+                      target="_blank"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-sky-600 font-semibold hover:text-sky-700 underline"
+                    >
+                      Chính sách bảo mật
+                    </Link>
+                  </label>
+                </div>
                 {errors.privacy && <p className="text-red-500 text-xs">{errors.privacy}</p>}
               </div>
 
