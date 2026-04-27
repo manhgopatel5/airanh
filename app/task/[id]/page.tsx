@@ -59,15 +59,15 @@ export default function TaskDetailPage() {
   const [timeLeft, setTimeLeft] = useState("");
   const [joining, setJoining] = useState(false);
 
-  const applicants = task?.applicants ?? [];
+  const applicants = task?.applicants?? [];
 
   const isFull = useMemo(
-    () => applicants.length >= (task && isTask(task) ? task.totalSlots : 1),
+    () => applicants.length >= (task && isTask(task)? task.totalSlots : 1),
     [applicants, task]
   );
 
   const isApplied = useMemo(
-    () => !!currentUser && applicants.includes(currentUser.uid),
+    () =>!!currentUser && applicants.includes(currentUser.uid),
     [applicants, currentUser]
   );
 
@@ -81,7 +81,7 @@ export default function TaskDetailPage() {
 
   /* ================= LOAD TASK ================= */
   useEffect(() => {
-    if (!id || typeof id !== "string") return;
+    if (!id || typeof id!== "string") return;
 
     const loadTask = async () => {
       try {
@@ -108,7 +108,7 @@ export default function TaskDetailPage() {
     if (!task) return;
 
     const loadUsers = async () => {
-      const userIds = [task.userId, ...applicants];
+      const userIds = [task.userId,...applicants];
       const uniqueIds = [...new Set(userIds)];
 
       const snaps = await Promise.all(
@@ -116,8 +116,8 @@ export default function TaskDetailPage() {
       );
 
       const users = snaps
-        .filter((s) => s.exists())
-        .map((s) => ({ uid: s.id, ...(s.data() as any) } as UserData));
+       .filter((s) => s.exists())
+       .map((s) => ({ uid: s.id,...(s.data() as any) } as UserData));
 
       setOwner(users.find((u) => u.uid === task.userId) || null);
       setApplicantsData(users.filter((u) => applicants.includes(u.uid)));
@@ -128,7 +128,7 @@ export default function TaskDetailPage() {
 
   /* ================= COUNTDOWN ================= */
   useEffect(() => {
-    if (!task?.deadline?.seconds) return;
+    if (!task ||!isTask(task) ||!task.deadline?.seconds) return;
 
     const tick = () => {
       const diff = task.deadline!.seconds * 1000 - Date.now();
@@ -145,7 +145,7 @@ export default function TaskDetailPage() {
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [task?.deadline]);
+  }, [task]);
 
   /* ================= COMMENTS ================= */
   useEffect(() => {
@@ -169,7 +169,7 @@ export default function TaskDetailPage() {
 
   /* ================= ACTIONS ================= */
   const handleJoinTask = async () => {
-    if (!currentUser || !task || isApplied || isFull || joining || isOwner) return;
+    if (!currentUser ||!task || isApplied || isFull || joining || isOwner) return;
 
     try {
       setJoining(true);
@@ -187,7 +187,7 @@ export default function TaskDetailPage() {
   };
 
   const handleSendComment = async () => {
-    if (!currentUser || !task || !text.trim() || sending) return;
+    if (!currentUser ||!task ||!text.trim() || sending) return;
 
     setSending(true);
     const temp = text;
@@ -204,7 +204,7 @@ export default function TaskDetailPage() {
         },
         {
           text: DOMPurify.sanitize(temp),
-          ...(replyTo && {
+         ...(replyTo && {
             parentId: replyTo.id,
             replyToUserId: replyTo.userId,
             replyToUserName: replyTo.userName,
@@ -235,7 +235,7 @@ export default function TaskDetailPage() {
   if (!task)
     return <div className="p-4">Không tìm thấy task</div>;
 
-  const parentComments = comments.filter((c) => !c.parentId);
+  const parentComments = comments.filter((c) =>!c.parentId);
 
   return (
     <>
@@ -279,11 +279,11 @@ export default function TaskDetailPage() {
               className="px-4 py-2 rounded-lg bg-blue-600 text-white disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-medium"
             >
               {joining
-                ? "Đang xử lý..."
+               ? "Đang xử lý..."
                 : isApplied
-                ? "Đã ứng tuyển"
+               ? "Đã ứng tuyển"
                 : isFull
-                ? "Đã đủ người"
+               ? "Đã đủ người"
                 : "Ứng tuyển"}
             </button>
           )}
@@ -294,7 +294,7 @@ export default function TaskDetailPage() {
           <div className="flex items-center gap-2">
             <FiUsers className="text-gray-500" />
             <span>
-              {applicants.length}/{task && isTask(task) ? task.totalSlots : 1} ứng tuyển
+              {applicants.length}/{task && isTask(task)? task.totalSlots : 1} ứng tuyển
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -344,7 +344,7 @@ export default function TaskDetailPage() {
                 <div className="flex-1">
                   <div className="bg-gray-100 dark:bg-zinc-800 rounded-lg px-3 py-2">
                     <div className="font-semibold">{c.userName}</div>
-                    <div>{c.deleted ? <i className="text-gray-500">Bình luận đã bị xóa</i> : c.text}</div>
+                    <div>{c.deleted? <i className="text-gray-500">Bình luận đã bị xóa</i> : c.text}</div>
                   </div>
                   {!c.deleted && (
                     <div className="flex gap-4 mt-1 text-xs text-gray-500">
@@ -352,7 +352,7 @@ export default function TaskDetailPage() {
                         onClick={() => handleLikeComment(c.id)}
                         className="flex items-center gap-1"
                       >
-                        {liked ? (
+                        {liked? (
                           <FaHeart className="text-red-500" />
                         ) : (
                           <FaRegHeart />
