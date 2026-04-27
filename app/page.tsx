@@ -17,8 +17,11 @@ import TaskFeed from "@/components/TaskFeed";
 import PlanFeed from "@/components/PlanFeed";
 import ModeToggle from "@/components/ModeToggle";
 import { AppMode } from "@/types/app";
+import { FiMapPin } from "react-icons/fi";
+import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 
 const PAGE_SIZE = 15;
+type TabId = "hot" | "near" | "friends" | "new";
 
 /* ================= SKELETON ================= */
 function SkeletonList() {
@@ -50,6 +53,7 @@ function SkeletonList() {
 export default function Home() {
   const [db, setDb] = useState<any>(null);
   const [mode, setMode] = useState<AppMode>("task");
+  const [activeTab, setActiveTab] = useState<TabId>("hot"); // ✅ Thêm tab
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastDoc, setLastDoc] =
@@ -77,13 +81,17 @@ export default function Home() {
         where("status", "in", ["open", "full"]),
         where("visibility", "==", "public"),
         where("banned", "==", false),
-        where("price", mode === "task"? ">" : "==", 0),
+        where("price", mode === "task"? ">" : "==", 0), // Task > 0, Plan = 0
       ];
 
-      if (mode === "task") {
-        constraints.push(orderBy("price", "desc"));
+      // ✅ Logic tab Hot/Near/Friends/New
+      if (activeTab === "hot") {
+        constraints.push(orderBy("likeCount", "desc"));
+        constraints.push(orderBy("createdAt", "desc"));
+      } else if (activeTab === "new") {
         constraints.push(orderBy("createdAt", "desc"));
       } else {
+        // near/friends tạm thời sort theo time
         constraints.push(orderBy("createdAt", "desc"));
       }
 
@@ -93,7 +101,7 @@ export default function Home() {
       }
       return query(collection(db, "tasks"),...constraints);
     },
-    [db, mode]
+    [db, mode, activeTab] // ✅ Thêm activeTab
   );
 
   /* ================= LOAD DATA ================= */
@@ -115,7 +123,7 @@ export default function Home() {
       (snap) => {
         const data = snap.docs.map((doc) => ({
           id: doc.id,
-       ...doc.data(),
+     ...doc.data(),
         }));
         setTasks(data);
         setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -145,7 +153,7 @@ export default function Home() {
       const snap = await getDocs(q);
       const newTasks = snap.docs.map((doc) => ({
         id: doc.id,
-     ...doc.data(),
+   ...doc.data(),
       }));
       setTasks((prev) => [...prev,...newTasks]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -157,15 +165,55 @@ export default function Home() {
     }
   }, [db, lastDoc, loadingMore, hasMore, buildQuery]);
 
+  /* ================= TABS CONFIG ================= */
+  const tabs: { id: TabId; label: string; icon: any }[] = [
+    { id: "hot", label: "Hot", icon: HiFire },
+    { id: "near", label: "Gần bạn", icon: FiMapPin },
+    { id: "friends", label: "Bạn bè", icon: HiUsers },
+    { id: "new", label: "Mới", icon: HiSparkles },
+  ];
+
   /* ================= UI ================= */
   return (
     <div className="min-h-screen pb-24 font-sans">
+      {/* Tầng 1: Task/Plan */}
       <ModeToggle
         mode={mode}
         setMode={setMode}
-        taskCount={mode === "task"? tasks.length : 0} // ✅ Đổi undefined → 0
-        planCount={mode === "plan"? tasks.length : 0} // ✅ Đổi undefined → 0
+        taskCount={0}
+        planCount={0}
       />
+
+      {/* Tầng 2: Hot/Near/Friends/New */}
+      <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800">
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="flex justify-around">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const active = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex flex-col items-center py-3 px-2 flex-1 transition-all ${
+                    active
+                 ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-400 dark:text-zinc-500 hover:text-gray-600"
+                  }`}
+                >
+                  <Icon size={20} className={active? "scale-110" : ""} />
+                  <span className="text-xs font-semibold mt-1">{tab.label}</span>
+                  <div
+                    className={`mt-1 h-0.5 rounded-full transition-all ${
+                      active? "w-6 bg-blue-600 dark:bg-blue-400" : "w-0"
+                    }`}
+                  />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
 
       <div className="pt-4">
         {loading && <SkeletonList />}
@@ -180,7 +228,7 @@ export default function Home() {
               disabled={loadingMore}
               className={`w-full py-3 font-bold text-sm rounded-2xl active:scale-95 transition-all disabled:opacity-50 ${
                 mode === "task"
-               ? "text-orange-600 dark:text-orange-400 bg-orange-500/10 dark:bg-orange-500/20"
+             ? "text-orange-600 dark:text-orange-400 bg-orange-500/10 dark:bg-orange-500/20"
                   : "text-blue-600 dark:text-blue-400 bg-blue-500/10 dark:bg-blue-500/20"
               }`}
             >
