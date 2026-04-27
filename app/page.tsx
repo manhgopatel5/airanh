@@ -36,7 +36,6 @@ function SkeletonList() {
               <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-1/3 animate-pulse" />
               <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-1/4 animate-pulse" />
             </div>
-          </div>
           <div className="space-y-2">
             <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-3/4 animate-pulse" />
             <div className="h-20 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded-2xl animate-pulse" />
@@ -118,7 +117,7 @@ export default function Home() {
           console.log("Firestore success, docs:", snap.docs.length);
           const data = snap.docs.map((doc) => ({
             id: doc.id,
-          ...doc.data(),
+         ...doc.data(),
           })) as Task[];
           setAllItems(data);
           setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -221,30 +220,30 @@ export default function Home() {
         const task = item as TaskItem;
         return {
           id: task.id,
-          slug: task.slug,
-          title: task.title,
-          price: task.price,
-          currency: task.currency,
-          totalSlots: task.totalSlots,
-          joined: task.joined,
+          slug: task.slug || "",
+          title: task.title || "",
+          price: task.price?? 0,
+          currency: task.currency || "VND",
+          totalSlots: task.totalSlots?? 1,
+          joined: task.joined?? 0,
           status: task.status,
-          userName: task.userName,
-          userAvatar: task.userAvatar,
-         ...(task.userShortId && { userShortId: task.userShortId }),
-         ...(task.userUsername && { userUsername: task.userUsername }),
+          userName: task.userName || "",
+          userAvatar: task.userAvatar || "",
+          userShortId: task.userShortId || "",
+          userUsername: task.userUsername || "",
           createdAt: task.createdAt,
-         ...(task.category && { category: task.category }),
-         ...(task.tags && { tags: task.tags }),
-         ...(task.images && { images: task.images }),
-         ...(task.viewCount!== undefined && { viewCount: task.viewCount }),
-         ...(task.likeCount!== undefined && { likeCount: task.likeCount }),
-         ...(task.commentCount!== undefined && { commentCount: task.commentCount }),
+          category: task.category || "other",
+          tags: task.tags || [],
+          images: task.images || [],
+          viewCount: task.viewCount?? 0,
+          likeCount: task.likeCount?? 0,
+          commentCount: task.commentCount?? 0,
         ...(task.location && { location: task.location }),
-          isRemote: task.isRemote,
-         ...(task.likes && { likes: task.likes }),
+          isRemote: task.isRemote?? false,
+          likes: task.likes || [],
           budgetType: task.budgetType,
           userId: task.userId,
-          description: task.description,
+          description: task.description || "",
           type: task.type,
         ...(task.deadline && { deadline: task.deadline }),
         ...(task.startDate && { startDate: task.startDate }),
@@ -262,32 +261,32 @@ export default function Home() {
         const plan = item as PlanItem;
         return {
           id: plan.id,
-          slug: plan.slug,
-          title: plan.title,
+          slug: plan.slug || "",
+          title: plan.title || "",
           type: plan.type,
           status: plan.status,
-          userName: plan.userName,
-          userAvatar: plan.userAvatar,
-         ...(plan.userShortId && { userShortId: plan.userShortId }),
-         ...(plan.userUsername && { userUsername: plan.userUsername }),
+          userName: plan.userName || "",
+          userAvatar: plan.userAvatar || "",
+          userShortId: plan.userShortId || "",
+          userUsername: plan.userUsername || "",
           createdAt: plan.createdAt,
-         ...(plan.category && { category: plan.category }),
-         ...(plan.tags && { tags: plan.tags }),
-         ...(plan.images && { images: plan.images }),
-         ...(plan.viewCount!== undefined && { viewCount: plan.viewCount }),
-         ...(plan.likeCount!== undefined && { likeCount: plan.likeCount }),
-         ...(plan.commentCount!== undefined && { commentCount: plan.commentCount }),
+          category: plan.category || "other",
+          tags: plan.tags || [],
+          images: plan.images || [],
+          viewCount: plan.viewCount?? 0,
+          likeCount: plan.likeCount?? 0,
+          commentCount: plan.commentCount?? 0,
         ...(plan.location && { location: plan.location }),
-         ...(plan.likes && { likes: plan.likes }),
+          likes: plan.likes || [],
           userId: plan.userId,
-          description: plan.description,
+          description: plan.description || "",
           eventDate: plan.eventDate,
-         ...(plan.endDate && { endDate: plan.endDate }),
-          maxParticipants: plan.maxParticipants,
-          currentParticipants: plan.currentParticipants,
+        ...(plan.endDate && { endDate: plan.endDate }),
+          maxParticipants: plan.maxParticipants?? 0,
+          currentParticipants: plan.currentParticipants?? 0,
           costType: plan.costType,
-          costAmount: plan.costAmount,
-         ...(plan.milestones && { milestones: plan.milestones }),
+          costAmount: plan.costAmount?? 0,
+          milestones: plan.milestones || [],
         };
       });
 
