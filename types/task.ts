@@ -346,18 +346,18 @@ export const generateTaskSearchKeywords = ({
 
 export const isTaskOpen = (task: Task): boolean => {
   if (!task) return false;
-  if (task.status!== "open" && task.status!== "in_progress") return false;
   if (task.banned || task.hidden) return false;
   
   if (isTask(task)) {
+    if (task.status!== "open" && task.status!== "in_progress") return false;
     if (task.deadline && task.deadline.toMillis() < Date.now()) return false;
     if (task.joined >= task.totalSlots) return false;
   }
   
   if (isPlan(task)) {
+    if (task.status!== "open" && task.status!== "in_progress") return false;
     if (task.eventDate.toMillis() < Date.now()) return false;
     if (task.currentParticipants >= task.maxParticipants) return false;
-    if (task.status === "completed" || task.status === "cancelled") return false;
   }
   
   return true;
