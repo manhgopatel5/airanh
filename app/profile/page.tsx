@@ -8,7 +8,6 @@ import { useAppStore } from "@/store/app";
 import {
   doc, onSnapshot, updateDoc, serverTimestamp, getDoc, setDoc, deleteDoc
 } from "firebase/firestore";
-import { LucideIcon } from "lucide-react";
 import type { Timestamp } from "firebase/firestore";
 import {
   getFirebaseDB,
@@ -17,9 +16,9 @@ import {
 } from "@/lib/firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
-  HelpCircle, LogOut, Trash2, User, Star, Users, Shield, Lock,
+  HelpCircle, LogOut, Trash2, User, Users, Shield, Lock,
   Camera, Check, X, Copy, Circle, QrCode, Share2, Eye, EyeOff,
-  Mail, Phone, ChevronRight, Sparkles
+  ChevronRight
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import type { UploadTask } from "firebase/storage";
@@ -65,10 +64,10 @@ export default function Profile() {
   const uploadTaskRef = useRef<UploadTask | null>(null);
 
   const accentGradient = isPlan
-  ? "from-green-500 to-emerald-500"
+ ? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-500";
   const accentText = isPlan
-  ? "text-green-600 dark:text-green-400"
+ ? "text-green-600 dark:text-green-400"
     : "text-sky-600 dark:text-sky-400";
 
   useEffect(() => {
@@ -320,13 +319,11 @@ export default function Profile() {
     <div className="min-h-screen bg-white dark:bg-black pb-24 font-sans">
       <Toaster richColors position="top-center" />
 
-      {/* Mesh Gradient Cover 120px */}
       <div className={`h-[120px] bg-gradient-to-br ${accentGradient} opacity-10 relative`}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.3),transparent_50%)]" />
       </div>
 
       <div className="px-6 -mt-11">
-        {/* Avatar */}
         <div className="flex flex-col items-center">
           <div className="relative">
             <img
@@ -350,7 +347,6 @@ export default function Profile() {
             )}
           </div>
 
-          {/* Name */}
           {editingName? (
             <div className="flex items-center gap-2 mt-4 w-full max-w-xs">
               <input
@@ -374,7 +370,6 @@ export default function Profile() {
             @{userData.userId}
           </p>
 
-          {/* Copy ID Pill */}
           <button
             onClick={copyId}
             className="mt-3 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-zinc-900 text-[13px] font-semibold text-gray-700 dark:text-zinc-300 flex items-center gap-1.5 active:scale-95 transition"
@@ -383,7 +378,6 @@ export default function Profile() {
             {copied? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
           </button>
 
-          {/* Online Status */}
           <div className="flex items-center gap-1.5 mt-2">
             <Circle className={`w-2 h-2 fill-current ${userData.online? "text-green-500" : "text-gray-400"}`} />
             <span className="text-[13px] text-gray-500 dark:text-zinc-400 font-medium">
@@ -392,7 +386,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Stats 2x2 Grid */}
         <div className="grid grid-cols-2 gap-6 mt-8 text-center">
           {[
             { label: "TASK", value: userData.stats?.tasks || 0 },
@@ -411,7 +404,6 @@ export default function Profile() {
           ))}
         </div>
 
-        {/* Bio - No card */}
         <div className="mt-8">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[14px] font-bold text-gray-900 dark:text-white">Giới thiệu</span>
@@ -442,7 +434,6 @@ export default function Profile() {
           )}
         </div>
 
-        {/* Contact - List style */}
         <div className="mt-8 space-y-4">
           {userData.phone && (
             <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-zinc-900">
@@ -463,7 +454,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Menu - List style */}
         <div className="mt-8 space-y-6">
           <div>
             <div className="text-[12px] font-bold text-gray-400 dark:text-zinc-600 tracking-wider mb-1">HỒ SƠ</div>
@@ -486,7 +476,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Logout Text */}
         <button
           onClick={() => setShowLogoutModal(true)}
           className="w-full py-4 mt-8 text-[15px] font-bold text-red-500 active:opacity-50 transition"
@@ -495,7 +484,6 @@ export default function Profile() {
         </button>
       </div>
 
-      {/* QR Modal */}
       {showQR && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowQR(false)}>
           <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
@@ -520,12 +508,10 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Logout Modal */}
       {showLogoutModal && (
         <Modal title="Đăng xuất?" desc="Bạn sẽ cần đăng nhập lại để sử dụng app" onClose={() => setShowLogoutModal(false)} onConfirm={handleLogout} confirmText="Đăng xuất" danger />
       )}
 
-      {/* Delete Modal */}
       {showDeleteModal && (
         <Modal title="Xóa tài khoản?" desc="Hành động này không thể hoàn tác. Toàn bộ dữ liệu sẽ bị xóa vĩnh viễn." onClose={() => setShowDeleteModal(false)} onConfirm={handleDeleteAccount} confirmText="Xóa vĩnh viễn" danger />
       )}
@@ -542,7 +528,7 @@ function Item({
   label: string;
   onClick?: () => void;
   danger?: boolean;
-  icon: LucideIcon;
+  icon: React.ElementType;
 }) {
   return (
     <button
