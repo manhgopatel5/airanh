@@ -53,7 +53,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [magicLoading, setMagicLoading] = useState(false);
-  const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [remember, setRemember] = useState(true);
   const [authChecking, setAuthChecking] = useState(true);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
@@ -80,26 +79,26 @@ export default function Login() {
       }
       if (email) {
         signInWithEmailLink(authRef.current, email, window.location.href)
-         .then(async (result) => {
+        .then(async (result) => {
             localStorage.removeItem("emailForSignIn");
             await updateUserDoc(result.user, dbRef.current!);
             toast.success("Đăng nhập thành công");
             router.replace(redirectTo);
           })
-         .catch(() => setErrors({ submit: "Link không hợp lệ hoặc đã hết hạn" }));
+        .catch(() => setErrors({ submit: "Link không hợp lệ hoặc đã hết hạn" }));
       }
     }
 
     // Handle Google redirect
     getRedirectResult(authRef.current)
-     .then(async (result) => {
+    .then(async (result) => {
         if (result) {
           await updateUserDoc(result.user, dbRef.current!);
           toast.success("Đăng nhập thành công");
           router.replace(redirectTo);
         }
       })
-     .catch(() => setErrors({ submit: "Đăng nhập Google thất bại" }));
+    .catch(() => setErrors({ submit: "Đăng nhập Google thất bại" }));
 
     // Remember last email
     const lastEmail = localStorage.getItem("last_email");
@@ -211,9 +210,7 @@ export default function Login() {
   };
 
   const handlePasskey = async () => {
-    toast.info("Passkey đang phát triển");
-    // WebAuthn implementation sẽ cần backend để verify
-    // Tạm thời để placeholder
+    toast.info("Passkey đang phát triển. Dùng Google hoặc Email Link trước nhé");
   };
 
   const handleGoogleLogin = async () => {
@@ -354,7 +351,7 @@ export default function Login() {
 
   if (authChecking) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-sky-400 to-sky-500 flex items-center justify-center px-4">
+      <div className="h-dvh bg-gradient-to-br from-sky-400 to-sky-500 flex items-center justify-center px-4">
         <div className="w-full max-w-sm space-y-4">
           <div className="h-8 w-32 bg-white/20 rounded-lg animate-pulse mx-auto" />
           <div className="h-10 w-full bg-white/20 rounded-lg animate-pulse" />
@@ -370,8 +367,8 @@ export default function Login() {
       <Toaster richColors position="top-center" />
       <InstallPrompt />
 
-      <div className="min-h-screen bg-gradient-to-br from-sky-400 to-sky-500 flex items-center justify-center px-4">
-        <div className="w-full max-w-sm">
+      <div className="h-dvh bg-gradient-to-br from-sky-400 to-sky-500 flex items-center justify-center px-4 py-8 overflow-y-auto">
+        <div className="w-full max-w-sm my-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -383,15 +380,23 @@ export default function Login() {
             </h1>
 
             {errors.submit && (
-              <div className="text-red-500 mb-4 flex items-center gap-2 text-sm bg-red-50 px-3 py-2.5 rounded-lg">
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-red-500 mb-4 flex items-center gap-2 text-sm bg-red-50 px-3 py-2.5 rounded-lg"
+              >
                 <FiAlertCircle size={16} /> {errors.submit}
-              </div>
+              </motion.div>
             )}
 
             {magicLinkSent && (
-              <div className="bg-sky-50 border border-sky-200 text-sky-700 px-3 py-2.5 rounded-lg mb-4 flex items-center gap-2 text-sm">
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-sky-50 border border-sky-200 text-sky-700 px-3 py-2.5 rounded-lg mb-4 flex items-center gap-2 text-sm"
+              >
                 <FiSend size={16} /> Đã gửi link! Kiểm tra email và thư mục Spam
-              </div>
+              </motion.div>
             )}
 
             <form onSubmit={handleLogin} className="space-y-4">
