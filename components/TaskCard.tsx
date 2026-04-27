@@ -280,6 +280,6 @@ export default memo(TaskCard, (prev, next) => {
     prev.mode === next.mode &&
     prev.task.likeCount === next.task.likeCount &&
     prev.task.commentCount === next.task.commentCount &&
-    prev.task.joined === next.task.joined
+    (prev.task.type === "task"? (prev.task as any).joined : 0) === (next.task.type === "task"? (next.task as any).joined : 0)
   );
 });
