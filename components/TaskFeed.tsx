@@ -20,7 +20,9 @@ const emptyConfig = {
       desc: "Đăng việc đầu tiên, nhận offer sau 5 phút",
       tags: ["Ship đồ gấp", "Mua đồ hộ", "Dọn nhà", "Sửa điện nước"],
       gradient: "from-orange-500 to-pink-500",
-      color: "orange",
+      tagBg: "bg-orange-500/10",
+      tagText: "text-orange-600 dark:text-orange-400",
+      tagHover: "hover:bg-orange-500/20",
     },
     near: {
       icon: "📍",
@@ -28,7 +30,9 @@ const emptyConfig = {
       desc: "Bật định vị để thấy việc gần bạn nhất trong 1km",
       tags: ["Việc trong 1km", "Làm ngay", "Ship nội thành", "Grab food"],
       gradient: "from-emerald-500 to-teal-500",
-      color: "emerald",
+      tagBg: "bg-emerald-500/10",
+      tagText: "text-emerald-600 dark:text-emerald-400",
+      tagHover: "hover:bg-emerald-500/20",
     },
     friends: {
       icon: "👥",
@@ -36,7 +40,9 @@ const emptyConfig = {
       desc: "Mời bạn bè vào để nhận việc uy tín từ người quen",
       tags: ["Mời bạn bè", "Xem người quen", "Tạo nhóm", "Chia sẻ"],
       gradient: "from-blue-500 to-cyan-500",
-      color: "blue",
+      tagBg: "bg-blue-500/10",
+      tagText: "text-blue-600 dark:text-blue-400",
+      tagHover: "hover:bg-blue-500/20",
     },
     new: {
       icon: "✨",
@@ -44,7 +50,9 @@ const emptyConfig = {
       desc: "Việc mới sẽ xuất hiện ở đây đầu tiên mỗi phút",
       tags: ["Đăng việc", "Theo dõi tag", "Bật thông báo", "Refresh"],
       gradient: "from-purple-500 to-pink-500",
-      color: "purple",
+      tagBg: "bg-purple-500/10",
+      tagText: "text-purple-600 dark:text-purple-400",
+      tagHover: "hover:bg-purple-500/20",
     },
   },
   plan: {
@@ -54,7 +62,9 @@ const emptyConfig = {
       desc: "Tạo lịch hẹn đầu tiên, rủ 100+ người quanh bạn đi chơi",
       tags: ["Cafe cuối tuần", "Nhậu tối nay", "Chill rooftop", "Đi phượt"],
       gradient: "from-blue-500 to-indigo-500",
-      color: "blue",
+      tagBg: "bg-blue-500/10",
+      tagText: "text-blue-600 dark:text-blue-400",
+      tagHover: "hover:bg-blue-500/20",
     },
     near: {
       icon: "🗺️",
@@ -62,7 +72,9 @@ const emptyConfig = {
       desc: "Khám phá điểm hẹn hot, event trong bán kính 2km",
       tags: ["Quán gần đây", "Event hôm nay", "Check-in hot", "Workshop"],
       gradient: "from-teal-500 to-cyan-500",
-      color: "teal",
+      tagBg: "bg-teal-500/10",
+      tagText: "text-teal-600 dark:text-teal-400",
+      tagHover: "hover:bg-teal-500/20",
     },
     friends: {
       icon: "💬",
@@ -70,7 +82,9 @@ const emptyConfig = {
       desc: "Tạo lịch rủ bạn bè đi chơi, ăn uống, xem phim ngay",
       tags: ["Rủ bạn bè", "Lập team", "Đi chung", "Sinh nhật"],
       gradient: "from-indigo-500 to-violet-500",
-      color: "indigo",
+      tagBg: "bg-indigo-500/10",
+      tagText: "text-indigo-600 dark:text-indigo-400",
+      tagHover: "hover:bg-indigo-500/20",
     },
     new: {
       icon: "🗓️",
@@ -78,7 +92,9 @@ const emptyConfig = {
       desc: "Những cuộc hẹn mới nhất sẽ hiện ở đây mỗi giờ",
       tags: ["Tạo lịch hẹn", "Theo dõi khu vực", "Bật thông báo", "Lưu lịch"],
       gradient: "from-sky-500 to-blue-500",
-      color: "sky",
+      tagBg: "bg-sky-500/10",
+      tagText: "text-sky-600 dark:text-sky-400",
+      tagHover: "hover:bg-sky-500/20",
     },
   },
 };
@@ -87,9 +103,9 @@ export default function TaskFeed({ tasks, mode, activeTab }: Props) {
   const router = useRouter();
 
   if (tasks.length === 0) {
-    const config = emptyConfig[mode][activeTab];
+    const config = emptyConfig[activeTab];
     return (
-      <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
+      <div className="flex flex-col items-center justify-center px-6 py-20 text-center animate-in fade-in duration-300">
         <div className="text-6xl mb-4 animate-bounce">{config.icon}</div>
         <h2
           className={`text-2xl font-extrabold bg-gradient-to-r ${config.gradient} bg-clip-text text-transparent`}
@@ -105,7 +121,7 @@ export default function TaskFeed({ tasks, mode, activeTab }: Props) {
             <button
               key={t}
               onClick={() => router.push(`/create?mode=${mode}&suggest=${encodeURIComponent(t)}`)}
-              className={`px-4 py-2 rounded-full bg-${config.color}-500/10 text-${config.color}-600 dark:text-${config.color}-400 text-sm font-semibold active:scale-95 transition-all hover:bg-${config.color}-500/20`}
+              className={`px-4 py-2 rounded-full ${config.tagBg} ${config.tagText} text-sm font-semibold active:scale-95 transition-all ${config.tagHover}`}
             >
               + {t}
             </button>
