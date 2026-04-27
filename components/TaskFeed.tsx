@@ -12,7 +12,18 @@ type Props = {
   activeTab: TabId;
 };
 
-const emptyConfig = {
+type EmptyConfigItem = {
+  icon: string;
+  title: string;
+  desc: string;
+  tags: string[];
+  gradient: string;
+  tagBg: string;
+  tagText: string;
+  tagHover: string;
+};
+
+const emptyConfig: Record<AppMode, Record<TabId, EmptyConfigItem>> = {
   task: {
     hot: {
       icon: "🔥",
@@ -103,10 +114,12 @@ export default function TaskFeed({ tasks, mode, activeTab }: Props) {
   const router = useRouter();
 
   if (tasks.length === 0) {
-    const config = emptyConfig[activeTab];
+    // Fix: phải lấy theo mode trước, rồi mới tới activeTab
+    const config = emptyConfig[activeTab]?? emptyConfig.task.new;
+
     return (
       <div className="flex flex-col items-center justify-center px-6 py-20 text-center animate-in fade-in duration-300">
-        <div className="text-6xl mb-4 animate-bounce">{config.icon}</div>
+        <div className="text-6xl mb-4 animate-bounce select-none">{config.icon}</div>
         <h2
           className={`text-2xl font-extrabold bg-gradient-to-r ${config.gradient} bg-clip-text text-transparent`}
         >
@@ -120,7 +133,10 @@ export default function TaskFeed({ tasks, mode, activeTab }: Props) {
           {config.tags.map((t) => (
             <button
               key={t}
-              onClick={() => router.push(`/create?mode=${mode}&suggest=${encodeURIComponent(t)}`)}
+              onClick={() => {
+                if ("vibrate" in navigator) navigator.vibrate(5);
+                router.push(`/create?mode=${mode}&suggest=${encodeURIComponent(t)}`);
+              }}
               className={`px-4 py-2 rounded-full ${config.tagBg} ${config.tagText} text-sm font-semibold active:scale-95 transition-all ${config.tagHover}`}
             >
               + {t}
@@ -129,8 +145,11 @@ export default function TaskFeed({ tasks, mode, activeTab }: Props) {
         </div>
 
         <button
-          onClick={() => router.push(`/create?mode=${mode}`)}
-          className={`mt-8 px-6 py-3 rounded-2xl bg-gradient-to-r ${config.gradient} text-white font-bold text-sm shadow-lg active:scale-95 transition-all`}
+          onClick={() => {
+            if ("vibrate" in navigator) navigator.vibrate(10);
+            router.push(`/create?mode=${mode}`);
+          }}
+          className={`mt-8 px-6 py-3 rounded-2xl bg-gradient-to-r ${config.gradient} text-white font-bold text-sm shadow-lg active:scale-95 transition-all hover:shadow-xl`}
         >
           {mode === "task"? "Đăng việc ngay" : "Tạo lịch hẹn"}
         </button>
@@ -139,9 +158,13 @@ export default function TaskFeed({ tasks, mode, activeTab }: Props) {
   }
 
   return (
-    <div className="space-y-3">
-      {tasks.map((task) => (
-        <div key={task.id} className="px-4">
+    <div className="space-y-3 animate-in fade-in duration-300">
+      {tasks.map((task, idx) => (
+        <div
+          key={task.id}
+          className="px-4"
+          style={{ animationDelay: `${idx * 50}ms` }}
+        >
           <TaskCard task={task} mode={mode} />
         </div>
       ))}
