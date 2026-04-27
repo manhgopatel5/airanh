@@ -42,7 +42,7 @@ function TaskCard({ task, mode }: Props) {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, setCurrentUser);
     return () => unsub();
-  }, );
+  }, [auth]);
 
   if (!task) return <Skeleton />;
 
@@ -69,7 +69,7 @@ function TaskCard({ task, mode }: Props) {
 
     setLiking(true);
     const newLikes = liked
- ? localLikes.filter((id) => id!== currentUser.uid)
+? localLikes.filter((id) => id!== currentUser.uid)
       : [...localLikes, currentUser.uid];
     setLocalLikes(newLikes);
 
@@ -229,7 +229,6 @@ function TaskCard({ task, mode }: Props) {
                   {(task as any).planTime}
                 </span>
               )}
-              {/* ✅ FIX: Lấy string từ object location */}
               {task.location && (
                 <span className="flex items-center gap-1">
                   <FiMapPin className="w-3 h-3" />
