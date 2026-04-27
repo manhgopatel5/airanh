@@ -12,9 +12,12 @@ export type TaskStatus =
   | "deleted"
   | "expired";
 
-export type Visibility = "public" | "private" | "friends";
+export type Visibility = "public" | "private" | "friends" | "unlisted";
 export type BudgetType = "fixed" | "hourly" | "negotiable";
 export type CostType = "free" | "share" | "host";
+
+export type PlanParticipantRole = "owner" | "admin" | "member";
+export type PlanStatus = "draft" | "open" | "in_progress" | "completed" | "cancelled";
 
 /* ================= USER ================= */
 export type User = {
@@ -23,6 +26,8 @@ export type User = {
   displayName?: string | null;
   photoURL?: string | null;
   role?: "admin" | "user";
+  shortId?: string;
+  username?: string;
 };
 
 /* ================= BASE ITEM ================= */
@@ -99,15 +104,57 @@ export type TaskItem = BaseItem & {
   startDate?: Timestamp | null;
 };
 
-/* ================= PLAN TYPE ================= */
+/* ================= PLAN TYPE - NÂNG CẤP ================= */
+export type PlanMilestone = {
+  id: string;
+  title: string;
+  description?: string;
+  dueDate?: Timestamp;
+  completed: boolean;
+  completedAt?: Timestamp;
+  assignedTo?: string[]; // userId[]
+  order: number;
+};
+
+export type PlanParticipant = {
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  role: PlanParticipantRole;
+  joinedAt: Timestamp;
+  permissions: {
+    canEdit: boolean;
+    canInvite: boolean;
+    canManageTasks: boolean;
+    canManageMembers: boolean;
+  };
+  invitedBy?: string;
+  status: "active" | "left" | "kicked";
+};
+
 export type PlanItem = BaseItem & {
   type: "plan";
-  eventDate: Timestamp; // Ngày giờ diễn ra
+  
+  // Timeline
+  eventDate: Timestamp; // Ngày giờ chính diễn ra
+  endDate?: Timestamp; // Kết thúc
+  milestones: PlanMilestone[];
+
+  // Participants
+  participants: PlanParticipant[];
   maxParticipants: number;
   currentParticipants: number;
+  inviteCode?: string; // mã mời private
+  allowInvite: boolean;
+
+  // Cost
   costType: CostType;
   costAmount?: number; // Nếu costType = share/host
-  allowInvite: boolean;
+  costDescription?: string; // Mô tả chi phí
+
+  // Settings
+  autoAccept?: boolean; // Tự động accept khi join
+  requireApproval?: boolean; // Owner duyệt mới join
 };
 
 /* ================= UNION TYPE ================= */
@@ -142,22 +189,28 @@ export type CreatePlanInput = {
   description: string;
   category: string;
   eventDate: Timestamp;
+  endDate?: Timestamp;
   maxParticipants: number;
   costType: CostType;
   costAmount?: number;
+  costDescription?: string;
   allowInvite?: boolean;
+  autoAccept?: boolean;
+  requireApproval?: boolean;
   visibility?: Visibility;
   tags?: string[];
   images?: string[];
+  attachments?: string[];
   location?: BaseItem["location"];
+  milestones?: Omit<PlanMilestone, "id" | "completed" | "completedAt" | "order">[];
   featured?: boolean;
 };
 
 export type CreateItemInput = CreateTaskInput | CreatePlanInput;
 
 /* ================= UPDATE DTO ================= */
-export type UpdateTaskInput = Partial<CreateTaskInput>;
-export type UpdatePlanInput = Partial<CreatePlanInput>;
+export type UpdateTaskInput = Partial<Omit<CreateTaskInput, "type">>;
+export type UpdatePlanInput = Partial<Omit<CreatePlanInput, "type">>;
 export type UpdateItemInput = Partial<CreateItemInput>;
 
 /* ================= LIST ITEM ================= */
@@ -189,7 +242,11 @@ export type TaskListItem = Pick<
   | "userId"
   | "description"
   | "type"
-> | Pick<
+  | "deadline"
+  | "startDate"
+>;
+
+export type PlanListItem = Pick<
   PlanItem,
   | "id"
   | "slug"
@@ -212,11 +269,15 @@ export type TaskListItem = Pick<
   | "userId"
   | "description"
   | "eventDate"
+  | "endDate"
   | "maxParticipants"
   | "currentParticipants"
   | "costType"
   | "costAmount"
+  | "milestones"
 >;
+
+export type ItemListItem = TaskListItem | PlanListItem;
 
 /* ================= PARTICIPANT ================= */
 export type TaskParticipant = {
@@ -285,7 +346,7 @@ export const generateTaskSearchKeywords = ({
 
 export const isTaskOpen = (task: Task): boolean => {
   if (!task) return false;
-  if (task.status!== "open") return false;
+  if (task.status!== "open" && task.status!== "in_progress") return false;
   if (task.banned || task.hidden) return false;
   
   if (isTask(task)) {
@@ -296,6 +357,7 @@ export const isTaskOpen = (task: Task): boolean => {
   if (isPlan(task)) {
     if (task.eventDate.toMillis() < Date.now()) return false;
     if (task.currentParticipants >= task.maxParticipants) return false;
+    if (task.status === "completed" || task.status === "cancelled") return false;
   }
   
   return true;
@@ -330,7 +392,24 @@ export const formatEventDate = (date: Timestamp): string => {
     weekday: "long",
     day: "2-digit",
     month: "2-digit",
+    year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
   });
+};
+
+export const getPlanProgress = (plan: PlanItem): number => {
+  if (plan.milestones.length === 0) return 0;
+  const completed = plan.milestones.filter((m) => m.completed).length;
+  return Math.round((completed / plan.milestones.length) * 100);
+};
+
+export const canUserEditPlan = (plan: PlanItem, userId: string): boolean => {
+  const participant = plan.participants.find((p) => p.userId === userId);
+  return participant?.permissions.canEdit || participant?.role === "owner" || false;
+};
+
+export const canUserInvitePlan = (plan: PlanItem, userId: string): boolean => {
+  const participant = plan.participants.find((p) => p.userId === userId);
+  return participant?.permissions.canInvite || participant?.role === "owner" || false;
 };
