@@ -1,5 +1,4 @@
 "use client";
-
 import { useRouter, usePathname } from "next/navigation";
 import { FiMessageSquare, FiClipboard, FiUser } from "react-icons/fi";
 import { HiHome, HiPlus } from "react-icons/hi2";
@@ -9,6 +8,10 @@ export default function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
   const [, startTransition] = useTransition();
+  
+  // Check đang ở Task hay Plan
+  const isPlan = pathname.startsWith("/plan") || pathname.startsWith("/create/plan");
+  const isTask = pathname.startsWith("/task") || pathname === "/" || pathname.startsWith("/create/task");
 
   useEffect(() => {
     router.prefetch("/");
@@ -28,9 +31,21 @@ export default function BottomNav() {
   }, [pathname, router]);
 
   const isActive = useCallback((path: string) => {
-    if (path === "/") return pathname === "/";
+    if (path === "/") return pathname === "/" || pathname.startsWith("/task");
     return pathname.startsWith(path);
   }, [pathname]);
+
+  // Màu theo mode
+  const activeBg = isPlan 
+   ? "bg-green-500/10 dark:bg-green-500/20" 
+    : "bg-sky-500/10 dark:bg-sky-500/20";
+  const activeText = isPlan 
+   ? "text-green-600 dark:text-green-400" 
+    : "text-sky-600 dark:text-sky-400";
+  const fabGradient = isPlan 
+   ? "from-green-500 to-emerald-500 shadow-green-500/30" 
+    : "from-sky-500 to-blue-500 shadow-sky-500/30";
+  const fabHref = isPlan? "/create/plan" : "/create/task";
 
   const NavItem = ({
     path,
@@ -48,24 +63,24 @@ export default function BottomNav() {
         onClick={() => handleNav(path)}
         onMouseEnter={() => router.prefetch(path)}
         aria-current={active? "page" : undefined}
-        className="relative flex flex-col items-center justify-center flex-1 h-14 active:scale-95 transition-transform min-w-"
+        className="relative flex flex-col items-center justify-center flex-1 h-14 active:scale-95 transition-transform min-w-0"
         style={{ WebkitTapHighlightColor: 'transparent' }}
       >
         {active && (
-          <div className="absolute inset-1.5 bg-blue-500/10 dark:bg-blue-500/20 rounded-xl" />
+          <div className={`absolute inset-1.5 ${activeBg} rounded-xl`} />
         )}
         <div className="relative z-10 flex flex-col items-center gap-0.5">
           <Icon
             className={`w-5 h-5 sm:w-6 sm:h-6 ${
               active
-          ? "text-blue-600 dark:text-blue-400"
+               ? activeText
                 : "text-gray-500 dark:text-zinc-400"
             }`}
           />
           <span
             className={`text-xs font-semibold tracking-tight leading-none ${
               active
-          ? "text-blue-600 dark:text-blue-400"
+               ? activeText
                 : "text-gray-500 dark:text-zinc-400"
             }`}
           >
@@ -86,13 +101,13 @@ export default function BottomNav() {
               <NavItem path="/messages" icon={FiMessageSquare} label="Tin nhắn" />
 
               <button
-                onClick={() => handleNav("/create")}
-                onMouseEnter={() => router.prefetch("/create")}
+                onClick={() => handleNav(fabHref)}
+                onMouseEnter={() => router.prefetch(fabHref)}
                 aria-label="Tạo mới"
                 className="relative -mt-7 active:scale-95 transition-transform"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${fabGradient} flex items-center justify-center shadow-lg`}>
                   <HiPlus className="text-white" size={26} strokeWidth={2.5} />
                 </div>
               </button>
