@@ -356,12 +356,12 @@ export default function SettingsPage() {
 
         {/* 4. TÀI KHOẢN */}
         <Section title="TÀI KHOẢN">
-          <SettingItem
-            label="Đổi email"
-            icon={Mail}
-            value={user?.email ?? undefined}
-            onClick={() => router.push("/settings/change-email")}
-          />
+         <SettingItem
+  label="Đổi email"
+  icon={Mail}
+  {...(user?.email ? { value: user.email } : {})}
+  onClick={() => router.push("/settings/change-email")}
+/>
           <SettingItem
             label="Đổi số điện thoại"
             icon={Smartphone}
