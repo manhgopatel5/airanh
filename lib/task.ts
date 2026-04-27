@@ -18,6 +18,7 @@ import {
   Unsubscribe,
   QueryDocumentSnapshot,
   DocumentData,
+  deleteDoc,
 } from "firebase/firestore";
 import { getFirebaseDB } from "./firebase";
 import { nanoid } from "nanoid";
@@ -40,7 +41,6 @@ import {
   isPlan,
   User,
   TaskStatus,
-  PlanStatus,
 } from "@/types/task";
 
 class TaskError extends Error {
@@ -53,12 +53,12 @@ class TaskError extends Error {
 /* ================= HELPERS ================= */
 const slugify = (str: string): string =>
   str
-  .toLowerCase()
-  .normalize("NFD")
-  .replace(/[\u0300-\u036f]/g, "")
-  .replace(/[^a-z0-9]+/g, "-")
-  .replace(/^-|-$/g, "")
-  .slice(0, 60);
+ .toLowerCase()
+ .normalize("NFD")
+ .replace(/[\u0300-\u036f]/g, "")
+ .replace(/[^a-z0-9]+/g, "-")
+ .replace(/^-|-$/g, "")
+ .slice(0, 60);
 
 const generateUniqueShortId = async (): Promise<string> => {
   const db = getFirebaseDB();
@@ -74,9 +74,9 @@ const generateUniqueShortId = async (): Promise<string> => {
 
 const cleanTags = (tags: string[], title: string, category?: string): string[] => {
   const all = [...tags, category || "",...slugify(title).split("-")]
-  .map((t) => t.trim().toLowerCase())
-  .filter((t) => t.length >= 2 && t.length <= 20)
-  .slice(0, 10);
+ .map((t) => t.trim().toLowerCase())
+ .filter((t) => t.length >= 2 && t.length <= 20)
+ .slice(0, 10);
   return [...new Set(all)];
 };
 
@@ -314,7 +314,7 @@ export async function updateTask(
     }
 
     const newSearchKeywords = updates.title || updates.description || updates.tags || updates.category
-    ? generateTaskSearchKeywords({
+  ? generateTaskSearchKeywords({
           title: updates.title || data.title,
           description: updates.description || data.description,
           tags: updates.tags || data.tags,
@@ -324,7 +324,7 @@ export async function updateTask(
       : data.searchKeywords;
 
     transaction.update(taskRef, {
-    ...updates,
+  ...updates,
       searchKeywords: newSearchKeywords,
       edited: true,
       editedAt: serverTimestamp(),
@@ -366,7 +366,7 @@ export async function updatePlan(
     }
 
     const newSearchKeywords = updates.title || updates.description || updates.tags || updates.category
-    ? generateTaskSearchKeywords({
+  ? generateTaskSearchKeywords({
           title: updates.title || data.title,
           description: updates.description || data.description,
           tags: updates.tags || data.tags,
@@ -376,7 +376,7 @@ export async function updatePlan(
       : data.searchKeywords;
 
     transaction.update(planRef, {
-    ...updates,
+  ...updates,
       searchKeywords: newSearchKeywords,
       edited: true,
       editedAt: serverTimestamp(),
@@ -658,7 +658,7 @@ export async function toggleMilestone(
         if (!canToggle) throw new TaskError("Bạn không có quyền thay đổi mốc này");
 
         return {
-        ...m,
+      ...m,
           completed:!m.completed,
           completedAt: m.completed? undefined : Timestamp.now(),
         };
