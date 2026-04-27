@@ -15,7 +15,7 @@ import {
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { QueryConstraint } from "firebase/firestore";
-import { TaskListItem, isTask } from "@/types/task";
+import { TaskListItem } from "@/types/task";
 import TaskCard from "@/components/TaskCard";
 import { FiSearch, FiX, FiMapPin } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
@@ -149,15 +149,15 @@ export default function SearchPage() {
         // Tab near: filter client theo khoảng cách
         if (activeTab === "near" && userLocation) {
           data = data
-           .map((t) => ({
-             ...t,
+          .map((t) => ({
+            ...t,
               distance:
                 t.location?.lat && t.location?.lng
-                 ? getDistance(userLocation, { lat: t.location.lat, lng: t.location.lng })
+                ? getDistance(userLocation, { lat: t.location.lat, lng: t.location.lng })
                   : 9999,
             }))
-           .filter((t: any) => t.distance < 50)
-           .sort((a: any, b: any) => a.distance - b.distance);
+          .filter((t: any) => t.distance < 50)
+          .sort((a: any, b: any) => a.distance - b.distance);
         }
 
         // Tránh duplicate key khi loadMore
@@ -245,7 +245,7 @@ export default function SearchPage() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex flex-col items-center py-2 px-2 flex-1 transition-all ${
                       active
-                       ? "text-blue-600 dark:text-blue-400"
+                      ? "text-blue-600 dark:text-blue-400"
                         : "text-gray-400 dark:text-zinc-500 hover:text-gray-600"
                     }`}
                   >
@@ -273,7 +273,7 @@ export default function SearchPage() {
             <TaskCard
               key={task.id}
               task={task}
-              mode={isTask(task)? "task" : "plan"}
+              mode={task.type}
             />
           ))}
 
