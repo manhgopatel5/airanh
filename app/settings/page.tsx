@@ -89,7 +89,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const { user } = useAuth();
   const mode = useAppStore((s) => s.mode);
-  const isPlan = mode === "plan";
+ 
 
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [sessions, setSessions] = useState<any[]>([]);
