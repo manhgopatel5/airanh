@@ -13,8 +13,8 @@ import {
   QueryDocumentSnapshot,
   DocumentData,
 } from "firebase/firestore";
-import TaskFeed from "@/components/TaskFeed"; // ✅ Thêm
-import PlanFeed from "@/components/PlanFeed"; // ✅ Thêm
+import TaskFeed from "@/components/TaskFeed";
+import PlanFeed from "@/components/PlanFeed";
 import ModeToggle from "@/components/ModeToggle";
 import { AppMode } from "@/types/app";
 
@@ -115,7 +115,7 @@ export default function Home() {
       (snap) => {
         const data = snap.docs.map((doc) => ({
           id: doc.id,
-        ...doc.data(),
+       ...doc.data(),
         }));
         setTasks(data);
         setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -145,7 +145,7 @@ export default function Home() {
       const snap = await getDocs(q);
       const newTasks = snap.docs.map((doc) => ({
         id: doc.id,
-      ...doc.data(),
+     ...doc.data(),
       }));
       setTasks((prev) => [...prev,...newTasks]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -163,11 +163,10 @@ export default function Home() {
       <ModeToggle
         mode={mode}
         setMode={setMode}
-        taskCount={mode === "task"? tasks.length : undefined}
-        planCount={mode === "plan"? tasks.length : undefined}
+        taskCount={mode === "task"? tasks.length : 0} // ✅ Đổi undefined → 0
+        planCount={mode === "plan"? tasks.length : 0} // ✅ Đổi undefined → 0
       />
 
-      {/* ✅ Dùng TaskFeed + PlanFeed thay vì map trực tiếp */}
       <div className="pt-4">
         {loading && <SkeletonList />}
 
@@ -181,7 +180,7 @@ export default function Home() {
               disabled={loadingMore}
               className={`w-full py-3 font-bold text-sm rounded-2xl active:scale-95 transition-all disabled:opacity-50 ${
                 mode === "task"
-                ? "text-orange-600 dark:text-orange-400 bg-orange-500/10 dark:bg-orange-500/20"
+               ? "text-orange-600 dark:text-orange-400 bg-orange-500/10 dark:bg-orange-500/20"
                   : "text-blue-600 dark:text-blue-400 bg-blue-500/10 dark:bg-blue-500/20"
               }`}
             >
