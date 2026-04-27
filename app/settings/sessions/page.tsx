@@ -95,40 +95,4 @@ export default function SessionsPage() {
                       )}
                     </div>
                     <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
-                      {session.browser} · {session.os}
-                    </p>
-                    <div className="flex items-center gap-1.5 mt-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                      <p className="text-xs text-gray-500 dark:text-zinc-400">
-                        {session.location} · {session.ip}
-                      </p>
-                    </div>
-                    <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">
-                      Hoạt động: {new Date(session.lastActive).toLocaleString("vi-VN")}
-                    </p>
-                  </div>
-                {!session.current && (
-                  <button
-                    onClick={() => removeSession(session.id)}
-                    className="p-2 active:scale-90 transition"
-                  >
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-
-        {sessions.length > 1 && (
-          <button
-            onClick={logoutAll}
-            className="w-full py-3.5 rounded-2xl bg-red-500 text-white font-semibold active:scale-[0.98] transition"
-          >
-            Đăng xuất tất cả thiết bị khác
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
+                      {session.browser} ·
