@@ -9,12 +9,12 @@ import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { incrementTaskView } from "@/lib/task";
 import { TaskListItem } from "@/types/task";
-import { AppMode } from "@/types/app"; // ✅ Thêm
+import { AppMode } from "@/types/app";
 import { toast } from "sonner";
 
 type Props = {
   task: TaskListItem;
-  mode: AppMode; // ✅ Thêm prop này
+  mode: AppMode;
   onDelete?: (id: string) => void;
 };
 
@@ -30,7 +30,7 @@ const planCategoryEmoji: Record<string, string> = {
   other: "✨",
 };
 
-function TaskCard({ task, mode }: Props) { // ✅ Nhận mode
+function TaskCard({ task, mode }: Props) {
   const router = useRouter();
   const db = getFirebaseDB();
   const auth = getFirebaseAuth();
@@ -42,11 +42,11 @@ function TaskCard({ task, mode }: Props) { // ✅ Nhận mode
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, setCurrentUser);
     return () => unsub();
-  }, [auth]);
+  }, );
 
   if (!task) return <Skeleton />;
 
-  const isPlanMode = mode === "plan"; // ✅ Dùng mode thay cho isPlan cũ
+  const isPlanMode = mode === "plan";
   const liked = currentUser && localLikes.includes(currentUser.uid);
   const likeCount = localLikes.length;
 
@@ -69,7 +69,7 @@ function TaskCard({ task, mode }: Props) { // ✅ Nhận mode
 
     setLiking(true);
     const newLikes = liked
-    ? localLikes.filter((id) => id!== currentUser.uid)
+ ? localLikes.filter((id) => id!== currentUser.uid)
       : [...localLikes, currentUser.uid];
     setLocalLikes(newLikes);
 
@@ -155,7 +155,6 @@ function TaskCard({ task, mode }: Props) { // ✅ Nhận mode
                 <span className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">
                   {task.userName || "User"}
                 </span>
-                {/* ✅ Badge đổi theo mode */}
                 {isPlanMode? (
                   <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-lg">
                     {planCategoryEmoji[(task as any).planCategory || "other"]} PLAN
@@ -194,7 +193,6 @@ function TaskCard({ task, mode }: Props) { // ✅ Nhận mode
               {task.title}
             </h3>
 
-            {/* ✅ Task: hiện giá tiền */}
             {!isPlanMode && task.price!== undefined && (
               <div className="shrink-0 text-right">
                 <div className="text-lg font-extrabold bg-gradient-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent">
@@ -209,7 +207,6 @@ function TaskCard({ task, mode }: Props) { // ✅ Nhận mode
               </div>
             )}
 
-            {/* ✅ Plan: hiện nút join số người */}
             {isPlanMode && task.totalSlots && (
               <button className="shrink-0 px-3 py-1.5 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white text-sm font-bold flex items-center gap-1">
                 <FiUsers className="w-4 h-4" />
@@ -224,7 +221,6 @@ function TaskCard({ task, mode }: Props) { // ✅ Nhận mode
             </p>
           )}
 
-          {/* ✅ Plan: hiện thêm thời gian + địa điểm */}
           {isPlanMode && (
             <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-zinc-400">
               {(task as any).planTime && (
@@ -233,10 +229,11 @@ function TaskCard({ task, mode }: Props) { // ✅ Nhận mode
                   {(task as any).planTime}
                 </span>
               )}
+              {/* ✅ FIX: Lấy string từ object location */}
               {task.location && (
                 <span className="flex items-center gap-1">
                   <FiMapPin className="w-3 h-3" />
-                  {task.location}
+                  {task.location.address || task.location.city || "Địa điểm"}
                 </span>
               )}
             </div>
@@ -271,7 +268,6 @@ function Skeleton() {
           <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
           <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/3" />
         </div>
-      </div>
       <div className="h-5 bg-gray-200 dark:bg-zinc-800 rounded w-3/4 mb-2" />
       <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-full" />
     </div>
@@ -281,7 +277,7 @@ function Skeleton() {
 export default memo(TaskCard, (prev, next) => {
   return (
     prev.task.id === next.task.id &&
-    prev.mode === next.mode && // ✅ Thêm dòng này
+    prev.mode === next.mode &&
     prev.task.likeCount === next.task.likeCount &&
     prev.task.commentCount === next.task.commentCount &&
     prev.task.joined === next.task.joined
