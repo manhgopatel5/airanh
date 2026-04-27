@@ -9,7 +9,7 @@ import {
   PhoneMultiFactorGenerator,
   RecaptchaVerifier
 } from "firebase/auth";
-import { doc, updateDoc, onSnapshot } from "firebase/firestore";
+import { doc, updateDoc } from "firebase/firestore";
 import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
 import { ChevronLeft, Smartphone, Shield, Check, X, AlertTriangle } from "lucide-react";
 import { toast, Toaster } from "sonner";
@@ -41,7 +41,7 @@ export default function TwoFAPage() {
     if (factors.length > 0) {
       setEnrolledPhone(factors[0].displayName || factors[0].phoneNumber || "");
     }
-  }, );
+  }, [user]); // FIX: Thêm user vào deps
 
   useEffect(() => {
     if (!recaptchaRef.current || window.recaptchaVerifier) return;
@@ -49,7 +49,7 @@ export default function TwoFAPage() {
       size: "invisible",
       callback: () => {},
     });
-  }, []);
+  }, [auth]);
 
   const sendCode = async () => {
     if (!user ||!phone) return toast.error("Nhập số điện thoại");
