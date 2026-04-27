@@ -17,7 +17,7 @@ import {
 } from "@/lib/taskCommentService";
 
 import type { TaskComment } from "@/lib/taskCommentService";
-import { Task } from "@/types/task";
+import { Task, isTask } from "@/types/task";
 import {
   FiChevronLeft,
   FiSend,
@@ -62,7 +62,7 @@ export default function TaskDetailPage() {
   const applicants = task?.applicants ?? [];
 
   const isFull = useMemo(
-    () => applicants.length >= (task?.totalSlots ?? 1),
+    () => applicants.length >= (isTask(task) ? task.totalSlots : 1),
     [applicants, task]
   );
 
@@ -294,7 +294,7 @@ export default function TaskDetailPage() {
           <div className="flex items-center gap-2">
             <FiUsers className="text-gray-500" />
             <span>
-              {applicants.length}/{task.totalSlots ?? 1} ứng tuyển
+              {applicants.length}/{isTask(task) ? task.totalSlots : 1} ứng tuyển
             </span>
           </div>
           <div className="flex items-center gap-2">
