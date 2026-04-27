@@ -176,12 +176,12 @@ export default function EmptyState({ tab, type = "task" }: Props) {
 
   const handleSuggestClick = (suggest: string) => {
     if ("vibrate" in navigator) navigator.vibrate(5);
-    const path = type === "task"? "/create-task" : "/create/plan";
+    const path = type === "task"? "/create/task" : "/create/plan";
     router.push(`${path}?title=${encodeURIComponent(suggest)}`);
   };
 
   const handleCreateClick = () => {
-    const path = type === "task"? "/create-task" : "/create/plan";
+    const path = type === "task"? "/create/task" : "/create/plan";
     router.push(path);
   };
 
