@@ -114,9 +114,7 @@ export default function TaskFeed({ tasks, mode, activeTab }: Props) {
   const router = useRouter();
 
   if (tasks.length === 0) {
-    // Fix: phải lấy theo mode trước, rồi mới tới activeTab
     const config = emptyConfig[activeTab]?? emptyConfig.task.new;
-
     return (
       <div className="flex flex-col items-center justify-center px-6 py-20 text-center animate-in fade-in duration-300">
         <div className="text-6xl mb-4 animate-bounce select-none">{config.icon}</div>
