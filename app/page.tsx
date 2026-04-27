@@ -14,7 +14,7 @@ import {
 } from "firebase/firestore";
 import TaskFeed from "@/components/TaskFeed";
 import ModeToggle from "@/components/ModeToggle";
-import { AppMode, TaskItem, PlanItem, TaskListItem, PlanListItem, isTask, isPlan } from "@/types/task";
+import { AppMode, Task, TaskItem, PlanItem, TaskListItem, PlanListItem, isTask, isPlan } from "@/types/task";
 import { FiMapPin, FiRefreshCw } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 import { toast } from "sonner";
