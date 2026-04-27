@@ -13,10 +13,10 @@ import {
   QueryDocumentSnapshot,
   DocumentData,
 } from "firebase/firestore";
-import TaskCard from "@/components/TaskCard";
-import ModeToggle from "@/components/ModeToggle"; // ✅ Đổi từ TopTabs
-import EmptyState from "@/components/EmptyState";
-import { AppMode } from "@/types/app"; // ✅ Import type mới
+import TaskFeed from "@/components/TaskFeed"; // ✅ Thêm
+import PlanFeed from "@/components/PlanFeed"; // ✅ Thêm
+import ModeToggle from "@/components/ModeToggle";
+import { AppMode } from "@/types/app";
 
 const PAGE_SIZE = 15;
 
@@ -49,7 +49,7 @@ function SkeletonList() {
 /* ================= MAIN ================= */
 export default function Home() {
   const [db, setDb] = useState<any>(null);
-  const [mode, setMode] = useState<AppMode>("task"); // ✅ Đổi từ activeTab
+  const [mode, setMode] = useState<AppMode>("task");
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastDoc, setLastDoc] =
@@ -77,16 +77,14 @@ export default function Home() {
         where("status", "in", ["open", "full"]),
         where("visibility", "==", "public"),
         where("banned", "==", false),
-        // ✅ Lọc theo mode: task có giá > 0, plan giá = 0
         where("price", mode === "task"? ">" : "==", 0),
       ];
 
-      // ✅ Sort khác nhau cho 2 mode
       if (mode === "task") {
-        constraints.push(orderBy("price", "desc")); // Task: giá cao trước
+        constraints.push(orderBy("price", "desc"));
         constraints.push(orderBy("createdAt", "desc"));
       } else {
-        constraints.push(orderBy("createdAt", "desc")); // Plan: mới nhất
+        constraints.push(orderBy("createdAt", "desc"));
       }
 
       constraints.push(limit(PAGE_SIZE));
@@ -95,7 +93,7 @@ export default function Home() {
       }
       return query(collection(db, "tasks"),...constraints);
     },
-    [db, mode] // ✅ Đổi dependency từ activeTab → mode
+    [db, mode]
   );
 
   /* ================= LOAD DATA ================= */
@@ -117,7 +115,7 @@ export default function Home() {
       (snap) => {
         const data = snap.docs.map((doc) => ({
           id: doc.id,
-         ...doc.data(),
+        ...doc.data(),
         }));
         setTasks(data);
         setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -147,7 +145,7 @@ export default function Home() {
       const snap = await getDocs(q);
       const newTasks = snap.docs.map((doc) => ({
         id: doc.id,
-       ...doc.data(),
+      ...doc.data(),
       }));
       setTasks((prev) => [...prev,...newTasks]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -162,7 +160,6 @@ export default function Home() {
   /* ================= UI ================= */
   return (
     <div className="min-h-screen pb-24 font-sans">
-      {/* ✅ Đổi TopTabs → ModeToggle */}
       <ModeToggle
         mode={mode}
         setMode={setMode}
@@ -170,27 +167,21 @@ export default function Home() {
         planCount={mode === "plan"? tasks.length : undefined}
       />
 
-      {/* List */}
-      <div className="pt-4 space-y-3">
+      {/* ✅ Dùng TaskFeed + PlanFeed thay vì map trực tiếp */}
+      <div className="pt-4">
         {loading && <SkeletonList />}
 
-        {!loading &&
-          Array.isArray(tasks) &&
-          tasks.map((task) => (
-            <div key={task.id} className="px-4">
-              {/* ✅ Truyền mode vào TaskCard */}
-              <TaskCard task={task} mode={mode} />
-            </div>
-          ))}
+        {!loading && mode === "task" && <TaskFeed tasks={tasks} />}
+        {!loading && mode === "plan" && <PlanFeed plans={tasks} />}
 
         {!loading && hasMore && tasks.length > 0 && (
-          <div className="px-4">
+          <div className="px-4 mt-3">
             <button
               onClick={loadMore}
               disabled={loadingMore}
               className={`w-full py-3 font-bold text-sm rounded-2xl active:scale-95 transition-all disabled:opacity-50 ${
                 mode === "task"
-                 ? "text-orange-600 dark:text-orange-400 bg-orange-500/10 dark:bg-orange-500/20"
+                ? "text-orange-600 dark:text-orange-400 bg-orange-500/10 dark:bg-orange-500/20"
                   : "text-blue-600 dark:text-blue-400 bg-blue-500/10 dark:bg-blue-500/20"
               }`}
             >
@@ -198,9 +189,6 @@ export default function Home() {
             </button>
           </div>
         )}
-
-        {/* ✅ EmptyState nhận mode thay vì tab */}
-        {!loading && tasks.length === 0 && <EmptyState mode={mode} />}
       </div>
     </div>
   );
