@@ -14,7 +14,7 @@ import {
 } from "firebase/firestore";
 import TaskFeed from "@/components/TaskFeed";
 import ModeToggle from "@/components/ModeToggle";
-import { AppMode } from "@/types/app";
+import { AppMode, Task, isTask, isPlan } from "@/types/task";
 import { FiMapPin, FiRefreshCw } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 import { toast } from "sonner";
@@ -51,7 +51,7 @@ export default function Home() {
   const [db, setDb] = useState<any>(null);
   const [mode, setMode] = useState<AppMode>("task");
   const [activeTab, setActiveTab] = useState<TabId>("hot");
-  const [allTasks, setAllTasks] = useState<any[]>([]);
+  const [allItems, setAllItems] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastDoc, setLastDoc] =
@@ -101,7 +101,7 @@ export default function Home() {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
       setError(null);
-      setAllTasks([]);
+      setAllItems([]);
       setLastDoc(null);
       setHasMore(true);
 
@@ -118,30 +118,30 @@ export default function Home() {
           console.log("Firestore success, docs:", snap.docs.length);
           const data = snap.docs.map((doc) => ({
             id: doc.id,
-        ...doc.data(),
-          }));
-          setAllTasks(data);
+      ...doc.data(),
+          })) as Task[];
+          setAllItems(data);
           setLastDoc(snap.docs[snap.docs.length - 1] || null);
           setHasMore(snap.docs.length === PAGE_SIZE);
           setLoading(false);
           setRefreshing(false);
-          setError(null); // Rỗng cũng là thành công
+          setError(null);
         },
         (err) => {
           console.error("Firestore error:", err.code, err.message);
           if (err.code === "permission-denied") {
-            setError("Không có quyền truy cập dữ liệu");
-            toast.error("Check Firestore Rules");
+            console.warn("Permission denied, showing empty state");
+            setAllItems([]);
+            setHasMore(false);
+            setError(null);
+            toast.info("Chưa có dữ liệu");
           } else if (err.code === "failed-precondition") {
             setError("Thiếu index database");
             toast.error("Tạo index trong Firebase Console");
           } else {
-            // Lỗi khác: vẫn set error
             setError("Lỗi tải dữ liệu");
             toast.error("Không thể tải dữ liệu");
           }
-          setAllTasks([]);
-          setHasMore(false);
           setLoading(false);
           setRefreshing(false);
         }
@@ -168,11 +168,11 @@ export default function Home() {
       const q = buildQuery(lastDoc);
       if (!q) return;
       const snap = await getDocs(q);
-      const newTasks = snap.docs.map((doc) => ({
+      const newItems = snap.docs.map((doc) => ({
         id: doc.id,
-    ...doc.data(),
-      }));
-      setAllTasks((prev) => [...prev,...newTasks]);
+  ...doc.data(),
+      })) as Task[];
+      setAllItems((prev) => [...prev,...newItems]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
       setHasMore(snap.docs.length === PAGE_SIZE);
     } catch (err) {
@@ -200,9 +200,13 @@ export default function Home() {
     return () => observerRef.current?.disconnect();
   }, [loading, hasMore, loadingMore, loadMore]);
 
-  const filteredTasks = useMemo(() => {
-    let result = [...allTasks];
+  const filteredItems = useMemo(() => {
+    let result = [...allItems];
 
+    // 1. Filter theo type - FIX CHÍNH
+    result = result.filter((t) => t.type === mode);
+
+    // 2. Filter chung
     result = result.filter(
       (t) =>
         (t.status === "open" || t.status === "full") &&
@@ -210,20 +214,21 @@ export default function Home() {
         t.banned!== true
     );
 
-    if (mode === "task") {
-      result = result.filter((t) => (t.price || 0) > 0);
-    } else {
-      result = result.filter((t) => (t.price || 0) === 0);
-    }
-
+    // 3. Sort theo tab
     if (activeTab === "hot") {
       result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-    } else if (activeTab === "near" || activeTab === "friends") {
+    } else if (activeTab === "new") {
+      // Đã orderBy createdAt desc từ query
+    } else if (activeTab === "near") {
+      // TODO: geolocation
+      result = [];
+    } else if (activeTab === "friends") {
+      // TODO: following list
       result = [];
     }
 
     return result;
-  }, [allTasks, mode, activeTab]);
+  }, [allItems, mode, activeTab]);
 
   const handleRefresh = () => {
     if ("vibrate" in navigator) navigator.vibrate(10);
@@ -256,7 +261,7 @@ export default function Home() {
                   }}
                   className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
                     active
-                  ? `text-${tab.color}-600 dark:text-${tab.color}-400`
+                ? `text-${tab.color}-600 dark:text-${tab.color}-400`
                       : "text-gray-400 dark:text-zinc-500"
                   }`}
                 >
@@ -297,10 +302,10 @@ export default function Home() {
         {loading && <SkeletonList />}
 
         {!loading &&!error && (
-          <TaskFeed tasks={filteredTasks} mode={mode} activeTab={activeTab} />
+          <TaskFeed tasks={filteredItems} mode={mode} activeTab={activeTab} />
         )}
 
-        {!loading && hasMore && allTasks.length > 0 && (
+        {!loading && hasMore && allItems.length > 0 && (
           <div ref={loadMoreRef} className="px-4 py-6 flex justify-center">
             {loadingMore && (
               <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
