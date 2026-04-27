@@ -17,7 +17,6 @@ import {
   Smartphone,
   Shield,
   Check,
-  X,
   AlertTriangle,
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
