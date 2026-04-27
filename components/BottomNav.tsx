@@ -9,9 +9,8 @@ export default function BottomNav() {
   const pathname = usePathname();
   const [, startTransition] = useTransition();
   
-  // Check đang ở Task hay Plan
+  // Check đang ở Plan
   const isPlan = pathname.startsWith("/plan") || pathname.startsWith("/create/plan");
-  const isTask = pathname.startsWith("/task") || pathname === "/" || pathname.startsWith("/create/task");
 
   useEffect(() => {
     router.prefetch("/");
