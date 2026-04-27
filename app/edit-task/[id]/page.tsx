@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getTaskById, updateTask, deleteTask } from "@/lib/task";
-import { Task, UpdateTaskInput } from "@/types/task";
+import { Task, UpdateTaskInput, isTask } from "@/types/task";
 import { toast, Toaster } from "sonner";
 import { FiArrowLeft, FiTrash2, FiSave, FiX } from "react-icons/fi";
 import Link from "next/link";
@@ -49,8 +49,15 @@ export default function EditTaskPage() {
         const data = await getTaskById(taskId);
 
         if (!data) {
-          toast.error("Không tìm thấy công việc");
+          toast.error("Không tìm thấy");
           router.replace("/");
+          return;
+        }
+
+        // Fix: chỉ cho edit Task, không cho edit Plan ở route này
+        if (!isTask(data)) {
+          toast.error("Không thể sửa lịch hẹn ở đây");
+          router.replace(`/plan/${taskId}`);
           return;
         }
 
@@ -68,8 +75,8 @@ export default function EditTaskPage() {
 
         setTask(data);
 
-        // 🔥 normalize dữ liệu để KHÔNG BAO GIỜ undefined
         setForm({
+          type: "task",
           title: data.title ?? "",
           description: data.description ?? "",
           price: data.price ?? 0,
@@ -104,15 +111,15 @@ export default function EditTaskPage() {
     if (!form.description || form.description.length < 20)
       newErrors.description = "Mô tả tối thiểu 20 ký tự";
 
-    if (!form.price || form.price < 1000)
+    if (form.price !== undefined && form.price < 1000)
       newErrors.price = "Giá tối thiểu 1.000đ";
 
     if (!form.totalSlots || form.totalSlots < 1)
       newErrors.totalSlots = "Số người tối thiểu 1";
 
-    if (task && form.totalSlots !== undefined && form.totalSlots < task.joined) {
-  newErrors.totalSlots = `Không được nhỏ hơn ${task.joined} người đã tham gia`;
-}
+    if (task && isTask(task) && form.totalSlots !== undefined && form.totalSlots < task.joined) {
+      newErrors.totalSlots = `Không được nhỏ hơn ${task.joined} người đã tham gia`;
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -156,13 +163,12 @@ export default function EditTaskPage() {
     }
   };
 
-  // 🔥 FIX CHUẨN TYPE
- const removeImage = (index: number) => {
-  setForm((prev) => ({
-    ...prev,
-    images: (prev.images ?? []).filter((_, i) => i !== index),
-  }));
-};
+  const removeImage = (index: number) => {
+    setForm((prev) => ({
+      ...prev,
+      images: (prev.images ?? []).filter((_, i) => i !== index),
+    }));
+  };
 
   if (loading) {
     return (
@@ -172,7 +178,7 @@ export default function EditTaskPage() {
     );
   }
 
-  if (!task) return null;
+  if (!task || !isTask(task)) return null;
 
   return (
     <>
@@ -203,7 +209,6 @@ export default function EditTaskPage() {
           onSubmit={handleUpdate}
           className="max-w-2xl mx-auto px-4 py-6 space-y-6"
         >
-          {/* TITLE */}
           <div>
             <label className="block text-sm font-semibold mb-2">
               Tiêu đề *
@@ -218,47 +223,81 @@ export default function EditTaskPage() {
             {errors.title && <p className="text-red-500 text-xs">{errors.title}</p>}
           </div>
 
-          {/* DESCRIPTION */}
           <div>
+            <label className="block text-sm font-semibold mb-2">
+              Mô tả *
+            </label>
             <textarea
               value={form.description}
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, description: e.target.value }))
               }
+              rows={6}
+              className="w-full px-4 py-3 rounded-xl border"
             />
+            {errors.description && <p className="text-red-500 text-xs">{errors.description}</p>}
           </div>
 
-          {/* IMAGES */}
-       {(form.images ?? []).length > 0 && (
-  <div className="grid grid-cols-3 gap-2">
-    {(form.images ?? []).map((img, i) => (
-      <div key={i} className="relative">
-        <img src={img} alt="task image" />
-        <button type="button" onClick={() => removeImage(i)}>
-          <FiX />
-        </button>
-      </div>
-    ))}
-  </div>
-)}
+          <div>
+            <label className="block text-sm font-semibold mb-2">
+              Giá *
+            </label>
+            <input
+              type="number"
+              value={form.price}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, price: parseInt(e.target.value) || 0 }))
+              }
+              className="w-full px-4 py-3 rounded-xl border"
+            />
+            {errors.price && <p className="text-red-500 text-xs">{errors.price}</p>}
+          </div>
 
-       <button
-  type="submit"
-  disabled={saving}
-  className="w-full py-3.5 rounded-2xl text-white font-semibold bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center gap-2"
->
-  {saving ? (
-    <>
-      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-      Đang lưu...
-    </>
-  ) : (
-    <>
-      <FiSave />
-      Lưu thay đổi
-    </>
-  )}
-</button>
+          <div>
+            <label className="block text-sm font-semibold mb-2">
+              Số người *
+            </label>
+            <input
+              type="number"
+              value={form.totalSlots}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, totalSlots: parseInt(e.target.value) || 1 }))
+              }
+              className="w-full px-4 py-3 rounded-xl border"
+            />
+            {errors.totalSlots && <p className="text-red-500 text-xs">{errors.totalSlots}</p>}
+          </div>
+
+          {(form.images ?? []).length > 0 && (
+            <div className="grid grid-cols-3 gap-2">
+              {(form.images ?? []).map((img, i) => (
+                <div key={i} className="relative">
+                  <img src={img} alt="task image" className="rounded-lg" />
+                  <button type="button" onClick={() => removeImage(i)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1">
+                    <FiX size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full py-3.5 rounded-2xl text-white font-semibold bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center gap-2"
+          >
+            {saving ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Đang lưu...
+              </>
+            ) : (
+              <>
+                <FiSave />
+                Lưu thay đổi
+              </>
+            )}
+          </button>
         </form>
       </div>
     </>
