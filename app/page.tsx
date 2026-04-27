@@ -14,7 +14,8 @@ import {
 } from "firebase/firestore";
 import TaskFeed from "@/components/TaskFeed";
 import ModeToggle from "@/components/ModeToggle";
-import { AppMode, Task, TaskItem, PlanItem, TaskListItem, PlanListItem, isTask, isPlan } from "@/types/task";
+import { useAppStore } from "@/store/app"; // Thêm dòng này
+import { Task, TaskItem, PlanItem, TaskListItem, PlanListItem, isTask, isPlan } from "@/types/task";
 import { FiMapPin, FiRefreshCw } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 import { toast } from "sonner";
@@ -49,7 +50,7 @@ function SkeletonList() {
 
 export default function Home() {
   const [db, setDb] = useState<any>(null);
-  const [mode, setMode] = useState<AppMode>("task");
+  const mode = useAppStore((s) => s.mode); // Đọc từ store thay vì useState
   const [activeTab, setActiveTab] = useState<TabId>("hot");
   const [allItems, setAllItems] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,7 +119,7 @@ export default function Home() {
           console.log("Firestore success, docs:", snap.docs.length);
           const data = snap.docs.map((doc) => ({
             id: doc.id,
-          ...doc.data(),
+         ...doc.data(),
           })) as Task[];
           setAllItems(data);
           setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -170,7 +171,7 @@ export default function Home() {
       const snap = await getDocs(q);
       const newItems = snap.docs.map((doc) => ({
         id: doc.id,
-      ...doc.data(),
+     ...doc.data(),
       })) as Task[];
       setAllItems((prev) => [...prev,...newItems]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -239,15 +240,15 @@ export default function Home() {
           viewCount: task.viewCount?? 0,
           likeCount: task.likeCount?? 0,
           commentCount: task.commentCount?? 0,
-        ...(task.location && { location: task.location }),
+       ...(task.location && { location: task.location }),
           isRemote: task.isRemote?? false,
           likes: task.likes || [],
           budgetType: task.budgetType,
           userId: task.userId,
           description: task.description || "",
           type: task.type,
-        ...(task.deadline && { deadline: task.deadline }),
-        ...(task.startDate && { startDate: task.startDate }),
+       ...(task.deadline && { deadline: task.deadline }),
+       ...(task.startDate && { startDate: task.startDate }),
         };
       });
 
@@ -277,12 +278,12 @@ export default function Home() {
           viewCount: plan.viewCount?? 0,
           likeCount: plan.likeCount?? 0,
           commentCount: plan.commentCount?? 0,
-        ...(plan.location && { location: plan.location }),
+       ...(plan.location && { location: plan.location }),
           likes: plan.likes || [],
           userId: plan.userId,
           description: plan.description || "",
           eventDate: plan.eventDate,
-        ...(plan.endDate && { endDate: plan.endDate }),
+       ...(plan.endDate && { endDate: plan.endDate }),
           maxParticipants: plan.maxParticipants?? 0,
           currentParticipants: plan.currentParticipants?? 0,
           costType: plan.costType,
@@ -314,7 +315,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen pb-24 font-sans bg-gray-50 dark:bg-black">
-      <ModeToggle mode={mode} setMode={setMode} />
+      <ModeToggle />
 
       <div className="sticky top-0 z-40 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800">
         <div className="max-w-2xl mx-auto px-4">
@@ -331,7 +332,7 @@ export default function Home() {
                   }}
                   className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
                     active
-                    ? `text-${tab.color}-600 dark:text-${tab.color}-400`
+                  ? `text-${tab.color}-600 dark:text-${tab.color}-400`
                       : "text-gray-400 dark:text-zinc-500"
                   }`}
                 >
