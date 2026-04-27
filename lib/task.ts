@@ -136,7 +136,7 @@ export async function createTask(
     visibility: data.visibility || "public",
     createdAt: serverTimestamp() as Timestamp,
     updatedAt: serverTimestamp() as Timestamp,
-   ...(data.location && { location: data.location }),
+  ...(data.location && { location: data.location }),
     searchKeywords: generateTaskSearchKeywords({
       title: data.title,
       description: data.description || "",
@@ -156,9 +156,9 @@ export async function createTask(
     joined: 0,
     requirements: data.requirements || "",
     isRemote: data.isRemote?? false,
-   ...(data.applicationDeadline && { applicationDeadline: data.applicationDeadline }),
-   ...(data.deadline && { deadline: data.deadline }),
-   ...(data.startDate && { startDate: data.startDate }),
+  ...(data.applicationDeadline && { applicationDeadline: data.applicationDeadline }),
+  ...(data.deadline && { deadline: data.deadline }),
+  ...(data.startDate && { startDate: data.startDate }),
     featured: data.featured || false,
   };
 
@@ -206,8 +206,8 @@ export async function createPlan(
   const milestones: PlanMilestone[] = (data.milestones || []).map((m, idx) => ({
     id: nanoid(8),
     title: m.title.trim(),
-   ...(m.description && { description: m.description.trim() }),
-   ...(m.dueDate && { dueDate: m.dueDate }),
+  ...(m.description && { description: m.description.trim() }),
+  ...(m.dueDate && { dueDate: m.dueDate }),
     completed: false,
     assignedTo: m.assignedTo || [],
     order: idx,
@@ -247,7 +247,7 @@ export async function createPlan(
     visibility: data.visibility || "public",
     createdAt: serverTimestamp() as Timestamp,
     updatedAt: serverTimestamp() as Timestamp,
-   ...(data.location && { location: data.location }),
+  ...(data.location && { location: data.location }),
     searchKeywords: generateTaskSearchKeywords({
       title: data.title,
       description: data.description || "",
@@ -261,16 +261,16 @@ export async function createPlan(
     shareCount: 0,
     bookmarkCount: 0,
     eventDate: data.eventDate,
-   ...(data.endDate && { endDate: data.endDate }),
+  ...(data.endDate && { endDate: data.endDate }),
     milestones,
     participants: [ownerParticipant],
     maxParticipants: data.maxParticipants,
     currentParticipants: 1,
-   ...(inviteCode && { inviteCode }),
+  ...(inviteCode && { inviteCode }),
     allowInvite: data.allowInvite?? true,
     costType: data.costType,
-   ...(data.costType!== "free" && data.costAmount && { costAmount: data.costAmount }),
-   ...(data.costDescription && { costDescription: data.costDescription }),
+  ...(data.costType!== "free" && data.costAmount && { costAmount: data.costAmount }),
+  ...(data.costDescription && { costDescription: data.costDescription }),
     autoAccept: data.autoAccept?? false,
     requireApproval: data.requireApproval?? false,
     featured: data.featured || false,
@@ -314,7 +314,7 @@ export async function updateTask(
     }
 
     const newSearchKeywords = updates.title || updates.description || updates.tags || updates.category
- ? generateTaskSearchKeywords({
+? generateTaskSearchKeywords({
           title: updates.title || data.title,
           description: updates.description || data.description,
           tags: updates.tags || data.tags,
@@ -324,7 +324,7 @@ export async function updateTask(
       : data.searchKeywords;
 
     transaction.update(taskRef, {
- ...updates,
+...updates,
       searchKeywords: newSearchKeywords,
       edited: true,
       editedAt: serverTimestamp(),
@@ -366,7 +366,7 @@ export async function updatePlan(
     }
 
     const newSearchKeywords = updates.title || updates.description || updates.tags || updates.category
- ? generateTaskSearchKeywords({
+? generateTaskSearchKeywords({
           title: updates.title || data.title,
           description: updates.description || data.description,
           tags: updates.tags || data.tags,
@@ -376,7 +376,7 @@ export async function updatePlan(
       : data.searchKeywords;
 
     transaction.update(planRef, {
- ...updates,
+...updates,
       searchKeywords: newSearchKeywords,
       edited: true,
       editedAt: serverTimestamp(),
@@ -430,7 +430,7 @@ export async function getTaskById(id: string): Promise<Task | null> {
   if (!snap.exists()) return null;
   const data = snap.data() as Task;
   if (data.banned || data.hidden) return null;
-  return { id: snap.id,...data };
+  return {...data, id: snap.id };
 }
 
 export async function getTaskBySlug(slug: string): Promise<Task | null> {
@@ -444,7 +444,7 @@ export async function getTaskBySlug(slug: string): Promise<Task | null> {
   const snap = await getDocs(q);
   if (snap.empty) return null;
   const docSnap = snap.docs[0];
-  return { id: docSnap.id,...docSnap.data() } as Task;
+  return {...docSnap.data(), id: docSnap.id } as Task;
 }
 
 export async function getTaskByShortId(shortId: string): Promise<Task | null> {
@@ -458,7 +458,7 @@ export async function getTaskByShortId(shortId: string): Promise<Task | null> {
   const snap = await getDocs(q);
   if (snap.empty) return null;
   const docSnap = snap.docs[0];
-  return { id: docSnap.id,...docSnap.data() } as Task;
+  return {...docSnap.data(), id: docSnap.id } as Task;
 }
 
 /* ================= LISTEN ================= */
@@ -494,7 +494,7 @@ export const listenItems = (
   return onSnapshot(
     q,
     (snapshot) => {
-      const data = snapshot.docs.map((d) => ({ id: d.id,...d.data() } as ItemListItem));
+      const data = snapshot.docs.map((d) => ({...d.data(), id: d.id } as ItemListItem));
       callback(data);
     },
     (err) => {
@@ -658,7 +658,7 @@ export async function toggleMilestone(
         if (!canToggle) throw new TaskError("Bạn không có quyền thay đổi mốc này");
 
         return {
-     ...m,
+    ...m,
           completed:!m.completed,
           completedAt: m.completed? undefined : Timestamp.now(),
         };
