@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { doc, getDoc, collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
-import { TaskListItem, isTask } from "@/types/task";
+import { TaskListItem } from "@/types/task";
 import { FiChevronLeft, FiMapPin, FiCalendar, FiBriefcase } from "react-icons/fi";
 import { formatTaskPrice } from "@/types/task";
 import Link from "next/link";
@@ -179,11 +179,11 @@ export default function UserProfilePage() {
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100 line-clamp-1">{task.title}</h3>
                 <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-zinc-400">
                   <span className="font-bold text-emerald-600">
-                    {isTask(task) ? formatTaskPrice(task.price) : "Miễn phí"}
+                    {task.type === "task" ? formatTaskPrice((task as any).price) : "Miễn phí"}
                   </span>
                   <span>•</span>
                   <span>
-                    {isTask(task) ? `${task.joined}/${task.totalSlots}` : "Kế hoạch"} người
+                    {task.type === "task" ? `${(task as any).joined}/${(task as any).totalSlots}` : "Kế hoạch"} người
                   </span>
                 </div>
                 <div className="flex items-center gap-3 mt-2 text-xs">
