@@ -8,12 +8,12 @@ import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { incrementTaskView } from "@/lib/task";
-import { TaskListItem } from "@/types/task";
+import { TaskListItem, PlanListItem } from "@/types/task";
 import { AppMode } from "@/types/app";
 import { toast } from "sonner";
 
 type Props = {
-  task: TaskListItem;
+  task: TaskListItem | PlanListItem;
   mode: AppMode;
   onDelete?: (id: string) => void;
 };
@@ -42,7 +42,7 @@ function TaskCard({ task, mode }: Props) {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, setCurrentUser);
     return () => unsub();
-  }, []);
+  }, [auth]);
 
   if (!task) return <Skeleton />;
 
@@ -60,6 +60,9 @@ function TaskCard({ task, mode }: Props) {
 
   const safeStatus = (task.status && task.status in statusConfig? task.status : "open") as keyof typeof statusConfig;
   const status = statusConfig[safeStatus];
+
+  const taskData = task as TaskListItem;
+  const planData = task as PlanListItem;
 
   /* ================= LIKE ================= */
   const handleLike = useCallback(async (e: React.MouseEvent) => {
@@ -90,8 +93,8 @@ function TaskCard({ task, mode }: Props) {
   const handleShare = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (typeof window === "undefined") return;
-    const url = `${window.location.origin}/task/${task.slug}`;
-    const title = task.title || "Xem công việc";
+    const url = `${window.location.origin}/${mode}/${task.slug}`;
+    const title = task.title || "Xem bài đăng";
 
     if (navigator.share) {
       try {
@@ -101,13 +104,13 @@ function TaskCard({ task, mode }: Props) {
       await navigator.clipboard.writeText(url);
       toast.success("Đã sao chép link");
     }
-  }, [task.slug, task.title]);
+  }, [task.slug, task.title, mode]);
 
   /* ================= NAV ================= */
   const handleClick = useCallback(() => {
     incrementTaskView(task.id);
-    router.push(`/task/${task.slug}`);
-  }, [router, task.id, task.slug]);
+    router.push(`/${mode}/${task.slug}`);
+  }, [router, task.id, task.slug, mode]);
 
   const goToProfile = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -115,8 +118,8 @@ function TaskCard({ task, mode }: Props) {
   }, [router, task.userId]);
 
   const handleMouseEnter = useCallback(() => {
-    router.prefetch(`/task/${task.slug}`);
-  }, [router, task.slug]);
+    router.prefetch(`/${mode}/${task.slug}`);
+  }, [router, task.slug, mode]);
 
   /* ================= TIME ================= */
   const timeAgo = (seconds?: number) => {
@@ -157,7 +160,7 @@ function TaskCard({ task, mode }: Props) {
                 </span>
                 {isPlanMode? (
                   <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-lg">
-                    {planCategoryEmoji[(task as any).planCategory || "other"]} PLAN
+                    {planCategoryEmoji[planData.category || "other"]} PLAN
                   </span>
                 ) : (
                   <span className={`text-xs font-bold text-${status.color}-600 dark:text-${status.color}-400 bg-${status.color}-50 dark:bg-${status.color}-950/50 px-2 py-0.5 rounded-lg`}>
@@ -193,24 +196,24 @@ function TaskCard({ task, mode }: Props) {
               {task.title}
             </h3>
 
-            {task.type === "task" && (task as any).price!== undefined && (
+            {task.type === "task" && taskData.price!== undefined && (
               <div className="shrink-0 text-right">
                 <div className="text-lg font-extrabold bg-gradient-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent">
-                  {formatPrice((task as any).price, (task as any).currency)}
+                  {formatPrice(taskData.price, taskData.currency)}
                 </div>
-                {(task as any).totalSlots && (
+                {taskData.totalSlots && (
                   <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-zinc-400 justify-end">
                     <FiUsers size={12} />
-                    {(task as any).joined || 0}/{(task as any).totalSlots}
+                    {taskData.joined || 0}/{taskData.totalSlots}
                   </div>
                 )}
               </div>
             )}
 
-            {isPlanMode && (task as any).totalSlots && (
+            {isPlanMode && planData.maxParticipants && (
               <button className="shrink-0 px-3 py-1.5 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white text-sm font-bold flex items-center gap-1">
                 <FiUsers className="w-4 h-4" />
-                {(task as any).joined || 0}/{(task as any).totalSlots}
+                {planData.currentParticipants || 0}/{planData.maxParticipants}
               </button>
             )}
           </div>
@@ -223,10 +226,10 @@ function TaskCard({ task, mode }: Props) {
 
           {isPlanMode && (
             <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-zinc-400">
-              {(task as any).planTime && (
+              {planData.eventDate && (
                 <span className="flex items-center gap-1">
                   <FiCalendar className="w-3 h-3" />
-                  {(task as any).planTime}
+                  {new Date(planData.eventDate.seconds * 1000).toLocaleDateString("vi-VN")}
                 </span>
               )}
               {task.location && (
@@ -275,11 +278,13 @@ function Skeleton() {
 }
 
 export default memo(TaskCard, (prev, next) => {
+  const prevTaskData = prev.task as TaskListItem;
+  const nextTaskData = next.task as TaskListItem;
   return (
     prev.task.id === next.task.id &&
     prev.mode === next.mode &&
     prev.task.likeCount === next.task.likeCount &&
     prev.task.commentCount === next.task.commentCount &&
-    (prev.task.type === "task"? (prev.task as any).joined : 0) === (next.task.type === "task"? (next.task as any).joined : 0)
+    (prev.task.type === "task"? prevTaskData.joined : 0) === (next.task.type === "task"? nextTaskData.joined : 0)
   );
 });
