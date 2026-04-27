@@ -118,7 +118,7 @@ export default function Home() {
           console.log("Firestore success, docs:", snap.docs.length);
           const data = snap.docs.map((doc) => ({
             id: doc.id,
-           ...doc.data(),
+          ...doc.data(),
           })) as Task[];
           setAllItems(data);
           setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -170,7 +170,7 @@ export default function Home() {
       const snap = await getDocs(q);
       const newItems = snap.docs.map((doc) => ({
         id: doc.id,
-       ...doc.data(),
+      ...doc.data(),
       })) as Task[];
       setAllItems((prev) => [...prev,...newItems]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -230,24 +230,24 @@ export default function Home() {
           status: task.status,
           userName: task.userName,
           userAvatar: task.userAvatar,
-          userShortId: task.userShortId,
-          userUsername: task.userUsername,
+         ...(task.userShortId && { userShortId: task.userShortId }),
+         ...(task.userUsername && { userUsername: task.userUsername }),
           createdAt: task.createdAt,
-          category: task.category,
-          tags: task.tags,
-          images: task.images,
-          viewCount: task.viewCount,
-          likeCount: task.likeCount,
-          commentCount: task.commentCount,
-         ...(task.location && { location: task.location }),
+         ...(task.category && { category: task.category }),
+         ...(task.tags && { tags: task.tags }),
+         ...(task.images && { images: task.images }),
+         ...(task.viewCount!== undefined && { viewCount: task.viewCount }),
+         ...(task.likeCount!== undefined && { likeCount: task.likeCount }),
+         ...(task.commentCount!== undefined && { commentCount: task.commentCount }),
+        ...(task.location && { location: task.location }),
           isRemote: task.isRemote,
-          likes: task.likes,
+         ...(task.likes && { likes: task.likes }),
           budgetType: task.budgetType,
           userId: task.userId,
           description: task.description,
           type: task.type,
-         ...(task.deadline && { deadline: task.deadline }),
-         ...(task.startDate && { startDate: task.startDate }),
+        ...(task.deadline && { deadline: task.deadline }),
+        ...(task.startDate && { startDate: task.startDate }),
         };
       });
 
@@ -268,26 +268,26 @@ export default function Home() {
           status: plan.status,
           userName: plan.userName,
           userAvatar: plan.userAvatar,
-          userShortId: plan.userShortId,
-          userUsername: plan.userUsername,
+         ...(plan.userShortId && { userShortId: plan.userShortId }),
+         ...(plan.userUsername && { userUsername: plan.userUsername }),
           createdAt: plan.createdAt,
-          category: plan.category,
-          tags: plan.tags,
-          images: plan.images,
-          viewCount: plan.viewCount,
-          likeCount: plan.likeCount,
-          commentCount: plan.commentCount,
-         ...(plan.location && { location: plan.location }),
-          likes: plan.likes,
+         ...(plan.category && { category: plan.category }),
+         ...(plan.tags && { tags: plan.tags }),
+         ...(plan.images && { images: plan.images }),
+         ...(plan.viewCount!== undefined && { viewCount: plan.viewCount }),
+         ...(plan.likeCount!== undefined && { likeCount: plan.likeCount }),
+         ...(plan.commentCount!== undefined && { commentCount: plan.commentCount }),
+        ...(plan.location && { location: plan.location }),
+         ...(plan.likes && { likes: plan.likes }),
           userId: plan.userId,
           description: plan.description,
           eventDate: plan.eventDate,
-          endDate: plan.endDate,
+         ...(plan.endDate && { endDate: plan.endDate }),
           maxParticipants: plan.maxParticipants,
           currentParticipants: plan.currentParticipants,
           costType: plan.costType,
           costAmount: plan.costAmount,
-          milestones: plan.milestones,
+         ...(plan.milestones && { milestones: plan.milestones }),
         };
       });
 
@@ -331,7 +331,7 @@ export default function Home() {
                   }}
                   className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
                     active
-                     ? `text-${tab.color}-600 dark:text-${tab.color}-400`
+                    ? `text-${tab.color}-600 dark:text-${tab.color}-400`
                       : "text-gray-400 dark:text-zinc-500"
                   }`}
                 >
