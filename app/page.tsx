@@ -117,7 +117,7 @@ export default function Home() {
           console.log("Firestore success, docs:", snap.docs.length);
           const data = snap.docs.map((doc) => ({
             id: doc.id,
-         ...doc.data(),
+        ...doc.data(),
           })) as Task[];
           setAllItems(data);
           setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -169,7 +169,7 @@ export default function Home() {
       const snap = await getDocs(q);
       const newItems = snap.docs.map((doc) => ({
         id: doc.id,
-     ...doc.data(),
+    ...doc.data(),
       })) as Task[];
       setAllItems((prev) => [...prev,...newItems]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -324,7 +324,7 @@ export default function Home() {
                   }}
                   className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
                     active
-                 ? `text-${tab.color}-600 dark:text-${tab.color}-400`
+                ? `text-${tab.color}-600 dark:text-${tab.color}-400`
                       : "text-gray-400 dark:text-zinc-500"
                   }`}
                 >
