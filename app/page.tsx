@@ -6,7 +6,6 @@ import {
   query,
   orderBy,
   onSnapshot,
-  where,
   limit,
   startAfter,
   getDocs,
@@ -69,6 +68,7 @@ export default function Home() {
     try {
       const _db = getFirebaseDB();
       setDb(_db);
+      setError(null);
     } catch (err) {
       console.error("Firebase init error:", err);
       setError("Không thể kết nối database");
@@ -81,7 +81,7 @@ export default function Home() {
     (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
       if (!db) return null;
       const constraints: any[] = [
-        orderBy("createdAt", "desc"),
+        orderBy("createdAt", "desc"), // Chỉ 1 field, không where
         limit(PAGE_SIZE),
       ];
       if (startAfterDoc) {
@@ -95,10 +95,13 @@ export default function Home() {
   const loadData = useCallback(
     async (isRefresh = false) => {
       if (!db) return;
+
+      // Cleanup cũ trước
       if (unsubRef.current) {
         unsubRef.current();
         unsubRef.current = null;
       }
+
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
       setError(null);
@@ -107,7 +110,11 @@ export default function Home() {
       setHasMore(true);
 
       const q = buildQuery();
-      if (!q) return;
+      if (!q) {
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
 
       const unsub = onSnapshot(
         q,
@@ -121,7 +128,7 @@ export default function Home() {
           setHasMore(snap.docs.length === PAGE_SIZE);
           setLoading(false);
           setRefreshing(false);
-          setError(null);
+          setError(null); // Clear error khi success
         },
         (err) => {
           console.error("Firestore error:", err);
@@ -134,15 +141,18 @@ export default function Home() {
         }
       );
       unsubRef.current = unsub;
-      return () => {
-        if (unsub) unsub();
-      };
     },
     [db, buildQuery]
   );
 
   useEffect(() => {
     loadData();
+    return () => {
+      if (unsubRef.current) {
+        unsubRef.current();
+        unsubRef.current = null;
+      }
+    };
   }, [loadData]);
 
   const loadMore = useCallback(async () => {
@@ -184,9 +194,17 @@ export default function Home() {
     return () => observerRef.current?.disconnect();
   }, [loading, hasMore, loadingMore, loadMore]);
 
-  // FILTER CLIENT-SIDE - KHÔNG CẦN INDEX
+  // FILTER CLIENT-SIDE 100% - KHÔNG CẦN INDEX
   const filteredTasks = useMemo(() => {
     let result = [...allTasks];
+
+    // Filter cơ bản: status, visibility, banned
+    result = result.filter(
+      (t) =>
+        (t.status === "open" || t.status === "full") &&
+        t.visibility === "public" &&
+        t.banned!== true
+    );
 
     // Filter theo mode
     if (mode === "task") {
@@ -195,18 +213,15 @@ export default function Home() {
       result = result.filter((t) => (t.price || 0) === 0);
     }
 
-    // Filter status cơ bản
-    result = result.filter(
-      (t) => t.status === "open" || t.status === "full"
-    );
-
     // Filter theo tab
     if (activeTab === "hot") {
       result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-    } else if (activeTab === "near" || activeTab === "friends") {
-      result = []; // Tạm thời rỗng
+    } else if (activeTab === "near") {
+      result = []; // TODO: geolocation
+    } else if (activeTab === "friends") {
+      result = []; // TODO: following list
     }
-    // new thì giữ nguyên
+    // new giữ nguyên createdAt desc
 
     return result;
   }, [allTasks, mode, activeTab]);
