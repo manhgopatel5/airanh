@@ -1,8 +1,8 @@
 "use client";
 import { HiPlus, HiArrowPath } from "react-icons/hi2";
 import { 
-  FiTrendingUp, FiNavigation, FiInbox, FiUsers, FiCalendar,
-  FiZap, FiMapPin, FiClock, FiUserPlus // thêm 4 icon mới cho plan
+  FiTrendingUp, FiNavigation, FiInbox, FiUsers,
+  FiZap, FiMapPin, FiClock, FiUserPlus
 } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -41,34 +41,32 @@ const MESSAGES = {
     hot: { 
       title: "Chưa có kế hoạch hot", 
       desc: "Tạo hoạt động đầu tiên để\nrủ mọi người tham gia", 
-      icon: FiZap, // đổi từ FiTrendingUp
+      icon: FiZap,
       suggests: ["Cafe sáng T7", "Nhậu tối nay Q1", "Boardgame 4 người", "Phượt Vũng Tàu"]
     },
     near: { 
       title: "Quanh đây chưa có hẹn", 
       desc: "Lên kèo gần bạn để offline\ncùng hàng xóm", 
-      icon: FiMapPin, // đổi từ FiNavigation
+      icon: FiMapPin,
       suggests: ["Cafe Landmark 81", "Chạy bộ công viên", "Bi-a gần đây", "Workshop vẽ"]
     },
     new: { 
       title: "Chưa có kế hoạch mới", 
       desc: "Tạo sự kiện đầu tiên\ntrong hôm nay", 
-      icon: FiClock, // đổi từ FiCalendar
+      icon: FiClock,
       suggests: ["Lên kèo tối nay", "Đặt bàn 6 người", "Xem phim CGV", "Đá banh sân 5"]
     },
     friends: { 
       title: "Bạn bè chưa lên kèo", 
       desc: "Rủ bạn bè tạo kế hoạch\nđi chơi chung", 
-      icon: FiUserPlus, // đổi từ FiUsers
+      icon: FiUserPlus,
       suggests: ["Sinh nhật team", "Tân gia nhà mới", "Đi Đà Lạt nhóm", "Team building"]
     },
   },
 };
 
-// Phối màu đồng bộ cho từng mode
 const THEME = {
   task: {
-    // Cam - năng động, việc gấp
     iconBg: "bg-orange-500/10 dark:bg-orange-400/15",
     iconColor: "text-orange-600 dark:text-orange-400",
     tagBg: "bg-orange-500/10 hover:bg-orange-500/20 dark:bg-orange-400/15 dark:hover:bg-orange-400/25",
@@ -77,7 +75,6 @@ const THEME = {
     buttonText: "text-white",
   },
   plan: {
-    // Tím - sáng tạo, hẹn hò
     iconBg: "bg-violet-500/10 dark:bg-violet-400/15",
     iconColor: "text-violet-600 dark:text-violet-400",
     tagBg: "bg-violet-500/10 hover:bg-violet-500/20 dark:bg-violet-400/15 dark:hover:bg-violet-400/25",
