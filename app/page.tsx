@@ -23,7 +23,6 @@ import { toast } from "sonner";
 const PAGE_SIZE = 20;
 type TabId = "hot" | "near" | "friends" | "new";
 
-/* ================= SKELETON ================= */
 function SkeletonList() {
   return (
     <div className="space-y-3 px-4 animate-in fade-in duration-300">
@@ -49,7 +48,6 @@ function SkeletonList() {
   );
 }
 
-/* ================= MAIN ================= */
 export default function Home() {
   const [db, setDb] = useState<any>(null);
   const [mode, setMode] = useState<AppMode>("task");
@@ -66,7 +64,6 @@ export default function Home() {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  /* ================= INIT FIREBASE ================= */
   useEffect(() => {
     if (db) return;
     try {
@@ -75,31 +72,26 @@ export default function Home() {
     } catch (err) {
       console.error("Firebase init error:", err);
       setError("Không thể kết nối database");
+      setLoading(false);
     }
   }, [db]);
 
-  /* ================= BUILD QUERY - CHỈ QUERY CƠ BẢN ================= */
+  // QUERY ĐƠN GIẢN NHẤT - KHÔNG CẦN INDEX
   const buildQuery = useCallback(
     (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
       if (!db) return null;
       const constraints: any[] = [
-        where("status", "in", ["open", "full"]),
-        where("visibility", "==", "public"),
-        where("banned", "==", false),
-        where("price", mode === "task"? ">" : "==", 0),
-        orderBy("createdAt", "desc"), // Chỉ orderBy 1 field để không cần index
+        orderBy("createdAt", "desc"),
         limit(PAGE_SIZE),
       ];
-
       if (startAfterDoc) {
         constraints.push(startAfter(startAfterDoc));
       }
       return query(collection(db, "tasks"),...constraints);
     },
-    [db, mode]
+    [db]
   );
 
-  /* ================= LOAD DATA ================= */
   const loadData = useCallback(
     async (isRefresh = false) => {
       if (!db) return;
@@ -122,13 +114,14 @@ export default function Home() {
         (snap) => {
           const data = snap.docs.map((doc) => ({
             id: doc.id,
-       ...doc.data(),
+           ...doc.data(),
           }));
           setAllTasks(data);
           setLastDoc(snap.docs[snap.docs.length - 1] || null);
           setHasMore(snap.docs.length === PAGE_SIZE);
           setLoading(false);
           setRefreshing(false);
+          setError(null);
         },
         (err) => {
           console.error("Firestore error:", err);
@@ -152,7 +145,6 @@ export default function Home() {
     loadData();
   }, [loadData]);
 
-  /* ================= LOAD MORE ================= */
   const loadMore = useCallback(async () => {
     if (!db ||!lastDoc || loadingMore ||!hasMore) return;
     setLoadingMore(true);
@@ -162,7 +154,7 @@ export default function Home() {
       const snap = await getDocs(q);
       const newTasks = snap.docs.map((doc) => ({
         id: doc.id,
-   ...doc.data(),
+       ...doc.data(),
       }));
       setAllTasks((prev) => [...prev,...newTasks]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -175,7 +167,6 @@ export default function Home() {
     }
   }, [db, lastDoc, loadingMore, hasMore, buildQuery]);
 
-  /* ================= INFINITE SCROLL ================= */
   useEffect(() => {
     if (!loadMoreRef.current || loading ||!hasMore) return;
     if (observerRef.current) observerRef.current.disconnect();
@@ -193,32 +184,38 @@ export default function Home() {
     return () => observerRef.current?.disconnect();
   }, [loading, hasMore, loadingMore, loadMore]);
 
-  /* ================= FILTER TASKS THEO TAB - CLIENT SIDE ================= */
+  // FILTER CLIENT-SIDE - KHÔNG CẦN INDEX
   const filteredTasks = useMemo(() => {
     let result = [...allTasks];
 
-    if (activeTab === "hot") {
-      // Sort theo likeCount client-side
-      result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-    } else if (activeTab === "near") {
-      // TODO: filter theo location, tạm thời trả về rỗng để hiện empty state
-      result = [];
-    } else if (activeTab === "friends") {
-      // TODO: filter theo following, tạm thời trả về rỗng để hiện empty state
-      result = [];
+    // Filter theo mode
+    if (mode === "task") {
+      result = result.filter((t) => (t.price || 0) > 0);
+    } else {
+      result = result.filter((t) => (t.price || 0) === 0);
     }
-    // new thì giữ nguyên order createdAt
+
+    // Filter status cơ bản
+    result = result.filter(
+      (t) => t.status === "open" || t.status === "full"
+    );
+
+    // Filter theo tab
+    if (activeTab === "hot") {
+      result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+    } else if (activeTab === "near" || activeTab === "friends") {
+      result = []; // Tạm thời rỗng
+    }
+    // new thì giữ nguyên
 
     return result;
-  }, [allTasks, activeTab]);
+  }, [allTasks, mode, activeTab]);
 
-  /* ================= PULL TO REFRESH ================= */
   const handleRefresh = () => {
     if ("vibrate" in navigator) navigator.vibrate(10);
     loadData(true);
   };
 
-  /* ================= TABS CONFIG ================= */
   const tabs: { id: TabId; label: string; icon: any; color: string }[] = [
     { id: "hot", label: "Hot", icon: HiFire, color: "orange" },
     { id: "near", label: "Gần bạn", icon: FiMapPin, color: "emerald" },
@@ -226,13 +223,10 @@ export default function Home() {
     { id: "new", label: "Mới", icon: HiSparkles, color: "purple" },
   ];
 
-  /* ================= UI ================= */
   return (
     <div className="min-h-screen pb-24 font-sans bg-gray-50 dark:bg-black">
-      {/* Tầng 1: Task/Plan */}
       <ModeToggle mode={mode} setMode={setMode} />
 
-      {/* Tầng 2: Hot/Near/Friends/New */}
       <div className="sticky top-0 z-40 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800">
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex justify-around">
@@ -248,7 +242,7 @@ export default function Home() {
                   }}
                   className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
                     active
-        ? `text-${tab.color}-600 dark:text-${tab.color}-400`
+                     ? `text-${tab.color}-600 dark:text-${tab.color}-400`
                       : "text-gray-400 dark:text-zinc-500"
                   }`}
                 >
@@ -266,7 +260,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Content */}
       <div className="pt-4">
         {error && (
           <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
@@ -290,7 +283,6 @@ export default function Home() {
           <TaskFeed tasks={filteredTasks} mode={mode} activeTab={activeTab} />
         )}
 
-        {/* Infinite scroll trigger */}
         {!loading && hasMore && allTasks.length > 0 && (
           <div ref={loadMoreRef} className="px-4 py-6 flex justify-center">
             {loadingMore && (
