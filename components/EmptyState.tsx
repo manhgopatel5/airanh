@@ -124,20 +124,24 @@ const CONTENT_POOL = {
 
 const THEME = {
   task: {
-    iconBg: "bg-orange-500/10 dark:bg-orange-400/15",
-    iconColor: "text-orange-600 dark:text-orange-400",
-    tagBg: "bg-orange-500/10 hover:bg-orange-500/20 dark:bg-orange-400/15 dark:hover:bg-orange-400/25",
-    tagText: "text-orange-700 dark:text-orange-300",
-    buttonBg: "bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600",
+    iconBg: "bg-sky-500/10 dark:bg-sky-400/15",
+    iconColor: "text-sky-600 dark:text-sky-400",
+    tagBg: "bg-sky-500/10 hover:bg-sky-500/20 dark:bg-sky-400/15 dark:hover:bg-sky-400/25",
+    tagText: "text-sky-700 dark:text-sky-300",
+    buttonBg: "bg-sky-500 hover:bg-sky-600 dark:bg-sky-500 dark:hover:bg-sky-600",
     buttonText: "text-white",
+    tabActive: "text-sky-500",
+    tabLine: "bg-sky-500",
   },
   plan: {
-    iconBg: "bg-violet-500/10 dark:bg-violet-400/15",
-    iconColor: "text-violet-600 dark:text-violet-400",
-    tagBg: "bg-violet-500/10 hover:bg-violet-500/20 dark:bg-violet-400/15 dark:hover:bg-violet-400/25",
-    tagText: "text-violet-700 dark:text-violet-300",
-    buttonBg: "bg-violet-600 hover:bg-violet-700 dark:bg-violet-500 dark:hover:bg-violet-600",
+    iconBg: "bg-blue-500/10 dark:bg-blue-400/15",
+    iconColor: "text-blue-600 dark:text-blue-400",
+    tagBg: "bg-blue-500/10 hover:bg-blue-500/20 dark:bg-blue-400/15 dark:hover:bg-blue-400/25",
+    tagText: "text-blue-700 dark:text-blue-300",
+    buttonBg: "bg-blue-500 hover:bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600",
     buttonText: "text-white",
+    tabActive: "text-blue-500",
+    tabLine: "bg-blue-500",
   },
 };
 
