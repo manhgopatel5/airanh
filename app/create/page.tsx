@@ -137,7 +137,7 @@ export default function CreateTaskPage() {
     }
 
     for (const file of files) {
-      if (file.size > 5 * 1024) {
+      if (file.size > 5 * 1024 * 1024) {
         toast.error(`Ảnh ${file.name} vượt quá 5MB`);
         return;
       }
@@ -180,7 +180,7 @@ export default function CreateTaskPage() {
       setSubmitting(true);
       setUploadingImage(true);
 
-      // 1. Upload images to Firebase Storage - QUAN TRỌNG: path phải là tasks/${user.uid}/...
+      // 1. Upload images to Firebase Storage
       const imageUrls: string[] = [];
       for (const file of imageFiles) {
         const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
@@ -199,6 +199,7 @@ export default function CreateTaskPage() {
       const tags = form.tags.split(",").map(t => t.trim()).filter(Boolean).slice(0, 10);
 
       const payload: CreateTaskInput = {
+        type: "task", // Fix: thêm type
         title: form.title.trim(),
         description: form.description.trim(),
         price: form.budgetType === "negotiable" ? 0 : parseInt(form.price, 10),
