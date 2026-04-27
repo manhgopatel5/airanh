@@ -16,8 +16,12 @@ const config: Config = {
 
   safelist: [
     {
-      pattern: /^(bg|text|border)-(slate|gray|zinc|neutral|stone|red|green|blue|yellow|purple)-(50|100|200|300|400|500|600|700|800|900)$/,
+      pattern: /^(bg|text|border)-(slate|gray|zinc|neutral|stone|red|green|blue|yellow|purple|violet|emerald|indigo)-(50|100|200|300|400|500|600|700|800|900)$/,
       variants: ["hover", "dark", "dark:hover", "group-hover"],
+    },
+    {
+      pattern: /^(from|to)-(blue|violet|purple|indigo|emerald)-(400|500|600)$/,
+      variants: ["dark", "group-hover"],
     },
     {
       pattern: /^(w|h)-(0|px|0.5|1|1.5|2|2.5|3|3.5|4|5|6|7|8|9|10|11|12|14|16|20|24|28|32|36|40|44|48|52|56|60|64|72|80|96)$/,
@@ -26,7 +30,14 @@ const config: Config = {
       pattern: /^grid-cols-(1|2|3|4|5|6|7|8|9|10|11|12)$/,
       variants: ["sm", "md", "lg", "xl", "2xl"],
     },
+    {
+      pattern: /^shadow-(blue|violet|purple|indigo|emerald)-(400|500|600)\/(20|30)$/,
+      variants: ["hover", "group-hover"],
+    },
     "animate-shimmer",
+    "bg-blue-900/40",
+    "bg-violet-900/40",
+    "bg-emerald-900/40",
   ],
 
   theme: {
@@ -77,19 +88,17 @@ const config: Config = {
         mono: ["var(--font-mono)", ...defaultTheme.fontFamily.mono],
       },
 
-      // ✅ GRAB STYLE: Font size + line-height + letter-spacing
       fontSize: {
         '2xs': ['10px', { lineHeight: '14px', letterSpacing: '-0.01em' }],
-        'xs': ['12px', { lineHeight: '16px', letterSpacing: '-0.01em' }],  // Label tab
-        'sm': ['13px', { lineHeight: '18px', letterSpacing: '-0.01em' }],  // Caption
-        'base': ['15px', { lineHeight: '22px', letterSpacing: '-0.015em' }], // Body Grab
-        'lg': ['17px', { lineHeight: '24px', letterSpacing: '-0.02em' }], // Button
-        'xl': ['20px', { lineHeight: '28px', letterSpacing: '-0.02em' }], // Subheading
-        '2xl': ['24px', { lineHeight: '32px', letterSpacing: '-0.025em' }], // Title
+        'xs': ['12px', { lineHeight: '16px', letterSpacing: '-0.01em' }],
+        'sm': ['13px', { lineHeight: '18px', letterSpacing: '-0.01em' }],
+        'base': ['15px', { lineHeight: '22px', letterSpacing: '-0.015em' }],
+        'lg': ['17px', { lineHeight: '24px', letterSpacing: '-0.02em' }],
+        'xl': ['20px', { lineHeight: '28px', letterSpacing: '-0.02em' }],
+        '2xl': ['24px', { lineHeight: '32px', letterSpacing: '-0.025em' }],
         '3xl': ['30px', { lineHeight: '36px', letterSpacing: '-0.03em' }],
       },
 
-      // ✅ GRAB STYLE: Spacing sát hơn
       spacing: {
         '0.5': '2px',
         '1.5': '6px',
@@ -99,10 +108,10 @@ const config: Config = {
 
       fontWeight: {
         normal: '400',
-        medium: '500',  // Grab dùng medium cho body
-        semibold: '600', // Label
-        bold: '700',     // Button
-        extrabold: '800', // Title
+        medium: '500',
+        semibold: '600',
+        bold: '700',
+        extrabold: '800',
       },
 
       keyframes: {
