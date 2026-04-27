@@ -1,6 +1,8 @@
 import { Timestamp } from "firebase/firestore";
 
 /* ================= ENUMS ================= */
+export type AppMode = "task" | "plan";
+
 export type TaskStatus =
   | "open"
   | "full"
@@ -10,8 +12,9 @@ export type TaskStatus =
   | "deleted"
   | "expired";
 
-export type TaskVisibility = "public" | "private" | "friends";
+export type Visibility = "public" | "private" | "friends";
 export type BudgetType = "fixed" | "hourly" | "negotiable";
+export type CostType = "free" | "share" | "host";
 
 /* ================= USER ================= */
 export type User = {
@@ -22,21 +25,18 @@ export type User = {
   role?: "admin" | "user";
 };
 
-/* ================= MAIN TYPE ================= */
-export type Task = {
+/* ================= BASE ITEM ================= */
+export type BaseItem = {
   id: string;
   slug: string;
   shortId: string;
   title: string;
   description: string;
-  price: number;
-  currency: string;
-  budgetType: BudgetType;
-  totalSlots: number;
-  joined: number;
-  status: TaskStatus;
-  visibility: TaskVisibility;
-
+  category: string;
+  tags: string[];
+  images: string[];
+  attachments?: string[];
+  
   // Owner
   userId: string;
   userName: string;
@@ -44,23 +44,22 @@ export type Task = {
   userShortId?: string;
   userUsername?: string;
 
-  // Time (⚠️ optional theo createTask)
+  // Status
+  status: TaskStatus;
+  visibility: Visibility;
+  banned?: boolean;
+  hidden?: boolean;
+  featured?: boolean;
+  featuredUntil?: Timestamp;
+
+  // Time
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  applicationDeadline?: Timestamp | null;
-  deadline?: Timestamp | null;
-  startDate?: Timestamp | null;
   edited?: boolean;
   editedAt?: Timestamp;
   deletedAt?: Timestamp;
 
-  // Meta (⚠️ FIX chính ở đây)
-  category?: string;
-  tags: string[];
-  images: string[];
-  attachments?: string[];
-  requirements?: string;
-
+  // Location
   location?: {
     country?: string;
     city?: string;
@@ -68,8 +67,6 @@ export type Task = {
     lat?: number;
     lng?: number;
   };
-
-  isRemote: boolean;
 
   // Search
   searchKeywords: string[];
@@ -81,50 +78,91 @@ export type Task = {
   shareCount: number;
   bookmarkCount: number;
 
-  // Moderation
-  banned?: boolean;
-  hidden?: boolean;
-  featured?: boolean;
-  featuredUntil?: Timestamp;
-
   // Relations
   applicants?: string[];
   likes?: string[];
   reactions?: Record<string, string[]>;
 };
 
+/* ================= TASK TYPE ================= */
+export type TaskItem = BaseItem & {
+  type: "task";
+  price: number;
+  currency: string;
+  budgetType: BudgetType;
+  totalSlots: number;
+  joined: number;
+  requirements?: string;
+  isRemote: boolean;
+  applicationDeadline?: Timestamp | null;
+  deadline?: Timestamp | null;
+  startDate?: Timestamp | null;
+};
+
+/* ================= PLAN TYPE ================= */
+export type PlanItem = BaseItem & {
+  type: "plan";
+  eventDate: Timestamp; // Ngày giờ diễn ra
+  maxParticipants: number;
+  currentParticipants: number;
+  costType: CostType;
+  costAmount?: number; // Nếu costType = share/host
+  allowInvite: boolean;
+};
+
+/* ================= UNION TYPE ================= */
+export type Task = TaskItem | PlanItem;
+
 /* ================= CREATE DTO ================= */
 export type CreateTaskInput = {
+  type: "task";
   title: string;
   description: string;
   price: number;
   currency?: string;
   budgetType?: BudgetType;
   totalSlots: number;
-  visibility?: TaskVisibility;
-
+  visibility?: Visibility;
   category?: string;
   tags?: string[];
   images?: string[];
   attachments?: string[];
   requirements?: string;
-
-  location?: Task["location"];
+  location?: BaseItem["location"];
   isRemote?: boolean;
-
   applicationDeadline?: Timestamp | null;
   deadline?: Timestamp | null;
   startDate?: Timestamp | null;
-
   featured?: boolean;
 };
 
+export type CreatePlanInput = {
+  type: "plan";
+  title: string;
+  description: string;
+  category: string;
+  eventDate: Timestamp;
+  maxParticipants: number;
+  costType: CostType;
+  costAmount?: number;
+  allowInvite?: boolean;
+  visibility?: Visibility;
+  tags?: string[];
+  images?: string[];
+  location?: BaseItem["location"];
+  featured?: boolean;
+};
+
+export type CreateItemInput = CreateTaskInput | CreatePlanInput;
+
 /* ================= UPDATE DTO ================= */
 export type UpdateTaskInput = Partial<CreateTaskInput>;
+export type UpdatePlanInput = Partial<CreatePlanInput>;
+export type UpdateItemInput = Partial<CreateItemInput>;
 
 /* ================= LIST ITEM ================= */
 export type TaskListItem = Pick<
-  Task,
+  TaskItem,
   | "id"
   | "slug"
   | "title"
@@ -150,6 +188,34 @@ export type TaskListItem = Pick<
   | "budgetType"
   | "userId"
   | "description"
+  | "type"
+> | Pick<
+  PlanItem,
+  | "id"
+  | "slug"
+  | "title"
+  | "type"
+  | "status"
+  | "userName"
+  | "userAvatar"
+  | "userShortId"
+  | "userUsername"
+  | "createdAt"
+  | "category"
+  | "tags"
+  | "images"
+  | "viewCount"
+  | "likeCount"
+  | "commentCount"
+  | "location"
+  | "likes"
+  | "userId"
+  | "description"
+  | "eventDate"
+  | "maxParticipants"
+  | "currentParticipants"
+  | "costType"
+  | "costAmount"
 >;
 
 /* ================= PARTICIPANT ================= */
@@ -178,6 +244,10 @@ export type TaskComment = {
   likeCount: number;
 };
 
+/* ================= TYPE GUARDS ================= */
+export const isTask = (item: Task): item is TaskItem => item.type === "task";
+export const isPlan = (item: Task): item is PlanItem => item.type === "plan";
+
 /* ================= HELPERS ================= */
 export const generateTaskSearchKeywords = ({
   title,
@@ -199,7 +269,7 @@ export const generateTaskSearchKeywords = ({
     location?.city,
     location?.country,
     location?.address,
-    ...tags,
+   ...tags,
   ]
     .filter(Boolean)
     .join(" ")
@@ -215,10 +285,19 @@ export const generateTaskSearchKeywords = ({
 
 export const isTaskOpen = (task: Task): boolean => {
   if (!task) return false;
-  if (task.status !== "open") return false;
+  if (task.status!== "open") return false;
   if (task.banned || task.hidden) return false;
-  if (task.deadline && task.deadline.toMillis() < Date.now()) return false;
-  if (task.joined >= task.totalSlots) return false;
+  
+  if (isTask(task)) {
+    if (task.deadline && task.deadline.toMillis() < Date.now()) return false;
+    if (task.joined >= task.totalSlots) return false;
+  }
+  
+  if (isPlan(task)) {
+    if (task.eventDate.toMillis() < Date.now()) return false;
+    if (task.currentParticipants >= task.maxParticipants) return false;
+  }
+  
   return true;
 };
 
@@ -242,5 +321,16 @@ export const formatTaskDeadline = (
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+  });
+};
+
+export const formatEventDate = (date: Timestamp): string => {
+  const d = date.toDate();
+  return d.toLocaleDateString("vi-VN", {
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 };
