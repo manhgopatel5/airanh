@@ -10,9 +10,9 @@ import { User } from "@/types/task";
 import { toast, Toaster } from "sonner";
 import type { CreateTaskInput } from "@/types/task";
 import {
-  FiUpload, FiX, FiMapPin, FiDollarSign, FiUsers, FiClock,
+  FiUpload, FiX, FiMapPin, FiUsers, FiClock,
   FiTag, FiFileText, FiEye, FiEyeOff, FiNavigation,
-  FiMic, FiLoader,
+  FiCalendar
 } from "react-icons/fi";
 import { Timestamp } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
@@ -36,6 +36,11 @@ const formatCurrency = (value: string) => {
   return number.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 };
 
+const formatDateTimeLocal = (date: Date) => {
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
 export default function CreateTaskPage() {
   const auth = getFirebaseAuth();
   const storage = getFirebaseStorage();
@@ -48,16 +53,18 @@ export default function CreateTaskPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [listening, setListening] = useState(false);
-  const [priceRange, setPriceRange] = useState<[number, number] | null>(null);
+  const [showAllTags, setShowAllTags] = useState(false);
+
+  const now = new Date();
+  const defaultEnd = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
   const [form, setForm] = useState({
     title: "",
     description: "",
     price: "",
     totalSlots: "1",
-    durationHours: "24",
+    startDate: formatDateTimeLocal(now),
+    endDate: formatDateTimeLocal(defaultEnd),
     category: "other",
     tags: [] as string[],
     images: [] as string[],
@@ -67,7 +74,6 @@ export default function CreateTaskPage() {
     lng: null as number | null,
     visibility: "public" as "public" | "friends" | "private",
     budgetType: "fixed" as "fixed" | "hourly" | "negotiable",
-    currency: "VND" as "VND" | "USD" | "EUR",
     isRemote: false,
     requirements: "",
     attachments: [] as string[],
@@ -84,7 +90,6 @@ export default function CreateTaskPage() {
     }
   }, [searchParams]);
 
-  // Load draft
   useEffect(() => {
     const draft = localStorage.getItem("task_draft");
     if (draft &&!searchParams.get("title")) {
@@ -95,25 +100,14 @@ export default function CreateTaskPage() {
     }
   }, []);
 
-  // Auto save draft
   useEffect(() => {
     const timer = setTimeout(() => {
       const { images,...rest } = form;
       localStorage.setItem("task_draft", JSON.stringify(rest));
     }, 1000);
     return () => clearTimeout(timer);
-  }, [form]);
+  }, );
 
-  // 5. Fetch price range
-  useEffect(() => {
-    if (!form.category) return;
-    fetch(`/api/price-range?category=${form.category}&city=${form.city || 'HCM'}`)
-     .then(r => r.json())
-     .then(data => setPriceRange([data.min, data.max]))
-     .catch(() => setPriceRange(null));
-  }, [form.category, form.city]);
-
-  /* ================= AUTH CHECK ================= */
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       if (!firebaseUser) {
@@ -137,65 +131,6 @@ export default function CreateTaskPage() {
     return () => unsub();
   }, [auth, router]);
 
-  /* ================= 1. AI GỢI Ý ================= */
-  const suggestWithAI = async () => {
-    if (!form.title) return toast.error("Nhập tiêu đề trước");
-    if ("vibrate" in navigator) navigator.vibrate(5);
-    setAiLoading(true);
-    try {
-      const res = await fetch("/api/ai/suggest-task", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: form.title, category: form.category })
-      });
-      if (!res.ok) throw new Error();
-      const { description, price, tags } = await res.json();
-      setForm(prev => ({
-       ...prev,
-        description: description || prev.description,
-        price: price? formatCurrency(price.toString()) : prev.price,
-        tags: [...new Set([...prev.tags,...tags])].slice(0, 10)
-      }));
-      toast.success("AI đã gợi ý xong");
-    } catch {
-      toast.error("AI đang bận, thử lại sau");
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  /* ================= 7. VOICE INPUT ================= */
-  const startVoice = () => {
-    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-    if (!SpeechRecognition) return toast.error("Trình duyệt không hỗ trợ");
-
-    if ("vibrate" in navigator) navigator.vibrate(10);
-    const recognition = new SpeechRecognition();
-    recognition.lang = "vi-VN";
-    recognition.continuous = false;
-    recognition.interimResults = false;
-
-    recognition.onstart = () => {
-      setListening(true);
-      toast.info("Đang nghe... Nói mô tả công việc");
-    };
-
-    recognition.onresult = (e: any) => {
-      const text = e.results[0][0].transcript;
-      setForm(prev => ({...prev, description: (prev.description + " " + text).trim() }));
-      toast.success("Đã thêm vào mô tả");
-    };
-
-    recognition.onerror = () => {
-      toast.error("Lỗi ghi âm");
-      setListening(false);
-    };
-
-    recognition.onend = () => setListening(false);
-    recognition.start();
-  };
-
-  /* ================= VALIDATE ================= */
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -210,8 +145,8 @@ export default function CreateTaskPage() {
     const price = parseInt(form.price.replace(/\./g, ""));
     if (form.budgetType!== "negotiable") {
       if (!form.price || isNaN(price)) newErrors.price = "Vui lòng nhập giá";
-      else if (price < 1000) newErrors.price = "Giá tối thiểu 1.000đ";
-      else if (price > 100000000) newErrors.price = "Giá tối đa 100.000.000đ";
+      else if (price < 1000) newErrors.price = "Giá tối thiểu 1.000";
+      else if (price > 100000000) newErrors.price = "Giá tối đa 100.000.000";
     }
 
     const slots = parseInt(form.totalSlots);
@@ -219,10 +154,11 @@ export default function CreateTaskPage() {
     else if (slots < 1) newErrors.totalSlots = "Tối thiểu 1 người";
     else if (slots > 100) newErrors.totalSlots = "Tối đa 100 người";
 
-    const hours = parseInt(form.durationHours);
-    if (!form.durationHours || isNaN(hours)) newErrors.durationHours = "Vui lòng nhập thời gian";
-    else if (hours < 1) newErrors.durationHours = "Tối thiểu 1 giờ";
-    else if (hours > 720) newErrors.durationHours = "Tối đa 30 ngày";
+    if (!form.startDate) newErrors.startDate = "Chọn ngày bắt đầu";
+    if (!form.endDate) newErrors.endDate = "Chọn ngày kết thúc";
+    if (form.startDate && form.endDate && new Date(form.startDate) >= new Date(form.endDate)) {
+      newErrors.endDate = "Ngày kết thúc phải sau ngày bắt đầu";
+    }
 
     if (!form.category) newErrors.category = "Vui lòng chọn danh mục";
     if (!form.isRemote &&!form.address.trim()) newErrors.address = "Vui lòng nhập địa điểm hoặc chọn làm từ xa";
@@ -231,7 +167,6 @@ export default function CreateTaskPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  /* ================= UPLOAD IMAGES ================= */
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length + imageFiles.length > 5) {
@@ -266,7 +201,6 @@ export default function CreateTaskPage() {
     setImageFiles(newFiles);
   };
 
-  /* ================= TAGS ================= */
   const addTag = () => {
     const tag = tagInput.trim();
     if (!tag) return;
@@ -288,7 +222,6 @@ export default function CreateTaskPage() {
     setForm({...form, tags: form.tags.filter(t => t!== tag) });
   };
 
-  /* ================= GET LOCATION ================= */
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
       toast.error("Trình duyệt không hỗ trợ định vị");
@@ -299,7 +232,7 @@ export default function CreateTaskPage() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setForm({
-       ...form,
+      ...form,
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
           address: "Vị trí hiện tại",
@@ -315,7 +248,6 @@ export default function CreateTaskPage() {
     );
   };
 
-  /* ================= SUBMIT ================= */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -335,7 +267,6 @@ export default function CreateTaskPage() {
       setSubmitting(true);
       setUploadingImage(true);
 
-      // Upload images
       const imageUrls: string[] = [];
       for (const file of imageFiles) {
         const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
@@ -346,22 +277,21 @@ export default function CreateTaskPage() {
       }
       setUploadingImage(false);
 
-      const deadline = Timestamp.fromMillis(
-        Date.now() + parseInt(form.durationHours) * 60 * 60 * 1000
-      );
+      const deadline = Timestamp.fromDate(new Date(form.endDate));
+      const startDate = Timestamp.fromDate(new Date(form.startDate));
 
       const payload: CreateTaskInput = {
         type: "task",
         title: form.title.trim(),
         description: form.description.trim(),
         price: form.budgetType === "negotiable"? 0 : parseInt(form.price.replace(/\./g, ""), 10),
-        currency: form.currency,
+        currency: "VND",
         budgetType: form.budgetType,
         totalSlots: parseInt(form.totalSlots, 10),
         visibility: form.visibility,
         deadline,
         applicationDeadline: deadline,
-        startDate: Timestamp.now(),
+        startDate,
         category: form.category,
         tags: form.tags,
         images: imageUrls,
@@ -369,12 +299,12 @@ export default function CreateTaskPage() {
         requirements: form.requirements.trim(),
         isRemote: form.isRemote,
         location: form.isRemote
-     ? {}
+    ? {}
           : {
               address: form.address.trim(),
               city: form.city.trim(),
-       ...(form.lat!= null && { lat: form.lat }),
-       ...(form.lng!= null && { lng: form.lng }),
+      ...(form.lat!= null && { lat: form.lat }),
+      ...(form.lng!= null && { lng: form.lng }),
             },
       };
 
@@ -399,91 +329,55 @@ export default function CreateTaskPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950">
-        <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
       </div>
     );
   }
+
+  const displayTags = showAllTags? form.tags : form.tags.slice(0, 3);
+  const hiddenCount = form.tags.length - 3;
 
   return (
     <>
       <Toaster richColors position="top-center" />
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 pb-28">
-        {/* Header */}
-        <div className="bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-20 safe-top">
-          <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Tạo công việc</h1>
+        <div className="bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-20">
+          <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+            <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">Tạo công việc</h1>
             <button onClick={() => router.back()} className="p-2 -mr-2 text-gray-500 hover:text-gray-900 dark:hover:text-gray-100 active:scale-95">
-              <FiX size={24} />
+              <FiX size={22} />
             </button>
           </div>
         </div>
 
-        <form ref={formRef} onSubmit={handleSubmit} className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-          {/* 6. PREVIEW CARD */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-4 rounded-2xl border border-blue-200 dark:border-blue-900">
-            <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-2">XEM TRƯỚC</p>
-            <div className="bg-white dark:bg-zinc-900 rounded-xl p-4 border border-gray-200 dark:border-zinc-800">
-              <h4 className="font-bold text-gray-900 dark:text-gray-100">{form.title || "Tiêu đề việc"}</h4>
-              <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1 line-clamp-2">{form.description || "Mô tả công việc..."}</p>
-              <div className="flex items-center gap-3 mt-3 text-xs">
-                <span className="font-bold text-green-600 dark:text-green-400">
-                  {form.budgetType === "negotiable"? "Thương lượng" : `${form.price || "0"}đ`}
-                </span>
-                <span className="text-gray-500">{form.isRemote? "Làm từ xa" : form.address || "Chưa có địa điểm"}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Tiêu đề + AI */}
+        <form ref={formRef} onSubmit={handleSubmit} className="max-w-2xl mx-auto px-4 py-4 space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5">
               Tiêu đề <span className="text-red-500">*</span>
             </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="VD: Giao hàng quận 1 trong 2h"
-                value={form.title}
-                onChange={(e) => {
-                  setForm({...form, title: e.target.value });
-                  if (errors.title) setErrors({...errors, title: "" });
-                }}
-                className={`flex-1 px-4 py-3 rounded-xl border ${
-                  errors.title? "border-red-500" : "border-gray-200 dark:border-zinc-700"
-                } bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all`}
-                maxLength={100}
-              />
-              <motion.button
-                type="button"
-                whileTap={{ scale: 0.95 }}
-                onClick={suggestWithAI}
-                disabled={aiLoading}
-                className="px-4 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold text-sm disabled:opacity-50"
-              >
-                {aiLoading? <FiLoader className="animate-spin" /> : "✨ AI"}
-              </motion.button>
-            </div>
+            <input
+              type="text"
+              placeholder="VD: Giao hàng quận 1 trong 2h"
+              value={form.title}
+              onChange={(e) => {
+                setForm({...form, title: e.target.value });
+                if (errors.title) setErrors({...errors, title: "" });
+              }}
+              className={`w-full px-3 py-2.5 rounded-lg border text-sm ${
+                errors.title? "border-red-500" : "border-gray-300 dark:border-zinc-700"
+              } bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-400 outline-none`}
+              maxLength={100}
+            />
             <div className="flex justify-between mt-1">
               <span className="text-red-500 text-xs">{errors.title}</span>
               <span className="text-xs text-gray-500">{form.title.length}/100</span>
             </div>
           </div>
 
-          {/* Mô tả + Voice */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-semibold text-gray-700 dark:text-zinc-300">
-                Mô tả chi tiết <span className="text-red-500">*</span>
-              </label>
-              <motion.button
-                type="button"
-                whileTap={{ scale: 0.95 }}
-                onClick={startVoice}
-                className={`p-2 rounded-lg ${listening? "bg-red-500 text-white animate-pulse" : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400"}`}
-              >
-                <FiMic size={18} />
-              </motion.button>
-            </div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5">
+              Mô tả chi tiết <span className="text-red-500">*</span>
+            </label>
             <textarea
               placeholder="Mô tả yêu cầu công việc, địa điểm, thời gian, kỹ năng cần có..."
               value={form.description}
@@ -491,10 +385,10 @@ export default function CreateTaskPage() {
                 setForm({...form, description: e.target.value });
                 if (errors.description) setErrors({...errors, description: "" });
               }}
-              rows={5}
-              className={`w-full px-4 py-3 rounded-xl border ${
-                errors.description? "border-red-500" : "border-gray-200 dark:border-zinc-700"
-              } bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none resize-none transition-all`}
+              rows={4}
+              className={`w-full px-3 py-2.5 rounded-lg border text-sm ${
+                errors.description? "border-red-500" : "border-gray-300 dark:border-zinc-700"
+              } bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-400 outline-none resize-none`}
               maxLength={5000}
             />
             <div className="flex justify-between mt-1">
@@ -503,9 +397,8 @@ export default function CreateTaskPage() {
             </div>
           </div>
 
-          {/* Danh mục */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5">
               Danh mục <span className="text-red-500">*</span>
             </label>
             <div className="grid grid-cols-4 gap-2">
@@ -518,25 +411,24 @@ export default function CreateTaskPage() {
                     if ("vibrate" in navigator) navigator.vibrate(5);
                     setForm({...form, category: cat.id });
                   }}
-                  className={`p-3 rounded-xl border-2 transition-all ${
+                  className={`p-2.5 rounded-lg border transition-all ${
                     form.category === cat.id
-             ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
-                      : "border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+            ? "border-gray-900 dark:border-gray-100 bg-gray-100 dark:bg-zinc-800"
+                      : "border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
                   }`}
                 >
-                  <div className="text-2xl mb-1">{cat.icon}</div>
-                  <div className="text-xs font-medium text-gray-700 dark:text-zinc-300">{cat.name}</div>
+                  <div className="text-xl mb-0.5">{cat.icon}</div>
+                  <div className="text- font-medium text-gray-700 dark:text-zinc-300">{cat.name}</div>
                 </motion.button>
               ))}
             </div>
           </div>
 
-          {/* Loại ngân sách */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5">
               Loại ngân sách
             </label>
-            <div className="grid grid-cols-3 gap-2 mb-3">
+            <div className="grid grid-cols-3 gap-2 mb-2">
               {[
                 { id: "fixed", name: "Cố định" },
                 { id: "hourly", name: "Theo giờ" },
@@ -550,10 +442,10 @@ export default function CreateTaskPage() {
                     if ("vibrate" in navigator) navigator.vibrate(5);
                     setForm({...form, budgetType: type.id as any });
                   }}
-                  className={`py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${
+                  className={`py-2 rounded-lg border text-xs font-medium transition-all ${
                     form.budgetType === type.id
-             ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400"
-                      : "border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300"
+            ? "border-gray-900 dark:border-gray-100 bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
+                      : "border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-zinc-300"
                   }`}
                 >
                   {type.name}
@@ -564,8 +456,8 @@ export default function CreateTaskPage() {
             {form.budgetType!== "negotiable" && (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-gray-600 dark:text-zinc-400 mb-1.5">
-                    <FiDollarSign className="inline mr-1" />Giá <span className="text-red-500">*</span>
+                  <label className="block text-xs text-gray-600 dark:text-zinc-400 mb-1">
+                    Giá <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -576,76 +468,73 @@ export default function CreateTaskPage() {
                       setForm({...form, price: formatCurrency(e.target.value) });
                       if (errors.price) setErrors({...errors, price: "" });
                     }}
-                    className={`w-full px-4 py-3 rounded-xl border ${
-                      errors.price? "border-red-500" : "border-gray-200 dark:border-zinc-700"
-                    } bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none`}
+                    className={`w-full px-3 py-2.5 rounded-lg border text-sm ${
+                      errors.price? "border-red-500" : "border-gray-300 dark:border-zinc-700"
+                    } bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-400 outline-none`}
                   />
                   {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
-                  {/* 5. PRICE RANGE */}
-                  {priceRange && (
-                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                      💡 Giá phổ biến: {formatCurrency(priceRange[0]+"")} - {formatCurrency(priceRange[1]+"")}đ
-                    </p>
-                  )}
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-600 dark:text-zinc-400 mb-1.5">Đơn vị</label>
-                  <select
-                    value={form.currency}
-                    onChange={(e) => setForm({...form, currency: e.target.value as any })}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
-                  >
-                    <option value="VND">VND</option>
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                  </select>
+                  <label className="block text-xs text-gray-600 dark:text-zinc-400 mb-1">
+                    <FiUsers className="inline mr-1" />Số người <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={form.totalSlots}
+                    onChange={(e) => {
+                      setForm({...form, totalSlots: e.target.value });
+                      if (errors.totalSlots) setErrors({...errors, totalSlots: "" });
+                    }}
+                    className={`w-full px-3 py-2.5 rounded-lg border text-sm ${
+                      errors.totalSlots? "border-red-500" : "border-gray-300 dark:border-zinc-700"
+                    } bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-400 outline-none`}
+                  />
+                  {errors.totalSlots && <p className="text-red-500 text-xs mt-1">{errors.totalSlots}</p>}
                 </div>
               </div>
             )}
           </div>
 
-          {/* Số người + Thời gian */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
-                <FiUsers className="inline mr-1" />Số người <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5">
+                <FiCalendar className="inline mr-1" />Ngày bắt đầu <span className="text-red-500">*</span>
               </label>
               <input
-                type="number"
-                value={form.totalSlots}
+                type="datetime-local"
+                value={form.startDate}
                 onChange={(e) => {
-                  setForm({...form, totalSlots: e.target.value });
-                  if (errors.totalSlots) setErrors({...errors, totalSlots: "" });
+                  setForm({...form, startDate: e.target.value });
+                  if (errors.startDate) setErrors({...errors, startDate: "" });
                 }}
-                className={`w-full px-4 py-3 rounded-xl border ${
-                  errors.totalSlots? "border-red-500" : "border-gray-200 dark:border-zinc-700"
-                } bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none`}
+                className={`w-full px-3 py-2.5 rounded-lg border text-sm ${
+                  errors.startDate? "border-red-500" : "border-gray-300 dark:border-zinc-700"
+                } bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-400 outline-none`}
               />
-              {errors.totalSlots && <p className="text-red-500 text-xs mt-1">{errors.totalSlots}</p>}
+              {errors.startDate && <p className="text-red-500 text-xs mt-1">{errors.startDate}</p>}
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
-                <FiClock className="inline mr-1" />Thời gian (giờ) <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5">
+                <FiClock className="inline mr-1" />Ngày kết thúc <span className="text-red-500">*</span>
               </label>
               <input
-                type="number"
-                value={form.durationHours}
+                type="datetime-local"
+                value={form.endDate}
                 onChange={(e) => {
-                  setForm({...form, durationHours: e.target.value });
-                  if (errors.durationHours) setErrors({...errors, durationHours: "" });
+                  setForm({...form, endDate: e.target.value });
+                  if (errors.endDate) setErrors({...errors, endDate: "" });
                 }}
-                className={`w-full px-4 py-3 rounded-xl border ${
-                  errors.durationHours? "border-red-500" : "border-gray-200 dark:border-zinc-700"
-                } bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none`}
+                className={`w-full px-3 py-2.5 rounded-lg border text-sm ${
+                  errors.endDate? "border-red-500" : "border-gray-300 dark:border-zinc-700"
+                } bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-400 outline-none`}
               />
-              {errors.durationHours && <p className="text-red-500 text-xs mt-1">{errors.durationHours}</p>}
+              {errors.endDate && <p className="text-red-500 text-xs mt-1">{errors.endDate}</p>}
             </div>
           </div>
 
-          {/* Địa điểm */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-semibold text-gray-700 dark:text-zinc-300">
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-sm font-medium text-gray-700 dark:text-zinc-300">
                 <FiMapPin className="inline mr-1" />Địa điểm
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
@@ -653,7 +542,7 @@ export default function CreateTaskPage() {
                   type="checkbox"
                   checked={form.isRemote}
                   onChange={(e) => setForm({...form, isRemote: e.target.checked })}
-                  className="w-4 h-4 text-blue-500 rounded"
+                  className="w-4 h-4 text-gray-600 rounded"
                 />
                 <span className="text-sm text-gray-600 dark:text-zinc-400">Làm từ xa</span>
               </label>
@@ -669,17 +558,17 @@ export default function CreateTaskPage() {
                       setForm({...form, address: e.target.value });
                       if (errors.address) setErrors({...errors, address: "" });
                     }}
-                    className={`flex-1 px-4 py-3 rounded-xl border ${
-                      errors.address? "border-red-500" : "border-gray-200 dark:border-zinc-700"
-                    } bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none`}
+                    className={`flex-1 px-3 py-2.5 rounded-lg border text-sm ${
+                      errors.address? "border-red-500" : "border-gray-300 dark:border-zinc-700"
+                    } bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-400 outline-none`}
                   />
                   <motion.button
                     type="button"
                     whileTap={{ scale: 0.95 }}
                     onClick={getCurrentLocation}
-                    className="px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-300"
+                    className="px-3 py-2.5 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-300"
                   >
-                    <FiNavigation />
+                    <FiNavigation size={16} />
                   </motion.button>
                 </div>
                 <input
@@ -687,35 +576,57 @@ export default function CreateTaskPage() {
                   placeholder="Thành phố"
                   value={form.city}
                   onChange={(e) => setForm({...form, city: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-400 outline-none text-sm"
                 />
                 {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
               </>
             )}
           </div>
 
-          {/* Tags */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5">
+              <FiFileText className="inline mr-1" />Yêu cầu (không bắt buộc)
+            </label>
+            <textarea
+              placeholder="Kỹ năng cần có, kinh nghiệm..."
+              value={form.requirements}
+              onChange={(e) => setForm({...form, requirements: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-400 outline-none resize-none text-sm"
+              maxLength={1000}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5">
               <FiTag className="inline mr-1" />Thẻ tag
             </label>
-            <div className="flex flex-wrap gap-2 mb-2 min-h-[2.5rem] p-2 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
+            <div className="flex flex-wrap gap-1.5 mb-2 min-h-[2.25rem] p-2 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900">
               <AnimatePresence>
-                {form.tags.map((tag) => (
+                {displayTags.map((tag) => (
                   <motion.div
                     key={tag}
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 rounded-full text-sm"
+                    className="flex items-center gap-1 px-2.5 py-1 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 rounded-full text-xs"
                   >
                     {tag}
                     <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-500">
-                      <FiX size={14} />
+                      <FiX size={12} />
                     </button>
                   </motion.div>
                 ))}
               </AnimatePresence>
+              {!showAllTags && hiddenCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllTags(true)}
+                  className="px-2.5 py-1 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 rounded-full text-xs"
+                >
+                  +{hiddenCount}
+                </button>
+              )}
               <input
                 ref={tagInputRef}
                 type="text"
@@ -728,37 +639,21 @@ export default function CreateTaskPage() {
                     addTag();
                   }
                 }}
-                className="flex-1 min-w-[120px] bg-transparent outline-none text-gray-900 dark:text-gray-100 text-sm"
+                className="flex-1 min-w-[100px] bg-transparent outline-none text-gray-900 dark:text-gray-100 text-xs"
               />
             </div>
             <div className="flex flex-wrap gap-1">
               {HOT_TAGS.filter(t =>!form.tags.includes(t)).map(t => (
                 <button key={t} type="button" onClick={() => setForm({...form, tags: [...form.tags, t]})}
-                  className="px-2 py-1 bg-gray-100 dark:bg-zinc-800 text-xs rounded text-gray-600 dark:text-zinc-400">
+                  className="px-2 py-0.5 bg-gray-100 dark:bg-zinc-800 text- rounded text-gray-600 dark:text-zinc-400">
                   +{t}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Yêu cầu */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
-              <FiFileText className="inline mr-1" />Yêu cầu (không bắt buộc)
-            </label>
-            <textarea
-              placeholder="Kỹ năng cần có, kinh nghiệm..."
-              value={form.requirements}
-              onChange={(e) => setForm({...form, requirements: e.target.value })}
-              rows={3}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-              maxLength={1000}
-            />
-          </div>
-
-          {/* Ai có thể xem */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5">
               <FiEye className="inline mr-1" />Ai có thể xem
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -775,25 +670,24 @@ export default function CreateTaskPage() {
                     if ("vibrate" in navigator) navigator.vibrate(5);
                     setForm({...form, visibility: vis.id as any });
                   }}
-                  className={`py-3 rounded-xl border-2 transition-all ${
+                  className={`py-2 rounded-lg border transition-all ${
                     form.visibility === vis.id
-             ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
-                      : "border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+            ? "border-gray-900 dark:border-gray-100 bg-gray-100 dark:bg-zinc-800"
+                      : "border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
                   }`}
                 >
-                  <vis.icon className="mx-auto mb-1" size={20} />
-                  <div className="text-xs font-medium text-gray-700 dark:text-zinc-300">{vis.name}</div>
+                  <vis.icon className="mx-auto mb-0.5" size={18} />
+                  <div className="text- font-medium text-gray-700 dark:text-zinc-300">{vis.name}</div>
                 </motion.button>
               ))}
             </div>
           </div>
 
-          {/* Ảnh đính kèm */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1.5">
               Ảnh đính kèm (tối đa 5, mỗi ảnh &lt; 5MB)
             </label>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2">
               <AnimatePresence>
                 {form.images.map((url, i) => (
                   <motion.div
@@ -801,15 +695,15 @@ export default function CreateTaskPage() {
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
-                    className="relative w-24 h-24 rounded-xl overflow-hidden border-gray-200 dark:border-zinc-700"
+                    className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-300 dark:border-zinc-700"
                   >
                     <img src={url} alt="" className="w-full h-full object-cover" />
                     <button
                       type="button"
                       onClick={() => removeImage(i)}
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 active:scale-90"
+                      className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 active:scale-90"
                     >
-                      <FiX size={14} />
+                      <FiX size={12} />
                     </button>
                   </motion.div>
                 ))}
@@ -817,25 +711,39 @@ export default function CreateTaskPage() {
               {form.images.length < 5 && (
                 <motion.label
                   whileTap={{ scale: 0.95 }}
-                  className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 dark:border-zinc-700 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors"
+                  className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 dark:border-zinc-700 flex items-center justify-center cursor-pointer hover:border-gray-400 transition-colors"
                 >
-                  <FiUpload className="text-gray-400" size={24} />
+                  <FiUpload className="text-gray-400" size={20} />
                   <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
                 </motion.label>
               )}
             </div>
           </div>
+
+          <div className="pt-4 border-t border-gray-200 dark:border-zinc-800">
+            <p className="text-xs font-medium text-gray-500 dark:text-zinc-500 mb-2">Xem trước</p>
+            <div className="bg-white dark:bg-zinc-900 rounded-lg p-3 border border-gray-200 dark:border-zinc-800">
+              <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100">{form.title || "Tiêu đề việc"}</h4>
+              <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1 line-clamp-2">{form.description || "Mô tả công việc..."}</p>
+              <div className="flex items-center gap-3 mt-2 text-xs">
+                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                  {form.budgetType === "negotiable"? "Thương lượng" : `${form.price || "0"}`}
+                </span>
+                <span className="text-gray-500">{form.isRemote? "Làm từ xa" : form.address || "Chưa có địa điểm"}</span>
+                <span className="text-gray-500">{form.totalSlots} người</span>
+              </div>
+            </div>
+          </div>
         </form>
 
-        {/* Sticky bottom button */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800 p-4 safe-bottom">
+        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800 p-3">
           <div className="max-w-2xl mx-auto">
             <motion.button
               type="button"
               whileTap={{ scale: 0.98 }}
               onClick={handleSubmit}
               disabled={submitting}
-              className="w-full py-4 rounded-xl text-white font-semibold bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="w-full py-3 rounded-lg text-white font-semibold text-sm bg-gray-900 dark:bg-gray-100 dark:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {uploadingImage? "Đang tải ảnh..." : submitting? "Đang tạo..." : "Đăng công việc"}
             </motion.button>
