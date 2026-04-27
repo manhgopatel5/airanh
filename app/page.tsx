@@ -14,7 +14,7 @@ import {
 } from "firebase/firestore";
 import TaskFeed from "@/components/TaskFeed";
 import ModeToggle from "@/components/ModeToggle";
-import { AppMode, Task, isTask, isPlan } from "@/types/task";
+import { AppMode, Task, TaskItem, PlanItem, TaskListItem, PlanListItem, ItemListItem, isTask, isPlan } from "@/types/task";
 import { FiMapPin, FiRefreshCw } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 import { toast } from "sonner";
@@ -36,7 +36,6 @@ function SkeletonList() {
               <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-1/3 animate-pulse" />
               <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-1/4 animate-pulse" />
             </div>
-          </div>
           <div className="space-y-2">
             <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-3/4 animate-pulse" />
             <div className="h-20 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded-2xl animate-pulse" />
@@ -118,7 +117,7 @@ export default function Home() {
           console.log("Firestore success, docs:", snap.docs.length);
           const data = snap.docs.map((doc) => ({
             id: doc.id,
-           ...doc.data(),
+          ...doc.data(),
           })) as Task[];
           setAllItems(data);
           setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -170,7 +169,7 @@ export default function Home() {
       const snap = await getDocs(q);
       const newItems = snap.docs.map((doc) => ({
         id: doc.id,
-       ...doc.data(),
+      ...doc.data(),
       })) as Task[];
       setAllItems((prev) => [...prev,...newItems]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -200,10 +199,10 @@ export default function Home() {
     return () => observerRef.current?.disconnect();
   }, [loading, hasMore, loadingMore, loadMore]);
 
-  const filteredItems = useMemo(() => {
+  const filteredItems: ItemListItem[] = useMemo(() => {
     let result = [...allItems];
 
-    // 1. Filter theo type - DÙNG TYPE GUARD
+    // 1. Filter theo type
     if (mode === "task") {
       result = result.filter((t) => isTask(t));
     } else {
@@ -218,20 +217,86 @@ export default function Home() {
         t.banned!== true
     );
 
-    // 3. Sort theo tab
+    // 3. Map về ListItem để match TaskFeed props
+    const listItems: ItemListItem[] = result.map((item) => {
+      if (isTask(item)) {
+        const task = item as TaskItem;
+        return {
+          id: task.id,
+          slug: task.slug,
+          title: task.title,
+          price: task.price,
+          currency: task.currency,
+          totalSlots: task.totalSlots,
+          joined: task.joined,
+          status: task.status,
+          userName: task.userName,
+          userAvatar: task.userAvatar,
+          userShortId: task.userShortId,
+          userUsername: task.userUsername,
+          createdAt: task.createdAt,
+          category: task.category,
+          tags: task.tags,
+          images: task.images,
+          viewCount: task.viewCount,
+          likeCount: task.likeCount,
+          commentCount: task.commentCount,
+          location: task.location,
+          isRemote: task.isRemote,
+          likes: task.likes,
+          budgetType: task.budgetType,
+          userId: task.userId,
+          description: task.description,
+          type: task.type,
+          deadline: task.deadline,
+          startDate: task.startDate,
+        } as TaskListItem;
+      } else {
+        const plan = item as PlanItem;
+        return {
+          id: plan.id,
+          slug: plan.slug,
+          title: plan.title,
+          type: plan.type,
+          status: plan.status,
+          userName: plan.userName,
+          userAvatar: plan.userAvatar,
+          userShortId: plan.userShortId,
+          userUsername: plan.userUsername,
+          createdAt: plan.createdAt,
+          category: plan.category,
+          tags: plan.tags,
+          images: plan.images,
+          viewCount: plan.viewCount,
+          likeCount: plan.likeCount,
+          commentCount: plan.commentCount,
+          location: plan.location,
+          likes: plan.likes,
+          userId: plan.userId,
+          description: plan.description,
+          eventDate: plan.eventDate,
+          endDate: plan.endDate,
+          maxParticipants: plan.maxParticipants,
+          currentParticipants: plan.currentParticipants,
+          costType: plan.costType,
+          costAmount: plan.costAmount,
+          milestones: plan.milestones,
+        } as PlanListItem;
+      }
+    });
+
+    // 4. Sort theo tab
     if (activeTab === "hot") {
-      result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+      listItems.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
     } else if (activeTab === "new") {
       // Đã orderBy createdAt desc từ query
     } else if (activeTab === "near") {
-      // TODO: geolocation
-      result = [];
+      return [];
     } else if (activeTab === "friends") {
-      // TODO: following list
-      result = [];
+      return [];
     }
 
-    return result;
+    return listItems;
   }, [allItems, mode, activeTab]);
 
   const handleRefresh = () => {
@@ -265,7 +330,7 @@ export default function Home() {
                   }}
                   className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
                     active
-                     ? `text-${tab.color}-600 dark:text-${tab.color}-400`
+                  ? `text-${tab.color}-600 dark:text-${tab.color}-400`
                       : "text-gray-400 dark:text-zinc-500"
                   }`}
                 >
