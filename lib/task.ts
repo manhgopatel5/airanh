@@ -53,12 +53,12 @@ class TaskError extends Error {
 /* ================= HELPERS ================= */
 const slugify = (str: string): string =>
   str
- .toLowerCase()
- .normalize("NFD")
- .replace(/[\u0300-\u036f]/g, "")
- .replace(/[^a-z0-9]+/g, "-")
- .replace(/^-|-$/g, "")
- .slice(0, 60);
+.toLowerCase()
+.normalize("NFD")
+.replace(/[\u0300-\u036f]/g, "")
+.replace(/[^a-z0-9]+/g, "-")
+.replace(/^-|-$/g, "")
+.slice(0, 60);
 
 const generateUniqueShortId = async (): Promise<string> => {
   const db = getFirebaseDB();
@@ -74,9 +74,9 @@ const generateUniqueShortId = async (): Promise<string> => {
 
 const cleanTags = (tags: string[], title: string, category?: string): string[] => {
   const all = [...tags, category || "",...slugify(title).split("-")]
- .map((t) => t.trim().toLowerCase())
- .filter((t) => t.length >= 2 && t.length <= 20)
- .slice(0, 10);
+.map((t) => t.trim().toLowerCase())
+.filter((t) => t.length >= 2 && t.length <= 20)
+.slice(0, 10);
   return [...new Set(all)];
 };
 
@@ -136,7 +136,7 @@ export async function createTask(
     visibility: data.visibility || "public",
     createdAt: serverTimestamp() as Timestamp,
     updatedAt: serverTimestamp() as Timestamp,
-    location: data.location,
+   ...(data.location && { location: data.location }),
     searchKeywords: generateTaskSearchKeywords({
       title: data.title,
       description: data.description || "",
@@ -156,9 +156,9 @@ export async function createTask(
     joined: 0,
     requirements: data.requirements || "",
     isRemote: data.isRemote?? false,
-    applicationDeadline: data.applicationDeadline || null,
-    deadline: data.deadline || null,
-    startDate: data.startDate || null,
+   ...(data.applicationDeadline && { applicationDeadline: data.applicationDeadline }),
+   ...(data.deadline && { deadline: data.deadline }),
+   ...(data.startDate && { startDate: data.startDate }),
     featured: data.featured || false,
   };
 
@@ -206,8 +206,8 @@ export async function createPlan(
   const milestones: PlanMilestone[] = (data.milestones || []).map((m, idx) => ({
     id: nanoid(8),
     title: m.title.trim(),
-    description: m.description?.trim(),
-    dueDate: m.dueDate,
+   ...(m.description && { description: m.description.trim() }),
+   ...(m.dueDate && { dueDate: m.dueDate }),
     completed: false,
     assignedTo: m.assignedTo || [],
     order: idx,
@@ -247,7 +247,7 @@ export async function createPlan(
     visibility: data.visibility || "public",
     createdAt: serverTimestamp() as Timestamp,
     updatedAt: serverTimestamp() as Timestamp,
-    location: data.location,
+   ...(data.location && { location: data.location }),
     searchKeywords: generateTaskSearchKeywords({
       title: data.title,
       description: data.description || "",
@@ -261,16 +261,16 @@ export async function createPlan(
     shareCount: 0,
     bookmarkCount: 0,
     eventDate: data.eventDate,
-    endDate: data.endDate,
+   ...(data.endDate && { endDate: data.endDate }),
     milestones,
     participants: [ownerParticipant],
     maxParticipants: data.maxParticipants,
     currentParticipants: 1,
-    inviteCode,
+   ...(inviteCode && { inviteCode }),
     allowInvite: data.allowInvite?? true,
     costType: data.costType,
-    costAmount: data.costType === "free"? undefined : data.costAmount,
-    costDescription: data.costDescription,
+   ...(data.costType!== "free" && data.costAmount && { costAmount: data.costAmount }),
+   ...(data.costDescription && { costDescription: data.costDescription }),
     autoAccept: data.autoAccept?? false,
     requireApproval: data.requireApproval?? false,
     featured: data.featured || false,
@@ -314,7 +314,7 @@ export async function updateTask(
     }
 
     const newSearchKeywords = updates.title || updates.description || updates.tags || updates.category
-  ? generateTaskSearchKeywords({
+ ? generateTaskSearchKeywords({
           title: updates.title || data.title,
           description: updates.description || data.description,
           tags: updates.tags || data.tags,
@@ -324,7 +324,7 @@ export async function updateTask(
       : data.searchKeywords;
 
     transaction.update(taskRef, {
-  ...updates,
+ ...updates,
       searchKeywords: newSearchKeywords,
       edited: true,
       editedAt: serverTimestamp(),
@@ -366,7 +366,7 @@ export async function updatePlan(
     }
 
     const newSearchKeywords = updates.title || updates.description || updates.tags || updates.category
-  ? generateTaskSearchKeywords({
+ ? generateTaskSearchKeywords({
           title: updates.title || data.title,
           description: updates.description || data.description,
           tags: updates.tags || data.tags,
@@ -376,7 +376,7 @@ export async function updatePlan(
       : data.searchKeywords;
 
     transaction.update(planRef, {
-  ...updates,
+ ...updates,
       searchKeywords: newSearchKeywords,
       edited: true,
       editedAt: serverTimestamp(),
@@ -658,7 +658,7 @@ export async function toggleMilestone(
         if (!canToggle) throw new TaskError("Bạn không có quyền thay đổi mốc này");
 
         return {
-      ...m,
+     ...m,
           completed:!m.completed,
           completedAt: m.completed? undefined : Timestamp.now(),
         };
