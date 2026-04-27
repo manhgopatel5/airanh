@@ -236,8 +236,9 @@ export default function Profile() {
     }
   };
 
+  // FIX: Thêm deps [user?.uid, db] để không spam
   useEffect(() => {
-    if (!user) return;
+    if (!user?.uid) return;
     const updateOnline = () => updateDoc(doc(db, "users", user.uid), { online: true }).catch(() => {});
     const updateOffline = () => updateDoc(doc(db, "users", user.uid), {
         online: false,
@@ -258,7 +259,7 @@ export default function Profile() {
       window.removeEventListener("beforeunload", updateOffline);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, );
+  }, [user?.uid, db]); // FIX: Thêm deps
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -433,7 +434,7 @@ function Item({
     >
       <div className="flex items-center gap-3">
         <Icon className={`w-5 h-5 ${danger? "text-red-500" : "text-gray-900 dark:text-white"}`} />
-        <span className={`text-[15px] font-semibold ${danger? "text-red-500" : "text-gray-900 dark:text-white"}`}>{label}</span>
+        <span className={`text-base font-semibold ${danger? "text-red-500" : "text-gray-900 dark:text-white"}`}>{label}</span>
       </div>
       <ChevronRight className="w-4 h-4 text-gray-400" />
     </button>
