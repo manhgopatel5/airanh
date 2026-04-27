@@ -1,6 +1,6 @@
 "use client";
 
-import { TaskListItem } from "@/types/task";
+import { TaskListItem, PlanListItem } from "@/types/task";
 import TaskCard from "@/components/TaskCard";
 import { AppMode } from "@/types/app";
 import { useRouter } from "next/navigation";
@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 type TabId = "hot" | "near" | "friends" | "new";
 
 type Props = {
-  tasks: TaskListItem[];
+  tasks: (TaskListItem | PlanListItem)[];
   mode: AppMode;
   activeTab: TabId;
 };
@@ -116,7 +116,7 @@ export default function TaskFeed({ tasks, mode, activeTab }: Props) {
 
   if (tasks.length === 0) {
     const config =
-      emptyConfig[mode]?.[activeTab] ?? emptyConfig.task.new;
+      emptyConfig[mode]?.[activeTab]?? emptyConfig.task.new;
 
     return (
       <div className="flex flex-col items-center justify-center px-6 py-20 text-center animate-in fade-in duration-300">
@@ -158,7 +158,7 @@ export default function TaskFeed({ tasks, mode, activeTab }: Props) {
           }}
           className={`mt-8 px-6 py-3 rounded-2xl bg-gradient-to-r ${config.gradient} text-white font-bold text-sm shadow-lg active:scale-95 transition-all hover:shadow-xl`}
         >
-          {mode === "task" ? "Đăng việc ngay" : "Tạo lịch hẹn"}
+          {mode === "task"? "Đăng việc ngay" : "Tạo lịch hẹn"}
         </button>
       </div>
     );
