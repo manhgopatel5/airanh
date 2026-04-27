@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ChevronLeft, Database, Trash2, Image, MessageSquare, FileText } from "lucide-react";
+import { ChevronLeft, Trash2, Image, MessageSquare, FileText } from "lucide-react";
 import { toast, Toaster } from "sonner";
 
 export default function StoragePage() {
