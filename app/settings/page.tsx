@@ -88,7 +88,6 @@ export default function SettingsPage() {
   const auth = getFirebaseAuth();
   const router = useRouter();
   const { user } = useAuth();
-  const mode = useAppStore((s) => s.mode);
  
 
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
