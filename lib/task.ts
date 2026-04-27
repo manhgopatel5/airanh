@@ -244,56 +244,34 @@ export async function updateTask(
 export async function deleteTask(taskId: string, userId: string): Promise<void> {
   const db = getFirebaseDB();
 
-  if (!taskId || !userId) {
-    throw new TaskError("Thiếu thông tin");
-  }
+  if (!taskId ||!userId) throw new TaskError("Thiếu thông tin");
 
   await runTransaction(db, async (transaction) => {
     const taskRef = doc(db, "tasks", taskId);
     const snap = await transaction.get(taskRef);
-
-    if (!snap.exists()) {
-      throw new TaskError("Không tìm thấy công việc");
-    }
-
+    if (!snap.exists()) throw new TaskError("Không tìm thấy công việc");
     const data = snap.data() as Task;
+    if (data.userId!== userId) throw new TaskError("Bạn không có quyền xóa");
 
-    // ✅ check quyền
-    if (data.userId !== userId) {
-      throw new TaskError("Bạn không có quyền xóa");
-    }
-
-    // ✅ FIX TYPE: chỉ check joined khi là task
     if (data.type === "task") {
       const taskData = data as TaskItem;
-
-      if (taskData.joined > 0) {
-        throw new TaskError("Không thể xóa công việc đã có người tham gia");
-      }
+      if (taskData.joined > 0) throw new TaskError("Không thể xóa công việc đã có người tham gia");
     }
 
-    // ⚠️ query participants (ngoài transaction read vẫn OK)
     const participantsQuery = query(
       collection(db, "taskParticipants"),
       where("taskId", "==", taskId),
       limit(500)
     );
-
     const participantsSnap = await getDocs(participantsQuery);
 
-    // ✅ soft delete
     transaction.update(taskRef, {
       status: "cancelled",
       deletedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+    transaction.delete(doc(db, "shortIds", data.shortId));
 
-    // ✅ delete shortId mapping
-    if ("shortId" in data && data.shortId) {
-      transaction.delete(doc(db, "shortIds", data.shortId));
-    }
-
-    // ✅ delete participants
     participantsSnap.docs.forEach((d) => {
       transaction.delete(d.ref);
     });
@@ -428,10 +406,13 @@ export async function joinTask(taskId: string, user: User): Promise<void> {
       status: "joined" as const,
     };
 
+    if (task.type!== "task") throw new TaskError("Chỉ tham gia được công việc, không phải kế hoạch");
+    const taskItem = task as TaskItem;
+
     transaction.set(participantRef, participant);
     transaction.update(taskRef, {
       joined: increment(1),
-      status: task.joined + 1 >= task.totalSlots? "full" : "open",
+      status: taskItem.joined + 1 >= taskItem.totalSlots? "full" : "open",
       updatedAt: serverTimestamp(),
     });
   });
