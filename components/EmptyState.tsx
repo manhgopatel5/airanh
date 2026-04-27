@@ -176,7 +176,13 @@ export default function EmptyState({ tab, type = "task" }: Props) {
 
   const handleSuggestClick = (suggest: string) => {
     if ("vibrate" in navigator) navigator.vibrate(5);
-    router.push(`/create/${type}?title=${encodeURIComponent(suggest)}`);
+    const path = type === "task"? "/create-task" : "/create/plan";
+    router.push(`${path}?title=${encodeURIComponent(suggest)}`);
+  };
+
+  const handleCreateClick = () => {
+    const path = type === "task"? "/create-task" : "/create/plan";
+    router.push(path);
   };
 
   return (
@@ -227,7 +233,7 @@ export default function EmptyState({ tab, type = "task" }: Props) {
         transition={{ delay: 0.15 }}
       >
         <button
-          onClick={() => router.push(`/create/${type}`)}
+          onClick={handleCreateClick}
           className={`px-5 py-2.5 rounded-lg ${theme.buttonBg} ${theme.buttonText} font-semibold text-sm flex items-center gap-2 active:scale-95 transition-all shadow-sm`}
         >
           <HiPlus size={20} strokeWidth={2.5} />
