@@ -23,7 +23,7 @@ import {
 } from "firebase/firestore";
 import { getFirebaseDB } from "./firebase";
 import { nanoid } from "nanoid";
-import { Task, CreateTaskInput, UpdateTaskInput, TaskListItem, TaskStatus } from "@/types/task";
+import { Task, TaskItem, CreateTaskInput, UpdateTaskInput, TaskListItem, TaskStatus } from "@/types/task";
 
 export class TaskError extends Error {
   constructor(message: string, public code?: string) {
@@ -35,18 +35,18 @@ export class TaskError extends Error {
 /* ================= HELPERS ================= */
 const slugify = (str: string): string =>
   str
- .toLowerCase()
- .normalize("NFD")
- .replace(/[\u0300-\u036f]/g, "")
- .replace(/[^a-z0-9]+/g, "-")
- .replace(/^-|-$/g, "")
- .slice(0, 60);
+.toLowerCase()
+.normalize("NFD")
+.replace(/[\u0300-\u036f]/g, "")
+.replace(/[^a-z0-9]+/g, "-")
+.replace(/^-|-$/g, "")
+.slice(0, 60);
 
 const generateSearchKeywords = (title: string, description?: string, tags?: string[]): string[] => {
   const words = [
- ...title.toLowerCase().split(" "),
- ...(description?.toLowerCase().split(" ").slice(0, 20) || []),
- ...(tags?.map((t) => t.toLowerCase()) || []),
+...title.toLowerCase().split(" "),
+...(description?.toLowerCase().split(" ").slice(0, 20) || []),
+...(tags?.map((t) => t.toLowerCase()) || []),
   ].filter(Boolean);
   return [...new Set(words)].slice(0, 20);
 };
@@ -82,7 +82,6 @@ export const createTask = async (
   const baseSlug = slugify(data.title);
   let slug = `${baseSlug}-${nanoid(6)}`;
 
-  // Check slug unique trước transaction để tránh lỗi getDocs trong transaction
   let attempts = 0;
   while (attempts < 3) {
     const slugQuery = query(collection(db, "tasks"), where("slug", "==", slug), limit(1));
@@ -99,7 +98,8 @@ export const createTask = async (
     const taskRef = doc(collection(db, "tasks"));
     const now = serverTimestamp() as Timestamp;
 
-    const taskData: Omit<Task, "id"> = {
+    const taskData: Omit<TaskItem, "id"> = {
+      type: "task",
       slug,
       shortId,
       title: data.title.trim(),
@@ -115,8 +115,8 @@ export const createTask = async (
       userId: user.uid,
       userName: user.displayName || "Ẩn danh",
       userAvatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || "U")}`,
-   ...(user.shortId && { userShortId: user.shortId }),
-   ...(user.username && { userUsername: user.username }),
+  ...(user.shortId && { userShortId: user.shortId }),
+  ...(user.username && { userUsername: user.username }),
 
       createdAt: now,
       updatedAt: now,
@@ -124,12 +124,12 @@ export const createTask = async (
       deadline: data.deadline || null,
       startDate: data.startDate || null,
 
-   ...(data.category && { category: data.category }),
+  ...(data.category && { category: data.category }),
       tags: data.tags || [],
       images: data.images || [],
       attachments: data.attachments || [],
       requirements: data.requirements || "",
-   ...(data.location && { location: data.location }),
+  ...(data.location && { location: data.location }),
       isRemote: data.isRemote || false,
 
       searchKeywords: generateSearchKeywords(data.title, data.description, data.tags),
@@ -173,21 +173,29 @@ export const updateTask = async (
     if (data.status === "deleted") throw new TaskError("Task đã xóa");
     if (data.banned) throw new TaskError("Task đã bị cấm");
 
+    if (data.type === "task") {
+      const taskData = data as TaskItem;
+      if (taskData.deadline && taskData.deadline.toMillis() < Date.now()) throw new TaskError("Công việc đã hết hạn");
+      if (updates.totalSlots && updates.totalSlots < taskData.joined) throw new TaskError("Số người không được nhỏ hơn đã tham gia");
+    }
+
     const newSearchKeywords = updates.title || updates.description || updates.tags
-   ? generateSearchKeywords(
+ ? generateSearchKeywords(
           updates.title || data.title,
           updates.description || data.description,
           updates.tags || data.tags
         )
       : data.searchKeywords;
 
-    transaction.update(taskRef, {
-   ...updates,
+    const updateData: any = {
+ ...updates,
       searchKeywords: newSearchKeywords,
       edited: true,
       editedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    });
+    };
+
+    transaction.update(taskRef, updateData);
   });
 };
 
@@ -205,6 +213,11 @@ export const deleteTask = async (taskId: string, userId: string): Promise<void> 
   if (data.userId!== userId) throw new TaskError("Bạn không có quyền xóa", "FORBIDDEN");
   if (data.status === "deleted") return;
 
+  if (data.type === "task") {
+    const taskData = data as TaskItem;
+    if (taskData.joined > 0) throw new TaskError("Không thể xóa công việc đã có người tham gia");
+  }
+
   const batch = writeBatch(db);
 
   batch.update(taskRef, {
@@ -212,7 +225,6 @@ export const deleteTask = async (taskId: string, userId: string): Promise<void> 
     deletedAt: serverTimestamp(),
   });
 
-  // Xóa cascade: comments, likes, participants
   const collections = ["task_comments", "task_likes", "task_participants"];
   for (const col of collections) {
     const q = query(collection(db, col), where("taskId", "==", taskId), limit(500));
