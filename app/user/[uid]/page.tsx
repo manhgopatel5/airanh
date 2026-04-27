@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { doc, getDoc, collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
-import { TaskListItem } from "@/types/task";
+import { TaskListItem, isTask } from "@/types/task";
 import { FiChevronLeft, FiMapPin, FiCalendar, FiBriefcase } from "react-icons/fi";
 import { formatTaskPrice } from "@/types/task";
 import Link from "next/link";
@@ -25,7 +25,7 @@ type UserProfile = {
 export default function UserProfilePage() {
   const { uid } = useParams();
   const router = useRouter();
-  const db = getFirebaseDB(); // ✅ Dùng db ở đây
+  const db = getFirebaseDB();
   
   const [user, setUser] = useState<UserProfile | null>(null);
   const [tasks, setTasks] = useState<TaskListItem[]>([]);
@@ -33,7 +33,7 @@ export default function UserProfilePage() {
   const [tab, setTab] = useState<"open" | "completed">("open");
 
   useEffect(() => {
-    if (!uid || typeof uid !== "string") return;
+    if (!uid || typeof uid!== "string") return;
 
     const loadData = async () => {
       try {
@@ -42,7 +42,7 @@ export default function UserProfilePage() {
           router.replace("/404");
           return;
         }
-        setUser({ uid, ...userSnap.data() } as UserProfile);
+        setUser({ uid,...userSnap.data() } as UserProfile);
 
         const q = query(
           collection(db, "tasks"),
@@ -54,7 +54,7 @@ export default function UserProfilePage() {
           limit(20)
         );
         const taskSnap = await getDocs(q);
-        setTasks(taskSnap.docs.map((d) => ({ id: d.id, ...d.data() } as TaskListItem)));
+        setTasks(taskSnap.docs.map((d) => ({ id: d.id,...d.data() } as TaskListItem)));
       } catch (err) {
         console.error(err);
       } finally {
@@ -66,7 +66,7 @@ export default function UserProfilePage() {
   }, [uid, router, db]);
 
   const filteredTasks = tasks.filter((t) =>
-    tab === "open" ? ["open", "full"].includes(t.status) : t.status === "completed"
+    tab === "open"? ["open", "full"].includes(t.status) : t.status === "completed"
   );
 
   if (loading) return <div className="max-w-xl mx-auto p-4 space-y-4 animate-pulse"><div className="h-32 bg-gray-200 dark:bg-zinc-800 rounded-3xl" /></div>;
@@ -142,7 +142,7 @@ export default function UserProfilePage() {
             onClick={() => setTab(t.key as any)}
             className={`py-3 text-sm font-semibold border-b-2 transition ${
               tab === t.key
-             ? "border-blue-500 text-blue-500"
+            ? "border-blue-500 text-blue-500"
                 : "border-transparent text-gray-500 dark:text-zinc-400"
             }`}
           >
@@ -179,18 +179,20 @@ export default function UserProfilePage() {
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100 line-clamp-1">{task.title}</h3>
                 <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-zinc-400">
                   <span className="font-bold text-emerald-600">
-                    {formatTaskPrice(task.price)}
+                    {isTask(task) ? formatTaskPrice(task.price) : "Miễn phí"}
                   </span>
                   <span>•</span>
-                  <span>{task.joined}/{task.totalSlots} người</span>
+                  <span>
+                    {isTask(task) ? `${task.joined}/${task.totalSlots}` : "Kế hoạch"} người
+                  </span>
                 </div>
                 <div className="flex items-center gap-3 mt-2 text-xs">
                   <span className={`px-2 py-0.5 rounded-full font-semibold ${
-                    task.status === "open" ? "bg-green-100 text-green-700" :
-                    task.status === "full" ? "bg-orange-100 text-orange-700" :
+                    task.status === "open"? "bg-green-100 text-green-700" :
+                    task.status === "full"? "bg-orange-100 text-orange-700" :
                     "bg-blue-100 text-blue-700"
                   }`}>
-                    {task.status === "open" ? "Đang mở" : task.status === "full" ? "Đã đủ" : "Hoàn thành"}
+                    {task.status === "open"? "Đang mở" : task.status === "full"? "Đã đủ" : "Hoàn thành"}
                   </span>
                 </div>
               </div>
