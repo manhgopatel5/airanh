@@ -150,15 +150,15 @@ export default function SearchPage() {
         // Tab near: filter client theo khoảng cách
         if (activeTab === "near" && userLocation) {
           data = data
-           .map((t) => ({
-             ...t,
+         .map((t) => ({
+            ...t,
               distance:
                 t.location?.lat && t.location?.lng
-                 ? getDistance(userLocation, { lat: t.location.lat, lng: t.location.lng })
+               ? getDistance(userLocation, { lat: t.location.lat, lng: t.location.lng })
                   : 9999,
             }))
-           .filter((t: any) => t.distance < 50)
-           .sort((a: any, b: any) => a.distance - b.distance);
+         .filter((t: any) => t.distance < 50)
+         .sort((a: any, b: any) => a.distance - b.distance);
         }
 
         // Tránh duplicate key khi loadMore
@@ -246,7 +246,7 @@ export default function SearchPage() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex flex-col items-center py-2 px-2 flex-1 transition-all ${
                       active
-                       ? "text-blue-600 dark:text-blue-400"
+                     ? "text-blue-600 dark:text-blue-400"
                         : "text-gray-400 dark:text-zinc-500 hover:text-gray-600"
                     }`}
                   >
@@ -270,7 +270,13 @@ export default function SearchPage() {
           {!loading && tasks.length === 0 && (
             <Empty tab={activeTab} hasKeyword={!!keyword} hasLocation={!!userLocation} />
           )}
-          {!loading && tasks.map((task) => <TaskCard key={task.id} task={task} />)}
+          {!loading && tasks.map((task) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              mode={task.price === 0? "plan" : "task"} // ✅ Thêm dòng này
+            />
+          ))}
 
           {/* LOAD MORE */}
           {!loading && hasMore && tasks.length > 0 && (
