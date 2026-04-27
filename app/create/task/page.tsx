@@ -10,7 +10,7 @@ import type { CreateTaskInput } from "@/types/task";
 import {
   FiUpload, FiX, FiMapPin, FiUsers, FiClock,
   FiTag, FiEyeOff, FiNavigation,
-  FiCalendar,
+  FiCalendar
 } from "react-icons/fi";
 import { Timestamp } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
@@ -204,7 +204,7 @@ export default function CreateTaskPage() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setForm({
-    ...form,
+   ...form,
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
           address: "Vị trí hiện tại",
@@ -270,12 +270,12 @@ export default function CreateTaskPage() {
         requirements: form.requirements.trim(),
         isRemote: form.isRemote,
         location: form.isRemote
-   ? {}
+  ? {}
           : {
               address: form.address.trim(),
               city: form.city.trim(),
-     ...(form.lat!= null && { lat: form.lat }),
-     ...(form.lng!= null && { lng: form.lng }),
+    ...(form.lat!= null && { lat: form.lat }),
+    ...(form.lng!= null && { lng: form.lng }),
             },
       };
 
@@ -381,7 +381,7 @@ export default function CreateTaskPage() {
                       }}
                       className={`p-2.5 rounded-lg border-2 transition-all ${
                         form.category === cat.id
-            ? "border-sky-500 bg-sky-50"
+           ? "border-sky-500 bg-sky-50"
                           : "border-gray-200 bg-white"
                       }`}
                     >
@@ -447,7 +447,7 @@ export default function CreateTaskPage() {
                       }}
                       className={`py-2 rounded-lg border-2 text-xs font-semibold transition-all ${
                         form.budgetType === type.id
-            ? "border-sky-500 bg-sky-50 text-sky-600"
+           ? "border-sky-500 bg-sky-50 text-sky-600"
                           : "border-gray-200 text-gray-700"
                       }`}
                     >
@@ -546,7 +546,7 @@ export default function CreateTaskPage() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  <FiFileText className="inline mr-1" />Yêu cầu (không bắt buộc)
+                  Yêu cầu (không bắt buộc)
                 </label>
                 <textarea
                   placeholder="Kỹ năng cần có, kinh nghiệm..."
@@ -630,7 +630,7 @@ export default function CreateTaskPage() {
                       }}
                       className={`py-2 rounded-lg border-2 transition-all ${
                         form.visibility === vis.id
-            ? "border-sky-500 bg-sky-50"
+           ? "border-sky-500 bg-sky-50"
                           : "border-gray-200 bg-white"
                       }`}
                     >
