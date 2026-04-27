@@ -1,5 +1,5 @@
 "use client";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { FiMessageSquare, FiClipboard, FiUser } from "react-icons/fi";
 import { HiHome, HiPlus } from "react-icons/hi2";
 import { useEffect, useTransition, useCallback } from "react";
@@ -7,10 +7,14 @@ import { useEffect, useTransition, useCallback } from "react";
 export default function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
   
-  // Check đang ở Plan
-  const isPlan = pathname.startsWith("/plan") || pathname.startsWith("/create/plan");
+  // Check Plan: pathname hoặc query param?mode=plan
+  const isPlan = pathname.startsWith("/plan") || 
+                 pathname.startsWith("/create/plan") ||
+                 searchParams.get("mode") === "plan" ||
+                 (pathname === "/" && searchParams.get("tab") === "plan");
 
   useEffect(() => {
     router.prefetch("/");
@@ -30,19 +34,21 @@ export default function BottomNav() {
   }, [pathname, router]);
 
   const isActive = useCallback((path: string) => {
-    if (path === "/") return pathname === "/" || pathname.startsWith("/task");
+    if (path === "/") {
+      return pathname === "/" || pathname.startsWith("/task") || pathname.startsWith("/plan");
+    }
     return pathname.startsWith(path);
   }, [pathname]);
 
   // Màu theo mode
   const activeBg = isPlan 
-   ? "bg-green-500/10 dark:bg-green-500/20" 
+  ? "bg-green-500/10 dark:bg-green-500/20" 
     : "bg-sky-500/10 dark:bg-sky-500/20";
   const activeText = isPlan 
-   ? "text-green-600 dark:text-green-400" 
+  ? "text-green-600 dark:text-green-400" 
     : "text-sky-600 dark:text-sky-400";
   const fabGradient = isPlan 
-   ? "from-green-500 to-emerald-500 shadow-green-500/30" 
+  ? "from-green-500 to-emerald-500 shadow-green-500/30" 
     : "from-sky-500 to-blue-500 shadow-sky-500/30";
   const fabHref = isPlan? "/create/plan" : "/create/task";
 
@@ -72,14 +78,14 @@ export default function BottomNav() {
           <Icon
             className={`w-5 h-5 sm:w-6 sm:h-6 ${
               active
-               ? activeText
+              ? activeText
                 : "text-gray-500 dark:text-zinc-400"
             }`}
           />
           <span
             className={`text-xs font-semibold tracking-tight leading-none ${
               active
-               ? activeText
+              ? activeText
                 : "text-gray-500 dark:text-zinc-400"
             }`}
           >
