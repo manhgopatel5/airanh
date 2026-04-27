@@ -2,75 +2,87 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { onAuthStateChanged } from "firebase/auth";
-import { getFirebaseAuth, getFirebaseStorage } from "@/lib/firebase";
+import { getFirebaseStorage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { createPlan } from "@/lib/task";
-import { User } from "@/types/task";
+import { createTask } from "@/lib/task";
 import { toast, Toaster } from "sonner";
-import type { CreatePlanInput } from "@/types/task";
+import type { CreateTaskInput } from "@/types/task";
 import {
-  FiUpload,
-  FiX,
-  FiMapPin,
-  FiUsers,
-  FiClock,
-  FiTag,
-  FiCalendar,
-  FiShare2,
-  FiEye,
-  FiEyeOff,
+  FiUpload, FiX, FiMapPin, FiUsers, FiClock,
+  FiTag, FiEyeOff, FiNavigation,
+  FiCalendar, FiChevronLeft
 } from "react-icons/fi";
 import { Timestamp } from "firebase/firestore";
+import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/lib/AuthContext";
 
 const CATEGORIES = [
-  { id: "food", name: "Ăn uống", icon: "🍜" },
-  { id: "nightlife", name: "Nightlife", icon: "🍻" },
-  { id: "travel", name: "Du lịch", icon: "✈️" },
-  { id: "sport", name: "Thể thao", icon: "⚽" },
-  { id: "music", name: "Âm nhạc", icon: "🎵" },
-  { id: "workshop", name: "Workshop", icon: "🛠️" },
-  { id: "volunteer", name: "Tình nguyện", icon: "❤️" },
+  { id: "delivery", name: "Giao hàng", icon: "🚚" },
+  { id: "shopping", name: "Mua hộ", icon: "🛒" },
+  { id: "tutoring", name: "Gia sư", icon: "📚" },
+  { id: "design", name: "Thiết kế", icon: "🎨" },
+  { id: "dev", name: "Lập trình", icon: "💻" },
+  { id: "marketing", name: "Marketing", icon: "📢" },
+  { id: "writing", name: "Viết lách", icon: "✍️" },
   { id: "other", name: "Khác", icon: "📌" },
 ];
 
-export default function CreatePlanPage() {
-  const auth = getFirebaseAuth();
+const HOT_TAGS = ["gấp", "trong ngày", "part-time", "remote", "sinh viên", "cuối tuần"];
+
+const formatCurrency = (value: string) => {
+  const number = value.replace(/\D/g, "");
+  if (!number) return "";
+  return number.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
+
+const formatDateTimeLocal = (date: Date) => {
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
+export default function CreateTaskPage() {
   const storage = getFirebaseStorage();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading } = useAuth();
+
   const [submitting, setSubmitting] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [showAllTags, setShowAllTags] = useState(false);
+
+  const now = new Date();
+  const defaultEnd = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
   const [form, setForm] = useState({
     title: "",
     description: "",
-    category: "food",
+    category: "other",
     eventDate: "",
     eventTime: "",
     endDate: "",
     endTime: "",
-    maxParticipants: "10",
-    costType: "free" as "free" | "share" | "host",
+    maxParticipants: "1",
+    costType: "fixed" as "fixed" | "hourly" | "negotiable",
     costAmount: "",
     costDescription: "",
     allowInvite: true,
     autoAccept: false,
     requireApproval: false,
     visibility: "public" as "public" | "friends" | "private",
-    tags: "",
+    tags: [] as string[],
     images: [] as string[],
     address: "",
     city: "",
     lat: null as number | null,
     lng: null as number | null,
     attachments: [] as string[],
+    isRemote: false,
+    requirements: "",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [tagInput, setTagInput] = useState("");
 
   useEffect(() => {
     const titleParam = searchParams.get("title");
@@ -79,31 +91,24 @@ export default function CreatePlanPage() {
     }
   }, [searchParams]);
 
-  /* ================= AUTH CHECK ================= */
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
-      if (!firebaseUser) {
-        toast.error("Bạn cần đăng nhập");
-        router.replace("/login");
-        return;
-      }
-      if (!firebaseUser.emailVerified) {
-        toast.warning("Vui lòng xác thực email");
-        router.replace("/verify-email");
-        return;
-      }
-      setUser({
-        uid: firebaseUser.uid,
-        email: firebaseUser.email,
-        displayName: firebaseUser.displayName,
-        photoURL: firebaseUser.photoURL,
-      });
-      setLoading(false);
-    });
-    return () => unsub();
-  }, [auth, router]);
+    const draft = localStorage.getItem("task_draft");
+    if (draft &&!searchParams.get("title")) {
+      try {
+        const parsed = JSON.parse(draft);
+        setForm(prev => ({...prev,...parsed, images: [] }));
+      } catch {}
+    }
+  }, []);
 
-  /* ================= VALIDATE ================= */
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const { images,...rest } = form;
+      localStorage.setItem("task_draft", JSON.stringify(rest));
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, );
+
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!form.title.trim()) newErrors.title = "Vui lòng nhập tiêu đề";
@@ -114,33 +119,35 @@ export default function CreatePlanPage() {
     else if (form.description.length < 20) newErrors.description = "Mô tả tối thiểu 20 ký tự";
     else if (form.description.length > 5000) newErrors.description = "Mô tả tối đa 5000 ký tự";
 
-    if (!form.eventDate) newErrors.eventDate = "Vui lòng chọn ngày diễn ra";
-    else if (new Date(form.eventDate).getTime() < Date.now()) newErrors.eventDate = "Ngày diễn ra đã qua";
+    if (!form.eventDate) newErrors.eventDate = "Vui lòng chọn ngày bắt đầu";
+    if (!form.endDate) newErrors.endDate = "Vui lòng chọn ngày kết thúc";
+    if (form.eventDate && form.endDate && new Date(form.eventDate) >= new Date(form.endDate)) {
+      newErrors.endDate = "Ngày kết thúc phải sau ngày bắt đầu";
+    }
 
-    const max = parseInt(form.maxParticipants);
-    if (!form.maxParticipants || isNaN(max)) newErrors.maxParticipants = "Vui lòng nhập số người";
-    else if (max < 2) newErrors.maxParticipants = "Tối thiểu 2 người";
-    else if (max > 1000) newErrors.maxParticipants = "Tối đa 1000 người";
+    const slots = parseInt(form.totalSlots);
+    if (!form.totalSlots || isNaN(slots)) newErrors.totalSlots = "Vui lòng nhập số người";
+    else if (slots < 1) newErrors.totalSlots = "Tối thiểu 1 người";
+    else if (slots > 100) newErrors.totalSlots = "Tối đa 100 người";
 
-    if (form.costType!== "free") {
+    if (form.costType!== "negotiable") {
       const cost = parseInt(form.costAmount);
-      if (!form.costAmount || isNaN(cost)) newErrors.costAmount = "Vui lòng nhập chi phí";
-      else if (cost < 0) newErrors.costAmount = "Chi phí không hợp lệ";
+      if (!form.costAmount || isNaN(cost)) newErrors.costAmount = "Vui lòng nhập giá";
+      else if (cost < 1000) newErrors.costAmount = "Giá tối thiểu 1.000";
+      else if (cost > 100000000) newErrors.costAmount = "Giá tối đa 100.000.000";
     }
 
     if (!form.category) newErrors.category = "Vui lòng chọn danh mục";
-    if (form.images.length > 10) newErrors.images = "Tối đa 10 ảnh";
-    if (!form.address.trim()) newErrors.address = "Vui lòng nhập địa điểm";
+    if (!form.isRemote &&!form.address.trim()) newErrors.address = "Vui lòng nhập địa điểm hoặc chọn làm từ xa";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  /* ================= UPLOAD IMAGES ================= */
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    if (files.length + imageFiles.length > 10) {
-      toast.error("Tối đa 10 ảnh");
+    if (files.length + imageFiles.length > 5) {
+      toast.error("Tối đa 5 ảnh");
       return;
     }
 
@@ -156,7 +163,7 @@ export default function CreatePlanPage() {
     }
 
     setImageFiles([...imageFiles,...files]);
-    const urls = files.map((f) => URL.createObjectURL(f));
+    const urls = files.map(f => URL.createObjectURL(f));
     setForm({...form, images: [...form.images,...urls] });
   };
 
@@ -169,7 +176,50 @@ export default function CreatePlanPage() {
     setImageFiles(newFiles);
   };
 
-  /* ================= SUBMIT ================= */
+  const addTag = () => {
+    const tag = tagInput.trim();
+    if (!tag) return;
+    if (form.tags.length >= 10) {
+      toast.error("Tối đa 10 tag");
+      return;
+    }
+    if (form.tags.includes(tag)) {
+      toast.error("Tag đã tồn tại");
+      return;
+    }
+    setForm({...form, tags: [...form.tags, tag] });
+    setTagInput("");
+  };
+
+  const removeTag = (tag: string) => {
+    setForm({...form, tags: form.tags.filter(t => t!== tag) });
+  };
+
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Trình duyệt không hỗ trợ định vị");
+      return;
+    }
+    toast.loading("Đang lấy vị trí...");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setForm({
+     ...form,
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          address: "Vị trí hiện tại",
+          isRemote: false,
+        });
+        toast.dismiss();
+        toast.success("Đã lấy vị trí");
+      },
+      () => {
+        toast.dismiss();
+        toast.error("Không lấy được vị trí");
+      }
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -178,9 +228,9 @@ export default function CreatePlanPage() {
       return;
     }
 
-    const lastCreate = localStorage.getItem("last_plan_create");
+    const lastCreate = localStorage.getItem("last_task_create");
     if (lastCreate && Date.now() - parseInt(lastCreate) < 30000) {
-      toast.error("Vui lòng chờ 30 giây trước khi tạo kế hoạch mới");
+      toast.error("Vui lòng chờ 30 giây trước khi tạo công việc mới");
       return;
     }
 
@@ -188,57 +238,58 @@ export default function CreatePlanPage() {
       setSubmitting(true);
       setUploadingImage(true);
 
-      // Upload images
       const imageUrls: string[] = [];
       for (const file of imageFiles) {
         const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-        const fileRef = ref(storage, `plans/${user.uid}/${fileName}`);
+        const fileRef = ref(storage, `tasks/${user.uid}/${fileName}`);
         await uploadBytes(fileRef, file);
         const url = await getDownloadURL(fileRef);
         imageUrls.push(url);
       }
       setUploadingImage(false);
 
-      const eventDateTime = new Date(`${form.eventDate}T${form.eventTime || "00:00"}`);
-      const endDateTime = form.endDate? new Date(`${form.endDate}T${form.endTime || "23:59"}`) : undefined;
-      const tags = form.tags.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 10);
+      const deadline = Timestamp.fromDate(new Date(form.endDate));
+      const startDate = Timestamp.fromDate(new Date(form.eventDate));
 
-      const payload: CreatePlanInput = {
-        type: "plan",
+      const payload: CreateTaskInput = {
+        type: "task",
         title: form.title.trim(),
         description: form.description.trim(),
-        category: form.category,
-        eventDate: Timestamp.fromDate(eventDateTime),
-      ...(endDateTime && { endDate: Timestamp.fromDate(endDateTime) }),
-        maxParticipants: parseInt(form.maxParticipants, 10),
-        costType: form.costType,
-      ...(form.costType!== "free" && { costAmount: parseInt(form.costAmount, 10) }),
-      ...(form.costDescription && { costDescription: form.costDescription.trim() }),
-        allowInvite: form.allowInvite,
-        autoAccept: form.autoAccept,
-        requireApproval: form.requireApproval,
+        price: form.costType === "negotiable"? 0 : parseInt(form.costAmount.replace(/\./g, ""), 10),
+        currency: "VND",
+        budgetType: form.costType,
+        totalSlots: parseInt(form.totalSlots, 10),
         visibility: form.visibility,
-        tags,
+        deadline,
+        applicationDeadline: deadline,
+        startDate,
+        category: form.category,
+        tags: form.tags,
         images: imageUrls,
         attachments: [],
-        location: {
-          address: form.address.trim(),
-          city: form.city.trim(),
-        ...(form.lat!= null && { lat: form.lat }),
-        ...(form.lng!= null && { lng: form.lng }),
-        },
+        requirements: form.requirements.trim(),
+        isRemote: form.isRemote,
+        location: form.isRemote
+   ? {}
+          : {
+              address: form.address.trim(),
+              city: form.city.trim(),
+     ...(form.lat!= null && { lat: form.lat }),
+     ...(form.lng!= null && { lng: form.lng }),
+            },
       };
 
-      const result = await createPlan(payload, user);
-      localStorage.setItem("last_plan_create", Date.now().toString());
-      toast.success("Tạo kế hoạch thành công!");
+      const result = await createTask(payload, user);
+      localStorage.removeItem("task_draft");
+      localStorage.setItem("last_task_create", Date.now().toString());
+      toast.success("Đăng công việc thành công!");
       router.push(`/task/${result.slug}`);
     } catch (err: any) {
-      console.error("Create plan error:", err);
+      console.error("Create task error:", err);
       if (err.code === "storage/unauthorized") {
         toast.error("Không có quyền upload ảnh. Kiểm tra Storage Rules");
       } else {
-        toast.error(err.message || "Tạo kế hoạch thất bại");
+        toast.error(err.message || "Tạo công việc thất bại");
       }
     } finally {
       setSubmitting(false);
@@ -248,292 +299,366 @@ export default function CreatePlanPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950">
-        <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+      <div className="h-dvh bg-gradient-to-br from-sky-400 to-sky-500 flex items-center justify-center px-4">
+        <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin" />
       </div>
     );
   }
 
+  const displayTags = showAllTags? form.tags : form.tags.slice(0, 3);
+  const hiddenCount = form.tags.length - 3;
+
   return (
     <>
       <Toaster richColors position="top-center" />
-      <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 pb-24">
-        <div className="bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-10 safe-top">
-          <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Tạo kế hoạch</h1>
-            <button onClick={() => router.back()} className="text-gray-500 hover:text-gray-900 dark:hover:text-gray-100">
-              <FiX size={24} />
-            </button>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
-              Tiêu đề <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              placeholder="VD: Offline ăn uống cuối tuần tại Q1"
-              value={form.title}
-              onChange={(e) => setForm({...form, title: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-            {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
-              Mô tả chi tiết <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              placeholder="Mô tả hoạt động, lịch trình, lưu ý cho người tham gia..."
-              value={form.description}
-              onChange={(e) => setForm({...form, description: e.target.value })}
-              rows={6}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-            />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>{errors.description && <span className="text-red-500">{errors.description}</span>}</span>
-              <span>{form.description.length}/5000</span>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
-              Danh mục <span className="text-red-500">*</span>
-            </label>
-            <div className="grid grid-cols-4 gap-2">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setForm({...form, category: cat.id })}
-                  className={`p-3 rounded-xl border-2 transition-all ${
-                    form.category === cat.id
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
-                      : "border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
-                  }`}
-                >
-                  <div className="text-2xl mb-1">{cat.icon}</div>
-                  <div className="text-xs font-medium text-gray-700 dark:text-zinc-300">{cat.name}</div>
-                </button>
-              ))}
-            </div>
-            {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category}</p>}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
-                <FiCalendar className="inline mr-1" />Ngày diễn ra <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                value={form.eventDate}
-                onChange={(e) => setForm({...form, eventDate: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
-              />
-              {errors.eventDate && <p className="text-red-500 text-xs mt-1">{errors.eventDate}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
-                <FiClock className="inline mr-1" />Giờ bắt đầu
-              </label>
-              <input
-                type="time"
-                value={form.eventTime}
-                onChange={(e) => setForm({...form, eventTime: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
-              <FiUsers className="inline mr-1" />Số người tối đa <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              value={form.maxParticipants}
-              onChange={(e) => setForm({...form, maxParticipants: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-            {errors.maxParticipants && <p className="text-red-500 text-xs mt-1">{errors.maxParticipants}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
-              <FiShare2 className="inline mr-1" />Loại chi phí
-            </label>
-            <div className="grid grid-cols-3 gap-2 mb-3">
-              {[
-                { id: "free", name: "Miễn phí" },
-                { id: "share", name: "Share" },
-                { id: "host", name: "Host trả" },
-              ].map((type) => (
-                <button
-                  key={type.id}
-                  type="button"
-                  onClick={() => setForm({...form, costType: type.id as any })}
-                  className={`py-2 rounded-xl border-2 text-sm font-semibold transition-all ${
-                    form.costType === type.id
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400"
-                      : "border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300"
-                  }`}
-                >
-                  {type.name}
-                </button>
-              ))}
-            </div>
-
-            {form.costType!== "free" && (
-              <>
-                <input
-                  type="number"
-                  placeholder="Số tiền mỗi người"
-                  value={form.costAmount}
-                  onChange={(e) => setForm({...form, costAmount: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none mb-2"
-                />
-                {errors.costAmount && <p className="text-red-500 text-xs mt-1">{errors.costAmount}</p>}
-                <textarea
-                  placeholder="Mô tả chi phí (không bắt buộc)"
-                  value={form.costDescription}
-                  onChange={(e) => setForm({...form, costDescription: e.target.value })}
-                  rows={2}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                />
-              </>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
-              <FiMapPin className="inline mr-1" />Địa điểm <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              placeholder="Địa chỉ cụ thể"
-              value={form.address}
-              onChange={(e) => setForm({...form, address: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none mb-2"
-            />
-            <input
-              type="text"
-              placeholder="Thành phố"
-              value={form.city}
-              onChange={(e) => setForm({...form, city: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-            {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
-          </div>
-
-          <div className="space-y-3">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.allowInvite}
-                onChange={(e) => setForm({...form, allowInvite: e.target.checked })}
-                className="w-5 h-5 text-blue-500 rounded"
-              />
-              <span className="text-sm text-gray-700 dark:text-zinc-300">Cho phép thành viên mời bạn bè</span>
-            </label>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.autoAccept}
-                onChange={(e) => setForm({...form, autoAccept: e.target.checked })}
-                className="w-5 h-5 text-blue-500 rounded"
-              />
-              <span className="text-sm text-gray-700 dark:text-zinc-300">Tự động chấp nhận khi tham gia</span>
-            </label>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.requireApproval}
-                onChange={(e) => setForm({...form, requireApproval: e.target.checked })}
-                className="w-5 h-5 text-blue-500 rounded"
-              />
-              <span className="text-sm text-gray-700 dark:text-zinc-300">Cần duyệt trước khi tham gia</span>
-            </label>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
-              <FiTag className="inline mr-1" />Thẻ tag (phân cách bằng dấu phẩy)
-            </label>
-            <input
-              type="text"
-              placeholder="VD: cuối tuần, chill, nhóm nhỏ"
-              value={form.tags}
-              onChange={(e) => setForm({...form, tags: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
-              <FiEye className="inline mr-1" />Ai có thể xem
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { id: "public", name: "Công khai", icon: FiUsers },
-                { id: "friends", name: "Bạn bè", icon: FiUsers },
-                { id: "private", name: "Riêng tư", icon: FiEyeOff },
-              ].map((vis) => (
-                <button
-                  key={vis.id}
-                  type="button"
-                  onClick={() => setForm({...form, visibility: vis.id as any })}
-                  className={`py-3 rounded-xl border-2 transition-all ${
-                    form.visibility === vis.id
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
-                      : "border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
-                  }`}
-                >
-                  <vis.icon className="mx-auto mb-1" size={20} />
-                  <div className="text-xs font-medium text-gray-700 dark:text-zinc-300">{vis.name}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
-              Ảnh đính kèm (tối đa 10, mỗi ảnh &lt; 5MB)
-            </label>
-            <div className="flex flex-wrap gap-3">
-              {form.images.map((url, i) => (
-                <div key={i} className="relative w-24 h-24 rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-700">
-                  <img src={url} alt="" className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(i)}
-                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"
-                  >
-                    <FiX size={14} />
-                  </button>
-                </div>
-              ))}
-              {form.images.length < 10 && (
-                <label className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 dark:border-zinc-700 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors">
-                  <FiUpload className="text-gray-400" size={24} />
-                  <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
-                </label>
-              )}
-            </div>
-            {errors.images && <p className="text-red-500 text-xs mt-1">{errors.images}</p>}
-          </div>
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full py-4 rounded-xl text-white font-semibold bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/30 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      <div className="h-dvh bg-gradient-to-br from-sky-400 to-sky-500 flex items-center justify-center px-4 py-8 overflow-y-auto">
+        <div className="w-full max-w-sm my-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6"
           >
-            {uploadingImage? "Đang tải ảnh..." : submitting? "Đang tạo..." : "Đăng kế hoạch"}
-          </button>
-        </form>
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-2xl font-bold text-gray-900">Tạo công việc</h1>
+              <button onClick={() => router.back()} className="text-gray-500 hover:text-gray-900">
+                <FiX size={24} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <input
+                  type="text"
+                  placeholder="Tiêu đề công việc"
+                  value={form.title}
+                  onChange={(e) => setForm({...form, title: e.target.value })}
+                  className={`w-full pl-3 pr-3 py-2.5 rounded-lg border text-sm ${
+                    errors.title? "border-red-500" : "border-gray-300"
+                  } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none transition-all`}
+                  maxLength={100}
+                />
+                <div className="flex justify-between mt-1">
+                  <span className="text-red-500 text-xs">{errors.title}</span>
+                  <span className="text-xs text-gray-500">{form.title.length}/100</span>
+                </div>
+              </div>
+
+              <div>
+                <textarea
+                  placeholder="Mô tả chi tiết công việc, yêu cầu, thời gian..."
+                  value={form.description}
+                  onChange={(e) => setForm({...form, description: e.target.value })}
+                  rows={4}
+                  className={`w-full pl-3 pr-3 py-2.5 rounded-lg border text-sm ${
+                    errors.description? "border-red-500" : "border-gray-300"
+                  } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none resize-none transition-all`}
+                  maxLength={5000}
+                />
+                <div className="flex justify-between mt-1">
+                  <span className="text-red-500 text-xs">{errors.description}</span>
+                  <span className="text-xs text-gray-500">{form.description.length}/5000</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Danh mục</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {CATEGORIES.map((cat) => (
+                    <motion.button
+                      key={cat.id}
+                      type="button"
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setForm({...form, category: cat.id })}
+                      className={`p-2.5 rounded-lg border-2 transition-all ${
+                        form.category === cat.id
+               ? "border-sky-500 bg-sky-50"
+                          : "border-gray-200 bg-white"
+                      }`}
+                    >
+                      <div className="text-xl mb-0.5">{cat.icon}</div>
+                      <div className="text- font-medium text-gray-700">{cat.name}</div>
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    <FiCalendar className="inline mr-1" />Bắt đầu
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={form.eventDate}
+                    onChange={(e) => setForm({...form, eventDate: e.target.value })}
+                    className={`w-full px-3 py-2.5 rounded-lg border text-sm ${
+                      errors.eventDate? "border-red-500" : "border-gray-300"
+                    } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none`}
+                  />
+                  {errors.eventDate && <p className="text-red-500 text-xs mt-1">{errors.eventDate}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    <FiClock className="inline mr-1" />Kết thúc
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={form.endDate}
+                    onChange={(e) => setForm({...form, endDate: e.target.value })}
+                    className={`w-full px-3 py-2.5 rounded-lg border text-sm ${
+                      errors.endDate? "border-red-500" : "border-gray-300"
+                    } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none`}
+                  />
+                  {errors.endDate && <p className="text-red-500 text-xs mt-1">{errors.endDate}</p>}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Loại ngân sách</label>
+                <div className="grid grid-cols-3 gap-2 mb-2">
+                  {[
+                    { id: "fixed", name: "Cố định" },
+                    { id: "hourly", name: "Theo giờ" },
+                    { id: "negotiable", name: "Thương lượng" },
+                  ].map((type) => (
+                    <motion.button
+                      key={type.id}
+                      type="button"
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => setForm({...form, costType: type.id as any })}
+                      className={`py-2 rounded-lg border-2 text-xs font-semibold transition-all ${
+                        form.costType === type.id
+               ? "border-sky-500 bg-sky-50 text-sky-600"
+                          : "border-gray-200 text-gray-700"
+                      }`}
+                    >
+                      {type.name}
+                    </motion.button>
+                  ))}
+                </div>
+
+                {form.costType!== "negotiable" && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="Giá"
+                        value={form.costAmount}
+                        onChange={(e) => setForm({...form, costAmount: formatCurrency(e.target.value) })}
+                        className={`w-full px-3 py-2.5 rounded-lg border text-sm ${
+                          errors.costAmount? "border-red-500" : "border-gray-300"
+                        } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none`}
+                      />
+                      {errors.costAmount && <p className="text-red-500 text-xs mt-1">{errors.costAmount}</p>}
+                    </div>
+                    <div>
+                      <input
+                        type="number"
+                        placeholder="Số người"
+                        value={form.totalSlots}
+                        onChange={(e) => setForm({...form, totalSlots: e.target.value })}
+                        className={`w-full px-3 py-2.5 rounded-lg border text-sm ${
+                          errors.totalSlots? "border-red-500" : "border-gray-300"
+                        } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none`}
+                      />
+                      {errors.totalSlots && <p className="text-red-500 text-xs mt-1">{errors.totalSlots}</p>}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-sm font-semibold text-gray-700">
+                    <FiMapPin className="inline mr-1" />Địa điểm
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.isRemote}
+                      onChange={(e) => setForm({...form, isRemote: e.target.checked })}
+                      className="w-4 h-4 text-sky-500 rounded"
+                    />
+                    <span className="text-sm text-gray-600">Làm từ xa</span>
+                  </label>
+                </div>
+                {!form.isRemote && (
+                  <>
+                    <div className="flex gap-2 mb-2">
+                      <input
+                        type="text"
+                        placeholder="Địa chỉ cụ thể"
+                        value={form.address}
+                        onChange={(e) => setForm({...form, address: e.target.value })}
+                        className={`flex-1 px-3 py-2.5 rounded-lg border text-sm ${
+                          errors.address? "border-red-500" : "border-gray-300"
+                        } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none`}
+                      />
+                      <motion.button
+                        type="button"
+                        whileTap={{ scale: 0.95 }}
+                        onClick={getCurrentLocation}
+                        className="px-3 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-700"
+                      >
+                        <FiNavigation size={16} />
+                      </motion.button>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Thành phố"
+                      value={form.city}
+                      onChange={(e) => setForm({...form, city: e.target.value })}
+                      className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none text-sm"
+                    />
+                    {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
+                  </>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  <FiFileText className="inline mr-1" />Yêu cầu (không bắt buộc)
+                </label>
+                <textarea
+                  placeholder="Kỹ năng cần có, kinh nghiệm..."
+                  value={form.requirements}
+                  onChange={(e) => setForm({...form, requirements: e.target.value })}
+                  rows={2}
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none resize-none text-sm"
+                  maxLength={1000}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  <FiTag className="inline mr-1" />Thẻ tag
+                </label>
+                <div className="flex flex-wrap gap-1.5 mb-2 min-h-[2.25rem] p-2 rounded-lg border border-gray-300 bg-white">
+                  <AnimatePresence>
+                    {displayTags.map((tag) => (
+                      <motion.div
+                        key={tag}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        className="flex items-center gap-1 px-2.5 py-1 bg-sky-50 text-sky-700 rounded-full text-xs"
+                      >
+                        {tag}
+                        <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-500">
+                          <FiX size={12} />
+                        </button>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                  {!showAllTags && hiddenCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllTags(true)}
+                      className="px-2.5 py-1 bg-gray-100 text-gray-700 rounded-full text-xs"
+                    >
+                      +{hiddenCount}
+                    </button>
+                  )}
+                  <input
+                    type="text"
+                    placeholder={form.tags.length === 0? "VD: gấp, part-time" : ""}
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addTag();
+                      }
+                    }}
+                    className="flex-1 min-w-[100px] bg-transparent outline-none text-gray-900 text-xs"
+                  />
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {HOT_TAGS.filter(t =>!form.tags.includes(t)).map(t => (
+                    <button key={t} type="button" onClick={() => setForm({...form, tags: [...form.tags, t]})}
+                      className="px-2 py-0.5 bg-gray-100 text- rounded text-gray-600">
+                      +{t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ai có thể xem</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: "public", name: "Công khai", icon: FiUsers },
+                    { id: "friends", name: "Bạn bè", icon: FiUsers },
+                    { id: "private", name: "Riêng tư", icon: FiEyeOff },
+                  ].map((vis) => (
+                    <motion.button
+                      key={vis.id}
+                      type="button"
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => setForm({...form, visibility: vis.id as any })}
+                      className={`py-2 rounded-lg border-2 transition-all ${
+                        form.visibility === vis.id
+               ? "border-sky-500 bg-sky-50"
+                          : "border-gray-200 bg-white"
+                      }`}
+                    >
+                      <vis.icon className="mx-auto mb-0.5" size={18} />
+                      <div className="text- font-medium text-gray-700">{vis.name}</div>
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Ảnh đính kèm (tối đa 5, mỗi ảnh &lt; 5MB)
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <AnimatePresence>
+                    {form.images.map((url, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-300"
+                      >
+                        <img src={url} alt="" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(i)}
+                          className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 active:scale-90"
+                        >
+                          <FiX size={12} />
+                        </button>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                  {form.images.length < 5 && (
+                    <motion.label
+                      whileTap={{ scale: 0.95 }}
+                      className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-sky-500 transition-colors"
+                    >
+                      <FiUpload className="text-gray-400" size={20} />
+                      <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
+                    </motion.label>
+                  )}
+                </div>
+              </div>
+
+              <motion.button
+                type="submit"
+                whileTap={{ scale: 0.98 }}
+                disabled={submitting}
+                className="w-full py-3 rounded-lg text-white font-semibold text-sm bg-gradient-to-r from-sky-500 to-sky-600 shadow-lg shadow-sky-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {uploadingImage? "Đang tải ảnh..." : submitting? "Đang tạo..." : "Đăng công việc"}
+              </motion.button>
+            </form>
+          </motion.div>
+        </div>
       </div>
     </>
   );
