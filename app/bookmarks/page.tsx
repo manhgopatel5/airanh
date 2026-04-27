@@ -160,7 +160,11 @@ export default function BookmarksPage() {
         ) : (
           <div className="space-y-4">
             {tasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
+              <TaskCard 
+                key={task.id} 
+                task={task} 
+                mode={task.price === 0 ? "plan" : "task"} // ✅ Thêm dòng này
+              />
             ))}
           </div>
         )}
