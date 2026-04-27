@@ -62,18 +62,25 @@ const MESSAGES = {
   },
 };
 
-const COLORS = {
+// Phối màu đồng bộ cho từng mode
+const THEME = {
   task: {
-    accent: "text-orange-600 dark:text-orange-500",
-    bg: "bg-orange-500/10 dark:bg-orange-500/20",
-    tagBg: "bg-orange-500/10 hover:bg-orange-500/20",
-    tagText: "text-orange-700 dark:text-orange-400",
+    // Cam - năng động, việc gấp
+    iconBg: "bg-orange-500/10 dark:bg-orange-400/15",
+    iconColor: "text-orange-600 dark:text-orange-400",
+    tagBg: "bg-orange-500/10 hover:bg-orange-500/20 dark:bg-orange-400/15 dark:hover:bg-orange-400/25",
+    tagText: "text-orange-700 dark:text-orange-300",
+    buttonBg: "bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600",
+    buttonText: "text-white",
   },
   plan: {
-    accent: "text-violet-600 dark:text-violet-500",
-    bg: "bg-violet-500/10 dark:bg-violet-500/20",
-    tagBg: "bg-violet-500/10 hover:bg-violet-500/20",
-    tagText: "text-violet-700 dark:text-violet-400",
+    // Tím - sáng tạo, hẹn hò
+    iconBg: "bg-violet-500/10 dark:bg-violet-400/15",
+    iconColor: "text-violet-600 dark:text-violet-400",
+    tagBg: "bg-violet-500/10 hover:bg-violet-500/20 dark:bg-violet-400/15 dark:hover:bg-violet-400/25",
+    tagText: "text-violet-700 dark:text-violet-300",
+    buttonBg: "bg-violet-600 hover:bg-violet-700 dark:bg-violet-500 dark:hover:bg-violet-600",
+    buttonText: "text-white",
   },
 };
 
@@ -86,7 +93,7 @@ type Props = {
 export default function EmptyState({ tab, type = "task", onRefresh }: Props) {
   const router = useRouter();
   const msg = MESSAGES[type][tab];
-  const color = COLORS[type];
+  const theme = THEME[type];
   const Icon = msg.icon;
 
   const handleSuggestClick = (suggest: string) => {
@@ -100,9 +107,9 @@ export default function EmptyState({ tab, type = "task", onRefresh }: Props) {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.2 }}
-        className={`w-16 h-16 rounded-2xl ${color.bg} flex items-center justify-center mb-5`}
+        className={`w-16 h-16 rounded-2xl ${theme.iconBg} flex items-center justify-center mb-5`}
       >
-        <Icon className={color.accent} size={28} strokeWidth={1.75} />
+        <Icon className={theme.iconColor} size={28} strokeWidth={1.75} />
       </motion.div>
 
       <motion.div
@@ -129,7 +136,7 @@ export default function EmptyState({ tab, type = "task", onRefresh }: Props) {
           <button
             key={suggest}
             onClick={() => handleSuggestClick(suggest)}
-            className={`px-3.5 py-1.5 rounded-full ${color.tagBg} ${color.tagText} text-sm font-medium active:scale-95 transition-all`}
+            className={`px-3.5 py-1.5 rounded-full ${theme.tagBg} ${theme.tagText} text-sm font-medium active:scale-95 transition-all`}
           >
             {suggest}
           </button>
@@ -154,7 +161,7 @@ export default function EmptyState({ tab, type = "task", onRefresh }: Props) {
 
         <button
           onClick={() => router.push(`/create/${type}`)}
-          className="px-5 py-2.5 rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-semibold text-sm flex items-center gap-2 hover:bg-gray-800 dark:hover:bg-gray-100 active:scale-95 transition-all"
+          className={`px-5 py-2.5 rounded-lg ${theme.buttonBg} ${theme.buttonText} font-semibold text-sm flex items-center gap-2 active:scale-95 transition-all shadow-sm`}
         >
           <HiPlus size={20} strokeWidth={2.5} />
           {type === "task"? "Đăng việc mới" : "Tạo kế hoạch"}
