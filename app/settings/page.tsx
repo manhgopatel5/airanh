@@ -359,7 +359,7 @@ export default function SettingsPage() {
           <SettingItem
             label="Đổi email"
             icon={Mail}
-            value={user?.email}
+            value={user?.email ?? undefined}
             onClick={() => router.push("/settings/change-email")}
           />
           <SettingItem
