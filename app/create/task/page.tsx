@@ -11,7 +11,7 @@ import { toast, Toaster } from "sonner";
 import type { CreateTaskInput } from "@/types/task";
 import {
   FiUpload, FiX, FiMapPin, FiDollarSign, FiUsers, FiClock,
-  FiTag, FiFileText, FiEye, FiEyeOff, FiNavigation, FiPlus,
+  FiTag, FiFileText, FiEye, FiEyeOff, FiNavigation,
   FiMic, FiLoader, FiZap
 } from "react-icons/fi";
 import { Timestamp } from "firebase/firestore";
