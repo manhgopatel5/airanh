@@ -62,7 +62,7 @@ export default function TaskDetailPage() {
   const applicants = task?.applicants ?? [];
 
   const isFull = useMemo(
-    () => applicants.length >= (isTask(task) ? task.totalSlots : 1),
+    () => applicants.length >= (task && isTask(task) ? task.totalSlots : 1),
     [applicants, task]
   );
 
@@ -294,7 +294,7 @@ export default function TaskDetailPage() {
           <div className="flex items-center gap-2">
             <FiUsers className="text-gray-500" />
             <span>
-              {applicants.length}/{isTask(task) ? task.totalSlots : 1} ứng tuyển
+              {applicants.length}/{task && isTask(task) ? task.totalSlots : 1} ứng tuyển
             </span>
           </div>
           <div className="flex items-center gap-2">
