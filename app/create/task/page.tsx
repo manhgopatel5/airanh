@@ -817,8 +817,6 @@ export default function CreateTaskPage() {
               {form.images.length < 5 && (
                 <motion.label
                   whileTap={{ scale: 0.95 }}
-                <motion.label
-                  whileTap={{ scale: 0.95 }}
                   className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 dark:border-zinc-700 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors"
                 >
                   <FiUpload className="text-gray-400" size={24} />
