@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle } from "react-icons/fi";
+import { FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle, FiSend, FiSmartphone } from "react-icons/fi";
 import { FcGoogle } from "react-icons/fc";
 import {
   signInWithEmailAndPassword,
@@ -13,6 +13,11 @@ import {
   sendEmailVerification,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
   onAuthStateChanged,
   Auth,
 } from "firebase/auth";
@@ -32,6 +37,7 @@ import { motion } from "framer-motion";
 
 export default function Login() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const authRef = useRef<Auth | null>(null);
   const dbRef = useRef<Firestore | null>(null);
   const emailRef = useRef<HTMLInputElement>(null);
@@ -46,27 +52,70 @@ export default function Login() {
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [magicLoading, setMagicLoading] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [remember, setRemember] = useState(true);
   const [authChecking, setAuthChecking] = useState(true);
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [passkeySupported, setPasskeySupported] = useState(false);
 
   const failedAttempts = useRef(0);
   const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const redirectTo = searchParams.get("redirect") || "/";
 
   useEffect(() => {
     authRef.current = getFirebaseAuth();
     dbRef.current = getFirebaseDB();
 
+    // Check passkey support
+    if (window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
+      PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(setPasskeySupported);
+    }
+
+    // Handle magic link sign-in
+    if (isSignInWithEmailLink(authRef.current, window.location.href)) {
+      let email = localStorage.getItem("emailForSignIn");
+      if (!email) {
+        email = window.prompt("Nhập email để xác nhận");
+      }
+      if (email) {
+        signInWithEmailLink(authRef.current, email, window.location.href)
+         .then(async (result) => {
+            localStorage.removeItem("emailForSignIn");
+            await updateUserDoc(result.user, dbRef.current!);
+            toast.success("Đăng nhập thành công");
+            router.replace(redirectTo);
+          })
+         .catch(() => setErrors({ submit: "Link không hợp lệ hoặc đã hết hạn" }));
+      }
+    }
+
+    // Handle Google redirect
+    getRedirectResult(authRef.current)
+     .then(async (result) => {
+        if (result) {
+          await updateUserDoc(result.user, dbRef.current!);
+          toast.success("Đăng nhập thành công");
+          router.replace(redirectTo);
+        }
+      })
+     .catch(() => setErrors({ submit: "Đăng nhập Google thất bại" }));
+
+    // Remember last email
+    const lastEmail = localStorage.getItem("last_email");
+    if (lastEmail) setForm(prev => ({...prev, email: lastEmail }));
+
     // Auto redirect nếu đã login
     const unsub = onAuthStateChanged(authRef.current, (user) => {
       if (user && user.emailVerified) {
-        router.replace("/");
+        router.replace(redirectTo);
       } else {
         setAuthChecking(false);
-        emailRef.current?.focus();
+        setTimeout(() => emailRef.current?.focus(), 100);
       }
     });
     return () => unsub();
-  }, [router]);
+  }, [router, redirectTo]);
 
   useEffect(() => {
     return () => {
@@ -108,7 +157,7 @@ export default function Login() {
           user.photoURL ||
           `https://ui-avatars.com/api/?name=${encodeURIComponent(
             user.email || "U"
-          )}&background=random`,
+          )}&background=0EA5E9`,
         shortId: nanoid(6).toUpperCase(),
         online: true,
         lastSeen: serverTimestamp(),
@@ -125,6 +174,46 @@ export default function Login() {
       if (user.displayName &&!data.name) updates.name = user.displayName;
       await updateDoc(userRef, updates);
     }
+  };
+
+  const handleMagicLink = async () => {
+    const auth = authRef.current;
+    if (!auth) return;
+    
+    if (!form.email) {
+      setErrors({ email: "Nhập email trước" });
+      emailRef.current?.focus();
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      setErrors({ email: "Email không hợp lệ" });
+      return;
+    }
+
+    try {
+      setMagicLoading(true);
+      setErrors({});
+      
+      await sendSignInLinkToEmail(auth, form.email, {
+        url: window.location.origin + "/login",
+        handleCodeInApp: true,
+      });
+      
+      localStorage.setItem("emailForSignIn", form.email);
+      localStorage.setItem("last_email", form.email);
+      setMagicLinkSent(true);
+      toast.success("Đã gửi link đăng nhập qua email");
+    } catch (err: any) {
+      setErrors({ submit: "Gửi link thất bại" });
+    } finally {
+      setMagicLoading(false);
+    }
+  };
+
+  const handlePasskey = async () => {
+    toast.info("Passkey đang phát triển");
+    // WebAuthn implementation sẽ cần backend để verify
+    // Tạm thời để placeholder
   };
 
   const handleGoogleLogin = async () => {
@@ -148,14 +237,29 @@ export default function Login() {
       );
 
       const provider = new GoogleAuthProvider();
-      const res = await signInWithPopup(auth, provider);
-      await updateUserDoc(res.user, db);
+      provider.setCustomParameters({ prompt: "select_account" });
 
-      toast.success("Đăng nhập thành công");
-      router.replace("/");
+      const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        await signInWithRedirect(auth, provider);
+      } else {
+        const res = await signInWithPopup(auth, provider);
+        await updateUserDoc(res.user, db);
+        localStorage.setItem("last_email", res.user.email || "");
+        toast.success("Đăng nhập thành công");
+        router.replace(redirectTo);
+      }
     } catch (err: any) {
-      if (err.code === "auth/popup-closed-by-user") return;
-      setErrors({ submit: "Đăng nhập Google thất bại" });
+      if (err.code === "auth/popup-blocked") {
+        setErrors({ submit: "Popup bị chặn. Cho phép popup và thử lại" });
+      } else if (err.code === "auth/popup-closed-by-user") {
+        return;
+      } else if (err.code === "auth/unauthorized-domain") {
+        setErrors({ submit: "Domain chưa được xác thực trên Firebase" });
+      } else {
+        setErrors({ submit: "Đăng nhập Google thất bại" });
+      }
     } finally {
       setGoogleLoading(false);
     }
@@ -213,12 +317,13 @@ export default function Login() {
       }
 
       await updateUserDoc(user, db);
+      localStorage.setItem("last_email", form.email);
 
       failedAttempts.current = 0;
       localStorage.removeItem("login_fail_time");
 
       toast.success("Đăng nhập thành công");
-      router.replace("/");
+      router.replace(redirectTo);
     } catch (err: any) {
       failedAttempts.current++;
       localStorage.setItem("login_fail_time", Date.now().toString());
@@ -249,12 +354,12 @@ export default function Login() {
 
   if (authChecking) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-br from-sky-400 to-sky-500 flex items-center justify-center px-4">
         <div className="w-full max-w-sm space-y-4">
-          <div className="h-8 w-32 bg-gray-200 dark:bg-zinc-800 rounded-lg animate-pulse mx-auto" />
-          <div className="h-10 w-full bg-gray-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
-          <div className="h-10 w-full bg-gray-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
-          <div className="h-12 w-full bg-gray-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
+          <div className="h-8 w-32 bg-white/20 rounded-lg animate-pulse mx-auto" />
+          <div className="h-10 w-full bg-white/20 rounded-lg animate-pulse" />
+          <div className="h-10 w-full bg-white/20 rounded-lg animate-pulse" />
+          <div className="h-12 w-full bg-white/20 rounded-lg animate-pulse" />
         </div>
       </div>
     );
@@ -265,20 +370,27 @@ export default function Login() {
       <Toaster richColors position="top-center" />
       <InstallPrompt />
 
-      <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-br from-sky-400 to-sky-500 flex items-center justify-center px-4">
         <div className="w-full max-w-sm">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
+            className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6"
           >
-            <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-gray-100 mb-6">
+            <h1 className="text-2xl font-bold text-center text-gray-900 mb-6">
               Đăng nhập
             </h1>
 
             {errors.submit && (
-              <div className="text-red-500 mb-4 flex items-center gap-2 text-sm">
+              <div className="text-red-500 mb-4 flex items-center gap-2 text-sm bg-red-50 px-3 py-2.5 rounded-lg">
                 <FiAlertCircle size={16} /> {errors.submit}
+              </div>
+            )}
+
+            {magicLinkSent && (
+              <div className="bg-sky-50 border border-sky-200 text-sky-700 px-3 py-2.5 rounded-lg mb-4 flex items-center gap-2 text-sm">
+                <FiSend size={16} /> Đã gửi link! Kiểm tra email và thư mục Spam
               </div>
             )}
 
@@ -298,8 +410,8 @@ export default function Login() {
                   <input
                     ref={emailRef}
                     className={`w-full pl-10 pr-3 py-2.5 rounded-lg border text-sm ${
-                      errors.email? "border-red-500" : "border-gray-300 dark:border-zinc-700"
-                    } bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-400 outline-none transition-all`}
+                      errors.email? "border-red-500" : "border-gray-300"
+                    } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none transition-all`}
                     placeholder="Email"
                     value={form.email}
                     onChange={(e) => {
@@ -317,8 +429,8 @@ export default function Login() {
                   <input
                     type={show? "text" : "password"}
                     className={`w-full pl-10 pr-10 py-2.5 rounded-lg border text-sm ${
-                      errors.password? "border-red-500" : "border-gray-300 dark:border-zinc-700"
-                    } bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-gray-400 outline-none transition-all`}
+                      errors.password? "border-red-500" : "border-gray-300"
+                    } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none transition-all`}
                     placeholder="Mật khẩu"
                     value={form.password}
                     onChange={(e) => {
@@ -343,13 +455,13 @@ export default function Login() {
                     type="checkbox"
                     checked={remember}
                     onChange={(e) => setRemember(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 dark:border-zinc-700 text-gray-900 focus:ring-gray-400"
+                    className="w-4 h-4 rounded border-gray-300 text-sky-500 focus:ring-sky-400"
                   />
-                  <span className="text-sm text-gray-700 dark:text-zinc-300">Ghi nhớ đăng nhập</span>
+                  <span className="text-sm text-gray-700">Ghi nhớ</span>
                 </label>
                 <Link
                   href="/forgot-password"
-                  className="text-sm font-medium text-gray-900 dark:text-gray-100 hover:underline"
+                  className="text-sm font-medium text-sky-600 hover:text-sky-700"
                 >
                   Quên mật khẩu?
                 </Link>
@@ -358,36 +470,62 @@ export default function Login() {
               <motion.button
                 type="submit"
                 whileTap={{ scale: 0.98 }}
-                disabled={loading || googleLoading}
-                className="w-full py-3 rounded-lg text-white font-semibold text-sm bg-gray-900 dark:bg-gray-100 dark:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                disabled={loading || googleLoading || magicLoading}
+                className="w-full py-3 rounded-lg text-white font-semibold text-sm bg-sky-500 hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-sky-500/30"
               >
                 {loading? "Đang đăng nhập..." : "Đăng nhập"}
               </motion.button>
             </form>
 
-            <div className="relative my-6">
+            <div className="relative my-5">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300 dark:border-zinc-700" />
+                <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="bg-gray-50 dark:bg-zinc-950 px-3 text-gray-500 dark:text-zinc-400">hoặc</span>
+                <span className="bg-white px-3 text-gray-500">hoặc</span>
               </div>
             </div>
 
-            <motion.button
-              type="button"
-              whileTap={{ scale: 0.98 }}
-              onClick={handleGoogleLogin}
-              disabled={loading || googleLoading}
-              className="w-full py-3 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 font-semibold text-sm hover:bg-gray-50 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
-            >
-              <FcGoogle size={20} />
-              {googleLoading? "Đang kết nối..." : "Tiếp tục với Google"}
-            </motion.button>
+            <div className="space-y-3">
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.98 }}
+                onClick={handleGoogleLogin}
+                disabled={loading || googleLoading || magicLoading}
+                className="w-full py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-semibold text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+              >
+                <FcGoogle size={20} />
+                {googleLoading? "Đang kết nối..." : "Tiếp tục với Google"}
+              </motion.button>
 
-            <p className="text-center text-sm text-gray-600 dark:text-zinc-400 mt-4">
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.98 }}
+                onClick={handleMagicLink}
+                disabled={loading || googleLoading || magicLoading}
+                className="w-full py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-semibold text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+              >
+                <FiSend size={18} />
+                {magicLoading? "Đang gửi..." : "Đăng nhập bằng Email Link"}
+              </motion.button>
+
+              {passkeySupported && (
+                <motion.button
+                  type="button"
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handlePasskey}
+                  disabled={loading || googleLoading || magicLoading}
+                  className="w-full py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-semibold text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                >
+                  <FiSmartphone size={18} />
+                  Đăng nhập bằng Face ID
+                </motion.button>
+              )}
+            </div>
+
+            <p className="text-center text-sm text-gray-600 mt-4">
               Chưa có tài khoản?{" "}
-              <Link href="/register" className="font-semibold text-gray-900 dark:text-gray-100 hover:underline">
+              <Link href="/register" className="font-semibold text-sky-600 hover:text-sky-700">
                 Đăng ký
               </Link>
             </p>
