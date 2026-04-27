@@ -1,6 +1,6 @@
 "use client";
 import { HiPlus, HiArrowPath } from "react-icons/hi2";
-import { FiZap, FiMapPin, FiClock, FiUsers, FiCalendar } from "react-icons/fi";
+import { FiTrendingUp, FiNavigation, FiInbox, FiUsers, FiCalendar } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
@@ -9,14 +9,14 @@ type PostType = "task" | "plan";
 
 const MESSAGES = {
   task: {
-    hot: { title: "Chưa có việc nào", desc: "Đăng việc đầu tiên để nhận báo giá\ntừ người làm trong 5 phút", icon: FiZap },
-    near: { title: "Quanh đây chưa có việc", desc: "Tạo việc gần bạn để kết nối\nvới người trong khu vực", icon: FiMapPin },
-    new: { title: "Chưa có việc mới", desc: "Hãy là người đầu tiên đăng việc\ntrong hôm nay", icon: FiClock },
+    hot: { title: "Chưa có việc nào", desc: "Đăng việc đầu tiên để nhận báo giá\ntừ người làm trong 5 phút", icon: FiTrendingUp },
+    near: { title: "Quanh đây chưa có việc", desc: "Tạo việc gần bạn để kết nối\nvới người trong khu vực", icon: FiNavigation },
+    new: { title: "Chưa có việc mới", desc: "Hãy là người đầu tiên đăng việc\ntrong hôm nay", icon: FiInbox },
     friends: { title: "Bạn bè chưa đăng việc", desc: "Mời bạn bè tham gia để\ntìm việc và thuê người dễ hơn", icon: FiUsers },
   },
   plan: {
-    hot: { title: "Chưa có kế hoạch hot", desc: "Tạo hoạt động đầu tiên để\nrủ mọi người tham gia", icon: FiZap },
-    near: { title: "Quanh đây chưa có hẹn", desc: "Lên kèo gần bạn để offline\ncùng hàng xóm", icon: FiMapPin },
+    hot: { title: "Chưa có kế hoạch hot", desc: "Tạo hoạt động đầu tiên để\nrủ mọi người tham gia", icon: FiTrendingUp },
+    near: { title: "Quanh đây chưa có hẹn", desc: "Lên kèo gần bạn để offline\ncùng hàng xóm", icon: FiNavigation },
     new: { title: "Chưa có kế hoạch mới", desc: "Tạo sự kiện đầu tiên\ntrong hôm nay", icon: FiCalendar },
     friends: { title: "Bạn bè chưa lên kèo", desc: "Rủ bạn bè tạo kế hoạch\nđi chơi chung", icon: FiUsers },
   },
@@ -24,20 +24,18 @@ const MESSAGES = {
 
 const COLORS = {
   task: {
-    accent: "orange",
-    accentHex: "text-orange-600 dark:text-orange-500",
+    accent: "text-orange-600 dark:text-orange-500",
     bg: "bg-orange-500/10 dark:bg-orange-500/20",
   },
   plan: {
-    accent: "violet", 
-    accentHex: "text-violet-600 dark:text-violet-500",
+    accent: "text-violet-600 dark:text-violet-500",
     bg: "bg-violet-500/10 dark:bg-violet-500/20",
   },
 };
 
 type Props = {
   tab: TabId;
-  type?: PostType; // default = "task"
+  type?: PostType;
   onRefresh?: () => void;
 };
 
@@ -55,7 +53,7 @@ export default function EmptyState({ tab, type = "task", onRefresh }: Props) {
         transition={{ duration: 0.2 }}
         className={`w-16 h-16 rounded-2xl ${color.bg} flex items-center justify-center mb-5`}
       >
-        <Icon className={color.accentHex} size={28} strokeWidth={2} />
+        <Icon className={color.accent} size={28} strokeWidth={1.75} />
       </motion.div>
 
       <motion.div
