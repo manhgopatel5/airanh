@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiCalendar, FiMapPin, FiUsers, FiClock, FiImage, FiX } from "react-icons/fi";
-import { HiPlus } from "react-icons/hi2";
 import { toast, Toaster } from "sonner";
 import { motion } from "framer-motion";
 
