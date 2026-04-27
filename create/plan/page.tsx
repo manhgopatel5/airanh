@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createPlan } from "@/lib/task";
 import { useAuth } from "@/hooks/useAuth";
 import { Timestamp } from "firebase/firestore";
@@ -25,6 +25,7 @@ type MilestoneInput = {
 export default function CreatePlanPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     title: "",
@@ -50,6 +51,13 @@ export default function CreatePlanPage() {
   const [milestones, setMilestones] = useState<MilestoneInput[]>([
     { id: nanoid(8), title: "", description: "", dueDate: "" },
   ]);
+
+  useEffect(() => {
+    const titleParam = searchParams.get("title");
+    if (titleParam) {
+      setForm(prev => ({...prev, title: decodeURIComponent(titleParam) }));
+    }
+  }, [searchParams]);
 
   const handleSubmit = async () => {
     if (!user) return toast.error("Bạn cần đăng nhập");
@@ -311,7 +319,7 @@ export default function CreatePlanPage() {
               <Label>Địa chỉ</Label>
               <Input
                 value={form.location.address}
-                onChange={(e) => setForm({...form, location: {...form.location, address: e.target.value }})}
+                onChange={(e) => setForm({...form, location: {...form.location, address: e.target.value } })}
                 placeholder="VD: Đà Lạt, Lâm Đồng"
               />
             </div>
