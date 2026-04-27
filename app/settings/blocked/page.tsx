@@ -92,6 +92,7 @@ export default function BlockedPage() {
                       Chặn từ {new Date(u.blockedAt).toLocaleDateString("vi-VN")}
                     </p>
                   </div>
+                </div>
                 <button
                   onClick={() => unblock(u.uid)}
                   className="px-4 py-2 rounded-xl bg-gray-200 dark:bg-zinc-800 text-sm font-semibold text-gray-900 dark:text-white active:scale-95 transition"
