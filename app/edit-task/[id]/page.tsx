@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { getTaskById, updateTask, deleteTask } from "@/lib/task";
+import { getTaskById, updateTask, deleteItem } from "@/lib/task";
 import { Task, UpdateTaskInput, isTask } from "@/types/task";
 import { toast, Toaster } from "sonner";
 import { FiArrowLeft, FiTrash2, FiSave, FiX } from "react-icons/fi";
@@ -54,7 +54,6 @@ export default function EditTaskPage() {
           return;
         }
 
-        // Fix: chỉ cho edit Task, không cho edit Plan ở route này
         if (!isTask(data)) {
           toast.error("Không thể sửa lịch hẹn ở đây");
           router.replace(`/plan/${taskId}`);
@@ -152,7 +151,7 @@ export default function EditTaskPage() {
     try {
       setDeleting(true);
 
-      await deleteTask(taskId, user.uid);
+      await deleteItem(taskId, user.uid);
 
       toast.success("Đã xóa công việc");
       router.replace("/");
