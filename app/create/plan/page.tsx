@@ -68,6 +68,7 @@ export default function CreatePlanPage() {
     lat: null as number | null,
     lng: null as number | null,
     attachments: [] as string[],
+    isRemote: false, // ✅ THÊM DÒNG NÀY
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -125,7 +126,7 @@ export default function CreatePlanPage() {
 
     if (!form.category) newErrors.category = "Vui lòng chọn danh mục";
     if (form.images.length > 10) newErrors.images = "Tối đa 10 ảnh";
-    if (!form.address.trim()) newErrors.address = "Vui lòng nhập địa điểm";
+    if (!form.isRemote &&!form.address.trim()) newErrors.address = "Vui lòng nhập địa điểm hoặc chọn làm từ xa";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -191,10 +192,11 @@ export default function CreatePlanPage() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setForm({
-    ...form,
+   ...form,
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
           address: "Vị trí hiện tại",
+          isRemote: false,
         });
         toast.dismiss();
         toast.success("Đã lấy vị trí");
@@ -243,11 +245,11 @@ export default function CreatePlanPage() {
         description: form.description.trim(),
         category: form.category,
         eventDate: Timestamp.fromDate(eventDateTime),
-    ...(endDateTime && { endDate: Timestamp.fromDate(endDateTime) }),
+   ...(endDateTime && { endDate: Timestamp.fromDate(endDateTime) }),
         maxParticipants: parseInt(form.maxParticipants, 10),
         costType: form.costType,
-    ...(form.costType!== "free" && { costAmount: parseInt(form.costAmount, 10) }),
-    ...(form.costDescription && { costDescription: form.costDescription.trim() }),
+   ...(form.costType!== "free" && { costAmount: parseInt(form.costAmount, 10) }),
+   ...(form.costDescription && { costDescription: form.costDescription.trim() }),
         allowInvite: form.allowInvite,
         autoAccept: form.autoAccept,
         requireApproval: form.requireApproval,
@@ -258,8 +260,8 @@ export default function CreatePlanPage() {
         location: {
           address: form.address.trim(),
           city: form.city.trim(),
-      ...(form.lat!= null && { lat: form.lat }),
-      ...(form.lng!= null && { lng: form.lng }),
+     ...(form.lat!= null && { lat: form.lat }),
+     ...(form.lng!= null && { lng: form.lng }),
         },
       };
 
@@ -356,7 +358,7 @@ export default function CreatePlanPage() {
                       onClick={() => setForm({...form, category: cat.id })}
                       className={`p-2.5 rounded-lg border-2 transition-all ${
                         form.category === cat.id
-              ? "border-sky-500 bg-sky-50"
+             ? "border-sky-500 bg-sky-50"
                           : "border-gray-200 bg-white"
                       }`}
                     >
@@ -428,7 +430,7 @@ export default function CreatePlanPage() {
                       onClick={() => setForm({...form, costType: type.id as any })}
                       className={`py-2 rounded-lg border-2 text-xs font-semibold transition-all ${
                         form.costType === type.id
-              ? "border-sky-500 bg-sky-50 text-sky-600"
+             ? "border-sky-500 bg-sky-50 text-sky-600"
                           : "border-gray-200 text-gray-700"
                       }`}
                     >
@@ -608,7 +610,7 @@ export default function CreatePlanPage() {
                       onClick={() => setForm({...form, visibility: vis.id as any })}
                       className={`py-2 rounded-lg border-2 transition-all ${
                         form.visibility === vis.id
-              ? "border-sky-500 bg-sky-50"
+             ? "border-sky-500 bg-sky-50"
                           : "border-gray-200 bg-white"
                       }`}
                     >
