@@ -18,7 +18,6 @@ import {
   signInWithEmailLink,
   setPersistence,
   browserLocalPersistence,
-  onAuthStateChanged,
   getAdditionalUserInfo
 } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
@@ -70,19 +69,19 @@ export default function Register() {
       if (!email) email = window.prompt("Nhập email để xác nhận");
       if (email) {
         signInWithEmailLink(authRef.current, email, window.location.href)
-        .then(async (result) => {
+       .then(async (result) => {
             localStorage.removeItem("emailForSignIn");
             await updateUserDoc(result.user, true);
             toast.success("Đăng nhập thành công");
             router.replace(redirectTo);
           })
-        .catch(() => setErrors({ submit: "Link không hợp lệ hoặc đã hết hạn" }));
+       .catch(() => setErrors({ submit: "Link không hợp lệ hoặc đã hết hạn" }));
       }
     }
 
     // Handle Google redirect
     getRedirectResult(authRef.current)
-    .then(async (result) => {
+   .then(async (result) => {
         if (result) {
           const info = getAdditionalUserInfo(result);
           await updateUserDoc(result.user, info?.isNewUser);
@@ -95,18 +94,11 @@ export default function Register() {
           }
         }
       })
-    .catch(() => setErrors({ submit: "Đăng nhập Google thất bại" }));
+   .catch(() => setErrors({ submit: "Đăng nhập Google thất bại" }));
 
-    // Auto redirect nếu đã login
-    const unsub = onAuthStateChanged(authRef.current, (user) => {
-      if (user && user.emailVerified) {
-        router.replace(redirectTo);
-      } else {
-        setAuthChecking(false);
-        setTimeout(() => nameRef.current?.focus(), 100);
-      }
-    });
-    return () => unsub();
+    // ✅ BỎ onAuthStateChanged - EmailGuard đã xử lý rồi
+    setAuthChecking(false);
+    setTimeout(() => nameRef.current?.focus(), 100);
   }, [router, redirectTo]);
 
   /* ================= PASSWORD STRENGTH ================= */
@@ -474,21 +466,21 @@ export default function Register() {
                 {touched.confirmPassword && errors.confirmPassword && <p className="text-red-500 text-xs mt-1.5 ml-1">{errors.confirmPassword}</p>}
               </div>
 
-              {/* TERMS + PRIVACY - FIXED */}
+              {/* TERMS + PRIVACY */}
               <div className="space-y-2">
                 <div className="flex items-start gap-3">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     id="terms"
-                    checked={acceptTerms} 
-                    onChange={(e) => { setAcceptTerms(e.target.checked); if (errors.terms) setErrors({...errors, terms: "" }); }} 
-                    className="mt-0.5 w-4 h-4 text-sky-500 rounded focus:ring-2 focus:ring-sky-400/20 cursor-pointer" 
+                    checked={acceptTerms}
+                    onChange={(e) => { setAcceptTerms(e.target.checked); if (errors.terms) setErrors({...errors, terms: "" }); }}
+                    className="mt-0.5 w-4 h-4 text-sky-500 rounded focus:ring-2 focus:ring-sky-400/20 cursor-pointer"
                   />
                   <label htmlFor="terms" className="text-sm text-gray-600 cursor-pointer">
                     Tôi đồng ý với{" "}
-                    <Link 
-                      href="/terms" 
-                      target="_blank" 
+                    <Link
+                      href="/terms"
+                      target="_blank"
                       onClick={(e) => e.stopPropagation()}
                       className="text-sky-600 font-semibold hover:text-sky-700 underline"
                     >
@@ -497,19 +489,19 @@ export default function Register() {
                   </label>
                 </div>
                 {errors.terms && <p className="text-red-500 text-xs">{errors.terms}</p>}
-                
+
                 <div className="flex items-start gap-3">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     id="privacy"
-                    checked={acceptPrivacy} 
-                    onChange={(e) => { setAcceptPrivacy(e.target.checked); if (errors.privacy) setErrors({...errors, privacy: "" }); }} 
-                    className="mt-0.5 w-4 h-4 text-sky-500 rounded focus:ring-2 focus:ring-sky-400/20 cursor-pointer" 
+                    checked={acceptPrivacy}
+                    onChange={(e) => { setAcceptPrivacy(e.target.checked); if (errors.privacy) setErrors({...errors, privacy: "" }); }}
+                    className="mt-0.5 w-4 h-4 text-sky-500 rounded focus:ring-2 focus:ring-sky-400/20 cursor-pointer"
                   />
                   <label htmlFor="privacy" className="text-sm text-gray-600 cursor-pointer">
                     Tôi đồng ý với{" "}
-                    <Link 
-                      href="/privacy" 
+                    <Link
+                      href="/privacy"
                       target="_blank"
                       onClick={(e) => e.stopPropagation()}
                       className="text-sky-600 font-semibold hover:text-sky-700 underline"
