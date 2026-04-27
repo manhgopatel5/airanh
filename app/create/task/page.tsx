@@ -10,7 +10,7 @@ import type { CreatePlanInput } from "@/types/task";
 import {
   FiUpload, FiX, FiMapPin, FiUsers, FiClock,
   FiTag, FiEyeOff, FiNavigation,
-  FiCalendar, FiShare2, FiChevronLeft
+  FiCalendar
 } from "react-icons/fi";
 import { Timestamp } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
@@ -35,11 +35,6 @@ const formatCurrency = (value: string) => {
   return number.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 };
 
-const formatDateTimeLocal = (date: Date) => {
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-};
-
 export default function CreatePlanPage() {
   const storage = getFirebaseStorage();
   const router = useRouter();
@@ -49,9 +44,6 @@ export default function CreatePlanPage() {
   const [submitting, setSubmitting] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showAllTags, setShowAllTags] = useState(false);
-
-  const now = new Date();
-  const defaultEnd = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
   const [form, setForm] = useState({
     title: "",
@@ -76,6 +68,7 @@ export default function CreatePlanPage() {
     lat: null as number | null,
     lng: null as number | null,
     attachments: [] as string[],
+    isRemote: false, // ✅ THÊM DÒNG NÀY
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -97,7 +90,7 @@ export default function CreatePlanPage() {
         setForm(prev => ({...prev,...parsed, images: [] }));
       } catch {}
     }
-  }, );
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -133,7 +126,7 @@ export default function CreatePlanPage() {
 
     if (!form.category) newErrors.category = "Vui lòng chọn danh mục";
     if (form.images.length > 10) newErrors.images = "Tối đa 10 ảnh";
-    if (!form.address.trim()) newErrors.address = "Vui lòng nhập địa điểm";
+    if (!form.isRemote &&!form.address.trim()) newErrors.address = "Vui lòng nhập địa điểm hoặc chọn làm từ xa";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -199,10 +192,11 @@ export default function CreatePlanPage() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setForm({
-     ...form,
+   ...form,
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
           address: "Vị trí hiện tại",
+          isRemote: false,
         });
         toast.dismiss();
         toast.success("Đã lấy vị trí");
@@ -251,11 +245,11 @@ export default function CreatePlanPage() {
         description: form.description.trim(),
         category: form.category,
         eventDate: Timestamp.fromDate(eventDateTime),
-     ...(endDateTime && { endDate: Timestamp.fromDate(endDateTime) }),
+   ...(endDateTime && { endDate: Timestamp.fromDate(endDateTime) }),
         maxParticipants: parseInt(form.maxParticipants, 10),
         costType: form.costType,
-     ...(form.costType!== "free" && { costAmount: parseInt(form.costAmount, 10) }),
-     ...(form.costDescription && { costDescription: form.costDescription.trim() }),
+   ...(form.costType!== "free" && { costAmount: parseInt(form.costAmount, 10) }),
+   ...(form.costDescription && { costDescription: form.costDescription.trim() }),
         allowInvite: form.allowInvite,
         autoAccept: form.autoAccept,
         requireApproval: form.requireApproval,
@@ -266,8 +260,8 @@ export default function CreatePlanPage() {
         location: {
           address: form.address.trim(),
           city: form.city.trim(),
-       ...(form.lat!= null && { lat: form.lat }),
-       ...(form.lng!= null && { lng: form.lng }),
+     ...(form.lat!= null && { lat: form.lat }),
+     ...(form.lng!= null && { lng: form.lng }),
         },
       };
 
@@ -320,18 +314,16 @@ export default function CreatePlanPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Tiêu đề"
-                    value={form.title}
-                    onChange={(e) => setForm({...form, title: e.target.value })}
-                    className={`w-full pl-3 pr-3 py-2.5 rounded-lg border text-sm ${
-                      errors.title? "border-red-500" : "border-gray-300"
-                    } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none transition-all`}
-                    maxLength={100}
-                  />
-                </div>
+                <input
+                  type="text"
+                  placeholder="Tiêu đề"
+                  value={form.title}
+                  onChange={(e) => setForm({...form, title: e.target.value })}
+                  className={`w-full pl-3 pr-3 py-2.5 rounded-lg border text-sm ${
+                    errors.title? "border-red-500" : "border-gray-300"
+                  } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none transition-all`}
+                  maxLength={100}
+                />
                 <div className="flex justify-between mt-1">
                   <span className="text-red-500 text-xs">{errors.title}</span>
                   <span className="text-xs text-gray-500">{form.title.length}/100</span>
@@ -339,18 +331,16 @@ export default function CreatePlanPage() {
               </div>
 
               <div>
-                <div className="relative">
-                  <textarea
-                    placeholder="Mô tả chi tiết"
-                    value={form.description}
-                    onChange={(e) => setForm({...form, description: e.target.value })}
-                    rows={4}
-                    className={`w-full pl-3 pr-3 py-2.5 rounded-lg border text-sm ${
-                      errors.description? "border-red-500" : "border-gray-300"
-                    } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none resize-none transition-all`}
-                    maxLength={5000}
-                  />
-                </div>
+                <textarea
+                  placeholder="Mô tả chi tiết"
+                  value={form.description}
+                  onChange={(e) => setForm({...form, description: e.target.value })}
+                  rows={4}
+                  className={`w-full pl-3 pr-3 py-2.5 rounded-lg border text-sm ${
+                    errors.description? "border-red-500" : "border-gray-300"
+                  } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none resize-none transition-all`}
+                  maxLength={5000}
+                />
                 <div className="flex justify-between mt-1">
                   <span className="text-red-500 text-xs">{errors.description}</span>
                   <span className="text-xs text-gray-500">{form.description.length}/5000</span>
@@ -368,7 +358,7 @@ export default function CreatePlanPage() {
                       onClick={() => setForm({...form, category: cat.id })}
                       className={`p-2.5 rounded-lg border-2 transition-all ${
                         form.category === cat.id
-               ? "border-sky-500 bg-sky-50"
+             ? "border-sky-500 bg-sky-50"
                           : "border-gray-200 bg-white"
                       }`}
                     >
@@ -382,7 +372,7 @@ export default function CreatePlanPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                    <FiCalendar className="inline mr-1" />Ngày bắt đầu
+                    <FiCalendar className="inline mr-1" />Bắt đầu
                   </label>
                   <input
                     type="datetime-local"
@@ -396,7 +386,7 @@ export default function CreatePlanPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                    <FiClock className="inline mr-1" />Ngày kết thúc
+                    <FiClock className="inline mr-1" />Kết thúc
                   </label>
                   <input
                     type="datetime-local"
@@ -440,7 +430,7 @@ export default function CreatePlanPage() {
                       onClick={() => setForm({...form, costType: type.id as any })}
                       className={`py-2 rounded-lg border-2 text-xs font-semibold transition-all ${
                         form.costType === type.id
-               ? "border-sky-500 bg-sky-50 text-sky-600"
+             ? "border-sky-500 bg-sky-50 text-sky-600"
                           : "border-gray-200 text-gray-700"
                       }`}
                     >
@@ -606,9 +596,7 @@ export default function CreatePlanPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  <FiEye className="inline mr-1" />Ai có thể xem
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ai có thể xem</label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { id: "public", name: "Công khai", icon: FiUsers },
@@ -622,7 +610,7 @@ export default function CreatePlanPage() {
                       onClick={() => setForm({...form, visibility: vis.id as any })}
                       className={`py-2 rounded-lg border-2 transition-all ${
                         form.visibility === vis.id
-               ? "border-sky-500 bg-sky-50"
+             ? "border-sky-500 bg-sky-50"
                           : "border-gray-200 bg-white"
                       }`}
                     >
@@ -669,21 +657,6 @@ export default function CreatePlanPage() {
                   )}
                 </div>
                 {errors.images && <p className="text-red-500 text-xs mt-1">{errors.images}</p>}
-              </div>
-
-              <div className="pt-4 border-t border-gray-200">
-                <p className="text-xs font-medium text-gray-500 mb-2">Xem trước</p>
-                <div className="bg-white rounded-lg p-3 border border-gray-200">
-                  <h4 className="font-semibold text-sm text-gray-900">{form.title || "Tiêu đề kế hoạch"}</h4>
-                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">{form.description || "Mô tả kế hoạch..."}</p>
-                  <div className="flex items-center gap-3 mt-2 text-xs">
-                    <span className="font-semibold text-gray-900">
-                      {form.costType === "negotiable"? "Thương lượng" : `${form.costAmount || "0"}`}
-                    </span>
-                    <span className="text-gray-500">{form.isRemote? "Làm từ xa" : form.address || "Chưa có địa điểm"}</span>
-                    <span className="text-gray-500">{form.maxParticipants} người</span>
-                  </div>
-                </div>
               </div>
 
               <motion.button
