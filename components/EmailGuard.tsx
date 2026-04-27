@@ -14,7 +14,7 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
   const [sending, setSending] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
-  const publicRoutes = ["/login", "/register", "/forgot-password"];
+  const publicRoutes = ["/login", "/register", "/forgot-password", "/terms", "/privacy", "/verify-email"];
 
   useEffect(() => {
     if (!loading && user && !user.emailVerified && !publicRoutes.includes(pathname)) {
