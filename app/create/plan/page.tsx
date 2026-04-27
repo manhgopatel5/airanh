@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getFirebaseStorage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { createTask } from "@/lib/task";
+import { createPlan } from "@/lib/task";
 import { toast, Toaster } from "sonner";
-import type { CreateTaskInput } from "@/types/task";
+import type { CreatePlanInput } from "@/types/task";
 import {
   FiUpload, FiX, FiMapPin, FiUsers, FiClock,
   FiTag, FiEyeOff, FiNavigation,
@@ -17,13 +17,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/AuthContext";
 
 const CATEGORIES = [
-  { id: "delivery", name: "Giao hàng", icon: "🚚" },
-  { id: "shopping", name: "Mua hộ", icon: "🛒" },
-  { id: "tutoring", name: "Gia sư", icon: "📚" },
-  { id: "design", name: "Thiết kế", icon: "🎨" },
-  { id: "dev", name: "Lập trình", icon: "💻" },
-  { id: "marketing", name: "Marketing", icon: "📢" },
-  { id: "writing", name: "Viết lách", icon: "✍️" },
+  { id: "food", name: "Ăn uống", icon: "🍜" },
+  { id: "nightlife", name: "Nightlife", icon: "🍻" },
+  { id: "travel", name: "Du lịch", icon: "✈️" },
+  { id: "sport", name: "Thể thao", icon: "⚽" },
+  { id: "music", name: "Âm nhạc", icon: "🎵" },
+  { id: "workshop", name: "Workshop", icon: "🛠️" },
+  { id: "volunteer", name: "Tình nguyện", icon: "❤️" },
   { id: "other", name: "Khác", icon: "📌" },
 ];
 
@@ -35,12 +35,7 @@ const formatCurrency = (value: string) => {
   return number.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 };
 
-const formatDateTimeLocal = (date: Date) => {
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-};
-
-export default function CreateTaskPage() {
+export default function CreatePlanPage() {
   const storage = getFirebaseStorage();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -50,19 +45,16 @@ export default function CreateTaskPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showAllTags, setShowAllTags] = useState(false);
 
-  const now = new Date();
-  const defaultEnd = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-
   const [form, setForm] = useState({
     title: "",
     description: "",
-    category: "other",
+    category: "food",
     eventDate: "",
     eventTime: "",
     endDate: "",
     endTime: "",
-    maxParticipants: "1",
-    costType: "fixed" as "fixed" | "hourly" | "negotiable",
+    maxParticipants: "10",
+    costType: "free" as "free" | "share" | "host",
     costAmount: "",
     costDescription: "",
     allowInvite: true,
@@ -76,8 +68,6 @@ export default function CreateTaskPage() {
     lat: null as number | null,
     lng: null as number | null,
     attachments: [] as string[],
-    isRemote: false,
-    requirements: "",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -92,7 +82,7 @@ export default function CreateTaskPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    const draft = localStorage.getItem("task_draft");
+    const draft = localStorage.getItem("plan_draft");
     if (draft &&!searchParams.get("title")) {
       try {
         const parsed = JSON.parse(draft);
@@ -104,7 +94,7 @@ export default function CreateTaskPage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       const { images,...rest } = form;
-      localStorage.setItem("task_draft", JSON.stringify(rest));
+      localStorage.setItem("plan_draft", JSON.stringify(rest));
     }, 1000);
     return () => clearTimeout(timer);
   }, );
@@ -119,26 +109,23 @@ export default function CreateTaskPage() {
     else if (form.description.length < 20) newErrors.description = "Mô tả tối thiểu 20 ký tự";
     else if (form.description.length > 5000) newErrors.description = "Mô tả tối đa 5000 ký tự";
 
-    if (!form.eventDate) newErrors.eventDate = "Vui lòng chọn ngày bắt đầu";
-    if (!form.endDate) newErrors.endDate = "Vui lòng chọn ngày kết thúc";
-    if (form.eventDate && form.endDate && new Date(form.eventDate) >= new Date(form.endDate)) {
-      newErrors.endDate = "Ngày kết thúc phải sau ngày bắt đầu";
-    }
+    if (!form.eventDate) newErrors.eventDate = "Vui lòng chọn ngày diễn ra";
+    else if (new Date(form.eventDate).getTime() < Date.now()) newErrors.eventDate = "Ngày diễn ra đã qua";
 
-    const slots = parseInt(form.totalSlots);
-    if (!form.totalSlots || isNaN(slots)) newErrors.totalSlots = "Vui lòng nhập số người";
-    else if (slots < 1) newErrors.totalSlots = "Tối thiểu 1 người";
-    else if (slots > 100) newErrors.totalSlots = "Tối đa 100 người";
+    const max = parseInt(form.maxParticipants);
+    if (!form.maxParticipants || isNaN(max)) newErrors.maxParticipants = "Vui lòng nhập số người";
+    else if (max < 2) newErrors.maxParticipants = "Tối thiểu 2 người";
+    else if (max > 1000) newErrors.maxParticipants = "Tối đa 1000 người";
 
-    if (form.costType!== "negotiable") {
+    if (form.costType!== "free") {
       const cost = parseInt(form.costAmount);
-      if (!form.costAmount || isNaN(cost)) newErrors.costAmount = "Vui lòng nhập giá";
-      else if (cost < 1000) newErrors.costAmount = "Giá tối thiểu 1.000";
-      else if (cost > 100000000) newErrors.costAmount = "Giá tối đa 100.000.000";
+      if (!form.costAmount || isNaN(cost)) newErrors.costAmount = "Vui lòng nhập chi phí";
+      else if (cost < 0) newErrors.costAmount = "Chi phí không hợp lệ";
     }
 
     if (!form.category) newErrors.category = "Vui lòng chọn danh mục";
-    if (!form.isRemote &&!form.address.trim()) newErrors.address = "Vui lòng nhập địa điểm hoặc chọn làm từ xa";
+    if (form.images.length > 10) newErrors.images = "Tối đa 10 ảnh";
+    if (!form.address.trim()) newErrors.address = "Vui lòng nhập địa điểm";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -146,8 +133,8 @@ export default function CreateTaskPage() {
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    if (files.length + imageFiles.length > 5) {
-      toast.error("Tối đa 5 ảnh");
+    if (files.length + imageFiles.length > 10) {
+      toast.error("Tối đa 10 ảnh");
       return;
     }
 
@@ -163,7 +150,7 @@ export default function CreateTaskPage() {
     }
 
     setImageFiles([...imageFiles,...files]);
-    const urls = files.map(f => URL.createObjectURL(f));
+    const urls = files.map((f) => URL.createObjectURL(f));
     setForm({...form, images: [...form.images,...urls] });
   };
 
@@ -204,11 +191,10 @@ export default function CreateTaskPage() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setForm({
-     ...form,
+    ...form,
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
           address: "Vị trí hiện tại",
-          isRemote: false,
         });
         toast.dismiss();
         toast.success("Đã lấy vị trí");
@@ -228,9 +214,9 @@ export default function CreateTaskPage() {
       return;
     }
 
-    const lastCreate = localStorage.getItem("last_task_create");
+    const lastCreate = localStorage.getItem("last_plan_create");
     if (lastCreate && Date.now() - parseInt(lastCreate) < 30000) {
-      toast.error("Vui lòng chờ 30 giây trước khi tạo công việc mới");
+      toast.error("Vui lòng chờ 30 giây trước khi tạo kế hoạch mới");
       return;
     }
 
@@ -241,55 +227,53 @@ export default function CreateTaskPage() {
       const imageUrls: string[] = [];
       for (const file of imageFiles) {
         const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-        const fileRef = ref(storage, `tasks/${user.uid}/${fileName}`);
+        const fileRef = ref(storage, `plans/${user.uid}/${fileName}`);
         await uploadBytes(fileRef, file);
         const url = await getDownloadURL(fileRef);
         imageUrls.push(url);
       }
       setUploadingImage(false);
 
-      const deadline = Timestamp.fromDate(new Date(form.endDate));
-      const startDate = Timestamp.fromDate(new Date(form.eventDate));
+      const eventDateTime = new Date(`${form.eventDate}T${form.eventTime || "00:00"}`);
+      const endDateTime = form.endDate? new Date(`${form.endDate}T${form.endTime || "23:59"}`) : undefined;
 
-      const payload: CreateTaskInput = {
-        type: "task",
+      const payload: CreatePlanInput = {
+        type: "plan",
         title: form.title.trim(),
         description: form.description.trim(),
-        price: form.costType === "negotiable"? 0 : parseInt(form.costAmount.replace(/\./g, ""), 10),
-        currency: "VND",
-        budgetType: form.costType,
-        totalSlots: parseInt(form.totalSlots, 10),
-        visibility: form.visibility,
-        deadline,
-        applicationDeadline: deadline,
-        startDate,
         category: form.category,
+        eventDate: Timestamp.fromDate(eventDateTime),
+    ...(endDateTime && { endDate: Timestamp.fromDate(endDateTime) }),
+        maxParticipants: parseInt(form.maxParticipants, 10),
+        costType: form.costType,
+    ...(form.costType!== "free" && { costAmount: parseInt(form.costAmount, 10) }),
+    ...(form.costDescription && { costDescription: form.costDescription.trim() }),
+        allowInvite: form.allowInvite,
+        autoAccept: form.autoAccept,
+        requireApproval: form.requireApproval,
+        visibility: form.visibility,
         tags: form.tags,
         images: imageUrls,
         attachments: [],
-        requirements: form.requirements.trim(),
-        isRemote: form.isRemote,
-        location: form.isRemote
-   ? {}
-          : {
-              address: form.address.trim(),
-              city: form.city.trim(),
-     ...(form.lat!= null && { lat: form.lat }),
-     ...(form.lng!= null && { lng: form.lng }),
-            },
+        location: {
+          address: form.address.trim(),
+          city: form.city.trim(),
+      ...(form.lat!= null && { lat: form.lat }),
+      ...(form.lng!= null && { lng: form.lng }),
+        },
       };
 
-      const result = await createTask(payload, user);
-      localStorage.removeItem("task_draft");
-      localStorage.setItem("last_task_create", Date.now().toString());
-      toast.success("Đăng công việc thành công!");
+      const result = await createPlan(payload, user);
+      localStorage.removeItem("plan_draft");
+      localStorage.setItem("last_plan_create", Date.now().toString());
+      toast.success("Tạo kế hoạch thành công!");
       router.push(`/task/${result.slug}`);
     } catch (err: any) {
-      console.error("Create task error:", err);
+      console.error("Create plan error:", err);
       if (err.code === "storage/unauthorized") {
         toast.error("Không có quyền upload ảnh. Kiểm tra Storage Rules");
       } else {
-        toast.error(err.message || "Tạo công việc thất bại");
+        toast.error(err.message || "Tạo kế hoạch thất bại");
       }
     } finally {
       setSubmitting(false);
@@ -320,7 +304,7 @@ export default function CreateTaskPage() {
             className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6"
           >
             <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">Tạo công việc</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Tạo kế hoạch</h1>
               <button onClick={() => router.back()} className="text-gray-500 hover:text-gray-900">
                 <FiX size={24} />
               </button>
@@ -330,7 +314,7 @@ export default function CreateTaskPage() {
               <div>
                 <input
                   type="text"
-                  placeholder="Tiêu đề công việc"
+                  placeholder="Tiêu đề"
                   value={form.title}
                   onChange={(e) => setForm({...form, title: e.target.value })}
                   className={`w-full pl-3 pr-3 py-2.5 rounded-lg border text-sm ${
@@ -346,7 +330,7 @@ export default function CreateTaskPage() {
 
               <div>
                 <textarea
-                  placeholder="Mô tả chi tiết công việc, yêu cầu, thời gian..."
+                  placeholder="Mô tả chi tiết"
                   value={form.description}
                   onChange={(e) => setForm({...form, description: e.target.value })}
                   rows={4}
@@ -372,7 +356,7 @@ export default function CreateTaskPage() {
                       onClick={() => setForm({...form, category: cat.id })}
                       className={`p-2.5 rounded-lg border-2 transition-all ${
                         form.category === cat.id
-               ? "border-sky-500 bg-sky-50"
+              ? "border-sky-500 bg-sky-50"
                           : "border-gray-200 bg-white"
                       }`}
                     >
@@ -415,12 +399,27 @@ export default function CreateTaskPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Loại ngân sách</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  <FiUsers className="inline mr-1" />Số người tối đa
+                </label>
+                <input
+                  type="number"
+                  value={form.maxParticipants}
+                  onChange={(e) => setForm({...form, maxParticipants: e.target.value })}
+                  className={`w-full px-3 py-2.5 rounded-lg border text-sm ${
+                    errors.maxParticipants? "border-red-500" : "border-gray-300"
+                  } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none`}
+                />
+                {errors.maxParticipants && <p className="text-red-500 text-xs mt-1">{errors.maxParticipants}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Loại chi phí</label>
                 <div className="grid grid-cols-3 gap-2 mb-2">
                   {[
-                    { id: "fixed", name: "Cố định" },
-                    { id: "hourly", name: "Theo giờ" },
-                    { id: "negotiable", name: "Thương lượng" },
+                    { id: "free", name: "Miễn phí" },
+                    { id: "share", name: "Share" },
+                    { id: "host", name: "Host trả" },
                   ].map((type) => (
                     <motion.button
                       key={type.id}
@@ -429,7 +428,7 @@ export default function CreateTaskPage() {
                       onClick={() => setForm({...form, costType: type.id as any })}
                       className={`py-2 rounded-lg border-2 text-xs font-semibold transition-all ${
                         form.costType === type.id
-               ? "border-sky-500 bg-sky-50 text-sky-600"
+              ? "border-sky-500 bg-sky-50 text-sky-600"
                           : "border-gray-200 text-gray-700"
                       }`}
                     >
@@ -438,34 +437,27 @@ export default function CreateTaskPage() {
                   ))}
                 </div>
 
-                {form.costType!== "negotiable" && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="Giá"
-                        value={form.costAmount}
-                        onChange={(e) => setForm({...form, costAmount: formatCurrency(e.target.value) })}
-                        className={`w-full px-3 py-2.5 rounded-lg border text-sm ${
-                          errors.costAmount? "border-red-500" : "border-gray-300"
-                        } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none`}
-                      />
-                      {errors.costAmount && <p className="text-red-500 text-xs mt-1">{errors.costAmount}</p>}
-                    </div>
-                    <div>
-                      <input
-                        type="number"
-                        placeholder="Số người"
-                        value={form.totalSlots}
-                        onChange={(e) => setForm({...form, totalSlots: e.target.value })}
-                        className={`w-full px-3 py-2.5 rounded-lg border text-sm ${
-                          errors.totalSlots? "border-red-500" : "border-gray-300"
-                        } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none`}
-                      />
-                      {errors.totalSlots && <p className="text-red-500 text-xs mt-1">{errors.totalSlots}</p>}
-                    </div>
-                  </div>
+                {form.costType!== "free" && (
+                  <>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Số tiền mỗi người"
+                      value={form.costAmount}
+                      onChange={(e) => setForm({...form, costAmount: formatCurrency(e.target.value) })}
+                      className={`w-full px-3 py-2.5 rounded-lg border text-sm ${
+                        errors.costAmount? "border-red-500" : "border-gray-300"
+                      } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none mb-2`}
+                    />
+                    {errors.costAmount && <p className="text-red-500 text-xs mt-1">{errors.costAmount}</p>}
+                    <textarea
+                      placeholder="Mô tả chi phí (không bắt buộc)"
+                      value={form.costDescription}
+                      onChange={(e) => setForm({...form, costDescription: e.target.value })}
+                      rows={2}
+                      className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none resize-none text-sm"
+                    />
+                  </>
                 )}
               </div>
 
@@ -517,18 +509,34 @@ export default function CreateTaskPage() {
                 )}
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  <FiFileText className="inline mr-1" />Yêu cầu (không bắt buộc)
+              <div className="space-y-2">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.allowInvite}
+                    onChange={(e) => setForm({...form, allowInvite: e.target.checked })}
+                    className="w-4 h-4 text-sky-500 rounded"
+                  />
+                  <span className="text-sm text-gray-700">Cho phép thành viên mời bạn bè</span>
                 </label>
-                <textarea
-                  placeholder="Kỹ năng cần có, kinh nghiệm..."
-                  value={form.requirements}
-                  onChange={(e) => setForm({...form, requirements: e.target.value })}
-                  rows={2}
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none resize-none text-sm"
-                  maxLength={1000}
-                />
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.autoAccept}
+                    onChange={(e) => setForm({...form, autoAccept: e.target.checked })}
+                    className="w-4 h-4 text-sky-500 rounded"
+                  />
+                  <span className="text-sm text-gray-700">Tự động chấp nhận khi tham gia</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.requireApproval}
+                    onChange={(e) => setForm({...form, requireApproval: e.target.checked })}
+                    className="w-4 h-4 text-sky-500 rounded"
+                  />
+                  <span className="text-sm text-gray-700">Cần duyệt trước khi tham gia</span>
+                </label>
               </div>
 
               <div>
@@ -600,7 +608,7 @@ export default function CreateTaskPage() {
                       onClick={() => setForm({...form, visibility: vis.id as any })}
                       className={`py-2 rounded-lg border-2 transition-all ${
                         form.visibility === vis.id
-               ? "border-sky-500 bg-sky-50"
+              ? "border-sky-500 bg-sky-50"
                           : "border-gray-200 bg-white"
                       }`}
                     >
@@ -613,7 +621,7 @@ export default function CreateTaskPage() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Ảnh đính kèm (tối đa 5, mỗi ảnh &lt; 5MB)
+                  Ảnh đính kèm (tối đa 10, mỗi ảnh &lt; 5MB)
                 </label>
                 <div className="flex flex-wrap gap-2">
                   <AnimatePresence>
@@ -636,7 +644,7 @@ export default function CreateTaskPage() {
                       </motion.div>
                     ))}
                   </AnimatePresence>
-                  {form.images.length < 5 && (
+                  {form.images.length < 10 && (
                     <motion.label
                       whileTap={{ scale: 0.95 }}
                       className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-sky-500 transition-colors"
@@ -646,6 +654,7 @@ export default function CreateTaskPage() {
                     </motion.label>
                   )}
                 </div>
+                {errors.images && <p className="text-red-500 text-xs mt-1">{errors.images}</p>}
               </div>
 
               <motion.button
@@ -654,7 +663,7 @@ export default function CreateTaskPage() {
                 disabled={submitting}
                 className="w-full py-3 rounded-lg text-white font-semibold text-sm bg-gradient-to-r from-sky-500 to-sky-600 shadow-lg shadow-sky-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {uploadingImage? "Đang tải ảnh..." : submitting? "Đang tạo..." : "Đăng công việc"}
+                {uploadingImage? "Đang tải ảnh..." : submitting? "Đang tạo..." : "Đăng kế hoạch"}
               </motion.button>
             </form>
           </motion.div>
