@@ -13,7 +13,7 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
-import { TaskListItem, isTask } from "@/types/task";
+import { TaskListItem } from "@/types/task";
 import TaskCard from "@/components/TaskCard";
 import { FiBookmark, FiArrowLeft } from "react-icons/fi";
 import Link from "next/link";
@@ -161,7 +161,7 @@ export default function BookmarksPage() {
               <TaskCard 
                 key={task.id} 
                 task={task} 
-                mode={task.type} // Fix: dùng task.type thay vì check price
+                mode={task.type}
               />
             ))}
           </div>
