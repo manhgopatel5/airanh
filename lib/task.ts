@@ -14,7 +14,10 @@ import {
   runTransaction,
   onSnapshot,
   orderBy,
+  startAfter,
   Unsubscribe,
+  QueryDocumentSnapshot,
+  DocumentData,
 } from "firebase/firestore";
 import { getFirebaseDB } from "./firebase";
 import { nanoid } from "nanoid";
@@ -36,6 +39,8 @@ import {
   isTask,
   isPlan,
   User,
+  TaskStatus,
+  PlanStatus,
 } from "@/types/task";
 
 class TaskError extends Error {
@@ -48,12 +53,12 @@ class TaskError extends Error {
 /* ================= HELPERS ================= */
 const slugify = (str: string): string =>
   str
-   .toLowerCase()
-   .normalize("NFD")
-   .replace(/[\u0300-\u036f]/g, "")
-   .replace(/[^a-z0-9]+/g, "-")
-   .replace(/^-|-$/g, "")
-   .slice(0, 60);
+  .toLowerCase()
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .replace(/[^a-z0-9]+/g, "-")
+  .replace(/^-|-$/g, "")
+  .slice(0, 60);
 
 const generateUniqueShortId = async (): Promise<string> => {
   const db = getFirebaseDB();
@@ -69,9 +74,9 @@ const generateUniqueShortId = async (): Promise<string> => {
 
 const cleanTags = (tags: string[], title: string, category?: string): string[] => {
   const all = [...tags, category || "",...slugify(title).split("-")]
-   .map((t) => t.trim().toLowerCase())
-   .filter((t) => t.length >= 2 && t.length <= 20)
-   .slice(0, 10);
+  .map((t) => t.trim().toLowerCase())
+  .filter((t) => t.length >= 2 && t.length <= 20)
+  .slice(0, 10);
   return [...new Set(all)];
 };
 
@@ -144,7 +149,6 @@ export async function createTask(
     commentCount: 0,
     shareCount: 0,
     bookmarkCount: 0,
-    // Task specific
     price: Math.floor(data.price),
     currency: data.currency || "VND",
     budgetType: data.budgetType || "fixed",
@@ -256,7 +260,6 @@ export async function createPlan(
     commentCount: 0,
     shareCount: 0,
     bookmarkCount: 0,
-    // Plan specific
     eventDate: data.eventDate,
     endDate: data.endDate,
     milestones,
@@ -311,7 +314,7 @@ export async function updateTask(
     }
 
     const newSearchKeywords = updates.title || updates.description || updates.tags || updates.category
-     ? generateTaskSearchKeywords({
+    ? generateTaskSearchKeywords({
           title: updates.title || data.title,
           description: updates.description || data.description,
           tags: updates.tags || data.tags,
@@ -321,7 +324,7 @@ export async function updateTask(
       : data.searchKeywords;
 
     transaction.update(taskRef, {
-     ...updates,
+    ...updates,
       searchKeywords: newSearchKeywords,
       edited: true,
       editedAt: serverTimestamp(),
@@ -363,7 +366,7 @@ export async function updatePlan(
     }
 
     const newSearchKeywords = updates.title || updates.description || updates.tags || updates.category
-     ? generateTaskSearchKeywords({
+    ? generateTaskSearchKeywords({
           title: updates.title || data.title,
           description: updates.description || data.description,
           tags: updates.tags || data.tags,
@@ -373,7 +376,7 @@ export async function updatePlan(
       : data.searchKeywords;
 
     transaction.update(planRef, {
-     ...updates,
+    ...updates,
       searchKeywords: newSearchKeywords,
       edited: true,
       editedAt: serverTimestamp(),
@@ -420,8 +423,17 @@ export async function deleteItem(taskId: string, userId: string): Promise<void> 
   await deleteDoc(taskRef);
 }
 
-/* ================= GET BY SLUG ================= */
-export const getTaskBySlug = async (slug: string): Promise<Task | null> => {
+/* ================= GET ================= */
+export async function getTaskById(id: string): Promise<Task | null> {
+  const db = getFirebaseDB();
+  const snap = await getDoc(doc(db, "tasks", id));
+  if (!snap.exists()) return null;
+  const data = snap.data() as Task;
+  if (data.banned || data.hidden) return null;
+  return { id: snap.id,...data };
+}
+
+export async function getTaskBySlug(slug: string): Promise<Task | null> {
   const db = getFirebaseDB();
   const q = query(
     collection(db, "tasks"),
@@ -433,7 +445,21 @@ export const getTaskBySlug = async (slug: string): Promise<Task | null> => {
   if (snap.empty) return null;
   const docSnap = snap.docs[0];
   return { id: docSnap.id,...docSnap.data() } as Task;
-};
+}
+
+export async function getTaskByShortId(shortId: string): Promise<Task | null> {
+  const db = getFirebaseDB();
+  const q = query(
+    collection(db, "tasks"),
+    where("shortId", "==", shortId.toUpperCase()),
+    where("status", "in", ["open", "full", "completed", "in_progress"]),
+    limit(1)
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  const docSnap = snap.docs[0];
+  return { id: docSnap.id,...docSnap.data() } as Task;
+}
 
 /* ================= LISTEN ================= */
 export const listenItems = (
@@ -476,6 +502,20 @@ export const listenItems = (
       options?.onError?.(err);
     }
   );
+};
+
+export const listenTasks = (
+  callback: (items: TaskListItem[]) => void,
+  options?: Parameters<typeof listenItems>[1]
+): Unsubscribe => {
+  return listenItems(callback, {...options, type: "task" }) as Unsubscribe;
+};
+
+export const listenPlans = (
+  callback: (items: PlanListItem[]) => void,
+  options?: Parameters<typeof listenItems>[1]
+): Unsubscribe => {
+  return listenItems(callback, {...options, type: "plan" }) as Unsubscribe;
 };
 
 /* ================= JOIN TASK ================= */
@@ -555,7 +595,6 @@ export async function joinPlan(taskId: string, user: User, inviteCode?: string):
     }
 
     if (plan.requireApproval) {
-      // TODO: tạo request thay vì join trực tiếp
       throw new TaskError("Kế hoạch cần duyệt, chưa hỗ trợ");
     }
 
@@ -619,7 +658,7 @@ export async function toggleMilestone(
         if (!canToggle) throw new TaskError("Bạn không có quyền thay đổi mốc này");
 
         return {
-         ...m,
+        ...m,
           completed:!m.completed,
           completedAt: m.completed? undefined : Timestamp.now(),
         };
@@ -702,16 +741,31 @@ export const incrementTaskView = async (taskId: string): Promise<void> => {
 /* ================= AUTO EXPIRE ================= */
 export async function expireTasks(): Promise<void> {
   const db = getFirebaseDB();
-  const q = query(
+
+  // Expire tasks
+  const taskQ = query(
     collection(db, "tasks"),
     where("status", "==", "open"),
     where("type", "==", "task"),
     where("deadline", "<=", Timestamp.now())
   );
-  const snap = await getDocs(q);
+  const taskSnap = await getDocs(taskQ);
   const batch = writeBatch(db);
-  snap.docs.forEach((d) => {
+  taskSnap.docs.forEach((d) => {
     batch.update(d.ref, { status: "expired", updatedAt: serverTimestamp() });
   });
+
+  // Expire plans
+  const planQ = query(
+    collection(db, "tasks"),
+    where("status", "==", "open"),
+    where("type", "==", "plan"),
+    where("eventDate", "<=", Timestamp.now())
+  );
+  const planSnap = await getDocs(planQ);
+  planSnap.docs.forEach((d) => {
+    batch.update(d.ref, { status: "expired", updatedAt: serverTimestamp() });
+  });
+
   await batch.commit();
 }
