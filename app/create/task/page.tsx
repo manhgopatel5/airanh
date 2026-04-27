@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseStorage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -38,6 +38,7 @@ export default function CreateTaskPage() {
   const auth = getFirebaseAuth();
   const storage = getFirebaseStorage();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -66,6 +67,13 @@ export default function CreateTaskPage() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+
+  useEffect(() => {
+    const titleParam = searchParams.get("title");
+    if (titleParam) {
+      setForm(prev => ({...prev, title: decodeURIComponent(titleParam) }));
+    }
+  }, [searchParams]);
 
   /* ================= AUTH CHECK ================= */
   useEffect(() => {
@@ -104,7 +112,7 @@ export default function CreateTaskPage() {
     else if (form.description.length > 5000) newErrors.description = "Mô tả tối đa 5000 ký tự";
 
     const price = parseInt(form.price);
-    if (form.budgetType !== "negotiable") {
+    if (form.budgetType!== "negotiable") {
       if (!form.price || isNaN(price)) newErrors.price = "Vui lòng nhập giá";
       else if (price < 1000) newErrors.price = "Giá tối thiểu 1.000đ";
       else if (price > 100000000) newErrors.price = "Giá tối đa 100.000.000đ";
@@ -122,7 +130,7 @@ export default function CreateTaskPage() {
 
     if (!form.category) newErrors.category = "Vui lòng chọn danh mục";
     if (form.images.length > 5) newErrors.images = "Tối đa 5 ảnh";
-    if (!form.isRemote && !form.address.trim()) newErrors.address = "Vui lòng nhập địa điểm hoặc chọn làm từ xa";
+    if (!form.isRemote &&!form.address.trim()) newErrors.address = "Vui lòng nhập địa điểm hoặc chọn làm từ xa";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -137,7 +145,7 @@ export default function CreateTaskPage() {
     }
 
     for (const file of files) {
-      if (file.size > 5 * 1024 * 1024) {
+      if (file.size > 5 * 1024) {
         toast.error(`Ảnh ${file.name} vượt quá 5MB`);
         return;
       }
@@ -147,9 +155,9 @@ export default function CreateTaskPage() {
       }
     }
 
-    setImageFiles([...imageFiles, ...files]);
+    setImageFiles([...imageFiles,...files]);
     const urls = files.map(f => URL.createObjectURL(f));
-    setForm({ ...form, images: [...form.images, ...urls] });
+    setForm({...form, images: [...form.images,...urls] });
   };
 
   const removeImage = (index: number) => {
@@ -157,7 +165,7 @@ export default function CreateTaskPage() {
     const newFiles = [...imageFiles];
     newImages.splice(index, 1);
     newFiles.splice(index, 1);
-    setForm({ ...form, images: newImages });
+    setForm({...form, images: newImages });
     setImageFiles(newFiles);
   };
 
@@ -199,10 +207,10 @@ export default function CreateTaskPage() {
       const tags = form.tags.split(",").map(t => t.trim()).filter(Boolean).slice(0, 10);
 
       const payload: CreateTaskInput = {
-        type: "task", // Fix: thêm type
+        type: "task",
         title: form.title.trim(),
         description: form.description.trim(),
-        price: form.budgetType === "negotiable" ? 0 : parseInt(form.price, 10),
+        price: form.budgetType === "negotiable"? 0 : parseInt(form.price, 10),
         currency: form.currency,
         budgetType: form.budgetType,
         totalSlots: parseInt(form.totalSlots, 10),
@@ -217,12 +225,12 @@ export default function CreateTaskPage() {
         requirements: form.requirements.trim(),
         isRemote: form.isRemote,
         location: form.isRemote
-          ? {}
+         ? {}
           : {
               address: form.address.trim(),
               city: form.city.trim(),
-              ...(form.lat != null && { lat: form.lat }),
-              ...(form.lng != null && { lng: form.lng }),
+             ...(form.lat!= null && { lat: form.lat }),
+             ...(form.lng!= null && { lng: form.lng }),
             },
       };
 
@@ -276,7 +284,7 @@ export default function CreateTaskPage() {
               type="text"
               placeholder="VD: Giao hàng quận 1 trong 2h"
               value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              onChange={(e) => setForm({...form, title: e.target.value })}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
             />
             {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
@@ -289,7 +297,7 @@ export default function CreateTaskPage() {
             <textarea
               placeholder="Mô tả yêu cầu công việc, địa điểm, thời gian, kỹ năng cần có..."
               value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onChange={(e) => setForm({...form, description: e.target.value })}
               rows={6}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none resize-none"
             />
@@ -308,10 +316,10 @@ export default function CreateTaskPage() {
                 <button
                   key={cat.id}
                   type="button"
-                  onClick={() => setForm({ ...form, category: cat.id })}
+                  onClick={() => setForm({...form, category: cat.id })}
                   className={`p-3 rounded-xl border-2 transition-all ${
                     form.category === cat.id
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
+                     ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
                       : "border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
                   }`}
                 >
@@ -336,10 +344,10 @@ export default function CreateTaskPage() {
                 <button
                   key={type.id}
                   type="button"
-                  onClick={() => setForm({ ...form, budgetType: type.id as any })}
+                  onClick={() => setForm({...form, budgetType: type.id as any })}
                   className={`py-2 rounded-xl border-2 text-sm font-semibold transition-all ${
                     form.budgetType === type.id
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400"
+                     ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400"
                       : "border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300"
                   }`}
                 >
@@ -348,7 +356,7 @@ export default function CreateTaskPage() {
               ))}
             </div>
 
-            {form.budgetType !== "negotiable" && (
+            {form.budgetType!== "negotiable" && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs text-gray-600 dark:text-zinc-400 mb-1">
@@ -358,7 +366,7 @@ export default function CreateTaskPage() {
                     type="number"
                     placeholder="50000"
                     value={form.price}
-                    onChange={(e) => setForm({ ...form, price: e.target.value })}
+                    onChange={(e) => setForm({...form, price: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
                   />
                   {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
@@ -367,7 +375,7 @@ export default function CreateTaskPage() {
                   <label className="block text-xs text-gray-600 dark:text-zinc-400 mb-1">Đơn vị</label>
                   <select
                     value={form.currency}
-                    onChange={(e) => setForm({ ...form, currency: e.target.value as any })}
+                    onChange={(e) => setForm({...form, currency: e.target.value as any })}
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
                   >
                     <option value="VND">VND</option>
@@ -387,7 +395,7 @@ export default function CreateTaskPage() {
               <input
                 type="number"
                 value={form.totalSlots}
-                onChange={(e) => setForm({ ...form, totalSlots: e.target.value })}
+                onChange={(e) => setForm({...form, totalSlots: e.target.value })}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
               />
               {errors.totalSlots && <p className="text-red-500 text-xs mt-1">{errors.totalSlots}</p>}
@@ -399,7 +407,7 @@ export default function CreateTaskPage() {
               <input
                 type="number"
                 value={form.durationHours}
-                onChange={(e) => setForm({ ...form, durationHours: e.target.value })}
+                onChange={(e) => setForm({...form, durationHours: e.target.value })}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
               />
               {errors.durationHours && <p className="text-red-500 text-xs mt-1">{errors.durationHours}</p>}
@@ -415,7 +423,7 @@ export default function CreateTaskPage() {
                 <input
                   type="checkbox"
                   checked={form.isRemote}
-                  onChange={(e) => setForm({ ...form, isRemote: e.target.checked })}
+                  onChange={(e) => setForm({...form, isRemote: e.target.checked })}
                   className="w-4 h-4 text-blue-500 rounded"
                 />
                 <span className="text-sm text-gray-600 dark:text-zinc-400">Làm từ xa</span>
@@ -427,14 +435,14 @@ export default function CreateTaskPage() {
                   type="text"
                   placeholder="Địa chỉ cụ thể"
                   value={form.address}
-                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  onChange={(e) => setForm({...form, address: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none mb-2"
                 />
                 <input
                   type="text"
                   placeholder="Thành phố"
                   value={form.city}
-                  onChange={(e) => setForm({ ...form, city: e.target.value })}
+                  onChange={(e) => setForm({...form, city: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
                 />
                 {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
@@ -450,7 +458,7 @@ export default function CreateTaskPage() {
               type="text"
               placeholder="VD: gấp, part-time, remote"
               value={form.tags}
-              onChange={(e) => setForm({ ...form, tags: e.target.value })}
+              onChange={(e) => setForm({...form, tags: e.target.value })}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
             />
           </div>
@@ -462,7 +470,7 @@ export default function CreateTaskPage() {
             <textarea
               placeholder="Kỹ năng cần có, kinh nghiệm..."
               value={form.requirements}
-              onChange={(e) => setForm({ ...form, requirements: e.target.value })}
+              onChange={(e) => setForm({...form, requirements: e.target.value })}
               rows={3}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none resize-none"
             />
@@ -481,10 +489,10 @@ export default function CreateTaskPage() {
                 <button
                   key={vis.id}
                   type="button"
-                  onClick={() => setForm({ ...form, visibility: vis.id as any })}
+                  onClick={() => setForm({...form, visibility: vis.id as any })}
                   className={`py-3 rounded-xl border-2 transition-all ${
                     form.visibility === vis.id
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
+                     ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
                       : "border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
                   }`}
                 >
@@ -527,7 +535,7 @@ export default function CreateTaskPage() {
             disabled={submitting}
             className="w-full py-4 rounded-xl text-white font-semibold bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/30 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {uploadingImage ? "Đang tải ảnh..." : submitting ? "Đang tạo..." : "Đăng công việc"}
+            {uploadingImage? "Đang tải ảnh..." : submitting? "Đang tạo..." : "Đăng công việc"}
           </button>
         </form>
       </div>
