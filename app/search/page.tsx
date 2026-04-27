@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
@@ -50,7 +49,7 @@ export default function SearchPage() {
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const friendIdsRef = useRef<string[]>([]);
 
-  /* ================= GET FRIENDS - Cache ================= */
+  /* ================= GET FRIENDS ================= */
   useEffect(() => {
     if (!user?.uid || activeTab!== "friends" || friendIdsRef.current.length > 0) return;
 
@@ -305,6 +304,7 @@ function SkeletonList() {
               <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
               <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/3" />
             </div>
+          </div>
           <div className="h-5 bg-gray-200 dark:bg-zinc-800 rounded w-3/4 mb-2" />
           <div className="h-20 bg-gray-200 dark:bg-zinc-800 rounded" />
         </div>
