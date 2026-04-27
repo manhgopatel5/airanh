@@ -16,7 +16,7 @@ import {
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { QueryConstraint } from "firebase/firestore";
-import { TaskListItem } from "@/types/task";
+import { TaskListItem, isTask } from "@/types/task";
 import TaskCard from "@/components/TaskCard";
 import { FiSearch, FiX, FiMapPin } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
@@ -44,10 +44,10 @@ export default function SearchPage() {
   const [friendIds, setFriendIds] = useState<string[]>([]);
 
   const locationCache = useRef<{
-  coords: { lat: number; lng: number };
-  time: number;
-} | null>(null);
- const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+    coords: { lat: number; lng: number };
+    time: number;
+  } | null>(null);
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const friendIdsRef = useRef<string[]>([]);
 
   /* ================= GET FRIENDS - Cache ================= */
@@ -118,7 +118,7 @@ export default function SearchPage() {
         constraints.push(where("userId", "in", friendIds.slice(0, 10)));
         constraints.push(orderBy("createdAt", "desc"));
       } else if (activeTab === "near") {
-        constraints.push(orderBy("createdAt", "desc")); // Tạm, sau dùng geohash
+        constraints.push(orderBy("createdAt", "desc"));
       }
 
       constraints.push(limit(PAGE_SIZE));
@@ -150,15 +150,15 @@ export default function SearchPage() {
         // Tab near: filter client theo khoảng cách
         if (activeTab === "near" && userLocation) {
           data = data
-         .map((t) => ({
-            ...t,
+           .map((t) => ({
+             ...t,
               distance:
                 t.location?.lat && t.location?.lng
-               ? getDistance(userLocation, { lat: t.location.lat, lng: t.location.lng })
+                 ? getDistance(userLocation, { lat: t.location.lat, lng: t.location.lng })
                   : 9999,
             }))
-         .filter((t: any) => t.distance < 50)
-         .sort((a: any, b: any) => a.distance - b.distance);
+           .filter((t: any) => t.distance < 50)
+           .sort((a: any, b: any) => a.distance - b.distance);
         }
 
         // Tránh duplicate key khi loadMore
@@ -246,7 +246,7 @@ export default function SearchPage() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex flex-col items-center py-2 px-2 flex-1 transition-all ${
                       active
-                     ? "text-blue-600 dark:text-blue-400"
+                       ? "text-blue-600 dark:text-blue-400"
                         : "text-gray-400 dark:text-zinc-500 hover:text-gray-600"
                     }`}
                   >
@@ -274,7 +274,7 @@ export default function SearchPage() {
             <TaskCard
               key={task.id}
               task={task}
-              mode={task.price === 0? "plan" : "task"} // ✅ Thêm dòng này
+              mode={isTask(task)? "task" : "plan"}
             />
           ))}
 
@@ -305,7 +305,6 @@ function SkeletonList() {
               <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
               <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/3" />
             </div>
-          </div>
           <div className="h-5 bg-gray-200 dark:bg-zinc-800 rounded w-3/4 mb-2" />
           <div className="h-20 bg-gray-200 dark:bg-zinc-800 rounded" />
         </div>
