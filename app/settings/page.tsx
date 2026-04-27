@@ -4,11 +4,11 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { useAppStore } from "@/store/app";
-import { doc, updateDoc, onSnapshot, deleteDoc } from "firebase/firestore";
+import { doc, updateDoc, onSnapshot, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
 import { signOut, deleteUser } from "firebase/auth";
 import {
-  ChevronLeft, Moon, Sun, Palette, Bell, BellOff, Clock, Mail,
+  ChevronLeft, Moon, Sun, Palette, BellOff, Clock, Mail,
   Eye, EyeOff, UserX, Shield, Lock, Smartphone, Key, Trash2,
   Globe, DollarSign, Download, Zap, Database, Info, LogOut,
   ChevronRight, Check, Monitor, Languages, MapPin, Calendar,
@@ -96,9 +96,10 @@ export default function SettingsPage() {
   const [storage, setStorage] = useState({ used: 0, total: 100 });
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [tfaEnabled, setTfaEnabled] = useState(false);
 
   const accentGradient = isPlan
-  ? "from-green-500 to-emerald-500"
+ ? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-500";
 
   useEffect(() => {
@@ -108,7 +109,8 @@ export default function SettingsPage() {
         const data = snap.data();
         setSettings({...DEFAULT_SETTINGS,...data.settings });
         setSessions(data.sessions || []);
-        setStorage(data.storage || { used: 23.5, total: 100 }); // Mock
+        setStorage(data.storage || { used: 23.5, total: 100 });
+        setTfaEnabled(data.settings?.["2fa"] || false);
       }
     });
     return () => unsub();
@@ -150,7 +152,7 @@ export default function SettingsPage() {
     setShowLogoutModal(false);
     updateDoc(doc(db, "users", user.uid), {
       online: false,
-      lastSeen: new Date(),
+      lastSeen: serverTimestamp(), // FIX: dùng serverTimestamp thay vì new Date()
     }).catch(() => {});
     await signOut(auth);
     window.location.href = "/login";
@@ -377,8 +379,8 @@ export default function SettingsPage() {
           <SettingItem
             label="Xác thực 2 lớp"
             icon={Key}
-            value="Tắt"
-            onClick={() => router.push("/settings/2fa")}
+            value={tfaEnabled? "Đã bật" : "Tắt"}
+            onClick={() => router.push("/settings/2fa")} // FIX: Thêm link
           />
           <SettingItem
             label={`Phiên đăng nhập (${sessions.length})`}
@@ -481,7 +483,7 @@ export default function SettingsPage() {
             label="Webhook"
             icon={Zap}
             value={settings.webhookUrl? "Đã kết nối" : "Chưa kết nối"}
-            onClick={() => router.push("/settings/webhook")}
+            onClick={() => router.push("/settings/api")}
           />
         </Section>
 
