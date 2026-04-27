@@ -16,7 +16,7 @@ import {
 } from "@/lib/firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
-  HelpCircle, LogOut, Trash2, User, Users, Shield, Lock,
+  HelpCircle, LogOut, Trash2, User, Shield, Lock,
   Camera, Check, X, Copy, Circle, QrCode, Share2, Eye, EyeOff,
   ChevronRight
 } from "lucide-react";
@@ -64,10 +64,10 @@ export default function Profile() {
   const uploadTaskRef = useRef<UploadTask | null>(null);
 
   const accentGradient = isPlan
- ? "from-green-500 to-emerald-500"
+? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-500";
   const accentText = isPlan
- ? "text-green-600 dark:text-green-400"
+? "text-green-600 dark:text-green-400"
     : "text-sky-600 dark:text-sky-400";
 
   useEffect(() => {
