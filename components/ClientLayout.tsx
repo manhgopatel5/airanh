@@ -14,9 +14,11 @@ type Props = {
 export default function ClientLayout({ children }: Props) {
   const pathname = usePathname() || "";
   const router = useRouter();
-  const { user, loading } = useAuth(); // ✅ Bỏ userData đi
+  const { user, loading } = useAuth();
 
-  const publicRoutes = ["/login", "/register", "/forgot-password", "/verify-email"];
+  // ✅ THÊM /terms, /privacy vào đây
+  const publicRoutes = ["/login", "/register", "/forgot-password", "/verify-email", "/terms", "/privacy"];
+
   const isPublic = useMemo(
     () => publicRoutes.some((r) => pathname.startsWith(r)),
     [pathname]
@@ -34,10 +36,12 @@ export default function ClientLayout({ children }: Props) {
       return;
     }
 
-    if (user && isPublic) {
-      router.replace("/");
-      return;
-    }
+    // ✅ Bỏ redirect khi đã login vào public route
+    // Cho phép user đã login vẫn xem /terms, /privacy
+    // if (user && isPublic) {
+    // router.replace("/");
+    // return;
+    // }
   }, [user, loading, isPublic, router]);
 
   /* ================= LOADING ================= */
