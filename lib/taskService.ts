@@ -115,8 +115,8 @@ export const createTask = async (
       userId: user.uid,
       userName: user.displayName || "Ẩn danh",
       userAvatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || "U")}`,
-  ...(user.shortId && { userShortId: user.shortId }),
-  ...(user.username && { userUsername: user.username }),
+ ...(user.shortId && { userShortId: user.shortId }),
+ ...(user.username && { userUsername: user.username }),
 
       createdAt: now,
       updatedAt: now,
@@ -124,13 +124,13 @@ export const createTask = async (
       deadline: data.deadline || null,
       startDate: data.startDate || null,
 
-  ...(data.category && { category: data.category }),
+      category: data.category || "other",
       tags: data.tags || [],
       images: data.images || [],
       attachments: data.attachments || [],
       requirements: data.requirements || "",
-  ...(data.location && { location: data.location }),
-      isRemote: data.isRemote || false,
+ ...(data.location && { location: data.location }),
+      isRemote: data.isRemote?? false,
 
       searchKeywords: generateSearchKeywords(data.title, data.description, data.tags),
 
@@ -180,7 +180,7 @@ export const updateTask = async (
     }
 
     const newSearchKeywords = updates.title || updates.description || updates.tags
- ? generateSearchKeywords(
+? generateSearchKeywords(
           updates.title || data.title,
           updates.description || data.description,
           updates.tags || data.tags
@@ -188,7 +188,7 @@ export const updateTask = async (
       : data.searchKeywords;
 
     const updateData: any = {
- ...updates,
+...updates,
       searchKeywords: newSearchKeywords,
       edited: true,
       editedAt: serverTimestamp(),
