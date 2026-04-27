@@ -38,9 +38,10 @@ export default function TwoFAPage() {
     if (!user) return;
     const factors = multiFactor(user).enrolledFactors;
     setEnabled(factors.length > 0);
-    if (factors.length > 0) {
-      setEnrolledPhone(factors[0].displayName || factors[0].phoneNumber || "");
-    }
+    if (factors.length > 0 && factors[0]) {
+  const factor = factors[0];
+  setEnrolledPhone(factor.displayName || factor.phoneNumber || "");
+}
   }, [user]); // FIX: Thêm user vào deps
 
   useEffect(() => {
