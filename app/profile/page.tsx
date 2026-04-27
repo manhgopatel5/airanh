@@ -17,8 +17,7 @@ import {
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
   HelpCircle, LogOut, Trash2, User, Shield, Lock,
-  Camera, Check, Copy, Circle, QrCode, Share2, Eye, EyeOff,
-  ChevronRight
+  Camera, Check, QrCode, Share2, ChevronRight, Settings
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import type { UploadTask } from "firebase/storage";
@@ -51,24 +50,18 @@ export default function Profile() {
 
   const [userData, setUserData] = useState<UserData | null>(null);
   const [name, setName] = useState("");
-  const [bio, setBio] = useState("");
   const [editingName, setEditingName] = useState(false);
-  const [editingBio, setEditingBio] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showQR, setShowQR] = useState(false);
-  const [copied, setCopied] = useState(false);
   const hasCheckedId = useRef(false);
   const uploadTaskRef = useRef<UploadTask | null>(null);
 
   const accentGradient = isPlan
 ? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-500";
-  const accentText = isPlan
-? "text-green-600 dark:text-green-400"
-    : "text-sky-600 dark:text-sky-400";
 
   useEffect(() => {
     if (user === null) router.replace("/login");
@@ -81,7 +74,6 @@ export default function Profile() {
         const data = { uid: snap.id,...snap.data() } as UserData;
         setUserData(data);
         setName(data.name || "");
-        setBio(data.bio || "");
         if (user &&!user.emailVerified &&!data.emailVerified) {
           router.replace("/verify-email");
         }
@@ -140,27 +132,6 @@ export default function Profile() {
     }
   };
 
-  const handleUpdateBio = async () => {
-    if (!user) return;
-    if (bio === userData?.bio) {
-      setEditingBio(false);
-      return;
-    }
-    const oldBio = userData?.bio;
-    setEditingBio(false);
-    setUserData((prev) => prev? {...prev, bio: bio.trim() } : null);
-
-    try {
-      await updateDoc(doc(db, "users", user.uid), { bio: bio.trim() });
-      toast.success("Đã cập nhật");
-      if ("vibrate" in navigator) navigator.vibrate(8);
-    } catch {
-      toast.error("Cập nhật thất bại");
-      setUserData((prev) => prev? {...prev, bio: oldBio || "" } : null);
-      setBio(oldBio || "");
-    }
-  };
-
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file ||!user) return;
@@ -207,24 +178,6 @@ export default function Profile() {
       if (uploadTaskRef.current) uploadTaskRef.current.cancel();
     };
   }, []);
-
-  const copyId = () => {
-    if (userData?.userId) {
-      navigator.clipboard.writeText(userData.userId);
-      setCopied(true);
-      toast.success("Đã copy ID");
-      setTimeout(() => setCopied(false), 2000);
-      if ("vibrate" in navigator) navigator.vibrate(5);
-    }
-  };
-
-  const toggleHidePhone = async () => {
-    if (!user) return;
-    const newVal =!userData?.hidePhone;
-    await updateDoc(doc(db, "users", user.uid), { hidePhone: newVal });
-    toast.success(newVal? "Đã ẩn số" : "Đã hiện số");
-    if ("vibrate" in navigator) navigator.vibrate(5);
-  };
 
   const handleShare = async () => {
     if (!userData) return;
@@ -324,25 +277,21 @@ export default function Profile() {
     <div className="min-h-screen bg-white dark:bg-black pb-24 font-sans">
       <Toaster richColors position="top-center" />
 
-      <div className={`h-[120px] bg-gradient-to-br ${accentGradient} opacity-10 relative`}>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.3),transparent_50%)]" />
-      </div>
-
-      <div className="px-6 -mt-11">
-        <div className="flex flex-col items-center">
+      <div className="px-6 pt-12 pb-6">
+        <div className="flex items-center gap-4">
           <div className="relative">
             <img
               src={userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&size=176`}
-              className="w- h- rounded-full border-2 border-white dark:border-black"
+              className="w-16 h-16 rounded-full"
               alt="Avatar"
             />
             {userData.emailVerified && (
-              <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br ${accentGradient} flex items-center justify-center border-2 border-white dark:border-black`}>
-                <Check className="w-3 h-3 text-white stroke-[3]" />
+              <div className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-gradient-to-br ${accentGradient} flex items-center justify-center border-2 border-white dark:border-black`}>
+                <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
               </div>
             )}
-            <label className={`absolute -bottom-1 -right-8 w-8 h-8 rounded-full bg-gradient-to-br ${accentGradient} flex items-center justify-center cursor-pointer active:scale-90 transition shadow-lg`}>
-              <Camera size={14} className="text-white" />
+            <label className={`absolute -bottom-0.5 -right-6 w-7 h-7 rounded-full bg-gradient-to-br ${accentGradient} flex items-center justify-center cursor-pointer active:scale-90 transition shadow-lg`}>
+              <Camera size={13} className="text-white" />
               <input type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
             </label>
             {uploading && (
@@ -352,141 +301,54 @@ export default function Profile() {
             )}
           </div>
 
-          {editingName? (
-            <div className="flex items-center gap-2 mt-4 w-full max-w-xs">
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onBlur={handleUpdateName}
-                onKeyDown={(e) => e.key === "Enter" && handleUpdateName()}
-                autoFocus
-                className="text- font-extrabold border-b-2 border-gray-300 dark:border-zinc-700 outline-none bg-transparent text-gray-900 dark:text-white flex-1 text-center tracking-tight"
-              />
-              <button onClick={handleUpdateName} className={`p-1.5 bg-gradient-to-br ${accentGradient} rounded-full`}>
-                <Check size={16} className="text-white" />
-              </button>
-            </div>
-          ) : (
-            <h1 onClick={() => setEditingName(true)} className="text- font-extrabold text-gray-900 dark:text-white mt-4 tracking-tight cursor-pointer">
-              {userData.name}
-            </h1>
-          )}
-          <p className="text- text-gray-500 dark:text-zinc-400 mt-0.5">
-            @{userData.userId}
-          </p>
-
-          <button
-            onClick={copyId}
-            className="mt-3 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-zinc-900 text- font-semibold text-gray-700 dark:text-zinc-300 flex items-center gap-1.5 active:scale-95 transition"
-          >
-            ID: {userData.userId}
-            {copied? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-          </button>
-
-          <div className="flex items-center gap-1.5 mt-2">
-            <Circle className={`w-2 h-2 fill-current ${userData.online? "text-green-500" : "text-gray-400"}`} />
-            <span className="text- text-gray-500 dark:text-zinc-400 font-medium">
-              {userData.online? "Đang hoạt động" : "Ngoại tuyến"}
-            </span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-6 mt-8 text-center">
-          {[
-            { label: "TASK", value: userData.stats?.tasks || 0 },
-            { label: "PLAN", value: userData.stats?.plans || 0 },
-            { label: "HOÀN THÀNH", value: userData.stats?.completed || 0 },
-            { label: "RATING", value: userData.stats?.rating || 0 },
-          ].map((stat) => (
-            <div key={stat.label}>
-              <div className="text- font-black text-gray-900 dark:text-white tracking-tight">
-                {stat.value}{stat.label === "RATING" && "★"}
-              </div>
-              <div className="text- font-semibold text-gray-500 dark:text-zinc-500 tracking-wider mt-0.5">
-                {stat.label}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text- font-bold text-gray-900 dark:text-white">Giới thiệu</span>
-            {!editingBio? (
-              <button onClick={() => setEditingBio(true)} className={`text- font-semibold ${accentText}`}>
-                Sửa
-              </button>
-            ) : (
-              <button onClick={handleUpdateBio} className={`text- font-semibold ${accentText} flex items-center gap-1`}>
-                <Check className="w-3 h-3" />Lưu
-              </button>
-            )}
-          </div>
-          {editingBio? (
-            <textarea
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="Viết gì đó về bạn..."
-              className="w-full text- text-gray-600 dark:text-zinc-400 bg-transparent border-none outline-none resize-none"
-              rows={3}
-              maxLength={150}
-              autoFocus
-            />
-          ) : (
-            <p className="text- text-gray-600 dark:text-zinc-400 leading-relaxed">
-              {bio || "Chưa có giới thiệu"}
-            </p>
-          )}
-        </div>
-
-        <div className="mt-8 space-y-4">
-          {userData.phone && (
-            <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-zinc-900">
-              <span className="text- text-gray-500 dark:text-zinc-400">Số điện thoại</span>
+          <div className="flex-1 min-w-0">
+            {editingName? (
               <div className="flex items-center gap-2">
-                <span className="text- font-semibold text-gray-900 dark:text-white">
-                  {userData.hidePhone? "••••••••••" : userData.phone}
-                </span>
-                <button onClick={toggleHidePhone}>
-                  {userData.hidePhone? <EyeOff className="w-4 h-4 text-gray-400" /> : <Eye className={`w-4 h-4 ${accentText}`} />}
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onBlur={handleUpdateName}
+                  onKeyDown={(e) => e.key === "Enter" && handleUpdateName()}
+                  autoFocus
+                  className="text-2xl font-extrabold border-b-2 border-gray-300 dark:border-zinc-700 outline-none bg-transparent text-gray-900 dark:text-white flex-1 tracking-tight"
+                />
+                <button onClick={handleUpdateName} className={`p-1.5 bg-gradient-to-br ${accentGradient} rounded-full`}>
+                  <Check size={14} className="text-white" />
                 </button>
               </div>
-            </div>
-          )}
-          <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-zinc-900">
-            <span className="text- text-gray-500 dark:text-zinc-400">Email</span>
-            <span className="text- font-semibold text-gray-900 dark:text-white">{userData.email}</span>
+            ) : (
+              <h1 onClick={() => setEditingName(true)} className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight cursor-pointer">
+                {userData.name}
+              </h1>
+            )}
+            <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
+              {userData.online? "Đang hoạt động" : "Ngoại tuyến"}
+            </p>
           </div>
         </div>
+      </div>
 
-        <div className="mt-8 space-y-6">
-          <div>
-            <div className="text- font-bold text-gray-400 dark:text-zinc-600 tracking-wider mb-1">HỒ SƠ</div>
-            <Item label="Mã QR của tôi" icon={QrCode} onClick={() => setShowQR(true)} />
-            <Item label="Chia sẻ hồ sơ" icon={Share2} onClick={handleShare} />
-            <Item label="Thông tin cá nhân" icon={User} onClick={() => router.push("/profile/edit")} />
-          </div>
-
-          <div>
-            <div className="text- font-bold text-gray-400 dark:text-zinc-600 tracking-wider mb-1">BẢO MẬT</div>
-            <Item label="Xác thực CCCD" icon={Shield} />
-            <Item label="Đổi mật khẩu" icon={Lock} />
-          </div>
-
-          <div>
-            <div className="text- font-bold text-gray-400 dark:text-zinc-600 tracking-wider mb-1">HỖ TRỢ</div>
-            <Item label="Trung tâm trợ giúp" icon={HelpCircle} />
-            <Item label="Đăng xuất" icon={LogOut} onClick={() => setShowLogoutModal(true)} danger />
-            <Item label="Xoá tài khoản" icon={Trash2} onClick={() => setShowDeleteModal(true)} danger />
-          </div>
+      <div className="px-6 mt-2 space-y-6">
+        <div>
+          <div className="text-xs font-bold text-gray-400 dark:text-zinc-600 tracking-wider mb-1">HỒ SƠ</div>
+          <Item label="Thông tin cá nhân" icon={User} onClick={() => router.push("/profile/edit")} />
+          <Item label="Mã QR của tôi" icon={QrCode} onClick={() => setShowQR(true)} />
+          <Item label="Chia sẻ hồ sơ" icon={Share2} onClick={handleShare} />
         </div>
 
-        <button
-          onClick={() => setShowLogoutModal(true)}
-          className="w-full py-4 mt-8 text- font-bold text-red-500 active:opacity-50 transition"
-        >
-          Đăng xuất
-        </button>
+        <div>
+          <div className="text-xs font-bold text-gray-400 dark:text-zinc-600 tracking-wider mb-1">BẢO MẬT</div>
+          <Item label="Xác thực CCCD" icon={Shield} />
+          <Item label="Đổi mật khẩu" icon={Lock} />
+        </div>
+
+        <div>
+          <div className="text-xs font-bold text-gray-400 dark:text-zinc-600 tracking-wider mb-1">HỖ TRỢ</div>
+          <Item label="Trung tâm trợ giúp" icon={HelpCircle} />
+          <Item label="Cài đặt" icon={Settings} />
+          <Item label="Đăng xuất" icon={LogOut} onClick={() => setShowLogoutModal(true)} danger />
+          <Item label="Xoá tài khoản" icon={Trash2} onClick={() => setShowDeleteModal(true)} danger />
+        </div>
       </div>
 
       {showQR && (
@@ -500,9 +362,6 @@ export default function Profile() {
                 className="w-full"
               />
             </div>
-            <p className="text-center text-sm text-gray-500 dark:text-zinc-400 mt-4">
-              @{userData.userId}
-            </p>
             <button
               onClick={() => setShowQR(false)}
               className={`w-full mt-4 py-3 rounded-2xl font-bold bg-gradient-to-r ${accentGradient} text-white`}
@@ -544,8 +403,8 @@ function Item({
       className="w-full flex items-center justify-between py-4 active:opacity-50 transition"
     >
       <div className="flex items-center gap-3">
-        <Icon className={`w- h- ${danger? "text-red-500" : "text-gray-900 dark:text-white"}`} />
-        <span className={`text- font-semibold ${danger? "text-red-500" : "text-gray-900 dark:text-white"}`}>{label}</span>
+        <Icon className={`w-5 h-5 ${danger? "text-red-500" : "text-gray-900 dark:text-white"}`} />
+        <span className={`text-[15px] font-semibold ${danger? "text-red-500" : "text-gray-900 dark:text-white"}`}>{label}</span>
       </div>
       <ChevronRight className="w-4 h-4 text-gray-400" />
     </button>
