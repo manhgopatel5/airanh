@@ -12,7 +12,7 @@ import type { CreateTaskInput } from "@/types/task";
 import {
   FiUpload, FiX, FiMapPin, FiDollarSign, FiUsers, FiClock,
   FiTag, FiFileText, FiEye, FiEyeOff, FiNavigation,
-  FiMic, FiLoader, FiZap
+  FiMic, FiLoader,
 } from "react-icons/fi";
 import { Timestamp } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
