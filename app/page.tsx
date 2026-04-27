@@ -132,7 +132,7 @@ export default function Home() {
         (snap) => {
           const data = snap.docs.map((doc) => ({
             id: doc.id,
-           ...doc.data(),
+         ...doc.data(),
           }));
           setTasks(data);
           setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -172,7 +172,7 @@ export default function Home() {
       const snap = await getDocs(q);
       const newTasks = snap.docs.map((doc) => ({
         id: doc.id,
-       ...doc.data(),
+     ...doc.data(),
       }));
       setTasks((prev) => [...prev,...newTasks]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -192,7 +192,7 @@ export default function Home() {
 
     observerRef.current = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore &&!loadingMore) {
+        if (entries[0]?.isIntersecting && hasMore &&!loadingMore) {
           loadMore();
         }
       },
@@ -239,7 +239,7 @@ export default function Home() {
                   }}
                   className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
                     active
-            ? `text-${tab.color}-600 dark:text-${tab.color}-400`
+          ? `text-${tab.color}-600 dark:text-${tab.color}-400`
                       : "text-gray-400 dark:text-zinc-500"
                   }`}
                 >
