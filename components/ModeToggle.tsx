@@ -20,7 +20,7 @@ export default function ModeToggle({ mode, setMode }: Props) {
             }}
             className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all ${
               mode === "task"
-            ? "bg-gradient-to-br from-orange-500 to-pink-500 text-white shadow-lg"
+                ? "bg-gradient-to-br from-sky-500 to-blue-500 text-white shadow-lg"
                 : "text-gray-500 dark:text-zinc-400"
             }`}
             style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -37,7 +37,7 @@ export default function ModeToggle({ mode, setMode }: Props) {
             }}
             className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all ${
               mode === "plan"
-            ? "bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-lg"
+                ? "bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg"
                 : "text-gray-500 dark:text-zinc-400"
             }`}
             style={{ WebkitTapHighlightColor: 'transparent' }}
