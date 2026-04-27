@@ -28,7 +28,6 @@ import {
 } from "firebase/database";
 import { nanoid } from "nanoid";
 
-/* ================= TYPES ================= */
 export type AppUser = {
   uid: string;
   name: string;
@@ -62,7 +61,6 @@ const AuthContext = createContext<AuthContextType>({
   error: null,
 });
 
-/* ================= HELPER ================= */
 const generateSearchKeywords = (
   name: string,
   userId: string,
@@ -90,7 +88,6 @@ const generateSearchKeywords = (
   return Array.from(keywords).filter((k) => k.length >= 2);
 };
 
-/* ================= PROVIDER ================= */
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [auth, setAuth] = useState<any>(null);
   const [db, setDb] = useState<any>(null);
@@ -104,7 +101,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const userDataUnsub = useRef<(() => void) | null>(null);
   const presenceUnsub = useRef<(() => void) | null>(null);
 
-  /* ================= INIT FIREBASE ================= */
   useEffect(() => {
     const init = async () => {
       const firebase = await import("@/lib/firebase");
@@ -115,14 +111,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     init();
   }, []);
 
-  /* ================= AUTH ================= */
   useEffect(() => {
-    if (!auth || !db || !rtdb) return;
+    if (!auth ||!db ||!rtdb) return;
 
     const unsubAuth = onAuthStateChanged(
       auth,
-
-      // ✅ SUCCESS CALLBACK
       async (firebaseUser) => {
         setUser(firebaseUser);
         setError(null);
@@ -132,7 +125,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (!firebaseUser) {
           setUserData(null);
-          setLoading(false);
+          setLoading(false); // ✅ Tắt loading ngay khi chưa login
           return;
         }
 
@@ -198,15 +191,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             });
           }
 
-          // ✅ SNAPSHOT (QUAN TRỌNG NHẤT)
+          // ✅ FIX: Tắt loading ngay sau khi có firebaseUser, không chờ onSnapshot
+          setLoading(false);
+
+          // Snapshot chạy async
           userDataUnsub.current = onSnapshot(userRef, (docSnap) => {
             if (docSnap.exists()) {
               setUserData(docSnap.data() as AppUser);
-              setLoading(false);
             }
           });
 
-          // ✅ PRESENCE
+          // Presence
           const statusRef = ref(rtdb, `/status/${firebaseUser.uid}`);
           const connectedRef = ref(rtdb, ".info/connected");
 
@@ -229,8 +224,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setLoading(false);
         }
       },
-
-      // ✅ ERROR CALLBACK (FIX CHUẨN SYNTAX)
       (err) => {
         console.error("Auth error:", err);
         setError("Lỗi xác thực");
@@ -253,12 +246,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-/* ================= HOOK ================= */
 export const useAuth = () => {
   return useContext(AuthContext);
 };
 
-/* ================= LOGOUT ================= */
 export const useLogout = () => {
   return async () => {
     const firebase = await import("@/lib/firebase");
