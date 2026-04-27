@@ -1,82 +1,101 @@
 "use client";
 import { HiPlus, HiArrowPath } from "react-icons/hi2";
+import { FiZap, FiMapPin, FiClock, FiUsers, FiCalendar } from "react-icons/fi";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 
 type TabId = "hot" | "near" | "new" | "friends";
+type PostType = "task" | "plan";
 
-const messages = {
-  hot: {
-    title: "Chưa có gì bùng nổ",
-    desc: "Hãy là người đầu tiên tạo trend\nvà nhận ngàn like",
-    emoji: "🔥",
-    gradient: "from-orange-500 to-pink-500"
+const MESSAGES = {
+  task: {
+    hot: { title: "Chưa có việc nào", desc: "Đăng việc đầu tiên để nhận báo giá\ntừ người làm trong 5 phút", icon: FiZap },
+    near: { title: "Quanh đây chưa có việc", desc: "Tạo việc gần bạn để kết nối\nvới người trong khu vực", icon: FiMapPin },
+    new: { title: "Chưa có việc mới", desc: "Hãy là người đầu tiên đăng việc\ntrong hôm nay", icon: FiClock },
+    friends: { title: "Bạn bè chưa đăng việc", desc: "Mời bạn bè tham gia để\ntìm việc và thuê người dễ hơn", icon: FiUsers },
   },
-  near: {
-    title: "Quanh đây trống quá",
-    desc: "Tạo việc gần bạn để\nkết nối với hàng xóm",
-    emoji: "📍",
-    gradient: "from-emerald-500 to-cyan-500"
+  plan: {
+    hot: { title: "Chưa có kế hoạch hot", desc: "Tạo hoạt động đầu tiên để\nrủ mọi người tham gia", icon: FiZap },
+    near: { title: "Quanh đây chưa có hẹn", desc: "Lên kèo gần bạn để offline\ncùng hàng xóm", icon: FiMapPin },
+    new: { title: "Chưa có kế hoạch mới", desc: "Tạo sự kiện đầu tiên\ntrong hôm nay", icon: FiCalendar },
+    friends: { title: "Bạn bè chưa lên kèo", desc: "Rủ bạn bè tạo kế hoạch\nđi chơi chung", icon: FiUsers },
   },
-  new: {
-    title: "Chưa có việc mới",
-    desc: "Đăng việc đầu tiên\ngiành slot hot",
-    emoji: "✨",
-    gradient: "from-blue-500 to-violet-500"
+};
+
+const COLORS = {
+  task: {
+    accent: "orange",
+    accentHex: "text-orange-600 dark:text-orange-500",
+    bg: "bg-orange-500/10 dark:bg-orange-500/20",
   },
-  friends: {
-    title: "Bạn bè chưa đăng gì",
-    desc: "Mời bạn bè vào\nđăng việc kiếm tiền chung",
-    emoji: "👥",
-    gradient: "from-purple-500 to-rose-500"
+  plan: {
+    accent: "violet", 
+    accentHex: "text-violet-600 dark:text-violet-500",
+    bg: "bg-violet-500/10 dark:bg-violet-500/20",
   },
 };
 
 type Props = {
   tab: TabId;
+  type?: PostType; // default = "task"
   onRefresh?: () => void;
 };
 
-export default function EmptyState({ tab, onRefresh }: Props) {
+export default function EmptyState({ tab, type = "task", onRefresh }: Props) {
   const router = useRouter();
-  const msg = messages[tab];
+  const msg = MESSAGES[type][tab];
+  const color = COLORS[type];
+  const Icon = msg.icon;
 
   return (
-    <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-      <div className="mb-6 text-7xl">
-        {msg.emoji}
-      </div>
-
-      <h3
-        className={`text-2xl font-extrabold bg-gradient-to-r ${msg.gradient} bg-clip-text text-transparent mb-2 tracking-tight`}
+    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.2 }}
+        className={`w-16 h-16 rounded-2xl ${color.bg} flex items-center justify-center mb-5`}
       >
-        {msg.title}
-      </h3>
+        <Icon className={color.accentHex} size={28} strokeWidth={2} />
+      </motion.div>
 
-      <p className="text-base text-gray-500 mb-8 whitespace-pre-line leading-relaxed max-w-xs font-medium">
-        {msg.desc}
-      </p>
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, delay: 0.05 }}
+      >
+        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-50 mb-2">
+          {msg.title}
+        </h3>
 
-      <div className="flex gap-2 items-center">
+        <p className="text-sm text-gray-500 dark:text-zinc-400 mb-8 whitespace-pre-line leading-relaxed max-w-xs">
+          {msg.desc}
+        </p>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.15 }}
+        className="flex gap-2 items-center"
+      >
         {onRefresh && (
           <button
             onClick={onRefresh}
-            className="px-6 py-3.5 rounded-full bg-gray-100 text-gray-700 font-semibold text-base flex items-center gap-2 active:scale-95 transition-transform"
+            className="px-5 py-2.5 rounded-lg bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-medium text-sm flex items-center gap-2 hover:bg-gray-200 dark:hover:bg-zinc-700 active:scale-95 transition-all"
           >
-            <HiArrowPath size={20} />
+            <HiArrowPath size={18} />
             Làm mới
           </button>
         )}
 
         <button
-          onClick={() => router.push("/create")}
-          className={`px-8 py-3.5 rounded-full font-bold text-base text-white bg-gradient-to-r ${msg.gradient} active:scale-95 transition-transform`}
+          onClick={() => router.push(`/create/${type}`)}
+          className="px-5 py-2.5 rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-semibold text-sm flex items-center gap-2 hover:bg-gray-800 dark:hover:bg-gray-100 active:scale-95 transition-all"
         >
-          <span className="flex items-center gap-2">
-            <HiPlus size={22} strokeWidth={2.5} />
-            Đăng việc ngay
-          </span>
+          <HiPlus size={20} strokeWidth={2.5} />
+          {type === "task"? "Đăng việc mới" : "Tạo kế hoạch"}
         </button>
-      </div>
+      </motion.div>
     </div>
   );
 }
