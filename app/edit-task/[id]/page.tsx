@@ -75,7 +75,6 @@ export default function EditTaskPage() {
         setTask(data);
 
         setForm({
-          type: "task",
           title: data.title ?? "",
           description: data.description ?? "",
           price: data.price ?? 0,
