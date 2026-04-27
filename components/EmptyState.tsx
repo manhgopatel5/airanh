@@ -15,25 +15,25 @@ const MESSAGES = {
     hot: { 
       title: "Chưa có việc nào", 
       desc: "Đăng việc đầu tiên để nhận báo giá\ntừ người làm trong 5 phút", 
-      icon: FiTrendingUp, // Trend
+      icon: FiTrendingUp,
       suggests: ["Ship hồ sơ Q1 → Q7", "Mua trà sữa 3 ly", "Dọn phòng 25m²", "Sửa vòi nước rỉ"]
     },
     near: { 
       title: "Quanh đây chưa có việc", 
       desc: "Tạo việc gần bạn để kết nối\nvới người trong khu vực", 
-      icon: FiSend, // Mũi tên gửi - khác FiMapPin
+      icon: FiSend,
       suggests: ["Ship cơm trưa văn phòng", "Mua thuốc nhà thuốc", "Rửa xe máy tại nhà", "Lắp camera"]
     },
     new: { 
       title: "Chưa có việc mới", 
       desc: "Hãy là người đầu tiên đăng việc\ntrong hôm nay", 
-      icon: FiInbox, // Hộp thư
+      icon: FiInbox,
       suggests: ["Đăng việc gấp", "Thuê sinh viên", "Cần người hôm nay", "Việc 2 tiếng"]
     },
     friends: { 
       title: "Bạn bè chưa đăng việc", 
       desc: "Mời bạn bè tham gia để\ntìm việc và thuê người dễ hơn", 
-      icon: FiUsers, // Nhóm user
+      icon: FiUsers,
       suggests: ["Mời bạn bè", "Việc cho người quen", "Nhóm freelancer", "Share lên story"]
     },
   },
@@ -41,25 +41,25 @@ const MESSAGES = {
     hot: { 
       title: "Chưa có kế hoạch hot", 
       desc: "Tạo hoạt động đầu tiên để\nrủ mọi người tham gia", 
-      icon: FiZap, // Sét - khác FiTrendingUp
+      icon: FiZap,
       suggests: ["Cafe sáng T7", "Nhậu tối nay Q1", "Boardgame 4 người", "Phượt Vũng Tàu"]
     },
     near: { 
       title: "Quanh đây chưa có hẹn", 
       desc: "Lên kèo gần bạn để offline\ncùng hàng xóm", 
-      icon: FiMapPin, // Ghim map - khác FiSend
+      icon: FiMapPin,
       suggests: ["Cafe Landmark 81", "Chạy bộ công viên", "Bi-a gần đây", "Workshop vẽ"]
     },
     new: { 
       title: "Chưa có kế hoạch mới", 
       desc: "Tạo sự kiện đầu tiên\ntrong hôm nay", 
-      icon: FiClock, // Đồng hồ - khác FiInbox
+      icon: FiClock,
       suggests: ["Lên kèo tối nay", "Đặt bàn 6 người", "Xem phim CGV", "Đá banh sân 5"]
     },
     friends: { 
       title: "Bạn bè chưa lên kèo", 
       desc: "Rủ bạn bè tạo kế hoạch\nđi chơi chung", 
-      icon: FiUserPlus, // Thêm user - khác FiUsers
+      icon: FiUserPlus,
       suggests: ["Sinh nhật team", "Tân gia nhà mới", "Đi Đà Lạt nhóm", "Team building"]
     },
   },
@@ -160,4 +160,13 @@ export default function EmptyState({ tab, type = "task", onRefresh }: Props) {
         )}
 
         <button
-          onClick={()
+          onClick={() => router.push(`/create/${type}`)}
+          className={`px-5 py-2.5 rounded-lg ${theme.buttonBg} ${theme.buttonText} font-semibold text-sm flex items-center gap-2 active:scale-95 transition-all shadow-sm`}
+        >
+          <HiPlus size={20} strokeWidth={2.5} />
+          {type === "task"? "Đăng việc mới" : "Tạo kế hoạch"}
+        </button>
+      </motion.div>
+    </div>
+  );
+}
