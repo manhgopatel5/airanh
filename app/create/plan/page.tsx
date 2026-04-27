@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseStorage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -38,6 +38,7 @@ export default function CreatePlanPage() {
   const auth = getFirebaseAuth();
   const storage = getFirebaseStorage();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -70,6 +71,13 @@ export default function CreatePlanPage() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+
+  useEffect(() => {
+    const titleParam = searchParams.get("title");
+    if (titleParam) {
+      setForm(prev => ({...prev, title: decodeURIComponent(titleParam) }));
+    }
+  }, [searchParams]);
 
   /* ================= AUTH CHECK ================= */
   useEffect(() => {
@@ -114,7 +122,7 @@ export default function CreatePlanPage() {
     else if (max < 2) newErrors.maxParticipants = "Tối thiểu 2 người";
     else if (max > 1000) newErrors.maxParticipants = "Tối đa 1000 người";
 
-    if (form.costType !== "free") {
+    if (form.costType!== "free") {
       const cost = parseInt(form.costAmount);
       if (!form.costAmount || isNaN(cost)) newErrors.costAmount = "Vui lòng nhập chi phí";
       else if (cost < 0) newErrors.costAmount = "Chi phí không hợp lệ";
@@ -147,9 +155,9 @@ export default function CreatePlanPage() {
       }
     }
 
-    setImageFiles([...imageFiles, ...files]);
+    setImageFiles([...imageFiles,...files]);
     const urls = files.map((f) => URL.createObjectURL(f));
-    setForm({ ...form, images: [...form.images, ...urls] });
+    setForm({...form, images: [...form.images,...urls] });
   };
 
   const removeImage = (index: number) => {
@@ -157,7 +165,7 @@ export default function CreatePlanPage() {
     const newFiles = [...imageFiles];
     newImages.splice(index, 1);
     newFiles.splice(index, 1);
-    setForm({ ...form, images: newImages });
+    setForm({...form, images: newImages });
     setImageFiles(newFiles);
   };
 
@@ -192,7 +200,7 @@ export default function CreatePlanPage() {
       setUploadingImage(false);
 
       const eventDateTime = new Date(`${form.eventDate}T${form.eventTime || "00:00"}`);
-      const endDateTime = form.endDate ? new Date(`${form.endDate}T${form.endTime || "23:59"}`) : undefined;
+      const endDateTime = form.endDate? new Date(`${form.endDate}T${form.endTime || "23:59"}`) : undefined;
       const tags = form.tags.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 10);
 
       const payload: CreatePlanInput = {
@@ -201,11 +209,11 @@ export default function CreatePlanPage() {
         description: form.description.trim(),
         category: form.category,
         eventDate: Timestamp.fromDate(eventDateTime),
-        ...(endDateTime && { endDate: Timestamp.fromDate(endDateTime) }),
+      ...(endDateTime && { endDate: Timestamp.fromDate(endDateTime) }),
         maxParticipants: parseInt(form.maxParticipants, 10),
         costType: form.costType,
-        ...(form.costType !== "free" && { costAmount: parseInt(form.costAmount, 10) }),
-        ...(form.costDescription && { costDescription: form.costDescription.trim() }),
+      ...(form.costType!== "free" && { costAmount: parseInt(form.costAmount, 10) }),
+      ...(form.costDescription && { costDescription: form.costDescription.trim() }),
         allowInvite: form.allowInvite,
         autoAccept: form.autoAccept,
         requireApproval: form.requireApproval,
@@ -216,8 +224,8 @@ export default function CreatePlanPage() {
         location: {
           address: form.address.trim(),
           city: form.city.trim(),
-          ...(form.lat != null && { lat: form.lat }),
-          ...(form.lng != null && { lng: form.lng }),
+        ...(form.lat!= null && { lat: form.lat }),
+        ...(form.lng!= null && { lng: form.lng }),
         },
       };
 
@@ -268,7 +276,7 @@ export default function CreatePlanPage() {
               type="text"
               placeholder="VD: Offline ăn uống cuối tuần tại Q1"
               value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              onChange={(e) => setForm({...form, title: e.target.value })}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
             />
             {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
@@ -281,7 +289,7 @@ export default function CreatePlanPage() {
             <textarea
               placeholder="Mô tả hoạt động, lịch trình, lưu ý cho người tham gia..."
               value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onChange={(e) => setForm({...form, description: e.target.value })}
               rows={6}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none resize-none"
             />
@@ -300,10 +308,10 @@ export default function CreatePlanPage() {
                 <button
                   key={cat.id}
                   type="button"
-                  onClick={() => setForm({ ...form, category: cat.id })}
+                  onClick={() => setForm({...form, category: cat.id })}
                   className={`p-3 rounded-xl border-2 transition-all ${
                     form.category === cat.id
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
+                    ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
                       : "border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
                   }`}
                 >
@@ -323,7 +331,7 @@ export default function CreatePlanPage() {
               <input
                 type="date"
                 value={form.eventDate}
-                onChange={(e) => setForm({ ...form, eventDate: e.target.value })}
+                onChange={(e) => setForm({...form, eventDate: e.target.value })}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
               />
               {errors.eventDate && <p className="text-red-500 text-xs mt-1">{errors.eventDate}</p>}
@@ -335,7 +343,7 @@ export default function CreatePlanPage() {
               <input
                 type="time"
                 value={form.eventTime}
-                onChange={(e) => setForm({ ...form, eventTime: e.target.value })}
+                onChange={(e) => setForm({...form, eventTime: e.target.value })}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
               />
             </div>
@@ -348,7 +356,7 @@ export default function CreatePlanPage() {
             <input
               type="number"
               value={form.maxParticipants}
-              onChange={(e) => setForm({ ...form, maxParticipants: e.target.value })}
+              onChange={(e) => setForm({...form, maxParticipants: e.target.value })}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
             />
             {errors.maxParticipants && <p className="text-red-500 text-xs mt-1">{errors.maxParticipants}</p>}
@@ -367,10 +375,10 @@ export default function CreatePlanPage() {
                 <button
                   key={type.id}
                   type="button"
-                  onClick={() => setForm({ ...form, costType: type.id as any })}
+                  onClick={() => setForm({...form, costType: type.id as any })}
                   className={`py-2 rounded-xl border-2 text-sm font-semibold transition-all ${
                     form.costType === type.id
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400"
+                    ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400"
                       : "border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300"
                   }`}
                 >
@@ -379,20 +387,20 @@ export default function CreatePlanPage() {
               ))}
             </div>
 
-            {form.costType !== "free" && (
+            {form.costType!== "free" && (
               <>
                 <input
                   type="number"
                   placeholder="Số tiền mỗi người"
                   value={form.costAmount}
-                  onChange={(e) => setForm({ ...form, costAmount: e.target.value })}
+                  onChange={(e) => setForm({...form, costAmount: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none mb-2"
                 />
                 {errors.costAmount && <p className="text-red-500 text-xs mt-1">{errors.costAmount}</p>}
                 <textarea
                   placeholder="Mô tả chi phí (không bắt buộc)"
                   value={form.costDescription}
-                  onChange={(e) => setForm({ ...form, costDescription: e.target.value })}
+                  onChange={(e) => setForm({...form, costDescription: e.target.value })}
                   rows={2}
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none resize-none"
                 />
@@ -408,14 +416,14 @@ export default function CreatePlanPage() {
               type="text"
               placeholder="Địa chỉ cụ thể"
               value={form.address}
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
+              onChange={(e) => setForm({...form, address: e.target.value })}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none mb-2"
             />
             <input
               type="text"
               placeholder="Thành phố"
               value={form.city}
-              onChange={(e) => setForm({ ...form, city: e.target.value })}
+              onChange={(e) => setForm({...form, city: e.target.value })}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
             />
             {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
@@ -426,7 +434,7 @@ export default function CreatePlanPage() {
               <input
                 type="checkbox"
                 checked={form.allowInvite}
-                onChange={(e) => setForm({ ...form, allowInvite: e.target.checked })}
+                onChange={(e) => setForm({...form, allowInvite: e.target.checked })}
                 className="w-5 h-5 text-blue-500 rounded"
               />
               <span className="text-sm text-gray-700 dark:text-zinc-300">Cho phép thành viên mời bạn bè</span>
@@ -435,7 +443,7 @@ export default function CreatePlanPage() {
               <input
                 type="checkbox"
                 checked={form.autoAccept}
-                onChange={(e) => setForm({ ...form, autoAccept: e.target.checked })}
+                onChange={(e) => setForm({...form, autoAccept: e.target.checked })}
                 className="w-5 h-5 text-blue-500 rounded"
               />
               <span className="text-sm text-gray-700 dark:text-zinc-300">Tự động chấp nhận khi tham gia</span>
@@ -444,7 +452,7 @@ export default function CreatePlanPage() {
               <input
                 type="checkbox"
                 checked={form.requireApproval}
-                onChange={(e) => setForm({ ...form, requireApproval: e.target.checked })}
+                onChange={(e) => setForm({...form, requireApproval: e.target.checked })}
                 className="w-5 h-5 text-blue-500 rounded"
               />
               <span className="text-sm text-gray-700 dark:text-zinc-300">Cần duyệt trước khi tham gia</span>
@@ -459,7 +467,7 @@ export default function CreatePlanPage() {
               type="text"
               placeholder="VD: cuối tuần, chill, nhóm nhỏ"
               value={form.tags}
-              onChange={(e) => setForm({ ...form, tags: e.target.value })}
+              onChange={(e) => setForm({...form, tags: e.target.value })}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
             />
           </div>
@@ -477,10 +485,10 @@ export default function CreatePlanPage() {
                 <button
                   key={vis.id}
                   type="button"
-                  onClick={() => setForm({ ...form, visibility: vis.id as any })}
+                  onClick={() => setForm({...form, visibility: vis.id as any })}
                   className={`py-3 rounded-xl border-2 transition-all ${
                     form.visibility === vis.id
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
+                    ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
                       : "border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
                   }`}
                 >
@@ -523,7 +531,7 @@ export default function CreatePlanPage() {
             disabled={submitting}
             className="w-full py-4 rounded-xl text-white font-semibold bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/30 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {uploadingImage ? "Đang tải ảnh..." : submitting ? "Đang tạo..." : "Đăng kế hoạch"}
+            {uploadingImage? "Đang tải ảnh..." : submitting? "Đang tạo..." : "Đăng kế hoạch"}
           </button>
         </form>
       </div>
