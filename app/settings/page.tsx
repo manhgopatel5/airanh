@@ -98,9 +98,6 @@ export default function SettingsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [tfaEnabled, setTfaEnabled] = useState(false);
 
-  const accentGradient = isPlan
- ? "from-green-500 to-emerald-500"
-    : "from-sky-500 to-blue-500";
 
   useEffect(() => {
     if (!user?.uid) return;
