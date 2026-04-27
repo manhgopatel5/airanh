@@ -102,15 +102,15 @@ export default function CreateTaskPage() {
       localStorage.setItem("task_draft", JSON.stringify(rest));
     }, 1000);
     return () => clearTimeout(timer);
-  }, );
+  }, [form]);
 
-  // Fetch price range
+  // 5. Fetch price range
   useEffect(() => {
     if (!form.category) return;
     fetch(`/api/price-range?category=${form.category}&city=${form.city || 'HCM'}`)
-  .then(r => r.json())
-  .then(data => setPriceRange([data.min, data.max]))
-  .catch(() => setPriceRange(null));
+     .then(r => r.json())
+     .then(data => setPriceRange([data.min, data.max]))
+     .catch(() => setPriceRange(null));
   }, [form.category, form.city]);
 
   /* ================= AUTH CHECK ================= */
@@ -151,7 +151,7 @@ export default function CreateTaskPage() {
       if (!res.ok) throw new Error();
       const { description, price, tags } = await res.json();
       setForm(prev => ({
-    ...prev,
+       ...prev,
         description: description || prev.description,
         price: price? formatCurrency(price.toString()) : prev.price,
         tags: [...new Set([...prev.tags,...tags])].slice(0, 10)
@@ -299,7 +299,7 @@ export default function CreateTaskPage() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setForm({
-  ...form,
+       ...form,
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
           address: "Vị trí hiện tại",
@@ -347,7 +347,7 @@ export default function CreateTaskPage() {
       setUploadingImage(false);
 
       const deadline = Timestamp.fromMillis(
-        Date.now() + parseInt(form.durationHours) * 60 * 1000
+        Date.now() + parseInt(form.durationHours) * 60 * 60 * 1000
       );
 
       const payload: CreateTaskInput = {
@@ -369,12 +369,12 @@ export default function CreateTaskPage() {
         requirements: form.requirements.trim(),
         isRemote: form.isRemote,
         location: form.isRemote
-    ? {}
+     ? {}
           : {
               address: form.address.trim(),
               city: form.city.trim(),
-        ...(form.lat!= null && { lat: form.lat }),
-        ...(form.lng!= null && { lng: form.lng }),
+       ...(form.lat!= null && { lat: form.lat }),
+       ...(form.lng!= null && { lng: form.lng }),
             },
       };
 
@@ -520,7 +520,7 @@ export default function CreateTaskPage() {
                   }}
                   className={`p-3 rounded-xl border-2 transition-all ${
                     form.category === cat.id
-              ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
+             ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
                       : "border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
                   }`}
                 >
@@ -552,7 +552,7 @@ export default function CreateTaskPage() {
                   }}
                   className={`py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${
                     form.budgetType === type.id
-              ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400"
+             ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400"
                       : "border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300"
                   }`}
                 >
@@ -777,7 +777,7 @@ export default function CreateTaskPage() {
                   }}
                   className={`py-3 rounded-xl border-2 transition-all ${
                     form.visibility === vis.id
-              ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
+             ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
                       : "border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
                   }`}
                 >
@@ -799,4 +799,51 @@ export default function CreateTaskPage() {
                   <motion.div
                     key={i}
                     initial={{ scale: 0 }}
-                    animate={{ scale:
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    className="relative w-24 h-24 rounded-xl overflow-hidden border-gray-200 dark:border-zinc-700"
+                  >
+                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(i)}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 active:scale-90"
+                    >
+                      <FiX size={14} />
+                    </button>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              {form.images.length < 5 && (
+                <motion.label
+                  whileTap={{ scale: 0.95 }}
+                <motion.label
+                  whileTap={{ scale: 0.95 }}
+                  className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 dark:border-zinc-700 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors"
+                >
+                  <FiUpload className="text-gray-400" size={24} />
+                  <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
+                </motion.label>
+              )}
+            </div>
+          </div>
+        </form>
+
+        {/* Sticky bottom button */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800 p-4 safe-bottom">
+          <div className="max-w-2xl mx-auto">
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.98 }}
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="w-full py-4 rounded-xl text-white font-semibold bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              {uploadingImage? "Đang tải ảnh..." : submitting? "Đang tạo..." : "Đăng công việc"}
+            </motion.button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
