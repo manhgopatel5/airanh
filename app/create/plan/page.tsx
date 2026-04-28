@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { getFirebaseDB } from "@/lib/firebase";
+import { collection, query, where, onSnapshot, orderBy, limit, doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { FiX, FiCheck, FiPlus, FiChevronRight, FiUpload, FiClock, FiMapPin, FiEye, FiCopy, FiNavigation } from "react-icons/fi";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
@@ -178,7 +180,7 @@ const POPULAR_PLACES = ["Landmark 81", "Tao Đàn", "Bitexco", "Thảo Điền",
 
 export default function CreatePlanFinal() {
   const router = useRouter();
-  useAuth();
+  const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [nearbyPlaces, setNearbyPlaces] = useState<string[]>([]);
@@ -212,32 +214,29 @@ export default function CreatePlanFinal() {
 
   const [friends, setFriends] = useState<Array<{id: string, name: string, avatar: string, online: boolean}>>([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
-
 useEffect(() => {
-  const fetchFriends = async () => {
-    setFriendsLoading(true);
-    try {
-      const res = await fetch('/api/friends?limit=50');
-      const data = await res.json();
-      setFriends(data.map((f: any) => ({
-        id: f.id,
-        name: f.name || f.displayName,
-        avatar: f.avatar || f.photoURL || `https://i.pravatar.cc/80?u=${f.id}`,
-        online: f.online || f.isOnline || false
-      })));
-    } catch {
-      setFriends([
-        { id: "1", name: "Minh Nguyễn", avatar: "https://i.pravatar.cc/80?u=1", online: true },
-        { id: "2", name: "An Trần", avatar: "https://i.pravatar.cc/80?u=2", online: true },
-      ]);
-    } finally {
-      setFriendsLoading(false);
-    }
-  };
-  fetchFriends();
-  const interval = setInterval(fetchFriends, 30000);
-  return () => clearInterval(interval);
-}, []);
+  if (!user?.uid) return;
+  setFriendsLoading(true);
+  const db = getFirebaseDB();
+  const q = query(collection(db, 'friends'), where('userId', '==', user.uid), where('status', '==', 'accepted'), limit(50));
+
+  return onSnapshot(q, async (snap) => {
+    const data = await Promise.all(snap.docs.map(async d => {
+      const f = d.data();
+      const u = await getDoc(doc(db, 'users', f.friendId));
+      const ud = u.data();
+      return {
+        id: f.friendId,
+        name: ud?.displayName || 'Unknown',
+        avatar: ud?.photoURL || `https://i.pravatar.cc/80?u=${f.friendId}`,
+        online: ud?.lastSeen?.toDate() > new Date(Date.now() - 180000)
+      };
+    }));
+    setFriends(data);
+    setFriendsLoading(false);
+  });
+}, [user?.uid]);
+
 
   const filteredFriends = useMemo(() => friends.filter(f => f.name.toLowerCase().includes(searchFriend.toLowerCase())), [friends, searchFriend]);
 
@@ -252,6 +251,16 @@ useEffect(() => {
       setTime(d.time || "");
     } catch {}
   }, []);
+
+  useEffect(() => {
+  if (!user?.uid) return;
+  const db = getFirebaseDB();
+  const ref = doc(db, 'users', user.uid);
+  const update = () => updateDoc(ref, { lastSeen: Timestamp.now() });
+  update();
+  const id = setInterval(update, 30000);
+  return () => clearInterval(id);
+}, [user?.uid]);
 
   useEffect(() => {
     localStorage.setItem("plan_draft", JSON.stringify({ title, desc, cat: category.id, location, time }));
@@ -440,7 +449,7 @@ const handleDragEnd = (_: any, info: PanInfo) => {
                 <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 space-y-4">
                   <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
         <div className="flex items-center justify-between mb-3.5">
-  <div className="flex items-center gap-2.5"><div className="w-9 h-9 rounded-xl bg-green-500/10 grid place-items-center"><FiMapPin className="text-green-600" size={18} /></div><h3 className="font-semibold text-[15px]">Địa điểm</h3></div>
+  <div className="flex items-center gap-2.5"><div className="w-9 h-9 rounded-xl bg-green-500/10 grid place-items-center"><FiClock className="text-green-600" size={18} /></div><h3 className="font-semibold text-[15px]">Thời gian</h3></div>
   <div className="flex items-center gap-2">
     <button onClick={getCurrentLocation} disabled={locating} className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 grid place-items-center hover:bg-zinc-200 active:scale-95 disabled:opacity-50">
       {locating? <div className="w-3 h-3 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" /> : <FiNavigation size={14} className="text-zinc-600 dark:text-zinc-400" />}
@@ -584,7 +593,7 @@ const handleDragEnd = (_: any, info: PanInfo) => {
                     ].map((item, i) => (
                       <div key={i} className="p-4 flex items-center justify-between">
                         <span className="text-[14px] font-medium">{item.label}</span>
-                        <select value={item.value} onChange={e => item.setter(e.target.value as any)} className="text-[13px] font-medium bg-transparent outline-none cursor-pointer">
+                        <select value={item.value} onChange={e => item.setter(e.target.value as any)} className="text- font-medium bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-1.5 outline-none cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-700">
                           {item.options.map(([v, l]) => <option key={String(v)} value={v}>{l}</option>)}
                         </select>
                       </div>
