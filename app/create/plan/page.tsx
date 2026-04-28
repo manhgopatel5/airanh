@@ -532,7 +532,6 @@ const submit = async () => {
                       <span className="text-[11px] text-zinc-400 ml-2 shrink-0">{desc.length}/300</span>
                     </div>
                   </div>
-                </div>
                             </motion.div>
               )}
 
