@@ -34,7 +34,6 @@ import {
   FiX,
   FiLoader,
   FiUserX,
-  FiUserCheck,
 } from "react-icons/fi";
 import { RiAddLine, RiPushpinFill } from "react-icons/ri";
 import Link from "next/link";
