@@ -745,7 +745,7 @@ const submit = async () => {
     </div>
      <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-zinc-200 dark:border-zinc-700">
       <span className="text-[12px] text-zinc-500">Khoảng</span>
-      <span className="text-[13px] font-medium text-green-600">{ageRange[1] - ageRange[0]} năm</span>
+      <span className="text-[13px] font-medium text-green-600">{ageRange[1]! - ageRange[0]!} năm</span>
     </div>
   </div>
 )}
