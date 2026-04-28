@@ -206,7 +206,6 @@ export default function CreatePlanFinal() {
   const [reqInput, setReqInput] = useState("");
   const [minAge, setMinAge] = useState(0);
   const [needApproval, setNeedApproval] = useState(false);
-  const [pollTime, setPollTime] = useState(false);
   const [pollLocation, setPollLocation] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
