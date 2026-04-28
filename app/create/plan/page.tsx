@@ -11,7 +11,7 @@ import { useAuth } from "@/lib/useAuth";
 
 type Category = { id: string; label: string; emoji: string; suggestions: string[] };
 type CostType = "free" | "share" | "host" | "ticket";
-type Privacy = "public" | "friends" | "private";
+type Privacy = "public" | "friends" | "friends_except" | "private";
 
 const CATEGORIES: Category[] = [
   { id: "cafe", label: "Cafe", emoji: "☕", suggestions: ["Cafe sáng T7", "Work date", "Cafe chill", "Làm việc", "Cafe view đẹp", "Cafe mèo", "Study cafe", "Cafe acoustic", "Cafe rooftop", "Cafe sách"] },
@@ -176,9 +176,60 @@ const TEMPLATES = [
   { name: "Workshop Vẽ Màu Nước", cat: "art", title: "Học vẽ màu nước cho người mới", loc: "The Craft House - Q2", time: "14:00" },
   { name: "Dắt Pet Đi Dạo", cat: "pet", title: "Offline dắt chó đi dạo công viên", loc: "Công viên Gia Định", time: "17:00" },
 ];
+const POPULAR_PLACES = [
+  // === HÀ NỘI 100 ===
+  // Lịch sử - Văn hóa (15)
+  "Hồ Hoàn Kiếm", "Văn Miếu Quốc Tử Giám", "Lăng Chủ tịch HCM", "Chùa Một Cột", "Hoàng thành Thăng Long", "Nhà hát Lớn HN", "Cột cờ Hà Nội", "Chùa Trấn Quốc", "Phủ Tây Hồ", "Đền Ngọc Sơn", "Chùa Quán Sứ", "Nhà thờ Lớn", "Bảo tàng HCM", "Bảo tàng Dân tộc học", "Bảo tàng Lịch sử",
+  // Phố cổ & Chợ (10)
+  "Phố cổ 36 phố phường", "Chợ Đồng Xuân", "Phố Hàng Mã", "Phố Hàng Đào", "Phố Tạ Hiện", "Phố đi bộ Hồ Gươm", "Chợ đêm Hàng Ngang", "Phố Hàng Bạc", "Phố Mã Mây", "Chợ hoa Quảng Bá",
+  // Hồ & Công viên (10)
+  "Hồ Tây", "Hồ Trúc Bạch", "Hồ Thiền Quang", "Công viên Thống Nhất", "Công viên Thủ Lệ", "Công viên Yên Sở", "Vườn hoa Lý Thái Tổ", "Công viên nước Hồ Tây", "Hồ Bảy Mẫu", "Hồ Giảng Võ",
+  // TTTM (15)
+  "Vincom Bà Triệu", "Vincom Royal City", "Vincom Times City", "Vincom Metropolis", "Lotte Center", "Lotte Mall Tây Hồ", "Aeon Mall Long Biên", "Aeon Mall Hà Đông", "Tràng Tiền Plaza", "Vincom Smart City", "The Garden", "Indochina Plaza", "Savico Megamall", "Mipec Long Biên", "Keangnam",
+  // Cafe nổi tiếng (20)
+  "Cafe Giảng", "Cafe Đinh", "Cộng Cà Phê", "Highlands Hàm Cá Mập", "The Note Coffee", "Tranquil Books", "Xofa Cafe", "Nola Cafe", "Cafe Phố Cổ", "All Day Coffee", "Blackbird Coffee", "Kafa Cafe", "L'etape", "Loading T", "Oromia", "Cup of Tea", "Cafe Duy Trí", "Maison de Tet", "Ban Công", "Cafe Nắng",
+  // Ăn uống (15)
+  "Phở Bát Đàn", "Bún chả Hàng Mành", "Chả cá Lã Vọng", "Bánh cuốn Thanh Trì", "Phở cuốn Ngũ Xã", "Bún thang Cầu Gỗ", "Kem Tràng Tiền", "Bia hơi Tạ Hiện", "Phố ẩm thực Tống Duy Tân", "Chợ ẩm thực Đồng Xuân", "Bún đậu Hàng Khay", "Xôi Yến", "Bánh mì Phố Huế", "Lẩu Phan", "Nướng Gầm Cầu",
+  // Vui chơi (10)
+  "Thiên Đường Bảo Sơn", "Time City", "Royal City Ice Rink", "CGV Vincom", "BHD Star", "Lotte Cinema", "Hanoi Creative City", "Vinke", "TiniWorld", "Jump Arena",
+  // Bar - Pub (5)
+  "1900 Le Theatre", "The Unicorn", "Standing Bar", "Mad Botanist", "Nê Cocktail",
 
-const POPULAR_PLACES = ["Landmark 81", "Tao Đàn", "Bitexco", "Thảo Điền", "Nhà thờ Đức Bà", "Phố đi bộ Nguyễn Huệ", "Bùi Viện", "Thảo Cầm Viên", "Crescent Mall"];
-
+  // === TP.HCM 100 ===
+  // Lịch sử - Văn hóa (15)
+  "Dinh Độc Lập", "Nhà thờ Đức Bà", "Bưu điện Trung tâm", "Bảo tàng Chứng tích CT", "Bảo tàng HCM", "Bảo tàng Lịch sử", "Chùa Vĩnh Nghiêm", "Chùa Xá Lợi", "Đền thờ Đức Thánh Trần", "Nhà thờ Tân Định", "Chợ Bến Thành", "Bến Nhà Rồng", "Địa đạo Củ Chi", "Bảo tàng Mỹ thuật", "Nhà hát Thành phố",
+  // Phố đi bộ & Khu vui chơi (10)
+  "Phố đi bộ Nguyễn Huệ", "Bùi Viện", "Phạm Ngũ Lão", "Công viên Tao Đàn", "Công viên 23/9", "Phố đi bộ Bùi Hữu Nghĩa", "Cầu Ánh Sao", "Khu Thảo Điền", "Phú Mỹ Hưng", "Landmark 81 Park",
+  // Công viên - Thảo cầm viên (8)
+  "Thảo Cầm Viên", "Công viên Gia Định", "Công viên Lê Văn Tám", "Công viên Hoàng Văn Thụ", "Đầm Sen", "Suối Tiên", "Khu du lịch Văn Thánh", "Công viên nước Đầm Sen",
+  // TTTM (18)
+  "Vincom Đồng Khởi", "Takashimaya", "Saigon Centre", "Vincom Landmark 81", "Crescent Mall", "SC VivoCity", "Giga Mall", "Vincom Thảo Điền", "Estella Place", "Pearl Plaza", "Parkson", "Diamond Plaza", "Nowzone", "Union Square", "Vincom Mega Mall", "Aeon Mall Tân Phú", "Aeon Mall Bình Tân", "Lotte Mart Nam Sài Gòn",
+  // Cafe hot (22)
+  "The Workshop", "Cộng Cà Phê SG", "Highlands Bitexco", "Phúc Long Lê Lợi", "Katinat", "Oromia Coffee", "L'Usine", "The Loft", "Work Saigon", "Bosgaurus", "Shin Coffee", "The Running Bean", "Cafe Apartment 42 Nguyễn Huệ", "Think Cafe", "Soo Kafe", "Cafe EON 51", "Du Miên Garden", "The Dome Kaffe", "Saigon Oi", "Cheese Coffee", "Starbucks Reserve", "% Arabica",
+  // Ăn uống (15)
+  "Phở Hòa Pasteur", "Bánh mì Huynh Hoa", "Cơm tấm Ba Ghiền", "Hủ tiếu Nam Vang", "Bún bò Huế Đông Ba", "Bánh xèo 46A", "Ốc Đào", "Lẩu cá kèo Bà Huyện", "Bánh tráng Trảng Bàng", "Phố ẩm thực Vĩnh Khánh", "Chợ đêm Bến Thành", "Khu ăn vặt Hồ Con Rùa", "Sushi Hokkaido", "Pizza 4P's", "The Deck",
+  // Bar - Pub - Club (10)
+  "Chill Skybar", "EON51", "Blanchy Lounge", "Lush", "Apocalypse Now", "Oscar", "The View", "Rooftop Garden", "Pasteur Street Brewing", "Heart of Darkness",
+  // Rạp chiếu & Game (7)
+  "CGV Landmark", "CGV Vivo", "BHD Bitexco", "Lotte Cinema", "Galaxy Cinema", "Escape Room", "VR Game Park",
+  // === ĐÀ NẴNG 100 ===
+  // Biển & Cầu (15)
+  "Biển Mỹ Khê", "Biển Non Nước", "Biển An Bàng", "Biển Bắc Mỹ An", "Biển Phạm Văn Đồng", "Biển Sơn Trà", "Bãi Rạng", "Bãi Bụt", "Cầu Rồng", "Cầu Sông Hàn", "Cầu Trần Thị Lý", "Cầu Thuận Phước", "Cầu Nguyễn Văn Trỗi", "Cầu Tình Yêu", "Bán đảo Sơn Trà",
+  // Núi & Thiên nhiên (12)
+  "Bà Nà Hills", "Đỉnh Bàn Cờ", "Chùa Linh Ứng Sơn Trà", "Ngũ Hành Sơn", "Đèo Hải Vân", "Suối Mơ", "Suối Hoa", "Hồ Hòa Trung", "Ghềnh Bàng", "Rừng dừa Bảy Mẫu", "Công viên Biển Đông", "Công viên APEC",
+  // Khu du lịch (10)
+  "Sun World Bà Nà", "Asia Park", "Công viên nước Mikazuki", "VinWonders Nam Hội An", "Khu du lịch Hòa Phú Thành", "Thác Hòa Phú Thành", "Khu du lịch Sinh thái", "Bảo tàng 3D Art", "Upside Down World", "Helio Center",
+  // TTTM (8)
+  "Vincom Đà Nẵng", "Lotte Mart", "Big C", "Coopmart", "Parkson", "Indochina Riverside", "GO!", "Chợ Hàn",
+  // Cafe view đẹp (20)
+  "Cộng Cà Phê Đà Nẵng", "Highlands Bạch Đằng", "Phúc Long", "The Cups Coffee", "Boulevard Galeto", "Mộc Cafe", "43 Factory", "Wonderlust", "Aroi Dessert", "Memory Lounge", "Sky36", "On The Radio", "Cafe Trúc Lâm Viên", "Làng Cafe", "Papa Container", "Cafe 1976", "Ancient Cafe", "Nia Cafe", "Gecko Cafe", "Lighthouse",
+  // Ăn uống đặc sản (20)
+  "Bánh xèo Bà Dưỡng", "Mì Quảng Bà Mua", "Bún chả cá Hờn", "Bánh tráng cuốn thịt heo", "Hải sản Bé Mặn", "Hải sản Năm Đảnh", "Bê thui Cầu Mống", "Chè Liên", "Bánh bèo Bà Bé", "Mỳ Quảng ếch Bếp Trang", "Bún mắm Vân", "Gỏi cá Nam Ô", "Bánh canh ruộng", "Ốc hút", "Cao lầu", "Bánh đập", "Nem lụi", "Bánh ướt", "Cháo chờ Nam Ô", "Bánh mì Phượng",
+  // Chợ & Phố đi bộ (8)
+  "Chợ Cồn", "Chợ Hàn", "Chợ đêm Helio", "Chợ đêm Sơn Trà", "Phố đi bộ Bạch Đằng", "Phố An Thượng", "Chợ đêm Lê Duẩn", "Chợ Bắc Mỹ An",
+  // Bar - Pub (7)
+  "Sky36 Bar", "On The Radio", "Golden Pine", "Bamboo Bar", "New Phương Đông", "Memory Lounge", "The Craftsman"
+];
 export default function CreatePlanFinal() {
   const router = useRouter();
   const { user } = useAuth();
@@ -212,6 +263,8 @@ export default function CreatePlanFinal() {
   const [showPreview, setShowPreview] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [searchFriend, setSearchFriend] = useState("");
+  const [ageRange, setAgeRange] = useState([18, 35]);
+ const [currentAddress, setCurrentAddress] = useState("");
 
   const [friends, setFriends] = useState<Array<{id: string, name: string, avatar: string, online: boolean}>>([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
@@ -267,10 +320,10 @@ useEffect(() => {
     localStorage.setItem("plan_draft", JSON.stringify({ title, desc, cat: category.id, location, time }));
   }, [title, desc, category, location, time]);
 
-  useEffect(() => {
-  if (nearbyPlaces.length === 0) return;
+useEffect(() => {
+  const places = nearbyPlaces.length > 0? nearbyPlaces : POPULAR_PLACES;
   const id = setInterval(() => {
-    setNearbyIndex(i => (i + 4) % nearbyPlaces.length);
+    setNearbyIndex(i => (i + 7) % places.length);
   }, 5000);
   return () => clearInterval(id);
 }, [nearbyPlaces]);
@@ -286,21 +339,32 @@ useEffect(() => {
     toast.success("Đã thêm ảnh");
   }, []);
 
-  const getCurrentLocation = () => {
+const getCurrentLocation = () => {
   if (!navigator.geolocation) return toast.error("Trình duyệt không hỗ trợ");
   setLocating(true);
-navigator.geolocation.getCurrentPosition(
-  async (pos) => {  // ← thêm async
-    const { latitude, longitude } = pos.coords;
-    setUserLocation({ lat: latitude, lng: longitude });
-    try {
-      const res = await fetch(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=1000&type=cafe&key=YOUR_API_KEY`);
-      const data = await res.json();
-      setNearbyPlaces(data.results?.slice(0,8).map((p: any) => p.name) || []);
-    } catch {
-      setNearbyPlaces(["Highlands", "Starbucks", "Phúc Long"]); // fallback
-    }
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const { latitude, longitude } = pos.coords;
+      setUserLocation({ lat: latitude, lng: longitude });
 
+      try {
+        // Lấy địa chỉ từ tọa độ
+        const geoRes = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=YOUR_API_KEY&language=vi`
+        );
+        const geoData = await geoRes.json();
+        const address = geoData.results?.[0]?.formatted_address || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+        setCurrentAddress(address);
+        setLocationDetail(address); // Tự điền vào ô địa chỉ chi tiết
+
+        // Lấy quán gần đó
+        const res = await fetch(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=1000&type=cafe&key=YOUR_API_KEY`);
+        const data = await res.json();
+        setNearbyPlaces(data.results?.slice(0,8).map((p: any) => p.name) || []);
+      } catch {
+        setCurrentAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+        setNearbyPlaces(["Highlands", "Starbucks", "Phúc Long"]);
+      }
       setLocating(false);
       toast.success("Đã lấy vị trí");
     },
@@ -508,32 +572,41 @@ const submit = async () => {
                       <label className="flex items-center gap-1.5 text-[12px] cursor-pointer"><input type="checkbox" checked={pollLocation} onChange={e => setPollLocation(e.target.checked)} className="w-4 h-4 accent-green-500 rounded" />Bình chọn</label>
                     </div>
                     <div className="relative"><FiNavigation className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={16} /><input value={location} onChange={e => setLocation(e.target.value)} placeholder="Tìm địa điểm, quán, địa chỉ..." className="w-full h-12 pl-10 pr-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 text-[15px] placeholder:text-zinc-400" /></div>
-{userLocation && (
-  <p className="text-[11px] mt-2 px-1 text-green-600">
-    📍 {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
+{currentAddress && (
+  <p className="text-[11px] mt-2 px-1 text-green-600 truncate">
+    📍 {currentAddress}
   </p>
 )}
-{nearbyPlaces.length > 0 && (
-  <div className="mt-2.5">
-    <div className="flex items-center justify-between mb-1.5 px-1">
-      <p className="text-[11px] text-zinc-500">Gần bạn</p>
-      <div className="flex gap-0.5">
-        {Array.from({ length: Math.ceil(nearbyPlaces.length / 4) }).map((_, i) => (
-          <div key={i} className={`w-1 h-1 rounded-full transition-all ${Math.floor(nearbyIndex / 4) === i? "w-3 bg-blue-500" : "bg-zinc-300"}`} />
-        ))}
-      </div>
-    </div>
-    <div className="h-8 overflow-hidden">
-      <AnimatePresence mode="wait">
-        <motion.div key={nearbyIndex} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} className="flex gap-1.5">
-          {nearbyPlaces.slice(nearbyIndex, nearbyIndex + 4).map(p => (
-            <button key={p} onClick={() => setLocation(p)} className={`shrink-0 h-7 px-3 rounded-full text-[12px] font-medium whitespace-nowrap transition-all active:scale-95 ${location === p? "bg-green-500 text-white shadow-sm" : "bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100"}`}>{p}</button>
-          ))}
-        </motion.div>
-      </AnimatePresence>
-    </div>
+<div className="mt-2.5">
+  <div className="flex items-center justify-between mb-1.5 px-1">
+    <p className="text-[11px] text-zinc-500">{nearbyPlaces.length > 0? "Gần bạn" : "Gợi ý"}</p>
   </div>
-)}
+ <div className="h-8 overflow-hidden">
+  <div className="flex gap-1.5">
+    {(nearbyPlaces.length > 0 ? nearbyPlaces : POPULAR_PLACES).slice(nearbyIndex, nearbyIndex + 7).map(p => (
+      <button 
+        key={p} 
+        onClick={async () => {
+          setLocation(p);
+          try {
+            const res = await fetch(`https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(p + ' Vietnam')}&key=YOUR_API_KEY`);
+            const data = await res.json();
+            const loc = data.results?.[0]?.geometry?.location;
+            if (loc) {
+              const nearby = await fetch(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${loc.lat},${loc.lng}&radius=1000&type=establishment&key=YOUR_API_KEY`);
+              const nData = await nearby.json();
+              setNearbyPlaces(nData.results?.slice(0,8).map((x:any) => x.name) || []);
+              toast.success(`Gần ${p}`);
+            }
+          } catch {}
+        }}
+        className={`shrink-0 h-7 px-3 rounded-full text- font-medium whitespace-nowrap transition-all ${location === p ? "bg-green-500 text-white" : "bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200"}`}
+      >
+        {p}
+      </button>
+    ))}
+  </div>
+</div>
 <div className="flex gap-1.5 mt-2.5 overflow-x-auto scrollbar-hide pb-1">{POPULAR_PLACES.map(p => <button key={p} onClick={() => setLocation(p)} className={`shrink-0 h-7 px-3 rounded-full text-[12px] font-medium whitespace-nowrap transition-colors ${location === p? "bg-green-500 text-white" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200"}`}>{p}</button>)}</div>
                     <input value={locationDetail} onChange={e => setLocationDetail(e.target.value)} placeholder="Địa chỉ cụ thể (tùy chọn)" className="w-full mt-3 h-10 px-3.5 rounded-xl bg-zinc-50/70 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50 outline-none focus:ring-2 focus:ring-green-500/20 text-[13px] placeholder:text-zinc-400" />
                   </div>
@@ -559,7 +632,7 @@ const submit = async () => {
   {costType!== "free" && costType!== "host" && (
     <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
       <div className="flex items-baseline gap-1.5">
-        <input type="number" value={costAmount || ""} onChange={e => setCostAmount(Math.max(0, Number(e.target.value)))} placeholder="0" className="w-24 text-[24px] font-bold bg-transparent outline-none" />
+        <input type="number" value={costAmount || ""} onChange={e => setCostAmount(Number(e.target.value))} className="w-20 h-10 px-3 text-[18px] font-bold bg-zinc-50 dark:bg-zinc-800 rounded-xl outline-none text-center" />
         <span className="text-[13px] text-zinc-500">đ</span>
       </div>
       {splitCost > 0 && <p className="text-[11px] text-green-600 font-medium mt-0.5">~{splitCost.toLocaleString()}đ/người</p>}
@@ -625,28 +698,52 @@ const submit = async () => {
                   </div>
 
                   <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 divide-y divide-zinc-100 dark:divide-zinc-800 shadow-sm">
-                    {[
-                      { label: "Ai xem được", value: privacy, setter: setPrivacy, options: [["public", "Công khai"], ["friends", "Bạn bè"], ["private", "Riêng tư"]] },
-                      { label: "Độ tuổi", value: minAge, setter: setMinAge, options: [[0, "Mọi tuổi"], [18, "18+"], [21, "21+"]] },
-                    ].map((item, i) => (
-                      <div key={i} className="p-4 flex items-center justify-between">
-                        <span className="text-[14px] font-medium">{item.label}</span>
-                        <select value={item.value} onChange={e => item.setter(e.target.value as any)} className="text- font-medium bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-1.5 outline-none cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-700">
-                          {item.options.map(([v, l]) => <option key={String(v)} value={v}>{l}</option>)}
-                        </select>
-                      </div>
-                    ))}
-                    <div className="p-4 flex items-center justify-between">
-                      <span className="text-[14px] font-medium">Duyệt thành viên</span>
-                      <button onClick={() => setNeedApproval(!needApproval)} className={`relative w-11 h-6 rounded-full transition-colors ${needApproval? "bg-green-500" : "bg-zinc-300 dark:bg-zinc-700"}`}>
-                        <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all ${needApproval? "left-5" : "left-0.5"}`} />
-                      </button>
-                    </div>
-                  </div>
+  <div className="p-4 flex items-center justify-between">
+    <span className="text- font-medium">Ai xem được</span>
+    <select value={privacy} onChange={e => setPrivacy(e.target.value as Privacy)} className="text- font-medium bg-zinc-100 dark:bg-zinc-800 border-0 rounded-xl px-3 py-1.5 outline-none appearance-none">
+      <option value="public">Công khai</option>
+      <option value="friends">Bạn bè</option>
+      <option value="friends_except">Bạn bè (ngoại trừ)</option>
+      <option value="private">Riêng tư</option>
+    </select>
+  </div>
 
-                  <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
-                    <h3 className="font-semibold text-[15px] mb-3">Cần chuẩn bị</h3>
-                    <div className="flex gap-2">
+  <div className="p-4">
+    <div className="flex items-center justify-between">
+      <span className="text- font-medium">Độ tuổi</span>
+      <select value={minAge} onChange={e => setMinAge(Number(e.target.value))} className="text- font-medium bg-zinc-100 dark:bg-zinc-800 border-0 rounded-xl px-3 py-1.5 outline-none appearance-none">
+        <option value={0}>Mọi tuổi</option>
+        <option value={18}>18+</option>
+        <option value={21}>21+</option>
+        <option value={-1}>Tùy chỉnh</option>
+      </select>
+    </div>
+    {minAge === -1 && (
+      <div className="mt-4">
+        <div className="flex justify-between text- text-zinc-500 mb-2">
+          <span className="font-medium text-green-600">{ageRange[0]}</span>
+          <span className="font-medium text-green-600">{ageRange[1]}</span>
+        </div>
+        <div className="relative">
+          <input type="range" min={13} max={65} value={ageRange[0]} onChange={e => setAgeRange([Math.min(Number(e.target.value), ageRange[1]-1), ageRange[1]])} className="absolute w-full h-2 accent-green-500 z-10" />
+          <input type="range" min={13} max={65} value={ageRange[1]} onChange={e => setAgeRange([ageRange[0], Math.max(Number(e.target.value), ageRange[0]+1)])} className="absolute w-full h-2 accent-green-500" />
+          <div className="h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full" />
+        </div>
+      </div>
+    )}
+  </div>
+
+  <div className="p-4 flex items-center justify-between">
+    <span className="text- font-medium">Duyệt thành viên</span>
+    <button onClick={() => setNeedApproval(!needApproval)} className={`relative w-11 h-6 rounded-full transition-colors ${needApproval? "bg-green-500" : "bg-zinc-300 dark:bg-zinc-700"}`}>
+      <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all ${needApproval? "left-5" : "left-0.5"}`} />
+    </button>
+  </div>
+</div>
+
+<div className="bg-white dark:bg-zinc-900 rounded- border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
+  <h3 className="font-semibold text- mb-3">Cần chuẩn bị</h3>
+  <div className="flex gap-2">
                       <input value={reqInput} onChange={e => setReqInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addReq()} placeholder="VD: Laptop, giày..." className="flex-1 h-10 px-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 outline-none focus:ring-2 focus:ring-green-500/20 text-[14px]" />
                       <button onClick={addReq} className="w-10 h-10 rounded-xl bg-green-500 hover:bg-green-600 grid place-items-center transition-colors active:scale-95"><FiPlus size={18} className="text-white" /></button>
                     </div>
