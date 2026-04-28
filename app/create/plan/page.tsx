@@ -9,7 +9,7 @@ import {
 } from "react-icons/fi";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/lib/useAuth";
 
 type Category = { id: string; label: string; emoji: string; suggestions: string[] };
 type CostType = "free" | "share" | "host" | "ticket";
