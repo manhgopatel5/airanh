@@ -349,16 +349,16 @@ const getCurrentLocation = () => {
 
       try {
         // Lấy địa chỉ từ tọa độ
-        const geoRes = await fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=YOUR_API_KEY&language=vi`
-        );
+const geoRes = await fetch(
+  `/api/places/geocode?lat=${latitude}&lng=${longitude}`
+);
         const geoData = await geoRes.json();
         const address = geoData.results?.[0]?.formatted_address || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
         setCurrentAddress(address);
         setLocationDetail(address); // Tự điền vào ô địa chỉ chi tiết
 
         // Lấy quán gần đó
-        const res = await fetch(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=1000&type=cafe&key=YOUR_API_KEY`);
+        const res = await fetch(`/api/places/nearby?lat=${latitude}&lng=${longitude}`);
         const data = await res.json();
         setNearbyPlaces(data.results?.slice(0,8).map((p: any) => p.name) || []);
       } catch {
@@ -589,11 +589,11 @@ const submit = async () => {
         onClick={async () => {
           setLocation(p);
           try {
-            const res = await fetch(`https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(p + ' Vietnam')}&key=YOUR_API_KEY`);
+            const res = await fetch(`/api/places/search?q=${encodeURIComponent(p + ' Vietnam')}`);
             const data = await res.json();
             const loc = data.results?.[0]?.geometry?.location;
             if (loc) {
-              const nearby = await fetch(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${loc.lat},${loc.lng}&radius=1000&type=establishment&key=YOUR_API_KEY`);
+              const nearby = await fetch(`/api/places/nearby?lat=${loc.lat}&lng=${loc.lng}`);
               const nData = await nearby.json();
               setNearbyPlaces(nData.results?.slice(0,8).map((x:any) => x.name) || []);
               toast.success(`Gần ${p}`);
