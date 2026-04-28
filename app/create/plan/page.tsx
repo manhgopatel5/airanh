@@ -508,7 +508,7 @@ const submit = async () => {
                     <div className="flex items-start gap-3">
                       <span className="text-[28px] leading-none mt-1">{category.emoji}</span>
                       <div className="flex-1 min-w-0">
-                        <input value={title} onChange={e => setTitle(e.target.value.slice(0, 50))} placeholder={category.suggestions[0]} className="w-full text-[22px] font-bold bg-transparent outline-none border-0 p-0 placeholder:text-zinc-300 dark:placeholder:text-zinc-700" autoFocus />
+                        <input value={title} onChange={e => setTitle(e.target.value.slice(0, 50))} placeholder={category.suggestions[0]} className="w-full text-[22px] font-bold bg-transparent outline-none border-2 border-transparent focus:border-green-500/50 rounded-xl px-2 py-1 -mx-2 placeholder:text-zinc-300 dark:placeholder:text-zinc-700 transition-colors" autoFocus />
                         <div className="flex items-center justify-between mt-3">
                           <div className="flex flex-wrap gap-1.5 max-h-[60px] overflow-y-auto">
                             {category.suggestions.map(s => (
@@ -522,7 +522,7 @@ const submit = async () => {
                   </div>
 
                   <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
-                    <textarea value={desc} onChange={e => setDesc(e.target.value.slice(0, 300))} placeholder="Mô tả thêm về hoạt động, vibe, yêu cầu..." rows={3} className="w-full text-[15px] leading-[22px] bg-transparent outline-none border-0 p-0 resize-none placeholder:text-zinc-400" />
+                    <textarea value={desc} onChange={e => setDesc(e.target.value.slice(0, 300))} placeholder="Mô tả thêm về hoạt động, vibe, yêu cầu..." rows={3} className="w-full text- leading- bg-transparent outline-none border-2 border-transparent focus:border-green-500/50 rounded-xl px-2 py-1 -mx-2 resize-none placeholder:text-zinc-400 transition-colors" />
                     <div className="flex items-center justify-between mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
                       <div className="flex gap-1.5 flex-wrap">
                         {currentPresets.map(t => (
@@ -578,7 +578,7 @@ const submit = async () => {
     <p className="text-[11px] text-zinc-500">{nearbyPlaces.length > 0? "Gần bạn" : "Gợi ý"}</p>
   </div>
 <div className="h-8 overflow-hidden">
-  <div className="flex gap-1.5 w-max animate-[scroll_100s_linear_infinite] hover:[animation-play-state:paused]">
+  <div className="flex gap-1.5 w-max animate-[scroll_200s_linear_infinite] hover:[animation-play-state:paused]">
     {[...(nearbyPlaces.length>0?nearbyPlaces:POPULAR_PLACES),...(nearbyPlaces.length>0?nearbyPlaces:POPULAR_PLACES)].map((p,i) => (
       <button 
         key={`${p}-${i}`}
@@ -696,7 +696,7 @@ const submit = async () => {
                   <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 divide-y divide-zinc-100 dark:divide-zinc-800 shadow-sm">
   <div className="p-4 flex items-center justify-between">
     <span className="text- font-medium">Ai xem được</span>
-    <select value={privacy} onChange={e => setPrivacy(e.target.value as Privacy)} className="text-[14px] font-medium bg-zinc-100 dark:bg-zinc-800 border-0 rounded-xl px-3 py-1.5 outline-none appearance-none max-w-[160px] truncate">
+    <select value={privacy} onChange={e => setPrivacy(e.target.value as Privacy)} className="text-[14px] font-medium bg-zinc-100 dark:bg-zinc-800 border-0 rounded-xl px-3 py-1.5 outline-none appearance-none w-[160px] truncate">
       <option value="public">Công khai</option>
       <option value="friends">Bạn bè</option>
       <option value="friends_except">Bạn bè (ngoại trừ)</option>
@@ -717,7 +717,7 @@ const submit = async () => {
   <div className="p-4">
     <div className="flex items-center justify-between">
       <span className="text- font-medium">Độ tuổi</span>
-     <select value={minAge} onChange={e => setMinAge(Number(e.target.value))} className="text- font-medium bg-zinc-100 dark:bg-zinc-800 border-0 rounded-xl px-3 py-1.5 outline-none appearance-none max-w-[160px] truncate">
+     <select value={minAge} onChange={e => setMinAge(Number(e.target.value))} className="text- font-medium bg-zinc-100 dark:bg-zinc-800 border-0 rounded-xl px-3 py-1.5 outline-none appearance-none w-[160px] truncate">
         <option value={0}>Mọi tuổi</option>
         <option value={18}>18+</option>
         <option value={21}>21+</option>
