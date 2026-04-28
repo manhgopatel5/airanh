@@ -14,66 +14,66 @@ type PostType = "task" | "plan";
 const CONTENT_POOL = {
   task: {
     hot: {
-      titles: ["Chưa thấy job nào hot 🌝"],
-      descs: ["Đăng cái đi, biết đâu thành job hot đầu tiên luôn đó"],
+      titles: ["Không ai đăng hết luôn á? Ủa alo? 📢"],
+      descs: ["Người khác chưa đăng vì đang chờ bạn đó 👀"],
       icon: FiTrendingUp,
       suggests: [
-        "Ship hồ sơ lẹ cái 🏃‍♂️",
-        "Mua trà sữa cho tui tỉnh 🍹",
-        "Dọn giùm phòng gấp mẹ tui sắp về 😭",
-        "Sửa giùm cái vòi nước nhỏ giọt 💧"
+        "Tuyển 5 người đi bắt chồng ngoại tình 😭",
+        "Giả làm người yêu tui 1 buổi gặp họ hàng 🙃",
+        "Qua dọn giùm phòng gấp mẹ tui sắp về 😭",
+        "Chạy deadline giùm, tui hứa sẽ biết ơn (chắc vậy) 😰"
       ]
     },
     near: {
-      titles: ["Xung quanh hơi hơi yên ắng nghen 😴"],
-      descs: ["Bạn đăng phát cho khu này xôm lên đê"],
+      titles: ["Đăng cái gì đó cho khu này xôm lên đi 🔥"],
+      descs: ["Im lặng đáng sợ luôn á 😱"],
       icon: FiSend,
       suggests: [
         "Ship giùm hộp cơm tui đói sắp xỉu 🍱",
         "Mua thuốc panadol giùm cái coi 😵",
-        "Qua rửa xe giùm bụi quá rồi 🛵",
-        "Lắp camera cho đỡ lo 👀"
+        "Cho xin cục sạc, pin tui sắp về với tổ tiên 🔋",
+        "Ai rảnh qua bắt gián hộ tui với 🪳"
       ]
     },
     new: {
-      titles: ["Chưa có gì mới luôn 😅"],
-      descs: ["Bạn tạo cái đầu tiên cho có không khí nha"],
+      titles: ["Nhanh tay còn kịp, chậm là mất 👀"],
+      descs: ["Đây là nơi săn job nhanh hơn crush rep tin nhắn 💬"],
       icon: FiInbox,
       suggests: [
         "Cần người cứu gấp sắp toi rồi 🆘",
-        "Việc nhẹ lương… chưa rõ 😆",
+        "In tài liệu gấp, máy in tui phản chủ rồi 🖨️",
         "Làm nhanh về sớm, làm chậm về trễ 😎",
-        "Job 2 tiếng chill chill"
+        "Chụp hình sống ảo cho tui 100 tấm 📸"
       ]
     },
     friends: {
-      titles: ["Ủa bạn bè tui đâu hết rồi ta 🤔"],
-      descs: ["Rủ tụi nó vào làm chung cho đỡ chán đi"],
+      titles: ["Toàn job từ bạn bè, nhận phát là có uy tín liền 🤝"],
+      descs: ["Giúp bạn hôm nay, mai bạn giúp lại (hy vọng vậy) 🫠"],
       icon: FiUsers,
       suggests: [
-        "Kêu tụi bạn vào làm 😏",
-        "Việc cho người quen thôi",
-        "Team mình làm cho vui vui nào",
-        "Share story kéo người 👀"
+        "Qua phụ dọn nhà, tui bao ăn 🧹",
+        "Việc cho người quen thôi, qua Cam kiếm tiền",
+        "Comment dạo giúp tui cho bài đỡ flop 💬 trả công 5 chục",
+        "Tìm người đốt nhà ngừoi yêu cũ 🤫"
       ]
     },
   },
 
   plan: {
     hot: {
-      titles: ["Chưa có kèo nào cháy 🔥"],
-      descs: ["Lên kèo đi, biết đâu thành tụ điểm ăn chơi luôn 😏"],
+      titles: ["Kèo này mà bỏ là phí thanh xuân đó 😭🔥"],
+      descs: ["Join lẹ kẻo full slot đó 👀"],
       icon: FiZap,
       suggests: [
-        "Cafe sáng tám chuyện chill chill ☕",
-        "Nhậu nhẹ thôi nha mấy ba 🍻",
+        "Cafe sáng tám chuyện chill chill đê  ☕",
+        "Đi ăn chung cho tui đỡ ngại đi một mình 🍜",
         "Boardgame thua trả tiền nào 😏",
         "Phượt Vũng tàu nhẹ cái cho đã 🏍️"
       ]
     },
     near: {
       titles: ["Ê khu này im ắng quá nghe 🤨"],
-      descs: ["Rủ kèo phát cho xôm tụ lại coi"],
+      descs: ["Không cần đi xa, vui ngay gần nhà 😏"],
       icon: FiMapPin,
       suggests: [
         "Cafe gần nhà cho tiện ghé nào ☕",
@@ -84,7 +84,7 @@ const CONTENT_POOL = {
     },
     new: {
       titles: ["Chưa ai mở kèo mới hết bây 😗"],
-      descs: ["Bạn mở màn đi, mọi người vào liền đó"],
+      descs: ["Plan mới đăng, còn nóng hổi 🆕"],
       icon: FiClock,
       suggests: [
         "Kèo tối nay Q1 luôn không tụi bây 🍻",
@@ -94,12 +94,12 @@ const CONTENT_POOL = {
       ]
     },
     friends: {
-      titles: ["Mấy đưa đâu rồi vào nhanh 😏"],
-      descs: ["Gọi hội vào làm kèo cho vui nào"],
+      titles: ["Mấy đứa đâu rồi vào nhanh 😏"],
+      descs: ["Kèo người quen, không đi là kỳ đó 😏"],
       icon: FiUserPlus,
       suggests: [
         "Mai sinh nhật tao làm lớn đê 🎂",
-        "Nhà ai có cơm cho tui ăn ké 😆",
+        "Nhà ai có cơm cho tui ăn ké với đói quá 😭",
         "Đi Đà Lạt trốn việc sếp chửi thì giả điếc 🌲",
         "Team building cho có hình tao đăng Fb 📸"
       ]
