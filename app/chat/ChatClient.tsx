@@ -699,16 +699,20 @@ export default function ChatClient() {
   /**
    * Tách chat đã ghim và chưa ghim
    */
-  const { pinnedChats, normalChats } = useMemo(() => {
-    const pinned = filteredChats.filter((chat) =>
-      pinned.includes(chat.chatId)
-    );
-    const normal = filteredChats.filter(
-      (chat) =>!pinned.includes(chat.chatId)
-    );
+const { pinnedChats, normalChats } = useMemo(() => {
+  const pinnedList = filteredChats.filter((chat) =>
+    pinned.includes(chat.chatId)
+  );
 
-    return { pinnedChats: pinned, normalChats: normal };
-  }, [filteredChats, pinned]);
+  const normalList = filteredChats.filter(
+    (chat) => !pinned.includes(chat.chatId)
+  );
+
+  return {
+    pinnedChats: pinnedList,
+    normalChats: normalList,
+  };
+}, [filteredChats, pinned]);
 
   /**
    * Danh sách bạn bè để chọn tạo nhóm
