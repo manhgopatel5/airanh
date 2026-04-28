@@ -533,7 +533,6 @@ const submit = async () => {
                     </div>
                   </div>
                 </div>
-              </motion.div>
             )}
 
               {step === 2 && (
