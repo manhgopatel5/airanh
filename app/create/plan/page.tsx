@@ -145,8 +145,8 @@ export default function CreatePlanFinal() {
     setLocation(t.loc);
     setCategory(CATEGORIES.find(c => c.id === t.cat) || CATEGORIES[0]);
     const d = new Date();
-    const [h, m] = t.time.split(":").map(Number);
-    d.setHours(h, m, 0, 0);
+const [h, m] = t.time.split(":").map(Number);
+d.setHours(h || 0, m || 0, 0, 0);
     if (d < new Date()) d.setDate(d.getDate() + 1);
     setTime(d.toISOString().slice(0, 16));
     setShowTemplates(false);
