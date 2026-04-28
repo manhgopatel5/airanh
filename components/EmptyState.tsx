@@ -14,109 +14,94 @@ type PostType = "task" | "plan";
 const CONTENT_POOL = {
   task: {
     hot: {
-      titles: ["Chưa có việc nào", "Đang chờ việc đầu tiên", "Mọi thứ còn trống"],
-      descs: [
-        "Đăng việc đầu tiên để nhận báo giá\ntừ người làm trong 5 phút",
-        "Tạo việc ngay để người làm\nxung quanh thấy bạn",
-        "Bắt đầu bằng một việc nhỏ\nđể kết nối cộng đồng"
-      ],
+      titles: ["Chưa thấy job nào hot 🌝"],
+      descs: ["Đăng cái đi, biết đâu thành job hot đầu tiên luôn đó"],
       icon: FiTrendingUp,
       suggests: [
-        "Ship hồ sơ Q1 → Q7", "Mua trà sữa 3 ly", "Dọn phòng 25m²", "Sửa vòi nước rỉ",
-        "Giao hàng gấp 2km", "Mua đồ siêu thị", "Lau kính văn phòng", "Thay bóng đèn"
+        "Ship hồ sơ lẹ cái 🏃‍♂️",
+        "Mua trà sữa cho tui tỉnh 🍹",
+        "Dọn giùm phòng gấp mẹ tui sắp về 😭",
+        "Sửa giùm cái vòi nước nhỏ giọt 💧"
       ]
     },
     near: {
-      titles: ["Quanh đây chưa có việc", "Khu vực này đang trống", "Chưa ai đăng gần bạn"],
-      descs: [
-        "Tạo việc gần bạn để kết nối\nvới người trong khu vực",
-        "Đăng việc tại chỗ để hàng xóm\nnhận làm ngay",
-        "Bắt đầu kết nối với\nngười làm quanh đây"
-      ],
+      titles: ["Xung quanh hơi hơi yên ắng nghen 😴"],
+      descs: ["Bạn đăng phát cho khu này xôm lên đê"],
       icon: FiSend,
       suggests: [
-        "Ship cơm trưa văn phòng", "Mua thuốc nhà thuốc", "Rửa xe máy tại nhà", "Lắp camera",
-        "Đi chợ giúp", "Đưa đón bé", "Sửa ống nước", "Dọn nhà theo giờ"
+        "Ship giùm hộp cơm tui đói sắp xỉu 🍱",
+        "Mua thuốc panadol giùm cái coi 😵",
+        "Qua rửa xe giùm bụi quá rồi 🛵",
+        "Lắp camera cho đỡ lo 👀"
       ]
     },
     new: {
-      titles: ["Chưa có việc mới", "Hôm nay chưa ai đăng", "Bảng tin đang trống"],
-      descs: [
-        "Hãy là người đầu tiên đăng việc\ntrong hôm nay",
-        "Tạo việc mới để mọi người\nbắt đầu ngày mới",
-        "Đăng ngay để nhận\nphản hồi sớm nhất"
-      ],
+      titles: ["Chưa có gì mới luôn 😅"],
+      descs: ["Bạn tạo cái đầu tiên cho có không khí nha"],
       icon: FiInbox,
       suggests: [
-        "Đăng việc gấp", "Thuê sinh viên", "Cần người hôm nay", "Việc 2 tiếng",
-        "Tuyển gấp ca tối", "Làm ngay tại chỗ", "Cần trong 1h", "Việc part-time"
+        "Cần người cứu gấp sắp toi rồi 🆘",
+        "Việc nhẹ lương… chưa rõ 😆",
+        "Làm nhanh về sớm, làm chậm về trễ 😎",
+        "Job 2 tiếng chill chill"
       ]
     },
     friends: {
-      titles: ["Bạn bè chưa đăng việc", "Danh sách bạn đang trống", "Chưa có tin từ bạn bè"],
-      descs: [
-        "Mời bạn bè tham gia để\ntìm việc và thuê người dễ hơn",
-        "Rủ bạn bè vào để cùng\nđăng việc cho nhau",
-        "Kết nối bạn bè để\ntạo cộng đồng riêng"
-      ],
+      titles: ["Ủa bạn bè tui đâu hết rồi ta 🤔"],
+      descs: ["Rủ tụi nó vào làm chung cho đỡ chán đi"],
       icon: FiUsers,
       suggests: [
-        "Mời bạn bè", "Việc cho người quen", "Nhóm freelancer", "Share lên story",
-        "Tạo nhóm riêng", "Giới thiệu app", "Rủ bạn cùng làm", "Team nội bộ"
+        "Kêu tụi bạn vào làm 😏",
+        "Việc cho người quen thôi",
+        "Team mình làm cho vui vui nào",
+        "Share story kéo người 👀"
       ]
     },
   },
+
   plan: {
     hot: {
-      titles: ["Chưa có kế hoạch hot", "Chưa ai lên kèo", "Mọi người đang im ắng"],
-      descs: [
-        "Tạo hoạt động đầu tiên để\nrủ mọi người tham gia",
-        "Lên kèo ngay để khuấy động\ncộng đồng",
-        "Bắt đầu cuộc vui bằng\nmột kế hoạch nhỏ"
-      ],
+      titles: ["Chưa có kèo nào cháy 🔥"],
+      descs: ["Lên kèo đi, biết đâu thành tụ điểm ăn chơi luôn 😏"],
       icon: FiZap,
       suggests: [
-        "Cafe sáng T7", "Nhậu tối nay Q1", "Boardgame 4 người", "Phượt Vũng Tàu",
-        "Karaoke team", "Bida tối nay", "Ăn lẩu 6 người", "Xem concert"
+        "Cafe sáng tám chuyện chill chill ☕",
+        "Nhậu nhẹ thôi nha mấy ba 🍻",
+        "Boardgame thua trả tiền nào 😏",
+        "Phượt Vũng tàu nhẹ cái cho đã 🏍️"
       ]
     },
     near: {
-      titles: ["Quanh đây chưa có hẹn", "Khu này chưa có kèo", "Chưa ai rủ gần bạn"],
-      descs: [
-        "Lên kèo gần bạn để offline\ncùng hàng xóm",
-        "Tạo hoạt động tại chỗ để\ngặp gỡ người gần đây",
-        "Bắt đầu kết nối offline\nvới khu vực của bạn"
-      ],
+      titles: ["Ê khu này im ắng quá nghe 🤨"],
+      descs: ["Rủ kèo phát cho xôm tụ lại coi"],
       icon: FiMapPin,
       suggests: [
-        "Cafe Landmark 81", "Chạy bộ công viên", "Bi-a gần đây", "Workshop vẽ",
-        "Cầu lông sân gần", "Nhậu quán quen", "Đi dạo phố đi bộ", "Chụp ảnh couple"
+        "Cafe gần nhà cho tiện ghé nào ☕",
+        "Chạy bộ 5 phút nghỉ 30 phút🏃",
+        "Bi-a giao lưu nhẹ mấy fen 🎱",
+        "Workshop đi cho nó soang 🎨"
       ]
     },
     new: {
-      titles: ["Chưa có kế hoạch mới", "Hôm nay chưa có hẹn", "Lịch đang trống"],
-      descs: [
-        "Tạo sự kiện đầu tiên\ntrong hôm nay",
-        "Lên kèo mới để mọi người\ntham gia cùng",
-        "Bắt đầu ngày mới bằng\nmột cuộc hẹn vui"
-      ],
+      titles: ["Chưa ai mở kèo mới hết bây 😗"],
+      descs: ["Bạn mở màn đi, mọi người vào liền đó"],
       icon: FiClock,
       suggests: [
-        "Lên kèo tối nay", "Đặt bàn 6 người", "Xem phim CGV", "Đá banh sân 5",
-        "Ăn tối 8h", "Nhậu khuya", "Cafe đêm", "Đi bar chill"
+        "Kèo tối nay Q1 luôn không tụi bây 🍻",
+        "Đi ăn không đặt bàn nhanh nào 😤",
+        "Tối xem C1 trận MU - Ars nào 🤡",
+        "Ê tự nhiên muốn đi đảo khỉ Cần Giờ  🐒"
       ]
     },
     friends: {
-      titles: ["Bạn bè chưa lên kèo", "Nhóm bạn đang im", "Chưa có lời mời nào"],
-      descs: [
-        "Rủ bạn bè tạo kế hoạch\nđi chơi chung",
-        "Lên kèo với nhóm bạn\nđể gắn kết hơn",
-        "Tạo hoạt động riêng\ncho hội bạn thân"
-      ],
+      titles: ["Mấy đưa đâu rồi vào nhanh 😏"],
+      descs: ["Gọi hội vào làm kèo cho vui nào"],
       icon: FiUserPlus,
       suggests: [
-        "Sinh nhật team", "Tân gia nhà mới", "Đi Đà Lạt nhóm", "Team building",
-        "Tất niên công ty", "Picnic cuối tuần", "Du lịch nhóm", "Họp lớp"
+        "Mai sinh nhật tao làm lớn đê 🎂",
+        "Nhà ai có cơm cho tui ăn ké 😆",
+        "Đi Đà Lạt trốn việc sếp chửi thì giả điếc 🌲",
+        "Team building cho có hình tao đăng Fb 📸"
       ]
     },
   },
