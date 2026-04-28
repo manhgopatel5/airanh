@@ -23,7 +23,6 @@ import {
   Unsubscribe,
   QuerySnapshot,
   DocumentData,
-  orderBy,
 } from "firebase/firestore";
 import {
   FiSearch,
