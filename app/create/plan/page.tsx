@@ -23,44 +23,45 @@ const CATEGORIES: Category[] = [
   { id: "movie", label: "Chill", emoji: "🎬", suggestions: ["Xem phim", "Concert", "Karaoke", "Bar", "Netflix", "CGV", "Lotte", "BHD", "Phim ma", "Phim tình cảm"] },
   { id: "food", label: "Ăn", emoji: "🍜", suggestions: ["Ăn lẩu", "Buffet", "Ăn đêm", "Quán mới", "Ăn vặt", "Hải sản", "Nướng", "Lẩu bò", "Dimsum", "Bánh mì"] },
   { id: "travel", label: "Đi chơi", emoji: "🏖️", suggestions: ["Phượt", "Picnic", "Cắm trại", "Đà Lạt", "Vũng Tàu", "Mũi Né", "Cần Giờ", "Đi biển", "Camping", "Road trip"] },
-  // 4 MỤC MỚI
   { id: "volunteer", label: "Thiện nguyện", emoji: "🤝", suggestions: ["Phát cơm", "Dọn rác", "Thăm mái ấm", "Hiến máu", "Dạy học", "Trồng cây", "Từ thiện", "Gây quỹ", "Tình nguyện", "Giúp đỡ"] },
   { id: "wellness", label: "Wellness", emoji: "🧘", suggestions: ["Spa", "Massage", "Yoga", "Thiền", "Xông hơi", "Chăm sóc da", "Detox", "Mindfulness", "Pilates", "Thư giãn"] },
   { id: "art", label: "Nghệ thuật", emoji: "🎨", suggestions: ["Vẽ tranh", "Triển lãm", "Workshop art", "Pottery", "Nhiếp ảnh", "Gallery", "Vẽ màu nước", "Điêu khắc", "Handmade", "Sáng tác"] },
   { id: "pet", label: "Thú cưng", emoji: "🐕", suggestions: ["Dắt chó đi dạo", "Cafe thú cưng", "Tắm cho pet", "Công viên chó", "Chơi với mèo", "Pet spa", "Đi dạo", "Chụp ảnh pet", "Gặp gỡ", "Pet day"] },
 ];
 
-const TEMPLATES = [
-  { name: "Cafe làm việc", cat: "cafe", title: "Cafe sáng thứ 7", loc: "The Workshop", time: "09:00" },
-  { name: "Nhậu cuối tuần", cat: "drink", title: "Nhậu tối nay", loc: "Quán ốc", time: "19:00" },
-  { name: "Chạy bộ", cat: "sport", title: "Chạy bộ công viên", loc: "CV Tao Đàn", time: "05:30" },
-  { name: "Boardgame", cat: "game", title: "Boardgame tối T7", loc: "Boardgame Station", time: "19:30" },
-  { name: "Hẹn hò tối", cat: "date", title: "Date night", loc: "Rooftop Landmark", time: "19:30" },
-  { name: "Nghe nhạc", cat: "music", title: "Acoustic tối nay", loc: "Yoko Cafe", time: "20:00" },
-  { name: "Đi mall", cat: "shopping", title: "Shopping cuối tuần", loc: "Vincom Đồng Khởi", time: "14:00" },
-  { name: "Họp nhóm", cat: "work", title: "Brainstorm dự án", loc: "The Hive", time: "10:00" },
-  { name: "Thiện nguyện", cat: "volunteer", title: "Phát cơm từ thiện", loc: "Q1", time: "07:00" },
-  { name: "Đi spa", cat: "wellness", title: "Spa thư giãn", loc: "Anam QT Spa", time: "15:00" },
-];
-
-const HASHTAGS: Record<string, string[]> = {
-  cafe: ["coffee", "work", "chill", "study", "morning", "cafeholic"],
-  drink: ["beer", "nhau", "nightout", "friends", "cheers", "bar"],
-  game: ["boardgame", "ps5", "gaming", "fun", "play", "gameon"],
-  sport: ["running", "gym", "fitness", "sport", "workout", "healthy"],
-  music: ["music", "live", "acoustic", "concert", "jazz", "indie"],
-  shopping: ["shopping", "mall", "sale", "fashion", "ootd", "haul"],
-  date: ["date", "dating", "romantic", "couple", "love", "datenight"],
-  work: ["work", "meeting", "business", "networking", "coworking", "hustle"],
-  study: ["study", "learn", "education", "exam", "knowledge", "studytime"],
-  movie: ["movie", "cinema", "film", "netflix", "movienight", "chill"],
-  food: ["food", "foodie", "eat", "delicious", "yummy", "foodporn"],
-  travel: ["travel", "trip", "adventure", "explore", "wanderlust", "roadtrip"],
-  volunteer: ["volunteer", "charity", "help", "community", "giveback", "tuthien"],
-  wellness: ["wellness", "spa", "relax", "selfcare", "health", "mindfulness"],
-  art: ["art", "creative", "painting", "gallery", "artist", "artwork"],
-  pet: ["pet", "dog", "cat", "animals", "petlover", "cute"],
+const DESCRIPTION_PRESETS: Record<string, string[]> = {
+  cafe: ["Yên tĩnh", "Làm việc", "Trò chuyện", "View đẹp", "Không ồn"],
+  drink: ["Vui là chính", "Uống có trách nhiệm", "Đi đông vui", "Thả ga", "Không say"],
+  game: ["Chơi hết mình", "Không cay cú", "Teamwork", "Vui vẻ", "Fair play"],
+  sport: ["Đúng giờ", "Mang đồ", "Khởi động kỹ", "Uống nước", "Không bỏ cuộc"],
+  music: ["Nghe nhẹ nhàng", "Không ồn", "Thưởng thức", "Chill", "Cảm xúc"],
+  shopping: ["Có ngân sách", "Thử đồ", "Đi cùng", "Săn sale", "Vừa túi tiền"],
+  date: ["Lịch sự", "Đúng giờ", "Tôn trọng", "Lắng nghe", "Chân thành"],
+  work: ["Đúng giờ", "Chuẩn bị", "Tập trung", "Hiệu quả", "Chuyên nghiệp"],
+  study: ["Tập trung", "Im lặng", "Hỗ trợ nhau", "Nghiêm túc", "Chia sẻ"],
+  movie: ["Đúng giờ", "Im lặng", "Không spoil", "Thư giãn", "Tận hưởng"],
+  food: ["Ăn hết mình", "Thử món mới", "Chia sẻ", "No nê", "Vui vẻ"],
+  travel: ["Đúng giờ", "Mang đồ", "An toàn", "Khám phá", "Chụp ảnh"],
+  volunteer: ["Tận tâm", "Giúp đỡ", "Trách nhiệm", "Yêu thương", "Chia sẻ"],
+  wellness: ["Thư giãn", "Tĩnh tâm", "Chăm sóc", "Yên tĩnh", "Tận hưởng"],
+  art: ["Sáng tạo", "Tự do", "Cảm hứng", "Thử nghiệm", "Chia sẻ"],
+  pet: ["Yêu thương", "Nhẹ nhàng", "An toàn", "Vui đùa", "Chăm sóc"],
 };
+
+const TEMPLATES = [
+  { name: "Cafe Sáng Cuối Tuần", cat: "cafe", title: "Cafe sáng thứ 7 chill cùng team", loc: "The Workshop - 27 Ngô Đức Kế", time: "09:00" },
+  { name: "Nhậu Bờ Kè Thả Ga", cat: "drink", title: "Nhậu tối nay - Beer craft & mồi ngon", loc: "Quán ốc Đào - Q4", time: "19:00" },
+  { name: "Chạy Bộ Bình Minh", cat: "sport", title: "Chạy bộ 5km công viên sáng sớm", loc: "Công viên Tao Đàn", time: "05:30" },
+  { name: "Boardgame Đêm Thứ 7", cat: "game", title: "Boardgame Ma Sói & Catan tối T7", loc: "Boardgame Station - Q3", time: "19:30" },
+  { name: "Date Night Lãng Mạn", cat: "date", title: "Date night rooftop ngắm Sài Gòn", loc: "EON 51 - Bitexco", time: "19:30" },
+  { name: "Acoustic Chill Tối", cat: "music", title: "Nghe acoustic live band thư giãn", loc: "Yoko Cafe - Q3", time: "20:00" },
+  { name: "Shopping Săn Sale", cat: "shopping", title: "Đi mall săn sale cuối tuần", loc: "Vincom Đồng Khởi", time: "14:00" },
+  { name: "Brainstorm Dự Án Mới", cat: "work", title: "Họp nhóm brainstorm ý tưởng Q4", loc: "The Hive - Thảo Điền", time: "10:00" },
+  { name: "Phát Cơm Từ Thiện", cat: "volunteer", title: "Phát 100 phần cơm cho người vô gia cư", loc: "Bệnh viện Chợ Rẫy", time: "07:00" },
+  { name: "Spa Thư Giãn Cuối Tuần", cat: "wellness", title: "Spa massage đá nóng thư giãn", loc: "Anam QT Spa - Q1", time: "15:00" },
+  { name: "Workshop Vẽ Màu Nước", cat: "art", title: "Học vẽ màu nước cho người mới", loc: "The Craft House - Q2", time: "14:00" },
+  { name: "Dắt Pet Đi Dạo", cat: "pet", title: "Offline dắt chó đi dạo công viên", loc: "Công viên Gia Định", time: "17:00" },
+];
 
 const POPULAR_PLACES = ["Landmark 81", "Tao Đàn", "Bitexco", "Thảo Điền", "Nhà thờ Đức Bà", "Phố đi bộ Nguyễn Huệ", "Bùi Viện", "Thảo Cầm Viên", "Crescent Mall"];
 
@@ -73,7 +74,6 @@ export default function CreatePlanFinal() {
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [category, setCategory] = useState<Category>(CATEGORIES[0]!);
-  const [hashtags, setHashtags] = useState<string[]>([]);
   const [location, setLocation] = useState("");
   const [locationDetail, setLocationDetail] = useState("");
   const [time, setTime] = useState("");
@@ -115,17 +115,12 @@ export default function CreatePlanFinal() {
       setCategory(CATEGORIES.find(c => c.id === d.cat) || CATEGORIES[0]!);
       setLocation(d.location || "");
       setTime(d.time || "");
-      setHashtags(d.hashtags || []);
     } catch {}
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("plan_draft", JSON.stringify({ title, desc, cat: category.id, location, time, hashtags }));
-  }, [title, desc, category, location, time, hashtags]);
-
-  useEffect(() => {
-    setHashtags([]);
-  }, [category.id]);
+    localStorage.setItem("plan_draft", JSON.stringify({ title, desc, cat: category.id, location, time }));
+  }, [title, desc, category, location, time]);
 
   const handleImage = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -197,6 +192,7 @@ export default function CreatePlanFinal() {
   const progress = (step / 3) * 100;
   const canNext = step === 1? title.trim().length >= 3 : step === 2?!!location.trim() &&!!time : true;
   const splitCost = costAmount > 0 && costType === "share"? Math.ceil(costAmount / maxPeople) : 0;
+  const currentPresets = DESCRIPTION_PRESETS[category.id] || [];
 
   return (
     <>
@@ -247,12 +243,12 @@ export default function CreatePlanFinal() {
                       <div className="flex-1 min-w-0">
                         <input value={title} onChange={e => setTitle(e.target.value.slice(0, 50))} placeholder={category.suggestions[0]} className="w-full text-[22px] font-bold bg-transparent outline-none border-0 p-0 placeholder:text-zinc-300 dark:placeholder:text-zinc-700" autoFocus />
                         <div className="flex items-center justify-between mt-3">
-                          <div className="flex flex-wrap gap-1.5">
-                            {category.suggestions.slice(0, 4).map(s => (
-                              <button key={s} onClick={() => setTitle(s)} className="px-2.5 h-[26px] rounded-full bg-zinc-100 dark:bg-zinc-800 text-[12px] hover:bg-zinc-200 active:scale-95">{s}</button>
+                          <div className="flex flex-wrap gap-1.5 max-h-[60px] overflow-y-auto">
+                            {category.suggestions.map(s => (
+                              <button key={s} onClick={() => setTitle(s)} className="px-2.5 h-[26px] rounded-full bg-zinc-100 dark:bg-zinc-800 text-[12px] hover:bg-zinc-200 active:scale-95 whitespace-nowrap">{s}</button>
                             ))}
                           </div>
-                          <span className={`text-[11px] ${title.length > 40? "text-amber-600" : "text-zinc-400"}`}>{title.length}/50</span>
+                          <span className={`text-[11px] ml-2 shrink-0 ${title.length > 40? "text-amber-600" : "text-zinc-400"}`}>{title.length}/50</span>
                         </div>
                       </div>
                     </div>
@@ -261,56 +257,12 @@ export default function CreatePlanFinal() {
                   <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
                     <textarea value={desc} onChange={e => setDesc(e.target.value.slice(0, 300))} placeholder="Mô tả thêm về hoạt động, vibe, yêu cầu..." rows={3} className="w-full text-[15px] leading-[22px] bg-transparent outline-none border-0 p-0 resize-none placeholder:text-zinc-400" />
                     <div className="flex items-center justify-between mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                      <div className="flex gap-1.5">
-                        {["Vui là chính", "Đúng giờ", "Thoải mái"].map(t => (
+                      <div className="flex gap-1.5 flex-wrap">
+                        {currentPresets.map(t => (
                           <button key={t} onClick={() => setDesc(d => d? `${d} ${t}.` : `${t}.`)} className="text-[11px] px-2.5 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200">+ {t}</button>
                         ))}
                       </div>
-                      <span className="text-[11px] text-zinc-400">{desc.length}/300</span>
-                    </div>
-                  </div>
-
-                  <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
-                    <div className="flex items-center justify-between mb-2.5">
-                      <h3 className="text-[13px] font-medium text-zinc-700 dark:text-zinc-300">Hashtag cho {category.label}</h3>
-                      <span className="text-[11px] text-zinc-400">{hashtags.length}/5</span>
-                    </div>
-                    {hashtags.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mb-2.5">
-                        {hashtags.map((tag, i) => (
-                          <div key={i} className="flex items-center gap-1 pl-2.5 pr-1 h-6 rounded-full bg-green-500 text-white">
-                            <span className="text-[11px] font-medium">#{tag}</span>
-                            <button onClick={() => setHashtags(h => h.filter((_, idx) => idx!== i))} className="w-3.5 h-3.5 grid place-items-center hover:bg-white/20 rounded-full">
-                              <FiX size={10} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex flex-wrap gap-1.5">
-                      {(HASHTAGS[category.id] || []).map(tag => {
-                        const active = hashtags.includes(tag);
-                        return (
-                          <button
-                            key={tag}
-                            onClick={() => {
-                              if (active) {
-                                setHashtags(h => h.filter(t => t!== tag));
-                              } else if (hashtags.length < 5) {
-                                setHashtags(h => [...h, tag]);
-                              } else {
-                                toast.error("Tối đa 5 hashtag");
-                              }
-                            }}
-                            disabled={!active && hashtags.length >= 5}
-                            className={`px-2.5 h-[24px] rounded-full text-[11px] font-medium transition-all active:scale-95 disabled:opacity-40 ${
-                              active? "bg-green-500 text-white" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200"
-                            }`}
-                          >
-                            #{tag}
-                          </button>
-                        );
-                      })}
+                      <span className="text-[11px] text-zinc-400 ml-2 shrink-0">{desc.length}/300</span>
                     </div>
                   </div>
                 </motion.div>
@@ -485,13 +437,6 @@ export default function CreatePlanFinal() {
                 <h2 className="text-[22px] font-bold leading-tight">{title || "Tên hoạt động"}</h2>
                 <p className="text-[14px] text-zinc-500 mt-1">{category.label} • {time? new Date(time).toLocaleString("vi-VN", { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : "Chưa chọn"}</p>
                 {location && <p className="text-[14px] mt-3 flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400"><FiMapPin size={14} />{location}</p>}
-                {hashtags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-3">
-                    {hashtags.map(tag => (
-                      <span key={tag} className="text-[12px] text-green-600 dark:text-green-400">#{tag}</span>
-                    ))}
-                  </div>
-                )}
                 <div className="flex gap-2 mt-5">
                   <button onClick={() => setShowPreview(false)} className="flex-1 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-medium hover:bg-zinc-200">Đóng</button>
                   <button onClick={() => { setShowPreview(false); submit(); }} className="flex-1 h-11 rounded-2xl bg-green-500 text-white font-medium hover:bg-green-600">Đăng</button>
@@ -503,8 +448,8 @@ export default function CreatePlanFinal() {
       </div>
 
       <style jsx global>{`
-     .scrollbar-hide::-webkit-scrollbar { display: none; }
-     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </>
   );
