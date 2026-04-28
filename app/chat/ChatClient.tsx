@@ -1,19 +1,6 @@
 "use client";
 
-/**
- * ChatClient.tsx
- * ------------------------------------------------------------------
- * Phiên bản full production cho trang Tin nhắn
- * - Realtime 1-1 + nhóm từ Firestore
- * - Ghim / tắt thông báo (localStorage)
- * - Tìm kiếm debounce, tabs Tất cả / Chưa đọc / Nhóm
- * - Tạo nhóm, thêm bạn bằng ID/username
- * - UI giữ nguyên style gradient gốc của bạn
- * - Fix toàn bộ lỗi build Vercel (class bị cắt, thiếu thẻ đóng)
- *
- * Tác giả: nâng cấp từ file gốc của bạn
- * Ngày: 2026
- */
+
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -389,9 +376,12 @@ export default function ChatClient() {
           limit(1)
         );
         const searchSnapshot = await getDocs(searchQuery);
-        if (!searchSnapshot.empty) {
-          targetUserId = searchSnapshot.docs[0].id;
-        }
+if (!searchSnapshot.empty) {
+  const firstDoc = searchSnapshot.docs[0];
+  if (firstDoc) {
+    targetUserId = firstDoc.id;
+  }
+}
       }
 
       if (!targetUserId) {
