@@ -731,14 +731,14 @@ const submit = async () => {
       <div>
         <label className="text-[11px] text-zinc-500 mb-1 block">Từ</label>
         <div className="relative">
-          <input type="number" min={16} max={99} value={ageRange[0]} onChange={e => setAgeRange([Math.min(Number(e.target.value), ageRange[1]-1), ageRange[1]])} className="w-full h-10 pl-3 pr-8 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 outline-none text-center font-medium" />
+          <input type="number" min={16} max={99} value={ageRange[0]} onChange={e => setAgeRange([Math.min(Number(e.target.value), ageRange[1]! - 1), ageRange[1]!])} className="w-full h-10 pl-3 pr-8 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 outline-none text-center font-medium" />
           <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-zinc-400">tuổi</span>
         </div>
       </div>
       <div>
         <label className="text-[11px] text-zinc-500 mb-1 block">Đến</label>
         <div className="relative">
-          <input type="number" min={17} max={100} value={ageRange[1]} onChange={e => setAgeRange([ageRange[0], Math.max(Number(e.target.value), ageRange[0]+1)])} className="w-full h-10 pl-3 pr-8 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 outline-none text-center font-medium" />
+          <input type="number" min={17} max={100} value={ageRange[1]} onChange={e => setAgeRange([ageRange[0]!, Math.max(Number(e.target.value), ageRange[0]! + 1)])} className="w-full h-10 pl-3 pr-8 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 outline-none text-center font-medium" />
           <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-zinc-400">tuổi</span>
         </div>
       </div>
