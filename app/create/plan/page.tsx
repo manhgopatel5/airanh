@@ -11,14 +11,55 @@ type CostType = "free" | "share" | "host" | "ticket";
 type Privacy = "public" | "friends" | "private";
 
 const CATEGORIES: Category[] = [
-  { id: "cafe", label: "Cafe", emoji: "☕", suggestions: ["Cafe sáng T7", "Work date", "Cafe chill", "Làm việc"] },
-  { id: "drink", label: "Nhậu", emoji: "🍻", suggestions: ["Nhậu tối nay", "Beer craft", "Rooftop", "Quán quen"] },
-  { id: "game", label: "Game", emoji: "🎮", suggestions: ["Boardgame", "PS5", "Bida", "Ma sói"] },
-  { id: "sport", label: "Thể thao", emoji: "🏃", suggestions: ["Chạy bộ", "Đá banh", "Cầu lông", "Bơi"] },
-  { id: "study", label: "Học", emoji: "📚", suggestions: ["Học nhóm", "Workshop", "Ôn thi", "Thuyết trình"] },
-  { id: "movie", label: "Chill", emoji: "🎬", suggestions: ["Xem phim", "Concert", "Karaoke", "Bar"] },
-  { id: "food", label: "Ăn", emoji: "🍜", suggestions: ["Ăn lẩu", "Buffet", "Ăn đêm", "Quán mới"] },
-  { id: "travel", label: "Đi chơi", emoji: "🏖️", suggestions: ["Phượt", "Picnic", "Cắm trại", "Đà Lạt"] },
+  { 
+    id: "cafe", label: "Cafe", emoji: "☕", 
+    suggestions: ["Cafe sáng T7", "Work date", "Cafe chill", "Làm việc", "Cafe view đẹp", "Cafe mèo", "Study cafe", "Cafe acoustic", "Cafe rooftop", "Cafe sách"] 
+  },
+  { 
+    id: "drink", label: "Nhậu", emoji: "🍻", 
+    suggestions: ["Nhậu tối nay", "Beer craft", "Rooftop", "Quán quen", "Nhậu bờ kè", "Beer club", "Nhậu ốc", "Tửu lầu", "Quán nhậu chill", "Nhậu cuối tuần"] 
+  },
+  { 
+    id: "game", label: "Game", emoji: "🎮", 
+    suggestions: ["Boardgame", "PS5", "Bida", "Ma sói", "Bi-a", "Bowling", "Game center", "VR game", "Escape room", "Karaoke game"] 
+  },
+  { 
+    id: "sport", label: "Thể thao", emoji: "🏃", 
+    suggestions: ["Chạy bộ", "Đá banh", "Cầu lông", "Bơi", "Gym", "Yoga", "Tennis", "Bóng rổ", "Leo núi", "Đạp xe"] 
+  },
+  // 4 MỤC MỚI THÊM Ở TRÊN
+  { 
+    id: "music", label: "Nhạc", emoji: "🎵", 
+    suggestions: ["Nghe nhạc", "Acoustic", "Live band", "DJ", "Phòng trà", "Concert", "Nhạc jazz", "Vinyl cafe", "Open mic", "Nhạc sống"] 
+  },
+  { 
+    id: "shopping", label: "Mua sắm", emoji: "🛍️", 
+    suggestions: ["Đi mall", "Chợ đêm", "Thrift shop", "Mua đồ", "Window shopping", "Săn sale", "Chợ Bến Thành", "Saigon Centre", "Takashimaya", "Vincom"] 
+  },
+  { 
+    id: "date", label: "Hẹn hò", emoji: "💕", 
+    suggestions: ["Hẹn hò", "First date", "Date night", "Xem phim", "Ăn tối", "Dạo phố", "Cafe date", "Picnic", "Sunset", "Rooftop date"] 
+  },
+  { 
+    id: "work", label: "Công việc", emoji: "💼", 
+    suggestions: ["Họp nhóm", "Brainstorm", "Coworking", "Networking", "Workshop", "Meeting", "Làm dự án", "Thảo luận", "Pitching", "Team building"] 
+  },
+  { 
+    id: "study", label: "Học", emoji: "📚", 
+    suggestions: ["Học nhóm", "Workshop", "Ôn thi", "Thuyết trình", "Học tiếng Anh", "Coding", "Thư viện", "Học online", "Study with me", "Ôn IELTS"] 
+  },
+  { 
+    id: "movie", label: "Chill", emoji: "🎬", 
+    suggestions: ["Xem phim", "Concert", "Karaoke", "Bar", "Netflix", "CGV", "Lotte", "BHD", "Phim ma", "Phim tình cảm"] 
+  },
+  { 
+    id: "food", label: "Ăn", emoji: "🍜", 
+    suggestions: ["Ăn lẩu", "Buffet", "Ăn đêm", "Quán mới", "Ăn vặt", "Hải sản", "Nướng", "Lẩu bò", "Dimsum", "Bánh mì"] 
+  },
+  { 
+    id: "travel", label: "Đi chơi", emoji: "🏖️", 
+    suggestions: ["Phượt", "Picnic", "Cắm trại", "Đà Lạt", "Vũng Tàu", "Mũi Né", "Cần Giờ", "Đi biển", "Camping", "Road trip"] 
+  },
 ];
 
 const TEMPLATES = [
@@ -26,6 +67,11 @@ const TEMPLATES = [
   { name: "Nhậu cuối tuần", cat: "drink", title: "Nhậu tối nay", loc: "Quán ốc", time: "19:00" },
   { name: "Chạy bộ", cat: "sport", title: "Chạy bộ công viên", loc: "CV Tao Đàn", time: "05:30" },
   { name: "Boardgame", cat: "game", title: "Boardgame tối T7", loc: "Boardgame Station", time: "19:30" },
+  // Thêm templates mới
+  { name: "Hẹn hò tối", cat: "date", title: "Date night", loc: "Rooftop Landmark", time: "19:30" },
+  { name: "Nghe nhạc", cat: "music", title: "Acoustic tối nay", loc: "Yoko Cafe", time: "20:00" },
+  { name: "Đi mall", cat: "shopping", title: "Shopping cuối tuần", loc: "Vincom Đồng Khởi", time: "14:00" },
+  { name: "Họp nhóm", cat: "work", title: "Brainstorm dự án", loc: "The Hive", time: "10:00" },
 ];
 
 const POPULAR_PLACES = ["Landmark 81", "Tao Đàn", "Bitexco", "Thảo Điền", "Nhà thờ Đức Bà", "Phố đi bộ Nguyễn Huệ", "Bùi Viện", "Thảo Cầm Viên", "Crescent Mall"];
