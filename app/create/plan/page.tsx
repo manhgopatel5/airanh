@@ -96,7 +96,7 @@ export default function CreatePlanFinal() {
   }, []);
 
   useEffect(() => {
-    const data = { title, desc, cat: category.id, location, time };
+    const data = { title, desc, cat: category?.id || 'cafe', location, time };
     localStorage.setItem("plan_draft", JSON.stringify(data));
   }, [title, desc, category, location, time]);
 
