@@ -153,15 +153,24 @@ export default function ChatClient() {
     }
   }, []);
 
-  // Load friends
-  useEffect(() => {
-    if (!user?.uid || activeTab !== "friends") return;
-    
-    setFriendsLoading(true);
-    const friendsRef = collection(db, "users", user.uid, "friends");
-    const q = query(friendsRef);
-    
-    const unsub = onSnapshot(q, async (snapshot) => {
+// Load friends
+useEffect(() => {
+  if (!user?.uid || activeTab !== "friends") return;
+  
+  setFriendsLoading(true);
+  
+  // Force stop loading sau 800ms để tránh treo
+  const timeout = setTimeout(() => {
+    setFriendsLoading(false);
+  }, 800);
+  
+  const friendsRef = collection(db, "users", user.uid, "friends");
+  const q = query(friendsRef);
+  
+  const unsub = onSnapshot(
+    q,
+    async (snapshot) => {
+      clearTimeout(timeout);
       try {
         const friendIds = snapshot.docs.map(d => d.id);
         if (friendIds.length === 0) {
@@ -205,14 +214,24 @@ export default function ChatClient() {
         setFriends(friendsData);
       } catch (error) {
         console.error("Error loading friends:", error);
-        toast.error("Lỗi tải danh sách bạn bè");
+        setFriends([]);
       } finally {
         setFriendsLoading(false);
       }
-    });
+    },
+    (error) => {
+      clearTimeout(timeout);
+      console.error("Friends listener error:", error);
+      setFriends([]);
+      setFriendsLoading(false);
+    }
+  );
 
-    return () => unsub();
-  }, [user?.uid, activeTab, db]);
+  return () => {
+    clearTimeout(timeout);
+    unsub();
+  };
+}, [user?.uid, activeTab, db]);
 
   // Load chats
   useEffect(() => {
