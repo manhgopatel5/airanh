@@ -534,7 +534,7 @@ const submit = async () => {
                   </div>
                 </div>
               </motion.div>
-            )})}
+            )}
 
               {step === 2 && (
                 <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 space-y-4">
