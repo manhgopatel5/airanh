@@ -541,9 +541,7 @@ const submit = async () => {
         <div className="flex items-center justify-between mb-3.5">
   <div className="flex items-center gap-2.5"><div className="w-9 h-9 rounded-xl bg-green-500/10 grid place-items-center"><FiClock className="text-green-600" size={18} /></div><h3 className="font-semibold text-[15px]">Thời gian</h3></div>
   <div className="flex items-center gap-2">
-    <button onClick={getCurrentLocation} disabled={locating} className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 grid place-items-center hover:bg-zinc-200 active:scale-95 disabled:opacity-50">
-      {locating? <div className="w-3 h-3 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" /> : <FiNavigation size={14} className="text-zinc-600 dark:text-zinc-400" />}
-    </button>
+
     <label className="flex items-center gap-1.5 text-[12px] cursor-pointer"><input type="checkbox" checked={pollTime} onChange={e => setPollTime(e.target.checked)} className="w-4 h-4 accent-green-500 rounded" />Bình chọn</label>
   </div>
 </div>
@@ -562,7 +560,12 @@ const submit = async () => {
                   <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
                     <div className="flex items-center justify-between mb-3.5">
                       <div className="flex items-center gap-2.5"><div className="w-9 h-9 rounded-xl bg-green-500/10 grid place-items-center"><FiMapPin className="text-green-600" size={18} /></div><h3 className="font-semibold text-[15px]">Địa điểm</h3></div>
-                      <label className="flex items-center gap-1.5 text-[12px] cursor-pointer"><input type="checkbox" checked={pollLocation} onChange={e => setPollLocation(e.target.checked)} className="w-4 h-4 accent-green-500 rounded" />Bình chọn</label>
+                      <div className="flex items-center gap-2">
+  <button onClick={getCurrentLocation} disabled={locating} className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 grid place-items-center hover:bg-zinc-200 active:scale-95 disabled:opacity-50">
+    {locating? <div className="w-3 h-3 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" /> : <FiNavigation size={14} className="text-zinc-600 dark:text-zinc-400" />}
+  </button>
+  <label className="flex items-center gap-1.5 text-[12px] cursor-pointer"><input type="checkbox" checked={pollLocation} onChange={e => setPollLocation(e.target.checked)} className="w-4 h-4 accent-green-500 rounded" />Bình chọn</label>
+</div>
                     </div>
                     <div className="relative"><FiNavigation className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={16} /><input value={location} onChange={e => setLocation(e.target.value)} placeholder="Tìm địa điểm, quán, địa chỉ..." className="w-full h-12 pl-10 pr-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 text-[15px] placeholder:text-zinc-400" /></div>
 {currentAddress && (
@@ -575,7 +578,7 @@ const submit = async () => {
     <p className="text-[11px] text-zinc-500">{nearbyPlaces.length > 0? "Gần bạn" : "Gợi ý"}</p>
   </div>
 <div className="h-8 overflow-hidden">
-  <div className="flex gap-1.5 w-max animate-[scroll_25s_linear_infinite] hover:[animation-play-state:paused]">
+  <div className="flex gap-1.5 w-max animate-[scroll_50s_linear_infinite] hover:[animation-play-state:paused]">
     {[...(nearbyPlaces.length>0?nearbyPlaces:POPULAR_PLACES),...(nearbyPlaces.length>0?nearbyPlaces:POPULAR_PLACES)].map((p,i) => (
       <button 
         key={`${p}-${i}`}
@@ -634,6 +637,7 @@ const submit = async () => {
   )}
 </div>
                   </div>
+                </div> 
                 </motion.div>
               )}
 
@@ -722,30 +726,33 @@ const submit = async () => {
         <option value={-1}>Tùy chỉnh</option>
       </select>
     </div>
-    {minAge === -1 && (
-      <div className="mt-4">
-        <div className="flex justify-between text- text-zinc-500 mb-2">
-          <span className="font-medium text-green-600">{ageRange[0]}</span>
-          <span className="font-medium text-green-600">{ageRange[1]}</span>
-        </div>
+{minAge === -1 && (
+  <div className="mt-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
+    <div className="grid grid-cols-2 gap-3">
+      <div>
+        <label className="text-[11px] text-zinc-500 mb-1 block">Từ</label>
         <div className="relative">
-          <input type="range" min={16} max={100} value={ageRange[0]} onChange={e => setAgeRange([Math.min(Number(e.target.value), ageRange[1]!-1), ageRange[1]!])} className="absolute w-full h-2 accent-green-500 z-10 pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto" />
-<input type="range" min={16} max={100} value={ageRange[1]} onChange={e => setAgeRange([ageRange[0]!, Math.max(Number(e.target.value), ageRange[0]!+1)])} className="absolute w-full h-2 accent-green-500 pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto" />
-          <div className="h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full" />
+          <input type="number" min={16} max={99} value={ageRange[0]} onChange={e => setAgeRange([Math.min(Number(e.target.value), ageRange[1]-1), ageRange[1]])} className="w-full h-10 pl-3 pr-8 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 outline-none text-center font-medium" />
+          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-zinc-400">tuổi</span>
         </div>
       </div>
-    )}
+      <div>
+        <label className="text-[11px] text-zinc-500 mb-1 block">Đến</label>
+        <div className="relative">
+          <input type="number" min={17} max={100} value={ageRange[1]} onChange={e => setAgeRange([ageRange[0], Math.max(Number(e.target.value), ageRange[0]+1)])} className="w-full h-10 pl-3 pr-8 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 outline-none text-center font-medium" />
+          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-zinc-400">tuổi</span>
+        </div>
+      </div>
+    </div>
+    <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-zinc-200 dark:border-zinc-700">
+      <span className="text-[12px] text-zinc-500">Khoảng</span>
+      <span className="text-[13px] font-medium text-green-600">{ageRange[1] - ageRange[0]} năm</span>
+    </div>
   </div>
-
-  <div className="p-4 flex items-center justify-between">
-    <span className="text- font-medium">Duyệt thành viên</span>
-    <button onClick={() => setNeedApproval(!needApproval)} className={`relative w-11 h-6 rounded-full transition-colors ${needApproval? "bg-green-500" : "bg-zinc-300 dark:bg-zinc-700"}`}>
-      <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all ${needApproval? "left-5" : "left-0.5"}`} />
-    </button>
+)}
   </div>
 </div>
-
-<div className="bg-white dark:bg-zinc-900 rounded- border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
+<div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
   <h3 className="font-semibold text- mb-3">Cần chuẩn bị</h3>
   <div className="flex gap-2">
                       <input value={reqInput} onChange={e => setReqInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addReq()} placeholder="VD: Laptop, giày..." className="flex-1 h-10 px-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 outline-none focus:ring-2 focus:ring-green-500/20 text-[14px]" />
