@@ -471,7 +471,7 @@ const submit = async () => {
             <button onClick={() => step > 1? setStep(s => s - 1) : router.back()} className="w-9 h-9 -ml-2 grid place-items-center rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800"><FiX size={22} /></button>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-900 text-white dark:bg-white dark:text-black">BƯỚC {step}/3</span>
+                <span className="text- font-bold px-1.5 py-0.5 rounded bg-green-500 text-white">BƯỚC {step}/3</span>
                 <span className="text-[11px] text-zinc-500">Tự động lưu</span>
               </div>
               <h1 className="text-[17px] font-semibold truncate -mt-0.5">{step === 1? "Bạn muốn làm gì?" : step === 2? "Khi nào & ở đâu?" : "Mời bạn bè"}</h1>
@@ -508,7 +508,7 @@ const submit = async () => {
                     <div className="flex items-start gap-3">
                       <span className="text-[28px] leading-none mt-1">{category.emoji}</span>
                       <div className="flex-1 min-w-0">
-                        <input value={title} onChange={e => setTitle(e.target.value.slice(0, 50))} placeholder={category.suggestions[0]} className="w-full text-[22px] font-bold bg-transparent outline-none border-2 border-transparent focus:border-green-500/50 rounded-xl px-2 py-1 -mx-2 placeholder:text-zinc-300 dark:placeholder:text-zinc-700 transition-colors" autoFocus />
+                        <input value={title} onChange={e => setTitle(e.target.value.slice(0, 50))} placeholder={category.suggestions[0]} className="w-full text-[22px] font-bold bg-transparent outline-none focus:outline-none focus:ring-0 border-2 border-transparent rounded-xl px-2 py-1 -mx-2 placeholder:text-zinc-300 dark:placeholder:text-zinc-700 transition-colors" autoFocus />
                         <div className="flex items-center justify-between mt-3">
                           <div className="flex flex-wrap gap-1.5 max-h-[60px] overflow-y-auto">
                             {category.suggestions.map(s => (
@@ -522,7 +522,7 @@ const submit = async () => {
                   </div>
 
                   <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
-                    <textarea value={desc} onChange={e => setDesc(e.target.value.slice(0, 300))} placeholder="Mô tả thêm về hoạt động, vibe, yêu cầu..." rows={3} className="w-full text- leading- bg-transparent outline-none border-2 border-transparent focus:border-green-500/50 rounded-xl px-2 py-1 -mx-2 resize-none placeholder:text-zinc-400 transition-colors" />
+                    <textarea value={desc} onChange={e => setDesc(e.target.value.slice(0, 300))} placeholder="Mô tả thêm về hoạt động, vibe, yêu cầu..." rows={3} className="w-full text- leading- bg-transparent outline-none focus:outline-none focus:ring-0 border-2 border-transparent rounded-xl px-2 py-1 -mx-2 resize-none placeholder:text-zinc-400 transition-colors" />
                     <div className="flex items-center justify-between mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
                       <div className="flex gap-1.5 flex-wrap">
                         {currentPresets.map(t => (
@@ -578,7 +578,7 @@ const submit = async () => {
     <p className="text-[11px] text-zinc-500">{nearbyPlaces.length > 0? "Gần bạn" : "Gợi ý"}</p>
   </div>
 <div className="h-8 overflow-hidden">
-  <div className="flex gap-1.5 w-max animate-[scroll_200s_linear_infinite] hover:[animation-play-state:paused]">
+  <div className="flex gap-1.5 w-max animate-[scroll_350s_linear_infinite] hover:[animation-play-state:paused]">
     {[...(nearbyPlaces.length>0?nearbyPlaces:POPULAR_PLACES),...(nearbyPlaces.length>0?nearbyPlaces:POPULAR_PLACES)].map((p,i) => (
       <button 
         key={`${p}-${i}`}
