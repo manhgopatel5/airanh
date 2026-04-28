@@ -28,8 +28,6 @@ import {
   FiX,
   FiLoader,
   FiUsers,
-  FiBellOff,
-  FiTrash2,
   FiCheck,
 } from "react-icons/fi";
 import { RiAddLine, RiPushpinFill } from "react-icons/ri";
