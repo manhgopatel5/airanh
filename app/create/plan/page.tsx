@@ -30,22 +30,133 @@ const CATEGORIES: Category[] = [
 ];
 
 const DESCRIPTION_PRESETS: Record<string, string[]> = {
-  cafe: ["Yên tĩnh", "Làm việc", "Trò chuyện", "View đẹp", "Không ồn"],
-  drink: ["Vui là chính", "Uống có trách nhiệm", "Đi đông vui", "Thả ga", "Không say"],
-  game: ["Chơi hết mình", "Không cay cú", "Teamwork", "Vui vẻ", "Fair play"],
-  sport: ["Đúng giờ", "Mang đồ", "Khởi động kỹ", "Uống nước", "Không bỏ cuộc"],
-  music: ["Nghe nhẹ nhàng", "Không ồn", "Thưởng thức", "Chill", "Cảm xúc"],
-  shopping: ["Có ngân sách", "Thử đồ", "Đi cùng", "Săn sale", "Vừa túi tiền"],
-  date: ["Lịch sự", "Đúng giờ", "Tôn trọng", "Lắng nghe", "Chân thành"],
-  work: ["Đúng giờ", "Chuẩn bị", "Tập trung", "Hiệu quả", "Chuyên nghiệp"],
-  study: ["Tập trung", "Im lặng", "Hỗ trợ nhau", "Nghiêm túc", "Chia sẻ"],
-  movie: ["Đúng giờ", "Im lặng", "Không spoil", "Thư giãn", "Tận hưởng"],
-  food: ["Ăn hết mình", "Thử món mới", "Chia sẻ", "No nê", "Vui vẻ"],
-  travel: ["Đúng giờ", "Mang đồ", "An toàn", "Khám phá", "Chụp ảnh"],
-  volunteer: ["Tận tâm", "Giúp đỡ", "Trách nhiệm", "Yêu thương", "Chia sẻ"],
-  wellness: ["Thư giãn", "Tĩnh tâm", "Chăm sóc", "Yên tĩnh", "Tận hưởng"],
-  art: ["Sáng tạo", "Tự do", "Cảm hứng", "Thử nghiệm", "Chia sẻ"],
-  pet: ["Yêu thương", "Nhẹ nhàng", "An toàn", "Vui đùa", "Chăm sóc"],
+  cafe: [
+    "Wifi mạnh hơn ý chí đi làm sáng thứ 2 📶",
+    "Ngồi 5 tiếng gọi đúng 1 ly vẫn được 😭",
+    "View đẹp tới mức quay camera trước liền 📸",
+    "Yên tĩnh đủ để nghe tiếng deadline tới gần 👀",
+    "Cafe đậm như mối quan hệ toxic ☕"
+  ],
+
+  drink: [
+    "Uống vui là chính, đừng gọi ex lúc say 🍻",
+    "Say vừa thôi còn nhớ đường về 😵",
+    "Không ép uống, ép là nghỉ chơi 😌",
+    "Đi tỉnh về xỉn là thành công 🫠",
+    "Kèo này chỉ thiếu người bao thôi 💸"
+  ],
+
+  game: [
+    "Thua thì cười, đừng đập bàn phím 🎮",
+    "Không toxic, chửi nhẹ thôi 😭",
+    "AFK là bị réo tên cả dòng họ 👀",
+    "Chơi vì đam mê, thắng vì may mắn 🤡",
+    "Rank không quan trọng, quan trọng là cay 😤"
+  ],
+
+  sport: [
+    "Chạy chưa tới nơi đã muốn về 🥵",
+    "Khởi động kỹ kẻo mai đi cà nhắc 😭",
+    "Mồ hôi rơi nhiều hơn nước mắt thất tình 💦",
+    "Tập cho khỏe chứ không phải để up story 🤡",
+    "Hít đất 5 cái thấy cuộc đời vô nghĩa 😵"
+  ],
+
+  music: [
+    "Hát hay không quan trọng, tự tin là được 🎤",
+    "Sai nhạc vẫn phải phiêu 😌",
+    "Chill nhẹ như chưa từng bị deadline dí 🎶",
+    "Nghe nhạc chữa lành nhưng ví vẫn đau 😭",
+    "Mood lên cao như giá đồ ăn 🫠"
+  ],
+
+  shopping: [
+    "Đi ngắm là chính, mua là tai nạn 🛍️",
+    "Sale 50% nhưng vẫn hết tiền 😭",
+    "Mặc thử xong không muốn cởi ra 👀",
+    "Đi một vòng mất luôn lương tháng 💸",
+    "Mua vì thích chứ không cần lý do 🤡"
+  ],
+
+  date: [
+    "Đừng ghost nhau sau buổi gặp nha 😭",
+    "Lịch sự nhưng đừng giả trân 😌",
+    "Im lặng không đáng sợ bằng hết chuyện để nói 👀",
+    "Đi chơi nhẹ nhàng như chưa từng bị từ chối 💔",
+    "Nếu ngại quá thì giả vờ coi menu 🫠"
+  ],
+
+  work: [
+    "Deadline dí sát hơn chủ nợ 😭",
+    "Làm hết sức, lương tính sau 💸",
+    "OT vì đam mê chứ ai muốn đâu 🤡",
+    "Không drama công sở là thành công rồi 😌",
+    "Làm việc có tâm, cuối tháng hết tiền 😵"
+  ],
+
+  study: [
+    "Học 5 phút nghỉ 2 tiếng 📚",
+    "Mở sách ra là buồn ngủ liền 😭",
+    "Học nhóm nhưng chủ yếu là ăn 🤡",
+    "Deadline bài tập nhanh hơn ánh sáng 👀",
+    "Cố học để mai còn giàu 🫠"
+  ],
+
+  movie: [
+    "Không spoil không là nghỉ chơi 🎬",
+    "Mang não theo nếu phim hack não 🧠",
+    "Xem phim xong giả vờ hiểu hết 😌",
+    "Phim hay tới mức quên check điện thoại 📱",
+    "Khóc nhẹ thôi đừng làm ngập rạp 😭"
+  ],
+
+  food: [
+    "Ăn hết mình, mai tính tiếp 🍜",
+    "Diet để mai, hôm nay ăn trước 🤡",
+    "No tới mức thở bằng niềm tin 😭",
+    "Ăn chung cho vui chứ không ai giành đâu 😌",
+    "Món ngon tới mức quên chụp hình 📸"
+  ],
+
+  travel: [
+    "Đi chữa lành nhưng ví tổn thương 💸",
+    "Xách balo lên và quên deadline 🧳",
+    "Đi cho biết đó biết đây 👀",
+    "Chụp 200 tấm chọn được 1 tấm 😭",
+    "Mệt nhưng vui nên kệ 🫠"
+  ],
+
+  volunteer: [
+    "Giúp người tích đức cho đỡ nghiệp 😌",
+    "Cho đi yêu thương nhận lại mệt 😭",
+    "Làm việc tốt không cần check-in 🤝",
+    "Mệt nhưng lòng thấy vui ghê 🫶",
+    "Team thiện nguyện nhưng vẫn tấu hài 🤡"
+  ],
+
+  wellness: [
+    "Chữa lành tạm thời trước khi đi làm lại 😭",
+    "Thở sâu như đang thiền trên núi 🧘",
+    "Relax nhẹ cho đời bớt toxic 😌",
+    "Đi xả stress chứ stress không tự hết 🫠",
+    "Yên bình hiếm hoi giữa cuộc đời deadline 👀"
+  ],
+
+  art: [
+    "Vẽ không đẹp nhưng đầy cảm xúc 🎨",
+    "Sáng tạo mạnh ai nấy hiểu 😭",
+    "Nghệ thuật là ánh sáng của hóa đơn chưa trả 🫠",
+    "Feel nghệ sĩ nhưng tài khoản hơi buồn 💸",
+    "Không ai hiểu tác phẩm cũng không sao 🤡"
+  ],
+
+  pet: [
+    "Boss là chính, con sen là phụ 🐱",
+    "Vuốt mèo chữa lành mọi tổn thương 😭",
+    "Đi chơi với boss vui hơn gặp người yêu 😌",
+    "Coi chừng boss chê nha 👀",
+    "Pet dễ thương tới mức muốn nghỉ làm ở nhà luôn 🫠"
+  ]
 };
 
 const TEMPLATES = [
@@ -69,6 +180,10 @@ export default function CreatePlanFinal() {
   const router = useRouter();
   useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [nearbyPlaces, setNearbyPlaces] = useState<string[]>([]);
+  const [nearbyIndex, setNearbyIndex] = useState(0);
+  const [locating, setLocating] = useState(false);
   const [step, setStep] = useState(1);
   const [dragX, setDragX] = useState(0);
   const [title, setTitle] = useState("");
@@ -95,14 +210,34 @@ export default function CreatePlanFinal() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [searchFriend, setSearchFriend] = useState("");
 
-  const friends = useMemo(() => [
-    { id: "1", name: "Minh Nguyễn", avatar: "https://i.pravatar.cc/80?u=1", online: true },
-    { id: "2", name: "An Trần", avatar: "https://i.pravatar.cc/80?u=2", online: true },
-    { id: "3", name: "Linh Phạm", avatar: "https://i.pravatar.cc/80?u=3", online: false },
-    { id: "4", name: "Khoa Lê", avatar: "https://i.pravatar.cc/80?u=4", online: true },
-    { id: "5", name: "Trang Võ", avatar: "https://i.pravatar.cc/80?u=5", online: false },
-    { id: "6", name: "Dũng Hoàng", avatar: "https://i.pravatar.cc/80?u=6", online: true },
-  ], []);
+  const [friends, setFriends] = useState<Array<{id: string, name: string, avatar: string, online: boolean}>>([]);
+  const [friendsLoading, setFriendsLoading] = useState(false);
+
+useEffect(() => {
+  const fetchFriends = async () => {
+    setFriendsLoading(true);
+    try {
+      const res = await fetch('/api/friends?limit=50');
+      const data = await res.json();
+      setFriends(data.map((f: any) => ({
+        id: f.id,
+        name: f.name || f.displayName,
+        avatar: f.avatar || f.photoURL || `https://i.pravatar.cc/80?u=${f.id}`,
+        online: f.online || f.isOnline || false
+      })));
+    } catch {
+      setFriends([
+        { id: "1", name: "Minh Nguyễn", avatar: "https://i.pravatar.cc/80?u=1", online: true },
+        { id: "2", name: "An Trần", avatar: "https://i.pravatar.cc/80?u=2", online: true },
+      ]);
+    } finally {
+      setFriendsLoading(false);
+    }
+  };
+  fetchFriends();
+  const interval = setInterval(fetchFriends, 30000);
+  return () => clearInterval(interval);
+}, []);
 
   const filteredFriends = useMemo(() => friends.filter(f => f.name.toLowerCase().includes(searchFriend.toLowerCase())), [friends, searchFriend]);
 
@@ -122,6 +257,14 @@ export default function CreatePlanFinal() {
     localStorage.setItem("plan_draft", JSON.stringify({ title, desc, cat: category.id, location, time }));
   }, [title, desc, category, location, time]);
 
+  useEffect(() => {
+  if (nearbyPlaces.length === 0) return;
+  const id = setInterval(() => {
+    setNearbyIndex(i => (i + 4) % nearbyPlaces.length);
+  }, 5000);
+  return () => clearInterval(id);
+}, [nearbyPlaces]);
+
   const handleImage = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -132,6 +275,31 @@ export default function CreatePlanFinal() {
     r.readAsDataURL(f);
     toast.success("Đã thêm ảnh");
   }, []);
+
+  const getCurrentLocation = () => {
+  if (!navigator.geolocation) return toast.error("Trình duyệt không hỗ trợ");
+  setLocating(true);
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const { latitude, longitude } = pos.coords;
+      setUserLocation({ lat: latitude, lng: longitude });
+      // Giả lập địa điểm gần - thực tế gọi API
+      setNearbyPlaces([
+  "Highlands gần đây", "The Coffee House", "Starbucks", "Phúc Long",
+  "Katinat", "Cheese Coffee", "Cộng Cafe", "OHA Coffee",
+  "Laha Cafe", "Gong Cha", "Tocotoco", "KOI Thé",
+  "Phê La", "Aha Cafe", "Trung Nguyên", "Passio"
+]);
+      setLocating(false);
+      toast.success("Đã lấy vị trí");
+    },
+    () => {
+      setLocating(false);
+      toast.error("Không lấy được vị trí");
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+};
 
   const toggleInvite = (id: string) => {
     setInvites(p => {
@@ -152,12 +320,12 @@ export default function CreatePlanFinal() {
 
   const removeReq = (idx: number) => setRequirements(rs => rs.filter((_, i) => i!== idx));
 
-  const handleDragEnd = (_: any, info: PanInfo) => {
-    if (Math.abs(info.offset.x) < 50) return setDragX(0);
-    if (info.offset.x < -50 && step < 3 && canNext) setStep(s => s + 1);
-    if (info.offset.x > 50 && step > 1) setStep(s => s - 1);
-    setDragX(0);
-  };
+const handleDragEnd = (_: any, info: PanInfo) => {
+  if (Math.abs(info.offset.x) < 50) return setDragX(0);
+  if (info.offset.x < -50 && step < 3 && canNext) setStep(s => s + 1);  // Vuốt TRÁI → tiến
+  if (info.offset.x > 50 && step > 1) setStep(s => s - 1);               // Vuốt PHẢI → lùi
+  setDragX(0);
+};
 
   const useTemplate = (t: typeof TEMPLATES[0]) => {
     setTitle(t.title);
@@ -271,10 +439,15 @@ export default function CreatePlanFinal() {
               {step === 2 && (
                 <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 space-y-4">
                   <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
-                    <div className="flex items-center justify-between mb-3.5">
-                      <div className="flex items-center gap-2.5"><div className="w-9 h-9 rounded-xl bg-green-500/10 grid place-items-center"><FiClock className="text-green-600" size={18} /></div><h3 className="font-semibold text-[15px]">Thời gian</h3></div>
-                      <label className="flex items-center gap-1.5 text-[12px] cursor-pointer"><input type="checkbox" checked={pollTime} onChange={e => setPollTime(e.target.checked)} className="w-4 h-4 accent-green-500" />Bình chọn</label>
-                    </div>
+        <div className="flex items-center justify-between mb-3.5">
+  <div className="flex items-center gap-2.5"><div className="w-9 h-9 rounded-xl bg-green-500/10 grid place-items-center"><FiMapPin className="text-green-600" size={18} /></div><h3 className="font-semibold text-[15px]">Địa điểm</h3></div>
+  <div className="flex items-center gap-2">
+    <button onClick={getCurrentLocation} disabled={locating} className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 grid place-items-center hover:bg-zinc-200 active:scale-95 disabled:opacity-50">
+      {locating? <div className="w-3 h-3 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" /> : <FiNavigation size={14} className="text-zinc-600 dark:text-zinc-400" />}
+    </button>
+    <label className="flex items-center gap-1.5 text-[12px] cursor-pointer"><input type="checkbox" checked={pollLocation} onChange={e => setPollLocation(e.target.checked)} className="w-4 h-4 accent-green-500 rounded" />Bình chọn</label>
+  </div>
+</div>
                     <div className="grid grid-cols-4 gap-2 mb-3">
                       {[{ l: "Tối nay", h: 19 }, { l: "Ngày mai", h: 9, d: 1 }, { l: "T7", h: 9, wd: 6 }, { l: "CN", h: 9, wd: 0 }].map(q => (
                         <button key={q.l} onClick={() => { const d = new Date(); if (q.d) d.setDate(d.getDate() + q.d); if (q.wd!== undefined) { const diff = q.wd - d.getDay(); d.setDate(d.getDate() + (diff <= 0? diff + 7 : diff)); } d.setHours(q.h, 0, 0); setTime(d.toISOString().slice(0, 16)); }} className="h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-[13px] font-medium active:scale-95">{q.l}</button>
@@ -290,10 +463,31 @@ export default function CreatePlanFinal() {
                   <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
                     <div className="flex items-center justify-between mb-3.5">
                       <div className="flex items-center gap-2.5"><div className="w-9 h-9 rounded-xl bg-green-500/10 grid place-items-center"><FiMapPin className="text-green-600" size={18} /></div><h3 className="font-semibold text-[15px]">Địa điểm</h3></div>
-                      <label className="flex items-center gap-1.5 text-[12px] cursor-pointer"><input type="checkbox" checked={pollLocation} onChange={e => setPollLocation(e.target.checked)} className="w-4 h-4 accent-green-500" />Bình chọn</label>
+                      <label className="flex items-center gap-1.5 text-[12px] cursor-pointer"><input type="checkbox" checked={pollLocation} onChange={e => setPollLocation(e.target.checked)} className="w-4 h-4 accent-green-500 rounded" />Bình chọn</label>
                     </div>
                     <div className="relative"><FiNavigation className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={16} /><input value={location} onChange={e => setLocation(e.target.value)} placeholder="Tìm địa điểm, quán, địa chỉ..." className="w-full h-12 pl-10 pr-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 text-[15px] placeholder:text-zinc-400" /></div>
-                    <div className="flex gap-1.5 mt-2.5 overflow-x-auto scrollbar-hide pb-1">{POPULAR_PLACES.map(p => <button key={p} onClick={() => setLocation(p)} className={`shrink-0 h-7 px-3 rounded-full text-[12px] font-medium whitespace-nowrap transition-colors ${location === p? "bg-green-500 text-white" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200"}`}>{p}</button>)}</div>
+{nearbyPlaces.length > 0 && (
+  <div className="mt-2.5">
+    <div className="flex items-center justify-between mb-1.5 px-1">
+      <p className="text-[11px] text-zinc-500">Gần bạn</p>
+      <div className="flex gap-0.5">
+        {Array.from({ length: Math.ceil(nearbyPlaces.length / 4) }).map((_, i) => (
+          <div key={i} className={`w-1 h-1 rounded-full transition-all ${Math.floor(nearbyIndex / 4) === i? "w-3 bg-blue-500" : "bg-zinc-300"}`} />
+        ))}
+      </div>
+    </div>
+    <div className="h-8 overflow-hidden">
+      <AnimatePresence mode="wait">
+        <motion.div key={nearbyIndex} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} className="flex gap-1.5">
+          {nearbyPlaces.slice(nearbyIndex, nearbyIndex + 4).map(p => (
+            <button key={p} onClick={() => setLocation(p)} className={`shrink-0 h-7 px-3 rounded-full text-[12px] font-medium whitespace-nowrap transition-all active:scale-95 ${location === p? "bg-green-500 text-white shadow-sm" : "bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100"}`}>{p}</button>
+          ))}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  </div>
+)}
+<div className="flex gap-1.5 mt-2.5 overflow-x-auto scrollbar-hide pb-1">{POPULAR_PLACES.map(p => <button key={p} onClick={() => setLocation(p)} className={`shrink-0 h-7 px-3 rounded-full text-[12px] font-medium whitespace-nowrap transition-colors ${location === p? "bg-green-500 text-white" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200"}`}>{p}</button>)}</div>
                     <input value={locationDetail} onChange={e => setLocationDetail(e.target.value)} placeholder="Địa chỉ cụ thể (tùy chọn)" className="w-full mt-3 h-10 px-3.5 rounded-xl bg-zinc-50/70 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50 outline-none focus:ring-2 focus:ring-green-500/20 text-[13px] placeholder:text-zinc-400" />
                   </div>
 
@@ -303,38 +497,69 @@ export default function CreatePlanFinal() {
                       <div className="flex items-baseline gap-1.5 mt-1"><span className="text-[32px] font-bold leading-none">{maxPeople}</span><span className="text-[13px] text-zinc-500">người</span></div>
                       <input type="range" min={2} max={20} value={maxPeople} onChange={e => setMaxPeople(Number(e.target.value))} className="w-full mt-3 accent-green-500" />
                     </div>
-                    <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
-                      <p className="text-[12px] font-medium text-zinc-500 uppercase tracking-wide">Chi phí</p>
-                      <select value={costType} onChange={e => setCostType(e.target.value as CostType)} className="w-full bg-transparent outline-none text-[15px] font-semibold mt-1 -ml-1 cursor-pointer">
-                        <option value="free">Miễn phí</option><option value="share">Chia đều</option><option value="host">Mình bao</option><option value="ticket">Có vé</option>
-                      </select>
-                      {costType!== "free" && costType!== "host" && <div className="mt-1"><input type="number" value={costAmount || ""} onChange={e => setCostAmount(Math.max(0, Number(e.target.value)))} placeholder="0" className="w-20 text-[20px] font-bold bg-transparent outline-none" /><span className="text-[13px] text-zinc-500 ml-1">đ</span>{splitCost > 0 && <p className="text-[11px] text-green-600 font-medium">~{splitCost.toLocaleString()}đ/ng</p>}</div>}
-                    </div>
+    <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
+  <p className="text-[12px] font-medium text-zinc-500 uppercase tracking-wide">Chi phí</p>
+  <div className="grid grid-cols-2 gap-1.5 mt-2.5">
+    {[
+      { v: "free", l: "Miễn phí" },
+      { v: "share", l: "Chia đều" },
+      { v: "host", l: "Mình bao" },
+      { v: "ticket", l: "Có vé" },
+    ].map(o => (
+      <button key={o.v} onClick={() => setCostType(o.v as CostType)} className={`h-9 rounded-full text-[13px] font-medium transition-all active:scale-95 ${costType === o.v? "bg-green-500 text-white shadow-sm" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200"}`}>{o.l}</button>
+    ))}
+  </div>
+  {costType!== "free" && costType!== "host" && (
+    <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+      <div className="flex items-baseline gap-1.5">
+        <input type="number" value={costAmount || ""} onChange={e => setCostAmount(Math.max(0, Number(e.target.value)))} placeholder="0" className="w-24 text-[24px] font-bold bg-transparent outline-none" />
+        <span className="text-[13px] text-zinc-500">đ</span>
+      </div>
+      {splitCost > 0 && <p className="text-[11px] text-green-600 font-medium mt-0.5">~{splitCost.toLocaleString()}đ/người</p>}
+    </div>
+  )}
+</div>
                   </div>
                 </motion.div>
               )}
 
               {step === 3 && (
                 <motion.div key="s3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 space-y-4">
-                  <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
-                    <div className="flex items-center justify-between mb-3.5"><h3 className="font-semibold text-[15px]">Mời bạn bè</h3>{invites.length > 0 && <span className="text-[12px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 font-medium">{invites.length}</span>}</div>
-                    <input value={searchFriend} onChange={e => setSearchFriend(e.target.value)} placeholder="Tìm bạn bè..." className="w-full h-9 px-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 outline-none focus:ring-2 focus:ring-green-500/20 text-[13px] mb-3" />
-                    <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide">
-                      {filteredFriends.map(f => {
-                        const isInvited = invites.includes(f.id);
-                        return (
-                          <button key={f.id} onClick={() => toggleInvite(f.id)} className="shrink-0 relative group">
-                            <div className={`w-[60px] h-[60px] rounded-2xl overflow-hidden transition-all ${isInvited? "ring-2 ring-green-500 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900" : "ring-1 ring-zinc-200 dark:ring-zinc-800 group-hover:ring-zinc-300"}`}>
-                              <img src={f.avatar} alt="" className="w-full h-full object-cover" />
-                              {f.online && <div className="absolute bottom-1 right-1 w-2.5 h-2.5 bg-green-500 rounded-full ring-2 ring-white dark:ring-zinc-900" />}
-                            </div>
-                            <p className="text-[11px] mt-1.5 w-[60px] truncate font-medium">{f.name}</p>
-                            {isInvited && <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full grid place-items-center shadow-md"><FiCheck size={11} className="text-white" strokeWidth={3} /></div>}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+           <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
+  <div className="flex items-center justify-between mb-3.5">
+    <h3 className="font-semibold text-[15px]">Mời bạn bè</h3>
+    {invites.length > 0 && <span className="text-[12px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 font-medium">{invites.length}</span>}
+  </div>
+  <input value={searchFriend} onChange={e => setSearchFriend(e.target.value)} placeholder="Tìm bạn bè..." className="w-full h-9 px-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 outline-none focus:ring-2 focus:ring-green-500/20 text-[13px] mb-3" />
+  <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide min-h-[80px]">
+    {friendsLoading? (
+      [...Array(5)].map((_, i) => (
+        <div key={i} className="shrink-0">
+          <div className="w-[60px] h-[60px] rounded-2xl bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+          <div className="w-12 h-2.5 bg-zinc-200 dark:bg-zinc-800 rounded mt-1.5 mx-auto animate-pulse" />
+        </div>
+      ))
+    ) : filteredFriends.length === 0? (
+      <div className="w-full py-4 text-center">
+        <p className="text-[13px] text-zinc-500">{searchFriend? "Không tìm thấy bạn bè" : "Chưa có bạn bè"}</p>
+      </div>
+    ) : (
+      filteredFriends.map(f => {
+        const isInvited = invites.includes(f.id);
+        return (
+          <button key={f.id} onClick={() => toggleInvite(f.id)} className="shrink-0 relative group">
+            <div className={`w-[60px] h-[60px] rounded-2xl overflow-hidden transition-all ${isInvited? "ring-2 ring-green-500 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900" : "ring-1 ring-zinc-200 dark:ring-zinc-800 group-hover:ring-zinc-300"}`}>
+              <img src={f.avatar} alt="" className="w-full h-full object-cover" />
+              {f.online && <div className="absolute bottom-1 right-1 w-2.5 h-2.5 bg-green-500 rounded-full ring-2 ring-white dark:ring-zinc-900 animate-pulse" />}
+            </div>
+            <p className="text-[11px] mt-1.5 w-[60px] truncate font-medium">{f.name}</p>
+            {isInvited && <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full grid place-items-center shadow-md"><FiCheck size={11} className="text-white" strokeWidth={3} /></div>}
+          </button>
+        );
+      })
+    )}
+  </div>
+</div>
 
                   <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
                     <div className="flex items-center justify-between mb-3"><h3 className="font-semibold text-[15px]">Ảnh bìa</h3><span className="text-[11px] px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500">Tùy chọn</span></div>
