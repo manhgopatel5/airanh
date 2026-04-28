@@ -1,5 +1,20 @@
 "use client";
 
+/**
+ * ChatClient.tsx
+ * ------------------------------------------------------------------
+ * Phiên bản full production cho trang Tin nhắn
+ * - Realtime 1-1 + nhóm từ Firestore
+ * - Ghim / tắt thông báo (localStorage)
+ * - Tìm kiếm debounce, tabs Tất cả / Chưa đọc / Nhóm
+ * - Tạo nhóm, thêm bạn bằng ID/username
+ * - UI giữ nguyên style gradient gốc của bạn
+ * - Fix toàn bộ lỗi build Vercel (class bị cắt, thiếu thẻ đóng)
+ *
+ * Tác giả: nâng cấp từ file gốc của bạn
+ * Ngày: 2026
+ */
+
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
@@ -31,14 +46,25 @@ import {
   FiBellOff,
   FiTrash2,
 } from "react-icons/fi";
-import { IoSparkles } from "react-icons/io5";
 import { RiAddLine, RiPushpinLine, RiPushpinFill } from "react-icons/ri";
 import Link from "next/link";
 import { toast, Toaster } from "sonner";
-import { formatDistanceToNow, format, isToday, isYesterday } from "date-fns";
+import {
+  formatDistanceToNow,
+  format,
+  isToday,
+  isYesterday,
+} from "date-fns";
 import { vi } from "date-fns/locale";
 
-// Kiểu dữ liệu cho 1 item trong list (1-1 hoặc nhóm)
+// ============================================================================
+// TYPES
+// ============================================================================
+
+/**
+ * Kiểu dữ liệu cho 1 item trong danh sách chat
+ * Hỗ trợ cả chat 1-1 và nhóm
+ */
 type ChatItem = {
   uid: string;
   chatId: string;
@@ -57,12 +83,26 @@ type ChatItem = {
   members?: string[];
 };
 
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+const PINNED_KEY = "pinned_chats";
+const MUTED_KEY = "muted_chats";
+const DEBOUNCE_DELAY = 250;
+
+// ============================================================================
+// COMPONENT
+// ============================================================================
+
 export default function ChatClient() {
   const { user, loading: authLoading } = useAuth();
   const db = getFirebaseDB();
   const router = useRouter();
 
-  // State chính
+  // ------------------------------------------------------------------------
+  // STATE
+  // ------------------------------------------------------------------------
   const [items, setItems] = useState<ChatItem[]>([]);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -71,234 +111,359 @@ export default function ChatClient() {
   const [adding, setAdding] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "unread" | "group">("all");
 
-  // Ghim / tắt thông báo (lưu local)
   const [pinned, setPinned] = useState<string[]>([]);
   const [muted, setMuted] = useState<string[]>([]);
 
-  // Modal tạo mới
   const [showAdd, setShowAdd] = useState(false);
   const [addMode, setAddMode] = useState<"friend" | "group">("friend");
   const [groupName, setGroupName] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
 
-  // Debounce search
+  // ------------------------------------------------------------------------
+  // EFFECTS
+  // ------------------------------------------------------------------------
+
+  // Debounce search để tránh query liên tục
   useEffect(() => {
-    const t = setTimeout(() => setDebounced(search), 250);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => {
+      setDebounced(search);
+    }, DEBOUNCE_DELAY);
+
+    return () => {
+      clearTimeout(timer);
+    };
   }, [search]);
 
-  // Load pinned/muted
+  // Load pinned và muted từ localStorage
   useEffect(() => {
-    setPinned(JSON.parse(localStorage.getItem("pinned_chats") || "[]"));
-    setMuted(JSON.parse(localStorage.getItem("muted_chats") || "[]"));
+    try {
+      const pinnedData = localStorage.getItem(PINNED_KEY);
+      const mutedData = localStorage.getItem(MUTED_KEY);
+
+      if (pinnedData) {
+        setPinned(JSON.parse(pinnedData));
+      }
+      if (mutedData) {
+        setMuted(JSON.parse(mutedData));
+      }
+    } catch (error) {
+      console.error("Failed to load local storage:", error);
+    }
   }, []);
 
-  const savePinned = (v: string[]) => {
-    setPinned(v);
-    localStorage.setItem("pinned_chats", JSON.stringify(v));
+  // Lưu pinned vào localStorage
+  const savePinned = (values: string[]) => {
+    setPinned(values);
+    localStorage.setItem(PINNED_KEY, JSON.stringify(values));
   };
 
-  const saveMuted = (v: string[]) => {
-    setMuted(v);
-    localStorage.setItem("muted_chats", JSON.stringify(v));
+  // Lưu muted vào localStorage
+  const saveMuted = (values: string[]) => {
+    setMuted(values);
+    localStorage.setItem(MUTED_KEY, JSON.stringify(values));
   };
 
-  // REALTIME: nghe tất cả chats (1-1 và nhóm)
+  // ------------------------------------------------------------------------
+  // REALTIME LISTENER - Lắng nghe tất cả chats
+  // ------------------------------------------------------------------------
   useEffect(() => {
-    if (authLoading ||!user?.uid) return;
+    if (authLoading ||!user?.uid) {
+      return;
+    }
 
-    const q = query(
+    // Query tất cả chats mà user tham gia, sắp xếp theo updatedAt
+    const chatsQuery = query(
       collection(db, "chats"),
       where("members", "array-contains", user.uid),
       orderBy("updatedAt", "desc")
     );
 
-    const unsub = onSnapshot(q, async (snap) => {
-      setLoading(true);
-      try {
-        const raws: any[] = [];
-        const needUsers = new Set<string>();
+    const unsubscribe = onSnapshot(
+      chatsQuery,
+      async (snapshot) => {
+        setLoading(true);
 
-        snap.forEach((d) => {
-          const c = d.data();
-          if (c.isGroup) {
-            raws.push({ type: "group", id: d.id, c });
-          } else {
-            const other = c.members.find((m: string) => m!== user.uid);
-            if (other) needUsers.add(other);
-            raws.push({ type: "1-1", id: d.id, other, c });
-          }
-        });
+        try {
+          const rawChats: any[] = [];
+          const userIdsToFetch = new Set<string>();
 
-        // Lấy thông tin user cho chat 1-1
-        const usersMap: Record<string, any> = {};
-        if (needUsers.size > 0) {
-          const ids = Array.from(needUsers);
-          const chunks: string[][] = [];
-          for (let i = 0; i < ids.length; i += 10) {
-            chunks.push(ids.slice(i, i + 10));
-          }
-          const results = await Promise.all(
-            chunks.map((ch) =>
-              Promise.all(ch.map((id) => getDoc(doc(db, "users", id))))
-            )
-          );
-          results.flat().forEach((s) => {
-            if (s.exists()) usersMap[s.id] = s.data();
+          // Phân loại chat 1-1 và nhóm
+          snapshot.forEach((document) => {
+            const chatData = document.data();
+
+            if (chatData.isGroup) {
+              // Chat nhóm
+              rawChats.push({
+                type: "group",
+                id: document.id,
+                data: chatData,
+              });
+            } else {
+              // Chat 1-1, cần lấy thông tin user kia
+              const otherUserId = chatData.members.find(
+                (memberId: string) => memberId!== user.uid
+              );
+
+              if (otherUserId) {
+                userIdsToFetch.add(otherUserId);
+              }
+
+              rawChats.push({
+                type: "1-1",
+                id: document.id,
+                otherUserId,
+                data: chatData,
+              });
+            }
           });
-        }
 
-        const list: ChatItem[] = raws.map((r) => {
-          if (r.type === "group") {
-            const c = r.c;
-            return {
-              uid: r.id,
-              chatId: r.id,
-              name: c.groupName || "Nhóm",
-              username: "",
-              avatar:
-                c.groupAvatar ||
-                `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                  c.groupName || "N"
-                )}&background=6366f1&color=fff`,
-              userId: "",
-              lastMessage: c.lastMessage,
-              lastSenderId: c.lastSenderId,
-              lastSenderName: c.lastSenderName,
-              updatedAt: c.updatedAt,
-              unreadCount: c.unread?.[user.uid] || 0,
-              isTyping: Object.entries(c.typing || {}).some(
-                ([k, v]) => k!== user.uid && v
-              ),
-              isGroup: true,
-              members: c.members,
-              isOnline: false,
-            };
-          } else {
-            const u = usersMap[r.other] || {};
-            const c = r.c;
-            return {
-              uid: r.other,
-              chatId: r.id,
-              name: u.name || "User",
-              username: u.username || "",
-              avatar:
-                u.avatar ||
-                `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                  u.name || "User"
-                )}&background=random`,
-              userId: u.userId || "",
-              lastMessage: c.lastMessage,
-              lastSenderId: c.lastSenderId,
-              lastSenderName: "",
-              updatedAt: c.updatedAt,
-              isOnline: u.isOnline || false,
-              unreadCount: c.unread?.[user.uid] || 0,
-              isTyping: c.typing?.[r.other] || false,
-              isGroup: false,
-            };
+          // Fetch thông tin users cho chat 1-1
+          const usersMap: Record<string, any> = {};
+
+          if (userIdsToFetch.size > 0) {
+            const userIds = Array.from(userIdsToFetch);
+            const chunks: string[][] = [];
+
+            // Chia thành chunks 10 để tránh limit Firestore
+            for (let i = 0; i < userIds.length; i += 10) {
+              chunks.push(userIds.slice(i, i + 10));
+            }
+
+            const userDocs = await Promise.all(
+              chunks.map((chunk) =>
+                Promise.all(
+                  chunk.map((userId) => getDoc(doc(db, "users", userId)))
+                )
+              )
+            );
+
+            userDocs.flat().forEach((userDoc) => {
+              if (userDoc.exists()) {
+                usersMap[userDoc.id] = userDoc.data();
+              }
+            });
           }
-        });
 
-        // Sắp xếp: ghim lên đầu
-        const pins = JSON.parse(localStorage.getItem("pinned_chats") || "[]");
-        list.sort((a, b) => {
-          const ap = pins.includes(a.chatId)? 1 : 0;
-          const bp = pins.includes(b.chatId)? 1 : 0;
-          if (ap!== bp) return bp - ap;
-          return (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0);
-        });
+          // Build danh sách ChatItem
+          const chatList: ChatItem[] = rawChats.map((raw) => {
+            if (raw.type === "group") {
+              const chat = raw.data;
+              return {
+                uid: raw.id,
+                chatId: raw.id,
+                name: chat.groupName || "Nhóm",
+                username: "",
+                avatar:
+                  chat.groupAvatar ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    chat.groupName || "N"
+                  )}&background=6366f1&color=fff`,
+                userId: "",
+                lastMessage: chat.lastMessage,
+                lastSenderId: chat.lastSenderId,
+                lastSenderName: chat.lastSenderName,
+                updatedAt: chat.updatedAt,
+                unreadCount: chat.unread?.[user.uid] || 0,
+                isTyping: Object.entries(chat.typing || {}).some(
+                  ([userId, isTyping]) => userId!== user.uid && isTyping
+                ),
+                isGroup: true,
+                members: chat.members,
+                isOnline: false,
+              };
+            } else {
+              const userData = usersMap[raw.otherUserId] || {};
+              const chat = raw.data;
 
-        setItems(list);
-      } finally {
+              return {
+                uid: raw.otherUserId,
+                chatId: raw.id,
+                name: userData.name || "User",
+                username: userData.username || "",
+                avatar:
+                  userData.avatar ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    userData.name || "User"
+                  )}&background=random`,
+                userId: userData.userId || "",
+                lastMessage: chat.lastMessage,
+                lastSenderId: chat.lastSenderId,
+                lastSenderName: "",
+                updatedAt: chat.updatedAt,
+                isOnline: userData.isOnline || false,
+                unreadCount: chat.unread?.[user.uid] || 0,
+                isTyping: chat.typing?.[raw.otherUserId] || false,
+                isGroup: false,
+              };
+            }
+          });
+
+          // Sắp xếp: ghim lên đầu, sau đó theo thời gian
+          const pinnedChats = JSON.parse(
+            localStorage.getItem(PINNED_KEY) || "[]"
+          );
+
+          chatList.sort((a, b) => {
+            const aIsPinned = pinnedChats.includes(a.chatId)? 1 : 0;
+            const bIsPinned = pinnedChats.includes(b.chatId)? 1 : 0;
+
+            if (aIsPinned!== bIsPinned) {
+              return bIsPinned - aIsPinned;
+            }
+
+            const aTime = a.updatedAt?.seconds || 0;
+            const bTime = b.updatedAt?.seconds || 0;
+            return bTime - aTime;
+          });
+
+          setItems(chatList);
+        } catch (error) {
+          console.error("Error loading chats:", error);
+          toast.error("Lỗi tải danh sách chat");
+        } finally {
+          setLoading(false);
+        }
+      },
+      (error) => {
+        console.error("Snapshot error:", error);
+        toast.error("Lỗi kết nối realtime");
         setLoading(false);
       }
-    });
+    );
 
-    return () => unsub();
+    return () => {
+      unsubscribe();
+    };
   }, [user?.uid, authLoading, db]);
 
-  // Thêm bạn bè (giữ nguyên logic cũ của bạn)
-  const handleSearch = async (e?: React.FormEvent) => {
-    e?.preventDefault();
+  // ------------------------------------------------------------------------
+  // HANDLERS
+  // ------------------------------------------------------------------------
+
+  /**
+   * Thêm bạn bè bằng ID hoặc username
+   */
+  const handleSearch = async (event?: React.FormEvent) => {
+    event?.preventDefault();
+
     const auth = getAuth();
     await auth.authStateReady();
-    const me = auth.currentUser;
-    if (!me?.uid) return toast.error("Chưa đăng nhập");
+    const currentUser = auth.currentUser;
 
-    const kw = search.trim();
-    if (!kw) return;
+    if (!currentUser?.uid) {
+      toast.error("Chưa đăng nhập");
+      return;
+    }
+
+    const keyword = search.trim();
+    if (!keyword) {
+      return;
+    }
+
     setAdding(true);
 
     try {
-      let target: string | null = null;
-      const up = kw.toUpperCase();
-      const low = kw.toLowerCase();
+      let targetUserId: string | null = null;
+      const upperKeyword = keyword.toUpperCase();
+      const lowerKeyword = keyword.toLowerCase();
 
-      const a = await getDoc(doc(db, "userIds", up));
-      if (a.exists()) target = a.data().uid;
-
-      if (!target) {
-        const b = await getDoc(doc(db, "usernames", low));
-        if (b.exists()) target = b.data().uid;
+      // Thử tìm bằng userId
+      const userIdDoc = await getDoc(doc(db, "userIds", upperKeyword));
+      if (userIdDoc.exists()) {
+        targetUserId = userIdDoc.data().uid;
       }
 
-      if (!target) {
-        const s = await getDocs(
-          query(
-            collection(db, "users"),
-            where("searchKeywords", "array-contains", low),
-            limit(1)
-          )
+      // Thử tìm bằng username
+      if (!targetUserId) {
+        const usernameDoc = await getDoc(doc(db, "usernames", lowerKeyword));
+        if (usernameDoc.exists()) {
+          targetUserId = usernameDoc.data().uid;
+        }
+      }
+
+      // Thử tìm bằng searchKeywords
+      if (!targetUserId) {
+        const searchQuery = query(
+          collection(db, "users"),
+          where("searchKeywords", "array-contains", lowerKeyword),
+          limit(1)
         );
-        if (!s.empty) target = s.docs[0].id;
+        const searchSnapshot = await getDocs(searchQuery);
+        if (!searchSnapshot.empty) {
+          targetUserId = searchSnapshot.docs[0].id;
+        }
       }
 
-      if (!target) return toast.error(`Không tìm thấy: ${kw}`);
-      if (target === me.uid) return toast.error("Không thể thêm chính mình");
+      if (!targetUserId) {
+        toast.error(`Không tìm thấy: ${keyword}`);
+        return;
+      }
 
-      const chatId = [me.uid, target].sort().join("_");
-      const fr = doc(db, "friends", `${me.uid}_${target}`);
+      if (targetUserId === currentUser.uid) {
+        toast.error("Không thể thêm chính mình");
+        return;
+      }
 
-      if (!(await getDoc(fr)).exists()) {
-        await setDoc(fr, {
-          userId: me.uid,
-          friendId: target,
+      const chatId = [currentUser.uid, targetUserId].sort().join("_");
+      const friendRef = doc(db, "friends", `${currentUser.uid}_${targetUserId}`);
+
+      const friendExists = await getDoc(friendRef);
+      if (!friendExists.exists()) {
+        await setDoc(friendRef, {
+          userId: currentUser.uid,
+          friendId: targetUserId,
           createdAt: new Date(),
         });
+
         await setDoc(
           doc(db, "chats", chatId),
           {
-            members: [me.uid, target],
+            members: [currentUser.uid, targetUserId],
             isGroup: false,
             createdAt: new Date(),
             updatedAt: new Date(),
           },
           { merge: true }
         );
+
         toast.success("Đã thêm bạn bè");
       }
 
       router.push(`/chat/${chatId}`);
       setSearch("");
       setShowAdd(false);
-    } catch (e: any) {
-      toast.error(`Lỗi: ${e.code || e.message}`);
+    } catch (error: any) {
+      console.error("Add friend error:", error);
+      toast.error(`Lỗi: ${error.code || error.message}`);
     } finally {
       setAdding(false);
     }
   };
 
-  // Tạo nhóm mới
+  /**
+   * Tạo nhóm mới
+   */
   const createGroup = async () => {
-    if (!user) return;
-    if (!groupName.trim()) return toast.error("Nhập tên nhóm");
-    if (selected.length < 2) return toast.error("Chọn ít nhất 2 bạn");
+    if (!user) {
+      return;
+    }
+
+    if (!groupName.trim()) {
+      toast.error("Nhập tên nhóm");
+      return;
+    }
+
+    if (selected.length < 2) {
+      toast.error("Chọn ít nhất 2 bạn");
+      return;
+    }
 
     setAdding(true);
+
     try {
-      const ref = doc(collection(db, "chats"));
-      await setDoc(ref, {
+      const groupRef = doc(collection(db, "chats"));
+
+      await setDoc(groupRef, {
         members: [user.uid,...selected],
         isGroup: true,
         groupName: groupName.trim(),
@@ -308,69 +473,146 @@ export default function ChatClient() {
         lastMessage: `${user.displayName || "Bạn"} đã tạo nhóm`,
         lastSenderName: "Hệ thống",
       });
+
       toast.success("Đã tạo nhóm");
-      router.push(`/chat/${ref.id}`);
+      router.push(`/chat/${groupRef.id}`);
+
       setShowAdd(false);
       setGroupName("");
       setSelected([]);
+    } catch (error) {
+      console.error("Create group error:", error);
+      toast.error("Lỗi tạo nhóm");
     } finally {
       setAdding(false);
     }
   };
 
-  const togglePin = (id: string) => {
-    const v = pinned.includes(id)? pinned.filter((x) => x!== id) : [...pinned, id];
-    savePinned(v);
+  /**
+   * Ghim / bỏ ghim chat
+   */
+  const togglePin = (chatId: string) => {
+    const newPinned = pinned.includes(chatId)
+     ? pinned.filter((id) => id!== chatId)
+      : [...pinned, chatId];
+
+    savePinned(newPinned);
+    toast.success(newPinned.includes(chatId)? "Đã ghim" : "Đã bỏ ghim");
   };
 
-  const toggleMute = (id: string) => {
-    const v = muted.includes(id)? muted.filter((x) => x!== id) : [...muted, id];
-    saveMuted(v);
+  /**
+   * Tắt / bật thông báo
+   */
+  const toggleMute = (chatId: string) => {
+    const newMuted = muted.includes(chatId)
+     ? muted.filter((id) => id!== chatId)
+      : [...muted, chatId];
+
+    saveMuted(newMuted);
+    toast.success(newMuted.includes(chatId)? "Đã tắt thông báo" : "Đã bật thông báo");
   };
 
-  const handleDelete = async (c: ChatItem) => {
-    if (!user) return;
-    if (c.isGroup) {
-      if (!confirm(`Rời nhóm "${c.name}"?`)) return;
-      await updateDoc(doc(db, "chats", c.chatId), {
-        members: arrayRemove(user.uid),
-      });
-    } else {
-      await deleteDoc(doc(db, "friends", `${user.uid}_${c.uid}`));
+  /**
+   * Xóa chat hoặc rời nhóm
+   */
+  const handleDelete = async (chat: ChatItem) => {
+    if (!user) {
+      return;
     }
-    toast.success("Đã xoá");
+
+    if (chat.isGroup) {
+      const confirmed = confirm(`Rời nhóm "${chat.name}"?`);
+      if (!confirmed) {
+        return;
+      }
+
+      try {
+        await updateDoc(doc(db, "chats", chat.chatId), {
+          members: arrayRemove(user.uid),
+        });
+        toast.success("Đã rời nhóm");
+      } catch (error) {
+        toast.error("Lỗi rời nhóm");
+      }
+    } else {
+      const confirmed = confirm(`Xóa trò chuyện với ${chat.name}?`);
+      if (!confirmed) {
+        return;
+      }
+
+      try {
+        await deleteDoc(doc(db, "friends", `${user.uid}_${chat.uid}`));
+        toast.success("Đã xóa");
+      } catch (error) {
+        toast.error("Lỗi xóa");
+      }
+    }
   };
 
-  const formatTime = (t?: Timestamp) => {
-    if (!t?.toDate) return "";
-    const d = t.toDate();
-    if (isToday(d)) return format(d, "HH:mm");
-    if (isYesterday(d)) return "Hôm qua";
-    return formatDistanceToNow(d, { addSuffix: true, locale: vi }).replace(
-      "khoảng ",
-      ""
-    );
+  /**
+   * Format thời gian hiển thị
+   */
+  const formatTime = (timestamp?: Timestamp) => {
+    if (!timestamp?.toDate) {
+      return "";
+    }
+
+    const date = timestamp.toDate();
+
+    if (isToday(date)) {
+      return format(date, "HH:mm");
+    }
+
+    if (isYesterday(date)) {
+      return "Hôm qua";
+    }
+
+    return formatDistanceToNow(date, {
+      addSuffix: true,
+      locale: vi,
+    }).replace("khoảng ", "");
   };
+
+  // ------------------------------------------------------------------------
+  // COMPUTED VALUES
+  // ------------------------------------------------------------------------
 
   const filtered = useMemo(() => {
-    const q = debounced.toLowerCase();
-    return items.filter((f) => {
-      const match =
-       !q ||
-        f.name.toLowerCase().includes(q) ||
-        f.username.toLowerCase().includes(q) ||
-        f.userId.toLowerCase().includes(q);
-      if (!match) return false;
-      if (activeTab === "unread") return (f.unreadCount || 0) > 0;
-      if (activeTab === "group") return f.isGroup;
+    const query = debounced.toLowerCase().trim();
+
+    return items.filter((item) => {
+      // Filter theo search
+      if (query) {
+        const matchesSearch =
+          item.name.toLowerCase().includes(query) ||
+          item.username.toLowerCase().includes(query) ||
+          item.userId.toLowerCase().includes(query);
+
+        if (!matchesSearch) {
+          return false;
+        }
+      }
+
+      // Filter theo tab
+      if (activeTab === "unread") {
+        return (item.unreadCount || 0) > 0;
+      }
+
+      if (activeTab === "group") {
+        return item.isGroup;
+      }
+
       return true;
     });
   }, [items, debounced, activeTab]);
 
-  const friendsForPicker = useMemo(
-    () => items.filter((i) =>!i.isGroup),
-    [items]
-  );
+  const friendsForPicker = useMemo(() => {
+    return items.filter((item) =>!item.isGroup);
+  }, [items]);
+
+  // ------------------------------------------------------------------------
+  // RENDER
+  // ------------------------------------------------------------------------
 
   if (authLoading) {
     return (
@@ -383,10 +625,12 @@ export default function ChatClient() {
   return (
     <>
       <Toaster richColors position="top-center" />
+
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-black dark:via-zinc-950 dark:to-blue-950/10">
-        {/* Header giữ nguyên style gốc */}
+        {/* Header */}
         <div className="sticky top-0 z-30 backdrop-blur-3xl bg-white/80 dark:bg-zinc-950/80 border-b border-gray-200/30 dark:border-zinc-800/30 shadow-sm shadow-gray-900/5">
           <div className="px-5 pt-8 pb-5">
+            {/* Title và nút thêm */}
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h1 className="text- font-black tracking-tight bg-gradient-to-br from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent">
@@ -396,14 +640,17 @@ export default function ChatClient() {
                   {items.length} cuộc trò chuyện
                 </p>
               </div>
+
               <button
                 onClick={() => setShowAdd(true)}
-                className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-xl shadow-blue-500/40 active:scale-90 transition-all"
+                className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-xl shadow-blue-500/40 active:scale-90 transition-all duration-200"
+                aria-label="Tạo mới"
               >
                 <RiAddLine className="text-white" size={24} />
               </button>
             </div>
 
+            {/* Search bar */}
             <form onSubmit={handleSearch} className="relative group">
               <div
                 className={`absolute -inset- bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-3xl blur-lg transition-opacity duration-500 ${
@@ -412,7 +659,7 @@ export default function ChatClient() {
               />
               <div className="relative flex items-center h-14 bg-gray-100/60 dark:bg-zinc-900/60 backdrop-blur-2xl rounded-3xl border-[2.5px] border-transparent focus-within:border-blue-500/40 focus-within:bg-white dark:focus-within:bg-zinc-900 transition-all duration-300 shadow-lg shadow-gray-900/5">
                 <FiSearch
-                  className={`ml-5 transition-all ${
+                  className={`ml-5 transition-all duration-300 ${
                     focused
                      ? "text-blue-500 scale-110"
                       : "text-gray-400 dark:text-zinc-500"
@@ -432,7 +679,7 @@ export default function ChatClient() {
                   <button
                     type="button"
                     onClick={() => setSearch("")}
-                    className="mr-4 w-7 h-7 rounded-full bg-gray-300/80 dark:bg-zinc-700/80 flex items-center justify-center"
+                    className="mr-4 w-7 h-7 rounded-full bg-gray-300/80 dark:bg-zinc-700/80 hover:bg-gray-400 dark:hover:bg-zinc-600 flex items-center justify-center active:scale-90 transition-all"
                   >
                     <FiX className="text-gray-600 dark:text-zinc-300" size={16} />
                   </button>
@@ -440,133 +687,196 @@ export default function ChatClient() {
               </div>
             </form>
 
+            {/* Tabs */}
             <div className="flex gap-2 mt-4">
               {[
-                { k: "all", l: "Tất cả" },
-                { k: "unread", l: "Chưa đọc" },
-                { k: "group", l: "Nhóm" },
-              ].map((t) => (
+                { key: "all", label: "Tất cả" },
+                { key: "unread", label: "Chưa đọc" },
+                { key: "group", label: "Nhóm" },
+              ].map((tab) => (
                 <button
-                  key={t.k}
-                  onClick={() => setActiveTab(t.k as any)}
-                  className={`px-4 h-8 rounded-2xl text- font-semibold transition ${
-                    activeTab === t.k
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key as any)}
+                  className={`px-4 h-8 rounded-2xl text- font-semibold transition-all duration-200 ${
+                    activeTab === tab.key
                      ? "bg-blue-500 text-white shadow-lg shadow-blue-500/20"
-                      : "bg-gray-100/80 dark:bg-zinc-800/60 text-gray-600 dark:text-zinc-400"
+                      : "bg-gray-100/80 dark:bg-zinc-800/60 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700"
                   }`}
                 >
-                  {t.l}
+                  {tab.label}
                 </button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* List */}
-        <div className="px-4 py-3">
+        {/* Danh sách chat */}
+        <div className="px-4 py-3 pb-24">
           {loading? (
+            // Loading skeleton
             <div className="space-y-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-4 p-4 animate-pulse">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-4 p-4 animate-pulse"
+                >
                   <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-900 rounded-3xl" />
                   <div className="flex-1 space-y-3">
-                    <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded-lg w-1/3" />
-                    <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded-lg w-2/3" />
+                    <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-900 rounded-lg w-1/3" />
+                    <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-900 rounded-lg w-2/3" />
                   </div>
                 </div>
               ))}
             </div>
           ) : filtered.length === 0? (
+            // Empty state
             <div className="flex flex-col items-center justify-center py-28 px-6 text-center">
               <div className="relative mb-8">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 to-indigo-500/30 rounded-3xl blur-3xl" />
-                <div className="relative w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-zinc-900 dark:to-zinc-800 rounded-3xl flex items-center justify-center shadow-2xl">
-                  <FiMessageSquare className="text-gray-400 dark:text-zinc-600" size={36} />
+                <div className="relative w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-zinc-900 dark:to-zinc-800 rounded-3xl flex items-center justify-center shadow-2xl shadow-gray-900/10">
+                  <FiMessageSquare
+                    className="text-gray-400 dark:text-zinc-600"
+                    size={36}
+                  />
                 </div>
+              </div>
               <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">
                 Chưa có tin nhắn
               </h3>
-              <p className="text-gray-500 dark:text-zinc-400 font-medium max-w-">
-                Tạo nhóm hoặc thêm bạn bằng ID
+              <p className="text- text-gray-500 dark:text-zinc-400 font-medium max-w- leading-relaxed">
+                Tạo nhóm hoặc thêm bạn bằng ID để bắt đầu trò chuyện
               </p>
+              <button
+                onClick={() => setShowAdd(true)}
+                className="mt-8 px-6 py-3 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 text-white font-bold text- rounded-2xl shadow-xl shadow-blue-500/30 active:scale-95 transition-all"
+              >
+                Bắt đầu ngay
+              </button>
             </div>
           ) : (
+            // Danh sách chat
             <div className="space-y-2">
-              {filtered.map((f) => (
-                <div key={f.chatId} className="group relative">
+              {filtered.map((chat) => (
+                <div key={chat.chatId} className="group relative">
                   <Link
-                    href={`/chat/${f.chatId}`}
+                    href={`/chat/${chat.chatId}`}
                     className="flex items-center gap-4 p-4 rounded-3xl hover:bg-white dark:hover:bg-zinc-900/70 active:scale-[0.98] transition-all duration-300 hover:shadow-xl hover:shadow-gray-900/5"
                   >
+                    {/* Avatar */}
                     <div className="relative flex-shrink-0">
-                      <div className="w-16 h-16 rounded-3xl ring- ring-white dark:ring-zinc-950 shadow-xl overflow-hidden group-hover:ring-blue-500/20 transition-all">
-                        {f.isGroup? (
+                      <div className="w-16 h-16 rounded-3xl ring- ring-white dark:ring-zinc-950 shadow-xl shadow-gray-900/10 overflow-hidden group-hover:ring-blue-500/20 transition-all duration-300">
+                        {chat.isGroup? (
                           <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
                             <FiUsers className="text-white" size={28} />
                           </div>
                         ) : (
-                          <img src={f.avatar} alt={f.name} className="w-full h-full object-cover" />
+                          <img
+                            src={chat.avatar}
+                            alt={chat.name}
+                            className="w-full h-full object-cover"
+                          />
                         )}
                       </div>
-                      {!f.isGroup && f.isOnline && (
-                        <div className="absolute bottom-0 right-0 w-5 h-5 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full ring- ring-white dark:ring-zinc-950 shadow-lg">
+
+                      {/* Online indicator */}
+                      {!chat.isGroup && chat.isOnline && (
+                        <div className="absolute bottom-0 right-0 w-5 h-5 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full ring- ring-white dark:ring-zinc-950 shadow-lg shadow-emerald-500/50">
                           <div className="absolute inset-0 bg-emerald-400 rounded-full animate-ping opacity-75" />
                         </div>
                       )}
                     </div>
 
+                    {/* Nội dung */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2 min-w-0">
                           <p className="font-bold text- text-gray-900 dark:text-white truncate">
-                            {f.name}
+                            {chat.name}
                           </p>
-                          {pinned.includes(f.chatId) && (
-                            <RiPushpinFill className="text-blue-500" size={14} />
+
+                          {pinned.includes(chat.chatId) && (
+                            <RiPushpinFill
+                              className="text-blue-500 flex-shrink-0"
+                              size={14}
+                            />
                           )}
-                          {f.isGroup && (
-                            <span className="text- px-1.5 py-0.5 rounded-md bg-violet-500/10 text-violet-600 font-medium">
-                              {f.members?.length}
+
+                          {muted.includes(chat.chatId) && (
+                            <FiBellOff
+                              className="text-gray-400 flex-shrink-0"
+                              size={14}
+                            />
+                          )}
+
+                          {chat.isGroup && (
+                            <span className="text- px-1.5 py-0.5 rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-400 font-medium flex-shrink-0">
+                              {chat.members?.length}
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2.5">
+
+                        <div className="flex items-center gap-2.5 flex-shrink-0">
                           <p className="text-xs text-gray-400 dark:text-zinc-500 font-medium">
-                            {formatTime(f.updatedAt)}
+                            {formatTime(chat.updatedAt)}
                           </p>
-                          {f.unreadCount? (
-                            <div className="min-w- h-5 px-1.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
-                              <span className="text- font-bold text-white">
-                                {f.unreadCount}
+
+                          {chat.unreadCount? (
+                            <div className="min-w- h-5 px-1.5 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/40">
+                              <span className="text- font-black text-white">
+                                {chat.unreadCount}
                               </span>
                             </div>
                           ) : null}
                         </div>
                       </div>
+
                       <p className="text- text-gray-500 dark:text-zinc-400 font-medium truncate">
-                        {f.isTyping
-                         ? <span className="text-blue-500 italic">đang nhập...</span>
-                          : f.lastMessage
-                         ? f.isGroup
-                           ? `${f.lastSenderName || ""}: ${f.lastMessage}`
-                            : f.lastSenderId === user?.uid
-                           ? `Bạn: ${f.lastMessage}`
-                            : f.lastMessage
-                          : f.isGroup
-                         ? "Nhóm mới tạo"
-                          : `@${f.username || f.userId}`}
+                        {chat.isTyping? (
+                          <span className="text-blue-500 italic">đang nhập...</span>
+                        ) : chat.lastMessage? (
+                          chat.isGroup? (
+                            `${chat.lastSenderName || ""}: ${chat.lastMessage}`
+                          ) : chat.lastSenderId === user?.uid? (
+                            `Bạn: ${chat.lastMessage}`
+                          ) : (
+                            chat.lastMessage
+                          )
+                        ) : chat.isGroup? (
+                          "Nhóm mới tạo"
+                        ) : (
+                          `@${chat.username || chat.userId}`
+                        )}
                       </p>
                     </div>
                   </Link>
 
+                  {/* Action buttons (hiện khi hover) */}
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden group-hover:flex gap-1.5">
-                    <button onClick={() => togglePin(f.chatId)} className="w-8 h-8 rounded-xl bg-white/90 dark:bg-zinc-800/90 backdrop-blur flex items-center justify-center shadow">
-                      {pinned.includes(f.chatId)? <RiPushpinFill size={16} className="text-blue-500" /> : <RiPushpinLine size={16} />}
+                    <button
+                      onClick={() => togglePin(chat.chatId)}
+                      className="w-8 h-8 rounded-xl bg-white/90 dark:bg-zinc-800/90 backdrop-blur-xl flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-all"
+                      title={pinned.includes(chat.chatId)? "Bỏ ghim" : "Ghim"}
+                    >
+                      {pinned.includes(chat.chatId)? (
+                        <RiPushpinFill size={16} className="text-blue-500" />
+                      ) : (
+                        <RiPushpinLine size={16} className="text-gray-600 dark:text-zinc-400" />
+                      )}
                     </button>
-                    <button onClick={() => toggleMute(f.chatId)} className="w-8 h-8 rounded-xl bg-white/90 dark:bg-zinc-800/90 backdrop-blur flex items-center justify-center shadow">
-                      <FiBellOff size={15} />
+
+                    <button
+                      onClick={() => toggleMute(chat.chatId)}
+                      className="w-8 h-8 rounded-xl bg-white/90 dark:bg-zinc-800/90 backdrop-blur-xl flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-all"
+                      title={muted.includes(chat.chatId)? "Bật thông báo" : "Tắt thông báo"}
+                    >
+                      <FiBellOff size={15} className={muted.includes(chat.chatId)? "text-amber-500" : "text-gray-600 dark:text-zinc-400"} />
                     </button>
-                    <button onClick={() => handleDelete(f)} className="w-8 h-8 rounded-xl bg-white/90 dark:bg-zinc-800/90 backdrop-blur flex items-center justify-center shadow text-red-500">
+
+                    <button
+                      onClick={() => handleDelete(chat)}
+                      className="w-8 h-8 rounded-xl bg-white/90 dark:bg-zinc-800/90 backdrop-blur-xl flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-all text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50"
+                      title={chat.isGroup? "Rời nhóm" : "Xóa"}
+                    >
                       <FiTrash2 size={15} />
                     </button>
                   </div>
@@ -578,41 +888,138 @@ export default function ChatClient() {
 
         {/* Modal tạo mới */}
         {showAdd && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xl flex items-end sm:items-center justify-center p-4" onClick={() => setShowAdd(false)}>
-            <div onClick={(e) => e.stopPropagation()} className="w-full max-w- bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded- p-6 shadow-2xl border border-white/20">
+          <div
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xl flex items-end sm:items-center justify-center p-4"
+            onClick={() => setShowAdd(false)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w- bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded- p-6 shadow-2xl border-white/20 dark:border-zinc-800/50"
+            >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text- font-bold">Tạo mới</h3>
-                <button onClick={() => setShowAdd(false)} className="w-8 h-8 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center"><FiX /></button>
+                <h3 className="text- font-bold text-gray-900 dark:text-white">
+                  Tạo mới
+                </h3>
+                <button
+                  onClick={() => setShowAdd(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 flex items-center justify-center transition-colors"
+                >
+                  <FiX className="text-gray-600 dark:text-zinc-400" size={18} />
+                </button>
               </div>
+
+              {/* Tabs */}
               <div className="flex bg-gray-100 dark:bg-zinc-800 rounded-2xl p-1 mb-4">
-                <button onClick={() => setAddMode("friend")} className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-1.5 text- font-semibold ${addMode==="friend"?"bg-white dark:bg-zinc-700 shadow":"text-gray-600 dark:text-zinc-400"}`}><FiUserPlus/>Thêm bạn</button>
-                <button onClick={() => setAddMode("group")} className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-1.5 text- font-semibold ${addMode==="group"?"bg-white dark:bg-zinc-700 shadow":"text-gray-600 dark:text-zinc-400"}`}><FiUsers/>Tạo nhóm</button>
+                <button
+                  onClick={() => setAddMode("friend")}
+                  className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-1.5 text- font-semibold transition-all ${
+                    addMode === "friend"
+                     ? "bg-white dark:bg-zinc-700 shadow-md text-gray-900 dark:text-white"
+                      : "text-gray-600 dark:text-zinc-400"
+                  }`}
+                >
+                  <FiUserPlus size={16} />
+                  Thêm bạn
+                </button>
+                <button
+                  onClick={() => setAddMode("group")}
+                  className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-1.5 text- font-semibold transition-all ${
+                    addMode === "group"
+                     ? "bg-white dark:bg-zinc-700 shadow-md text-gray-900 dark:text-white"
+                      : "text-gray-600 dark:text-zinc-400"
+                  }`}
+                >
+                  <FiUsers size={16} />
+                  Tạo nhóm
+                </button>
               </div>
-              {addMode==="friend"? (
+
+              {addMode === "friend"? (
                 <form onSubmit={handleSearch}>
-                  <div className="h-12 bg-gray-100 dark:bg-zinc-800 rounded-2xl flex items-center px-3">
-                    <FiSearch className="text-gray-400" />
-                    <input value={search} onChange={(e)=>setSearch(e.target.value)} placeholder="Nhập ID hoặc @username" className="flex-1 bg-transparent outline-none px-2 text-" />
+                  <div className="h-12 bg-gray-100 dark:bg-zinc-800 rounded-2xl flex items-center px-3 focus-within:ring-2 focus-within:ring-blue-500/30 transition-all">
+                    <FiSearch className="text-gray-400 dark:text-zinc-500" size={18} />
+                    <input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Nhập ID hoặc @username"
+                      className="flex-1 bg-transparent outline-none px-2 text- text-gray-900 dark:text-white placeholder:text-gray-400"
+                      autoFocus
+                    />
                   </div>
-                  <button disabled={adding||!search} type="submit" className="w-full mt-4 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl font-bold disabled:opacity-50">
-                    {adding? "Đang tìm..." : "Thêm bạn"}
+                  <button
+                    disabled={adding ||!search}
+                    type="submit"
+                    className="w-full mt-4 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-2xl font-bold text- disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/25 active:scale-[0.98] transition-all"
+                  >
+                    {adding? (
+                      <span className="flex items-center justify-center gap-2">
+                        <FiLoader className="animate-spin" size={18} />
+                        Đang tìm...
+                      </span>
+                    ) : (
+                      "Thêm bạn"
+                    )}
                   </button>
                 </form>
               ) : (
                 <div>
-                  <input value={groupName} onChange={(e)=>setGroupName(e.target.value)} placeholder="Tên nhóm" className="w-full h-12 bg-gray-100 dark:bg-zinc-800 rounded-2xl px-3 outline-none text- mb-3" />
-                  <p className="text-xs text-gray-500 mb-2">Chọn thành viên ({selected.length})</p>
-                  <div className="max-h- overflow-auto space-y-1.5 pr-1">
-                    {friendsForPicker.map((p) => (
-                      <label key={p.uid} className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer">
-                        <input type="checkbox" checked={selected.includes(p.uid)} onChange={(e)=>setSelected(s=>e.target.checked?[...s,p.uid]:s.filter(x=>x!==p.uid))} className="w-4 h-4 accent-blue-500" />
-                        <img src={p.avatar} className="w-9 h-9 rounded-xl object-cover" />
-                        <span className="text- font-medium">{p.name}</span>
-                      </label>
-                    ))}
+                  <input
+                    value={groupName}
+                    onChange={(e) => setGroupName(e.target.value)}
+                    placeholder="Tên nhóm"
+                    className="w-full h-12 bg-gray-100 dark:bg-zinc-800 rounded-2xl px-3 outline-none text- text-gray-900 dark:text-white placeholder:text-gray-400 focus:ring-2 focus:ring-violet-500/30 transition-all mb-3"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-zinc-400 mb-2 font-medium">
+                    Chọn thành viên ({selected.length})
+                  </p>
+                  <div className="max-h- overflow-auto space-y-1.5 pr-1 -mr-1">
+                    {friendsForPicker.length === 0? (
+                      <p className="text-center text-gray-400 py-8 text-">
+                        Chưa có bạn bè để thêm
+                      </p>
+                    ) : (
+                      friendsForPicker.map((person) => (
+                        <label
+                          key={person.uid}
+                          className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selected.includes(person.uid)}
+                            onChange={(e) =>
+                              setSelected((current) =>
+                                e.target.checked
+                                 ? [...current, person.uid]
+                                  : current.filter((id) => id!== person.uid)
+                              )
+                            }
+                            className="w-4 h-4 accent-violet-500 rounded"
+                          />
+                          <img
+                            src={person.avatar}
+                            alt={person.name}
+                            className="w-9 h-9 rounded-xl object-cover ring-1 ring-gray-200 dark:ring-zinc-700"
+                          />
+                          <span className="text- font-medium text-gray-900 dark:text-white">
+                            {person.name}
+                          </span>
+                        </label>
+                      ))
+                    )}
                   </div>
-                  <button disabled={adding||!groupName||selected.length<2} onClick={createGroup} className="w-full mt-4 h-12 bg-gradient-to-r from-violet-500 to-indigo-600 text-white rounded-2xl font-bold disabled:opacity-50">
-                    {adding? "Đang tạo..." : "Tạo nhóm"}
+                  <button
+                    disabled={adding ||!groupName || selected.length < 2}
+                    onClick={createGroup}
+                    className="w-full mt-4 h-12 bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white rounded-2xl font-bold text- disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-500/25 active:scale-[0.98] transition-all"
+                  >
+                    {adding? (
+                      <span className="flex items-center justify-center gap-2">
+                        <FiLoader className="animate-spin" size={18} />
+                        Đang tạo...
+                      </span>
+                    ) : (
+                      "Tạo nhóm"
+                    )}
                   </button>
                 </div>
               )}
