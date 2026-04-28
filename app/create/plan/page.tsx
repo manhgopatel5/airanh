@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   FiX, FiCheck, FiPlus, FiChevronRight, FiUpload,
-  FiClock, FiMapPin, FiUsers, FiDollarSign, FiGlobe,
+  FiClock, FiMapPin, FiDollarSign, FiGlobe,
   FiRepeat, FiShield, FiUserPlus, FiEye, FiCopy, 
   FiNavigation, FiSun
 } from "react-icons/fi";
