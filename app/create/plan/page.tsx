@@ -743,37 +743,48 @@ const submit = async () => {
         </div>
       </div>
     </div>
-    <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-zinc-200 dark:border-zinc-700">
+     <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-zinc-200 dark:border-zinc-700">
       <span className="text-[12px] text-zinc-500">Khoảng</span>
       <span className="text-[13px] font-medium text-green-600">{ageRange[1] - ageRange[0]} năm</span>
     </div>
   </div>
 )}
   </div>
+  <div className="p-4 flex items-center justify-between">
+    <div>
+      <span className="text-sm font-medium">Duyệt thành viên</span>
+      <p className="text-xs text-zinc-500 mt-0.5">Phê duyệt trước khi tham gia</p>
+    </div>
+    <button
+      onClick={() => setNeedApproval(!needApproval)}
+      className={`relative w-11 h-6 rounded-full transition-colors ${needApproval? 'bg-green-500' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+    >
+      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform ${needApproval? 'translate-x-5' : 'translate-x-0.5'}`} />
+    </button>
+  </div>
 </div>
 <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
-  <h3 className="font-semibold text- mb-3">Cần chuẩn bị</h3>
+  <h3 className="font-semibold text-sm mb-3">Cần chuẩn bị</h3>
   <div className="flex gap-2">
-                      <input value={reqInput} onChange={e => setReqInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addReq()} placeholder="VD: Laptop, giày..." className="flex-1 h-10 px-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 outline-none focus:ring-2 focus:ring-green-500/20 text-[14px]" />
-                      <button onClick={addReq} className="w-10 h-10 rounded-xl bg-green-500 hover:bg-green-600 grid place-items-center transition-colors active:scale-95"><FiPlus size={18} className="text-white" /></button>
-                    </div>
-                    {requirements.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-3">
-                        {requirements.map((r, i) => (
-                          <div key={i} className="flex items-center gap-1.5 h-7 pl-2.5 pr-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800">
-                            <span className="text-[12px]">{r}</span>
-                            <button onClick={() => removeReq(i)} className="w-4 h-4 grid place-items-center hover:text-red-500 transition-colors"><FiX size={12} /></button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+    <input value={reqInput} onChange={e => setReqInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addReq()} placeholder="VD: Laptop, giày..." className="flex-1 h-10 px-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 outline-none focus:ring-2 focus:ring-green-500/20 text-[14px]" />
+    <button onClick={addReq} className="w-10 h-10 rounded-xl bg-green-500 hover:bg-green-600 grid place-items-center transition-colors active:scale-95"><FiPlus size={18} className="text-white" /></button>
+  </div>
+  {requirements.length > 0 && (
+    <div className="flex flex-wrap gap-1.5 mt-3">
+      {requirements.map((r, i) => (
+        <div key={i} className="flex items-center gap-1.5 h-7 pl-2.5 pr-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800">
+          <span className="text-[12px]">{r}</span>
+          <button onClick={() => removeReq(i)} className="w-4 h-4 grid place-items-center hover:text-red-500 transition-colors"><FiX size={12} /></button>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
                 </motion.div>
               )}
             </AnimatePresence>
           </motion.div>
         </div>
-
         <div className="fixed bottom-0 inset-x-0 z-30 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-2xl border-t border-zinc-200/80 dark:border-zinc-800/80">
           <div className="max-w-[600px] mx-auto px-4 h-[84px] flex items-center gap-3" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
             <div className="flex-1 min-w-0 hidden sm:block">
