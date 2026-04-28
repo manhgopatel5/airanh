@@ -46,7 +46,7 @@ export default function CreatePlanFinal() {
 
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
-  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [category, setCategory] = useState<Category>(CATEGORIES[0]);
   const [location, setLocation] = useState("");
   const [locationDetail, setLocationDetail] = useState("");
   const [time, setTime] = useState("");
