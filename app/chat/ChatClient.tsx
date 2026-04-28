@@ -33,8 +33,7 @@ import {
 import { RiAddLine, RiPushpinFill } from "react-icons/ri";
 import Link from "next/link";
 import { toast, Toaster } from "sonner";
-import { formatDistanceToNow, format, isToday, isYesterday } from "date-fns";
-import { vi } from "date-fns/locale";
+import { format, isToday, isYesterday } from "date-fns";
 
 type ChatItem = {
   uid: string;
