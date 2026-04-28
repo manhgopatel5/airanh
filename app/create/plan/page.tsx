@@ -12,7 +12,7 @@ import { useAuth } from "@/lib/useAuth";
 
 type Category = { id: string; label: string; emoji: string; suggestions: string[] };
 type CostType = "free" | "share" | "host" | "ticket";
-type Privacy = "public" | "friends_of_friends" | "private";
+type Privacy = "public" | "friends" | "private"; // FIX: đổi từ friends_of_friends
 
 const CATEGORIES: Category[] = [
   { id: "cafe", label: "Cafe", emoji: "☕", suggestions: ["Cafe sáng T7", "Work date", "Cafe chill", "Làm việc"] },
@@ -29,7 +29,7 @@ const TEMPLATES = [
   { name: "Cafe làm việc", cat: "cafe", title: "Cafe sáng thứ 7", loc: "The Workshop", time: "09:00" },
   { name: "Nhậu cuối tuần", cat: "drink", title: "Nhậu tối nay", loc: "Quán ốc", time: "19:00" },
   { name: "Chạy bộ", cat: "sport", title: "Chạy bộ công viên", loc: "CV Tao Đàn", time: "05:30" },
-  { name: "Boardgame", cat: "game", title: "Boardgame tối T7", loc: "Boardgame Station", time: "19:30" },
+  { id: "game", name: "Boardgame", cat: "game", title: "Boardgame tối T7", loc: "Boardgame Station", time: "19:30" },
 ];
 
 const POPULAR_PLACES = [
@@ -89,7 +89,7 @@ export default function CreatePlanFinal() {
       const d = JSON.parse(saved);
       setTitle(d.title || "");
       setDesc(d.desc || "");
-      setCategory(CATEGORIES.find(c => c.id === d.cat) || CATEGORIES[0]);
+      setCategory(CATEGORIES.find(c => c.id === d.cat) || CATEGORIES[0]!); // FIX: thêm!
       setLocation(d.location || "");
       setTime(d.time || "");
     } catch {}
@@ -143,10 +143,10 @@ export default function CreatePlanFinal() {
   const useTemplate = (t: typeof TEMPLATES[0]) => {
     setTitle(t.title);
     setLocation(t.loc);
-    setCategory(CATEGORIES.find(c => c.id === t.cat) || CATEGORIES[0]);
+    setCategory(CATEGORIES.find(c => c.id === t.cat) || CATEGORIES[0]!); // FIX: thêm!
     const d = new Date();
-const [h, m] = t.time.split(":").map(Number);
-d.setHours(h || 0, m || 0, 0, 0);
+    const [h, m] = t.time.split(":").map(Number);
+    d.setHours(h || 0, m || 0, 0, 0);
     if (d < new Date()) d.setDate(d.getDate() + 1);
     setTime(d.toISOString().slice(0, 16));
     setShowTemplates(false);
@@ -498,8 +498,8 @@ d.setHours(h || 0, m || 0, 0, 0);
       </div>
 
       <style jsx global>{`
-      .scrollbar-hide::-webkit-scrollbar { display: none; }
-      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+     .scrollbar-hide::-webkit-scrollbar { display: none; }
+     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </>
   );
