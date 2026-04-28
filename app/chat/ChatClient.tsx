@@ -21,14 +21,13 @@ import {
   Timestamp,
   Unsubscribe,
 } from "firebase/firestore";
-import {
-  FiSearch,
-  FiMessageSquare,
-  FiUserPlus,
-  FiX,
+import { 
+  FiSearch, 
+  FiMessageSquare, 
+  FiUserPlus, 
+  FiX, 
   FiLoader,
-  FiUsers,
-  FiCheck,
+  FiBellOff
 } from "react-icons/fi";
 import { RiAddLine, RiPushpinFill } from "react-icons/ri";
 import Link from "next/link";
