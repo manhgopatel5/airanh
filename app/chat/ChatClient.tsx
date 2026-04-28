@@ -1044,15 +1044,19 @@ export default function ChatClient() {
                         className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8e8e93] pointer-events-none"
                         size={18}
                       />
-                      <input
-                        type="text"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="ID hoặc @username"
-                        className="w-full h-[44px] pl-10 pr-3.5 bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded-[12px] text-[16px] outline-none focus:border-[#0a84ff] focus:ring-4 focus:ring-[#0a84ff]/10 transition-all"
-                        autoFocus
-                        autoComplete="off"
-                      />
+       <input
+  type="search"
+  inputMode="search"
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+  placeholder="ID hoặc @username"
+  className="w-full h- pl-10 pr-3.5 bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded- text- outline-none focus:border-[#0a84ff] focus:ring-4 focus:ring-[#0a84ff]/10 transition-all"
+  autoFocus
+  autoComplete="off"
+  autoCorrect="off"
+  spellCheck={false}
+  name="search-user-not-login"
+/>
                     </div>
                     <button
                       type="submit"
