@@ -295,7 +295,7 @@ navigator.geolocation.getCurrentPosition(
     try {
       const res = await fetch(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=1000&type=cafe&key=YOUR_API_KEY`);
       const data = await res.json();
-      setNearbyPlaces(data.results?.slice(0,8).map(p => p.name) || []);
+      setNearbyPlaces(data.results?.slice(0,8).map((p: any) => p.name) || []);
     } catch {
       setNearbyPlaces(["Highlands", "Starbucks", "Phúc Long"]); // fallback
     }
