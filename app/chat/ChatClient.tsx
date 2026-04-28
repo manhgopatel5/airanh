@@ -699,20 +699,20 @@ export default function ChatClient() {
   /**
    * Tách chat đã ghim và chưa ghim
    */
-const { pinnedChats, normalChats } = useMemo(() => {
-  const pinnedList = filteredChats.filter((chat) =>
-    pinned.includes(chat.chatId)
-  );
+  const { pinnedChats, normalChats } = useMemo(() => {
+    const pinnedList = filteredChats.filter((chat) =>
+      pinned.includes(chat.chatId)
+    );
 
-  const normalList = filteredChats.filter(
-    (chat) => !pinned.includes(chat.chatId)
-  );
+    const normalList = filteredChats.filter(
+      (chat) =>!pinned.includes(chat.chatId)
+    );
 
-  return {
-    pinnedChats: pinnedList,
-    normalChats: normalList,
-  };
-}, [filteredChats, pinned]);
+    return {
+      pinnedChats: pinnedList,
+      normalChats: normalList,
+    };
+  }, [filteredChats, pinned]);
 
   /**
    * Danh sách bạn bè để chọn tạo nhóm
@@ -842,7 +842,7 @@ const { pinnedChats, normalChats } = useMemo(() => {
           ) : filteredChats.length === 0? (
             // Empty state
             <div className="flex flex-col items-center justify-center min-h- px-8 text-center">
-              <div className="w- h- bg-[#f2f2f7] dark:bg-zinc-900 rounded- flex items-center justify-center mb-4 shadow-sm">
+              <div className="w- h- bg-[#f2f7] dark:bg-zinc-900 rounded- flex items-center justify-center mb-4 shadow-sm">
                 <FiMessageSquare
                   className="text-gray-400"
                   size={30}
@@ -882,13 +882,13 @@ const { pinnedChats, normalChats } = useMemo(() => {
               )}
 
               {/* Chat list */}
-<div className="bg-white dark:bg-black divide-y divide-gray-100 dark:divide-zinc-900">
-  {[...pinnedChats, ...normalChats].map((chat) => (
-    <div key={chat.chatId} className="group relative">
-      <Link
-        href={`/chat/${chat.chatId}`}
-        className="flex items-center gap-3 px-4 py-3 active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors duration-150"
-      >
+              <div className="bg-white dark:bg-black divide-y divide-gray-100 dark:divide-zinc-900">
+                {[...pinnedChats,...normalChats].map((chat) => (
+                  <div key={chat.chatId} className="group relative">
+                    <Link
+                      href={`/chat/${chat.chatId}`}
+                      className="flex items-center gap-3 px-4 py- active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors duration-150"
+                    >
                       {/* Avatar */}
                       <div className="relative flex-shrink-0">
                         <img
@@ -943,7 +943,7 @@ const { pinnedChats, normalChats } = useMemo(() => {
                               </span>
                             </div>
                           ) : (
-                            <p className="text- leading- text-[#8e8e93] dark:text-zinc-500 truncate">
+                            <p className="text- leading- text-[#8e93] dark:text-zinc-500 truncate">
                               {chat.isGroup &&
                               chat.lastSenderName &&
                               chat.lastSenderId!== user?.uid
@@ -1066,13 +1066,13 @@ const { pinnedChats, normalChats } = useMemo(() => {
                     </button>
                   </form>
                 ) : (
-                  <div className="flex-1 flex-col min-h-0 space-y-3">
+                  <div className="flex-1 flex flex-col min-h-0 space-y-3">
                     <input
                       type="text"
                       value={groupName}
                       onChange={(e) => setGroupName(e.target.value)}
                       placeholder="Tên nhóm"
-                      className="w-full h- px-3.5 bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded- text- outline-none focus:border-[#0a84ff] focus:ring-4 focus:ring-[#0a84ff]/10 transition-all"
+                      className="w-full h- px-3.5 bg-white dark:bg-zinc-800 border-black/10 dark:border-white/10 rounded- text- outline-none focus:border-[#0a84ff] focus:ring-4 focus:ring-[#0a84ff]/10 transition-all"
                       maxLength={30}
                     />
 
