@@ -548,15 +548,34 @@ export default function ChatClient() {
                 <div className="w-[72px] h-[72px] bg-[#f2f2f7] dark:bg-zinc-900 rounded-[20px] flex items-center justify-center mb-4">
                   <FiUsers className="text-gray-400" size={30} strokeWidth={1.5} />
                 </div>
-                <h3 className="text-[20px] font-semibold mb-1.5">{search ? "Không tìm thấy" : "Chưa có bạn bè"}</h3>
-                <p className="text-[15px] text-[#8e8e93] max-w-[280px]">{search ? "Thử tìm với từ khóa khác" : "Nhấn + để thêm bạn bè mới"}</p>
-                {!search && <button onClick={() => setShowAdd(true)} className={`mt-6 px-5 h-[36px] ${primaryBg} ${primaryHover} text-white rounded-full text-[14px] font-medium active:scale-95`}>Thêm bạn</button>}
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-100 dark:divide-zinc-900">
-                <div className="px-4 py-2 bg-gray-50 dark:bg-zinc-950">
-                  <p className="text-[12px] text-[#8e8e93] font-medium">{filteredFriends.filter(f => f.isOnline).length} đang hoạt động • {filteredFriends.length} bạn bè</p>
-                </div>
+               <h3 className="text- font-semibold mb-1.5">
+  {search? "Không tìm thấy" : "Chưa có bạn"}
+</h3>
+<p className="text- text-[#8e8e93] dark:text-zinc-500 max-w- leading-">
+  {search? "Thử tìm với từ khóa khác" : "Mời kết bạn để bắt đầu trò chuyện cùng nhau"}
+</p>
+{!search && (
+  <button
+    onClick={() => setShowAdd(true)}
+    className={`mt-6 px-6 h- ${primaryBg} ${primaryHover} ${primaryActive} text-white rounded-full text- font-medium shadow-sm active:scale-95 transition-all flex items-center gap-2`}
+  >
+    <FiUserPlus size={18} />
+    Kết bạn ngay
+  </button>
+)}
+</div>
+) : (
+<div className="divide-y divide-gray-100 dark:divide-zinc-900">
+  <div className="px-4 py-2.5 bg-gray-50/80 dark:bg-zinc-950/50 backdrop-blur-sm sticky top- z-10">
+    <p className="text- text-[#8e8e93] dark:text-zinc-500 font-medium">
+      <span className="inline-flex items-center gap-1">
+        <span className="w-2 h-2 bg-[#30d158] rounded-full animate-pulse" />
+        {filteredFriends.filter(f => f.isOnline).length} đang hoạt động
+      </span>
+      <span className="mx-1.5">•</span>
+      {filteredFriends.length} bạn bè
+    </p>
+  </div>
                 {filteredFriends.map((friend) => (
                   <div key={friend.uid} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-900/50 active:bg-gray-100 dark:active:bg-zinc-800 transition-colors">
                     <div className="relative flex-shrink-0">
