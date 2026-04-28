@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { getFirebaseDB } from "@/lib/firebase";
-import { collection, query, where, onSnapshot, orderBy, limit, doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, limit, doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { FiX, FiCheck, FiPlus, FiChevronRight, FiUpload, FiClock, FiMapPin, FiEye, FiCopy, FiNavigation } from "react-icons/fi";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
