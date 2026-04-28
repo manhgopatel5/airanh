@@ -236,7 +236,6 @@ export default function CreatePlanFinal() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [nearbyPlaces, setNearbyPlaces] = useState<string[]>([]);
-  const [nearbyIndex, setNearbyIndex] = useState(0);
   const [locating, setLocating] = useState(false);
   const [step, setStep] = useState(1);
   const [dragX, setDragX] = useState(0);
@@ -320,13 +319,7 @@ useEffect(() => {
     localStorage.setItem("plan_draft", JSON.stringify({ title, desc, cat: category.id, location, time }));
   }, [title, desc, category, location, time]);
 
-useEffect(() => {
-  const places = nearbyPlaces.length > 0? nearbyPlaces : POPULAR_PLACES;
-  const id = setInterval(() => {
-    setNearbyIndex(i => (i + 7) % places.length);
-  }, 5000);
-  return () => clearInterval(id);
-}, [nearbyPlaces]);
+
 
   const handleImage = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -581,11 +574,11 @@ const submit = async () => {
   <div className="flex items-center justify-between mb-1.5 px-1">
     <p className="text-[11px] text-zinc-500">{nearbyPlaces.length > 0? "Gần bạn" : "Gợi ý"}</p>
   </div>
- <div className="h-8 overflow-hidden">
-  <div className="flex gap-1.5">
-    {(nearbyPlaces.length > 0 ? nearbyPlaces : POPULAR_PLACES).slice(nearbyIndex, nearbyIndex + 7).map(p => (
+<div className="h-8 overflow-hidden">
+  <div className="flex gap-1.5 w-max animate-[scroll_25s_linear_infinite] hover:[animation-play-state:paused]">
+    {[...(nearbyPlaces.length>0?nearbyPlaces:POPULAR_PLACES),...(nearbyPlaces.length>0?nearbyPlaces:POPULAR_PLACES)].map((p,i) => (
       <button 
-        key={p} 
+        key={`${p}-${i}`}
         onClick={async () => {
           setLocation(p);
           try {
@@ -600,7 +593,7 @@ const submit = async () => {
             }
           } catch {}
         }}
-        className={`shrink-0 h-7 px-3 rounded-full text- font-medium whitespace-nowrap transition-all ${location === p ? "bg-green-500 text-white" : "bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200"}`}
+        className={`shrink-0 h-7 px-3 rounded-full text-[12px] font-medium whitespace-nowrap transition-all ${location === p ? "bg-green-500 text-white" : "bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200"}`}
       >
         {p}
       </button>
@@ -632,10 +625,10 @@ const submit = async () => {
   </div>
   {costType!== "free" && costType!== "host" && (
     <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
-      <div className="flex items-baseline gap-1.5">
-        <input type="number" value={costAmount || ""} onChange={e => setCostAmount(Number(e.target.value))} className="w-20 h-10 px-3 text-[18px] font-bold bg-zinc-50 dark:bg-zinc-800 rounded-xl outline-none text-center" />
-        <span className="text-[13px] text-zinc-500">đ</span>
-      </div>
+<div className="relative">
+  <input type="number" value={costAmount || ""} onChange={e => setCostAmount(Number(e.target.value))} className="w-full h-10 pl-3 pr-12 text-[18px] font-bold bg-zinc-50 dark:bg-zinc-800 rounded-xl outline-none" placeholder="0" />
+  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-zinc-500 font-medium">VNĐ</span>
+</div>
       {splitCost > 0 && <p className="text-[11px] text-green-600 font-medium mt-0.5">~{splitCost.toLocaleString()}đ/người</p>}
     </div>
   )}
@@ -701,18 +694,28 @@ const submit = async () => {
                   <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 divide-y divide-zinc-100 dark:divide-zinc-800 shadow-sm">
   <div className="p-4 flex items-center justify-between">
     <span className="text- font-medium">Ai xem được</span>
-    <select value={privacy} onChange={e => setPrivacy(e.target.value as Privacy)} className="text- font-medium bg-zinc-100 dark:bg-zinc-800 border-0 rounded-xl px-3 py-1.5 outline-none appearance-none">
+    <select value={privacy} onChange={e => setPrivacy(e.target.value as Privacy)} className="text-[14px] font-medium bg-zinc-100 dark:bg-zinc-800 border-0 rounded-xl px-3 py-1.5 outline-none appearance-none max-w-[140px] truncate">
       <option value="public">Công khai</option>
       <option value="friends">Bạn bè</option>
       <option value="friends_except">Bạn bè (ngoại trừ)</option>
       <option value="private">Riêng tư</option>
     </select>
   </div>
-
+  {privacy === 'friends_except' && (
+    <div className="px-4 pb-3 -mt-2">
+      <div className="flex flex-wrap gap-1.5">
+        {friends.slice(0,10).map(f => (
+          <button key={f.id} onClick={() => toggleInvite(f.id)} className={`px-2.5 h-6 rounded-full text- ${invites.includes(f.id)?'bg-red-500 text-white':'bg-zinc-100 dark:bg-zinc-800'}`}>
+            {invites.includes(f.id)?'✕ ':''}{f.name.split(' ')[0]}
+          </button>
+        ))}
+      </div>
+    </div>
+  )}
   <div className="p-4">
     <div className="flex items-center justify-between">
       <span className="text- font-medium">Độ tuổi</span>
-      <select value={minAge} onChange={e => setMinAge(Number(e.target.value))} className="text- font-medium bg-zinc-100 dark:bg-zinc-800 border-0 rounded-xl px-3 py-1.5 outline-none appearance-none">
+     <select value={minAge} onChange={e => setMinAge(Number(e.target.value))} className="text- font-medium bg-zinc-100 dark:bg-zinc-800 border-0 rounded-xl px-3 py-1.5 outline-none appearance-none max-w-[100px] truncate">
         <option value={0}>Mọi tuổi</option>
         <option value={18}>18+</option>
         <option value={21}>21+</option>
@@ -726,8 +729,8 @@ const submit = async () => {
           <span className="font-medium text-green-600">{ageRange[1]}</span>
         </div>
         <div className="relative">
-          <input type="range" min={13} max={65} value={ageRange[0]} onChange={e => setAgeRange([Math.min(Number(e.target.value), ageRange[1]!-1), ageRange[1]!])} className="absolute w-full h-2 accent-green-500 z-10" />
-<input type="range" min={13} max={65} value={ageRange[1]} onChange={e => setAgeRange([ageRange[0]!, Math.max(Number(e.target.value), ageRange[0]!+1)])} className="absolute w-full h-2 accent-green-500" />
+          <input type="range" min={16} max={100} value={ageRange[0]} onChange={e => setAgeRange([Math.min(Number(e.target.value), ageRange[1]!-1), ageRange[1]!])} className="absolute w-full h-2 accent-green-500 z-10 pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto" />
+<input type="range" min={16} max={100} value={ageRange[1]} onChange={e => setAgeRange([ageRange[0]!, Math.max(Number(e.target.value), ageRange[0]!+1)])} className="absolute w-full h-2 accent-green-500 pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto" />
           <div className="h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full" />
         </div>
       </div>
@@ -817,10 +820,11 @@ const submit = async () => {
         )}
       </div>
 
-      <style jsx global>{`
-      .scrollbar-hide::-webkit-scrollbar { display: none; }
-      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-      `}</style>
+<style jsx global>{`
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+@keyframes scroll { to { transform: translateX(-50%); } }
+`}</style>
     </>
   );
 }
