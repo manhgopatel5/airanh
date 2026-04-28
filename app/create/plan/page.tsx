@@ -207,6 +207,7 @@ export default function CreatePlanFinal() {
   const [minAge, setMinAge] = useState(0);
   const [needApproval, setNeedApproval] = useState(false);
   const [pollLocation, setPollLocation] = useState(false);
+  const [pollTime, setPollTime] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
@@ -299,11 +300,7 @@ navigator.geolocation.getCurrentPosition(
     } catch {
       setNearbyPlaces(["Highlands", "Starbucks", "Phúc Long"]); // fallback
     }
-const res = await fetch(
-  `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=1000&type=cafe&key=YOUR_API_KEY`
-);
-const data = await res.json();
-setNearbyPlaces(data.results?.slice(0,8).map((p: any) => p.name) || []);
+
       setLocating(false);
       toast.success("Đã lấy vị trí");
     },
@@ -490,7 +487,7 @@ const submit = async () => {
     <button onClick={getCurrentLocation} disabled={locating} className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 grid place-items-center hover:bg-zinc-200 active:scale-95 disabled:opacity-50">
       {locating? <div className="w-3 h-3 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" /> : <FiNavigation size={14} className="text-zinc-600 dark:text-zinc-400" />}
     </button>
-    <label className="flex items-center gap-1.5 text-[12px] cursor-pointer"><input type="checkbox" checked={pollLocation} onChange={e => setPollLocation(e.target.checked)} className="w-4 h-4 accent-green-500 rounded" />Bình chọn</label>
+    <label className="flex items-center gap-1.5 text-[12px] cursor-pointer"><input type="checkbox" checked={pollTime} onChange={e => setPollTime(e.target.checked)} className="w-4 h-4 accent-green-500 rounded" />Bình chọn</label>
   </div>
 </div>
                     <div className="grid grid-cols-4 gap-2 mb-3">
@@ -512,7 +509,7 @@ const submit = async () => {
                     </div>
                     <div className="relative"><FiNavigation className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={16} /><input value={location} onChange={e => setLocation(e.target.value)} placeholder="Tìm địa điểm, quán, địa chỉ..." className="w-full h-12 pl-10 pr-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 text-[15px] placeholder:text-zinc-400" /></div>
 {userLocation && (
-  <p className="text- mt-2 px-1 text-green-600">
+  <p className="text-[11px] mt-2 px-1 text-green-600">
     📍 {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
   </p>
 )}
