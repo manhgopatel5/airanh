@@ -25,6 +25,7 @@ import {
   FiSearch, 
   FiMessageSquare, 
   FiUserPlus, 
+  FiUsers,
   FiX, 
   FiLoader,
   FiBellOff
