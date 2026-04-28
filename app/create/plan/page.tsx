@@ -2,10 +2,10 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
-  FiX, FiCheck, FiPlus, FiTrash2, FiChevronRight, FiUpload,
-  FiClock, FiMapPin, FiUsers, FiDollarSign, FiLock, FiGlobe,
-  FiCoffee, FiZap, FiMusic, FiBook, FiHeart, FiRepeat,
-  FiShield, FiUserPlus, FiEye, FiCopy, FiNavigation, FiSun
+  FiX, FiCheck, FiPlus, FiChevronRight, FiUpload,
+  FiClock, FiMapPin, FiUsers, FiDollarSign, FiGlobe,
+  FiRepeat, FiShield, FiUserPlus, FiEye, FiCopy, 
+  FiNavigation, FiSun
 } from "react-icons/fi";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
