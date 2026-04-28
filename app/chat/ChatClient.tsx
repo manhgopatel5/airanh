@@ -882,13 +882,13 @@ const { pinnedChats, normalChats } = useMemo(() => {
               )}
 
               {/* Chat list */}
-              <div className="bg-white dark:bg-black divide-y divide-gray-100 dark:divide-zinc-900">
-                {[...pinnedChats,...normalChats].map((chat, index) => (
-                  <div key={chat.chatId} className="group relative">
-                    <Link
-                      href={`/chat/${chat.chatId}`}
-                      className="flex items-center gap-3 px-4 py- active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors duration-150"
-                    >
+<div className="bg-white dark:bg-black divide-y divide-gray-100 dark:divide-zinc-900">
+  {[...pinnedChats, ...normalChats].map((chat) => (
+    <div key={chat.chatId} className="group relative">
+      <Link
+        href={`/chat/${chat.chatId}`}
+        className="flex items-center gap-3 px-4 py-3 active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors duration-150"
+      >
                       {/* Avatar */}
                       <div className="relative flex-shrink-0">
                         <img
