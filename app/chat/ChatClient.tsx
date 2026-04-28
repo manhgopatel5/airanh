@@ -983,7 +983,7 @@ export default function ChatClient() {
             ADD CHAT MODAL
             =================================================================== */}
         {showAdd && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 p-4">
             {/* Backdrop */}
             <div
               className="absolute inset-0 bg-black/40 backdrop-blur-2xl"
