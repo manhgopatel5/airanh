@@ -5,6 +5,7 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, limit, doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { FiX, FiCheck, FiPlus, FiChevronRight, FiUpload, FiClock, FiMapPin, FiEye, FiCopy, FiNavigation } from "react-icons/fi";
 import { toast, Toaster } from "sonner";
+import { addDoc } from 'firebase/firestore';
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { useAuth } from "@/lib/useAuth";
 
@@ -288,17 +289,22 @@ useEffect(() => {
   const getCurrentLocation = () => {
   if (!navigator.geolocation) return toast.error("Trình duyệt không hỗ trợ");
   setLocating(true);
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const { latitude, longitude } = pos.coords;
-      setUserLocation({ lat: latitude, lng: longitude });
-      // Giả lập địa điểm gần - thực tế gọi API
-      setNearbyPlaces([
-  "Highlands gần đây", "The Coffee House", "Starbucks", "Phúc Long",
-  "Katinat", "Cheese Coffee", "Cộng Cafe", "OHA Coffee",
-  "Laha Cafe", "Gong Cha", "Tocotoco", "KOI Thé",
-  "Phê La", "Aha Cafe", "Trung Nguyên", "Passio"
-]);
+navigator.geolocation.getCurrentPosition(
+  async (pos) => {  // ← thêm async
+    const { latitude, longitude } = pos.coords;
+    setUserLocation({ lat: latitude, lng: longitude });
+    try {
+      const res = await fetch(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=1000&type=cafe&key=YOUR_API_KEY`);
+      const data = await res.json();
+      setNearbyPlaces(data.results?.slice(0,8).map(p => p.name) || []);
+    } catch {
+      setNearbyPlaces(["Highlands", "Starbucks", "Phúc Long"]); // fallback
+    }
+const res = await fetch(
+  `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=1000&type=cafe&key=YOUR_API_KEY`
+);
+const data = await res.json();
+setNearbyPlaces(data.results?.slice(0,8).map(p => p.name) || []);
       setLocating(false);
       toast.success("Đã lấy vị trí");
     },
@@ -349,22 +355,53 @@ const handleDragEnd = (_: any, info: PanInfo) => {
     toast.success(`Đã dùng mẫu "${t.name}"`);
   };
 
-  const submit = async () => {
-    if (!title.trim() || title.trim().length < 3) return toast.error("Nhập tên (tối thiểu 3 ký tự)");
-    if (!location.trim()) return toast.error("Chọn địa điểm");
-    if (!time || new Date(time) < new Date()) return toast.error("Chọn thời gian hợp lệ");
-    setLoading(true);
-    try {
-      await new Promise(r => setTimeout(r, 800));
-      localStorage.removeItem("plan_draft");
-      toast.success("Tạo kế hoạch thành công!");
-      setTimeout(() => router.push("/"), 600);
-    } catch {
-      toast.error("Tạo thất bại");
-    } finally {
-      setLoading(false);
-    }
-  };
+const submit = async () => {
+  if (!title.trim() || title.trim().length < 3) return toast.error("Nhập tên (tối thiểu 3 ký tự)");
+  if (!location.trim()) return toast.error("Chọn địa điểm");
+  if (!time || new Date(time) < new Date()) return toast.error("Chọn thời gian hợp lệ");
+  
+  setLoading(true);
+  try {
+    const db = getFirebaseDB();
+    await addDoc(collection(db, 'plans'), {
+      title: title.trim(),
+      desc: desc.trim(),
+      category: category.id,
+      location: location.trim(),
+      locationDetail: locationDetail.trim(),
+      coordinates: userLocation ? {
+        lat: userLocation.lat,
+        lng: userLocation.lng
+      } : null,
+      time: Timestamp.fromDate(new Date(time)),
+      duration,
+      maxPeople,
+      costType,
+      costAmount: costType === 'free' || costType === 'host' ? 0 : costAmount,
+      privacy,
+      minAge,
+      needApproval,
+      pollTime,
+      pollLocation,
+      invites,
+      requirements,
+      cover,
+      createdBy: user?.uid,
+      createdAt: Timestamp.now(),
+      status: 'active',
+      participants: [user?.uid],
+    });
+    
+    localStorage.removeItem("plan_draft");
+    toast.success("Tạo kế hoạch thành công!");
+    setTimeout(() => router.push("/"), 600);
+  } catch (error) {
+    console.error(error);
+    toast.error("Tạo thất bại, thử lại");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const progress = (step / 3) * 100;
   const canNext = step === 1? title.trim().length >= 3 : step === 2?!!location.trim() &&!!time : true;
@@ -475,6 +512,11 @@ const handleDragEnd = (_: any, info: PanInfo) => {
                       <label className="flex items-center gap-1.5 text-[12px] cursor-pointer"><input type="checkbox" checked={pollLocation} onChange={e => setPollLocation(e.target.checked)} className="w-4 h-4 accent-green-500 rounded" />Bình chọn</label>
                     </div>
                     <div className="relative"><FiNavigation className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={16} /><input value={location} onChange={e => setLocation(e.target.value)} placeholder="Tìm địa điểm, quán, địa chỉ..." className="w-full h-12 pl-10 pr-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 text-[15px] placeholder:text-zinc-400" /></div>
+{userLocation && (
+  <p className="text- mt-2 px-1 text-green-600">
+    📍 {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
+  </p>
+)}
 {nearbyPlaces.length > 0 && (
   <div className="mt-2.5">
     <div className="flex items-center justify-between mb-1.5 px-1">
