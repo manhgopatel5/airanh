@@ -610,6 +610,7 @@ const submit = async () => {
 <div className="flex gap-1.5 mt-2.5 overflow-x-auto scrollbar-hide pb-1">{POPULAR_PLACES.map(p => <button key={p} onClick={() => setLocation(p)} className={`shrink-0 h-7 px-3 rounded-full text-[12px] font-medium whitespace-nowrap transition-colors ${location === p? "bg-green-500 text-white" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200"}`}>{p}</button>)}</div>
                     <input value={locationDetail} onChange={e => setLocationDetail(e.target.value)} placeholder="Địa chỉ cụ thể (tùy chọn)" className="w-full mt-3 h-10 px-3.5 rounded-xl bg-zinc-50/70 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50 outline-none focus:ring-2 focus:ring-green-500/20 text-[13px] placeholder:text-zinc-400" />
                   </div>
+                </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm">
