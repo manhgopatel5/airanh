@@ -12,7 +12,7 @@ import type { CreateTaskInput } from "@/types/task";
 import {
   FiUpload, FiX, FiUsers, FiClock,
   FiEyeOff, FiNavigation,
-  FiCalendar, FiChevronRight,
+  FiCalendar,
   FiMapPin,
   FiFileText
 } from "react-icons/fi";
