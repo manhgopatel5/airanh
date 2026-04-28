@@ -12,8 +12,7 @@ import type { CreateTaskInput } from "@/types/task";
 import {
   FiUpload, FiX, FiUsers, FiClock,
   FiEyeOff, FiNavigation,
-  FiCalendar, FiTag, FiMapPin,
-  FiFileText
+  FiCalendar, FiTag, FiMapPin, FiEye, FiFileText
 } from "react-icons/fi";
 import { Timestamp } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
