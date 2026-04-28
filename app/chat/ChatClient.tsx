@@ -109,10 +109,7 @@ export default function ChatClient() {
     if (navigator.vibrate) navigator.vibrate(10);
   }, []);
 
-  const saveMuted = useCallback((v: string[]) => {
-    setMuted(v);
-    localStorage.setItem(MUTED_KEY, JSON.stringify(v));
-  }, []);
+
 
   // REALTIME - UPGRADED
   useEffect(() => {
