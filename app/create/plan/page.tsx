@@ -726,8 +726,8 @@ const submit = async () => {
           <span className="font-medium text-green-600">{ageRange[1]}</span>
         </div>
         <div className="relative">
-          <input type="range" min={13} max={65} value={ageRange[0]} onChange={e => setAgeRange([Math.min(Number(e.target.value), ageRange[1]-1), ageRange[1]])} className="absolute w-full h-2 accent-green-500 z-10" />
-          <input type="range" min={13} max={65} value={ageRange[1]} onChange={e => setAgeRange([ageRange[0], Math.max(Number(e.target.value), ageRange[0]+1)])} className="absolute w-full h-2 accent-green-500" />
+          <input type="range" min={13} max={65} value={ageRange[0]} onChange={e => setAgeRange([Math.min(Number(e.target.value), ageRange[1]!-1), ageRange[1]!])} className="absolute w-full h-2 accent-green-500 z-10" />
+<input type="range" min={13} max={65} value={ageRange[1]} onChange={e => setAgeRange([ageRange[0]!, Math.max(Number(e.target.value), ageRange[0]!+1)])} className="absolute w-full h-2 accent-green-500" />
           <div className="h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full" />
         </div>
       </div>
