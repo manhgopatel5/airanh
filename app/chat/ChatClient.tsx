@@ -455,10 +455,22 @@ export default function ChatClient() {
     if (!user?.uid) return;
     try {
       const batch = writeBatch(db);
-      batch.set(doc(db, "users", user.uid, "friends", notif.fromUid), { addedAt: new Date(), uid: notif.fromUid });
-      batch.set(doc(db, "users", notif.fromUid, "friends", user.uid), { addedAt: new Date(), uid: user.uid });
-      batch.update(doc(db, "notifications", user.uid, "items", notif.id), { read: true });
+
+      batch.set(doc(db, "users", user.uid, "friends", notif.fromUid), {
+        addedAt: new Date(),
+        uid: notif.fromUid,
+      });
+      batch.set(doc(db, "users", notif.fromUid, "friends", user.uid), {
+        addedAt: new Date(),
+        uid: user.uid,
+      });
+
+      batch.update(doc(db, "notifications", user.uid, "items", notif.id), {
+        read: true
+      });
+
       await batch.commit();
+
       const userDoc = await getDoc(doc(db, "users", user.uid));
       const userData = userDoc.data();
       await createNotification(notif.fromUid, {
@@ -469,8 +481,15 @@ export default function ChatClient() {
         title: "Đã chấp nhận",
         message: "đã chấp nhận lời mời kết bạn",
       });
+
       const chatId = [user.uid, notif.fromUid].sort().join("_");
-      await setDoc(doc(db, "chats", chatId), { members: [user.uid, notif.fromUid], isGroup: false, createdAt: new Date(), updatedAt: new Date() }, { merge: true });
+      await setDoc(doc(db, "chats", chatId), {
+        members: [user.uid, notif.fromUid],
+        isGroup: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }, { merge: true });
+
       toast.success(`Đã kết bạn với ${notif.fromName}`);
       router.push(`/chat/${chatId}`);
     } catch (error) {
@@ -492,7 +511,9 @@ export default function ChatClient() {
   const handleMarkNotificationRead = useCallback(async (notifId: string) => {
     if (!user?.uid) return;
     try {
-      await updateDoc(doc(db, "notifications", user.uid, "items", notifId), { read: true });
+      await updateDoc(doc(db, "notifications", user.uid, "items", notifId), {
+        read: true
+      });
     } catch (error) {
       console.error("Mark read error:", error);
     }
@@ -558,6 +579,7 @@ export default function ChatClient() {
       const groupRef = doc(collection(db, "chats"));
       const groupData = { members: [user.uid,...selected], isGroup: true, groupName: trimmedName, admins: [user.uid], createdAt: new Date(), updatedAt: new Date(), lastMessage: `${user.displayName || "Bạn"} đã tạo nhóm`, lastSenderName: "Hệ thống" };
       await setDoc(groupRef, groupData);
+
       const userDoc = await getDoc(doc(db, "users", user.uid));
       const userData = userDoc.data();
       await Promise.all(selected.map(memberId =>
@@ -572,6 +594,7 @@ export default function ChatClient() {
           chatId: groupRef.id,
         })
       ));
+
       toast.success("Đã tạo nhóm thành công");
       router.push(`/chat/${groupRef.id}`);
       setShowAdd(false);
@@ -625,6 +648,7 @@ export default function ChatClient() {
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
+
     if (diffMins < 1) return "Vừa xong";
     if (diffMins < 60) return `${diffMins} phút trước`;
     if (diffHours < 24) return `${diffHours} giờ trước`;
@@ -670,11 +694,13 @@ export default function ChatClient() {
   }, [filteredChats, pinned]);
 
   const friendsForGroup = useMemo(() => items.filter((item) =>!item.isGroup), [items]);
+
   const unreadNotifications = useMemo(() => notifications.filter(n =>!n.read).length, [notifications]);
 
   const groupedNotifications = useMemo(() => {
     const today: NotificationItem[] = [];
     const earlier: NotificationItem[] = [];
+
     notifications.forEach(notif => {
       if (notif.createdAt?.toDate && isToday(notif.createdAt.toDate())) {
         today.push(notif);
@@ -682,6 +708,7 @@ export default function ChatClient() {
         earlier.push(notif);
       }
     });
+
     return { today, earlier };
   }, [notifications]);
 
@@ -716,12 +743,13 @@ export default function ChatClient() {
             <div className="flex items-center gap-2.5">
               <div className="relative flex-1">
                 <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
-                <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={activeTab === "friends"? "Tìm bạn bè" : activeTab === "notifications"? "Tìm thông báo" : "Tìm kiếm"} className={`w-full h-[38px] pl-[34px] pr-3.5 bg-[#f2f7] dark:bg-zinc-900 rounded-[10px] text-[15px] font-normal outline-none border-0 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 ${primaryRing} transition-all placeholder:text-gray-400`} autoComplete="off" autoCorrect="off" />
+                <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={activeTab === "friends"? "Tìm bạn bè" : activeTab === "notifications"? "Tìm thông báo" : "Tìm kiếm"} className={`w-full h-[38px] pl-[34px] pr-3.5 bg-[#f2f2f7] dark:bg-zinc-900 rounded-[10px] text-[15px] font-normal outline-none border-0 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 ${primaryRing} transition-all placeholder:text-gray-400`} autoComplete="off" autoCorrect="off" />
               </div>
               <button onClick={() => setShowAdd(true)} className={`w-[38px] h-[38px] ${primaryBg} ${primaryHover} ${primaryActive} rounded-[10px] flex items-center justify-center shadow-sm active:scale-95 transition-all duration-150`} aria-label="Tạo mới">
                 <RiAddLine className="text-white" size={22} strokeWidth={2.5} />
               </button>
             </div>
+            {/* SỬA: Chia đều 5 cột */}
             <div className="grid grid-cols-5 mt-3.5 px-0.5">
               {[
                 { key: "all", label: "Tất cả" },
@@ -730,7 +758,7 @@ export default function ChatClient() {
                 { key: "unread", label: "Chưa đọc" },
                 { key: "group", label: "Nhóm" }
               ].map((tab) => (
-                <button key={tab.key} onClick={() => setActiveTab(tab.key as any)} className={`relative py-2 text-[15px] whitespace-nowrap transition-colors duration-200 flex items-center justify-center gap-1 ${activeTab === tab.key? "text-black dark:text-white font-semibold" : "text-[#8e8e93] dark:text-zinc-500 font-normal"}`}>
+                <button key={tab.key} onClick={() => setActiveTab(tab.key as any)} className={`relative py-2 text-[15px] whitespace-nowrap transition-colors duration-200 flex items-center justify-center gap-1 ${activeTab === tab.key? "text-black dark:text-white font-semibold" : "text-[#8e93] dark:text-zinc-500 font-normal"}`}>
                   {tab.label}
                   {tab.badge? <span className="min-w-[18px] h-[18px] px-1 bg-[#ff3b30] rounded-full flex items-center justify-center"><span className="text-[11px] leading-none font-medium text-white">{tab.badge > 99? "99+" : tab.badge}</span></span> : null}
                   {activeTab === tab.key && <div className="absolute -bottom-[1px] left-0 right-0 h-[2.5px] bg-black dark:bg-white rounded-full" />}
@@ -740,7 +768,6 @@ export default function ChatClient() {
             {!isOnline && <div className="mt-2 flex justify-center"><span className="text-[12px] text-orange-500 font-medium flex items-center gap-1"><span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse" />Offline</span></div>}
           </div>
         </div>
-
         <div className="pb-24">
           {activeTab === "notifications"? (
             notifLoading? (
@@ -757,7 +784,7 @@ export default function ChatClient() {
               </div>
             ) : notifications.length === 0? (
               <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
-                <div className="w-[72px] h-[72px] bg-[#f2f2f7] dark:bg-zinc-900 rounded-[20px] flex items-center justify-center mb-4">
+                <div className="w-[72px] h-[72px] bg-[#f2f7] dark:bg-zinc-900 rounded-[20px] flex items-center justify-center mb-4">
                   <FiBell className="text-gray-400" size={30} strokeWidth={1.5} />
                 </div>
                 <h3 className="text-[20px] font-semibold mb-1.5">Chưa có thông báo</h3>
@@ -766,15 +793,16 @@ export default function ChatClient() {
             ) : (
               <div>
                 <div className="sticky top-[104px] z-10 px-4 py-2.5 bg-gray-50/80 dark:bg-zinc-950/50 backdrop-blur-sm border-b border-gray-100 dark:border-zinc-900 flex items-center justify-between">
-                  <p className="text-[12px] text-[#8e8e93] dark:text-zinc-500 font-medium">{unreadNotifications} chưa đọc</p>
+                  <p className="text-[12px] text-[#8e93] dark:text-zinc-500 font-medium">{unreadNotifications} chưa đọc</p>
                   <div className="flex items-center gap-3">
                     <button onClick={handleMarkAllRead} className={`text-[12px] ${primaryText} font-medium`}>Đọc tất cả</button>
                     <button onClick={handleClearAllNotifications} className="text-[12px] text-[#ff3b30] font-medium">Xóa tất cả</button>
                   </div>
                 </div>
+
                 {groupedNotifications.today.length > 0 && (
                   <div>
-                    <div className="px-4 pt-3 pb-1"><p className="text-[12px] font-medium text-[#8e8e93] dark:text-zinc-500 uppercase tracking-wider">Hôm nay</p></div>
+                    <div className="px-4 pt-3 pb-1"><p className="text-[12px] font-medium text-[#8e93] dark:text-zinc-500 uppercase tracking-wider">Hôm nay</p></div>
                     <div className="divide-y divide-gray-100 dark:divide-zinc-900">
                       {groupedNotifications.today.map((notif) => (
                         <div key={notif.id} className={`px-4 py-3 flex items-start gap-3 ${!notif.read? "bg-[#0a84ff]/[0.04] dark:bg-[#0a84ff]/[0.08]" : ""} hover:bg-gray-50 dark:hover:bg-zinc-900/50 transition-colors`}>
@@ -786,7 +814,7 @@ export default function ChatClient() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-[15px] leading-[20px]"><span className="font-[550]">{notif.fromName}</span> <span className="text-[#3a3c] dark:text-zinc-300">{notif.message}</span></p>
-                            <p className="text-[13px] text-[#8e8e93] mt-0.5">{formatNotifTime(notif.createdAt)}</p>
+                            <p className="text-[13px] text-[#8e93] mt-0.5">{formatNotifTime(notif.createdAt)}</p>
                             {notif.type === "friend_request" &&!notif.read && (
                               <div className="flex items-center gap-2 mt-2.5">
                                 <button onClick={() => handleAcceptFriendRequest(notif)} className={`h-7 px-4 ${primaryBg} ${primaryHover} text-white rounded-full text-[13px] font-medium`}>Chấp nhận</button>
@@ -803,6 +831,7 @@ export default function ChatClient() {
                     </div>
                   </div>
                 )}
+
                 {groupedNotifications.earlier.length > 0 && (
                   <div>
                     <div className="px-4 pt-4 pb-1"><p className="text-[12px] font-medium text-[#8e8e93] dark:text-zinc-500 uppercase tracking-wider">Trước đó</p></div>
@@ -816,8 +845,8 @@ export default function ChatClient() {
                             </div>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-[15px] leading-[20px]"><span className="font-[550]">{notif.fromName}</span> <span className="text-[#3a3a3c] dark:text-zinc-300">{notif.message}</span></p>
-                            <p className="text-[13px] text-[#8e8e93] mt-0.5">{formatNotifTime(notif.createdAt)}</p>
+                            <p className="text-[15px] leading-[20px]"><span className="font-[550]">{notif.fromName}</span> <span className="text-[#3a3c] dark:text-zinc-300">{notif.message}</span></p>
+                            <p className="text-[13px] text-[#8e93] mt-0.5">{formatNotifTime(notif.createdAt)}</p>
                           </div>
                           {!notif.read && <div className="w-2 h-2 bg-[#0a84ff] rounded-full flex-shrink-0 mt-2" />}
                         </div>
@@ -846,7 +875,7 @@ export default function ChatClient() {
                   <FiUsers className="text-gray-400" size={30} strokeWidth={1.5} />
                 </div>
                <h3 className="text-[20px] font-semibold mb-1.5">{search? "Không tìm thấy" : "Chưa có bạn"}</h3>
-<p className="text-[15px] text-[#8e8e93] dark:text-zinc-500 max-w-[280px] leading-[20px]">{search? "Thử tìm với từ khóa khác" : "Mời kết bạn để bắt đầu trò chuyện cùng nhau"}</p>
+<p className="text-[15px] text-[#8e93] dark:text-zinc-500 max-w-[280px] leading-[20px]">{search? "Thử tìm với từ khóa khác" : "Mời kết bạn để bắt đầu trò chuyện cùng nhau"}</p>
 {!search && (
   <button onClick={() => setShowAdd(true)} className={`mt-6 px-6 h-[40px] ${primaryBg} ${primaryHover} ${primaryActive} text-white rounded-full text-[15px] font-medium shadow-sm active:scale-95 transition-all flex items-center gap-2`}>
     <FiUserPlus size={18} />
@@ -857,7 +886,7 @@ export default function ChatClient() {
 ) : (
 <div className="divide-y divide-gray-100 dark:divide-zinc-900">
   <div className="px-4 py-2.5 bg-gray-50/80 dark:bg-zinc-950/50 backdrop-blur-sm sticky top-[104px] z-10">
-    <p className="text-[12px] text-[#8e8e93] dark:text-zinc-500 font-medium">
+    <p className="text-[12px] text-[#8e93] dark:text-zinc-500 font-medium">
       <span className="inline-flex items-center gap-1">
         <span className="w-2 h-2 bg-[#30d158] rounded-full animate-pulse" />
         {filteredFriends.filter(f => f.isOnline).length} đang hoạt động
@@ -905,7 +934,7 @@ export default function ChatClient() {
             </div>
           ) : filteredChats.length === 0? (
             <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
-              <div className="w-[72px] h-[72px] bg-[#f2f2f7] dark:bg-zinc-900 rounded-[20px] flex items-center justify-center mb-4 shadow-sm">
+              <div className="w-[72px] h-[72px] bg-[#f2f7] dark:bg-zinc-900 rounded-[20px] flex items-center justify-center mb-4 shadow-sm">
                 <FiMessageSquare className="text-gray-400" size={30} strokeWidth={1.5} />
               </div>
               <h3 className="text-[20px] font-semibold tracking-tight text-gray-900 dark:text-white mb-1.5">{activeTab === "unread"? "Không có tin chưa đọc" : activeTab === "group"? "Chưa có nhóm" : "Chưa có tin nhắn"}</h3>
@@ -997,22 +1026,22 @@ export default function ChatClient() {
                 ) : (
                   <div className="flex-1 flex flex-col min-h-0 space-y-3">
                     <input type="text" value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="Tên nhóm" className={`w-full h-[44px] px-3.5 bg-white dark:bg-zinc-800 border-black/10 dark:border-white/10 rounded-[12px] text-[16px] outline-none ${primaryBorder} focus:ring-4 ${primaryRing} transition-all`} maxLength={30} />
-                    <div className="flex-1 bg-white dark:bg-zinc-800 rounded-[12px] border border-black/10 dark:border-white/10 overflow-hidden flex-col min-h-0">
+                    <div className="flex-1 bg-white dark:bg-zinc-800 rounded-[12px] border border-black/10 dark:border-white/10 overflow-hidden flex flex-col min-h-0">
                       <div className="px-3 py-2.5 bg-white/80 dark:bg-zinc-800/80 backdrop-blur border-b border-black/5 dark:border-white/5 flex-shrink-0">
-                        <p className="text-[13px] font-medium text-[#8e8e93] dark:text-zinc-500">Đã chọn {selected.length} người</p>
+                        <p className="text-[13px] font-medium text-[#8e93] dark:text-zinc-500">Đã chọn {selected.length} người</p>
                       </div>
                       <div className="flex-1 overflow-auto">
                         {friendsForGroup.length === 0? (
-                          <div className="p-8 text-center"><p className="text-[14px] text-[#8e8e93] dark:text-zinc-500">Chưa có bạn bè</p></div>
+                          <div className="p-8 text-center"><p className="text-[14px] text-[#8e93] dark:text-zinc-500">Chưa có bạn bè</p></div>
                         ) : (
                           <div className="divide-y divide-black/5 dark:divide-white/5">
                             {friendsForGroup.map((person) => (
                               <label key={person.uid} className="flex items-center gap-3 px-3 py-2.5 hover:bg-black/[0.02] dark:hover:bg-white/[0.03] cursor-pointer active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors">
-                                <input type="checkbox" checked={selected.includes(person.uid)} onChange={(e) => setSelected((current) => e.target.checked? [...current, person.uid] : current.filter((id) => id!== person.uid))} className={`w-[20px] h-[20px] rounded-[6px] border-2 border-[#c7c7cc] dark:border-zinc-600 ${primaryText} focus:ring-0 focus:ring-offset-0 checked:${primaryBgSolid} checked:border-transparent transition-colors`} />
+                                <input type="checkbox" checked={selected.includes(person.uid)} onChange={(e) => setSelected((current) => e.target.checked? [...current, person.uid] : current.filter((id) => id!== person.uid))} className={`w-[20px] h-[20px] rounded-[6px] border-2 border-[#c7cc] dark:border-zinc-600 ${primaryText} focus:ring-0 focus:ring-offset-0 checked:${primaryBgSolid} checked:border-transparent transition-colors`} />
                                 <img src={person.avatar} alt={person.name} className="w-9 h-9 rounded-full object-cover bg-gray-100 dark:bg-zinc-800 flex-shrink-0" />
                                 <div className="flex-1 min-w-0">
                                   <p className="text-[15px] leading-5 font-normal truncate">{person.name}</p>
-                                  <p className="text-[13px] leading-4 text-[#8e8e93] dark:text-zinc-500">@{person.username || person.userId}</p>
+                                  <p className="text-[13px] leading-4 text-[#8e93] dark:text-zinc-500">@{person.username || person.userId}</p>
                                 </div>
                                 {selected.includes(person.uid) && <div className={`w-5 h-5 ${primaryBgSolid} rounded-full flex items-center justify-center flex-shrink-0`}><FiCheck className="text-white" size={12} strokeWidth={3} /></div>}
                               </label>
