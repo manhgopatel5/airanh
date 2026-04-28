@@ -351,7 +351,7 @@ export default function ChatClient() {
                   updatedAt: chatData.updatedAt,
                   isOnline: Boolean(userData.isOnline),
                   unreadCount: chatData.unread?.[user.uid] || 0,
-                  isTyping: Boolean(chatData.typing?.[raw.other]),
+                  isTyping: Boolean(raw.other && chatData.typing?.[raw.other]),
                   isGroup: false,
                 };
               }
