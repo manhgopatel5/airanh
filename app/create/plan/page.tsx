@@ -637,7 +637,6 @@ const submit = async () => {
   )}
 </div>
                   </div>
-                </div> 
                 </motion.div>
               )}
 
