@@ -531,8 +531,10 @@ const submit = async () => {
                       </div>
                       <span className="text-[11px] text-zinc-400 ml-2 shrink-0">{desc.length}/300</span>
                     </div>
-                </motion.div>
-              )}
+                  </div>
+                </div>
+              </motion.div>
+            )})}
 
               {step === 2 && (
                 <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 space-y-4">
