@@ -3,9 +3,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   FiX, FiCheck, FiPlus, FiChevronRight, FiUpload,
-  FiClock, FiMapPin, FiDollarSign, FiGlobe,
-  FiRepeat, FiShield, FiUserPlus, FiEye, FiCopy, 
-  FiNavigation, FiSun
+  FiClock, FiMapPin, FiEye, FiCopy,
+  FiNavigation
 } from "react-icons/fi";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
@@ -13,7 +12,7 @@ import { useAuth } from "@/lib/useAuth";
 
 type Category = { id: string; label: string; emoji: string; suggestions: string[] };
 type CostType = "free" | "share" | "host" | "ticket";
-type Privacy = "public" | "friends" | "friends_of_friends" | "private";
+type Privacy = "public" | "friends_of_friends" | "private";
 
 const CATEGORIES: Category[] = [
   { id: "cafe", label: "Cafe", emoji: "☕", suggestions: ["Cafe sáng T7", "Work date", "Cafe chill", "Làm việc"] },
@@ -40,7 +39,7 @@ const POPULAR_PLACES = [
 
 export default function CreatePlanFinal() {
   const router = useRouter();
-  const { user } = useAuth();
+  useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState(1);
   const [dragX, setDragX] = useState(0);
@@ -57,14 +56,11 @@ export default function CreatePlanFinal() {
   const [costAmount, setCostAmount] = useState(0);
   const [privacy, setPrivacy] = useState<Privacy>("public");
   const [cover, setCover] = useState<string | null>(null);
-  const [recurring, setRecurring] = useState<"none" | "weekly" | "monthly">("none");
   const [invites, setInvites] = useState<string[]>([]);
-  const [cohosts, setCohosts] = useState<string[]>([]);
   const [requirements, setRequirements] = useState<string[]>([]);
   const [reqInput, setReqInput] = useState("");
   const [minAge, setMinAge] = useState(0);
   const [needApproval, setNeedApproval] = useState(false);
-  const [allowWaitlist, setAllowWaitlist] = useState(true);
   const [pollTime, setPollTime] = useState(false);
   const [pollLocation, setPollLocation] = useState(false);
 
@@ -124,12 +120,6 @@ export default function CreatePlanFinal() {
       }
       return newList;
     });
-    if (invites.includes(id)) setCohosts(c => c.filter(cid => cid!== id));
-  };
-
-  const toggleCohost = (id: string) => {
-    if (!invites.includes(id)) return toast.error("Mời bạn trước");
-    setCohosts(p => p.includes(id)? p.filter(i => i!== id) : [...p, id].slice(0, 3));
   };
 
   const addReq = () => {
@@ -329,14 +319,14 @@ export default function CreatePlanFinal() {
                     </div>
                     <div className="relative">
                       <FiNavigation size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
-                      <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Tìm địa điểm, quán, địa chỉ..." className="w-full h-12 pl-10 pr-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/70 border-zinc-200 dark:border-zinc-700 outline-none focus:border-[#22c55e] text-[15px] placeholder:text-zinc-400" />
+                      <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Tìm địa điểm, quán, địa chỉ..." className="w-full h-12 pl-10 pr-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/70 border border-zinc-200 dark:border-zinc-700 outline-none focus:border-[#22c55e] text-[15px] placeholder:text-zinc-400" />
                     </div>
                     <div className="flex gap-1.5 mt-2.5 overflow-x-auto scrollbar-hide">
                       {POPULAR_PLACES.map(p => (
                         <button key={p} onClick={() => setLocation(p)} className={`flex-shrink-0 h-7 px-3 rounded-full text-[12px] font-medium whitespace-nowrap ${location === p? "bg-[#22c55e] text-white" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"}`}>{p}</button>
                       ))}
                     </div>
-                    <input value={locationDetail} onChange={e => setLocationDetail(e.target.value)} placeholder="Địa chỉ cụ thể (tùy chọn)" className="w-full mt-3 h-10 px-3.5 rounded-xl bg-zinc-50/70 dark:bg-zinc-800/50 border-zinc-200/50 dark:border-zinc-700/50 outline-none text-[13px] placeholder:text-zinc-400" />
+                    <input value={locationDetail} onChange={e => setLocationDetail(e.target.value)} placeholder="Địa chỉ cụ thể (tùy chọn)" className="w-full mt-3 h-10 px-3.5 rounded-xl bg-zinc-50/70 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50 outline-none text-[13px] placeholder:text-zinc-400" />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -382,7 +372,7 @@ export default function CreatePlanFinal() {
                         return (
                           <button key={f.id} onClick={() => toggleInvite(f.id)} className="flex-shrink-0 relative">
                             <div className={`w-[60px] h-[60px] rounded-2xl overflow-hidden ${isInvited? "ring-2 ring-[#22c55e] ring-offset-2 ring-offset-white dark:ring-offset-zinc-900" : "ring-1 ring-zinc-200 dark:ring-zinc-800"}`}>
-                              <img src={f.avatar} className="w-full h-full object-cover" />
+                              <img src={f.avatar} alt="" className="w-full h-full object-cover" />
                               {f.online && <div className="absolute bottom-1 right-1 w-2.5 h-2.5 bg-[#22c55e] rounded-full ring-2 ring-white dark:ring-zinc-900" />}
                             </div>
                             <p className="text-[11px] mt-1.5 w-[60px] truncate font-medium">{f.name}</p>
@@ -400,7 +390,7 @@ export default function CreatePlanFinal() {
                     </div>
                     {cover? (
                       <div className="relative aspect-[16/9] rounded-2xl overflow-hidden">
-                        <img src={cover} className="w-full h-full object-cover" />
+                        <img src={cover} alt="" className="w-full h-full object-cover" />
                         <button onClick={() => setCover(null)} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 grid place-items-center"><FiX size={14} className="text-white" /></button>
                       </div>
                     ) : (
@@ -492,7 +482,7 @@ export default function CreatePlanFinal() {
         {showPreview && (
           <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setShowPreview(false)}>
             <div className="w-full max-w-[380px] bg-white dark:bg-zinc-900 rounded-[32px] overflow-hidden" onClick={e => e.stopPropagation()}>
-              {cover && <img src={cover} className="w-full aspect-[16/9] object-cover" />}
+              {cover && <img src={cover} alt="" className="w-full aspect-[16/9] object-cover" />}
               <div className="p-5">
                 <h2 className="text-[22px] font-bold">{title || "Tên hoạt động"}</h2>
                 <p className="text-[14px] text-zinc-500 mt-1">{category.label} • {new Date(time).toLocaleString("vi-VN")}</p>
@@ -508,8 +498,8 @@ export default function CreatePlanFinal() {
       </div>
 
       <style jsx global>{`
-       .scrollbar-hide::-webkit-scrollbar { display: none; }
-       .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </>
   );
