@@ -26,6 +26,7 @@ import {
   FiMessageSquare, 
   FiUserPlus, 
   FiUsers,
+  FiCheck,
   FiX, 
   FiLoader,
   FiBellOff
