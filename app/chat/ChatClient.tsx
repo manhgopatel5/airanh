@@ -160,7 +160,7 @@ export default function ChatClient() {
     
     setFriendsLoading(true);
     const friendsRef = collection(db, "users", user.uid, "friends");
-    const q = query(friendsRef, orderBy("addedAt", "desc"));
+    const q = query(friendsRef);
     
     const unsub = onSnapshot(q, async (snapshot) => {
       try {
@@ -557,7 +557,7 @@ export default function ChatClient() {
 {!search && (
   <button
     onClick={() => setShowAdd(true)}
-    className={`mt-6 px-6 h- ${primaryBg} ${primaryHover} ${primaryActive} text-white rounded-full text- font-medium shadow-sm active:scale-95 transition-all flex items-center gap-2`}
+    className={`mt-6 px-6 h-[40px] ${primaryBg} ${primaryHover} ${primaryActive} text-white rounded-full text-[15px] font-medium shadow-sm active:scale-95 transition-all flex items-center gap-2`}
   >
     <FiUserPlus size={18} />
     Kết bạn ngay
@@ -566,8 +566,8 @@ export default function ChatClient() {
 </div>
 ) : (
 <div className="divide-y divide-gray-100 dark:divide-zinc-900">
-  <div className="px-4 py-2.5 bg-gray-50/80 dark:bg-zinc-950/50 backdrop-blur-sm sticky top- z-10">
-    <p className="text- text-[#8e8e93] dark:text-zinc-500 font-medium">
+  <div className="px-4 py-2.5 bg-gray-50/80 dark:bg-zinc-950/50 backdrop-blur-sm sticky top-[104px] z-10">
+    <p className="text-[12px] text-[#8e8e93] dark:text-zinc-500 font-medium">
       <span className="inline-flex items-center gap-1">
         <span className="w-2 h-2 bg-[#30d158] rounded-full animate-pulse" />
         {filteredFriends.filter(f => f.isOnline).length} đang hoạt động
