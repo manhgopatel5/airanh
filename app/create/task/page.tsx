@@ -13,7 +13,8 @@ import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import {
   FiX, FiCheck, FiPlus, FiClock, FiMapPin, FiEye, FiCopy,
   FiZap, FiShield, FiStar, FiTarget, FiLayers,
-  FiTrendingUp, FiLock, FiGlobe
+  FiTrendingUp, FiLock, FiGlobe, FiUsers, FiDollarSign,
+  FiChevronRight, FiNavigation, FiCalendar, FiUserCheck // thêm 2 cái cuối
 } from "react-icons/fi";
 
 const CATEGORIES = [
@@ -194,9 +195,7 @@ export default function CreateTaskProMax() {
                       <div className="flex-1 min-w-0">
                         <input value={form.title} onChange={e => setForm({...form, title: e.target.value.slice(0, 100) })} placeholder="Bạn cần làm gì?" className="w-full text-[17px] font-semibold bg-transparent outline-none placeholder:text-zinc-300 dark:placeholder-zinc-700 leading-snug" autoFocus />
                         <div className="flex gap-1.5 mt-2.5 overflow-x-auto scrollbar-hide -mx-1 px-1">
-                          {category.suggestions?.slice(0, 3).map(s => (
-                            <button key={s} onClick={() => setForm({...form, title: s })} className="px-2.5 py-1 rounded-full bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-[12px] whitespace-nowrap transition-colors active:scale-95">{s}</button>
-                          ))}
+
                         </div>
                       </div>
                     </div>
@@ -375,7 +374,7 @@ export default function CreateTaskProMax() {
                       <div>
                         <div className="text-[12px] text-zinc-500 mb-2">Số lần sửa</div>
                         <div className="flex items-center gap-2">
-                          <input type="range" min="1" max="10" value={form.revisions} onChange={e => setForm({...form, revisions: e.target.value })} className="flex-1 h-1.5 accent-[#0a84ff]" />
+                          <input type="range" min="1" max="10" value={form.revisions} onChange={e => setForm({...form, revisions: parseInt(e.target.value) })} className="flex-1 h-1.5 accent-[#0a84ff]" />
                           <span className="w-6 text-center text-[13px] font-medium tabular-nums">{form.revisions}</span>
                         </div>
                       </div>
@@ -391,7 +390,7 @@ export default function CreateTaskProMax() {
                     <div className="flex gap-2 overflow-x-auto scrollbar-hide">
                       {form.images.map((url, i) => (
                         <div key={i} className="relative w-[72px] h-[72px] rounded-xl overflow-hidden shrink-0 ring-1 ring-zinc-200 dark:ring-zinc-800">
-                          <img src={url} className="w-full h-full object-cover" />
+                          <img src={url} alt="" className="w-full h-full object-cover" />
                           <button onClick={() => { const n = [...form.images]; n.splice(i, 1); setForm({...form, images: n }); const f = [...imageFiles]; f.splice(i, 1); setImageFiles(f); }} className="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 grid place-items-center transition-opacity">
                             <FiX size={16} className="text-white" />
                           </button>
@@ -492,33 +491,51 @@ export default function CreateTaskProMax() {
           </div>
         </div>
 
-        {/* Templates Modal */}
-        <AnimatePresence>
-          {showTemplates && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center p-3" onClick={() => setShowTemplates(false)}>
-              <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }} onClick={e => e.stopPropagation()} className="w-full max-w-[480px] bg-white dark:bg-zinc-900 rounded-[28px] p-5 max-h-[75vh] overflow-auto shadow-2xl">
-                <div className="w-9 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mb-4" />
-                <h3 className="text-[20px] font-bold">Mẫu có sẵn</h3>
-                <p className="text-[13px] text-zinc-500 mt-0.5 mb-4">Chọn để bắt đầu nhanh</p>
-                <div className="grid gap-2.5">
-                  {TEMPLATES.map(t => (
-                    <button key={t.name} onClick={() => useTemplate(t)} className="group w-full p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 text-left transition-all active:scale-[0.98]">
-                      <div className="w-11 h-11 rounded-xl bg-white dark:bg-zinc-900 shadow-sm grid place-items-center text-[20px] group-hover:scale-110 transition-transform">{t.icon}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-[14px]">{t.name}</div>
-                        <div className="text-[12px] text-zinc-500 truncate">{t.title}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-[13px] font-semibold text-[#0a84ff]">{t.price}</div>
-                        <div className="text-[10px] text-zinc-400">{t.tags[0]}</div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </motion.div>
+      {/* DÁN VÀO ĐÂY - NGAY SAU </div> trên */}
+      <AnimatePresence>
+        {showTemplates && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center p-3" onClick={() => setShowTemplates(false)}>
+            <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }} onClick={e => e.stopPropagation()} className="w-full max-w-[480px] bg-white dark:bg-zinc-900 rounded-[28px] p-5 max-h-[75vh] overflow-auto shadow-2xl">
+              <div className="w-9 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mb-4" />
+              <h3 className="text-[20px] font-bold">Mẫu có sẵn</h3>
+              <p className="text-[13px] text-zinc-500 mt-0.5 mb-4">Chọn để bắt đầu nhanh</p>
+              <div className="grid gap-2.5">
+                {TEMPLATES.map(t => (
+                  <button key={t.name} onClick={() => useTemplate(t)} className="group w-full p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 text-left transition-all active:scale-[0.98]">
+                    <div className="w-11 h-11 rounded-xl bg-white dark:bg-zinc-900 shadow-sm grid place-items-center text-[20px] group-hover:scale-110 transition-transform">{t.icon}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-[14px]">{t.name}</div>
+                      <div className="text-[12px] text-zinc-500 truncate">{t.title}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[13px] font-semibold text-[#0a84ff]">{(parseInt(t.price)/1000).toFixed(0)}k</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </motion.div>
-          )}
-        </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+{/* Thêm ngay trước </div> cuối cùng, sau phần Templates Modal */}
+<AnimatePresence>
+  {showPreview && (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setShowPreview(false)}>
+      <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} onClick={e => e.stopPropagation()} className="w-full max-w-[380px] bg-white dark:bg-zinc-900 rounded-[24px] overflow-hidden">
+        {form.images[0] && <img src={form.images[0]} alt="" className="w-full aspect-[16/9] object-cover" />}
+        <div className="p-5">
+          <h2 className="text-[18px] font-bold">{form.title || "Tiêu đề"}</h2>
+          <p className="text-[13px] text-zinc-500 mt-1">{category.name} • {form.price}đ</p>
+          <p className="text-[14px] mt-3 line-clamp-3 text-zinc-600 dark:text-zinc-400">{form.description || "Mô tả..."}</p>
+          <div className="flex gap-2 mt-5">
+            <button onClick={() => setShowPreview(false)} className="flex-1 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-800">Đóng</button>
+            <button onClick={() => { setShowPreview(false); submit(); }} className="flex-1 h-11 rounded-2xl bg-[#0a84ff] text-white">Đăng</button>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
       </div>
 
       <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}*{ -webkit-tap-highlight-color: transparent; }`}</style>
