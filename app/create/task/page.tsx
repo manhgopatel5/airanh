@@ -359,9 +359,10 @@ export default function CreateTaskProMax() {
                               <button onClick={() => setForm({...form, totalSlots: Math.max(1, parseInt(form.totalSlots) - 1).toString() })} className="w-7 h-7 grid place-items-center rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-600 active:scale-95">−</button>
                               <span className="w-8 text-center text-[14px] font-medium tabular-nums">{form.totalSlots}</span>
                               <button onClick={() => setForm({...form, totalSlots: Math.min(20, parseInt(form.totalSlots) + 1).toString() })} className="w-7 h-7 grid place-items-center rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-600 active:scale-95">+</button>
-                            </div>
-                          <span className="text-[13px] text-zinc-500 tabular-nums">TB: {(category.basePrice / 1000).toFixed(0)}k</span>
-                        </div>
+           </div>
+  </div>
+  <span className="text-[13px] text-zinc-500 tabular-nums">TB: {(category.basePrice / 1000).toFixed(0)}k</span>
+</div>
                       </>
                     ) : (
                       <div className="h-[52px] grid place-items-center bg-[#F2F2F7] dark:bg-zinc-800 rounded-2xl text-zinc-500 text-[15px]">Sẽ thỏa thuận sau</div>
