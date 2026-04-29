@@ -11,8 +11,8 @@ import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import {
   FiX, FiCheck, FiPlus, FiMapPin, FiEye, FiCopy,
-  FiZap, FiShield, FiStar, FiTarget, FiLayers,
-  FiTrendingUp, FiLock, FiGlobe, FiDollarSign,
+  FiZap, FiStar, FiTarget, FiLayers,
+  FiTrendingUp, FiLock, FiGlobe,
   FiChevronRight, FiNavigation, FiCalendar, FiUserCheck
 } from "react-icons/fi";
 
@@ -432,7 +432,7 @@ export default function CreateTaskProMax() {
         allowBids: form.allowBids,
         featured: form.featured,
         nda: form.nda,
-        warranty: form.warranty,
+        
         invites: form.invites,
         needApproval: form.needApproval,
       } as any, user);
