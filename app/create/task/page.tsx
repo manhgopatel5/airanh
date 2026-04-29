@@ -161,7 +161,7 @@ const [form, setForm] = useState({
   ],
   instantHire: false, allowBids: false, featured: false, privateNotes: "",
   invites: [] as string[], pollPrice: false, needApproval: true,
-  nda: false, warranty: 7, attachments: [] as File[], recurring: "once",
+  nda: false, attachments: [] as File[], recurring: "once",
   languages: ["Tiếng Việt"], timezone: "Asia/Ho_Chi_Minh",
 });
 
@@ -363,20 +363,20 @@ const totalPercent = form.milestones.reduce((sum, m) => sum + (m.percent || 0), 
  <div className="space-y-3">
 <div className="flex items-center gap-3">
   <div className="w-9 h-9 rounded-xl grid place-items-center shrink-0" style={{ backgroundColor: `${category.color}15` }}>
-    <span className="text-">{category.icon}</span>
+    <span className="text-[16px]">{category.icon}</span>
   </div>
   <div className="flex-1 relative">
-    <input value={form.title} onChange={e => setForm({...form, title: e.target.value.slice(0, 100) })} placeholder="Bạn cần làm gì?" className="w-full h-11 px-3 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 text- font-medium outline-none placeholder:text-zinc-400 border border-[#E5E5EA] dark:border-zinc-800 focus:border-[#0a84ff] focus:ring-2 focus:ring-[#0a84ff]/20 transition-all" autoFocus />
+    <input value={form.title} onChange={e => setForm({...form, title: e.target.value.slice(0, 100) })} placeholder="Bạn cần làm gì?" className="w-full h-11 px-3 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 text-[14px] font-medium outline-none placeholder:text-zinc-400 border border-[#E5E5EA] dark:border-zinc-800 focus:border-[#0a84ff] focus:ring-2 focus:ring-[#0a84ff]/20 transition-all" autoFocus />
     {form.title.length > 0 && form.title.length < 10 && (
       <span className="absolute -bottom-5 right-0 text-[11px] text-amber-600">Cần tối thiểu 10 ký tự</span>
     )}
   </div>
 </div>
-  <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
-        {category.suggestions.map(tag => (
-          <button key={tag} onClick={() => setForm(f => ({...f, title: tag }))} className="px-2.5 py-1 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 hover:bg-[#0a84ff]/10 hover:text-[#0a84ff] text-[12px] text-zinc-600 dark:text-zinc-400 transition-colors active:scale-95">{tag}</button>
-        ))}
-      </div>
+<div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1 whitespace-nowrap">
+  {category.suggestions.map(tag => (
+    <button key={tag} onClick={() => setForm(f => ({...f, title: tag }))} className="px-2.5 py-1 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 hover:bg-[#0a84ff]/10 hover:text-[#0a84ff] text- text-zinc-600 dark:text-zinc-400 transition-colors active:scale-95 shrink-0">{tag}</button>
+  ))}
+</div>
     </div>
 
 <div className="space-y-3">
@@ -385,25 +385,25 @@ const totalPercent = form.milestones.reduce((sum, m) => sum + (m.percent || 0), 
   onChange={e => setForm({...form, description: e.target.value.slice(0, 2000) })}
   placeholder="Mô tả chi tiết yêu cầu, mục tiêu, kết quả mong muốn..."
   rows={5}
-  className="w-full p-3 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 outline-none resize-none text- leading- placeholder:text-zinc-400"
+  className="w-full p-3 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 outline-none resize-none text- leading-relaxed placeholder:text-zinc-400"
 />
-      <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#E5E5EA] dark:border-zinc-800">
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
-          {category.descQuick.map(t => (
-            <button
-              key={t}
-              onClick={() =>
-                setForm(f => ({
-                 ...f,
-                  description: f.description + (f.description? "\n" : "") + t
-                }))
-              }
-              className="px-2.5 py-1 rounded-lg bg-[#F2F2F7] dark:bg-zinc-800 hover:bg-[#E5E5EA] dark:hover:bg-zinc-700 text-[12px] text-zinc-600 dark:text-zinc-400 transition-colors active:scale-95 whitespace-nowrap"
-            >
-              {t}
-            </button>
-          ))}
-        </div>
+<div className="flex items-center justify-between mt-3 pt-3 border-t border-[#E5E5EA] dark:border-zinc-800">
+  <div className="flex gap-1.5 overflow-x-auto scrollbar-hide flex-1">
+    {category.descQuick.map(t => (
+      <button
+        key={t}
+        onClick={() =>
+          setForm(f => ({
+           ...f,
+            description: f.description + (f.description? "\n" : "") + t
+          }))
+        }
+        className="px-2.5 py-1 rounded-lg bg-[#F2F2F7] dark:bg-zinc-800 hover:bg-[#E5E5EA] dark:hover:bg-zinc-700 text- text-zinc-600 dark:text-zinc-400 transition-colors active:scale-95 whitespace-nowrap shrink-0"
+      >
+        {t}
+      </button>
+    ))}
+  </div>
 {form.description.length > 0 && form.description.length < 20 && (
   <span className="text-[11px] tabular-nums ml-2 text-amber-600">
     Cần tối thiểu 20 ký tự
@@ -519,7 +519,7 @@ const totalPercent = form.milestones.reduce((sum, m) => sum + (m.percent || 0), 
   { k: "allowBids", icon: FiTrendingUp, label: "Đấu thầu", desc: "Nhận nhiều báo giá" },
   { k: "needApproval", icon: FiUserCheck, label: "Duyệt tay", desc: "Chọn người làm" },
   { k: "nda", icon: FiLock, label: "Bảo mật NDA", desc: "Ký thỏa thuận" },
-  { k: "warranty", icon: FiShield, label: "Bảo hành", desc: "7-30 ngày" },
+  
 ].map(item => {
   const Icon = item.icon;
   const active = (form as any)[item.k];
