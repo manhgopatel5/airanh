@@ -314,12 +314,14 @@ const [form, setForm] = useState({
     address: "", city: "Hồ Chí Minh", lat: null as number | null, lng: null as number | null,
     visibility: "public", budgetType: "fixed", isRemote: true, requirements: "",
     urgency: "once", milestones: true,
-    autoMatch: true, allowBids: false, featured: false, privateNotes: "",
-    invites: [] as string[], pollPrice: false, needApproval: true,
+    autoMatch: false, // Duyệt tự động = tắt
+    allowBids: false, featured: false, privateNotes: "",
+    invites: [] as string[], pollPrice: false, 
+    needApproval: true, // Duyệt tay = bật mặc định
     nda: false, attachments: [] as File[], recurring: "once",
     languages: ["Tiếng Việt"], timezone: "Asia/Ho_Chi_Minh",
     hours: 1, 
-  });
+});});
 
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const category = useMemo(() => CATEGORIES.find(c => c.id === form.category)!, [form.category]);
@@ -533,29 +535,31 @@ const [form, setForm] = useState({
     rows={5}
     className="w-full p-3 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 outline-none resize-none text-[15px] leading-relaxed placeholder:text-zinc-400"
   />
-  <div className="flex items-center justify-between pt-3 border-t border-[#E5E5EA] dark:border-zinc-800">
-    <div className="flex gap-1.5 overflow-x-auto scrollbar-hide flex-1">
+<div className="pt-3 border-t border-[#E5E5EA] dark:border-zinc-800">
+  <div className="flex items-start justify-between gap-2 mb-2">
+    <div className="flex gap-1.5 flex-wrap flex-1">
       {(category.suggestions.find(s => s.title === form.title)?.desc || category.suggestions[0]?.desc || []).map(t => (
         <button
           key={t}
           onClick={() =>
             setForm(f => ({
-             ...f,
+            ...f,
               description: f.description + (f.description? "\n" : "") + t
             }))
           }
-          className="px-2.5 py-1 rounded-lg bg-[#F2F2F7] dark:bg-zinc-800 hover:bg-[#E5E5EA] dark:hover:bg-zinc-700 text-[12px] text-zinc-600 dark:text-zinc-400 transition-colors active:scale-95 whitespace-nowrap"
+          className="px-2.5 py-1 rounded-lg bg-[#F2F2F7] dark:bg-zinc-800 hover:bg-[#E5E5EA] dark:hover:bg-zinc-700 text-[12px] text-zinc-600 dark:text-zinc-400 transition-colors active:scale-95"
         >
           {t}
         </button>
       ))}
     </div>
-{form.description.length < 20 && (
-  <span className="text-[12px] text-red-500 tabular-nums ml-2 shrink-0">
-    {form.description.length}/20
-  </span>
-)}
+    {form.description.length < 20 && (
+      <span className="text-[12px] text-red-500 tabular-nums shrink-0">
+        {form.description.length}/20
+      </span>
+    )}
   </div>
+</div>
 </div>
   </motion.div>
 
