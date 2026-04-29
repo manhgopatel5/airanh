@@ -273,28 +273,59 @@ export default function CreateTaskProMax() {
                     </div>
                   </div>
 
-                  <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-4">
-                    <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value.slice(0, 2000) })} placeholder="Mô tả chi tiết yêu cầu, mục tiêu, kết quả mong muốn..." rows={5} className="w-full bg-transparent outline-none resize-none text-[15px] leading-[22px] placeholder:text-zinc-400" />
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#E5E5EA] dark:border-zinc-800">
-                      <div className="flex gap-1.5">
-                        {["Chi tiết", "Đúng hạn", "Báo cáo"].map(t => (
-                          <button key={t} onClick={() => setForm(f => ({...f, description: f.description + (f.description ? "
-• " : "• ") + t }))} className="px-2.5 py-1 rounded-lg bg-[#F2F2F7] dark:bg-zinc-800 hover:bg-[#E5E5EA] dark:hover:bg-zinc-700 text-[12px] text-zinc-600 dark:text-zinc-400 transition-colors active:scale-95">+ {t}</button>
-                        ))}
-                      </div>
-                      <span className={`text-[12px] tabular-nums ${form.description.length >= 20 ? 'text-[#0a84ff]' : 'text-zinc-400'}`}>{form.description.length}/2000</span>
-                    </div>
-                  </div>
+                 <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-4">
+  <textarea
+    value={form.description}
+    onChange={e => setForm({...form, description: e.target.value.slice(0, 2000) })}
+    placeholder="Mô tả chi tiết yêu cầu, mục tiêu, kết quả mong muốn..."
+    rows={5}
+    className="w-full bg-transparent outline-none resize-none text-[15px] leading-[22px] placeholder:text-zinc-400"
+  />
+
+  <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#E5E5EA] dark:border-zinc-800">
+    <div className="flex gap-1.5">
+      {["Chi tiết", "Đúng hạn", "Báo cáo"].map(t => (
+        <button
+          key={t}
+          onClick={() =>
+            setForm(f => ({
+              ...f,
+              description: f.description + (f.description ? "\n• " : "• ") + t
+            }))
+          }
+          className="px-2.5 py-1 rounded-lg bg-[#F2F2F7] dark:bg-zinc-800 hover:bg-[#E5E5EA] dark:hover:bg-zinc-700 text-[12px] text-zinc-600 dark:text-zinc-400 transition-colors active:scale-95"
+        >
+          + {t}
+        </button>
+      ))}
+    </div>
+
+    <span className={`text-[12px] tabular-nums ${form.description.length >= 20 ? 'text-[#0a84ff]' : 'text-zinc-400'}`}>
+      {form.description.length}/2000
+    </span>
+  </div>
+</div>
 
                   <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-4">
-                    <div className="text-[13px] text-zinc-500 mb-3">Gợi ý mô tả nhanh</div>
-                    <div className="space-y-2">
-                      {QUICK_DESCRIPTIONS.map((desc, i) => (
-                        <button key={i} onClick={() => setForm(f => ({...f, description: f.description + (f.description ? "
-" : "") + desc }))} className="w-full text-left px-3 py-2.5 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 hover:bg-[#E5E5EA] dark:hover:bg-zinc-700 text-[14px] text-zinc-700 dark:text-zinc-300 transition-colors active:scale-[0.98]">{desc}</button>
-                      ))}
-                    </div>
-                  </div>
+  <div className="text-[13px] text-zinc-500 mb-3">Gợi ý mô tả nhanh</div>
+
+  <div className="space-y-2">
+    {QUICK_DESCRIPTIONS.map((desc, i) => (
+      <button
+        key={i}
+        onClick={() =>
+          setForm(f => ({
+            ...f,
+            description: f.description + (f.description ? "\n" : "") + desc
+          }))
+        }
+        className="w-full text-left px-3 py-2.5 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 hover:bg-[#E5E5EA] dark:hover:bg-zinc-700 text-[14px] text-zinc-700 dark:text-zinc-300 transition-colors active:scale-[0.98]"
+      >
+        {desc}
+      </button>
+    ))}
+  </div>
+</div>
 
                   <div className="grid grid-cols-3 gap-3">
                     {[
