@@ -17,14 +17,86 @@ import {
 } from "react-icons/fi";
 
 const CATEGORIES = [
-  { id: "delivery", name: "Giao hàng", icon: "🚚", color: "#ff9500", basePrice: 50000 },
-  { id: "shopping", name: "Mua hộ", icon: "🛒", color: "#34c759", basePrice: 30000 },
-  { id: "tutoring", name: "Gia sư", icon: "📚", color: "#0a84ff", basePrice: 200000 },
-  { id: "design", name: "Thiết kế", icon: "🎨", color: "#af52de", basePrice: 500000 },
-  { id: "dev", name: "Lập trình", icon: "💻", color: "#5856d6", basePrice: 2000000 },
-  { id: "marketing", name: "Marketing", icon: "📢", color: "#ff2d55", basePrice: 800000 },
-  { id: "writing", name: "Viết lách", icon: "✍️", color: "#ffcc00", basePrice: 150000 },
-  { id: "other", name: "Khác", icon: "📌", color: "#8e8e93", basePrice: 100000 },
+  { 
+    id: "delivery", name: "Giao hàng", icon: "🚚", color: "#ff9500", basePrice: 50000,
+    suggestions: ["Ship hàng nội thành 2h", "Giao đồ ăn sáng tận nơi", "Lấy hàng ship COD", "Giao tài liệu hỏa tốc", "Ship quà sinh nhật", "Giao hoa tươi trong ngày", "Chuyển nhà mini", "Ship đồ cồng kềnh"],
+    descQuick: ["+ Giao trong 2 tiếng", "+ Có chụp ảnh xác nhận", "+ Ứng tiền trước được", "+ Gọi trước khi giao", "+ Hỗ trợ bốc xếp"]
+  },
+  { 
+    id: "shopping", name: "Mua hộ", icon: "🛒", color: "#34c759", basePrice: 30000,
+    suggestions: ["Mua đồ siêu thị giúp", "Xếp hàng mua vé concert", "Mua thuốc theo đơn", "Săn sale hộ Shopee", "Mua đồ chợ truyền thống", "Đặt bánh sinh nhật", "Mua quà tặng sếp", "Mua hộ đồ brand"],
+    descQuick: ["+ Hóa đơn rõ ràng", "+ Chọn hàng kỹ như cho mình", "+ Báo giá trước khi mua", "+ Có thể video call chọn đồ", "+ Giao luôn trong ngày"]
+  },
+  { 
+    id: "tutoring", name: "Gia sư", icon: "📚", color: "#0a84ff", basePrice: 200000,
+    suggestions: ["Dạy Toán cấp 3", "Luyện IELTS 7.0+", "Dạy Piano cho bé", "Kèm code Python cơ bản", "Dạy tiếng Trung HSK", "Ôn thi đại học", "Dạy vẽ cho trẻ em", "Luyện speaking 1-1"],
+    descQuick: ["+ Test trình độ miễn phí", "+ Giáo trình riêng", "+ Linh hoạt giờ học", "+ Có cam kết đầu ra", "+ Dạy online được"]
+  },
+  { 
+    id: "design", name: "Thiết kế", icon: "🎨", color: "#af52de", basePrice: 500000,
+    suggestions: ["Logo + bộ nhận diện", "Banner Shopee/TikTok", "Thiết kế menu quán", "Edit video ngắn", "Avatar thương hiệu", "Thiệp cưới hiện đại", "Poster sự kiện", "Packaging sản phẩm"],
+    descQuick: ["+ Sửa đến khi ưng ý", "+ Gửi file gốc AI/PSD", "+ Concept đa dạng", "+ Giao trong 48h", "+ Tư vấn branding free"]
+  },
+  { 
+    id: "content", name: "Content", icon: "✍️", color: "#ffcc00", basePrice: 150000,
+    suggestions: ["Viết bài SEO website", "Kịch bản TikTok viral", "Viết CV chuyên nghiệp", "PR báo chí", "Caption bán hàng", "Email marketing", "Bài đăng Fanpage", "Review sản phẩm"],
+    descQuick: ["+ Nghiên cứu từ khóa", "+ Đúng insight khách", "+ Không copy AI", "+ Chuẩn tone thương hiệu", "+ Có portfolio"]
+  },
+  { 
+    id: "marketing", name: "Marketing", icon: "📢", color: "#ff2d55", basePrice: 800000,
+    suggestions: ["Chạy ads Facebook", "Tối ưu TikTok Shop", "Lên plan 30 ngày", "Seeding group", "Booking KOC/KOL", "Audit kênh free", "Setup Google Ads", "Tăng follow thật"],
+    descQuick: ["+ Cam kết KPI rõ ràng", "+ Report hằng ngày", "+ Tối ưu ngân sách", "+ Không chạy bùng", "+ Có case study"]
+  },
+  { 
+    id: "translate", name: "Dịch thuật", icon: "🌐", color: "#5856d6", basePrice: 200000,
+    suggestions: ["Dịch hợp đồng Anh-Việt", "Phiên dịch hội thảo", "Dịch phim/vietsub", "Dịch thuật công chứng", "Dịch sách kỹ thuật", "Dịch website", "Dịch game", "Dịch tiếng Hàn/Nhật"],
+    descQuick: ["+ Chuẩn thuật ngữ ngành", "+ Bảo mật tài liệu", "+ Deadline đúng hẹn", "+ Có dấu mộc nếu cần", "+ Native speaker check"]
+  },
+  { 
+    id: "photo", name: "Chụp ảnh", icon: "📸", color: "#ff3b30", basePrice: 800000,
+    suggestions: ["Chụp ảnh sản phẩm", "Chụp lookbook thời trang", "Chụp ảnh cưới", "Chụp sự kiện công ty", "Chụp profile cá nhân", "Chụp món ăn", "Chụp nội thất", "Quay flycam"],
+    descQuick: ["+ Retouch da đẹp", "+ Giao full file gốc", "+ Concept theo brief", "+ Có studio/di chuyển", "+ Trả ảnh trong 3 ngày"]
+  },
+  { 
+    id: "assistant", name: "Trợ lý", icon: "👔", color: "#5ac8fa", basePrice: 300000,
+    suggestions: ["Trợ lý từ xa theo giờ", "Nhập liệu Excel", "Quản lý Fanpage", "Đặt lịch hẹn", "Nghiên cứu thị trường", "Gọi điện CSKH", "Sắp xếp hồ sơ", "Support dự án"],
+    descQuick: ["+ Online 24/7 nếu cần", "+ Bảo mật thông tin", "+ Báo cáo mỗi ngày", "+ Thạo công cụ văn phòng", "+ Chủ động công việc"]
+  },
+  { 
+    id: "event", name: "Sự kiện", icon: "🎉", color: "#ff9f0a", basePrice: 1500000,
+    suggestions: ["Tổ chức sinh nhật", "MC dẫn chương trình", "Setup workshop", "Thuê PG/PB", "Trang trí tiệc cưới", "Âm thanh ánh sáng", "Quay phim sự kiện", "Lên timeline chi tiết"],
+    descQuick: ["+ Trọn gói từ A-Z", "+ Có hợp đồng rõ ràng", "+ Đúng concept yêu cầu", "+ Backup rủi ro", "+ Kinh nghiệm 5 năm+"]
+  },
+  { 
+    id: "legal", name: "Pháp lý", icon: "⚖️", color: "#30d158", basePrice: 1000000,
+    suggestions: ["Thành lập công ty", "Đăng ký nhãn hiệu", "Soạn hợp đồng", "Tư vấn ly hôn", "Làm visa/ work permit", "Xin giấy phép", "Quyết toán thuế", "Tranh chấp đất đai"],
+    descQuick: ["+ Luật sư có thẻ hành nghề", "+ Tư vấn miễn phí lần đầu", "+ Phí trọn gói không phát sinh", "+ Đúng quy trình pháp luật", "+ Hỗ trợ toàn quốc"]
+  },
+  { 
+    id: "repair", name: "Sửa chữa", icon: "🔧", color: "#bf5af2", basePrice: 200000,
+    suggestions: ["Sửa điện nước tại nhà", "Sửa laptop/PC", "Lắp camera an ninh", "Sửa máy lạnh", "Thông tắc bồn cầu", "Sửa khóa tận nơi", "Sơn sửa nhà", "Lắp đặt nội thất"],
+    descQuick: ["+ Có mặt sau 30 phút", "+ Báo giá trước khi làm", "+ Bảo hành 6 tháng", "+ Thợ lành nghề", "+ Dọn dẹp sạch sẽ"]
+  },
+  { 
+    id: "accounting", name: "Kế toán", icon: "🧮", color: "#64d2ff", basePrice: 500000,
+    suggestions: ["Báo cáo thuế tháng", "Làm sổ sách kế toán", "Quyết toán cuối năm", "Tư vấn tối ưu thuế", "Hoàn thuế TNCN", "Đăng ký BHXH", "Làm BCTC", "Setup phần mềm"],
+    descQuick: ["+ Kế toán trưởng duyệt", "+ Đúng hạn cơ quan thuế", "+ Bảo mật số liệu", "+ Giải trình khi thanh tra", "+ Chứng chỉ đại lý thuế"]
+  },
+  { 
+    id: "care", name: "Chăm sóc", icon: "❤️", color: "#ff375f", basePrice: 400000,
+    suggestions: ["Chăm người già tại nhà", "Trông trẻ theo giờ", "Chăm sóc thú cưng", "Massage trị liệu", "Chăm sóc mẹ & bé", "Đi chợ nấu ăn", "Đưa đón bé đi học", "Tập vật lý trị liệu"],
+    descQuick: ["+ Có chứng chỉ nghiệp vụ", "+ Lý lịch rõ ràng", "+ Yêu nghề, tận tâm", "+ Cập nhật tình hình hằng ngày", "+ Xử lý tình huống tốt"]
+  },
+  { 
+    id: "car", name: "Xe cộ", icon: "🚗", color: "#ac8e68", basePrice: 600000,
+    suggestions: ["Tài xế riêng theo ngày", "Rửa xe tận nơi", "Đăng kiểm hộ", "Cứu hộ ắc quy", "Dán phim cách nhiệt", "Thuê xe tự lái", "Vá vỏ lưu động", "Sang tên đổi chủ"],
+    descQuick: ["+ Lái xe kinh nghiệm 5 năm+", "+ Xe đời mới, sạch sẽ", "+ Đúng giờ, đúng hẹn", "+ Có bảo hiểm đầy đủ", "+ Rành đường TP.HCM"]
+  },
+  { 
+    id: "other", name: "Khác", icon: "📌", color: "#8e8e93", basePrice: 100000,
+    suggestions: ["Việc gì cũng nhận", "Tư vấn tâm lý", "Xem tarot/bói bài", "Thuê người yêu", "Xếp hàng mua đồ", "Test game/app", "Tìm người thất lạc", "Việc theo yêu cầu"],
+    descQuick: ["+ Trao đổi cụ thể nhé", "+ Giá thương lượng", "+ Uy tín là đầu", "+ Hỗ trợ 24/7", "+ Không ngại việc khó"]
+  },
 ];
 
 const URGENCY = [
@@ -34,19 +106,14 @@ const URGENCY = [
 ];
 
 const TEMPLATES = [
-  { icon: "🚀", name: "Ship nhanh", cat: "delivery", title: "Giao hàng hỏa tốc nội thành", price: "45000", tags: ["gấp", "trong ngày"] },
+  { icon: "🚚", name: "Ship nhanh", cat: "delivery", title: "Giao hàng hỏa tốc nội thành", price: "45000", tags: ["gấp", "trong ngày"] },
   { icon: "🎨", name: "Logo Pro", cat: "design", title: "Thiết kế logo + bộ nhận diện", price: "1500000", tags: ["chuyên nghiệp", "3 concept"] },
-  { icon: "💻", name: "Web bán hàng", cat: "dev", title: "Website TMĐT full tính năng", price: "5000000", tags: ["fullstack", "1 tháng"] },
-  { icon: "📱", name: "TikTok Ads", cat: "marketing", title: "Chạy quảng cáo TikTok 1 tháng", price: "3000000", tags: ["target", "report"] },
+  { icon: "📸", name: "Chụp sản phẩm", cat: "photo", title: "Chụp ảnh sản phẩm chuyên nghiệp", price: "800000", tags: ["studio", "retouch"] },
+  { icon: "📢", name: "TikTok Ads", cat: "marketing", title: "Chạy quảng cáo TikTok 1 tháng", price: "3000000", tags: ["target", "report"] },
+  { icon: "⚖️", name: "Thành lập CTY", cat: "legal", title: "Dịch vụ thành lập công ty trọn gói", price: "3000000", tags: ["pháp lý", "nhanh"] },
+  { icon: "🔧", name: "Sửa máy lạnh", cat: "repair", title: "Vệ sinh + bơm gas máy lạnh", price: "200000", tags: ["tại nhà", "bảo hành"] },
 ];
 
-const QUICK_DESCRIPTIONS = [
-  "+ Cần gấp trong ngày",
-  "+ Báo giá trước khi làm",
-  "+ Ưu tiên kinh nghiệm",
-  "+ Làm online được",
-  "+ Có thể thương lượng giá",
-];
 
 export default function CreateTaskProMax() {
   const auth = getFirebaseAuth();
@@ -222,7 +289,7 @@ export default function CreateTaskProMax() {
                 <span className="text-[11px] text-zinc-500">/3</span>
                 {savedTasks > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-black tabular-nums">{savedTasks}</span>}
               </div>
-              <h1 className="text-[17px] font-semibold leading-tight mt-0.5">{["Mô tả công việc", "Ngân sách & Thời gian", "Tùy chọn nâng cao"][step - 1]}</h1>
+              <h1 className="text-[17px] font-semibold leading-tight mt-0.5">{["Bạn muốn làm gì?", "Ngân sách & Thời gian", "Tùy chọn nâng cao"][step - 1]}</h1>
             </div>
             <div className="flex items-center gap-1">
               <button onClick={() => setShowTemplates(true)} className="w-8 h-8 grid place-items-center rounded-lg hover:bg-zinc-900/5 dark:hover:bg-white/5 text-zinc-500 active:scale-95 transition-all">
@@ -238,110 +305,75 @@ export default function CreateTaskProMax() {
         <div className="max-w-[680px] mx-auto pb-28">
           <motion.div drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.15} onDrag={(_, i) => setDragX(i.offset.x)} onDragEnd={handleDragEnd} style={{ x: dragX }}>
             <AnimatePresence mode="wait" initial={false}>
-              {step === 1 && (
-                <motion.div key="s1" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }} className="p-4 space-y-3">
-                  <div>
-                    <div className="text-[13px] text-zinc-500 mb-2 px-1">Chọn loại công việc</div>
-                    <div className="grid grid-cols-4 gap-2.5">
-                      {CATEGORIES.map(c => (
-                        <button key={c.id} onClick={() => setForm({...form, category: c.id, price: c.basePrice.toLocaleString('vi-VN') })} className="relative active:scale-95 transition-transform">
-                          <div className={`rounded-2xl border p-3 flex flex-col items-center justify-center gap-1.5 min-h-[76px] transition-all ${form.category === c.id ? "border-[#0a84ff] bg-[#0a84ff]/5" : "border-[#E5E5EA] dark:border-zinc-800 bg-white dark:bg-zinc-900"}`}>
-                            <div className="text-[24px] leading-none">{c.icon}</div>
-                            <div className={`text-[12px] font-medium leading-tight text-center ${form.category === c.id ? "text-[#0a84ff]" : "text-zinc-700 dark:text-zinc-300"}`}>{c.name}</div>
-                          </div>
-                          {form.category === c.id && (
-                            <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[#0a84ff] rounded-full grid place-items-center shadow-md">
-                              <FiCheck size={12} className="text-white" strokeWidth={3} />
-                            </div>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl grid place-items-center shrink-0" style={{ backgroundColor: `${category.color}15` }}>
-                        <span className="text-[20px]">{category.icon}</span>
-                      </div>
-                      <input value={form.title} onChange={e => setForm({...form, title: e.target.value.slice(0, 100) })} placeholder="Bạn cần làm gì?" className="flex-1 text-[16px] font-medium bg-transparent outline-none placeholder:text-zinc-400" autoFocus />
-                    </div>
-                    <div className="flex gap-1.5 mt-3 overflow-x-auto scrollbar-hide">
-                      {form.tags.map(tag => (
-                        <span key={tag} className="px-2.5 py-1 rounded-full bg-[#0a84ff]/10 text-[#0a84ff] text-[12px] font-medium">{tag}</span>
-                      ))}
-                    </div>
-                  </div>
-
-                 <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-4">
-  <textarea
-    value={form.description}
-    onChange={e => setForm({...form, description: e.target.value.slice(0, 2000) })}
-    placeholder="Mô tả chi tiết yêu cầu, mục tiêu, kết quả mong muốn..."
-    rows={5}
-    className="w-full bg-transparent outline-none resize-none text-[15px] leading-[22px] placeholder:text-zinc-400"
-  />
-
-  <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#E5E5EA] dark:border-zinc-800">
-    <div className="flex gap-1.5">
-      {["Chi tiết", "Đúng hạn", "Báo cáo"].map(t => (
-        <button
-          key={t}
-          onClick={() =>
-            setForm(f => ({
-              ...f,
-              description: f.description + (f.description ? "\n• " : "• ") + t
-            }))
-          }
-          className="px-2.5 py-1 rounded-lg bg-[#F2F2F7] dark:bg-zinc-800 hover:bg-[#E5E5EA] dark:hover:bg-zinc-700 text-[12px] text-zinc-600 dark:text-zinc-400 transition-colors active:scale-95"
-        >
-          + {t}
-        </button>
-      ))}
+{step === 1 && (
+  <motion.div key="s1" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }} className="p-4 space-y-3">
+    <div>
+      <div className="text-[13px] text-zinc-500 mb-2 px-1">Chọn loại hoạt động</div>
+      <div className="grid grid-cols-4 gap-2">
+        {CATEGORIES.map(c => (
+          <button key={c.id} onClick={() => setForm({...form, category: c.id, price: c.basePrice.toLocaleString('vi-VN'), tags: [] })} className="relative active:scale-95 transition-transform">
+    <div className={`rounded-xl border p-2 flex-col items-center justify-center gap-1 min-h-[60px] transition-all ${form.category === c.id? "border-[#0a84ff] bg-[#0a84ff]/5" : "border-[#E5E5EA] dark:border-zinc-800 bg-white dark:bg-zinc-900"}`}>
+  <div className="text-[20px] leading-none">{c.icon}</div>
+  <div className={`text-[11px] font-medium leading-tight text-center ${form.category === c.id? "text-[#0a84ff]" : "text-zinc-700 dark:text-zinc-300"}`}>{c.name}</div>
+</div>
+            {form.category === c.id && (
+           <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#0a84ff] rounded-full grid place-items-center shadow-sm">
+  <FiCheck size={10} className="text-white" strokeWidth={3} />
+</div>
+            )}
+          </button>
+        ))}
+      </div>
     </div>
 
-    <span className={`text-[12px] tabular-nums ${form.description.length >= 20 ? 'text-[#0a84ff]' : 'text-zinc-400'}`}>
-      {form.description.length}/2000
-    </span>
+ <div className="space-y-3">
+  <div className="flex items-center gap-3">
+    <div className="w-9 h-9 rounded-xl grid place-items-center shrink-0" style={{ backgroundColor: `${category.color}15` }}>
+      <span className="text-">{category.icon}</span>
+    </div>
+    <input value={form.title} onChange={e => setForm({...form, title: e.target.value.slice(0, 100) })} placeholder="Bạn cần làm gì?" className="flex-1 h-11 px-3 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 text- font-medium outline-none placeholder:text-zinc-400" autoFocus />
+    <span className={`text- tabular-nums ${form.title.length >= 10? 'text-[#0a84ff]' : 'text-zinc-400'}`}>{form.title.length}/100</span>
   </div>
-</div>
+  <div className="flex gap-1.5 flex-wrap">
+        {category.suggestions.map(tag => (
+          <button key={tag} onClick={() => setForm(f => ({...f, title: tag }))} className="px-2.5 py-1 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 hover:bg-[#0a84ff]/10 hover:text-[#0a84ff] text-[12px] text-zinc-600 dark:text-zinc-400 transition-colors active:scale-95">{tag}</button>
+        ))}
+      </div>
+    </div>
 
-                  <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-4">
-  <div className="text-[13px] text-zinc-500 mb-3">Gợi ý mô tả nhanh</div>
+<div className="space-y-3">
+<textarea
+  value={form.description}
+  onChange={e => setForm({...form, description: e.target.value.slice(0, 2000) })}
+  placeholder="Mô tả chi tiết yêu cầu, mục tiêu, kết quả mong muốn..."
+  rows={5}
+  className="w-full p-3 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 outline-none resize-none text- leading- placeholder:text-zinc-400"
+/>
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#E5E5EA] dark:border-zinc-800">
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
+          {category.descQuick.map(t => (
+            <button
+              key={t}
+              onClick={() =>
+                setForm(f => ({
+                 ...f,
+                  description: f.description + (f.description? "\n" : "") + t
+                }))
+              }
+              className="px-2.5 py-1 rounded-lg bg-[#F2F2F7] dark:bg-zinc-800 hover:bg-[#E5E5EA] dark:hover:bg-zinc-700 text-[12px] text-zinc-600 dark:text-zinc-400 transition-colors active:scale-95 whitespace-nowrap"
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+        <span className={`text-[12px] tabular-nums ml-2 ${form.description.length >= 20? 'text-[#0a84ff]' : 'text-zinc-400'}`}>
+          {form.description.length}/2000
+        </span>
+      </div>
+    </div>
 
-  <div className="space-y-2">
-    {QUICK_DESCRIPTIONS.map((desc, i) => (
-      <button
-        key={i}
-        onClick={() =>
-          setForm(f => ({
-            ...f,
-            description: f.description + (f.description ? "\n" : "") + desc
-          }))
-        }
-        className="w-full text-left px-3 py-2.5 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 hover:bg-[#E5E5EA] dark:hover:bg-zinc-700 text-[14px] text-zinc-700 dark:text-zinc-300 transition-colors active:scale-[0.98]"
-      >
-        {desc}
-      </button>
-    ))}
-  </div>
-</div>
-
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { icon: FiUsers, label: "1.2k", sub: "Freelancer" },
-                      { icon: FiClock, label: "2.4h", sub: "TB phản hồi" },
-                      { icon: FiStar, label: "4.8", sub: "Đánh giá" },
-                    ].map((s, i) => (
-                      <div key={i} className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-3.5 text-center">
-                        <s.icon size={18} className="mx-auto text-zinc-400 mb-1.5" />
-                        <div className="text-[17px] font-semibold leading-none tabular-nums">{s.label}</div>
-                        <div className="text-[11px] text-zinc-500 mt-1">{s.sub}</div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
+  </motion.div>
+)}
 
               {step === 2 && (
                 <motion.div key="s2" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }} className="p-4 space-y-3">
@@ -364,17 +396,14 @@ export default function CreateTaskProMax() {
                           <input type="text" inputMode="numeric" value={form.price} onChange={e => setForm({...form, price: e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ".") })} placeholder="0" className="w-full h-[52px] pl-4 pr-14 bg-[#F2F2F7] dark:bg-zinc-800 rounded-2xl outline-none focus:ring-2 focus:ring-[#0a84ff]/20 text-[24px] font-semibold tracking-tight transition-all tabular-nums" />
                           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[14px] font-medium text-zinc-400">VND</span>
                         </div>
-                        <div className="flex items-center justify-between mt-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[13px] text-zinc-500">Số lượng:</span>
-                            <div className="flex items-center gap-2 bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg p-0.5">
-                              <button onClick={() => setForm({...form, totalSlots: Math.max(1, parseInt(form.totalSlots) - 1).toString() })} className="w-7 h-7 grid place-items-center rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-600 active:scale-95">−</button>
-                              <span className="w-8 text-center text-[14px] font-medium tabular-nums">{form.totalSlots}</span>
-                              <button onClick={() => setForm({...form, totalSlots: Math.min(20, parseInt(form.totalSlots) + 1).toString() })} className="w-7 h-7 grid place-items-center rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-600 active:scale-95">+</button>
-                            </div>
-                          </div>
-                          <span className="text-[13px] text-zinc-500 tabular-nums">TB: {(category.basePrice / 1000).toFixed(0)}k</span>
-                        </div>
+                 <div className="flex items-center gap-2 mt-3">
+  <span className="text- text-zinc-500">Số người:</span>
+  <div className="flex items-center gap-2 bg-[#F2F7] dark:bg-zinc-800 rounded-lg p-0.5">
+    <button onClick={() => setForm({...form, totalSlots: Math.max(1, parseInt(form.totalSlots) - 1).toString() })} className="w-7 h-7 grid place-items-center rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-600 active:scale-95">−</button>
+    <span className="w-8 text-center text- font-medium tabular-nums">{form.totalSlots}</span>
+    <button onClick={() => setForm({...form, totalSlots: Math.min(20, parseInt(form.totalSlots) + 1).toString() })} className="w-7 h-7 grid place-items-center rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-600 active:scale-95">+</button>
+  </div>
+</div>
                       </>
                     ) : (
                       <div className="h-[52px] grid place-items-center bg-[#F2F2F7] dark:bg-zinc-800 rounded-2xl text-zinc-500 text-[15px]">Sẽ thỏa thuận sau</div>
@@ -387,13 +416,13 @@ export default function CreateTaskProMax() {
                       <span className="font-medium text-[15px]">Độ ưu tiên</span>
                     </div>
                     <div className="grid grid-cols-3 gap-2.5">
-                      {URGENCY.map(u => (
-                        <button key={u.id} onClick={() => setForm({...form, urgency: u.id })} className={`relative p-3 rounded-2xl border text-left transition-all active:scale-95 ${form.urgency === u.id ? "border-amber-500 bg-amber-50 dark:bg-amber-950/20" : "border-[#E5E5EA] dark:border-zinc-800 bg-[#F2F2F7]/50 dark:bg-zinc-800/30"}`}>
-                          <div className="text-[12px] font-semibold" style={{ color: u.color === "emerald" ? "#10b981" : u.color === "amber" ? "#f59e0b" : "#ef4444" }}>{u.name}</div>
-                          <div className="text-[12px] text-zinc-500 mt-0.5">{u.time}</div>
-                          {u.bonus > 0 && <div className="text-[11px] font-medium mt-1 tabular-nums" style={{ color: u.color === "amber" ? "#f59e0b" : "#ef4444" }}>+{u.bonus}%</div>}
-                        </button>
-                      ))}
+     {URGENCY.map(u => (
+  <button key={u.id} onClick={() => setForm({...form, urgency: u.id })} className={`relative p-3 rounded-2xl border text-left transition-all active:scale-95 ${form.urgency === u.id ? "border-[#0a84ff] bg-[#0a84ff]/5" : "border-[#E5E5EA] dark:border-zinc-800 bg-[#F2F7]/50 dark:bg-zinc-800/30"}`}>
+    <div className={`text- font-semibold ${form.urgency === u.id ? "text-[#0a84ff]" : "text-zinc-700 dark:text-zinc-300"}`}>{u.name}</div>
+    <div className="text- text-zinc-500 mt-0.5">{u.time}</div>
+    {u.bonus > 0 && <div className={`text- font-medium mt-1 tabular-nums ${form.urgency === u.id ? "text-[#0a84ff]" : "text-zinc-500"}`}>+{u.bonus}%</div>}
+  </button>
+))}
                     </div>
                   </div>
 
@@ -406,11 +435,11 @@ export default function CreateTaskProMax() {
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <div className="text-[12px] text-zinc-500 mb-1.5">Bắt đầu</div>
-                          <input type="datetime-local" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value })} className="w-full h-10 px-3 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl outline-none text-[14px] font-medium" />
+                          <input type="datetime-local" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value })} className="w-full h-10 px-3 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl outline-none text-[14px] font-medium border border-[#E5E5EA] dark:border-zinc-800 focus:border-[#0a84ff] focus:ring-2 focus:ring-[#0a84ff]/20 transition-all" />
                         </div>
                         <div>
                           <div className="text-[12px] text-zinc-500 mb-1.5">Kết thúc</div>
-                          <input type="datetime-local" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value })} className="w-full h-10 px-3 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl outline-none text-[14px] font-medium" />
+                          <input type="datetime-local" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value })} className="w-full h-10 px-3 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl outline-none text-[14px] font-medium border border-[#E5E5EA] dark:border-zinc-800 focus:border-[#0a84ff] focus:ring-2 focus:ring-[#0a84ff]/20 transition-all" />
                         </div>
                       </div>
                     </div>
@@ -431,7 +460,7 @@ export default function CreateTaskProMax() {
                         </div>
                       ) : (
                         <div className="flex gap-2">
-                          <input value={form.address} onChange={e => setForm({...form, address: e.target.value })} placeholder="Nhập địa chỉ..." className="flex-1 h-10 px-3 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl outline-none text-[14px]" />
+                          <input value={form.address} onChange={e => setForm({...form, address: e.target.value })} placeholder="Nhập địa chỉ..." className="flex-1 h-10 px-3 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl outline-none text-[14px] border border-[#E5E5EA] dark:border-zinc-800 focus:border-[#0a84ff] focus:ring-2 focus:ring-[#0a84ff]/20 transition-all" />
                           <button onClick={handleGetLocation} className="w-10 h-10 grid place-items-center bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl active:scale-95 transition-all">
                             <FiNavigation size={15} />
                           </button>
