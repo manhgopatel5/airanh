@@ -965,7 +965,7 @@ const [form, setForm] = useState({
                       {(urgencyFee > 0 || featuredFee > 0) && (
                         <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5">
                           <div className="flex justify-between text-[12px] opacity-70"><span>Giá gốc</span><span className="tabular-nums">{basePrice.toLocaleString('vi-VN')}đ</span></div>
-                          {urgencyFee > 0 && <div className="flex justify-between text-[12px] opacity-70"><span>Phí ưu tiên ({urgencyLevel.bonus}%)</span><span className="tabular-nums">+{urgencyFee.toLocaleString('vi-VN')}đ</span></div>}
+                          {urgencyFee > 0 && <div className="flex justify-between text-[12px] opacity-70"><span>Phí ưu tiên</span><span className="tabular-nums">+{urgencyFee.toLocaleString('vi-VN')}đ</span></div>}
                           {featuredFee > 0 && <div className="flex justify-between text-[12px] opacity-70"><span>Ghim PRO</span><span className="tabular-nums">+{featuredFee.toLocaleString('vi-VN')}đ</span></div>}
                         </div>
                       )}
