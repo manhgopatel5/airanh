@@ -324,7 +324,7 @@ const [form, setForm] = useState({
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const category = useMemo(() => CATEGORIES.find(c => c.id === form.category)!, [form.category]);
 
-  const urgencyLevel = URGENCY.find(u => u.id === form.urgency)!;
+  
   const progress = (step / 3) * 100;
   const basePrice = parseInt(form.price.replace(/\./g, "") || "0");
   const urgencyFee = 0;
