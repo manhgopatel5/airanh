@@ -11,7 +11,7 @@ import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import {
   FiX, FiCheck, FiPlus, FiMapPin, FiEye, FiCopy,
-  FiZap, FiShield, FiStar, FiTarget, FiLayers,
+  FiZap, FiShield, FiStar, FiLayers,
   FiTrendingUp, FiLock, FiGlobe, FiDollarSign,
   FiChevronRight, FiNavigation, FiCalendar, FiUserCheck
 } from "react-icons/fi";
