@@ -321,7 +321,7 @@ const [form, setForm] = useState({
     nda: false, attachments: [] as File[], recurring: "once",
     languages: ["Tiếng Việt"], timezone: "Asia/Ho_Chi_Minh",
     hours: 1, 
-});});
+});
 
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const category = useMemo(() => CATEGORIES.find(c => c.id === form.category)!, [form.category]);
