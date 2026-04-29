@@ -306,7 +306,7 @@ export default function CreateTaskProMax() {
   const [savedTasks, setSavedTasks] = useState(0);
 
   const now = new Date();
-  const [form, setForm] = useState({
+const [form, setForm] = useState({
     title: "", description: "", price: "", totalSlots: "1",
     startDate: new Date(now.getTime() + 3600000).toISOString().slice(0, 16),
     endDate: new Date(now.getTime() + 86400000 * 3).toISOString().slice(0, 16),
@@ -318,6 +318,7 @@ export default function CreateTaskProMax() {
     invites: [] as string[], pollPrice: false, needApproval: true,
     nda: false, attachments: [] as File[], recurring: "once",
     languages: ["Tiếng Việt"], timezone: "Asia/Ho_Chi_Minh",
+    hours: 1, 
   });
 
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -676,7 +677,7 @@ export default function CreateTaskProMax() {
                     onClick={() =>
                       setForm({
                         ...form,
-                        hours: Math.max(1, (form as any).hours - 1),
+                        hours: Math.max(1, form.hours - 1),
                       })
                     }
                     className="w-7 h-7 grid place-items-center rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-600 active:scale-95"
@@ -692,7 +693,7 @@ export default function CreateTaskProMax() {
                     onClick={() =>
                       setForm({
                         ...form,
-                        hours: Math.min(24, ((form as any).hours || 1) + 1),
+                        hours: Math.min(24, form.hours + 1),
                       })
                     }
                     className="w-7 h-7 grid place-items-center rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-600 active:scale-95"
