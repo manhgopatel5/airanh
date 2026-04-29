@@ -327,10 +327,7 @@ const [form, setForm] = useState({
   
   const progress = (step / 3) * 100;
   const basePrice = parseInt(form.price.replace(/\./g, "") || "0");
-  const urgencyFee = 0;
-  const featuredFee = form.featured ? 50000 : 0;
-  const serviceFee = Math.round((basePrice + urgencyFee) * 0.05);
-  const totalPrice = basePrice + urgencyFee + featuredFee + serviceFee;
+
 
   const canNext = step === 1
     ? form.title.length >= 10 && form.description.length >= 20
