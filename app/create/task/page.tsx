@@ -10,9 +10,9 @@ import { createTask } from "@/lib/task";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import {
-  FiX, FiCheck, FiPlus, FiClock, FiMapPin, FiEye, FiCopy,
-  FiZap, FiShield, FiStar, FiTarget, FiLayers,
-  FiTrendingUp, FiLock, FiGlobe, FiUsers, FiDollarSign,
+  FiX, FiCheck, FiPlus, FiMapPin, FiEye, FiCopy,
+  FiZap, FiShield, FiTarget, FiLayers,
+  FiTrendingUp, FiLock, FiGlobe, FiDollarSign,
   FiChevronRight, FiNavigation, FiCalendar, FiUserCheck
 } from "react-icons/fi";
 
