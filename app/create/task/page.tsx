@@ -21,30 +21,30 @@ const CATEGORIES = [
     id: "delivery", name: "Giao hàng", icon: "🚚", color: "#ff9500", basePrice: 50000,
     suggestions: [
       { title: "Ship hàng nội thành 2h", desc: ["+ Giao trong 2 tiếng kể từ khi nhận", "+ Có ảnh chụp khi giao xong", "+ Ứng tiền trước tối đa 3tr", "+ Gọi báo trước 10 phút", "+ Miễn phí chờ 15 phút"] },
-      { title: "Giao đồ ăn sáng tận nơi", desc: ["+ Mua đúng quán bạn chỉ định", "+ Giữ nóng bằng túi giữ nhiệt", "+ Giao trước 8h sáng", "+ Có hóa đơn rõ ràng", "+ Free ship < 3km"] },
+      { title: "Giao đồ ăn sáng tận nơi", desc: ["+ Mua đúng quán bạn chỉ định", "+ Giữ nóng bằng túi giữ nhiệt", "+ Giao trước 8h sáng", "+ Có hóa đơn rõ ràng", "+ Free ship dưới 3km"] },
       { title: "Lấy hàng ship COD", desc: ["+ Đối soát tiền trong ngày", "+ Có biên nhận đầy đủ", "+ Xử lý hàng hoàn nếu có", "+ Báo cáo đơn real-time", "+ Hỗ trợ đóng gói lại"] },
-      { title: "Giao tài liệu hỏa tốc", desc: ["+ Bảo mật tuyệt đối", "+ Giao tận tay người nhận", "+ Ký nhận từng trang", "+ Có người trực 24/7", "+ Cam kết đúng giờ"] },
-      { title: "Ship quà sinh nhật", desc: ["+ Gói quà đẹp free", "+ Giao đúng khung giờ", "+ Chụp ảnh người nhận", "+ Giấu giá, kèm thiệp", "+ Có thể hát chúc mừng"] },
+      { title: "Giao tài liệu hỏa tốc", desc: ["+ Bảo mật tuyệt đối", "+ Giao tận tay người nhận", "+ Ký nhận từng trang", "+ Có người trực 24-7", "+ Cam kết đúng giờ"] },
+      { title: "Ship quà sinh nhật", desc: ["+ Gói quà đẹp free", "+ Giao đúng khung giờ", "+ Chụp ảnh người nhận", "+ Giấu giá kèm thiệp", "+ Có thể hát chúc mừng"] },
       { title: "Giao hoa tươi trong ngày", desc: ["+ Hoa nhập mới mỗi sáng", "+ Tặng thiệp viết tay", "+ Chụp ảnh trước khi giao", "+ Giao trong 90 phút", "+ Héo hoàn 100%"] },
-      { title: "Chuyển nhà mini", desc: ["+ Xe ba gác/xe tải nhỏ", "+ 2 người bốc xếp", "+ Tháo lắp đồ cơ bản", "+ Bọc màng chống trầy", "+ Dọn sạch sau khi chuyển"] },
-      { title: "Ship đồ cồng kềnh", desc: ["+ Có xe bán tải/xe tải", "+ Hỗ trợ khiêng lên lầu", "+ Dây ràng chắc chắn", "+ Đi tỉnh được", "+ Báo giá trước khi chở"] },
-      { title: "Giao hàng lúc nửa đêm", desc: ["+ Nhận đơn 22h-6h", "+ Phụ phí rõ ràng", "+ Shipper nam, có CCCD", "+ Share định vị real-time", "+ Gọi xác nhận 2 lần"] },
+      { title: "Chuyển nhà mini", desc: ["+ Xe ba gác-xe tải nhỏ", "+ 2 người bốc xếp", "+ Tháo lắp đồ cơ bản", "+ Bọc màng chống trầy", "+ Dọn sạch sau khi chuyển"] },
+      { title: "Ship đồ cồng kềnh", desc: ["+ Có xe bán tải-xe tải", "+ Hỗ trợ khiêng lên lầu", "+ Dây ràng chắc chắn", "+ Đi tỉnh được", "+ Báo giá trước khi chở"] },
+      { title: "Giao hàng lúc nửa đêm", desc: ["+ Nhận đơn 22h-6h", "+ Phụ phí rõ ràng", "+ Shipper nam có CCCD", "+ Share định vị real-time", "+ Gọi xác nhận 2 lần"] },
       { title: "Giao thuốc khẩn cấp", desc: ["+ Mua đúng đơn bác sĩ", "+ Giữ lạnh nếu cần", "+ Giao trong 60 phút", "+ Có hóa đơn nhà thuốc", "+ Tư vấn liều dùng cơ bản"] }
     ]
   },
   {
     id: "shopping", name: "Mua hộ", icon: "🛒", color: "#34c759", basePrice: 30000,
     suggestions: [
-      { title: "Mua đồ siêu thị giúp", desc: ["+ Chọn đồ tươi như cho nhà dùng", "+ Chụp ảnh kệ để bạn duyệt", "+ Hóa đơn + tích điểm cho bạn", "+ Giao trong 3 tiếng", "+ Đổi trả nếu héo/ôI"] },
+      { title: "Mua đồ siêu thị giúp", desc: ["+ Chọn đồ tươi như cho nhà dùng", "+ Chụp ảnh kệ để bạn duyệt", "+ Hóa đơn + tích điểm cho bạn", "+ Giao trong 3 tiếng", "+ Đổi trả nếu héo hoặc ôi"] },
       { title: "Xếp hàng mua vé concert", desc: ["+ Camp từ 4h sáng", "+ Live update vị trí", "+ Mua đúng khu bạn chọn", "+ Hoàn tiền nếu hết vé", "+ Tặng lightstick nếu có"] },
       { title: "Mua thuốc theo đơn", desc: ["+ Đi 3 nhà thuốc so giá", "+ Dược sĩ tư vấn lại", "+ Giữ toa gốc cẩn thận", "+ Giao + hướng dẫn uống", "+ Mua thêm theo yêu cầu"] },
-      { title: "Săn sale hộ Shopee/Lazada", desc: ["+ Canh khung giờ vàng", "+ Áp full mã giảm", "+ Chat shop check hàng", "+ Quay video khui hàng", "+ Hỗ trợ đổi trả 7 ngày"] },
-      { title: "Mua đồ chợ truyền thống", desc: ["+ Biết trả giá đúng chợ", "+ Chọn rau thịt tươi nhất", "+ Không độn hàng cũ", "+ Giao trước 10h sáng", "+ Free túi nilon/túi giấy"] },
+      { title: "Săn sale hộ Shopee-Lazada", desc: ["+ Canh khung giờ vàng", "+ Áp full mã giảm", "+ Chat shop check hàng", "+ Quay video khui hàng", "+ Hỗ trợ đổi trả 7 ngày"] },
+      { title: "Mua đồ chợ truyền thống", desc: ["+ Biết trả giá đúng chợ", "+ Chọn rau thịt tươi nhất", "+ Không độn hàng cũ", "+ Giao trước 10h sáng", "+ Free túi nilon hoặc túi giấy"] },
       { title: "Đặt bánh sinh nhật", desc: ["+ Gửi 5 mẫu cho chọn", "+ Viết chữ theo yêu cầu", "+ Giao đúng giờ cắt bánh", "+ Thêm nến + dao free", "+ Bánh mới trong ngày"] },
       { title: "Mua quà tặng sếp", desc: ["+ Tư vấn theo ngân sách", "+ Gói quà sang trọng", "+ Xuất VAT nếu cần", "+ Giao tận văn phòng", "+ Kèm thiệp doanh nghiệp"] },
-      { title: "Mua hộ đồ brand", desc: ["+ Check auth tại store", "+ Quay video mua hàng", "+ Giữ bill/tag đầy đủ", "+ Săn sale outlet 50%+", "+ Ship quốc tế được"] },
-      { title: "Đi chợ nấu cơm gia đình", desc: ["+ Lên thực đơn 3 món", "+ Cân đối dinh dưỡng", "+ Sơ chế sẵn nếu cần", "+ Tính toán 40k/người", "+ Dọn bếp sau khi nấu"] },
-      { title: "Mua đồ cúng/mâm lễ", desc: ["+ Đủ lễ theo vùng miền", "+ Trái cây loại 1", "+ Hoa tươi không héo", "+ Giao trước giờ cúng", "+ Hỗ trợ bày mâm"] }
+      { title: "Mua hộ đồ brand", desc: ["+ Check auth tại store", "+ Quay video mua hàng", "+ Giữ bill và tag đầy đủ", "+ Săn sale outlet 50% trở lên", "+ Ship quốc tế được"] },
+      { title: "Đi chợ nấu cơm gia đình", desc: ["+ Lên thực đơn 3 món", "+ Cân đối dinh dưỡng", "+ Sơ chế sẵn nếu cần", "+ Tính toán 40k mỗi người", "+ Dọn bếp sau khi nấu"] },
+      { title: "Mua đồ cúng-mâm lễ", desc: ["+ Đủ lễ theo vùng miền", "+ Trái cây loại 1", "+ Hoa tươi không héo", "+ Giao trước giờ cúng", "+ Hỗ trợ bày mâm"] }
     ]
   },
   {
@@ -53,41 +53,41 @@ const CATEGORIES = [
       { title: "Dạy Toán cấp 3", desc: ["+ Ôn thi THPT 8+", "+ Lộ trình cá nhân hóa", "+ Đề thi thử mỗi tuần", "+ Báo cáo cho phụ huynh", "+ Học thử 1 buổi free"] },
       { title: "Luyện IELTS 7.0+", desc: ["+ Test 4 kỹ năng đầu vào", "+ Chấm Writing chi tiết", "+ Mock test Speaking 1-1", "+ Cam kết tăng 1.0 band", "+ Tài liệu độc quyền"] },
       { title: "Dạy Piano cho bé", desc: ["+ Giáo trình Method Rose", "+ Vừa học vừa chơi", "+ Biểu diễn sau 3 tháng", "+ Có đàn tại nhà cô", "+ Phụ huynh dự giờ được"] },
-      { title: "Kèm code Python cơ bản", desc: ["+ Làm project thực tế", "+ Dạy tư duy, không học vẹt", "+ Fix bug cùng học viên", "+ Portfolio sau khóa", "+ Support cả khi học xong"] },
+      { title: "Kèm code Python cơ bản", desc: ["+ Làm project thực tế", "+ Dạy tư duy không học vẹt", "+ Fix bug cùng học viên", "+ Portfolio sau khóa", "+ Support cả khi học xong"] },
       { title: "Dạy tiếng Trung HSK", desc: ["+ Phát âm chuẩn Bắc Kinh", "+ Luyện 4 kỹ năng", "+ Thi thử HSK mỗi tháng", "+ Giao tiếp chủ đề công sở", "+ Tặng bộ flashcard"] },
-      { title: "Ôn thi đại học cấp tốc", desc: ["+ Tổng ôn 2 tháng", "+ Mẹo khoanh trắc nghiệm", "+ Đề các trường top", "+ Học 6 buổi/tuần", "+ Ở lại lớp đến khi hiểu"] },
-      { title: "Dạy vẽ cho trẻ em", desc: ["+ Kích thích sáng tạo", "+ Học màu nước/chì/sáp", "+ Triển lãm mini cuối khóa", "+ Lớp tối đa 5 bé", "+ Vật liệu bao gồm"] },
-      { title: "Luyện Speaking 1-1", desc: ["+ Sửa phát âm từng từ", "+ Chủ đề công việc/du lịch", "+ Không ngại nói sai", "+ Ghi âm để nghe lại", "+ Linh hoạt giờ học"] },
+      { title: "Ôn thi đại học cấp tốc", desc: ["+ Tổng ôn 2 tháng", "+ Mẹo khoanh trắc nghiệm", "+ Đề các trường top", "+ Học 6 buổi mỗi tuần", "+ Ở lại lớp đến khi hiểu"] },
+      { title: "Dạy vẽ cho trẻ em", desc: ["+ Kích thích sáng tạo", "+ Học màu nước-chì-sáp", "+ Triển lãm mini cuối khóa", "+ Lớp tối đa 5 bé", "+ Vật liệu bao gồm"] },
+      { title: "Luyện Speaking 1-1", desc: ["+ Sửa phát âm từng từ", "+ Chủ đề công việc hoặc du lịch", "+ Không ngại nói sai", "+ Ghi âm để nghe lại", "+ Linh hoạt giờ học"] },
       { title: "Dạy Excel nâng cao", desc: ["+ Pivot + VBA cơ bản", "+ Bài tập từ file công ty bạn", "+ Dashboard quản lý", "+ Shortcut làm nhanh x3", "+ Cấp chứng nhận"] },
-      { title: "Dạy nhảy TikTok", desc: ["+ Trend mới nhất", "+ Quay clip đẹp cho bạn", "+ Dạy tại studio/gia sư", "+ Nhóm 1-3 người", "+ Dáng đẹp sau 1 tháng"] }
+      { title: "Dạy nhảy TikTok", desc: ["+ Trend mới nhất", "+ Quay clip đẹp cho bạn", "+ Dạy tại studio hoặc gia sư", "+ Nhóm 1-3 người", "+ Dáng đẹp sau 1 tháng"] }
     ]
   },
   {
     id: "design", name: "Thiết kế", icon: "🎨", color: "#af52de", basePrice: 500000,
     suggestions: [
-      { title: "Logo + bộ nhận diện", desc: ["+ 3 concept khác nhau", "+ Sửa không giới hạn", "+ File AI, PSD, PNG", "+ Guideline sử dụng", "+ Tặng mockup đẹp"] },
-      { title: "Banner Shopee/TikTok", desc: ["+ Đúng size sàn TMĐT", "+ Tối ưu CTR", "+ Text thu hút", "+ Giao trong 24h", "+ Sửa 3 lần free"] },
+      { title: "Logo + bộ nhận diện", desc: ["+ 3 concept khác nhau", "+ Sửa không giới hạn", "+ File AI PSD PNG", "+ Guideline sử dụng", "+ Tặng mockup đẹp"] },
+      { title: "Banner Shopee-TikTok", desc: ["+ Đúng size sàn TMĐT", "+ Tối ưu CTR", "+ Text thu hút", "+ Giao trong 24h", "+ Sửa 3 lần free"] },
       { title: "Thiết kế menu quán", desc: ["+ Layout dễ nhìn", "+ Hình chụp món đẹp", "+ Inbox giá in ấn", "+ File in offset", "+ Update giá free 3 tháng"] },
-      { title: "Edit video ngắn", desc: ["+ Capcut/Pr chuyên nghiệp", "+ Hiệu ứng trend", "+ Subtitle auto", "+ Nhạc không bản quyền", "+ Xuất 4K nếu cần"] },
-      { title: "Avatar thương hiệu", desc: ["+ Nhận diện rõ ngành", "+ 5 option màu", "+ Dùng cho MXH/print", "+ Tặng cover Facebook", "+ File vector"] },
-      { title: "Thiệp cưới hiện đại", desc: ["+ Phong cách Hàn/Nhật", "+ In tên khách mời", "+ Giấy mỹ thuật", "+ Có file gửi online", "+ Tư vấn nội dung"] },
-      { title: "Poster sự kiện", desc: ["+ A3/A2/A1 đều được", "+ Thông tin rõ ràng", "+ QR code check-in", "+ Giao file in nhanh", "+ Concept theo brief"] },
+      { title: "Edit video ngắn", desc: ["+ Capcut-Pr chuyên nghiệp", "+ Hiệu ứng trend", "+ Subtitle auto", "+ Nhạc không bản quyền", "+ Xuất 4K nếu cần"] },
+      { title: "Avatar thương hiệu", desc: ["+ Nhận diện rõ ngành", "+ 5 option màu", "+ Dùng cho MXH hoặc print", "+ Tặng cover Facebook", "+ File vector"] },
+      { title: "Thiệp cưới hiện đại", desc: ["+ Phong cách Hàn-Nhật", "+ In tên khách mời", "+ Giấy mỹ thuật", "+ Có file gửi online", "+ Tư vấn nội dung"] },
+      { title: "Poster sự kiện", desc: ["+ A3 A2 A1 đều được", "+ Thông tin rõ ràng", "+ QR code check-in", "+ Giao file in nhanh", "+ Concept theo brief"] },
       { title: "Packaging sản phẩm", desc: ["+ Dieline chuẩn", "+ Mockup 3D", "+ Tư vấn chất liệu", "+ File cho xưởng in", "+ Test in mẫu 1 cái"] },
-      { title: "Thiết kế áo đồng phục", desc: ["+ Logo thêu/in đẹp", "+ Phối màu theo brand", "+ Size chart chuẩn", "+ Mockup người mặc", "+ Làm việc với xưởng"] },
+      { title: "Thiết kế áo đồng phục", desc: ["+ Logo thêu hoặc in đẹp", "+ Phối màu theo brand", "+ Size chart chuẩn", "+ Mockup người mặc", "+ Làm việc với xưởng"] },
       { title: "Slide PowerPoint", desc: ["+ Template riêng", "+ Infographic dễ hiểu", "+ Animation mượt", "+ Không dùng mẫu có sẵn", "+ Giao file edit được"] }
     ]
   },
   {
     id: "content", name: "Content", icon: "✍️", color: "#ffcc00", basePrice: 150000,
     suggestions: [
-      { title: "Viết bài SEO website", desc: ["+ Nghiên cứu 20 từ khóa", "+ 1500-2000 từ", "+ Chuẩn Yoast/RankMath", "+ Không AI content", "+ Tặng outline"] },
+      { title: "Viết bài SEO website", desc: ["+ Nghiên cứu 20 từ khóa", "+ 1500-2000 từ", "+ Chuẩn Yoast hoặc RankMath", "+ Không AI content", "+ Tặng outline"] },
       { title: "Kịch bản TikTok viral", desc: ["+ Hook 3s đầu", "+ Trend đang lên", "+ Call-to-action mạnh", "+ 30s-60s", "+ Gợi ý diễn viên"] },
       { title: "Viết CV chuyên nghiệp", desc: ["+ ATS friendly", "+ Highlight thành tích", "+ 2 bản Việt-Anh", "+ Template đẹp", "+ Sửa đến khi đậu PV"] },
       { title: "PR báo chí", desc: ["+ Góc nhìn báo chí", "+ Không quảng cáo lộ", "+ Booking báo lớn", "+ Ảnh minh họa", "+ Duyệt nhanh"] },
-      { title: "Caption bán hàng", desc: ["+ Đúng insight", "+ 5 version A/B test", "+ Emoji hợp lý", "+ Hashtag chuẩn", "+ Tăng comment"] },
+      { title: "Caption bán hàng", desc: ["+ Đúng insight", "+ 5 version A-B test", "+ Emoji hợp lý", "+ Hashtag chuẩn", "+ Tăng comment"] },
       { title: "Email marketing", desc: ["+ Subject mở cao", "+ Cá nhân hóa tên", "+ Kêu gọi click", "+ Không vào spam", "+ Template Mailchimp"] },
-      { title: "Bài đăng Fanpage", desc: ["+ 30 bài/tháng", "+ Hình + text đồng bộ", "+ Đăng giờ vàng", "+ Tương tác comment", "+ Báo cáo reach"] },
-      { title: "Review sản phẩm", desc: ["+ Trải nghiệm thật", "+ Ảnh/video tự chụp", "+ Ưu nhược rõ ràng", "+ Không seeder", "+ Đăng hội nhóm"] },
+      { title: "Bài đăng Fanpage", desc: ["+ 30 bài mỗi tháng", "+ Hình + text đồng bộ", "+ Đăng giờ vàng", "+ Tương tác comment", "+ Báo cáo reach"] },
+      { title: "Review sản phẩm", desc: ["+ Trải nghiệm thật", "+ Ảnh-video tự chụp", "+ Ưu nhược rõ ràng", "+ Không seeder", "+ Đăng hội nhóm"] },
       { title: "Content storytelling", desc: ["+ Câu chuyện cảm xúc", "+ Nhân vật gần gũi", "+ Bài học đọng lại", "+ Phù hợp brand", "+ Series 5 kỳ"] },
       { title: "Dịch + biên tập sách", desc: ["+ Giữ văn phong tác giả", "+ Biên tập mạch lạc", "+ Chú thích thuật ngữ", "+ Đúng deadline", "+ NDA bảo mật"] }
     ]
@@ -95,59 +95,59 @@ const CATEGORIES = [
   {
     id: "marketing", name: "Marketing", icon: "📢", color: "#ff2d55", basePrice: 800000,
     suggestions: [
-      { title: "Chạy ads Facebook", desc: ["+ Target chuẩn tệp", "+ Test 5 content", "+ Tối ưu CPM/CPC", "+ Report hằng ngày", "+ Không chạy bùng"] },
+      { title: "Chạy ads Facebook", desc: ["+ Target chuẩn tệp", "+ Test 5 content", "+ Tối ưu CPM và CPC", "+ Report hằng ngày", "+ Không chạy bùng"] },
       { title: "Tối ưu TikTok Shop", desc: ["+ Setup gian hàng", "+ Livestream khung giờ vàng", "+ Gắn giỏ hàng video", "+ Đẩy GMV", "+ Làm việc với KOC"] },
       { title: "Lên plan 30 ngày", desc: ["+ Content calendar", "+ KPI rõ ràng", "+ Ngân sách chi tiết", "+ Phân bổ kênh", "+ Có backup plan"] },
-      { title: "Seeding group", desc: ["+ Nick thật, tương tác cao", "+ Không spam link", "+ Comment tự nhiên", "+ Report link bài", "+ Đổi content nếu flop"] },
-      { title: "Booking KOC/KOL", desc: ["+ List 50 KOC đúng tệp", "+ Deal giá tốt", "+ Brief + duyệt content", "+ Tracking link", "+ Bảo hành view"] },
+      { title: "Seeding group", desc: ["+ Nick thật tương tác cao", "+ Không spam link", "+ Comment tự nhiên", "+ Report link bài", "+ Đổi content nếu flop"] },
+      { title: "Booking KOC-KOL", desc: ["+ List 50 KOC đúng tệp", "+ Deal giá tốt", "+ Brief + duyệt content", "+ Tracking link", "+ Bảo hành view"] },
       { title: "Audit kênh free", desc: ["+ Check 20 tiêu chí", "+ Chỉ ra lỗi sai", "+ Đề xuất cải thiện", "+ File PDF chi tiết", "+ Gọi tư vấn 30p"] },
       { title: "Setup Google Ads", desc: ["+ Keyword planner", "+ Loại trừ click ảo", "+ Conversion tracking", "+ Tối ưu Quality Score", "+ Báo cáo Search Term"] },
-      { title: "Tăng follow thật", desc: ["+ Không tool, không ảo", "+ Target đúng ngành", "+ Tương tác hằng ngày", "+ Content hút follow", "+ Cam kết không tụt"] },
+      { title: "Tăng follow thật", desc: ["+ Không tool không ảo", "+ Target đúng ngành", "+ Tương tác hằng ngày", "+ Content hút follow", "+ Cam kết không tụt"] },
       { title: "Chạy Zalo OA", desc: ["+ Tin broadcast", "+ ZNS chăm sóc", "+ Chatbot trả lời", "+ Tích điểm thành viên", "+ Đẩy đơn từ Zalo"] },
-      { title: "Làm landing page", desc: ["+ Tốc độ < 2s", "+ Chuẩn mobile", "+ Gắn pixel đầy đủ", "+ A/B test 2 bản", "+ Tối ưu CR"] }
+      { title: "Làm landing page", desc: ["+ Tốc độ dưới 2s", "+ Chuẩn mobile", "+ Gắn pixel đầy đủ", "+ A-B test 2 bản", "+ Tối ưu CR"] }
     ]
   },
   {
     id: "translate", name: "Dịch thuật", icon: "🌐", color: "#5856d6", basePrice: 200000,
     suggestions: [
       { title: "Dịch hợp đồng Anh-Việt", desc: ["+ Thuật ngữ pháp lý chuẩn", "+ Bảo mật tuyệt đối", "+ Dò 2 lần", "+ Giao file Word", "+ Có dấu công ty nếu cần"] },
-      { title: "Phiên dịch hội thảo", desc: ["+ Cabin hoặc đuổi", "+ Kinh nghiệm 3 năm+", "+ Nghiên cứu tài liệu trước", "+ Đúng giờ, tác phong tốt", "+ Thiết bị kèm theo"] },
-      { title: "Dịch phim/vietsub", desc: ["+ Khớp timecode", "+ Văn nói tự nhiên", "+ Font + hiệu ứng", "+ Giao file SRT/ASS", "+ Demo 2 phút trước"] },
+      { title: "Phiên dịch hội thảo", desc: ["+ Cabin hoặc đuổi", "+ Kinh nghiệm 3 năm trở lên", "+ Nghiên cứu tài liệu trước", "+ Đúng giờ tác phong tốt", "+ Thiết bị kèm theo"] },
+      { title: "Dịch phim-vietsub", desc: ["+ Khớp timecode", "+ Văn nói tự nhiên", "+ Font + hiệu ứng", "+ Giao file SRT hoặc ASS", "+ Demo 2 phút trước"] },
       { title: "Dịch thuật công chứng", desc: ["+ Lấy dấu tư pháp", "+ 1-2 ngày có", "+ Scan gửi trước", "+ Ship tận nơi", "+ Bao đậu hồ sơ"] },
       { title: "Dịch sách kỹ thuật", desc: ["+ Đúng chuyên ngành", "+ Thuật ngữ nhất quán", "+ Vẽ lại hình minh họa", "+ Mục lục tự động", "+ ISBN hỗ trợ"] },
       { title: "Dịch website", desc: ["+ Giữ format HTML", "+ SEO keyword", "+ Đa ngôn ngữ", "+ Không vỡ layout", "+ Update khi web đổi"] },
       { title: "Dịch game", desc: ["+ Tone game thủ", "+ Không dài hơn UI", "+ Test in-game", "+ Glossary riêng", "+ NDA với studio"] },
-      { title: "Dịch tiếng Hàn/Nhật", desc: ["+ Topik N2/JLPT N2+", "+ Thư tín thương mại", "+ Dịch nói qua Zoom", "+ Văn hóa doanh nghiệp", "+ Có người bản xứ check"] },
-      { title: "Dịch hồ sơ du học", desc: ["+ SOP/LOR", "+ Đúng form trường", "+ Nhấn mạnh điểm mạnh", "+ Nộp trước deadline", "+ Edit đến khi ưng"] },
-      { title: "Dịch app mobile", desc: ["+ String file iOS/Android", "+ Độ dài phù hợp button", "+ 20 ngôn ngữ", "+ OTA update", "+ Test trên máy thật"] }
+      { title: "Dịch tiếng Hàn-Nhật", desc: ["+ Topik N2 JLPT N2 trở lên", "+ Thư tín thương mại", "+ Dịch nói qua Zoom", "+ Văn hóa doanh nghiệp", "+ Có người bản xứ check"] },
+      { title: "Dịch hồ sơ du học", desc: ["+ SOP LOR", "+ Đúng form trường", "+ Nhấn mạnh điểm mạnh", "+ Nộp trước deadline", "+ Edit đến khi ưng"] },
+      { title: "Dịch app mobile", desc: ["+ String file iOS Android", "+ Độ dài phù hợp button", "+ 20 ngôn ngữ", "+ OTA update", "+ Test trên máy thật"] }
     ]
   },
   {
     id: "photo", name: "Chụp ảnh", icon: "📸", color: "#ff3b30", basePrice: 800000,
     suggestions: [
-      { title: "Chụp ảnh sản phẩm", desc: ["+ Nền trắng/đổi màu", "+ Chụp 360 độ", "+ Retouch xóa defect", "+ Đúng size sàn TMĐT", "+ Giao 48h"] },
-      { title: "Chụp lookbook thời trang", desc: ["+ Concept theo BST", "+ Model có sẵn", "+ Stylist + MUA", "+ Studio/Outdoor", "+ Video hậu trường"] },
+      { title: "Chụp ảnh sản phẩm", desc: ["+ Nền trắng hoặc đổi màu", "+ Chụp 360 độ", "+ Retouch xóa defect", "+ Đúng size sàn TMĐT", "+ Giao 48h"] },
+      { title: "Chụp lookbook thời trang", desc: ["+ Concept theo BST", "+ Model có sẵn", "+ Stylist + MUA", "+ Studio hoặc Outdoor", "+ Video hậu trường"] },
       { title: "Chụp ảnh cưới", desc: ["+ 2 máy 2 góc", "+ Flycam nếu cần", "+ Album cao cấp", "+ File gốc không watermark", "+ Chụp phóng sự"] },
       { title: "Chụp sự kiện công ty", desc: ["+ Bắt khoảnh khắc tự nhiên", "+ Chụp lãnh đạo đẹp", "+ Giao ảnh trong ngày", "+ Backup thẻ nhớ", "+ Không làm phiền khách"] },
-      { title: "Chụp profile cá nhân", desc: ["+ Tạo dáng hướng dẫn", "+ Nền studio/doanh nhân", "+ Retouch da tự nhiên", "+ 20 ảnh chọn", "+ Phù hợp LinkedIn"] },
-      { title: "Chụp món ăn", desc: ["+ Food stylist", "+ Ánh sáng ngon mắt", "+ Khói/bay hơi thật", "+ Menu + MXH", "+ Giao file TIFF"] },
+      { title: "Chụp profile cá nhân", desc: ["+ Tạo dáng hướng dẫn", "+ Nền studio-doanh nhân", "+ Retouch da tự nhiên", "+ 20 ảnh chọn", "+ Phù hợp LinkedIn"] },
+      { title: "Chụp món ăn", desc: ["+ Food stylist", "+ Ánh sáng ngon mắt", "+ Khói bay hơi thật", "+ Menu + MXH", "+ Giao file TIFF"] },
       { title: "Chụp nội thất", desc: ["+ Lens góc rộng", "+ HDR đủ sáng", "+ Dọn đồ gọn gàng", "+ Virtual tour 360", "+ Cho Airbnb"] },
-      { title: "Quay flycam", desc: ["+ Giấy phép bay", "+ 4K 60fps", "+ Bay an toàn", "+ Edit nhạc", "+ Toàn cảnh BĐS/sự kiện"] },
-      { title: "Chụp ảnh cho bé", desc: ["+ Kiên nhẫn, dỗ bé", "+ Đạo cụ dễ thương", "+ An toàn studio", "+ Cha mẹ vào cùng", "+ In ảnh tặng"] },
-      { title: "Chụp ảnh thẻ lấy ngay", desc: ["+ Đúng quy chuẩn", "+ Sửa tóc/áo", "+ Nền xanh/trắng", "+ File + in 4 tấm", "+ 5 phút có"] }
+      { title: "Quay flycam", desc: ["+ Giấy phép bay", "+ 4K 60fps", "+ Bay an toàn", "+ Edit nhạc", "+ Toàn cảnh BĐS hoặc sự kiện"] },
+      { title: "Chụp ảnh cho bé", desc: ["+ Kiên nhẫn dỗ bé", "+ Đạo cụ dễ thương", "+ An toàn studio", "+ Cha mẹ vào cùng", "+ In ảnh tặng"] },
+      { title: "Chụp ảnh thẻ lấy ngay", desc: ["+ Đúng quy chuẩn", "+ Sửa tóc-áo", "+ Nền xanh hoặc trắng", "+ File + in 4 tấm", "+ 5 phút có"] }
     ]
   },
   {
     id: "assistant", name: "Trợ lý", icon: "👔", color: "#5ac8fa", basePrice: 300000,
     suggestions: [
-      { title: "Trợ lý từ xa theo giờ", desc: ["+ Online 9-18h", "+ Thạo GG Workspace", "+ Báo cáo cuối ngày", "+ Bảo mật NDA", "+ Thử việc 3 ngày"] },
-      { title: "Nhập liệu Excel", desc: ["+ 10.000 dòng/ngày", "+ Độ chính xác 99%", "+ Check 2 lớp", "+ Công thức tự động", "+ Giao file .xlsx"] },
-      { title: "Quản lý Fanpage", desc: ["+ Rep inbox 5p", "+ Đăng 2 bài/ngày", "+ Chốt đơn cơ bản", "+ Lọc spam", "+ Báo cáo tuần"] },
-      { title: "Đặt lịch hẹn", desc: ["+ Gọi xác nhận", "+ Nhắc trước 1 ngày", "+ Sắp xếp tối ưu", "+ GG Calendar", "+ Dời lịch linh hoạt"] },
+      { title: "Trợ lý từ xa theo giờ", desc: ["+ Online 9-18h", "+ Thạo Google Workspace", "+ Báo cáo cuối ngày", "+ Bảo mật NDA", "+ Thử việc 3 ngày"] },
+      { title: "Nhập liệu Excel", desc: ["+ 10000 dòng mỗi ngày", "+ Độ chính xác 99%", "+ Check 2 lớp", "+ Công thức tự động", "+ Giao file xlsx"] },
+      { title: "Quản lý Fanpage", desc: ["+ Rep inbox 5p", "+ Đăng 2 bài mỗi ngày", "+ Chốt đơn cơ bản", "+ Lọc spam", "+ Báo cáo tuần"] },
+      { title: "Đặt lịch hẹn", desc: ["+ Gọi xác nhận", "+ Nhắc trước 1 ngày", "+ Sắp xếp tối ưu", "+ Google Calendar", "+ Dời lịch linh hoạt"] },
       { title: "Nghiên cứu thị trường", desc: ["+ 20 đối thủ", "+ Bảng so sánh giá", "+ Insight khách hàng", "+ File slide đẹp", "+ Nguồn tin cậy"] },
       { title: "Gọi điện CSKH", desc: ["+ Kịch bản có sẵn", "+ Giọng dễ nghe", "+ Ghi âm cuộc gọi", "+ Excel kết quả", "+ Gọi lại lần 2"] },
       { title: "Sắp xếp hồ sơ", desc: ["+ Scan PDF", "+ Đặt tên chuẩn", "+ Upload Drive", "+ Phân thư mục", "+ Bàn giao mục lục"] },
-      { title: "Support dự án", desc: ["+ Họp ghi biên bản", "+ Theo dõi deadline", "+ Nhắc việc team", "+ Tổng hợp báo cáo", "+ Tool Notion/Trello"] },
+      { title: "Support dự án", desc: ["+ Họp ghi biên bản", "+ Theo dõi deadline", "+ Nhắc việc team", "+ Tổng hợp báo cáo", "+ Tool Notion hoặc Trello"] },
       { title: "Tìm + đặt vé máy bay", desc: ["+ Săn vé rẻ", "+ So 3 hãng", "+ Giờ bay đẹp", "+ Thêm hành lý", "+ Check-in online"] },
       { title: "Quản lý KOL booking", desc: ["+ List KOC phù hợp", "+ Deal giá + hợp đồng", "+ Duyệt content", "+ Thanh toán", "+ Report kết quả"] }
     ]
@@ -157,14 +157,14 @@ const CATEGORIES = [
     suggestions: [
       { title: "Tổ chức sinh nhật", desc: ["+ Concept riêng", "+ Backdrop + bóng", "+ MC + games", "+ Chụp ảnh", "+ Dọn dẹp sau tiệc"] },
       { title: "MC dẫn chương trình", desc: ["+ Song ngữ nếu cần", "+ Kịch bản tự viết", "+ Hoạt náo tốt", "+ Đúng dresscode", "+ Có demo video"] },
-      { title: "Setup workshop", desc: ["+ Thuê địa điểm", "+ Teabreak", "+ Máy chiếu/mic", "+ Check-in QR", "+ Quay recap"] },
-      { title: "Thuê PG/PB", desc: ["+ Ngoại hình chuẩn", "+ Đồng phục brand", "+ Training sản phẩm", "+ Đúng giờ", "+ Quản lý tại chỗ"] },
+      { title: "Setup workshop", desc: ["+ Thuê địa điểm", "+ Teabreak", "+ Máy chiếu-mic", "+ Check-in QR", "+ Quay recap"] },
+      { title: "Thuê PG-PB", desc: ["+ Ngoại hình chuẩn", "+ Đồng phục brand", "+ Training sản phẩm", "+ Đúng giờ", "+ Quản lý tại chỗ"] },
       { title: "Trang trí tiệc cưới", desc: ["+ Hoa tươi", "+ Bảng tên + hashtag", "+ Sân khấu + lối đi", "+ Tháo dỡ gọn", "+ Xem mẫu trước"] },
-      { title: "Âm thanh ánh sáng", desc: ["+ Loa đủ công suất", "+ Đèn moving/strobe", "+ Kỹ thuật trực", "+ Test trước 2 tiếng", "+ Backup máy phát"] },
+      { title: "Âm thanh ánh sáng", desc: ["+ Loa đủ công suất", "+ Đèn moving-strobe", "+ Kỹ thuật trực", "+ Test trước 2 tiếng", "+ Backup máy phát"] },
       { title: "Quay phim sự kiện", desc: ["+ 2-3 máy", "+ Highlight 3 phút", "+ Full show", "+ Flycam", "+ Giao trong 72h"] },
       { title: "Lên timeline chi tiết", desc: ["+ Từng phút", "+ Phân công nhân sự", "+ Rủi ro + backup", "+ File Excel + PDF", "+ Họp duyệt trước"] },
-      { title: "Thuê mascot/chú hề", desc: ["+ Hoạt náo trẻ em", "+ Bong bóng tạo hình", "+ Chụp ảnh cùng", "+ 2 tiếng", "+ Đồ sạch sẽ"] },
-      { title: "Tiệc công ty Year End", desc: ["+ Ý tưởng chủ đề", "+ Games sân khấu", "+ Vinh danh + quà", "+ Ban nhạc/DJ", "+ Trọn gói A-Z"] }
+      { title: "Thuê mascot-chú hề", desc: ["+ Hoạt náo trẻ em", "+ Bong bóng tạo hình", "+ Chụp ảnh cùng", "+ 2 tiếng", "+ Đồ sạch sẽ"] },
+      { title: "Tiệc công ty Year End", desc: ["+ Ý tưởng chủ đề", "+ Games sân khấu", "+ Vinh danh + quà", "+ Ban nhạc hoặc DJ", "+ Trọn gói A-Z"] }
     ]
   },
   {
@@ -173,11 +173,11 @@ const CATEGORIES = [
       { title: "Thành lập công ty", desc: ["+ Tư vấn loại hình", "+ GPKD 3 ngày", "+ Con dấu + bảng hiệu", "+ Mở TK ngân hàng", "+ Khai thuế ban đầu"] },
       { title: "Đăng ký nhãn hiệu", desc: ["+ Tra cứu trùng", "+ Nộp Cục SHTT", "+ Theo dõi 12-18 tháng", "+ Phúc đáp nếu bị từ chối", "+ Văn bằng gốc"] },
       { title: "Soạn hợp đồng", desc: ["+ Điều khoản chặt chẽ", "+ Bảo vệ quyền lợi", "+ Song ngữ", "+ Đóng dấu công ty", "+ Tư vấn ký kết"] },
-      { title: "Tư vấn ly hôn", desc: ["+ Thuận tình/đơn phương", "+ Chia tài sản/con cái", "+ Soạn đơn", "+ Đi tòa cùng", "+ Bảo mật thông tin"] },
-      { title: "Làm visa/ work permit", desc: ["+ Check hồ sơ", "+ Dịch công chứng", "+ Nộp Cục QLXNC", "+ Nhanh 7 ngày", "+ Bao đậu 90%"] },
-      { title: "Xin giấy phép", desc: ["+ VSATTP/PCCC", "+ Quảng cáo ngoài trời", "+ Bản vẽ + hồ sơ", "+ Làm việc cơ quan", "+ Nghiệm thu"] },
+      { title: "Tư vấn ly hôn", desc: ["+ Thuận tình hoặc đơn phương", "+ Chia tài sản-con cái", "+ Soạn đơn", "+ Đi tòa cùng", "+ Bảo mật thông tin"] },
+      { title: "Làm visa- work permit", desc: ["+ Check hồ sơ", "+ Dịch công chứng", "+ Nộp Cục QLXNC", "+ Nhanh 7 ngày", "+ Bao đậu 90%"] },
+      { title: "Xin giấy phép", desc: ["+ VSATTP-PCCC", "+ Quảng cáo ngoài trời", "+ Bản vẽ + hồ sơ", "+ Làm việc cơ quan", "+ Nghiệm thu"] },
       { title: "Quyết toán thuế", desc: ["+ Rà soát sổ sách", "+ Tối ưu chi phí", "+ Giải trình thanh tra", "+ Nộp online", "+ Chịu trách nhiệm"] },
-      { title: "Tranh chấp đất đai", desc: ["+ Đo đạc lại", "+ Hòa giải xã/phường", "+ Khởi kiện ra tòa", "+ Luật sư tranh tụng", "+ Thi hành án"] },
+      { title: "Tranh chấp đất đai", desc: ["+ Đo đạc lại", "+ Hòa giải xã-phường", "+ Khởi kiện ra tòa", "+ Luật sư tranh tụng", "+ Thi hành án"] },
       { title: "Đăng ký mã vạch", desc: ["+ GS1 Việt Nam", "+ 1-2 ngày có", "+ File in tem", "+ Hướng dẫn dán", "+ Không phát sinh"] },
       { title: "Tư vấn thừa kế", desc: ["+ Di chúc hợp pháp", "+ Phân chia theo luật", "+ Công chứng", "+ Sang tên sổ", "+ Tránh tranh chấp"] }
     ]
@@ -186,214 +186,78 @@ const CATEGORIES = [
     id: "repair", name: "Sửa chữa", icon: "🔧", color: "#bf5af2", basePrice: 200000,
     suggestions: [
       { title: "Sửa điện nước tại nhà", desc: ["+ Có mặt 30p", "+ Báo giá trước", "+ Linh kiện chính hãng", "+ Bảo hành 6 tháng", "+ Dọn sạch"] },
-      { title: "Sửa laptop/PC", desc: ["+ Vệ sinh + tra keo", "+ Cài Win/Office", "+ Cứu dữ liệu", "+ Nâng cấp SSD/RAM", "+ Test tại chỗ"] },
-      { title: "Lắp camera an ninh", desc: ["+ Khảo sát free", "+ Đi dây âm tường", "+ Xem từ xa qua app", "+ Lưu cloud/thẻ nhớ", "+ Bảo trì 12 tháng"] },
-      { title: "Sửa máy lạnh", desc: ["+ Vệ sinh 150k", "+ Bơm gas R32/R410", "+ Sửa board", "+ Xì dàn lạnh", "+ Có hóa đơn VAT"] },
-      { title: "Thông tắc bồn cầu", desc: ["+ Máy lò xo/máy nén", "+ Không đục phá", "+ Hết mùi", "+ 23h-6h vẫn làm", "+ Bảo hành 3 tháng"] },
+      { title: "Sửa laptop-PC", desc: ["+ Vệ sinh + tra keo", "+ Cài Win-Office", "+ Cứu dữ liệu", "+ Nâng cấp SSD-RAM", "+ Test tại chỗ"] },
+      { title: "Lắp camera an ninh", desc: ["+ Khảo sát free", "+ Đi dây âm tường", "+ Xem từ xa qua app", "+ Lưu cloud hoặc thẻ nhớ", "+ Bảo trì 12 tháng"] },
+      { title: "Sửa máy lạnh", desc: ["+ Vệ sinh 150k", "+ Bơm gas R32-R410", "+ Sửa board", "+ Xì dàn lạnh", "+ Có hóa đơn VAT"] },
+      { title: "Thông tắc bồn cầu", desc: ["+ Máy lò xo hoặc máy nén", "+ Không đục phá", "+ Hết mùi", "+ 23h-6h vẫn làm", "+ Bảo hành 3 tháng"] },
       { title: "Sửa khóa tận nơi", desc: ["+ Mở khóa quên chìa", "+ Thay khóa mới", "+ Làm chìa smartkey", "+ Két sắt", "+ 15 phút có mặt"] },
-      { title: "Sơn sửa nhà", desc: ["+ Chống thấm", "+ Bả matit", "+ Sơn nước/sơn dầu", "+ Che chắn đồ", "+ Màu chuẩn"] },
-      { title: "Lắp đặt nội thất", desc: ["+ Tủ/bàn/ghế", "+ Khoan tường", "+ Cân chỉnh", "+ Vệ sinh sau lắp", "+ Có dụng cụ đủ"] },
-      { title: "Sửa máy giặt", desc: ["+ Không vắt/kêu to", "+ Thay board/ty", "+ Vệ sinh lồng", "+ Thay dây curoa", "+ Test 30p"] },
-      { title: "Chống dột mái tôn", desc: ["+ Tìm đúng chỗ dột", "+ Bắn silicon/keo", "+ Thay tôn", "+ Làm máng xối", "+ Bảo hành mùa mưa"] }
+      { title: "Sơn sửa nhà", desc: ["+ Chống thấm", "+ Bả matit", "+ Sơn nước-sơn dầu", "+ Che chắn đồ", "+ Màu chuẩn"] },
+      { title: "Lắp đặt nội thất", desc: ["+ Tủ-bàn-ghế", "+ Khoan tường", "+ Cân chỉnh", "+ Vệ sinh sau lắp", "+ Có dụng cụ đủ"] },
+      { title: "Sửa máy giặt", desc: ["+ Không vắt hoặc kêu to", "+ Thay board-ty", "+ Vệ sinh lồng", "+ Thay dây curoa", "+ Test 30p"] },
+      { title: "Chống dột mái tôn", desc: ["+ Tìm đúng chỗ dột", "+ Bắn silicon-keo", "+ Thay tôn", "+ Làm máng xối", "+ Bảo hành mùa mưa"] }
     ]
   },
   {
     id: "accounting", name: "Kế toán", icon: "🧮", color: "#64d2ff", basePrice: 500000,
     suggestions: [
-      { title: "Báo cáo thuế tháng", desc: ["+ GTGT/TNCN", "+ Nộp đúng hạn", "+ Tối ưu khấu trừ", "+ Sổ sách khớp", "+ Chữ ký số"] },
-      { title: "Làm sổ sách kế toán", desc: ["+ Misa/Fast", "+ Phiếu thu chi", "+ In sổ đóng cuốn", "+ Lưu file mềm", "+ Quyết toán năm"] },
-      { title: "Quyết toán cuối năm", desc: ["+ BCTC", "+ TNDN/TNCN", "+ Thuyết minh", "+ Nộp online", "+ Giải trình"] },
+      { title: "Báo cáo thuế tháng", desc: ["+ GTGT-TNCN", "+ Nộp đúng hạn", "+ Tối ưu khấu trừ", "+ Sổ sách khớp", "+ Chữ ký số"] },
+      { title: "Làm sổ sách kế toán", desc: ["+ Misa hoặc Fast", "+ Phiếu thu chi", "+ In sổ đóng cuốn", "+ Lưu file mềm", "+ Quyết toán năm"] },
+      { title: "Quyết toán cuối năm", desc: ["+ BCTC", "+ TNDN-TNCN", "+ Thuyết minh", "+ Nộp online", "+ Giải trình"] },
       { title: "Tư vấn tối ưu thuế", desc: ["+ Hợp pháp 100%", "+ Chi phí hợp lý", "+ Hóa đơn đầu vào", "+ Rủi ro thấp", "+ Có văn bản"] },
       { title: "Hoàn thuế TNCN", desc: ["+ Người phụ thuộc", "+ Chứng từ đủ", "+ Nộp online", "+ Theo dõi tiền về", "+ Phí sau khi có tiền"] },
-      { title: "Đăng ký BHXH", desc: ["+ Lần đầu cho DN", "+ Báo tăng/giảm", "+ Chốt sổ", "+ Thai sản/ốm đau", "+ Giao dịch điện tử"] },
-      { title: "Làm BCTC", desc: ["+ CĐKT/KQKD/LCTT", "+ Chuẩn VAS", "+ Kiểm toán nếu cần", "+ Nộp Thống kê", "+ In 3 bộ"] },
-      { title: "Setup phần mềm", desc: ["+ Misa/Amis", "+ Danh mục ban đầu", "+ Phân quyền", "+ Training 2 buổi", "+ Support 3 tháng"] },
-      { title: "Rà soát rủi ro thuế", desc: ["+ 50 tiêu chí", "+ Báo cáo đỏ/vàng", "+ Khắc phục", "+ Mô phỏng thanh tra", "+ Cam kết bảo mật"] },
+      { title: "Đăng ký BHXH", desc: ["+ Lần đầu cho DN", "+ Báo tăng-giảm", "+ Chốt sổ", "+ Thai sản-ốm đau", "+ Giao dịch điện tử"] },
+      { title: "Làm BCTC", desc: ["+ CĐKT-KQKD-LCTT", "+ Chuẩn VAS", "+ Kiểm toán nếu cần", "+ Nộp Thống kê", "+ In 3 bộ"] },
+      { title: "Setup phần mềm", desc: ["+ Misa-Amis", "+ Danh mục ban đầu", "+ Phân quyền", "+ Training 2 buổi", "+ Support 3 tháng"] },
+      { title: "Rà soát rủi ro thuế", desc: ["+ 50 tiêu chí", "+ Báo cáo đỏ-vàng", "+ Khắc phục", "+ Mô phỏng thanh tra", "+ Cam kết bảo mật"] },
       { title: "Kế toán trưởng", desc: ["+ Ký BCTC", "+ Chịu trách nhiệm PL", "+ Họp với thuế", "+ Ủy quyền", "+ Chứng chỉ BTC"] }
     ]
   },
   {
     id: "care", name: "Chăm sóc", icon: "❤️", color: "#ff375f", basePrice: 400000,
     suggestions: [
-      { title: "Chăm người già tại nhà", desc: ["+ Kinh nghiệm 3 năm+", "+ Cho ăn/uống thuốc", "+ Tắm rửa", "+ Đi dạo", "+ Báo cáo hằng ngày"] },
-      { title: "Trông trẻ theo giờ", desc: ["+ Cô giáo mầm non", "+ Cho ăn/ngủ", "+ Dạy bé chơi", "+ Sơ cứu cơ bản", "+ Camera nếu cần"] },
-      { title: "Chăm sóc thú cưng", desc: ["+ Cho ăn/đi dạo", "+ Tắm sấy", "+ Gửi ảnh/video", "+ Ở lại nhà bạn", "+ Biết xử lý khi ốm"] },
+      { title: "Chăm người già tại nhà", desc: ["+ Kinh nghiệm 3 năm trở lên", "+ Cho ăn-uống thuốc", "+ Tắm rửa", "+ Đi dạo", "+ Báo cáo hằng ngày"] },
+      { title: "Trông trẻ theo giờ", desc: ["+ Cô giáo mầm non", "+ Cho ăn-ngủ", "+ Dạy bé chơi", "+ Sơ cứu cơ bản", "+ Camera nếu cần"] },
+      { title: "Chăm sóc thú cưng", desc: ["+ Cho ăn-đi dạo", "+ Tắm sấy", "+ Gửi ảnh-video", "+ Ở lại nhà bạn", "+ Biết xử lý khi ốm"] },
       { title: "Massage trị liệu", desc: ["+ Chứng chỉ YHCT", "+ Đau cổ vai gáy", "+ Bấm huyệt", "+ Tinh dầu", "+ Đến tận nhà"] },
-      { title: "Chăm sóc mẹ & bé", desc: ["+ Tắm bé chuẩn Y khoa", "+ Massage bầu", "+ Thông tắc sữa", "+ Nấu đồ ở cữ", "+ 24/24 hoặc theo ca"] },
-      { title: "Đi chợ nấu ăn", desc: ["+ Lên menu tuần", "+ Tính 50k/người", "+ Sơ chế sạch", "+ Nấu 3 món+ canh", "+ Rửa chén"] },
-      { title: "Đưa đón bé đi học", desc: ["+ Đúng giờ", "+ Xe máy/oto", "+ Có ghế trẻ em", "+ Đón 2 chiều", "+ Cô giáo đi cùng"] },
-      { title: "Tập vật lý trị liệu", desc: ["+ Sau tai biến", "+ Phục hồi chức năng", "+ Máy móc hỗ trợ", "+ Tại nhà/BV", "+ BS giám sát"] },
-      { title: "Chăm người bệnh BV", desc: ["+ Trực đêm", "+ Lật trở/chống loét", "+ Báo BS kịp thời", "+ Mua đồ ăn BV", "+ Ca 12/24h"] },
-      { title: "Cắt tóc tại nhà", desc: ["+ Nam/nữ/trẻ em", "+ Dụng cụ khử khuẩn", "+ Tạo kiểu theo ảnh", "+ Gội sấy", "+ Dọn tóc sạch"] }
+      { title: "Chăm sóc mẹ và bé", desc: ["+ Tắm bé chuẩn Y khoa", "+ Massage bầu", "+ Thông tắc sữa", "+ Nấu đồ ở cữ", "+ 24-24 hoặc theo ca"] },
+      { title: "Đi chợ nấu ăn", desc: ["+ Lên menu tuần", "+ Tính 50k mỗi người", "+ Sơ chế sạch", "+ Nấu 3 món + canh", "+ Rửa chén"] },
+      { title: "Đưa đón bé đi học", desc: ["+ Đúng giờ", "+ Xe máy-oto", "+ Có ghế trẻ em", "+ Đón 2 chiều", "+ Cô giáo đi cùng"] },
+      { title: "Tập vật lý trị liệu", desc: ["+ Sau tai biến", "+ Phục hồi chức năng", "+ Máy móc hỗ trợ", "+ Tại nhà hoặc BV", "+ BS giám sát"] },
+      { title: "Chăm người bệnh BV", desc: ["+ Trực đêm", "+ Lật trở-chống loét", "+ Báo BS kịp thời", "+ Mua đồ ăn BV", "+ Ca 12-24h"] },
+      { title: "Cắt tóc tại nhà", desc: ["+ Nam-nữ-trẻ em", "+ Dụng cụ khử khuẩn", "+ Tạo kiểu theo ảnh", "+ Gội sấy", "+ Dọn tóc sạch"] }
     ]
   },
   {
     id: "car", name: "Xe cộ", icon: "🚗", color: "#ac8e68", basePrice: 600000,
     suggestions: [
-      { title: "Tài xế riêng theo ngày", desc: ["+ B2 5 năm+", "+ Rành đường HCM", "+ Xe 4-7 chỗ", "+ Chờ không tính phí", "+ Lịch sự"] },
+      { title: "Tài xế riêng theo ngày", desc: ["+ B2 5 năm trở lên", "+ Rành đường HCM", "+ Xe 4-7 chỗ", "+ Chờ không tính phí", "+ Lịch sự"] },
       { title: "Rửa xe tận nơi", desc: ["+ Không cần nước nhà bạn", "+ Rửa + hút bụi", "+ Dưỡng nội thất", "+ 60 phút xong", "+ Đặt lịch app"] },
       { title: "Đăng kiểm hộ", desc: ["+ Xếp hàng lấy số", "+ Sửa lỗi nhỏ", "+ Đi 2 lần nếu rớt", "+ Giao xe tận nhà", "+ Phí nhà nước riêng"] },
-      { title: "Cứu hộ ắc quy", desc: ["+ Câu bình 5p", "+ Thay bình mới", "+ Thu bình cũ", "+ 24/7", "+ Bảo hành 6-12 tháng"] },
-      { title: "Dán phim cách nhiệt", desc: ["+ 3M/Llumar", "+ Bảo hành 10 năm", "+ Đo UV tại chỗ", "+ Không bong mép", "+ Dán tại nhà"] },
+      { title: "Cứu hộ ắc quy", desc: ["+ Câu bình 5p", "+ Thay bình mới", "+ Thu bình cũ", "+ 24-7", "+ Bảo hành 6-12 tháng"] },
+      { title: "Dán phim cách nhiệt", desc: ["+ 3M-Llumar", "+ Bảo hành 10 năm", "+ Đo UV tại chỗ", "+ Không bong mép", "+ Dán tại nhà"] },
       { title: "Thuê xe tự lái", desc: ["+ Giao xe tận nơi", "+ BH 2 chiều", "+ Không thế chấp", "+ Đổi xe nếu hỏng", "+ Hợp đồng rõ"] },
-      { title: "Vá vỏ lưu động", desc: ["+ Vá lụi/vá trong", "+ 20 phút có mặt", "+ Đêm vẫn làm", "+ Kích bình free", "+ Có vỏ mới"] },
+      { title: "Vá vỏ lưu động", desc: ["+ Vá lụi hoặc vá trong", "+ 20 phút có mặt", "+ Đêm vẫn làm", "+ Kích bình free", "+ Có vỏ mới"] },
       { title: "Sang tên đổi chủ", desc: ["+ Công chứng", "+ Nộp thuế", "+ Bấm số nếu cần", "+ Cà số khung máy", "+ 3-5 ngày xong"] },
       { title: "Lắp camera hành trình", desc: ["+ Đi dây gọn", "+ App xem lại", "+ Cảnh báo ADAS", "+ Thẻ nhớ 64GB", "+ BH 12 tháng"] },
-      { title: "Đánh bóng xe", desc: ["+ 3 bước chuẩn", "+ Xóa xước xoáy", "+ Phủ ceramic", "+ Sáng như mới", "+ BH 1 năm"] }
+      { title: "Đánh bóng xe", desc: ["+ 3 bước chuẩn", "+ Xóa xước xoáy", "+ Phủ ceramic", "+ Sáng như mới", "+ BH 1 
     ]
   },
   {
-    id: "other", name: "Khác", icon: "📌", color: "#8e8e93", basePrice: 100000,
+    id: "other", name: "Khác", icon: "📌", color: "#ac8e68", basePrice: 100000,
     suggestions: [
-      { title: "Việc gì cũng nhận", desc: ["+ Trao đổi trước", "+ Giá thương lượng", "+ Uy tín", "+ 24/7", "+ Không ngại khó"] },
-      { title: "Tư vấn tâm lý", desc: ["+ Lắng nghe 60p", "+ Không phán xét", "+ Giữ bí mật", "+ Online/offline", "+ Chuyên viên"] },
-      { title: "Xem tarot/bói bài", desc: ["+ 3 câu hỏi", "+ Ghi âm gửi lại", "+ Trải bài Celtic", "+ Không hù dọa", "+ Định hướng"] },
-      { title: "Thuê người yêu", desc: ["+ Đi ăn/tiệc", "+ Chụp ảnh", "+ Kịch bản rõ", "+ Giới hạn tiếp xúc", "+ Hợp đồng"] },
-      { title: "Xếp hàng mua đồ", desc: ["+ iPhone/Labubu", "+ Camp qua đêm", "+ Live vị trí", "+ Mua đúng size/màu", "+ Hoàn nếu fail"] },
-      { title: "Test game/app", desc: ["+ 20 test case", "+ Quay màn hình bug", "+ Báo cáo chi tiết", "+ Đa thiết bị", "+ Bảo mật"] },
-      { title: "Tìm người thất lạc", desc: ["+ Check camera khu vực", "+ Đăng hội nhóm", "+ In tờ rơi", "+ Báo công an nếu cần", "+ Cập nhật 24/7"] },
-      { title: "Tư vấn phong thủy", desc: ["+ Xem tuổi/hướng nhà", "+ Ngày tốt khai trương", "+ Bố trí bàn làm việc", "+ Vòng tay hợp mệnh", "+ Không mê tín dị đoan"] },
-      { title: "Thuê bạn đi nhậu", desc: ["+ Uống được, vui vẻ", "+ Biết lắng nghe", "+ Kịch bản rõ ràng", "+ Không qua đêm", "+ Có CCCD"] },
-      { title: "Dịch vụ đòi nợ thuê", desc: ["+ Đúng pháp luật", "+ Không giang hồ", "+ Nhắc nợ văn minh", "+ Có giấy ủy quyền", "+ Phí % sau khi đòi được"] }
-    ]
-  },
-  {
-    id: "photo", name: "Chụp ảnh", icon: "📸", color: "#ff3b30", basePrice: 800000,
-    suggestions: [
-      { title: "Chụp ảnh sản phẩm", desc: ["+ Nền trắng/đổi màu", "+ Chụp 360 độ", "+ Retouch xóa defect", "+ Đúng size sàn TMĐT", "+ Giao 48h"] },
-      { title: "Chụp lookbook thời trang", desc: ["+ Concept theo BST", "+ Model có sẵn", "+ Stylist + MUA", "+ Studio/Outdoor", "+ Video hậu trường"] },
-      { title: "Chụp ảnh cưới", desc: ["+ 2 máy 2 góc", "+ Flycam nếu cần", "+ Album cao cấp", "+ File gốc không watermark", "+ Chụp phóng sự"] },
-      { title: "Chụp sự kiện công ty", desc: ["+ Bắt khoảnh khắc tự nhiên", "+ Chụp lãnh đạo đẹp", "+ Giao ảnh trong ngày", "+ Backup thẻ nhớ", "+ Không làm phiền khách"] },
-      { title: "Chụp profile cá nhân", desc: ["+ Tạo dáng hướng dẫn", "+ Nền studio/doanh nhân", "+ Retouch da tự nhiên", "+ 20 ảnh chọn", "+ Phù hợp LinkedIn"] },
-      { title: "Chụp món ăn", desc: ["+ Food stylist", "+ Ánh sáng ngon mắt", "+ Khói/bay hơi thật", "+ Menu + MXH", "+ Giao file TIFF"] },
-      { title: "Chụp nội thất", desc: ["+ Lens góc rộng", "+ HDR đủ sáng", "+ Dọn đồ gọn gàng", "+ Virtual tour 360", "+ Cho Airbnb"] },
-      { title: "Quay flycam", desc: ["+ Giấy phép bay", "+ 4K 60fps", "+ Bay an toàn", "+ Edit nhạc", "+ Toàn cảnh BĐS/sự kiện"] },
-      { title: "Chụp ảnh cho bé", desc: ["+ Kiên nhẫn, dỗ bé", "+ Đạo cụ dễ thương", "+ An toàn studio", "+ Cha mẹ vào cùng", "+ In ảnh tặng"] },
-      { title: "Chụp ảnh thẻ lấy ngay", desc: ["+ Đúng quy chuẩn", "+ Sửa tóc/áo", "+ Nền xanh/trắng", "+ File + in 4 tấm", "+ 5 phút có"] }
-    ]
-  },
-  {
-    id: "assistant", name: "Trợ lý", icon: "👔", color: "#5ac8fa", basePrice: 300000,
-    suggestions: [
-      { title: "Trợ lý từ xa theo giờ", desc: ["+ Online 9-18h", "+ Thạo GG Workspace", "+ Báo cáo cuối ngày", "+ Bảo mật NDA", "+ Thử việc 3 ngày"] },
-      { title: "Nhập liệu Excel", desc: ["+ 10.000 dòng/ngày", "+ Độ chính xác 99%", "+ Check 2 lớp", "+ Công thức tự động", "+ Giao file.xlsx"] },
-      { title: "Quản lý Fanpage", desc: ["+ Rep inbox 5p", "+ Đăng 2 bài/ngày", "+ Chốt đơn cơ bản", "+ Lọc spam", "+ Báo cáo tuần"] },
-      { title: "Đặt lịch hẹn", desc: ["+ Gọi xác nhận", "+ Nhắc trước 1 ngày", "+ Sắp xếp tối ưu", "+ GG Calendar", "+ Dời lịch linh hoạt"] },
-      { title: "Nghiên cứu thị trường", desc: ["+ 20 đối thủ", "+ Bảng so sánh giá", "+ Insight khách hàng", "+ File slide đẹp", "+ Nguồn tin cậy"] },
-      { title: "Gọi điện CSKH", desc: ["+ Kịch bản có sẵn", "+ Giọng dễ nghe", "+ Ghi âm cuộc gọi", "+ Excel kết quả", "+ Gọi lại lần 2"] },
-      { title: "Sắp xếp hồ sơ", desc: ["+ Scan PDF", "+ Đặt tên chuẩn", "+ Upload Drive", "+ Phân thư mục", "+ Bàn giao mục lục"] },
-      { title: "Support dự án", desc: ["+ Họp ghi biên bản", "+ Theo dõi deadline", "+ Nhắc việc team", "+ Tổng hợp báo cáo", "+ Tool Notion/Trello"] },
-      { title: "Tìm + đặt vé máy bay", desc: ["+ Săn vé rẻ", "+ So 3 hãng", "+ Giờ bay đẹp", "+ Thêm hành lý", "+ Check-in online"] },
-      { title: "Quản lý KOL booking", desc: ["+ List KOC phù hợp", "+ Deal giá + hợp đồng", "+ Duyệt content", "+ Thanh toán", "+ Report kết quả"] }
-    ]
-  },
-  {
-    id: "event", name: "Sự kiện", icon: "🎉", color: "#ff9f0a", basePrice: 1500000,
-    suggestions: [
-      { title: "Tổ chức sinh nhật", desc: ["+ Concept riêng", "+ Backdrop + bóng", "+ MC + games", "+ Chụp ảnh", "+ Dọn dẹp sau tiệc"] },
-      { title: "MC dẫn chương trình", desc: ["+ Song ngữ nếu cần", "+ Kịch bản tự viết", "+ Hoạt náo tốt", "+ Đúng dresscode", "+ Có demo video"] },
-      { title: "Setup workshop", desc: ["+ Thuê địa điểm", "+ Teabreak", "+ Máy chiếu/mic", "+ Check-in QR", "+ Quay recap"] },
-      { title: "Thuê PG/PB", desc: ["+ Ngoại hình chuẩn", "+ Đồng phục brand", "+ Training sản phẩm", "+ Đúng giờ", "+ Quản lý tại chỗ"] },
-      { title: "Trang trí tiệc cưới", desc: ["+ Hoa tươi", "+ Bảng tên + hashtag", "+ Sân khấu + lối đi", "+ Tháo dỡ gọn", "+ Xem mẫu trước"] },
-      { title: "Âm thanh ánh sáng", desc: ["+ Loa đủ công suất", "+ Đèn moving/strobe", "+ Kỹ thuật trực", "+ Test trước 2 tiếng", "+ Backup máy phát"] },
-      { title: "Quay phim sự kiện", desc: ["+ 2-3 máy", "+ Highlight 3 phút", "+ Full show", "+ Flycam", "+ Giao trong 72h"] },
-      { title: "Lên timeline chi tiết", desc: ["+ Từng phút", "+ Phân công nhân sự", "+ Rủi ro + backup", "+ File Excel + PDF", "+ Họp duyệt trước"] },
-      { title: "Thuê mascot/chú hề", desc: ["+ Hoạt náo trẻ em", "+ Bong bóng tạo hình", "+ Chụp ảnh cùng", "+ 2 tiếng", "+ Đồ sạch sẽ"] },
-      { title: "Tiệc công ty Year End", desc: ["+ Ý tưởng chủ đề", "+ Games sân khấu", "+ Vinh danh + quà", "+ Ban nhạc/DJ", "+ Trọn gói A-Z"] }
-    ]
-  },
-  {
-    id: "legal", name: "Pháp lý", icon: "⚖️", color: "#30d158", basePrice: 1000000,
-    suggestions: [
-      { title: "Thành lập công ty", desc: ["+ Tư vấn loại hình", "+ GPKD 3 ngày", "+ Con dấu + bảng hiệu", "+ Mở TK ngân hàng", "+ Khai thuế ban đầu"] },
-      { title: "Đăng ký nhãn hiệu", desc: ["+ Tra cứu trùng", "+ Nộp Cục SHTT", "+ Theo dõi 12-18 tháng", "+ Phúc đáp nếu bị từ chối", "+ Văn bằng gốc"] },
-      { title: "Soạn hợp đồng", desc: ["+ Điều khoản chặt chẽ", "+ Bảo vệ quyền lợi", "+ Song ngữ", "+ Đóng dấu công ty", "+ Tư vấn ký kết"] },
-      { title: "Tư vấn ly hôn", desc: ["+ Thuận tình/đơn phương", "+ Chia tài sản/con cái", "+ Soạn đơn", "+ Đi tòa cùng", "+ Bảo mật thông tin"] },
-      { title: "Làm visa/ work permit", desc: ["+ Check hồ sơ", "+ Dịch công chứng", "+ Nộp Cục QLXNC", "+ Nhanh 7 ngày", "+ Bao đậu 90%"] },
-      { title: "Xin giấy phép", desc: ["+ VSATTP/PCCC", "+ Quảng cáo ngoài trời", "+ Bản vẽ + hồ sơ", "+ Làm việc cơ quan", "+ Nghiệm thu"] },
-      { title: "Quyết toán thuế", desc: ["+ Rà soát sổ sách", "+ Tối ưu chi phí", "+ Giải trình thanh tra", "+ Nộp online", "+ Chịu trách nhiệm"] },
-      { title: "Tranh chấp đất đai", desc: ["+ Đo đạc lại", "+ Hòa giải xã/phường", "+ Khởi kiện ra tòa", "+ Luật sư tranh tụng", "+ Thi hành án"] },
-      { title: "Đăng ký mã vạch", desc: ["+ GS1 Việt Nam", "+ 1-2 ngày có", "+ File in tem", "+ Hướng dẫn dán", "+ Không phát sinh"] },
-      { title: "Tư vấn thừa kế", desc: ["+ Di chúc hợp pháp", "+ Phân chia theo luật", "+ Công chứng", "+ Sang tên sổ", "+ Tránh tranh chấp"] }
-    ]
-  },
-  {
-    id: "repair", name: "Sửa chữa", icon: "🔧", color: "#bf5af2", basePrice: 200000,
-    suggestions: [
-      { title: "Sửa điện nước tại nhà", desc: ["+ Có mặt 30p", "+ Báo giá trước", "+ Linh kiện chính hãng", "+ Bảo hành 6 tháng", "+ Dọn sạch"] },
-      { title: "Sửa laptop/PC", desc: ["+ Vệ sinh + tra keo", "+ Cài Win/Office", "+ Cứu dữ liệu", "+ Nâng cấp SSD/RAM", "+ Test tại chỗ"] },
-      { title: "Lắp camera an ninh", desc: ["+ Khảo sát free", "+ Đi dây âm tường", "+ Xem từ xa qua app", "+ Lưu cloud/thẻ nhớ", "+ Bảo trì 12 tháng"] },
-      { title: "Sửa máy lạnh", desc: ["+ Vệ sinh 150k", "+ Bơm gas R32/R410", "+ Sửa board", "+ Xì dàn lạnh", "+ Có hóa đơn VAT"] },
-      { title: "Thông tắc bồn cầu", desc: ["+ Máy lò xo/máy nén", "+ Không đục phá", "+ Hết mùi", "+ 23h-6h vẫn làm", "+ Bảo hành 3 tháng"] },
-      { title: "Sửa khóa tận nơi", desc: ["+ Mở khóa quên chìa", "+ Thay khóa mới", "+ Làm chìa smartkey", "+ Két sắt", "+ 15 phút có mặt"] },
-      { title: "Sơn sửa nhà", desc: ["+ Chống thấm", "+ Bả matit", "+ Sơn nước/sơn dầu", "+ Che chắn đồ", "+ Màu chuẩn"] },
-      { title: "Lắp đặt nội thất", desc: ["+ Tủ/bàn/ghế", "+ Khoan tường", "+ Cân chỉnh", "+ Vệ sinh sau lắp", "+ Có dụng cụ đủ"] },
-      { title: "Sửa máy giặt", desc: ["+ Không vắt/kêu to", "+ Thay board/ty", "+ Vệ sinh lồng", "+ Thay dây curoa", "+ Test 30p"] },
-      { title: "Chống dột mái tôn", desc: ["+ Tìm đúng chỗ dột", "+ Bắn silicon/keo", "+ Thay tôn", "+ Làm máng xối", "+ Bảo hành mùa mưa"] }
-    ]
-  },
-  {
-    id: "accounting", name: "Kế toán", icon: "🧮", color: "#64d2ff", basePrice: 500000,
-    suggestions: [
-      { title: "Báo cáo thuế tháng", desc: ["+ GTGT/TNCN", "+ Nộp đúng hạn", "+ Tối ưu khấu trừ", "+ Sổ sách khớp", "+ Chữ ký số"] },
-      { title: "Làm sổ sách kế toán", desc: ["+ Misa/Fast", "+ Phiếu thu chi", "+ In sổ đóng cuốn", "+ Lưu file mềm", "+ Quyết toán năm"] },
-      { title: "Quyết toán cuối năm", desc: ["+ BCTC", "+ TNDN/TNCN", "+ Thuyết minh", "+ Nộp online", "+ Giải trình"] },
-      { title: "Tư vấn tối ưu thuế", desc: ["+ Hợp pháp 100%", "+ Chi phí hợp lý", "+ Hóa đơn đầu vào", "+ Rủi ro thấp", "+ Có văn bản"] },
-      { title: "Hoàn thuế TNCN", desc: ["+ Người phụ thuộc", "+ Chứng từ đủ", "+ Nộp online", "+ Theo dõi tiền về", "+ Phí sau khi có tiền"] },
-      { title: "Đăng ký BHXH", desc: ["+ Lần đầu cho DN", "+ Báo tăng/giảm", "+ Chốt sổ", "+ Thai sản/ốm đau", "+ Giao dịch điện tử"] },
-      { title: "Làm BCTC", desc: ["+ CĐKT/KQKD/LCTT", "+ Chuẩn VAS", "+ Kiểm toán nếu cần", "+ Nộp Thống kê", "+ In 3 bộ"] },
-      { title: "Setup phần mềm", desc: ["+ Misa/Amis", "+ Danh mục ban đầu", "+ Phân quyền", "+ Training 2 buổi", "+ Support 3 tháng"] },
-      { title: "Rà soát rủi ro thuế", desc: ["+ 50 tiêu chí", "+ Báo cáo đỏ/vàng", "+ Khắc phục", "+ Mô phỏng thanh tra", "+ Cam kết bảo mật"] },
-      { title: "Kế toán trưởng", desc: ["+ Ký BCTC", "+ Chịu trách nhiệm PL", "+ Họp với thuế", "+ Ủy quyền", "+ Chứng chỉ BTC"] }
-    ]
-  },
-  {
-    id: "care", name: "Chăm sóc", icon: "❤️", color: "#ff375f", basePrice: 400000,
-    suggestions: [
-      { title: "Chăm người già tại nhà", desc: ["+ Kinh nghiệm 3 năm+", "+ Cho ăn/uống thuốc", "+ Tắm rửa", "+ Đi dạo", "+ Báo cáo hằng ngày"] },
-      { title: "Trông trẻ theo giờ", desc: ["+ Cô giáo mầm non", "+ Cho ăn/ngủ", "+ Dạy bé chơi", "+ Sơ cứu cơ bản", "+ Camera nếu cần"] },
-      { title: "Chăm sóc thú cưng", desc: ["+ Cho ăn/đi dạo", "+ Tắm sấy", "+ Gửi ảnh/video", "+ Ở lại nhà bạn", "+ Biết xử lý khi ốm"] },
-      { title: "Massage trị liệu", desc: ["+ Chứng chỉ YHCT", "+ Đau cổ vai gáy", "+ Bấm huyệt", "+ Tinh dầu", "+ Đến tận nhà"] },
-      { title: "Chăm sóc mẹ & bé", desc: ["+ Tắm bé chuẩn Y khoa", "+ Massage bầu", "+ Thông tắc sữa", "+ Nấu đồ ở cữ", "+ 24/24 hoặc theo ca"] },
-      { title: "Đi chợ nấu ăn", desc: ["+ Lên menu tuần", "+ Tính 50k/người", "+ Sơ chế sạch", "+ Nấu 3 món+ canh", "+ Rửa chén"] },
-      { title: "Đưa đón bé đi học", desc: ["+ Đúng giờ", "+ Xe máy/oto", "+ Có ghế trẻ em", "+ Đón 2 chiều", "+ Cô giáo đi cùng"] },
-      { title: "Tập vật lý trị liệu", desc: ["+ Sau tai biến", "+ Phục hồi chức năng", "+ Máy móc hỗ trợ", "+ Tại nhà/BV", "+ BS giám sát"] },
-      { title: "Chăm người bệnh BV", desc: ["+ Trực đêm", "+ Lật trở/chống loét", "+ Báo BS kịp thời", "+ Mua đồ ăn BV", "+ Ca 12/24h"] },
-      { title: "Cắt tóc tại nhà", desc: ["+ Nam/nữ/trẻ em", "+ Dụng cụ khử khuẩn", "+ Tạo kiểu theo ảnh", "+ Gội sấy", "+ Dọn tóc sạch"] }
-    ]
-  },
-  {
-    id: "car", name: "Xe cộ", icon: "🚗", color: "#ac8e68", basePrice: 600000,
-    suggestions: [
-      { title: "Tài xế riêng theo ngày", desc: ["+ B2 5 năm+", "+ Rành đường HCM", "+ Xe 4-7 chỗ", "+ Chờ không tính phí", "+ Lịch sự"] },
-      { title: "Rửa xe tận nơi", desc: ["+ Không cần nước nhà bạn", "+ Rửa + hút bụi", "+ Dưỡng nội thất", "+ 60 phút xong", "+ Đặt lịch app"] },
-      { title: "Đăng kiểm hộ", desc: ["+ Xếp hàng lấy số", "+ Sửa lỗi nhỏ", "+ Đi 2 lần nếu rớt", "+ Giao xe tận nhà", "+ Phí nhà nước riêng"] },
-      { title: "Cứu hộ ắc quy", desc: ["+ Câu bình 5p", "+ Thay bình mới", "+ Thu bình cũ", "+ 24/7", "+ Bảo hành 6-12 tháng"] },
-      { title: "Dán phim cách nhiệt", desc: ["+ 3M/Llumar", "+ Bảo hành 10 năm", "+ Đo UV tại chỗ", "+ Không bong mép", "+ Dán tại nhà"] },
-      { title: "Thuê xe tự lái", desc: ["+ Giao xe tận nơi", "+ BH 2 chiều", "+ Không thế chấp", "+ Đổi xe nếu hỏng", "+ Hợp đồng rõ"] },
-      { title: "Vá vỏ lưu động", desc: ["+ Vá lụi/vá trong", "+ 20 phút có mặt", "+ Đêm vẫn làm", "+ Kích bình free", "+ Có vỏ mới"] },
-      { title: "Sang tên đổi chủ", desc: ["+ Công chứng", "+ Nộp thuế", "+ Bấm số nếu cần", "+ Cà số khung máy", "+ 3-5 ngày xong"] },
-      { title: "Lắp camera hành trình", desc: ["+ Đi dây gọn", "+ App xem lại", "+ Cảnh báo ADAS", "+ Thẻ nhớ 64GB", "+ BH 12 tháng"] },
-      { title: "Đánh bóng xe", desc: ["+ 3 bước chuẩn", "+ Xóa xước xoáy", "+ Phủ ceramic", "+ Sáng như mới", "+ BH 1 năm"] }
-    ]
-  },
-  {
-    id: "other", name: "Khác", icon: "📌", color: "#8e8e93", basePrice: 100000,
-    suggestions: [
-      { title: "Việc gì cũng nhận", desc: ["+ Trao đổi trước", "+ Giá thương lượng", "+ Uy tín", "+ 24/7", "+ Không ngại khó"] },
-      { title: "Tư vấn tâm lý", desc: ["+ Lắng nghe 60p", "+ Không phán xét", "+ Giữ bí mật", "+ Online/offline", "+ Chuyên viên"] },
-      { title: "Xem tarot/bói bài", desc: ["+ 3 câu hỏi", "+ Ghi âm gửi lại", "+ Trải bài Celtic", "+ Không hù dọa", "+ Định hướng"] },
-      { title: "Thuê người yêu", desc: ["+ Đi ăn/tiệc", "+ Chụp ảnh", "+ Kịch bản rõ", "+ Giới hạn tiếp xúc", "+ Hợp đồng"] },
-      { title: "Xếp hàng mua đồ", desc: ["+ iPhone/Labubu", "+ Camp qua đêm", "+ Live vị trí", "+ Mua đúng size/màu", "+ Hoàn nếu fail"] },
-      { title: "Test game/app", desc: ["+ 20 test case", "+ Quay màn hình bug", "+ Báo cáo chi tiết", "+ Đa thiết bị", "+ Bảo mật"] },
-      { title: "Tìm người thất lạc", desc: ["+ Check camera khu vực", "+ Đăng hội nhóm", "+ In tờ rơi", "+ Báo công an nếu cần", "+ Cập nhật 24/7"] },
-      { title: "Tư vấn phong thủy", desc: ["+ Xem tuổi/hướng nhà", "+ Ngày tốt khai trương", "+ Bố trí bàn làm việc", "+ Vòng tay hợp mệnh", "+ Không mê tín dị đoan"] },
-      { title: "Thuê bạn đi nhậu", desc: ["+ Uống được, vui vẻ", "+ Biết lắng nghe", "+ Kịch bản rõ ràng", "+ Không qua đêm", "+ Có CCCD"] },
-      { title: "Dịch vụ đòi nợ thuê", desc: ["+ Đúng pháp luật", "+ Không giang hồ", "+ Nhắc nợ văn minh", "+ Có giấy ủy quyền", "+ Phí % sau khi đòi được"] }
+      { title: "Việc gì cũng nhận", desc: ["+ Trao đổi trước", "+ Giá thương lượng", "+ Uy tín", "+ 24-7", "+ Không ngại khó"] },
+      { title: "Tư vấn tâm lý", desc: ["+ Lắng nghe 60p", "+ Không phán xét", "+ Giữ bí mật", "+ Online hoặc offline", "+ Chuyên viên"] },
+      { title: "Xem tarot-bói bài", desc: ["+ 3 câu hỏi", "+ Ghi âm gửi lại", "+ Trải bài Celtic", "+ Không hù dọa", "+ Định hướng"] },
+      { title: "Thuê người yêu", desc: ["+ Đi ăn hoặc đi tiệc", "+ Chụp ảnh", "+ Kịch bản rõ ràng", "+ Giới hạn tiếp xúc", "+ Hợp đồng"] },
+      { title: "Xếp hàng mua đồ", desc: ["+ iPhone-Labubu", "+ Camp qua đêm", "+ Live vị trí", "+ Mua đúng size và màu", "+ Hoàn nếu fail"] },
+      { title: "Test game-app", desc: ["+ 20 test case", "+ Quay màn hình bug", "+ Báo cáo chi tiết", "+ Đa thiết bị", "+ Bảo mật"] },
+      { title: "Tìm người thất lạc", desc: ["+ Check camera khu vực", "+ Đăng hội nhóm", "+ In tờ rơi", "+ Báo công an nếu cần", "+ Cập nhật 24-7"] },
+      { title: "Tư vấn phong thủy", desc: ["+ Xem tuổi-hướng nhà", "+ Ngày tốt khai trương", "+ Bố trí bàn làm việc", "+ Vòng tay hợp mệnh", "+ Không mê tín dị đoan"] },
+      { title: "Thuê bạn đi nhậu", desc: ["+ Uống được vui vẻ", "+ Biết lắng nghe", "+ Kịch bản rõ ràng", "+ Không qua đêm", "+ Có CCCD"] },
+      { title: "Dịch vụ đòi nợ thuê", desc: ["+ Đúng pháp luật", "+ Không giang hồ", "+ Nhắc nợ văn minh", "+ Có giấy ủy quyền", "+ Phí phần trăm sau khi đòi được"] }
     ]
   }
 ];
-
 const URGENCY = [
   { id: "normal", name: "Thường", time: "3-7 ngày", bonus: 0, color: "emerald" },
   { id: "urgent", name: "Gấp", time: "24-48h", bonus: 25, color: "amber" },
