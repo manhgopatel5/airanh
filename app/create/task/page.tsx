@@ -555,7 +555,7 @@ export default function CreateTaskProMax() {
                           <div className="font-medium text-[14px] flex items-center gap-1.5">Ghim lên đầu <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-amber-500 text-white font-bold">PRO</span></div>
                           <div className="text-[12px] text-zinc-500 mt-0.5 leading-snug">Hiển thị ưu tiên • Gấp 5x lượt xem • 24h đầu</div>
                         </div>
-</div>  // <- THÊM CHỖ NÀY
+</div>  
                       <div className={`w-5 h-5 rounded-full border-2 grid place-items-center transition-all ${form.featured? "border-amber-500 bg-amber-500" : "border-zinc-300 dark:border-zinc-600"}`}>{form.featured && <FiCheck size={10} className="text-white" strokeWidth={3} />}</div>
                     </div>
                     {form.featured && <div className="mt-3 pt-3 border-t border-amber-200 dark:border-amber-900/50 flex items-center justify-between"><span className="text-[12px] text-amber-700 dark:text-amber-400">Phí dịch vụ</span><span className="text-[14px] font-semibold text-amber-600 tabular-nums">+50.000đ</span></div>}
@@ -570,7 +570,7 @@ export default function CreateTaskProMax() {
                             <span className="text-[28px] font-bold tracking-tight leading-none tabular-nums">{totalPrice.toLocaleString()}</span>
                             <span className="text-[14px] opacity-70">đ</span>
                           </div>
-</div> // <- THÊM CHỖ NÀY
+</div> 
                         <div className="text-right">
                           <div className="text-[11px] opacity-60">Bao gồm</div>
                           <div className="text-[12px] font-medium mt-0.5">Phí dịch vụ 5%</div>
