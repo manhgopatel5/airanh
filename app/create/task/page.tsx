@@ -239,7 +239,7 @@ const CATEGORIES = [
       { title: "Vá vỏ lưu động", desc: ["+ Vá lụi hoặc vá trong", "+ 20 phút có mặt", "+ Đêm vẫn làm", "+ Kích bình free", "+ Có vỏ mới"] },
       { title: "Sang tên đổi chủ", desc: ["+ Công chứng", "+ Nộp thuế", "+ Bấm số nếu cần", "+ Cà số khung máy", "+ 3-5 ngày xong"] },
       { title: "Lắp camera hành trình", desc: ["+ Đi dây gọn", "+ App xem lại", "+ Cảnh báo ADAS", "+ Thẻ nhớ 64GB", "+ BH 12 tháng"] },
-      { title: "Đánh bóng xe", desc: ["+ 3 bước chuẩn", "+ Xóa xước xoáy", "+ Phủ ceramic", "+ Sáng như mới", "+ BH 1 
+      { title: "Đánh bóng xe", desc: ["+ 3 bước chuẩn", "+ Xóa xước xoáy", "+ Phủ ceramic", "+ Sáng như mới", "+ BH 1 năm"] },
     ]
   },
   {
