@@ -553,8 +553,8 @@ const totalPercent = form.milestones.reduce((sum, m) => sum + (m.percent || 0), 
         <div className="text-[12px] text-zinc-500">Lên lịch thanh toán theo tiến độ</div>
       </div>
     </div>
-<button... className={`relative w-11 h-[26px] rounded-full...`}>
-  <div className={`absolute top-0.5 w-[22px] h-[22px] bg-white... ${form.milestoneEnabled? "translate-x-[20px]" : "translate-x-0.5"}`} />
+<button onClick={() => setForm({...form, milestoneEnabled:!form.milestoneEnabled})} className={`relative w-11 h-[26px] rounded-full transition-colors ${form.milestoneEnabled? "bg-[#0a84ff]" : "bg-zinc-300 dark:bg-zinc-700"}`}>
+  <div className={`absolute top-0.5 w-[22px] h-[22px] bg-white rounded-full shadow-sm transition-transform ${form.milestoneEnabled? "translate-x-[20px]" : "translate-x-0.5"}`} />
 </button>
   </div>
 
