@@ -491,10 +491,10 @@ export default function CreateTaskProMax() {
  <div className="space-y-3">
   <div className="flex items-center gap-3">
     <div className="w-9 h-9 rounded-xl grid place-items-center shrink-0" style={{ backgroundColor: `${category.color}15` }}>
-      <span className="text-">{category.icon}</span>
+      <span className="text-[18px]">{category.icon}</span>
     </div>
-    <input value={form.title} onChange={e => setForm({...form, title: e.target.value.slice(0, 100) })} placeholder="Bạn cần làm gì?" className="flex-1 h-11 px-3 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 text- font-medium outline-none placeholder:text-zinc-400" autoFocus />
-    <span className={`text- tabular-nums ${form.title.length >= 10? 'text-[#0a84ff]' : 'text-zinc-400'}`}>{form.title.length}/100</span>
+    <input value={form.title} onChange={e => setForm({...form, title: e.target.value.slice(0, 100) })} placeholder="Bạn cần làm gì?" className="flex-1 h-11 px-3 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 text-[15px] font-medium outline-none placeholder:text-zinc-400" autoFocus />
+    <span className={`text-[14px] tabular-nums ${form.title.length >= 10? 'text-[#0a84ff]' : 'text-zinc-400'}`}>{form.title.length}/100</span>
   </div>
 <div className="flex gap-1.5 flex-wrap">
   {category.suggestions.map(item => (
@@ -539,8 +539,11 @@ export default function CreateTaskProMax() {
     </span>
   </div>
 </div>
+  </motion.div>
 
-              {step === 2 && (
+)}
+
+{step === 2 && (
                 <motion.div key="s2" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }} className="p-4 space-y-3">
                   <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-4">
                     <div className="flex items-center justify-between mb-3">
@@ -563,9 +566,9 @@ export default function CreateTaskProMax() {
                         </div>
                  <div className="flex items-center gap-2 mt-3">
   <span className="text- text-zinc-500">Số người:</span>
-  <div className="flex items-center gap-2 bg-[#F2F7] dark:bg-zinc-800 rounded-lg p-0.5">
+  <div className="flex items-center gap-2 bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg p-0.5">
     <button onClick={() => setForm({...form, totalSlots: Math.max(1, parseInt(form.totalSlots) - 1).toString() })} className="w-7 h-7 grid place-items-center rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-600 active:scale-95">−</button>
-    <span className="w-8 text-center text- font-medium tabular-nums">{form.totalSlots}</span>
+    <span className="w-8 text-center text-[14px] font-medium tabular-nums">{form.totalSlots}</span>
     <button onClick={() => setForm({...form, totalSlots: Math.min(20, parseInt(form.totalSlots) + 1).toString() })} className="w-7 h-7 grid place-items-center rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-600 active:scale-95">+</button>
   </div>
 </div>
@@ -584,8 +587,8 @@ export default function CreateTaskProMax() {
      {URGENCY.map(u => (
   <button key={u.id} onClick={() => setForm({...form, urgency: u.id })} className={`relative p-3 rounded-2xl border text-left transition-all active:scale-95 ${form.urgency === u.id ? "border-[#0a84ff] bg-[#0a84ff]/5" : "border-[#E5E5EA] dark:border-zinc-800 bg-[#F2F7]/50 dark:bg-zinc-800/30"}`}>
     <div className={`text- font-semibold ${form.urgency === u.id ? "text-[#0a84ff]" : "text-zinc-700 dark:text-zinc-300"}`}>{u.name}</div>
-    <div className="text- text-zinc-500 mt-0.5">{u.time}</div>
-    {u.bonus > 0 && <div className={`text- font-medium mt-1 tabular-nums ${form.urgency === u.id ? "text-[#0a84ff]" : "text-zinc-500"}`}>+{u.bonus}%</div>}
+    <div className="text-[15px] text-zinc-500 mt-0.5">{u.time}</div>
+    {u.bonus > 0 && <div className={`text-[13px] font-medium mt-1 tabular-nums ${form.urgency === u.id ? "text-[#0a84ff]" : "text-zinc-500"}`}>+{u.bonus}%</div>}
   </button>
 ))}
                     </div>
