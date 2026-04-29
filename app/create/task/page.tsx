@@ -583,7 +583,6 @@ export default function CreateTaskProMax() {
                         </div>
                       )}
                     </div>
-                  )}
                 </motion.div>
               )}
             </AnimatePresence>
