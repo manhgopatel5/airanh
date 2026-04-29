@@ -12,7 +12,7 @@ import { Timestamp } from "firebase/firestore";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import {
   FiX, FiCheck, FiPlus, FiClock, FiMapPin, FiEye, FiCopy,
-  FiZap, FiShield, FiAward, FiStar, FiTarget, FiLayers,
+  FiZap, FiShield, FiStar, FiTarget, FiLayers,
   FiTrendingUp, FiLock, FiGlobe
 } from "react-icons/fi";
 
