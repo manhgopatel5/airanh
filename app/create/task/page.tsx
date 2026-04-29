@@ -291,7 +291,7 @@ const totalPercent = form.milestones.reduce((sum, m) => sum + (m.percent || 0), 
         allowBids: form.allowBids,
         featured: form.featured,
         nda: form.nda,
-        warranty: form.warranty,
+        
         invites: form.invites,
         needApproval: form.needApproval,
       } as any, user);
