@@ -503,14 +503,18 @@ const [form, setForm] = useState({
     </div>
 
  <div className="space-y-3">
-<div className="flex items-center gap-2">
-    <input value={form.title} onChange={e => setForm({...form, title: e.target.value.slice(0, 100) })} placeholder="Bạn cần làm gì?" className="w-full h-11 px-3 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 text-[15px] font-medium outline-none placeholder:text-zinc-400" autoFocus />
-    {form.title.length < 10 && (
-  <span className="text-[13px] text-red-500 tabular-nums shrink-0">
-    {form.title.length}/10
-  </span>
-)}
-  </div>
+<div className="relative">
+    <input 
+      value={form.title} 
+      onChange={e => setForm({...form, title: e.target.value.slice(0, 100) })} 
+      placeholder="Bạn cần làm gì?" 
+      className="w-full h-11 pl-3 pr-14 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 text-[15px] font-medium outline-none placeholder:text-zinc-400" 
+      autoFocus 
+    />
+    <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-[13px] tabular-nums ${form.title.length < 10? "text-red-500" : "text-zinc-400"}`}>
+      {form.title.length}/10
+    </span>
+</div>
 <div className="flex gap-1.5 flex-wrap">
   {category.suggestions.map(item => (
     <button
@@ -860,25 +864,59 @@ const [form, setForm] = useState({
               {step === 3 && (
                 <motion.div key="s3" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }} className="p-4 space-y-3">
                   <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { k: "autoMatch", icon: FiTarget, label: "Tự động ghép", desc: "AI tìm người phù hợp" },
-                      { k: "milestones", icon: FiLayers, label: "Chia giai đoạn", desc: "Thanh toán theo tiến độ" },
-                      { k: "allowBids", icon: FiTrendingUp, label: "Đấu thầu", desc: "Nhận nhiều báo giá" },
-                      { k: "needApproval", icon: FiUserCheck, label: "Duyệt tay", desc: "Chọn người làm" },
-                      { k: "nda", icon: FiLock, label: "Bảo mật NDA", desc: "Ký thỏa thuận" },
-                    
-                    ].map(item => {
-                      const Icon = item.icon;
-                      const active = (form as any)[item.k];
-                      return (
-                        <button key={item.k} onClick={() => setForm({...form, [item.k]: !active })} className={`group relative p-4 rounded-2xl border text-left transition-all active:scale-[0.98] ${active ? "border-[#0a84ff] bg-[#0a84ff]/5" : "border-[#E5E5EA] dark:border-zinc-800 bg-white dark:bg-zinc-900"}`}>
-                          <Icon size={20} className={active ? "text-[#0a84ff]" : "text-zinc-400"} />
-                          <div className="text-[14px] font-medium mt-2.5 leading-tight">{item.label}</div>
-                          <div className="text-[12px] text-zinc-500 leading-snug mt-0.5">{item.desc}</div>
-                          {active && <div className="absolute top-2.5 right-2.5 w-5 h-5 bg-[#0a84ff] rounded-full grid place-items-center"><FiCheck size={12} className="text-white" strokeWidth={3} /></div>}
-                        </button>
-                      );
-                    })}
+{[
+  { k: "autoMatch", icon: FiZap, label: "Duyệt tự động", desc: "Ứng viên tự động được nhận" },
+  { k: "milestones", icon: FiLayers, label: "Chia giai đoạn", desc: "Thanh toán theo tiến độ" },
+  { k: "allowBids", icon: FiTrendingUp, label: "Đấu thầu", desc: "Nhận nhiều báo giá" },
+  { k: "needApproval", icon: FiUserCheck, label: "Duyệt tay", desc: "Chọn người làm" },
+  { k: "nda", icon: FiLock, label: "Bảo mật NDA", desc: "Ký thỏa thuận" },
+].map(item => {
+  const Icon = item.icon;
+  const active = (form as any)[item.k];
+  
+  const isDisabled = 
+    (item.k === "autoMatch" && form.needApproval) || 
+    (item.k === "needApproval" && form.autoMatch);
+  
+  const handleClick = () => {
+    if (isDisabled) return;
+    if (item.k === "autoMatch") {
+      setForm({...form, autoMatch: !active, needApproval: false });
+    } else if (item.k === "needApproval") {
+      setForm({...form, needApproval: !active, autoMatch: false });
+    } else {
+      setForm({...form, [item.k]: !active });
+    }
+  };
+  
+  return (
+    <button 
+      key={item.k} 
+      onClick={handleClick}
+      disabled={isDisabled}
+      className={`group relative p-4 rounded-2xl border text-left transition-all ${
+        isDisabled 
+          ? "border-[#E5E5EA] dark:border-zinc-800 bg-[#F2F2F7] dark:bg-zinc-800/50 opacity-50 cursor-not-allowed" 
+          : active 
+            ? "border-[#0a84ff] bg-[#0a84ff]/5 active:scale-[0.98]" 
+            : "border-[#E5E5EA] dark:border-zinc-800 bg-white dark:bg-zinc-900 active:scale-[0.98]"
+      }`}
+    >
+      <Icon size={20} className={isDisabled ? "text-zinc-300 dark:text-zinc-600" : active ? "text-[#0a84ff]" : "text-zinc-400"} />
+      <div className={`text-[14px] font-medium mt-2.5 leading-tight ${isDisabled ? "text-zinc-400 dark:text-zinc-600" : ""}`}>
+        {item.label}
+      </div>
+      <div className={`text-[12px] leading-snug mt-0.5 ${isDisabled ? "text-zinc-400 dark:text-zinc-600" : "text-zinc-500"}`}>
+        {item.desc}
+      </div>
+      {active && !isDisabled && (
+        <div className="absolute top-2.5 right-2.5 w-5 h-5 bg-[#0a84ff] rounded-full grid place-items-center">
+          <FiCheck size={12} className="text-white" strokeWidth={3} />
+        </div>
+      )}
+    </button>
+  );
+})}
                   </div>
 
                   
@@ -947,30 +985,7 @@ const [form, setForm] = useState({
                     {form.featured && <div className="mt-3 pt-3 border-t border-amber-200 dark:border-amber-900/50 flex items-center justify-between"><span className="text-[13px] text-amber-700 dark:text-amber-400">Phí dịch vụ</span><span className="text-[15px] font-semibold text-amber-600 tabular-nums">+50.000đ</span></div>}
                   </button>
 
-                  {basePrice > 0 && (
-                    <div className="bg-zinc-900 dark:bg-white text-white dark:text-black rounded-2xl p-4">
-                      <div className="flex items-baseline justify-between">
-                        <div>
-                          <div className="text-[11px] opacity-60 uppercase tracking-wide font-medium">Tổng thanh toán</div>
-                          <div className="flex items-baseline gap-1 mt-1">
-                            <span className="text-[28px] font-bold tracking-tight leading-none tabular-nums">{totalPrice.toLocaleString('vi-VN')}</span>
-                            <span className="text-[14px] opacity-70">đ</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-[11px] opacity-60">Bao gồm</div>
-                          <div className="text-[12px] font-medium mt-0.5">Phí dịch vụ 5%</div>
-                        </div>
-                      </div>
-                      {(urgencyFee > 0 || featuredFee > 0) && (
-                        <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5">
-                          <div className="flex justify-between text-[12px] opacity-70"><span>Giá gốc</span><span className="tabular-nums">{basePrice.toLocaleString('vi-VN')}đ</span></div>
-                          {urgencyFee > 0 && <div className="flex justify-between text-[12px] opacity-70"><span>Phí ưu tiên</span><span className="tabular-nums">+{urgencyFee.toLocaleString('vi-VN')}đ</span></div>}
-                          {featuredFee > 0 && <div className="flex justify-between text-[12px] opacity-70"><span>Ghim PRO</span><span className="tabular-nums">+{featuredFee.toLocaleString('vi-VN')}đ</span></div>}
-                        </div>
-                      )}
-                    </div>
-                  )}
+     
                 </motion.div>
               )}
             </AnimatePresence>
