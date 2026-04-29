@@ -472,7 +472,7 @@ export default function CreateTaskProMax() {
       <div className="grid grid-cols-4 gap-2">
         {CATEGORIES.map(c => (
           <button key={c.id} onClick={() => setForm({...form, category: c.id, price: c.basePrice.toLocaleString('vi-VN'), tags: [] })} className="relative active:scale-95 transition-transform">
-    <div className={`rounded-xl border p-2 flex-col items-center justify-center gap-1 min-h-[60px] transition-all ${form.category === c.id? "border-[#0a84ff] bg-[#0a84ff]/5" : "border-[#E5E5EA] dark:border-zinc-800 bg-white dark:bg-zinc-900"}`}>
+    <div className={`flex flex-col rounded-xl border p-2 items-center justify-center gap-1 min-h-[60px] transition-all ${form.category === c.id? "border-[#0a84ff] bg-[#0a84ff]/5" : "border-[#E5E5EA] dark:border-zinc-800 bg-white dark:bg-zinc-900"}`}>
   <div className="text-[20px] leading-none">{c.icon}</div>
   <div className={`text-[11px] font-medium leading-tight text-center ${form.category === c.id? "text-[#0a84ff]" : "text-zinc-700 dark:text-zinc-300"}`}>{c.name}</div>
 </div>
@@ -563,7 +563,7 @@ export default function CreateTaskProMax() {
                           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[14px] font-medium text-zinc-400">VND</span>
                         </div>
                  <div className="flex items-center gap-2 mt-3">
-  <span className="text- text-zinc-500">Số người:</span>
+  <span className="text-[14px] text-zinc-500">Số người:</span>
   <div className="flex items-center gap-2 bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg p-0.5">
     <button onClick={() => setForm({...form, totalSlots: Math.max(1, parseInt(form.totalSlots) - 1).toString() })} className="w-7 h-7 grid place-items-center rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-600 active:scale-95">−</button>
     <span className="w-8 text-center text-[14px] font-medium tabular-nums">{form.totalSlots}</span>
@@ -583,9 +583,9 @@ export default function CreateTaskProMax() {
                     </div>
                     <div className="grid grid-cols-3 gap-2.5">
      {URGENCY.map(u => (
-  <button key={u.id} onClick={() => setForm({...form, urgency: u.id })} className={`relative p-3 rounded-2xl border text-left transition-all active:scale-95 ${form.urgency === u.id ? "border-[#0a84ff] bg-[#0a84ff]/5" : "border-[#E5E5EA] dark:border-zinc-800 bg-[#F2F7]/50 dark:bg-zinc-800/30"}`}>
-    <div className={`text- font-semibold ${form.urgency === u.id ? "text-[#0a84ff]" : "text-zinc-700 dark:text-zinc-300"}`}>{u.name}</div>
-    <div className="text-[15px] text-zinc-500 mt-0.5">{u.time}</div>
+  <button key={u.id} onClick={() => setForm({...form, urgency: u.id })} className={`relative p-3 rounded-2xl border text-left transition-all active:scale-95 ${form.urgency === u.id ? "border-[#0a84ff] bg-[#0a84ff]/5" : "border-[#E5E5EA] dark:border-zinc-800 bg-[#F2F2F7]/50 dark:bg-zinc-800/30"}`}>
+    <div className={`text-[13px] font-semibold ${form.urgency === u.id ? "text-[#0a84ff]" : "text-zinc-700 dark:text-zinc-300"}`}>{u.name}</div>
+    <div className="text-[13px] text-zinc-500 mt-0.5">{u.time}</div>
     {u.bonus > 0 && <div className={`text-[13px] font-medium mt-1 tabular-nums ${form.urgency === u.id ? "text-[#0a84ff]" : "text-zinc-500"}`}>+{u.bonus}%</div>}
   </button>
 ))}
