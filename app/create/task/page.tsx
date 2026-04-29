@@ -307,9 +307,7 @@ export default function CreateTaskProMax() {
 
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const category = useMemo(() => CATEGORIES.find(c => c.id === form.category)!, [form.category]);
-  const currentSuggestion = useMemo(() =>
-  category.suggestions.find(s => s.title === form.title),
-[category, form.title]);
+
   const urgencyLevel = URGENCY.find(u => u.id === form.urgency)!;
   const progress = (step / 3) * 100;
   const basePrice = parseInt(form.price.replace(/\./g, "") || "0");
