@@ -1,760 +1,529 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
-import { getFirebaseAuth, getFirebaseStorage } from "@/lib/firebase";
+import { getFirebaseAuth, getFirebaseStorage, getFirebaseDB } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { collection, query, where, onSnapshot, limit, getDocs } from "firebase/firestore";
 import { createTask } from "@/lib/task";
-import { User } from "@/types/task";
 import { toast, Toaster } from "sonner";
-import type { CreateTaskInput } from "@/types/task";
-import {
-  FiUpload, FiX, FiUsers, FiClock,
-  FiEyeOff, FiNavigation,
-  FiCalendar, FiTag, FiMapPin, FiEye, FiFileText, FiCheck
-} from "react-icons/fi";
 import { Timestamp } from "firebase/firestore";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, PanInfo } from "framer-motion";
+import {
+  FiX, FiCheck, FiPlus, FiChevronRight, FiUpload, FiClock, FiMapPin, FiEye, FiCopy,
+  FiNavigation, FiCalendar, FiTag, FiUsers, FiEyeOff, FiFileText, FiDollarSign,
+  FiZap, FiShield, FiAward, FiStar, FiBriefcase, FiTarget, FiLayers, FiTrendingUp,
+  FiHeart, FiBookmark, FiRepeat, FiLock, FiGlobe, FiVideo, FiPaperclip,
+  FiBarChart2, FiUserCheck, FiAlertCircle, FiGift
+} from "react-icons/fi";
 
 const CATEGORIES = [
-  { id: "delivery", name: "Giao hàng", icon: "🚚", color: "bg-orange-500" },
-  { id: "shopping", name: "Mua hộ", icon: "🛒", color: "bg-green-500" },
-  { id: "tutoring", name: "Gia sư", icon: "📚", color: "bg-blue-500" },
-  { id: "design", name: "Thiết kế", icon: "🎨", color: "bg-purple-500" },
-  { id: "dev", name: "Lập trình", icon: "💻", color: "bg-indigo-500" },
-  { id: "marketing", name: "Marketing", icon: "📢", color: "bg-pink-500" },
-  { id: "writing", name: "Viết lách", icon: "✍️", color: "bg-yellow-500" },
-  { id: "other", name: "Khác", icon: "📌", color: "bg-gray-500" },
+  { id: "delivery", name: "Giao hàng", icon: "🚚", color: "#ff9500", basePrice: 50000 },
+  { id: "shopping", name: "Mua hộ", icon: "🛒", color: "#34c759", basePrice: 30000 },
+  { id: "tutoring", name: "Gia sư", icon: "📚", color: "#0a84ff", basePrice: 200000 },
+  { id: "design", name: "Thiết kế", icon: "🎨", color: "#af52de", basePrice: 500000 },
+  { id: "dev", name: "Lập trình", icon: "💻", color: "#5856d6", basePrice: 2000000 },
+  { id: "marketing", name: "Marketing", icon: "📢", color: "#ff2d55", basePrice: 800000 },
+  { id: "writing", name: "Viết lách", icon: "✍️", color: "#ffcc00", basePrice: 150000 },
+  { id: "other", name: "Khác", icon: "📌", color: "#8e8e93", basePrice: 100000 },
 ];
 
-const HOT_TAGS = ["gấp", "trong ngày", "part-time", "remote", "sinh viên", "cuối tuần"];
+const URGENCY = [
+  { id: "normal", name: "Thường", time: "3-7 ngày", bonus: 0, color: "emerald" },
+  { id: "urgent", name: "Gấp", time: "24-48h", bonus: 25, color: "amber" },
+  { id: "express", name: "Hỏa tốc", time: "< 12h", bonus: 60, color: "red" },
+];
 
-const formatCurrency = (value: string) => {
-  const number = value.replace(/\D/g, "");
-  if (!number) return "";
-  return number.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-};
+const TEMPLATES = [
+  { icon: "🚀", name: "Ship nhanh", cat: "delivery", title: "Giao hàng hỏa tốc nội thành", price: "45000", tags: ["gấp", "trong ngày"] },
+  { icon: "🎨", name: "Logo Pro", cat: "design", title: "Thiết kế logo + bộ nhận diện", price: "1500000", tags: ["chuyên nghiệp", "3 concept"] },
+  { icon: "💻", name: "Web bán hàng", cat: "dev", title: "Website TMĐT full tính năng", price: "5000000", tags: ["fullstack", "1 tháng"] },
+  { icon: "📱", name: "TikTok Ads", cat: "marketing", title: "Chạy quảng cáo TikTok 1 tháng", price: "3000000", tags: ["target", "report"] },
+];
 
-const formatDateTimeLocal = (date: Date) => {
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-};
-
-export default function CreateTaskPage() {
+export default function CreateTaskProMax() {
   const auth = getFirebaseAuth();
   const storage = getFirebaseStorage();
+  const db = getFirebaseDB();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const tagInputRef = useRef<HTMLInputElement>(null);
-  const formRef = useRef<HTMLFormElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [step, setStep] = useState(1);
+  const [dragX, setDragX] = useState(0);
   const [submitting, setSubmitting] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [showAllTags, setShowAllTags] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [friends, setFriends] = useState<any[]>([]);
+  const [savedTasks, setSavedTasks] = useState(0);
 
   const now = new Date();
-  const defaultEnd = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-
   const [form, setForm] = useState({
-    title: "",
-    description: "",
-    price: "",
-    totalSlots: "1",
-    startDate: formatDateTimeLocal(now),
-    endDate: formatDateTimeLocal(defaultEnd),
-    category: "other",
-    tags: [] as string[],
-    images: [] as string[],
-    address: "",
-    city: "",
-    lat: null as number | null,
-    lng: null as number | null,
-    visibility: "public" as "public" | "friends" | "private",
-    budgetType: "fixed" as "fixed" | "hourly" | "negotiable",
-    isRemote: false,
-    requirements: "",
-    attachments: [] as string[],
+    title: "", description: "", price: "", totalSlots: "1",
+    startDate: new Date(now.getTime() + 3600000).toISOString().slice(0, 16),
+    endDate: new Date(now.getTime() + 86400000 * 3).toISOString().slice(0, 16),
+    category: "other", tags: [] as string[], images: [] as string[],
+    address: "", city: "Hồ Chí Minh", lat: null as number | null, lng: null as number | null,
+    visibility: "public", budgetType: "fixed", isRemote: true, requirements: "",
+    urgency: "normal", skillLevel: 2, revisions: 3, milestones: true,
+    autoMatch: true, allowBids: false, featured: false, privateNotes: "",
+    invites: [] as string[], pollPrice: false, needApproval: true,
+    nda: false, warranty: 7, attachments: [] as File[], recurring: "once",
+    languages: ["Tiếng Việt"], timezone: "Asia/Ho_Chi_Minh",
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [tagInput, setTagInput] = useState("");
+  const category = useMemo(() => CATEGORIES.find(c => c.id === form.category)!, [form.category]);
+  const urgencyLevel = URGENCY.find(u => u.id === form.urgency)!;
+  const progress = (step / 3) * 100;
+  const basePrice = parseInt(form.price.replace(/\./g, "") || "0");
+  const urgencyFee = Math.round(basePrice * urgencyLevel.bonus / 100);
+  const featuredFee = form.featured? 50000 : 0;
+  const serviceFee = Math.round((basePrice + urgencyFee) * 0.05);
+  const totalPrice = basePrice + urgencyFee + featuredFee + serviceFee;
+  const canNext = step === 1? form.title.length >= 10 && form.description.length >= 20 : step === 2? basePrice >= 1000 || form.budgetType === "negotiable" : true;
 
   useEffect(() => {
-    const titleParam = searchParams.get("title");
-    if (titleParam) {
-      setForm(prev => ({...prev, title: decodeURIComponent(titleParam) }));
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    const draft = localStorage.getItem("task_draft");
-    if (draft && !searchParams.get("title")) {
-      try {
-        const parsed = JSON.parse(draft);
-        setForm(prev => ({...prev, ...parsed, images: [] }));
-      } catch {}
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const { images, ...rest } = form;
-      localStorage.setItem("task_draft", JSON.stringify(rest));
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [form]);
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
-      if (!firebaseUser) {
-        toast.error("Bạn cần đăng nhập");
-        router.replace("/login");
-        return;
-      }
-      if (!firebaseUser.emailVerified) {
-        toast.warning("Vui lòng xác thực email");
-        router.replace("/verify-email");
-        return;
-      }
-      setUser({
-        uid: firebaseUser.uid,
-        email: firebaseUser.email,
-        displayName: firebaseUser.displayName,
-        photoURL: firebaseUser.photoURL,
-      });
-      setLoading(false);
-    });
+    const unsub = onAuthStateChanged(auth, u => u? setUser({ uid: u.uid, email: u.email }) : router.replace("/login"));
     return () => unsub();
-  }, [auth, router]);
+  }, []);
 
-  const validate = (): boolean => {
-    const newErrors: Record<string, string> = {};
+  useEffect(() => {
+    if (!user?.uid) return;
+    getDocs(query(collection(db, 'tasks'), where('createdBy', '==', user.uid), limit(1))).then(s => setSavedTasks(s.size));
+    const q = query(collection(db, 'friends'), where('userId', '==', user.uid), limit(12));
+    return onSnapshot(q, snap => setFriends(snap.docs.map(d => ({ id: d.data().friendId, name: "Bạn" }))));
+  }, [user, db]);
 
-    if (!form.title.trim()) newErrors.title = "Vui lòng nhập tiêu đề";
-    else if (form.title.length < 10) newErrors.title = "Tiêu đề tối thiểu 10 ký tự";
-    else if (form.title.length > 100) newErrors.title = "Tiêu đề tối đa 100 ký tự";
-
-    if (!form.description.trim()) newErrors.description = "Vui lòng nhập mô tả";
-    else if (form.description.length < 20) newErrors.description = "Mô tả tối thiểu 20 ký tự";
-    else if (form.description.length > 5000) newErrors.description = "Mô tả tối đa 5000 ký tự";
-
-    const price = parseInt(form.price.replace(/\./g, ""));
-    if (form.budgetType !== "negotiable") {
-      if (!form.price || isNaN(price)) newErrors.price = "Vui lòng nhập giá";
-      else if (price < 1000) newErrors.price = "Giá tối thiểu 1.000";
-      else if (price > 100000000) newErrors.price = "Giá tối đa 100.000.000";
-    }
-
-    const slots = parseInt(form.totalSlots);
-    if (!form.totalSlots || isNaN(slots)) newErrors.totalSlots = "Vui lòng nhập số người";
-    else if (slots < 1) newErrors.totalSlots = "Tối thiểu 1 người";
-    else if (slots > 100) newErrors.totalSlots = "Tối đa 100 người";
-
-    if (!form.startDate) newErrors.startDate = "Chọn ngày bắt đầu";
-    if (!form.endDate) newErrors.endDate = "Chọn ngày kết thúc";
-    if (form.startDate && form.endDate && new Date(form.startDate) >= new Date(form.endDate)) {
-      newErrors.endDate = "Ngày kết thúc phải sau ngày bắt đầu";
-    }
-
-    if (!form.category) newErrors.category = "Vui lòng chọn danh mục";
-    if (!form.isRemote && !form.address.trim()) newErrors.address = "Vui lòng nhập địa điểm hoặc chọn làm từ xa";
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const handleDragEnd = (_: any, info: PanInfo) => {
+    if (Math.abs(info.offset.x) < 50) return setDragX(0);
+    if (info.offset.x < -50 && step < 3 && canNext) setStep(s => s + 1);
+    if (info.offset.x > 50 && step > 1) setStep(s => s - 1);
+    setDragX(0);
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length + imageFiles.length > 5) {
-      toast.error("Tối đa 5 ảnh");
-      return;
-    }
-
-    for (const file of files) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error(`Ảnh ${file.name} vượt quá 5MB`);
-        return;
-      }
-      if (!file.type.startsWith("image/")) {
-        toast.error(`File ${file.name} không phải ảnh`);
-        return;
-      }
-    }
-
-    if ("vibrate" in navigator) navigator.vibrate(5);
-    setImageFiles([...imageFiles, ...files]);
-    const urls = files.map(f => URL.createObjectURL(f));
-    setForm({...form, images: [...form.images, ...urls] });
+  const useTemplate = (t: any) => {
+    setForm(f => ({...f, category: t.cat, title: t.title, price: t.price, tags: t.tags }));
+    setShowTemplates(false);
+    toast.success("Đã áp dụng mẫu");
   };
 
-  const removeImage = (index: number) => {
-    if ("vibrate" in navigator) navigator.vibrate(5);
-    const newImages = [...form.images];
-    const newFiles = [...imageFiles];
-    newImages.splice(index, 1);
-    newFiles.splice(index, 1);
-    setForm({...form, images: newImages });
-    setImageFiles(newFiles);
-  };
-
-  const addTag = () => {
-    const tag = tagInput.trim();
-    if (!tag) return;
-    if (form.tags.length >= 10) {
-      toast.error("Tối đa 10 tag");
-      return;
-    }
-    if (form.tags.includes(tag)) {
-      toast.error("Tag đã tồn tại");
-      return;
-    }
-    if ("vibrate" in navigator) navigator.vibrate(5);
-    setForm({...form, tags: [...form.tags, tag] });
-    setTagInput("");
-  };
-
-  const removeTag = (tag: string) => {
-    if ("vibrate" in navigator) navigator.vibrate(5);
-    setForm({...form, tags: form.tags.filter(t => t !== tag) });
-  };
-
-  const getCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error("Trình duyệt không hỗ trợ định vị");
-      return;
-    }
-    if ("vibrate" in navigator) navigator.vibrate(10);
-    toast.loading("Đang lấy vị trí...");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setForm({
-      ...form,
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          address: "Vị trí hiện tại",
-          isRemote: false,
-        });
-        toast.dismiss();
-        toast.success("Đã lấy vị trí");
-      },
-      () => {
-        toast.dismiss();
-        toast.error("Không lấy được vị trí");
-      }
-    );
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = async () => {
     if (!user) return;
-    if (!validate()) {
-      toast.error("Vui lòng kiểm tra lại thông tin");
-      formRef.current?.scrollIntoView({ behavior: "smooth" });
-      return;
-    }
-
-    const lastCreate = localStorage.getItem("last_task_create");
-    if (lastCreate && Date.now() - parseInt(lastCreate) < 30000) {
-      toast.error("Vui lòng chờ 30 giây trước khi tạo công việc mới");
-      return;
-    }
-
+    setSubmitting(true);
     try {
-      setSubmitting(true);
-      setUploadingImage(true);
-
-      const imageUrls: string[] = [];
-      for (const file of imageFiles) {
-        const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-        const fileRef = ref(storage, `tasks/${user.uid}/${fileName}`);
-        await uploadBytes(fileRef, file);
-        const url = await getDownloadURL(fileRef);
-        imageUrls.push(url);
-      }
-      setUploadingImage(false);
-
-      const deadline = Timestamp.fromDate(new Date(form.endDate));
-      const startDate = Timestamp.fromDate(new Date(form.startDate));
-
-      const payload: CreateTaskInput = {
-        type: "task",
-        title: form.title.trim(),
-        description: form.description.trim(),
-        price: form.budgetType === "negotiable" ? 0 : parseInt(form.price.replace(/\./g, ""), 10),
-        currency: "VND",
-        budgetType: form.budgetType,
-        totalSlots: parseInt(form.totalSlots, 10),
-        visibility: form.visibility,
-        deadline,
-        applicationDeadline: deadline,
-        startDate,
-        category: form.category,
-        tags: form.tags,
-        images: imageUrls,
-        attachments: [],
-        requirements: form.requirements.trim(),
-        isRemote: form.isRemote,
-        location: form.isRemote
-    ? {}
-          : {
-              address: form.address.trim(),
-              city: form.city.trim(),
-      ...(form.lat != null && { lat: form.lat }),
-      ...(form.lng != null && { lng: form.lng }),
-            },
-      };
-
-      const result = await createTask(payload, user);
-      localStorage.removeItem("task_draft");
-      localStorage.setItem("last_task_create", Date.now().toString());
-      toast.success("Đăng công việc thành công!");
-      router.push(`/task/${result.slug}`);
-    } catch (err: any) {
-      console.error("Create task error:", err);
-      if (err.code === "storage/unauthorized") {
-        toast.error("Không có quyền upload ảnh. Kiểm tra Storage Rules");
-      } else {
-        toast.error(err.message || "Tạo công việc thất bại");
-      }
+      const urls = await Promise.all(imageFiles.map(async file => {
+        const r = ref(storage, `tasks/${user.uid}/${Date.now()}_${file.name}`);
+        await uploadBytes(r, file);
+        return getDownloadURL(r);
+      }));
+      await createTask({
+        type: "task", title: form.title, description: form.description,
+        price: form.budgetType === "negotiable"? 0 : totalPrice, currency: "VND",
+        budgetType: form.budgetType, totalSlots: parseInt(form.totalSlots),
+        visibility: form.visibility, deadline: Timestamp.fromDate(new Date(form.endDate)),
+        applicationDeadline: Timestamp.fromDate(new Date(form.endDate)),
+        startDate: Timestamp.fromDate(new Date(form.startDate)), category: form.category,
+        tags: [...form.tags, form.urgency], images: urls, attachments: [],
+        requirements: form.requirements, isRemote: form.isRemote,
+        location: form.isRemote? {} : { address: form.address, city: form.city, lat: form.lat, lng: form.lng },
+      } as any, user);
+      toast.success("🎉 Đăng thành công!");
+      setTimeout(() => router.push("/"), 800);
+    } catch (e: any) {
+      toast.error(e.message);
     } finally {
       setSubmitting(false);
-      setUploadingImage(false);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-3 border-[#0a84ff] border-t-transparent rounded-full animate-spin" />
-          <p className="text-[14px] text-[#8e8e93]">Đang tải...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const displayTags = showAllTags ? form.tags : form.tags.slice(0, 3);
-  const hiddenCount = form.tags.length - 3;
-  const selectedCategory = CATEGORIES.find(c => c.id === form.category);
 
   return (
     <>
-      <Toaster richColors position="top-center" toastOptions={{ duration: 2000 }} />
-      <div className="min-h-screen bg-[#f2f2f7] dark:bg-black pb-24">
+      <Toaster richColors position="top-center" />
+      <div className="min-h-screen bg-[#f5f5f7] dark:bg-black text-zinc-900 dark:text-zinc-100 select-none">
         {/* Header */}
-        <div className="sticky top-0 z-20 bg-white/80 dark:bg-black/80 backdrop-blur-2xl border-b border-black/[0.08] dark:border-white/[0.08]">
-          <div className="max-w-[640px] mx-auto px-4 h-[52px] flex items-center justify-between">
-            <h1 className="text-[17px] font-semibold">Tạo công việc</h1>
-            <button onClick={() => router.back()} className="w-8 h-8 -mr-1 flex items-center justify-center text-[#8e8e93] active:opacity-60">
-              <FiX size={24} />
+        <div className="sticky top-0 z-40 backdrop-blur-2xl bg-white/70 dark:bg-black/70 border-b border-zinc-200/50 dark:border-zinc-800/50">
+          <div className="h-[2px] bg-zinc-200 dark:bg-zinc-800"><motion.div className="h-full bg-[#0a84ff]" animate={{ width: `${progress}%` }} transition={{ type: "spring", stiffness: 300 }} /></div>
+          <div className="h-[52px] px-4 flex items-center gap-3 max-w-[680px] mx-auto">
+            <button onClick={() => step > 1? setStep(s => s - 1) : router.back()} className="w-8 h-8 -ml-1 grid place-items-center rounded-full hover:bg-zinc-900/5 dark:hover:bg-white/5 active:scale-90 transition-all">
+              <FiX size={20} className="text-zinc-600 dark:text-zinc-400" />
             </button>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-semibold tracking-wider px-2 py-0.5 rounded-full bg-[#0a84ff] text-white">BƯỚC {step}</span>
+                <span className="text-[10px] text-zinc-500">/3</span>
+                {savedTasks > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-black">{savedTasks} đã đăng</span>}
+              </div>
+              <h1 className="text-[15px] font-semibold leading-tight mt-0.5">{["Mô tả công việc", "Ngân sách & Thời gian", "Tùy chọn nâng cao"][step - 1]}</h1>
+            </div>
+            <div className="flex items-center gap-0.5">
+              <button onClick={() => setShowTemplates(true)} className="w-8 h-8 grid place-items-center rounded-full hover:bg-zinc-900/5 dark:hover:bg-white/5 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors">
+                <FiCopy size={16} />
+              </button>
+              <button onClick={() => setShowPreview(true)} className="w-8 h-8 grid place-items-center rounded-full hover:bg-zinc-900/5 dark:hover:bg-white/5 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors">
+                <FiEye size={16} />
+              </button>
+            </div>
           </div>
         </div>
 
-        <form ref={formRef} onSubmit={handleSubmit} className="max-w-[640px] mx-auto px-3 py-3 space-y-3">
-          {/* Title & Description */}
-          <div className="bg-white dark:bg-zinc-900 rounded-[12px] overflow-hidden">
-            <div className="p-4 space-y-4">
-              <div>
-                <input
-                  type="text"
-                  placeholder="Tiêu đề công việc"
-                  value={form.title}
-                  onChange={(e) => {
-                    setForm({...form, title: e.target.value });
-                    if (errors.title) setErrors({...errors, title: "" });
-                  }}
-                  className="w-full bg-transparent text-[17px] placeholder-[#c7c7cc] dark:placeholder-zinc-600 outline-none"
-                  maxLength={100}
-                />
-                <div className="flex justify-between mt-1.5">
-                  {errors.title && <span className="text-[12px] text-[#ff3b30]">{errors.title}</span>}
-                  <span className="text-[12px] text-[#8e8e93] ml-auto">{form.title.length}/100</span>
-                </div>
-              </div>
-              
-              <div className="h-px bg-black/[0.06] dark:bg-white/[0.06] -mx-4" />
-              
-              <div>
-                <textarea
-                  placeholder="Mô tả chi tiết..."
-                  value={form.description}
-                  onChange={(e) => {
-                    setForm({...form, description: e.target.value });
-                    if (errors.description) setErrors({...errors, description: "" });
-                  }}
-                  rows={4}
-                  className="w-full bg-transparent text-[15px] leading-[20px] placeholder-[#c7c7cc] dark:placeholder-zinc-600 outline-none resize-none"
-                  maxLength={5000}
-                />
-                <div className="flex justify-between mt-1.5">
-                  {errors.description && <span className="text-[12px] text-[#ff3b30]">{errors.description}</span>}
-                  <span className="text-[12px] text-[#8e8e93] ml-auto">{form.description.length}/5000</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="max-w-[680px] mx-auto pb-24">
+          <motion.div drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.12} onDrag={(_, i) => setDragX(i.offset.x)} onDragEnd={handleDragEnd} style={{ x: dragX }}>
+            <AnimatePresence mode="wait" initial={false}>
+              {/* STEP 1 */}
+              {step === 1 && (
+                <motion.div key="s1" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }} className="p-3 space-y-3">
+                  {/* Categories */}
+                  <div className="grid grid-cols-4 gap-2">
+                    {CATEGORIES.map(c => (
+                      <button key={c.id} onClick={() => setForm({...form, category: c.id, price: c.basePrice.toString() })} className="group relative">
+                        <div className={`aspect-[4/3.5] rounded-2xl border-[1.5px] p-2.5 flex flex-col items-center justify-center gap-1 transition-all ${form.category === c.id? "border-[#0a84ff] bg-[#0a84ff]/[0.06] dark:bg-[#0a84ff]/10 shadow-sm shadow-[#0a84ff]/20" : "border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-300 dark:hover:border-zinc-700"}`}>
+                          <div className="text-[22px] leading-none transition-transform group-active:scale-110">{c.icon}</div>
+                          <div className={`text-[11px] font-medium leading-tight text-center ${form.category === c.id? "text-[#0a84ff]" : "text-zinc-700 dark:text-zinc-300"}`}>{c.name}</div>
+                        </div>
+                        {form.category === c.id && <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#0a84ff] rounded-full grid place-items-center shadow-md ring-2 ring-white dark:ring-black"><FiCheck size={9} className="text-white" strokeWidth={3.5} /></div>}
+                      </button>
+                    ))}
+                  </div>
 
-          {/* Category */}
-          <div className="bg-white dark:bg-zinc-900 rounded-[12px] p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <FiTag className="text-[#8e8e93]" size={14} />
-              <p className="text-[13px] font-medium text-[#8e8e93] uppercase tracking-wider">Danh mục</p>
-            </div>
-            <div className="grid grid-cols-4 gap-2.5">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => {
-                    setForm({...form, category: cat.id });
-                    if ("vibrate" in navigator) navigator.vibrate(5);
-                  }}
-                  className={`relative p-3 rounded-[10px] border-2 transition-all ${
-                    form.category === cat.id
-                      ? "border-[#0a84ff] bg-[#0a84ff]/5"
-                      : "border-transparent bg-[#f2f2f7] dark:bg-black"
-                  }`}
-                >
-                  <div className="text-[24px] mb-1">{cat.icon}</div>
-                  <div className="text-[11px] font-medium leading-tight">{cat.name}</div>
-                  {form.category === cat.id && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-[#0a84ff] rounded-full flex items-center justify-center">
-                      <FiCheck size={12} className="text-white" strokeWidth={3} />
+                  {/* Title */}
+                  <div className="bg-white dark:bg-zinc-900 rounded-[20px] border border-zinc-200/60 dark:border-zinc-800 p-4 shadow-sm shadow-zinc-900/[0.02]">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-2xl grid place-items-center shrink-0 mt-0.5" style={{ backgroundColor: `${category.color}15` }}>
+                        <span className="text-[20px]">{category.icon}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <input value={form.title} onChange={e => setForm({...form, title: e.target.value.slice(0, 100) })} placeholder="Bạn cần làm gì?" className="w-full text-[17px] font-semibold bg-transparent outline-none placeholder:text-zinc-300 dark:placeholder-zinc-700 leading-snug" autoFocus />
+                        <div className="flex gap-1.5 mt-2.5 overflow-x-auto scrollbar-hide -mx-1 px-1">
+                          {category.suggestions?.slice(0, 3).map(s => (
+                            <button key={s} onClick={() => setForm({...form, title: s })} className="px-2.5 py-1 rounded-full bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-[12px] whitespace-nowrap transition-colors active:scale-95">{s}</button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <div className="bg-white dark:bg-zinc-900 rounded-[20px] border border-zinc-200/60 dark:border-zinc-800 p-4 shadow-sm shadow-zinc-900/[0.02]">
+                    <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value.slice(0, 2000) })} placeholder="Mô tả chi tiết yêu cầu, mục tiêu, kết quả mong muốn..." rows={4} className="w-full bg-transparent outline-none resize-none text-[15px] leading-[22px] placeholder:text-zinc-400" />
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                      <div className="flex gap-1">
+                        {["Chi tiết", "Đúng hạn", "Báo cáo"].map(t => (
+                          <button key={t} onClick={() => setForm(f => ({...f, description: f.description + (f.description? "\n• " : "• ") + t }))} className="px-2 py-1 rounded-lg bg-zinc-50 dark:bg-zinc-800/70 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-[11px] text-zinc-600 dark:text-zinc-400 transition-colors">+ {t}</button>
+                        ))}
+                      </div>
+                      <span className="text-[11px] text-zinc-400 tabular-nums">{form.description.length}/2000</span>
+                    </div>
+                  </div>
+
+                  {/* Quick Stats */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { icon: FiUsers, label: "1.2k", sub: "Freelancer" },
+                      { icon: FiClock, label: "2.4h", sub: "TB phản hồi" },
+                      { icon: FiStar, label: "4.8", sub: "Đánh giá" },
+                    ].map((s, i) => (
+                      <div key={i} className="bg-white/60 dark:bg-zinc-900/60 backdrop-blur rounded-2xl border-zinc-200/40 dark:border-zinc-800/40 p-3 text-center">
+                        <s.icon size={16} className="mx-auto text-zinc-400 mb-1" />
+                        <div className="text-[15px] font-semibold leading-none">{s.label}</div>
+                        <div className="text-[10px] text-zinc-500 mt-0.5">{s.sub}</div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* STEP 2 */}
+              {step === 2 && (
+                <motion.div key="s2" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }} className="p-3 space-y-3">
+                  {/* Budget */}
+                  <div className="bg-white dark:bg-zinc-900 rounded-[20px] border border-zinc-200/60 dark:border-zinc-800 p-4 shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-[#0a84ff]/10 grid place-items-center"><FiDollarSign size={15} className="text-[#0a84ff]" /></div>
+                        <span className="font-medium text-[14px]">Ngân sách</span>
+                      </div>
+                      <div className="flex bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-lg">
+                        {["fixed", "hourly", "negotiable"].map((t, i) => (
+                          <button key={t} onClick={() => setForm({...form, budgetType: t as any })} className={`px-2.5 py-1 rounded-md text-[12px] font-medium transition-all ${form.budgetType === t? "bg-white dark:bg-zinc-700 shadow-sm" : "text-zinc-500"}`}>{["Cố định", "Giờ", "Thỏa thuận"][i]}</button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {form.budgetType!== "negotiable"? (
+                      <>
+                        <div className="relative">
+                          <input type="text" inputMode="numeric" value={form.price} onChange={e => setForm({...form, price: e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ".") })} placeholder="0" className="w-full h-[52px] pl-4 pr-14 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl outline-none focus:ring-2 focus:ring-[#0a84ff]/20 text-[24px] font-semibold tracking-tight transition-all" />
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[13px] font-medium text-zinc-400">VND</span>
+                        </div>
+                        <div className="flex items-center justify-between mt-2.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[12px] text-zinc-500">Số lượng:</span>
+                            <div className="flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-lg p-0.5">
+                              <button onClick={() => setForm({...form, totalSlots: Math.max(1, parseInt(form.totalSlots) - 1).toString() })} className="w-6 h-6 grid place-items-center rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-600">−</button>
+                              <span className="w-8 text-center text-[13px] font-medium tabular-nums">{form.totalSlots}</span>
+                              <button onClick={() => setForm({...form, totalSlots: Math.min(20, parseInt(form.totalSlots) + 1).toString() })} className="w-6 h-6 grid place-items-center rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-600">+</button>
+                            </div>
+                          </div>
+                          <span className="text-[12px] text-zinc-500">TB: {(category.basePrice / 1000).toFixed(0)}k</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="h-[52px] grid place-items-center bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl text-zinc-500 text-[14px]">Sẽ thỏa thuận sau</div>
+                    )}
+                  </div>
+
+                  {/* Urgency */}
+                  <div className="bg-white dark:bg-zinc-900 rounded-[20px] border border-zinc-200/60 dark:border-zinc-800 p-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 rounded-xl bg-amber-500/10 grid place-items-center"><FiZap size={15} className="text-amber-600" /></div>
+                      <span className="font-medium text-[14px]">Độ ưu tiên</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {URGENCY.map(u => (
+                        <button key={u.id} onClick={() => setForm({...form, urgency: u.id })} className={`relative p-3 rounded-2xl border-[1.5px] text-left transition-all ${form.urgency === u.id? "border-amber-500 bg-amber-50 dark:bg-amber-950/20" : "border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 hover:border-zinc-300"}`}>
+                          <div className="text-[11px] font-semibold" style={{ color: u.color === "emerald"? "#10b981" : u.color === "amber"? "#f59e0b" : "#ef4444" }}>{u.name}</div>
+                          <div className="text-[11px] text-zinc-500 mt-0.5">{u.time}</div>
+                          {u.bonus > 0 && <div className="text-[10px] font-medium mt-1" style={{ color: u.color === "amber"? "#f59e0b" : "#ef4444" }}>+{u.bonus}%</div>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Time & Location */}
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="bg-white dark:bg-zinc-900 rounded-[20px] border border-zinc-200/60 dark:border-zinc-800 p-4 shadow-sm">
+                      <div className="flex items-center gap-2 mb-3">
+                        <FiCalendar size={15} className="text-zinc-400" />
+                        <span className="text-[13px] font-medium text-zinc-600 dark:text-zinc-400">Thời gian thực hiện</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <div>
+                          <div className="text-[11px] text-zinc-500 mb-1">Bắt đầu</div>
+                          <input type="datetime-local" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value })} className="w-full h-9 px-2.5 bg-zinc-50 dark:bg-zinc-800 rounded-xl outline-none text-[13px] font-medium" />
+                        </div>
+                        <div>
+                          <div className="text-[11px] text-zinc-500 mb-1">Kết thúc</div>
+                          <input type="datetime-local" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value })} className="w-full h-9 px-2.5 bg-zinc-50 dark:bg-zinc-800 rounded-xl outline-none text-[13px] font-medium" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-zinc-900 rounded-[20px] border border-zinc-200/60 dark:border-zinc-800 p-4 shadow-sm">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <FiMapPin size={15} className="text-zinc-400" />
+                          <span className="text-[13px] font-medium text-zinc-600 dark:text-zinc-400">Địa điểm</span>
+                        </div>
+                        <button onClick={() => setForm({...form, isRemote:!form.isRemote })} className={`relative w-10 h-[22px] rounded-full transition-colors ${form.isRemote? "bg-[#0a84ff]" : "bg-zinc-300 dark:bg-zinc-700"}`}>
+                          <div className={`absolute top-0.5 w-[18px] h-[18px] bg-white rounded-full shadow-sm transition-transform ${form.isRemote? "translate-x-[18px]" : "translate-x-0.5"}`} />
+                        </button>
+                      </div>
+                      {form.isRemote? (
+                        <div className="h-9 px-3 bg-zinc-50 dark:bg-zinc-800 rounded-xl flex items-center gap-2 text-[13px] text-zinc-600 dark:text-zinc-400">
+                          <FiGlobe size={14} /> Làm việc từ xa
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <input value={form.address} onChange={e => setForm({...form, address: e.target.value })} placeholder="Nhập địa chỉ..." className="flex-1 h-9 px-3 bg-zinc-50 dark:bg-zinc-800 rounded-xl outline-none text-[13px]" />
+                          <button onClick={() => navigator.geolocation.getCurrentPosition(p => setForm({...form, lat: p.coords.latitude, lng: p.coords.longitude, address: "Vị trí hiện tại" }))} className="w-9 h-9 grid place-items-center bg-zinc-100 dark:bg-zinc-800 rounded-xl active:scale-95">
+                            <FiNavigation size={14} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* STEP 3 */}
+              {step === 3 && (
+                <motion.div key="s3" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }} className="p-3 space-y-3">
+                  {/* Pro Features Grid */}
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {[
+                      { k: "autoMatch", icon: FiTarget, label: "Tự động ghép", desc: "AI tìm người phù hợp", color: "emerald" },
+                      { k: "milestones", icon: FiLayers, label: "Chia giai đoạn", desc: "Thanh toán theo tiến độ", color: "blue" },
+                      { k: "allowBids", icon: FiTrendingUp, label: "Đấu thầu", desc: "Nhận nhiều báo giá", color: "purple" },
+                      { k: "needApproval", icon: FiUserCheck, label: "Duyệt tay", desc: "Chọn người làm", color: "amber" },
+                      { k: "nda", icon: FiLock, label: "Bảo mật NDA", desc: "Ký thỏa thuận", color: "red" },
+                      { k: "warranty", icon: FiShield, label: "Bảo hành", desc: "7-30 ngày", color: "indigo" },
+                    ].map(item => {
+                      const Icon = item.icon;
+                      const active = (form as any)[item.k];
+                      return (
+                        <button key={item.k} onClick={() => setForm({...form, [item.k]:!active })} className={`group relative p-3.5 rounded-2xl border-[1.5px] text-left transition-all active:scale-[0.98] ${active? "border-[#0a84ff] bg-[#0a84ff]/[0.06] dark:bg-[#0a84ff]/10" : "border-zinc-200/70 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-300"}`}>
+                          <Icon size={18} className={active? "text-[#0a84ff]" : "text-zinc-400 group-hover:text-zinc-600 transition-colors"} />
+                          <div className="text-[13px] font-medium mt-2 leading-tight">{item.label}</div>
+                          <div className="text-[11px] text-zinc-500 leading-snug mt-0.5">{item.desc}</div>
+                          {active && <div className="absolute top-2 right-2 w-4 h-4 bg-[#0a84ff] rounded-full grid place-items-center"><FiCheck size={9} className="text-white" strokeWidth={3} /></div>}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Skill & Revisions */}
+                  <div className="bg-white dark:bg-zinc-900 rounded-[20px] border border-zinc-200/60 dark:border-zinc-800 p-4 shadow-sm">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-[12px] text-zinc-500 mb-2">Cấp độ yêu cầu</div>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4].map(l => (
+                            <button key={l} onClick={() => setForm({...form, skillLevel: l })} className={`flex-1 h-8 rounded-lg text-[12px] font-medium transition-all ${form.skillLevel === l? "bg-[#0a84ff] text-white shadow-sm" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 hover:bg-zinc-200"}`}>{["New", "TB", "Pro", "Exp"][l - 1]}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[12px] text-zinc-500 mb-2">Số lần sửa</div>
+                        <div className="flex items-center gap-2">
+                          <input type="range" min="1" max="10" value={form.revisions} onChange={e => setForm({...form, revisions: e.target.value })} className="flex-1 h-1.5 accent-[#0a84ff]" />
+                          <span className="w-6 text-center text-[13px] font-medium tabular-nums">{form.revisions}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Media Upload */}
+                  <div className="bg-white dark:bg-zinc-900 rounded-[20px] border border-zinc-200/60 dark:border-zinc-800 p-4 shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[13px] font-medium">Tài liệu đính kèm</span>
+                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600">{form.images.length}/5</span>
+                    </div>
+                    <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+                      {form.images.map((url, i) => (
+                        <div key={i} className="relative w-[72px] h-[72px] rounded-xl overflow-hidden shrink-0 ring-1 ring-zinc-200 dark:ring-zinc-800">
+                          <img src={url} className="w-full h-full object-cover" />
+                          <button onClick={() => { const n = [...form.images]; n.splice(i, 1); setForm({...form, images: n }); const f = [...imageFiles]; f.splice(i, 1); setImageFiles(f); }} className="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 grid place-items-center transition-opacity">
+                            <FiX size={16} className="text-white" />
+                          </button>
+                        </div>
+                      ))}
+                      {form.images.length < 5 && (
+                        <button onClick={() => fileRef.current?.click()} className="w-[72px] h-[72px] rounded-xl border-[1.5px] border-dashed border-zinc-300 dark:border-zinc-700 grid place-items-center hover:border-[#0a84ff]/50 hover:bg-[#0a84ff]/5 transition-colors shrink-0 group">
+                          <FiPlus size={18} className="text-zinc-400 group-hover:text-[#0a84ff] transition-colors" />
+                        </button>
+                      )}
+                    </div>
+                    <input ref={fileRef} type="file" accept="image/*,application/pdf" multiple onChange={e => { const f = Array.from(e.target.files || []); setImageFiles([...imageFiles,...f]); setForm({...form, images: [...form.images,...f.map(x => URL.createObjectURL(x))] }); }} className="hidden" />
+                  </div>
+
+                  {/* Visibility & Invite */}
+                  <div className="bg-white dark:bg-zinc-900 rounded-[20px] border border-zinc-200/60 dark:border-zinc-800 divide-y divide-zinc-100 dark:divide-zinc-800 shadow-sm overflow-hidden">
+                    <div className="p-3.5 flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 grid place-items-center"><FiEye size={14} className="text-zinc-600" /></div>
+                        <div>
+                          <div className="text-[13px] font-medium">Hiển thị</div>
+                          <div className="text-[11px] text-zinc-500">Ai có thể xem</div>
+                        </div>
+                      </div>
+                      <select value={form.visibility} onChange={e => setForm({...form, visibility: e.target.value as any })} className="text-[13px] font-medium bg-zinc-100 dark:bg-zinc-800 border-0 rounded-lg px-2.5 py-1.5 outline-none">
+                        <option value="public">Công khai</option>
+                        <option value="friends">Bạn bè</option>
+                        <option value="private">Riêng tư</option>
+                      </select>
+                    </div>
+                    {form.visibility!== "public" && friends.length > 0 && (
+                      <div className="p-3.5">
+                        <div className="text-[12px] text-zinc-500 mb-2">Mời bạn bè ({form.invites.length})</div>
+                        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
+                          {friends.slice(0, 8).map(f => (
+                            <button key={f.id} onClick={() => setForm({...form, invites: form.invites.includes(f.id)? form.invites.filter(x => x!== f.id) : [...form.invites, f.id] })} className={`px-2.5 py-1.5 rounded-full text-[12px] whitespace-nowrap border transition-all ${form.invites.includes(f.id)? "bg-[#0a84ff] text-white border-[#0a84ff]" : "bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 hover:border-zinc-300"}`}>{f.name}</button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Featured */}
+                  <button onClick={() => setForm({...form, featured:!form.featured })} className={`w-full p-4 rounded-[20px] border-[1.5px] transition-all text-left ${form.featured? "border-amber-500 bg-amber-50 dark:bg-amber-950/20" : "border-zinc-200/60 dark:border-zinc-800 bg-white dark:bg-zinc-900"}`}>
+                    <div className="flex items-start justify-between">
+                      <div className="flex gap-3">
+                        <div className={`w-10 h-10 rounded-2xl grid place-items-center ${form.featured? "bg-amber-500" : "bg-zinc-100 dark:bg-zinc-800"}`}><FiStar size={18} className={form.featured? "text-white" : "text-zinc-400"} /></div>
+                        <div>
+                          <div className="font-medium text-[14px] flex items-center gap-1.5">Ghim lên đầu <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500 text-white font-bold">PRO</span></div>
+                          <div className="text-[12px] text-zinc-500 mt-0.5 leading-snug">Hiển thị ưu tiên • Gấp 5x lượt xem • 24h đầu</div>
+                        </div>
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border-2 grid place-items-center transition-all ${form.featured? "border-amber-500 bg-amber-500" : "border-zinc-300 dark:border-zinc-600"}`}>{form.featured && <FiCheck size={10} className="text-white" strokeWidth={3} />}</div>
+                    </div>
+                    {form.featured && <div className="mt-3 pt-3 border-t border-amber-200 dark:border-amber-900/50 flex items-center justify-between"><span className="text-[12px] text-amber-700 dark:text-amber-400">Phí dịch vụ</span><span className="text-[14px] font-semibold text-amber-600">+50.000đ</span></div>}
+                  </button>
+
+                  {/* Price Summary */}
+                  {basePrice > 0 && (
+                    <div className="bg-zinc-900 dark:bg-white text-white dark:text-black rounded-[20px] p-4">
+                      <div className="flex items-baseline justify-between">
+                        <div>
+                          <div className="text-[11px] opacity-60 uppercase tracking-wide font-medium">Tổng thanh toán</div>
+                          <div className="flex items-baseline gap-1 mt-1">
+                            <span className="text-[28px] font-bold tracking-tight leading-none">{totalPrice.toLocaleString()}</span>
+                            <span className="text-[14px] opacity-70">đ</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-[11px] opacity-60">Bao gồm</div>
+                          <div className="text-[12px] font-medium mt-0.5">Phí dịch vụ 5%</div>
+                        </div>
+                      </div>
+                      {(urgencyFee > 0 || featuredFee > 0) && (
+                        <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5">
+                          <div className="flex justify-between text-[12px] opacity-70"><span>Giá gốc</span><span>{basePrice.toLocaleString()}đ</span></div>
+                          {urgencyFee > 0 && <div className="flex justify-between text-[12px] opacity-70"><span>Phí ưu tiên ({urgencyLevel.bonus}%)</span><span>+{urgencyFee.toLocaleString()}đ</span></div>}
+                          {featuredFee > 0 && <div className="flex justify-between text-[12px] opacity-70"><span>Ghim PRO</span><span>+{featuredFee.toLocaleString()}đ</span></div>}
+                        </div>
+                      )}
                     </div>
                   )}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Budget */}
-          <div className="bg-white dark:bg-zinc-900 rounded-[12px] p-4">
-            <p className="text-[13px] font-medium text-[#8e8e93] uppercase tracking-wider mb-3">Ngân sách</p>
-            
-            <div className="flex gap-1.5 p-1 bg-[#f2f2f7] dark:bg-black rounded-[8px] mb-3">
-              {[
-                { id: "fixed", name: "Cố định" },
-                { id: "hourly", name: "Theo giờ" },
-                { id: "negotiable", name: "Thương lượng" },
-              ].map((type) => (
-                <button
-                  key={type.id}
-                  type="button"
-                  onClick={() => setForm({...form, budgetType: type.id as any })}
-                  className={`flex-1 py-1.5 rounded-[6px] text-[13px] font-medium transition-all ${
-                    form.budgetType === type.id
-                      ? "bg-white dark:bg-zinc-800 shadow-sm"
-                      : "text-[#8e8e93]"
-                  }`}
-                >
-                  {type.name}
-                </button>
-              ))}
-            </div>
-
-            {form.budgetType !== "negotiable" && (
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Giá"
-                    value={form.price}
-                    onChange={(e) => {
-                      setForm({...form, price: formatCurrency(e.target.value) });
-                      if (errors.price) setErrors({...errors, price: "" });
-                    }}
-                    className="w-full h-[44px] px-3 bg-[#f2f2f7] dark:bg-black rounded-[10px] text-[17px] font-[450] outline-none focus:ring-2 focus:ring-[#0a84ff]/20"
-                  />
-                  {errors.price && <p className="text-[11px] text-[#ff3b30] mt-1">{errors.price}</p>}
-                  {!errors.price && <p className="text-[11px] text-[#8e8e93] mt-1">VND</p>}
-                </div>
-                <div>
-                  <div className="relative">
-                    <FiUsers className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8e8e93]" size={16} />
-                    <input
-                      type="number"
-                      placeholder="Số người"
-                      value={form.totalSlots}
-                      onChange={(e) => {
-                        setForm({...form, totalSlots: e.target.value });
-                        if (errors.totalSlots) setErrors({...errors, totalSlots: "" });
-                      }}
-                      className="w-full h-[44px] pl-9 pr-3 bg-[#f2f2f7] dark:bg-black rounded-[10px] text-[17px] font-[450] outline-none focus:ring-2 focus:ring-[#0a84ff]/20"
-                    />
-                  </div>
-                  {errors.totalSlots && <p className="text-[11px] text-[#ff3b30] mt-1">{errors.totalSlots}</p>}
-                  {!errors.totalSlots && <p className="text-[11px] text-[#8e8e93] mt-1">Người cần</p>}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Time */}
-          <div className="bg-white dark:bg-zinc-900 rounded-[12px] p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <FiClock className="text-[#8e8e93]" size={14} />
-              <p className="text-[13px] font-medium text-[#8e8e93] uppercase tracking-wider">Thời gian</p>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <p className="text-[12px] text-[#8e8e93] mb-1.5 flex items-center gap-1">
-                  <FiCalendar size={12} /> Bắt đầu
-                </p>
-                <input
-                  type="datetime-local"
-                  value={form.startDate}
-                  onChange={(e) => setForm({...form, startDate: e.target.value })}
-                  className="w-full h-[40px] px-3 bg-[#f2f2f7] dark:bg-black rounded-[8px] text-[14px] outline-none"
-                />
-              </div>
-              <div>
-                <p className="text-[12px] text-[#8e8e93] mb-1.5 flex items-center gap-1">
-                  <FiClock size={12} /> Kết thúc
-                </p>
-                <input
-                  type="datetime-local"
-                  value={form.endDate}
-                  onChange={(e) => setForm({...form, endDate: e.target.value })}
-                  className="w-full h-[40px] px-3 bg-[#f2f2f7] dark:bg-black rounded-[8px] text-[14px] outline-none"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Location */}
-          <div className="bg-white dark:bg-zinc-900 rounded-[12px] p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <FiMapPin className="text-[#8e8e93]" size={14} />
-                <p className="text-[13px] font-medium text-[#8e8e93] uppercase tracking-wider">Địa điểm</p>
-              </div>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <span className="text-[13px]">Làm từ xa</span>
-                <button
-                  type="button"
-                  onClick={() => setForm({...form, isRemote: !form.isRemote})}
-                  className={`relative w-[44px] h-[26px] rounded-full transition-colors ${form.isRemote ? "bg-[#0a84ff]" : "bg-[#e5e5ea] dark:bg-zinc-700"}`}
-                >
-                  <div className={`absolute top-[2px] w-[22px] h-[22px] bg-white rounded-full shadow-md transition-transform ${form.isRemote ? "translate-x-[20px]" : "translate-x-[2px]"}`} />
-                </button>
-              </label>
-            </div>
-            
-            {!form.isRemote && (
-              <div className="space-y-2.5">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Địa chỉ cụ thể"
-                    value={form.address}
-                    onChange={(e) => {
-                      setForm({...form, address: e.target.value });
-                      if (errors.address) setErrors({...errors, address: "" });
-                    }}
-                    className="flex-1 h-[40px] px-3 bg-[#f2f2f7] dark:bg-black rounded-[8px] text-[15px] outline-none focus:ring-2 focus:ring-[#0a84ff]/20"
-                  />
-                  <button type="button" onClick={getCurrentLocation} className="w-[40px] h-[40px] bg-[#f2f2f7] dark:bg-black rounded-[8px] flex items-center justify-center active:scale-95">
-                    <FiNavigation size={18} className="text-[#0a84ff]" />
-                  </button>
-                </div>
-                <input
-                  type="text"
-                  placeholder="Thành phố"
-                  value={form.city}
-                  onChange={(e) => setForm({...form, city: e.target.value })}
-                  className="w-full h-[40px] px-3 bg-[#f2f2f7] dark:bg-black rounded-[8px] text-[15px] outline-none focus:ring-2 focus:ring-[#0a84ff]/20"
-                />
-                {errors.address && <p className="text-[12px] text-[#ff3b30]">{errors.address}</p>}
-              </div>
-            )}
-          </div>
-
-          {/* Requirements */}
-          <div className="bg-white dark:bg-zinc-900 rounded-[12px] p-4">
-            <div className="flex items-center gap-2 mb-2.5">
-              <FiFileText className="text-[#8e8e93]" size={14} />
-              <p className="text-[13px] font-medium text-[#8e8e93] uppercase tracking-wider">Yêu cầu</p>
-              <span className="text-[11px] text-[#8e8e93]">(không bắt buộc)</span>
-            </div>
-            <textarea
-              placeholder="Kỹ năng cần có, kinh nghiệm..."
-              value={form.requirements}
-              onChange={(e) => setForm({...form, requirements: e.target.value })}
-              rows={3}
-              className="w-full bg-[#f2f2f7] dark:bg-black rounded-[8px] px-3 py-2.5 text-[15px] outline-none resize-none placeholder-[#c7c7cc]"
-              maxLength={1000}
-            />
-          </div>
-
-          {/* Tags */}
-          <div className="bg-white dark:bg-zinc-900 rounded-[12px] p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <FiTag className="text-[#8e8e93]" size={14} />
-              <p className="text-[13px] font-medium text-[#8e8e93] uppercase tracking-wider">Tags</p>
-            </div>
-            
-            <div className="flex flex-wrap gap-1.5 mb-3 min-h-[28px]">
-              <AnimatePresence>
-                {displayTags.map((tag) => (
-                  <motion.div
-                    key={tag}
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0, opacity: 0 }}
-                    className="flex items-center gap-1 pl-2.5 pr-1 py-1 bg-[#0a84ff]/10 dark:bg-[#0a84ff]/20 text-[#0a84ff] rounded-full"
-                  >
-                    <span className="text-[13px]">{tag}</span>
-                    <button type="button" onClick={() => removeTag(tag)} className="w-4 h-4 flex items-center justify-center hover:bg-black/10 rounded-full">
-                      <FiX size={12} />
-                    </button>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-              {!showAllTags && hiddenCount > 0 && (
-                <button type="button" onClick={() => setShowAllTags(true)} className="px-2.5 py-1 bg-[#f2f2f7] dark:bg-black text-[#8e8e93] rounded-full text-[13px]">
-                  +{hiddenCount}
-                </button>
+                </motion.div>
               )}
-            </div>
-            
-            <div className="flex gap-2 mb-2.5">
-              <input
-                ref={tagInputRef}
-                type="text"
-                placeholder="Thêm tag..."
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
-                className="flex-1 h-[36px] px-3 bg-[#f2f2f7] dark:bg-black rounded-[8px] text-[14px] outline-none"
-              />
-              <button type="button" onClick={addTag} className="px-4 h-[36px] bg-[#0a84ff] text-white rounded-[8px] text-[14px] font-medium active:scale-95">Thêm</button>
-            </div>
-            
-            <div className="flex flex-wrap gap-1.5">
-              {HOT_TAGS.filter(t => !form.tags.includes(t)).map(t => (
-                <button key={t} type="button" onClick={() => setForm({...form, tags: [...form.tags, t]})} className="px-2.5 py-1 bg-[#f2f2f7] dark:bg-black rounded-full text-[12px] text-[#8e8e93] active:scale-95">
-                  + {t}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Visibility & Images */}
-          <div className="bg-white dark:bg-zinc-900 rounded-[12px] p-4 space-y-4">
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <FiEye className="text-[#8e8e93]" size={14} />
-                <p className="text-[13px] font-medium text-[#8e8e93] uppercase tracking-wider">Quyền riêng tư</p>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: "public", name: "Công khai", icon: FiUsers },
-                  { id: "friends", name: "Bạn bè", icon: FiUsers },
-                  { id: "private", name: "Riêng tư", icon: FiEyeOff },
-                ].map((vis) => (
-                  <button
-                    key={vis.id}
-                    type="button"
-                    onClick={() => setForm({...form, visibility: vis.id as any })}
-                    className={`py-2.5 rounded-[8px] border-2 transition-all ${
-                      form.visibility === vis.id
-                        ? "border-[#0a84ff] bg-[#0a84ff]/5"
-                        : "border-[#f2f2f7] dark:border-zinc-800 bg-[#f2f2f7] dark:bg-black"
-                    }`}
-                  >
-                    <vis.icon className={`mx-auto mb-1 ${form.visibility === vis.id ? "text-[#0a84ff]" : "text-[#8e8e93]"}`} size={18} />
-                    <div className="text-[12px] font-medium">{vis.name}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="h-px bg-black/[0.06] dark:bg-white/[0.06]" />
-
-            <div>
-              <p className="text-[13px] font-medium text-[#8e8e93] uppercase tracking-wider mb-3">Ảnh ({form.images.length}/5)</p>
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-                {form.images.map((url, i) => (
-                  <div key={i} className="relative w-[80px] h-[80px] rounded-[10px] overflow-hidden bg-[#f2f2f7] dark:bg-black shrink-0">
-                    <img src={url} alt="" className="w-full h-full object-cover" />
-                    <button type="button" onClick={() => removeImage(i)} className="absolute top-1 right-1 w-5 h-5 bg-black/70 backdrop-blur rounded-full flex items-center justify-center">
-                      <FiX size={12} className="text-white" />
-                    </button>
-                  </div>
-                ))}
-                {form.images.length < 5 && (
-                  <label className="w-[80px] h-[80px] rounded-[10px] border-2 border-dashed border-[#c7c7cc] dark:border-zinc-700 flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 shrink-0 hover:border-[#0a84ff]/50 transition-colors">
-                    <FiUpload size={20} className="text-[#8e8e93]" />
-                    <span className="text-[10px] text-[#8e8e93]">Thêm</span>
-                    <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
-                  </label>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Preview */}
-          <div className="bg-white dark:bg-zinc-900 rounded-[12px] p-3.5 border border-[#0a84ff]/20">
-            <p className="text-[11px] font-medium text-[#0a84ff] uppercase tracking-wider mb-2.5">Xem trước</p>
-            <div className="flex gap-3">
-              {form.images[0] ? (
-                <img src={form.images[0]} alt="" className="w-16 h-16 rounded-[8px] object-cover shrink-0" />
-              ) : (
-                <div className="w-16 h-16 rounded-[8px] bg-[#f2f2f7] dark:bg-black flex items-center justify-center shrink-0">
-                  <span className="text-[24px]">{selectedCategory?.icon}</span>
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <h4 className="text-[15px] font-[550] leading-[20px] line-clamp-1">{form.title || "Tiêu đề công việc"}</h4>
-                <p className="text-[13px] text-[#8e8e93] leading-[18px] line-clamp-2 mt-0.5">{form.description || "Mô tả sẽ hiện ở đây..."}</p>
-                <div className="flex items-center gap-2 mt-1.5">
-                  <span className="text-[14px] font-semibold text-[#0a84ff]">
-                    {form.budgetType === "negotiable" ? "Thương lượng" : form.price ? `${form.price}đ` : "0đ"}
-                  </span>
-                  <span className="w-1 h-1 bg-[#c7c7cc] rounded-full" />
-                  <span className="text-[12px] text-[#8e8e93] truncate">{form.isRemote ? "Từ xa" : form.city || form.address || "Chưa có địa điểm"}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </form>
+            </AnimatePresence>
+          </motion.div>
+        </div>
 
         {/* Bottom Bar */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-black/80 backdrop-blur-2xl border-t border-black/[0.08] dark:border-white/[0.08]">
-          <div className="max-w-[640px] mx-auto px-4 py-3 pb-[calc(12px+env(safe-area-inset-bottom))]">
-            <button
-              onClick={handleSubmit}
-              disabled={submitting || !form.title || !form.description}
-              className="w-full h-[44px] bg-[#0a84ff] hover:bg-[#007aff] active:bg-[#0051d5] text-white rounded-[10px] font-semibold text-[17px] transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
-            >
-              {uploadingImage ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Đang tải ảnh...
-                </span>
-              ) : submitting ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Đang đăng...
-                </span>
-              ) : (
-                "Đăng công việc"
-              )}
-            </button>
+        <div className="fixed bottom-0 inset-x-0 z-30 backdrop-blur-2xl bg-white/80 dark:bg-black/80 border-t border-zinc-200/50 dark:border-zinc-800/50">
+          <div className="max-w-[680px] mx-auto px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+            <div className="flex items-center gap-2.5">
+              {step > 1 && <button onClick={() => setStep(s => s - 1)} className="h-11 px-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-medium text-[14px] active:scale-95 transition-all hover:bg-zinc-200 dark:hover:bg-zinc-700">Quay lại</button>}
+              <button onClick={() => step < 3? setStep(s => s + 1) : submit()} disabled={!canNext || submitting} className="flex-1 h-11 rounded-2xl bg-[#0a84ff] hover:bg-[#0071e3] active:bg-[#0066cc] text-white font-semibold text-[15px] disabled:opacity-30 flex items-center justify-center gap-1.5 shadow-lg shadow-[#0a84ff]/20 active:scale-[0.98] transition-all">
+                {submitting? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Đang đăng...</> : step < 3? <>Tiếp tục<FiChevronRight size={16} /></> : <>Đăng công việc<FiZap size={14} /></>}
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Templates Modal */}
+        <AnimatePresence>
+          {showTemplates && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center p-3" onClick={() => setShowTemplates(false)}>
+              <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }} onClick={e => e.stopPropagation()} className="w-full max-w-[480px] bg-white dark:bg-zinc-900 rounded-[28px] p-5 max-h-[75vh] overflow-auto shadow-2xl">
+                <div className="w-9 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mb-4" />
+                <h3 className="text-[20px] font-bold">Mẫu có sẵn</h3>
+                <p className="text-[13px] text-zinc-500 mt-0.5 mb-4">Chọn để bắt đầu nhanh</p>
+                <div className="grid gap-2.5">
+                  {TEMPLATES.map(t => (
+                    <button key={t.name} onClick={() => useTemplate(t)} className="group w-full p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-3 text-left transition-all active:scale-[0.98]">
+                      <div className="w-11 h-11 rounded-xl bg-white dark:bg-zinc-900 shadow-sm grid place-items-center text-[20px] group-hover:scale-110 transition-transform">{t.icon}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-[14px]">{t.name}</div>
+                        <div className="text-[12px] text-zinc-500 truncate">{t.title}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[13px] font-semibold text-[#0a84ff]">{t.price}</div>
+                        <div className="text-[10px] text-zinc-400">{t.tags[0]}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      <style jsx global>{`
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-      `}</style>
+      <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}*{ -webkit-tap-highlight-color: transparent; }`}</style>
     </>
   );
 }
