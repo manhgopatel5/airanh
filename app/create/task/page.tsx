@@ -259,9 +259,24 @@ const CATEGORIES = [
   }
 ];
 const URGENCY = [
-  { id: "normal", name: "Thường", time: "3-7 ngày", bonus: 0, color: "emerald" },
-  { id: "urgent", name: "Gấp", time: "24-48h", bonus: 25, color: "amber" },
-  { id: "express", name: "Hỏa tốc", time: "< 12h", bonus: 60, color: "red" },
+  {
+    id: "once",
+    name: "Một lần",
+    time: "Job đơn lẻ",
+    color: "emerald",
+  },
+  {
+    id: "weekly",
+    name: "Theo tuần",
+    time: "Lặp định kỳ",
+    color: "amber",
+  },
+  {
+    id: "ongoing",
+    name: "Liên tục",
+    time: "Cần thường xuyên",
+    color: "red",
+  },
 ];
 
 const TEMPLATES = [
@@ -298,10 +313,10 @@ export default function CreateTaskProMax() {
     category: "other", tags: [] as string[], images: [] as string[],
     address: "", city: "Hồ Chí Minh", lat: null as number | null, lng: null as number | null,
     visibility: "public", budgetType: "fixed", isRemote: true, requirements: "",
-    urgency: "normal", skillLevel: 2, revisions: 3, milestones: true,
+    urgency: "once", milestones: true,
     autoMatch: true, allowBids: false, featured: false, privateNotes: "",
     invites: [] as string[], pollPrice: false, needApproval: true,
-    nda: false, warranty: 7, attachments: [] as File[], recurring: "once",
+    nda: false, attachments: [] as File[], recurring: "once",
     languages: ["Tiếng Việt"], timezone: "Asia/Ho_Chi_Minh",
   });
 
@@ -311,7 +326,7 @@ export default function CreateTaskProMax() {
   const urgencyLevel = URGENCY.find(u => u.id === form.urgency)!;
   const progress = (step / 3) * 100;
   const basePrice = parseInt(form.price.replace(/\./g, "") || "0");
-  const urgencyFee = Math.round(basePrice * urgencyLevel.bonus / 100);
+  const urgencyFee = 0;
   const featuredFee = form.featured ? 50000 : 0;
   const serviceFee = Math.round((basePrice + urgencyFee) * 0.05);
   const totalPrice = basePrice + urgencyFee + featuredFee + serviceFee;
@@ -410,8 +425,8 @@ export default function CreateTaskProMax() {
         isRemote: form.isRemote,
         location: form.isRemote ? {} : { address: form.address, city: form.city, lat: form.lat, lng: form.lng },
         urgency: form.urgency,
-        skillLevel: form.skillLevel,
-        revisions: form.revisions,
+      
+        
         milestones: form.milestones,
         autoMatch: form.autoMatch,
         allowBids: form.allowBids,
@@ -487,12 +502,13 @@ export default function CreateTaskProMax() {
     </div>
 
  <div className="space-y-3">
-  <div className="flex items-center gap-3">
-    <div className="w-9 h-9 rounded-xl grid place-items-center shrink-0" style={{ backgroundColor: `${category.color}15` }}>
-      <span className="text-[18px]">{category.icon}</span>
-    </div>
-    <input value={form.title} onChange={e => setForm({...form, title: e.target.value.slice(0, 100) })} placeholder="Bạn cần làm gì?" className="flex-1 h-11 px-3 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 text-[15px] font-medium outline-none placeholder:text-zinc-400" autoFocus />
-    <span className={`text-[14px] tabular-nums ${form.title.length >= 10? 'text-[#0a84ff]' : 'text-zinc-400'}`}>{form.title.length}/100</span>
+<div className="flex items-center gap-2">
+    <input value={form.title} onChange={e => setForm({...form, title: e.target.value.slice(0, 100) })} placeholder="Bạn cần làm gì?" className="w-full h-11 px-3 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 text-[15px] font-medium outline-none placeholder:text-zinc-400" autoFocus />
+    {form.title.length < 10 && (
+  <span className="text-[13px] text-red-500 tabular-nums shrink-0">
+    {form.title.length}/10
+  </span>
+)}
   </div>
 <div className="flex gap-1.5 flex-wrap">
   {category.suggestions.map(item => (
@@ -532,9 +548,11 @@ export default function CreateTaskProMax() {
         </button>
       ))}
     </div>
-    <span className={`text-[12px] tabular-nums ml-2 shrink-0 ${form.description.length >= 20? 'text-[#0a84ff]' : 'text-zinc-400'}`}>
-      {form.description.length}/2000
-    </span>
+{form.description.length < 20 && (
+  <span className="text-[12px] text-red-500 tabular-nums ml-2 shrink-0">
+    {form.description.length}/20
+  </span>
+)}
   </div>
 </div>
   </motion.div>
@@ -542,100 +560,301 @@ export default function CreateTaskProMax() {
 )}
 
 {step === 2 && (
-                <motion.div key="s2" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }} className="p-4 space-y-3">
-                  <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-xl bg-[#0a84ff]/10 grid place-items-center"><FiDollarSign size={16} className="text-[#0a84ff]" /></div>
-                        <span className="font-medium text-[15px]">Ngân sách</span>
-                      </div>
-                      <div className="flex bg-[#F2F2F7] dark:bg-zinc-800 p-0.5 rounded-lg">
-                        {["fixed", "hourly", "negotiable"].map((t, i) => (
-                          <button key={t} onClick={() => setForm({...form, budgetType: t as any })} className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-all active:scale-95 ${form.budgetType === t ? "bg-white dark:bg-zinc-700 shadow-sm" : "text-zinc-500"}`}>{["Cố định", "Theo giờ", "Thỏa thuận"][i]}</button>
-                        ))}
-                      </div>
-                    </div>
+  <motion.div
+    key="s2"
+    initial={{ opacity: 0, x: 16 }}
+    animate={{ opacity: 1, x: 0 }}
+    exit={{ opacity: 0, x: -16 }}
+    transition={{ duration: 0.2 }}
+    className="p-4 space-y-3"
+  >
+    <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-[#0a84ff]/10 grid place-items-center">
+            <span className="text-[11px] font-bold tracking-tight text-[#0a84ff]">
+              VNĐ
+            </span>
+          </div>
 
-                    {form.budgetType !== "negotiable" ? (
-                      <>
-                        <div className="relative">
-                          <input type="text" inputMode="numeric" value={form.price} onChange={e => setForm({...form, price: e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ".") })} placeholder="0" className="w-full h-[52px] pl-4 pr-14 bg-[#F2F2F7] dark:bg-zinc-800 rounded-2xl outline-none focus:ring-2 focus:ring-[#0a84ff]/20 text-[24px] font-semibold tracking-tight transition-all tabular-nums" />
-                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[14px] font-medium text-zinc-400">VND</span>
-                        </div>
-                 <div className="flex items-center gap-2 mt-3">
-  <span className="text-[14px] text-zinc-500">Số người:</span>
-  <div className="flex items-center gap-2 bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg p-0.5">
-    <button onClick={() => setForm({...form, totalSlots: Math.max(1, parseInt(form.totalSlots) - 1).toString() })} className="w-7 h-7 grid place-items-center rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-600 active:scale-95">−</button>
-    <span className="w-8 text-center text-[14px] font-medium tabular-nums">{form.totalSlots}</span>
-    <button onClick={() => setForm({...form, totalSlots: Math.min(20, parseInt(form.totalSlots) + 1).toString() })} className="w-7 h-7 grid place-items-center rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-600 active:scale-95">+</button>
-  </div>
-</div>
-                      </>
-                    ) : (
-                      <div className="h-[52px] grid place-items-center bg-[#F2F2F7] dark:bg-zinc-800 rounded-2xl text-zinc-500 text-[15px]">Sẽ thỏa thuận sau</div>
-                    )}
-                  </div>
+          <span className="font-medium text-[15px]">Ngân sách</span>
+        </div>
 
-                  <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-xl bg-amber-500/10 grid place-items-center"><FiZap size={16} className="text-amber-600" /></div>
-                      <span className="font-medium text-[15px]">Độ ưu tiên</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2.5">
-     {URGENCY.map(u => (
-  <button key={u.id} onClick={() => setForm({...form, urgency: u.id })} className={`relative p-3 rounded-2xl border text-left transition-all active:scale-95 ${form.urgency === u.id ? "border-[#0a84ff] bg-[#0a84ff]/5" : "border-[#E5E5EA] dark:border-zinc-800 bg-[#F2F2F7]/50 dark:bg-zinc-800/30"}`}>
-    <div className={`text-[13px] font-semibold ${form.urgency === u.id ? "text-[#0a84ff]" : "text-zinc-700 dark:text-zinc-300"}`}>{u.name}</div>
-    <div className="text-[13px] text-zinc-500 mt-0.5">{u.time}</div>
-    {u.bonus > 0 && <div className={`text-[13px] font-medium mt-1 tabular-nums ${form.urgency === u.id ? "text-[#0a84ff]" : "text-zinc-500"}`}>+{u.bonus}%</div>}
-  </button>
-))}
-                    </div>
-                  </div>
+        <div className="flex bg-[#F2F2F7] dark:bg-zinc-800 p-0.5 rounded-lg">
+          {["fixed", "hourly", "negotiable"].map((t, i) => (
+            <button
+              key={t}
+              onClick={() => setForm({ ...form, budgetType: t as any })}
+              className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-all active:scale-95 ${
+                form.budgetType === t
+                  ? "bg-white dark:bg-zinc-700 shadow-sm"
+                  : "text-zinc-500"
+              }`}
+            >
+              {["Cố định", "Theo giờ", "Thỏa thuận"][i]}
+            </button>
+          ))}
+        </div>
+      </div>
 
-                  <div className="space-y-3">
-                    <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <FiCalendar size={16} className="text-zinc-400" />
-                        <span className="text-[14px] font-medium text-zinc-600 dark:text-zinc-400">Thời gian thực hiện</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <div className="text-[12px] text-zinc-500 mb-1.5">Bắt đầu</div>
-                          <input type="datetime-local" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value })} className="w-full h-10 px-3 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl outline-none text-[14px] font-medium border border-[#E5E5EA] dark:border-zinc-800 focus:border-[#0a84ff] focus:ring-2 focus:ring-[#0a84ff]/20 transition-all" />
-                        </div>
-                        <div>
-                          <div className="text-[12px] text-zinc-500 mb-1.5">Kết thúc</div>
-                          <input type="datetime-local" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value })} className="w-full h-10 px-3 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl outline-none text-[14px] font-medium border border-[#E5E5EA] dark:border-zinc-800 focus:border-[#0a84ff] focus:ring-2 focus:ring-[#0a84ff]/20 transition-all" />
-                        </div>
-                      </div>
-                    </div>
+      {form.budgetType !== "negotiable" ? (
+        <>
+          <div className="relative">
+            <input
+              type="text"
+              inputMode="numeric"
+              value={form.price}
+              onChange={e =>
+                setForm({
+                  ...form,
+                  price: e.target.value
+                    .replace(/\D/g, "")
+                    .replace(/\B(?=(\d{3})+(?!\d))/g, "."),
+                })
+              }
+              placeholder="0"
+              className="w-full h-[52px] pl-4 pr-14 bg-[#F2F2F7] dark:bg-zinc-800 rounded-2xl outline-none focus:ring-2 focus:ring-[#0a84ff]/20 text-[24px] font-semibold tracking-tight transition-all tabular-nums"
+            />
 
-                    <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <FiMapPin size={16} className="text-zinc-400" />
-                          <span className="text-[14px] font-medium text-zinc-600 dark:text-zinc-400">Địa điểm</span>
-                        </div>
-                        <button onClick={() => setForm({...form, isRemote: !form.isRemote })} className={`relative w-11 h-[26px] rounded-full transition-colors ${form.isRemote ? "bg-[#0a84ff]" : "bg-zinc-300 dark:bg-zinc-700"}`}>
-                          <div className={`absolute top-0.5 w-[22px] h-[22px] bg-white rounded-full shadow-sm transition-transform ${form.isRemote ? "translate-x-[20px]" : "translate-x-0.5"}`} />
-                        </button>
-                      </div>
-                      {form.isRemote ? (
-                        <div className="h-10 px-3 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl flex items-center gap-2 text-[14px] text-zinc-600 dark:text-zinc-400">
-                          <FiGlobe size={15} /> Làm việc từ xa
-                        </div>
-                      ) : (
-                        <div className="flex gap-2">
-                          <input value={form.address} onChange={e => setForm({...form, address: e.target.value })} placeholder="Nhập địa chỉ..." className="flex-1 h-10 px-3 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl outline-none text-[14px] border border-[#E5E5EA] dark:border-zinc-800 focus:border-[#0a84ff] focus:ring-2 focus:ring-[#0a84ff]/20 transition-all" />
-                          <button onClick={handleGetLocation} className="w-10 h-10 grid place-items-center bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl active:scale-95 transition-all">
-                            <FiNavigation size={15} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[14px] font-medium text-zinc-400">
+              VND
+            </span>
+          </div>
+
+          <div className="flex items-center gap-4 mt-3 flex-wrap">
+
+            <div className="flex items-center gap-2">
+              <span className="text-[14px] text-zinc-500">
+                Số người:
+              </span>
+
+              <div className="flex items-center gap-2 bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg p-0.5">
+                <button
+                  onClick={() =>
+                    setForm({
+                      ...form,
+                      totalSlots: Math.max(
+                        1,
+                        parseInt(form.totalSlots) - 1
+                      ).toString(),
+                    })
+                  }
+                  className="w-7 h-7 grid place-items-center rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-600 active:scale-95"
+                >
+                  −
+                </button>
+
+                <span className="w-8 text-center text-[14px] font-medium tabular-nums">
+                  {form.totalSlots}
+                </span>
+
+                <button
+                  onClick={() =>
+                    setForm({
+                      ...form,
+                      totalSlots: Math.min(
+                        20,
+                        parseInt(form.totalSlots) + 1
+                      ).toString(),
+                    })
+                  }
+                  className="w-7 h-7 grid place-items-center rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-600 active:scale-95"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            {form.budgetType === "hourly" && (
+              <div className="flex items-center gap-2">
+                <span className="text-[14px] text-zinc-500">
+                  Số giờ:
+                </span>
+
+                <div className="flex items-center gap-2 bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg p-0.5">
+                  <button
+                    onClick={() =>
+                      setForm({
+                        ...form,
+                        hours: Math.max(1, (form as any).hours - 1),
+                      })
+                    }
+                    className="w-7 h-7 grid place-items-center rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-600 active:scale-95"
+                  >
+                    −
+                  </button>
+
+                  <span className="w-8 text-center text-[14px] font-medium tabular-nums">
+                    {(form as any).hours || 1}
+                  </span>
+
+                  <button
+                    onClick={() =>
+                      setForm({
+                        ...form,
+                        hours: Math.min(24, ((form as any).hours || 1) + 1),
+                      })
+                    }
+                    className="w-7 h-7 grid place-items-center rounded-md hover:bg-white dark:hover:bg-zinc-700 text-zinc-600 active:scale-95"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="h-[52px] grid place-items-center bg-[#F2F2F7] dark:bg-zinc-800 rounded-2xl text-zinc-500 text-[15px]">
+          Sẽ thỏa thuận sau
+        </div>
+      )}
+    </div>
+
+    <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-8 h-8 rounded-xl bg-amber-500/10 grid place-items-center">
+          <FiZap size={16} className="text-amber-600" />
+        </div>
+
+<span className="font-medium text-[15px]">
+  Tần suất công việc
+</span>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2.5">
+        {URGENCY.map(u => (
+          <button
+            key={u.id}
+            onClick={() => setForm({ ...form, urgency: u.id })}
+            className={`relative p-3 rounded-2xl border text-left transition-all active:scale-95 ${
+              form.urgency === u.id
+                ? "border-[#0a84ff] bg-[#0a84ff]/5"
+                : "border-[#E5E5EA] dark:border-zinc-800 bg-[#F2F2F7]/50 dark:bg-zinc-800/30"
+            }`}
+          >
+            <div
+              className={`text-[13px] font-semibold ${
+                form.urgency === u.id
+                  ? "text-[#0a84ff]"
+                  : "text-zinc-700 dark:text-zinc-300"
+              }`}
+            >
+              {u.name}
+            </div>
+
+            <div className="text-[13px] text-zinc-500 mt-0.5">
+              {u.time}
+            </div>
+
+
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <div className="space-y-3">
+
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <FiCalendar size={16} className="text-zinc-400" />
+
+          <span className="text-[14px] font-medium text-zinc-600 dark:text-zinc-400">
+            Thời gian thực hiện
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <div className="text-[12px] text-zinc-500 mb-1.5">
+              Bắt đầu
+            </div>
+
+            <input
+              type="datetime-local"
+              value={form.startDate}
+              onChange={e =>
+                setForm({ ...form, startDate: e.target.value })
+              }
+              className="w-full h-10 px-3 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl outline-none text-[14px] font-medium border border-[#E5E5EA] dark:border-zinc-800 focus:border-[#0a84ff] focus:ring-2 focus:ring-[#0a84ff]/20 transition-all"
+            />
+          </div>
+
+          <div>
+            <div className="text-[12px] text-zinc-500 mb-1.5">
+              Kết thúc
+            </div>
+
+            <input
+              type="datetime-local"
+              value={form.endDate}
+              onChange={e =>
+                setForm({ ...form, endDate: e.target.value })
+              }
+              className="w-full h-10 px-3 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl outline-none text-[14px] font-medium border border-[#E5E5EA] dark:border-zinc-800 focus:border-[#0a84ff] focus:ring-2 focus:ring-[#0a84ff]/20 transition-all"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <FiMapPin size={16} className="text-zinc-400" />
+
+            <span className="text-[14px] font-medium text-zinc-600 dark:text-zinc-400">
+              Địa điểm
+            </span>
+          </div>
+
+          <button
+            onClick={() =>
+              setForm({ ...form, isRemote: !form.isRemote })
+            }
+            className={`relative w-11 h-[26px] rounded-full transition-colors ${
+              form.isRemote
+                ? "bg-[#0a84ff]"
+                : "bg-zinc-300 dark:bg-zinc-700"
+            }`}
+          >
+            <div
+              className={`absolute top-0.5 w-[22px] h-[22px] bg-white rounded-full shadow-sm transition-transform ${
+                form.isRemote
+                  ? "translate-x-[20px]"
+                  : "translate-x-0.5"
+              }`}
+            />
+          </button>
+        </div>
+
+        {form.isRemote ? (
+          <div className="h-10 px-3 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl flex items-center gap-2 text-[14px] text-zinc-600 dark:text-zinc-400">
+            <FiGlobe size={15} />
+            Làm việc từ xa
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <input
+              value={form.address}
+              onChange={e =>
+                setForm({ ...form, address: e.target.value })
+              }
+              placeholder="Nhập địa chỉ..."
+              className="flex-1 h-10 px-3 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl outline-none text-[14px] border border-[#E5E5EA] dark:border-zinc-800 focus:border-[#0a84ff] focus:ring-2 focus:ring-[#0a84ff]/20 transition-all"
+            />
+
+            <button
+              onClick={handleGetLocation}
+              className="w-10 h-10 grid place-items-center bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl active:scale-95 transition-all"
+            >
+              <FiNavigation size={15} />
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  </motion.div>
+)}
 
               {step === 3 && (
                 <motion.div key="s3" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.2 }} className="p-4 space-y-3">
@@ -646,7 +865,7 @@ export default function CreateTaskProMax() {
                       { k: "allowBids", icon: FiTrendingUp, label: "Đấu thầu", desc: "Nhận nhiều báo giá" },
                       { k: "needApproval", icon: FiUserCheck, label: "Duyệt tay", desc: "Chọn người làm" },
                       { k: "nda", icon: FiLock, label: "Bảo mật NDA", desc: "Ký thỏa thuận" },
-                      { k: "warranty", icon: FiShield, label: "Bảo hành", desc: "7-30 ngày" },
+                    
                     ].map(item => {
                       const Icon = item.icon;
                       const active = (form as any)[item.k];
@@ -661,25 +880,7 @@ export default function CreateTaskProMax() {
                     })}
                   </div>
 
-                  <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-[13px] text-zinc-500 mb-2">Cấp độ yêu cầu</div>
-                        <div className="flex gap-1">
-                          {[1, 2, 3, 4].map(l => (
-                            <button key={l} onClick={() => setForm({...form, skillLevel: l })} className={`flex-1 h-9 rounded-lg text-[13px] font-medium transition-all active:scale-95 ${form.skillLevel === l ? "bg-[#0a84ff] text-white shadow-sm" : "bg-[#F2F2F7] dark:bg-zinc-800 text-zinc-600 hover:bg-[#E5E5EA]"}`}>{["New", "TB", "Pro", "Exp"][l - 1]}</button>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[13px] text-zinc-500 mb-2">Số lần sửa</div>
-                        <div className="flex items-center gap-2">
-                          <input type="range" min="1" max="10" value={form.revisions} onChange={e => setForm({...form, revisions: parseInt(e.target.value) })} className="flex-1 h-1.5 accent-[#0a84ff]" />
-                          <span className="w-6 text-center text-[14px] font-medium tabular-nums">{form.revisions}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  
 
                   <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-4">
                     <div className="flex items-center justify-between mb-3">
