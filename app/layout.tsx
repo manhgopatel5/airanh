@@ -4,7 +4,6 @@ import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
 import { AuthProvider } from "@/lib/AuthContext";
 import EmailGuard from "@/components/EmailGuard";
-import SplashScreen from "@/components/SplashScreen";
 
 const inter = Inter({
   subsets: ["latin", "vietnamese"],
@@ -19,7 +18,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://airanh.com"),
   title: {
     default: "AIR",
-    template: "%s | AIR", // Sửa template luôn
+    template: "%s | AIR",
   },
   description: "Kết nối người cần việc và người tìm việc nhanh chóng, an toàn",
   keywords: ["social", "task", "freelance", "vietnam", "kết nối", "airanh", "việc làm tự do"],
@@ -49,7 +48,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "vi_VN",
     url: "https://airanh.com",
-    siteName: "AIR", // Đổi từ Airanh
+    siteName: "AIR",
     title: "AIR - Nền tảng việc làm tự do",
     description: "Kết nối người cần việc và người tìm việc nhanh chóng, an toàn",
     images: [
@@ -73,7 +72,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "AIR", // Cái này quan trọng nhất - tên dưới icon iOS
+    title: "AIR",
     startupImage: [
       {
         url: "/splash-1290x2796.PNG",
@@ -157,7 +156,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
       <body className="font-sans bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight">
-        <SplashScreen />
         <AuthProvider>
           <EmailGuard>
             <ClientLayout>{children}</ClientLayout>
