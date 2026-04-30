@@ -125,7 +125,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (!firebaseUser) {
           setUserData(null);
-          setLoading(false); // ✅ Tắt loading ngay khi chưa login
+          setLoading(false);
           return;
         }
 
@@ -191,14 +191,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             });
           }
 
-          // ✅ FIX: Tắt loading ngay sau khi có firebaseUser, không chờ onSnapshot
-          setLoading(false);
+          // FIX 1: BỎ setLoading(false) ở đây
+          // setLoading(false); ← XÓA DÒNG NÀY
 
-          // Snapshot chạy async
+          // Snapshot chạy async, setLoading(false) trong callback
           userDataUnsub.current = onSnapshot(userRef, (docSnap) => {
             if (docSnap.exists()) {
               setUserData(docSnap.data() as AppUser);
             }
+            setLoading(false); // FIX 2: CHỈ TẮT LOADING SAU KHI CÓ userData
+          }, (err) => {
+            console.error("Snapshot error:", err);
+            setError(err.message);
+            setLoading(false);
           });
 
           // Presence
