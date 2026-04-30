@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { sendEmailVerification } from "firebase/auth";
 import { toast } from "sonner";
-import { FiMail, FiLoader } from "react-icons/fi"; // ✅ Bỏ FiX
+import { FiMail, FiLoader } from "react-icons/fi";
 
 export default function EmailGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -15,6 +15,12 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
   const [showModal, setShowModal] = useState(false);
 
   const publicRoutes = ["/login", "/register", "/forgot-password", "/terms", "/privacy", "/verify-email"];
+
+  useEffect(() => {
+    if (!loading && !user && !publicRoutes.includes(pathname)) {
+      router.replace("/login");
+    }
+  }, [user, loading, pathname, router]);
 
   useEffect(() => {
     if (!loading && user && !user.emailVerified && !publicRoutes.includes(pathname)) {
@@ -43,8 +49,27 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
     router.push("/login");
   };
 
-  if (loading || publicRoutes.includes(pathname)) {
+  // FIX 1: Đang loading thì hiện màn hình trắng có logo, không render children
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-50 bg-white dark:bg-zinc-950 flex items-center justify-center">
+        <img src="/logo.png" alt="AIR" className="w-16 h-16 animate-pulse" />
+      </div>
+    );
+  }
+
+  // FIX 2: Trang public thì cho qua luôn
+  if (publicRoutes.includes(pathname)) {
     return <>{children}</>;
+  }
+
+  // FIX 3: Chưa login mà vào trang private → hiện logo chờ redirect, không render children
+  if (!user) {
+    return (
+      <div className="fixed inset-0 z-50 bg-white dark:bg-zinc-950 flex items-center justify-center">
+        <img src="/logo.png" alt="AIR" className="w-16 h-16 animate-pulse" />
+      </div>
+    );
   }
 
   return (
