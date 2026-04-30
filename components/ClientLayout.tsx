@@ -16,7 +16,6 @@ export default function ClientLayout({ children }: Props) {
   const router = useRouter();
   const { user, loading } = useAuth();
 
-  // ✅ THÊM /terms, /privacy vào đây
   const publicRoutes = ["/login", "/register", "/forgot-password", "/verify-email", "/terms", "/privacy"];
 
   const isPublic = useMemo(
@@ -30,43 +29,14 @@ export default function ClientLayout({ children }: Props) {
   /* ================= REDIRECT ================= */
   useEffect(() => {
     if (loading) return;
-
     if (!user &&!isPublic) {
       router.replace("/login");
-      return;
     }
-
-    // ✅ Bỏ redirect khi đã login vào public route
-    // Cho phép user đã login vẫn xem /terms, /privacy
-    // if (user && isPublic) {
-    // router.replace("/");
-    // return;
-    // }
   }, [user, loading, isPublic, router]);
 
   /* ================= LOADING ================= */
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900 font-sans">
-        <div className="max-w-2xl mx-auto p-4 space-y-4 pt-8">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="bg-white dark:bg-zinc-900 rounded-3xl p-4 animate-pulse border border-gray-100 dark:border-zinc-800"
-            >
-              <div className="flex gap-3">
-                <div className="w-10 h-10 bg-gray-200 dark:bg-zinc-800 rounded-full" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/3" />
-                  <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-2/3" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  // Bỏ skeleton, return null để không nháy sau splash
+  if (loading) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors font-sans">
