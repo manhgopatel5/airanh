@@ -69,7 +69,7 @@ export const metadata: Metadata = {
 
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default", // ← SỬA: từ "black-translucent" thành "default"
     title: "AIR",
     startupImage: [
       { url: "/splash-1290x2796.PNG", media: "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" },
@@ -103,12 +103,9 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#09090b" },
-  ],
-  colorScheme: "light dark",
+  viewportFit: "contain", // ← SỬA: từ "cover" thành "contain"
+  themeColor: "#ffffff", // ← SỬA: để đơn giản, bỏ mảng đi
+  colorScheme: "light",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
