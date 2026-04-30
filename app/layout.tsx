@@ -12,17 +12,15 @@ const inter = Inter({
   weight: ['400', '500', '600', '700', '800'],
 });
 
-// ĐÃ XÓA: export const dynamic = 'force-dynamic';
-
 export const metadata: Metadata = {
-  metadataBase: new URL("https://airanh.com"),
+  metadataBase: new URL("https://airanh.vercel.app"),
   title: {
     default: "AIR",
     template: "%s | AIR",
   },
   description: "Kết nối người cần việc và người tìm việc nhanh chóng, an toàn",
   keywords: ["social", "task", "freelance", "vietnam", "kết nối", "airanh", "việc làm tự do"],
-  authors: [{ name: "Airanh Team", url: "https://airanh.com" }],
+  authors: [{ name: "Airanh Team", url: "https://airanh.vercel.app" }],
   creator: "Airanh",
   publisher: "Airanh",
   applicationName: "AIR",
@@ -47,7 +45,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "vi_VN",
-    url: "https://airanh.com",
+    url: "https://airanh.vercel.app",
     siteName: "AIR",
     title: "AIR - Nền tảng việc làm tự do",
     description: "Kết nối người cần việc và người tìm việc nhanh chóng, an toàn",
@@ -98,8 +96,6 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-
-  // ĐÃ XÓA other để tránh duplicate
 };
 
 export const viewport: Viewport = {
@@ -121,7 +117,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* ĐÃ XÓA 2 meta duplicate */}
       </head>
       <body className="font-sans bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight">
         <AuthProvider>
