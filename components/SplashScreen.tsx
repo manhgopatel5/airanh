@@ -3,37 +3,32 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 
 export default function SplashScreen() {
-  const [show, setShow] = useState(false)
+  const [show, setShow] = useState(true) // Hiện ngay lập tức
   const [fadeOut, setFadeOut] = useState(false)
 
   useEffect(() => {
-    // Chỉ hiện lần đầu vào web
-    if (sessionStorage.getItem('airanh-splash')) return
+    if (sessionStorage.getItem('airanh-splash')) {
+      setShow(false)
+      return
+    }
     
-    // Delay 0.5s mới hiện
-    const showTimer = setTimeout(() => setShow(true), 500)
-    
-    // Hiện 2s rồi bắt đầu fade out
+    // Chạy 2s rồi fade out, không delay nữa
     const hideTimer = setTimeout(() => {
       setFadeOut(true)
-      // Đợi fade xong 300ms thì ẩn hẳn
       setTimeout(() => {
         setShow(false)
         sessionStorage.setItem('airanh-splash', '1')
       }, 300)
-    }, 2500) // 0.5s delay + 2s hiện
+    }, 2000)
 
-    return () => {
-      clearTimeout(showTimer)
-      clearTimeout(hideTimer)
-    }
+    return () => clearTimeout(hideTimer)
   }, [])
 
   if (!show) return null
 
   return (
     <div 
-      className={`fixed inset-0 z-[9999] bg-white dark:bg-zinc-950 flex items-center justify-center transition-opacity duration-300 ${
+      className={`fixed inset-0 z- bg-white dark:bg-zinc-950 flex items-center justify-center transition-opacity duration-300 ${
         fadeOut ? 'opacity-0' : 'opacity-100'
       }`}
     >
