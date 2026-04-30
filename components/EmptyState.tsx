@@ -47,8 +47,8 @@ const CONTENT_POOL = {
       ]
     },
     friends: {
-      titles: ["Toàn job từ bạn bè, nhận phát là có uy tín liền 🤝"],
-      descs: ["Giúp bạn hôm nay, mai bạn giúp lại (hy vọng vậy) 🫠"],
+      titles: ["    Kèo người quen, tiền ít nhưng drama nhiều 🌚"],
+      descs: ["    Giúp nhau hôm nay, mai cưới nhớ gửi thiệp 😌"],
       icon: FiUsers,
       suggests: [
         "Qua phụ dọn nhà, tui bao ăn 🧹",
