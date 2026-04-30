@@ -53,7 +53,7 @@ export default function Home() {
   const mode = useAppStore((s) => s.mode); // Đọc từ store thay vì useState
   const [activeTab, setActiveTab] = useState<TabId>("hot");
   const [allItems, setAllItems] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [lastDoc, setLastDoc] =
     useState<QueryDocumentSnapshot<DocumentData> | null>(null);
@@ -185,7 +185,7 @@ export default function Home() {
   }, [db, lastDoc, loadingMore, hasMore, buildQuery]);
 
   useEffect(() => {
-    if (!loadMoreRef.current || loading ||!hasMore) return;
+    if (!loadMoreRef.current || !hasMore) return;
     if (observerRef.current) observerRef.current.disconnect();
 
     observerRef.current = new IntersectionObserver(
@@ -370,11 +370,11 @@ export default function Home() {
           </div>
         )}
 
-        {loading && <SkeletonList />}
+{refreshing && <SkeletonList />}
 
-        {!loading &&!error && (
-          <TaskFeed tasks={filteredItems} mode={mode} activeTab={activeTab} />
-        )}
+{!error && (
+  <TaskFeed tasks={filteredItems} mode={mode} activeTab={activeTab} />
+)}
 
         {!loading && hasMore && allItems.length > 0 && (
           <div ref={loadMoreRef} className="px-4 py-6 flex justify-center">
