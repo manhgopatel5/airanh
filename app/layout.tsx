@@ -12,7 +12,7 @@ const inter = Inter({
   weight: ['400', '500', '600', '700', '800'],
 });
 
-export const dynamic = 'force-dynamic';
+// ĐÃ XÓA: export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://airanh.com"),
@@ -71,45 +71,19 @@ export const metadata: Metadata = {
 
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "AIR",
     startupImage: [
-      {
-        url: "/splash-1290x2796.PNG",
-        media: "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)",
-      },
-      {
-        url: "/splash-1179x2556.PNG",
-        media: "(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)",
-      },
-      {
-        url: "/splash-1170x2532.PNG",
-        media: "(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)",
-      },
-      {
-        url: "/splash-1125x2436.PNG",
-        media: "(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)",
-      },
-      {
-        url: "/splash-828x1792.PNG",
-        media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)",
-      },
-      {
-        url: "/splash-750x1334.PNG",
-        media: "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)",
-      },
-      {
-        url: "/splash-2048x2732.PNG",
-        media: "(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)",
-      },
-      {
-        url: "/splash-1668x2388.PNG",
-        media: "(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)",
-      },
-      {
-        url: "/splash-1536x2048.PNG",
-        media: "(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)",
-      },
+      { url: "/splash-1290x2796.PNG", media: "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" },
+      { url: "/splash-1179x2556.PNG", media: "(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" },
+      { url: "/splash-1170x2532.PNG", media: "(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" },
+      { url: "/splash-1125x2436.PNG", media: "(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" },
+      { url: "/splash-1242x2688.PNG", media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)" },
+      { url: "/splash-828x1792.PNG", media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" },
+      { url: "/splash-750x1334.PNG", media: "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" },
+      { url: "/splash-2048x2732.PNG", media: "(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" },
+      { url: "/splash-1668x2388.PNG", media: "(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" },
+      { url: "/splash-1536x2048.PNG", media: "(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)" },
     ],
   },
 
@@ -125,12 +99,7 @@ export const metadata: Metadata = {
     },
   },
 
-  other: {
-    "msapplication-TileColor": "#3b82f6",
-    "msapplication-config": "/browserconfig.xml",
-    "apple-mobile-web-app-capable": "yes",
-    "apple-mobile-web-app-status-bar-style": "default",
-  },
+  // ĐÃ XÓA other để tránh duplicate
 };
 
 export const viewport: Viewport = {
@@ -152,8 +121,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        {/* ĐÃ XÓA 2 meta duplicate */}
       </head>
       <body className="font-sans bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight">
         <AuthProvider>
