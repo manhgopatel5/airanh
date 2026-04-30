@@ -17,11 +17,11 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   metadataBase: new URL("https://airanh.com"),
   title: {
-    default: "Airanh",
+    default: "Airanh - Nền tảng việc làm tự do",
     template: "%s | Airanh",
   },
-  description: "Kết nối, chia sẻ nhiệm vụ và kiếm tiền cùng bạn bè",
-  keywords: ["social", "task", "freelance", "vietnam", "kết nối", "airanh"],
+  description: "Kết nối người cần việc và người tìm việc nhanh chóng, an toàn",
+  keywords: ["social", "task", "freelance", "vietnam", "kết nối", "airanh", "việc làm tự do"],
   authors: [{ name: "Airanh Team", url: "https://airanh.com" }],
   creator: "Airanh",
   publisher: "Airanh",
@@ -35,14 +35,11 @@ export const metadata: Metadata = {
 
   icons: {
     icon: [
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16.PNG", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32.PNG", sizes: "32x32", type: "image/png" },
     ],
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    apple: [{ url: "/apple-icon-180.PNG", sizes: "180x180", type: "image/png" }],
     shortcut: "/favicon.ico",
-    other: [
-      { rel: "mask-icon", url: "/safari-pinned-tab.svg", color: "#3b82f6" },
-    ],
   },
 
   manifest: "/manifest.json",
@@ -52,11 +49,11 @@ export const metadata: Metadata = {
     locale: "vi_VN",
     url: "https://airanh.com",
     siteName: "Airanh",
-    title: "Airanh - Social Task App",
-    description: "Kết nối, chia sẻ nhiệm vụ và kiếm tiền cùng bạn bè",
+    title: "Airanh - Nền tảng việc làm tự do",
+    description: "Kết nối người cần việc và người tìm việc nhanh chóng, an toàn",
     images: [
       {
-        url: "/og-image.png",
+        url: "/og-image.png", // Giữ file cũ hoặc tạo thêm og-image.PNG
         width: 1200,
         height: 630,
         alt: "Airanh",
@@ -66,29 +63,61 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title: "Airanh - Social Task App",
-    description: "Kết nối, chia sẻ nhiệm vụ và kiếm tiền cùng bạn bè",
+    title: "Airanh - Nền tảng việc làm tự do",
+    description: "Kết nối người cần việc và người tìm việc nhanh chóng, an toàn",
     images: ["/og-image.png"],
     creator: "@airanh",
   },
 
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default", // ✅ Quan trọng: default mới đẩy content xuống
+    statusBarStyle: "default",
     title: "Airanh",
     startupImage: [
+      // iPhone 14 Pro Max, 15 Pro Max
       {
-        url: "/splash-1170x2532.png",
+        url: "/splash-1290x2796.PNG",
+        media: "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)",
+      },
+      // iPhone 14 Pro
+      {
+        url: "/splash-1179x2556.PNG",
+        media: "(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)",
+      },
+      // iPhone 13 Pro Max, 12 Pro Max
+      {
+        url: "/splash-1170x2532.PNG",
         media: "(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)",
       },
+      // iPhone 13, 13 Pro, 12, 12 Pro
       {
-        url: "/splash-1284x2778.png",
-        media: "(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)",
+        url: "/splash-1125x2436.PNG",
+        media: "(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)",
       },
-      // ✅ THÊM: iPhone 15 Pro Max
+      // iPhone XR, 11
       {
-        url: "/splash-1290x2796.png",
-        media: "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)",
+        url: "/splash-828x1792.PNG",
+        media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)",
+      },
+      // iPhone SE, 8, 7, 6s
+      {
+        url: "/splash-750x1334.PNG",
+        media: "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)",
+      },
+      // iPad Pro 12.9"
+      {
+        url: "/splash-2048x2732.PNG",
+        media: "(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)",
+      },
+      // iPad Pro 11"
+      {
+        url: "/splash-1668x2388.PNG",
+        media: "(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)",
+      },
+      // iPad Air, iPad 9/10
+      {
+        url: "/splash-1536x2048.PNG",
+        media: "(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)",
       },
     ],
   },
@@ -108,7 +137,6 @@ export const metadata: Metadata = {
   other: {
     "msapplication-TileColor": "#3b82f6",
     "msapplication-config": "/browserconfig.xml",
-    // ✅ THÊM: Force iOS PWA full screen
     "apple-mobile-web-app-capable": "yes",
     "apple-mobile-web-app-status-bar-style": "default",
   },
@@ -119,7 +147,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  viewportFit: "cover", // ✅ Bắt buộc cho env(safe-area-inset-*)
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#09090b" },
@@ -133,7 +161,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* ✅ THÊM: Meta tag backup cho iOS cũ */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
