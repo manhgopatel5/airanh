@@ -4,6 +4,7 @@ import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
 import { AuthProvider } from "@/lib/AuthContext";
 import EmailGuard from "@/components/EmailGuard";
+import SplashScreen from "@/components/SplashScreen"; // Thêm dòng này
 
 const inter = Inter({
   subsets: ["latin", "vietnamese"],
@@ -53,7 +54,7 @@ export const metadata: Metadata = {
     description: "Kết nối người cần việc và người tìm việc nhanh chóng, an toàn",
     images: [
       {
-        url: "/og-image.png", // Giữ file cũ hoặc tạo thêm og-image.PNG
+        url: "/og-image.png",
         width: 1200,
         height: 630,
         alt: "Airanh",
@@ -74,47 +75,38 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Airanh",
     startupImage: [
-      // iPhone 14 Pro Max, 15 Pro Max
       {
         url: "/splash-1290x2796.PNG",
         media: "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)",
       },
-      // iPhone 14 Pro
       {
         url: "/splash-1179x2556.PNG",
         media: "(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)",
       },
-      // iPhone 13 Pro Max, 12 Pro Max
       {
         url: "/splash-1170x2532.PNG",
         media: "(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)",
       },
-      // iPhone 13, 13 Pro, 12, 12 Pro
       {
         url: "/splash-1125x2436.PNG",
         media: "(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)",
       },
-      // iPhone XR, 11
       {
         url: "/splash-828x1792.PNG",
         media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)",
       },
-      // iPhone SE, 8, 7, 6s
       {
         url: "/splash-750x1334.PNG",
         media: "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)",
       },
-      // iPad Pro 12.9"
       {
         url: "/splash-2048x2732.PNG",
         media: "(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)",
       },
-      // iPad Pro 11"
       {
         url: "/splash-1668x2388.PNG",
         media: "(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)",
       },
-      // iPad Air, iPad 9/10
       {
         url: "/splash-1536x2048.PNG",
         media: "(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)",
@@ -165,6 +157,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
       <body className="font-sans bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight">
+        <SplashScreen />
         <AuthProvider>
           <EmailGuard>
             <ClientLayout>{children}</ClientLayout>
