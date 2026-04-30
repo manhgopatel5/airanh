@@ -13,25 +13,37 @@
 
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/icon-192.PNG",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icon-256.PNG",
+      "sizes": "256x256", 
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-384.PNG",
+      "sizes": "384x384",
+      "type": "image/png", 
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.PNG",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/icon-192-maskable.png",
+      "src": "/icon-maskable-192.PNG",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/icon-512-maskable.png",
+      "src": "/icon-maskable-512.PNG", 
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -40,13 +52,13 @@
 
   "screenshots": [
     {
-      "src": "/screenshot-1.png",
+      "src": "/screenshot-1.PNG",
       "sizes": "540x720",
       "type": "image/png",
       "form_factor": "narrow"
     },
     {
-      "src": "/screenshot-2.png",
+      "src": "/screenshot-2.PNG", 
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide"
@@ -61,21 +73,21 @@
       "url": "/create",
       "icons": [
         {
-          "src": "/icon-create.png",
+          "src": "/icon-create.PNG",
           "sizes": "96x96",
           "type": "image/png"
         }
       ]
     },
     {
-      "name": "Tìm việc",
+      "name": "Tìm việc", 
       "short_name": "Tìm",
       "description": "Tìm kiếm công việc",
       "url": "/search",
       "icons": [
         {
-          "src": "/icon-search.png",
-          "sizes": "96x96",
+          "src": "/icon-search.PNG",
+          "sizes": "96x96", 
           "type": "image/png"
         }
       ]
