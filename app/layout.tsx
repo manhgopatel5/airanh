@@ -4,7 +4,7 @@ import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
 import { AuthProvider } from "@/lib/AuthContext";
 import EmailGuard from "@/components/EmailGuard";
-import SplashScreen from "@/components/SplashScreen"; // Thêm dòng này
+import SplashScreen from "@/components/SplashScreen";
 
 const inter = Inter({
   subsets: ["latin", "vietnamese"],
@@ -18,15 +18,15 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   metadataBase: new URL("https://airanh.com"),
   title: {
-    default: "Airanh - Nền tảng việc làm tự do",
-    template: "%s | Airanh",
+    default: "AIR",
+    template: "%s | AIR", // Sửa template luôn
   },
   description: "Kết nối người cần việc và người tìm việc nhanh chóng, an toàn",
   keywords: ["social", "task", "freelance", "vietnam", "kết nối", "airanh", "việc làm tự do"],
   authors: [{ name: "Airanh Team", url: "https://airanh.com" }],
   creator: "Airanh",
   publisher: "Airanh",
-  applicationName: "Airanh",
+  applicationName: "AIR",
   referrer: "origin-when-cross-origin",
   formatDetection: { telephone: false, email: false, address: false },
 
@@ -49,22 +49,22 @@ export const metadata: Metadata = {
     type: "website",
     locale: "vi_VN",
     url: "https://airanh.com",
-    siteName: "Airanh",
-    title: "Airanh - Nền tảng việc làm tự do",
+    siteName: "AIR", // Đổi từ Airanh
+    title: "AIR - Nền tảng việc làm tự do",
     description: "Kết nối người cần việc và người tìm việc nhanh chóng, an toàn",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Airanh",
+        alt: "AIR",
       },
     ],
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "Airanh - Nền tảng việc làm tự do",
+    title: "AIR - Nền tảng việc làm tự do",
     description: "Kết nối người cần việc và người tìm việc nhanh chóng, an toàn",
     images: ["/og-image.png"],
     creator: "@airanh",
@@ -73,7 +73,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Airanh",
+    title: "AIR", // Cái này quan trọng nhất - tên dưới icon iOS
     startupImage: [
       {
         url: "/splash-1290x2796.PNG",
