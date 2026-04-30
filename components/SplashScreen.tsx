@@ -3,16 +3,28 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 
 export default function SplashScreen() {
-  const [show, setShow] = useState(true) // Hiện ngay lập tức
+  const [show, setShow] = useState(false)
   const [fadeOut, setFadeOut] = useState(false)
 
   useEffect(() => {
+    // Check nếu đang chạy PWA thì bỏ qua React splash
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches 
+                  || (window.navigator as any).standalone 
+                  || document.referrer.includes('android-app://')
+    
+    if (isPWA) {
+      setShow(false)
+      return
+    }
+
+    // Chỉ hiện trên web thường
     if (sessionStorage.getItem('airanh-splash')) {
       setShow(false)
       return
     }
     
-    // Chạy 2s rồi fade out, không delay nữa
+    setShow(true)
+    
     const hideTimer = setTimeout(() => {
       setFadeOut(true)
       setTimeout(() => {
@@ -34,7 +46,7 @@ export default function SplashScreen() {
     >
       <Image 
         src="/icon-512.PNG" 
-        alt="Airanh" 
+        alt="AIR" 
         width={120} 
         height={120}
         priority
