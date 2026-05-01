@@ -595,7 +595,7 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
     const fromUid = notif.fromUid;
     const requestId = `${fromUid}_${currentUser.uid}`;
 
-    // Check request còn tồn tại không
+    // Check request
     const requestDoc = await getDoc(doc(db, "friendRequests", requestId));
     if (!requestDoc.exists()) {
       toast.error("Lời mời đã hết hạn");
@@ -603,9 +603,8 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
       return;
     }
 
-    // BATCH 1: Add friend 2 chiều + xóa request/notif
+    // BATCH 1: Add friends 2 chiều
     const batch1 = writeBatch(db);
-    
     batch1.set(doc(db, "users", currentUser.uid, "friends", fromUid), {
       addedAt: serverTimestamp(),
       uid: fromUid,
@@ -614,12 +613,9 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
       addedAt: serverTimestamp(),
       uid: currentUser.uid,
     });
-    batch1.delete(doc(db, "notifications", currentUser.uid, "items", notif.id));
-    batch1.delete(doc(db, "friendRequests", requestId));
+    await batch1.commit(); // Commit để rules thấy đã là bạn
 
-    await batch1.commit(); // Commit lần 1 để rules thấy đã là bạn
-
-    // BATCH 2: Tạo chat sau khi đã là bạn
+    // BATCH 2: Tạo chat + xóa request/notif
     const chatId = [currentUser.uid, fromUid].sort().join("_");
     const [mySnap, friendSnap] = await Promise.all([
       getDoc(doc(db, "users", currentUser.uid)),
@@ -629,7 +625,7 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
     const friendData = friendSnap.data();
 
     const batch2 = writeBatch(db);
-
+    
     batch2.set(doc(db, "chats", chatId), {
       members: [currentUser.uid, fromUid],
       isGroup: false,
@@ -650,16 +646,22 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
       }
     }, { merge: true });
 
-    batch2.set(doc(db, "users", currentUser.uid, "chats", chatId), {
-      chatId,
-      createdAt: serverTimestamp()
-    });
-    batch2.set(doc(db, "users", fromUid, "chats", chatId), {
-      chatId,
-      createdAt: serverTimestamp()
-    });
+    batch2.delete(doc(db, "notifications", currentUser.uid, "items", notif.id));
+    batch2.delete(doc(db, "friendRequests", requestId));
 
-    await batch2.commit();
+    await batch2.commit(); // Commit chat trước
+
+    // BATCH 3: Add chat vào subcollection 2 user - giờ đã là bạn + chat đã tồn tại
+    const batch3 = writeBatch(db);
+    batch3.set(doc(db, "users", currentUser.uid, "chats", chatId), {
+      chatId,
+      createdAt: serverTimestamp()
+    });
+    batch3.set(doc(db, "users", fromUid, "chats", chatId), {
+      chatId,
+      createdAt: serverTimestamp()
+    });
+    await batch3.commit();
 
     await createNotification(fromUid, {
       type: "friend_accepted",
@@ -674,7 +676,7 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
     router.push(`/chat/${chatId}`);
   } catch (error: any) {
     console.error("Accept friend error:", error.code, error.message);
-    toast.error("Lỗi chấp nhận kết bạn");
+    toast.error(`Lỗi: ${error.message || "Không thể chấp nhận"}`);
   }
 }, [db, createNotification, router]);
 
