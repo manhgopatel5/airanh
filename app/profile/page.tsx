@@ -64,7 +64,7 @@ export default function Profile() {
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
   const accentGradient = isPlan
-   ? "from-green-500 to-emerald-500"
+ ? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-500";
 
   useEffect(() => {
@@ -438,13 +438,16 @@ export default function Profile() {
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://airanh.vercel.app/u/${userData.userId}&color=000&bgcolor=fff&margin=0`}
                 alt="QR Code"
                 className="w-full rounded-xl"
+                onError={(e) => {
+                  e.currentTarget.src = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=https://airanh.vercel.app/u/${userData.userId}`;
+                }}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3 mt-4">
               <button
                 onClick={handleShare}
-                className="py-3 rounded-2xl font-bold bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white flex items-center justify-center gap-2"
+                className="py-3 rounded-2xl font-bold bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white flex items-center justify-center gap-2 active:scale-95 transition"
               >
                 <Share2 size={18} /> Chia sẻ
               </button>
@@ -453,7 +456,7 @@ export default function Profile() {
                   setShowQR(false);
                   setShowScanQR(true);
                 }}
-                className={`py-3 rounded-2xl font-bold bg-gradient-to-r ${accentGradient} text-white flex items-center justify-center gap-2`}
+                className={`py-3 rounded-2xl font-bold bg-gradient-to-r ${accentGradient} text-white flex items-center justify-center gap-2 active:scale-95 transition`}
               >
                 <ScanLine size={18} /> Quét mã
               </button>
