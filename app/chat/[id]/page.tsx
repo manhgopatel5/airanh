@@ -792,8 +792,8 @@ const getSeenAvatars = (msg: Message) => {
         </button>
         <div className="relative">
           <img src={friend.avatar} className="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-zinc-950 shadow-lg" alt={friend.name} />
-          {friend.online && (
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full ring-[3px] ring-white dark:ring-zinc-950">
+{friend.isOnline && (
+  <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full ring-[3px] ring-white dark:ring-zinc-950">
               <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75" />
             </div>
           )}
