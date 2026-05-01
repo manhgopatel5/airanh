@@ -356,20 +356,21 @@ const sendMessage = useCallback(async () => {
         });
       } else {
         // New message
-        await addDoc(collection(db, "chats", chatId, "messages"), {
-          text: tempText,
-          senderId: user.uid,
-          createdAt: serverTimestamp(),
-          seenBy: [user.uid],
-          type: "text",
-         ...(tempReply && {
-            replyTo: {
-              id: tempReply.id,
-              text: tempReply.text,
-              senderName: tempReply.senderId === user.uid? "Bạn" : friend.name,
-            },
-          }),
-        });
+await addDoc(collection(db, "chats", chatId, "messages"), {
+  text: tempText,
+  senderId: user.uid,
+  createdAt: serverTimestamp(),
+  seenBy: [user.uid],
+  type: "text",
+  members: chatData!.members, // THÊM DÒNG NÀY
+  ...(tempReply && {
+    replyTo: {
+      id: tempReply.id,
+      text: tempReply.text,
+      senderName: tempReply.senderId === user.uid ? "Bạn" : friend.name,
+    },
+  }),
+});
 
         await setDoc(
           doc(db, "chats", chatId),
@@ -426,13 +427,14 @@ const sendMessage = useCallback(async () => {
         async () => {
           try {
             const url = await getDownloadURL(uploadTask.snapshot.ref);
-            await addDoc(collection(db, "chats", chatId, "messages"), {
-              senderId: user.uid,
-              image: url,
-              type: "image",
-              createdAt: serverTimestamp(),
-              seenBy: [user.uid],
-            });
+await addDoc(collection(db, "chats", chatId, "messages"), {
+  senderId: user.uid,
+  image: url,
+  type: "image",
+  createdAt: serverTimestamp(),
+  seenBy: [user.uid],
+  members: chatData!.members, // THÊM DÒNG NÀY
+});
 
             await setDoc(
               doc(db, "chats", chatId),
@@ -472,14 +474,15 @@ const sendMessage = useCallback(async () => {
       await uploadBytesResumable(storageRef, file);
       const url = await getDownloadURL(storageRef);
 
-      await addDoc(collection(db, "chats", chatId, "messages"), {
-        senderId: user.uid,
-        file: url,
-        fileName: file.name,
-        type: "file",
-        createdAt: serverTimestamp(),
-        seenBy: [user.uid],
-      });
+await addDoc(collection(db, "chats", chatId, "messages"), {
+  senderId: user.uid,
+  file: url,
+  fileName: file.name,
+  type: "file",
+  createdAt: serverTimestamp(),
+  seenBy: [user.uid],
+  members: chatData!.members, // THÊM DÒNG NÀY
+});
 
       await setDoc(
         doc(db, "chats", chatId),
@@ -540,14 +543,15 @@ const sendMessage = useCallback(async () => {
       await uploadBytesResumable(storageRef, audioBlob);
       const url = await getDownloadURL(storageRef);
 
-      await addDoc(collection(db, "chats", chatId, "messages"), {
-        senderId: user.uid,
-        voice: url,
-        duration: recordingTime,
-        type: "voice",
-        createdAt: serverTimestamp(),
-        seenBy: [user.uid],
-      });
+await addDoc(collection(db, "chats", chatId, "messages"), {
+  senderId: user.uid,
+  voice: url,
+  duration: recordingTime,
+  type: "voice",
+  createdAt: serverTimestamp(),
+  seenBy: [user.uid],
+  members: chatData!.members, // THÊM DÒNG NÀY
+});
 
       await setDoc(
         doc(db, "chats", chatId),
@@ -583,13 +587,14 @@ const sendMessage = useCallback(async () => {
       async (pos) => {
         const { latitude, longitude } = pos.coords;
         try {
-          await addDoc(collection(db, "chats", chatId, "messages"), {
-            senderId: user.uid,
-            location: { lat: latitude, lng: longitude },
-            type: "location",
-            createdAt: serverTimestamp(),
-            seenBy: [user.uid],
-          });
+ await addDoc(collection(db, "chats", chatId, "messages"), {
+  senderId: user.uid,
+  location: { lat: latitude, lng: longitude },
+  type: "location",
+  createdAt: serverTimestamp(),
+  seenBy: [user.uid],
+  members: chatData!.members, // THÊM DÒNG NÀY
+});
 
           await setDoc(
             doc(db, "chats", chatId),
