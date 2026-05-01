@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB, getFirebaseStorage } from "@/lib/firebase";
 import {
-  collection, query, onSnapshot, doc, getDocs,
+  collection, query, onSnapshot, doc,
   orderBy, limit, addDoc, serverTimestamp, Timestamp,
   writeBatch, setDoc, where
 } from "firebase/firestore";
