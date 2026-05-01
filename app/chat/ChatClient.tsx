@@ -413,7 +413,7 @@ const handleScanFromFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
   try {
     const result = await html5QrCode.scanFile(file, true);
     if (result.includes("/u/")) {
-      const userId = result.split("/u/")[1];
+  const userId = result.split("/u/")[1] || "";
       setSearch(userId);
       setAddMode("friend");
       stopScan();
