@@ -11,7 +11,7 @@ import {
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
   Image as ImageIcon, MapPin, Paperclip, Phone, Send,
-  ArrowLeft, Loader2, X, Video, CheckCheck, MoreVertical,
+  ArrowLeft, Loader2, X, Video, CheckCheck,
   Smile, Reply, Trash2, Pencil, Pin, Copy, Mic, Square, Search
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
