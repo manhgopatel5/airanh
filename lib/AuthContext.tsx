@@ -166,18 +166,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 username
               );
 
-              const newUser: AppUser = {
-                uid: firebaseUser.uid,
-                name, // FIX: THÊM DÒNG NÀY
-                nameLower: name.toLowerCase(),
-                username,
-                userId,
-                emailVerified: firebaseUser.emailVerified,
-                avatar:
-                  firebaseUser.photoURL ||
-                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                    name
-                  )}&background=random`,
+const newUser: AppUser = {
+  uid: firebaseUser.uid,
+  name,
+  nameLower: name.toLowerCase(),
+  username,
+  userId,
+  email: firebaseUser.email || "", // ← THÊM DÒNG NÀY
+  emailVerified: firebaseUser.emailVerified,
+  avatar:
+    firebaseUser.photoURL ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      name
+    )}&background=random`,
                 bio: "",
                 isOnline: true,
                 lastSeen: serverTimestamp() as Timestamp,
