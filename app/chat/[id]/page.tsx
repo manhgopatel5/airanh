@@ -156,7 +156,7 @@ setFriend({
   username: otherUser.username || "",
   avatar: otherUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name)}&background=random`,
   isOnline: false, // FIX
-  userId: otherUser.userId || otherUser.username || "" // FIX: Lấy userId thật
+  userId: otherUser.username || "" // FIX: membersInfo chỉ có username thôi
 });
       setFriendId(otherUid);
       setChatData(data);
