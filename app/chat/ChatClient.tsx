@@ -1239,7 +1239,7 @@ const { pinnedChats, normalChats } = useMemo(() => {
   </div>
 </div>
 
-<div className="flex-1 overflow-hidden flex flex-col min-h-0 px-5 pb-5">5">
+<div className="flex-1 overflow-hidden flex flex-col min-h-0 px-5 pb-5">
                 {addMode === "friend"? (
                   <div className="space-y-3">
                     <div className="grid grid-cols-3 gap-2">
