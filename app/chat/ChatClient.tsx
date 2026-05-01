@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
 import { getAuth } from "firebase/auth";
 import { getFunctions, httpsCallable } from "firebase/functions";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { useAppStore } from "@/store/app";
 import {
   collection,
@@ -586,7 +587,6 @@ const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<voi
   }
 }, [search, db, createNotification]);
 
-import { getFunctions, httpsCallable } from "firebase/functions";
 
 const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) => {
   if (!user?.uid) return;
