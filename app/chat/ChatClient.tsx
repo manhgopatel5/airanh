@@ -592,7 +592,6 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
   if (!currentUser?.uid) return;
 
   try {
-    const batch = writeBatch(db);
     const fromUid = notif.fromUid;
     const requestId = `${fromUid}_${currentUser.uid}`;
 
@@ -600,26 +599,27 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
     const requestDoc = await getDoc(doc(db, "friendRequests", requestId));
     if (!requestDoc.exists()) {
       toast.error("Lời mời đã hết hạn");
+      await deleteDoc(doc(db, "notifications", currentUser.uid, "items", notif.id));
       return;
     }
 
-    // 1. Add bạn bè 2 chiều - giờ rules cho phép
-    batch.set(doc(db, "users", currentUser.uid, "friends", fromUid), {
+    // BATCH 1: Add friend 2 chiều + xóa request/notif
+    const batch1 = writeBatch(db);
+    
+    batch1.set(doc(db, "users", currentUser.uid, "friends", fromUid), {
       addedAt: serverTimestamp(),
       uid: fromUid,
     });
-    batch.set(doc(db, "users", fromUid, "friends", currentUser.uid), {
+    batch1.set(doc(db, "users", fromUid, "friends", currentUser.uid), {
       addedAt: serverTimestamp(),
       uid: currentUser.uid,
     });
+    batch1.delete(doc(db, "notifications", currentUser.uid, "items", notif.id));
+    batch1.delete(doc(db, "friendRequests", requestId));
 
-    // 2. Xóa notification
-    batch.delete(doc(db, "notifications", currentUser.uid, "items", notif.id));
+    await batch1.commit(); // Commit lần 1 để rules thấy đã là bạn
 
-    // 3. Xóa friendRequest
-    batch.delete(doc(db, "friendRequests", requestId));
-
-    // 4. Tạo chat
+    // BATCH 2: Tạo chat sau khi đã là bạn
     const chatId = [currentUser.uid, fromUid].sort().join("_");
     const [mySnap, friendSnap] = await Promise.all([
       getDoc(doc(db, "users", currentUser.uid)),
@@ -628,7 +628,9 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
     const myData = mySnap.data();
     const friendData = friendSnap.data();
 
-    batch.set(doc(db, "chats", chatId), {
+    const batch2 = writeBatch(db);
+
+    batch2.set(doc(db, "chats", chatId), {
       members: [currentUser.uid, fromUid],
       isGroup: false,
       createdAt: serverTimestamp(),
@@ -648,19 +650,17 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
       }
     }, { merge: true });
 
-    // 5. Add chat vào cả 2 user - giờ rules cho phép vì vừa add friend
-    batch.set(doc(db, "users", currentUser.uid, "chats", chatId), {
+    batch2.set(doc(db, "users", currentUser.uid, "chats", chatId), {
       chatId,
       createdAt: serverTimestamp()
     });
-    batch.set(doc(db, "users", fromUid, "chats", chatId), {
+    batch2.set(doc(db, "users", fromUid, "chats", chatId), {
       chatId,
       createdAt: serverTimestamp()
     });
 
-    await batch.commit();
+    await batch2.commit();
 
-    // Gửi notification cho người kia
     await createNotification(fromUid, {
       type: "friend_accepted",
       fromUid: currentUser.uid,
