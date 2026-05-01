@@ -11,7 +11,6 @@ import {
   sendEmailVerification,
   GoogleAuthProvider,
   signInWithPopup,
-  signInWithRedirect,
   getRedirectResult,
   sendSignInLinkToEmail,
   isSignInWithEmailLink,
@@ -26,12 +25,16 @@ import { nanoid } from "nanoid";
 import { toast, Toaster } from "sonner";
 import InstallPrompt from "@/components/InstallPrompt";
 import { motion } from "framer-motion";
+import { useAuth } from "@/lib/AuthContext"; // THÊM
 
 export default function Register() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const authRef = useRef(getFirebaseAuth());
-  const dbRef = useRef(getFirebaseDB());
+  const { user, userData, loading: authLoading } = useAuth(); // THÊM
+  
+  // FIX 1: Không gọi getFirebaseAuth trong useRef
+  const [auth, setAuth] = useState<any>(null);
+  const [db, setDb] = useState<any>(null);
   const nameRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
@@ -53,53 +56,64 @@ export default function Register() {
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [acceptPrivacy, setAcceptPrivacy] = useState(false);
-  const [authChecking, setAuthChecking] = useState(true);
 
-  const redirectTo = searchParams.get("redirect") || "/";
+  const redirectTo = searchParams.get("redirect") || "/chat";
+
+  // FIX 2: Init Firebase trước
+  useEffect(() => {
+    const init = async () => {
+      const firebase = await import("@/lib/firebase");
+      setAuth(firebase.getFirebaseAuth());
+      setDb(firebase.getFirebaseDB());
+    };
+    init();
+  }, []);
+
+  // FIX 3: Redirect nếu đã login
+  useEffect(() => {
+    if (!authLoading && user && userData) {
+      router.replace("/chat");
+    }
+  }, [user, userData, authLoading, router]);
 
   useEffect(() => {
-    // Check passkey
+    if (!auth) return; // Đợi auth init xong
+
     if (window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
       PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(setPasskeySupported);
     }
 
     // Handle magic link
-    if (isSignInWithEmailLink(authRef.current, window.location.href)) {
+    if (isSignInWithEmailLink(auth, window.location.href)) {
       let email = localStorage.getItem("emailForSignIn");
       if (!email) email = window.prompt("Nhập email để xác nhận");
       if (email) {
-        signInWithEmailLink(authRef.current, email, window.location.href)
-       .then(async (result) => {
+        signInWithEmailLink(auth, email, window.location.href)
+          .then(async (result) => {
             localStorage.removeItem("emailForSignIn");
-            await updateUserDoc(result.user, true);
             toast.success("Đăng nhập thành công");
             router.replace(redirectTo);
           })
-       .catch(() => setErrors({ submit: "Link không hợp lệ hoặc đã hết hạn" }));
+          .catch(() => setErrors({ submit: "Link không hợp lệ hoặc đã hết hạn" }));
       }
     }
 
     // Handle Google redirect
-    getRedirectResult(authRef.current)
-   .then(async (result) => {
+    getRedirectResult(auth)
+      .then(async (result) => {
         if (result) {
-          const info = getAdditionalUserInfo(result);
-          await updateUserDoc(result.user, info?.isNewUser);
-          if (info?.isNewUser) {
-            toast.success("Chào mừng bạn đến Airanh!");
-            router.replace("/onboarding");
-          } else {
-            toast.success("Đăng nhập thành công");
-            router.replace(redirectTo);
-          }
+          console.log("Google redirect thành công:", result.user.uid);
+          toast.success("Đăng nhập thành công");
+          router.replace(redirectTo);
         }
       })
-   .catch(() => setErrors({ submit: "Đăng nhập Google thất bại" }));
+      .catch((err) => {
+        console.error("Redirect error:", err);
+        setErrors({ submit: "Đăng nhập Google thất bại" });
+      });
 
-    // ✅ BỎ onAuthStateChanged - EmailGuard đã xử lý rồi
-    setAuthChecking(false);
     setTimeout(() => nameRef.current?.focus(), 100);
-  }, [router, redirectTo]);
+  }, [auth, router, redirectTo]);
 
   /* ================= PASSWORD STRENGTH ================= */
   const getPasswordStrength = (pass: string) => {
@@ -130,7 +144,7 @@ export default function Register() {
         if (getPasswordStrength(value) < 3) return "Cần chữ hoa, thường, số và ký tự đặc biệt";
         return "";
       case "confirmPassword":
-        if (value!== form.password) return "Mật khẩu không khớp";
+        if (value !== form.password) return "Mật khẩu không khớp";
         return "";
       default:
         return "";
@@ -150,72 +164,49 @@ export default function Register() {
     return Object.keys(newErrors).length === 0;
   }, [form, acceptTerms, acceptPrivacy, validateField]);
 
-  /* ================= UPDATE USER DOC ================= */
-  const updateUserDoc = async (user: any, isNewUser = false) => {
-    const userRef = doc(dbRef.current, "users", user.uid);
-    const snap = await getDoc(userRef).catch(() => null);
-
-    if (!snap ||!snap.exists() || isNewUser) {
-      let userId = `AIR${nanoid(6).toUpperCase()}`;
-      let attempts = 0;
-      while (attempts < 3) {
-        const checkSnap = await getDoc(doc(dbRef.current, "usernames", userId));
-        if (!checkSnap.exists()) break;
-        userId = `AIR${nanoid(6).toUpperCase()}`;
-        attempts++;
-      }
-
-      await Promise.all([
-        setDoc(userRef, {
-          email: user.email,
-          name: user.displayName || form.name || user.email?.split("@")[0],
-          userId,
-          avatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || form.name)}&background=0EA5E9`,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          emailVerified: user.emailVerified,
-          provider: user.providerData[0]?.providerId || "password",
-        }),
-        setDoc(doc(dbRef.current, "usernames", userId), { uid: user.uid }),
-      ]);
-    }
-  };
+  /* ================= XÓA updateUserDoc - AuthContext lo rồi ================= */
 
   /* ================= GOOGLE SIGN UP ================= */
   const handleGoogleSignup = async () => {
+    if (!auth) {
+      setErrors({ submit: "Firebase chưa sẵn sàng" });
+      return;
+    }
+
     try {
+      console.log("1. Bắt đầu Google login");
       setGoogleLoading(true);
       setErrors({});
 
-      await setPersistence(authRef.current, browserLocalPersistence);
+      await setPersistence(auth, browserLocalPersistence);
       const provider = new GoogleAuthProvider();
+      provider.addScope('email');
+      provider.addScope('profile');
       provider.setCustomParameters({ prompt: "select_account" });
 
-      const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
-
-      if (isMobile) {
-        await signInWithRedirect(authRef.current, provider);
-      } else {
-        const res = await signInWithPopup(authRef.current, provider);
-        const info = getAdditionalUserInfo(res);
-        await updateUserDoc(res.user, info?.isNewUser);
-        localStorage.setItem("last_email", res.user.email || "");
-
-        if (info?.isNewUser) {
-          toast.success("Chào mừng bạn đến Airanh!");
-          router.replace("/onboarding");
-        } else {
-          toast.success("Đăng nhập thành công");
-          router.replace(redirectTo);
-        }
-      }
+      console.log("2. Mở popup");
+      const res = await signInWithPopup(auth, provider);
+      console.log("3. Login OK:", res.user.uid, res.user.email);
+      
+      // AuthContext tự tạo user, ở đây chỉ redirect
+      toast.success("Đăng nhập thành công");
+      router.replace("/chat");
+      
     } catch (err: any) {
+      console.error("GOOGLE ERROR:", err.code, err.message);
+      
       if (err.code === "auth/popup-blocked") {
-        setErrors({ submit: "Popup bị chặn. Cho phép popup và thử lại" });
+        setErrors({ submit: "Popup bị chặn. Bấm icon 🔒 trên URL → Allow popup" });
       } else if (err.code === "auth/popup-closed-by-user") {
         return;
+      } else if (err.code === "auth/unauthorized-domain") {
+        setErrors({ submit: "Domain chưa add vào Firebase → Authentication → Settings → Authorized domains" });
+      } else if (err.code === "auth/operation-not-allowed") {
+        setErrors({ submit: "Chưa bật Google Provider → Authentication → Sign-in method → Google → Enable" });
+      } else if (err.code === "auth/cancelled-popup-request") {
+        return;
       } else {
-        setErrors({ submit: "Đăng ký Google thất bại" });
+        setErrors({ submit: `Lỗi: ${err.code}` });
       }
     } finally {
       setGoogleLoading(false);
@@ -224,6 +215,7 @@ export default function Register() {
 
   /* ================= MAGIC LINK ================= */
   const handleMagicLink = async () => {
+    if (!auth) return;
     if (!form.email) {
       setErrors({ email: "Nhập email trước" });
       return;
@@ -237,7 +229,7 @@ export default function Register() {
       setMagicLoading(true);
       setErrors({});
 
-      await sendSignInLinkToEmail(authRef.current, form.email, {
+      await sendSignInLinkToEmail(auth, form.email, {
         url: window.location.origin + "/register",
         handleCodeInApp: true,
       });
@@ -260,9 +252,9 @@ export default function Register() {
   /* ================= EMAIL/PASSWORD REGISTER ================= */
   const handleRegister = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (form.honeypot) return; // Bot detected
+    if (!auth || !db) return;
+    if (form.honeypot) return;
 
-    // Rate limit 60s
     const lastAttempt = localStorage.getItem("last_register_attempt");
     if (lastAttempt && Date.now() - parseInt(lastAttempt, 10) < 60000) {
       setErrors({ submit: "Vui lòng chờ 1 phút trước khi thử lại" });
@@ -276,17 +268,15 @@ export default function Register() {
     localStorage.setItem("last_register_attempt", Date.now().toString());
 
     try {
-      const userCred = await createUserWithEmailAndPassword(authRef.current, form.email, form.password);
+      const userCred = await createUserWithEmailAndPassword(auth, form.email, form.password);
       const user = userCred.user;
 
       await updateProfile(user, { displayName: form.name });
-      await updateUserDoc(user, true);
       await sendEmailVerification(user);
 
       localStorage.setItem("last_email", form.email);
 
-      // Analytics
-      if (typeof window!== "undefined" && (window as any).gtag) {
+      if (typeof window !== "undefined" && (window as any).gtag) {
         (window as any).gtag("event", "sign_up", { method: "email" });
       }
 
@@ -317,15 +307,11 @@ export default function Register() {
     if (err) setErrors({...errors, [field]: err });
   };
 
-  if (authChecking) {
+  // FIX 4: Check authLoading thay vì authChecking
+  if (authLoading || (user && userData)) {
     return (
       <div className="h-dvh bg-gradient-to-br from-sky-400 to-sky-500 flex items-center justify-center px-4">
-        <div className="w-full max-w-sm space-y-4">
-          <div className="h-8 w-32 bg-white/20 rounded-lg animate-pulse mx-auto" />
-          <div className="h-10 w-full bg-white/20 rounded-lg animate-pulse" />
-          <div className="h-10 w-full bg-white/20 rounded-lg animate-pulse" />
-          <div className="h-12 w-full bg-white/20 rounded-lg animate-pulse" />
-        </div>
+        <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin" />
       </div>
     );
   }
@@ -373,10 +359,8 @@ export default function Register() {
             )}
 
             <form onSubmit={handleRegister} className="space-y-4">
-              {/* HONEYPOT */}
               <input type="text" name="website" value={form.honeypot} onChange={handleChange("honeypot")} className="hidden" tabIndex={-1} autoComplete="off" />
 
-              {/* NAME */}
               <div>
                 <div className="relative">
                   <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
@@ -386,7 +370,7 @@ export default function Register() {
                     placeholder="Họ và tên"
                     autoComplete="name"
                     className={`w-full pl-10 pr-3 py-2.5 rounded-lg border text-sm ${
-                      touched.name && errors.name? "border-red-500" : "border-gray-300"
+                      touched.name && errors.name ? "border-red-500" : "border-gray-300"
                     } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none transition-all`}
                     value={form.name}
                     onChange={handleChange("name")}
@@ -396,7 +380,6 @@ export default function Register() {
                 {touched.name && errors.name && <p className="text-red-500 text-xs mt-1.5 ml-1">{errors.name}</p>}
               </div>
 
-              {/* EMAIL */}
               <div>
                 <div className="relative">
                   <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
@@ -405,7 +388,7 @@ export default function Register() {
                     placeholder="Email"
                     autoComplete="email"
                     className={`w-full pl-10 pr-3 py-2.5 rounded-lg border text-sm ${
-                      touched.email && errors.email? "border-red-500" : "border-gray-300"
+                      touched.email && errors.email ? "border-red-500" : "border-gray-300"
                     } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none transition-all`}
                     value={form.email}
                     onChange={handleChange("email")}
@@ -415,58 +398,55 @@ export default function Register() {
                 {touched.email && errors.email && <p className="text-red-500 text-xs mt-1.5 ml-1">{errors.email}</p>}
               </div>
 
-              {/* PASSWORD */}
               <div>
                 <div className="relative">
                   <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                   <input
-                    type={showPass? "text" : "password"}
+                    type={showPass ? "text" : "password"}
                     placeholder="Mật khẩu"
                     autoComplete="new-password"
                     className={`w-full pl-10 pr-10 py-2.5 rounded-lg border text-sm ${
-                      touched.password && errors.password? "border-red-500" : "border-gray-300"
+                      touched.password && errors.password ? "border-red-500" : "border-gray-300"
                     } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none transition-all`}
                     value={form.password}
                     onChange={handleChange("password")}
                     onBlur={() => handleBlur("password")}
                   />
                   <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                    {showPass? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                    {showPass ? <FiEyeOff size={18} /> : <FiEye size={18} />}
                   </button>
                 </div>
                 {form.password && (
                   <div className="flex gap-1 mt-2 ml-1">
                     {Array.from({ length: 4 }).map((_, i) => (
-                      <div key={i} className={`h-1 flex-1 rounded-full ${i < passStrength? passStrength < 2? "bg-red-500" : passStrength < 3? "bg-yellow-500" : "bg-green-500" : "bg-gray-200"}`} />
+                      <div key={i} className={`h-1 flex-1 rounded-full ${i < passStrength ? passStrength < 2 ? "bg-red-500" : passStrength < 3 ? "bg-yellow-500" : "bg-green-500" : "bg-gray-200"}`} />
                     ))}
                   </div>
                 )}
                 {touched.password && errors.password && <p className="text-red-500 text-xs mt-1.5 ml-1">{errors.password}</p>}
               </div>
 
-              {/* CONFIRM PASSWORD */}
               <div>
                 <div className="relative">
                   <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                   <input
-                    type={showConfirm? "text" : "password"}
+                    type={showConfirm ? "text" : "password"}
                     placeholder="Xác nhận mật khẩu"
                     autoComplete="new-password"
                     className={`w-full pl-10 pr-10 py-2.5 rounded-lg border text-sm ${
-                      touched.confirmPassword && errors.confirmPassword? "border-red-500" : "border-gray-300"
+                      touched.confirmPassword && errors.confirmPassword ? "border-red-500" : "border-gray-300"
                     } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none transition-all`}
                     value={form.confirmPassword}
                     onChange={handleChange("confirmPassword")}
                     onBlur={() => handleBlur("confirmPassword")}
                   />
                   <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                    {showConfirm? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                    {showConfirm ? <FiEyeOff size={18} /> : <FiEye size={18} />}
                   </button>
                 </div>
                 {touched.confirmPassword && errors.confirmPassword && <p className="text-red-500 text-xs mt-1.5 ml-1">{errors.confirmPassword}</p>}
               </div>
 
-              {/* TERMS + PRIVACY */}
               <div className="space-y-2">
                 <div className="flex items-start gap-3">
                   <input
@@ -478,12 +458,7 @@ export default function Register() {
                   />
                   <label htmlFor="terms" className="text-sm text-gray-600 cursor-pointer">
                     Tôi đồng ý với{" "}
-                    <Link
-                      href="/terms"
-                      target="_blank"
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-sky-600 font-semibold hover:text-sky-700 underline"
-                    >
+                    <Link href="/terms" target="_blank" onClick={(e) => e.stopPropagation()} className="text-sky-600 font-semibold hover:text-sky-700 underline">
                       Điều khoản
                     </Link>
                   </label>
@@ -500,12 +475,7 @@ export default function Register() {
                   />
                   <label htmlFor="privacy" className="text-sm text-gray-600 cursor-pointer">
                     Tôi đồng ý với{" "}
-                    <Link
-                      href="/privacy"
-                      target="_blank"
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-sky-600 font-semibold hover:text-sky-700 underline"
-                    >
+                    <Link href="/privacy" target="_blank" onClick={(e) => e.stopPropagation()} className="text-sky-600 font-semibold hover:text-sky-700 underline">
                       Chính sách bảo mật
                     </Link>
                   </label>
@@ -516,10 +486,10 @@ export default function Register() {
               <motion.button
                 type="submit"
                 whileTap={{ scale: 0.98 }}
-                disabled={loading || googleLoading || magicLoading}
+                disabled={loading || googleLoading || magicLoading || !auth}
                 className="w-full py-3 rounded-lg text-white font-semibold text-sm bg-sky-500 hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-sky-500/30 flex items-center justify-center gap-2"
               >
-                {loading? <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Đang tạo tài khoản...</> : "Đăng ký"}
+                {loading ? <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Đang tạo tài khoản...</> : "Đăng ký"}
               </motion.button>
             </form>
 
@@ -537,22 +507,22 @@ export default function Register() {
                 type="button"
                 whileTap={{ scale: 0.98 }}
                 onClick={handleGoogleSignup}
-                disabled={loading || googleLoading || magicLoading}
+                disabled={loading || googleLoading || magicLoading || !auth}
                 className="w-full py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-semibold text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
               >
                 <FcGoogle size={20} />
-                {googleLoading? "Đang kết nối..." : "Đăng ký với Google"}
+                {googleLoading ? "Đang kết nối..." : "Đăng ký với Google"}
               </motion.button>
 
               <motion.button
                 type="button"
                 whileTap={{ scale: 0.98 }}
                 onClick={handleMagicLink}
-                disabled={loading || googleLoading || magicLoading}
+                disabled={loading || googleLoading || magicLoading || !auth}
                 className="w-full py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-semibold text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
               >
                 <FiSend size={18} />
-                {magicLoading? "Đang gửi..." : "Đăng ký bằng Email Link"}
+                {magicLoading ? "Đang gửi..." : "Đăng ký bằng Email Link"}
               </motion.button>
 
               {passkeySupported && (
@@ -560,7 +530,7 @@ export default function Register() {
                   type="button"
                   whileTap={{ scale: 0.98 }}
                   onClick={handlePasskey}
-                  disabled={loading || googleLoading || magicLoading}
+                  disabled={loading || googleLoading || magicLoading || !auth}
                   className="w-full py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-semibold text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                 >
                   <FiSmartphone size={18} />
