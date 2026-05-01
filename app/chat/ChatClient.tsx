@@ -566,49 +566,65 @@ stopScan();
       return;
     }
 
-    const currentUserDoc = await getDoc(doc(db, "users", currentUser.uid));
-    const currentUserData = currentUserDoc.data();
+    const [currentUserDoc, targetUserDoc] = await Promise.all([
+  getDoc(doc(db, "users", currentUser.uid)),
+  getDoc(doc(db, "users", targetUserId))
+]);
+const currentUserData = currentUserDoc.data();
+const targetUserData = targetUserDoc.data();
 
-    // Tạo bạn bè 2 chiều
-    await Promise.all([
-      setDoc(doc(db, "users", currentUser.uid, "friends", targetUserId), {
-        addedAt: serverTimestamp(),
-        uid: targetUserId,
-      }),
-      setDoc(doc(db, "users", targetUserId, "friends", currentUser.uid), {
-        addedAt: serverTimestamp(),
-        uid: currentUser.uid,
-      })
-    ]);
-    
-    await createNotification(targetUserId, {
-      type: "friend_request",
-      fromUid: currentUser.uid,
-      fromName: currentUserData?.name || "Người dùng",
-      fromAvatar: currentUserData?.avatar || "",
-      title: "Lời mời kết bạn",
-      message: "đã gửi lời mời kết bạn",
-      actionData: { requesterId: currentUser.uid }
-    });
-    
-    const chatId = [currentUser.uid, targetUserId].sort().join("_");
-    await setDoc(doc(db, "chats", chatId), { 
-      members: [currentUser.uid, targetUserId], 
-      isGroup: false, 
-      createdAt: serverTimestamp(), 
-      updatedAt: serverTimestamp() 
-    }, { merge: true });
-    
-    toast.success("Đã thêm bạn bè");
-    router.push(`/chat/${chatId}`);
-    setShowAdd(false);
-    setSearch("");
-  } catch (error: any) {
-    console.error("Add friend error:", error.code, error.message);
-    toast.error(`Lỗi: ${error.message || "Không thể thêm bạn"}`);
-  } finally {
-    setAdding(false);
+// Tạo bạn bè 2 chiều
+await Promise.all([
+  setDoc(doc(db, "users", currentUser.uid, "friends", targetUserId), {
+    addedAt: serverTimestamp(),
+    uid: targetUserId,
+  }),
+  setDoc(doc(db, "users", targetUserId, "friends", currentUser.uid), {
+    addedAt: serverTimestamp(),
+    uid: currentUser.uid,
+  })
+]);
+
+await createNotification(targetUserId, {
+  type: "friend_request",
+  fromUid: currentUser.uid,
+  fromName: currentUserData?.name || "Người dùng",
+  fromAvatar: currentUserData?.avatar || "",
+  title: "Lời mời kết bạn",
+  message: "đã gửi lời mời kết bạn",
+  actionData: { requesterId: currentUser.uid }
+});
+
+const chatId = [currentUser.uid, targetUserId].sort().join("_");
+await setDoc(doc(db, "chats", chatId), {
+  members: [currentUser.uid, targetUserId],
+  isGroup: false,
+  createdAt: serverTimestamp(),
+  updatedAt: serverTimestamp(),
+  membersInfo: {
+    [currentUser.uid]: {
+      name: currentUserData?.name || "User",
+      avatar: currentUserData?.avatar || "",
+      username: currentUserData?.username || ""
+    },
+    [targetUserId]: {
+      name: targetUserData?.name || "User",
+      avatar: targetUserData?.avatar || "",
+      username: targetUserData?.username || ""
+    }
   }
+}, { merge: true });
+
+toast.success("Đã thêm bạn bè");
+router.push(`/chat/${chatId}`);
+setShowAdd(false);
+setSearch("");
+} catch (error: any) {
+  console.error("Add friend error:", error.code, error.message);
+  toast.error(`Lỗi: ${error.message || "Không thể thêm bạn"}`);
+} finally {
+  setAdding(false);
+}
 }, [search, db, router, createNotification]);
 
 const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) => {
@@ -717,12 +733,43 @@ const handleDeclineFriendRequest = useCallback(async (notifId: string) => {
     }
   }, [user?.uid, db, notifications]);
 
-  const handleStartChatWithFriend = useCallback(async (friendId: string) => {
-    if (!user?.uid) return;
-    const chatId = [user.uid, friendId].sort().join("_");
-    await setDoc(doc(db, "chats", chatId), { members: [user.uid, friendId], isGroup: false, updatedAt: new Date() }, { merge: true });
-    router.push(`/chat/${chatId}`);
-  }, [user?.uid, db, router]);
+const handleStartChatWithFriend = useCallback(async (friendId: string) => {
+  const auth = getAuth();
+  await auth.authStateReady();
+  const currentUser = auth.currentUser;
+  if (!currentUser?.uid) return;
+
+  const chatId = [currentUser.uid, friendId].sort().join("_");
+  
+  const [currentUserDoc, friendDoc] = await Promise.all([
+    getDoc(doc(db, "users", currentUser.uid)),
+    getDoc(doc(db, "users", friendId))
+  ]);
+
+  const currentData = currentUserDoc.data();
+  const friendData = friendDoc.data();
+
+  await setDoc(doc(db, "chats", chatId), { 
+    members: [currentUser.uid, friendId], 
+    isGroup: false, 
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    membersInfo: {
+      [currentUser.uid]: {
+        name: currentData?.name || "User",
+        avatar: currentData?.avatar || "",
+        username: currentData?.username || ""
+      },
+      [friendId]: {
+        name: friendData?.name || "User", 
+        avatar: friendData?.avatar || "",
+        username: friendData?.username || ""
+      }
+    }
+  }, { merge: true });
+  
+  router.push(`/chat/${chatId}`);
+}, [db, router]);
 
   const handleRemoveFriend = useCallback(async (friendId: string, friendName: string) => {
     if (!user?.uid) return;
