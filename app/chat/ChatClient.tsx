@@ -414,19 +414,28 @@ const handleScanFromFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (!file) return;
 
-  try {
-    if (scannerRef.current) {
-      await scannerRef.current.clear();
-    }
-  } catch {}
+  let qrReader = document.getElementById("qr-reader-file");
+  if (!qrReader) {
+    qrReader = document.createElement("div");
+    qrReader.id = "qr-reader-file";
+    qrReader.style.display = "none";
+    document.body.appendChild(qrReader);
+  }
 
   const html5QrCode = new Html5Qrcode("qr-reader-file");
-  scannerRef.current = html5QrCode;
-
   try {
     const result = await html5QrCode.scanFile(file, false);
+    let userId = "";
+
     if (result.includes("/u/")) {
-      const userId = result.split("/u/")[1] || "";
+      userId = result.split("/u/")[1] || "";
+    } else if (result.startsWith("@")) {
+      userId = result.slice(1);
+    } else {
+      userId = result.trim();
+    }
+
+    if (userId) {
       setSearch(userId);
       setAddMode("friend");
       setShowAdd(true);
@@ -453,18 +462,28 @@ useEffect(() => {
       await html5QrCode.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => {
-          if ("vibrate" in navigator) navigator.vibrate(10);
-          if (decodedText.includes("/u/")) {
-     const userId = decodedText.split("/u/")[1] || "";
-  setSearch(userId);
-            setAddMode("friend");
-            stopScan();
-            toast.success("Đã quét QR");
-          } else {
-            toast.error("Mã QR không hợp lệ");
-          }
-        },
+(decodedText) => {
+  if ("vibrate" in navigator) navigator.vibrate(10);
+  let userId = "";
+
+  if (decodedText.includes("/u/")) {
+    userId = decodedText.split("/u/")[1] || "";
+  } else if (decodedText.startsWith("@")) {
+    userId = decodedText.slice(1);
+  } else {
+    userId = decodedText.trim();
+  }
+
+  if (userId) {
+    setSearch(userId);
+    setAddMode("friend");
+    setShowAdd(true);
+    stopScan();
+    toast.success("Đã quét QR");
+  } else {
+    toast.error("Mã QR không hợp lệ");
+  }
+},
         () => {}
       );
     } catch {
