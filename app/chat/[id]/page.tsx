@@ -565,6 +565,53 @@ export default function ChatDetailPage() {
     }
   };
 
+  /* ================= SEND LOCATION ================= */
+  const sendLocation = async () => {
+    if (!user ||!chatId ||!friendId) return;
+    if (!navigator.geolocation) {
+      toast.error("Trình duyệt không hỗ trợ định vị");
+      return;
+    }
+
+    setUploading(true);
+    toast.info("Đang lấy vị trí...");
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        try {
+          await addDoc(collection(db, "chats", chatId, "messages"), {
+            senderId: user.uid,
+            location: { lat: latitude, lng: longitude },
+            type: "location",
+            createdAt: serverTimestamp(),
+            seenBy: [user.uid],
+          });
+
+          await setDoc(
+            doc(db, "chats", chatId),
+            {
+              lastMessage: "📍 Vị trí",
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+          toast.success("Đã gửi vị trí");
+        } catch (err) {
+          console.error(err);
+          toast.error("Lỗi gửi vị trí");
+        } finally {
+          setUploading(false);
+        }
+      },
+      (err) => {
+        console.error(err);
+        toast.error("Không lấy được vị trí. Bật định vị trong trình duyệt");
+        setUploading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
   /* ================= REACTIONS ================= */
   const toggleReaction = async (msgId: string, emoji: string) => {
     if (!user ||!chatId) return;
@@ -916,6 +963,20 @@ export default function ChatDetailPage() {
                           <span className="text-xs">{m.duration}s</span>
                         </div>
                       )}
+{m.location && (
+  <a
+    href={`https://maps.google.com/?q=${m.location.lat},${m.location.lng}`}
+    target="_blank"
+    className="flex items-center gap-2 p-3 bg-black/10 rounded-xl"
+  >
+    <MapPin size={20} />
+    <div>
+      <p className="text-sm font-bold">Vị trí đã chia sẻ</p>
+      <p className="text-xs opacity-70">Nhấn để mở Google Maps</p>
+    </div>
+  </a>
+)}
+
                       {m.text && (
                         <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
                           {m.text}
@@ -1067,6 +1128,10 @@ export default function ChatDetailPage() {
           <button onClick={() => fileInputRef.current?.click()} className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90">
             <Paperclip size={22} className="text-gray-600 dark:text-zinc-400" />
           </button>
+
+<button onClick={sendLocation} className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90">
+  <MapPin size={22} className="text-gray-600 dark:text-zinc-400" />
+</button>
           <div className="flex-1 relative">
             <input
               ref={inputRef}
