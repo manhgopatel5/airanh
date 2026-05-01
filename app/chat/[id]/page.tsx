@@ -697,21 +697,7 @@ const otherUser = data.membersInfo[otherUid];
     }
   };
 
-  /* ================= LINK PREVIEW ================= */
-  const fetchLinkPreview = async (url: string) => {
-    try {
-      const res = await fetch(`https://api.microlink.io?url=${encodeURIComponent(url)}`);
-      const data = await res.json();
-      return {
-        title: data.data.title || "",
-        desc: data.data.description || "",
-        image: data.data.image?.url || "",
-        url: url
-      };
-    } catch {
-      return null;
-    }
-  };
+
 
   /* ================= FILTER SEARCH ================= */
   const filteredMessages = useMemo(() => {
