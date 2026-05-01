@@ -521,7 +521,6 @@ const handleTyping = useCallback(async () => {
         members: chatData.members,
       });
 
-   );
 
       setAudioBlob(null);
       setRecordingTime(0);
