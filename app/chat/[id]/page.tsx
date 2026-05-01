@@ -25,10 +25,9 @@ type UserData = {
   name: string;
   username: string;
   avatar: string;
-  online: boolean;
+  isOnline: boolean; // FIX: Đổi tên cho khớp AppUser
   lastSeen?: Timestamp;
-  shortId: string;
-  userId?: string;
+  userId: string; // FIX: Bỏ optional, đổi tên từ shortId
 };
 
 type Reaction = {
@@ -151,15 +150,14 @@ if (!otherUid ||!data.membersInfo?.[otherUid]) {
 
 const otherUser = data.membersInfo[otherUid];
 
-      setFriend({
-        uid: otherUid,
-        name: otherUser.name || "User",
-        username: otherUser.username || "",
-        avatar: otherUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name)}&background=random`,
-        online: false,
-        shortId: "",
-        userId: otherUser.username || ""
-      });
+setFriend({
+  uid: otherUid,
+  name: otherUser.name || "User",
+  username: otherUser.username || "",
+  avatar: otherUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name)}&background=random`,
+  isOnline: false, // FIX
+  userId: otherUser.userId || otherUser.username || "" // FIX: Lấy userId thật
+});
       setFriendId(otherUid);
       setChatData(data);
       setLoadingFriend(false);
@@ -179,11 +177,11 @@ const otherUser = data.membersInfo[otherUid];
     const unsub = onSnapshot(doc(db, "users", friendId), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
-        setFriend(prev => prev? {
-        ...prev,
-          online: data.online || false,
-          lastSeen: data.lastSeen
-        } : null);
+setFriend(prev => prev? {
+...prev,
+  isOnline: data.isOnline || false, // FIX
+  lastSeen: data.lastSeen
+} : null);
       }
     });
     return () => unsub();
