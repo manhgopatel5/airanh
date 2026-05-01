@@ -23,7 +23,6 @@ import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import {
   doc,
   getDoc,
-  setDoc,
   updateDoc,
   serverTimestamp,
   Firestore,
