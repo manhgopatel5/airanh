@@ -1275,29 +1275,29 @@ const { pinnedChats, normalChats } = useMemo(() => {
                         <p className="text- font-medium text-[#8e8e93] dark:text-zinc-500">Đã chọn {selected.length} người</p>
                       </div>
                       <div className="flex-1 overflow-auto">
-                        {friendsForGroup.length === 0? (
-                          <div className="p-8 text-center"><p className="text- text-[#8e8e93] dark:text-zinc-500">Chưa có bạn bè</p></div>
-                        ) : (
-                          <div className="divide-y divide-black/5 dark:divide-white/5">
-                            {friendsForGroup.map((person) => (
-                              <label key={person.uid} className="flex items-center gap-3 px-3 py-2.5 hover:bg-black/[0.02] dark:hover:bg-white/[0.03] cursor-pointer active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors">
-                                <input type="checkbox" checked={selected.includes(person.uid)} onChange={(e) => setSelected((current) => e.target.checked? [...current, person.uid] : current.filter((id) => id!== person.uid))} className={`w- h- rounded- border-2 border-[#c7cc] dark:border-zinc-600 ${primaryText} focus:ring-0 focus:ring-offset-0 checked:${primaryBgSolid} checked:border-transparent transition-colors`} />
-                                <img src={person.avatar} alt={person.name} className="w-9 h-9 rounded-full object-cover bg-gray-100 dark:bg-zinc-800 flex-shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text- leading-5 font-normal truncate">{person.name}</p>
-                                  <p className="text- leading-4 text-[#8e8e93] dark:text-zinc-500">@{person.username || person.userId}</p>
-                                </div>
-                                {selected.includes(person.uid) && <div className={`w-5 h-5 ${primaryBgSolid} rounded-full flex items-center justify-center flex-shrink-0`}><FiCheck className="text-white" size={12} strokeWidth={3} /></div>}
-                              </label>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    <button onClick={handleCreateGroup} disabled={adding ||!groupName.trim() || selected.length < 1} className={`w-full h- ${primaryBg} ${primaryHover} ${primaryActive} disabled:opacity-40 text-white rounded- text- font-[550] transition-all active:scale-[0.98] flex items-center justify-center gap-2 flex-shrink-0`}>
-                      {adding && <FiLoader className="animate-spin" size={18} />}Tạo nhóm ({selected.length + 1})
-                    </button>
-                  
-                )}
+{friendsForGroup.length === 0? (
+  <div className="p-8 text-center"><p className="text- text-[#8e8e93] dark:text-zinc-500">Chưa có bạn bè</p></div>
+) : (
+  <div className="divide-y divide-black/5 dark:divide-white/5">
+    {friendsForGroup.map((person) => (
+      <label key={person.uid} className="flex items-center gap-3 px-3 py-2.5 hover:bg-black/[0.02] dark:hover:bg-white/[0.03] cursor-pointer active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors">
+        <input type="checkbox" checked={selected.includes(person.uid)} onChange={(e) => setSelected((current) => e.target.checked? [...current, person.uid] : current.filter((id) => id!== person.uid))} className={`w- h- rounded- border-2 border-[#c7c7cc] dark:border-zinc-600 ${primaryText} focus:ring-0 focus:ring-offset-0 checked:${primaryBgSolid} checked:border-transparent transition-colors`} />
+        <img src={person.avatar} alt={person.name} className="w-9 h-9 rounded-full object-cover bg-gray-100 dark:bg-zinc-800 flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text- leading-5 font-normal truncate">{person.name}</p>
+          <p className="text- leading-4 text-[#8e93] dark:text-zinc-500">@{person.username || person.userId}</p>
+        </div>
+        {selected.includes(person.uid) && <div className={`w-5 h-5 ${primaryBgSolid} rounded-full flex items-center justify-center flex-shrink-0`}><FiCheck className="text-white" size={12} strokeWidth={3} /></div>}
+      </label>
+    ))}
+  </div>
+)}
+</div>
+<button onClick={handleCreateGroup} disabled={adding ||!groupName.trim() || selected.length < 1} className={`w-full h- ${primaryBg} ${primaryHover} ${primaryActive} disabled:opacity-40 text-white rounded- text- font-[550] transition-all active:scale-[0.98] flex items-center justify-center gap-2 flex-shrink-0`}>
+  {adding && <FiLoader className="animate-spin" size={18} />}Tạo nhóm ({selected.length + 1})
+</button>
+</div>
+)}
               </div>
             </div>
           </div>
