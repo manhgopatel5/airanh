@@ -1036,7 +1036,7 @@ const handleStartChatWithFriend = useCallback(async (friendId: string) => {
                             {notif.type === "friend_request" && !notif.read && (
                               <div className="flex items-center gap-2 mt-2.5">
                                 <button onClick={() => handleAcceptFriendRequest(notif)} className={`h-7 px-4 ${primaryBg} ${primaryHover} text-white rounded-full text-[13px] font-medium`}>Chấp nhận</button>
-                                <button onClick={() => handleDeclineFriendRequest(notif.id)} className="h-7 px-4 bg-[#f2f2f7] dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-full text-[13px] font-medium">Từ chối</button>
+                                <button onClick={() => handleDeclineFriendRequest(notif)} className="h-7 px-4 bg-[#f2f2f7] dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-full text-[13px] font-medium">Từ chối</button>
                               </div>
                             )}
                             {(notif.type === "group_invite" || notif.type === "mention") && notif.chatId && (
