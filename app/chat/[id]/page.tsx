@@ -76,57 +76,83 @@ const idFromUrl = Array.isArray(params?.id)
 
   const chatId = user && friendId? [user.uid, friendId].sort().join("_") : null;
 
-  /* ================= LOAD FRIEND - FIX PVT331HC ================= */
-  useEffect(() => {
-    if (!idFromUrl) return;
-if (authLoading) return;
-    if (!user) {
+/* ================= LOAD FRIEND FROM CHAT DOC ================= */
+/* ================= LOAD FRIEND FROM CHAT DOC ================= */
+useEffect(() => {
+  if (!idFromUrl) return;
+  if (authLoading) return;
+  if (!user) {
+    router.replace("/chat");
+    return;
+  }
+
+  // ✅ idFromUrl chính là chatId luôn
+  const chatId = idFromUrl as string;
+  
+  const unsub = onSnapshot(doc(db, "chats", chatId), (snap) => {
+    if (!snap.exists()) {
+      toast.error("Cuộc trò chuyện không tồn tại");
+      setTimeout(() => router.replace("/chat"), 1500);
+      return;
+    }
+
+    const data = snap.data();
+    
+    // ✅ Check user có trong chat không
+    if (!data.members?.includes(user.uid)) {
+      toast.error("Bạn không có quyền truy cập");
       router.replace("/chat");
       return;
     }
 
-    const loadFriend = async () => {
-      try {
-        const q = query(
-          collection(db, "users"),
-          where("uid", "==", idFromUrl),
-          limit(1)
-        );
-        const snap = await getDocs(q);
+    const otherUid = data.members?.find((id: string) => id!== user.uid);
+    
+    // ✅ Đọc từ membersInfo
+    const otherUser = data.membersInfo?.[otherUid];
+    
+    if (!otherUser) {
+      toast.error("Không tìm thấy người dùng");
+      router.replace("/chat");
+      return;
+    }
 
-        if (snap.empty ||!snap.docs[0]) {
-          toast.error("Người dùng không tồn tại");
-          setTimeout(() => router.replace("/chat"), 1500);
-          return;
-        }
+    setFriend({
+      uid: otherUid,
+      name: otherUser.name || "User",
+      username: otherUser.username || "",
+      avatar: otherUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name)}&background=random`,
+      online: false, // sẽ update realtime sau
+      shortId: "",
+      userId: otherUser.username || ""
+    });
+    setFriendId(otherUid);
+    setLoadingFriend(false);
+  }, (error) => {
+    console.error(error);
+    toast.error("Lỗi tải thông tin");
+    router.replace("/chat");
+    setLoadingFriend(false);
+  });
 
-        const userDoc = snap.docs[0];
-        const data = userDoc.data() as UserData;
-        setFriend({...data, uid: userDoc.id });
-        setFriendId(userDoc.id);
-
-      } catch (e) {
-        console.error(e);
-        toast.error("Lỗi tải thông tin");
-        router.replace("/chat");
-      } finally {
-        setLoadingFriend(false);
-      }
-    };
-
-    loadFriend();
-  }, [idFromUrl, user, authLoading, router, db]);
+  return () => unsub();
+}, [idFromUrl, user, authLoading, router, db]);
 
   /* ================= REALTIME FRIEND STATUS ================= */
-  useEffect(() => {
-    if (!friendId) return;
-    const unsub = onSnapshot(doc(db, "users", friendId), (snap) => {
-      if (snap.exists()) {
-        setFriend({ uid: snap.id,...snap.data() } as UserData);
-      }
-    });
-    return () => unsub();
-  }, [friendId, db]);
+/* ================= REALTIME FRIEND STATUS ================= */
+useEffect(() => {
+  if (!friendId) return;
+  const unsub = onSnapshot(doc(db, "users", friendId), (snap) => {
+    if (snap.exists()) {
+      const data = snap.data();
+      setFriend(prev => prev? { 
+       ...prev, 
+        online: data.online || false,
+        lastSeen: data.lastSeen 
+      } : null);
+    }
+  });
+  return () => unsub();
+}, [friendId, db]);
 
   /* ================= LOAD MESSAGES ================= */
   useEffect(() => {
