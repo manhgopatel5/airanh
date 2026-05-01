@@ -10,7 +10,7 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
-  Image as ImageIcon, MapPin, Paperclip, Phone, Info, Send,
+  Image as ImageIcon, MapPin, Paperclip, Phone, Send,
   ArrowLeft, Loader2, X, Video, CheckCheck, MoreVertical,
   Smile, Reply, Trash2, Pencil, Pin, Copy, Mic, Square, Search
 } from "lucide-react";
