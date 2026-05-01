@@ -563,10 +563,7 @@ const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<voi
       addedAt: serverTimestamp(),
       uid: targetUserId,
     });
-    batch.set(doc(db, "users", targetUserId, "friends", currentUser.uid), {
-      addedAt: serverTimestamp(),
-      uid: currentUser.uid,
-    });
+
 
     // 2. Tạo chatId
     const chatId = [currentUser.uid, targetUserId].sort().join("_");
@@ -636,10 +633,7 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
       addedAt: serverTimestamp(),
       uid: notif.fromUid,
     });
-    batch.set(doc(db, "users", notif.fromUid, "friends", currentUser.uid), {
-      addedAt: serverTimestamp(),
-      uid: currentUser.uid,
-    });
+
 
     batch.update(doc(db, "notifications", currentUser.uid, "items", notif.id), {
       read: true
@@ -678,10 +672,7 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
       chatId,
       createdAt: serverTimestamp()
     });
-    batch.set(doc(db, "users", notif.fromUid, "chats", chatId), {
-      chatId,
-      createdAt: serverTimestamp()
-    });
+
 
     await batch.commit();
 
