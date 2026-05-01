@@ -44,7 +44,7 @@ import {
 import { RiAddLine, RiPushpinFill } from "react-icons/ri";
 import Link from "next/link";
 import { toast, Toaster } from "sonner";
-import { ScanLine, Upload } from "lucide-react";
+import { ScanLine } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { format, isToday, isYesterday, formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
