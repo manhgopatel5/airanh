@@ -286,23 +286,10 @@ export default function ChatDetailPage() {
     return () => unsub();
   }, [chatId, friendId, db]);
 
-  const handleTyping = useCallback(async () => {
-    if (!user ||!chatId) return;
-    try {
-      await setDoc(doc(db, "chats", chatId), {
-        [`typing.${user.uid}`]: true
-      }, { merge: true });
-
-      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      typingTimeoutRef.current = setTimeout(async () => {
-        await setDoc(doc(db, "chats", chatId), {
-          [`typing.${user.uid}`]: false
-        }, { merge: true });
-      }, 3000);
-    } catch (e) {
-      console.log("Typing error:", e);
-    }
-  }, [user, chatId, db]);
+const handleTyping = useCallback(async () => {
+  // Bỏ typing vì rules chặn update chats
+  return;
+}, []);
 
   /* ================= SEND MESSAGE - OPTIMISTIC UI ================= */
   const sendMessage = useCallback(async () => {
@@ -368,15 +355,7 @@ export default function ChatDetailPage() {
           }),
         });
 
-        await setDoc(
-          doc(db, "chats", chatId),
-          {
-            lastMessage: tempText,
-            updatedAt: serverTimestamp(),
-            [`typing.${user.uid}`]: false,
-          },
-          { merge: true }
-        );
+  );
       }
     } catch (e: any) {
       console.error(e);
@@ -434,14 +413,7 @@ export default function ChatDetailPage() {
               members: chatData.members,
             });
 
-            await setDoc(
-              doc(db, "chats", chatId),
-              {
-                lastMessage: "📷 Ảnh",
-                updatedAt: serverTimestamp(),
-              },
-              { merge: true }
-            );
+         
           } catch (err: any) {
             console.error(err);
             toast.error(`Lỗi gửi ảnh: ${err.code}`);
@@ -485,14 +457,7 @@ export default function ChatDetailPage() {
         members: chatData.members,
       });
 
-      await setDoc(
-        doc(db, "chats", chatId),
-        {
-          lastMessage: `📎 ${file.name}`,
-          updatedAt: serverTimestamp(),
-        },
-        { merge: true }
-      );
+
     } catch (err: any) {
       console.error(err);
       toast.error(`Lỗi gửi file: ${err.code}`);
@@ -557,14 +522,7 @@ export default function ChatDetailPage() {
         members: chatData.members,
       });
 
-      await setDoc(
-        doc(db, "chats", chatId),
-        {
-          lastMessage: "🎤 Tin nhắn thoại",
-          updatedAt: serverTimestamp(),
-        },
-        { merge: true }
-      );
+   );
 
       setAudioBlob(null);
       setRecordingTime(0);
@@ -603,14 +561,7 @@ export default function ChatDetailPage() {
             members: chatData.members,
           });
 
-          await setDoc(
-            doc(db, "chats", chatId),
-            {
-              lastMessage: "📍 Vị trí",
-              updatedAt: serverTimestamp(),
-            },
-            { merge: true }
-          );
+        );
           toast.success("Đã gửi vị trí");
         } catch (err: any) {
           console.error(err);
@@ -688,29 +639,22 @@ export default function ChatDetailPage() {
   };
 
   /* ================= PIN MESSAGE ================= */
-  const pinMessage = async (msgId: string) => {
-    if (!chatId) return;
-    try {
-      await setDoc(doc(db, "chats", chatId), {
-        pinnedMessage: msgId
-      }, { merge: true });
-      toast.success("Đã ghim tin nhắn");
-    } catch (err) {
-      toast.error("Lỗi ghim tin nhắn");
-    }
-  };
+const pinMessage = async (msgId: string) => {
+  toast.info("Tính năng ghim sẽ cập nhật sau");
+  // if (!chatId) return;
+  // try {
+  //   await setDoc(doc(db, "chats", chatId), {
+  //     pinnedMessage: msgId
+  //   }, { merge: true });
+  //   toast.success("Đã ghim tin nhắn");
+  // } catch (err) {
+  //   toast.error("Lỗi ghim tin nhắn");
+  // }
+};
 
-  const unpinMessage = async () => {
-    if (!chatId) return;
-    try {
-      await setDoc(doc(db, "chats", chatId), {
-        pinnedMessage: null
-      }, { merge: true });
-      toast.success("Đã bỏ ghim");
-    } catch (err) {
-      toast.error("Lỗi bỏ ghim");
-    }
-  };
+const unpinMessage = async () => {
+  toast.info("Tính năng ghim sẽ cập nhật sau");
+};
 
   /* ================= FILTER SEARCH ================= */
   const filteredMessages = useMemo(() => {
