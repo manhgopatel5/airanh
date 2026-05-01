@@ -13,8 +13,6 @@ import {
   sendEmailVerification,
   GoogleAuthProvider,
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
   sendSignInLinkToEmail,
   isSignInWithEmailLink,
   signInWithEmailLink,
@@ -29,6 +27,7 @@ import {
   updateDoc,
   serverTimestamp,
   Firestore,
+  runTransaction,
 } from "firebase/firestore";
 import { nanoid } from "nanoid";
 import { toast, Toaster } from "sonner";
@@ -60,7 +59,7 @@ export default function Login() {
 
   const failedAttempts = useRef(0);
   const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const redirectTo = searchParams.get("redirect") || "/";
+  const redirectTo = searchParams.get("redirect") || "/chat";
 
   useEffect(() => {
     authRef.current = getFirebaseAuth();
@@ -79,26 +78,17 @@ export default function Login() {
       }
       if (email) {
         signInWithEmailLink(authRef.current, email, window.location.href)
-        .then(async (result) => {
+       .then(async (result) => {
             localStorage.removeItem("emailForSignIn");
             await updateUserDoc(result.user, dbRef.current!);
             toast.success("Đăng nhập thành công");
             router.replace(redirectTo);
           })
-        .catch(() => setErrors({ submit: "Link không hợp lệ hoặc đã hết hạn" }));
+       .catch(() => setErrors({ submit: "Link không hợp lệ hoặc đã hết hạn" }));
       }
     }
 
-    // Handle Google redirect
-    getRedirectResult(authRef.current)
-    .then(async (result) => {
-        if (result) {
-          await updateUserDoc(result.user, dbRef.current!);
-          toast.success("Đăng nhập thành công");
-          router.replace(redirectTo);
-        }
-      })
-    .catch(() => setErrors({ submit: "Đăng nhập Google thất bại" }));
+    // FIX: XÓA getRedirectResult - không dùng redirect nữa
 
     // Remember last email
     const lastEmail = localStorage.getItem("last_email");
@@ -148,19 +138,54 @@ export default function Login() {
     const snap = await getDoc(userRef).catch(() => null);
 
     if (!snap ||!snap.exists()) {
-      await setDoc(userRef, {
-        uid: user.uid,
-        email: user.email,
-        name: user.displayName || user.email?.split("@")[0] || "User",
-        avatar:
-          user.photoURL ||
-          `https://ui-avatars.com/api/?name=${encodeURIComponent(
-            user.email || "U"
-          )}&background=0EA5E9`,
-        shortId: nanoid(6).toUpperCase(),
-        online: true,
-        lastSeen: serverTimestamp(),
-        createdAt: serverTimestamp(),
+      // FIX: Tạo user mới + userIds/usernames
+      await runTransaction(db, async (tx) => {
+        let userId = "";
+        for (let i = 0; i < 5; i++) {
+          userId = `AIR${nanoid(6).toUpperCase()}`;
+          const q = await tx.get(doc(db, "userIds", userId));
+          if (!q.exists()) break;
+        }
+
+        const email = user.email || "";
+        const name = user.displayName || email.split("@")[0] || "User";
+
+        let baseUsername = name.toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9]/g, "");
+        if (!baseUsername) baseUsername = "user";
+        let username = baseUsername;
+        let counter = 1;
+
+        while (true) {
+          const usernameDoc = await tx.get(doc(db, "usernames", username));
+          if (!usernameDoc.exists()) break;
+          username = `${baseUsername}${counter}`;
+          counter++;
+          if (counter > 100) throw new Error("Không tạo được username");
+        }
+
+        const newUser = {
+          uid: user.uid,
+          name,
+          nameLower: name.toLowerCase(),
+          username,
+          userId,
+          email: user.email || "",
+          emailVerified: user.emailVerified,
+          avatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(email || "U")}&background=0EA5E9`,
+          bio: "",
+          isOnline: true,
+          lastSeen: serverTimestamp(),
+          createdAt: serverTimestamp(),
+          fcmTokens: [],
+          status: "active",
+          searchKeywords: [name.toLowerCase(), userId.toLowerCase(), username.toLowerCase()],
+          hidden: false,
+          deletedAt: null,
+        };
+
+        tx.set(userRef, newUser);
+        tx.set(doc(db, "userIds", userId), { uid: user.uid });
+        tx.set(doc(db, "usernames", username), { uid: user.uid });
       });
     } else {
       const data = snap.data() || {};
@@ -168,7 +193,6 @@ export default function Login() {
         online: true,
         lastSeen: serverTimestamp(),
       };
-      if (!data.shortId) updates.shortId = nanoid(6).toUpperCase();
       if (user.photoURL &&!data.avatar) updates.avatar = user.photoURL;
       if (user.displayName &&!data.name) updates.name = user.displayName;
       await updateDoc(userRef, updates);
@@ -213,6 +237,7 @@ export default function Login() {
     toast.info("Passkey đang phát triển. Dùng Google hoặc Email Link trước nhé");
   };
 
+  // FIX: BỎ signInWithRedirect, dùng popup cho tất cả
   const handleGoogleLogin = async () => {
     const auth = authRef.current;
     const db = dbRef.current;
@@ -228,29 +253,25 @@ export default function Login() {
 
       await setPersistence(
         auth,
-        remember
-      ? browserLocalPersistence
-          : browserSessionPersistence
+        remember? browserLocalPersistence : browserSessionPersistence
       );
 
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
 
-      const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+      const res = await signInWithPopup(auth, provider);
+      await updateUserDoc(res.user, db);
+      localStorage.setItem("last_email", res.user.email || "");
+      toast.success("Đăng nhập thành công");
+      router.replace(redirectTo);
       
-      if (isMobile) {
-        await signInWithRedirect(auth, provider);
-      } else {
-        const res = await signInWithPopup(auth, provider);
-        await updateUserDoc(res.user, db);
-        localStorage.setItem("last_email", res.user.email || "");
-        toast.success("Đăng nhập thành công");
-        router.replace(redirectTo);
-      }
     } catch (err: any) {
+      console.error("GOOGLE ERROR:", err.code);
       if (err.code === "auth/popup-blocked") {
         setErrors({ submit: "Popup bị chặn. Cho phép popup và thử lại" });
       } else if (err.code === "auth/popup-closed-by-user") {
+        return;
+      } else if (err.code === "auth/cancelled-popup-request") {
         return;
       } else if (err.code === "auth/unauthorized-domain") {
         setErrors({ submit: "Domain chưa được xác thực trên Firebase" });
@@ -293,9 +314,7 @@ export default function Login() {
 
       await setPersistence(
         auth,
-        remember
-      ? browserLocalPersistence
-          : browserSessionPersistence
+        remember? browserLocalPersistence : browserSessionPersistence
       );
 
       const res = await signInWithEmailAndPassword(
