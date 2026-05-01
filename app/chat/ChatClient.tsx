@@ -651,8 +651,7 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
 
     await batch2.commit(); // Commit chat trước
 
-    // BATCH 3: Add chat vào subcollection 2 user - giờ đã là bạn + chat đã tồn tại
-    // BATCH 3: Add chat vào subcollection 2 user với full data
+    // BATCH 3: Add chat vào subcollection 2 user với members
 const batch3 = writeBatch(db);
 
 const chatData = {
@@ -660,6 +659,7 @@ const chatData = {
   createdAt: serverTimestamp(),
   updatedAt: serverTimestamp(),
   lastMessage: "",
+  members: [currentUser.uid, fromUid], // THÊM DÒNG NÀY
   otherUser: {
     uid: fromUid,
     name: friendData?.name || "User",
@@ -673,6 +673,7 @@ const chatDataForOther = {
   createdAt: serverTimestamp(),
   updatedAt: serverTimestamp(),
   lastMessage: "",
+  members: [currentUser.uid, fromUid], // THÊM DÒNG NÀY
   otherUser: {
     uid: currentUser.uid,
     name: myData?.name || "User",
