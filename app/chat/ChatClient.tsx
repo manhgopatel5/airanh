@@ -413,8 +413,8 @@ const handleScanFromFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
   try {
     const result = await html5QrCode.scanFile(file, true);
     if (result.includes("/u/")) {
-  const userId = result.split("/u/")[1] || "";
-      setSearch(userId);
+const userId = result.split("/u/")[1] || "";
+  setSearch(userId);
       setAddMode("friend");
       stopScan();
       toast.success("Đã quét QR thành công");
@@ -441,8 +441,8 @@ useEffect(() => {
         (decodedText) => {
           if ("vibrate" in navigator) navigator.vibrate(10);
           if (decodedText.includes("/u/")) {
-            const userId = decodedText.split("/u/")[1];
-            setSearch(userId);
+     const userId = decodedText.split("/u/")[1] || "";
+  setSearch(userId);
             setAddMode("friend");
             stopScan();
             toast.success("Đã quét QR");
