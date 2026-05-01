@@ -131,7 +131,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const snap = await getDoc(userRef);
 
           if (!snap.exists()) {
-            // FIX: Tạo user mới hoàn toàn
+            // TẠO USER MỚI
             console.log("Tạo user mới cho:", firebaseUser.uid);
             await runTransaction(db, async (tx) => {
               let userId = "";
@@ -146,9 +146,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 firebaseUser.displayName || email.split("@")[0] || "User";
 
               let baseUsername = name
-                .toLowerCase()
-                .replace(/\s+/g, "")
-                .replace(/[^a-z0-9]/g, "");
+               .toLowerCase()
+               .replace(/\s+/g, "")
+               .replace(/[^a-z0-9]/g, "");
               if (!baseUsername) baseUsername = "user";
               let username = baseUsername;
               let counter = 1;
@@ -167,12 +167,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 username
               );
 
-const newUser: AppUser = {
-  uid: firebaseUser.uid,
-  name, // ← THÊM DÒNG NÀY
-  nameLower: name.toLowerCase(),
-  username,
-  userId,
+              const newUser: AppUser = {
+                uid: firebaseUser.uid,
+                name: name,
+                nameLower: name.toLowerCase(),
+                username,
+                userId,
                 email: firebaseUser.email || "",
                 emailVerified: firebaseUser.emailVerified,
                 avatar:
@@ -196,24 +196,21 @@ const newUser: AppUser = {
               console.log("Tạo user xong:", userId, username);
             });
           } else {
-            // FIX: User cũ - check và tạo lại userIds/usernames nếu thiếu
+            // USER CŨ - CHECK THIẾU userIds/usernames
             const data = snap.data() as AppUser;
             console.log("User đã có:", data.userId);
 
+            // FIX: Check và tạo lại nếu thiếu, không dùng transaction
             const userIdDoc = await getDoc(doc(db, "userIds", data.userId));
             if (!userIdDoc.exists()) {
               console.log("Thiếu userIds, tạo lại:", data.userId);
-              await runTransaction(db, async (tx) => {
-                tx.set(doc(db, "userIds", data.userId), { uid: firebaseUser.uid });
-              });
+              await setDoc(doc(db, "userIds", data.userId), { uid: firebaseUser.uid });
             }
 
             const usernameDoc = await getDoc(doc(db, "usernames", data.username));
             if (!usernameDoc.exists()) {
               console.log("Thiếu usernames, tạo lại:", data.username);
-              await runTransaction(db, async (tx) => {
-                tx.set(doc(db, "usernames", data.username), { uid: firebaseUser.uid });
-              });
+              await setDoc(doc(db, "usernames", data.username), { uid: firebaseUser.uid });
             }
 
             await updateDoc(userRef, {
