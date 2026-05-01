@@ -1220,15 +1220,26 @@ const { pinnedChats, normalChats } = useMemo(() => {
                 <h2 className="text- font-semibold tracking-tight">Tin nhắn mới</h2>
                 <button onClick={() => setShowAdd(false)} className="w-7 h-7 -mr-1 flex items-center justify-center text-[#8e93] active:opacity-60 transition-opacity" aria-label="Đóng"><FiX size={22} /></button>
               </div>
-              <div className="px-4 pb-3 flex-shrink-0">
-                <div className="grid grid-cols-2 gap-1 p-1 bg-black/[0.04] dark:bg-white/[0.06] rounded-">
-                  {[{ id: "friend", label: "Thêm bạn", icon: FiUserPlus }, { id: "group", label: "Tạo nhóm", icon: FiUsers }].map((tab) => (
-                    <button key={tab.id} onClick={() => setAddMode(tab.id as any)} className={`h- rounded- text- font-[550] flex items-center justify-center gap-1.5 transition-all duration-200 ${addMode === tab.id? "bg-white dark:bg-zinc-800 shadow-sm text-black dark:text-white" : "text-[#8e93] dark:text-zinc-500"}`}>
-                      <tab.icon size={15} />{tab.label}
-                    </button>
-                  ))}
-                </div>
-              <div className="flex-1 overflow-hidden flex flex-col min-h-0 px-5 pb-5">
+<div className="px-4 pb-3 flex-shrink-0">
+  <div className="grid grid-cols-2 gap-1 p-1 bg-black/[0.04] dark:bg-white/[0.06] rounded-">
+    {[{ id: "friend", label: "Thêm bạn", icon: FiUserPlus }, { id: "group", label: "Tạo nhóm", icon: FiUsers }].map((tab) => (
+      <button
+        key={tab.id}
+        onClick={() => setAddMode(tab.id as any)}
+        className={`h- rounded- text- font-[550] flex items-center justify-center gap-1.5 transition-all duration-200 ${
+          addMode === tab.id
+            ? "bg-white dark:bg-zinc-800 shadow-sm text-black dark:text-white"
+            : "text-[#8e93] dark:text-zinc-500"
+        }`}
+      >
+        <tab.icon size={15} />
+        {tab.label}
+      </button>
+    ))}
+  </div>
+</div>
+
+<div className="flex-1 overflow-hidden flex flex-col min-h-0 px-5 pb-5">5">
                 {addMode === "friend"? (
                   <div className="space-y-3">
                     <div className="grid grid-cols-3 gap-2">
