@@ -24,6 +24,7 @@ import { toast, Toaster } from "sonner";
 import type { UploadTask } from "firebase/storage";
 import { nanoid } from "nanoid";
 import { Html5Qrcode } from "html5-qrcode";
+import { QRCodeSVG } from "qrcode.react";
 
 type UserData = {
   uid: string;
@@ -64,7 +65,7 @@ export default function Profile() {
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
   const accentGradient = isPlan
- ? "from-green-500 to-emerald-500"
+? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-500";
 
   useEffect(() => {
@@ -427,20 +428,18 @@ export default function Profile() {
         </div>
       </div>
 
-      {showQR && (
+      {showQR && userData.userId && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowQR(false)}>
           <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-xl font-black text-center mb-1 text-gray-900 dark:text-white">@{userData.userId}</h3>
             <p className="text-sm text-center text-gray-500 mb-4">Quét để kết nối với {userData.name}</p>
 
-            <div className="bg-white p-4 rounded-2xl">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://airanh.vercel.app/u/${userData.userId}&color=000&bgcolor=fff&margin=0`}
-                alt="QR Code"
-                className="w-full rounded-xl"
-                onError={(e) => {
-                  e.currentTarget.src = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=https://airanh.vercel.app/u/${userData.userId}`;
-                }}
+            <div className="bg-white p-4 rounded-2xl flex items-center justify-center">
+              <QRCodeSVG
+                value={`https://airanh.vercel.app/u/${userData.userId}`}
+                size={200}
+                level="H"
+                includeMargin={true}
               />
             </div>
 
