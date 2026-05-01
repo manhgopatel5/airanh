@@ -497,47 +497,43 @@ return () => {
 stopScan();
 };
 }, [showScanQR, scanMode]);
-  const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<void> => {
+const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<void> => {
   event?.preventDefault();
   setAdding(true);
-  
+
   try {
-    // ✅ Đợi auth load xong
     const auth = getAuth();
     await auth.authStateReady();
     const currentUser = auth.currentUser;
-    if (!currentUser?.uid) { 
-      toast.error("Chưa đăng nhập. F5 lại trang."); 
+    if (!currentUser?.uid) {
+      toast.error("Chưa đăng nhập. F5 lại trang.");
       setAdding(false);
-      return; 
+      return;
     }
 
     const keyword = search.trim();
-    if (!keyword) { 
-      toast.error("Vui lòng nhập ID hoặc username"); 
+    if (!keyword) {
+      toast.error("Vui lòng nhập ID hoặc username");
       setAdding(false);
-      return; 
+      return;
     }
 
     let targetUserId: string | null = null;
     const upperKeyword = keyword.toUpperCase();
     const lowerKeyword = keyword.toLowerCase();
 
-    // 1. Tìm bằng userIds
     const userIdDoc = await getDoc(doc(db, "userIds", upperKeyword));
     if (userIdDoc.exists()) targetUserId = userIdDoc.data().uid;
-    
-    // 2. Tìm bằng usernames
+
     if (!targetUserId) {
       const usernameDoc = await getDoc(doc(db, "usernames", lowerKeyword));
       if (usernameDoc.exists()) targetUserId = usernameDoc.data().uid;
     }
-    
-    // 3. Tìm bằng searchKeywords
+
     if (!targetUserId) {
       const searchQuery = query(
-        collection(db, "users"), 
-        where("searchKeywords", "array-contains", lowerKeyword), 
+        collection(db, "users"),
+        where("searchKeywords", "array-contains", lowerKeyword),
         limit(1)
       );
       const searchSnapshot = await getDocs(searchQuery);
@@ -545,20 +541,19 @@ stopScan();
         targetUserId = searchSnapshot.docs[0].id;
       }
     }
-    
-    if (!targetUserId) { 
-      toast.error(`Không tìm thấy: ${keyword}`); 
+
+    if (!targetUserId) {
+      toast.error(`Không tìm thấy: ${keyword}`);
       setAdding(false);
-      return; 
+      return;
     }
-    
-    if (targetUserId === currentUser.uid) { 
-      toast.error("Không thể thêm chính mình"); 
+
+    if (targetUserId === currentUser.uid) {
+      toast.error("Không thể thêm chính mình");
       setAdding(false);
-      return; 
+      return;
     }
-    
-    // Check đã là bạn chưa
+
     const existingFriendDoc = await getDoc(doc(db, "users", currentUser.uid, "friends", targetUserId));
     if (existingFriendDoc.exists()) {
       toast.error("Các bạn đã là bạn bè");
@@ -567,64 +562,84 @@ stopScan();
     }
 
     const [currentUserDoc, targetUserDoc] = await Promise.all([
-  getDoc(doc(db, "users", currentUser.uid)),
-  getDoc(doc(db, "users", targetUserId))
-]);
-const currentUserData = currentUserDoc.data();
-const targetUserData = targetUserDoc.data();
+      getDoc(doc(db, "users", currentUser.uid)),
+      getDoc(doc(db, "users", targetUserId))
+    ]);
+    const currentUserData = currentUserDoc.data();
+    const targetUserData = targetUserDoc.data();
 
-// Tạo bạn bè 2 chiều
-await Promise.all([
-  setDoc(doc(db, "users", currentUser.uid, "friends", targetUserId), {
-    addedAt: serverTimestamp(),
-    uid: targetUserId,
-  }),
-  setDoc(doc(db, "users", targetUserId, "friends", currentUser.uid), {
-    addedAt: serverTimestamp(),
-    uid: currentUser.uid,
-  })
-]);
+    // Tạo batch để add bạn + tạo chat cùng lúc
+    const batch = writeBatch(db);
 
-await createNotification(targetUserId, {
-  type: "friend_request",
-  fromUid: currentUser.uid,
-  fromName: currentUserData?.name || "Người dùng",
-  fromAvatar: currentUserData?.avatar || "",
-  title: "Lời mời kết bạn",
-  message: "đã gửi lời mời kết bạn",
-  actionData: { requesterId: currentUser.uid }
-});
+    // 1. Add bạn bè 2 chiều
+    batch.set(doc(db, "users", currentUser.uid, "friends", targetUserId), {
+      addedAt: serverTimestamp(),
+      uid: targetUserId,
+    });
+    batch.set(doc(db, "users", targetUserId, "friends", currentUser.uid), {
+      addedAt: serverTimestamp(),
+      uid: currentUser.uid,
+    });
 
-const chatId = [currentUser.uid, targetUserId].sort().join("_");
-await setDoc(doc(db, "chats", chatId), {
-  members: [currentUser.uid, targetUserId],
-  isGroup: false,
-  createdAt: serverTimestamp(),
-  updatedAt: serverTimestamp(),
-  membersInfo: {
-    [currentUser.uid]: {
-      name: currentUserData?.name || "User",
-      avatar: currentUserData?.avatar || "",
-      username: currentUserData?.username || ""
-    },
-    [targetUserId]: {
-      name: targetUserData?.name || "User",
-      avatar: targetUserData?.avatar || "",
-      username: targetUserData?.username || ""
-    }
+    // 2. Tạo chatId
+    const chatId = [currentUser.uid, targetUserId].sort().join("_");
+
+    // 3. Tạo chat doc
+    batch.set(doc(db, "chats", chatId), {
+      members: [currentUser.uid, targetUserId],
+      isGroup: false,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      lastMessage: "",
+      membersInfo: {
+        [currentUser.uid]: {
+          name: currentUserData?.name || "User",
+          avatar: currentUserData?.avatar || "",
+          username: currentUserData?.username || ""
+        },
+        [targetUserId]: {
+          name: targetUserData?.name || "User",
+          avatar: targetUserData?.avatar || "",
+          username: targetUserData?.username || ""
+        }
+      }
+    }, { merge: true });
+
+    // 4. QUAN TRỌNG: Add chatId vào users/{A}/chats
+    batch.set(doc(db, "users", currentUser.uid, "chats", chatId), {
+      chatId,
+      createdAt: serverTimestamp()
+    });
+
+    // 5. QUAN TRỌNG: Add chatId vào users/{B}/chats ← FIX LỖI BÊN B KHÔNG THẤY
+    batch.set(doc(db, "users", targetUserId, "chats", chatId), {
+      chatId,
+      createdAt: serverTimestamp()
+    });
+
+    await batch.commit();
+
+    // Gửi notification
+    await createNotification(targetUserId, {
+      type: "friend_request",
+      fromUid: currentUser.uid,
+      fromName: currentUserData?.name || "Người dùng",
+      fromAvatar: currentUserData?.avatar || "",
+      title: "Lời mời kết bạn",
+      message: "đã gửi lời mời kết bạn",
+      actionData: { requesterId: currentUser.uid }
+    });
+
+    toast.success("Đã thêm bạn bè");
+    router.push(`/chat/${chatId}`);
+    setShowAdd(false);
+    setSearch("");
+  } catch (error: any) {
+    console.error("Add friend error:", error.code, error.message);
+    toast.error(`Lỗi: ${error.message || "Không thể thêm bạn"}`);
+  } finally {
+    setAdding(false);
   }
-}, { merge: true });
-
-toast.success("Đã thêm bạn bè");
-router.push(`/chat/${chatId}`);
-setShowAdd(false);
-setSearch("");
-} catch (error: any) {
-  console.error("Add friend error:", error.code, error.message);
-  toast.error(`Lỗi: ${error.message || "Không thể thêm bạn"}`);
-} finally {
-  setAdding(false);
-}
 }, [search, db, router, createNotification]);
 
 const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) => {
@@ -632,7 +647,7 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
   await auth.authStateReady();
   const currentUser = auth.currentUser;
   if (!currentUser?.uid) return;
-  
+
   try {
     const batch = writeBatch(db);
 
@@ -649,6 +664,44 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
       read: true
     });
 
+    const chatId = [currentUser.uid, notif.fromUid].sort().join("_");
+
+    const [mySnap, friendSnap] = await Promise.all([
+      getDoc(doc(db, "users", currentUser.uid)),
+      getDoc(doc(db, "users", notif.fromUid))
+    ]);
+    const myData = mySnap.data();
+    const friendData = friendSnap.data();
+
+    batch.set(doc(db, "chats", chatId), {
+      members: [currentUser.uid, notif.fromUid],
+      isGroup: false,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      membersInfo: {
+        [currentUser.uid]: {
+          name: myData?.name || "User",
+          avatar: myData?.avatar || "",
+          username: myData?.username || ""
+        },
+        [notif.fromUid]: {
+          name: friendData?.name || "User",
+          avatar: friendData?.avatar || "",
+          username: friendData?.username || ""
+        }
+      }
+    }, { merge: true });
+
+    // Add vào cả 2 user
+    batch.set(doc(db, "users", currentUser.uid, "chats", chatId), {
+      chatId,
+      createdAt: serverTimestamp()
+    });
+    batch.set(doc(db, "users", notif.fromUid, "chats", chatId), {
+      chatId,
+      createdAt: serverTimestamp()
+    });
+
     await batch.commit();
 
     const userDoc = await getDoc(doc(db, "users", currentUser.uid));
@@ -662,14 +715,6 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
       message: "đã chấp nhận lời mời kết bạn",
     });
 
-    const chatId = [currentUser.uid, notif.fromUid].sort().join("_");
-    await setDoc(doc(db, "chats", chatId), { 
-      members: [currentUser.uid, notif.fromUid], 
-      isGroup: false, 
-      createdAt: serverTimestamp(), 
-      updatedAt: serverTimestamp() 
-    }, { merge: true });
-    
     toast.success(`Đã kết bạn với ${notif.fromName}`);
     router.push(`/chat/${chatId}`);
   } catch (error) {
