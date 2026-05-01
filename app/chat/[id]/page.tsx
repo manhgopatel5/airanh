@@ -20,15 +20,14 @@ import imageCompression from "browser-image-compression";
 import { formatDistanceToNow, format } from "date-fns";
 import { vi } from "date-fns/locale";
 
-
 type UserData = {
   uid: string;
   name: string;
   username: string;
   avatar: string;
-  isOnline: boolean; // FIX: Đổi tên cho khớp AppUser
+  isOnline: boolean;
   lastSeen?: Timestamp;
-  userId: string; // FIX: Bỏ optional, đổi tên từ shortId
+  userId: string;
 };
 
 type Reaction = {
@@ -64,7 +63,8 @@ type Message = {
     image: string;
     url: string;
   };
-  optimistic?: boolean; // Cho optimistic UI
+  optimistic?: boolean;
+  members?: string[]; // THÊM FIELD NÀY CHO RULE MỚI
 };
 
 type ChatData = {
@@ -126,52 +126,50 @@ export default function ChatDetailPage() {
       return;
     }
 
- const unsub = onSnapshot(doc(db, "chats", chatId), async (snap) => { // THÊM async
-  if (!snap.exists()) {
-    toast.error("Cuộc trò chuyện không tồn tại");
-    setTimeout(() => router.replace("/chat"), 1500);
-    return;
-  }
+    const unsub = onSnapshot(doc(db, "chats", chatId), async (snap) => {
+      if (!snap.exists()) {
+        toast.error("Cuộc trò chuyện không tồn tại");
+        setTimeout(() => router.replace("/chat"), 1500);
+        return;
+      }
 
-  const data = snap.data() as ChatData;
+      const data = snap.data() as ChatData;
 
-  if (!data.members?.includes(user.uid)) {
-    toast.error("Bạn không có quyền truy cập");
-    router.replace("/chat");
-    return;
-  }
+      if (!data.members?.includes(user.uid)) {
+        toast.error("Bạn không có quyền truy cập");
+        router.replace("/chat");
+        return;
+      }
 
-  const otherUid = data.members?.find((id: string) => id!== user.uid);
+      const otherUid = data.members?.find((id: string) => id!== user.uid);
 
-  if (!otherUid ||!data.membersInfo?.[otherUid]) {
-    toast.error("Không tìm thấy người dùng");
-    router.replace("/chat");
-    return;
-  }
+      if (!otherUid ||!data.membersInfo?.[otherUid]) {
+        toast.error("Không tìm thấy người dùng");
+        router.replace("/chat");
+        return;
+      }
 
-  const otherUser = data.membersInfo[otherUid];
+      const otherUser = data.membersInfo[otherUid];
+      const friendSnap = await getDoc(doc(db, "users", otherUid));
+      const friendData = friendSnap.data();
 
-  // FIX: await được vì đã thêm async ở trên
-  const friendSnap = await getDoc(doc(db, "users", otherUid));
-  const friendData = friendSnap.data();
-
-  setFriend({
-    uid: otherUid,
-    name: otherUser.name || "User",
-    username: otherUser.username || "",
-    avatar: otherUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name)}&background=random`,
-    isOnline: friendData?.isOnline || false,
-    userId: friendData?.userId || ""
-  });
-  setFriendId(otherUid);
-  setChatData(data);
-  setLoadingFriend(false);
-}, (error) => {
-  console.error(error);
-  toast.error("Lỗi tải thông tin");
-  router.replace("/chat");
-  setLoadingFriend(false);
-});
+      setFriend({
+        uid: otherUid,
+        name: otherUser.name || "User",
+        username: otherUser.username || "",
+        avatar: otherUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name)}&background=random`,
+        isOnline: friendData?.isOnline || false,
+        userId: friendData?.userId || ""
+      });
+      setFriendId(otherUid);
+      setChatData(data);
+      setLoadingFriend(false);
+    }, (error) => {
+      console.error(error);
+      toast.error("Lỗi tải thông tin");
+      router.replace("/chat");
+      setLoadingFriend(false);
+    });
 
     return () => unsub();
   }, [chatId, user, authLoading, router, db]);
@@ -182,11 +180,11 @@ export default function ChatDetailPage() {
     const unsub = onSnapshot(doc(db, "users", friendId), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
-setFriend(prev => prev? {
-...prev,
-  isOnline: data.isOnline || false, // FIX
-  lastSeen: data.lastSeen
-} : null);
+        setFriend(prev => prev? {
+         ...prev,
+          isOnline: data.isOnline || false,
+          lastSeen: data.lastSeen
+        } : null);
       }
     });
     return () => unsub();
@@ -253,12 +251,10 @@ setFriend(prev => prev? {
           const msg = { id: change.doc.id,...change.doc.data() } as Message;
 
           setMessages(prev => {
-            // Tránh duplicate với optimistic msg
             if (msg.optimistic || prev.find(m => m.id === msg.id)) return prev;
             return [...prev, msg];
           });
 
-          // Auto mark as seen
           if (msg.senderId === friendId &&!msg.seenBy?.includes(user.uid)) {
             updateDoc(doc(db, "chats", chatId, "messages", msg.id), {
               seenBy: arrayUnion(user.uid)
@@ -306,39 +302,41 @@ setFriend(prev => prev? {
     } catch (e) {
       console.log("Typing error:", e);
     }
-}, [user, chatId, db]);
+  }, [user, chatId, db]);
 
-/* ================= SEND MESSAGE - OPTIMISTIC UI ================= */
-const sendMessage = useCallback(async () => {
-  if (!text.trim() ||!user ||!friend ||!chatId || sending ||!friendId) return;
+  /* ================= SEND MESSAGE - OPTIMISTIC UI ================= */
+  const sendMessage = useCallback(async () => {
+    if (!text.trim() ||!user ||!friend ||!chatId || sending ||!friendId ||!chatData) {
+      if (!chatData) toast.error("Đang tải dữ liệu chat...");
+      return;
+    }
 
-  const tempText = text;
-  const tempReply = replyTo;
-  const tempEdit = editingMsg;
+    const tempText = text;
+    const tempReply = replyTo;
+    const tempEdit = editingMsg;
 
-  // OPTIMISTIC: Hiện ngay lập tức
-  const optimisticMsg: Message = {
-    id: `temp_${Date.now()}`,
-    text: tempText,
-    senderId: user.uid,
-    createdAt: Timestamp.now(),
-    seenBy: [user.uid],
-    type: "text",
-    optimistic: true,
-   ...(tempReply && {
-      replyTo: {
-        id: tempReply.id,
-        text: tempReply.text,
-        senderName: tempReply.senderId === user.uid? "Bạn" : friend.name,
-      },
-    }),
-  };
+    const optimisticMsg: Message = {
+      id: `temp_${Date.now()}`,
+      text: tempText,
+      senderId: user.uid,
+      createdAt: Timestamp.now(),
+      seenBy: [user.uid],
+      type: "text",
+      optimistic: true,
+     ...(tempReply && {
+        replyTo: {
+          id: tempReply.id,
+          text: tempReply.text,
+          senderName: tempReply.senderId === user.uid? "Bạn" : friend.name,
+        },
+      }),
+    };
 
-  if (tempEdit) {
-    setMessages(prev => prev.map(m => m.id === tempEdit.id? {...m, text: tempText, edited: true } : m));
-  } else {
-    setMessages(prev => [...prev, optimisticMsg]);
-  }
+    if (tempEdit) {
+      setMessages(prev => prev.map(m => m.id === tempEdit.id? {...m, text: tempText, edited: true } : m));
+    } else {
+      setMessages(prev => [...prev, optimisticMsg]);
+    }
 
     setText("");
     setReplyTo(null);
@@ -348,29 +346,27 @@ const sendMessage = useCallback(async () => {
 
     try {
       if (tempEdit) {
-        // Edit message
         await updateDoc(doc(db, "chats", chatId, "messages", tempEdit.id), {
           text: tempText,
           edited: true,
           editedAt: serverTimestamp()
         });
       } else {
-        // New message
-await addDoc(collection(db, "chats", chatId, "messages"), {
-  text: tempText,
-  senderId: user.uid,
-  createdAt: serverTimestamp(),
-  seenBy: [user.uid],
-  type: "text",
-  members: chatData!.members, // THÊM DÒNG NÀY
-  ...(tempReply && {
-    replyTo: {
-      id: tempReply.id,
-      text: tempReply.text,
-      senderName: tempReply.senderId === user.uid ? "Bạn" : friend.name,
-    },
-  }),
-});
+        await addDoc(collection(db, "chats", chatId, "messages"), {
+          text: tempText,
+          senderId: user.uid,
+          createdAt: serverTimestamp(),
+          seenBy: [user.uid],
+          type: "text",
+          members: chatData.members,
+         ...(tempReply && {
+            replyTo: {
+              id: tempReply.id,
+              text: tempReply.text,
+              senderName: tempReply.senderId === user.uid? "Bạn" : friend.name,
+            },
+          }),
+        });
 
         await setDoc(
           doc(db, "chats", chatId),
@@ -382,10 +378,9 @@ await addDoc(collection(db, "chats", chatId, "messages"), {
           { merge: true }
         );
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast.error("Gửi thất bại");
-      // Rollback optimistic
+      toast.error(`Gửi thất bại: ${e.code}`);
       if (tempEdit) {
         setMessages(prev => prev.map(m => m.id === tempEdit.id? tempEdit : m));
       } else {
@@ -397,11 +392,14 @@ await addDoc(collection(db, "chats", chatId, "messages"), {
     } finally {
       setSending(false);
     }
-  }, [user, text, friend, chatId, sending, replyTo, editingMsg, friendId, db]);
+  }, [user, text, friend, chatId, sending, replyTo, editingMsg, friendId, db, chatData]);
 
   /* ================= SEND IMAGE ================= */
   const sendImage = async (file: File) => {
-    if (!user ||!chatId ||!friendId) return;
+    if (!user ||!chatId ||!friendId ||!chatData) {
+      if (!chatData) toast.error("Đang tải dữ liệu chat...");
+      return;
+    }
     setUploading(true);
     setUploadProgress(0);
 
@@ -427,14 +425,14 @@ await addDoc(collection(db, "chats", chatId, "messages"), {
         async () => {
           try {
             const url = await getDownloadURL(uploadTask.snapshot.ref);
-await addDoc(collection(db, "chats", chatId, "messages"), {
-  senderId: user.uid,
-  image: url,
-  type: "image",
-  createdAt: serverTimestamp(),
-  seenBy: [user.uid],
-  members: chatData!.members, // THÊM DÒNG NÀY
-});
+            await addDoc(collection(db, "chats", chatId, "messages"), {
+              senderId: user.uid,
+              image: url,
+              type: "image",
+              createdAt: serverTimestamp(),
+              seenBy: [user.uid],
+              members: chatData.members,
+            });
 
             await setDoc(
               doc(db, "chats", chatId),
@@ -444,9 +442,9 @@ await addDoc(collection(db, "chats", chatId, "messages"), {
               },
               { merge: true }
             );
-          } catch (err) {
+          } catch (err: any) {
             console.error(err);
-            toast.error("Lỗi gửi ảnh");
+            toast.error(`Lỗi gửi ảnh: ${err.code}`);
           } finally {
             setUploading(false);
             setUploadProgress(0);
@@ -462,7 +460,10 @@ await addDoc(collection(db, "chats", chatId, "messages"), {
 
   /* ================= SEND FILE ================= */
   const sendFile = async (file: File) => {
-    if (!user ||!chatId ||!friendId) return;
+    if (!user ||!chatId ||!friendId ||!chatData) {
+      if (!chatData) toast.error("Đang tải dữ liệu chat...");
+      return;
+    }
     if (file.size > 10 * 1024 * 1024) {
       toast.error("File không được vượt quá 10MB");
       return;
@@ -474,15 +475,15 @@ await addDoc(collection(db, "chats", chatId, "messages"), {
       await uploadBytesResumable(storageRef, file);
       const url = await getDownloadURL(storageRef);
 
-await addDoc(collection(db, "chats", chatId, "messages"), {
-  senderId: user.uid,
-  file: url,
-  fileName: file.name,
-  type: "file",
-  createdAt: serverTimestamp(),
-  seenBy: [user.uid],
-  members: chatData!.members, // THÊM DÒNG NÀY
-});
+      await addDoc(collection(db, "chats", chatId, "messages"), {
+        senderId: user.uid,
+        file: url,
+        fileName: file.name,
+        type: "file",
+        createdAt: serverTimestamp(),
+        seenBy: [user.uid],
+        members: chatData.members,
+      });
 
       await setDoc(
         doc(db, "chats", chatId),
@@ -492,9 +493,9 @@ await addDoc(collection(db, "chats", chatId, "messages"), {
         },
         { merge: true }
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error("Lỗi gửi file");
+      toast.error(`Lỗi gửi file: ${err.code}`);
     } finally {
       setUploading(false);
     }
@@ -535,7 +536,10 @@ await addDoc(collection(db, "chats", chatId, "messages"), {
   };
 
   const sendVoice = async () => {
-    if (!audioBlob ||!user ||!chatId ||!friendId) return;
+    if (!audioBlob ||!user ||!chatId ||!friendId ||!chatData) {
+      if (!chatData) toast.error("Đang tải dữ liệu chat...");
+      return;
+    }
     setUploading(true);
 
     try {
@@ -543,15 +547,15 @@ await addDoc(collection(db, "chats", chatId, "messages"), {
       await uploadBytesResumable(storageRef, audioBlob);
       const url = await getDownloadURL(storageRef);
 
-await addDoc(collection(db, "chats", chatId, "messages"), {
-  senderId: user.uid,
-  voice: url,
-  duration: recordingTime,
-  type: "voice",
-  createdAt: serverTimestamp(),
-  seenBy: [user.uid],
-  members: chatData!.members, // THÊM DÒNG NÀY
-});
+      await addDoc(collection(db, "chats", chatId, "messages"), {
+        senderId: user.uid,
+        voice: url,
+        duration: recordingTime,
+        type: "voice",
+        createdAt: serverTimestamp(),
+        seenBy: [user.uid],
+        members: chatData.members,
+      });
 
       await setDoc(
         doc(db, "chats", chatId),
@@ -564,9 +568,9 @@ await addDoc(collection(db, "chats", chatId, "messages"), {
 
       setAudioBlob(null);
       setRecordingTime(0);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error("Lỗi gửi voice");
+      toast.error(`Lỗi gửi voice: ${err.code}`);
     } finally {
       setUploading(false);
     }
@@ -574,7 +578,10 @@ await addDoc(collection(db, "chats", chatId, "messages"), {
 
   /* ================= SEND LOCATION ================= */
   const sendLocation = async () => {
-    if (!user ||!chatId ||!friendId) return;
+    if (!user ||!chatId ||!friendId ||!chatData) {
+      if (!chatData) toast.error("Đang tải dữ liệu chat...");
+      return;
+    }
     if (!navigator.geolocation) {
       toast.error("Trình duyệt không hỗ trợ định vị");
       return;
@@ -587,14 +594,14 @@ await addDoc(collection(db, "chats", chatId, "messages"), {
       async (pos) => {
         const { latitude, longitude } = pos.coords;
         try {
- await addDoc(collection(db, "chats", chatId, "messages"), {
-  senderId: user.uid,
-  location: { lat: latitude, lng: longitude },
-  type: "location",
-  createdAt: serverTimestamp(),
-  seenBy: [user.uid],
-  members: chatData!.members, // THÊM DÒNG NÀY
-});
+          await addDoc(collection(db, "chats", chatId, "messages"), {
+            senderId: user.uid,
+            location: { lat: latitude, lng: longitude },
+            type: "location",
+            createdAt: serverTimestamp(),
+            seenBy: [user.uid],
+            members: chatData.members,
+          });
 
           await setDoc(
             doc(db, "chats", chatId),
@@ -605,9 +612,9 @@ await addDoc(collection(db, "chats", chatId, "messages"), {
             { merge: true }
           );
           toast.success("Đã gửi vị trí");
-        } catch (err) {
+        } catch (err: any) {
           console.error(err);
-          toast.error("Lỗi gửi vị trí");
+          toast.error(`Lỗi gửi vị trí: ${err.code}`);
         } finally {
           setUploading(false);
         }
@@ -705,8 +712,6 @@ await addDoc(collection(db, "chats", chatId, "messages"), {
     }
   };
 
-
-
   /* ================= FILTER SEARCH ================= */
   const filteredMessages = useMemo(() => {
     if (!searchQuery.trim()) return messages;
@@ -716,13 +721,13 @@ await addDoc(collection(db, "chats", chatId, "messages"), {
   }, [messages, searchQuery]);
 
   /* ================= SEEN AVATAR STACK ================= */
-const getSeenAvatars = (msg: Message) => {
-  if (!chatData || msg.senderId!== user?.uid) return [];
-  return (msg.seenBy || [])
-   .filter(uid => uid!== user?.uid)
-   .map(uid => chatData.membersInfo[uid])
-   .filter((u): u is { name: string; avatar: string; username: string } => Boolean(u));
-};
+  const getSeenAvatars = (msg: Message) => {
+    if (!chatData || msg.senderId!== user?.uid) return [];
+    return (msg.seenBy || [])
+    .filter(uid => uid!== user?.uid)
+    .map(uid => chatData.membersInfo[uid])
+    .filter((u): u is { name: string; avatar: string; username: string } => Boolean(u));
+  };
 
   const formatTime = (time?: Timestamp | null) => {
     if (!time) return "";
@@ -758,7 +763,7 @@ const getSeenAvatars = (msg: Message) => {
 
   if (!friend) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-white dark:bg-zinc-950 gap-4">
+      <div className="h-screen flex-col items-center justify-center bg-white dark:bg-zinc-950 gap-4">
         <p className="text-lg font-bold text-gray-900 dark:text-white">Không tìm thấy người dùng</p>
         <button
           onClick={() => router.replace("/chat")}
@@ -803,7 +808,7 @@ const getSeenAvatars = (msg: Message) => {
         <div className="relative">
           <img src={friend.avatar} className="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-zinc-950 shadow-lg" alt={friend.name} />
           {friend.isOnline && (
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full ring-[3px] ring-white dark:ring-zinc-950">
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full ring- ring-white dark:ring-zinc-950">
               <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75" />
             </div>
           )}
@@ -873,7 +878,7 @@ const getSeenAvatars = (msg: Message) => {
           const isFirstInGroup =!prev || prev.senderId!== m.senderId;
           const isLastInGroup =!next || next.senderId!== m.senderId;
           const showDate =
-          !prev ||
+         !prev ||
             (m.createdAt &&
               prev.createdAt &&
               m.createdAt.toDate().toDateString()!== prev.createdAt.toDate().toDateString());
@@ -915,22 +920,22 @@ const getSeenAvatars = (msg: Message) => {
                     <div
                       className={`px-4 py-2.5 shadow-sm cursor-pointer ${
                         isMe
-                      ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
+                     ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
                             isFirstInGroup && isLastInGroup
-                            ? "rounded-3xl"
+                           ? "rounded-3xl"
                               : isFirstInGroup
-                            ? "rounded-3xl rounded-br-lg"
+                           ? "rounded-3xl rounded-br-lg"
                               : isLastInGroup
-                            ? "rounded-3xl rounded-tr-lg"
+                           ? "rounded-3xl rounded-tr-lg"
                               : "rounded-r-lg rounded-l-3xl"
                           }`
                         : `bg-white dark:bg-zinc-800 text-gray-900 dark:text-white ${
                             isFirstInGroup && isLastInGroup
-                            ? "rounded-3xl"
+                           ? "rounded-3xl"
                               : isFirstInGroup
-                            ? "rounded-3xl rounded-bl-lg"
+                           ? "rounded-3xl rounded-bl-lg"
                               : isLastInGroup
-                            ? "rounded-3xl rounded-tl-lg"
+                           ? "rounded-3xl rounded-tl-lg"
                               : "rounded-l-lg rounded-r-3xl"
                           }`
                       }`}
@@ -988,7 +993,7 @@ const getSeenAvatars = (msg: Message) => {
                             onClick={() => toggleReaction(m.id, r.emoji)}
                             className={`px-2 py-0.5 rounded-full text-xs ${
                               r.users.includes(user.uid)
-                              ? "bg-blue-100 dark:bg-blue-900/50"
+                             ? "bg-blue-100 dark:bg-blue-900/50"
                                 : "bg-gray-100 dark:bg-zinc-800"
                             }`}
                           >
