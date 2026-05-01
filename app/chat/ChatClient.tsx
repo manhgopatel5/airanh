@@ -474,7 +474,9 @@ useEffect(() => {
   };
 
   startScan();
-  return () => stopScan();
+return () => {
+stopScan();
+};
 }, [showScanQR, scanMode]);
   const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<void> => {
     event?.preventDefault();
