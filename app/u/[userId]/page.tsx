@@ -19,12 +19,13 @@ type PublicUser = {
 };
 
 export default function PublicProfile() {
-  const { userId } = useParams(); // AIR123456
+  const { userId } = useParams();
   const router = useRouter();
   const { user } = useAuth();
   const db = getFirebaseDB();
 
   const [targetUser, setTargetUser] = useState<PublicUser | null>(null);
+  const [currentUserData, setCurrentUserData] = useState<any>(null);
   const [isFriend, setIsFriend] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +34,6 @@ export default function PublicProfile() {
 
     const fetchUser = async () => {
       try {
-        // 1. Tìm uid từ userId
         const q = query(collection(db, "users"), where("userId", "==", userId));
         const snap = await getDocs(q);
 
@@ -44,10 +44,20 @@ export default function PublicProfile() {
         }
 
         const userDoc = snap.docs[0];
+        if (!userDoc) {
+          toast.error("Không tìm thấy người dùng");
+          router.back();
+          return;
+        }
+
         const data = { uid: userDoc.id,...userDoc.data() } as PublicUser;
         setTargetUser(data);
 
-        // 2. Check đã kết bạn chưa
+        const currentUserSnap = await getDoc(doc(db, "users", user.uid));
+        if (currentUserSnap.exists()) {
+          setCurrentUserData(currentUserSnap.data());
+        }
+
         const friendSnap = await getDoc(doc(db, "users", user.uid, "friends", userDoc.id));
         setIsFriend(friendSnap.exists());
       } catch (err) {
@@ -69,7 +79,6 @@ export default function PublicProfile() {
     }
 
     try {
-      // Tạo friend 2 chiều
       await Promise.all([
         setDoc(doc(db, "users", user.uid, "friends", targetUser.uid), {
           createdAt: new Date(),
@@ -81,9 +90,9 @@ export default function PublicProfile() {
         setDoc(doc(db, "users", targetUser.uid, "friends", user.uid), {
           createdAt: new Date(),
           status: "accepted",
-          name: user.displayName || "User",
-          avatar: user.photoURL || "",
-          userId: userData?.userId || ""
+          name: currentUserData?.name || user.displayName || "User",
+          avatar: currentUserData?.avatar || user.photoURL || "",
+          userId: currentUserData?.userId || ""
         })
       ]);
 
@@ -125,7 +134,6 @@ export default function PublicProfile() {
     <div className="min-h-screen bg-white dark:bg-black">
       <Toaster richColors position="top-center" />
 
-      {/* Header */}
       <div className="sticky top-0 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-900 z-10">
         <div className="px-4 py-3 flex items-center gap-3">
           <button
@@ -138,7 +146,6 @@ export default function PublicProfile() {
         </div>
       </div>
 
-      {/* Content */}
       <div className="px-6 py-8">
         <div className="max-w-md mx-auto">
           <div className="text-center">
