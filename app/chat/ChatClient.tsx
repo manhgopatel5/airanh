@@ -1296,7 +1296,7 @@ const { pinnedChats, normalChats } = useMemo(() => {
                     <button onClick={handleCreateGroup} disabled={adding ||!groupName.trim() || selected.length < 1} className={`w-full h- ${primaryBg} ${primaryHover} ${primaryActive} disabled:opacity-40 text-white rounded- text- font-[550] transition-all active:scale-[0.98] flex items-center justify-center gap-2 flex-shrink-0`}>
                       {adding && <FiLoader className="animate-spin" size={18} />}Tạo nhóm ({selected.length + 1})
                     </button>
-                  </div>
+                  
                 )}
               </div>
             </div>
