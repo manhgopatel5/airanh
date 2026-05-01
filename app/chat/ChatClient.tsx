@@ -34,6 +34,7 @@ import {
   FiUsers,
   FiCheck,
   FiX,
+  FiUpload,
   FiLoader,
   FiUserX,
   FiBell,
@@ -43,6 +44,8 @@ import {
 import { RiAddLine, RiPushpinFill } from "react-icons/ri";
 import Link from "next/link";
 import { toast, Toaster } from "sonner";
+import { ScanLine, Upload } from "lucide-react";
+import { Html5Qrcode } from "html5-qrcode";
 import { format, isToday, isYesterday, formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 
@@ -136,6 +139,10 @@ export default function ChatClient() {
   const [groupName, setGroupName] = useState<string>("");
   const [selected, setSelected] = useState<string[]>([]);
   const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [showScanQR, setShowScanQR] = useState<boolean>(false);
+const [scanMode, setScanMode] = useState<"camera" | "upload">("camera");
+const fileInputRef = useRef<HTMLInputElement>(null);
+const scannerRef = useRef<Html5Qrcode | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(search), DEBOUNCE_DELAY);
@@ -391,6 +398,69 @@ export default function ChatClient() {
     }
   }, [db]);
 
+  const stopScan = () => {
+  if (scannerRef.current?.isScanning) {
+    scannerRef.current.stop().catch(() => {});
+  }
+  setShowScanQR(false);
+};
+
+const handleScanFromFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  const html5QrCode = new Html5Qrcode("qr-reader-file");
+  try {
+    const result = await html5QrCode.scanFile(file, true);
+    if (result.includes("/u/")) {
+      const userId = result.split("/u/")[1];
+      setSearch(userId);
+      setAddMode("friend");
+      stopScan();
+      toast.success("Đã quét QR thành công");
+    } else {
+      toast.error("Mã QR không hợp lệ");
+    }
+  } catch {
+    toast.error("Không đọc được QR từ ảnh");
+  }
+  e.target.value = "";
+};
+
+useEffect(() => {
+  if (!showScanQR || scanMode!== "camera") return;
+
+  const startScan = async () => {
+    const html5QrCode = new Html5Qrcode("qr-reader");
+    scannerRef.current = html5QrCode;
+
+    try {
+      await html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          if ("vibrate" in navigator) navigator.vibrate(10);
+          if (decodedText.includes("/u/")) {
+            const userId = decodedText.split("/u/")[1];
+            setSearch(userId);
+            setAddMode("friend");
+            stopScan();
+            toast.success("Đã quét QR");
+          } else {
+            toast.error("Mã QR không hợp lệ");
+          }
+        },
+        () => {}
+      );
+    } catch {
+      toast.error("Không mở được camera");
+      setShowScanQR(false);
+    }
+  };
+
+  startScan();
+  return () => stopScan();
+}, [showScanQR, scanMode]);
   const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<void> => {
     event?.preventDefault();
     const auth = getAuth();
@@ -1015,17 +1085,45 @@ export default function ChatClient() {
                   ))}
                 </div>
               </div>
-              <div className="flex-1 overflow-hidden flex flex-col min-h-0 px-5 pb-5">
-                {addMode === "friend" ? (
-                  <form onSubmit={handleAddFriend} className="space-y-3">
-                    <div className="relative">
-                      <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8e8e93] pointer-events-none" size={18} />
-                      <input type="search" inputMode="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="ID hoặc @username" className={`w-full h-[44px] pl-10 pr-3.5 bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded-[12px] text-[16px] outline-none ${primaryBorder} focus:ring-4 ${primaryRing} transition-all`} autoFocus autoComplete="off" autoCorrect="off" spellCheck={false} name="search-user-not-login" />
+             <div className="flex-1 overflow-hidden flex flex-col min-h-0 px-5 pb-5">
+                {addMode === "friend"? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => { setShowScanQR(true); setScanMode("camera"); }}
+                        className="h-[44px] bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded-[12px] text-[14px] font-[550] flex items-center justify-center gap-1.5 active:scale-95 transition"
+                      >
+                        <ScanLine size={18} /> Quét
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="h-[44px] bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded-[12px] text-[14px] font-[550] flex items-center justify-center gap-1.5 active:scale-95 transition"
+                      >
+                        <FiUpload size={18} /> Ảnh QR
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAddMode("friend")}
+                        className="h-[44px] bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded-[12px] text-[14px] font-[550] flex items-center justify-center gap-1.5 active:scale-95 transition"
+                      >
+                        <FiUserPlus size={18} /> Thủ công
+                      </button>
                     </div>
-                    <button type="submit" disabled={adding || !search.trim()} className={`w-full h-[44px] ${primaryBg} ${primaryHover} ${primaryActive} disabled:opacity-40 text-white rounded-[12px] text-[16px] font-[550] transition-all active:scale-[0.98] flex items-center justify-center gap-2`}>
-                      {adding && <FiLoader className="animate-spin" size={18} />}{adding ? "Đang tìm" : "Tiếp tục"}
-                    </button>
-                  </form>
+
+                    <form onSubmit={handleAddFriend} className="space-y-3">
+                      <div className="relative">
+                        <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8e8e93] pointer-events-none" size={18} />
+                        <input type="search" inputMode="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="ID hoặc @username" className={`w-full h-[44px] pl-10 pr-3.5 bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded-[12px] text-[16px] outline-none ${primaryBorder} focus:ring-4 ${primaryRing} transition-all`} autoFocus autoComplete="off" autoCorrect="off" spellCheck={false} name="search-user-not-login" />
+                      </div>
+                      <button type="submit" disabled={adding ||!search.trim()} className={`w-full h-[44px] ${primaryBg} ${primaryHover} ${primaryActive} disabled:opacity-40 text-white rounded-[12px] text-[16px] font-[550] transition-all active:scale-[0.98] flex items-center justify-center gap-2`}>
+                        {adding && <FiLoader className="animate-spin" size={18} />}{adding? "Đang tìm" : "Tiếp tục"}
+                      </button>
+                    </form>
+
+                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleScanFromFile} />
+                  </div>
                 ) : (
                   <div className="flex-1 flex flex-col min-h-0 space-y-3">
                     <input type="text" value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="Tên nhóm" className={`w-full h-[44px] px-3.5 bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded-[12px] text-[16px] outline-none ${primaryBorder} focus:ring-4 ${primaryRing} transition-all`} maxLength={30} />
@@ -1034,13 +1132,13 @@ export default function ChatClient() {
                         <p className="text-[13px] font-medium text-[#8e8e93] dark:text-zinc-500">Đã chọn {selected.length} người</p>
                       </div>
                       <div className="flex-1 overflow-auto">
-                        {friendsForGroup.length === 0 ? (
+                        {friendsForGroup.length === 0? (
                           <div className="p-8 text-center"><p className="text-[14px] text-[#8e8e93] dark:text-zinc-500">Chưa có bạn bè</p></div>
                         ) : (
                           <div className="divide-y divide-black/5 dark:divide-white/5">
                             {friendsForGroup.map((person) => (
                               <label key={person.uid} className="flex items-center gap-3 px-3 py-2.5 hover:bg-black/[0.02] dark:hover:bg-white/[0.03] cursor-pointer active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors">
-                                <input type="checkbox" checked={selected.includes(person.uid)} onChange={(e) => setSelected((current) => e.target.checked ? [...current, person.uid] : current.filter((id) => id !== person.uid))} className={`w-[20px] h-[20px] rounded-[6px] border-2 border-[#c7c7cc] dark:border-zinc-600 ${primaryText} focus:ring-0 focus:ring-offset-0 checked:${primaryBgSolid} checked:border-transparent transition-colors`} />
+                                <input type="checkbox" checked={selected.includes(person.uid)} onChange={(e) => setSelected((current) => e.target.checked? [...current, person.uid] : current.filter((id) => id!== person.uid))} className={`w-[20px] h-[20px] rounded-[6px] border-2 border-[#c7c7cc] dark:border-zinc-600 ${primaryText} focus:ring-0 focus:ring-offset-0 checked:${primaryBgSolid} checked:border-transparent transition-colors`} />
                                 <img src={person.avatar} alt={person.name} className="w-9 h-9 rounded-full object-cover bg-gray-100 dark:bg-zinc-800 flex-shrink-0" />
                                 <div className="flex-1 min-w-0">
                                   <p className="text-[15px] leading-5 font-normal truncate">{person.name}</p>
@@ -1053,7 +1151,7 @@ export default function ChatClient() {
                         )}
                       </div>
                     </div>
-                    <button onClick={handleCreateGroup} disabled={adding || !groupName.trim() || selected.length < 1} className={`w-full h-[44px] ${primaryBg} ${primaryHover} ${primaryActive} disabled:opacity-40 text-white rounded-[12px] text-[16px] font-[550] transition-all active:scale-[0.98] flex items-center justify-center gap-2 flex-shrink-0`}>
+                    <button onClick={handleCreateGroup} disabled={adding ||!groupName.trim() || selected.length < 1} className={`w-full h-[44px] ${primaryBg} ${primaryHover} ${primaryActive} disabled:opacity-40 text-white rounded-[12px] text-[16px] font-[550] transition-all active:scale-[0.98] flex items-center justify-center gap-2 flex-shrink-0`}>
                       {adding && <FiLoader className="animate-spin" size={18} />}Tạo nhóm ({selected.length + 1})
                     </button>
                   </div>
@@ -1062,8 +1160,25 @@ export default function ChatClient() {
             </div>
           </div>
         )}
+
+        {showScanQR && (
+          <div className="fixed inset-0 bg-black z-[60]">
+            <div id="qr-reader" className={scanMode === "camera"? "w-full h-full" : "hidden"} />
+            <div id="qr-reader-file" className="hidden" />
+            <button
+              onClick={stopScan}
+              className="absolute top-6 right-6 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center"
+            >
+              <FiX className="w-5 h-5 text-white" />
+            </button>
+            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-white text-center">
+              <p className="font-bold">Đưa mã QR vào khung</p>
+              <p className="text-sm opacity-70 mt-1">Tự động quét khi phát hiện</p>
+            </div>
+          </div>
+        )}
       </div>
       <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}body{overscroll-behavior-y:contain}`}</style>
     </>
   );
-} 
+}
