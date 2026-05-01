@@ -559,7 +559,6 @@ const handleTyping = useCallback(async () => {
             members: chatData.members,
           });
 
-        );
           toast.success("Đã gửi vị trí");
         } catch (err: any) {
           console.error(err);
