@@ -7,7 +7,7 @@ import { getFirebaseDB, getFirebaseStorage } from "@/lib/firebase";
 import {
   collection, query, onSnapshot, doc,
   orderBy, limit, addDoc, serverTimestamp, Timestamp,
-  writeBatch, setDoc, where
+  writeBatch, setDoc
 } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
