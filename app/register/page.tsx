@@ -85,12 +85,12 @@ export default function Register() {
       let email = localStorage.getItem("emailForSignIn");
       if (!email) email = window.prompt("Nhập email để xác nhận");
       if (email) {
-        signInWithEmailLink(auth, email, window.location.href)
-          .then(async (result) => {
-            localStorage.removeItem("emailForSignIn");
-            toast.success("Đăng nhập thành công");
-            router.replace(redirectTo);
-          })
+signInWithEmailLink(auth, email, window.location.href)
+  .then(() => {
+    localStorage.removeItem("emailForSignIn");
+    toast.success("Đăng nhập thành công");
+    router.replace(redirectTo);
+  })
           .catch(() => setErrors({ submit: "Link không hợp lệ hoặc đã hết hạn" }));
       }
     }
