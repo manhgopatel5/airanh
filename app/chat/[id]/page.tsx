@@ -708,13 +708,13 @@ const otherUser = data.membersInfo[otherUid];
   }, [messages, searchQuery]);
 
   /* ================= SEEN AVATAR STACK ================= */
-  const getSeenAvatars = (msg: Message) => {
-    if (!chatData || msg.senderId!== user?.uid) return [];
-    return (msg.seenBy || [])
-    .filter(uid => uid!== user?.uid)
-    .map(uid => chatData.membersInfo[uid])
-    .filter(Boolean);
-  };
+const getSeenAvatars = (msg: Message) => {
+  if (!chatData || msg.senderId!== user?.uid) return [];
+  return (msg.seenBy || [])
+   .filter(uid => uid!== user?.uid)
+   .map(uid => chatData.membersInfo[uid])
+   .filter((u): u is { name: string; avatar: string; username: string } => Boolean(u));
+};
 
   const formatTime = (time?: Timestamp | null) => {
     if (!time) return "";
