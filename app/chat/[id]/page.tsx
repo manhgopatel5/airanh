@@ -8,6 +8,7 @@ import {
   collection, query, onSnapshot, doc,
   orderBy, limit, addDoc, serverTimestamp, Timestamp, setDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, startAfter, getDocs
 } from "firebase/firestore";
+import { getDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
   Image as ImageIcon, MapPin, Paperclip, Phone, Send,
@@ -125,48 +126,52 @@ export default function ChatDetailPage() {
       return;
     }
 
-    const unsub = onSnapshot(doc(db, "chats", chatId), (snap) => {
-      if (!snap.exists()) {
-        toast.error("Cuộc trò chuyện không tồn tại");
-        setTimeout(() => router.replace("/chat"), 1500);
-        return;
-      }
+ const unsub = onSnapshot(doc(db, "chats", chatId), async (snap) => { // THÊM async
+  if (!snap.exists()) {
+    toast.error("Cuộc trò chuyện không tồn tại");
+    setTimeout(() => router.replace("/chat"), 1500);
+    return;
+  }
 
-      const data = snap.data() as ChatData;
+  const data = snap.data() as ChatData;
 
-      if (!data.members?.includes(user.uid)) {
-        toast.error("Bạn không có quyền truy cập");
-        router.replace("/chat");
-        return;
-      }
+  if (!data.members?.includes(user.uid)) {
+    toast.error("Bạn không có quyền truy cập");
+    router.replace("/chat");
+    return;
+  }
 
-const otherUid = data.members?.find((id: string) => id!== user.uid);
+  const otherUid = data.members?.find((id: string) => id!== user.uid);
 
-if (!otherUid ||!data.membersInfo?.[otherUid]) {
-  toast.error("Không tìm thấy người dùng");
+  if (!otherUid ||!data.membersInfo?.[otherUid]) {
+    toast.error("Không tìm thấy người dùng");
+    router.replace("/chat");
+    return;
+  }
+
+  const otherUser = data.membersInfo[otherUid];
+
+  // FIX: await được vì đã thêm async ở trên
+  const friendSnap = await getDoc(doc(db, "users", otherUid));
+  const friendData = friendSnap.data();
+
+  setFriend({
+    uid: otherUid,
+    name: otherUser.name || "User",
+    username: otherUser.username || "",
+    avatar: otherUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name)}&background=random`,
+    isOnline: friendData?.isOnline || false,
+    userId: friendData?.userId || ""
+  });
+  setFriendId(otherUid);
+  setChatData(data);
+  setLoadingFriend(false);
+}, (error) => {
+  console.error(error);
+  toast.error("Lỗi tải thông tin");
   router.replace("/chat");
-  return;
-}
-
-const otherUser = data.membersInfo[otherUid];
-
-setFriend({
-  uid: otherUid,
-  name: otherUser.name || "User",
-  username: otherUser.username || "",
-  avatar: otherUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name)}&background=random`,
-  isOnline: false, // FIX
-  userId: otherUser.username || "" // FIX: membersInfo chỉ có username thôi
+  setLoadingFriend(false);
 });
-      setFriendId(otherUid);
-      setChatData(data);
-      setLoadingFriend(false);
-    }, (error) => {
-      console.error(error);
-      toast.error("Lỗi tải thông tin");
-      router.replace("/chat");
-      setLoadingFriend(false);
-    });
 
     return () => unsub();
   }, [chatId, user, authLoading, router, db]);
@@ -301,39 +306,39 @@ setFriend(prev => prev? {
     } catch (e) {
       console.log("Typing error:", e);
     }
-  }, [user, chatId, db]);
+}, [user, chatId, db]);
 
-  /* ================= SEND MESSAGE - OPTIMISTIC UI ================= */
-  const sendMessage = useCallback(async () => {
-    if (!text.trim() ||!user ||!friend ||!chatId || sending ||!friendId) return;
+/* ================= SEND MESSAGE - OPTIMISTIC UI ================= */
+const sendMessage = useCallback(async () => {
+  if (!text.trim() ||!user ||!friend ||!chatId || sending ||!friendId) return;
 
-    const tempText = text;
-    const tempReply = replyTo;
-    const tempEdit = editingMsg;
+  const tempText = text;
+  const tempReply = replyTo;
+  const tempEdit = editingMsg;
 
-    // OPTIMISTIC: Hiện ngay lập tức
-    const optimisticMsg: Message = {
-      id: `temp_${Date.now()}`,
-      text: tempText,
-      senderId: user.uid,
-      createdAt: Timestamp.now(),
-      seenBy: [user.uid],
-      type: "text",
-      optimistic: true,
-     ...(tempReply && {
-        replyTo: {
-          id: tempReply.id,
-          text: tempReply.text,
-          senderName: tempReply.senderId === user.uid? "Bạn" : friend.name,
-        },
-      }),
-    };
+  // OPTIMISTIC: Hiện ngay lập tức
+  const optimisticMsg: Message = {
+    id: `temp_${Date.now()}`,
+    text: tempText,
+    senderId: user.uid,
+    createdAt: Timestamp.now(),
+    seenBy: [user.uid],
+    type: "text",
+    optimistic: true,
+   ...(tempReply && {
+      replyTo: {
+        id: tempReply.id,
+        text: tempReply.text,
+        senderName: tempReply.senderId === user.uid? "Bạn" : friend.name,
+      },
+    }),
+  };
 
-    if (tempEdit) {
-      setMessages(prev => prev.map(m => m.id === tempEdit.id? {...m, text: tempText, edited: true } : m));
-    } else {
-      setMessages(prev => [...prev, optimisticMsg]);
-    }
+  if (tempEdit) {
+    setMessages(prev => prev.map(m => m.id === tempEdit.id? {...m, text: tempText, edited: true } : m));
+  } else {
+    setMessages(prev => [...prev, optimisticMsg]);
+  }
 
     setText("");
     setReplyTo(null);
