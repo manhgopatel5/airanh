@@ -16,8 +16,7 @@ import {
   isSignInWithEmailLink,
   signInWithEmailLink,
   setPersistence,
-  browserLocalPersistence,
-  getAdditionalUserInfo
+  browserLocalPersistence
 } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore";
