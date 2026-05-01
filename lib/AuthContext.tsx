@@ -18,6 +18,7 @@ import {
   onSnapshot,
   Timestamp,
   runTransaction,
+  writeBatch,
 } from "firebase/firestore";
 import {
   ref,
@@ -72,11 +73,9 @@ const generateSearchKeywords = (
   if (nameLower) {
     keywords.add(nameLower);
     keywords.add(nameLower.replace(/\s+/g, ""));
-
     const no = nameLower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     keywords.add(no);
     keywords.add(no.replace(/\s+/g, ""));
-
     nameLower.split(" ").forEach((w) => {
       if (w.length >= 2) keywords.add(w);
     });
@@ -84,7 +83,6 @@ const generateSearchKeywords = (
 
   keywords.add(userId.toLowerCase());
   if (username) keywords.add(username.toLowerCase());
-
   return Array.from(keywords).filter((k) => k.length >= 2);
 };
 
@@ -134,6 +132,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const snap = await getDoc(userRef);
 
           if (!snap.exists()) {
+            // FIX: Tạo user mới khi login Google lần đầu
             await runTransaction(db, async (tx) => {
               let userId = "";
               for (let i = 0; i < 5; i++) {
@@ -142,12 +141,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 if (!q.exists()) break;
               }
 
+              const email = firebaseUser.email || "";
               const name =
                 firebaseUser.displayName ||
-                firebaseUser.email?.split("@")[0] ||
+                email.split("@")[0] ||
                 "User";
 
-              const username = name.toLowerCase().replace(/\s+/g, "");
+              // FIX: Đảm bảo username unique
+              let baseUsername = name.toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9]/g, "");
+              if (!baseUsername) baseUsername = "user";
+              let username = baseUsername;
+              let counter = 1;
+              
+              while (true) {
+                const usernameDoc = await tx.get(doc(db, "usernames", username));
+                if (!usernameDoc.exists()) break;
+                username = `${baseUsername}${counter}`;
+                counter++;
+                if (counter > 100) throw new Error("Không tạo được username");
+              }
+
               const searchKeywords = generateSearchKeywords(
                 name,
                 userId,
@@ -156,17 +169,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
               const newUser: AppUser = {
                 uid: firebaseUser.uid,
-                name,
                 nameLower: name.toLowerCase(),
                 username,
                 userId,
-                email: firebaseUser.email || "",
+                email,
                 emailVerified: firebaseUser.emailVerified,
                 avatar:
                   firebaseUser.photoURL ||
-                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                    name
-                  )}`,
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
                 bio: "",
                 isOnline: true,
                 lastSeen: serverTimestamp() as Timestamp,
@@ -179,9 +189,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
               tx.set(userRef, newUser);
               tx.set(doc(db, "userIds", userId), { uid: firebaseUser.uid });
-              tx.set(doc(db, "usernames", username), {
-                uid: firebaseUser.uid,
-              });
+              tx.set(doc(db, "usernames", username), { uid: firebaseUser.uid });
             });
           } else {
             await updateDoc(userRef, {
@@ -191,20 +199,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             });
           }
 
-          // FIX 1: BỎ setLoading(false) ở đây
-          // setLoading(false); ← XÓA DÒNG NÀY
-
-          // Snapshot chạy async, setLoading(false) trong callback
-          userDataUnsub.current = onSnapshot(userRef, (docSnap) => {
-            if (docSnap.exists()) {
-              setUserData(docSnap.data() as AppUser);
+          // FIX: KHÔNG setLoading(false) ở đây. Đợi onSnapshot chạy xong
+          userDataUnsub.current = onSnapshot(
+            userRef,
+            (docSnap) => {
+              if (docSnap.exists()) {
+                setUserData(docSnap.data() as AppUser);
+              }
+              setLoading(false); // FIX: Chỉ tắt loading sau khi có userData
+            },
+            (err) => {
+              console.error("Snapshot error:", err);
+              setError(err.message);
+              setLoading(false);
             }
-            setLoading(false); // FIX 2: CHỈ TẮT LOADING SAU KHI CÓ userData
-          }, (err) => {
-            console.error("Snapshot error:", err);
-            setError(err.message);
-            setLoading(false);
-          });
+          );
 
           // Presence
           const statusRef = ref(rtdb, `/status/${firebaseUser.uid}`);
@@ -212,12 +221,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
           presenceUnsub.current = onValue(connectedRef, (snap) => {
             if (!snap.val()) return;
-
             onDisconnect(statusRef).set({
               isOnline: false,
               lastSeen: rtdbTimestamp(),
             });
-
             set(statusRef, {
               isOnline: true,
               lastSeen: rtdbTimestamp(),
@@ -260,9 +267,7 @@ export const useLogout = () => {
     const firebase = await import("@/lib/firebase");
     const auth = firebase.getFirebaseAuth();
     const db = firebase.getFirebaseDB();
-
     const user = auth.currentUser;
-
     if (user) {
       try {
         await updateDoc(doc(db, "users", user.uid), {
@@ -271,7 +276,6 @@ export const useLogout = () => {
         });
       } catch {}
     }
-
     await auth.signOut();
   };
 };
