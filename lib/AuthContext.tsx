@@ -18,10 +18,6 @@ import {
   onSnapshot,
   Timestamp,
   runTransaction,
-  query,
-  collection,
-  where,
-  getDocs,
 } from "firebase/firestore";
 import {
   ref,
