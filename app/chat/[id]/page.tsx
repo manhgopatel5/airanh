@@ -355,7 +355,6 @@ const handleTyping = useCallback(async () => {
           }),
         });
 
-  );
       }
     } catch (e: any) {
       console.error(e);
