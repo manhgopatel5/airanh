@@ -594,8 +594,16 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
   try {
     const batch = writeBatch(db);
     const fromUid = notif.fromUid;
+    const requestId = `${fromUid}_${currentUser.uid}`;
 
-    // 1. Add bạn bè 2 chiều
+    // Check request còn tồn tại không
+    const requestDoc = await getDoc(doc(db, "friendRequests", requestId));
+    if (!requestDoc.exists()) {
+      toast.error("Lời mời đã hết hạn");
+      return;
+    }
+
+    // 1. Add bạn bè 2 chiều - giờ rules cho phép
     batch.set(doc(db, "users", currentUser.uid, "friends", fromUid), {
       addedAt: serverTimestamp(),
       uid: fromUid,
@@ -609,7 +617,6 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
     batch.delete(doc(db, "notifications", currentUser.uid, "items", notif.id));
 
     // 3. Xóa friendRequest
-    const requestId = `${fromUid}_${currentUser.uid}`;
     batch.delete(doc(db, "friendRequests", requestId));
 
     // 4. Tạo chat
@@ -641,7 +648,7 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
       }
     }, { merge: true });
 
-    // 5. Add chat vào cả 2 user
+    // 5. Add chat vào cả 2 user - giờ rules cho phép vì vừa add friend
     batch.set(doc(db, "users", currentUser.uid, "chats", chatId), {
       chatId,
       createdAt: serverTimestamp()
@@ -665,8 +672,8 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
 
     toast.success(`Đã kết bạn với ${notif.fromName}`);
     router.push(`/chat/${chatId}`);
-  } catch (error) {
-    console.error("Accept friend error:", error);
+  } catch (error: any) {
+    console.error("Accept friend error:", error.code, error.message);
     toast.error("Lỗi chấp nhận kết bạn");
   }
 }, [db, createNotification, router]);
