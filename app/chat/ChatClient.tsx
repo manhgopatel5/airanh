@@ -522,25 +522,18 @@ const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<voi
     const upperKeyword = keyword.toUpperCase();
     const lowerKeyword = keyword.toLowerCase();
 
+    // 1. Check userIds collection
     const userIdDoc = await getDoc(doc(db, "userIds", upperKeyword));
     if (userIdDoc.exists()) targetUserId = userIdDoc.data().uid;
 
+    // 2. Check usernames collection  
     if (!targetUserId) {
       const usernameDoc = await getDoc(doc(db, "usernames", lowerKeyword));
       if (usernameDoc.exists()) targetUserId = usernameDoc.data().uid;
     }
 
-    if (!targetUserId) {
-      const searchQuery = query(
-        collection(db, "users"),
-        where("searchKeywords", "array-contains", lowerKeyword),
-        limit(1)
-      );
-      const searchSnapshot = await getDocs(searchQuery);
-      if (!searchSnapshot.empty && searchSnapshot.docs[0]) {
-        targetUserId = searchSnapshot.docs[0].id;
-      }
-    }
+    // 3. BỎ PHẦN searchKeywords đi vì nó gây lỗi permission
+    // Không dùng query + getDocs trên collection users nữa
 
     if (!targetUserId) {
       toast.error(`Không tìm thấy: ${keyword}`);
@@ -568,10 +561,8 @@ const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<voi
     const currentUserData = currentUserDoc.data();
     const targetUserData = targetUserDoc.data();
 
-    // Tạo batch để add bạn + tạo chat cùng lúc
     const batch = writeBatch(db);
 
-    // 1. Add bạn bè 2 chiều
     batch.set(doc(db, "users", currentUser.uid, "friends", targetUserId), {
       addedAt: serverTimestamp(),
       uid: targetUserId,
@@ -581,10 +572,8 @@ const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<voi
       uid: currentUser.uid,
     });
 
-    // 2. Tạo chatId
     const chatId = [currentUser.uid, targetUserId].sort().join("_");
 
-    // 3. Tạo chat doc
     batch.set(doc(db, "chats", chatId), {
       members: [currentUser.uid, targetUserId],
       isGroup: false,
@@ -605,13 +594,11 @@ const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<voi
       }
     }, { merge: true });
 
-    // 4. QUAN TRỌNG: Add chatId vào users/{A}/chats
     batch.set(doc(db, "users", currentUser.uid, "chats", chatId), {
       chatId,
       createdAt: serverTimestamp()
     });
 
-    // 5. QUAN TRỌNG: Add chatId vào users/{B}/chats ← FIX LỖI BÊN B KHÔNG THẤY
     batch.set(doc(db, "users", targetUserId, "chats", chatId), {
       chatId,
       createdAt: serverTimestamp()
@@ -619,7 +606,6 @@ const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<voi
 
     await batch.commit();
 
-    // Gửi notification
     await createNotification(targetUserId, {
       type: "friend_request",
       fromUid: currentUser.uid,
