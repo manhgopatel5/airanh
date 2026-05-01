@@ -13,6 +13,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import {
   doc,
   getDoc,
+  setDoc, 
   updateDoc,
   serverTimestamp,
   onSnapshot,
