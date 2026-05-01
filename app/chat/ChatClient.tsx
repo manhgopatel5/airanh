@@ -398,10 +398,15 @@ const scannerRef = useRef<Html5Qrcode | null>(null);
     }
   }, [db]);
 
-  const stopScan = () => {
-  if (scannerRef.current?.isScanning) {
-    scannerRef.current.stop().catch(() => {});
-  }
+const stopScan = async () => {
+  try {
+    if (scannerRef.current) {
+      if (scannerRef.current.isScanning) {
+        await scannerRef.current.stop();
+      }
+      await scannerRef.current.clear();
+    }
+  } catch {}
   setShowScanQR(false);
 };
 
@@ -409,22 +414,32 @@ const handleScanFromFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (!file) return;
 
-  const html5QrCode = new Html5Qrcode("qr-reader-file");
   try {
-    const result = await html5QrCode.scanFile(file, true);
+    if (scannerRef.current) {
+      await scannerRef.current.clear();
+    }
+  } catch {}
+
+  const html5QrCode = new Html5Qrcode("qr-reader-file");
+  scannerRef.current = html5QrCode;
+
+  try {
+    const result = await html5QrCode.scanFile(file, false);
     if (result.includes("/u/")) {
-const userId = result.split("/u/")[1] || "";
-  setSearch(userId);
+      const userId = result.split("/u/")[1] || "";
+      setSearch(userId);
       setAddMode("friend");
-      stopScan();
+      setShowAdd(true);
       toast.success("Đã quét QR thành công");
     } else {
       toast.error("Mã QR không hợp lệ");
     }
   } catch {
     toast.error("Không đọc được QR từ ảnh");
+  } finally {
+    await html5QrCode.clear();
+    e.target.value = "";
   }
-  e.target.value = "";
 };
 
 useEffect(() => {
@@ -1161,22 +1176,22 @@ useEffect(() => {
           </div>
         )}
 
-        {showScanQR && (
-          <div className="fixed inset-0 bg-black z-[60]">
-            <div id="qr-reader" className={scanMode === "camera"? "w-full h-full" : "hidden"} />
-            <div id="qr-reader-file" className="hidden" />
-            <button
-              onClick={stopScan}
-              className="absolute top-6 right-6 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center"
-            >
-              <FiX className="w-5 h-5 text-white" />
-            </button>
-            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-white text-center">
-              <p className="font-bold">Đưa mã QR vào khung</p>
-              <p className="text-sm opacity-70 mt-1">Tự động quét khi phát hiện</p>
-            </div>
-          </div>
-        )}
+{showScanQR && (
+  <div className="fixed inset-0 bg-black z-[60]">
+    <div id="qr-reader" className={scanMode === "camera"? "w-full h-full" : "hidden"} />
+    <div id="qr-reader-file" className="hidden" />
+    <button
+      onClick={stopScan}
+      className="absolute top-6 right-6 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center"
+    >
+      <FiX className="w-5 h-5 text-white" />
+    </button>
+    <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-white text-center">
+      <p className="font-bold">Đưa mã QR vào khung</p>
+      <p className="text-sm opacity-70 mt-1">Tự động quét khi phát hiện</p>
+    </div>
+  </div>
+)}
       </div>
       <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}body{overscroll-behavior-y:contain}`}</style>
     </>
