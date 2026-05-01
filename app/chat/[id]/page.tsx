@@ -636,7 +636,7 @@ const handleTyping = useCallback(async () => {
   };
 
   /* ================= PIN MESSAGE ================= */
-const pinMessage = async (msgId: string) => {
+const pinMessage = async (_msgId: string) => {
   toast.info("Tính năng ghim sẽ cập nhật sau");
   // if (!chatId) return;
   // try {
