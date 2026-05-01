@@ -148,18 +148,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               let userId = "";
               for (let i = 0; i < 5; i++) {
                 userId = `AIR${nanoid(6).toUpperCase()}`;
-                const q = await tx.get(doc(db, "userIds", userId));
+                // BỎ: check userIds
+                const q = await tx.get(doc(db, "users", firebaseUser.uid));
                 if (!q.exists()) break;
               }
 
               const email = firebaseUser.email || "";
-              const name =
-                firebaseUser.displayName || email.split("@")[0] || "User";
+              const name = firebaseUser.displayName || email.split("@")[0] || "User";
 
-              let baseUsername = name
-               .toLowerCase()
-               .replace(/\s+/g, "")
-               .replace(/[^a-z0-9]/g, "");
+              let baseUsername = name.toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9]/g, "");
               if (!baseUsername) baseUsername = "user";
               let username = baseUsername;
               let counter = 1;
@@ -172,11 +169,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 if (counter > 100) throw new Error("Không tạo được username");
               }
 
-              const searchKeywords = generateSearchKeywords(
-                name,
-                userId,
-                username
-              );
+              const searchKeywords = generateSearchKeywords(name, userId, username);
 
               const newUser: AppUser = {
                 uid: firebaseUser.uid,
@@ -186,11 +179,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 userId,
                 email: firebaseUser.email || "",
                 emailVerified: firebaseUser.emailVerified,
-                avatar:
-                  firebaseUser.photoURL ||
-                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                    name
-                  )}&background=random`,
+                avatar: firebaseUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
                 bio: "",
                 isOnline: true,
                 lastSeen: serverTimestamp() as Timestamp,
@@ -202,20 +191,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               };
 
               tx.set(userRef, newUser);
-              tx.set(doc(db, "userIds", userId), { uid: firebaseUser.uid });
+              // BỎ: tx.set(doc(db, "userIds", userId), { uid: firebaseUser.uid });
               tx.set(doc(db, "usernames", username), { uid: firebaseUser.uid });
               console.log("Tạo user xong:", userId, username);
             });
           } else {
-            // USER CŨ - CHECK THIẾU userIds/usernames
+            // USER CŨ
             const data = snap.data() as AppUser;
             console.log("User đã có:", data.userId);
 
-            const userIdDoc = await getDoc(doc(db, "userIds", data.userId));
-            if (!userIdDoc.exists()) {
-              console.log("Thiếu userIds, tạo lại:", data.userId);
-              await setDoc(doc(db, "userIds", data.userId), { uid: firebaseUser.uid });
-            }
+            // BỎ: check userIds
 
             const usernameDoc = await getDoc(doc(db, "usernames", data.username));
             if (!usernameDoc.exists()) {
@@ -223,7 +208,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               await setDoc(doc(db, "usernames", data.username), { uid: firebaseUser.uid });
             }
 
-            // FIX: Set online khi login
             await updateDoc(userRef, {
               isOnline: true,
               lastSeen: serverTimestamp(),
@@ -231,7 +215,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             });
           }
 
-          // FIX: Handle visibility change - set offline khi ẩn tab
           const handleVisibility = () => {
             if (document.visibilityState === "hidden") {
               updateDoc(userRef, { 
@@ -245,7 +228,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           document.addEventListener("visibilitychange", handleVisibility);
           visibilityHandlerRef.current = handleVisibility;
 
-          // FIX: Set offline khi đóng tab
           const handleBeforeUnload = () => {
             updateDoc(userRef, { 
               isOnline: false, 
@@ -271,7 +253,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
           );
 
-          // RTDB Presence cho onDisconnect
           const statusRef = ref(rtdb, `/status/${firebaseUser.uid}`);
           const connectedRef = ref(rtdb, ".info/connected");
 
@@ -309,7 +290,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (beforeUnloadHandlerRef.current) {
         window.removeEventListener("beforeunload", beforeUnloadHandlerRef.current);
       }
-      // FIX: Set offline khi unmount
       if (auth?.currentUser) {
         updateDoc(doc(db, "users", auth.currentUser.uid), {
           isOnline: false,
