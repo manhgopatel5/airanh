@@ -98,6 +98,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const userDataUnsub = useRef<(() => void) | null>(null);
   const presenceUnsub = useRef<(() => void) | null>(null);
+  const visibilityHandlerRef = useRef<(() => void) | null>(null);
+  const beforeUnloadHandlerRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -120,6 +122,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (userDataUnsub.current) userDataUnsub.current();
         if (presenceUnsub.current) presenceUnsub.current();
+        if (visibilityHandlerRef.current) {
+          document.removeEventListener("visibilitychange", visibilityHandlerRef.current);
+          visibilityHandlerRef.current = null;
+        }
+        if (beforeUnloadHandlerRef.current) {
+          window.removeEventListener("beforeunload", beforeUnloadHandlerRef.current);
+          beforeUnloadHandlerRef.current = null;
+        }
 
         if (!firebaseUser) {
           setUserData(null);
@@ -201,7 +211,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const data = snap.data() as AppUser;
             console.log("User đã có:", data.userId);
 
-            // FIX: Check và tạo lại nếu thiếu, không dùng transaction
             const userIdDoc = await getDoc(doc(db, "userIds", data.userId));
             if (!userIdDoc.exists()) {
               console.log("Thiếu userIds, tạo lại:", data.userId);
@@ -214,12 +223,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               await setDoc(doc(db, "usernames", data.username), { uid: firebaseUser.uid });
             }
 
+            // FIX: Set online khi login
             await updateDoc(userRef, {
               isOnline: true,
               lastSeen: serverTimestamp(),
               emailVerified: firebaseUser.emailVerified,
             });
           }
+
+          // FIX: Handle visibility change - set offline khi ẩn tab
+          const handleVisibility = () => {
+            if (document.visibilityState === "hidden") {
+              updateDoc(userRef, { 
+                isOnline: false, 
+                lastSeen: serverTimestamp() 
+              }).catch(() => {});
+            } else {
+              updateDoc(userRef, { isOnline: true }).catch(() => {});
+            }
+          };
+          document.addEventListener("visibilitychange", handleVisibility);
+          visibilityHandlerRef.current = handleVisibility;
+
+          // FIX: Set offline khi đóng tab
+          const handleBeforeUnload = () => {
+            updateDoc(userRef, { 
+              isOnline: false, 
+              lastSeen: serverTimestamp() 
+            }).catch(() => {});
+          };
+          window.addEventListener("beforeunload", handleBeforeUnload);
+          beforeUnloadHandlerRef.current = handleBeforeUnload;
 
           userDataUnsub.current = onSnapshot(
             userRef,
@@ -237,6 +271,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
           );
 
+          // RTDB Presence cho onDisconnect
           const statusRef = ref(rtdb, `/status/${firebaseUser.uid}`);
           const connectedRef = ref(rtdb, ".info/connected");
 
@@ -268,6 +303,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       unsubAuth();
       if (userDataUnsub.current) userDataUnsub.current();
       if (presenceUnsub.current) presenceUnsub.current();
+      if (visibilityHandlerRef.current) {
+        document.removeEventListener("visibilitychange", visibilityHandlerRef.current);
+      }
+      if (beforeUnloadHandlerRef.current) {
+        window.removeEventListener("beforeunload", beforeUnloadHandlerRef.current);
+      }
+      // FIX: Set offline khi unmount
+      if (auth?.currentUser) {
+        updateDoc(doc(db, "users", auth.currentUser.uid), {
+          isOnline: false,
+          lastSeen: serverTimestamp()
+        }).catch(() => {});
+      }
     };
   }, [auth, db, rtdb]);
 
