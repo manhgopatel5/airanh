@@ -167,11 +167,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 username
               );
 
-              const newUser: AppUser = {
-                uid: firebaseUser.uid,
-                nameLower: name.toLowerCase(),
-                username,
-                userId,
+const newUser: AppUser = {
+  uid: firebaseUser.uid,
+  name, // ← THÊM DÒNG NÀY
+  nameLower: name.toLowerCase(),
+  username,
+  userId,
                 email: firebaseUser.email || "",
                 emailVerified: firebaseUser.emailVerified,
                 avatar:
