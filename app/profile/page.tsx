@@ -18,11 +18,12 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
   HelpCircle, LogOut, Trash2, User, Shield, Lock,
   Camera, Check, QrCode, Share2, ChevronRight, Settings,
-  Circle, Zap, ClipboardList, Star
+  Circle, Zap, ClipboardList, Star, ScanLine, X
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import type { UploadTask } from "firebase/storage";
 import { nanoid } from "nanoid";
+import { Html5Qrcode } from "html5-qrcode";
 
 type UserData = {
   uid: string;
@@ -57,11 +58,13 @@ export default function Profile() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [showScanQR, setShowScanQR] = useState(false);
   const hasCheckedId = useRef(false);
   const uploadTaskRef = useRef<UploadTask | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
 
   const accentGradient = isPlan
-? "from-green-500 to-emerald-500"
+   ? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-500";
 
   useEffect(() => {
@@ -182,7 +185,7 @@ export default function Profile() {
 
   const handleShare = async () => {
     if (!userData) return;
-    const url = `https://air.vn/u/${userData.userId}`;
+    const url = `https://airanh.vercel.app/u/${userData.userId}`;
     if (navigator.share) {
       await navigator.share({
         title: userData.name || "Người dùng AIR",
@@ -236,7 +239,6 @@ export default function Profile() {
     }
   };
 
-  // FIX: Thêm deps [user?.uid, db] để không spam
   useEffect(() => {
     if (!user?.uid) return;
     const updateOnline = () => updateDoc(doc(db, "users", user.uid), { online: true }).catch(() => {});
@@ -259,7 +261,7 @@ export default function Profile() {
       window.removeEventListener("beforeunload", updateOffline);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [user?.uid, db]); // FIX: Thêm deps
+  }, [user?.uid, db]);
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -267,11 +269,56 @@ export default function Profile() {
         setShowLogoutModal(false);
         setShowDeleteModal(false);
         setShowQR(false);
+        setShowScanQR(false);
       }
     };
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
+
+  const stopScan = () => {
+    if (scannerRef.current?.isScanning) {
+      scannerRef.current.stop().catch(() => {});
+    }
+    setShowScanQR(false);
+  };
+
+  useEffect(() => {
+    if (!showScanQR) return;
+
+    const startScan = async () => {
+      const html5QrCode = new Html5Qrcode("qr-reader");
+      scannerRef.current = html5QrCode;
+
+      try {
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          (decodedText) => {
+            if ("vibrate" in navigator) navigator.vibrate(10);
+            stopScan();
+            if (decodedText.includes("/u/")) {
+              const targetUserId = decodedText.split("/u/")[1];
+              if (targetUserId === userData?.userId) {
+                toast.error("Đây là mã của bạn");
+                return;
+              }
+              router.push(`/u/${targetUserId}`);
+            } else {
+              toast.error("Mã QR không hợp lệ");
+            }
+          },
+          () => {}
+        );
+      } catch {
+        toast.error("Không mở được camera");
+        setShowScanQR(false);
+      }
+    };
+
+    startScan();
+    return () => stopScan();
+  }, [showScanQR, userData?.userId, router]);
 
   if (!user ||!userData) return null;
 
@@ -279,7 +326,6 @@ export default function Profile() {
     <div className="min-h-screen bg-white dark:bg-black pb-24 font-sans">
       <Toaster richColors position="top-center" />
 
-      {/* HEADER FIX: Tap avatar = đổi ảnh, bỏ nút camera riêng */}
       <div className="px-6 pt-12 pb-6">
         <div className="flex items-center gap-4">
           <label className="relative cursor-pointer group">
@@ -333,7 +379,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* QUICK STATS PILL - Mới */}
         <div className="flex items-center gap-2 mt-5">
           <button
             onClick={() => router.push("/tasks")}
@@ -363,6 +408,7 @@ export default function Profile() {
           <div className="text-xs font-bold text-gray-400 dark:text-zinc-600 tracking-wider mb-1">HỒ SƠ</div>
           <Item label="Thông tin cá nhân" icon={User} onClick={() => router.push("/profile/edit")} />
           <Item label="Mã QR của tôi" icon={QrCode} onClick={() => setShowQR(true)} />
+          <Item label="Quét mã QR" icon={ScanLine} onClick={() => setShowScanQR(true)} />
           <Item label="Chia sẻ hồ sơ" icon={Share2} onClick={handleShare} />
         </div>
 
@@ -384,20 +430,50 @@ export default function Profile() {
       {showQR && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowQR(false)}>
           <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-black text-center mb-4 text-gray-900 dark:text-white">Quét để kết nối</h3>
+            <h3 className="text-xl font-black text-center mb-1 text-gray-900 dark:text-white">@{userData.userId}</h3>
+            <p className="text-sm text-center text-gray-500 mb-4">Quét để kết nối với {userData.name}</p>
+
             <div className="bg-white p-4 rounded-2xl">
               <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://air.vn/u/${userData.userId}`}
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://airanh.vercel.app/u/${userData.userId}&color=000&bgcolor=fff&margin=0`}
                 alt="QR Code"
-                className="w-full"
+                className="w-full rounded-xl"
               />
             </div>
-            <button
-              onClick={() => setShowQR(false)}
-              className={`w-full mt-4 py-3 rounded-2xl font-bold bg-gradient-to-r ${accentGradient} text-white`}
-            >
-              Đóng
-            </button>
+
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <button
+                onClick={handleShare}
+                className="py-3 rounded-2xl font-bold bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white flex items-center justify-center gap-2"
+              >
+                <Share2 size={18} /> Chia sẻ
+              </button>
+              <button
+                onClick={() => {
+                  setShowQR(false);
+                  setShowScanQR(true);
+                }}
+                className={`py-3 rounded-2xl font-bold bg-gradient-to-r ${accentGradient} text-white flex items-center justify-center gap-2`}
+              >
+                <ScanLine size={18} /> Quét mã
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showScanQR && (
+        <div className="fixed inset-0 bg-black z-50">
+          <div id="qr-reader" className="w-full h-full" />
+          <button
+            onClick={stopScan}
+            className="absolute top-6 right-6 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center"
+          >
+            <X className="w-5 h-5 text-white" />
+          </button>
+          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-white text-center">
+            <p className="font-bold">Đưa mã QR vào khung</p>
+            <p className="text-sm opacity-70 mt-1">Tự động quét khi phát hiện</p>
           </div>
         </div>
       )}
