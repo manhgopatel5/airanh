@@ -18,6 +18,10 @@ import {
   onSnapshot,
   Timestamp,
   runTransaction,
+  query,
+  collection,
+  where,
+  getDocs,
 } from "firebase/firestore";
 import {
   ref,
@@ -131,6 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const snap = await getDoc(userRef);
 
           if (!snap.exists()) {
+            // FIX: Tạo user mới hoàn toàn
             console.log("Tạo user mới cho:", firebaseUser.uid);
             await runTransaction(db, async (tx) => {
               let userId = "";
@@ -166,19 +171,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 username
               );
 
-const newUser: AppUser = {
-  uid: firebaseUser.uid,
-  name,
-  nameLower: name.toLowerCase(),
-  username,
-  userId,
-  email: firebaseUser.email || "", // ← THÊM DÒNG NÀY
-  emailVerified: firebaseUser.emailVerified,
-  avatar:
-    firebaseUser.photoURL ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      name
-    )}&background=random`,
+              const newUser: AppUser = {
+                uid: firebaseUser.uid,
+                nameLower: name.toLowerCase(),
+                username,
+                userId,
+                email: firebaseUser.email || "",
+                emailVerified: firebaseUser.emailVerified,
+                avatar:
+                  firebaseUser.photoURL ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    name
+                  )}&background=random`,
                 bio: "",
                 isOnline: true,
                 lastSeen: serverTimestamp() as Timestamp,
@@ -195,6 +199,26 @@ const newUser: AppUser = {
               console.log("Tạo user xong:", userId, username);
             });
           } else {
+            // FIX: User cũ - check và tạo lại userIds/usernames nếu thiếu
+            const data = snap.data() as AppUser;
+            console.log("User đã có:", data.userId);
+
+            const userIdDoc = await getDoc(doc(db, "userIds", data.userId));
+            if (!userIdDoc.exists()) {
+              console.log("Thiếu userIds, tạo lại:", data.userId);
+              await runTransaction(db, async (tx) => {
+                tx.set(doc(db, "userIds", data.userId), { uid: firebaseUser.uid });
+              });
+            }
+
+            const usernameDoc = await getDoc(doc(db, "usernames", data.username));
+            if (!usernameDoc.exists()) {
+              console.log("Thiếu usernames, tạo lại:", data.username);
+              await runTransaction(db, async (tx) => {
+                tx.set(doc(db, "usernames", data.username), { uid: firebaseUser.uid });
+              });
+            }
+
             await updateDoc(userRef, {
               isOnline: true,
               lastSeen: serverTimestamp(),
