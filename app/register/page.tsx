@@ -18,9 +18,7 @@ import {
   setPersistence,
   browserLocalPersistence
 } from "firebase/auth";
-import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
-import { doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore";
-import { nanoid } from "nanoid";
+
 import { toast, Toaster } from "sonner";
 import InstallPrompt from "@/components/InstallPrompt";
 import { motion } from "framer-motion";
