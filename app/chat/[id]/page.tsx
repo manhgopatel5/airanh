@@ -141,14 +141,15 @@ export default function ChatDetailPage() {
         return;
       }
 
-      const otherUid = data.members?.find((id: string) => id!== user.uid);
-      const otherUser = data.membersInfo?.[otherUid];
+const otherUid = data.members?.find((id: string) => id!== user.uid);
 
-      if (!otherUser) {
-        toast.error("Không tìm thấy người dùng");
-        router.replace("/chat");
-        return;
-      }
+if (!otherUid ||!data.membersInfo?.[otherUid]) {
+  toast.error("Không tìm thấy người dùng");
+  router.replace("/chat");
+  return;
+}
+
+const otherUser = data.membersInfo[otherUid];
 
       setFriend({
         uid: otherUid,
