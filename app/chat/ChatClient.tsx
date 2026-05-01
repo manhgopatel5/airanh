@@ -652,16 +652,38 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
     await batch2.commit(); // Commit chat trước
 
     // BATCH 3: Add chat vào subcollection 2 user - giờ đã là bạn + chat đã tồn tại
-    const batch3 = writeBatch(db);
-    batch3.set(doc(db, "users", currentUser.uid, "chats", chatId), {
-      chatId,
-      createdAt: serverTimestamp()
-    });
-    batch3.set(doc(db, "users", fromUid, "chats", chatId), {
-      chatId,
-      createdAt: serverTimestamp()
-    });
-    await batch3.commit();
+    // BATCH 3: Add chat vào subcollection 2 user với full data
+const batch3 = writeBatch(db);
+
+const chatData = {
+  chatId,
+  createdAt: serverTimestamp(),
+  updatedAt: serverTimestamp(),
+  lastMessage: "",
+  otherUser: {
+    uid: fromUid,
+    name: friendData?.name || "User",
+    avatar: friendData?.avatar || "",
+    username: friendData?.username || ""
+  }
+};
+
+const chatDataForOther = {
+  chatId,
+  createdAt: serverTimestamp(),
+  updatedAt: serverTimestamp(),
+  lastMessage: "",
+  otherUser: {
+    uid: currentUser.uid,
+    name: myData?.name || "User",
+    avatar: myData?.avatar || "",
+    username: myData?.username || ""
+  }
+};
+
+batch3.set(doc(db, "users", currentUser.uid, "chats", chatId), chatData);
+batch3.set(doc(db, "users", fromUid, "chats", chatId), chatDataForOther);
+await batch3.commit();
 
     await createNotification(fromUid, {
       type: "friend_accepted",
