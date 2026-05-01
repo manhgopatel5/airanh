@@ -18,7 +18,6 @@ import {
   onSnapshot,
   Timestamp,
   runTransaction,
-  
 } from "firebase/firestore";
 import {
   ref,
@@ -110,7 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (!auth ||!db ||!rtdb) return;
+    if (!auth || !db || !rtdb) return;
 
     const unsubAuth = onAuthStateChanged(
       auth,
@@ -132,27 +131,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const snap = await getDoc(userRef);
 
           if (!snap.exists()) {
-            // FIX: Tạo user mới khi login Google lần đầu
+            console.log("Tạo user mới cho:", firebaseUser.uid);
             await runTransaction(db, async (tx) => {
               let userId = "";
               for (let i = 0; i < 5; i++) {
-                userId = nanoid(8).toUpperCase();
+                userId = `AIR${nanoid(6).toUpperCase()}`;
                 const q = await tx.get(doc(db, "userIds", userId));
                 if (!q.exists()) break;
               }
 
               const email = firebaseUser.email || "";
               const name =
-                firebaseUser.displayName ||
-                email.split("@")[0] ||
-                "User";
+                firebaseUser.displayName || email.split("@")[0] || "User";
 
-              // FIX: Đảm bảo username unique
-              let baseUsername = name.toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9]/g, "");
+              let baseUsername = name
+                .toLowerCase()
+                .replace(/\s+/g, "")
+                .replace(/[^a-z0-9]/g, "");
               if (!baseUsername) baseUsername = "user";
               let username = baseUsername;
               let counter = 1;
-              
+
               while (true) {
                 const usernameDoc = await tx.get(doc(db, "usernames", username));
                 if (!usernameDoc.exists()) break;
@@ -169,15 +168,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
               const newUser: AppUser = {
                 uid: firebaseUser.uid,
+                name, // FIX: THÊM DÒNG NÀY
                 nameLower: name.toLowerCase(),
                 username,
                 userId,
-                name,
-                email,
                 emailVerified: firebaseUser.emailVerified,
                 avatar:
                   firebaseUser.photoURL ||
-                  `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    name
+                  )}&background=random`,
                 bio: "",
                 isOnline: true,
                 lastSeen: serverTimestamp() as Timestamp,
@@ -191,6 +191,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               tx.set(userRef, newUser);
               tx.set(doc(db, "userIds", userId), { uid: firebaseUser.uid });
               tx.set(doc(db, "usernames", username), { uid: firebaseUser.uid });
+              console.log("Tạo user xong:", userId, username);
             });
           } else {
             await updateDoc(userRef, {
@@ -200,14 +201,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             });
           }
 
-          // FIX: KHÔNG setLoading(false) ở đây. Đợi onSnapshot chạy xong
           userDataUnsub.current = onSnapshot(
             userRef,
             (docSnap) => {
               if (docSnap.exists()) {
                 setUserData(docSnap.data() as AppUser);
+                console.log("userData loaded:", docSnap.data().userId);
               }
-              setLoading(false); // FIX: Chỉ tắt loading sau khi có userData
+              setLoading(false);
             },
             (err) => {
               console.error("Snapshot error:", err);
@@ -216,7 +217,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
           );
 
-          // Presence
           const statusRef = ref(rtdb, `/status/${firebaseUser.uid}`);
           const connectedRef = ref(rtdb, ".info/connected");
 
