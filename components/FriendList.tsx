@@ -17,7 +17,7 @@ import {
 } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthContext";
 import { useRouter } from "next/navigation";
-import { getOrCreateConversation } from "@/lib/chatService";
+
 import { FiMessageSquare, FiSearch, FiUsers } from "react-icons/fi";
 
 type Friend = {
