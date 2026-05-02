@@ -1,51 +1,50 @@
-import * as functions from "firebase-functions";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 
 admin.initializeApp();
 const db = admin.firestore();
 
-interface AcceptFriendData {
-  fromUid: string;
-  notifId: string;
-}
-
-export const acceptFriendRequest = functions
-  .region("asia-southeast1")
-  .https.onCall(async (
-    data: AcceptFriendData,
-    context: functions.https.CallableContext
-  ) => {
-    const { fromUid, notifId } = data;
-    const toUid = context.auth?.uid;
-
-    if (!toUid) {
-      throw new functions.https.HttpsError("unauthenticated", "Phải đăng nhập");
+export const acceptFriendRequest = onCall(
+  {
+    region: "asia-southeast1",
+    cors: true,
+    invoker: ["public"], // Key: bypass org policy
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Chưa đăng nhập");
     }
+
+    const { fromUid, notifId } = request.data;
+    const toUid = request.auth.uid;
+
     if (!fromUid || !notifId) {
-      throw new functions.https.HttpsError("invalid-argument", "Thiếu fromUid hoặc notifId");
+      throw new HttpsError("invalid-argument", "Thiếu fromUid hoặc notifId");
     }
 
+    // Logic cũ của bạn copy vào đây
     const batch = db.batch();
     
-    const friendRef1 = db.collection("friends").doc(`${toUid}_${fromUid}`);
-    batch.set(friendRef1, { 
-      userId: toUid, 
-      friendId: fromUid, 
-      status: "accepted",
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-    
-    const friendRef2 = db.collection("friends").doc(`${fromUid}_${toUid}`);
-    batch.set(friendRef2, { 
-      userId: fromUid, 
-      friendId: toUid, 
-      status: "accepted",
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    });
+    const friendRef1 = db.doc(`users/${toUid}/friends/${fromUid}`);
+    const friendRef2 = db.doc(`users/${fromUid}/friends/${toUid}`);
+    const notifRef = db.doc(`notifications/${toUid}/items/${notifId}`);
+    const requestRef = db.doc(`friendRequests/${fromUid}_${toUid}`);
 
-    const notifRef = db.collection("friendRequests").doc(notifId);
+    batch.set(friendRef1, { createdAt: admin.firestore.FieldValue.serverTimestamp() });
+    batch.set(friendRef2, { createdAt: admin.firestore.FieldValue.serverTimestamp() });
     batch.delete(notifRef);
+    batch.delete(requestRef);
+
+    const chatId = [fromUid, toUid].sort().join("_");
+    const chatRef = db.doc(`chats/${chatId}`);
+    batch.set(chatRef, {
+      members: [fromUid, toUid],
+      isGroup: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
 
     await batch.commit();
-    return { success: true };
-  });
+    return { chatId };
+  }
+);
