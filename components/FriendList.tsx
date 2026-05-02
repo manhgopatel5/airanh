@@ -16,6 +16,7 @@ import {
   serverTimestamp, // Thêm
 } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthContext";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 import { FiMessageSquare, FiSearch, FiUsers } from "react-icons/fi";
@@ -134,21 +135,20 @@ const handleChat = useCallback(async (fid: string) => {
   setChattingId(fid);
 
   try {
-    // Tạo chatId chuẩn: sort 2 uid để 2 chiều đều ra 1 id
+    const db = getFirebaseDB(); // Thêm dòng này
     const chatId = [user.uid, fid].sort().join("_");
     const chatRef = doc(db, "chats", chatId);
-    
-    // Check + tạo chat nếu chưa có
+
     const chatSnap = await getDoc(chatRef);
     if (!chatSnap.exists()) {
       const [meSnap, friendSnap] = await Promise.all([
         getDoc(doc(db, "users", user.uid)),
         getDoc(doc(db, "users", fid))
       ]);
-      
+
       const meData = meSnap.data();
       const friendData = friendSnap.data();
-      
+
       await setDoc(chatRef, {
         members: [user.uid, fid],
         membersInfo: {
@@ -169,7 +169,7 @@ const handleChat = useCallback(async (fid: string) => {
         isGroup: false
       });
     }
-    
+
     router.push(`/chat/${chatId}`);
   } catch (err) {
     console.error("Lỗi chat:", err);
@@ -177,14 +177,14 @@ const handleChat = useCallback(async (fid: string) => {
   } finally {
     setChattingId(null);
   }
-}, [user?.uid, chattingId, router, db]);
+}, [user?.uid, chattingId, router]);
 
   /* ================= PREFETCH ================= */
-  const handleMouseEnter = useCallback(async (fid: string) => {
-    if (!user?.uid) return;
-    const id = await getOrCreateConversation(user.uid, fid);
-    router.prefetch(`/chat/${id}`);
-  }, [user?.uid, router]);
+const handleMouseEnter = useCallback((fid: string) => {
+  if (!user?.uid) return;
+  const chatId = [user.uid, fid].sort().join("_");
+  router.prefetch(`/chat/${chatId}`);
+}, [user?.uid, router]);
 
   /* ================= LOADING SKELETON ================= */
   if (loading) {
