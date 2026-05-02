@@ -585,8 +585,6 @@ const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<voi
       return;
     }
 
-    const currentUserDoc = await getDoc(doc(db, "users", currentUser.uid));
-    const currentUserData = currentUserDoc.data();
 
     await setDoc(doc(db, "friendRequests", requestId), {
       from: currentUser.uid,
