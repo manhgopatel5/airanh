@@ -248,19 +248,31 @@ useEffect(() => {
         await Promise.all(
           chunks.map(async (chunk) => {
             const userDocs = await Promise.all(chunk.map(id => getDoc(doc(db, "users", id))));
+const chatDocs = await Promise.all(chunk.map(id => {
+  const chatId = [user.uid, id].sort().join("_");
+  return getDoc(doc(db, "chats", chatId));
+}));
 
-            // Load chat để check blockedBy
-            const chatDocs = await Promise.all(chunk.map(id => {
-              const chatId = [user.uid, id].sort().join("_");
-              return getDoc(doc(db, "chats", chatId));
-            }));
+userDocs.forEach((userDoc, idx) => {
+  if (userDoc.exists()) {
+    const data = userDoc.data();
+    const chatSnap = chatDocs[idx];
+    const chatData = chatSnap?.exists()? chatSnap.data() : null; // Thêm? sau chatSnap
+    const isDeletedByThem = chatData?.blockedBy?.includes(user.uid) || false;
 
-            userDocs.forEach((userDoc, idx) => {
-              if (userDoc.exists()) {
-                const data = userDoc.data();
-                const chatSnap = chatDocs[idx];
-                const chatData = chatSnap.exists()? chatSnap.data() : null;
-                const isDeletedByThem = chatData?.blockedBy?.includes(user.uid) || false;
+    friendsData.push({
+      uid: userDoc.id,
+      name: data.name || "User",
+      username: data.username || "",
+      avatar: data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || "U")}&background=random`,
+      userId: data.userId || "",
+      isOnline: Boolean(data.isOnline),
+      lastSeen: data.lastSeen,
+      mutualFriends: data.mutualFriends || 0,
+      isDeletedByThem,
+    });
+  }
+});
 
                 friendsData.push({
                   uid: userDoc.id,
