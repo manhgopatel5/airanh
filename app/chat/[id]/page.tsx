@@ -63,7 +63,6 @@ type Message = {
     image: string;
     url: string;
   };
-  optimistic?: boolean;
   members?: string[]; // THÊM FIELD NÀY CHO RULE MỚI
 };
 
@@ -190,89 +189,35 @@ export default function ChatDetailPage() {
     return () => unsub();
   }, [friendId, db]);
 
-  /* ================= LOAD MESSAGES WITH PAGINATION ================= */
-  const loadMessages = useCallback(async (loadMore = false) => {
-    if (!chatId ||!user ||!friendId) return;
-    if (loadMore &&!hasMore) return;
 
-    setLoadingMore(true);
 
-    let q = query(
-      collection(db, "chats", chatId, "messages"),
-      orderBy("createdAt", "desc"),
-      limit(MSG_LIMIT)
-    );
+  /* ================= REALTIME MESSAGES - DUY NHẤT ================= */
+useEffect(() => {
+  if (!chatId ||!user ||!friendId) return;
 
-    if (loadMore && lastMsgDocRef.current) {
-      q = query(
-        collection(db, "chats", chatId, "messages"),
-        orderBy("createdAt", "desc"),
-        startAfter(lastMsgDocRef.current),
-        limit(MSG_LIMIT)
-      );
-    }
+  const q = query(
+    collection(db, "chats", chatId, "messages"),
+    orderBy("createdAt", "asc"),
+    limit(MSG_LIMIT)
+  );
 
-    const snap = await getDocs(q);
-    const msgs = snap.docs.map((d) => ({ id: d.id,...d.data() } as Message)).reverse();
+  const unsub = onSnapshot(q, (snap) => {
+    const msgs = snap.docs.map((d) => ({ id: d.id,...d.data() } as Message));
+    setMessages(msgs); // Ghi đè toàn bộ, không append
 
-    if (snap.docs.length > 0) {
-      lastMsgDocRef.current = snap.docs[snap.docs.length - 1];
-    }
-
-    setHasMore(snap.docs.length === MSG_LIMIT);
-
-    if (loadMore) {
-      setMessages(prev => [...msgs,...prev]);
-    } else {
-      setMessages(msgs);
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-    }
-
-    setLoadingMore(false);
-  }, [chatId, user, friendId, db, hasMore]);
-
-  useEffect(() => {
-    loadMessages(false);
-  }, [loadMessages]);
-
-  /* ================= REALTIME NEW MESSAGES ================= */
-  useEffect(() => {
-    if (!chatId ||!user ||!friendId) return;
-
-    const q = query(
-      collection(db, "chats", chatId, "messages"),
-      orderBy("createdAt", "desc"),
-      limit(1)
-    );
-
-    const unsub = onSnapshot(q, (snap) => {
-      snap.docChanges().forEach((change) => {
-        if (change.type === "added") {
-          const msg = { id: change.doc.id,...change.doc.data() } as Message;
-
-          setMessages(prev => {
-            if (msg.optimistic || prev.find(m => m.id === msg.id)) return prev;
-            return [...prev, msg];
-          });
-
-          if (msg.senderId === friendId &&!msg.seenBy?.includes(user.uid)) {
-            updateDoc(doc(db, "chats", chatId, "messages", msg.id), {
-              seenBy: arrayUnion(user.uid)
-            }).catch(() => {});
-          }
-        }
-        if (change.type === "modified") {
-          const msg = { id: change.doc.id,...change.doc.data() } as Message;
-          setMessages(prev => prev.map(m => m.id === msg.id? msg : m));
-        }
-        if (change.type === "removed") {
-          setMessages(prev => prev.filter(m => m.id!== change.doc.id));
-        }
-      });
+    // Đánh dấu đã xem
+    snap.docs.forEach((docSnap) => {
+      const msg = docSnap.data() as Message;
+      if (msg.senderId === friendId &&!msg.seenBy?.includes(user.uid)) {
+        updateDoc(doc(db, "chats", chatId, "messages", docSnap.id), {
+          seenBy: arrayUnion(user.uid)
+        }).catch(() => {});
+      }
     });
+  });
 
-    return () => unsub();
-  }, [chatId, user, friendId, db]);
+  return () => unsub();
+}, [chatId, user, friendId, db]);
 
   /* ================= TYPING INDICATOR ================= */
   useEffect(() => {
@@ -291,86 +236,56 @@ const handleTyping = useCallback(async () => {
   return;
 }, []);
 
-  /* ================= SEND MESSAGE - OPTIMISTIC UI ================= */
-  const sendMessage = useCallback(async () => {
-    if (!text.trim() ||!user ||!friend ||!chatId || sending ||!friendId ||!chatData) {
-      if (!chatData) toast.error("Đang tải dữ liệu chat...");
-      return;
-    }
+const sendMessage = useCallback(async () => {
+  if (!text.trim() ||!user ||!friend ||!chatId || sending ||!friendId ||!chatData) {
+    if (!chatData) toast.error("Đang tải dữ liệu chat...");
+    return;
+  }
 
-    const tempText = text;
-    const tempReply = replyTo;
-    const tempEdit = editingMsg;
+  const tempText = text;
+  const tempReply = replyTo;
+  const tempEdit = editingMsg;
 
-    const optimisticMsg: Message = {
-      id: `temp_${Date.now()}`,
-      text: tempText,
-      senderId: user.uid,
-      createdAt: Timestamp.now(),
-      seenBy: [user.uid],
-      type: "text",
-      optimistic: true,
-     ...(tempReply && {
-        replyTo: {
-          id: tempReply.id,
-          text: tempReply.text,
-          senderName: tempReply.senderId === user.uid? "Bạn" : friend.name,
-        },
-      }),
-    };
+  setText("");
+  setReplyTo(null);
+  setEditingMsg(null);
+  setSending(true);
+  inputRef.current?.focus();
 
+  try {
     if (tempEdit) {
-      setMessages(prev => prev.map(m => m.id === tempEdit.id? {...m, text: tempText, edited: true } : m));
+      await updateDoc(doc(db, "chats", chatId, "messages", tempEdit.id), {
+        text: tempText,
+        edited: true,
+        editedAt: serverTimestamp()
+      });
     } else {
-      setMessages(prev => [...prev, optimisticMsg]);
+      await addDoc(collection(db, "chats", chatId, "messages"), {
+        text: tempText,
+        senderId: user.uid,
+        createdAt: serverTimestamp(),
+        seenBy: [user.uid],
+        type: "text",
+        members: chatData.members,
+       ...(tempReply && {
+          replyTo: {
+            id: tempReply.id,
+            text: tempReply.text,
+            senderName: tempReply.senderId === user.uid? "Bạn" : friend.name,
+          },
+        }),
+      });
     }
-
-    setText("");
-    setReplyTo(null);
-    setEditingMsg(null);
-    setSending(true);
-    inputRef.current?.focus();
-
-    try {
-      if (tempEdit) {
-        await updateDoc(doc(db, "chats", chatId, "messages", tempEdit.id), {
-          text: tempText,
-          edited: true,
-          editedAt: serverTimestamp()
-        });
-      } else {
-        await addDoc(collection(db, "chats", chatId, "messages"), {
-          text: tempText,
-          senderId: user.uid,
-          createdAt: serverTimestamp(),
-          seenBy: [user.uid],
-          type: "text",
-          members: chatData.members,
-         ...(tempReply && {
-            replyTo: {
-              id: tempReply.id,
-              text: tempReply.text,
-              senderName: tempReply.senderId === user.uid? "Bạn" : friend.name,
-            },
-          }),
-        });
-
-      }
-    } catch (e: any) {
-      console.error(e);
-      toast.error(`Gửi thất bại: ${e.code}`);
-      if (tempEdit) {
-        setMessages(prev => prev.map(m => m.id === tempEdit.id? tempEdit : m));
-      } else {
-        setMessages(prev => prev.filter(m => m.id!== optimisticMsg.id));
-      }
-      setText(tempText);
-      setReplyTo(tempReply);
-      setEditingMsg(tempEdit);
-    } finally {
-      setSending(false);
-    }
-  }, [user, text, friend, chatId, sending, replyTo, editingMsg, friendId, db, chatData]);
+  } catch (e: any) {
+    console.error(e);
+    toast.error(`Gửi thất bại: ${e.code}`);
+    setText(tempText); // Khôi phục text nếu lỗi
+    setReplyTo(tempReply);
+    setEditingMsg(tempEdit);
+  } finally {
+    setSending(false);
+  }
+}, [user, text, friend, chatId, sending, replyTo, editingMsg, friendId, db, chatData]);
 
   /* ================= SEND IMAGE ================= */
   const sendImage = async (file: File) => {
