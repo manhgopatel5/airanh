@@ -713,16 +713,8 @@ const unpinMessage = async () => {
       )}
 
       {/* MESSAGES */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-0.5" onScroll={(e) => {
-        if (e.currentTarget.scrollTop === 0 && hasMore &&!loadingMore) {
-          loadMessages(true);
-        }
-      }}>
-        {loadingMore && (
-          <div className="flex justify-center py-4">
-            <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
-          </div>
-        )}
+   <div className="flex-1 overflow-y-auto px-4 py-6 space-y-0.5">
+    
 
         {filteredMessages.map((m, i) => {
           const isMe = m.senderId === user.uid;
