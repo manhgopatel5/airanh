@@ -17,6 +17,7 @@ import {
   onSnapshot,
   doc,
   getDoc,
+  arrayUnion,
   setDoc,
   limit,
   updateDoc,
@@ -68,6 +69,7 @@ type ChatItem = {
   isTyping?: boolean;
   isGroup: boolean;
   members?: string[];
+  blockedBy?: string[];
 };
 
 type FriendItem = {
@@ -327,28 +329,30 @@ const scannerRef = useRef<Html5Qrcode | null>(null);
             }));
           }
 
-          const chatList: ChatItem[] = rawChats.map((raw) => {
-            const chatData = raw.c;
-            if (raw.isGroup) {
-              return {
-                uid: raw.id, chatId: raw.id, name: chatData.groupName || "Nhóm", username: "",
-                avatar: chatData.groupAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(chatData.groupName || "N")}&background=${isPlan ? "22c55e" : "0a84ff"}&color=fff&bold=true`,
-                userId: "", lastMessage: chatData.lastMessage, lastSenderId: chatData.lastSenderId, lastSenderName: chatData.lastSenderName,
-                updatedAt: chatData.updatedAt, unreadCount: chatData.unread?.[user.uid] || 0,
-                isTyping: Object.entries(chatData.typing || {}).some(([userId, isTyping]) => userId !== user.uid && Boolean(isTyping)),
-                isGroup: true, members: chatData.members || [], isOnline: false,
-              };
-            } else {
-              const userData = usersMap[raw.other || ""] || {};
-              return {
-                uid: raw.other || "", chatId: raw.id, name: userData.name || "User", username: userData.username || "",
-                avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || "U")}&background=random`,
-                userId: userData.userId || "", lastMessage: chatData.lastMessage, lastSenderId: chatData.lastSenderId, lastSenderName: "",
-                updatedAt: chatData.updatedAt, isOnline: Boolean(userData.isOnline), unreadCount: chatData.unread?.[user.uid] || 0,
-                isTyping: Boolean(raw.other && chatData.typing?.[raw.other]), isGroup: false,
-              };
-            }
-          });
+     const chatList: ChatItem[] = rawChats.map((raw) => {
+  const chatData = raw.c;
+  if (raw.isGroup) {
+    return {
+      uid: raw.id, chatId: raw.id, name: chatData.groupName || "Nhóm", username: "",
+      avatar: chatData.groupAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(chatData.groupName || "N")}&background=${isPlan ? "22c55e" : "0a84ff"}&color=fff&bold=true`,
+      userId: "", lastMessage: chatData.lastMessage, lastSenderId: chatData.lastSenderId, lastSenderName: chatData.lastSenderName,
+      updatedAt: chatData.updatedAt, unreadCount: chatData.unread?.[user.uid] || 0,
+      isTyping: Object.entries(chatData.typing || {}).some(([userId, isTyping]) => userId !== user.uid && Boolean(isTyping)),
+      isGroup: true, members: chatData.members || [], isOnline: false,
+      blockedBy: chatData.blockedBy || [], // Thêm dòng này
+    };
+  } else {
+    const userData = usersMap[raw.other || ""] || {};
+    return {
+      uid: raw.other || "", chatId: raw.id, name: userData.name || "User", username: userData.username || "",
+      avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || "U")}&background=random`,
+      userId: userData.userId || "", lastMessage: chatData.lastMessage, lastSenderId: chatData.lastSenderId, lastSenderName: "",
+      updatedAt: chatData.updatedAt, isOnline: Boolean(userData.isOnline), unreadCount: chatData.unread?.[user.uid] || 0,
+      isTyping: Boolean(raw.other && chatData.typing?.[raw.other]), isGroup: false,
+      blockedBy: chatData.blockedBy || [], // Thêm dòng này
+    };
+  }
+});
 
           const pinnedChats = JSON.parse(localStorage.getItem(PINNED_KEY) || "[]");
           chatList.sort((a, b) => {
@@ -728,27 +732,26 @@ const handleRemoveFriend = useCallback(async (friendId: string, friendName: stri
   if (!window.confirm(`Xóa ${friendName} khỏi danh sách bạn bè?`)) return;
   
   try {
+    const db = getFirebaseDB();
     const chatId = [user.uid, friendId].sort().join("_");
     const batch = writeBatch(db);
 
-    // 1. Xóa bạn 2 chiều
+    // 1. Chỉ xóa bạn ở phía mình
     batch.delete(doc(db, "users", user.uid, "friends", friendId));
-    batch.delete(doc(db, "users", friendId, "friends", user.uid));
-
-    // 2. Xóa chat khỏi subcollection 2 user
-    batch.delete(doc(db, "users", user.uid, "chats", chatId));
-    batch.delete(doc(db, "users", friendId, "chats", chatId));
-
-    // 3. Xóa chat chính - 1-1 thì xóa luôn
-    batch.delete(doc(db, "chats", chatId));
+    
+    // 2. Block chat để người kia không nhắn được
+    batch.update(doc(db, "chats", chatId), {
+      blockedBy: arrayUnion(user.uid),
+      updatedAt: serverTimestamp()
+    });
 
     await batch.commit();
-    toast.success("Đã xóa bạn bè và cuộc trò chuyện");
+    toast.success("Đã xóa bạn bè");
   } catch (error: any) {
     console.error("Remove friend error:", error);
-    toast.error(`Lỗi: ${error.message || "Không thể xóa bạn bè"}`);
+    toast.error(`Lỗi: ${error.message}`);
   }
-}, [user?.uid, db]);
+}, [user?.uid]);
 
   const handleCreateGroup = useCallback(async (): Promise<void> => {
     if (!user) { toast.error("Chưa đăng nhập"); return; }
@@ -843,21 +846,25 @@ const handleRemoveFriend = useCallback(async (friendId: string, friendName: stri
     return formatDistanceToNow(timestamp.toDate(), { addSuffix: true, locale: vi });
   }, []);
 
-  const filteredChats = useMemo(() => {
-    const query = debounced.toLowerCase().trim();
-    let filtered = items;
-    if (query) {
-      filtered = filtered.filter((item) => {
-        const nameMatch = item.name.toLowerCase().includes(query);
-        const usernameMatch = item.username.toLowerCase().includes(query);
-        const userIdMatch = item.userId.toLowerCase().includes(query);
-        return nameMatch || usernameMatch || userIdMatch;
-      });
-    }
-    if (activeTab === "unread") filtered = filtered.filter((item) => (item.unreadCount || 0) > 0);
-    else if (activeTab === "group") filtered = filtered.filter((item) => item.isGroup);
-    return filtered;
-  }, [items, debounced, activeTab]);
+ const filteredChats = useMemo(() => {
+  const query = debounced.toLowerCase().trim();
+  let filtered = items;
+  
+  // Ẩn chat mà mình đã xóa người ta
+  filtered = filtered.filter(item => !item.blockedBy?.includes(user?.uid || ""));
+  
+  if (query) {
+    filtered = filtered.filter((item) => {
+      const nameMatch = item.name.toLowerCase().includes(query);
+      const usernameMatch = item.username.toLowerCase().includes(query);
+      const userIdMatch = item.userId.toLowerCase().includes(query);
+      return nameMatch || usernameMatch || userIdMatch;
+    });
+  }
+  if (activeTab === "unread") filtered = filtered.filter((item) => (item.unreadCount || 0) > 0);
+  else if (activeTab === "group") filtered = filtered.filter((item) => item.isGroup);
+  return filtered;
+}, [items, debounced, activeTab, user?.uid]);
 
   const filteredFriends = useMemo(() => {
     const query = debounced.toLowerCase().trim();
@@ -1077,29 +1084,37 @@ const handleRemoveFriend = useCallback(async (friendId: string, friendName: stri
       {filteredFriends.length} bạn bè
     </p>
   </div>
-                {filteredFriends.map((friend) => (
-                  <div key={friend.uid} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-900/50 active:bg-gray-100 dark:active:bg-zinc-800 transition-colors">
-  <div className="relative flex-shrink-0">
-    <img src={friend.avatar} alt={friend.name} className="w-[52px] h-[52px] rounded-full object-cover" />
-    {friend.isOnline && <div className="absolute bottom-0 right-0 w-[14px] h-[14px] bg-[#30d158] rounded-full border-[2.5px] border-white dark:border-black" />}
-  </div>
-  <div className="flex-1 min-w-0">
-    <div className="flex items-baseline gap-2">
-      <p className="text-[16px] font-[550] truncate">{friend.name}</p>
-      {friend.isOnline && <span className="text-[11px] text-[#30d158] font-medium">• Online</span>}
+{filteredFriends.map((friend) => {
+  const chat = items.find(i => i.uid === friend.uid);
+  const isBlockedByMe = chat?.blockedBy?.includes(user?.uid || "");
+  
+  return (
+    <div key={friend.uid} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-900/50 active:bg-gray-100 dark:active:bg-zinc-800 transition-colors">
+      <div className="relative flex-shrink-0">
+        <img src={friend.avatar} alt={friend.name} className="w-[52px] h-[52px] rounded-full object-cover" />
+        {friend.isOnline && <div className="absolute bottom-0 right-0 w-[14px] h-[14px] bg-[#30d158] rounded-full border-[2.5px] border-white dark:border-black" />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline gap-2">
+          <p className="text-[16px] font-[550] truncate">{friend.name}</p>
+          {friend.isOnline && <span className="text-[11px] text-[#30d158] font-medium">• Online</span>}
+          {isBlockedByMe && <span className="text-[11px] text-red-500 font-medium">• Đã xóa</span>}
+        </div>
+        <p className="text-[13px] text-[#8e8e93] truncate">@{friend.username || friend.userId} • {friend.isOnline? "Đang hoạt động" : formatLastSeen(friend.lastSeen)}</p>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <button onClick={() => handleStartChatWithFriend(friend.uid)} className={`w-8 h-8 ${primaryBg} ${primaryHover} rounded-full flex items-center justify-center active:scale-90 transition-all`} title="Nhắn tin">
+          <FiMessageSquare className="text-white" size={14} />
+        </button>
+        {!isBlockedByMe && (
+          <button onClick={() => handleRemoveFriend(friend.uid, friend.name)} className="w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center active:scale-90 transition-all" title="Xóa bạn">
+            <FiUserX className="text-white" size={14} />
+          </button>
+        )}
+      </div>
     </div>
-    <p className="text-[13px] text-[#8e8e93] truncate">@{friend.username || friend.userId} • {friend.isOnline? "Đang hoạt động" : formatLastSeen(friend.lastSeen)}</p>
-  </div>
-  <div className="flex items-center gap-1.5">
-    <button onClick={() => handleStartChatWithFriend(friend.uid)} className={`w-8 h-8 ${primaryBg} ${primaryHover} rounded-full flex items-center justify-center active:scale-90 transition-all`} title="Nhắn tin">
-      <FiMessageSquare className="text-white" size={14} />
-    </button>
-    <button onClick={() => handleRemoveFriend(friend.uid, friend.name)} className="w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center active:scale-90 transition-all" title="Xóa bạn">
-      <FiUserX className="text-white" size={14} />
-    </button>
-  </div>
-</div>
-                ))}
+  );
+})}
               </div>
             )
           ) : loading ? (
