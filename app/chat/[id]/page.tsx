@@ -87,6 +87,10 @@ export default function ChatDetailPage() {
   const [friend, setFriend] = useState<UserData | null>(null);
   const [friendId, setFriendId] = useState<string | null>(null);
   const [chatData, setChatData] = useState<ChatData | null>(null);
+
+
+const isBlocked = chatData?.blockedBy?.includes(user?.uid || "");
+const isDeleted = chatData?.deletedBy?.includes(user?.uid || "");
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -964,61 +968,88 @@ const unpinMessage = async () => {
         </div>
       )}
 
-      {/* INPUT */}
-      <div className="p-4 border-t border-gray-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-2xl">
-        <div className="flex items-end gap-2">
-          <input type="file" hidden ref={imageInputRef} accept="image/*" onChange={(e) => e.target.files?.[0] && sendImage(e.target.files[0])} />
-          <button onClick={() => imageInputRef.current?.click()} className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90">
-            <ImageIcon size={22} className="text-gray-600 dark:text-zinc-400" />
-          </button>
-          <input type="file" hidden ref={fileInputRef} onChange={(e) => e.target.files?.[0] && sendFile(e.target.files[0])} />
-          <button onClick={() => fileInputRef.current?.click()} className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90">
-            <Paperclip size={22} className="text-gray-600 dark:text-zinc-400" />
-          </button>
+{/* INPUT */}
+<div className="p-4 border-t border-gray-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-2xl">
+  <div className="flex items-end gap-2">
+    <input type="file" hidden ref={imageInputRef} accept="image/*" onChange={(e) => e.target.files?.[0] && sendImage(e.target.files[0])} />
+    <button
+      onClick={() => imageInputRef.current?.click()}
+      disabled={isBlocked || isDeleted}
+      className={`w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90 ${isBlocked || isDeleted? "opacity-50 cursor-not-allowed" : ""}`}
+    >
+      <ImageIcon size={22} className="text-gray-600 dark:text-zinc-400" />
+    </button>
+    <input type="file" hidden ref={fileInputRef} onChange={(e) => e.target.files?.[0] && sendFile(e.target.files[0])} />
+    <button
+      onClick={() => fileInputRef.current?.click()}
+      disabled={isBlocked || isDeleted}
+      className={`w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90 ${isBlocked || isDeleted? "opacity-50 cursor-not-allowed" : ""}`}
+    >
+      <Paperclip size={22} className="text-gray-600 dark:text-zinc-400" />
+    </button>
 
-<button onClick={sendLocation} className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90">
-  <MapPin size={22} className="text-gray-600 dark:text-zinc-400" />
-</button>
-          <div className="flex-1 relative">
-            <input
-              ref={inputRef}
-              value={text}
-              onChange={(e) => {
-                setText(e.target.value);
-                handleTyping();
-              }}
-              onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && (e.preventDefault(), sendMessage())}
-              placeholder="Nhắn tin..."
-              className="w-full px-5 py-3 bg-gray-100 dark:bg-zinc-900 rounded-3xl outline-none focus:ring-2 focus:ring-blue-500/30 text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 transition-all"
-            />
-          </div>
-          {text.trim()? (
-            <button
-              onClick={sendMessage}
-              disabled={sending}
-              className="w-11 h-11 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full flex items-center justify-center active:scale-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/30"
-            >
-              {sending? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-            </button>
-          ) : (
-            <button
-              onMouseDown={startRecording}
-              onMouseUp={stopRecording}
-              onTouchStart={startRecording}
-              onTouchEnd={stopRecording}
-              className={`w-11 h-11 ${recording? "bg-red-500" : "bg-gradient-to-br from-blue-500 to-indigo-600"} text-white rounded-full flex items-center justify-center active:scale-90 transition-all shadow-lg`}
-            >
-              {recording? <Square size={18} /> : <Mic size={18} />}
-            </button>
-          )}
-        </div>
-        {recording && (
-          <div className="mt-2 flex items-center justify-center gap-2 text-red-500 text-sm font-medium">
-            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-            Đang ghi âm {recordingTime}s
-          </div>
-        )}
-      </div>
+    <button
+      onClick={sendLocation}
+      disabled={isBlocked || isDeleted}
+      className={`w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90 ${isBlocked || isDeleted? "opacity-50 cursor-not-allowed" : ""}`}
+    >
+      <MapPin size={22} className="text-gray-600 dark:text-zinc-400" />
+    </button>
+    <div className="flex-1 relative">
+      <input
+        ref={inputRef}
+        value={text}
+        onChange={(e) => {
+          setText(e.target.value);
+          handleTyping();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" &&!e.shiftKey) {
+            e.preventDefault();
+            if (!isBlocked &&!isDeleted && text.trim()) sendMessage();
+          }
+        }}
+        disabled={isBlocked || isDeleted}
+        placeholder={
+          isBlocked
+           ? "Bạn không thể nhắn tin"
+            : isDeleted
+           ? "Bạn đã xóa cuộc trò chuyện"
+            : "Nhắn tin..."
+        }
+        className={`w-full px-5 py-3 bg-gray-100 dark:bg-zinc-900 rounded-3xl outline-none focus:ring-2 focus:ring-blue-500/30 text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 transition-all ${
+          isBlocked || isDeleted? "opacity-50 cursor-not-allowed" : ""
+        }`}
+      />
     </div>
-  );
+    {text.trim()? (
+<button
+  onClick={sendMessage}
+  disabled={sending || isBlocked || isDeleted || !text.trim()} // THÊM isBlocked || isDeleted
+  className={`w-11 h-11 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full flex items-center justify-center active:scale-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/30`}
+>
+  {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+</button>
+    ) : (
+      <button
+        onMouseDown={startRecording}
+        onMouseUp={stopRecording}
+        onTouchStart={startRecording}
+        onTouchEnd={stopRecording}
+        disabled={isBlocked || isDeleted}
+        className={`w-11 h-11 ${recording? "bg-red-500" : "bg-gradient-to-br from-blue-500 to-indigo-600"} text-white rounded-full flex items-center justify-center active:scale-90 transition-all shadow-lg ${isBlocked || isDeleted? "opacity-50 cursor-not-allowed" : ""}`}
+      >
+        {recording? <Square size={18} /> : <Mic size={18} />}
+      </button>
+    )}
+  </div>
+  {recording && (
+    <div className="mt-2 flex items-center justify-center gap-2 text-red-500 text-sm font-medium">
+      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+      Đang ghi âm {recordingTime}s
+    </div>
+  )}
+</div>
+</div>
+);
 }
