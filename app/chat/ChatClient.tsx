@@ -82,6 +82,7 @@ type FriendItem = {
   isOnline: boolean;
   lastSeen?: Timestamp;
   mutualFriends?: number;
+  isDeletedByThem?: boolean;
 };
 
 type NotificationItem = {
@@ -214,83 +215,95 @@ const scannerRef = useRef<Html5Qrcode | null>(null);
   }, [user?.uid, db]);
 
   // Load friends
-  useEffect(() => {
-    if (!user?.uid || activeTab !== "friends") return;
-    
-    setFriendsLoading(true);
-    
-    const timeout = setTimeout(() => {
-      setFriendsLoading(false);
-    }, 800);
-    
-    const friendsRef = collection(db, "users", user.uid, "friends");
-    const q = query(friendsRef);
-    
-    const unsub = onSnapshot(
-      q,
-      async (snapshot) => {
-        clearTimeout(timeout);
-        try {
-          const friendIds = snapshot.docs.map(d => d.id);
-          if (friendIds.length === 0) {
-            setFriends([]);
-            setFriendsLoading(false);
-            return;
-          }
+useEffect(() => {
+  if (!user?.uid || activeTab!== "friends") return;
 
-          const chunks: string[][] = [];
-          for (let i = 0; i < friendIds.length; i += BATCH_SIZE) {
-            chunks.push(friendIds.slice(i, i + BATCH_SIZE));
-          }
+  setFriendsLoading(true);
 
-          const friendsData: FriendItem[] = [];
-          await Promise.all(
-            chunks.map(async (chunk) => {
-              const userDocs = await Promise.all(chunk.map(id => getDoc(doc(db, "users", id))));
-              userDocs.forEach(userDoc => {
-                if (userDoc.exists()) {
-                  const data = userDoc.data();
-                  friendsData.push({
-                    uid: userDoc.id,
-                    name: data.name || "User",
-                    username: data.username || "",
-                    avatar: data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || "U")}&background=random`,
-                    userId: data.userId || "",
-                    isOnline: Boolean(data.isOnline),
-                    lastSeen: data.lastSeen,
-                    mutualFriends: data.mutualFriends || 0,
-                  });
-                }
-              });
-            })
-          );
+  const timeout = setTimeout(() => {
+    setFriendsLoading(false);
+  }, 800);
 
-          friendsData.sort((a, b) => {
-            if (a.isOnline !== b.isOnline) return b.isOnline ? 1 : -1;
-            return a.name.localeCompare(b.name);
-          });
+  const friendsRef = collection(db, "users", user.uid, "friends");
+  const q = query(friendsRef);
 
-          setFriends(friendsData);
-        } catch (error) {
-          console.error("Error loading friends:", error);
+  const unsub = onSnapshot(
+    q,
+    async (snapshot) => {
+      clearTimeout(timeout);
+      try {
+        const friendIds = snapshot.docs.map(d => d.id);
+        if (friendIds.length === 0) {
           setFriends([]);
-        } finally {
           setFriendsLoading(false);
+          return;
         }
-      },
-      (error) => {
-        clearTimeout(timeout);
-        console.error("Friends listener error:", error);
+
+        const chunks: string[][] = [];
+        for (let i = 0; i < friendIds.length; i += BATCH_SIZE) {
+          chunks.push(friendIds.slice(i, i + BATCH_SIZE));
+        }
+
+        const friendsData: FriendItem[] = [];
+        await Promise.all(
+          chunks.map(async (chunk) => {
+            const userDocs = await Promise.all(chunk.map(id => getDoc(doc(db, "users", id))));
+
+            // Load chat để check blockedBy
+            const chatDocs = await Promise.all(chunk.map(id => {
+              const chatId = [user.uid, id].sort().join("_");
+              return getDoc(doc(db, "chats", chatId));
+            }));
+
+            userDocs.forEach((userDoc, idx) => {
+              if (userDoc.exists()) {
+                const data = userDoc.data();
+                const chatSnap = chatDocs[idx];
+                const chatData = chatSnap.exists()? chatSnap.data() : null;
+                const isDeletedByThem = chatData?.blockedBy?.includes(user.uid) || false;
+
+                friendsData.push({
+                  uid: userDoc.id,
+                  name: data.name || "User",
+                  username: data.username || "",
+                  avatar: data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || "U")}&background=random`,
+                  userId: data.userId || "",
+                  isOnline: Boolean(data.isOnline),
+                  lastSeen: data.lastSeen,
+                  mutualFriends: data.mutualFriends || 0,
+                  isDeletedByThem, // Thêm field này
+                });
+              }
+            });
+          })
+        );
+
+        friendsData.sort((a, b) => {
+          if (a.isOnline!== b.isOnline) return b.isOnline? 1 : -1;
+          return a.name.localeCompare(b.name);
+        });
+
+        setFriends(friendsData);
+      } catch (error) {
+        console.error("Error loading friends:", error);
         setFriends([]);
+      } finally {
         setFriendsLoading(false);
       }
-    );
-
-    return () => {
+    },
+    (error) => {
       clearTimeout(timeout);
-      unsub();
-    };
-  }, [user?.uid, activeTab, db]);
+      console.error("Friends listener error:", error);
+      setFriends([]);
+      setFriendsLoading(false);
+    }
+  );
+
+  return () => {
+    clearTimeout(timeout);
+    unsub();
+  };
+}, [user?.uid, activeTab, db]);
 
   // Load chats
   useEffect(() => {
@@ -1096,9 +1109,6 @@ const filteredChats = useMemo(() => {
     </p>
   </div>
 {filteredFriends.map((friend) => {
-  const chat = items.find(i => i.uid === friend.uid);
-  const isBlockedByMe = chat?.blockedBy?.includes(user?.uid || "");
-  
   return (
     <div key={friend.uid} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-900/50 active:bg-gray-100 dark:active:bg-zinc-800 transition-colors">
       <div className="relative flex-shrink-0">
@@ -1108,20 +1118,28 @@ const filteredChats = useMemo(() => {
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2">
           <p className="text-[16px] font-[550] truncate">{friend.name}</p>
+          {friend.isDeletedByThem && (
+            <span className="text-[12px] text-red-500 font-medium flex-shrink-0">• Đã xóa</span>
+          )}
           {friend.isOnline && <span className="text-[11px] text-[#30d158] font-medium">• Online</span>}
-          {isBlockedByMe && <span className="text-[11px] text-red-500 font-medium">• Đã xóa</span>}
         </div>
         <p className="text-[13px] text-[#8e8e93] truncate">@{friend.username || friend.userId} • {friend.isOnline? "Đang hoạt động" : formatLastSeen(friend.lastSeen)}</p>
       </div>
       <div className="flex items-center gap-1.5">
-        <button onClick={() => handleStartChatWithFriend(friend.uid)} className={`w-8 h-8 ${primaryBg} ${primaryHover} rounded-full flex items-center justify-center active:scale-90 transition-all`} title="Nhắn tin">
+        <button
+          onClick={() => handleStartChatWithFriend(friend.uid)}
+          className={`w-8 h-8 ${primaryBg} ${primaryHover} rounded-full flex items-center justify-center active:scale-90 transition-all`}
+          title="Nhắn tin"
+        >
           <FiMessageSquare className="text-white" size={14} />
         </button>
-        {!isBlockedByMe && (
-          <button onClick={() => handleRemoveFriend(friend.uid, friend.name)} className="w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center active:scale-90 transition-all" title="Xóa bạn">
-            <FiUserX className="text-white" size={14} />
-          </button>
-        )}
+        <button
+          onClick={() => handleRemoveFriend(friend.uid, friend.name)}
+          className="w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center active:scale-90 transition-all"
+          title="Xóa bạn"
+        >
+          <FiUserX className="text-white" size={14} />
+        </button>
       </div>
     </div>
   );
