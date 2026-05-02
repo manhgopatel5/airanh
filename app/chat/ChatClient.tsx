@@ -593,7 +593,7 @@ const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) =>
   setAdding(true);
 
   try {
-    const functions = getFunctions();
+    const functions = getFunctions(getApp(), "asia-southeast1"); // THÊM asia-southeast1
     const acceptFn = httpsCallable(functions, 'acceptFriendRequest');
 
     const result = await acceptFn({
