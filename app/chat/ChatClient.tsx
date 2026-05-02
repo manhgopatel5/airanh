@@ -69,8 +69,8 @@ type ChatItem = {
   isTyping?: boolean;
   isGroup: boolean;
   members?: string[];
-  blockedBy?: string[];
-  deletedBy?: string[];
+blockedUsers?: string[];
+deletedFor?: string[];
 };
 
 type FriendItem = {
@@ -258,7 +258,7 @@ userDocs.forEach((userDoc, idx) => {
     const data = userDoc.data();
     const chatSnap = chatDocs[idx];
     const chatData = chatSnap?.exists()? chatSnap.data() : null; // Thêm? sau chatSnap
-    const isDeletedByThem = chatData?.blockedBy?.includes(user.uid) || false;
+    const isDeletedByThem = chatData?.blockedUsers?.includes(user.uid) || false;
 
 
 
@@ -354,8 +354,8 @@ userDocs.forEach((userDoc, idx) => {
       updatedAt: chatData.updatedAt, unreadCount: chatData.unread?.[user.uid] || 0,
       isTyping: Object.entries(chatData.typing || {}).some(([userId, isTyping]) => userId !== user.uid && Boolean(isTyping)),
       isGroup: true, members: chatData.members || [], isOnline: false,
-      blockedBy: chatData.blockedBy || [],
-      deletedBy: chatData.deletedBy || [], // Thêm dòng này
+      blockedUsers: chatData.blockedUsers || [],
+      deletedFor: chatData.deletedFor || [], // Thêm dòng này
     };
   } else {
     const userData = usersMap[raw.other || ""] || {};
@@ -365,8 +365,8 @@ userDocs.forEach((userDoc, idx) => {
       userId: userData.userId || "", lastMessage: chatData.lastMessage, lastSenderId: chatData.lastSenderId, lastSenderName: "",
       updatedAt: chatData.updatedAt, isOnline: Boolean(userData.isOnline), unreadCount: chatData.unread?.[user.uid] || 0,
       isTyping: Boolean(raw.other && chatData.typing?.[raw.other]), isGroup: false,
-      blockedBy: chatData.blockedBy || [],
-      deletedBy: chatData.deletedBy || [], // Thêm dòng này
+      blockedUsers: chatData.blockedUsers || [],
+      deletedFor: chatData.deletedFor || [], // Thêm dòng này
     };
   }
 });
@@ -719,7 +719,11 @@ const handleStartChatWithFriend = useCallback(async (friendId: string) => {
   if (!currentUser?.uid) return;
 
   const chatId = [currentUser.uid, friendId].sort().join("_");
-  
+  const chatSnap = await getDoc(doc(db, "chats", chatId));
+if (chatSnap.exists() && chatSnap.data()?.blockedUsers?.includes(currentUser.uid)) {
+  toast.error("Bạn đã bị chặn");
+  return;
+}
   const [currentUserDoc, friendDoc] = await Promise.all([
     getDoc(doc(db, "users", currentUser.uid)),
     getDoc(doc(db, "users", friendId))
@@ -767,11 +771,11 @@ const handleRemoveFriend = useCallback(async (friendId: string, friendName: stri
     const chatRef = doc(db, "chats", chatId);
     const chatSnap = await getDoc(chatRef);
     if (chatSnap.exists()) {
-      batch.update(chatRef, {
-        deletedBy: arrayUnion(user.uid), // Người xóa mất chat khỏi "Tất cả"
-        blockedBy: arrayUnion(friendId), // Người bị xóa vào xem được nhưng không nhắn
-        updatedAt: serverTimestamp()
-      });
+batch.update(chatRef, {
+  deletedFor: arrayUnion(user.uid), 
+  blockedUsers: arrayUnion(friendId), 
+  updatedAt: serverTimestamp()
+});
     }
 
     await batch.commit();
