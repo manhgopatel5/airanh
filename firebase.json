@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "functions": {
     "source": "functions",
     "predeploy": [
@@ -10,3 +11,29 @@
     "indexes": "firestore.indexes.json"
   }
 }
+=======
+  "firestore": {
+    "database": "(default)",
+    "location": "asia-southeast1",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ]
+    }
+  ]
+}
+>>>>>>> d3c946e (fix)
