@@ -20,8 +20,6 @@ const nextConfig = {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
-
-    // ⚠️ chỉ áp dụng cho image
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
@@ -29,7 +27,6 @@ const nextConfig = {
     const csp = [
       "default-src 'self'",
 
-      // 🔥 FIX SCRIPT FULL (Firebase + Google)
       [
         "script-src",
         "'self'",
@@ -40,7 +37,7 @@ const nextConfig = {
         "https://www.googleapis.com",
         "https://*.firebaseapp.com",
         "https://*.firebaseio.com",
-        "https://*.firebasedatabase.app", // 🔥 QUAN TRỌNG NHẤT
+        "https://*.firebasedatabase.app",
       ].join(' '),
 
       "style-src 'self' 'unsafe-inline'",
@@ -57,7 +54,7 @@ const nextConfig = {
 
       "font-src 'self' data:",
 
-      // 🔥 CONNECT FULL (Firestore + RTDB + WebSocket)
+      // 🔥 THÊM 2 DÒNG NÀY
       [
         "connect-src",
         "'self'",
@@ -68,6 +65,8 @@ const nextConfig = {
         "wss://*.firebasedatabase.app",
         "https://*.googleusercontent.com",
         "https://fcm.googleapis.com",
+        "https://*.cloudfunctions.net",                              // THÊM DÒNG NÀY
+        "https://asia-southeast1-airanh-ba64c.cloudfunctions.net", // THÊM DÒNG NÀY
       ].join(' '),
 
       [
