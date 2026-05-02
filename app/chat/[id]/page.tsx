@@ -243,6 +243,7 @@ const handleTyping = useCallback(async () => {
 }, []);
 
 const sendMessage = useCallback(async () => {
+  if (isBlocked || isDeleted) return;
   if (!text.trim() ||!user ||!friend ||!chatId || sending ||!friendId ||!chatData) {
     if (!chatData) toast.error("Đang tải dữ liệu chat...");
     return;
@@ -291,10 +292,11 @@ const sendMessage = useCallback(async () => {
   } finally {
     setSending(false);
   }
-}, [user, text, friend, chatId, sending, replyTo, editingMsg, friendId, db, chatData]);
+}, [user, text, friend, chatId, sending, replyTo, editingMsg, friendId, db, chatData, isBlocked, isDeleted]);
 
   /* ================= SEND IMAGE ================= */
   const sendImage = async (file: File) => {
+    if (isBlocked || isDeleted) return;
     if (!user ||!chatId ||!friendId ||!chatData) {
       if (!chatData) toast.error("Đang tải dữ liệu chat...");
       return;
@@ -352,6 +354,7 @@ const sendMessage = useCallback(async () => {
 
   /* ================= SEND FILE ================= */
   const sendFile = async (file: File) => {
+    if (isBlocked || isDeleted) return;
     if (!user ||!chatId ||!friendId ||!chatData) {
       if (!chatData) toast.error("Đang tải dữ liệu chat...");
       return;
@@ -388,6 +391,7 @@ const sendMessage = useCallback(async () => {
 
   /* ================= VOICE RECORDING ================= */
   const startRecording = async () => {
+    if (isBlocked || isDeleted) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
@@ -455,6 +459,7 @@ const sendMessage = useCallback(async () => {
 
   /* ================= SEND LOCATION ================= */
   const sendLocation = async () => {
+    if (isBlocked || isDeleted) return;
     if (!user ||!chatId ||!friendId ||!chatData) {
       if (!chatData) toast.error("Đang tải dữ liệu chat...");
       return;
@@ -1025,13 +1030,13 @@ const unpinMessage = async () => {
       />
     </div>
     {text.trim()? (
-<button
-  onClick={sendMessage}
-  disabled={sending || isBlocked || isDeleted || !text.trim()} // THÊM isBlocked || isDeleted
-  className={`w-11 h-11 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full flex items-center justify-center active:scale-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/30`}
->
-  {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-</button>
+      <button
+        onClick={sendMessage}
+        disabled={sending || isBlocked || isDeleted}
+        className="w-11 h-11 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full flex items-center justify-center active:scale-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/30"
+      >
+        {sending? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+      </button>
     ) : (
       <button
         onMouseDown={startRecording}
@@ -1052,6 +1057,3 @@ const unpinMessage = async () => {
     </div>
   )}
 </div>
-</div>
-);
-}
