@@ -595,15 +595,7 @@ const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<voi
       createdAt: serverTimestamp()
     });
 
-    await createNotification(targetUserId, {
-      type: "friend_request",
-      fromUid: currentUser.uid,
-      fromName: currentUserData?.name || "Người dùng",
-      fromAvatar: currentUserData?.avatar || "",
-      title: "Lời mời kết bạn",
-      message: "đã gửi lời mời kết bạn",
-      actionData: { requesterId: currentUser.uid }
-    });
+ 
 
     toast.success("Đã gửi lời mời kết bạn");
     setShowAdd(false);
