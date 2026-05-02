@@ -11,6 +11,9 @@ import {
   or,
   documentId,
   getDocs,
+  getDoc,
+  setDoc, // Thêm
+  serverTimestamp, // Thêm
 } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthContext";
 import { useRouter } from "next/navigation";
@@ -125,19 +128,56 @@ export default function FriendList() {
   }, [friends, search]);
 
   /* ================= CHAT ================= */
-  const handleChat = useCallback(async (fid: string) => {
-    if (!user?.uid || chattingId) return;
-    setChattingId(fid);
 
-    try {
-      const id = await getOrCreateConversation(user.uid, fid);
-      router.push(`/chat/${id}`);
-    } catch (err) {
-      console.error("Lỗi chat:", err);
-    } finally {
-      setChattingId(null);
+const handleChat = useCallback(async (fid: string) => {
+  if (!user?.uid || chattingId) return;
+  setChattingId(fid);
+
+  try {
+    // Tạo chatId chuẩn: sort 2 uid để 2 chiều đều ra 1 id
+    const chatId = [user.uid, fid].sort().join("_");
+    const chatRef = doc(db, "chats", chatId);
+    
+    // Check + tạo chat nếu chưa có
+    const chatSnap = await getDoc(chatRef);
+    if (!chatSnap.exists()) {
+      const [meSnap, friendSnap] = await Promise.all([
+        getDoc(doc(db, "users", user.uid)),
+        getDoc(doc(db, "users", fid))
+      ]);
+      
+      const meData = meSnap.data();
+      const friendData = friendSnap.data();
+      
+      await setDoc(chatRef, {
+        members: [user.uid, fid],
+        membersInfo: {
+          [user.uid]: {
+            name: meData?.name || "Bạn",
+            avatar: meData?.avatar || "",
+            username: meData?.username || ""
+          },
+          [fid]: {
+            name: friendData?.name || "User",
+            avatar: friendData?.avatar || "",
+            username: friendData?.username || ""
+          }
+        },
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        lastMessage: "",
+        isGroup: false
+      });
     }
-  }, [user?.uid, chattingId, router]);
+    
+    router.push(`/chat/${chatId}`);
+  } catch (err) {
+    console.error("Lỗi chat:", err);
+    toast.error("Không thể mở chat");
+  } finally {
+    setChattingId(null);
+  }
+}, [user?.uid, chattingId, router, db]);
 
   /* ================= PREFETCH ================= */
   const handleMouseEnter = useCallback(async (fid: string) => {
