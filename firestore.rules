@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isSignedIn() { return request.auth!= null; }
+    function isSignedIn() { return request.auth != null; }
 
     match /users/{userId} {
       allow read: if isSignedIn();
@@ -20,19 +20,51 @@ service cloud.firestore {
     }
 
     match /chats/{chatId} {
-      allow read: if isSignedIn() && request.auth.uid in resource.data.members;
-      allow create, update, delete: if false;
+      // GET: cho phép member xem để vào chat ngay cả khi đã xóa - dùng trong /chat/[chatId]
+      allow get: if isSignedIn() && request.auth.uid in resource.data.members;
+      
+      // LIST: ẩn nếu user nằm trong deletedFor - dùng trong list chat
+      allow list: if isSignedIn() 
+        && request.auth.uid in resource.data.members
+        && !(request.auth.uid in resource.data.get('deletedFor', []));
+      
+      // CREATE: chỉ qua Functions
+      allow create: if false;
+      
+      // UPDATE: cho update settings cá nhân HOẶC gửi tin nếu không bị block
+      allow update: if isSignedIn() 
+        && request.auth.uid in resource.data.members
+        && (
+          // Cho phép update các field cá nhân
+          request.resource.data.diff(resource.data).changedKeys()
+            .hasOnly(['deletedFor', 'archivedBy', 'mutedBy', 'typing', 'unread', 'updatedAt', 'lastMessage', 'lastSenderId', 'lastSenderName'])
+          ||
+          // Hoặc update khác nếu không bị block
+          !(request.auth.uid in resource.data.get('blockedUsers', []))
+        );
+      
+      allow delete: if false;
 
       match /messages/{messageId} {
-        allow read: if isSignedIn() && request.auth.uid in resource.data.members;
+        // READ: cho phép nếu là member và không nằm trong deletedFor
+        allow read: if isSignedIn() 
+          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members
+          && !(request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('deletedFor', []));
+        
+        // CREATE: cho phép nếu là member và không bị block
         allow create: if isSignedIn()
           && request.auth.uid == request.resource.data.senderId
-          && request.auth.uid in request.resource.data.members;
+          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members
+          && !(request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('blockedUsers', []));
+        
+        // UPDATE: chỉ update seenBy, reactions, edit tin của mình
         allow update: if isSignedIn()
-          && request.auth.uid in resource.data.members
+          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members
           && request.resource.data.diff(resource.data).changedKeys().hasOnly([
             'seenBy', 'reactions', 'text', 'editedAt', 'edited'
-          ]);
+          ])
+          && (request.resource.data.senderId == request.auth.uid || request.resource.data.diff(resource.data).changedKeys().hasOnly(['seenBy', 'reactions']));
+        
         allow delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
       }
     }
