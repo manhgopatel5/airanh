@@ -1,23 +1,20 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
-import * as admin from "firebase-admin";
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
 
 admin.initializeApp();
 const db = admin.firestore();
 
-export const acceptFriendRequest = onCall(
-  {
-    region: "asia-southeast1", // Thêm dòng này cho trùng Firestore
-    cors: true, // Thêm CORS cho chắc
-  },
-  async (request) => {
-    const { fromUid, notifId } = request.data;
-    const toUid = request.auth?.uid;
+exports.acceptFriendRequest = functions
+  .region("asia-southeast1") // Giữ Singapore
+  .https.onCall(async (data, context) => {
+    const { fromUid, notifId } = data;
+    const toUid = context.auth?.uid;
 
     if (!toUid) {
-      throw new HttpsError("unauthenticated", "Phải đăng nhập");
+      throw new functions.https.HttpsError("unauthenticated", "Phải đăng nhập");
     }
     if (!fromUid || !notifId) {
-      throw new HttpsError("invalid-argument", "Thiếu fromUid hoặc notifId");
+      throw new functions.https.HttpsError("invalid-argument", "Thiếu fromUid hoặc notifId");
     }
 
     const batch = db.batch();
@@ -45,5 +42,4 @@ export const acceptFriendRequest = onCall(
 
     await batch.commit();
     return { success: true };
-  }
-);
+  });
