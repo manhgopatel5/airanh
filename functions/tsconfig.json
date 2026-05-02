@@ -1,32 +1,20 @@
 {
   "compilerOptions": {
-<<<<<<< HEAD
     "module": "commonjs",
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "outDir": "lib",
     "sourceMap": true,
     "strict": true,
-    "target": "es2020"
-=======
-    "module": "NodeNext",
+    "target": "es2017",
     "esModuleInterop": true,
-    "moduleResolution": "nodenext",
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "outDir": "lib",
-    "rootDir": "src",
-    "sourceMap": true,
-    "strict": true,
-    "target": "es2017"
->>>>>>> d3c946e (fix)
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true
   },
   "compileOnSave": true,
   "include": [
     "src"
   ]
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> d3c946e (fix)
