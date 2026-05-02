@@ -71,8 +71,8 @@ type ChatData = {
   membersInfo: Record<string, { name: string; avatar: string; username: string }>;
   pinnedMessage?: string;
   typing?: Record<string, boolean>;
-  blockedBy?: string[]; 
-  deletedBy?: string[]; 
+  blockedUsers?: string[];  // Đổi từ blockedBy
+  deletedFor?: string[];  
 };
 
 const EMOJI_LIST = ["❤️", "😂", "😮", "😢", "😡", "👍"];
@@ -91,8 +91,8 @@ export default function ChatDetailPage() {
   const [chatData, setChatData] = useState<ChatData | null>(null);
 
 
-const isBlocked = chatData?.blockedBy?.includes(user?.uid || "");
-const isDeleted = chatData?.deletedBy?.includes(user?.uid || "");
+const isBlocked = chatData?.blockedUsers?.includes(user?.uid || "");
+const isDeleted = chatData?.deletedFor?.includes(user?.uid || "");
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
