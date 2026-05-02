@@ -3,8 +3,10 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
+
 import { getFirebaseDB } from "@/lib/firebase";
 import { getAuth } from "firebase/auth";
+import { getApp } from "firebase/app";
 
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { useAppStore } from "@/store/app";
