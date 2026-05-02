@@ -2,34 +2,28 @@
 importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js");
 
-// Dán config của bạn vào đây
+// Config từ .env của bạn
 const firebaseConfig = {
-  apiKey: "AIzaSy...",
+  apiKey: "AIzaSyB-mUYa7_t4lrePwI5GGCYWGxnKcGOzc_0",
   authDomain: "airanh-ba64c.firebaseapp.com",
   projectId: "airanh-ba64c",
   storageBucket: "airanh-ba64c.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abc123def456"
+  messagingSenderId: "236839124077",
+  appId: "1:236839124077:web:bcf03a9721d45386f2d364",
+  databaseURL: "https://airanh-ba64c-default-rtdb.asia-southeast1.firebasedatabase.app/"
 };
 
 const VERSION = "v2.1.1";
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
-/* ================= CACHE - SỬA .PNG VIẾT HOA ================= */
+/* ================= CACHE - DÙNG .PNG VIẾT HOA ================= */
 const CACHE_NAME = `fcm-assets-${VERSION}`;
-const ICONS_TO_CACHE = [
-  "/icon-192.PNG",  // Sửa .png → .PNG
-  "/icon-512.PNG",  // Sửa .png → .PNG
-  "/badge-72.png",  // File này chưa có, xóa hoặc tạo thêm
-  "/icon-reply.png", // File này chưa có, xóa hoặc tạo thêm
-  "/icon-view.png",  // File này chưa có, xóa hoặc tạo thêm
-];
-
-// Nếu chưa có badge/icon-reply/icon-view thì comment 3 dòng dưới
 const ICONS_TO_CACHE = [
   "/icon-192.PNG",
   "/icon-512.PNG",
+  "/apple-icon-180.PNG",
+  "/favicon-32.PNG",
 ];
 
 self.addEventListener("install", (event) => {
@@ -63,7 +57,7 @@ self.addEventListener("message", (event) => {
   }
 });
 
-/* ================= BACKGROUND MESSAGE - SỬA .PNG ================= */
+/* ================= BACKGROUND MESSAGE ================= */
 messaging.onBackgroundMessage((payload) => {
   console.log("📩 Background:", payload);
 
@@ -84,8 +78,8 @@ messaging.onBackgroundMessage((payload) => {
 
   const options = {
     body,
-    icon: notification.icon || data.icon || "/icon-192.PNG", // Sửa .png → .PNG
-    badge: notification.badge || "/badge-72.PNG", // Nếu chưa có file này thì bỏ dòng này
+    icon: notification.icon || data.icon || "/icon-192.PNG",
+    badge: notification.badge || "/icon-192.PNG",
     image: data.image,
     tag,
     renotify: data.renotify === "true",
@@ -110,8 +104,8 @@ messaging.onBackgroundMessage((payload) => {
 function getActions(data) {
   if (data.type === "message") {
     return [
-      { action: "reply", title: "💬 Trả lời", icon: "/icon-reply.PNG" }, // Sửa .png → .PNG
-      { action: "view", title: "👀 Xem", icon: "/icon-view.PNG" }, // Sửa .png → .PNG
+      { action: "reply", title: "💬 Trả lời" },
+      { action: "view", title: "👀 Xem" },
     ];
   }
   if (data.type === "friend_request") {
