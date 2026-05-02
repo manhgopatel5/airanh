@@ -5,7 +5,7 @@ admin.initializeApp();
 const db = admin.firestore();
 
 exports.acceptFriendRequest = functions
-  .region("asia-southeast1") // Giữ Singapore
+  .region("asia-southeast1")
   .https.onCall(async (data, context) => {
     const { fromUid, notifId } = data;
     const toUid = context.auth?.uid;
@@ -19,7 +19,6 @@ exports.acceptFriendRequest = functions
 
     const batch = db.batch();
     
-    // 1. Tạo friend cho cả 2 chiều
     const friendRef1 = db.collection("friends").doc(`${toUid}_${fromUid}`);
     batch.set(friendRef1, { 
       userId: toUid, 
@@ -36,8 +35,8 @@ exports.acceptFriendRequest = functions
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    // 2. Xóa thông báo
-    const notifRef = db.collection("notifications").doc(notifId);
+    // Đã sửa: notifications → friendRequests
+    const notifRef = db.collection("friendRequests").doc(notifId);
     batch.delete(notifRef);
 
     await batch.commit();
