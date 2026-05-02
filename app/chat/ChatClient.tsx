@@ -736,13 +736,16 @@ const handleRemoveFriend = useCallback(async (friendId: string, friendName: stri
     const chatId = [user.uid, friendId].sort().join("_");
     const batch = writeBatch(db);
 
+    // 1. Xóa bạn bè 2 chiều
     batch.delete(doc(db, "users", user.uid, "friends", friendId));
+    batch.delete(doc(db, "users", friendId, "friends", user.uid));
     
-    // SỬA DÒNG NÀY: block friendId, không phải user.uid
-    batch.update(doc(db, "chats", chatId), {
-      blockedBy: arrayUnion(friendId), // Đúng: block B
+    // 2. QUAN TRỌNG: Set blockedBy = B để B không nhắn được nữa
+    batch.set(doc(db, "chats", chatId), {
+      deletedBy: arrayUnion(user.uid), // A ẩn chat
+      blockedBy: arrayUnion(friendId), // B BỊ BLOCK
       updatedAt: serverTimestamp()
-    });
+    }, { merge: true });
 
     await batch.commit();
     toast.success("Đã xóa bạn bè");
