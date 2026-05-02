@@ -260,19 +260,8 @@ userDocs.forEach((userDoc, idx) => {
     const chatData = chatSnap?.exists()? chatSnap.data() : null; // Thêm? sau chatSnap
     const isDeletedByThem = chatData?.blockedBy?.includes(user.uid) || false;
 
-    friendsData.push({
-      uid: userDoc.id,
-      name: data.name || "User",
-      username: data.username || "",
-      avatar: data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || "U")}&background=random`,
-      userId: data.userId || "",
-      isOnline: Boolean(data.isOnline),
-      lastSeen: data.lastSeen,
-      mutualFriends: data.mutualFriends || 0,
-      isDeletedByThem,
-    });
-  }
-});
+
+
 
                 friendsData.push({
                   uid: userDoc.id,
