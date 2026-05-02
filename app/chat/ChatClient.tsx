@@ -1193,11 +1193,11 @@ const filteredChats = useMemo(() => {
                             <p className="text-[16px] leading-[22px] font-[550] text-black dark:text-white truncate">{chat.name}</p>
                             {pinned.includes(chat.chatId) && <RiPushpinFill size={12} className="text-[#8e8e93] dark:text-zinc-500 flex-shrink-0" />}
 <div className="flex items-center gap-1.5 min-w-0">
-  <p className="text-[16px] leading-[22px] font-[550] text-black dark:text-white truncate">{chat.name}</p>
-  {pinned.includes(chat.chatId) && <RiPushpinFill size={12} className="text-[#8e8e93] dark:text-zinc-500 flex-shrink-0" />}
-  {chat.blockedBy?.includes(user?.uid || "") && (
-    <span className="text-[11px] text-red-500 font-medium flex-shrink-0">• Bị xóa</span>
-  )}
+<p className="text-[16px] leading-[22px] font-[550] text-black dark:text-white truncate">{chat.name}</p>
+{pinned.includes(chat.chatId) && <RiPushpinFill size={12} className="text-[#8e8e93] dark:text-zinc-500 flex-shrink-0" />}
+{chat.blockedUsers?.includes(user?.uid || "") && (
+  <span className="text-[11px] text-red-500 font-medium flex-shrink-0">• Bị xóa</span>
+)}
 </div>
                           </div>
                           <div className="flex items-center gap-1.5 flex-shrink-0">
