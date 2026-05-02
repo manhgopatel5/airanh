@@ -881,8 +881,6 @@ const filteredChats = useMemo(() => {
   const query = debounced.toLowerCase().trim();
   let filtered = items;
   
-  // A xóa B → A mất chat khỏi "Tất cả"
-  filtered = filtered.filter(chat => !chat.deletedBy?.includes(user?.uid || ""));
   
   if (query) {
     filtered = filtered.filter((item) => {
