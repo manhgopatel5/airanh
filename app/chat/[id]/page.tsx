@@ -74,7 +74,7 @@ type ChatData = {
 };
 
 const EMOJI_LIST = ["❤️", "😂", "😮", "😢", "😡", "👍"];
-const MSG_LIMIT = 30;
+
 
 export default function ChatDetailPage() {
   const params = useParams();
@@ -96,8 +96,7 @@ export default function ChatDetailPage() {
   const [editingMsg, setEditingMsg] = useState<Message | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [loadingFriend, setLoadingFriend] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -112,7 +111,7 @@ export default function ChatDetailPage() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const lastMsgDocRef = useRef<any>(null);
+  
 
   const chatId = idFromUrl as string;
 
@@ -198,7 +197,6 @@ useEffect(() => {
   const q = query(
     collection(db, "chats", chatId, "messages"),
     orderBy("createdAt", "asc"),
-    limit(MSG_LIMIT)
   );
 
   const unsub = onSnapshot(q, (snap) => {
