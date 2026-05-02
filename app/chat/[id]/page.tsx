@@ -71,6 +71,8 @@ type ChatData = {
   membersInfo: Record<string, { name: string; avatar: string; username: string }>;
   pinnedMessage?: string;
   typing?: Record<string, boolean>;
+  blockedBy?: string[]; 
+  deletedBy?: string[]; 
 };
 
 const EMOJI_LIST = ["❤️", "😂", "😮", "😢", "😡", "👍"];
