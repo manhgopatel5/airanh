@@ -1079,26 +1079,26 @@ const handleRemoveFriend = useCallback(async (friendId: string, friendName: stri
   </div>
                 {filteredFriends.map((friend) => (
                   <div key={friend.uid} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-900/50 active:bg-gray-100 dark:active:bg-zinc-800 transition-colors">
-                    <div className="relative flex-shrink-0">
-                      <img src={friend.avatar} alt={friend.name} className="w-[52px] h-[52px] rounded-full object-cover" />
-                      {friend.isOnline && <div className="absolute bottom-0 right-0 w-[14px] h-[14px] bg-[#30d158] rounded-full border-[2.5px] border-white dark:border-black" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline gap-2">
-                        <p className="text-[16px] font-[550] truncate">{friend.name}</p>
-                        {friend.isOnline && <span className="text-[11px] text-[#30d158] font-medium">• Online</span>}
-                      </div>
-                      <p className="text-[13px] text-[#8e8e93] truncate">@{friend.username || friend.userId} • {friend.isOnline ? "Đang hoạt động" : formatLastSeen(friend.lastSeen)}</p>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <button onClick={() => handleStartChatWithFriend(friend.uid)} className={`w-8 h-8 ${primaryBg} ${primaryHover} rounded-full flex items-center justify-center active:scale-90 transition-all`} title="Nhắn tin">
-                        <FiMessageSquare className="text-white" size={14} />
-                      </button>
-                      <button onClick={() => handleRemoveFriend(friend.uid, friend.name)} className="w-8 h-8 bg-gray-200 dark:bg-zinc-800 hover:bg-gray-300 dark:hover:bg-zinc-700 rounded-full flex items-center justify-center active:scale-90 transition-all" title="Xóa bạn">
-                        <FiUserX className="text-gray-600 dark:text-zinc-400" size={14} />
-                      </button>
-                    </div>
-                  </div>
+  <div className="relative flex-shrink-0">
+    <img src={friend.avatar} alt={friend.name} className="w-[52px] h-[52px] rounded-full object-cover" />
+    {friend.isOnline && <div className="absolute bottom-0 right-0 w-[14px] h-[14px] bg-[#30d158] rounded-full border-[2.5px] border-white dark:border-black" />}
+  </div>
+  <div className="flex-1 min-w-0">
+    <div className="flex items-baseline gap-2">
+      <p className="text-[16px] font-[550] truncate">{friend.name}</p>
+      {friend.isOnline && <span className="text-[11px] text-[#30d158] font-medium">• Online</span>}
+    </div>
+    <p className="text-[13px] text-[#8e8e93] truncate">@{friend.username || friend.userId} • {friend.isOnline? "Đang hoạt động" : formatLastSeen(friend.lastSeen)}</p>
+  </div>
+  <div className="flex items-center gap-1.5">
+    <button onClick={() => handleStartChatWithFriend(friend.uid)} className={`w-8 h-8 ${primaryBg} ${primaryHover} rounded-full flex items-center justify-center active:scale-90 transition-all`} title="Nhắn tin">
+      <FiMessageSquare className="text-white" size={14} />
+    </button>
+    <button onClick={() => handleRemoveFriend(friend.uid, friend.name)} className="w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center active:scale-90 transition-all" title="Xóa bạn">
+      <FiUserX className="text-white" size={14} />
+    </button>
+  </div>
+</div>
                 ))}
               </div>
             )
