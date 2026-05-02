@@ -19,51 +19,33 @@ export const acceptFriendRequest = functions
     const toUid = context.auth?.uid;
 
     if (!toUid) {
-      throw new functions.https.HttpsError(
-        "unauthenticated",
-        "Phải đăng nhập mới chấp nhận được"
-      );
+      throw new functions.https.HttpsError("unauthenticated", "Phải đăng nhập");
     }
-
     if (!fromUid || !notifId) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "Thiếu fromUid hoặc notifId"
-      );
+      throw new functions.https.HttpsError("invalid-argument", "Thiếu fromUid hoặc notifId");
     }
 
-    try {
-      const batch = db.batch();
+    const batch = db.batch();
+    
+    const friendRef1 = db.collection("friends").doc(`${toUid}_${fromUid}`);
+    batch.set(friendRef1, { 
+      userId: toUid, 
+      friendId: fromUid, 
+      status: "accepted",
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    
+    const friendRef2 = db.collection("friends").doc(`${fromUid}_${toUid}`);
+    batch.set(friendRef2, { 
+      userId: fromUid, 
+      friendId: toUid, 
+      status: "accepted",
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
 
-      // 1. Tạo document bạn bè 2 chiều
-      const friendRef1 = db.collection("friends").doc(`${toUid}_${fromUid}`);
-      batch.set(friendRef1, {
-        userId: toUid,
-        friendId: fromUid,
-        status: "accepted",
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+    const notifRef = db.collection("friendRequests").doc(notifId);
+    batch.delete(notifRef);
 
-      const friendRef2 = db.collection("friends").doc(`${fromUid}_${toUid}`);
-      batch.set(friendRef2, {
-        userId: fromUid,
-        friendId: toUid,
-        status: "accepted",
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-
-      // 2. Xóa lời mời kết bạn
-      const notifRef = db.collection("friendRequests").doc(notifId);
-      batch.delete(notifRef);
-
-      await batch.commit();
-
-      return { success: true, message: "Đã chấp nhận kết bạn" };
-    } catch (error) {
-      console.error("Lỗi acceptFriendRequest:", error);
-      throw new functions.https.HttpsError(
-        "internal",
-        "Lỗi server khi chấp nhận kết bạn"
-      );
-    }
+    await batch.commit();
+    return { success: true };
   });
