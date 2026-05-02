@@ -126,18 +126,20 @@ export default function ChatDetailPage() {
 
     const unsub = onSnapshot(doc(db, "chats", chatId), async (snap) => {
       if (!snap.exists()) {
-        toast.error("Cuộc trò chuyện không tồn tại");
-        setTimeout(() => router.replace("/chat"), 1500);
-        return;
-      }
+  // Chat chưa có → không lỗi, đợi user gửi tin đầu tiên
+  // hoặc đợi trang bạn bè tạo chat trước khi push vào đây
+  setLoadingFriend(false);
+  setChatData(null);
+  return;
+}
 
-      const data = snap.data() as ChatData;
+const data = snap.data() as ChatData;
 
-      if (!data.members?.includes(user.uid)) {
-        toast.error("Bạn không có quyền truy cập");
-        router.replace("/chat");
-        return;
-      }
+if (!data.members?.includes(user.uid)) {
+  toast.error("Bạn không có quyền truy cập");
+  router.replace("/chat");
+  return;
+}
 
       const otherUid = data.members?.find((id: string) => id!== user.uid);
 
