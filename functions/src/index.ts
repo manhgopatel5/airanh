@@ -42,14 +42,14 @@ export const acceptFriendRequest = onCall(
     batch.delete(notifRef);
     batch.delete(requestRef);
 
-    // 3. RESET CHAT: XÓA blockedBy + deletedBy để chat lại bình thường
+    // 3. RESET CHAT: XÓA blockedUsers + deletedFor để chat lại bình thường
     const chatId = [fromUid, toUid].sort().join("_");
     const chatRef = db.doc(`chats/${chatId}`);
     batch.set(chatRef, {
       members: [fromUid, toUid].sort(),
       isGroup: false,
-      blockedBy: [], // RESET
-      deletedBy: [], // RESET
+      blockedUsers: [], // Đổi từ blockedBy
+      deletedFor: [], // Đổi từ deletedBy
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
