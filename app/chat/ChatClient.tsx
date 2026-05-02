@@ -556,8 +556,15 @@ const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<voi
       return;
     }
 
+    // BỎ CHECK existingFriendDoc - CHỈ CHECK blockedBy
+    const chatId = [currentUser.uid, targetUserId].sort().join("_");
+    const chatSnap = await getDoc(doc(db, "chats", chatId));
+    
+    // Nếu đã là bạn và KHÔNG bị block thì mới báo lỗi
     const existingFriendDoc = await getDoc(doc(db, "users", currentUser.uid, "friends", targetUserId));
-    if (existingFriendDoc.exists()) {
+    const isBlocked = chatSnap.exists() && chatSnap.data()?.blockedBy?.includes(currentUser.uid);
+    
+    if (existingFriendDoc.exists() && !isBlocked) {
       toast.error("Các bạn đã là bạn bè");
       return;
     }
@@ -581,7 +588,6 @@ const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<voi
     const currentUserDoc = await getDoc(doc(db, "users", currentUser.uid));
     const currentUserData = currentUserDoc.data();
 
-    // CHỈ GỬI NOTIFICATION + LƯU FRIENDREQUEST - KHÔNG TẠO CHAT, KHÔNG ADD FRIEND
     await setDoc(doc(db, "friendRequests", requestId), {
       from: currentUser.uid,
       to: targetUserId,
