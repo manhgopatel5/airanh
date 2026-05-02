@@ -736,12 +736,11 @@ const handleRemoveFriend = useCallback(async (friendId: string, friendName: stri
     const chatId = [user.uid, friendId].sort().join("_");
     const batch = writeBatch(db);
 
-    // 1. Chỉ xóa bạn ở phía mình
     batch.delete(doc(db, "users", user.uid, "friends", friendId));
     
-    // 2. Block chat để người kia không nhắn được
+    // SỬA DÒNG NÀY: block friendId, không phải user.uid
     batch.update(doc(db, "chats", chatId), {
-      blockedBy: arrayUnion(user.uid),
+      blockedBy: arrayUnion(friendId), // Đúng: block B
       updatedAt: serverTimestamp()
     });
 
@@ -846,12 +845,11 @@ const handleRemoveFriend = useCallback(async (friendId: string, friendName: stri
     return formatDistanceToNow(timestamp.toDate(), { addSuffix: true, locale: vi });
   }, []);
 
- const filteredChats = useMemo(() => {
+const filteredChats = useMemo(() => {
   const query = debounced.toLowerCase().trim();
   let filtered = items;
   
-  // Ẩn chat mà mình đã xóa người ta
-  filtered = filtered.filter(item => !item.blockedBy?.includes(user?.uid || ""));
+  // XÓA DÒNG NÀY: filtered = filtered.filter(item =>!item.blockedBy?.includes(user?.uid || ""));
   
   if (query) {
     filtered = filtered.filter((item) => {
@@ -1154,6 +1152,13 @@ const handleRemoveFriend = useCallback(async (friendId: string, friendName: stri
                           <div className="flex items-center gap-1.5 min-w-0">
                             <p className="text-[16px] leading-[22px] font-[550] text-black dark:text-white truncate">{chat.name}</p>
                             {pinned.includes(chat.chatId) && <RiPushpinFill size={12} className="text-[#8e8e93] dark:text-zinc-500 flex-shrink-0" />}
+<div className="flex items-center gap-1.5 min-w-0">
+  <p className="text-[16px] leading-[22px] font-[550] text-black dark:text-white truncate">{chat.name}</p>
+  {pinned.includes(chat.chatId) && <RiPushpinFill size={12} className="text-[#8e8e93] dark:text-zinc-500 flex-shrink-0" />}
+  {chat.blockedBy?.includes(user?.uid || "") && (
+    <span className="text-[11px] text-red-500 font-medium flex-shrink-0">• Bị xóa</span>
+  )}
+</div>
                           </div>
                           <div className="flex items-center gap-1.5 flex-shrink-0">
                             <span className="text-[13px] leading-[18px] text-[#8e8e93] dark:text-zinc-500 tabular-nums">{formatMessageTime(chat.updatedAt)}</span>
