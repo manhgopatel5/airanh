@@ -70,6 +70,7 @@ type ChatItem = {
   isGroup: boolean;
   members?: string[];
   blockedBy?: string[];
+  deletedBy?: string[];
 };
 
 type FriendItem = {
@@ -339,7 +340,8 @@ const scannerRef = useRef<Html5Qrcode | null>(null);
       updatedAt: chatData.updatedAt, unreadCount: chatData.unread?.[user.uid] || 0,
       isTyping: Object.entries(chatData.typing || {}).some(([userId, isTyping]) => userId !== user.uid && Boolean(isTyping)),
       isGroup: true, members: chatData.members || [], isOnline: false,
-      blockedBy: chatData.blockedBy || [], // Thêm dòng này
+      blockedBy: chatData.blockedBy || [],
+      deletedBy: chatData.deletedBy || [], // Thêm dòng này
     };
   } else {
     const userData = usersMap[raw.other || ""] || {};
@@ -349,7 +351,8 @@ const scannerRef = useRef<Html5Qrcode | null>(null);
       userId: userData.userId || "", lastMessage: chatData.lastMessage, lastSenderId: chatData.lastSenderId, lastSenderName: "",
       updatedAt: chatData.updatedAt, isOnline: Boolean(userData.isOnline), unreadCount: chatData.unread?.[user.uid] || 0,
       isTyping: Boolean(raw.other && chatData.typing?.[raw.other]), isGroup: false,
-      blockedBy: chatData.blockedBy || [], // Thêm dòng này
+      blockedBy: chatData.blockedBy || [],
+      deletedBy: chatData.deletedBy || [], // Thêm dòng này
     };
   }
 });
@@ -730,28 +733,34 @@ const handleStartChatWithFriend = useCallback(async (friendId: string) => {
 const handleRemoveFriend = useCallback(async (friendId: string, friendName: string) => {
   if (!user?.uid) return;
   if (!window.confirm(`Xóa ${friendName} khỏi danh sách bạn bè?`)) return;
-  
+
+  setAdding(true);
   try {
     const db = getFirebaseDB();
     const chatId = [user.uid, friendId].sort().join("_");
     const batch = writeBatch(db);
 
-    // 1. Xóa bạn bè 2 chiều
+    // 1. Người bấm xóa → mất người kia trong bạn bè
     batch.delete(doc(db, "users", user.uid, "friends", friendId));
-    batch.delete(doc(db, "users", friendId, "friends", user.uid));
-    
-    // 2. QUAN TRỌNG: Set blockedBy = B để B không nhắn được nữa
-    batch.set(doc(db, "chats", chatId), {
-      deletedBy: arrayUnion(user.uid), // A ẩn chat
-      blockedBy: arrayUnion(friendId), // B BỊ BLOCK
-      updatedAt: serverTimestamp()
-    }, { merge: true });
+
+    // 2. Update chat theo cơ chế bạn đang dùng
+    const chatRef = doc(db, "chats", chatId);
+    const chatSnap = await getDoc(chatRef);
+    if (chatSnap.exists()) {
+      batch.update(chatRef, {
+        deletedBy: arrayUnion(user.uid), // Người xóa mất chat khỏi "Tất cả"
+        blockedBy: arrayUnion(friendId), // Người bị xóa vào xem được nhưng không nhắn
+        updatedAt: serverTimestamp()
+      });
+    }
 
     await batch.commit();
     toast.success("Đã xóa bạn bè");
   } catch (error: any) {
     console.error("Remove friend error:", error);
-    toast.error(`Lỗi: ${error.message}`);
+    toast.error(`Lỗi: ${error.message || "Không thể xóa"}`);
+  } finally {
+    setAdding(false);
   }
 }, [user?.uid]);
 
@@ -852,7 +861,8 @@ const filteredChats = useMemo(() => {
   const query = debounced.toLowerCase().trim();
   let filtered = items;
   
-  // XÓA DÒNG NÀY: filtered = filtered.filter(item =>!item.blockedBy?.includes(user?.uid || ""));
+  // A xóa B → A mất chat khỏi "Tất cả"
+  filtered = filtered.filter(chat => !chat.deletedBy?.includes(user?.uid || ""));
   
   if (query) {
     filtered = filtered.filter((item) => {
