@@ -1,17 +1,4 @@
 {
-<<<<<<< HEAD
-  "functions": {
-    "source": "functions",
-    "predeploy": [
-      "npm --prefix \"$RESOURCE_DIR\" run build"
-    ]
-  },
-  "firestore": {
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
-  }
-}
-=======
   "firestore": {
     "database": "(default)",
     "location": "asia-southeast1",
@@ -22,7 +9,6 @@
     {
       "source": "functions",
       "codebase": "default",
-      "disallowLegacyRuntimeConfig": true,
       "ignore": [
         "node_modules",
         ".git",
@@ -34,6 +20,16 @@
         "npm --prefix \"$RESOURCE_DIR\" run build"
       ]
     }
-  ]
+  ],
+  "emulators": {
+    "functions": {
+      "port": 5001
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "ui": {
+      "enabled": true
+    }
+  }
 }
->>>>>>> d3c946e (fix)
