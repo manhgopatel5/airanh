@@ -1,141 +1,43 @@
-import * as functions from "firebase-functions";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 
 admin.initializeApp();
 const db = admin.firestore();
 
-export const acceptFriendRequest = functions.https.onCall(
-    async (data, context) => {
-      if (!context.auth) {
-        throw new functions.https.HttpsError(
-            "unauthenticated",
-            "Chưa đăng nhập",
-        );
-      }
+export const acceptFriendRequest = onCall(async (request) => {
+  const { fromUid, notifId } = request.data;
+  const toUid = request.auth?.uid;
 
-      const toUid = context.auth.uid;
-      const {fromUid, notifId} = data;
+  if (!toUid) {
+    throw new HttpsError("unauthenticated", "Phải đăng nhập");
+  }
+  if (!fromUid || !notifId) {
+    throw new HttpsError("invalid-argument", "Thiếu fromUid hoặc notifId");
+  }
 
-      if (!fromUid ||!notifId) {
-        throw new functions.https.HttpsError(
-            "invalid-argument",
-            "Thiếu fromUid hoặc notifId",
-        );
-      }
+  const batch = db.batch();
+  
+  // 1. Tạo friend cho cả 2 chiều
+  const friendRef1 = db.collection("friends").doc(`${toUid}_${fromUid}`);
+  batch.set(friendRef1, { 
+    userId: toUid, 
+    friendId: fromUid, 
+    status: "accepted",
+    createdAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+  
+  const friendRef2 = db.collection("friends").doc(`${fromUid}_${toUid}`);
+  batch.set(friendRef2, { 
+    userId: fromUid, 
+    friendId: toUid, 
+    status: "accepted",
+    createdAt: admin.firestore.FieldValue.serverTimestamp()
+  });
 
-      const requestId = `${fromUid}_${toUid}`;
-      const chatId = [fromUid, toUid].sort().join("_");
+  // 2. Xóa thông báo
+  const notifRef = db.collection("notifications").doc(notifId);
+  batch.delete(notifRef);
 
-      return db.runTransaction(async (tx) => {
-        const requestRef = db.doc(`friendRequests/${requestId}`);
-        const requestSnap = await tx.get(requestRef);
-
-        if (!requestSnap.exists) {
-          throw new functions.https.HttpsError(
-              "not-found",
-              "Lời mời không tồn tại",
-          );
-        }
-
-        const [fromUserSnap, toUserSnap] = await Promise.all([
-          tx.get(db.doc(`users/${fromUid}`)),
-          tx.get(db.doc(`users/${toUid}`)),
-        ]);
-
-        if (!fromUserSnap.exists ||!toUserSnap.exists) {
-          throw new functions.https.HttpsError(
-              "not-found",
-              "User không tồn tại",
-          );
-        }
-
-        const fromUser = fromUserSnap.data();
-        const toUser = toUserSnap.data();
-
-        if (!fromUser ||!toUser) {
-          throw new functions.https.HttpsError(
-              "internal",
-              "Lỗi dữ liệu user",
-          );
-        }
-
-        // 1. Add friend 2 chiều
-        tx.set(db.doc(`users/${toUid}/friends/${fromUid}`), {
-          addedAt: admin.firestore.FieldValue.serverTimestamp(),
-          uid: fromUid,
-        });
-        tx.set(db.doc(`users/${fromUid}/friends/${toUid}`), {
-          addedAt: admin.firestore.FieldValue.serverTimestamp(),
-          uid: toUid,
-        });
-
-        // 2. Tạo chat
-        tx.set(db.doc(`chats/${chatId}`), {
-          members: [fromUid, toUid],
-          isGroup: false,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          lastMessage: "",
-          membersInfo: {
-            [fromUid]: {
-              name: fromUser.name || "User",
-              avatar: fromUser.avatar || "",
-              username: fromUser.username || "",
-            },
-            [toUid]: {
-              name: toUser.name || "User",
-              avatar: toUser.avatar || "",
-              username: toUser.username || "",
-            },
-          },
-        });
-
-        // 3. Add chat vào subcollection
-        tx.set(db.doc(`users/${toUid}/chats/${chatId}`), {
-          chatId,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          lastMessage: "",
-          members: [fromUid, toUid],
-          otherUser: {
-            uid: fromUid,
-            name: fromUser.name || "User",
-            avatar: fromUser.avatar || "",
-            username: fromUser.username || "",
-          },
-        });
-        tx.set(db.doc(`users/${fromUid}/chats/${chatId}`), {
-          chatId,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          lastMessage: "",
-          members: [fromUid, toUid],
-          otherUser: {
-            uid: toUid,
-            name: toUser.name || "User",
-            avatar: toUser.avatar || "",
-            username: toUser.username || "",
-          },
-        });
-
-        // 4. Xóa request + notif
-        tx.delete(db.doc(`notifications/${toUid}/items/${notifId}`));
-        tx.delete(requestRef);
-
-        // 5. Gửi notif đã chấp nhận
-        const acceptedNotifRef =
-          db.collection(`notifications/${fromUid}/items`).doc();
-        tx.set(acceptedNotifRef, {
-          type: "friend_accepted",
-          fromUid: toUid,
-          fromName: toUser.name || "Người dùng",
-          fromAvatar: toUser.avatar || "",
-          title: "Đã chấp nhận",
-          message: "đã chấp nhận lời mời kết bạn",
-          read: false,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-
-        return {chatId};
-      });
-    });
+  await batch.commit();
+  return { success: true };
+});
