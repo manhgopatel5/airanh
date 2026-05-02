@@ -1,22 +1,35 @@
-/* ================= FIREBASE SW V2.1 ================= */
+/* ================= FIREBASE SW V2.1 FIXED ================= */
 importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js");
 
-// Build time inject từ netlify.toml
-importScripts("/firebase-config.js");
+// Dán config của bạn vào đây
+const firebaseConfig = {
+  apiKey: "AIzaSy...",
+  authDomain: "airanh-ba64c.firebaseapp.com",
+  projectId: "airanh-ba64c",
+  storageBucket: "airanh-ba64c.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abc123def456"
+};
 
-const VERSION = "v2.1.0";
-firebase.initializeApp(self.firebaseConfig);
+const VERSION = "v2.1.1";
+firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
-/* ================= CACHE ================= */
+/* ================= CACHE - SỬA .PNG VIẾT HOA ================= */
 const CACHE_NAME = `fcm-assets-${VERSION}`;
 const ICONS_TO_CACHE = [
-  "/icon-192.png",
-  "/icon-512.png",
-  "/badge-72.png",
-  "/icon-reply.png",
-  "/icon-view.png",
+  "/icon-192.PNG",  // Sửa .png → .PNG
+  "/icon-512.PNG",  // Sửa .png → .PNG
+  "/badge-72.png",  // File này chưa có, xóa hoặc tạo thêm
+  "/icon-reply.png", // File này chưa có, xóa hoặc tạo thêm
+  "/icon-view.png",  // File này chưa có, xóa hoặc tạo thêm
+];
+
+// Nếu chưa có badge/icon-reply/icon-view thì comment 3 dòng dưới
+const ICONS_TO_CACHE = [
+  "/icon-192.PNG",
+  "/icon-512.PNG",
 ];
 
 self.addEventListener("install", (event) => {
@@ -50,7 +63,7 @@ self.addEventListener("message", (event) => {
   }
 });
 
-/* ================= BACKGROUND MESSAGE ================= */
+/* ================= BACKGROUND MESSAGE - SỬA .PNG ================= */
 messaging.onBackgroundMessage((payload) => {
   console.log("📩 Background:", payload);
 
@@ -71,8 +84,8 @@ messaging.onBackgroundMessage((payload) => {
 
   const options = {
     body,
-    icon: notification.icon || data.icon || "/icon-192.png",
-    badge: notification.badge || "/badge-72.png",
+    icon: notification.icon || data.icon || "/icon-192.PNG", // Sửa .png → .PNG
+    badge: notification.badge || "/badge-72.PNG", // Nếu chưa có file này thì bỏ dòng này
     image: data.image,
     tag,
     renotify: data.renotify === "true",
@@ -97,8 +110,8 @@ messaging.onBackgroundMessage((payload) => {
 function getActions(data) {
   if (data.type === "message") {
     return [
-      { action: "reply", title: "💬 Trả lời", icon: "/icon-reply.png" },
-      { action: "view", title: "👀 Xem", icon: "/icon-view.png" },
+      { action: "reply", title: "💬 Trả lời", icon: "/icon-reply.PNG" }, // Sửa .png → .PNG
+      { action: "view", title: "👀 Xem", icon: "/icon-view.PNG" }, // Sửa .png → .PNG
     ];
   }
   if (data.type === "friend_request") {
@@ -119,7 +132,6 @@ self.addEventListener("notificationclick", (event) => {
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      // Có tab đang mở → gửi message để client gọi API
       for (const client of clientList) {
         if (client.url.includes(self.location.origin) && "focus" in client) {
           client.focus();
@@ -132,7 +144,6 @@ self.addEventListener("notificationclick", (event) => {
           return;
         }
       }
-      // Không có tab → mở mới với query để client tự xử lý
       if (clients.openWindow) {
         const targetUrl = action? `${url}?action=${action}&id=${data.requestId || ""}` : url;
         return clients.openWindow(targetUrl);
