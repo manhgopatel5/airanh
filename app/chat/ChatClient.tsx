@@ -216,7 +216,7 @@ const scannerRef = useRef<Html5Qrcode | null>(null);
 
   // Load friends
 useEffect(() => {
-  if (!user?.uid || activeTab!== "friends") return;
+  if (!user?.uid || activeTab !== "friends") return;
 
   setFriendsLoading(true);
 
@@ -248,21 +248,11 @@ useEffect(() => {
         await Promise.all(
           chunks.map(async (chunk) => {
             const userDocs = await Promise.all(chunk.map(id => getDoc(doc(db, "users", id))));
-const chatDocs = await Promise.all(chunk.map(id => {
-  const chatId = [user.uid, id].sort().join("_");
-  return getDoc(doc(db, "chats", chatId));
-}));
+            // ĐÃ XÓA getDoc chats ở đây
 
-userDocs.forEach((userDoc, idx) => {
-  if (userDoc.exists()) {
-    const data = userDoc.data();
-    const chatSnap = chatDocs[idx];
-    const chatData = chatSnap?.exists()? chatSnap.data() : null; // Thêm? sau chatSnap
-    const isDeletedByThem = chatData?.blockedUsers?.includes(user.uid) || false;
-
-
-
-
+            userDocs.forEach((userDoc) => {
+              if (userDoc.exists()) {
+                const data = userDoc.data();
                 friendsData.push({
                   uid: userDoc.id,
                   name: data.name || "User",
@@ -272,7 +262,7 @@ userDocs.forEach((userDoc, idx) => {
                   isOnline: Boolean(data.isOnline),
                   lastSeen: data.lastSeen,
                   mutualFriends: data.mutualFriends || 0,
-                  isDeletedByThem, // Thêm field này
+                  isDeletedByThem: false, // Tạm bỏ, check sau khi vào chat
                 });
               }
             });
@@ -280,7 +270,7 @@ userDocs.forEach((userDoc, idx) => {
         );
 
         friendsData.sort((a, b) => {
-          if (a.isOnline!== b.isOnline) return b.isOnline? 1 : -1;
+          if (a.isOnline !== b.isOnline) return b.isOnline ? 1 : -1;
           return a.name.localeCompare(b.name);
         });
 
@@ -709,11 +699,10 @@ const handleStartChatWithFriend = useCallback(async (friendId: string) => {
   if (!currentUser?.uid) return;
 
   const chatId = [currentUser.uid, friendId].sort().join("_");
-  const chatSnap = await getDoc(doc(db, "chats", chatId));
-if (chatSnap.exists() && chatSnap.data()?.blockedUsers?.includes(currentUser.uid)) {
-  toast.error("Bạn đã bị chặn");
-  return;
-}
+  
+  // XÓA getDoc check blockedUsers ở đây
+  // Để Cloud Function hoặc message send check sau
+
   const [currentUserDoc, friendDoc] = await Promise.all([
     getDoc(doc(db, "users", currentUser.uid)),
     getDoc(doc(db, "users", friendId))
@@ -750,23 +739,18 @@ const handleRemoveFriend = useCallback(async (friendId: string, friendName: stri
 
   setAdding(true);
   try {
-    const db = getFirebaseDB();
     const chatId = [user.uid, friendId].sort().join("_");
     const batch = writeBatch(db);
 
-    // 1. Người bấm xóa → mất người kia trong bạn bè
     batch.delete(doc(db, "users", user.uid, "friends", friendId));
 
-    // 2. Update chat theo cơ chế bạn đang dùng
+    // Dùng updateDoc thay vì getDoc + update
     const chatRef = doc(db, "chats", chatId);
-    const chatSnap = await getDoc(chatRef);
-    if (chatSnap.exists()) {
-batch.update(chatRef, {
-  deletedFor: arrayUnion(user.uid), 
-  blockedUsers: arrayUnion(friendId), 
-  updatedAt: serverTimestamp()
-});
-    }
+    batch.update(chatRef, {
+      deletedFor: arrayUnion(user.uid), 
+      blockedUsers: arrayUnion(friendId), 
+      updatedAt: serverTimestamp()
+    });
 
     await batch.commit();
     toast.success("Đã xóa bạn bè");
@@ -776,7 +760,7 @@ batch.update(chatRef, {
   } finally {
     setAdding(false);
   }
-}, [user?.uid]);
+}, [user?.uid, db]);
 
   const handleCreateGroup = useCallback(async (): Promise<void> => {
     if (!user) { toast.error("Chưa đăng nhập"); return; }
