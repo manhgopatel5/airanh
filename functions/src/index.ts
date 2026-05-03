@@ -191,8 +191,7 @@ batch.set(
       const theirFriendRef = db.doc(`users/${friendUid}/friends/${uid}`);
       const theirFriendDoc = await theirFriendRef.get();
 
-      if (theirFriendDoc.exists) {
-const theirFriendDoc = await theirFriendRef.get();
+
 
 if (theirFriendDoc.exists) {
   const theirData = theirFriendDoc.data();
