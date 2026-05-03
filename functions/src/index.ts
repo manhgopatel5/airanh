@@ -195,8 +195,8 @@ batch.set(
 batch.set(
   theirFriendRef,
   {
-    status: "removed",
-    removedAt: FieldValue.serverTimestamp(),
+    status: "active",
+    removedBy: uid,
     updatedAt: FieldValue.serverTimestamp(),
   },
   { merge: true }
