@@ -714,34 +714,19 @@ const handleRemoveFriend = useCallback(async (friendId: string, friendName: stri
 
   setAdding(true);
   try {
-    const chatId = [user.uid, friendId].sort().join("_");
-    const batch = writeBatch(db);
-
-    batch.delete(doc(db, "users", user.uid, "friends", friendId));
-
-    // Không getDoc, cứ update thẳng. Nếu chat chưa có thì bỏ qua
-    const chatRef = doc(db, "chats", chatId);
-    batch.update(chatRef, {
-      deletedFor: arrayUnion(user.uid),
-      blockedUsers: arrayUnion(friendId),
-      updatedAt: serverTimestamp()
-    });
-
-    await batch.commit();
-    toast.success("Đã xóa bạn bè");
+    const functions = getFunctions(getApp(), "asia-southeast1");
+    const unfriend = httpsCallable(functions, 'unfriend');
+    
+    await unfriend({ friendUid: friendId });
+    toast.success("Đã hủy kết bạn");
+    
   } catch (error: any) {
-    // Nếu chat chưa tồn tại thì batch.update sẽ fail, bỏ qua
-    if (error.code === 'not-found') {
-      await deleteDoc(doc(db, "users", user.uid, "friends", friendId));
-      toast.success("Đã xóa bạn bè");
-    } else {
-      console.error("Remove friend error:", error);
-      toast.error(`Lỗi: ${error.message || "Không thể xóa"}`);
-    }
+    console.error("Remove friend error:", error);
+    toast.error(`Lỗi: ${error.message || "Không thể xóa"}`);
   } finally {
     setAdding(false);
   }
-}, [user?.uid, db]);
+}, [user?.uid]);
 
   const handleCreateGroup = useCallback(async (): Promise<void> => {
     if (!user) { toast.error("Chưa đăng nhập"); return; }
