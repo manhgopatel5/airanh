@@ -233,17 +233,7 @@ useEffect(() => {
       clearTimeout(timeout);
       try {
 const activeFriendIds = snapshot.docs
-  .filter(d => {
-    const data = d.data();
-
-    // vẫn là bạn bè nếu:
-    // - chưa bị remove
-    // - hoặc bị remove nhưng KHÔNG phải do mình
-    return (
-      data?.status !== "removed" ||
-      (data?.status === "active" && data?.removedBy && data.removedBy !== user.uid)
-    );
-  })
+  .filter(d => d.data()?.status !== "removed")
   .map(d => d.id);
 
 const removedFriendIds = snapshot.docs
@@ -251,32 +241,11 @@ const removedFriendIds = snapshot.docs
   .map(d => d.id);
 const friendsData: FriendItem[] = [];
 
-const chatsQuery = query(
-  collection(db, "chats"),
-  where("members", "array-contains", user.uid)
-);
 
-const chatsSnap = await getDocs(chatsQuery);
 
-const removedUsers = new Set<string>();
 
-chatsSnap.forEach((chatDoc) => {
-  const data = chatDoc.data();
 
-  if (!data.isGroup && data.members?.length === 2) {
-    const otherUid = data.members.find(
-      (id: string) => id !== user.uid
-    );
 
-if (
-  otherUid &&
-  !activeFriendIds.includes(otherUid) &&
-  !removedFriendIds.includes(otherUid)
-) {
-  removedUsers.add(otherUid);
-}
-  }
-});
 
 const allIds = [...new Set([
   ...activeFriendIds
@@ -312,7 +281,9 @@ for (let i = 0; i < allIds.length; i += BATCH_SIZE) {
                   isOnline: Boolean(data.isOnline),
                   lastSeen: data.lastSeen,
                   mutualFriends: data.mutualFriends || 0,
-                  isDeletedByThem: removedUsers.has(userDoc.id),
+                  isDeletedByThem: Boolean(
+  snapshot.docs.find(d => d.id === userDoc.id)?.data()?.removedBy
+),
                 });
               }
             });
