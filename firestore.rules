@@ -32,17 +32,22 @@ service cloud.firestore {
       allow create: if false;
       
       // UPDATE: cho update settings cá nhân HOẶC gửi tin nếu chat active + không bị block
-      allow update: if isSignedIn() 
-        && request.auth.uid in resource.data.members
-        && (
-          request.resource.data.diff(resource.data).changedKeys()
-            .hasOnly(['deletedFor', 'archivedBy', 'mutedBy', 'typing', 'unread', 'updatedAt', 'lastMessage', 'lastSenderId', 'lastSenderName'])
-          ||
-          (
-            resource.data.get('status', 'active') == 'active'
-            && !(request.auth.uid in resource.data.get('blockedUsers', []))
-          )
-        );
+allow update: if isSignedIn()
+  && request.auth.uid in resource.data.members
+  && (
+    request.resource.data.diff(resource.data).changedKeys()
+      .hasOnly([
+        'deletedFor',
+        'archivedBy',
+        'mutedBy',
+        'typing',
+        'unread',
+        'updatedAt',
+        'lastMessage',
+        'lastSenderId',
+        'lastSenderName'
+      ])
+  );
       
       allow delete: if false;
 
