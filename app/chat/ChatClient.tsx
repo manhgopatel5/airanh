@@ -22,7 +22,7 @@ import {
   limit,
   updateDoc,
   arrayRemove,
-  
+  getDocs,
   Timestamp,
   Unsubscribe,
   QuerySnapshot,
@@ -232,19 +232,62 @@ useEffect(() => {
     async (snapshot) => {
       clearTimeout(timeout);
       try {
-        const friendIds = snapshot.docs.map(d => d.id);
-        if (friendIds.length === 0) {
-          setFriends([]);
-          setFriendsLoading(false);
-          return;
-        }
+        const friendIds = snapshot.docs
+  .filter(d => d.data()?.status !== "removed")
+  .map(d => d.id);
+const friendsData: FriendItem[] = [];
 
-        const chunks: string[][] = [];
-        for (let i = 0; i < friendIds.length; i += BATCH_SIZE) {
-          chunks.push(friendIds.slice(i, i + BATCH_SIZE));
-        }
+const chatsQuery = query(
+  collection(db, "chats"),
+  where("members", "array-contains", user.uid)
+);
 
-        const friendsData: FriendItem[] = [];
+const chatsSnap = await getDocs(chatsQuery);
+
+const removedUsers = new Set<string>();
+
+chatsSnap.forEach((chatDoc) => {
+  const data = chatDoc.data();
+
+  if (!data.isGroup && data.members?.length === 2) {
+    const otherUid = data.members.find(
+      (id: string) => id !== user.uid
+    );
+
+    if (otherUid && !friendIds.includes(otherUid)) {
+      removedUsers.add(otherUid);
+    }
+  }
+});
+
+const allIds = [...new Set([
+  ...friendIds,
+  ...Array.from(removedUsers)
+])];
+
+if (allIds.length === 0) {
+  setFriends([]);
+  setFriendsLoading(false);
+  return;
+}
+
+const chunks: string[][] = [];
+
+for (let i = 0; i < allIds.length; i += BATCH_SIZE) {
+  chunks.push(allIds.slice(i, i + BATCH_SIZE));
+}
+
+chatsSnap.forEach((chatDoc) => {
+  const data = chatDoc.data();
+
+  if (!data.isGroup && data.members?.length === 2) {
+    const otherUid = data.members.find((id: string) => id !== user.uid);
+
+    if (otherUid && !friendIds.includes(otherUid)) {
+      removedUsers.add(otherUid);
+    }
+  }
+});
         await Promise.all(
           chunks.map(async (chunk) => {
             const userDocs = await Promise.all(chunk.map(id => getDoc(doc(db, "users", id))));
@@ -262,7 +305,7 @@ useEffect(() => {
                   isOnline: Boolean(data.isOnline),
                   lastSeen: data.lastSeen,
                   mutualFriends: data.mutualFriends || 0,
-                  isDeletedByThem: false, // Tạm bỏ, check sau khi vào chat
+                  isDeletedByThem: removedUsers.has(userDoc.id),
                 });
               }
             });
@@ -417,16 +460,20 @@ return () => { isMounted = false; if (unsubscribe) unsubscribe(); };
     }
   }, [db]);
 
-const stopScan = async () => {
+const stopScan = async (closeModal = true) => {
   try {
     if (scannerRef.current) {
       if (scannerRef.current.isScanning) {
         await scannerRef.current.stop();
       }
       await scannerRef.current.clear();
+      scannerRef.current = null;
     }
   } catch {}
-  setShowScanQR(false);
+
+  if (closeModal) {
+    setShowScanQR(false);
+  }
 };
 
 const handleScanFromFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -513,7 +560,7 @@ useEffect(() => {
 
   startScan();
 return () => {
-stopScan();
+  stopScan(false);
 };
 }, [showScanQR, scanMode]);
 const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<void> => {
@@ -742,7 +789,8 @@ const handleRemoveFriend = useCallback(async (friendId: string, friendName: stri
     setAdding(true);
     try {
       const groupRef = doc(collection(db, "chats"));
-      const groupData = { members: [user.uid, ...selected], isGroup: true, groupName: trimmedName, admins: [user.uid], createdAt: new Date(), updatedAt: new Date(), lastMessage: `${user.displayName || "Bạn"} đã tạo nhóm`, lastSenderName: "Hệ thống" };
+      const groupData = { members: [user.uid, ...selected], isGroup: true, groupName: trimmedName, admins: [user.uid], createdAt: serverTimestamp(),
+updatedAt: serverTimestamp(), lastMessage: `${user.displayName || "Bạn"} đã tạo nhóm`, lastSenderName: "Hệ thống" };
       await setDoc(groupRef, groupData);
       
       const userDoc = await getDoc(doc(db, "users", user.uid));
@@ -1140,13 +1188,7 @@ const filteredChats = useMemo(() => {
                           <div className="flex items-center gap-1.5 min-w-0">
                             <p className="text-[16px] leading-[22px] font-[550] text-black dark:text-white truncate">{chat.name}</p>
                             {pinned.includes(chat.chatId) && <RiPushpinFill size={12} className="text-[#8e8e93] dark:text-zinc-500 flex-shrink-0" />}
-<div className="flex items-center gap-1.5 min-w-0">
-<p className="text-[16px] leading-[22px] font-[550] text-black dark:text-white truncate">{chat.name}</p>
-{pinned.includes(chat.chatId) && <RiPushpinFill size={12} className="text-[#8e8e93] dark:text-zinc-500 flex-shrink-0" />}
-{chat.blockedUsers?.includes(user?.uid || "") && (
-  <span className="text-[11px] text-red-500 font-medium flex-shrink-0">• Bị xóa</span>
-)}
-</div>
+
                           </div>
                           <div className="flex items-center gap-1.5 flex-shrink-0">
                             <span className="text-[13px] leading-[18px] text-[#8e8e93] dark:text-zinc-500 tabular-nums">{formatMessageTime(chat.updatedAt)}</span>
