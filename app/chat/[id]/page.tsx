@@ -137,21 +137,21 @@ const isDeleted = chatData?.deletedFor?.includes(user?.uid || "");
       return;
     }
 
-    const data = snap.data() as ChatData;
+const data = snap.data() as ChatData;
 
-+ // Tự mở lại chat nếu trước đó mình đã xóa
-+ if (data.deletedFor?.includes(user.uid)) {
-+ await updateDoc(doc(db, "chats", chatId), {
-+ deletedFor: arrayRemove(user.uid)
-+ });
-+ return; // Đợi snapshot mới
-+ }
+// Tự mở lại chat nếu trước đó mình đã xóa
+if (data.deletedFor?.includes(user.uid)) {
+  await updateDoc(doc(db, "chats", chatId), {
+    deletedFor: arrayRemove(user.uid)
+  });
+  return; // Đợi snapshot mới
+}
 
-    if (!data.members?.includes(user.uid)) {
-      toast.error("Bạn không có quyền truy cập");
-      router.replace("/chat");
-      return;
-    }
+if (!data.members?.includes(user.uid)) {
+  toast.error("Bạn không có quyền truy cập");
+  router.replace("/chat");
+  return;
+}
 
     const otherUid = data.members?.find((id: string) => id!== user.uid);
 
