@@ -198,7 +198,7 @@ export const unfriend = onCall(
         batch.update(chatRef, {
           status: "archived",
           archivedBy: uid,
-+         deletedFor: FieldValue.arrayUnion(uid),
+          deletedFor: FieldValue.arrayUnion(uid),
           updatedAt: FieldValue.serverTimestamp(),
         });
       }
