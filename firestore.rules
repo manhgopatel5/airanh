@@ -83,10 +83,11 @@ service cloud.firestore {
     }
 
     match /notifications/{userId}/items/{notifId} {
-      allow read: if isOwner(userId);
-      allow create: if isSignedIn();
-      allow delete: if isOwner(userId);
-      allow update: if false;
+  allow read: if isOwner(userId);
+  allow create: if isSignedIn();
+  allow delete: if isOwner(userId);
+  allow update: if isOwner(userId);
+
     }
   }
 }
