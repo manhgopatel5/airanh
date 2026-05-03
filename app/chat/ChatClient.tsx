@@ -279,8 +279,7 @@ if (
 });
 
 const allIds = [...new Set([
-  ...activeFriendIds,
-  ...Array.from(removedUsers)
+  ...activeFriendIds
 ])];
 
 if (allIds.length === 0) {
