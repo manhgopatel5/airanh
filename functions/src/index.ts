@@ -162,26 +162,47 @@ export const unfriend = onCall(
       throw new HttpsError("invalid-argument", "Thiếu friendUid");
     }
 
-    const batch = db.batch();
+    if (uid === friendUid) {
+      throw new HttpsError("invalid-argument", "Không thể tự hủy kết bạn");
+    }
 
-    // 1. Xóa B khỏi danh sách bạn của A
-    batch.delete(db.doc(`users/${uid}/friends/${friendUid}`));
+    try {
+      const batch = db.batch();
 
-    // 2. Đánh dấu A trong danh sách bạn của B là "removed"
-    batch.update(db.doc(`users/${friendUid}/friends/${uid}`), {
-      status: "removed",
-      removedAt: FieldValue.serverTimestamp(),
-    });
+      // 1. Xóa B khỏi danh sách bạn của A
+      const myFriendRef = db.doc(`users/${uid}/friends/${friendUid}`);
+      batch.delete(myFriendRef);
 
-    // 3. Đánh dấu chat là "archived" để không cho nhắn tiếp
-    const chatId = [uid, friendUid].sort().join("_");
-    batch.update(db.doc(`chats/${chatId}`), {
-      status: "archived",
-      archivedBy: uid,
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+      // 2. Check xem B có A trong friend list không rồi mới update
+      const theirFriendRef = db.doc(`users/${friendUid}/friends/${uid}`);
+      const theirFriendDoc = await theirFriendRef.get();
+      
+      if (theirFriendDoc.exists) {
+        batch.update(theirFriendRef, {
+          status: "removed",
+          removedAt: FieldValue.serverTimestamp(),
+        });
+      }
 
-    await batch.commit();
-    return { success: true };
+      // 3. Check chat có tồn tại không rồi mới update
+      const chatId = [uid, friendUid].sort().join("_");
+      const chatRef = db.doc(`chats/${chatId}`);
+      const chatDoc = await chatRef.get();
+      
+      if (chatDoc.exists) {
+        batch.update(chatRef, {
+          status: "archived",
+          archivedBy: uid,
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      }
+
+      await batch.commit();
+      return { success: true };
+      
+    } catch (error: any) {
+      console.error("unfriend error:", error);
+      throw new HttpsError("internal", `Lỗi server: ${error.message}`);
+    }
   }
 );
