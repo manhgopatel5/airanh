@@ -546,36 +546,9 @@ const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<voi
       return;
     }
 
-    // XÓA TỪ ĐÂY
-    // const chatId = [currentUser.uid, targetUserId].sort().join("_");
-    // const chatSnap = await getDoc(doc(db, "chats", chatId));
-    // const isBlocked = chatSnap.exists() && chatSnap.data()?.blockedBy?.includes(currentUser.uid);
-    // ĐẾN ĐÂY
-
-    // Chỉ check đã là bạn chưa
-    const existingFriendDoc = await getDoc(doc(db, "users", currentUser.uid, "friends", targetUserId));
-    if (existingFriendDoc.exists()) {
-      toast.error("Các bạn đã là bạn bè");
-      return;
-    }
-
-    // Check đã gửi lời mời chưa
     const requestId = `${currentUser.uid}_${targetUserId}`;
-    const existingRequest = await getDoc(doc(db, "friendRequests", requestId));
-    if (existingRequest.exists()) {
-      toast.error("Đã gửi lời mời rồi");
-      return;
-    }
 
-    // Check người kia đã gửi lời mời cho mình chưa
-    const reverseRequestId = `${targetUserId}_${currentUser.uid}`;
-    const reverseRequest = await getDoc(doc(db, "friendRequests", reverseRequestId));
-    if (reverseRequest.exists()) {
-      toast.error("Người này đã gửi lời mời cho bạn. Hãy chấp nhận trong Thông báo");
-      return;
-    }
-
-
+    // BỎ HẾT getDoc check, cứ setDoc thẳng. Rules sẽ chặn nếu trùng
     await setDoc(doc(db, "friendRequests", requestId), {
       from: currentUser.uid,
       to: targetUserId,
@@ -583,18 +556,20 @@ const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<voi
       createdAt: serverTimestamp()
     });
 
- 
-
     toast.success("Đã gửi lời mời kết bạn");
     setShowAdd(false);
     setSearch("");
   } catch (error: any) {
     console.error("Add friend error:", error.code, error.message);
-    toast.error(`Lỗi: ${error.message || "Không thể gửi lời mời"}`);
+    if (error.code === 'permission-denied') {
+      toast.error("Đã gửi lời mời hoặc các bạn đã là bạn bè");
+    } else {
+      toast.error(`Lỗi: ${error.message || "Không thể gửi lời mời"}`);
+    }
   } finally {
     setAdding(false);
   }
-}, [search, db, createNotification]);
+}, [search, db]);
 
 
 const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) => {
@@ -699,9 +674,8 @@ const handleStartChatWithFriend = useCallback(async (friendId: string) => {
   if (!currentUser?.uid) return;
 
   const chatId = [currentUser.uid, friendId].sort().join("_");
-  
-  // XÓA getDoc check blockedUsers ở đây
-  // Để Cloud Function hoặc message send check sau
+
+  // XÓA getDoc check blockedUsers
 
   const [currentUserDoc, friendDoc] = await Promise.all([
     getDoc(doc(db, "users", currentUser.uid)),
@@ -711,9 +685,10 @@ const handleStartChatWithFriend = useCallback(async (friendId: string) => {
   const currentData = currentUserDoc.data();
   const friendData = friendDoc.data();
 
-  await setDoc(doc(db, "chats", chatId), { 
-    members: [currentUser.uid, friendId], 
-    isGroup: false, 
+  // setDoc merge sẽ tạo nếu chưa có, update nếu có rồi
+  await setDoc(doc(db, "chats", chatId), {
+    members: [currentUser.uid, friendId],
+    isGroup: false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
     membersInfo: {
@@ -723,13 +698,13 @@ const handleStartChatWithFriend = useCallback(async (friendId: string) => {
         username: currentData?.username || ""
       },
       [friendId]: {
-        name: friendData?.name || "User", 
+        name: friendData?.name || "User",
         avatar: friendData?.avatar || "",
         username: friendData?.username || ""
       }
     }
   }, { merge: true });
-  
+
   router.push(`/chat/${chatId}`);
 }, [db, router]);
 
@@ -744,19 +719,25 @@ const handleRemoveFriend = useCallback(async (friendId: string, friendName: stri
 
     batch.delete(doc(db, "users", user.uid, "friends", friendId));
 
-    // Dùng updateDoc thay vì getDoc + update
+    // Không getDoc, cứ update thẳng. Nếu chat chưa có thì bỏ qua
     const chatRef = doc(db, "chats", chatId);
     batch.update(chatRef, {
-      deletedFor: arrayUnion(user.uid), 
-      blockedUsers: arrayUnion(friendId), 
+      deletedFor: arrayUnion(user.uid),
+      blockedUsers: arrayUnion(friendId),
       updatedAt: serverTimestamp()
     });
 
     await batch.commit();
     toast.success("Đã xóa bạn bè");
   } catch (error: any) {
-    console.error("Remove friend error:", error);
-    toast.error(`Lỗi: ${error.message || "Không thể xóa"}`);
+    // Nếu chat chưa tồn tại thì batch.update sẽ fail, bỏ qua
+    if (error.code === 'not-found') {
+      await deleteDoc(doc(db, "users", user.uid, "friends", friendId));
+      toast.success("Đã xóa bạn bè");
+    } else {
+      console.error("Remove friend error:", error);
+      toast.error(`Lỗi: ${error.message || "Không thể xóa"}`);
+    }
   } finally {
     setAdding(false);
   }
