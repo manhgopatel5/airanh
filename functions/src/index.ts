@@ -79,6 +79,7 @@ export const onFriendAccepted = onDocumentCreated(
 );
 
 // 3. Function accept lời mời
+// 3. Function accept lời mời
 export const acceptFriendRequest = onCall(
   { region: "asia-southeast1" },
   async (request) => {
@@ -101,7 +102,7 @@ export const acceptFriendRequest = onCall(
 
     batch.set(db.doc(`users/${uid}/friends/${fromUid}`), {
       createdAt: FieldValue.serverTimestamp(),
-      status: "active", // Thêm status
+      status: "active",
     });
     batch.set(db.doc(`users/${fromUid}/friends/${uid}`), {
       createdAt: FieldValue.serverTimestamp(),
@@ -122,7 +123,7 @@ export const acceptFriendRequest = onCall(
       {
         members: [uid, fromUid],
         isGroup: false,
-        status: "active", // Thêm status cho chat
+        status: "active",
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
         lastMessage: "Các bạn đã là bạn bè",
@@ -139,6 +140,9 @@ export const acceptFriendRequest = onCall(
             username: fromData?.username || "",
           },
         },
+        // THÊM 2 DÒNG NÀY: Xóa deletedFor để mở lại chat
+        deletedFor: FieldValue.arrayRemove(uid),
+        blockedUsers: FieldValue.arrayRemove(uid),
       },
       { merge: true }
     );
@@ -149,6 +153,7 @@ export const acceptFriendRequest = onCall(
     return { chatId };
   }
 );
+
 
 // 4. Function hủy kết bạn: A xóa B → B còn A nhưng status = "removed"
 export const unfriend = onCall(
