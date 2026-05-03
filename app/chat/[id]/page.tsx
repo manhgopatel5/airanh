@@ -93,6 +93,7 @@ export default function ChatDetailPage() {
 
 const isBlocked = chatData?.blockedUsers?.includes(user?.uid || "");
 const isDeleted = chatData?.deletedFor?.includes(user?.uid || "");
+const canSendMessage = !!friendId;
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -255,7 +256,10 @@ const handleTyping = useCallback(async () => {
 }, []);
 
 const sendMessage = useCallback(async () => {
-  if (isBlocked || isDeleted) return;
+  if (!canSendMessage || isBlocked || isDeleted) {
+  toast.error("Không thể nhắn tin");
+  return;
+}
   if (!text.trim() ||!user ||!friend ||!chatId || sending ||!friendId ||!chatData) {
     if (!chatData) toast.error("Đang tải dữ liệu chat...");
     return;
@@ -308,7 +312,10 @@ const sendMessage = useCallback(async () => {
 
   /* ================= SEND IMAGE ================= */
   const sendImage = async (file: File) => {
-    if (isBlocked || isDeleted) return;
+    if (!canSendMessage || isBlocked || isDeleted) {
+  toast.error("Không thể nhắn tin");
+  return;
+}
     if (!user ||!chatId ||!friendId ||!chatData) {
       if (!chatData) toast.error("Đang tải dữ liệu chat...");
       return;
@@ -366,7 +373,10 @@ const sendMessage = useCallback(async () => {
 
   /* ================= SEND FILE ================= */
   const sendFile = async (file: File) => {
-    if (isBlocked || isDeleted) return;
+    if (!canSendMessage || isBlocked || isDeleted) {
+  toast.error("Không thể nhắn tin");
+  return;
+}
     if (!user ||!chatId ||!friendId ||!chatData) {
       if (!chatData) toast.error("Đang tải dữ liệu chat...");
       return;
@@ -403,7 +413,10 @@ const sendMessage = useCallback(async () => {
 
   /* ================= VOICE RECORDING ================= */
   const startRecording = async () => {
-    if (isBlocked || isDeleted) return;
+    if (!canSendMessage || isBlocked || isDeleted) {
+  toast.error("Không thể nhắn tin");
+  return;
+}
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
@@ -471,7 +484,10 @@ const sendMessage = useCallback(async () => {
 
   /* ================= SEND LOCATION ================= */
   const sendLocation = async () => {
-    if (isBlocked || isDeleted) return;
+    if (!canSendMessage || isBlocked || isDeleted) {
+  toast.error("Không thể nhắn tin");
+  return;
+}
     if (!user ||!chatId ||!friendId ||!chatData) {
       if (!chatData) toast.error("Đang tải dữ liệu chat...");
       return;
@@ -1002,7 +1018,7 @@ const unpinMessage = async () => {
     <input type="file" hidden ref={imageInputRef} accept="image/*" onChange={(e) => e.target.files?.[0] && sendImage(e.target.files[0])} />
     <button
       onClick={() => imageInputRef.current?.click()}
-      disabled={isBlocked || isDeleted}
+      disabled={!canSendMessage || isBlocked || isDeleted}
       className={`w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90 ${isBlocked || isDeleted? "opacity-50 cursor-not-allowed" : ""}`}
     >
       <ImageIcon size={22} className="text-gray-600 dark:text-zinc-400" />
@@ -1010,7 +1026,7 @@ const unpinMessage = async () => {
     <input type="file" hidden ref={fileInputRef} onChange={(e) => e.target.files?.[0] && sendFile(e.target.files[0])} />
     <button
       onClick={() => fileInputRef.current?.click()}
-      disabled={isBlocked || isDeleted}
+      disabled={!canSendMessage || isBlocked || isDeleted}
       className={`w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90 ${isBlocked || isDeleted? "opacity-50 cursor-not-allowed" : ""}`}
     >
       <Paperclip size={22} className="text-gray-600 dark:text-zinc-400" />
@@ -1018,7 +1034,7 @@ const unpinMessage = async () => {
 
     <button
       onClick={sendLocation}
-      disabled={isBlocked || isDeleted}
+      disabled={!canSendMessage || isBlocked || isDeleted}
       className={`w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90 ${isBlocked || isDeleted? "opacity-50 cursor-not-allowed" : ""}`}
     >
       <MapPin size={22} className="text-gray-600 dark:text-zinc-400" />
@@ -1034,17 +1050,21 @@ const unpinMessage = async () => {
     onKeyDown={(e) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        if (!isBlocked && !isDeleted && text.trim()) sendMessage();
+        if (!canSendMessage || isBlocked || isDeleted) return;
+
+if (text.trim()) sendMessage();
       }
     }}
-    disabled={isBlocked || isDeleted}
-    placeholder={
-      isBlocked
-        ? "Bạn không thể nhắn tin"
-        : isDeleted
-        ? "Bạn đã xóa cuộc trò chuyện"
-        : "Nhắn tin..."
-    }
+    disabled={!canSendMessage || isBlocked || isDeleted}
+placeholder={
+  !canSendMessage
+    ? "Các bạn không còn là bạn bè"
+    : isBlocked
+    ? "Bạn không thể nhắn tin"
+    : isDeleted
+    ? "Bạn đã xóa cuộc trò chuyện"
+    : "Nhắn tin..."
+}
     className={`w-full px-5 py-3 bg-gray-100 dark:bg-zinc-900 rounded-3xl outline-none focus:ring-2 focus:ring-blue-500/30 text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 transition-all ${
       isBlocked || isDeleted ? "opacity-50 cursor-not-allowed" : ""
     }`}
@@ -1053,7 +1073,7 @@ const unpinMessage = async () => {
 {text.trim() ? (
   <button
     onClick={sendMessage}
-    disabled={sending || isBlocked || isDeleted}
+    disabled={sending || !canSendMessage || isBlocked || isDeleted}
     className="w-11 h-11 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full flex items-center justify-center active:scale-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/30"
   >
     {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
@@ -1064,7 +1084,7 @@ const unpinMessage = async () => {
     onMouseUp={stopRecording}
     onTouchStart={startRecording}
     onTouchEnd={stopRecording}
-    disabled={isBlocked || isDeleted}
+    disabled={!canSendMessage || isBlocked || isDeleted}
     className={`w-11 h-11 ${recording ? "bg-red-500" : "bg-gradient-to-br from-blue-500 to-indigo-600"} text-white rounded-full flex items-center justify-center active:scale-90 transition-all shadow-lg ${
       isBlocked || isDeleted ? "opacity-50 cursor-not-allowed" : ""
     }`}
