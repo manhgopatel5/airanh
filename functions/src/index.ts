@@ -1,60 +1,67 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
-import * as admin from "firebase-admin";
+const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const { initializeApp } = require("firebase-admin/app");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 
-admin.initializeApp();
-const db = admin.firestore();
+initializeApp();
+const db = getFirestore();
 
-export const acceptFriendRequest = onCall(
-  {
-    region: "asia-southeast1",
-    cors: true,
-    invoker: ["public"],
-  },
-  async (request) => {
-    if (!request.auth) {
-      throw new HttpsError("unauthenticated", "Chưa đăng nhập");
-    }
+// 1. Khi có lời mời kết bạn mới → tạo thông báo cho người nhận
+exports.onFriendRequestCreated = onDocumentCreated(
+  "friendRequests/{requestId}",
+  async (event) => {
+    const data = event.data.data();
+    const { from, to } = data;
 
-    const { fromUid, notifId } = request.data;
-    const toUid = request.auth.uid;
+    // Lấy info người gửi
+    const fromUserDoc = await db.doc(`users/${from}`).get();
+    const fromUser = fromUserDoc.data();
 
-    if (!fromUid || !notifId) {
-      throw new HttpsError("invalid-argument", "Thiếu fromUid hoặc notifId");
-    }
+    // Tạo notification cho người nhận
+    await db.collection(`notifications/${to}/items`).add({
+      type: "friend_request",
+      fromUid: from,
+      fromName: fromUser.name || "Người dùng",
+      fromAvatar: fromUser.avatar || "",
+      title: "Lời mời kết bạn",
+      message: "đã gửi lời mời kết bạn",
+      actionData: { requesterId: from },
+      read: false,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+  }
+);
 
-    const batch = db.batch();
+// 2. Khi lời mời được chấp nhận → tạo thông báo cho người gửi lời mời
+exports.onFriendAccepted = onDocumentCreated(
+  "users/{userId}/friends/{friendId}",
+  async (event) => {
+    const userId = event.params.userId; // Người vừa accept
+    const friendId = event.params.friendId; // Người gửi lời mời ban đầu
+
+    // Check xem friendId có gửi lời mời cho userId không
+    const requestId = `${friendId}_${userId}`;
+    const requestDoc = await db.doc(`friendRequests/${requestId}`).get();
     
-    // 1. Tạo friend 2 chiều - dùng set + merge để không lỗi nếu đã tồn tại
-    const friendRef1 = db.doc(`users/${toUid}/friends/${fromUid}`);
-    const friendRef2 = db.doc(`users/${fromUid}/friends/${toUid}`);
-    
-    batch.set(friendRef1, { 
-      createdAt: admin.firestore.FieldValue.serverTimestamp() 
-    }, { merge: true });
-    
-    batch.set(friendRef2, { 
-      createdAt: admin.firestore.FieldValue.serverTimestamp() 
-    }, { merge: true });
+    if (!requestDoc.exists) return; // Không phải accept từ lời mời
 
-    // 2. Xóa notification + friendRequest
-    const notifRef = db.doc(`notifications/${toUid}/items/${notifId}`);
-    const requestRef = db.doc(`friendRequests/${fromUid}_${toUid}`);
-    batch.delete(notifRef);
-    batch.delete(requestRef);
+    // Lấy info người accept
+    const userDoc = await db.doc(`users/${userId}`).get();
+    const userData = userDoc.data();
 
-    // 3. RESET CHAT: XÓA blockedUsers + deletedFor để chat lại bình thường
-    const chatId = [fromUid, toUid].sort().join("_");
-    const chatRef = db.doc(`chats/${chatId}`);
-    batch.set(chatRef, {
-      members: [fromUid, toUid].sort(),
-      isGroup: false,
-      blockedUsers: [], // Đổi từ blockedBy
-      deletedFor: [], // Đổi từ deletedBy
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
+    // Tạo notification cho người gửi lời mời ban đầu
+    await db.collection(`notifications/${friendId}/items`).add({
+      type: "friend_accepted",
+      fromUid: userId,
+      fromName: userData.name || "Người dùng",
+      fromAvatar: userData.avatar || "",
+      title: "Đã chấp nhận kết bạn",
+      message: "đã chấp nhận lời mời kết bạn của bạn",
+      actionData: { chatId: [userId, friendId].sort().join("_") },
+      read: false,
+      createdAt: FieldValue.serverTimestamp(),
+    });
 
-    await batch.commit();
-    return { chatId };
+    // Xóa document friendRequests sau khi accept
+    await db.doc(`friendRequests/${requestId}`).delete();
   }
 );
