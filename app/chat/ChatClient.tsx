@@ -345,7 +345,7 @@ useEffect(() => {
       isTyping: Object.entries(chatData.typing || {}).some(([userId, isTyping]) => userId !== user.uid && Boolean(isTyping)),
       isGroup: true, members: chatData.members || [], isOnline: false,
       blockedUsers: chatData.blockedUsers || [],
-      deletedFor: chatData.deletedFor || [], // Thêm dòng này
+      deletedFor: chatData.deletedFor || [],
     };
   } else {
     const userData = usersMap[raw.other || ""] || {};
@@ -356,48 +356,53 @@ useEffect(() => {
       updatedAt: chatData.updatedAt, isOnline: Boolean(userData.isOnline), unreadCount: chatData.unread?.[user.uid] || 0,
       isTyping: Boolean(raw.other && chatData.typing?.[raw.other]), isGroup: false,
       blockedUsers: chatData.blockedUsers || [],
-      deletedFor: chatData.deletedFor || [], // Thêm dòng này
+      deletedFor: chatData.deletedFor || [],
     };
   }
 });
 
-          const pinnedChats = JSON.parse(localStorage.getItem(PINNED_KEY) || "[]");
-          chatList.sort((a, b) => {
-            const aIsPinned = pinnedChats.includes(a.chatId) ? 1 : 0;
-            const bIsPinned = pinnedChats.includes(b.chatId) ? 1 : 0;
-            if (aIsPinned !== bIsPinned) return bIsPinned - aIsPinned;
-            const aTime = a.updatedAt?.seconds || 0;
-            const bTime = b.updatedAt?.seconds || 0;
-            return bTime - aTime;
-          });
+// Lọc chat đã bị user xóa
+const visibleChats = chatList.filter(chat => 
+  !chat.deletedFor?.includes(user.uid)
+);
 
-          if (isMounted) setItems(chatList);
-        } catch (error) {
-          console.error("Error processing chats:", error);
-          if (isMounted) toast.error("Lỗi tải danh sách chat");
-        } finally {
-          if (isMounted) setLoading(false);
-        }
-      }, (error) => {
-        console.error("Realtime listener error:", error);
-        if (!isMounted) return;
-        if (retryCount < MAX_RETRIES && error.code !== "permission-denied") {
-          retryCount++;
-          const delay = RETRY_DELAY * retryCount;
-          setTimeout(() => { if (isMounted) setupListener(); }, delay);
-        } else if (error.code !== "permission-denied") {
-          toast.error("Không thể kết nối realtime");
-        }
-        setLoading(false);
-      });
+const pinnedChats = JSON.parse(localStorage.getItem(PINNED_KEY) || "[]");
+visibleChats.sort((a, b) => {
+  const aIsPinned = pinnedChats.includes(a.chatId) ? 1 : 0;
+  const bIsPinned = pinnedChats.includes(b.chatId) ? 1 : 0;
+  if (aIsPinned !== bIsPinned) return bIsPinned - aIsPinned;
+  const aTime = a.updatedAt?.seconds || 0;
+  const bTime = b.updatedAt?.seconds || 0;
+  return bTime - aTime;
+});
 
-      unsubRef.current = unsubscribe;
-      return unsubscribe;
-    };
+if (isMounted) setItems(visibleChats);
+} catch (error) {
+  console.error("Error processing chats:", error);
+  if (isMounted) toast.error("Lỗi tải danh sách chat");
+} finally {
+  if (isMounted) setLoading(false);
+}
+}, (error) => {
+  console.error("Realtime listener error:", error);
+  if (!isMounted) return;
+  if (retryCount < MAX_RETRIES && error.code !== "permission-denied") {
+    retryCount++;
+    const delay = RETRY_DELAY * retryCount;
+    setTimeout(() => { if (isMounted) setupListener(); }, delay);
+  } else if (error.code !== "permission-denied") {
+    toast.error("Không thể kết nối realtime");
+  }
+  setLoading(false);
+});
 
-    const unsubscribe = setupListener();
-    return () => { isMounted = false; if (unsubscribe) unsubscribe(); };
-  }, [user?.uid, authLoading, db, isPlan]);
+unsubRef.current = unsubscribe;
+return unsubscribe;
+};
+
+const unsubscribe = setupListener();
+return () => { isMounted = false; if (unsubscribe) unsubscribe(); };
+}, [user?.uid, authLoading, db, isPlan]);
 
   const createNotification = useCallback(async (targetUid: string, notif: Omit<NotificationItem, "id" | "createdAt" | "read">) => {
     try {
