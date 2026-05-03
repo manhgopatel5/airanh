@@ -175,19 +175,32 @@ export const unfriend = onCall(
       const batch = db.batch();
 
       // 1. Xóa B khỏi danh sách bạn của A
-      const myFriendRef = db.doc(`users/${uid}/friends/${friendUid}`);
-      batch.delete(myFriendRef);
+const myFriendRef = db.doc(`users/${uid}/friends/${friendUid}`);
+
+batch.set(
+  myFriendRef,
+  {
+    status: "removed",
+    removedAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  },
+  { merge: true }
+);
 
       // 2. Check xem B có A trong friend list không rồi mới update
       const theirFriendRef = db.doc(`users/${friendUid}/friends/${uid}`);
       const theirFriendDoc = await theirFriendRef.get();
 
       if (theirFriendDoc.exists) {
-        batch.update(theirFriendRef, {
-          status: "removed",
-          removedAt: FieldValue.serverTimestamp(),
-        });
-      }
+batch.set(
+  theirFriendRef,
+  {
+    status: "removed",
+    removedAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  },
+  { merge: true }
+);
 
       // 3. Update chat: chỉ ẩn với A, B vẫn thấy nhưng không nhắn được
       const chatId = [uid, friendUid].sort().join("_");
@@ -199,7 +212,7 @@ export const unfriend = onCall(
         const userName = userDoc.data()?.name || "Người dùng";
 
         batch.update(chatRef, {
-          status: "archived",
+          status: "active",
           archivedBy: uid,
           deletedFor: FieldValue.arrayUnion(uid), // Chỉ ẩn với A
           updatedAt: FieldValue.serverTimestamp(),
