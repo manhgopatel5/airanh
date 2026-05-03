@@ -17,7 +17,7 @@ import {
   onSnapshot,
   doc,
   getDoc,
-  
+  arrayUnion,
   setDoc,
   limit,
   updateDoc,
@@ -775,22 +775,25 @@ const handleRemoveFriend = useCallback(async (friendId: string, friendName: stri
   }, [pinned, savePinned]);
 
   const handleDeleteChat = useCallback(async (chat: ChatItem): Promise<void> => {
-    if (!user?.uid) { toast.error("Chưa đăng nhập"); return; }
-    const confirmMessage = chat.isGroup ? `Bạn có chắc muốn rời nhóm "${chat.name}"?` : `Xóa cuộc trò chuyện với ${chat.name}?`;
-    if (!window.confirm(confirmMessage)) return;
-    try {
-      if (chat.isGroup) {
-        await updateDoc(doc(db, "chats", chat.chatId), { members: arrayRemove(user.uid), updatedAt: new Date() });
-        toast.success("Đã rời nhóm");
-      } else {
-        await deleteDoc(doc(db, "chats", chat.chatId));
-        toast.success("Đã xóa cuộc trò chuyện");
-      }
-    } catch (error: any) {
-      console.error("Delete chat error:", error);
-      toast.error(`Lỗi: ${error.message || "Không thể xóa"}`);
+  if (!user?.uid) { toast.error("Chưa đăng nhập"); return; }
+  const confirmMessage = chat.isGroup ? `Bạn có chắc muốn rời nhóm "${chat.name}"?` : `Xóa cuộc trò chuyện với ${chat.name}?`;
+  if (!window.confirm(confirmMessage)) return;
+  try {
+    if (chat.isGroup) {
+      await updateDoc(doc(db, "chats", chat.chatId), { members: arrayRemove(user.uid), updatedAt: new Date() });
+      toast.success("Đã rời nhóm");
+    } else {
+      await updateDoc(doc(db, "chats", chat.chatId), { 
+        deletedFor: arrayUnion(user.uid),
+        updatedAt: new Date() 
+      }); // SỬA: updateDoc thay vì deleteDoc
+      toast.success("Đã xóa cuộc trò chuyện");
     }
-  }, [user?.uid, db]);
+  } catch (error: any) {
+    console.error("Delete chat error:", error);
+    toast.error(`Lỗi: ${error.message || "Không thể xóa"}`);
+  }
+}, [user?.uid, db]);
 
   const formatMessageTime = useCallback((timestamp?: Timestamp): string => {
     if (!timestamp?.toDate) return "";
