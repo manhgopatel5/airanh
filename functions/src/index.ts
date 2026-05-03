@@ -192,15 +192,35 @@ batch.set(
       const theirFriendDoc = await theirFriendRef.get();
 
       if (theirFriendDoc.exists) {
-batch.set(
-  theirFriendRef,
-  {
-    status: "active",
-    removedBy: uid,
-    updatedAt: FieldValue.serverTimestamp(),
-  },
-  { merge: true }
-);
+const theirFriendDoc = await theirFriendRef.get();
+
+if (theirFriendDoc.exists) {
+  const theirData = theirFriendDoc.data();
+
+  // Nếu họ đã hủy mình trước đó
+  if (theirData?.removedBy === friendUid) {
+    batch.set(
+      theirFriendRef,
+      {
+        status: "removed",
+        removedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+  } else {
+    // Chỉ một phía hủy
+    batch.set(
+      theirFriendRef,
+      {
+        status: "active",
+        removedBy: uid,
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+  }
+}
 
       // 3. Update chat: chỉ ẩn với A, B vẫn thấy nhưng không nhắn được
       const chatId = [uid, friendUid].sort().join("_");
