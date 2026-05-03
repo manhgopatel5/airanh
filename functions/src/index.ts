@@ -181,7 +181,7 @@ export const unfriend = onCall(
       // 2. Check xem B có A trong friend list không rồi mới update
       const theirFriendRef = db.doc(`users/${friendUid}/friends/${uid}`);
       const theirFriendDoc = await theirFriendRef.get();
-      
+
       if (theirFriendDoc.exists) {
         batch.update(theirFriendRef, {
           status: "removed",
@@ -189,23 +189,28 @@ export const unfriend = onCall(
         });
       }
 
-      // 3. Check chat có tồn tại không rồi mới update
+      // 3. Update chat: chỉ ẩn với A, B vẫn thấy nhưng không nhắn được
       const chatId = [uid, friendUid].sort().join("_");
       const chatRef = db.doc(`chats/${chatId}`);
       const chatDoc = await chatRef.get();
-      
+
       if (chatDoc.exists) {
+        const userDoc = await db.doc(`users/${uid}`).get();
+        const userName = userDoc.data()?.name || "Người dùng";
+
         batch.update(chatRef, {
           status: "archived",
           archivedBy: uid,
-          deletedFor: FieldValue.arrayUnion(uid),
+          deletedFor: FieldValue.arrayUnion(uid), // Chỉ ẩn với A
           updatedAt: FieldValue.serverTimestamp(),
+          lastMessage: `${userName} đã hủy kết bạn`,
+          lastSenderName: "Hệ thống",
         });
       }
 
       await batch.commit();
       return { success: true };
-      
+
     } catch (error: any) {
       console.error("unfriend error:", error);
       throw new HttpsError("internal", `Lỗi server: ${error.message}`);
