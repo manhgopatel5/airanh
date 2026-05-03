@@ -233,7 +233,17 @@ useEffect(() => {
       clearTimeout(timeout);
       try {
 const activeFriendIds = snapshot.docs
-  .filter(d => d.data()?.status !== "removed")
+  .filter(d => {
+    const data = d.data();
+
+    // vẫn là bạn bè nếu:
+    // - chưa bị remove
+    // - hoặc bị remove nhưng KHÔNG phải do mình
+    return (
+      data?.status !== "removed" ||
+      (data?.status === "active" && data?.removedBy && data.removedBy !== user.uid)
+    );
+  })
   .map(d => d.id);
 
 const removedFriendIds = snapshot.docs
