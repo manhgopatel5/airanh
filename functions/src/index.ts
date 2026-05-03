@@ -1,4 +1,4 @@
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { onDocumentCreated, onDocumentDeleted } from "firebase-functions/v2/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
@@ -34,8 +34,6 @@ export const onFriendRequestCreated = onDocumentCreated(
         read: false,
         createdAt: FieldValue.serverTimestamp(),
       });
-
-      console.log(`Created friend request notif: ${from} -> ${to}`);
     } catch (error) {
       console.error("onFriendRequestCreated error:", error);
     }
@@ -49,14 +47,14 @@ export const onFriendAccepted = onDocumentCreated(
     region: "asia-southeast1",
   },
   async (event: FirestoreEvent<QueryDocumentSnapshot | undefined>) => {
-    const userId = event.params.userId; // Người vừa accept
-    const friendId = event.params.friendId; // Người gửi lời mời ban đầu
+    const userId = event.params.userId;
+    const friendId = event.params.friendId;
 
     try {
       const requestId = `${friendId}_${userId}`;
       const requestDoc = await db.doc(`friendRequests/${requestId}`).get();
 
-      if (!requestDoc.exists) return; // Không phải accept từ lời mời
+      if (!requestDoc.exists) return;
 
       const userDoc = await db.doc(`users/${userId}`).get();
       const userData = userDoc.data();
@@ -74,8 +72,6 @@ export const onFriendAccepted = onDocumentCreated(
       });
 
       await db.doc(`friendRequests/${requestId}`).delete();
-
-      console.log(`Created friend accepted notif: ${userId} -> ${friendId}`);
     } catch (error) {
       console.error("onFriendAccepted error:", error);
     }
@@ -105,9 +101,11 @@ export const acceptFriendRequest = onCall(
 
     batch.set(db.doc(`users/${uid}/friends/${fromUid}`), {
       createdAt: FieldValue.serverTimestamp(),
+      status: "active", // Thêm status
     });
     batch.set(db.doc(`users/${fromUid}/friends/${uid}`), {
       createdAt: FieldValue.serverTimestamp(),
+      status: "active",
     });
 
     const chatId = [uid, fromUid].sort().join("_");
@@ -124,6 +122,7 @@ export const acceptFriendRequest = onCall(
       {
         members: [uid, fromUid],
         isGroup: false,
+        status: "active", // Thêm status cho chat
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
         lastMessage: "Các bạn đã là bạn bè",
@@ -145,9 +144,44 @@ export const acceptFriendRequest = onCall(
     );
 
     batch.delete(db.doc(`notifications/${uid}/items/${notifId}`));
-
     await batch.commit();
 
     return { chatId };
+  }
+);
+
+// 4. Function hủy kết bạn: A xóa B → B còn A nhưng status = "removed"
+export const unfriend = onCall(
+  { region: "asia-southeast1" },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError("unauthenticated", "Chưa đăng nhập");
+
+    const { friendUid } = request.data;
+    if (!friendUid) {
+      throw new HttpsError("invalid-argument", "Thiếu friendUid");
+    }
+
+    const batch = db.batch();
+
+    // 1. Xóa B khỏi danh sách bạn của A
+    batch.delete(db.doc(`users/${uid}/friends/${friendUid}`));
+
+    // 2. Đánh dấu A trong danh sách bạn của B là "removed"
+    batch.update(db.doc(`users/${friendUid}/friends/${uid}`), {
+      status: "removed",
+      removedAt: FieldValue.serverTimestamp(),
+    });
+
+    // 3. Đánh dấu chat là "archived" để không cho nhắn tiếp
+    const chatId = [uid, friendUid].sort().join("_");
+    batch.update(db.doc(`chats/${chatId}`), {
+      status: "archived",
+      archivedBy: uid,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    await batch.commit();
+    return { success: true };
   }
 );
