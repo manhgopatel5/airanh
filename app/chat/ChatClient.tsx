@@ -236,9 +236,6 @@ const activeFriendIds = snapshot.docs
   .filter(d => d.data()?.status !== "removed")
   .map(d => d.id);
 
-const removedFriendIds = snapshot.docs
-  .filter(d => d.data()?.status === "removed")
-  .map(d => d.id);
 const friendsData: FriendItem[] = [];
 
 
