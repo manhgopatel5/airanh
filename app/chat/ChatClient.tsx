@@ -232,8 +232,12 @@ useEffect(() => {
     async (snapshot) => {
       clearTimeout(timeout);
       try {
-        const friendIds = snapshot.docs
+const activeFriendIds = snapshot.docs
   .filter(d => d.data()?.status !== "removed")
+  .map(d => d.id);
+
+const removedFriendIds = snapshot.docs
+  .filter(d => d.data()?.status === "removed")
   .map(d => d.id);
 const friendsData: FriendItem[] = [];
 
@@ -254,14 +258,18 @@ chatsSnap.forEach((chatDoc) => {
       (id: string) => id !== user.uid
     );
 
-    if (otherUid && !friendIds.includes(otherUid)) {
-      removedUsers.add(otherUid);
-    }
+if (
+  otherUid &&
+  !activeFriendIds.includes(otherUid) &&
+  !removedFriendIds.includes(otherUid)
+) {
+  removedUsers.add(otherUid);
+}
   }
 });
 
 const allIds = [...new Set([
-  ...friendIds,
+  ...activeFriendIds,
   ...Array.from(removedUsers)
 ])];
 
@@ -277,17 +285,7 @@ for (let i = 0; i < allIds.length; i += BATCH_SIZE) {
   chunks.push(allIds.slice(i, i + BATCH_SIZE));
 }
 
-chatsSnap.forEach((chatDoc) => {
-  const data = chatDoc.data();
 
-  if (!data.isGroup && data.members?.length === 2) {
-    const otherUid = data.members.find((id: string) => id !== user.uid);
-
-    if (otherUid && !friendIds.includes(otherUid)) {
-      removedUsers.add(otherUid);
-    }
-  }
-});
         await Promise.all(
           chunks.map(async (chunk) => {
             const userDocs = await Promise.all(chunk.map(id => getDoc(doc(db, "users", id))));
