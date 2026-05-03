@@ -122,63 +122,69 @@ const isDeleted = chatData?.deletedFor?.includes(user?.uid || "");
   const chatId = idFromUrl as string;
 
   /* ================= LOAD CHAT + FRIEND ================= */
-  useEffect(() => {
-    if (!chatId) return;
-    if (authLoading) return;
-    if (!user) {
+ useEffect(() => {
+  if (!chatId) return;
+  if (authLoading) return;
+  if (!user) {
+    router.replace("/chat");
+    return;
+  }
+
+  const unsub = onSnapshot(doc(db, "chats", chatId), async (snap) => {
+    if (!snap.exists()) {
+      setLoadingFriend(false);
+      setChatData(null);
+      return;
+    }
+
+    const data = snap.data() as ChatData;
+
++ // Tự mở lại chat nếu trước đó mình đã xóa
++ if (data.deletedFor?.includes(user.uid)) {
++ await updateDoc(doc(db, "chats", chatId), {
++ deletedFor: arrayRemove(user.uid)
++ });
++ return; // Đợi snapshot mới
++ }
+
+    if (!data.members?.includes(user.uid)) {
+      toast.error("Bạn không có quyền truy cập");
       router.replace("/chat");
       return;
     }
 
-    const unsub = onSnapshot(doc(db, "chats", chatId), async (snap) => {
-      if (!snap.exists()) {
-  // Chat chưa có → không lỗi, đợi user gửi tin đầu tiên
-  // hoặc đợi trang bạn bè tạo chat trước khi push vào đây
-  setLoadingFriend(false);
-  setChatData(null);
-  return;
-}
+    const otherUid = data.members?.find((id: string) => id!== user.uid);
 
-const data = snap.data() as ChatData;
-
-if (!data.members?.includes(user.uid)) {
-  toast.error("Bạn không có quyền truy cập");
-  router.replace("/chat");
-  return;
-}
-
-      const otherUid = data.members?.find((id: string) => id!== user.uid);
-
-      if (!otherUid ||!data.membersInfo?.[otherUid]) {
-        toast.error("Không tìm thấy người dùng");
-        router.replace("/chat");
-        return;
-      }
-
-      const otherUser = data.membersInfo[otherUid];
-      const friendSnap = await getDoc(doc(db, "users", otherUid));
-      const friendData = friendSnap.data();
-
-      setFriend({
-        uid: otherUid,
-        name: otherUser.name || "User",
-        username: otherUser.username || "",
-        avatar: otherUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name)}&background=random`,
-        isOnline: friendData?.isOnline || false,
-        userId: friendData?.userId || ""
-      });
-      setFriendId(otherUid);
-      setChatData(data);
-      setLoadingFriend(false);
-    }, (error) => {
-      console.error(error);
-      toast.error("Lỗi tải thông tin");
+    if (!otherUid ||!data.membersInfo?.[otherUid]) {
+      toast.error("Không tìm thấy người dùng");
       router.replace("/chat");
-      setLoadingFriend(false);
-    });
+      return;
+    }
 
-    return () => unsub();
-  }, [chatId, user, authLoading, router, db]);
+    const otherUser = data.membersInfo[otherUid];
+    const friendSnap = await getDoc(doc(db, "users", otherUid));
+    const friendData = friendSnap.data();
+
+    setFriend({
+      uid: otherUid,
+      name: otherUser.name || "User",
+      username: otherUser.username || "",
+      avatar: otherUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name)}&background=random`,
+      isOnline: friendData?.isOnline || false,
+      userId: friendData?.userId || ""
+    });
+    setFriendId(otherUid);
+    setChatData(data);
+    setLoadingFriend(false);
+  }, (error) => {
+    console.error(error);
+    toast.error("Lỗi tải thông tin");
+    router.replace("/chat");
+    setLoadingFriend(false);
+  });
+
+  return () => unsub();
+}, [chatId, user, authLoading, router, db]);
 
   /* ================= REALTIME FRIEND STATUS ================= */
   useEffect(() => {
