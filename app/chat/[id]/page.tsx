@@ -213,7 +213,7 @@ useEffect(() => {
 
   /* ================= REALTIME MESSAGES - DUY NHẤT ================= */
 useEffect(() => {
-  if (!chatId ||!user ||!friendId) return;
+  if (!chatId || !user) return;
 
   const q = query(
     collection(db, "chats", chatId, "messages"),
@@ -227,7 +227,11 @@ useEffect(() => {
     // Đánh dấu đã xem
     snap.docs.forEach((docSnap) => {
       const msg = docSnap.data() as Message;
-      if (msg.senderId === friendId &&!msg.seenBy?.includes(user.uid)) {
+      if (
+  friendId &&
+  msg.senderId === friendId &&
+  !msg.seenBy?.includes(user.uid)
+) {
         updateDoc(doc(db, "chats", chatId, "messages", docSnap.id), {
           seenBy: arrayUnion(user.uid)
         }).catch(() => {});
