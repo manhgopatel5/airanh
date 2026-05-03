@@ -1115,12 +1115,15 @@ const filteredChats = useMemo(() => {
   </div>
 {filteredFriends.map((friend) => {
   return (
-    <div key={friend.uid} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-900/50 active:bg-gray-100 dark:active:bg-zinc-800 transition-colors">
+    <div
+  key={friend.uid}
+  className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-900/50 active:bg-gray-100 dark:active:bg-zinc-800 transition-colors"
+>
       <div className="relative flex-shrink-0">
         <img src={friend.avatar} alt={friend.name} className="w-[52px] h-[52px] rounded-full object-cover" />
         {friend.isOnline && <div className="absolute bottom-0 right-0 w-[14px] h-[14px] bg-[#30d158] rounded-full border-[2.5px] border-white dark:border-black" />}
       </div>
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 pr-2">
         <div className="flex items-baseline gap-2">
           <p className="text-[16px] font-[550] truncate">{friend.name}</p>
           {friend.isDeletedByThem && (
