@@ -122,7 +122,7 @@ const isDeleted = chatData?.deletedFor?.includes(user?.uid || "");
   const chatId = idFromUrl as string;
 
   /* ================= LOAD CHAT + FRIEND ================= */
- useEffect(() => {
+useEffect(() => {
   if (!chatId) return;
   if (authLoading) return;
   if (!user) {
@@ -137,21 +137,21 @@ const isDeleted = chatData?.deletedFor?.includes(user?.uid || "");
       return;
     }
 
-const data = snap.data() as ChatData;
+    const data = snap.data() as ChatData;
 
-// Tự mở lại chat nếu trước đó mình đã xóa
-if (data.deletedFor?.includes(user.uid)) {
-  await updateDoc(doc(db, "chats", chatId), {
-    deletedFor: arrayRemove(user.uid)
-  });
-  return; // Đợi snapshot mới
-}
+    // Tự mở lại chat nếu trước đó mình đã xóa
+    if (data.deletedFor?.includes(user.uid)) {
+      await updateDoc(doc(db, "chats", chatId), {
+        deletedFor: arrayRemove(user.uid)
+      });
+      return; // Đợi snapshot mới
+    }
 
-if (!data.members?.includes(user.uid)) {
-  toast.error("Bạn không có quyền truy cập");
-  router.replace("/chat");
-  return;
-}
+    if (!data.members?.includes(user.uid)) {
+      toast.error("Bạn không có quyền truy cập");
+      router.replace("/chat");
+      return;
+    }
 
     const otherUid = data.members?.find((id: string) => id!== user.uid);
 
@@ -165,15 +165,21 @@ if (!data.members?.includes(user.uid)) {
     const friendSnap = await getDoc(doc(db, "users", otherUid));
     const friendData = friendSnap.data();
 
+    // Check xem còn là bạn không
+    const friendDoc = await getDoc(doc(db, "users", user.uid, "friends", otherUid));
+    const isFriend = friendDoc.exists() && friendDoc.data()?.status!== "removed";
+
     setFriend({
       uid: otherUid,
       name: otherUser.name || "User",
       username: otherUser.username || "",
       avatar: otherUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name)}&background=random`,
-      isOnline: friendData?.isOnline || false,
+      isOnline: isFriend? (friendData?.isOnline || false) : false,
       userId: friendData?.userId || ""
     });
-    setFriendId(otherUid);
+
+    // Set friendId = null nếu đã unfriend để disable gửi tin
+    setFriendId(isFriend? otherUid : null);
     setChatData(data);
     setLoadingFriend(false);
   }, (error) => {
