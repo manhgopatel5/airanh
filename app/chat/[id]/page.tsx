@@ -549,17 +549,26 @@ const sendMessage = useCallback(async () => {
   };
 
   /* ================= DELETE MESSAGE ================= */
-  const deleteMessage = async (msgId: string) => {
-    if (!chatId) return;
-    if (!confirm("Xoá tin nhắn này?")) return;
+ const deleteMessage = async (msgId: string) => {
+  if (!chatId || !user) return;
+  if (isDeleted) {
+    toast.error("Không thể xóa tin nhắn trong cuộc trò chuyện đã xóa");
+    return;
+  }
+  if (!confirm("Xoá tin nhắn này?")) return;
 
-    try {
-      await deleteDoc(doc(db, "chats", chatId, "messages", msgId));
-      toast.success("Đã xoá");
-    } catch (err) {
+  try {
+    await deleteDoc(doc(db, "chats", chatId, "messages", msgId));
+    toast.success("Đã xoá");
+  } catch (err: any) {
+    console.error("Delete message error:", err);
+    if (err.code === 'permission-denied') {
+      toast.error("Bạn chỉ có thể xóa tin nhắn của mình");
+    } else {
       toast.error("Lỗi xoá tin nhắn");
     }
-  };
+  }
+};
 
   /* ================= PIN MESSAGE ================= */
 const pinMessage = async (_msgId: string) => {
@@ -1002,53 +1011,55 @@ const unpinMessage = async () => {
     >
       <MapPin size={22} className="text-gray-600 dark:text-zinc-400" />
     </button>
-    <div className="flex-1 relative">
-      <input
-        ref={inputRef}
-        value={text}
-        onChange={(e) => {
-          setText(e.target.value);
-          handleTyping();
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" &&!e.shiftKey) {
-            e.preventDefault();
-            if (!isBlocked &&!isDeleted && text.trim()) sendMessage();
-          }
-        }}
-        disabled={isBlocked || isDeleted}
-        placeholder={
-          isBlocked
-           ? "Bạn không thể nhắn tin"
-            : isDeleted
-           ? "Bạn đã xóa cuộc trò chuyện"
-            : "Nhắn tin..."
-        }
-        className={`w-full px-5 py-3 bg-gray-100 dark:bg-zinc-900 rounded-3xl outline-none focus:ring-2 focus:ring-blue-500/30 text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 transition-all ${
-          isBlocked || isDeleted? "opacity-50 cursor-not-allowed" : ""
-        }`}
-      />
-    </div>
-    {text.trim()? (
-      <button
-        onClick={sendMessage}
-        disabled={sending || isBlocked || isDeleted}
-        className="w-11 h-11 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full flex items-center justify-center active:scale-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/30"
-      >
-        {sending? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-      </button>
-    ) : (
-      <button
-        onMouseDown={startRecording}
-        onMouseUp={stopRecording}
-        onTouchStart={startRecording}
-        onTouchEnd={stopRecording}
-        disabled={isBlocked || isDeleted}
-        className={`w-11 h-11 ${recording? "bg-red-500" : "bg-gradient-to-br from-blue-500 to-indigo-600"} text-white rounded-full flex items-center justify-center active:scale-90 transition-all shadow-lg ${isBlocked || isDeleted? "opacity-50 cursor-not-allowed" : ""}`}
-      >
-        {recording? <Square size={18} /> : <Mic size={18} />}
-      </button>
-    )}
+<div className="flex-1 relative">
+  <input
+    ref={inputRef}
+    value={text}
+    onChange={(e) => {
+      setText(e.target.value);
+      handleTyping();
+    }}
+    onKeyDown={(e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        if (!isBlocked && !isDeleted && text.trim()) sendMessage();
+      }
+    }}
+    disabled={isBlocked || isDeleted}
+    placeholder={
+      isBlocked
+        ? "Bạn không thể nhắn tin"
+        : isDeleted
+        ? "Bạn đã xóa cuộc trò chuyện"
+        : "Nhắn tin..."
+    }
+    className={`w-full px-5 py-3 bg-gray-100 dark:bg-zinc-900 rounded-3xl outline-none focus:ring-2 focus:ring-blue-500/30 text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 transition-all ${
+      isBlocked || isDeleted ? "opacity-50 cursor-not-allowed" : ""
+    }`}
+  />
+</div>
+{text.trim() ? (
+  <button
+    onClick={sendMessage}
+    disabled={sending || isBlocked || isDeleted}
+    className="w-11 h-11 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full flex items-center justify-center active:scale-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/30"
+  >
+    {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+  </button>
+) : (
+  <button
+    onMouseDown={startRecording}
+    onMouseUp={stopRecording}
+    onTouchStart={startRecording}
+    onTouchEnd={stopRecording}
+    disabled={isBlocked || isDeleted}
+    className={`w-11 h-11 ${recording ? "bg-red-500" : "bg-gradient-to-br from-blue-500 to-indigo-600"} text-white rounded-full flex items-center justify-center active:scale-90 transition-all shadow-lg ${
+      isBlocked || isDeleted ? "opacity-50 cursor-not-allowed" : ""
+    }`}
+  >
+    {recording ? <Square size={18} /> : <Mic size={18} />}
+  </button>
+)}
   </div>
   {recording && (
     <div className="mt-2 flex items-center justify-center gap-2 text-red-500 text-sm font-medium">
