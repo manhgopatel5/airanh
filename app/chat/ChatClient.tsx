@@ -1325,7 +1325,7 @@ const filteredChats = useMemo(() => {
     <div id="qr-reader" className={scanMode === "camera"? "w-full h-full" : "hidden"} />
     <div id="qr-reader-file" className="hidden" />
     <button
-      onClick={stopScan}
+      onClick={() => stopScan()}
       className="absolute top-6 right-6 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center"
     >
       <FiX className="w-5 h-5 text-white" />
