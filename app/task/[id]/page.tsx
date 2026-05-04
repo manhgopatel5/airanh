@@ -136,20 +136,20 @@ export default function TaskDetailPage() {
     loadTask();
   }, [id, router]);
 
-  useEffect(() => {
-    if (!task) return;
-    const loadUsers = async () => {
-      setLoadingUsers(true);
-      const userIds = [task.userId,...applicants];
-      const uniqueIds = [...new Set(userIds)];
-      const snaps = await Promise.all(uniqueIds.map((uid) => getDoc(doc(db, "users", uid))));
-      const users = snaps.filter(s => s.exists()).map(s => ({ uid: s.id,...s.data() } as any));
-      setOwner(users.find((u) => u.uid === task.userId) || null);
-      setApplicantsData(users.filter((u) => applicants.includes(u.uid)));
-      setLoadingUsers(false);
-    };
-    loadUsers();
-  }, [task, applicants, db]);
+useEffect(() => {
+  if (!task) return;
+  const loadUsers = async () => {
+    setLoadingUsers(true);
+    const userIds = [task.userId,...(task.applicants?? [])];
+    const uniqueIds = [...new Set(userIds)];
+    const snaps = await Promise.all(uniqueIds.map((uid) => getDoc(doc(db, "users", uid))));
+    const users = snaps.filter(s => s.exists()).map(s => ({ uid: s.id,...s.data() } as UserData));
+    setOwner(users.find((u) => u.uid === task.userId) || null);
+    setApplicantsData(users.filter((u) => (task.applicants?? []).includes(u.uid)));
+    setLoadingUsers(false);
+  };
+  loadUsers();
+}, [task?.id, task?.userId, task?.applicants, db]); // ✅ Đổi dependency
 
   useEffect(() => {
     if (!task ||!isTask(task) ||!task.deadline?.seconds || task.status === "completed") return;
