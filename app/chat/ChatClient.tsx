@@ -601,34 +601,46 @@ const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<voi
 
 const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) => {
   if (!user?.uid) return;
+
   setAdding(true);
 
   try {
-    const functions = getFunctions(getApp(), "asia-southeast1"); // THÊM asia-southeast1
-    const acceptFn = httpsCallable(functions, 'acceptFriendRequest');
+    const functions = getFunctions(getApp(), "asia-southeast1");
+
+    const acceptFn = httpsCallable(functions, "acceptFriendRequest");
 
     const result = await acceptFn({
       fromUid: notif.fromUid,
-      notifId: notif.id
+      notifId: notif.id,
     });
 
-    const data = result.data as { chatId: string };
+    const data = result.data as any;
+
     toast.success(`Đã kết bạn với ${notif.fromName}`);
-    router.push(`/chat/${data.chatId}`);
+
+    // tránh safari PWA bị treo router
+    window.location.href = `/chat/${data.chatId}`;
 
   } catch (error: any) {
-    console.error(error);
-    if (error.code === 'functions/not-found') {
-      toast.error("Lời mời đã hết hạn");
-    } else if (error.code === 'functions/already-exists') {
-      toast.error("Các bạn đã là bạn bè");
+    console.error("Accept friend error:", error);
+
+    if (
+      error.code === "functions/not-found" ||
+      error.message?.includes("not-found")
+    ) {
+      toast.error("Lời mời không tồn tại");
+    } else if (
+      error.code === "functions/already-exists"
+    ) {
+      toast.error("Đã là bạn bè");
     } else {
-      toast.error("Lỗi: " + error.message);
+      toast.error(error.message || "Không thể chấp nhận");
     }
+
   } finally {
     setAdding(false);
   }
-}, [user?.uid, router]);
+}, [user?.uid]);
 
 const handleDeclineFriendRequest = useCallback(async (notif: NotificationItem) => {
   const auth = getAuth();
