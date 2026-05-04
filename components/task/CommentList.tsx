@@ -133,7 +133,6 @@ export function CommentList({
               )}
             </div>
 
-            {/* Like count nổi */}
             {c.likeCount > 0 &&!isEditing && (
               <motion.div
                 initial={{ scale: 0 }}
@@ -189,7 +188,6 @@ export function CommentList({
             </div>
           )}
 
-          {/* REPLIES */}
           <AnimatePresence>
             {displayReplies.map((r) => (
               <motion.div
@@ -208,6 +206,7 @@ export function CommentList({
                       <span className="text-[#0a84ff] font-medium">@{r.replyToUserName}</span>{" "}
                       {r.text}
                     </div>
+                  </div>
                   <div className="flex items-center gap-4 mt-1 px-3.5 text-[12px] text-zinc-500">
                     <span>{timeAgo(r.createdAt)}</span>
                   </div>
