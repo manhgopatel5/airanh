@@ -205,7 +205,7 @@ if (userSnap.empty) {
   return;
 }
 
-const friendData = userSnap.docs[0].data();
+const friendData = userSnap.docs[0]?.data();
 
     // Check xem còn là bạn không
 const myFriendDoc = await getDoc(
