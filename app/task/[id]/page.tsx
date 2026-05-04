@@ -201,7 +201,7 @@ useEffect(() => {
         photoURL: currentUser.photoURL,
       });
       toast.success("Ứng tuyển thành công!");
-      setTask(prev => prev? {...prev, applicants: [...prev.applicants, currentUser.uid] } : null);
+      setTask(prev => prev? {...prev, applicants: [...(prev.applicants || []), currentUser.uid] } : null);
     } catch (err: any) {
       toast.error(err.message || "Ứng tuyển thất bại");
     } finally {
@@ -219,7 +219,7 @@ useEffect(() => {
         applicants: arrayRemove(currentUser.uid)
       });
       toast.success("Đã hủy ứng tuyển");
-      setTask(prev => prev? {...prev, applicants: prev.applicants.filter(id => id!== currentUser.uid) } : null);
+      setTask(prev => prev? {...prev, applicants: (prev.applicants || []).filter(id => id!== currentUser.uid) } : null);
     } catch {
       toast.error("Hủy thất bại");
     } finally {
