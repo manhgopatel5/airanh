@@ -167,11 +167,15 @@ useEffect(() => {
     return () => clearInterval(interval);
   }, [task]);
 
-  useEffect(() => {
-    if (!task?.id) return;
-    const unsub = listenComments(task.id, (data) => setComments(data), { limit: 20 });
-    return () => unsub && unsub();
-  }, [task?.id]);
+useEffect(() => {
+  if (!task?.id) return;
+  setLoadingComments(true); // ✅ Thêm dòng này
+  const unsub = listenComments(task.id, (data) => {
+    setComments(data);
+    setLoadingComments(false); // ✅ Thêm dòng này
+  }, { limit: 20 });
+  return () => unsub && unsub();
+}, [task?.id]);
 
   useEffect(() => {
     if (inView && hasMoreComments &&!loadingComments && lastCommentDoc) loadMoreComments();
