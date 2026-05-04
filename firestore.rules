@@ -14,40 +14,6 @@ service cloud.firestore {
         && request.auth.uid == userId;
     }
 
-    function chatDoc(chatId) {
-      return get(
-        /databases/$(database)/documents/chats/$(chatId)
-      );
-    }
-
-    function isChatMember(chatId) {
-      return isSignedIn()
-        && request.auth.uid in chatDoc(chatId).data.members;
-    }
-
-    function isDeletedFor(chatId) {
-      return (
-        'deletedFor' in chatDoc(chatId).data
-        && request.auth.uid
-          in chatDoc(chatId).data.deletedFor
-      );
-    }
-
-    function isBlocked(chatId) {
-      return (
-        'blockedUsers' in chatDoc(chatId).data
-        && request.auth.uid
-          in chatDoc(chatId).data.blockedUsers
-      );
-    }
-
-    function isChatActive(chatId) {
-      return !(
-        'status' in chatDoc(chatId).data
-      )
-      || chatDoc(chatId).data.status == 'active';
-    }
-
     /* ================= USERS ================= */
 
     match /users/{userId} {
@@ -81,33 +47,19 @@ service cloud.firestore {
 
     match /chats/{chatId} {
 
-      // query chats realtime
-      allow list: if isSignedIn();
+      // realtime chats query
+      allow read: if isSignedIn()
+        && request.auth.uid in resource.data.members;
 
-      // mở chat
-      allow get: if isChatMember(chatId);
-
-      // tạo chat mới
+      // tạo chat
       allow create: if isSignedIn()
         && request.auth.uid
           in request.resource.data.members;
 
-      // update metadata
-      allow update: if isChatMember(chatId)
-        && request.resource.data
-          .diff(resource.data)
-          .changedKeys()
-          .hasOnly([
-            'deletedFor',
-            'updatedAt',
-            'typing',
-            'pinnedMessage',
-            'members',
-            'lastMessage',
-            'lastSenderId',
-            'lastSenderName',
-            'unread'
-          ]);
+      // update chat
+      allow update: if isSignedIn()
+        && request.auth.uid
+          in resource.data.members;
 
       allow delete: if false;
 
@@ -115,46 +67,22 @@ service cloud.firestore {
 
       match /messages/{messageId} {
 
-        // realtime messages query
-        allow get, list: if isChatMember(chatId)
-          && !isDeletedFor(chatId);
+        // realtime messages
+        allow read: if isSignedIn()
+          && request.auth.uid in get(
+            /databases/$(database)/documents/chats/$(chatId)
+          ).data.members;
 
         // gửi tin
         allow create: if isSignedIn()
           && request.auth.uid
-            == request.resource.data.senderId
-          && isChatMember(chatId)
-          && isChatActive(chatId)
-          && !isBlocked(chatId);
+            == request.resource.data.senderId;
 
-        // seen / react / edit
-        allow update: if isChatMember(chatId)
-          && (
-            (
-              resource.data.senderId
-                == request.auth.uid
-              && request.resource.data
-                .diff(resource.data)
-                .changedKeys()
-                .hasOnly([
-                  'text',
-                  'edited',
-                  'editedAt',
-                  'reactions',
-                  'seenBy'
-                ])
-            )
-            ||
-            (
-              request.resource.data
-                .diff(resource.data)
-                .changedKeys()
-                .hasOnly([
-                  'seenBy',
-                  'reactions'
-                ])
-            )
-          );
+        // seen/react/edit
+        allow update: if isSignedIn()
+          && request.auth.uid in get(
+            /databases/$(database)/documents/chats/$(chatId)
+          ).data.members;
 
         // xóa tin nhắn của mình
         allow delete: if isSignedIn()
