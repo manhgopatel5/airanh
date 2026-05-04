@@ -88,16 +88,14 @@ export default function ChatDetailPage() {
 
   const [friend, setFriend] = useState<UserData | null>(null);
   const [friendId, setFriendId] = useState<string | null>(null);
+  const [removedByThem, setRemovedByThem] = useState(false);
   const [chatData, setChatData] = useState<ChatData | null>(null);
 
 
 const isBlocked = chatData?.blockedUsers?.includes(user?.uid || "");
 const isDeleted = chatData?.deletedFor?.includes(user?.uid || "");
 const canSendMessage = !!friendId;
-const wasUnfriended =
-  !canSendMessage &&
-  !isBlocked &&
-  !isDeleted;
+const wasUnfriended = removedByThem;
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -171,8 +169,25 @@ useEffect(() => {
     const friendData = friendSnap.data();
 
     // Check xem còn là bạn không
-    const friendDoc = await getDoc(doc(db, "users", user.uid, "friends", otherUid));
-    const isFriend = friendDoc.exists() && friendDoc.data()?.status!== "removed";
+const myFriendDoc = await getDoc(
+  doc(db, "users", user.uid, "friends", otherUid)
+);
+
+const theirFriendDoc = await getDoc(
+  doc(db, "users", otherUid, "friends", user.uid)
+);
+
+const myStatus = myFriendDoc.data()?.status;
+const theirStatus = theirFriendDoc.data()?.status;
+
+const isFriend =
+  myStatus !== "removed" &&
+  theirStatus !== "removed";
+
+setRemovedByThem(
+  theirStatus === "removed" &&
+  myStatus !== "removed"
+);
 
     setFriend({
       uid: otherUid,
