@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FiChevronLeft, FiX, FiZoomIn, FiZoomOut } from "react-icons/fi";
-import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 type Props = {
