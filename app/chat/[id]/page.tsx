@@ -134,7 +134,8 @@ const wasUnfriended = removedByThem;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
+  const loadedRef = useRef(false);
+  const mimeTypeRef = useRef("audio/webm");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -147,11 +148,17 @@ useEffect(() => {
   return () => {
     if (recordingIntervalRef.current) {
       clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
     }
 
-    if (mediaRecorderRef.current?.state !== "inactive") {
-      mediaRecorderRef.current?.stop();
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
+      mediaRecorderRef.current.stop();
     }
+
+    mediaRecorderRef.current = null;
   };
 }, []);
 
@@ -175,138 +182,165 @@ useEffect(() => {
 useEffect(() => {
   if (!chatId) return;
   if (authLoading) return;
+
   if (!user) {
     router.replace("/chat");
     return;
   }
 
-  const unsub = onSnapshot(doc(db, "chats", chatId), async (snap) => {
-    if (!snap.exists()) {
-      setLoadingFriend(false);
-      setChatData(null);
-      return;
-    }
+  const unsub = onSnapshot(
+    doc(db, "chats", chatId),
+    async (snap) => {
+      if (!snap.exists()) {
+        setLoadingFriend(false);
+        setChatData(null);
+        return;
+      }
 
-    const data = snap.data() as ChatData;
+      const data = snap.data() as ChatData;
 
-    // Tự mở lại chat nếu trước đó mình đã xóa
-if (data.deletedFor?.includes(user.uid)) {
-  try {
-await updateDoc(doc(db, "chats", chatId), {
-  deletedFor: arrayRemove(user.uid)
-});
+// realtime nhẹ
 
-return;
-  } catch (e) {
-    console.error(e);
-  }
+setChatData(prev => ({
 
-  setChatData({
-    ...data,
-    deletedFor: (data.deletedFor || []).filter(id => id !== user.uid)
-  });
-}
-
-if (!data.members?.includes(user.uid)) {
-  if (redirectedRef.current) return;
-
-  redirectedRef.current = true;
-
-  toast.error("Bạn không có quyền truy cập");
-  router.replace("/chat");
-  return;
-}
-
-    const otherUid = data.members?.find((id: string) => id!== user.uid);
-
-    if (!otherUid ||!data.membersInfo?.[otherUid]) {
-      toast.error("Không tìm thấy người dùng");
-      router.replace("/chat");
-      return;
-    }
-
-    const otherUser = data.membersInfo[otherUid];
-const userQuery = query(
-  collection(db, "users"),
-  where("uid", "==", otherUid)
-);
-
-const userSnap = await getDocs(userQuery);
-
-if (userSnap.empty) {
-  toast.error("Người dùng không tồn tại");
-  router.replace("/chat");
-  return;
-}
-
-const friendData = userSnap.docs[0]!.data();
-const friendDocId = userSnap.docs[0]!.id;
-
-const currentUserQuery = query(
-  collection(db, "users"),
-  where("uid", "==", user.uid)
-);
-
-const currentUserSnap = await getDocs(currentUserQuery);
-
-if (currentUserSnap.empty) {
-  toast.error("Không tìm thấy tài khoản");
-  router.replace("/chat");
-  return;
-}
-
-const currentUserDocId = currentUserSnap.docs[0]!.id;
-
-
-    // Check xem còn là bạn không
-const myFriendDoc = await getDoc(
-  doc(db, "users", currentUserDocId, "friends", otherUid)
-);
-
-const theirFriendDoc = await getDoc(
- doc(db, "users", friendDocId, "friends", user.uid)
-);
-
-const myStatus = myFriendDoc.data()?.status;
-const theirStatus = theirFriendDoc.data()?.status;
-
-const isFriend =
-  myStatus !== "removed" &&
-  theirStatus !== "removed";
-
-setRemovedByThem(
-  theirStatus === "removed" &&
-  myStatus !== "removed"
-);
-
-    setFriend({
-      uid: otherUid,
-      name: otherUser.name || "User",
-      username: otherUser.username || "",
-      avatar: otherUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name)}&background=random`,
-      isOnline: isFriend? (friendData?.isOnline || false) : false,
-      userId: friendData?.userId || ""
-    });
-
-    // Set friendId = null nếu đã unfriend để disable gửi tin
-    setFriendId(isFriend? otherUid : null);
-    setChatData(prev => ({
   ...(prev || data),
+
   ...data,
+
   deletedFor: (data.deletedFor || []).filter(
+
     id => id !== user.uid
+
   )
+
 }));
-    setLoadingFriend(false);
-  }, (error) => {
-    console.error(error);
-    toast.error("Lỗi tải thông tin");
-    router.replace("/chat");
-    setLoadingFriend(false);
-  });
+
+// chỉ skip phần nặng
+
+const firstLoad = !loadedRef.current;
+
+      if (!firstLoad) return;
+
+      loadedRef.current = true;
+
+      // tự mở lại chat nếu đã xóa
+      if (data.deletedFor?.includes(user.uid)) {
+        try {
+          await updateDoc(doc(db, "chats", chatId), {
+            deletedFor: arrayRemove(user.uid)
+          });
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      if (!data.members?.includes(user.uid)) {
+        if (redirectedRef.current) return;
+
+        redirectedRef.current = true;
+
+        toast.error("Bạn không có quyền truy cập");
+        router.replace("/chat");
+        return;
+      }
+
+      const otherUid = data.members.find(
+        (id: string) => id !== user.uid
+      );
+
+      if (!otherUid || !data.membersInfo?.[otherUid]) {
+        toast.error("Không tìm thấy người dùng");
+        router.replace("/chat");
+        return;
+      }
+
+      const otherUser = data.membersInfo[otherUid];
+
+      // load user
+      const userQuery = query(
+        collection(db, "users"),
+        where("uid", "==", otherUid)
+      );
+
+      const userSnap = await getDocs(userQuery);
+
+      if (userSnap.empty) {
+        toast.error("Người dùng không tồn tại");
+        router.replace("/chat");
+        return;
+      }
+
+      const friendData = userSnap.docs[0]!.data();
+      const friendDocId = userSnap.docs[0]!.id;
+
+      // current user
+      const currentUserQuery = query(
+        collection(db, "users"),
+        where("uid", "==", user.uid)
+      );
+
+      const currentUserSnap = await getDocs(currentUserQuery);
+
+      if (currentUserSnap.empty) {
+        toast.error("Không tìm thấy tài khoản");
+        router.replace("/chat");
+        return;
+      }
+
+      const currentUserDocId = currentUserSnap.docs[0]!.id;
+
+      // check friend
+      const myFriendDoc = await getDoc(
+        doc(db, "users", currentUserDocId, "friends", otherUid)
+      );
+
+      const theirFriendDoc = await getDoc(
+        doc(db, "users", friendDocId, "friends", user.uid)
+      );
+
+      const myStatus = myFriendDoc.data()?.status;
+      const theirStatus = theirFriendDoc.data()?.status;
+
+      const isFriend =
+        myStatus !== "removed" &&
+        theirStatus !== "removed";
+
+      setRemovedByThem(
+        theirStatus === "removed" &&
+        myStatus !== "removed"
+      );
+
+      setFriend({
+        uid: otherUid,
+        name: otherUser.name || "User",
+        username: otherUser.username || "",
+        avatar:
+          otherUser.avatar ||
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(
+            otherUser.name
+          )}&background=random`,
+        isOnline: isFriend
+          ? (friendData?.isOnline || false)
+          : false,
+        userId: friendData?.userId || ""
+      });
+
+      setFriendId(isFriend ? otherUid : null);
+
+      setLoadingFriend(false);
+    },
+    (error) => {
+      console.error(error);
+      toast.error("Lỗi tải thông tin");
+      router.replace("/chat");
+      setLoadingFriend(false);
+    }
+  );
 
   return () => unsub();
 }, [chatId, user, authLoading, router, db]);
+
+
 
   /* ================= REALTIME FRIEND STATUS ================= */
   useEffect(() => {
@@ -348,25 +382,36 @@ useEffect(() => {
   );
 
   const unsub = onSnapshot(q, (snap) => {
-    const msgs = snap.docs.map((d) => ({ id: d.id,...d.data() } as Message));
-    setMessages(msgs); // Ghi đè toàn bộ, không append
+    const msgs = snap.docs.map(
+      (d) => ({ id: d.id, ...d.data() } as Message)
+    );
 
-    // Đánh dấu đã xem
-    snap.docs.forEach((docSnap) => {
+    setMessages(msgs);
+
+    const unseenDocs = snap.docs.filter((docSnap) => {
       const msg = docSnap.data() as Message;
-      if (
-  friendId &&
-  msg.senderId === friendId &&
-  !msg.seenBy?.includes(user.uid)
-) {
-        updateDoc(doc(db, "chats", chatId, "messages", docSnap.id), {
-          seenBy: arrayUnion(user.uid)
-        }).catch(() => {});
-      }
+
+      return (
+        friendId &&
+        msg.senderId === friendId &&
+        !msg.seenBy?.includes(user.uid)
+      );
     });
+
+    Promise.all(
+      unseenDocs.map((docSnap) =>
+        updateDoc(
+          doc(db, "chats", chatId, "messages", docSnap.id),
+          {
+            seenBy: arrayUnion(user.uid)
+          }
+        ).catch(() => {})
+      )
+    );
   });
 
   return () => unsub();
+
 }, [chatId, user, friendId, db]);
 
 useEffect(() => {
@@ -543,8 +588,14 @@ const sendMessage = useCallback(async () => {
 
 await new Promise<void>((resolve, reject) => {
   const unsubscribeUpload = uploadTask.on(
-    "state_changed",
-    undefined,
+  "state_changed",
+  (snap) => {
+    setUploadProgress(
+      Math.round(
+        (snap.bytesTransferred / snap.totalBytes) * 100
+      )
+    );
+  },
     (error) => {
       unsubscribeUpload();
       reject(error);
@@ -577,44 +628,130 @@ await new Promise<void>((resolve, reject) => {
   };
 
   /* ================= VOICE RECORDING ================= */
-  const startRecording = async () => {
+const startRecording = async () => {
   if (recording) return;
-    if (!canSendMessage) {
-  toast.error("Không thể nhắn tin");
-  return;
-}
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      const chunks: Blob[] = [];
 
-      mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-      mediaRecorder.onstop = () => {
-  mediaRecorderRef.current = null;
-        const blob = new Blob(chunks, { type: "audio/webm" });
-        setAudioBlob(blob);
-        stream.getTracks().forEach(track => track.stop());
-      };
+  if (!canSendMessage) {
+    toast.error("Không thể nhắn tin");
+    return;
+  }
 
-      mediaRecorder.start();
-      setRecording(true);
-      setRecordingTime(0);
-      recordingIntervalRef.current = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
-      }, 1000);
-    } catch (err) {
-      toast.error("Không thể truy cập microphone");
+  try {
+    if (
+      typeof window === "undefined" ||
+      !navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia
+    ) {
+      toast.error("Thiết bị không hỗ trợ ghi âm");
+      return;
     }
-  };
 
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && recording) {
-      mediaRecorderRef.current.stop();
+    if (!window.MediaRecorder) {
+      toast.error("Thiết bị không hỗ trợ MediaRecorder");
+      return;
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: true
+    });
+
+    const mimeType = MediaRecorder.isTypeSupported("audio/webm")
+      ? "audio/webm"
+      : MediaRecorder.isTypeSupported("audio/mp4")
+      ? "audio/mp4"
+      : "";
+
+    if (!mimeType) {
+      toast.error("Định dạng ghi âm không được hỗ trợ");
+      stream.getTracks().forEach(track => track.stop());
+      return;
+    }
+
+    mimeTypeRef.current = mimeType;
+
+    const mediaRecorder = new MediaRecorder(stream, {
+      mimeType
+    });
+
+    mediaRecorderRef.current = mediaRecorder;
+
+    const chunks: Blob[] = [];
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) {
+        chunks.push(e.data);
+      }
+    };
+
+    mediaRecorder.onerror = () => {
       setRecording(false);
-      if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
+      }
+
+      stream.getTracks().forEach(track => track.stop());
+
+      mediaRecorderRef.current = null;
+
+      toast.error("Lỗi ghi âm");
+    };
+
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(chunks, {
+        type: mimeTypeRef.current
+      });
+
+      if (blob.size > 0) {
+        setAudioBlob(blob);
+      }
+
+      stream.getTracks().forEach(track => track.stop());
+
+      mediaRecorderRef.current = null;
+
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
+      }
+    };
+
+    mediaRecorder.start(100);
+
+    setRecording(true);
+    setRecordingTime(0);
+
+    recordingIntervalRef.current = setInterval(() => {
+      setRecordingTime(prev => prev + 1);
+    }, 1000);
+
+  } catch (err) {
+    console.error(err);
+
+    setRecording(false);
+
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
     }
-  };
+
+    toast.error("Không thể truy cập microphone");
+  }
+};
+
+const stopRecording = () => {
+  if (mediaRecorderRef.current && recording) {
+    mediaRecorderRef.current.stop();
+
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
+
+    setRecording(false);
+  }
+};
 
 const sendVoice = async () => {
   if (!canSendMessage) {
@@ -630,13 +767,31 @@ const sendVoice = async () => {
   setUploading(true);
 
   try {
-      const storageRef = ref(storage, `chat-voice/${chatId}/${Date.now()}.webm`);
-      const uploadTask = uploadBytesResumable(storageRef, audioBlob);
+      const extension =
+  mimeTypeRef.current === "audio/mp4"
+    ? "mp4"
+    : "webm";
+
+const storageRef = ref(
+  storage,
+  `chat-voice/${chatId}/${Date.now()}.${extension}`
+);
+
+const uploadTask = uploadBytesResumable(
+  storageRef,
+  audioBlob
+);
 
 await new Promise<void>((resolve, reject) => {
   const unsubscribeUpload = uploadTask.on(
-    "state_changed",
-    undefined,
+  "state_changed",
+  (snap) => {
+    setUploadProgress(
+      Math.round(
+        (snap.bytesTransferred / snap.totalBytes) * 100
+      )
+    );
+  },
     (error) => {
       unsubscribeUpload();
       reject(error);
@@ -1350,6 +1505,10 @@ onTouchStart={(e) => {
   startRecording();
 }}
 onTouchEnd={(e) => {
+  e.preventDefault();
+  stopRecording();
+}}
+onTouchCancel={(e) => {
   e.preventDefault();
   stopRecording();
 }}
