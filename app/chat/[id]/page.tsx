@@ -203,11 +203,6 @@ useEffect(() => {
 
 setChatData(data);
 
-if (loadedRef.current) {
-  return;
-}
-
-loadedRef.current = true;
 
 
 
