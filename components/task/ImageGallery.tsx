@@ -38,12 +38,15 @@ export function ImageGallery({ open, images, initialIndex, onClose }: Props) {
   // Preload ảnh trước/sau
   useEffect(() => {
     if (!open) return;
-    const preload = (idx: number) => {
-      if (idx >= 0 && idx < images.length) {
-        const img = new Image();
-        img.src = images[idx];
-      }
-    };
+const preload = (idx: number) => {
+  if (idx >= 0 && idx < images.length) {
+    const src = images[idx];
+    if (src) {
+      const img = new Image();
+      img.src = src;
+    }
+  }
+};
     preload(currentIndex + 1);
     preload(currentIndex - 1);
   }, [currentIndex, images, open]);
