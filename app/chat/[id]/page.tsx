@@ -105,6 +105,13 @@ const wasUnfriended = removedByThem;
   const [editingMsg, setEditingMsg] = useState<Message | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [loadingFriend, setLoadingFriend] = useState(true);
+useEffect(() => {
+  const timer = setTimeout(() => {
+    setLoadingFriend(false);
+  }, 8000);
+
+  return () => clearTimeout(timer);
+}, []);
 
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
@@ -143,14 +150,22 @@ useEffect(() => {
     const data = snap.data() as ChatData;
 
     // Tự mở lại chat nếu trước đó mình đã xóa
-    if (data.deletedFor?.includes(user.uid)) {
-      await updateDoc(doc(db, "chats", chatId), {
-        deletedFor: arrayRemove(user.uid)
-      });
-      return; // Đợi snapshot mới
-    }
+if (data.deletedFor?.includes(user.uid)) {
+  try {
+    await updateDoc(doc(db, "chats", chatId), {
+      deletedFor: arrayRemove(user.uid)
+    });
+  } catch (e) {
+    console.error(e);
+  }
 
-    if (!data.members?.includes(user.uid)) {
+  setChatData({
+    ...data,
+    deletedFor: (data.deletedFor || []).filter(id => id !== user.uid)
+  });
+}
+
+if (!data.members?.includes(user.uid)) {
       toast.error("Bạn không có quyền truy cập");
       router.replace("/chat");
       return;
@@ -166,6 +181,11 @@ useEffect(() => {
 
     const otherUser = data.membersInfo[otherUid];
     const friendSnap = await getDoc(doc(db, "users", otherUid));
+if (!friendSnap.exists()) {
+  toast.error("Người dùng không tồn tại");
+  router.replace("/chat");
+  return;
+}
     const friendData = friendSnap.data();
 
     // Check xem còn là bạn không
@@ -688,9 +708,9 @@ const unpinMessage = async () => {
     );
   }
 
-  if (!friend) {
-    return (
-      <div className="h-screen flex-col items-center justify-center bg-white dark:bg-zinc-950 gap-4">
+if (!friend) {
+  return (
+    <div className="h-screen flex flex-col items-center justify-center bg-white dark:bg-zinc-950 gap-4">
         <p className="text-lg font-bold text-gray-900 dark:text-white">Không tìm thấy người dùng</p>
         <button
           onClick={() => router.replace("/chat")}
@@ -735,7 +755,7 @@ const unpinMessage = async () => {
         <div className="relative">
           <img src={friend.avatar} className="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-zinc-950 shadow-lg" alt={friend.name} />
           {friend.isOnline && (
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full ring- ring-white dark:ring-zinc-950">
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full ring-2 ring-white dark:ring-zinc-950">
               <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75" />
             </div>
           )}
@@ -943,7 +963,15 @@ const unpinMessage = async () => {
                       <button onClick={() => pinMessage(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
                         <Pin size={16} />
                       </button>
-                      <button onClick={() => { navigator.clipboard.writeText(m.text); toast.success("Đã copy"); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+                      <button
+  onClick={async () => {
+    try {
+      await navigator.clipboard.writeText(m.text || "");
+      toast.success("Đã copy");
+    } catch {
+      toast.error("Không thể copy");
+    }
+  }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
                         <Copy size={16} />
                       </button>
                     </div>
