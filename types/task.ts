@@ -299,6 +299,7 @@ export type TaskComment = {
   userAvatar: string;
   text: string; // đổi content -> text
   createdAt: Timestamp;
+  taskOwnerId?: string;
   updatedAt?: Timestamp;
   edited?: boolean;
   parentId?: string | null; // thêm null
