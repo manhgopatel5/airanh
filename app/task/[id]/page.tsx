@@ -297,15 +297,16 @@ useEffect(() => {
     }
   };
 
-  const handleDeleteComment = async (commentId: string) => {
-    if (!confirm("Xóa bình luận này?")) return;
-    try {
-      await deleteComment(task.id, commentId);
-      toast.success("Đã xóa");
-    } catch {
-      toast.error("Xóa thất bại");
-    }
-  };
+const handleDeleteComment = async (commentId: string) => {
+  if (!task?.id) return;
+  if (!confirm("Xóa bình luận này?")) return;
+  try {
+    await deleteComment(task.id, commentId);
+    toast.success("Đã xóa");
+  } catch {
+    toast.error("Xóa thất bại");
+  }
+};
 
   const handleReply = (c: TaskComment) => {
     setReplyTo(c);
