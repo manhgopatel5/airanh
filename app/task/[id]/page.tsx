@@ -17,7 +17,7 @@ import {
   deleteComment,
 } from "@/lib/taskCommentService";
 
-import type { TaskComment } from "@/lib/taskCommentService";
+import type { TaskComment } from "@/types/task";
 import { isTask, isPlan, type Task } from "@/types/task";
 import {
   FiChevronLeft,
