@@ -201,38 +201,22 @@ useEffect(() => {
 
 // realtime nhẹ
 
-setChatData(prev => ({
+setChatData(data);
 
-  ...(prev || data),
+if (loadedRef.current) {
+  return;
+}
 
-  ...data,
+loadedRef.current = true;
 
-  deletedFor: (data.deletedFor || []).filter(
 
-    id => id !== user.uid
-
-  )
-
-}));
-
-// chỉ skip phần nặng
-
-const firstLoad = !loadedRef.current;
-
-      if (!firstLoad) return;
-
-      loadedRef.current = true;
 
       // tự mở lại chat nếu đã xóa
-      if (data.deletedFor?.includes(user.uid)) {
-        try {
-          await updateDoc(doc(db, "chats", chatId), {
-            deletedFor: arrayRemove(user.uid)
-          });
-        } catch (e) {
-          console.error(e);
-        }
-      }
+if (data.deletedFor?.includes(user.uid)) {
+  updateDoc(doc(db, "chats", chatId), {
+    deletedFor: arrayRemove(user.uid)
+  }).catch(console.error);
+}
 
       if (!data.members?.includes(user.uid)) {
         if (redirectedRef.current) return;
@@ -326,8 +310,9 @@ const firstLoad = !loadedRef.current;
       });
 
       setFriendId(isFriend ? otherUid : null);
-
       setLoadingFriend(false);
+
+      
     },
     (error) => {
       console.error(error);
@@ -378,40 +363,66 @@ useEffect(() => {
 
   const q = query(
     collection(db, "chats", chatId, "messages"),
-    orderBy("createdAt", "asc"),
+    orderBy("createdAt", "asc")
   );
 
-  const unsub = onSnapshot(q, (snap) => {
-    const msgs = snap.docs.map(
-      (d) => ({ id: d.id, ...d.data() } as Message)
-    );
+  const unsub = onSnapshot(
+    q,
+    async (snap) => {
+      try {
+        const msgs = snap.docs
+          .map((d) => ({
+            id: d.id,
+            ...d.data()
+          } as Message))
+          .filter(
+            (m) =>
+              m.createdAt &&
+              typeof m.createdAt?.toDate === "function"
+          );
 
-    setMessages(msgs);
+        setMessages(msgs);
 
-    const unseenDocs = snap.docs.filter((docSnap) => {
-      const msg = docSnap.data() as Message;
+        if (!friendId) return;
 
-      return (
-        friendId &&
-        msg.senderId === friendId &&
-        !msg.seenBy?.includes(user.uid)
-      );
-    });
+        const unseenDocs = snap.docs.filter((docSnap) => {
+          const msg = docSnap.data() as Message;
 
-    Promise.all(
-      unseenDocs.map((docSnap) =>
-        updateDoc(
-          doc(db, "chats", chatId, "messages", docSnap.id),
-          {
-            seenBy: arrayUnion(user.uid)
-          }
-        ).catch(() => {})
-      )
-    );
-  });
+          return (
+            msg.createdAt &&
+            msg.senderId === friendId &&
+            !msg.seenBy?.includes(user.uid)
+          );
+        });
+
+        if (unseenDocs.length === 0) return;
+
+        await Promise.all(
+          unseenDocs.map((docSnap) =>
+            updateDoc(
+              doc(
+                db,
+                "chats",
+                chatId,
+                "messages",
+                docSnap.id
+              ),
+              {
+                seenBy: arrayUnion(user.uid)
+              }
+            ).catch(() => {})
+          )
+        );
+      } catch (err) {
+        console.error("Messages snapshot error:", err);
+      }
+    },
+    (err) => {
+      console.error("Realtime messages error:", err);
+    }
+  );
 
   return () => unsub();
-
 }, [chatId, user, friendId, db]);
 
 useEffect(() => {
