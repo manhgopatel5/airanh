@@ -5,20 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB, getFirebaseStorage } from "@/lib/firebase";
 import {
-  collection,
-  query,
-  where,
-  getDocs,
-  onSnapshot,
-  doc,
-  orderBy,
-  addDoc,
-  serverTimestamp,
-  Timestamp,
-  updateDoc,
-  deleteDoc,
-  arrayUnion,
-  arrayRemove
+  collection, query, onSnapshot, doc,
+  orderBy, addDoc, serverTimestamp, Timestamp, updateDoc, deleteDoc, arrayUnion, arrayRemove
 } from "firebase/firestore";
 import { getDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
@@ -49,13 +37,13 @@ type Reaction = {
 
 type Message = {
   id: string;
-  text?: string;
+  text: string;
   senderId: string;
   createdAt: Timestamp | null;
   seenBy?: string[];
   replyTo?: {
     id: string;
-    text?: string;
+    text: string;
     senderName: string;
   };
   image?: string;
@@ -100,19 +88,12 @@ export default function ChatDetailPage() {
 
   const [friend, setFriend] = useState<UserData | null>(null);
   const [friendId, setFriendId] = useState<string | null>(null);
-  const [removedByThem, setRemovedByThem] = useState(false);
   const [chatData, setChatData] = useState<ChatData | null>(null);
 
-const uid = user?.uid ?? "";
 
-const isDeleted = !!chatData?.deletedFor?.includes(uid);
-const isBlocked = !!chatData?.blockedUsers?.includes(uid);
-
-const canSendMessage =
-  !!friendId &&
-  !isBlocked &&
-  !isDeleted;
-const wasUnfriended = removedByThem;
+const isBlocked = chatData?.blockedUsers?.includes(user?.uid || "");
+const isDeleted = chatData?.deletedFor?.includes(user?.uid || "");
+const canSendMessage = !!friendId;
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -123,19 +104,16 @@ const wasUnfriended = removedByThem;
   const [isTyping, setIsTyping] = useState(false);
   const [loadingFriend, setLoadingFriend] = useState(true);
 
-
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [recording, setRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
-  const redirectedRef = useRef(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
- 
-  const mimeTypeRef = useRef("audio/webm");
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -144,211 +122,92 @@ const wasUnfriended = removedByThem;
 
   const chatId = idFromUrl as string;
 
-useEffect(() => {
-  return () => {
-    if (recordingIntervalRef.current) {
-      clearInterval(recordingIntervalRef.current);
-      recordingIntervalRef.current = null;
-    }
-
-    if (
-      mediaRecorderRef.current &&
-      mediaRecorderRef.current.state !== "inactive"
-    ) {
-      mediaRecorderRef.current.stop();
-    }
-
-    mediaRecorderRef.current = null;
-  };
-}, []);
-
-
-useEffect(() => {
-  const close = (e: MouseEvent) => {
-  const target = e.target as HTMLElement;
-
-  if (!target.closest("[data-emoji-picker]")) {
-    setShowEmojiPicker(null);
-  }
-};
-
-  window.addEventListener("click", close);
-
-  return () => {
-    window.removeEventListener("click", close);
-  };
-}, []);
   /* ================= LOAD CHAT + FRIEND ================= */
 useEffect(() => {
   if (!chatId) return;
   if (authLoading) return;
-
   if (!user) {
     router.replace("/chat");
     return;
   }
 
-  const unsub = onSnapshot(
-    doc(db, "chats", chatId),
-    async (snap) => {
-      if (!snap.exists()) {
-        setLoadingFriend(false);
-        setChatData(null);
-        return;
-      }
-
-      const data = snap.data() as ChatData;
-
-// realtime nhẹ
-
-setChatData(data);
-
-
-
-
-      // tự mở lại chat nếu đã xóa
-if (data.deletedFor?.includes(user.uid)) {
-  updateDoc(doc(db, "chats", chatId), {
-    deletedFor: arrayRemove(user.uid)
-  }).catch(console.error);
-}
-
-      if (!data.members?.includes(user.uid)) {
-        if (redirectedRef.current) return;
-
-        redirectedRef.current = true;
-
-        toast.error("Bạn không có quyền truy cập");
-        router.replace("/chat");
-        return;
-      }
-
-      const otherUid = data.members.find(
-        (id: string) => id !== user.uid
-      );
-
-      if (!otherUid || !data.membersInfo?.[otherUid]) {
-        toast.error("Không tìm thấy người dùng");
-        router.replace("/chat");
-        return;
-      }
-
-      const otherUser = data.membersInfo[otherUid];
-
-      // load user
-      const userQuery = query(
-        collection(db, "users"),
-        where("uid", "==", otherUid)
-      );
-
-      const userSnap = await getDocs(userQuery);
-
-      if (userSnap.empty) {
-        toast.error("Người dùng không tồn tại");
-        router.replace("/chat");
-        return;
-      }
-
-      const friendData = userSnap.docs[0]!.data();
-      const friendDocId = userSnap.docs[0]!.id;
-
-      // current user
-      const currentUserQuery = query(
-        collection(db, "users"),
-        where("uid", "==", user.uid)
-      );
-
-      const currentUserSnap = await getDocs(currentUserQuery);
-
-      if (currentUserSnap.empty) {
-        toast.error("Không tìm thấy tài khoản");
-        router.replace("/chat");
-        return;
-      }
-
-      const currentUserDocId = currentUserSnap.docs[0]!.id;
-
-      // check friend
-      const myFriendDoc = await getDoc(
-        doc(db, "users", currentUserDocId, "friends", otherUid)
-      );
-
-      const theirFriendDoc = await getDoc(
-        doc(db, "users", friendDocId, "friends", user.uid)
-      );
-
-      const myStatus = myFriendDoc.data()?.status;
-      const theirStatus = theirFriendDoc.data()?.status;
-
-      const isFriend =
-        myStatus !== "removed" &&
-        theirStatus !== "removed";
-
-      setRemovedByThem(
-        theirStatus === "removed" &&
-        myStatus !== "removed"
-      );
-
-      setFriend({
-        uid: otherUid,
-        name: otherUser.name || "User",
-        username: otherUser.username || "",
-        avatar:
-          otherUser.avatar ||
-          `https://ui-avatars.com/api/?name=${encodeURIComponent(
-            otherUser.name
-          )}&background=random`,
-        isOnline: isFriend
-          ? (friendData?.isOnline || false)
-          : false,
-        userId: friendData?.userId || ""
-      });
-
-      setFriendId(isFriend ? otherUid : null);
+  const unsub = onSnapshot(doc(db, "chats", chatId), async (snap) => {
+    if (!snap.exists()) {
       setLoadingFriend(false);
-
-      
-    },
-    (error) => {
-      console.error(error);
-      toast.error("Lỗi tải thông tin");
-      router.replace("/chat");
-      setLoadingFriend(false);
+      setChatData(null);
+      return;
     }
-  );
+
+    const data = snap.data() as ChatData;
+
+    // Tự mở lại chat nếu trước đó mình đã xóa
+    if (data.deletedFor?.includes(user.uid)) {
+      await updateDoc(doc(db, "chats", chatId), {
+        deletedFor: arrayRemove(user.uid)
+      });
+      return; // Đợi snapshot mới
+    }
+
+    if (!data.members?.includes(user.uid)) {
+      toast.error("Bạn không có quyền truy cập");
+      router.replace("/chat");
+      return;
+    }
+
+    const otherUid = data.members?.find((id: string) => id!== user.uid);
+
+    if (!otherUid ||!data.membersInfo?.[otherUid]) {
+      toast.error("Không tìm thấy người dùng");
+      router.replace("/chat");
+      return;
+    }
+
+    const otherUser = data.membersInfo[otherUid];
+    const friendSnap = await getDoc(doc(db, "users", otherUid));
+    const friendData = friendSnap.data();
+
+    // Check xem còn là bạn không
+    const friendDoc = await getDoc(doc(db, "users", user.uid, "friends", otherUid));
+    const isFriend = friendDoc.exists() && friendDoc.data()?.status!== "removed";
+
+    setFriend({
+      uid: otherUid,
+      name: otherUser.name || "User",
+      username: otherUser.username || "",
+      avatar: otherUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name)}&background=random`,
+      isOnline: isFriend? (friendData?.isOnline || false) : false,
+      userId: friendData?.userId || ""
+    });
+
+    // Set friendId = null nếu đã unfriend để disable gửi tin
+    setFriendId(isFriend? otherUid : null);
+    setChatData(data);
+    setLoadingFriend(false);
+  }, (error) => {
+    console.error(error);
+    toast.error("Lỗi tải thông tin");
+    router.replace("/chat");
+    setLoadingFriend(false);
+  });
 
   return () => unsub();
 }, [chatId, user, authLoading, router, db]);
 
-
-
   /* ================= REALTIME FRIEND STATUS ================= */
   useEffect(() => {
-  if (!friendId) return;
-
-  const q = query(
-    collection(db, "users"),
-    where("uid", "==", friendId)
-  );
-
-  const unsub = onSnapshot(q, (snap) => {
-    if (!snap.empty) {
-      const data = snap.docs[0]!.data();
-
-      setFriend(prev =>
-        prev
-          ? {
-              ...prev,
-              isOnline: data.isOnline || false,
-              lastSeen: data.lastSeen
-            }
-          : null
-      );
-    }
-  });
-
-  return () => unsub();
-}, [friendId, db]);
+    if (!friendId) return;
+    const unsub = onSnapshot(doc(db, "users", friendId), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setFriend(prev => prev? {
+         ...prev,
+          isOnline: data.isOnline || false,
+          lastSeen: data.lastSeen
+        } : null);
+      }
+    });
+    return () => unsub();
+  }, [friendId, db]);
 
 
 
@@ -358,86 +217,30 @@ useEffect(() => {
 
   const q = query(
     collection(db, "chats", chatId, "messages"),
-    orderBy("createdAt", "asc")
+    orderBy("createdAt", "asc"),
   );
 
-  const unsub = onSnapshot(
-    q,
-    async (snap) => {
-      try {
-        const msgs = snap.docs
-          .map((d) => ({
-            id: d.id,
-            ...d.data()
-          } as Message))
-          .filter(
-            (m) =>
-              m.createdAt &&
-              typeof m.createdAt?.toDate === "function"
-          );
+  const unsub = onSnapshot(q, (snap) => {
+    const msgs = snap.docs.map((d) => ({ id: d.id,...d.data() } as Message));
+    setMessages(msgs); // Ghi đè toàn bộ, không append
 
-        setMessages(msgs);
-
-        if (!friendId) return;
-
-        const unseenDocs = snap.docs.filter((docSnap) => {
-          const msg = docSnap.data() as Message;
-
-          return (
-            msg.createdAt &&
-            msg.senderId === friendId &&
-            !msg.seenBy?.includes(user.uid)
-          );
-        });
-
-        if (unseenDocs.length === 0) return;
-
-        await Promise.all(
-          unseenDocs.map((docSnap) =>
-            updateDoc(
-              doc(
-                db,
-                "chats",
-                chatId,
-                "messages",
-                docSnap.id
-              ),
-              {
-                seenBy: arrayUnion(user.uid)
-              }
-            ).catch(() => {})
-          )
-        );
-      } catch (err) {
-        console.error("Messages snapshot error:", err);
+    // Đánh dấu đã xem
+    snap.docs.forEach((docSnap) => {
+      const msg = docSnap.data() as Message;
+      if (
+  friendId &&
+  msg.senderId === friendId &&
+  !msg.seenBy?.includes(user.uid)
+) {
+        updateDoc(doc(db, "chats", chatId, "messages", docSnap.id), {
+          seenBy: arrayUnion(user.uid)
+        }).catch(() => {});
       }
-    },
-    (err) => {
-      console.error("Realtime messages error:", err);
-    }
-  );
+    });
+  });
 
   return () => unsub();
 }, [chatId, user, friendId, db]);
-
-useEffect(() => {
-  if (showSearch) return;
-
-  const container = messagesContainerRef.current;
-
-  if (!container) return;
-
-
-
-  const isNearBottom =
-    container.scrollHeight - container.scrollTop - container.clientHeight < 300;
-
-  if (isNearBottom) {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth"
-    });
-  }
-}, [messages, showSearch]);
 
   /* ================= TYPING INDICATOR ================= */
   useEffect(() => {
@@ -457,7 +260,7 @@ const handleTyping = useCallback(async () => {
 }, []);
 
 const sendMessage = useCallback(async () => {
-  if (!canSendMessage) {
+  if (!canSendMessage || isBlocked || isDeleted) {
   toast.error("Không thể nhắn tin");
   return;
 }
@@ -509,11 +312,11 @@ const sendMessage = useCallback(async () => {
   } finally {
     setSending(false);
   }
-}, [user, text, friend, chatId, sending, replyTo, editingMsg, friendId, db, chatData, canSendMessage]);
+}, [user, text, friend, chatId, sending, replyTo, editingMsg, friendId, db, chatData, isBlocked, isDeleted]);
 
   /* ================= SEND IMAGE ================= */
   const sendImage = async (file: File) => {
-    if (!canSendMessage) {
+    if (!canSendMessage || isBlocked || isDeleted) {
   toast.error("Không thể nhắn tin");
   return;
 }
@@ -574,7 +377,7 @@ const sendMessage = useCallback(async () => {
 
   /* ================= SEND FILE ================= */
   const sendFile = async (file: File) => {
-    if (!canSendMessage) {
+    if (!canSendMessage || isBlocked || isDeleted) {
   toast.error("Không thể nhắn tin");
   return;
 }
@@ -590,29 +393,8 @@ const sendMessage = useCallback(async () => {
     setUploading(true);
     try {
       const storageRef = ref(storage, `chat-files/${chatId}/${Date.now()}_${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-
-await new Promise<void>((resolve, reject) => {
-  const unsubscribeUpload = uploadTask.on(
-  "state_changed",
-  (snap) => {
-    setUploadProgress(
-      Math.round(
-        (snap.bytesTransferred / snap.totalBytes) * 100
-      )
-    );
-  },
-    (error) => {
-      unsubscribeUpload();
-      reject(error);
-    },
-    () => {
-      unsubscribeUpload();
-      resolve();
-    }
-  );
-});
-      const url = await getDownloadURL(uploadTask.snapshot.ref);
+      await uploadBytesResumable(storageRef, file);
+      const url = await getDownloadURL(storageRef);
 
       await addDoc(collection(db, "chats", chatId, "messages"), {
         senderId: user.uid,
@@ -634,181 +416,54 @@ await new Promise<void>((resolve, reject) => {
   };
 
   /* ================= VOICE RECORDING ================= */
-const startRecording = async () => {
-  if (recording) return;
+  const startRecording = async () => {
+    if (!canSendMessage || isBlocked || isDeleted) {
+  toast.error("Không thể nhắn tin");
+  return;
+}
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      const chunks: Blob[] = [];
 
-  if (!canSendMessage) {
-    toast.error("Không thể nhắn tin");
-    return;
-  }
-
-  try {
-    if (
-      typeof window === "undefined" ||
-      !navigator.mediaDevices ||
-      !navigator.mediaDevices.getUserMedia
-    ) {
-      toast.error("Thiết bị không hỗ trợ ghi âm");
-      return;
-    }
-
-    if (!window.MediaRecorder) {
-      toast.error("Thiết bị không hỗ trợ MediaRecorder");
-      return;
-    }
-
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: true
-    });
-
-    const mimeType = MediaRecorder.isTypeSupported("audio/webm")
-      ? "audio/webm"
-      : MediaRecorder.isTypeSupported("audio/mp4")
-      ? "audio/mp4"
-      : "";
-
-    if (!mimeType) {
-      toast.error("Định dạng ghi âm không được hỗ trợ");
-      stream.getTracks().forEach(track => track.stop());
-      return;
-    }
-
-    mimeTypeRef.current = mimeType;
-
-    const mediaRecorder = new MediaRecorder(stream, {
-      mimeType
-    });
-
-    mediaRecorderRef.current = mediaRecorder;
-
-    const chunks: Blob[] = [];
-
-    mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) {
-        chunks.push(e.data);
-      }
-    };
-
-    mediaRecorder.onerror = () => {
-      setRecording(false);
-
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
-        recordingIntervalRef.current = null;
-      }
-
-      stream.getTracks().forEach(track => track.stop());
-
-      mediaRecorderRef.current = null;
-
-      toast.error("Lỗi ghi âm");
-    };
-
-    mediaRecorder.onstop = () => {
-      const blob = new Blob(chunks, {
-        type: mimeTypeRef.current
-      });
-
-      if (blob.size > 0) {
+      mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: "audio/webm" });
         setAudioBlob(blob);
-      }
+        stream.getTracks().forEach(track => track.stop());
+      };
 
-      stream.getTracks().forEach(track => track.stop());
-
-      mediaRecorderRef.current = null;
-
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
-        recordingIntervalRef.current = null;
-      }
-    };
-
-    mediaRecorder.start(100);
-
-    setRecording(true);
-    setRecordingTime(0);
-
-    recordingIntervalRef.current = setInterval(() => {
-      setRecordingTime(prev => prev + 1);
-    }, 1000);
-
-  } catch (err) {
-    console.error(err);
-
-    setRecording(false);
-
-    if (recordingIntervalRef.current) {
-      clearInterval(recordingIntervalRef.current);
-      recordingIntervalRef.current = null;
+      mediaRecorder.start();
+      setRecording(true);
+      setRecordingTime(0);
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } catch (err) {
+      toast.error("Không thể truy cập microphone");
     }
+  };
 
-    toast.error("Không thể truy cập microphone");
-  }
-};
-
-const stopRecording = () => {
-  if (mediaRecorderRef.current && recording) {
-    mediaRecorderRef.current.stop();
-
-    if (recordingIntervalRef.current) {
-      clearInterval(recordingIntervalRef.current);
-      recordingIntervalRef.current = null;
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && recording) {
+      mediaRecorderRef.current.stop();
+      setRecording(false);
+      if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
     }
+  };
 
-    setRecording(false);
-  }
-};
-
-const sendVoice = async () => {
-  if (!canSendMessage) {
-    toast.error("Không thể nhắn tin");
-    return;
-  }
-
-  if (!audioBlob || !user || !chatId || !friendId || !chatData) {
-    if (!chatData) toast.error("Đang tải dữ liệu chat...");
-    return;
-  }
-
-  setUploading(true);
-
-  try {
-      const extension =
-  mimeTypeRef.current === "audio/mp4"
-    ? "mp4"
-    : "webm";
-
-const storageRef = ref(
-  storage,
-  `chat-voice/${chatId}/${Date.now()}.${extension}`
-);
-
-const uploadTask = uploadBytesResumable(
-  storageRef,
-  audioBlob
-);
-
-await new Promise<void>((resolve, reject) => {
-  const unsubscribeUpload = uploadTask.on(
-  "state_changed",
-  (snap) => {
-    setUploadProgress(
-      Math.round(
-        (snap.bytesTransferred / snap.totalBytes) * 100
-      )
-    );
-  },
-    (error) => {
-      unsubscribeUpload();
-      reject(error);
-    },
-    () => {
-      unsubscribeUpload();
-      resolve();
+  const sendVoice = async () => {
+    if (!audioBlob ||!user ||!chatId ||!friendId ||!chatData) {
+      if (!chatData) toast.error("Đang tải dữ liệu chat...");
+      return;
     }
-  );
-});
-      const url = await getDownloadURL(uploadTask.snapshot.ref);
+    setUploading(true);
+
+    try {
+      const storageRef = ref(storage, `chat-voice/${chatId}/${Date.now()}.webm`);
+      await uploadBytesResumable(storageRef, audioBlob);
+      const url = await getDownloadURL(storageRef);
 
       await addDoc(collection(db, "chats", chatId, "messages"), {
         senderId: user.uid,
@@ -833,7 +488,7 @@ await new Promise<void>((resolve, reject) => {
 
   /* ================= SEND LOCATION ================= */
   const sendLocation = async () => {
-    if (!canSendMessage) {
+    if (!canSendMessage || isBlocked || isDeleted) {
   toast.error("Không thể nhắn tin");
   return;
 }
@@ -893,11 +548,9 @@ await new Promise<void>((resolve, reject) => {
         // Remove reaction
         const newUsers = existing.users.filter(u => u!== user.uid);
         if (newUsers.length === 0) {
-const newReactions = reactions.filter(r => r.emoji !== emoji);
-
-await updateDoc(doc(db, "chats", chatId, "messages", msgId), {
-  reactions: newReactions
-});
+          await updateDoc(doc(db, "chats", chatId, "messages", msgId), {
+            reactions: arrayRemove(existing)
+          });
         } else {
           const newReactions = reactions.map(r =>
             r.emoji === emoji? {...r, users: newUsers } : r
@@ -916,17 +569,9 @@ await updateDoc(doc(db, "chats", chatId, "messages", msgId), {
             reactions: newReactions
           });
         } else {
-const newReactions = [
-  ...reactions,
-  { emoji, users: [user.uid] }
-];
-
-await updateDoc(
-  doc(db, "chats", chatId, "messages", msgId),
-  {
-    reactions: newReactions
-  }
-);
+          await updateDoc(doc(db, "chats", chatId, "messages", msgId), {
+            reactions: arrayUnion({ emoji, users: [user.uid] })
+          });
         }
       }
     } catch (err) {
@@ -976,17 +621,12 @@ const unpinMessage = async () => {
 };
 
   /* ================= FILTER SEARCH ================= */
- const filteredMessages = useMemo(() => {
-  if (!searchQuery.trim()) return messages;
-
-  return messages.filter(m =>
-    (m.text || "").toLowerCase().includes(searchQuery.toLowerCase())
-  );
-}, [messages, searchQuery]);
-
-const visibleMessages = useMemo(() => {
-  return filteredMessages.slice(-300);
-}, [filteredMessages]);
+  const filteredMessages = useMemo(() => {
+    if (!searchQuery.trim()) return messages;
+    return messages.filter(m =>
+      m.text?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [messages, searchQuery]);
 
   /* ================= SEEN AVATAR STACK ================= */
   const getSeenAvatars = (msg: Message) => {
@@ -1029,9 +669,9 @@ const visibleMessages = useMemo(() => {
     );
   }
 
-if (!friend) {
-  return (
-    <div className="h-screen flex flex-col items-center justify-center bg-white dark:bg-zinc-950 gap-4">
+  if (!friend) {
+    return (
+      <div className="h-screen flex-col items-center justify-center bg-white dark:bg-zinc-950 gap-4">
         <p className="text-lg font-bold text-gray-900 dark:text-white">Không tìm thấy người dùng</p>
         <button
           onClick={() => router.replace("/chat")}
@@ -1074,11 +714,9 @@ if (!friend) {
           <ArrowLeft size={24} className="text-gray-900 dark:text-white" />
         </button>
         <div className="relative">
-          <img
-  src={friend.avatar}
-  loading="lazy" className="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-zinc-950 shadow-lg" alt={friend.name} />
+          <img src={friend.avatar} className="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-zinc-950 shadow-lg" alt={friend.name} />
           {friend.isOnline && (
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full ring-2 ring-white dark:ring-zinc-950">
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full ring- ring-white dark:ring-zinc-950">
               <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75" />
             </div>
           )}
@@ -1129,16 +767,13 @@ if (!friend) {
       )}
 
       {/* MESSAGES */}
-   <div
-  ref={messagesContainerRef}
-  className="flex-1 overflow-y-auto px-4 py-6 space-y-0.5"
->
+   <div className="flex-1 overflow-y-auto px-4 py-6 space-y-0.5">
     
 
-       {visibleMessages.map((m, i) => {
+        {filteredMessages.map((m, i) => {
           const isMe = m.senderId === user.uid;
-      const prev = visibleMessages[i - 1];
-const next = visibleMessages[i + 1];
+          const prev = filteredMessages[i - 1];
+          const next = filteredMessages[i + 1];
           const showAvatar =!isMe && (!next || next.senderId!== m.senderId);
           const isFirstInGroup =!prev || prev.senderId!== m.senderId;
           const isLastInGroup =!next || next.senderId!== m.senderId;
@@ -1146,7 +781,7 @@ const next = visibleMessages[i + 1];
          !prev ||
             (m.createdAt &&
               prev.createdAt &&
-              m.createdAt?.toDate?.().toDateString?.()!== prev.createdAt.toDate().toDateString());
+              m.createdAt.toDate().toDateString()!== prev.createdAt.toDate().toDateString());
 
           const seenAvatars = getSeenAvatars(m);
 
@@ -1165,10 +800,7 @@ const next = visibleMessages[i + 1];
               <div className={`flex items-end gap-2 group ${isMe? "justify-end" : "justify-start"} ${isFirstInGroup? "mt-3" : ""}`}>
                 {!isMe && (
                   <div className="w-7 flex-shrink-0">
-                    {showAvatar && <img
-  src={friend.avatar}
-  loading="lazy"
-  className="w-7 h-7 rounded-full shadow-sm" alt={friend.name} />}
+                    {showAvatar && <img src={friend.avatar} className="w-7 h-7 rounded-full shadow-sm" alt={friend.name} />}
                   </div>
                 )}
                 <div className={`max-w-[75%] flex flex-col ${isMe? "items-end" : "items-start"}`}>
@@ -1180,7 +812,7 @@ const next = visibleMessages[i + 1];
                       }`}
                     >
                       <p className="font-bold text-xs">{m.replyTo.senderName}</p>
-                      <p className="truncate">{m.replyTo.text || "Tin nhắn"}</p>
+                      <p className="truncate">{m.replyTo.text}</p>
                     </button>
                   )}
 
@@ -1212,14 +844,9 @@ const next = visibleMessages[i + 1];
                         setShowEmojiPicker(m.id);
                       }}
                     >
-                      {m.image && <img
-  src={m.image}
-  loading="lazy" className="rounded-2xl max-w-full mb-1" alt="sent" />}
+                      {m.image && <img src={m.image} className="rounded-2xl max-w-full mb-1" alt="sent" />}
                       {m.file && (
-                        <a
-  href={m.file}
-  target="_blank"
-  rel="noopener noreferrer" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl">
+                        <a href={m.file} target="_blank" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl">
                           <Paperclip size={16} />
                           <span className="text-sm truncate">{m.fileName}</span>
                         </a>
@@ -1236,10 +863,9 @@ const next = visibleMessages[i + 1];
                         </div>
                       )}
 {m.location && (
-<a
-  href={`https://maps.google.com/?q=${m.location.lat},${m.location.lng}`}
-  target="_blank"
-  rel="noopener noreferrer"
+  <a
+    href={`https://maps.google.com/?q=${m.location.lat},${m.location.lng}`}
+    target="_blank"
     className="flex items-center gap-2 p-3 bg-black/10 rounded-xl"
   >
     <MapPin size={20} />
@@ -1279,11 +905,7 @@ const next = visibleMessages[i + 1];
 
                     {/* Context Menu */}
                     <div className={`absolute ${isMe? "right-0" : "left-0"} top-0 hidden group-hover:flex gap-1 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-1`}>
-                      <button
-  onClick={(e) => {
-    e.stopPropagation();
-    setShowEmojiPicker(m.id);
-  }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+                      <button onClick={() => setShowEmojiPicker(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
                         <Smile size={16} />
                       </button>
                       <button onClick={() => setReplyTo(m)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
@@ -1291,7 +913,7 @@ const next = visibleMessages[i + 1];
                       </button>
                       {isMe && (
                         <>
-                          <button onClick={() => { setEditingMsg(m); setText(m.text || ""); inputRef.current?.focus(); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+                          <button onClick={() => { setEditingMsg(m); setText(m.text); inputRef.current?.focus(); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
                             <Pencil size={16} />
                           </button>
                           <button onClick={() => deleteMessage(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded text-red-500">
@@ -1302,24 +924,14 @@ const next = visibleMessages[i + 1];
                       <button onClick={() => pinMessage(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
                         <Pin size={16} />
                       </button>
-                      <button
-  onClick={async () => {
-    try {
-      await navigator.clipboard.writeText(m.text || "");
-      toast.success("Đã copy");
-    } catch {
-      toast.error("Không thể copy");
-    }
-  }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+                      <button onClick={() => { navigator.clipboard.writeText(m.text); toast.success("Đã copy"); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
                         <Copy size={16} />
                       </button>
                     </div>
 
                     {/* Emoji Picker */}
                     {showEmojiPicker === m.id && (
-                      <div
-  data-emoji-picker
-  className="absolute bottom-full mb-2 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-2 flex gap-1 z-10">
+                      <div className="absolute bottom-full mb-2 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-2 flex gap-1 z-10">
                         {EMOJI_LIST.map(emoji => (
                           <button
                             key={emoji}
@@ -1403,53 +1015,22 @@ const next = visibleMessages[i + 1];
           </div>
         </div>
       )}
-{wasUnfriended && (
-  <div className="mx-4 mb-2 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm font-medium text-red-400">
-    Người kia đã xóa kết bạn với bạn
-  </div>
-)}
+
 {/* INPUT */}
 <div className="p-4 border-t border-gray-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-2xl">
   <div className="flex items-end gap-2">
-    <input
-  type="file"
-  hidden
-  ref={imageInputRef}
-  accept="image/*"
-  onChange={(e) => {
-    const file = e.target.files?.[0];
-
-    if (file) {
-      sendImage(file);
-    }
-
-    e.target.value = "";
-  }}
-/>
+    <input type="file" hidden ref={imageInputRef} accept="image/*" onChange={(e) => e.target.files?.[0] && sendImage(e.target.files[0])} />
     <button
       onClick={() => imageInputRef.current?.click()}
-      disabled={!canSendMessage}
+      disabled={!canSendMessage || isBlocked || isDeleted}
       className={`w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90 ${isBlocked || isDeleted? "opacity-50 cursor-not-allowed" : ""}`}
     >
       <ImageIcon size={22} className="text-gray-600 dark:text-zinc-400" />
     </button>
-    <input
-  type="file"
-  hidden
-  ref={fileInputRef}
-  onChange={(e) => {
-    const file = e.target.files?.[0];
-
-    if (file) {
-      sendFile(file);
-    }
-
-    e.target.value = "";
-  }}
-/>
+    <input type="file" hidden ref={fileInputRef} onChange={(e) => e.target.files?.[0] && sendFile(e.target.files[0])} />
     <button
       onClick={() => fileInputRef.current?.click()}
-      disabled={!canSendMessage}
+      disabled={!canSendMessage || isBlocked || isDeleted}
       className={`w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90 ${isBlocked || isDeleted? "opacity-50 cursor-not-allowed" : ""}`}
     >
       <Paperclip size={22} className="text-gray-600 dark:text-zinc-400" />
@@ -1457,15 +1038,14 @@ const next = visibleMessages[i + 1];
 
     <button
       onClick={sendLocation}
-      disabled={!canSendMessage}
+      disabled={!canSendMessage || isBlocked || isDeleted}
       className={`w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90 ${isBlocked || isDeleted? "opacity-50 cursor-not-allowed" : ""}`}
     >
       <MapPin size={22} className="text-gray-600 dark:text-zinc-400" />
     </button>
 <div className="flex-1 relative">
-<input
-  ref={inputRef}
-  autoComplete="off"
+  <input
+    ref={inputRef}
     value={text}
     onChange={(e) => {
       setText(e.target.value);
@@ -1474,21 +1054,19 @@ const next = visibleMessages[i + 1];
     onKeyDown={(e) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        if (!canSendMessage) return;
+        if (!canSendMessage || isBlocked || isDeleted) return;
 
 if (text.trim()) sendMessage();
       }
     }}
-    disabled={!canSendMessage}
+    disabled={!canSendMessage || isBlocked || isDeleted}
 placeholder={
-  wasUnfriended
-    ? "Người kia đã xóa kết bạn với bạn"
+  !canSendMessage
+    ? "Các bạn không còn là bạn bè"
     : isBlocked
     ? "Bạn không thể nhắn tin"
     : isDeleted
     ? "Bạn đã xóa cuộc trò chuyện"
-    : !friendId
-    ? "Các bạn không còn là bạn bè"
     : "Nhắn tin..."
 }
     className={`w-full px-5 py-3 bg-gray-100 dark:bg-zinc-900 rounded-3xl outline-none focus:ring-2 focus:ring-blue-500/30 text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 transition-all ${
@@ -1499,28 +1077,18 @@ placeholder={
 {text.trim() ? (
   <button
     onClick={sendMessage}
-    disabled={sending || !canSendMessage}
+    disabled={sending || !canSendMessage || isBlocked || isDeleted}
     className="w-11 h-11 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full flex items-center justify-center active:scale-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/30"
   >
     {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
   </button>
 ) : (
   <button
-onTouchStart={(e) => {
-  e.preventDefault();
-  startRecording();
-}}
-onTouchEnd={(e) => {
-  e.preventDefault();
-  stopRecording();
-}}
-onTouchCancel={(e) => {
-  e.preventDefault();
-  stopRecording();
-}}
-
-
-    disabled={!canSendMessage}
+    onMouseDown={startRecording}
+    onMouseUp={stopRecording}
+    onTouchStart={startRecording}
+    onTouchEnd={stopRecording}
+    disabled={!canSendMessage || isBlocked || isDeleted}
     className={`w-11 h-11 ${recording ? "bg-red-500" : "bg-gradient-to-br from-blue-500 to-indigo-600"} text-white rounded-full flex items-center justify-center active:scale-90 transition-all shadow-lg ${
       isBlocked || isDeleted ? "opacity-50 cursor-not-allowed" : ""
     }`}
