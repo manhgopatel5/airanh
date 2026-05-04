@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { cn } from "@/lib/utils";
 import type { TaskComment } from "@/types/task";
 
-const PRIMARY = "#0a84ff";
+
 
 type Props = {
   comment: TaskComment;
