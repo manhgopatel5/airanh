@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { FiCheck, FiX } from "react-icons/fi";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
 import { motion } from "framer-motion";
@@ -13,7 +12,7 @@ const PRIMARY = "#0a84ff";
 type Props = {
   comment: TaskComment;
   replies: TaskComment[];
-  currentUserId?: string;
+  currentUserId?: string | null | undefined; // nhận đủ 3 case
   onLike: (id: string) => void;
   onReply: (c: TaskComment) => void;
   onDelete: (id: string) => void;
