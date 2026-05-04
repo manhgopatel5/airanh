@@ -297,13 +297,17 @@ export type TaskComment = {
   userId: string;
   userName: string;
   userAvatar: string;
-  content: string;
+  text: string; // đổi content -> text
   createdAt: Timestamp;
   updatedAt?: Timestamp;
   edited?: boolean;
-  parentId?: string;
+  parentId?: string | null; // thêm null
+  replyToUserId?: string;
+  replyToUserName?: string;
   likeCount: number;
-  likes?: string[];
+  likedBy: string[]; // đổi likes -> likedBy
+  deleted?: boolean; // thêm field này
+
 };
 
 /* ================= TYPE GUARDS ================= */
