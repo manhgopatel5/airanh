@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { FiCheck, FiX } from "react-icons/fi";
+import { useState, useRef, useEffect } from "react";
+import { FiCheck, FiX, FiMoreHorizontal } from "react-icons/fi";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { UserAvatar } from "@/components/ui/UserAvatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 import type { TaskComment } from "@/types/task";
 
 const PRIMARY = "#0a84ff";
@@ -12,7 +14,7 @@ const PRIMARY = "#0a84ff";
 type Props = {
   comment: TaskComment;
   replies: TaskComment[];
-  currentUserId?: string | null | undefined; // nhận đủ 3 case
+  currentUserId?: string | null | undefined;
   onLike: (id: string) => void;
   onReply: (c: TaskComment) => void;
   onDelete: (id: string) => void;
@@ -40,98 +42,189 @@ export function CommentList({
   onCancelEdit,
   likingComments,
 }: Props) {
-  const liked = currentUserId && c.likedBy?.includes(currentUserId);
+  const liked =!!(currentUserId && c.likedBy?.includes(currentUserId));
+  const isOwnComment = currentUserId === c.userId;
   const [showAllReplies, setShowAllReplies] = useState(false);
-  const displayReplies = showAllReplies? replies : replies.slice(0, 2);
+  const editInputRef = useRef<HTMLInputElement>(null);
+
+  const displayReplies = showAllReplies? replies : replies.slice(0, 1);
+
+  useEffect(() => {
+    if (isEditing) editInputRef.current?.focus();
+  }, [isEditing]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" &&!e.shiftKey) {
+      e.preventDefault();
+      if (editText.trim()) onSaveEdit(c.id);
+    }
+    if (e.key === "Escape") onCancelEdit();
+  };
+
+  const timeAgo = (timestamp: any) => {
+    if (!timestamp?.toDate) return "";
+    const seconds = Math.floor((Date.now() - timestamp.toDate().getTime()) / 1000);
+    if (seconds < 60) return "Vừa xong";
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} phút`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)} giờ`;
+    return `${Math.floor(seconds / 86400)} ngày`;
+  };
 
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="text-[15px]"
+      className="text-[15px] group"
     >
       <div className="flex gap-2.5">
         <UserAvatar src={c.userAvatar} name={c.userName} size={32} />
+
         <div className="flex-1 min-w-0">
-          <div className="bg-[#F2F2F7] dark:bg-zinc-800 rounded-2xl px-3.5 py-2.5">
-            <div className="font-semibold text-[14px]">{c.userName}</div>
-            {isEditing? (
-              <div className="mt-1 flex gap-2">
-                <input
-                  value={editText}
-                  onChange={(e) => setEditText(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && onSaveEdit(c.id)}
-                  className="flex-1 px-2 py-1 rounded-lg bg-white dark:bg-zinc-900 text-[14px]"
-                  autoFocus
-                />
-                <button onClick={() => onSaveEdit(c.id)} className="p-1 text-[#0a84ff] hover:scale-110 transition-all">
-                  <FiCheck size={16} />
-                </button>
-                <button onClick={onCancelEdit} className="p-1 hover:scale-110 transition-all">
-                  <FiX size={16} />
-                </button>
+          <div className="relative">
+            <div className="bg-[#F2F2F7] dark:bg-zinc-800 rounded-2xl px-3.5 py-2.5">
+              <div className="flex items-center gap-1.5">
+                <div className="font-semibold text-[14px]">{c.userName}</div>
+                {c.userId === c.taskOwnerId && (
+                  <span className="text-[11px] px-1.5 py-0.5 rounded-md bg-[#0a84ff]/10 text-[#0a84ff] font-medium">
+                    Tác giả
+                  </span>
+                )}
               </div>
-            ) : (
-              <div className="break-words text-[15px] leading-relaxed mt-0.5">
-                {c.deleted? <i className="text-zinc-500">Đã xóa</i> : c.text}
-                {c.edited && <span className="text-[12px] text-zinc-500 ml-1">(đã sửa)</span>}
-              </div>
+
+              {isEditing? (
+                <div className="mt-1.5">
+                  <input
+                    ref={editInputRef}
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 text-[15px] outline-none ring-2 ring-[#0a84ff]/50"
+                    placeholder="Chỉnh sửa bình luận..."
+                  />
+                  <div className="flex gap-2 mt-2 justify-end">
+                    <button
+                      onClick={onCancelEdit}
+                      className="px-3 py-1.5 text-[13px] text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition-all active:scale-95"
+                    >
+                      Huỷ
+                    </button>
+                    <button
+                      onClick={() => onSaveEdit(c.id)}
+                      disabled={!editText.trim()}
+                      className="px-3 py-1.5 text-[13px] bg-[#0a84ff] hover:bg-[#0071e3] text-white rounded-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Lưu
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="break-words text-[15px] leading-relaxed mt-0.5 whitespace-pre-wrap">
+                  {c.deleted? (
+                    <i className="text-zinc-500">Bình luận đã bị xoá</i>
+                  ) : (
+                    <>
+                      {c.text}
+                      {c.edited && (
+                        <span className="text-[12px] text-zinc-500 ml-1.5">· đã chỉnh sửa</span>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Like count nổi */}
+            {c.likeCount > 0 &&!isEditing && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="absolute -bottom-2 -right-2 flex items-center gap-1 px-1.5 py-0.5 bg-white dark:bg-zinc-900 rounded-full shadow-md border border-zinc-200 dark:border-zinc-700"
+              >
+                <FaHeart className="text-red-500" size={11} />
+                <span className="text-[12px] font-medium tabular-nums">{c.likeCount}</span>
+              </motion.div>
             )}
           </div>
 
           {!c.deleted &&!isEditing && (
-            <div className="flex gap-4 mt-1.5 text-[13px] text-zinc-500 px-3.5">
+            <div className="flex items-center gap-4 mt-1.5 px-3.5 text-[13px] text-zinc-500">
+              <span>{timeAgo(c.createdAt)}</span>
               <button
                 onClick={() => onLike(c.id)}
                 disabled={likingComments.has(c.id)}
-                className="flex items-center gap-1.5 hover:text-red-500 active:scale-90 transition-all disabled:opacity-50"
+                className={cn(
+                  "font-semibold hover:underline active:scale-95 transition-all disabled:opacity-50",
+                  liked && "text-red-500"
+                )}
               >
-                {liked? <FaHeart className="text-red-500" size={13} /> : <FaRegHeart size={13} />}
-                <span className="tabular-nums">{c.likeCount || ""}</span>
+                {liked? "Đã thích" : "Thích"}
               </button>
-              <button onClick={() => onReply(c)} className="hover:text-[#0a84ff] active:scale-90 transition-all">
+              <button
+                onClick={() => onReply(c)}
+                className="font-semibold hover:underline active:scale-95 transition-all"
+              >
                 Trả lời
               </button>
-              {currentUserId === c.userId && (
-                <>
-                  <button onClick={() => onEdit(c.id)} className="hover:text-[#0a84ff] active:scale-90 transition-all">
-                    Sửa
-                  </button>
-                  <button onClick={() => onDelete(c.id)} className="hover:text-red-500 active:scale-90 transition-all">
-                    Xóa
-                  </button>
-                </>
+
+              {isOwnComment && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="opacity-0 group-hover:opacity-100 p-1 -m-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-full transition-all active:scale-90">
+                      <FiMoreHorizontal size={16} />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="rounded-xl">
+                    <DropdownMenuItem onClick={() => onEdit(c.id)}>
+                      Chỉnh sửa
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onDelete(c.id)}
+                      className="text-red-500 focus:text-red-500"
+                    >
+                      Xoá
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </div>
           )}
 
           {/* REPLIES */}
-          {displayReplies.map((r) => (
-            <motion.div
-              key={r.id}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex gap-2.5 mt-3 ml-4"
-            >
-              <UserAvatar src={r.userAvatar} name={r.userName} size={28} />
-              <div className="flex-1 min-w-0">
-                <div className="bg-[#F2F2F7] dark:bg-zinc-800 rounded-2xl px-3.5 py-2.5">
-                  <div className="font-semibold text-[13px]">{r.userName}</div>
-                  <div className="text-[14px] leading-relaxed mt-0.5">
-                    <span className={`text-[${PRIMARY}] font-medium`}>@{r.replyToUserName}</span> {r.text}
+          <AnimatePresence>
+            {displayReplies.map((r) => (
+              <motion.div
+                key={r.id}
+                layout
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="flex gap-2.5 mt-3"
+              >
+                <UserAvatar src={r.userAvatar} name={r.userName} size={28} />
+                <div className="flex-1 min-w-0">
+                  <div className="bg-[#F2F2F7] dark:bg-zinc-800 rounded-2xl px-3.5 py-2.5">
+                    <div className="font-semibold text-[13px]">{r.userName}</div>
+                    <div className="text-[14px] leading-relaxed mt-0.5 whitespace-pre-wrap">
+                      <span className="text-[#0a84ff] font-medium">@{r.replyToUserName}</span>{" "}
+                      {r.text}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 mt-1 px-3.5 text-[12px] text-zinc-500">
+                    <span>{timeAgo(r.createdAt)}</span>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))}
+          </AnimatePresence>
 
-          {replies.length > 2 &&!showAllReplies && (
+          {replies.length > 1 &&!showAllReplies && (
             <button
               onClick={() => setShowAllReplies(true)}
-              className="ml-4 mt-2 text-[13px] text-zinc-500 hover:text-[#0a84ff] transition-colors"
+              className="mt-2 text-[13px] font-semibold text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
             >
-              Xem {replies.length - 2} phản hồi khác
+              — Xem {replies.length - 1} câu trả lời khác
             </button>
           )}
         </div>
