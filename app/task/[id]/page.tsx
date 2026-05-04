@@ -421,12 +421,25 @@ const handleDeleteComment = async (commentId: string) => {
     </span>
   </div>
 )}
-          {task.budget && (
-            <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
-              <FiDollarSign size={18} className="text-zinc-400" />
-              <span className="font-medium text-zinc-900 dark:text-zinc-100 tabular-nums">{task.budget.toLocaleString("vi-VN")}đ</span>
-            </div>
-          )}
+{isTask(task) && task.price > 0 && (
+  <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
+    <FiDollarSign size={18} className="text-zinc-400" />
+    <span className="font-medium text-zinc-900 dark:text-zinc-100 tabular-nums">
+      {task.price.toLocaleString("vi-VN")} {task.currency || "đ"}
+    </span>
+  </div>
+)}
+
+{isPlan(task) && task.costAmount && task.costType !== "free" && (
+  <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
+    <FiDollarSign size={18} className="text-zinc-400" />
+    <span className="font-medium text-zinc-900 dark:text-zinc-100">
+      {task.costType === "share" ? "Chia sẻ: " : "Chủ chi: "}
+      {task.costAmount.toLocaleString("vi-VN")}đ
+      {task.costDescription && ` - ${task.costDescription}`}
+    </span>
+  </div>
+)}
           <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
             <FiUsers size={18} className="text-zinc-400" />
             <span>{applicants.length}/{task && isTask(task)? task.totalSlots : 1} người ứng tuyển</span>
