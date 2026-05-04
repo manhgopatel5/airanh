@@ -509,25 +509,39 @@ useEffect(() => {
             </div>
           )}
           <div className="flex gap-2 items-end relative">
-            <Popover open={showMention} onOpenChange={setShowMention}>
-              <PopoverTrigger asChild>
-                <input ref={inputRef} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSendComment()} placeholder="Viết bình luận..." className="flex-1 px-4 py-2.5 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 outline-none text-[15px] focus:ring-2 focus:ring-[#0a84ff]/20 transition-all" disabled={sending} />
-              </PopoverTrigger>
-              <PopoverContent className="w-64 p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Tìm người..." value={mentionQuery} onValueChange={setMentionQuery} />
-                  <CommandEmpty>Không tìm thấy</CommandEmpty>
-                  <CommandGroup>
-                    {mentionUsers.map((user) => (
-                      <CommandItem key={user.uid} onSelect={() => handleSelectMention(user)} className="flex items-center gap-2">
-                        <UserAvatar src={user.avatar} name={user.name} size={24} />
-                        <span>{user.name}</span>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </Command>
-              </PopoverContent>
-            </Popover>
+           <div className="flex-1 relative">
+  <input
+    ref={inputRef}
+    value={text}
+    onChange={(e) => setText(e.target.value)}
+    onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSendComment()}
+    placeholder="Viết bình luận..."
+    className="w-full px-4 py-2.5 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 outline-none text-[15px] focus:ring-2 focus:ring-[#0a84ff]/20 transition-all"
+    disabled={sending}
+  />
+  {showMention && mentionUsers.length > 0 && (
+    <div className="absolute bottom-12 left-0 w-64 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-[#E5E5EA] dark:border-zinc-800 max-h-60 overflow-auto z-50">
+      <div className="p-2">
+        <input
+          placeholder="Tìm người..."
+          value={mentionQuery}
+          onChange={(e) => setMentionQuery(e.target.value)}
+          className="w-full px-3 py-1.5 text-[14px] bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg outline-none mb-2"
+        />
+        {mentionUsers.map((user) => (
+          <button
+            key={user.uid}
+            onClick={() => handleSelectMention(user)}
+            className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#F2F2F7] dark:hover:bg-zinc-800 rounded-lg text-left"
+          >
+            <UserAvatar src={user.avatar} name={user.name} size={24} />
+            <span className="text-[15px]">{user.name}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )}
+</div>
             <motion.button whileTap={{ scale: 0.9 }} onClick={handleSendComment} disabled={!text.trim() || sending} className={`p-2.5 rounded-full bg-[${PRIMARY}] hover:bg-[#0071e3] text-white disabled:bg-zinc-300 dark:disabled:bg-zinc-700 disabled:cursor-not-allowed active:scale-90 transition-all`}>
               <FiSend size={18} />
             </motion.button>
