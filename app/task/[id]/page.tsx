@@ -169,7 +169,6 @@ useEffect(() => {
   if (!task?.id) return;
   const unsub = listenComments(task.id, (data) => {
     setComments(data);
-    setHasMoreComments(data.length >= 20);
   }, { limit: 20 });
   return () => unsub && unsub();
 }, [task?.id]);
