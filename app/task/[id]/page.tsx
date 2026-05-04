@@ -18,7 +18,7 @@ import {
 } from "@/lib/taskCommentService";
 
 import type { TaskComment } from "@/lib/taskCommentService";
-import { isTask, isPlan, type Task, type TaskItem, type PlanItem } from "@/types/task";
+import { isTask, isPlan, type Task } from "@/types/task";
 import {
   FiChevronLeft,
   FiSend,
