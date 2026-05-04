@@ -1,18 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Geist } from "next/font/google";
+import { Geist } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
 import { AuthProvider } from "@/lib/AuthContext";
 import EmailGuard from "@/components/EmailGuard";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
-
-const inter = Inter({
-  subsets: ["latin", "vietnamese"],
+const geist = Geist({
+  subsets: ['latin'],
+  variable: '--font-sans',
   display: "swap",
-  variable: "--font-inter",
-  weight: ['400', '500', '600', '700', '800'],
 });
 
 export const metadata: Metadata = {
@@ -72,7 +69,7 @@ export const metadata: Metadata = {
 
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default", // ← SỬA: từ "black-translucent" thành "default"
+    statusBarStyle: "default",
     title: "AIR",
     startupImage: [
       { url: "/splash-1290x2796.PNG", media: "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" },
@@ -106,8 +103,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  viewportFit: "contain", // ← SỬA: từ "cover" thành "contain"
-  themeColor: "#ffffff", // ← SỬA: để đơn giản, bỏ mảng đi
+  viewportFit: "contain",
+  themeColor: "#ffffff",
   colorScheme: "light",
 };
 
