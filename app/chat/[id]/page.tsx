@@ -5,8 +5,20 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB, getFirebaseStorage } from "@/lib/firebase";
 import {
-  collection, query, onSnapshot, doc,
-  orderBy, addDoc, serverTimestamp, Timestamp, updateDoc, deleteDoc, arrayUnion, arrayRemove
+  collection,
+  query,
+  where,
+  getDocs,
+  onSnapshot,
+  doc,
+  orderBy,
+  addDoc,
+  serverTimestamp,
+  Timestamp,
+  updateDoc,
+  deleteDoc,
+  arrayUnion,
+  arrayRemove
 } from "firebase/firestore";
 import { getDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
@@ -180,13 +192,20 @@ if (!data.members?.includes(user.uid)) {
     }
 
     const otherUser = data.membersInfo[otherUid];
-    const friendSnap = await getDoc(doc(db, "users", otherUid));
-if (!friendSnap.exists()) {
+const userQuery = query(
+  collection(db, "users"),
+  where("uid", "==", otherUid)
+);
+
+const userSnap = await getDocs(userQuery);
+
+if (userSnap.empty) {
   toast.error("Người dùng không tồn tại");
   router.replace("/chat");
   return;
 }
-    const friendData = friendSnap.data();
+
+const friendData = userSnap.docs[0].data();
 
     // Check xem còn là bạn không
 const myFriendDoc = await getDoc(
