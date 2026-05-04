@@ -22,9 +22,9 @@ import type { TaskComment } from "@/types/task";
 import { isTask, isPlan, type Task } from "@/types/task";
 import {
   FiChevronLeft, FiSend, FiClock, FiZap, FiUsers, FiX, FiShare2, FiMoreVertical,
-  FiEdit2, FiTrash2, FiMapPin, FiDollarSign, FiCheckCircle, FiAlertCircle, FiAtSign, FiMessageCircle, FiChevronRight
+  FiEdit2, FiTrash2, FiMapPin, FiDollarSign, FiCheckCircle, FiAlertCircle, 
+  FiMessageCircle, FiChevronRight
 } from "react-icons/fi";
-import { FaRegHeart, FaHeart } from "react-icons/fa";
 import DOMPurify from "isomorphic-dompurify";
 import { toast, Toaster } from "sonner";
 import Image from "next/image";
