@@ -300,7 +300,7 @@ useEffect(() => {
   const handleDeleteComment = async (commentId: string) => {
     if (!confirm("Xóa bình luận này?")) return;
     try {
-      await deleteComment(commentId);
+      await deleteComment(task.id, commentId);
       toast.success("Đã xóa");
     } catch {
       toast.error("Xóa thất bại");
