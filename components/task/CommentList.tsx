@@ -2,14 +2,12 @@
 
 import { useState, useRef, useEffect } from "react";
 import { FiMoreHorizontal } from "react-icons/fi";
-import {  FaHeart } from "react-icons/fa";
+import { FaHeart } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import type { TaskComment } from "@/types/task";
-
-
 
 type Props = {
   comment: TaskComment;
@@ -210,7 +208,6 @@ export function CommentList({
                       <span className="text-[#0a84ff] font-medium">@{r.replyToUserName}</span>{" "}
                       {r.text}
                     </div>
-                  </div>
                   <div className="flex items-center gap-4 mt-1 px-3.5 text-[12px] text-zinc-500">
                     <span>{timeAgo(r.createdAt)}</span>
                   </div>
