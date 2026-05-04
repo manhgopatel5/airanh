@@ -94,6 +94,10 @@ export default function ChatDetailPage() {
 const isBlocked = chatData?.blockedUsers?.includes(user?.uid || "");
 const isDeleted = chatData?.deletedFor?.includes(user?.uid || "");
 const canSendMessage = !!friendId;
+const wasUnfriended =
+  !canSendMessage &&
+  !isBlocked &&
+  !isDeleted;
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -1015,7 +1019,11 @@ const unpinMessage = async () => {
           </div>
         </div>
       )}
-
+{wasUnfriended && (
+  <div className="mx-4 mb-2 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm font-medium text-red-400">
+    Người kia đã xóa kết bạn với bạn
+  </div>
+)}
 {/* INPUT */}
 <div className="p-4 border-t border-gray-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-2xl">
   <div className="flex items-end gap-2">
@@ -1061,7 +1069,9 @@ if (text.trim()) sendMessage();
     }}
     disabled={!canSendMessage || isBlocked || isDeleted}
 placeholder={
-  !canSendMessage
+  wasUnfriended
+    ? "Người kia đã xóa kết bạn với bạn"
+    : !canSendMessage
     ? "Các bạn không còn là bạn bè"
     : isBlocked
     ? "Bạn không thể nhắn tin"
