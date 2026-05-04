@@ -303,6 +303,7 @@ export type TaskComment = {
   edited?: boolean;
   parentId?: string;
   likeCount: number;
+  likes?: string[];
 };
 
 /* ================= TYPE GUARDS ================= */
