@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { FiCheck, FiX, FiMoreHorizontal } from "react-icons/fi";
+import { FiX, FiMoreHorizontal } from "react-icons/fi";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserAvatar } from "@/components/ui/UserAvatar";
