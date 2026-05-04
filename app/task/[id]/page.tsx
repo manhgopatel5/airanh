@@ -23,6 +23,7 @@ import {
   FiChevronLeft,
   FiSend,
   FiClock,
+  FiZap,
   FiUsers,
   FiX,
   FiShare2,
