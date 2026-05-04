@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   src?: string | null | undefined;
-  name?: string | null;
+  name?: string | null | undefined;  // thêm undefined vào đây
   size?: number;
   className?: string;
 };
