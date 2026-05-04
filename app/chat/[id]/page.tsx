@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { getFirebaseDB, getFirebaseStorage } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
 import {
   collection, query, onSnapshot, doc,
   orderBy, addDoc, serverTimestamp, Timestamp, updateDoc, deleteDoc, arrayUnion, arrayRemove
@@ -82,8 +82,7 @@ export default function ChatDetailPage() {
   const params = useParams();
   const idFromUrl = Array.isArray(params?.id)? params.id[0] : params?.id || null;
   const router = useRouter();
-  const db = getFirebaseDB();
-  const storage = getFirebaseStorage();
+
   const { user, loading: authLoading } = useAuth();
 
   const [friend, setFriend] = useState<UserData | null>(null);
@@ -241,6 +240,11 @@ useEffect(() => {
 
   return () => unsub();
 }, [chatId, user, friendId, db]);
+
+// ✅ Auto scroll xuống cuối khi có tin mới
+useEffect(() => {
+  messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+}, [messages.length]);
 
   /* ================= TYPING INDICATOR ================= */
   useEffect(() => {
@@ -716,7 +720,7 @@ const unpinMessage = async () => {
         <div className="relative">
           <img src={friend.avatar} className="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-zinc-950 shadow-lg" alt={friend.name} />
           {friend.isOnline && (
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full ring- ring-white dark:ring-zinc-950">
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full ring-2 ring-white dark:ring-zinc-950">
               <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75" />
             </div>
           )}
