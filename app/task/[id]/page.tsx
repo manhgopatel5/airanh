@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
-import { doc, getDoc, updateDoc, deleteDoc, arrayRemove, Timestamp, query, collection, orderBy, limit, startAfter, getDocs, where } from "firebase/firestore";
+import { doc, getDoc, updateDoc, deleteDoc, arrayRemove, Timestamp } from "firebase/firestore";
 import {
   getTaskBySlug,
   joinTask,
