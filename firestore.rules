@@ -1,84 +1,184 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isSignedIn() { return request.auth != null; }
-    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function chatDoc(chatId) {
+      return get(/databases/$(database)/documents/chats/$(chatId));
+    }
+
+    function isChatMember(chatId) {
+      return isSignedIn()
+        && request.auth.uid in chatDoc(chatId).data.members;
+    }
+
+    function isDeletedFor(chatId) {
+      return 'deletedFor' in chatDoc(chatId).data
+        && request.auth.uid in chatDoc(chatId).data.deletedFor;
+    }
+
+    function isBlocked(chatId) {
+      return 'blockedUsers' in chatDoc(chatId).data
+        && request.auth.uid in chatDoc(chatId).data.blockedUsers;
+    }
+
+    function isChatActive(chatId) {
+      return !('status' in chatDoc(chatId).data)
+        || chatDoc(chatId).data.status == 'active';
+    }
+
+    /* ================= USERS ================= */
 
     match /users/{userId} {
+
       allow read: if isSignedIn();
+
       allow write: if isOwner(userId);
 
       match /friends/{friendId} {
+
         allow read: if isOwner(userId);
+
         allow create: if false;
-        allow update: if isSignedIn() 
-          && request.resource.data.diff(resource.data).changedKeys().hasOnly(['status', 'removedAt', 'updatedAt']);
+
+        allow update: if isSignedIn()
+          && request.resource.data.diff(resource.data)
+            .changedKeys()
+            .hasOnly([
+              'status',
+              'removedAt',
+              'updatedAt',
+              'removedBy'
+            ]);
+
         allow delete: if isOwner(userId);
       }
     }
 
+    /* ================= CHATS ================= */
+
     match /chats/{chatId} {
-      // GET: cho phép member xem để vào chat ngay cả khi đã archived
-      allow get: if isSignedIn() && request.auth.uid in resource.data.members;
-      
-      // LIST: ẩn nếu user nằm trong deletedFor HOẶC chat không active
-      allow list: if isSignedIn() 
-        && request.auth.uid in resource.data.members
-        && !(request.auth.uid in resource.data.get('deletedFor', []))
-        && resource.data.get('status', 'active') == 'active';
-      
-      // CREATE: chỉ qua Functions
+
+      // mở chat trực tiếp
+      allow get: if isChatMember(chatId);
+
+      // list chats
+      allow list: if isChatMember(chatId)
+        && !isDeletedFor(chatId)
+        && isChatActive(chatId);
+
+      // chỉ Functions tạo
       allow create: if false;
-      
-      // UPDATE: cho update settings cá nhân HOẶC gửi tin nếu chat active + không bị block
-allow update: if isSignedIn()
-  && request.auth.uid in resource.data.members;
-      
+
+      // update chat metadata
+      allow update: if isChatMember(chatId)
+        && request.resource.data.diff(resource.data)
+          .changedKeys()
+          .hasOnly([
+            'deletedFor',
+            'updatedAt',
+            'typing',
+            'pinnedMessage',
+            'members'
+          ]);
+
       allow delete: if false;
 
+      /* ================= MESSAGES ================= */
+
       match /messages/{messageId} {
-        // READ: cho phép nếu là member và không nằm trong deletedFor
-        allow read: if isSignedIn() 
-          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members
-          && !(request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('deletedFor', []));
-        
-        // CREATE: chỉ khi chat active + là member + không bị block
+
+        // READ
+        allow read: if isChatMember(chatId)
+          && !isDeletedFor(chatId);
+
+        // CREATE
         allow create: if isSignedIn()
           && request.auth.uid == request.resource.data.senderId
-          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members
-          && get(/databases/$(database)/documents/chats/$(chatId)).data.get('status', 'active') == 'active'
-          && !(request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.get('blockedUsers', []));
-        
-        // UPDATE: chỉ update seenBy, reactions, edit tin của mình
-        allow update: if isSignedIn()
-          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members
-          && request.resource.data.diff(resource.data).changedKeys().hasOnly([
-            'seenBy', 'reactions', 'text', 'editedAt', 'edited'
-          ])
-          && (request.resource.data.senderId == request.auth.uid || request.resource.data.diff(resource.data).changedKeys().hasOnly(['seenBy', 'reactions']));
-        
-        allow delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
+          && isChatMember(chatId)
+          && isChatActive(chatId)
+          && !isBlocked(chatId);
+
+        // UPDATE
+        allow update: if isChatMember(chatId)
+          && (
+            (
+              request.resource.data.senderId == request.auth.uid
+              && request.resource.data.diff(resource.data)
+                .changedKeys()
+                .hasOnly([
+                  'text',
+                  'edited',
+                  'editedAt',
+                  'reactions',
+                  'seenBy'
+                ])
+            )
+            ||
+            (
+              request.resource.data.diff(resource.data)
+                .changedKeys()
+                .hasOnly([
+                  'seenBy',
+                  'reactions'
+                ])
+            )
+          );
+
+        // DELETE
+        allow delete: if isSignedIn()
+          && resource.data.senderId == request.auth.uid;
       }
     }
 
+    /* ================= FRIEND REQUESTS ================= */
+
     match /friendRequests/{reqId} {
-      allow read: if isSignedIn() && (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
-      allow create: if isSignedIn() && request.auth.uid == request.resource.data.from;
-      allow delete: if isSignedIn() && (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
+
+      allow read: if isSignedIn()
+        && (
+          request.auth.uid == resource.data.from
+          || request.auth.uid == resource.data.to
+        );
+
+      allow create: if isSignedIn()
+        && request.auth.uid == request.resource.data.from;
+
+      allow delete: if isSignedIn()
+        && (
+          request.auth.uid == resource.data.from
+          || request.auth.uid == resource.data.to
+        );
     }
 
+    /* ================= USERNAMES ================= */
+
     match /usernames/{username} {
+
       allow read: if true;
+
       allow write: if false;
     }
 
-    match /notifications/{userId}/items/{notifId} {
-  allow read: if isOwner(userId);
-  allow create: if isSignedIn();
-  allow delete: if isOwner(userId);
-  allow update: if isOwner(userId);
+    /* ================= NOTIFICATIONS ================= */
 
+    match /notifications/{userId}/items/{notifId} {
+
+      allow read: if isOwner(userId);
+
+      allow create: if isSignedIn();
+
+      allow update: if isOwner(userId);
+
+      allow delete: if isOwner(userId);
     }
   }
 }
