@@ -209,6 +209,7 @@ export const unfriend = onCall(
         await theirFriendRef.get();
 
       if (theirFriendDoc.exists) {
+<<<<<<< Updated upstream
         batch.set(
           theirFriendRef,
           {
@@ -219,6 +220,37 @@ export const unfriend = onCall(
           { merge: true }
         );
       }
+=======
+const theirFriendDoc = await theirFriendRef.get();
+
+if (theirFriendDoc.exists) {
+  const theirData = theirFriendDoc.data();
+
+  // Nếu họ đã hủy mình trước đó
+  if (theirData?.removedBy === friendUid) {
+    batch.set(
+      theirFriendRef,
+      {
+        status: "removed",
+        removedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+  } else {
+    // Chỉ một phía hủy
+    batch.set(
+      theirFriendRef,
+      {
+        status: "active",
+        removedBy: uid,
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+  }
+}
+>>>>>>> Stashed changes
 
       // update chat
       const chatId =
