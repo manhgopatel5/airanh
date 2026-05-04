@@ -49,13 +49,13 @@ type Reaction = {
 
 type Message = {
   id: string;
-  text: string;
+  text?: string;
   senderId: string;
   createdAt: Timestamp | null;
   seenBy?: string[];
   replyTo?: {
     id: string;
-    text: string;
+    text?: string;
     senderName: string;
   };
   image?: string;
@@ -103,10 +103,15 @@ export default function ChatDetailPage() {
   const [removedByThem, setRemovedByThem] = useState(false);
   const [chatData, setChatData] = useState<ChatData | null>(null);
 
+const uid = user?.uid ?? "";
 
-const isBlocked = chatData?.blockedUsers?.includes(user?.uid || "");
-const isDeleted = chatData?.deletedFor?.includes(user?.uid || "");
-const canSendMessage = !!friendId;
+const isDeleted = !!chatData?.deletedFor?.includes(uid);
+const isBlocked = !!chatData?.blockedUsers?.includes(uid);
+
+const canSendMessage =
+  !!friendId &&
+  !isBlocked &&
+  !isDeleted;
 const wasUnfriended = removedByThem;
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
@@ -117,13 +122,7 @@ const wasUnfriended = removedByThem;
   const [editingMsg, setEditingMsg] = useState<Message | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [loadingFriend, setLoadingFriend] = useState(true);
-useEffect(() => {
-  const timer = setTimeout(() => {
-    setLoadingFriend(false);
-  }, 8000);
 
-  return () => clearTimeout(timer);
-}, []);
 
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
@@ -131,8 +130,9 @@ useEffect(() => {
   const [recording, setRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
-
+  const redirectedRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -143,6 +143,34 @@ useEffect(() => {
 
   const chatId = idFromUrl as string;
 
+useEffect(() => {
+  return () => {
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+    }
+
+    if (mediaRecorderRef.current?.state !== "inactive") {
+      mediaRecorderRef.current?.stop();
+    }
+  };
+}, []);
+
+
+useEffect(() => {
+  const close = (e: MouseEvent) => {
+  const target = e.target as HTMLElement;
+
+  if (!target.closest("[data-emoji-picker]")) {
+    setShowEmojiPicker(null);
+  }
+};
+
+  window.addEventListener("click", close);
+
+  return () => {
+    window.removeEventListener("click", close);
+  };
+}, []);
   /* ================= LOAD CHAT + FRIEND ================= */
 useEffect(() => {
   if (!chatId) return;
@@ -164,9 +192,11 @@ useEffect(() => {
     // Tự mở lại chat nếu trước đó mình đã xóa
 if (data.deletedFor?.includes(user.uid)) {
   try {
-    await updateDoc(doc(db, "chats", chatId), {
-      deletedFor: arrayRemove(user.uid)
-    });
+await updateDoc(doc(db, "chats", chatId), {
+  deletedFor: arrayRemove(user.uid)
+});
+
+return;
   } catch (e) {
     console.error(e);
   }
@@ -178,10 +208,14 @@ if (data.deletedFor?.includes(user.uid)) {
 }
 
 if (!data.members?.includes(user.uid)) {
-      toast.error("Bạn không có quyền truy cập");
-      router.replace("/chat");
-      return;
-    }
+  if (redirectedRef.current) return;
+
+  redirectedRef.current = true;
+
+  toast.error("Bạn không có quyền truy cập");
+  router.replace("/chat");
+  return;
+}
 
     const otherUid = data.members?.find((id: string) => id!== user.uid);
 
@@ -205,15 +239,32 @@ if (userSnap.empty) {
   return;
 }
 
-const friendData = userSnap.docs[0]?.data();
+const friendData = userSnap.docs[0]!.data();
+const friendDocId = userSnap.docs[0]!.id;
+
+const currentUserQuery = query(
+  collection(db, "users"),
+  where("uid", "==", user.uid)
+);
+
+const currentUserSnap = await getDocs(currentUserQuery);
+
+if (currentUserSnap.empty) {
+  toast.error("Không tìm thấy tài khoản");
+  router.replace("/chat");
+  return;
+}
+
+const currentUserDocId = currentUserSnap.docs[0]!.id;
+
 
     // Check xem còn là bạn không
 const myFriendDoc = await getDoc(
-  doc(db, "users", user.uid, "friends", otherUid)
+  doc(db, "users", currentUserDocId, "friends", otherUid)
 );
 
 const theirFriendDoc = await getDoc(
-  doc(db, "users", otherUid, "friends", user.uid)
+ doc(db, "users", friendDocId, "friends", user.uid)
 );
 
 const myStatus = myFriendDoc.data()?.status;
@@ -239,7 +290,13 @@ setRemovedByThem(
 
     // Set friendId = null nếu đã unfriend để disable gửi tin
     setFriendId(isFriend? otherUid : null);
-    setChatData(data);
+    setChatData(prev => ({
+  ...(prev || data),
+  ...data,
+  deletedFor: (data.deletedFor || []).filter(
+    id => id !== user.uid
+  )
+}));
     setLoadingFriend(false);
   }, (error) => {
     console.error(error);
@@ -253,19 +310,31 @@ setRemovedByThem(
 
   /* ================= REALTIME FRIEND STATUS ================= */
   useEffect(() => {
-    if (!friendId) return;
-    const unsub = onSnapshot(doc(db, "users", friendId), (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setFriend(prev => prev? {
-         ...prev,
-          isOnline: data.isOnline || false,
-          lastSeen: data.lastSeen
-        } : null);
-      }
-    });
-    return () => unsub();
-  }, [friendId, db]);
+  if (!friendId) return;
+
+  const q = query(
+    collection(db, "users"),
+    where("uid", "==", friendId)
+  );
+
+  const unsub = onSnapshot(q, (snap) => {
+    if (!snap.empty) {
+      const data = snap.docs[0]!.data();
+
+      setFriend(prev =>
+        prev
+          ? {
+              ...prev,
+              isOnline: data.isOnline || false,
+              lastSeen: data.lastSeen
+            }
+          : null
+      );
+    }
+  });
+
+  return () => unsub();
+}, [friendId, db]);
 
 
 
@@ -300,6 +369,25 @@ useEffect(() => {
   return () => unsub();
 }, [chatId, user, friendId, db]);
 
+useEffect(() => {
+  if (showSearch) return;
+
+  const container = messagesContainerRef.current;
+
+  if (!container) return;
+
+
+
+  const isNearBottom =
+    container.scrollHeight - container.scrollTop - container.clientHeight < 300;
+
+  if (isNearBottom) {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth"
+    });
+  }
+}, [messages, showSearch]);
+
   /* ================= TYPING INDICATOR ================= */
   useEffect(() => {
     if (!chatId ||!friendId) return;
@@ -318,7 +406,7 @@ const handleTyping = useCallback(async () => {
 }, []);
 
 const sendMessage = useCallback(async () => {
-  if (!canSendMessage || isBlocked || isDeleted) {
+  if (!canSendMessage) {
   toast.error("Không thể nhắn tin");
   return;
 }
@@ -370,11 +458,11 @@ const sendMessage = useCallback(async () => {
   } finally {
     setSending(false);
   }
-}, [user, text, friend, chatId, sending, replyTo, editingMsg, friendId, db, chatData, isBlocked, isDeleted]);
+}, [user, text, friend, chatId, sending, replyTo, editingMsg, friendId, db, chatData, canSendMessage]);
 
   /* ================= SEND IMAGE ================= */
   const sendImage = async (file: File) => {
-    if (!canSendMessage || isBlocked || isDeleted) {
+    if (!canSendMessage) {
   toast.error("Không thể nhắn tin");
   return;
 }
@@ -435,7 +523,7 @@ const sendMessage = useCallback(async () => {
 
   /* ================= SEND FILE ================= */
   const sendFile = async (file: File) => {
-    if (!canSendMessage || isBlocked || isDeleted) {
+    if (!canSendMessage) {
   toast.error("Không thể nhắn tin");
   return;
 }
@@ -451,8 +539,23 @@ const sendMessage = useCallback(async () => {
     setUploading(true);
     try {
       const storageRef = ref(storage, `chat-files/${chatId}/${Date.now()}_${file.name}`);
-      await uploadBytesResumable(storageRef, file);
-      const url = await getDownloadURL(storageRef);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+await new Promise<void>((resolve, reject) => {
+  const unsubscribeUpload = uploadTask.on(
+    "state_changed",
+    undefined,
+    (error) => {
+      unsubscribeUpload();
+      reject(error);
+    },
+    () => {
+      unsubscribeUpload();
+      resolve();
+    }
+  );
+});
+      const url = await getDownloadURL(uploadTask.snapshot.ref);
 
       await addDoc(collection(db, "chats", chatId, "messages"), {
         senderId: user.uid,
@@ -475,7 +578,8 @@ const sendMessage = useCallback(async () => {
 
   /* ================= VOICE RECORDING ================= */
   const startRecording = async () => {
-    if (!canSendMessage || isBlocked || isDeleted) {
+  if (recording) return;
+    if (!canSendMessage) {
   toast.error("Không thể nhắn tin");
   return;
 }
@@ -487,6 +591,7 @@ const sendMessage = useCallback(async () => {
 
       mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
       mediaRecorder.onstop = () => {
+  mediaRecorderRef.current = null;
         const blob = new Blob(chunks, { type: "audio/webm" });
         setAudioBlob(blob);
         stream.getTracks().forEach(track => track.stop());
@@ -511,17 +616,38 @@ const sendMessage = useCallback(async () => {
     }
   };
 
-  const sendVoice = async () => {
-    if (!audioBlob ||!user ||!chatId ||!friendId ||!chatData) {
-      if (!chatData) toast.error("Đang tải dữ liệu chat...");
-      return;
-    }
-    setUploading(true);
+const sendVoice = async () => {
+  if (!canSendMessage) {
+    toast.error("Không thể nhắn tin");
+    return;
+  }
 
-    try {
+  if (!audioBlob || !user || !chatId || !friendId || !chatData) {
+    if (!chatData) toast.error("Đang tải dữ liệu chat...");
+    return;
+  }
+
+  setUploading(true);
+
+  try {
       const storageRef = ref(storage, `chat-voice/${chatId}/${Date.now()}.webm`);
-      await uploadBytesResumable(storageRef, audioBlob);
-      const url = await getDownloadURL(storageRef);
+      const uploadTask = uploadBytesResumable(storageRef, audioBlob);
+
+await new Promise<void>((resolve, reject) => {
+  const unsubscribeUpload = uploadTask.on(
+    "state_changed",
+    undefined,
+    (error) => {
+      unsubscribeUpload();
+      reject(error);
+    },
+    () => {
+      unsubscribeUpload();
+      resolve();
+    }
+  );
+});
+      const url = await getDownloadURL(uploadTask.snapshot.ref);
 
       await addDoc(collection(db, "chats", chatId, "messages"), {
         senderId: user.uid,
@@ -546,7 +672,7 @@ const sendMessage = useCallback(async () => {
 
   /* ================= SEND LOCATION ================= */
   const sendLocation = async () => {
-    if (!canSendMessage || isBlocked || isDeleted) {
+    if (!canSendMessage) {
   toast.error("Không thể nhắn tin");
   return;
 }
@@ -606,9 +732,11 @@ const sendMessage = useCallback(async () => {
         // Remove reaction
         const newUsers = existing.users.filter(u => u!== user.uid);
         if (newUsers.length === 0) {
-          await updateDoc(doc(db, "chats", chatId, "messages", msgId), {
-            reactions: arrayRemove(existing)
-          });
+const newReactions = reactions.filter(r => r.emoji !== emoji);
+
+await updateDoc(doc(db, "chats", chatId, "messages", msgId), {
+  reactions: newReactions
+});
         } else {
           const newReactions = reactions.map(r =>
             r.emoji === emoji? {...r, users: newUsers } : r
@@ -627,9 +755,17 @@ const sendMessage = useCallback(async () => {
             reactions: newReactions
           });
         } else {
-          await updateDoc(doc(db, "chats", chatId, "messages", msgId), {
-            reactions: arrayUnion({ emoji, users: [user.uid] })
-          });
+const newReactions = [
+  ...reactions,
+  { emoji, users: [user.uid] }
+];
+
+await updateDoc(
+  doc(db, "chats", chatId, "messages", msgId),
+  {
+    reactions: newReactions
+  }
+);
         }
       }
     } catch (err) {
@@ -679,12 +815,17 @@ const unpinMessage = async () => {
 };
 
   /* ================= FILTER SEARCH ================= */
-  const filteredMessages = useMemo(() => {
-    if (!searchQuery.trim()) return messages;
-    return messages.filter(m =>
-      m.text?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [messages, searchQuery]);
+ const filteredMessages = useMemo(() => {
+  if (!searchQuery.trim()) return messages;
+
+  return messages.filter(m =>
+    (m.text || "").toLowerCase().includes(searchQuery.toLowerCase())
+  );
+}, [messages, searchQuery]);
+
+const visibleMessages = useMemo(() => {
+  return filteredMessages.slice(-300);
+}, [filteredMessages]);
 
   /* ================= SEEN AVATAR STACK ================= */
   const getSeenAvatars = (msg: Message) => {
@@ -772,7 +913,9 @@ if (!friend) {
           <ArrowLeft size={24} className="text-gray-900 dark:text-white" />
         </button>
         <div className="relative">
-          <img src={friend.avatar} className="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-zinc-950 shadow-lg" alt={friend.name} />
+          <img
+  src={friend.avatar}
+  loading="lazy" className="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-zinc-950 shadow-lg" alt={friend.name} />
           {friend.isOnline && (
             <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full ring-2 ring-white dark:ring-zinc-950">
               <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75" />
@@ -825,13 +968,16 @@ if (!friend) {
       )}
 
       {/* MESSAGES */}
-   <div className="flex-1 overflow-y-auto px-4 py-6 space-y-0.5">
+   <div
+  ref={messagesContainerRef}
+  className="flex-1 overflow-y-auto px-4 py-6 space-y-0.5"
+>
     
 
-        {filteredMessages.map((m, i) => {
+       {visibleMessages.map((m, i) => {
           const isMe = m.senderId === user.uid;
-          const prev = filteredMessages[i - 1];
-          const next = filteredMessages[i + 1];
+      const prev = visibleMessages[i - 1];
+const next = visibleMessages[i + 1];
           const showAvatar =!isMe && (!next || next.senderId!== m.senderId);
           const isFirstInGroup =!prev || prev.senderId!== m.senderId;
           const isLastInGroup =!next || next.senderId!== m.senderId;
@@ -839,7 +985,7 @@ if (!friend) {
          !prev ||
             (m.createdAt &&
               prev.createdAt &&
-              m.createdAt.toDate().toDateString()!== prev.createdAt.toDate().toDateString());
+              m.createdAt?.toDate?.().toDateString?.()!== prev.createdAt.toDate().toDateString());
 
           const seenAvatars = getSeenAvatars(m);
 
@@ -858,7 +1004,10 @@ if (!friend) {
               <div className={`flex items-end gap-2 group ${isMe? "justify-end" : "justify-start"} ${isFirstInGroup? "mt-3" : ""}`}>
                 {!isMe && (
                   <div className="w-7 flex-shrink-0">
-                    {showAvatar && <img src={friend.avatar} className="w-7 h-7 rounded-full shadow-sm" alt={friend.name} />}
+                    {showAvatar && <img
+  src={friend.avatar}
+  loading="lazy"
+  className="w-7 h-7 rounded-full shadow-sm" alt={friend.name} />}
                   </div>
                 )}
                 <div className={`max-w-[75%] flex flex-col ${isMe? "items-end" : "items-start"}`}>
@@ -870,7 +1019,7 @@ if (!friend) {
                       }`}
                     >
                       <p className="font-bold text-xs">{m.replyTo.senderName}</p>
-                      <p className="truncate">{m.replyTo.text}</p>
+                      <p className="truncate">{m.replyTo.text || "Tin nhắn"}</p>
                     </button>
                   )}
 
@@ -902,9 +1051,14 @@ if (!friend) {
                         setShowEmojiPicker(m.id);
                       }}
                     >
-                      {m.image && <img src={m.image} className="rounded-2xl max-w-full mb-1" alt="sent" />}
+                      {m.image && <img
+  src={m.image}
+  loading="lazy" className="rounded-2xl max-w-full mb-1" alt="sent" />}
                       {m.file && (
-                        <a href={m.file} target="_blank" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl">
+                        <a
+  href={m.file}
+  target="_blank"
+  rel="noopener noreferrer" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl">
                           <Paperclip size={16} />
                           <span className="text-sm truncate">{m.fileName}</span>
                         </a>
@@ -921,9 +1075,10 @@ if (!friend) {
                         </div>
                       )}
 {m.location && (
-  <a
-    href={`https://maps.google.com/?q=${m.location.lat},${m.location.lng}`}
-    target="_blank"
+<a
+  href={`https://maps.google.com/?q=${m.location.lat},${m.location.lng}`}
+  target="_blank"
+  rel="noopener noreferrer"
     className="flex items-center gap-2 p-3 bg-black/10 rounded-xl"
   >
     <MapPin size={20} />
@@ -963,7 +1118,11 @@ if (!friend) {
 
                     {/* Context Menu */}
                     <div className={`absolute ${isMe? "right-0" : "left-0"} top-0 hidden group-hover:flex gap-1 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-1`}>
-                      <button onClick={() => setShowEmojiPicker(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+                      <button
+  onClick={(e) => {
+    e.stopPropagation();
+    setShowEmojiPicker(m.id);
+  }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
                         <Smile size={16} />
                       </button>
                       <button onClick={() => setReplyTo(m)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
@@ -971,7 +1130,7 @@ if (!friend) {
                       </button>
                       {isMe && (
                         <>
-                          <button onClick={() => { setEditingMsg(m); setText(m.text); inputRef.current?.focus(); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+                          <button onClick={() => { setEditingMsg(m); setText(m.text || ""); inputRef.current?.focus(); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
                             <Pencil size={16} />
                           </button>
                           <button onClick={() => deleteMessage(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded text-red-500">
@@ -997,7 +1156,9 @@ if (!friend) {
 
                     {/* Emoji Picker */}
                     {showEmojiPicker === m.id && (
-                      <div className="absolute bottom-full mb-2 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-2 flex gap-1 z-10">
+                      <div
+  data-emoji-picker
+  className="absolute bottom-full mb-2 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-2 flex gap-1 z-10">
                         {EMOJI_LIST.map(emoji => (
                           <button
                             key={emoji}
@@ -1089,18 +1250,45 @@ if (!friend) {
 {/* INPUT */}
 <div className="p-4 border-t border-gray-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-2xl">
   <div className="flex items-end gap-2">
-    <input type="file" hidden ref={imageInputRef} accept="image/*" onChange={(e) => e.target.files?.[0] && sendImage(e.target.files[0])} />
+    <input
+  type="file"
+  hidden
+  ref={imageInputRef}
+  accept="image/*"
+  onChange={(e) => {
+    const file = e.target.files?.[0];
+
+    if (file) {
+      sendImage(file);
+    }
+
+    e.target.value = "";
+  }}
+/>
     <button
       onClick={() => imageInputRef.current?.click()}
-      disabled={!canSendMessage || isBlocked || isDeleted}
+      disabled={!canSendMessage}
       className={`w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90 ${isBlocked || isDeleted? "opacity-50 cursor-not-allowed" : ""}`}
     >
       <ImageIcon size={22} className="text-gray-600 dark:text-zinc-400" />
     </button>
-    <input type="file" hidden ref={fileInputRef} onChange={(e) => e.target.files?.[0] && sendFile(e.target.files[0])} />
+    <input
+  type="file"
+  hidden
+  ref={fileInputRef}
+  onChange={(e) => {
+    const file = e.target.files?.[0];
+
+    if (file) {
+      sendFile(file);
+    }
+
+    e.target.value = "";
+  }}
+/>
     <button
       onClick={() => fileInputRef.current?.click()}
-      disabled={!canSendMessage || isBlocked || isDeleted}
+      disabled={!canSendMessage}
       className={`w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90 ${isBlocked || isDeleted? "opacity-50 cursor-not-allowed" : ""}`}
     >
       <Paperclip size={22} className="text-gray-600 dark:text-zinc-400" />
@@ -1108,14 +1296,15 @@ if (!friend) {
 
     <button
       onClick={sendLocation}
-      disabled={!canSendMessage || isBlocked || isDeleted}
+      disabled={!canSendMessage}
       className={`w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90 ${isBlocked || isDeleted? "opacity-50 cursor-not-allowed" : ""}`}
     >
       <MapPin size={22} className="text-gray-600 dark:text-zinc-400" />
     </button>
 <div className="flex-1 relative">
-  <input
-    ref={inputRef}
+<input
+  ref={inputRef}
+  autoComplete="off"
     value={text}
     onChange={(e) => {
       setText(e.target.value);
@@ -1124,21 +1313,21 @@ if (!friend) {
     onKeyDown={(e) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        if (!canSendMessage || isBlocked || isDeleted) return;
+        if (!canSendMessage) return;
 
 if (text.trim()) sendMessage();
       }
     }}
-    disabled={!canSendMessage || isBlocked || isDeleted}
+    disabled={!canSendMessage}
 placeholder={
   wasUnfriended
     ? "Người kia đã xóa kết bạn với bạn"
-    : !canSendMessage
-    ? "Các bạn không còn là bạn bè"
     : isBlocked
     ? "Bạn không thể nhắn tin"
     : isDeleted
     ? "Bạn đã xóa cuộc trò chuyện"
+    : !friendId
+    ? "Các bạn không còn là bạn bè"
     : "Nhắn tin..."
 }
     className={`w-full px-5 py-3 bg-gray-100 dark:bg-zinc-900 rounded-3xl outline-none focus:ring-2 focus:ring-blue-500/30 text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 transition-all ${
@@ -1149,18 +1338,24 @@ placeholder={
 {text.trim() ? (
   <button
     onClick={sendMessage}
-    disabled={sending || !canSendMessage || isBlocked || isDeleted}
+    disabled={sending || !canSendMessage}
     className="w-11 h-11 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full flex items-center justify-center active:scale-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/30"
   >
     {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
   </button>
 ) : (
   <button
-    onMouseDown={startRecording}
-    onMouseUp={stopRecording}
-    onTouchStart={startRecording}
-    onTouchEnd={stopRecording}
-    disabled={!canSendMessage || isBlocked || isDeleted}
+onTouchStart={(e) => {
+  e.preventDefault();
+  startRecording();
+}}
+onTouchEnd={(e) => {
+  e.preventDefault();
+  stopRecording();
+}}
+
+
+    disabled={!canSendMessage}
     className={`w-11 h-11 ${recording ? "bg-red-500" : "bg-gradient-to-br from-blue-500 to-indigo-600"} text-white rounded-full flex items-center justify-center active:scale-90 transition-all shadow-lg ${
       isBlocked || isDeleted ? "opacity-50 cursor-not-allowed" : ""
     }`}
