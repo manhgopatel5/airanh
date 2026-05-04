@@ -512,7 +512,7 @@ const handleDeleteComment = async (commentId: string) => {
             <div className="text-center py-12 text-zinc-400 text-[15px]">Chưa có bình luận nào</div>
           ) : (
             parentComments.map((c) => {
-              const liked = currentUser && c.likes?.includes(currentUser.uid);
+              const liked = currentUser && c.likedBy?.includes(currentUser.uid);
               const replies = getReplies(c.id);
               return (
                 <div key={c.id} className="text-[15px]">
