@@ -76,10 +76,10 @@ export default function TaskDetailPage() {
 
   const applicants = task?.applicants?? [];
 
-  const isFull = useMemo(
-    () => applicants.length >= (task && isTask(task)? task.totalSlots : 1),
-    [applicants, task]
-  );
+const isFull = useMemo(
+  () => applicants.length >= (task && isTask(task)? task.totalSlots : 1) || task?.status === "full",
+  [applicants, task]
+);
 
   const isApplied = useMemo(
     () =>!!currentUser && applicants.includes(currentUser.uid),
@@ -91,14 +91,14 @@ export default function TaskDetailPage() {
     [currentUser, task]
   );
 
-  const taskStatus = useMemo(() => {
-    if (!task) return null;
-    if (task.status === "done") return { text: "Đã hoàn thành", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400", icon: FiCheckCircle };
-    if (task.status === "doing") return { text: "Đang thực hiện", color: `bg-[${PRIMARY}]/10 text-[${PRIMARY}]`, icon: FiClock };
-    if (timeLeft === "Đã hết hạn") return { text: "Hết hạn", color: "bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-400", icon: FiAlertCircle };
-    if (isFull) return { text: "Đã đủ người", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400", icon: FiUsers };
-    return { text: "Đang tuyển", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", icon: FiZap };
-  }, [task, timeLeft, isFull]);
+const taskStatus = useMemo(() => {
+  if (!task) return null;
+  if (task.status === "completed") return { text: "Đã hoàn thành", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400", icon: FiCheckCircle };
+  if (task.status === "in_progress") return { text: "Đang thực hiện", color: `bg-[${PRIMARY}]/10 text-[${PRIMARY}]`, icon: FiClock };
+  if (timeLeft === "Đã hết hạn" || task.status === "expired") return { text: "Hết hạn", color: "bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-400", icon: FiAlertCircle };
+  if (isFull || task.status === "full") return { text: "Đã đủ người", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400", icon: FiUsers };
+  return { text: "Đang tuyển", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", icon: FiZap };
+}, [task, timeLeft, isFull]);
 
   /* ================= AUTH ================= */
   useEffect(() => onAuthStateChanged(auth, setCurrentUser), [auth]);
@@ -151,27 +151,26 @@ export default function TaskDetailPage() {
   }, [task, applicants, db]);
 
   /* ================= COUNTDOWN ================= */
-  useEffect(() => {
-    if (!task ||!isTask(task) ||!task.deadline?.seconds) return;
+useEffect(() => {
+  if (!task ||!isTask(task) ||!task.deadline?.seconds || task.status === "completed") return;
 
-    const tick = () => {
-      const diff = task.deadline!.seconds * 1000 - Date.now();
-      if (diff <= 0) {
-        setTimeLeft("Đã hết hạn");
-        return;
-      }
-      const d = Math.floor(diff / 86400000);
-      const h = Math.floor((diff % 86400000) / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(d > 0? `${d} ngày ${h}h` : `${h}h ${m}m ${s}s`);
-    };
+  const tick = () => {
+    const diff = task.deadline!.seconds * 1000 - Date.now();
+    if (diff <= 0) {
+      setTimeLeft("Đã hết hạn");
+      return;
+    }
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    setTimeLeft(d > 0? `${d} ngày ${h}h` : `${h}h ${m}m ${s}s`);
+  };
 
-    tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
-  }, [task]);
-
+  tick();
+  const interval = setInterval(tick, 1000);
+  return () => clearInterval(interval);
+}, [task]);
   /* ================= COMMENTS ================= */
   useEffect(() => {
     if (!task?.id) return;
@@ -448,17 +447,17 @@ export default function TaskDetailPage() {
             </div>
           </button>
           {!isOwner && (
-            <button
-              onClick={isApplied? handleCancelApply : handleJoinTask}
-              disabled={(!isApplied && isFull) || joining}
-              className={`px-5 py-2.5 rounded-xl text-[15px] font-semibold transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${
-                isApplied
-                ? "bg-[#F2F2F7] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
-                  : `bg-[${PRIMARY}] hover:bg-[#0071e3] text-white shadow-lg shadow-[${PRIMARY}]/20`
-              }`}
-            >
-              {joining? "Đang xử lý..." : isApplied? "Hủy ứng tuyển" : isFull? "Đã đủ người" : "Ứng tuyển"}
-            </button>
+<button
+  onClick={isApplied? handleCancelApply : handleJoinTask}
+  disabled={(!isApplied && (isFull || task.status!== "open")) || joining}
+  className={`px-5 py-2.5 rounded-xl text- font-semibold transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${
+    isApplied
+   ? "bg-[#F2F2F7] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+      : `bg-[${PRIMARY}] hover:bg-[#0071e3] text-white shadow-lg shadow-[${PRIMARY}]/20`
+  }`}
+>
+  {joining? "Đang xử lý..." : isApplied? "Hủy ứng tuyển" : isFull? "Đã đủ người" : task.status!== "open"? "Đã đóng" : "Ứng tuyển"}
+</button>
           )}
         </div>
 
