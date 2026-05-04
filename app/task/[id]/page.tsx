@@ -114,7 +114,12 @@ export default function TaskDetailPage() {
     return { text: "Đang tuyển", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", icon: FiZap };
   }, [task, timeLeft, isFull]);
 
-  useEffect(() => onAuthStateChanged(auth, setCurrentUser), []);
+  useEffect(() => {
+  const unsub = onAuthStateChanged(auth, (user) => {
+    setCurrentUser(user);
+  });
+  return () => unsub();
+}, [auth]);
 
   useEffect(() => {
     if (!id || typeof id!== "string") return;
@@ -166,9 +171,20 @@ useEffect(() => {
 
 useEffect(() => {
   if (!task?.id) return;
-  const unsub = listenComments(task.id, (data) => {
-    setComments(data);
-  }, { limit: 20 });
+  const unsub = listenComments(
+    task.id, 
+    (data, hasMore) => {
+      setComments(data);
+      // setHasMoreComments(hasMore); // ✅ Nếu bro muốn load more thì bật lại state này
+    }, 
+    { 
+      limit: 20,
+      onError: (err) => {
+        console.error("Listen comments error:", err);
+        toast.error("Lỗi tải bình luận");
+      }
+    }
+  );
   return () => unsub && unsub();
 }, [task?.id]);
 
@@ -509,15 +525,15 @@ useEffect(() => {
           )}
           <div className="flex gap-2 items-end relative">
            <div className="flex-1 relative">
-  <input
-    ref={inputRef}
-    value={text}
-    onChange={(e) => setText(e.target.value)}
-    onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSendComment()}
-    placeholder="Viết bình luận..."
-    className="w-full px-4 py-2.5 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 outline-none text-[15px] focus:ring-2 focus:ring-[#0a84ff]/20 transition-all"
-    disabled={sending}
-  />
+<input
+  ref={inputRef}
+  value={text}
+  onChange={(e) => setText(e.target.value)}
+  onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSendComment()}
+  placeholder={currentUser? "Viết bình luận..." : "Đăng nhập để bình luận"}
+  className="w-full px-4 py-2.5 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 outline-none text-[15px] focus:ring-2 focus:ring-[#0a84ff]/20 transition-all"
+  disabled={sending ||!currentUser}
+/>
   {showMention && mentionUsers.length > 0 && (
     <div className="absolute bottom-12 left-0 w-64 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-[#E5E5EA] dark:border-zinc-800 max-h-60 overflow-auto z-50">
       <div className="p-2">
@@ -541,9 +557,14 @@ useEffect(() => {
     </div>
   )}
 </div>
-            <motion.button whileTap={{ scale: 0.9 }} onClick={handleSendComment} disabled={!text.trim() || sending} className={`p-2.5 rounded-full bg-[${PRIMARY}] hover:bg-[#0071e3] text-white disabled:bg-zinc-300 dark:disabled:bg-zinc-700 disabled:cursor-not-allowed active:scale-90 transition-all`}>
-              <FiSend size={18} />
-            </motion.button>
+<motion.button
+  whileTap={{ scale: 0.9 }}
+  onClick={handleSendComment}
+  disabled={!text.trim() || sending ||!currentUser}
+  className={`p-2.5 rounded-full bg-[${PRIMARY}] hover:bg-[#0071e3] text-white disabled:bg-zinc-300 dark:disabled:bg-zinc-700 disabled:cursor-not-allowed active:scale-90 transition-all`}
+>
+  <FiSend size={18} />
+</motion.button>
           </div>
         </div>
       </div>
