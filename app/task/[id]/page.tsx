@@ -34,7 +34,7 @@ import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
-import { useInView } from "react-intersection-observer";
+
 import { motion, AnimatePresence } from "framer-motion";
 import { CommentList } from "@/components/task/CommentList";
 import { ImageGallery } from "@/components/task/ImageGallery";
@@ -57,7 +57,7 @@ export default function TaskDetailPage() {
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { ref: loadMoreRef, inView } = useInView({ threshold: 0.1 });
+  
 
   const [task, setTask] = useState<Task | null>(null);
   const [owner, setOwner] = useState<UserData | null>(null);
@@ -74,9 +74,7 @@ export default function TaskDetailPage() {
 
   const [loading, setLoading] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(true);
-  const [loadingComments, setLoadingComments] = useState(false);
-  const [hasMoreComments, setHasMoreComments] = useState(true);
-  const [lastCommentDoc, setLastCommentDoc] = useState<any>(null);
+
   const [sending, setSending] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
   const [joining, setJoining] = useState(false);
@@ -169,35 +167,14 @@ useEffect(() => {
 
 useEffect(() => {
   if (!task?.id) return;
-  setLoadingComments(true); // ✅ Thêm dòng này
   const unsub = listenComments(task.id, (data) => {
     setComments(data);
-    setLoadingComments(false); // ✅ Thêm dòng này
+    setHasMoreComments(data.length >= 20);
   }, { limit: 20 });
   return () => unsub && unsub();
 }, [task?.id]);
 
-  useEffect(() => {
-    if (inView && hasMoreComments &&!loadingComments && lastCommentDoc) loadMoreComments();
-  }, [inView]);
-
-  const loadMoreComments = async () => {
-    if (!task?.id || loadingComments) return;
-    setLoadingComments(true);
-    const q = query(
-      collection(db, "task_comments"),
-      where("taskId", "==", task.id),
-      orderBy("createdAt", "asc"),
-      startAfter(lastCommentDoc),
-      limit(20)
-    );
-    const snap = await getDocs(q);
-    const newComments = snap.docs.map(d => ({ id: d.id,...d.data() } as TaskComment));
-    setComments(prev => [...prev,...newComments]);
-    setLastCommentDoc(snap.docs[snap.docs.length - 1]);
-    setHasMoreComments(snap.docs.length === 20);
-    setLoadingComments(false);
-  };
+  
 
   useEffect(() => {
     const lastAt = text.lastIndexOf("@");
@@ -521,7 +498,7 @@ useEffect(() => {
               ))}
             </AnimatePresence>
           )}
-          {hasMoreComments && <div ref={loadMoreRef} className="py-4 text-center text-zinc-400 text-[15px]">Đang tải thêm...</div>}
+          
           <div ref={bottomRef} />
         </div>
 
