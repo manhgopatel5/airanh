@@ -82,7 +82,7 @@ export function ImageGallery({ open, images, initialIndex, onClose }: Props) {
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
               dragElastic={1}
-              onDragEnd={(e, { offset, velocity }) => {
+              onDragEnd={(_, { offset, velocity }) => {
                 const swipe = Math.abs(offset.x) * velocity.x;
                 if (swipe < -10000) paginate(1);
                 else if (swipe > 10000) paginate(-1);
