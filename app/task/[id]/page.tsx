@@ -411,12 +411,16 @@ const handleDeleteComment = async (commentId: string) => {
 
         {/* META INFO */}
         <div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 space-y-3 text-[15px]">
-          {task.location && (
-            <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
-              <FiMapPin size={18} className="text-zinc-400" />
-              <span>{task.location}</span>
-            </div>
-          )}
+{task.location && (task.location.address || task.location.city) && (
+  <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
+    <FiMapPin size={18} className="text-zinc-400" />
+    <span>
+      {[task.location.address, task.location.city, task.location.country]
+        .filter(Boolean)
+        .join(", ")}
+    </span>
+  </div>
+)}
           {task.budget && (
             <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
               <FiDollarSign size={18} className="text-zinc-400" />
