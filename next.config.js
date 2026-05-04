@@ -1,7 +1,16 @@
 import bundleAnalyzer from '@next/bundle-analyzer';
+import withPWAInit from 'next-pwa';
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
+});
+
+const withPWA = withPWAInit({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  clientsClaim: true,
+  disable: false,
 });
 
 /** @type {import('next').NextConfig} */
@@ -13,14 +22,25 @@ const nextConfig = {
 
   images: {
     remotePatterns: [
-      { protocol: 'https', hostname: 'firebasestorage.googleapis.com', pathname: '/v0/b/**' },
-      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
-      { protocol: 'https', hostname: 'ui-avatars.com' },
+      {
+        protocol: 'https',
+        hostname: 'firebasestorage.googleapis.com',
+        pathname: '/v0/b/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ui-avatars.com',
+      },
     ],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    contentSecurityPolicy:
+      "default-src 'self'; script-src 'none'; sandbox;",
   },
 
   async headers() {
@@ -28,52 +48,51 @@ const nextConfig = {
       "default-src 'self'",
 
       [
-        "script-src",
+        'script-src',
         "'self'",
         "'unsafe-eval'",
         "'unsafe-inline'",
-        "https://apis.google.com",
-        "https://www.gstatic.com",
-        "https://www.googleapis.com",
-        "https://*.firebaseapp.com",
-        "https://*.firebaseio.com",
-        "https://*.firebasedatabase.app",
+        'https://apis.google.com',
+        'https://www.gstatic.com',
+        'https://www.googleapis.com',
+        'https://*.firebaseapp.com',
+        'https://*.firebaseio.com',
+        'https://*.firebasedatabase.app',
       ].join(' '),
 
       "style-src 'self' 'unsafe-inline'",
 
       [
-        "img-src",
+        'img-src',
         "'self'",
-        "data:",
-        "blob:",
-        "https://firebasestorage.googleapis.com",
-        "https://lh3.googleusercontent.com",
-        "https://ui-avatars.com",
+        'data:',
+        'blob:',
+        'https://firebasestorage.googleapis.com',
+        'https://lh3.googleusercontent.com',
+        'https://ui-avatars.com',
       ].join(' '),
 
       "font-src 'self' data:",
 
-      // 🔥 THÊM 2 DÒNG NÀY
       [
-        "connect-src",
+        'connect-src',
         "'self'",
-        "https://*.googleapis.com",
-        "https://*.firebaseio.com",
-        "wss://*.firebaseio.com",
-        "https://*.firebasedatabase.app",
-        "wss://*.firebasedatabase.app",
-        "https://*.googleusercontent.com",
-        "https://fcm.googleapis.com",
-        "https://*.cloudfunctions.net",                              // THÊM DÒNG NÀY
-        "https://asia-southeast1-airanh-ba64c.cloudfunctions.net", // THÊM DÒNG NÀY
+        'https://*.googleapis.com',
+        'https://*.firebaseio.com',
+        'wss://*.firebaseio.com',
+        'https://*.firebasedatabase.app',
+        'wss://*.firebasedatabase.app',
+        'https://*.googleusercontent.com',
+        'https://fcm.googleapis.com',
+        'https://*.cloudfunctions.net',
+        'https://asia-southeast1-airanh-ba64c.cloudfunctions.net',
       ].join(' '),
 
       [
-        "frame-src",
+        'frame-src',
         "'self'",
-        "https://*.firebaseapp.com",
-        "https://accounts.google.com",
+        'https://*.firebaseapp.com',
+        'https://accounts.google.com',
       ].join(' '),
 
       "frame-ancestors 'none'",
@@ -85,12 +104,31 @@ const nextConfig = {
       {
         source: '/(.*)',
         headers: [
-          { key: 'Content-Security-Policy', value: csp },
-          { key: 'X-DNS-Prefetch-Control', value: 'on' },
-          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
-          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
-          { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          {
+            key: 'Content-Security-Policy',
+            value: csp,
+          },
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value:
+              'max-age=63072000; includeSubDomains; preload',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
         ],
       },
     ];
@@ -125,4 +163,4 @@ const nextConfig = {
   },
 };
 
-export default withBundleAnalyzer(nextConfig);
+export default withBundleAnalyzer(withPWA(nextConfig));
