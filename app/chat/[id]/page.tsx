@@ -134,7 +134,7 @@ const wasUnfriended = removedByThem;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const loadedRef = useRef(false);
+ 
   const mimeTypeRef = useRef("audio/webm");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
