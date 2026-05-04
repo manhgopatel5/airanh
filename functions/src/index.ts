@@ -160,61 +160,87 @@ export const unfriend = onCall(
   { region: "asia-southeast1" },
   async (request) => {
     const uid = request.auth?.uid;
-    if (!uid) throw new HttpsError("unauthenticated", "Chưa đăng nhập");
+
+    if (!uid) {
+      throw new HttpsError(
+        "unauthenticated",
+        "Chưa đăng nhập"
+      );
+    }
 
     const { friendUid } = request.data;
+
     if (!friendUid) {
-      throw new HttpsError("invalid-argument", "Thiếu friendUid");
+      throw new HttpsError(
+        "invalid-argument",
+        "Thiếu friendUid"
+      );
     }
 
     if (uid === friendUid) {
-      throw new HttpsError("invalid-argument", "Không thể tự hủy kết bạn");
+      throw new HttpsError(
+        "invalid-argument",
+        "Không thể tự hủy kết bạn"
+      );
     }
 
     try {
       const batch = db.batch();
 
-      // 1. Xóa B khỏi danh sách bạn của A
-const myFriendRef = db.doc(`users/${uid}/friends/${friendUid}`);
+      // A remove B
+      const myFriendRef =
+        db.doc(`users/${uid}/friends/${friendUid}`);
 
-batch.set(
-  myFriendRef,
-  {
-    status: "removed",
-    removedAt: FieldValue.serverTimestamp(),
-    updatedAt: FieldValue.serverTimestamp(),
-  },
-  { merge: true }
-);
+      batch.set(
+        myFriendRef,
+        {
+          status: "removed",
+          removedAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
 
-      // 2. Check xem B có A trong friend list không rồi mới update
-      const theirFriendRef = db.doc(`users/${friendUid}/friends/${uid}`);
-      const theirFriendDoc = await theirFriendRef.get();
+      // B vẫn giữ A
+      const theirFriendRef =
+        db.doc(`users/${friendUid}/friends/${uid}`);
+
+      const theirFriendDoc =
+        await theirFriendRef.get();
 
       if (theirFriendDoc.exists) {
-batch.set(
-  theirFriendRef,
-  {
-    status: "active",
-    removedBy: uid,
-    updatedAt: FieldValue.serverTimestamp(),
-  },
-  { merge: true }
-);
+        batch.set(
+          theirFriendRef,
+          {
+            status: "active",
+            removedBy: uid,
+            updatedAt: FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+      }
 
-      // 3. Update chat: chỉ ẩn với A, B vẫn thấy nhưng không nhắn được
-      const chatId = [uid, friendUid].sort().join("_");
-      const chatRef = db.doc(`chats/${chatId}`);
-      const chatDoc = await chatRef.get();
+      // update chat
+      const chatId =
+        [uid, friendUid].sort().join("_");
+
+      const chatRef =
+        db.doc(`chats/${chatId}`);
+
+      const chatDoc =
+        await chatRef.get();
 
       if (chatDoc.exists) {
-        const userDoc = await db.doc(`users/${uid}`).get();
-        const userName = userDoc.data()?.name || "Người dùng";
+        const userDoc =
+          await db.doc(`users/${uid}`).get();
+
+        const userName =
+          userDoc.data()?.name || "Người dùng";
 
         batch.update(chatRef, {
           status: "active",
           archivedBy: uid,
-          deletedFor: FieldValue.arrayUnion(uid), // Chỉ ẩn với A
+          deletedFor: FieldValue.arrayUnion(uid),
           updatedAt: FieldValue.serverTimestamp(),
           lastMessage: `${userName} đã hủy kết bạn`,
           lastSenderName: "Hệ thống",
@@ -222,11 +248,22 @@ batch.set(
       }
 
       await batch.commit();
-      return { success: true };
+
+      return {
+        success: true
+      };
 
     } catch (error: any) {
-      console.error("unfriend error:", error);
-      throw new HttpsError("internal", `Lỗi server: ${error.message}`);
+
+      console.error(
+        "unfriend error:",
+        error
+      );
+
+      throw new HttpsError(
+        "internal",
+        `Lỗi server: ${error.message}`
+      );
     }
   }
 );
