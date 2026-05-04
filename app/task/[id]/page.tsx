@@ -334,7 +334,7 @@ useEffect(() => {
   return (
     <>
       <Toaster richColors position="top-center" />
-      <div className="max-w-xl mx-auto bg-[#F2F2F7] dark:bg-black min-h-screen pb-24">
+      <div className="max-w-xl mx-auto bg-[#F2F2F7] dark:bg-black min-h-screen pb-40">
         <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-[#E5E5EA] dark:border-zinc-800 px-4 py-3 flex gap-3 items-center">
           <button onClick={() => router.back()} className="p-1 -ml-1 rounded-full hover:bg-zinc-900/5 dark:hover:bg-white/5 active:scale-90 transition-all">
             <FiChevronLeft size={24} />
@@ -501,7 +501,7 @@ useEffect(() => {
           <div ref={bottomRef} />
         </div>
 
-        <div className="fixed bottom-0 left-0 right-0 max-w-xl mx-auto bg-white/80 dark:bg-black/80 backdrop-blur-xl border-t border-[#E5E5EA] dark:border-zinc-800 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        <div className="fixed bottom-16 left-0 right-0 max-w-xl mx-auto bg-white/80 dark:bg-black/80 backdrop-blur-xl border-t border-[#E5E5EA] dark:border-zinc-800 p-3 z-50">
           {replyTo && (
             <div className="text-[13px] text-zinc-600 dark:text-zinc-400 mb-2 flex items-center justify-between bg-[#F2F2F7] dark:bg-zinc-800 px-3.5 py-2 rounded-xl">
               <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
