@@ -22,23 +22,7 @@ import {
 import { getFirebaseDB } from "./firebase";
 import { User } from "@/types/task";
 
-export type TaskComment = {
-  id: string;
-  taskId: string;
-  userId: string;
-  userName: string;
-  userAvatar: string;
-  text: string;
-  parentId?: string | null;
-  replyToUserId?: string;
-  replyToUserName?: string;
-  likeCount: number;
-  likedBy: string[];
-  createdAt: Timestamp;
-  updatedAt?: Timestamp;
-  edited?: boolean;
-  deleted?: boolean;
-};
+import type { TaskComment } from "@/types/task";
 
 export class TaskCommentError extends Error {
   constructor(message: string, public code?: string) {
