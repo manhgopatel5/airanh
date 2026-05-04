@@ -3,16 +3,21 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    /* ================= HELPERS ================= */
+
     function isSignedIn() {
       return request.auth != null;
     }
 
     function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+      return isSignedIn()
+        && request.auth.uid == userId;
     }
 
     function chatDoc(chatId) {
-      return get(/databases/$(database)/documents/chats/$(chatId));
+      return get(
+        /databases/$(database)/documents/chats/$(chatId)
+      );
     }
 
     function isChatMember(chatId) {
@@ -21,18 +26,26 @@ service cloud.firestore {
     }
 
     function isDeletedFor(chatId) {
-      return 'deletedFor' in chatDoc(chatId).data
-        && request.auth.uid in chatDoc(chatId).data.deletedFor;
+      return (
+        'deletedFor' in chatDoc(chatId).data
+        && request.auth.uid
+          in chatDoc(chatId).data.deletedFor
+      );
     }
 
     function isBlocked(chatId) {
-      return 'blockedUsers' in chatDoc(chatId).data
-        && request.auth.uid in chatDoc(chatId).data.blockedUsers;
+      return (
+        'blockedUsers' in chatDoc(chatId).data
+        && request.auth.uid
+          in chatDoc(chatId).data.blockedUsers
+      );
     }
 
     function isChatActive(chatId) {
-      return !('status' in chatDoc(chatId).data)
-        || chatDoc(chatId).data.status == 'active';
+      return !(
+        'status' in chatDoc(chatId).data
+      )
+      || chatDoc(chatId).data.status == 'active';
     }
 
     /* ================= USERS ================= */
@@ -41,7 +54,7 @@ service cloud.firestore {
 
       allow read: if isSignedIn();
 
-      allow write: if isOwner(userId);
+      allow create, update, delete: if isOwner(userId);
 
       match /friends/{friendId} {
 
@@ -50,7 +63,8 @@ service cloud.firestore {
         allow create: if false;
 
         allow update: if isSignedIn()
-          && request.resource.data.diff(resource.data)
+          && request.resource.data
+            .diff(resource.data)
             .changedKeys()
             .hasOnly([
               'status',
@@ -67,27 +81,32 @@ service cloud.firestore {
 
     match /chats/{chatId} {
 
-      // mở chat trực tiếp
+      // query chats realtime
+      allow list: if isSignedIn();
+
+      // mở chat
       allow get: if isChatMember(chatId);
 
-      // list chats
-      allow list: if isChatMember(chatId)
-        && !isDeletedFor(chatId)
-        && isChatActive(chatId);
+      // tạo chat mới
+      allow create: if isSignedIn()
+        && request.auth.uid
+          in request.resource.data.members;
 
-      // chỉ Functions tạo
-      allow create: if false;
-
-      // update chat metadata
+      // update metadata
       allow update: if isChatMember(chatId)
-        && request.resource.data.diff(resource.data)
+        && request.resource.data
+          .diff(resource.data)
           .changedKeys()
           .hasOnly([
             'deletedFor',
             'updatedAt',
             'typing',
             'pinnedMessage',
-            'members'
+            'members',
+            'lastMessage',
+            'lastSenderId',
+            'lastSenderName',
+            'unread'
           ]);
 
       allow delete: if false;
@@ -96,23 +115,26 @@ service cloud.firestore {
 
       match /messages/{messageId} {
 
-        // READ
-        allow read: if isChatMember(chatId)
+        // realtime messages query
+        allow get, list: if isChatMember(chatId)
           && !isDeletedFor(chatId);
 
-        // CREATE
+        // gửi tin
         allow create: if isSignedIn()
-          && request.auth.uid == request.resource.data.senderId
+          && request.auth.uid
+            == request.resource.data.senderId
           && isChatMember(chatId)
           && isChatActive(chatId)
           && !isBlocked(chatId);
 
-        // UPDATE
+        // seen / react / edit
         allow update: if isChatMember(chatId)
           && (
             (
-              request.resource.data.senderId == request.auth.uid
-              && request.resource.data.diff(resource.data)
+              resource.data.senderId
+                == request.auth.uid
+              && request.resource.data
+                .diff(resource.data)
                 .changedKeys()
                 .hasOnly([
                   'text',
@@ -124,7 +146,8 @@ service cloud.firestore {
             )
             ||
             (
-              request.resource.data.diff(resource.data)
+              request.resource.data
+                .diff(resource.data)
                 .changedKeys()
                 .hasOnly([
                   'seenBy',
@@ -133,9 +156,10 @@ service cloud.firestore {
             )
           );
 
-        // DELETE
+        // xóa tin nhắn của mình
         allow delete: if isSignedIn()
-          && resource.data.senderId == request.auth.uid;
+          && resource.data.senderId
+            == request.auth.uid;
       }
     }
 
@@ -145,17 +169,22 @@ service cloud.firestore {
 
       allow read: if isSignedIn()
         && (
-          request.auth.uid == resource.data.from
-          || request.auth.uid == resource.data.to
+          request.auth.uid
+            == resource.data.from
+          || request.auth.uid
+            == resource.data.to
         );
 
       allow create: if isSignedIn()
-        && request.auth.uid == request.resource.data.from;
+        && request.auth.uid
+          == request.resource.data.from;
 
       allow delete: if isSignedIn()
         && (
-          request.auth.uid == resource.data.from
-          || request.auth.uid == resource.data.to
+          request.auth.uid
+            == resource.data.from
+          || request.auth.uid
+            == resource.data.to
         );
     }
 
