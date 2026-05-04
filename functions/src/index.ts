@@ -177,6 +177,8 @@ export const unfriend = onCall(
       // 1. Xóa B khỏi danh sách bạn của A
 const myFriendRef = db.doc(`users/${uid}/friends/${friendUid}`);
 
+const myFriendDoc = await myFriendRef.get();
+const myData = myFriendDoc.data();
 batch.set(
   myFriendRef,
   {
@@ -188,37 +190,32 @@ batch.set(
 );
 
       // 2. Check xem B có A trong friend list không rồi mới update
-      const theirFriendRef = db.doc(`users/${friendUid}/friends/${uid}`);
-      const theirFriendDoc = await theirFriendRef.get();
+const theirFriendRef = db.doc(`users/${friendUid}/friends/${uid}`);
 
 
 
-if (theirFriendDoc.exists) {
-  const theirData = theirFriendDoc.data();
-
-  // Nếu họ đã hủy mình trước đó
-  if (theirData?.removedBy === friendUid) {
-    batch.set(
-      theirFriendRef,
-      {
-        status: "removed",
-        removedAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true }
-    );
-  } else {
-    // Chỉ một phía hủy
-    batch.set(
-      theirFriendRef,
-      {
-        status: "active",
-        removedBy: uid,
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true }
-    );
-  }
+// Nếu người kia đã hủy mình trước đó
+if (myData?.removedBy === friendUid) {
+  batch.set(
+    theirFriendRef,
+    {
+      status: "removed",
+      removedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+} else {
+  // Chỉ một phía hủy
+  batch.set(
+    theirFriendRef,
+    {
+      status: "active",
+      removedBy: uid,
+      updatedAt: FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
 }
 
       // 3. Update chat: chỉ ẩn với A, B vẫn thấy nhưng không nhắn được
