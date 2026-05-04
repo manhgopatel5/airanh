@@ -177,8 +177,6 @@ export const unfriend = onCall(
       // 1. Xóa B khỏi danh sách bạn của A
 const myFriendRef = db.doc(`users/${uid}/friends/${friendUid}`);
 
-const myFriendDoc = await myFriendRef.get();
-const myData = myFriendDoc.data();
 batch.set(
   myFriendRef,
   {
@@ -190,33 +188,19 @@ batch.set(
 );
 
       // 2. Check xem B có A trong friend list không rồi mới update
-const theirFriendRef = db.doc(`users/${friendUid}/friends/${uid}`);
+      const theirFriendRef = db.doc(`users/${friendUid}/friends/${uid}`);
+      const theirFriendDoc = await theirFriendRef.get();
 
-
-
-// Nếu người kia đã hủy mình trước đó
-if (myData?.removedBy === friendUid) {
-  batch.set(
-    theirFriendRef,
-    {
-      status: "removed",
-      removedAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    },
-    { merge: true }
-  );
-} else {
-  // Chỉ một phía hủy
-  batch.set(
-    theirFriendRef,
-    {
-      status: "active",
-      removedBy: uid,
-      updatedAt: FieldValue.serverTimestamp(),
-    },
-    { merge: true }
-  );
-}
+      if (theirFriendDoc.exists) {
+batch.set(
+  theirFriendRef,
+  {
+    status: "active",
+    removedBy: uid,
+    updatedAt: FieldValue.serverTimestamp(),
+  },
+  { merge: true }
+);
 
       // 3. Update chat: chỉ ẩn với A, B vẫn thấy nhưng không nhắn được
       const chatId = [uid, friendUid].sort().join("_");
