@@ -539,27 +539,27 @@ const taskTime = isTask(task) && task.deadline?.seconds
             </button>
           </div>
 
-          {/* Map mini */}
-          {task.lat && task.lng && (
-            <>
-              <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800" />
-              <div className="p-3">
-                <div className="relative h-32 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800">
-                  <iframe
-                    src={`https://www.google.com/maps?q=${task.lat},${task.lng}&output=embed`}
-                    className="w-full h-full border-0"
-                    loading="lazy"
-                  />
-                  <div className="absolute top-2 left-2 bg-white dark:bg-zinc-900 px-2 py-1 rounded-lg text- font-medium shadow">
-                    Bản đồ
-                  </div>
-                </div>
-                <button className="w-full mt-2 text-[#0a84ff] font-semibold text-[17px]">
-                  Xem chi tiết
-                </button>
-              </div>
-            </>
-          )}
+      {/* Map mini */}
+{task.location?.lat && task.location?.lng && (
+  <>
+    <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800" />
+    <div className="p-3">
+      <div className="relative h-32 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+        <iframe
+          src={`https://www.google.com/maps?q=${task.location.lat},${task.location.lng}&output=embed`}
+          className="w-full h-full border-0"
+          loading="lazy"
+        />
+        <div className="absolute top-2 left-2 bg-white dark:bg-zinc-900 px-2 py-1 rounded-lg text-[13px] font-medium shadow">
+          Bản đồ
+        </div>
+      </div>
+      <button className="w-full mt-2 text-[#0a84ff] font-semibold text-[17px]">
+        Xem chi tiết
+      </button>
+    </div>
+  </>
+)}
 
           {/* Danh sách ứng viên */}
           {applicantsData.length > 0 && (
