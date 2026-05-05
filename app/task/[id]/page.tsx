@@ -30,7 +30,7 @@ import { toast, Toaster } from "sonner";
 import Image from "next/image";
 import Linkify from "linkify-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 
 
@@ -77,7 +77,7 @@ export default function TaskDetailPage() {
   const [sending, setSending] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
   const [joining, setJoining] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
+  
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showImageGallery, setShowImageGallery] = useState<number | null>(null);
   const [likingComments, setLikingComments] = useState<Set<string>>(new Set());
@@ -358,25 +358,26 @@ const handleEditComment = async (commentId: string) => {
           <button onClick={handleShare} className="p-2 rounded-full hover:bg-zinc-900/5 dark:hover:bg-white/5 active:scale-90 transition-all">
             <FiShare2 size={18} className="text-zinc-600 dark:text-zinc-400" />
           </button>
-          {isOwner && (
-            <Drawer open={showMenu} onOpenChange={setShowMenu}>
-              <DrawerTrigger asChild>
-                <button className="p-2 rounded-full hover:bg-zinc-900/5 dark:hover:bg-white/5 active:scale-90 transition-all">
-                  <FiMoreVertical size={18} className="text-zinc-600 dark:text-zinc-400" />
-                </button>
-              </DrawerTrigger>
-              <DrawerContent>
-                <div className="p-4 space-y-2">
-                  <button onClick={() => { router.push(`/nhiem-vu/edit/${task.id}`); setShowMenu(false); }} className="flex items-center gap-3 px-4 py-3 text-[17px] hover:bg-[#F2F2F7] dark:hover:bg-zinc-800 w-full rounded-xl active:scale-95 transition-all">
-                    <FiEdit2 size={20} /> Chỉnh sửa
-                  </button>
-                  <button onClick={() => { setShowDeleteDialog(true); setShowMenu(false); }} className="flex items-center gap-3 px-4 py-3 text-[17px] text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 w-full rounded-xl active:scale-95 transition-all">
-                    <FiTrash2 size={20} /> Xóa task
-                  </button>
-                </div>
-              </DrawerContent>
-            </Drawer>
-          )}
+        {isOwner && (
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <button className="p-2 rounded-full hover:bg-zinc-900/5 dark:hover:bg-white/5 active:scale-90 transition-all">
+        <FiMoreVertical size={18} className="text-zinc-600 dark:text-zinc-400" />
+      </button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuItem onClick={() => router.push(`/nhiem-vu/edit/${task.id}`)}>
+        <FiEdit2 size={16} className="mr-2" /> Chỉnh sửa
+      </DropdownMenuItem>
+      <DropdownMenuItem 
+        onClick={() => setShowDeleteDialog(true)}
+        className="text-red-500 focus:text-red-500"
+      >
+        <FiTrash2 size={16} className="mr-2" /> Xóa task
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>
+)}
         </motion.div>
 
         {taskStatus && StatusIcon && (
