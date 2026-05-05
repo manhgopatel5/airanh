@@ -723,24 +723,15 @@ const unpinMessage = async () => {
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-bold text-gray-900 dark:text-white truncate">{friend.name}</p>
-          <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">
-            {isTyping? (
-              <span className="flex items-center gap-1">
-                Đang nhập
-                <span className="flex gap-0.5">
-                  <span className="w-1 h-1 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <span className="w-1 h-1 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <span className="w-1 h-1 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-                </span>
-              </span>
- ) : friend.isOnline? (
-  "Đang hoạt động"
-) : friend.lastSeen? (
-              formatDistanceToNow(friend.lastSeen.toDate(), { addSuffix: true, locale: vi })
-            ) : (
-              "Offline"
-            )}
-          </p>
+         <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">
+  {friend.isOnline? (
+    "Đang hoạt động"
+  ) : friend.lastSeen? (
+    formatDistanceToNow(friend.lastSeen.toDate(), { addSuffix: true, locale: vi })
+  ) : (
+    "Offline"
+  )}
+</p>
         </div>
         <div className="flex items-center gap-1">
           <button onClick={() => setShowSearch(true)} className="p-2.5 hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90">
