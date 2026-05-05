@@ -185,6 +185,7 @@ useEffect(() => {
     // Set friendId = null nếu đã unfriend để disable gửi tin
 setIsFriend(isFriend);
     setChatData(data);
+setFriendId(otherUid);
     setLoadingFriend(false);
   }, (error) => {
     console.error(error);
