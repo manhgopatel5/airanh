@@ -417,7 +417,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
         </motion.div>
 
         {/* Card Task chính - Style giống mẫu */}
-       <div className="bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl shadow-sm overflow-hidden">
+     <div className="bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden">
           {/* Header: Avatar + Info */}
           <div className="p-4">
             <div className="flex gap-3">
@@ -434,42 +434,42 @@ const taskTime = isTask(task) && task.deadline?.seconds
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className="font-bold text-[17px]">{owner?.name || "Minh Tran"}</span>
+                 <span className="font-semibold text-[17px] text-zinc-900 dark:text-zinc-100">{owner?.name || "Minh Tran"}</span>
                   {owner?.rating && (
                     <div className="flex items-center gap-1 text-[17px]">
-                      <FiStar className="fill-yellow-400 text-yellow-400" size={14} />
-                      <span className="font-semibold">{owner.rating}</span>
-                      <span className="text-zinc-500">({owner.reviewCount || 21} đánh giá)</span>
+                    <FiStar className="fill-yellow-400 text-yellow-400" size={15} />
+                   <span className="font-semibold text-zinc-900 dark:text-zinc-100">{owner.rating}</span>
+<span className="text-zinc-500 text-[15px]">({owner.reviewCount || 21} đánh giá)</span>
                     </div>
                   )}
-                  <span className="text-zinc-500 text-[17px]">• Mới tham gia</span>
+                <span className="text-zinc-500 text-[15px]">• Mới tham gia</span>
                 </div>
 
-                <h2 className="font-bold text-[17px] leading-snug mb-2">{task.title}</h2>
+                <h2 className="font-semibold text-[17px] leading-snug mb-2 text-zinc-900 dark:text-zinc-100">{task.title}</h2>
 
-                <div className="flex items-center gap-3 text-[17px] text-zinc-600 dark:text-zinc-400">
+               <div className="flex items-center gap-3 text-[15px] text-zinc-500 dark:text-zinc-400">
                   <div className="flex items-center gap-1">
-                    <FiCalendar size={16} />
+                    <FiCalendar size={15} />
                     <span>{taskDate}</span>
                   </div>
-                  <span>•</span>
+                  <<span className="text-[15px]">•</span>
                   <div className="flex items-center gap-1">
-                    <FiClock size={16} />
+                    <FiClock size={15} />
                     <span>{taskTime}</span>
                   </div>
                   {isTask(task) && task.price > 0 && (
                     <>
-                      <span className="px-2 py-0.5 rounded-md bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[17px] font-semibold">
+                    <span className="px-2 py-0.5 rounded-md bg-[#E8F5E9] text-[#2E7D32] dark:bg-green-900/30 dark:text-green-400 text-[15px] font-semibold">
                         {task.price.toLocaleString("vi-VN")} đ
                       </span>
-                      <span>• Cố định</span>
+                      <span className="text-[15px]">• Cố định</span>
                     </>
                   )}
                 </div>
 
                 <button
                   onClick={() => router.push(`/profile/${task.userId}`)}
-                  className="text-[#0a84ff] text-[17px] font-medium underline mt-1"
+                  className="text-[#0a84ff] text-[15px] font-normal underline mt-1"
                 >
                   Xem hồ sơ
                 </button>
@@ -480,14 +480,14 @@ const taskTime = isTask(task) && task.deadline?.seconds
             <div className="flex gap-2 mt-3">
               <div className="flex-1 flex flex-wrap gap-1.5">
                 {task.tags?.map((tag, i) => (
-                  <span key={i} className="px-3 py-1.5 rounded-lg bg-[#0a84ff]/10 text-[#0a84ff] text-[17px] font-medium">
+                 <span key={i} className="px-3 py-1.5 rounded-lg bg-[#E3F2FD] text-[#1976D2] dark:bg-[#0a84ff]/10 dark:text-[#0a84ff] text-[15px] font-normal">
                     {tag}
                   </span>
                 ))}
                 {!task.tags?.length && (
                   <>
-                    <span className="px-3 py-1.5 rounded-lg bg-[#0a84ff]/10 text-[#0a84ff] text-[17px] font-medium">Nhanh chóng</span>
-                    <span className="px-3 py-1.5 rounded-lg bg-[#0a84ff]/10 text-[#0a84ff] text-[17px] font-medium">Uy tín</span>
+ <span className="px-3 py-1.5 rounded-lg bg-[#E3F2FD] text-[#1976D2] dark:bg-[#0a84ff]/10 dark:text-[#0a84ff] text-[15px] font-normal">Nhanh chóng</span>
+<span className="px-3 py-1.5 rounded-lg bg-[#E3F2FD] text-[#1976D2] dark:bg-[#0a84ff]/10 dark:text-[#0a84ff] text-[15px] font-normal">Uy tín</span>
                   </>
                 )}
               </div>
@@ -585,7 +585,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
          <div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl shadow-sm">
             <h3 className="font-semibold mb-2 text-[17px]">Mô tả chi tiết</h3>
             <Linkify options={{ target: "_blank", className: `text-[${PRIMARY}] hover:underline` }}>
-              <p className="text- text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">{task.description}</p>
+             <p className="text-[15px] text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-[22px]">{task.description}</p>
             </Linkify>
           </div>
         )}
@@ -614,7 +614,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
           </div>
         )}
       {/* Info chi tiết task */}
-<div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl shadow-sm space-y-3 text-">
+<div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl shadow-sm space-y-3 text-[15px]">
   {task.location && (task.location.address || task.location.city) && (
     <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
       <FiMapPin size={18} className="text-zinc-400" />
@@ -625,7 +625,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
   {isTask(task) && typeof task.price === 'number' && task.price > 0 && (
     <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
       <FiDollarSign size={18} className="text-zinc-400" />
-      <span className="font-medium text-zinc-900 dark:text-zinc-100 tabular-nums">
+      <span className="font-medium text-zinc-900 dark:text-zinc-100 tabular-nums text-[15px]">
         {task.price.toLocaleString("vi-VN")} {task.currency || "đ"}
       </span>
     </div>
@@ -634,7 +634,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
   {isPlan(task) && task.costAmount && task.costType!== "free" && (
     <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
       <FiDollarSign size={18} className="text-zinc-400" />
-      <span className="font-medium text-zinc-900 dark:text-zinc-100">
+     <span className="font-medium text-zinc-900 dark:text-zinc-100 tabular-nums text-[15px]">
         {task.costType === "share"? "Chia sẻ: " : "Chủ chi: "}
         {task.costAmount.toLocaleString("vi-VN")}đ
         {task.costDescription && ` - ${task.costDescription}`}
@@ -656,9 +656,9 @@ const taskTime = isTask(task) && task.deadline?.seconds
 </div>
         {/* Khung bình luận */}
         <div className="p-4 space-y-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl shadow-sm">
-          <div className="font-semibold text-">Bình luận ({comments.length})</div>
+         <div className="font-semibold text-[17px] text-zinc-900 dark:text-zinc-100">Bình luận ({comments.length})</div>
           {parentComments.length === 0? (
-            <div className="text-center py-12 text-zinc-400 text-">
+            <div className="text-center py-12 text-zinc-400 text-[15px]">
               <FiMessageCircle size={48} className="mx-auto mb-3 opacity-30" />
               Chưa có bình luận nào<br />Hãy là người đầu tiên
             </div>
@@ -691,7 +691,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
           {/* Ô nhập nằm trong khung bình luận */}
           <div className="sticky bottom-0 bg-white dark:bg-zinc-900 pt-3 -mx-4 px-4 pb-3 border-t border-[#E5E5EA] dark:border-zinc-800">
             {replyTo && (
-              <div className="text- text-zinc-600 dark:text-zinc-400 mb-2 flex items-center justify-between bg-[#F2F2F7] dark:bg-zinc-800 px-3.5 py-2 rounded-xl">
+              <div className="text-[15px] dark:text-zinc-400 mb-2 flex items-center justify-between bg-[#F2F2F7] dark:bg-zinc-800 px-3.5 py-2 rounded-xl">
                 <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
                 <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg active:scale-90 transition-all"><FiX size={14} /></button>
               </div>
@@ -704,7 +704,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
                   onChange={(e) => setText(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSendComment()}
                   placeholder={currentUser? "Viết bình luận..." : "Đăng nhập để bình luận"}
-                  className="w-full px-4 py-2.5 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 outline-none text- focus:ring-2 focus:ring-[#0a84ff]/20 transition-all"
+                  className="w-full px-4 py-2.5 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 outline-none text-[15px] focus:ring-2 focus:ring-[#0a84ff]/20 transition-all"
                   disabled={sending ||!currentUser}
                 />
                 {showMention && mentionUsers.length > 0 && (
@@ -714,7 +714,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
                         placeholder="Tìm người..."
                         value={mentionQuery}
                         onChange={(e) => setMentionQuery(e.target.value)}
-                        className="w-full px-3 py-1.5 text- bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg outline-none mb-2"
+                        className="w-full px-3 py-1.5 text-[15px] bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg outline-none mb-2"
                       />
                       {mentionUsers.map((user) => (
                         <button
@@ -723,7 +723,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
                           className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#F2F2F7] dark:hover:bg-zinc-800 rounded-lg text-left"
                         >
                           <UserAvatar src={user.avatar} name={user.name} size={24} />
-                          <span className="text-">{user.name}</span>
+                         <span className="text-[15px]">{user.name}</span>
                         </button>
                       ))}
                     </div>
@@ -747,10 +747,10 @@ const taskTime = isTask(task) && task.deadline?.seconds
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader><DialogTitle>Xóa task?</DialogTitle></DialogHeader>
-          <p className="text- text-zinc-600 dark:text-zinc-400">Hành động này không thể hoàn tác. Tất cả dữ liệu sẽ bị xóa vĩnh viễn.</p>
+         <p className="text-[15px] text-zinc-600 dark:text-zinc-400">Hành động này không thể hoàn tác. Tất cả dữ liệu sẽ bị xóa vĩnh viễn.</p>
           <div className="flex gap-2 justify-end mt-4">
-            <button onClick={() => setShowDeleteDialog(false)} className="px-4 py-2 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 text- font-medium active:scale-95 transition-all">Hủy</button>
-            <button onClick={() => { handleDeleteTask(); setShowDeleteDialog(false); }} className="px-4 py-2 rounded-xl bg-red-500 text-white text- font-medium active:scale-95 transition-all">Xóa</button>
+           className="px-4 py-2 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 text-[15px] font-medium active:scale-95 transition-all"
+className="px-4 py-2 rounded-xl bg-red-500 text-white text-[15px] font-medium active:scale-95 transition-all"
           </div>
         </DialogContent>
       </Dialog>
