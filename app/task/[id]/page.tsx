@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
-import { doc, getDoc, updateDoc, deleteDoc, arrayRemove, Timestamp, setDoc, collection, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, updateDoc, deleteDoc, arrayRemove, Timestamp, setDoc, serverTimestamp } from "firebase/firestore";
 import { FiMessageSquare } from "react-icons/fi";
 import {
   getTaskBySlug,
