@@ -104,7 +104,7 @@ const canSendMessage =!!friendId && isFriend &&!isBlocked &&!isDeleted; // ✅ C
   const [uploadProgress, setUploadProgress] = useState(0);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [editingMsg, setEditingMsg] = useState<Message | null>(null);
-  const [isTyping, setIsTyping] = useState(false);
+  
   const [loadingFriend, setLoadingFriend] = useState(true);
 
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
