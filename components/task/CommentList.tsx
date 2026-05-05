@@ -13,6 +13,7 @@ type Props = {
   comment: TaskComment;
   replies: TaskComment[];
   currentUserId?: string | null | undefined;
+  taskOwnerId: string; // ✅ Thêm prop này
   onLike: (id: string) => void;
   onReply: (c: TaskComment) => void;
   onDelete: (id: string) => void;
@@ -29,6 +30,7 @@ export function CommentList({
   comment: c,
   replies,
   currentUserId,
+  taskOwnerId, // ✅ Nhận prop
   onLike,
   onReply,
   onDelete,
@@ -84,7 +86,7 @@ export function CommentList({
             <div className="bg-[#F2F2F7] dark:bg-zinc-800 rounded-2xl px-3.5 py-2.5">
               <div className="flex items-center gap-1.5">
                 <div className="font-semibold text-[14px]">{c.userName}</div>
-                {c.userId === c.taskOwnerId && (
+                {c.userId === taskOwnerId && ( // ✅ Dùng taskOwnerId
                   <span className="text-[11px] px-1.5 py-0.5 rounded-md bg-[#0a84ff]/10 text-[#0a84ff] font-medium">
                     Tác giả
                   </span>
@@ -203,8 +205,14 @@ export function CommentList({
                   <div className="bg-[#F2F2F7] dark:bg-zinc-800 rounded-2xl px-3.5 py-2.5">
                     <div className="font-semibold text-[13px]">{r.userName}</div>
                     <div className="text-[14px] leading-relaxed mt-0.5 whitespace-pre-wrap">
-                      <span className="text-[#0a84ff] font-medium">@{r.replyToUserName}</span>{" "}
-                      {r.text}
+                      {r.deleted? ( // ✅ Check deleted cho reply
+                        <i className="text-zinc-500">Bình luận đã bị xoá</i>
+                      ) : (
+                        <>
+                          <span className="text-[#0a84ff] font-medium">@{r.replyToUserName}</span>{" "}
+                          {r.text}
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-4 mt-1 px-3.5 text-[12px] text-zinc-500">
