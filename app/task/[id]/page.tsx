@@ -498,6 +498,7 @@ useEffect(() => {
                   comment={c}
                   replies={getReplies(c.id)}
                   currentUserId={currentUser?.uid}
+                   taskOwnerId={task.userId}
                   onLike={handleLikeComment}
                   onReply={handleReply}
                   onDelete={handleDeleteComment}
