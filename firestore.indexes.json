@@ -57,10 +57,10 @@
       ]
     },
     {
-      "collectionGroup": "task_comments",
+      "collectionGroup": "comments",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "taskId", "order": "ASCENDING" },
+        { "fieldPath": "deleted", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "ASCENDING" }
       ]
     },
