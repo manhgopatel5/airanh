@@ -417,7 +417,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
         </motion.div>
 
         {/* Card Task chính - Style giống mẫu */}
-        <div className="bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 overflow-hidden">
+       <div className="bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl shadow-sm overflow-hidden">
           {/* Header: Avatar + Info */}
           <div className="p-4">
             <div className="flex gap-3">
@@ -582,7 +582,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
 
         {/* Mô tả chi tiết */}
         {task.description && (
-          <div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800">
+         <div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl shadow-sm">
             <h3 className="font-semibold mb-2 text-[17px]">Mô tả chi tiết</h3>
             <Linkify options={{ target: "_blank", className: `text-[${PRIMARY}] hover:underline` }}>
               <p className="text- text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">{task.description}</p>
@@ -614,7 +614,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
           </div>
         )}
       {/* Info chi tiết task */}
-<div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 space-y-3 text-[17px]">
+<div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl shadow-sm space-y-3 text-">
   {task.location && (task.location.address || task.location.city) && (
     <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
       <FiMapPin size={18} className="text-zinc-400" />
@@ -655,7 +655,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
   </div>
 </div>
         {/* Khung bình luận */}
-        <div className="p-4 space-y-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800">
+        <div className="p-4 space-y-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl shadow-sm">
           <div className="font-semibold text-">Bình luận ({comments.length})</div>
           {parentComments.length === 0? (
             <div className="text-center py-12 text-zinc-400 text-">
