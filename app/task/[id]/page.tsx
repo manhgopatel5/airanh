@@ -289,47 +289,47 @@ useEffect(() => {
     }
   };
 
-  const handleLikeComment = async (commentId: string) => {
-    if (!currentUser) return router.push("/login");
-    if (likingComments.has(commentId)) return;
-    setLikingComments(prev => new Set(prev).add(commentId));
-    const liked = comments.find(c => c.id === commentId)?.likedBy?.includes(currentUser.uid);
-    setComments(prev => prev.map(c => c.id === commentId? {...c, likedBy: liked? c.likedBy.filter(id => id!== currentUser.uid) : [...(c.likedBy || []), currentUser.uid], likeCount: liked? c.likeCount - 1 : c.likeCount + 1 } : c));
-    try {
-      await toggleLikeComment(commentId, currentUser.uid);
-      navigator.vibrate?.(10);
-    } catch {
-      setComments(prev => prev.map(c => c.id === commentId? {...c, likedBy: liked? [...(c.likedBy || []), currentUser.uid] : c.likedBy.filter(id => id!== currentUser.uid), likeCount: liked? c.likeCount + 1 : c.likeCount - 1 } : c));
-      toast.error("Lỗi");
-    } finally {
-      setLikingComments(prev => { const next = new Set(prev); next.delete(commentId); return next; });
-    }
-  };
+const handleLikeComment = async (commentId: string) => {
+  if (!currentUser || !task) return router.push("/login"); // ✅ Thêm check task
+  if (likingComments.has(commentId)) return;
+  setLikingComments(prev => new Set(prev).add(commentId));
+  const liked = comments.find(c => c.id === commentId)?.likedBy?.includes(currentUser.uid);
+  setComments(prev => prev.map(c => c.id === commentId? {...c, likedBy: liked? c.likedBy.filter(id => id!== currentUser.uid) : [...(c.likedBy || []), currentUser.uid], likeCount: liked? c.likeCount - 1 : c.likeCount + 1 } : c));
+  try {
+    await toggleLikeComment(commentId, currentUser.uid, task.id); // ✅ Thêm task.id
+    navigator.vibrate?.(10);
+  } catch {
+    setComments(prev => prev.map(c => c.id === commentId? {...c, likedBy: liked? [...(c.likedBy || []), currentUser.uid] : c.likedBy.filter(id => id!== currentUser.uid), likeCount: liked? c.likeCount + 1 : c.likeCount - 1 } : c));
+    toast.error("Lỗi");
+  } finally {
+    setLikingComments(prev => { const next = new Set(prev); next.delete(commentId); return next; });
+  }
+};
 
-  const handleDeleteComment = async (commentId: string) => {
-    if (!task?.id) return;
-    const backup = comments;
-    setComments(prev => prev.filter(c => c.id!== commentId && c.parentId!== commentId));
-    try {
-      await deleteComment(commentId, currentUser!.uid);
-      toast.success("Đã xóa");
-      navigator.vibrate?.(10);
-    } catch {
-      setComments(backup);
-      toast.error("Xóa thất bại");
-    }
-  };
+const handleDeleteComment = async (commentId: string) => {
+  if (!task?.id) return;
+  const backup = comments;
+  setComments(prev => prev.filter(c => c.id!== commentId && c.parentId!== commentId));
+  try {
+    await deleteComment(commentId, currentUser!.uid, task.id); // ✅ Thêm task.id
+    toast.success("Đã xóa");
+    navigator.vibrate?.(10);
+  } catch {
+    setComments(backup);
+    toast.error("Xóa thất bại");
+  }
+};
 
-  const handleEditComment = async (commentId: string) => {
-    if (!editText.trim()) return;
-    try {
-      await editComment(commentId, currentUser!.uid, DOMPurify.sanitize(editText));
-      setEditingComment(null); setEditText("");
-      toast.success("Đã sửa");
-    } catch {
-      toast.error("Sửa thất bại");
-    }
-  };
+const handleEditComment = async (commentId: string) => {
+  if (!editText.trim() || !task) return; // ✅ Check thêm task
+  try {
+    await editComment(commentId, currentUser!.uid, DOMPurify.sanitize(editText), task.id); // ✅ Thêm task.id
+    setEditingComment(null); setEditText("");
+    toast.success("Đã sửa");
+  } catch {
+    toast.error("Sửa thất bại");
+  }
+};
 
   const handleReply = (c: TaskComment) => { setReplyTo(c); inputRef.current?.focus(); };
   const handleSelectMention = (user: UserData) => {
