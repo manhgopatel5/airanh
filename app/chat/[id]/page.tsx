@@ -83,7 +83,7 @@ export default function ChatDetailPage() {
   const params = useParams();
   const idFromUrl = Array.isArray(params?.id)? params.id[0] : params?.id || null;
   const router = useRouter();
-  const auth = useMemo(() => getFirebaseAuth(), []);
+  
   const db = useMemo(() => getFirebaseDB(), []);
   const storage = useMemo(() => getFirebaseStorage(), []);
   const { user, loading: authLoading } = useAuth();
