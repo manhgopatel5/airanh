@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { getFirebaseAuth, getFirebaseDB, getFirebaseStorage } from "@/lib/firebase"; // ✅ Thêm
+import { getFirebaseAuth } from "@/lib/firebase"; // ✅ Thêm
 
 import {
   collection, query, onSnapshot, doc,
