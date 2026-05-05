@@ -232,16 +232,7 @@ export default function TaskDetailPage() {
     }
   };
 
-  const handleDeleteTask = async () => {
-    if (!isOwner ||!task) return;
-    try {
-      await deleteDoc(doc(db, "tasks", task.id));
-      toast.success("Đã xóa task");
-      router.push("/nhiem-vu");
-    } catch {
-      toast.error("Xóa thất bại");
-    }
-  };
+
 
   const handleShare = useCallback(async () => {
     const url = window.location.href;
