@@ -75,7 +75,7 @@ export default function TaskDetailPage() {
   const [mentionQuery, setMentionQuery] = useState("");
 
   const [loading, setLoading] = useState(true);
-  const [loadingUsers, setLoadingUsers] = useState(true);
+  
 
   const [sending, setSending] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
@@ -144,14 +144,14 @@ export default function TaskDetailPage() {
   useEffect(() => {
     if (!task) return;
     const loadUsers = async () => {
-      setLoadingUsers(true);
+      
       const userIds = [task.userId,...(task.applicants?? [])];
       const uniqueIds = [...new Set(userIds)];
       const snaps = await Promise.all(uniqueIds.map((uid) => getDoc(doc(db, "users", uid))));
       const users = snaps.filter(s => s.exists()).map(s => ({ uid: s.id,...s.data() } as UserData));
       setOwner(users.find((u) => u.uid === task.userId) || null);
       setApplicantsData(users.filter((u) => (task.applicants?? []).includes(u.uid)));
-      setLoadingUsers(false);
+      
     };
     loadUsers();
   }, [task?.id, task?.userId, task?.applicants, db]);
