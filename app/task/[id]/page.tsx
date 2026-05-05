@@ -452,7 +452,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
                     <FiCalendar size={15} />
                     <span>{taskDate}</span>
                   </div>
-                  <<span className="text-[15px]">•</span>
+                  <span className="text-[15px]">•</span>
                   <div className="flex items-center gap-1">
                     <FiClock size={15} />
                     <span>{taskTime}</span>
