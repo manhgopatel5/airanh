@@ -4,7 +4,8 @@ import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
-import { doc, getDoc, updateDoc, deleteDoc, arrayRemove, Timestamp } from "firebase/firestore";
+import { doc, getDoc, updateDoc, deleteDoc, arrayRemove, Timestamp, setDoc, collection, serverTimestamp } from "firebase/firestore";
+import { FiMessageSquare } from "react-icons/fi";
 import {
   getTaskBySlug,
   joinTask,
@@ -77,7 +78,7 @@ export default function TaskDetailPage() {
   const [sending, setSending] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
   const [joining, setJoining] = useState(false);
-  
+  const [creatingChat, setCreatingChat] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showImageGallery, setShowImageGallery] = useState<number | null>(null);
   const [likingComments, setLikingComments] = useState<Set<string>>(new Set());
@@ -106,13 +107,13 @@ export default function TaskDetailPage() {
   }, [applicantsData, owner, mentionQuery]);
 
   const taskStatus = useMemo(() => {
-    if (!task) return null;
-    if (task.status === "completed") return { text: "Đã hoàn thành", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400", icon: FiCheckCircle };
-    if (task.status === "in_progress") return { text: "Đang thực hiện", color: `bg-[${PRIMARY}]/10 text-[${PRIMARY}]`, icon: FiClock };
-    if (timeLeft === "Đã hết hạn" || task.status === "expired") return { text: "Hết hạn", color: "bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-400", icon: FiAlertCircle };
-    if (isFull || task.status === "full") return { text: "Đã đủ người", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400", icon: FiUsers };
-    return { text: "Đang tuyển", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", icon: FiZap };
-  }, [task, timeLeft, isFull]);
+  if (!task) return null;
+  if (task.status === "completed") return { text: "Đã hoàn thành", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400", icon: FiCheckCircle };
+  if (task.status === "in_progress") return { text: "Đang thực hiện", color: `bg-[#0a84ff]/10 text-[#0a84ff]`, icon: FiClock };
+  if (timeLeft === "Đã hết hạn" || task.status === "expired") return { text: "Hết hạn", color: "bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-400", icon: FiAlertCircle };
+  if (isFull || task.status === "full") return { text: "Đã đủ người", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400", icon: FiUsers };
+  return { text: "Đang tuyển", color: `bg-[#0a84ff]/10 text-[#0a84ff]`, icon: FiZap };
+}, [task, timeLeft, isFull]);
 
   useEffect(() => {
   const unsub = onAuthStateChanged(auth, (user) => {
@@ -339,6 +340,40 @@ const handleEditComment = async (commentId: string) => {
     inputRef.current?.focus();
   };
 
+  const handleQuickChat = async () => {
+  if (!currentUser ||!owner || isOwner || creatingChat) return;
+  if (!currentUser) return router.push("/login");
+
+  setCreatingChat(true);
+  try {
+    const chatId = [currentUser.uid, owner.uid].sort().join("_");
+    const chatRef = doc(db, "chats", chatId);
+    const chatSnap = await getDoc(chatRef);
+
+    if (!chatSnap.exists()) {
+      await setDoc(chatRef, {
+        participants: [currentUser.uid, owner.uid],
+        lastMessage: "Job này còn tuyển không anh?",
+        lastMessageAt: serverTimestamp(),
+        createdAt: serverTimestamp(),
+      });
+
+      await setDoc(doc(db, "chats", chatId, "messages", `msg_${Date.now()}`), {
+        text: `Hi anh, em thấy job "${task?.title}". Job này còn tuyển không ạ?`,
+        senderId: currentUser.uid,
+        createdAt: serverTimestamp(),
+      });
+    }
+
+    router.push(`/tin-nhan/${chatId}`);
+    navigator.vibrate?.(10);
+  } catch (err) {
+    toast.error("Không tạo được chat");
+  } finally {
+    setCreatingChat(false);
+  }
+};
+
   if (loading) return <TaskSkeleton />;
   if (!task) return <div className="p-4 text-center">Không tìm thấy task</div>;
 
@@ -389,22 +424,62 @@ const handleEditComment = async (commentId: string) => {
           </div>
         )}
 
-        {task.images && task.images.length > 0 && (
-          <div className="mt-4 px-4">
-            <div className={`grid gap-1.5 rounded-2xl overflow-hidden ${task.images.length === 1? "grid-cols-1" : "grid-cols-2"}`}>
-              {task.images.slice(0, 4).map((img, i) => (
-                <motion.div key={i} whileTap={{ scale: 0.95 }} className="relative" onClick={() => setShowImageGallery(i)}>
-                  <Image src={img} alt="" width={400} height={300} className={`w-full object-cover bg-[#E5E5EA] dark:bg-zinc-800 cursor-pointer ${task.images!.length === 1? "h-64" : "h-32"}`} />
-                  {i === 3 && task.images!.length > 4 && (
-                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold text-xl">
-                      +{task.images!.length - 4}
-                    </div>
-                  )}
-                </motion.div>
-              ))}
+  {/* 4.1: Card Chủ task + Nút Chat nhanh - Đưa lên trên */}
+<div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800">
+  {loadingUsers? (
+    <div className="flex items-center gap-3">
+      <Skeleton className="w-12 h-12 rounded-full" />
+      <div className="space-y-2 flex-1"><Skeleton className="h-4 w-24" /><Skeleton className="h-3 w-16" /></div>
+    </div>
+  ) : (
+    <div className="space-y-3">
+      <button onClick={() => router.push(`/profile/${task.userId}`)} className="flex items-center gap-3 w-full active:scale-95 transition-transform">
+        <UserAvatar src={owner?.avatar} name={owner?.name} size={48} />
+        <div className="text-left flex-1">
+          <div className="font-semibold text-[16px]">{owner?.name}</div>
+          <div className="text-[13px] text-zinc-500">Chủ task</div>
+        </div>
+        <FiChevronLeft className="rotate-180 text-zinc-400" size={20} />
+      </button>
+
+      {!isOwner && currentUser && (
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={handleQuickChat}
+          disabled={creatingChat}
+          className="w-full h-11 rounded-xl bg-[#0a84ff]/10 hover:bg-[#0a84ff]/20 text-[#0a84ff] font-semibold text-[15px] flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+        >
+          <FiMessageSquare size={18} />
+          {creatingChat? "Đang mở chat..." : "Nhắn tin hỏi chủ task"}
+        </motion.button>
+      )}
+    </div>
+  )}
+</div>
+
+{/* 4.2: Ảnh task - Thu nhỏ, để dưới avatar */}
+{task.images && task.images.length > 0 && (
+  <div className="mt-3 px-4">
+    <div className={`grid gap-1.5 rounded-2xl overflow-hidden ${task.images.length === 1? "grid-cols-1" : "grid-cols-3"}`}>
+      {task.images.slice(0, 3).map((img, i) => (
+        <motion.div key={i} whileTap={{ scale: 0.95 }} className="relative" onClick={() => setShowImageGallery(i)}>
+          <Image
+            src={img}
+            alt=""
+            width={400}
+            height={300}
+            className={`w-full object-cover bg-[#E5E5EA] dark:bg-zinc-800 cursor-pointer ${task.images!.length === 1? "h-48" : "h-28"}`}
+          />
+          {i === 2 && task.images!.length > 3 && (
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold text-lg">
+              +{task.images!.length - 3}
             </div>
-          </div>
-        )}
+          )}
+        </motion.div>
+      ))}
+    </div>
+  </div>
+)}
 
         {task.description && (
           <div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800">
@@ -444,27 +519,19 @@ const handleEditComment = async (commentId: string) => {
           </div>
         </div>
 
-        <div className="p-4 flex items-center justify-between bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800">
-          {loadingUsers? (
-            <div className="flex items-center gap-3 flex-1">
-              <Skeleton className="w-11 h-11 rounded-full" />
-              <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-3 w-16" /></div>
-            </div>
-          ) : (
-            <button onClick={() => router.push(`/profile/${task.userId}`)} className="flex items-center gap-3 flex-1 active:scale-95 transition-transform">
-              <UserAvatar src={owner?.avatar} name={owner?.name} size={44} />
-              <div className="text-left">
-                <div className="font-semibold text-[15px]">{owner?.name}</div>
-                <div className="text-[13px] text-zinc-500">Chủ task</div>
-              </div>
-            </button>
-          )}
-          {!isOwner && (
-            <motion.button whileTap={{ scale: 0.95 }} onClick={isApplied? handleCancelApply : handleJoinTask} disabled={(!isApplied && (isFull || task.status!== "open")) || joining} className={`px-5 py-2.5 rounded-xl text-[15px] font-semibold transition-all disabled:opacity-30 disabled:cursor-not-allowed ${isApplied? "bg-[#F2F2F7] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300" : `bg-[${PRIMARY}] hover:bg-[#0071e3] text-white shadow-lg shadow-[${PRIMARY}]/20`}`}>
-              {joining? "Đang xử lý..." : isApplied? "Hủy ứng tuyển" : isFull? "Đã đủ người" : task.status!== "open"? "Đã đóng" : "Ứng tuyển"}
-            </motion.button>
-          )}
-        </div>
+        {/* Nút Ứng tuyển - Tách riêng */}
+{!isOwner && (
+  <div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800">
+    <motion.button
+      whileTap={{ scale: 0.98 }}
+      onClick={isApplied? handleCancelApply : handleJoinTask}
+      disabled={(!isApplied && (isFull || task.status!== "open")) || joining}
+      className={`w-full h-12 rounded-xl text-[16px] font-semibold transition-all disabled:opacity-30 disabled:cursor-not-allowed ${isApplied? "bg-[#F2F2F7] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300" : `bg-[#0a84ff] hover:bg-[#0071e3] text-white shadow-lg shadow-[#0a84ff]/30`}`}
+    >
+      {joining? "Đang xử lý..." : isApplied? "Hủy ứng tuyển" : isFull? "Đã đủ người" : task.status!== "open"? "Đã đóng" : "Ứng tuyển ngay"}
+    </motion.button>
+  </div>
+)}
 
         {applicantsData.length > 0 && (
           <div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800">
