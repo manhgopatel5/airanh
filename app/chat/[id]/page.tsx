@@ -3,7 +3,8 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { db, storage } from "@/lib/firebase";
+import { getFirebaseAuth, getFirebaseDB, getFirebaseStorage } from "@/lib/firebase"; // ✅ Thêm
+
 import {
   collection, query, onSnapshot, doc,
   orderBy, addDoc, serverTimestamp, Timestamp, updateDoc, deleteDoc, arrayUnion, arrayRemove
@@ -82,17 +83,20 @@ export default function ChatDetailPage() {
   const params = useParams();
   const idFromUrl = Array.isArray(params?.id)? params.id[0] : params?.id || null;
   const router = useRouter();
-
+  const auth = useMemo(() => getFirebaseAuth(), []);
+  const db = useMemo(() => getFirebaseDB(), []);
+  const storage = useMemo(() => getFirebaseStorage(), []);
   const { user, loading: authLoading } = useAuth();
 
   const [friend, setFriend] = useState<UserData | null>(null);
   const [friendId, setFriendId] = useState<string | null>(null);
+  const [isFriend, setIsFriend] = useState(true);
   const [chatData, setChatData] = useState<ChatData | null>(null);
 
 
 const isBlocked = chatData?.blockedUsers?.includes(user?.uid || "");
 const isDeleted = chatData?.deletedFor?.includes(user?.uid || "");
-const canSendMessage = !!friendId;
+const canSendMessage =!!friendId && isFriend &&!isBlocked &&!isDeleted; // ✅ Check isFriend
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -164,11 +168,11 @@ useEffect(() => {
     const otherUser = data.membersInfo[otherUid];
     const friendSnap = await getDoc(doc(db, "users", otherUid));
     const friendData = friendSnap.data();
-
+    
     // Check xem còn là bạn không
     const friendDoc = await getDoc(doc(db, "users", user.uid, "friends", otherUid));
     const isFriend = friendDoc.exists() && friendDoc.data()?.status!== "removed";
-
+    
     setFriend({
       uid: otherUid,
       name: otherUser.name || "User",
@@ -179,7 +183,7 @@ useEffect(() => {
     });
 
     // Set friendId = null nếu đã unfriend để disable gửi tin
-    setFriendId(isFriend? otherUid : null);
+setIsFriend(isFriend);
     setChatData(data);
     setLoadingFriend(false);
   }, (error) => {
@@ -247,16 +251,7 @@ useEffect(() => {
 }, [messages.length]);
 
   /* ================= TYPING INDICATOR ================= */
-  useEffect(() => {
-    if (!chatId ||!friendId) return;
-    const unsub = onSnapshot(doc(db, "chats", chatId), (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setIsTyping(data?.typing?.[friendId] === true);
-      }
-    });
-    return () => unsub();
-  }, [chatId, friendId, db]);
+
 
 const handleTyping = useCallback(async () => {
   // Bỏ typing vì rules chặn update chats
