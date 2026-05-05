@@ -108,14 +108,7 @@ export default function TaskDetailPage() {
     return users.filter(u => u.name.toLowerCase().includes(mentionQuery.toLowerCase()));
   }, [applicantsData, owner, mentionQuery]);
 
-  const taskStatus = useMemo(() => {
-    if (!task) return null;
-    if (task.status === "completed") return { text: "Đã hoàn thành", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400", icon: FiCheckCircle };
-    if (task.status === "in_progress") return { text: "Đang thực hiện", color: `bg-[#0a84ff]/10 text-[#0a84ff]`, icon: FiClock };
-    if (timeLeft === "Đã hết hạn" || task.status === "expired") return { text: "Hết hạn", color: "bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-400", icon: FiAlertCircle };
-    if (isFull || task.status === "full") return { text: "Đã đủ người", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400", icon: FiUsers };
-    return { text: "Đang tuyển", color: `bg-[#0a84ff]/10 text-[#0a84ff]`, icon: FiZap };
-  }, [task, timeLeft, isFull]);
+
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -376,7 +369,7 @@ export default function TaskDetailPage() {
 
   const parentComments = comments.filter((c) =>!c.parentId);
   const getReplies = (id: string) => comments.filter((c) => c.parentId === id);
-  
+  const StatusIcon = taskStatus?.icon;
 
   const taskDate = task.deadline?.seconds 
     ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
