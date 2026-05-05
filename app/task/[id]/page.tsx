@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { doc, getDoc, updateDoc, deleteDoc, arrayRemove, Timestamp, setDoc, serverTimestamp } from "firebase/firestore";
-import { FiMessageSquare } from "react-icons/fi";
+import { FiMessageSquare, FiPhone, FiPlus, FiAlertTriangle, FiStar } from "react-icons/fi";
 import {
   getTaskBySlug,
   joinTask,
@@ -23,8 +23,8 @@ import type { TaskComment } from "@/types/task";
 import { isTask, isPlan, type Task } from "@/types/task";
 import {
   FiChevronLeft, FiSend, FiClock, FiZap, FiUsers, FiX, FiShare2, FiMoreVertical,
-  FiEdit2, FiTrash2, FiMapPin, FiDollarSign, FiCheckCircle, FiAlertCircle, 
-  FiMessageCircle
+  FiEdit2, FiTrash2, FiMapPin, FiDollarSign, FiCheckCircle, FiAlertCircle,
+  FiMessageCircle, FiCalendar
 } from "react-icons/fi";
 import DOMPurify from "isomorphic-dompurify";
 import { toast, Toaster } from "sonner";
@@ -33,7 +33,6 @@ import Linkify from "linkify-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-
 
 import { motion, AnimatePresence } from "framer-motion";
 import { CommentList } from "@/components/task/CommentList";
@@ -45,6 +44,10 @@ type UserData = {
   name: string;
   avatar: string;
   online?: boolean;
+  rating?: number;
+  reviewCount?: number;
+  joinedDate?: Timestamp;
+  phone?: string;
 };
 
 const PRIMARY = "#0a84ff";
@@ -57,7 +60,6 @@ export default function TaskDetailPage() {
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  
 
   const [task, setTask] = useState<Task | null>(null);
   const [owner, setOwner] = useState<UserData | null>(null);
@@ -107,20 +109,20 @@ export default function TaskDetailPage() {
   }, [applicantsData, owner, mentionQuery]);
 
   const taskStatus = useMemo(() => {
-  if (!task) return null;
-  if (task.status === "completed") return { text: "Đã hoàn thành", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400", icon: FiCheckCircle };
-  if (task.status === "in_progress") return { text: "Đang thực hiện", color: `bg-[#0a84ff]/10 text-[#0a84ff]`, icon: FiClock };
-  if (timeLeft === "Đã hết hạn" || task.status === "expired") return { text: "Hết hạn", color: "bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-400", icon: FiAlertCircle };
-  if (isFull || task.status === "full") return { text: "Đã đủ người", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400", icon: FiUsers };
-  return { text: "Đang tuyển", color: `bg-[#0a84ff]/10 text-[#0a84ff]`, icon: FiZap };
-}, [task, timeLeft, isFull]);
+    if (!task) return null;
+    if (task.status === "completed") return { text: "Đã hoàn thành", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400", icon: FiCheckCircle };
+    if (task.status === "in_progress") return { text: "Đang thực hiện", color: `bg-[#0a84ff]/10 text-[#0a84ff]`, icon: FiClock };
+    if (timeLeft === "Đã hết hạn" || task.status === "expired") return { text: "Hết hạn", color: "bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-400", icon: FiAlertCircle };
+    if (isFull || task.status === "full") return { text: "Đã đủ người", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400", icon: FiUsers };
+    return { text: "Đang tuyển", color: `bg-[#0a84ff]/10 text-[#0a84ff]`, icon: FiZap };
+  }, [task, timeLeft, isFull]);
 
   useEffect(() => {
-  const unsub = onAuthStateChanged(auth, (user) => {
-    setCurrentUser(user);
-  });
-  return () => unsub();
-}, [auth]);
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsub();
+  }, );
 
   useEffect(() => {
     if (!id || typeof id!== "string") return;
@@ -139,20 +141,20 @@ export default function TaskDetailPage() {
     loadTask();
   }, [id, router]);
 
-useEffect(() => {
-  if (!task) return;
-  const loadUsers = async () => {
-    setLoadingUsers(true);
-    const userIds = [task.userId,...(task.applicants?? [])];
-    const uniqueIds = [...new Set(userIds)];
-    const snaps = await Promise.all(uniqueIds.map((uid) => getDoc(doc(db, "users", uid))));
-    const users = snaps.filter(s => s.exists()).map(s => ({ uid: s.id,...s.data() } as UserData));
-    setOwner(users.find((u) => u.uid === task.userId) || null);
-    setApplicantsData(users.filter((u) => (task.applicants?? []).includes(u.uid)));
-    setLoadingUsers(false);
-  };
-  loadUsers();
-}, [task?.id, task?.userId, task?.applicants, db]); // ✅ Đổi dependency
+  useEffect(() => {
+    if (!task) return;
+    const loadUsers = async () => {
+      setLoadingUsers(true);
+      const userIds = [task.userId,...(task.applicants?? [])];
+      const uniqueIds = [...new Set(userIds)];
+      const snaps = await Promise.all(uniqueIds.map((uid) => getDoc(doc(db, "users", uid))));
+      const users = snaps.filter(s => s.exists()).map(s => ({ uid: s.id,...s.data() } as UserData));
+      setOwner(users.find((u) => u.uid === task.userId) || null);
+      setApplicantsData(users.filter((u) => (task.applicants?? []).includes(u.uid)));
+      setLoadingUsers(false);
+    };
+    loadUsers();
+  }, [task?.id, task?.userId, task?.applicants, db]);
 
   useEffect(() => {
     if (!task ||!isTask(task) ||!task.deadline?.seconds || task.status === "completed") return;
@@ -170,26 +172,23 @@ useEffect(() => {
     return () => clearInterval(interval);
   }, [task]);
 
-useEffect(() => {
-  if (!task?.id) return;
-  const unsub = listenComments(
-    task.id, 
-    (data) => {
-      setComments(data);
-      // setHasMoreComments(hasMore); // ✅ Nếu bro muốn load more thì bật lại state này
-    }, 
-    { 
-      limit: 20,
-      onError: (err) => {
-        console.error("Listen comments error:", err);
-        toast.error("Lỗi tải bình luận");
+  useEffect(() => {
+    if (!task?.id) return;
+    const unsub = listenComments(
+      task.id,
+      (data) => {
+        setComments(data);
+      },
+      {
+        limit: 20,
+        onError: (err) => {
+          console.error("Listen comments error:", err);
+          toast.error("Lỗi tải bình luận");
+        }
       }
-    }
-  );
-  return () => unsub && unsub();
-}, [task?.id]);
-
-   
+    );
+    return () => unsub && unsub();
+  }, [task?.id]);
 
   useEffect(() => {
     const lastAt = text.lastIndexOf("@");
@@ -271,7 +270,7 @@ useEffect(() => {
       id: tempId, taskId: task.id, userId: currentUser.uid,
       userName: currentUser.displayName || "Bạn", userAvatar: currentUser.photoURL || "",
       text: text.trim(), createdAt: Timestamp.now(), likeCount: 0, likedBy: [],
-     ...(replyTo && { parentId: replyTo.parentId || replyTo.id, replyToUserId: replyTo.userId, replyToUserName: replyTo.userName }),
+    ...(replyTo && { parentId: replyTo.parentId || replyTo.id, replyToUserId: replyTo.userId, replyToUserName: replyTo.userName }),
     };
     setComments(prev => [...prev, tempComment]);
     setText(""); setReplyTo(null); setSending(true);
@@ -279,7 +278,7 @@ useEffect(() => {
     try {
       await createComment(task.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, {
         text: DOMPurify.sanitize(tempComment.text),
-       ...(replyTo && { parentId: replyTo.parentId || replyTo.id, replyToUserId: replyTo.userId, replyToUserName: replyTo.userName }),
+      ...(replyTo && { parentId: replyTo.parentId || replyTo.id, replyToUserId: replyTo.userId, replyToUserName: replyTo.userName }),
       });
     } catch (err: any) {
       setComments(prev => prev.filter(c => c.id!== tempId));
@@ -290,47 +289,47 @@ useEffect(() => {
     }
   };
 
-const handleLikeComment = async (commentId: string) => {
-  if (!currentUser || !task) return router.push("/login"); // ✅ Thêm check task
-  if (likingComments.has(commentId)) return;
-  setLikingComments(prev => new Set(prev).add(commentId));
-  const liked = comments.find(c => c.id === commentId)?.likedBy?.includes(currentUser.uid);
-  setComments(prev => prev.map(c => c.id === commentId? {...c, likedBy: liked? c.likedBy.filter(id => id!== currentUser.uid) : [...(c.likedBy || []), currentUser.uid], likeCount: liked? c.likeCount - 1 : c.likeCount + 1 } : c));
-  try {
-    await toggleLikeComment(commentId, currentUser.uid, task.id); // ✅ Thêm task.id
-    navigator.vibrate?.(10);
-  } catch {
-    setComments(prev => prev.map(c => c.id === commentId? {...c, likedBy: liked? [...(c.likedBy || []), currentUser.uid] : c.likedBy.filter(id => id!== currentUser.uid), likeCount: liked? c.likeCount + 1 : c.likeCount - 1 } : c));
-    toast.error("Lỗi");
-  } finally {
-    setLikingComments(prev => { const next = new Set(prev); next.delete(commentId); return next; });
-  }
-};
+  const handleLikeComment = async (commentId: string) => {
+    if (!currentUser ||!task) return router.push("/login");
+    if (likingComments.has(commentId)) return;
+    setLikingComments(prev => new Set(prev).add(commentId));
+    const liked = comments.find(c => c.id === commentId)?.likedBy?.includes(currentUser.uid);
+    setComments(prev => prev.map(c => c.id === commentId? {...c, likedBy: liked? c.likedBy.filter(id => id!== currentUser.uid) : [...(c.likedBy || []), currentUser.uid], likeCount: liked? c.likeCount - 1 : c.likeCount + 1 } : c));
+    try {
+      await toggleLikeComment(commentId, currentUser.uid, task.id);
+      navigator.vibrate?.(10);
+    } catch {
+      setComments(prev => prev.map(c => c.id === commentId? {...c, likedBy: liked? [...(c.likedBy || []), currentUser.uid] : c.likedBy.filter(id => id!== currentUser.uid), likeCount: liked? c.likeCount + 1 : c.likeCount - 1 } : c));
+      toast.error("Lỗi");
+    } finally {
+      setLikingComments(prev => { const next = new Set(prev); next.delete(commentId); return next; });
+    }
+  };
 
-const handleDeleteComment = async (commentId: string) => {
-  if (!task?.id) return;
-  const backup = comments;
-  setComments(prev => prev.filter(c => c.id!== commentId && c.parentId!== commentId));
-  try {
-    await deleteComment(commentId, currentUser!.uid, task.id); // ✅ Thêm task.id
-    toast.success("Đã xóa");
-    navigator.vibrate?.(10);
-  } catch {
-    setComments(backup);
-    toast.error("Xóa thất bại");
-  }
-};
+  const handleDeleteComment = async (commentId: string) => {
+    if (!task?.id) return;
+    const backup = comments;
+    setComments(prev => prev.filter(c => c.id!== commentId && c.parentId!== commentId));
+    try {
+      await deleteComment(commentId, currentUser!.uid, task.id);
+      toast.success("Đã xóa");
+      navigator.vibrate?.(10);
+    } catch {
+      setComments(backup);
+      toast.error("Xóa thất bại");
+    }
+  };
 
-const handleEditComment = async (commentId: string) => {
-  if (!editText.trim() || !task) return; // ✅ Check thêm task
-  try {
-    await editComment(commentId, currentUser!.uid, DOMPurify.sanitize(editText), task.id); // ✅ Thêm task.id
-    setEditingComment(null); setEditText("");
-    toast.success("Đã sửa");
-  } catch {
-    toast.error("Sửa thất bại");
-  }
-};
+  const handleEditComment = async (commentId: string) => {
+    if (!editText.trim() ||!task) return;
+    try {
+      await editComment(commentId, currentUser!.uid, DOMPurify.sanitize(editText), task.id);
+      setEditingComment(null); setEditText("");
+      toast.success("Đã sửa");
+    } catch {
+      toast.error("Sửa thất bại");
+    }
+  };
 
   const handleReply = (c: TaskComment) => { setReplyTo(c); inputRef.current?.focus(); };
   const handleSelectMention = (user: UserData) => {
@@ -341,38 +340,36 @@ const handleEditComment = async (commentId: string) => {
   };
 
   const handleQuickChat = async () => {
-  if (!currentUser ||!owner || isOwner || creatingChat) return;
-  if (!currentUser) return router.push("/login");
+    if (!currentUser ||!owner || isOwner || creatingChat) return;
+    setCreatingChat(true);
+    try {
+      const chatId = [currentUser.uid, owner.uid].sort().join("_");
+      const chatRef = doc(db, "chats", chatId);
+      const chatSnap = await getDoc(chatRef);
 
-  setCreatingChat(true);
-  try {
-    const chatId = [currentUser.uid, owner.uid].sort().join("_");
-    const chatRef = doc(db, "chats", chatId);
-    const chatSnap = await getDoc(chatRef);
+      if (!chatSnap.exists()) {
+        await setDoc(chatRef, {
+          participants: [currentUser.uid, owner.uid],
+          lastMessage: "Job này còn tuyển không anh?",
+          lastMessageAt: serverTimestamp(),
+          createdAt: serverTimestamp(),
+        });
 
-    if (!chatSnap.exists()) {
-      await setDoc(chatRef, {
-        participants: [currentUser.uid, owner.uid],
-        lastMessage: "Job này còn tuyển không anh?",
-        lastMessageAt: serverTimestamp(),
-        createdAt: serverTimestamp(),
-      });
+        await setDoc(doc(db, "chats", chatId, "messages", `msg_${Date.now()}`), {
+          text: `Hi anh, em thấy job "${task?.title}". Job này còn tuyển không ạ?`,
+          senderId: currentUser.uid,
+          createdAt: serverTimestamp(),
+        });
+      }
 
-      await setDoc(doc(db, "chats", chatId, "messages", `msg_${Date.now()}`), {
-        text: `Hi anh, em thấy job "${task?.title}". Job này còn tuyển không ạ?`,
-        senderId: currentUser.uid,
-        createdAt: serverTimestamp(),
-      });
+      router.push(`/tin-nhan/${chatId}`);
+      navigator.vibrate?.(10);
+    } catch (err) {
+      toast.error("Không tạo được chat");
+    } finally {
+      setCreatingChat(false);
     }
-
-    router.push(`/tin-nhan/${chatId}`);
-    navigator.vibrate?.(10);
-  } catch (err) {
-    toast.error("Không tạo được chat");
-  } finally {
-    setCreatingChat(false);
-  }
-};
+  };
 
   if (loading) return <TaskSkeleton />;
   if (!task) return <div className="p-4 text-center">Không tìm thấy task</div>;
@@ -381,116 +378,247 @@ const handleEditComment = async (commentId: string) => {
   const getReplies = (id: string) => comments.filter((c) => c.parentId === id);
   const StatusIcon = taskStatus?.icon;
 
+  const taskDate = task.deadline?.seconds 
+    ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
+    : "Chưa xác định";
+  
+  const taskTime = task.deadline?.seconds
+    ? `${new Date(task.deadline.seconds * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(task.deadline.seconds * 1000 + 3*60*1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+    : "";
+
   return (
     <>
       <Toaster richColors position="top-center" />
-      <div className="max-w-xl mx-auto bg-[#F2F2F7] dark:bg-black min-h-screen pb-40">
+      <div className="max-w-xl mx-auto bg-[#F2F2F7] dark:bg-black min-h-screen pb-4">
         <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-[#E5E5EA] dark:border-zinc-800 px-4 py-3 flex gap-3 items-center">
           <button onClick={() => router.back()} className="p-1 -ml-1 rounded-full hover:bg-zinc-900/5 dark:hover:bg-white/5 active:scale-90 transition-all">
             <FiChevronLeft size={24} />
           </button>
-          <h1 className="font-semibold truncate flex-1 text-[17px]">{task.title}</h1>
+          <h1 className="font-semibold truncate flex-1 text-[17px]">Chi tiết</h1>
           <button onClick={handleShare} className="p-2 rounded-full hover:bg-zinc-900/5 dark:hover:bg-white/5 active:scale-90 transition-all">
             <FiShare2 size={18} className="text-zinc-600 dark:text-zinc-400" />
           </button>
-        {isOwner && (
-  <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <button className="p-2 rounded-full hover:bg-zinc-900/5 dark:hover:bg-white/5 active:scale-90 transition-all">
-        <FiMoreVertical size={18} className="text-zinc-600 dark:text-zinc-400" />
-      </button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="end" className="w-48">
-      <DropdownMenuItem onClick={() => router.push(`/nhiem-vu/edit/${task.id}`)}>
-        <FiEdit2 size={16} className="mr-2" /> Chỉnh sửa
-      </DropdownMenuItem>
-      <DropdownMenuItem 
-        onClick={() => setShowDeleteDialog(true)}
-        className="text-red-500 focus:text-red-500"
-      >
-        <FiTrash2 size={16} className="mr-2" /> Xóa task
-      </DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
-)}
-        </motion.div>
-
-        {taskStatus && StatusIcon && (
-          <div className="px-4 pt-4">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-medium ${taskStatus.color}`}>
-              <StatusIcon size={14} />
-              {taskStatus.text}
-            </motion.div>
-          </div>
-        )}
-
-  {/* 4.1: Card Chủ task + Nút Chat nhanh - Đưa lên trên */}
-<div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800">
-  {loadingUsers? (
-    <div className="flex items-center gap-3">
-      <Skeleton className="w-12 h-12 rounded-full" />
-      <div className="space-y-2 flex-1"><Skeleton className="h-4 w-24" /><Skeleton className="h-3 w-16" /></div>
-    </div>
-  ) : (
-    <div className="space-y-3">
-      <button onClick={() => router.push(`/profile/${task.userId}`)} className="flex items-center gap-3 w-full active:scale-95 transition-transform">
-        <UserAvatar src={owner?.avatar} name={owner?.name} size={48} />
-        <div className="text-left flex-1">
-          <div className="font-semibold text-[16px]">{owner?.name}</div>
-          <div className="text-[13px] text-zinc-500">Chủ task</div>
-        </div>
-        <FiChevronLeft className="rotate-180 text-zinc-400" size={20} />
-      </button>
-
-      {!isOwner && currentUser && (
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          onClick={handleQuickChat}
-          disabled={creatingChat}
-          className="w-full h-11 rounded-xl bg-[#0a84ff]/10 hover:bg-[#0a84ff]/20 text-[#0a84ff] font-semibold text-[15px] flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-        >
-          <FiMessageSquare size={18} />
-          {creatingChat? "Đang mở chat..." : "Nhắn tin hỏi chủ task"}
-        </motion.button>
-      )}
-    </div>
-  )}
-</div>
-
-{/* 4.2: Ảnh task - Thu nhỏ, để dưới avatar */}
-{task.images && task.images.length > 0 && (
-  <div className="mt-3 px-4">
-    <div className={`grid gap-1.5 rounded-2xl overflow-hidden ${task.images.length === 1? "grid-cols-1" : "grid-cols-3"}`}>
-      {task.images.slice(0, 3).map((img, i) => (
-       <motion.div key={i} whileTap={{ scale: 0.95 }} className="relative aspect-square" onClick={() => setShowImageGallery(i)}>
-          <Image
-            src={img}
-            alt=""
-            width={400}
-            height={300}
-           className="w-full h-full object-cover bg-[#E5E5EA] dark:bg-zinc-800 cursor-pointer"
-          />
-          {i === 2 && task.images!.length > 3 && (
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold text-lg">
-              +{task.images!.length - 3}
-            </div>
+          {isOwner && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-2 rounded-full hover:bg-zinc-900/5 dark:hover:bg-white/5 active:scale-90 transition-all">
+                  <FiMoreVertical size={18} className="text-zinc-600 dark:text-zinc-400" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => router.push(`/nhiem-vu/edit/${task.id}`)}>
+                  <FiEdit2 size={16} className="mr-2" /> Chỉnh sửa
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="text-red-500 focus:text-red-500"
+                >
+                  <FiTrash2 size={16} className="mr-2" /> Xóa task
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </motion.div>
-      ))}
-    </div>
-  </div>
-)}
 
+        {/* Card Task chính - Style giống mẫu */}
+        <div className="bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 overflow-hidden">
+          {/* Header: Avatar + Info */}
+          <div className="p-4">
+            <div className="flex gap-3">
+              <button onClick={() => router.push(`/profile/${task.userId}`)} className="shrink-0">
+                <div className="relative">
+                  <UserAvatar src={owner?.avatar} name={owner?.name} size={56} />
+                  {owner?.rating && owner.rating >= 4.8 && (
+                    <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-0.5">
+                      <FiCheckCircle className="text-white" size={14} />
+                    </div>
+                  )}
+                </div>
+              </button>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <span className="font-bold text-[17px]">{owner?.name || "Minh Tran"}</span>
+                  {owner?.rating && (
+                    <div className="flex items-center gap-1 text-[17px]">
+                      <FiStar className="fill-yellow-400 text-yellow-400" size={14} />
+                      <span className="font-semibold">{owner.rating}</span>
+                      <span className="text-zinc-500">({owner.reviewCount || 21} đánh giá)</span>
+                    </div>
+                  )}
+                  <span className="text-zinc-500 text-[17px]">• Mới tham gia</span>
+                </div>
+
+                <h2 className="font-bold text-[17px] leading-snug mb-2">{task.title}</h2>
+
+                <div className="flex items-center gap-3 text-[17px] text-zinc-600 dark:text-zinc-400">
+                  <div className="flex items-center gap-1">
+                    <FiCalendar size={16} />
+                    <span>{taskDate}</span>
+                  </div>
+                  <span>•</span>
+                  <div className="flex items-center gap-1">
+                    <FiClock size={16} />
+                    <span>{taskTime}</span>
+                  </div>
+                  {isTask(task) && task.price > 0 && (
+                    <>
+                      <span className="px-2 py-0.5 rounded-md bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[17px] font-semibold">
+                        {task.price.toLocaleString("vi-VN")} đ
+                      </span>
+                      <span>• Cố định</span>
+                    </>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => router.push(`/profile/${task.userId}`)}
+                  className="text-[#0a84ff] text-[17px] font-medium underline mt-1"
+                >
+                  Xem hồ sơ
+                </button>
+              </div>
+            </div>
+
+            {/* Tags + Phần thưởng */}
+            <div className="flex gap-2 mt-3">
+              <div className="flex-1 flex flex-wrap gap-1.5">
+                {task.tags?.map((tag, i) => (
+                  <span key={i} className="px-3 py-1.5 rounded-lg bg-[#0a84ff]/10 text-[#0a84ff] text-[17px] font-medium">
+                    {tag}
+                  </span>
+                ))}
+                {!task.tags?.length && (
+                  <>
+                    <span className="px-3 py-1.5 rounded-lg bg-[#0a84ff]/10 text-[#0a84ff] text-[17px] font-medium">Nhanh chóng</span>
+                    <span className="px-3 py-1.5 rounded-lg bg-[#0a84ff]/10 text-[#0a84ff] text-[17px] font-medium">Uy tín</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800" />
+
+          {/* 4 nút action */}
+          <div className="p-3 grid grid-cols-4 gap-2">
+            <button
+              onClick={handleQuickChat}
+              disabled={creatingChat || isOwner}
+              className="h-10 rounded-lg border border-[#E5E5EA] dark:border-zinc-700 bg-white dark:bg-zinc-800 flex items-center justify-center gap-1.5 text-[17px] font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 active:scale-95 transition-all"
+            >
+              <FiMessageSquare size={18} />
+              <span className="hidden sm:inline">Nhắn tin</span>
+            </button>
+
+            <button
+              onClick={() => window.open(`tel:${owner?.phone || ''}`)}
+              disabled={!owner?.phone}
+              className="h-10 rounded-lg border border-[#E5E5EA] dark:border-zinc-700 bg-white dark:bg-zinc-800 flex items-center justify-center gap-1.5 text-[17px] font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 active:scale-95 transition-all"
+            >
+              <FiPhone size={18} />
+              <span className="hidden sm:inline">Gọi điện</span>
+            </button>
+
+            <button
+              onClick={isApplied? handleCancelApply : handleJoinTask}
+              disabled={(!isApplied && (isFull || task.status!== "open")) || joining || isOwner}
+              className={`h-10 rounded-lg flex items-center justify-center gap-1.5 text-[17px] font-semibold active:scale-95 transition-all disabled:opacity-40 ${
+                isApplied
+                 ? "border border-[#E5E5EA] dark:border-zinc-700 bg-white dark:bg-zinc-800"
+                  : "bg-[#0a84ff] hover:bg-[#0071e3] text-white"
+              }`}
+            >
+              <FiPlus size={18} />
+              <span className="hidden sm:inline">{isApplied? "Hủy" : "Nhận việc"}</span>
+            </button>
+
+            <button
+              onClick={() => toast.info("Đã gửi báo cáo")}
+              className="h-10 rounded-lg border border-[#E5E5EA] dark:border-zinc-700 bg-white dark:bg-zinc-800 flex items-center justify-center gap-1.5 text-[17px] font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700 active:scale-95 transition-all"
+            >
+              <FiAlertTriangle size={18} />
+              <span className="hidden sm:inline">Báo cáo</span>
+            </button>
+          </div>
+
+          {/* Map mini */}
+          {task.lat && task.lng && (
+            <>
+              <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800" />
+              <div className="p-3">
+                <div className="relative h-32 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+                  <iframe
+                    src={`https://www.google.com/maps?q=${task.lat},${task.lng}&output=embed`}
+                    className="w-full h-full border-0"
+                    loading="lazy"
+                  />
+                  <div className="absolute top-2 left-2 bg-white dark:bg-zinc-900 px-2 py-1 rounded-lg text- font-medium shadow">
+                    Bản đồ
+                  </div>
+                </div>
+                <button className="w-full mt-2 text-[#0a84ff] font-semibold text-[17px]">
+                  Xem chi tiết
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* Danh sách ứng viên */}
+          {applicantsData.length > 0 && (
+            <>
+              <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800" />
+              <div className="p-3 flex items-center gap-2">
+                <div className="flex -space-x-2">
+                  {applicantsData.slice(0, 3).map((u) => (
+                    <UserAvatar key={u.uid} src={u.avatar} name={u.name} size={28} className="border-2 border-white dark:border-zinc-900" />
+                  ))}
+                </div>
+                <div className="flex items-center gap-1 text-[17px] text-zinc-600 dark:text-zinc-400">
+                  <FiUsers size={16} />
+                  <span>{applicantsData.length} người đang ứng tuyển</span>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Mô tả chi tiết */}
         {task.description && (
           <div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800">
-            <h3 className="font-semibold mb-2 text-[15px]">Mô tả công việc</h3>
+            <h3 className="font-semibold mb-2 text-[17px]">Mô tả chi tiết</h3>
             <Linkify options={{ target: "_blank", className: `text-[${PRIMARY}] hover:underline` }}>
-              <p className="text-[15px] text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">{task.description}</p>
+              <p className="text- text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">{task.description}</p>
             </Linkify>
           </div>
         )}
 
-        <div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 space-y-3 text-[15px]">
+        {/* Ảnh task - THU NHỎ XÍU, ĐỂ DƯỚI MÔ TẢ */}
+        {task.images && task.images.length > 0 && (
+          <div className="mt-3 px-4">
+            <div className={`grid gap-1.5 rounded-2xl overflow-hidden ${task.images.length === 1? "grid-cols-1" : "grid-cols-3"}`}>
+              {task.images.slice(0, 3).map((img, i) => (
+                <motion.div key={i} whileTap={{ scale: 0.95 }} className="relative aspect-square" onClick={() => setShowImageGallery(i)}>
+                  <Image
+                    src={img}
+                    alt=""
+                    width={400}
+                    height={300}
+                    className="w-full h-full object-cover bg-[#E5E5EA] dark:bg-zinc-800 cursor-pointer"
+                  />
+                  {i === 2 && task.images!.length > 3 && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold text-lg">
+                      +{task.images!.length - 3}
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* Info chi tiết task */}
+        <div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 space-y-3 text-[17px]">
           {task.location && (task.location.address || task.location.city) && (
             <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
               <FiMapPin size={18} className="text-zinc-400" />
@@ -519,42 +647,11 @@ const handleEditComment = async (commentId: string) => {
           </div>
         </div>
 
-        {/* Nút Ứng tuyển - Tách riêng */}
-{!isOwner && (
-  <div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800">
-    <motion.button
-      whileTap={{ scale: 0.98 }}
-      onClick={isApplied? handleCancelApply : handleJoinTask}
-      disabled={(!isApplied && (isFull || task.status!== "open")) || joining}
-      className={`w-full h-12 rounded-xl text-[16px] font-semibold transition-all disabled:opacity-30 disabled:cursor-not-allowed ${isApplied? "bg-[#F2F2F7] dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300" : `bg-[#0a84ff] hover:bg-[#0071e3] text-white shadow-lg shadow-[#0a84ff]/30`}`}
-    >
-      {joining? "Đang xử lý..." : isApplied? "Hủy ứng tuyển" : isFull? "Đã đủ người" : task.status!== "open"? "Đã đóng" : "Ứng tuyển ngay"}
-    </motion.button>
-  </div>
-)}
-
-        {applicantsData.length > 0 && (
-          <div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800">
-            <div className="text-[15px] font-semibold mb-3">Đã ứng tuyển ({applicantsData.length})</div>
-            <div className="flex -space-x-2">
-              {applicantsData.slice(0, 8).map((u) => (
-                <motion.button key={u.uid} whileHover={{ scale: 1.1 }} onClick={() => router.push(`/profile/${u.uid}`)}>
-                  <UserAvatar src={u.avatar} name={u.name} size={36} className="border-2 border-white dark:border-zinc-900" />
-                </motion.button>
-              ))}
-              {applicantsData.length > 8 && (
-                <div className="w-9 h-9 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 border-2 border-white dark:border-zinc-900 flex items-center justify-center text-[12px] font-semibold tabular-nums">
-                  +{applicantsData.length - 8}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
+        {/* Khung bình luận */}
         <div className="p-4 space-y-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800">
-          <div className="font-semibold text-[15px]">Bình luận ({comments.length})</div>
+          <div className="font-semibold text-">Bình luận ({comments.length})</div>
           {parentComments.length === 0? (
-            <div className="text-center py-12 text-zinc-400 text-[15px]">
+            <div className="text-center py-12 text-zinc-400 text-">
               <FiMessageCircle size={48} className="mx-auto mb-3 opacity-30" />
               Chưa có bình luận nào<br />Hãy là người đầu tiên
             </div>
@@ -566,7 +663,7 @@ const handleEditComment = async (commentId: string) => {
                   comment={c}
                   replies={getReplies(c.id)}
                   currentUserId={currentUser?.uid}
-                   taskOwnerId={task.userId}
+                  taskOwnerId={task.userId}
                   onLike={handleLikeComment}
                   onReply={handleReply}
                   onDelete={handleDeleteComment}
@@ -582,73 +679,71 @@ const handleEditComment = async (commentId: string) => {
             </AnimatePresence>
           )}
           
-         
-<div ref={bottomRef} />
+          <div ref={bottomRef} />
 
-{/* Ô nhập nằm trong khung bình luận */}
-<div className="sticky bottom-0 bg-white dark:bg-zinc-900 pt-3 -mx-4 px-4 pb-3 border-t border-[#E5E5EA] dark:border-zinc-800">
-  {replyTo && (
-    <div className="text- text-zinc-600 dark:text-zinc-400 mb-2 flex items-center justify-between bg-[#F2F2F7] dark:bg-zinc-800 px-3.5 py-2 rounded-xl">
-      <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
-      <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg active:scale-90 transition-all"><FiX size={14} /></button>
-    </div>
-  )}
-  <div className="flex gap-2 items-end relative">
-    <div className="flex-1 relative">
-      <input
-        ref={inputRef}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSendComment()}
-        placeholder={currentUser? "Viết bình luận..." : "Đăng nhập để bình luận"}
-        className="w-full px-4 py-2.5 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 outline-none text- focus:ring-2 focus:ring-[#0a84ff]/20 transition-all"
-        disabled={sending ||!currentUser}
-      />
-      {showMention && mentionUsers.length > 0 && (
-        <div className="absolute bottom-12 left-0 w-64 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-[#E5E5EA] dark:border-zinc-800 max-h-60 overflow-auto z-50">
-          <div className="p-2">
-            <input
-              placeholder="Tìm người..."
-              value={mentionQuery}
-              onChange={(e) => setMentionQuery(e.target.value)}
-              className="w-full px-3 py-1.5 text- bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg outline-none mb-2"
-            />
-            {mentionUsers.map((user) => (
-              <button
-                key={user.uid}
-                onClick={() => handleSelectMention(user)}
-                className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#F2F2F7] dark:hover:bg-zinc-800 rounded-lg text-left"
+          {/* Ô nhập nằm trong khung bình luận */}
+          <div className="sticky bottom-0 bg-white dark:bg-zinc-900 pt-3 -mx-4 px-4 pb-3 border-t border-[#E5E5EA] dark:border-zinc-800">
+            {replyTo && (
+              <div className="text- text-zinc-600 dark:text-zinc-400 mb-2 flex items-center justify-between bg-[#F2F2F7] dark:bg-zinc-800 px-3.5 py-2 rounded-xl">
+                <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
+                <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg active:scale-90 transition-all"><FiX size={14} /></button>
+              </div>
+            )}
+            <div className="flex gap-2 items-end relative">
+              <div className="flex-1 relative">
+                <input
+                  ref={inputRef}
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSendComment()}
+                  placeholder={currentUser? "Viết bình luận..." : "Đăng nhập để bình luận"}
+                  className="w-full px-4 py-2.5 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 outline-none text- focus:ring-2 focus:ring-[#0a84ff]/20 transition-all"
+                  disabled={sending ||!currentUser}
+                />
+                {showMention && mentionUsers.length > 0 && (
+                  <div className="absolute bottom-12 left-0 w-64 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-[#E5E5EA] dark:border-zinc-800 max-h-60 overflow-auto z-50">
+                    <div className="p-2">
+                      <input
+                        placeholder="Tìm người..."
+                        value={mentionQuery}
+                        onChange={(e) => setMentionQuery(e.target.value)}
+                        className="w-full px-3 py-1.5 text- bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg outline-none mb-2"
+                      />
+                      {mentionUsers.map((user) => (
+                        <button
+                          key={user.uid}
+                          onClick={() => handleSelectMention(user)}
+                          className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#F2F2F7] dark:hover:bg-zinc-800 rounded-lg text-left"
+                        >
+                          <UserAvatar src={user.avatar} name={user.name} size={24} />
+                          <span className="text-">{user.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={handleSendComment}
+                disabled={!text.trim() || sending ||!currentUser}
+                className={`p-2.5 rounded-full bg-[#0a84ff] hover:bg-[#0071e3] text-white disabled:bg-zinc-300 dark:disabled:bg-zinc-700 disabled:cursor-not-allowed active:scale-90 transition-all`}
               >
-                <UserAvatar src={user.avatar} name={user.name} size={24} />
-                <span className="text-">{user.name}</span>
-              </button>
-            ))}
+                <FiSend size={18} />
+              </motion.button>
+            </div>
           </div>
         </div>
-      )}
-    </div>
-    <motion.button
-      whileTap={{ scale: 0.9 }}
-      onClick={handleSendComment}
-      disabled={!text.trim() || sending ||!currentUser}
-      className={`p-2.5 rounded-full bg-[#0a84ff] hover:bg-[#0071e3] text-white disabled:bg-zinc-300 dark:disabled:bg-zinc-700 disabled:cursor-not-allowed active:scale-90 transition-all`}
-    >
-      <FiSend size={18} />
-    </motion.button>
-  </div>
-</div>
-        </div>
-
 
       </div>
 
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader><DialogTitle>Xóa task?</DialogTitle></DialogHeader>
-          <p className="text-[15px] text-zinc-600 dark:text-zinc-400">Hành động này không thể hoàn tác. Tất cả dữ liệu sẽ bị xóa vĩnh viễn.</p>
+          <p className="text- text-zinc-600 dark:text-zinc-400">Hành động này không thể hoàn tác. Tất cả dữ liệu sẽ bị xóa vĩnh viễn.</p>
           <div className="flex gap-2 justify-end mt-4">
-            <button onClick={() => setShowDeleteDialog(false)} className="px-4 py-2 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 text-[15px] font-medium active:scale-95 transition-all">Hủy</button>
-            <button onClick={() => { handleDeleteTask(); setShowDeleteDialog(false); }} className="px-4 py-2 rounded-xl bg-red-500 text-white text-[15px] font-medium active:scale-95 transition-all">Xóa</button>
+            <button onClick={() => setShowDeleteDialog(false)} className="px-4 py-2 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 text- font-medium active:scale-95 transition-all">Hủy</button>
+            <button onClick={() => { handleDeleteTask(); setShowDeleteDialog(false); }} className="px-4 py-2 rounded-xl bg-red-500 text-white text- font-medium active:scale-95 transition-all">Xóa</button>
           </div>
         </DialogContent>
       </Dialog>
