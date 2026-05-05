@@ -462,13 +462,13 @@ const handleEditComment = async (commentId: string) => {
   <div className="mt-3 px-4">
     <div className={`grid gap-1.5 rounded-2xl overflow-hidden ${task.images.length === 1? "grid-cols-1" : "grid-cols-3"}`}>
       {task.images.slice(0, 3).map((img, i) => (
-        <motion.div key={i} whileTap={{ scale: 0.95 }} className="relative" onClick={() => setShowImageGallery(i)}>
+       <motion.div key={i} whileTap={{ scale: 0.95 }} className="relative aspect-square" onClick={() => setShowImageGallery(i)}>
           <Image
             src={img}
             alt=""
             width={400}
             height={300}
-            className={`w-full object-cover bg-[#E5E5EA] dark:bg-zinc-800 cursor-pointer ${task.images!.length === 1? "h-48" : "h-28"}`}
+           className="w-full h-full object-cover bg-[#E5E5EA] dark:bg-zinc-800 cursor-pointer"
           />
           {i === 2 && task.images!.length > 3 && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold text-lg">
@@ -582,60 +582,64 @@ const handleEditComment = async (commentId: string) => {
             </AnimatePresence>
           )}
           
-          <div ref={bottomRef} />
-        </div>
+         
+<div ref={bottomRef} />
 
-        <div className="fixed bottom-16 left-0 right-0 max-w-xl mx-auto bg-white/80 dark:bg-black/80 backdrop-blur-xl border-t border-[#E5E5EA] dark:border-zinc-800 p-3 z-50">
-          {replyTo && (
-            <div className="text-[13px] text-zinc-600 dark:text-zinc-400 mb-2 flex items-center justify-between bg-[#F2F2F7] dark:bg-zinc-800 px-3.5 py-2 rounded-xl">
-              <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
-              <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg active:scale-90 transition-all"><FiX size={14} /></button>
-            </div>
-          )}
-          <div className="flex gap-2 items-end relative">
-           <div className="flex-1 relative">
-<input
-  ref={inputRef}
-  value={text}
-  onChange={(e) => setText(e.target.value)}
-  onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSendComment()}
-  placeholder={currentUser? "Viết bình luận..." : "Đăng nhập để bình luận"}
-  className="w-full px-4 py-2.5 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 outline-none text-[15px] focus:ring-2 focus:ring-[#0a84ff]/20 transition-all"
-  disabled={sending ||!currentUser}
-/>
-  {showMention && mentionUsers.length > 0 && (
-    <div className="absolute bottom-12 left-0 w-64 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-[#E5E5EA] dark:border-zinc-800 max-h-60 overflow-auto z-50">
-      <div className="p-2">
-        <input
-          placeholder="Tìm người..."
-          value={mentionQuery}
-          onChange={(e) => setMentionQuery(e.target.value)}
-          className="w-full px-3 py-1.5 text-[14px] bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg outline-none mb-2"
-        />
-        {mentionUsers.map((user) => (
-          <button
-            key={user.uid}
-            onClick={() => handleSelectMention(user)}
-            className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#F2F2F7] dark:hover:bg-zinc-800 rounded-lg text-left"
-          >
-            <UserAvatar src={user.avatar} name={user.name} size={24} />
-            <span className="text-[15px]">{user.name}</span>
-          </button>
-        ))}
-      </div>
+{/* Ô nhập nằm trong khung bình luận */}
+<div className="sticky bottom-0 bg-white dark:bg-zinc-900 pt-3 -mx-4 px-4 pb-3 border-t border-[#E5E5EA] dark:border-zinc-800">
+  {replyTo && (
+    <div className="text- text-zinc-600 dark:text-zinc-400 mb-2 flex items-center justify-between bg-[#F2F2F7] dark:bg-zinc-800 px-3.5 py-2 rounded-xl">
+      <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
+      <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg active:scale-90 transition-all"><FiX size={14} /></button>
     </div>
   )}
-</div>
-<motion.button
-  whileTap={{ scale: 0.9 }}
-  onClick={handleSendComment}
-  disabled={!text.trim() || sending ||!currentUser}
-  className={`p-2.5 rounded-full bg-[${PRIMARY}] hover:bg-[#0071e3] text-white disabled:bg-zinc-300 dark:disabled:bg-zinc-700 disabled:cursor-not-allowed active:scale-90 transition-all`}
->
-  <FiSend size={18} />
-</motion.button>
+  <div className="flex gap-2 items-end relative">
+    <div className="flex-1 relative">
+      <input
+        ref={inputRef}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSendComment()}
+        placeholder={currentUser? "Viết bình luận..." : "Đăng nhập để bình luận"}
+        className="w-full px-4 py-2.5 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 outline-none text- focus:ring-2 focus:ring-[#0a84ff]/20 transition-all"
+        disabled={sending ||!currentUser}
+      />
+      {showMention && mentionUsers.length > 0 && (
+        <div className="absolute bottom-12 left-0 w-64 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-[#E5E5EA] dark:border-zinc-800 max-h-60 overflow-auto z-50">
+          <div className="p-2">
+            <input
+              placeholder="Tìm người..."
+              value={mentionQuery}
+              onChange={(e) => setMentionQuery(e.target.value)}
+              className="w-full px-3 py-1.5 text- bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg outline-none mb-2"
+            />
+            {mentionUsers.map((user) => (
+              <button
+                key={user.uid}
+                onClick={() => handleSelectMention(user)}
+                className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#F2F2F7] dark:hover:bg-zinc-800 rounded-lg text-left"
+              >
+                <UserAvatar src={user.avatar} name={user.name} size={24} />
+                <span className="text-">{user.name}</span>
+              </button>
+            ))}
           </div>
         </div>
+      )}
+    </div>
+    <motion.button
+      whileTap={{ scale: 0.9 }}
+      onClick={handleSendComment}
+      disabled={!text.trim() || sending ||!currentUser}
+      className={`p-2.5 rounded-full bg-[#0a84ff] hover:bg-[#0071e3] text-white disabled:bg-zinc-300 dark:disabled:bg-zinc-700 disabled:cursor-not-allowed active:scale-90 transition-all`}
+    >
+      <FiSend size={18} />
+    </motion.button>
+  </div>
+</div>
+        </div>
+
+
       </div>
 
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
