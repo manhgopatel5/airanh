@@ -15,6 +15,7 @@ export type TaskStatus =
 export type Visibility = "public" | "private" | "friends" | "unlisted";
 export type BudgetType = "fixed" | "hourly" | "negotiable";
 export type CostType = "free" | "share" | "host";
+export type PaymentMethod = "app" | "cash"; // THÊM
 
 export type PlanParticipantRole = "owner" | "admin" | "member";
 export type PlanStatus = "draft" | "open" | "in_progress" | "completed" | "cancelled";
@@ -38,7 +39,7 @@ export type BaseItem = {
   title: string;
   description: string;
   category: string;
-  tags: string[];
+  tags: string[]; // ĐÃ CÓ
   images: string[];
   attachments?: string[];
   
@@ -69,8 +70,8 @@ export type BaseItem = {
     country?: string;
     city?: string;
     address?: string;
-    lat?: number;
-    lng?: number;
+    lat?: number; // ĐÃ CÓ
+    lng?: number; // ĐÃ CÓ
   };
 
   // Search
@@ -95,6 +96,7 @@ export type TaskItem = BaseItem & {
   price: number;
   currency: string;
   budgetType: BudgetType;
+  paymentMethod?: PaymentMethod; // THÊM DÒNG NÀY
   totalSlots: number;
   joined: number;
   requirements?: string;
@@ -151,6 +153,7 @@ export type PlanItem = BaseItem & {
   costType: CostType;
   costAmount?: number; // Nếu costType = share/host
   costDescription?: string; // Mô tả chi phí
+  paymentMethod?: PaymentMethod; // THÊM DÒNG NÀY
 
   // Settings
   autoAccept?: boolean; // Tự động accept khi join
@@ -168,6 +171,7 @@ export type CreateTaskInput = {
   price: number;
   currency?: string;
   budgetType?: BudgetType;
+  paymentMethod?: PaymentMethod; // THÊM DÒNG NÀY
   totalSlots: number;
   visibility?: Visibility;
   category?: string;
@@ -194,6 +198,7 @@ export type CreatePlanInput = {
   costType: CostType;
   costAmount?: number;
   costDescription?: string;
+  paymentMethod?: PaymentMethod; // THÊM DÒNG NÀY
   allowInvite?: boolean;
   autoAccept?: boolean;
   requireApproval?: boolean;
@@ -202,7 +207,7 @@ export type CreatePlanInput = {
   images?: string[];
   attachments?: string[];
   location?: BaseItem["location"];
-  milestones?: Omit<PlanMilestone, "id" | "completed" | "completedAt" | "order">[];
+  milestones?: Omit<PlanMilestone, "id" | "completedAt" | "order">[];
   featured?: boolean;
 };
 
@@ -239,6 +244,7 @@ export type TaskListItem = Pick<
   | "isRemote"
   | "likes"
   | "budgetType"
+  | "paymentMethod" // THÊM DÒNG NÀY
   | "userId"
   | "description"
   | "type"
@@ -274,6 +280,7 @@ export type PlanListItem = Pick<
   | "currentParticipants"
   | "costType"
   | "costAmount"
+  | "paymentMethod" // THÊM DÒNG NÀY
   | "milestones"
 >;
 
@@ -308,7 +315,6 @@ export type TaskComment = {
   likeCount: number;
   likedBy: string[]; // đổi likes -> likedBy
   deleted?: boolean; // thêm field này
-
 };
 
 /* ================= TYPE GUARDS ================= */
