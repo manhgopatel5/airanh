@@ -23,7 +23,7 @@ import type { TaskComment } from "@/types/task";
 import { isTask, isPlan, type Task } from "@/types/task";
 import {
   FiChevronLeft, FiSend, FiClock, FiUsers, FiX, FiShare2, FiMoreVertical,
-  FiEdit2, FiTrash2, FiMapPin, FiDollarSign, FiCheckCircle, FiAlertCircle,
+  FiEdit2, FiTrash2, FiMapPin, FiDollarSign, FiCheckCircle,
   FiMessageCircle, FiCalendar
 } from "react-icons/fi";
 import DOMPurify from "isomorphic-dompurify";
