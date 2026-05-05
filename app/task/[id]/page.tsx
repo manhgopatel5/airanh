@@ -173,7 +173,7 @@ useEffect(() => {
   if (!task?.id) return;
   const unsub = listenComments(
     task.id, 
-    (data, hasMore) => {
+    (data) => {
       setComments(data);
       // setHasMoreComments(hasMore); // ✅ Nếu bro muốn load more thì bật lại state này
     }, 
