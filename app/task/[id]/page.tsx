@@ -376,7 +376,7 @@ export default function TaskDetailPage() {
 
   const parentComments = comments.filter((c) =>!c.parentId);
   const getReplies = (id: string) => comments.filter((c) => c.parentId === id);
-  const StatusIcon = taskStatus?.icon;
+  
 
   const taskDate = task.deadline?.seconds 
     ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
