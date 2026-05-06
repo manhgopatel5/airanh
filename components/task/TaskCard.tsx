@@ -10,7 +10,7 @@ import { useState, useCallback, useRef } from "react";
 import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
-import { isTask, type Task, type TaskStatus } from "@/types/task";
+import { isTask, type TaskStatus, type TaskListItem, type PlanListItem } from "@/types/task";
 import { toast } from "sonner";
 import { motion, useMotionValue, useTransform, AnimatePresence } from "framer-motion";
 import { TaskListItem, PlanListItem } from "@/types/task";
