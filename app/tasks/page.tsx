@@ -28,7 +28,7 @@ export default function TasksPage() {
   const router = useRouter();
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [mainTab, setMainTab] = useState<MainTab>("task"); // Task trước giống trang chủ
+  const [mainTab, setMainTab] = useState<MainTab>("task");
   const [subTab, setSubTab] = useState<SubTab>("mine");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,8 +39,6 @@ export default function TasksPage() {
       bg: "bg-green-500",
       bgHover: "hover:bg-green-600",
       text: "text-green-600 dark:text-green-400",
-      textActive: "text-green-600 dark:text-green-400",
-      bgLight: "bg-green-500 text-white",
       shadow: "shadow-green-500/20",
       icon: FiCalendar,
     },
@@ -48,8 +46,6 @@ export default function TasksPage() {
       bg: "bg-blue-500",
       bgHover: "hover:bg-blue-600",
       text: "text-blue-600 dark:text-blue-400", 
-      textActive: "text-blue-600 dark:text-blue-400",
-      bgLight: "bg-blue-500 text-white",
       shadow: "shadow-blue-500/20",
       icon: FiZap,
     }
@@ -119,9 +115,9 @@ export default function TasksPage() {
 
       const snap = await getDocs(q);
       const data = snap.docs
-      .map(doc => ({ id: doc.id,...doc.data() } as Task))
-      .filter(t => t.status!== "deleted" && t.status!== "cancelled")
-      .sort((a, b) => b.createdAt?.toMillis() - a.createdAt?.toMillis()); // Sort client
+    .map(doc => ({ id: doc.id,...doc.data() } as Task))
+    .filter(t => t.status!== "deleted" && t.status!== "cancelled")
+    .sort((a, b) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
       
       setTasks(data);
     } catch (err) {
@@ -136,23 +132,17 @@ export default function TasksPage() {
     <>
       <Toaster richColors position="top-center" />
       <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 select-none pb-28">
-        {/* Header mới giống trang chủ - không có chữ "Nhiệm vụ" + dấu cộng */}
+        {/* ĐÃ BỎ THANH PROGRESS 0.5 Ở ĐÂY */}
+        
         <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-800">
-          <div className="h-0.5 w-full bg-zinc-200 dark:bg-zinc-800">
-            <motion.div 
-              className={`h-full ${theme.bg}`} 
-              animate={{ width: `${((SUB_TABS.findIndex(t => t.key === subTab) + 1) / SUB_TABS.length) * 100}%` }}
-            />
-          </div>
-
-          {/* Main Tab: Task | Plan - giống trang chủ */}
+          {/* Main Tab: Task | Plan */}
           <div className="px-4 pt-3 pb-2">
             <div className="bg-zinc-100 dark:bg-zinc-900 rounded-xl p-1 flex">
               <button
                 onClick={() => setMainTab("task")}
                 className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-1.5 text- font-semibold transition-all active:scale-95 ${
                   mainTab === "task" 
-               ? "bg-white dark:bg-zinc-800 shadow-sm text-blue-600 dark:text-blue-400" 
+              ? "bg-white dark:bg-zinc-800 shadow-sm text-blue-600 dark:text-blue-400" 
                     : "text-zinc-500"
                 }`}
               >
@@ -163,7 +153,7 @@ export default function TasksPage() {
                 onClick={() => setMainTab("plan")}
                 className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-1.5 text- font-semibold transition-all active:scale-95 ${
                   mainTab === "plan" 
-               ? "bg-white dark:bg-zinc-800 shadow-sm text-green-600 dark:text-green-400" 
+              ? "bg-white dark:bg-zinc-800 shadow-sm text-green-600 dark:text-green-400" 
                     : "text-zinc-500"
                 }`}
               >
@@ -173,7 +163,7 @@ export default function TasksPage() {
             </div>
           </div>
 
-          {/* Sub Tab: scroll ngang */}
+          {/* Sub Tab */}
           <div className="px-4 pb-3 overflow-x-auto scrollbar-hide">
             <div className="flex gap-2">
               {SUB_TABS.map((tab) => (
@@ -182,7 +172,7 @@ export default function TasksPage() {
                   onClick={() => setSubTab(tab.key)}
                   className={`px-4 h-9 rounded-full text- font-medium whitespace-nowrap transition-all active:scale-95 ${
                     subTab === tab.key
-                   ? `${theme.bgLight} shadow-sm ${theme.shadow}`
+                  ? `${theme.bg} text-white shadow-sm ${theme.shadow}`
                       : "bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200"
                   }`}
                 >
@@ -198,7 +188,7 @@ export default function TasksPage() {
           {loading? (
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="bg-white dark:bg-zinc-900 rounded- border border-zinc-200 dark:border-zinc-800 p-4 animate-pulse">
+                <div key={i} className="bg-white dark:bg-zinc-900 rounded- border-zinc-200 dark:border-zinc-800 p-4 animate-pulse">
                   <div className="h-5 w-3/4 bg-zinc-200 dark:bg-zinc-800 rounded mb-2" />
                   <div className="h-4 w-1/2 bg-zinc-200 dark:bg-zinc-800 rounded" />
                 </div>
@@ -245,8 +235,8 @@ export default function TasksPage() {
       </div>
 
       <style jsx global>{`
-     .scrollbar-hide::-webkit-scrollbar { display: none; }
-     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </>
   );
