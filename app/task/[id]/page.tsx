@@ -6,10 +6,10 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp } from "firebase/firestore";
 import {
-   FiSend, FiClock, FiUsers, FiX, FiShare2,
-  FiMapPin, FiDollarSign, FiCheckCircle,
-  FiMessageCircle, FiCalendar, FiMessageSquare, FiPhone, 
-  FiPlus, FiAlertTriangle, FiStar, FiBookmark, FiMoreHorizontal
+  FiChevronLeft, FiSend, FiClock, FiUsers, FiX, FiShare2,
+  FiMapPin, FiDollarSign, FiCheckCircle, FiMessageCircle, 
+  FiCalendar, FiMessageSquare, FiPhone, FiPlus, FiAlertTriangle, 
+  FiStar, FiBookmark, FiMoreHorizontal
 } from "react-icons/fi";
 import {
   getTaskBySlug,
@@ -26,11 +26,7 @@ import {
 
 import type { TaskComment } from "@/types/task";
 import { isTask, isPlan, type Task } from "@/types/task";
-import {
-  FiChevronLeft, FiSend, FiClock, FiUsers, FiX, FiShare2,
-  FiMapPin, FiDollarSign, FiCheckCircle,
-  FiMessageCircle, FiCalendar
-} from "react-icons/fi";
+
 import DOMPurify from "isomorphic-dompurify";
 import { toast, Toaster } from "sonner";
 import Image from "next/image";
