@@ -9,7 +9,7 @@ import { useState, useCallback } from "react";
 import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
-import { isTask, isPlan, type Task } from "@/types/task";
+import { isTask, isPlan, type Task, type TaskStatus } from "@/types/task";
 import { toast } from "sonner";
 
 type Props = {
