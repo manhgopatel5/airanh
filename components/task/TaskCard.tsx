@@ -5,6 +5,7 @@ import {
   FiUsers, FiClock, FiMapPin, FiBookmark, FiMoreHorizontal, 
   FiTrash2, FiEdit2, FiCheck, FiShare2, FiEye
 } from "react-icons/fi";
+
 import { useState, useCallback, useRef } from "react";
 import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
@@ -12,9 +13,9 @@ import { useAuth } from "@/lib/AuthContext";
 import { isTask, type Task, type TaskStatus } from "@/types/task";
 import { toast } from "sonner";
 import { motion, useMotionValue, useTransform, AnimatePresence } from "framer-motion";
-
+import { TaskListItem, PlanListItem } from "@/types/task";
 type Props = {
-  task: Task;
+  task: TaskListItem | PlanListItem;
   theme: "task" | "plan";
   onDelete?: (id: string) => void;
   onShare?: () => void;
