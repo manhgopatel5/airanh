@@ -106,7 +106,7 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
 
   const goToTask = () => {
     vibrate();
-    router.push(`/task/${task.slug || task.id}`);
+    router.push(`/task/${task.id}`);
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
