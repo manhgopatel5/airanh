@@ -7,7 +7,7 @@ import { HiBolt, HiCalendarDays } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import type { Task } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
@@ -73,8 +73,7 @@ export default function TasksPage() {
             baseCollection, 
             where("userId", "==", currentUser.uid), 
             where("type", "==", mode),
-            where("status", "not-in", ["deleted", "cancelled"]),
-            orderBy("createdAt", "desc")
+            where("status", "not-in", ["deleted", "cancelled"])
           );
           break;
         case "saved":
@@ -82,8 +81,7 @@ export default function TasksPage() {
             baseCollection, 
             where("savedBy", "array-contains", currentUser.uid), 
             where("type", "==", mode),
-            where("status", "not-in", ["deleted", "cancelled"]),
-            orderBy("createdAt", "desc")
+            where("status", "not-in", ["deleted", "cancelled"])
           );
           break;
         case "doing":
@@ -91,8 +89,7 @@ export default function TasksPage() {
             baseCollection, 
             where("assignees", "array-contains", currentUser.uid), 
             where("status", "==", "doing"), 
-            where("type", "==", mode),
-            orderBy("createdAt", "desc")
+            where("type", "==", mode)
           );
           break;
         case "applied":
@@ -100,8 +97,7 @@ export default function TasksPage() {
             baseCollection, 
             where("applicants", "array-contains", currentUser.uid), 
             where("status", "in", ["open", "pending"]), 
-            where("type", "==", mode),
-            orderBy("createdAt", "desc")
+            where("type", "==", mode)
           );
           break;
         case "completed":
@@ -109,8 +105,7 @@ export default function TasksPage() {
             baseCollection, 
             where("assignees", "array-contains", currentUser.uid), 
             where("status", "==", "completed"), 
-            where("type", "==", mode),
-            orderBy("createdAt", "desc")
+            where("type", "==", mode)
           );
           break;
         case "cancelled":
@@ -118,22 +113,20 @@ export default function TasksPage() {
             baseCollection, 
             where("userId", "==", currentUser.uid), 
             where("status", "==", "cancelled"), 
-            where("type", "==", mode),
-            orderBy("createdAt", "desc")
+            where("type", "==", mode)
           );
           break;
       }
 
       const snap = await getDocs(q);
-      const data = snap.docs.map(doc => ({ id: doc.id,...doc.data() } as Task));
+      const data = snap.docs
+       .map(doc => ({ id: doc.id,...doc.data() } as Task))
+       .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      
       setTasks(data);
     } catch (err: any) {
       console.error(err);
-      if (err.code === "failed-precondition") {
-        toast.error("Cần tạo index Firestore cho query này");
-      } else {
-        toast.error("Tải dữ liệu thất bại");
-      }
+      toast.error("Tải dữ liệu thất bại");
     } finally {
       setLoading(false);
     }
@@ -155,7 +148,7 @@ export default function TasksPage() {
                 }}
                 className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all ${
                   mode === "task"
-       ? "bg-gradient-to-br from-sky-500 to-blue-500 text-white shadow-lg"
+      ? "bg-gradient-to-br from-sky-500 to-blue-500 text-white shadow-lg"
                     : "text-gray-500 dark:text-zinc-400"
                 }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -171,7 +164,7 @@ export default function TasksPage() {
                 }}
                 className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all ${
                   mode === "plan"
-       ? "bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg"
+      ? "bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg"
                     : "text-gray-500 dark:text-zinc-400"
                 }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -191,7 +184,7 @@ export default function TasksPage() {
                   onClick={() => setSubTab(tab.key)}
                   className={`px-4 h-8 rounded-full text-sm font-medium whitespace-nowrap transition-all active:scale-95 ${
   subTab === tab.key
-    ? `${theme[mode].bgLight} text-white shadow-sm ${theme[mode].shadow}`
+   ? `${theme[mode].bgLight} text-white shadow-sm ${theme[mode].shadow}`
     : "bg-[#F2F2F7] dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400"
 }`}
                 >
