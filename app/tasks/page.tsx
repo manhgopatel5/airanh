@@ -13,7 +13,7 @@ import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
 import { useAppStore } from "@/store/app"; // Dùng store chung
 
-type MainTab = "task" | "plan";
+
 type SubTab = "mine" | "saved" | "doing" | "applied" | "completed";
 
 const SUB_TABS: { key: SubTab; label: string }[] = [
