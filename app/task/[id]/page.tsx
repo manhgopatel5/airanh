@@ -383,7 +383,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
           <button onClick={handleShare} className="p-2 rounded-full hover:bg-zinc-900/5 dark:hover:bg-white/5 active:scale-90 transition-all">
             <FiShare2 size={18} className="text-zinc-600 dark:text-zinc-400" />
           </button>
-          {isOwner && (
+          
   
         </motion.div>
 
