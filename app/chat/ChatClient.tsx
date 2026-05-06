@@ -358,7 +358,12 @@ for (let i = 0; i < allIds.length; i += BATCH_SIZE) {
     return {
       uid: raw.id, chatId: raw.id, name: chatData.groupName || "Nhóm", username: "",
       avatar: chatData.groupAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(chatData.groupName || "N")}&background=${isPlan ? "22c55e" : "0a84ff"}&color=fff&bold=true`,
-      userId: "", lastMessage: chatData.lastMessage, lastSenderId: chatData.lastSenderId, lastSenderName: chatData.lastSenderName,
+      userId: "", 
+      lastMessage: typeof chatData.lastMessage === 'string' 
+        ? chatData.lastMessage 
+        : chatData.lastMessage?.text || "", // ← Fix: handle object cũ
+      lastSenderId: chatData.lastSenderId || chatData.lastMessage?.senderId, 
+      lastSenderName: chatData.lastSenderName,
       updatedAt: chatData.updatedAt, unreadCount: chatData.unread?.[user.uid] || 0,
       isTyping: Object.entries(chatData.typing || {}).some(([userId, isTyping]) => userId !== user.uid && Boolean(isTyping)),
       isGroup: true, members: chatData.members || [], isOnline: false,
@@ -370,7 +375,12 @@ for (let i = 0; i < allIds.length; i += BATCH_SIZE) {
     return {
       uid: raw.other || "", chatId: raw.id, name: userData.name || "User", username: userData.username || "",
       avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || "U")}&background=random`,
-      userId: userData.userId || "", lastMessage: chatData.lastMessage, lastSenderId: chatData.lastSenderId, lastSenderName: "",
+      userId: userData.userId || "", 
+      lastMessage: typeof chatData.lastMessage === 'string' 
+        ? chatData.lastMessage 
+        : chatData.lastMessage?.text || "", // ← Fix: handle object cũ
+      lastSenderId: chatData.lastSenderId || chatData.lastMessage?.senderId, 
+      lastSenderName: "",
       updatedAt: chatData.updatedAt, isOnline: Boolean(userData.isOnline), unreadCount: chatData.unread?.[user.uid] || 0,
       isTyping: Boolean(raw.other && chatData.typing?.[raw.other]), isGroup: false,
       blockedUsers: chatData.blockedUsers || [],
