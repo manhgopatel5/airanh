@@ -17,6 +17,7 @@ type Props = {
   task: Task;
   theme: "task" | "plan";
   onDelete?: (id: string) => void;
+  onShare?: () => void;
 };
 
 export default function TaskCard({ task, theme, onDelete }: Props) {
@@ -218,7 +219,9 @@ export default function TaskCard({ task, theme, onDelete }: Props) {
               onClick={handleShare}
               className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all"
             >
-              <FiShare2 size={18} className="text-zinc-400 dark:text-zinc-500" />
+             <button onClick={() => onShare?.()}>
+  <Share2 className="w-5 h-5 text-gray-400" />
+</button>
             </motion.button>
             {isOwner && (
               <div className="relative">
