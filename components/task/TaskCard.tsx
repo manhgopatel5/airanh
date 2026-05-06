@@ -79,7 +79,7 @@ export default function TaskCard({ task, theme, onDelete }: Props) {
     toast.success("Đã xóa");
   }, [isOwner, task.id, onDelete, db]);
 
-  const goToTask = () => router.push(`/task/${task.id}`);
+ const goToTask = () => router.push(`/task/${task.slug || task.id}`);
 
   const taskDate = isTask(task) && task.deadline?.seconds 
 ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
