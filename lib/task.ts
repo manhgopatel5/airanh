@@ -438,7 +438,7 @@ export async function getTaskBySlug(slug: string): Promise<Task | null> {
   const q = query(
     collection(db, "tasks"),
     where("slug", "==", slug),
-    where("status", "in", ["open", "full", "completed", "in_progress"]),
+    
     limit(1)
   );
   const snap = await getDocs(q);
@@ -453,7 +453,7 @@ export async function getTaskByShortId(shortId: string): Promise<Task | null> {
   const q = query(
     collection(db, "tasks"),
     where("shortId", "==", shortId.toUpperCase()),
-    where("status", "in", ["open", "full", "completed", "in_progress"]),
+    
     limit(1)
   );
   const snap = await getDocs(q);
