@@ -33,27 +33,19 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Task = xanh dương, Plan = xanh lá
+  // Task = xanh dương, Plan = xanh lá - giống trang chủ 100%
   const theme = {
     task: {
-      bg: "bg-gradient-to-r from-blue-500 to-blue-600",
-      bgSolid: "bg-blue-500",
-      bgHover: "hover:bg-blue-600",
-      text: "text-blue-600 dark:text-blue-400",
-      bgLight: "bg-blue-500 text-white",
-      bgPill: "bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400",
-      shadow: "shadow-blue-500/30",
-      icon: FiZap,
+      gradient: "bg-gradient-to-r from-[#2E7CF6] to-[#1A73E8]",
+      text: "text-[#1A73E8]",
+      bgLight: "bg-gradient-to-r from-[#2E7CF6] to-[#1A73E8]",
+      shadow: "shadow-[#1A73E8]/40",
     },
     plan: {
-      bg: "bg-gradient-to-r from-green-500 to-green-600",
-      bgSolid: "bg-green-500",
-      bgHover: "hover:bg-green-600",
-      text: "text-green-600 dark:text-green-400",
-      bgLight: "bg-green-500 text-white",
-      bgPill: "bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400",
-      shadow: "shadow-green-500/30",
-      icon: FiCalendar,
+      gradient: "bg-gradient-to-r from-[#34A853] to-[#1E8E3E]",
+      text: "text-[#1E8E3E]",
+      bgLight: "bg-gradient-to-r from-[#34A853] to-[#1E8E3E]",
+      shadow: "shadow-[#1E8E3E]/40",
     }
   }[mainTab];
 
@@ -121,9 +113,9 @@ export default function TasksPage() {
 
       const snap = await getDocs(q);
       const data = snap.docs
-     .map(doc => ({ id: doc.id,...doc.data() } as Task))
-     .filter(t => t.status!== "deleted" && t.status!== "cancelled")
-     .sort((a, b) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
+    .map(doc => ({ id: doc.id,...doc.data() } as Task))
+    .filter(t => t.status!== "deleted" && t.status!== "cancelled")
+    .sort((a, b) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
       
       setTasks(data);
     } catch (err) {
@@ -138,37 +130,53 @@ export default function TasksPage() {
     <>
       <Toaster richColors position="top-center" />
       <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 select-none pb-28">
-        {/* Header - BỎ HẾT CHỮ "NHIỆM VỤ" VÀ DẤU + */}
         <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-800">
-          {/* Main Tab: Task | Plan - Giống trang chủ */}
+          
+          {/* Main Tab: Task | Plan - GIỐNG 100% TRANG CHỦ */}
           <div className="px-4 pt-3 pb-2">
-            <div className="bg-zinc-100 dark:bg-zinc-900 rounded-xl p-1 flex">
+            <div className="bg-[#F2F2F7] dark:bg-zinc-900 rounded-[20px] p-1.5 flex">
               <button
                 onClick={() => setMainTab("task")}
-                className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-1.5 text- font-semibold transition-all active:scale-95 ${
+                className={`flex-1 h-12 rounded-[16px] flex items-center justify-center gap-2 transition-all active:scale-95 ${
                   mainTab === "task" 
-             ? "bg-white dark:bg-zinc-800 shadow-sm text-blue-600 dark:text-blue-400" 
-                    : "text-zinc-500"
+             ? "bg-gradient-to-r from-[#2E7CF6] to-[#1A73E8] shadow-lg shadow-[#1A73E8]/40" 
+                    : "bg-white dark:bg-zinc-800"
                 }`}
+                style={{ fontFamily: 'Georgia, serif' }}
               >
-                <FiZap size={16} />
-                <span>Task</span>
+                <FiZap 
+                  size={18} 
+                  className={mainTab === "task"? "text-white" : "text-[#1A73E8]"} 
+                />
+                <span className={`text-[17px] font-medium ${
+                  mainTab === "task"? "text-white" : "text-[#1A73E8]"
+                }`}>
+                  Task
+                </span>
               </button>
               <button
                 onClick={() => setMainTab("plan")}
-                className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-1.5 text- font-semibold transition-all active:scale-95 ${
+                className={`flex-1 h-12 rounded-[16px] flex items-center justify-center gap-2 transition-all active:scale-95 ${
                   mainTab === "plan" 
-             ? "bg-white dark:bg-zinc-800 shadow-sm text-green-600 dark:text-green-400" 
-                    : "text-zinc-500"
+             ? "bg-gradient-to-r from-[#34A853] to-[#1E8E3E] shadow-lg shadow-[#1E8E3E]/40" 
+                    : "bg-white dark:bg-zinc-800"
                 }`}
+                style={{ fontFamily: 'Georgia, serif' }}
               >
-                <FiCalendar size={16} />
-                <span>Plan</span>
+                <FiCalendar 
+                  size={18} 
+                  className={mainTab === "plan"? "text-white" : "text-[#1E8E3E]"} 
+                />
+                <span className={`text-[17px] font-medium ${
+                  mainTab === "plan"? "text-white" : "text-[#1E8E3E]"
+                }`}>
+                  Plan
+                </span>
               </button>
             </div>
           </div>
 
-          {/* Sub Tab - Đổi màu theo theme */}
+          {/* Sub Tab */}
           <div className="px-4 pb-3 overflow-x-auto scrollbar-hide">
             <div className="flex gap-2">
               {SUB_TABS.map((tab) => (
@@ -177,7 +185,7 @@ export default function TasksPage() {
                   onClick={() => setSubTab(tab.key)}
                   className={`px-4 h-9 rounded-full text- font-medium whitespace-nowrap transition-all active:scale-95 ${
                     subTab === tab.key
-                 ? `${theme.bgLight} shadow-sm ${theme.shadow}`
+                 ? `${theme.bgLight} text-white shadow-sm ${theme.shadow}`
                       : "bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200"
                   }`}
                 >
@@ -215,7 +223,7 @@ export default function TasksPage() {
               {subTab === "mine" && (
                 <button
                   onClick={() => router.push(mainTab === "task"? "/create/task" : "/create/plan")}
-                  className={`px-5 h-10 rounded-xl ${theme.bgSolid} ${theme.bgHover} text-white text- font-medium active:scale-95 transition-all`}
+                  className={`px-5 h-10 rounded-xl ${theme.bgLight} text-white text- font-medium active:scale-95 transition-all`}
                 >
                   Tạo ngay
                 </button>
@@ -240,8 +248,8 @@ export default function TasksPage() {
       </div>
 
       <style jsx global>{`
-   .scrollbar-hide::-webkit-scrollbar { display: none; }
-   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </>
   );
