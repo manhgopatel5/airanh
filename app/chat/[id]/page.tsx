@@ -65,6 +65,9 @@ type Message = {
     url: string;
   };
   members?: string[]; // THÊM FIELD NÀY CHO RULE MỚI
+  taskId?: string;
+  taskTitle?: string;
+  taskPrice?: number;
 };
 
 type ChatData = {
@@ -758,141 +761,312 @@ const unpinMessage = async () => {
       )}
 
       {/* MESSAGES */}
-   <div className="flex-1 overflow-y-auto px-4 py-6 space-y-0.5">
-    
+<div className="flex-1 overflow-y-auto px-4 py-6 space-y-0.5">
+  {filteredMessages.map((m, i) => {
+    const isMe = m.senderId === user.uid;
+    const prev = filteredMessages[i - 1];
+    const next = filteredMessages[i + 1];
+    const showAvatar = !isMe && (!next || next.senderId !== m.senderId);
+    const isFirstInGroup = !prev || prev.senderId !== m.senderId;
+    const isLastInGroup = !next || next.senderId !== m.senderId;
+    const showDate =
+      !prev ||
+      (m.createdAt &&
+        prev.createdAt &&
+        m.createdAt.toDate().toDateString() !== prev.createdAt.toDate().toDateString());
 
-        {filteredMessages.map((m, i) => {
-          const isMe = m.senderId === user.uid;
-          const prev = filteredMessages[i - 1];
-          const next = filteredMessages[i + 1];
-          const showAvatar =!isMe && (!next || next.senderId!== m.senderId);
-          const isFirstInGroup =!prev || prev.senderId!== m.senderId;
-          const isLastInGroup =!next || next.senderId!== m.senderId;
-          const showDate =
-         !prev ||
-            (m.createdAt &&
-              prev.createdAt &&
-              m.createdAt.toDate().toDateString()!== prev.createdAt.toDate().toDateString());
+    const seenAvatars = getSeenAvatars(m);
 
-          const seenAvatars = getSeenAvatars(m);
+    return (
+      <div key={m.id} id={`msg-${m.id}`}>
+        {showDate && m.createdAt && (
+          <div className="flex items-center justify-center my-6">
+            <div className="px-4 py-1.5 bg-gray-200/60 dark:bg-zinc-800/60 backdrop-blur-xl rounded-full">
+              <p className="text-xs font-bold text-gray-600 dark:text-zinc-400">
+                {formatDateDivider(m.createdAt)}
+              </p>
+            </div>
+          </div>
+        )}
 
-          return (
-            <div key={m.id} id={`msg-${m.id}`}>
-              {showDate && m.createdAt && (
-                <div className="flex items-center justify-center my-6">
-                  <div className="px-4 py-1.5 bg-gray-200/60 dark:bg-zinc-800/60 backdrop-blur-xl rounded-full">
-                    <p className="text-xs font-bold text-gray-600 dark:text-zinc-400">
-                      {formatDateDivider(m.createdAt)}
+        <div className={`flex items-end gap-2 group ${isMe ? "justify-end" : "justify-start"} ${isFirstInGroup ? "mt-3" : ""}`}>
+          {!isMe && (
+            <div className="w-7 flex-shrink-0">
+              {showAvatar && <img src={friend.avatar} className="w-7 h-7 rounded-full shadow-sm" alt={friend.name} />}
+            </div>
+          )}
+          <div className={`max-w-[75%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
+            {m.replyTo && (
+              <button
+                onClick={() => scrollToMessage(m.replyTo!.id)}
+                className={`px-3 py-1.5 mb-1 rounded-2xl text-xs ${
+                  isMe ? "bg-blue-400/30 text-white/80" : "bg-gray-200/60 dark:bg-zinc-700/60 text-gray-600 dark:text-zinc-300"
+                }`}
+              >
+                <p className="font-bold text-xs">{m.replyTo.senderName}</p>
+                <p className="truncate">{m.replyTo.text}</p>
+              </button>
+            )}
+
+            <div className="relative">
+              {m.type === "task_share" ? (
+                <div
+                  onClick={() => router.push(`/task/${m.taskId}`)}
+                  className={`px-4 py-3 shadow-sm cursor-pointer active:scale-95 transition ${
+                    isMe
+                      ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
+                          isFirstInGroup && isLastInGroup
+                            ? "rounded-3xl"
+                            : isFirstInGroup
+                            ? "rounded-3xl rounded-br-lg"
+                            : isLastInGroup
+                            ? "rounded-3xl rounded-tr-lg"
+                            : "rounded-r-lg rounded-l-3xl"
+                        }`
+                      : `bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border-2 border-blue-200 dark:border-blue-900 ${
+                          isFirstInGroup && isLastInGroup
+                            ? "rounded-3xl"
+                            : isFirstInGroup
+                            ? "rounded-3xl rounded-bl-lg"
+                            : isLastInGroup
+                            ? "rounded-3xl rounded-tl-lg"
+                            : "rounded-l-lg rounded-r-3xl"
+                        }`
+                  }`}
+                >
+                  <p className="text-xs font-bold mb-1 opacity-80">
+                    📋 Đã chia sẻ công việc
+                  </p>
+                  <p className="font-semibold leading-snug">{m.taskTitle}</p>
+                  <p className={`text-sm font-bold mt-1 ${isMe ? 'text-white' : 'text-blue-600 dark:text-blue-400'}`}>
+                    {m.taskPrice?.toLocaleString()}đ
+                  </p>
+                  <p className={`text-xs mt-2 opacity-70`}>
+                    Nhấn để xem chi tiết →
+                  </p>
+                </div>
+              ) : (
+                <div
+                  className={`px-4 py-2.5 shadow-sm cursor-pointer ${
+                    isMe
+                      ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
+                          isFirstInGroup && isLastInGroup
+                            ? "rounded-3xl"
+                            : isFirstInGroup
+                            ? "rounded-3xl rounded-br-lg"
+                            : isLastInGroup
+                            ? "rounded-3xl rounded-tr-lg"
+                            : "rounded-r-lg rounded-l-3xl"
+                        }`
+                      : `bg-white dark:bg-zinc-800 text-gray-900 dark:text-white ${
+                          isFirstInGroup && isLastInGroup
+                            ? "rounded-3xl"
+                            : isFirstInGroup
+                            ? "rounded-3xl rounded-bl-lg"
+                            : isLastInGroup
+                            ? "rounded-3xl rounded-tl-lg"
+                            : "rounded-l-lg rounded-r-3xl"
+                        }`
+                  }`}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setShowEmojiPicker(m.id);
+                  }}
+                >
+                  {m.image && <img src={m.image} className="rounded-2xl max-w-full mb-1" alt="sent" />}
+                  {m.file && (
+                    <a href={m.file} target="_blank" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl">
+                      <Paperclip size={16} />
+                      <span className="text-sm truncate">{m.fileName}</span>
+                    </a>
+                  )}
+                  {m.voice && (
+                    <div className="flex items-center gap-2">
+                      <button className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                        <Mic size={16} />
+                      </button>
+                      <div className="flex-1 h-1 bg-white/30 rounded-full">
+                        <div className="h-full bg-white rounded-full" style={{ width: "30%" }} />
+                      </div>
+                      <span className="text-xs">{m.duration}s</span>
+                    </div>
+                  )}
+                  {m.location && (
+                    <a
+                      href={`https://maps.google.com/?q=${m.location.lat},${m.location.lng}`}
+                      target="_blank"
+                      className="flex items-center gap-2 p-3 bg-black/10 rounded-xl"
+                    >
+                      <MapPin size={20} />
+                      <div>
+                        <p className="text-sm font-bold">Vị trí đã chia sẻ</p>
+                        <p className="text-xs opacity-70">Nhấn để mở Google Maps</p>
+                      </div>
+                    </a>
+                  )}
+
+                  {m.text && (
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                      {m.text}
+                      {m.edited && <span className="text-xs opacity-60 ml-1">(đã sửa)</span>}
                     </p>
-                  </div>
+                  )}
                 </div>
               )}
 
-              <div className={`flex items-end gap-2 group ${isMe? "justify-end" : "justify-start"} ${isFirstInGroup? "mt-3" : ""}`}>
-                {!isMe && (
-                  <div className="w-7 flex-shrink-0">
-                    {showAvatar && <img src={friend.avatar} className="w-7 h-7 rounded-full shadow-sm" alt={friend.name} />}
+              {/* Reactions */}
+              {m.reactions && m.reactions.length > 0 && (
+                <div className="flex gap-1 mt-1 px-1">
+                  {m.reactions.map((r) => (
+                    <button
+                      key={r.emoji}
+                      onClick={() => toggleReaction(m.id, r.emoji)}
+                      className={`px-2 py-0.5 rounded-full text-xs ${
+                        r.users.includes(user.uid)
+                          ? "bg-blue-100 dark:bg-blue-900/50"
+                          : "bg-gray-100 dark:bg-zinc-800"
+                      }`}
+                    >
+                      {r.emoji} {r.users.length}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Context Menu */}
+              <div className={`absolute ${isMe ? "right-0" : "left-0"} top-0 hidden group-hover:flex gap-1 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-1`}>
+                <button onClick={() => setShowEmojiPicker(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+                  <Smile size={16} />
+                </button>
+                <button onClick={() => setReplyTo(m)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+                  <Reply size={16} />
+                </button>
+                {isMe && (
+                  <>
+                    <button onClick={() => { setEditingMsg(m); setText(m.text); inputRef.current?.focus(); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+                      <Pencil size={16} />
+                    </button>
+                    <button onClick={() => deleteMessage(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded text-red-500">
+                      <Trash2 size={16} />
+                    </button>
+                  </>
+                )}
+                <button onClick={() => pinMessage(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+                  <Pin size={16} />
+                </button>
+                <button onClick={() => { navigator.clipboard.writeText(m.text); toast.success("Đã copy"); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+                  <Copy size={16} />
+                </button>
+              </div>
+
+              {/* Emoji Picker */}
+              {showEmojiPicker === m.id && (
+                <div className="absolute bottom-full mb-2 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-2 flex gap-1 z-10">
+                  {EMOJI_LIST.map(emoji => (
+                    <button
+                      key={emoji}
+                      onClick={() => toggleReaction(m.id, emoji)}
+                      className="text-2xl hover:scale-125 transition-transform"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {isLastInGroup && (
+              <div className={`flex items-center gap-1 mt-1 px-1 ${isMe ? "flex-row-reverse" : ""}`}>
+                <p className="text-xs text-gray-400 dark:text-zinc-500 font-medium">{formatTime(m.createdAt)}</p>
+                {isMe && seenAvatars.length > 0 && (
+                  <div className="flex -space-x-2">
+                    {seenAvatars.slice(0, 3).map((u, idx) => (
+                      <img
+                        key={idx}
+                        src={u.avatar}
+                        className="w-4 h-4 rounded-full ring-2 ring-white dark:ring-zinc-950"
+                        alt={u.name}
+                      />
+                    ))}
                   </div>
                 )}
-                <div className={`max-w-[75%] flex flex-col ${isMe? "items-end" : "items-start"}`}>
-                  {m.replyTo && (
-                    <button
-                      onClick={() => scrollToMessage(m.replyTo!.id)}
-                      className={`px-3 py-1.5 mb-1 rounded-2xl text-xs ${
-                        isMe? "bg-blue-400/30 text-white/80" : "bg-gray-200/60 dark:bg-zinc-700/60 text-gray-600 dark:text-zinc-300"
-                      }`}
-                    >
-                      <p className="font-bold text-xs">{m.replyTo.senderName}</p>
-                      <p className="truncate">{m.replyTo.text}</p>
+                {isMe && seenAvatars.length === 0 && m.seenBy && m.seenBy.length > 1 && <CheckCheck className="text-blue-500" size={14} />}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  })}
+  <div ref={messagesEndRef} />
+</div>
+              {/* Context Menu */}
+              <div className={`absolute ${isMe ? "right-0" : "left-0"} top-0 hidden group-hover:flex gap-1 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-1`}>
+                <button onClick={() => setShowEmojiPicker(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+                  <Smile size={16} />
+                </button>
+                <button onClick={() => setReplyTo(m)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+                  <Reply size={16} />
+                </button>
+                {isMe && (
+                  <>
+                    <button onClick={() => { setEditingMsg(m); setText(m.text); inputRef.current?.focus(); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+                      <Pencil size={16} />
                     </button>
-                  )}
+                    <button onClick={() => deleteMessage(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded text-red-500">
+                      <Trash2 size={16} />
+                    </button>
+                  </>
+                )}
+                <button onClick={() => pinMessage(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+                  <Pin size={16} />
+                </button>
+                <button onClick={() => { navigator.clipboard.writeText(m.text); toast.success("Đã copy"); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
+                  <Copy size={16} />
+                </button>
+              </div>
 
-                  <div className="relative">
-                    <div
-                      className={`px-4 py-2.5 shadow-sm cursor-pointer ${
-                        isMe
-                     ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
-                            isFirstInGroup && isLastInGroup
-                           ? "rounded-3xl"
-                              : isFirstInGroup
-                           ? "rounded-3xl rounded-br-lg"
-                              : isLastInGroup
-                           ? "rounded-3xl rounded-tr-lg"
-                              : "rounded-r-lg rounded-l-3xl"
-                          }`
-                        : `bg-white dark:bg-zinc-800 text-gray-900 dark:text-white ${
-                            isFirstInGroup && isLastInGroup
-                           ? "rounded-3xl"
-                              : isFirstInGroup
-                           ? "rounded-3xl rounded-bl-lg"
-                              : isLastInGroup
-                           ? "rounded-3xl rounded-tl-lg"
-                              : "rounded-l-lg rounded-r-3xl"
-                          }`
-                      }`}
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        setShowEmojiPicker(m.id);
-                      }}
+              {/* Emoji Picker */}
+              {showEmojiPicker === m.id && (
+                <div className="absolute bottom-full mb-2 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-2 flex gap-1 z-10">
+                  {EMOJI_LIST.map(emoji => (
+                    <button
+                      key={emoji}
+                      onClick={() => toggleReaction(m.id, emoji)}
+                      className="text-2xl hover:scale-125 transition-transform"
                     >
-                      {m.image && <img src={m.image} className="rounded-2xl max-w-full mb-1" alt="sent" />}
-                      {m.file && (
-                        <a href={m.file} target="_blank" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl">
-                          <Paperclip size={16} />
-                          <span className="text-sm truncate">{m.fileName}</span>
-                        </a>
-                      )}
-                      {m.voice && (
-                        <div className="flex items-center gap-2">
-                          <button className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                            <Mic size={16} />
-                          </button>
-                          <div className="flex-1 h-1 bg-white/30 rounded-full">
-                            <div className="h-full bg-white rounded-full" style={{ width: "30%" }} />
-                          </div>
-                          <span className="text-xs">{m.duration}s</span>
-                        </div>
-                      )}
-{m.location && (
-  <a
-    href={`https://maps.google.com/?q=${m.location.lat},${m.location.lng}`}
-    target="_blank"
-    className="flex items-center gap-2 p-3 bg-black/10 rounded-xl"
-  >
-    <MapPin size={20} />
-    <div>
-      <p className="text-sm font-bold">Vị trí đã chia sẻ</p>
-      <p className="text-xs opacity-70">Nhấn để mở Google Maps</p>
-    </div>
-  </a>
-)}
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-                      {m.text && (
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                          {m.text}
-                          {m.edited && <span className="text-xs opacity-60 ml-1">(đã sửa)</span>}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Reactions */}
-                    {m.reactions && m.reactions.length > 0 && (
-                      <div className="flex gap-1 mt-1 px-1">
-                        {m.reactions.map((r) => (
-                          <button
-                            key={r.emoji}
-                            onClick={() => toggleReaction(m.id, r.emoji)}
-                            className={`px-2 py-0.5 rounded-full text-xs ${
-                              r.users.includes(user.uid)
-                             ? "bg-blue-100 dark:bg-blue-900/50"
-                                : "bg-gray-100 dark:bg-zinc-800"
-                            }`}
-                          >
-                            {r.emoji} {r.users.length}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+            {isLastInGroup && (
+              <div className={`flex items-center gap-1 mt-1 px-1 ${isMe ? "flex-row-reverse" : ""}`}>
+                <p className="text-xs text-gray-400 dark:text-zinc-500 font-medium">{formatTime(m.createdAt)}</p>
+                {isMe && seenAvatars.length > 0 && (
+                  <div className="flex -space-x-2">
+                    {seenAvatars.slice(0, 3).map((u, idx) => (
+                      <img
+                        key={idx}
+                        src={u.avatar}
+                        className="w-4 h-4 rounded-full ring-2 ring-white dark:ring-zinc-950"
+                        alt={u.name}
+                      />
+                    ))}
+                  </div>
+                )}
+                {isMe && seenAvatars.length === 0 && m.seenBy && m.seenBy.length > 1 && <CheckCheck className="text-blue-500" size={14} />}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  })}
+  <div ref={messagesEndRef} />
+</div>
 
                     {/* Context Menu */}
                     <div className={`absolute ${isMe? "right-0" : "left-0"} top-0 hidden group-hover:flex gap-1 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-1`}>
