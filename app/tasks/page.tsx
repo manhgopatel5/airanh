@@ -3,18 +3,17 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiInbox } from "react-icons/fi";
-import { HiBolt, HiCalendarDays } from "react-icons/hi2"; // Dùng icon giống ModeToggle
+import { HiBolt, HiCalendarDays } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import type { Task } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
-import { useAppStore } from "@/store/app"; // Dùng store chung
+import { useAppStore } from "@/store/app";
 
-
-type SubTab = "mine" | "saved" | "doing" | "applied" | "completed";
+type SubTab = "mine" | "saved" | "doing" | "applied" | "completed" | "cancelled";
 
 const SUB_TABS: { key: SubTab; label: string }[] = [
   { key: "mine", label: "Của tôi" },
@@ -22,15 +21,16 @@ const SUB_TABS: { key: SubTab; label: string }[] = [
   { key: "doing", label: "Đang nhận" },
   { key: "applied", label: "Đã ứng tuyển" },
   { key: "completed", label: "Hoàn thành" },
+  { key: "cancelled", label: "Đã hủy" }, // Thêm tab Đã hủy
 ];
 
 export default function TasksPage() {
   const auth = getFirebaseAuth();
   const db = getFirebaseDB();
   const router = useRouter();
-  
+
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const { mode, setMode } = useAppStore(); // Dùng chung store với trang chủ
+  const { mode, setMode } = useAppStore();
   const [subTab, setSubTab] = useState<SubTab>("mine");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +44,7 @@ export default function TasksPage() {
       bgLight: "bg-gradient-to-br from-green-500 to-emerald-500",
       shadow: "shadow-emerald-500/40",
     }
-  }[mode];
+  };
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -62,39 +62,78 @@ export default function TasksPage() {
   const fetchTasks = async () => {
     if (!currentUser) return;
     setLoading(true);
-    
+
     try {
       const baseCollection = collection(db, "tasks");
       let q;
-      
+
       switch (subTab) {
         case "mine":
-          q = query(baseCollection, where("userId", "==", currentUser.uid), where("type", "==", mode));
+          q = query(
+            baseCollection, 
+            where("userId", "==", currentUser.uid), 
+            where("type", "==", mode),
+            where("status", "not-in", ["deleted", "cancelled"]),
+            orderBy("createdAt", "desc")
+          );
           break;
         case "saved":
-          q = query(baseCollection, where("savedBy", "array-contains", currentUser.uid), where("type", "==", mode));
+          q = query(
+            baseCollection, 
+            where("savedBy", "array-contains", currentUser.uid), 
+            where("type", "==", mode),
+            where("status", "not-in", ["deleted", "cancelled"]),
+            orderBy("createdAt", "desc")
+          );
           break;
         case "doing":
-          q = query(baseCollection, where("assignees", "array-contains", currentUser.uid), where("status", "==", "doing"), where("type", "==", mode));
+          q = query(
+            baseCollection, 
+            where("assignees", "array-contains", currentUser.uid), 
+            where("status", "==", "doing"), 
+            where("type", "==", mode),
+            orderBy("createdAt", "desc")
+          );
           break;
         case "applied":
-          q = query(baseCollection, where("applicants", "array-contains", currentUser.uid), where("status", "in", ["open", "pending"]), where("type", "==", mode));
+          q = query(
+            baseCollection, 
+            where("applicants", "array-contains", currentUser.uid), 
+            where("status", "in", ["open", "pending"]), 
+            where("type", "==", mode),
+            orderBy("createdAt", "desc")
+          );
           break;
         case "completed":
-          q = query(baseCollection, where("assignees", "array-contains", currentUser.uid), where("status", "==", "completed"), where("type", "==", mode));
+          q = query(
+            baseCollection, 
+            where("assignees", "array-contains", currentUser.uid), 
+            where("status", "==", "completed"), 
+            where("type", "==", mode),
+            orderBy("createdAt", "desc")
+          );
+          break;
+        case "cancelled":
+          q = query(
+            baseCollection, 
+            where("userId", "==", currentUser.uid), 
+            where("status", "==", "cancelled"), 
+            where("type", "==", mode),
+            orderBy("createdAt", "desc")
+          );
           break;
       }
 
       const snap = await getDocs(q);
-      const data = snap.docs
-.map(doc => ({ id: doc.id,...doc.data() } as Task))
-.filter(t => t.status!== "deleted" && t.status!== "cancelled")
-.sort((a, b) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
-      
+      const data = snap.docs.map(doc => ({ id: doc.id,...doc.data() } as Task));
       setTasks(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error("Tải dữ liệu thất bại");
+      if (err.code === "failed-precondition") {
+        toast.error("Cần tạo index Firestore cho query này");
+      } else {
+        toast.error("Tải dữ liệu thất bại");
+      }
     } finally {
       setLoading(false);
     }
@@ -105,8 +144,8 @@ export default function TasksPage() {
       <Toaster richColors position="top-center" />
       <div className="min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 select-none pb-28">
         <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-800">
-          
-          {/* Main Tab: Task | Plan - COPY Y HỆT ModeToggle */}
+
+          {/* Main Tab: Task | Plan */}
           <div className="border-b border-gray-100 dark:border-zinc-800">
             <div className="flex items-center p-1.5 mx-3 my-2 rounded-2xl bg-gray-100 dark:bg-zinc-800">
               <button
@@ -116,7 +155,7 @@ export default function TasksPage() {
                 }}
                 className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all ${
                   mode === "task"
-                 ? "bg-gradient-to-br from-sky-500 to-blue-500 text-white shadow-lg"
+       ? "bg-gradient-to-br from-sky-500 to-blue-500 text-white shadow-lg"
                     : "text-gray-500 dark:text-zinc-400"
                 }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -132,7 +171,7 @@ export default function TasksPage() {
                 }}
                 className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all ${
                   mode === "plan"
-                 ? "bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg"
+       ? "bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg"
                     : "text-gray-500 dark:text-zinc-400"
                 }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -152,7 +191,7 @@ export default function TasksPage() {
                   onClick={() => setSubTab(tab.key)}
                   className={`px-4 h-8 rounded-full text-sm font-medium whitespace-nowrap transition-all active:scale-95 ${
                     subTab === tab.key
-             ? `${theme.bgLight} text-white shadow-sm ${theme.shadow}`
+          ? `${theme.bgLight} text-white shadow-sm ${theme.shadow}`
                       : "bg-[#F2F2F7] dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400"
                   }`}
                 >
@@ -168,14 +207,14 @@ export default function TasksPage() {
           {loading? (
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 animate-pulse">
+                <div key={i} className="bg-white dark:bg-zinc-900 rounded-xl border border-[#E5E5EA] dark:border-zinc-800 p-4 animate-pulse">
                   <div className="h-5 w-3/4 bg-zinc-200 dark:bg-zinc-800 rounded mb-2" />
                   <div className="h-4 w-1/2 bg-zinc-200 dark:bg-zinc-800 rounded" />
                 </div>
               ))}
             </div>
           ) : tasks.length === 0? (
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-12 text-center">
+            <div className="bg-white dark:bg-zinc-900 rounded-xl border border-[#E5E5EA] dark:border-zinc-800 p-12 text-center">
               <FiInbox size={48} className="mx-auto mb-3 text-zinc-300 dark:text-zinc-700" />
               <p className="text-base font-medium text-zinc-600 dark:text-zinc-400 mb-1">
                 Chưa có {mode === "task"? "task" : "plan"} nào
@@ -186,6 +225,7 @@ export default function TasksPage() {
                 {subTab === "doing" && `Nhận ${mode} để bắt đầu làm`}
                 {subTab === "applied" && `Ứng tuyển ${mode} phù hợp`}
                 {subTab === "completed" && `Hoàn thành ${mode} đầu tiên`}
+                {subTab === "cancelled" && `Không có ${mode} nào bị hủy`}
               </p>
               {subTab === "mine" && (
                 <button
@@ -206,7 +246,12 @@ export default function TasksPage() {
                 className="space-y-3"
               >
                 {tasks.map((task) => (
-                  <TaskCard key={task.id} task={task} theme={mode} onDelete={(id) => setTasks(prev => prev.filter(t => t.id!== id))} />
+                  <TaskCard 
+                    key={task.id} 
+                    task={task} 
+                    theme={mode} 
+                    onDelete={(id) => setTasks(prev => prev.filter(t => t.id!== id))} 
+                  />
                 ))}
               </motion.div>
             </AnimatePresence>
