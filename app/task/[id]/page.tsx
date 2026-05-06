@@ -115,22 +115,44 @@ export default function TaskDetailPage() {
     return () => unsub();
   }, );
 
-  useEffect(() => {
-    if (!id || typeof id!== "string") return;
-    const loadTask = async () => {
-      try {
-        const data = await getTaskBySlug(id);
-        if (!data) return router.replace("/404");
-        setTask(data);
-        incrementTaskView(data.id);
-      } catch {
+useEffect(() => {
+  if (!id || typeof id!== "string") return;
+  
+  const loadTask = async () => {
+    try {
+      // ✅ Dùng getDoc với ID trực tiếp
+      const snap = await getDoc(doc(db, "tasks", id));
+      console.log("Task ID:", id, "Exists:", snap.exists());
+
+      if (!snap.exists()) {
+        toast.error("Không tìm thấy công việc");
         router.replace("/404");
-      } finally {
-        setLoading(false);
+        return;
       }
-    };
-    loadTask();
-  }, [id, router]);
+
+      const data = snap.data();
+      
+      // ✅ Chỉ chặn nếu bị ban, cho xem hết các status khác
+      if (data.banned) {
+        toast.error("Công việc này đã bị khóa");
+        router.replace("/");
+        return;
+      }
+
+      const taskData = { id: snap.id,...data } as Task;
+      setTask(taskData);
+      incrementTaskView(taskData.id);
+    } catch (err) {
+      console.error("Load task error:", err);
+      toast.error("Lỗi tải công việc");
+      router.replace("/404");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  loadTask();
+}, [id, router, db]);
 
   useEffect(() => {
     if (!task) return;
