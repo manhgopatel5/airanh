@@ -325,8 +325,8 @@ export type TaskComment = {
 };
 
 /* ================= TYPE GUARDS ================= */
-export const isTask = (item: Task): item is TaskItem => item.type === "task";
-export const isPlan = (item: Task): item is PlanItem => item.type === "plan";
+export const isTask = (item: Task | TaskListItem | PlanListItem): item is TaskItem | TaskListItem => item.type === "task";
+export const isPlan = (item: Task | TaskListItem | PlanListItem): item is PlanItem | PlanListItem => item.type === "plan";
 
 /* ================= HELPERS ================= */
 export const generateTaskSearchKeywords = ({
