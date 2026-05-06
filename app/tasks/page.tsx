@@ -300,7 +300,7 @@ const distance = touchY - pullStartY.current;
                     onClick={() => handleTabChange(tab.key)}
                     className={`px-4 h-9 rounded-full text- font-semibold whitespace-nowrap transition-all ${
                       subTab === tab.key
-                    ? `bg-gradient-to-r ${theme.gradient} text-white ${theme.shadow}`
+                    ? `bg-gradient-to-r ${theme[mode].gradient} text-white ${theme[mode].shadow}`
                         : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                     }`}
                   >
@@ -392,7 +392,7 @@ const distance = touchY - pullStartY.current;
                     vibrate(10);
                     router.push(mode === "task"? "/create/task" : "/create/plan");
                   }}
-                  className={`px-6 h-11 rounded-xl bg-gradient-to-r ${theme.bgLight} text-white text- font-semibold active:scale-95 transition-all ${theme.shadow}`}
+                  className={`px-6 h-11 rounded-xl bg-gradient-to-r ${theme[mode].gradient} text-white text- font-semibold active:scale-95 transition-all ${theme[mode].shadow}`}
                 >
                   Tạo ngay
                 </button>
