@@ -810,69 +810,69 @@ const unpinMessage = async () => {
 
             <div className="relative">
               {m.type === "task_share" ? (
-                <div
-                  onClick={() => router.push(`/task/${m.taskId}`)}
-                  className={`px-4 py-3 shadow-sm cursor-pointer active:scale-95 transition ${
-                    isMe
-                      ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
-                          isFirstInGroup && isLastInGroup
-                            ? "rounded-3xl"
-                            : isFirstInGroup
-                            ? "rounded-3xl rounded-br-lg"
-                            : isLastInGroup
-                            ? "rounded-3xl rounded-tr-lg"
-                            : "rounded-r-lg rounded-l-3xl"
-                        }`
-                      : `bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border-2 border-blue-200 dark:border-blue-900 ${
-                          isFirstInGroup && isLastInGroup
-                            ? "rounded-3xl"
-                            : isFirstInGroup
-                            ? "rounded-3xl rounded-bl-lg"
-                            : isLastInGroup
-                            ? "rounded-3xl rounded-tl-lg"
-                            : "rounded-l-lg rounded-r-3xl"
-                        }`
-                  }`}
-                >
-                  <p className="text-xs font-bold mb-1 opacity-80">
-                    📋 Đã chia sẻ công việc
-                  </p>
-                  <p className="font-semibold leading-snug">{m.taskTitle}</p>
-                  <p className={`text-sm font-bold mt-1 ${isMe ? 'text-white' : 'text-blue-600 dark:text-blue-400'}`}>
-                    {m.taskPrice?.toLocaleString()}đ
-                  </p>
-                  <p className={`text-xs mt-2 opacity-70`}>
-                    Nhấn để xem chi tiết →
-                  </p>
-                </div>
-              ) : (
-                <div
-                  className={`px-4 py-2.5 shadow-sm cursor-pointer ${
-                    isMe
-                      ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
-                          isFirstInGroup && isLastInGroup
-                            ? "rounded-3xl"
-                            : isFirstInGroup
-                            ? "rounded-3xl rounded-br-lg"
-                            : isLastInGroup
-                            ? "rounded-3xl rounded-tr-lg"
-                            : "rounded-r-lg rounded-l-3xl"
-                        }`
-                      : `bg-white dark:bg-zinc-800 text-gray-900 dark:text-white ${
-                          isFirstInGroup && isLastInGroup
-                            ? "rounded-3xl"
-                            : isFirstInGroup
-                            ? "rounded-3xl rounded-bl-lg"
-                            : isLastInGroup
-                            ? "rounded-3xl rounded-tl-lg"
-                            : "rounded-l-lg rounded-r-3xl"
-                        }`
-                  }`}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setShowEmojiPicker(m.id);
-                  }}
-                >
+  <div
+    onClick={() => router.push(`/task/${m.taskId}`)}
+    className={`px-4 py-3 shadow-sm cursor-pointer active:scale-95 transition ${
+      isMe
+        ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
+            isFirstInGroup && isLastInGroup
+              ? "rounded-3xl"
+              : isFirstInGroup
+              ? "rounded-3xl rounded-br-lg"
+              : isLastInGroup
+              ? "rounded-3xl rounded-tr-lg"
+              : "rounded-r-lg rounded-l-3xl"
+          }`
+        : `bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border-2 border-blue-200 dark:border-blue-900 ${
+            isFirstInGroup && isLastInGroup
+              ? "rounded-3xl"
+              : isFirstInGroup
+              ? "rounded-3xl rounded-bl-lg"
+              : isLastInGroup
+              ? "rounded-3xl rounded-tl-lg"
+              : "rounded-l-lg rounded-r-3xl"
+          }`
+    }`}
+  >
+    <p className="text-xs font-bold mb-1 opacity-80">
+      📋 Đã chia sẻ {m.taskPrice && m.taskPrice > 0 ? 'công việc' : 'kế hoạch'}
+    </p>
+    <p className="font-semibold leading-snug">{m.taskTitle}</p>
+    <p className={`text-sm font-bold mt-1 ${isMe ? 'text-white' : 'text-blue-600 dark:text-blue-400'}`}>
+      {m.taskPrice && m.taskPrice > 0 ? `${m.taskPrice.toLocaleString()}đ` : 'Miễn phí'}
+    </p>
+    <p className={`text-xs mt-2 opacity-70`}>
+      Nhấn để xem chi tiết →
+    </p>
+  </div>
+) : (
+  <div
+    className={`px-4 py-2.5 shadow-sm cursor-pointer ${
+      isMe
+        ? `bg-gradient-to-br from-blue-500 to-indigo-600 text-white ${
+            isFirstInGroup && isLastInGroup
+              ? "rounded-3xl"
+              : isFirstInGroup
+              ? "rounded-3xl rounded-br-lg"
+              : isLastInGroup
+              ? "rounded-3xl rounded-tr-lg"
+              : "rounded-r-lg rounded-l-3xl"
+          }`
+        : `bg-white dark:bg-zinc-800 text-gray-900 dark:text-white ${
+            isFirstInGroup && isLastInGroup
+              ? "rounded-3xl"
+              : isFirstInGroup
+              ? "rounded-3xl rounded-bl-lg"
+              : isLastInGroup
+              ? "rounded-3xl rounded-tl-lg"
+              : "rounded-l-lg rounded-r-3xl"
+          }`
+    }`}
+    onContextMenu={(e) => {
+      e.preventDefault();
+      setShowEmojiPicker(m.id);
+    }}
+  >
                   {m.image && <img src={m.image} className="rounded-2xl max-w-full mb-1" alt="sent" />}
                   {m.file && (
                     <a href={m.file} target="_blank" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl">
