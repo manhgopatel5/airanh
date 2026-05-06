@@ -30,9 +30,7 @@ import DOMPurify from "isomorphic-dompurify";
 import { toast, Toaster } from "sonner";
 import Image from "next/image";
 import Linkify from "linkify-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
+
 
 import { motion, AnimatePresence } from "framer-motion";
 import { CommentList } from "@/components/task/CommentList";
@@ -386,20 +384,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
             <FiShare2 size={18} className="text-zinc-600 dark:text-zinc-400" />
           </button>
           {isOwner && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="p-2 rounded-full hover:bg-zinc-900/5 dark:hover:bg-white/5 active:scale-90 transition-all">
-                  <FiMoreVertical size={18} className="text-zinc-600 dark:text-zinc-400" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => router.push(`/nhiem-vu/edit/${task.id}`)}>
-                  <FiEdit2 size={16} className="mr-2" /> Chỉnh sửa
-                </DropdownMenuItem>
-       l
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+  
         </motion.div>
 
         {/* Card Task chính - Style giống mẫu */}
