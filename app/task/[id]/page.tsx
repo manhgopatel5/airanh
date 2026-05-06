@@ -515,7 +515,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
               </div>
             </>
           )}
-        </div>
+        
 
         {/* Mô tả chi tiết */}
         {task.description && (
