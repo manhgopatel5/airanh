@@ -233,17 +233,7 @@ export default function TaskDetailPage() {
 
 
 
-  const handleShare = useCallback(async () => {
-    const url = window.location.href;
-    const title = task?.title || "Xem task";
-    if (navigator.share) {
-      try { await navigator.share({ title, url }); } catch {}
-    } else {
-      await navigator.clipboard.writeText(url);
-      toast.success("Đã copy link");
-      navigator.vibrate?.(10);
-    }
-  }, [task?.title]);
+
 
   const handleSendComment = async () => {
     if (!currentUser ||!task ||!text.trim() || sending) return;
