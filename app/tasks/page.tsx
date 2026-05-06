@@ -197,6 +197,7 @@ export default function TasksPage() {
                 >
                   {tab.label}
                 </button>
+
               ))}
             </div>
           </div>
