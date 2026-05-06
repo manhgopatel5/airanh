@@ -126,7 +126,7 @@ await setDoc(
     updatedAt: serverTimestamp(),
   },
   { merge: true }
-););
+);
         })
       );
       toast.success(`Đã gửi cho ${selected.length} người`);
