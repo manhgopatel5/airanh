@@ -26,7 +26,7 @@ export default function TaskFeed({ tasks, mode, activeTab }: Props) {
           className="px-4"
           style={{ animationDelay: `${idx * 50}ms` }}
         >
-          <TaskCard task={task} mode={mode} />
+          <TaskCard task={task} theme={mode} />
         </div>
       ))}
     </div>
