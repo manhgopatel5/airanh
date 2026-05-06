@@ -71,13 +71,18 @@ export default function TaskCard({ task, onDelete }: Props) {
    ? new Date(task.eventDate.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
     : "";
 
-  const statusMap = {
-    open: { label: "Đang tuyển", color: "bg-[#E6F4EA] text-[#1E8E3E]" },
-    full: { label: "Đã đủ", color: "bg-[#FEE8E8] text-[#D93025]" },
-    doing: { label: "Đang làm", color: "bg-[#E8F0FE] text-[#1A73E8]" },
-    completed: { label: "Hoàn thành", color: "bg-[#F1F3F4] text-[#5F6368]" },
-    pending: { label: "Chờ duyệt", color: "bg-[#FEF7E0] text-[#F9AB00]" }
-  };
+const statusMap: Record<TaskStatus, { label: string; color: string }> = {
+  open: { label: "Đang tuyển", color: "bg-[#E6F4EA] text-[#1E8E3E]" },
+  full: { label: "Đã đủ", color: "bg-[#FEE8E8] text-[#D93025]" },
+  doing: { label: "Đang làm", color: "bg-[#E8F0FE] text-[#1A73E8]" },
+  completed: { label: "Hoàn thành", color: "bg-[#F1F3F4] text-[#5F6368]" },
+  cancelled: { label: "Đã hủy", color: "bg-[#F1F3F4] text-[#5F6368]" },
+  deleted: { label: "Đã xóa", color: "bg-[#F1F3F4] text-[#5F6368]" },
+  expired: { label: "Hết hạn", color: "bg-[#FEF7E0] text-[#F9AB00]" },
+  pending: { label: "Chờ duyệt", color: "bg-[#FEF7E0] text-[#F9AB00]" },
+};
+
+const status = statusMap[task.status];
 
   const status = statusMap[task.status] || statusMap.open;
 
