@@ -366,12 +366,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
     <>
       <Toaster richColors position="top-center" />
       <div className="max-w-xl mx-auto bg-[#F2F2F7] dark:bg-black min-h-screen pb-4">
- <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-[#E5E5EA] dark:border-zinc-800 px-4 py-3 flex gap-3 items-center">
-  <button onClick={() => router.back()} className="p-1 -ml-1 rounded-full hover:bg-zinc-900/5 dark:hover:bg-white/5 active:scale-90 transition-all">
-    <FiChevronLeft size={24} />
-  </button>
-  <h1 className="font-semibold truncate flex-1 text-[17px]">Chi tiết</h1>
-</motion.div>
+
 
        {/* Card Task chính */}
 <div className="bg-white mt-3 mx-4 rounded-2xl border border-[#E5E5E7] overflow-hidden">
