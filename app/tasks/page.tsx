@@ -441,7 +441,11 @@ const distance = touchY - pullStartY.current;
           )}
 {shareTask && (
   <ShareTaskModal 
-    task={{ id: shareTask.id, title: shareTask.title, price: shareTask.price }} 
+    task={{ 
+      id: shareTask.id, 
+      title: shareTask.title, 
+      price: 'price' in shareTask ? shareTask.price : 0  // PlanItem không có price → = 0
+    }} 
     onClose={() => setShareTask(null)} 
   />
 )}
