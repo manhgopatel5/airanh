@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiInbox, FiSearch, FiRefreshCw, FiX } from "react-icons/fi";
 import { HiBolt, HiCalendarDays } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
+import ShareTaskModal from "@/components/ShareTaskModal";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { collection, query, where, getDocs, limit, startAfter, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
@@ -42,6 +43,7 @@ export default function TasksPage() {
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [shareTask, setShareTask] = useState<Task | null>(null);
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const pullStartY = useRef(0);
@@ -414,11 +416,12 @@ const distance = touchY - pullStartY.current;
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.05 }}
                   >
-                    <TaskCard 
-                      task={task} 
-                      theme={mode} 
-                      onDelete={(id) => setTasks(prev => prev.filter(t => t.id!== id))} 
-                    />
+         <TaskCard 
+  task={task} 
+  theme={mode} 
+  onDelete={(id) => setTasks(prev => prev.filter(t => t.id !== id))}
+  onShare={() => setShareTask(task)}  // thêm dòng này
+/>
                   </motion.div>
                 ))}
               </motion.div>
@@ -436,6 +439,12 @@ const distance = touchY - pullStartY.current;
               <FiRefreshCw className="animate-spin text-[#0A84FF]" size={24} />
             </div>
           )}
+{shareTask && (
+  <ShareTaskModal 
+    task={{ id: shareTask.id, title: shareTask.title, price: shareTask.price }} 
+    onClose={() => setShareTask(null)} 
+  />
+)}
 
           <div ref={loadMoreRef} className="h-4" />
         </div>
