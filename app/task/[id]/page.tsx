@@ -23,7 +23,7 @@ import type { TaskComment } from "@/types/task";
 import { isTask, isPlan, type Task } from "@/types/task";
 import {
   FiChevronLeft, FiSend, FiClock, FiUsers, FiX, FiShare2, FiMoreVertical,
-  FiEdit2, FiTrash2, FiMapPin, FiDollarSign, FiCheckCircle,
+  FiMapPin, FiDollarSign, FiCheckCircle,
   FiMessageCircle, FiCalendar
 } from "react-icons/fi";
 import DOMPurify from "isomorphic-dompurify";
@@ -81,7 +81,7 @@ export default function TaskDetailPage() {
   const [timeLeft, setTimeLeft] = useState("");
   const [joining, setJoining] = useState(false);
   const [creatingChat, setCreatingChat] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+ 
   const [showImageGallery, setShowImageGallery] = useState<number | null>(null);
   const [likingComments, setLikingComments] = useState<Set<string>>(new Set());
 
@@ -396,12 +396,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
                 <DropdownMenuItem onClick={() => router.push(`/nhiem-vu/edit/${task.id}`)}>
                   <FiEdit2 size={16} className="mr-2" /> Chỉnh sửa
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setShowDeleteDialog(true)}
-                  className="text-red-500 focus:text-red-500"
-                >
-                  <FiTrash2 size={16} className="mr-2" /> Xóa task
-                </DropdownMenuItem>
+       l
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -429,7 +424,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
                   {owner?.rating && (
                     <div className="flex items-center gap-1 text-[17px]">
                     <FiStar className="fill-yellow-400 text-yellow-400" size={15} />
-                   <span className="font-semibold text-zinc-900 dark:text-zinc-100">{owner.rating}</span>
+                   <span className="font-semibold text-[17px] text-zinc-900 dark:text-zinc-100">{owner.rating}</span>
 <span className="text-zinc-500 text-[15px]">({owner.reviewCount || 21} đánh giá)</span>
                     </div>
                   )}
@@ -493,7 +488,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
             <button
               onClick={handleQuickChat}
               disabled={creatingChat || isOwner}
-              className="h-10 rounded-lg border border-[#E5E5EA] dark:border-zinc-700 bg-white dark:bg-zinc-800 flex items-center justify-center gap-1.5 text-[17px] font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 active:scale-95 transition-all"
+              className="h-10 rounded-xl bg-white dark:bg-zinc-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex items-center justify-center gap-1.5 text-[15px] font-normal text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 active:scale-95 transition-all"
             >
               <FiMessageSquare size={18} />
               <span className="hidden sm:inline">Nhắn tin</span>
@@ -502,8 +497,8 @@ const taskTime = isTask(task) && task.deadline?.seconds
             <button
               onClick={() => window.open(`tel:${owner?.phone || ''}`)}
               disabled={!owner?.phone}
-              className="h-10 rounded-lg border border-[#E5E5EA] dark:border-zinc-700 bg-white dark:bg-zinc-800 flex items-center justify-center gap-1.5 text-[17px] font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 active:scale-95 transition-all"
-            >
+              className="h-10 rounded-xl bg-white dark:bg-zinc-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex items-center justify-center gap-1.5 text-[15px] font-normal text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 active:scale-95 transition-all"
+  >
               <FiPhone size={18} />
               <span className="hidden sm:inline">Gọi điện</span>
             </button>
@@ -511,11 +506,11 @@ const taskTime = isTask(task) && task.deadline?.seconds
             <button
               onClick={isApplied? handleCancelApply : handleJoinTask}
               disabled={(!isApplied && (isFull || task.status!== "open")) || joining || isOwner}
-              className={`h-10 rounded-lg flex items-center justify-center gap-1.5 text-[17px] font-semibold active:scale-95 transition-all disabled:opacity-40 ${
-                isApplied
-                 ? "border border-[#E5E5EA] dark:border-zinc-700 bg-white dark:bg-zinc-800"
-                  : "bg-[#0a84ff] hover:bg-[#0071e3] text-white"
-              }`}
+  className={`h-10 rounded-xl flex items-center justify-center gap-1.5 text-[15px] font-semibold active:scale-95 transition-all disabled:opacity-40 ${
+    isApplied
+    ? "bg-white dark:bg-zinc-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] text-zinc-700 dark:text-zinc-300"
+      : "bg-[#00A86B] hover:bg-[#009960] text-white"
+  }`}
             >
               <FiPlus size={18} />
               <span className="hidden sm:inline">{isApplied? "Hủy" : "Nhận việc"}</span>
@@ -523,8 +518,8 @@ const taskTime = isTask(task) && task.deadline?.seconds
 
             <button
               onClick={() => toast.info("Đã gửi báo cáo")}
-              className="h-10 rounded-lg border border-[#E5E5EA] dark:border-zinc-700 bg-white dark:bg-zinc-800 flex items-center justify-center gap-1.5 text-[17px] font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700 active:scale-95 transition-all"
-            >
+    className="h-10 rounded-xl bg-white dark:bg-zinc-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex items-center justify-center gap-1.5 text-[15px] font-normal text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 active:scale-95 transition-all"
+>
               <FiAlertTriangle size={18} />
               <span className="hidden sm:inline">Báo cáo</span>
             </button>
@@ -609,7 +604,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
   {task.location && (task.location.address || task.location.city) && (
     <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
       <FiMapPin size={18} className="text-zinc-400" />
-      <span>{[task.location.address, task.location.city, task.location.country].filter(Boolean).join(", ")}</span>
+      <span className="text-[15px]">{[task.location.address, task.location.city, task.location.country].filter(Boolean).join(", ")}</span>
     </div>
   )}
 
@@ -635,14 +630,14 @@ const taskTime = isTask(task) && task.deadline?.seconds
 
   <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
     <FiUsers size={18} className="text-zinc-400" />
-    <span>
-      {applicants.length}/{isTask(task) && task.totalSlots? task.totalSlots : 1} người ứng tuyển
-    </span>
+<span className="text-[15px]">
+  {applicants.length}/{isTask(task) && task.totalSlots? task.totalSlots : 1} người ứng tuyển
+</span>
   </div>
 
   <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
     <FiClock size={18} className="text-zinc-400" />
-    <span className="tabular-nums">{timeLeft}</span>
+    <span className="tabular-nums text-[15px]">{timeLeft}</span>
   </div>
 </div>
         {/* Khung bình luận */}
@@ -735,16 +730,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
 
       </div>
 
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Xóa task?</DialogTitle></DialogHeader>
-         <p className="text-[15px] text-zinc-600 dark:text-zinc-400">Hành động này không thể hoàn tác. Tất cả dữ liệu sẽ bị xóa vĩnh viễn.</p>
-          <div className="flex gap-2 justify-end mt-4">
-           className="px-4 py-2 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 text-[15px] font-medium active:scale-95 transition-all"
-className="px-4 py-2 rounded-xl bg-red-500 text-white text-[15px] font-medium active:scale-95 transition-all"
-          </div>
-        </DialogContent>
-      </Dialog>
+
 
       <ImageGallery open={showImageGallery!== null} images={task.images || []} initialIndex={showImageGallery || 0} onClose={() => setShowImageGallery(null)} />
     </>
