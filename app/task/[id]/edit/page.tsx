@@ -71,18 +71,21 @@ export default function EditTaskPage() {
         }
 
         setTask(data);
-        setForm({
-          title: data.title,
-          description: data.description || "",
-          price: "price" in data? data.price : 0,
-          totalSlots: "totalSlots" in data? data.totalSlots : 1,
-          category: data.category,
-          tags: data.tags || [],
-          images: data.images || [],
-          requirements: "requirements" in data? data.requirements : "",
-          location: data.location || { address: "", city: "" },
-          isRemote: "isRemote" in data? data.isRemote : false,
-        });
+setForm({
+  title: data.title,
+  description: data.description || "",
+  price: "price" in data? data.price : 0,
+  totalSlots: "totalSlots" in data? data.totalSlots : 1,
+  category: data.category,
+  tags: data.tags || [],
+  images: data.images || [],
+  requirements: "requirements" in data? data.requirements : "",
+  location: {
+    address: data.location?.address || "",
+    city: data.location?.city || "",
+  },
+  isRemote: "isRemote" in data? data.isRemote : false,
+});
       } catch (err) {
         console.error(err);
         toast.error("Lỗi tải dữ liệu");
