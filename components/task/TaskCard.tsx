@@ -102,19 +102,7 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
     toast.success("Đã xóa");
   }, [isOwner, task.id, onDelete, db]);
 
-  const handleShare = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    vibrate(8);
-    if (navigator.share) {
-      navigator.share({
-        title: task.title,
-        url: `${window.location.origin}/task/${task.slug || task.id}`
-      });
-    } else {
-      navigator.clipboard.writeText(`${window.location.origin}/task/${task.slug || task.id}`);
-      toast.success("Đã copy link");
-    }
-  }, [task]);
+
 
   const goToTask = () => {
     vibrate();
