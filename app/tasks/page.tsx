@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiInbox, FiZap, FiCalendar } from "react-icons/fi";
+import { FiInbox } from "react-icons/fi";
 import { HiBolt, HiCalendarDays } from "react-icons/hi2"; // Dùng icon giống ModeToggle
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
