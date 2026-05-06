@@ -117,17 +117,16 @@ export default function ShareTaskModal({
             readBy: [user.uid],
           });
 
-          await setDoc(
-            chatRef,
-            {
-              lastMessage: {
-                text: isPlan? `Đã chia sẻ kế hoạch: ${task.title}` : `Đã chia sẻ: ${task.title}`,
-                senderId: user.uid,
-              },
-              updatedAt: serverTimestamp(),
-            },
-            { merge: true }
-          );
+await setDoc(
+  chatRef,
+  {
+    lastMessage: isPlan? `Đã chia sẻ kế hoạch: ${task.title}` : `Đã chia sẻ: ${task.title}`,
+    lastSenderId: user.uid,
+    lastSenderName: user.displayName || user.email?.split('@')[0] || "User",
+    updatedAt: serverTimestamp(),
+  },
+  { merge: true }
+););
         })
       );
       toast.success(`Đã gửi cho ${selected.length} người`);
