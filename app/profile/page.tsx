@@ -302,6 +302,7 @@ export default function Profile() {
       {/* ── Header: avatar + name + status ── */}
       <div className="px-6 pt-12 pb-6">
         <div className="flex items-center gap-4">
+          {/* Avatar with upload + verified badge */}
           <label className="relative cursor-pointer group flex-shrink-0">
             <img
               src={
@@ -311,6 +312,8 @@ export default function Profile() {
               className="w-16 h-16 rounded-full object-cover"
               alt="Avatar"
             />
+
+            {/* Verified badge */}
             {userData.emailVerified && (
               <div
                 className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-gradient-to-br ${accentGradient} flex items-center justify-center border-2 border-white dark:border-black`}
@@ -318,9 +321,12 @@ export default function Profile() {
                 <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
               </div>
             )}
+
+            {/* Camera overlay on press */}
             <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-active:opacity-100 transition-opacity">
               <Camera size={20} className="text-white" />
             </div>
+
             <input
               type="file"
               accept="image/*"
@@ -328,6 +334,8 @@ export default function Profile() {
               onChange={handleUpload}
               disabled={uploading}
             />
+
+            {/* Upload progress overlay */}
             {uploading && (
               <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center backdrop-blur-sm">
                 <span className="text-white text-xs font-bold">{uploadProgress}%</span>
@@ -335,6 +343,7 @@ export default function Profile() {
             )}
           </label>
 
+          {/* Name (editable) + online status */}
           <div className="flex-1 min-w-0">
             {editingName? (
               <div className="flex items-center gap-2">
@@ -361,6 +370,7 @@ export default function Profile() {
                 {userData.name}
               </h1>
             )}
+
             <div className="flex items-center gap-1.5 mt-1">
               <Circle
                 className={`w-2 h-2 fill-current ${
@@ -374,6 +384,7 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* ── Stats row: Task / Plan / Rating ── */}
         <div className="flex items-center gap-2 mt-5">
           <button
             onClick={() => router.push("/tasks")}
@@ -385,6 +396,7 @@ export default function Profile() {
             </span>
             <span className="text-xs text-gray-400 dark:text-zinc-500">Task</span>
           </button>
+
           <button
             onClick={() => router.push("/plans")}
             className="flex-1 py-2.5 rounded-2xl bg-gray-50 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95 transition"
@@ -395,6 +407,7 @@ export default function Profile() {
             </span>
             <span className="text-xs text-gray-400 dark:text-zinc-500">Plan</span>
           </button>
+
           <button className="flex-1 py-2.5 rounded-2xl bg-gray-50 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95 transition">
             <Star className="w-4 h-4 text-gray-500 dark:text-zinc-400" />
             <span className="text-sm font-bold text-gray-900 dark:text-white">
@@ -404,7 +417,9 @@ export default function Profile() {
         </div>
       </div>
 
+      {/* ── Menu sections ── */}
       <div className="px-6 mt-2 space-y-6">
+        {/* HỒ SƠ */}
         <div>
           <SectionLabel>HỒ SƠ</SectionLabel>
           <Item label="Thông tin cá nhân" icon={User} onClick={() => router.push("/profile/edit")} />
@@ -412,11 +427,15 @@ export default function Profile() {
           <Item label="Quét mã QR" icon={ScanLine} onClick={() => setShowScanQR(true)} />
           <Item label="Chia sẻ hồ sơ" icon={Share2} onClick={handleShare} />
         </div>
+
+        {/* BẢO MẬT */}
         <div>
           <SectionLabel>BẢO MẬT</SectionLabel>
           <Item label="Xác thực CCCD" icon={Shield} />
           <Item label="Đổi mật khẩu" icon={Lock} onClick={() => router.push("/settings/change-password")} />
         </div>
+
+        {/* HỖ TRỢ */}
         <div>
           <SectionLabel>HỖ TRỢ</SectionLabel>
           <Item label="Trung tâm trợ giúp" icon={HelpCircle} />
@@ -426,6 +445,7 @@ export default function Profile() {
         </div>
       </div>
 
+      {/* ── QR Modal ── */}
       {showQR && userData.userId && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
@@ -441,6 +461,7 @@ export default function Profile() {
             <p className="text-sm text-center text-gray-500 mb-4">
               Quét để kết nối với {userData.name}
             </p>
+
             <div className="bg-white p-4 rounded-2xl flex items-center justify-center">
               <QRCodeSVG
                 value={`https://airanh.vercel.app/u/${userData.userId}`}
@@ -449,6 +470,7 @@ export default function Profile() {
                 includeMargin
               />
             </div>
+
             <div className="grid grid-cols-2 gap-3 mt-4">
               <button
                 onClick={handleShare}
@@ -467,6 +489,7 @@ export default function Profile() {
         </div>
       )}
 
+      {/* ── Scan QR fullscreen ── */}
       {showScanQR && (
         <div className="fixed inset-0 bg-black z-50">
           <div id="qr-reader" className="w-full h-full" />
@@ -483,6 +506,7 @@ export default function Profile() {
         </div>
       )}
 
+      {/* ── Modals ── */}
       {showLogoutModal && (
         <Modal
           title="Đăng xuất?"
@@ -506,6 +530,8 @@ export default function Profile() {
     </div>
   );
 }
+
+// ─── Sub-components ───────────────────────────────────────────────
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
