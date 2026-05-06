@@ -21,7 +21,7 @@ const SUB_TABS: { key: SubTab; label: string }[] = [
   { key: "doing", label: "Đang nhận" },
   { key: "applied", label: "Đã ứng tuyển" },
   { key: "completed", label: "Hoàn thành" },
-  { key: "cancelled", label: "Đã hủy" }, // Thêm tab Đã hủy
+  { key: "cancelled", label: "Đã hủy" },
 ];
 
 export default function TasksPage() {
