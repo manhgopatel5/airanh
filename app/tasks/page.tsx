@@ -190,10 +190,10 @@ export default function TasksPage() {
                   key={tab.key}
                   onClick={() => setSubTab(tab.key)}
                   className={`px-4 h-8 rounded-full text-sm font-medium whitespace-nowrap transition-all active:scale-95 ${
-                    subTab === tab.key
-          ? `${theme.bgLight} text-white shadow-sm ${theme.shadow}`
-                      : "bg-[#F2F2F7] dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400"
-                  }`}
+  subTab === tab.key
+    ? `${theme[mode].bgLight} text-white shadow-sm ${theme[mode].shadow}`
+    : "bg-[#F2F2F7] dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400"
+}`}
                 >
                   {tab.label}
                 </button>
