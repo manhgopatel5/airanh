@@ -82,7 +82,7 @@ const statusMap: Record<TaskStatus, { label: string; color: string }> = {
   pending: { label: "Chờ duyệt", color: "bg-[#FEF7E0] text-[#F9AB00]" },
 };
 
-const status = statusMap[task.status];
+
 
   const status = statusMap[task.status] || statusMap.open;
 
