@@ -14,7 +14,7 @@ import { toast } from "sonner";
 
 type Props = {
   task: Task;
-  theme: "task" | "plan"; // THÊM PROP NÀY
+  theme: "task" | "plan";
   onDelete?: (id: string) => void;
 };
 
@@ -33,16 +33,15 @@ export default function TaskCard({ task, theme, onDelete }: Props) {
   const applicants = task.applicants || [];
   const isApplied = user && applicants.includes(user.uid);
 
-  // Màu theo theme: task = blue, plan = green
   const themeColor = {
     task: {
-      primary: "#1A73E8", // xanh dương
+      primary: "#1A73E8",
       bg: "bg-[#E8F0FE]",
       text: "text-[#1A73E8]",
       fill: "fill-[#1A73E8]"
     },
     plan: {
-      primary: "#1E8E3E", // xanh lá
+      primary: "#1E8E3E",
       bg: "bg-[#E6F4EA]",
       text: "text-[#1E8E3E]",
       fill: "fill-[#1E8E3E]"
@@ -104,21 +103,22 @@ export default function TaskCard({ task, theme, onDelete }: Props) {
   return (
     <div
       onClick={goToTask}
-      className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5E7] dark:border-zinc-800 p-4 active:scale-[0.98] transition-all cursor-pointer hover:shadow-lg"
+      className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 active:scale-[0.98] transition-all cursor-pointer"
+      style={{ fontFamily: 'Georgia, serif' }}
     >
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className={`px-2 py-0.5 rounded-md text- font-medium ${status.color}`}>
+            <span className={`px-2 py-0.5 rounded-md text-[13px] font-medium ${status.color}`}>
               {status.label}
             </span>
             {isTask(task) && task.price > 0 && (
-              <span className={`px-2 py-0.5 rounded-md ${themeColor.bg} ${themeColor.text} text- font-semibold`}>
+              <span className={`px-2 py-0.5 rounded-md ${themeColor.bg} ${themeColor.text} text-[13px] font-semibold`}>
                 {task.price.toLocaleString("vi-VN")}đ
               </span>
             )}
           </div>
-          <h3 className="font-semibold text- text-[#1C1C1E] dark:text-white line-clamp-2 leading-snug">
+          <h3 className="font-semibold text-[16px] text-[#1C1C1E] dark:text-white line-clamp-2 leading-snug">
             {task.title}
           </h3>
         </div>
@@ -146,10 +146,10 @@ export default function TaskCard({ task, theme, onDelete }: Props) {
                 <FiMoreHorizontal size={18} className="text-[#8E8E93]" />
               </button>
               {showMenu && (
-                <div className="absolute right-0 top-8 bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-[#E5E5E7] dark:border-zinc-700 py-1 z-10">
+                <div className="absolute right-0 top-8 bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700 py-1 z-10">
                   <button
                     onClick={handleDelete}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-zinc-700 w-full whitespace-nowrap"
+                    className="flex items-center gap-2 px-4 py-2 text-[14px] text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-zinc-700 w-full whitespace-nowrap"
                   >
                     <FiTrash2 size={14} /> Xóa
                   </button>
@@ -160,7 +160,7 @@ export default function TaskCard({ task, theme, onDelete }: Props) {
         </div>
       </div>
 
-      <div className="flex items-center gap-3 text- text-[#8E8E93] dark:text-zinc-400 flex-wrap">
+      <div className="flex items-center gap-3 text-[14px] text-[#8E8E93] dark:text-zinc-400 flex-wrap">
         {taskDate && (
           <div className="flex items-center gap-1">
             <FiClock size={14} />
@@ -180,8 +180,8 @@ export default function TaskCard({ task, theme, onDelete }: Props) {
       </div>
 
       {isApplied && (
-        <div className="mt-2 pt-2 border-t border-[#E5E5E7] dark:border-zinc-800">
-          <span className={`text- ${themeColor.text} font-medium`}>Đã ứng tuyển</span>
+        <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+          <span className={`text-[14px] ${themeColor.text} font-medium`}>Đã ứng tuyển</span>
         </div>
       )}
     </div>
