@@ -1,7 +1,7 @@
 "use client";
 
 import { TaskListItem, PlanListItem } from "@/types/task";
-import TaskCard from "@/components/TaskCard";
+import TaskCard from "@/components/task/TaskCard";
 import EmptyState from "@/components/EmptyState";
 import { AppMode } from "@/types/app";
 
