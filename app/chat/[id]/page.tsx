@@ -51,7 +51,7 @@ type Message = {
   file?: string;
   fileName?: string;
   location?: { lat: number; lng: number };
-  type: "text" | "image" | "file" | "location" | "voice";
+type: "text" | "image" | "file" | "location" | "voice" | "task_share"; // ← Thêm task_share
   voice?: string;
   duration?: number;
   reactions?: Reaction[];
@@ -1000,142 +1000,7 @@ const unpinMessage = async () => {
   })}
   <div ref={messagesEndRef} />
 </div>
-              {/* Context Menu */}
-              <div className={`absolute ${isMe ? "right-0" : "left-0"} top-0 hidden group-hover:flex gap-1 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-1`}>
-                <button onClick={() => setShowEmojiPicker(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
-                  <Smile size={16} />
-                </button>
-                <button onClick={() => setReplyTo(m)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
-                  <Reply size={16} />
-                </button>
-                {isMe && (
-                  <>
-                    <button onClick={() => { setEditingMsg(m); setText(m.text); inputRef.current?.focus(); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
-                      <Pencil size={16} />
-                    </button>
-                    <button onClick={() => deleteMessage(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded text-red-500">
-                      <Trash2 size={16} />
-                    </button>
-                  </>
-                )}
-                <button onClick={() => pinMessage(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
-                  <Pin size={16} />
-                </button>
-                <button onClick={() => { navigator.clipboard.writeText(m.text); toast.success("Đã copy"); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
-                  <Copy size={16} />
-                </button>
-              </div>
-
-              {/* Emoji Picker */}
-              {showEmojiPicker === m.id && (
-                <div className="absolute bottom-full mb-2 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-2 flex gap-1 z-10">
-                  {EMOJI_LIST.map(emoji => (
-                    <button
-                      key={emoji}
-                      onClick={() => toggleReaction(m.id, emoji)}
-                      className="text-2xl hover:scale-125 transition-transform"
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {isLastInGroup && (
-              <div className={`flex items-center gap-1 mt-1 px-1 ${isMe ? "flex-row-reverse" : ""}`}>
-                <p className="text-xs text-gray-400 dark:text-zinc-500 font-medium">{formatTime(m.createdAt)}</p>
-                {isMe && seenAvatars.length > 0 && (
-                  <div className="flex -space-x-2">
-                    {seenAvatars.slice(0, 3).map((u, idx) => (
-                      <img
-                        key={idx}
-                        src={u.avatar}
-                        className="w-4 h-4 rounded-full ring-2 ring-white dark:ring-zinc-950"
-                        alt={u.name}
-                      />
-                    ))}
-                  </div>
-                )}
-                {isMe && seenAvatars.length === 0 && m.seenBy && m.seenBy.length > 1 && <CheckCheck className="text-blue-500" size={14} />}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  })}
-  <div ref={messagesEndRef} />
-</div>
-
-                    {/* Context Menu */}
-                    <div className={`absolute ${isMe? "right-0" : "left-0"} top-0 hidden group-hover:flex gap-1 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-1`}>
-                      <button onClick={() => setShowEmojiPicker(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
-                        <Smile size={16} />
-                      </button>
-                      <button onClick={() => setReplyTo(m)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
-                        <Reply size={16} />
-                      </button>
-                      {isMe && (
-                        <>
-                          <button onClick={() => { setEditingMsg(m); setText(m.text); inputRef.current?.focus(); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
-                            <Pencil size={16} />
-                          </button>
-                          <button onClick={() => deleteMessage(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded text-red-500">
-                            <Trash2 size={16} />
-                          </button>
-                        </>
-                      )}
-                      <button onClick={() => pinMessage(m.id)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
-                        <Pin size={16} />
-                      </button>
-                      <button onClick={() => { navigator.clipboard.writeText(m.text); toast.success("Đã copy"); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded">
-                        <Copy size={16} />
-                      </button>
-                    </div>
-
-                    {/* Emoji Picker */}
-                    {showEmojiPicker === m.id && (
-                      <div className="absolute bottom-full mb-2 bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-2 flex gap-1 z-10">
-                        {EMOJI_LIST.map(emoji => (
-                          <button
-                            key={emoji}
-                            onClick={() => toggleReaction(m.id, emoji)}
-                            className="text-2xl hover:scale-125 transition-transform"
-                          >
-                            {emoji}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {isLastInGroup && (
-                    <div className={`flex items-center gap-1 mt-1 px-1 ${isMe? "flex-row-reverse" : ""}`}>
-                      <p className="text-xs text-gray-400 dark:text-zinc-500 font-medium">{formatTime(m.createdAt)}</p>
-                      {isMe && seenAvatars.length > 0 && (
-                        <div className="flex -space-x-2">
-                          {seenAvatars.slice(0, 3).map((u, idx) => (
-                            <img
-                              key={idx}
-                              src={u.avatar}
-                              className="w-4 h-4 rounded-full ring-2 ring-white dark:ring-zinc-950"
-                              alt={u.name}
-                            />
-                          ))}
-                        </div>
-                      )}
-                      {isMe && seenAvatars.length === 0 && m.seenBy && m.seenBy.length > 1 && <CheckCheck className="text-blue-500" size={14} />}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-        <div ref={messagesEndRef} />
-      </div>
-
+              
       {/* REPLY/EDIT BAR */}
       {(replyTo || editingMsg) && (
         <div className="px-4 pt-2 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-2xl border-t border-gray-200/50 dark:border-zinc-800/50">
