@@ -13,7 +13,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { isTask, type TaskStatus, type TaskListItem, type PlanListItem } from "@/types/task";
 import { toast } from "sonner";
 import { motion, useMotionValue, useTransform, AnimatePresence } from "framer-motion";
-import { TaskListItem, PlanListItem } from "@/types/task";
+
 type Props = {
   task: TaskListItem | PlanListItem;
   theme: "task" | "plan";
