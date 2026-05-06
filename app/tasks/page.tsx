@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiInbox, FiPlus } from "react-icons/fi";
+import { FiInbox, FiZap, FiCalendar } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
@@ -11,7 +11,7 @@ import type { Task } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
 
-type MainTab = "plan" | "task"; // Đổi thứ tự: plan trước
+type MainTab = "task" | "plan";
 type SubTab = "mine" | "saved" | "doing" | "applied" | "completed";
 
 const SUB_TABS: { key: SubTab; label: string }[] = [
@@ -28,26 +28,30 @@ export default function TasksPage() {
   const router = useRouter();
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [mainTab, setMainTab] = useState<MainTab>("plan"); // Default Plan
+  const [mainTab, setMainTab] = useState<MainTab>("task"); // Task trước giống trang chủ
   const [subTab, setSubTab] = useState<SubTab>("mine");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Đổi màu: Plan = xanh lá, Task = xanh dương
+  // Plan = xanh lá, Task = xanh dương
   const theme = {
     plan: {
       bg: "bg-green-500",
       bgHover: "hover:bg-green-600",
       text: "text-green-600 dark:text-green-400",
+      textActive: "text-green-600 dark:text-green-400",
+      bgLight: "bg-green-500 text-white",
       shadow: "shadow-green-500/20",
-      activeBg: "bg-green-500 text-white",
+      icon: FiCalendar,
     },
     task: {
       bg: "bg-blue-500",
       bgHover: "hover:bg-blue-600",
-      text: "text-blue-600 dark:text-blue-400",
+      text: "text-blue-600 dark:text-blue-400", 
+      textActive: "text-blue-600 dark:text-blue-400",
+      bgLight: "bg-blue-500 text-white",
       shadow: "shadow-blue-500/20",
-      activeBg: "bg-blue-500 text-white",
+      icon: FiZap,
     }
   }[mainTab];
 
@@ -70,7 +74,6 @@ export default function TasksPage() {
     
     try {
       const baseCollection = collection(db, "tasks");
-      const typeFilter = mainTab; // "plan" hoặc "task"
       let q;
       
       switch (subTab) {
@@ -78,14 +81,14 @@ export default function TasksPage() {
           q = query(
             baseCollection, 
             where("userId", "==", currentUser.uid),
-            where("type", "==", typeFilter)
+            where("type", "==", mainTab)
           );
           break;
         case "saved":
           q = query(
             baseCollection,
             where("savedBy", "array-contains", currentUser.uid),
-            where("type", "==", typeFilter)
+            where("type", "==", mainTab)
           );
           break;
         case "doing":
@@ -93,7 +96,7 @@ export default function TasksPage() {
             baseCollection,
             where("assignees", "array-contains", currentUser.uid),
             where("status", "==", "doing"),
-            where("type", "==", typeFilter)
+            where("type", "==", mainTab)
           );
           break;
         case "applied":
@@ -101,7 +104,7 @@ export default function TasksPage() {
             baseCollection,
             where("applicants", "array-contains", currentUser.uid),
             where("status", "in", ["open", "pending"]),
-            where("type", "==", typeFilter)
+            where("type", "==", mainTab)
           );
           break;
         case "completed":
@@ -109,7 +112,7 @@ export default function TasksPage() {
             baseCollection,
             where("assignees", "array-contains", currentUser.uid),
             where("status", "==", "completed"),
-            where("type", "==", typeFilter)
+            where("type", "==", mainTab)
           );
           break;
       }
@@ -133,7 +136,7 @@ export default function TasksPage() {
     <>
       <Toaster richColors position="top-center" />
       <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 select-none pb-28">
-        {/* Header đã bỏ phần trên, chỉ giữ tab */}
+        {/* Header mới giống trang chủ - không có chữ "Nhiệm vụ" + dấu cộng */}
         <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-800">
           <div className="h-0.5 w-full bg-zinc-200 dark:bg-zinc-800">
             <motion.div 
@@ -141,62 +144,45 @@ export default function TasksPage() {
               animate={{ width: `${((SUB_TABS.findIndex(t => t.key === subTab) + 1) / SUB_TABS.length) * 100}%` }}
             />
           </div>
-          
-          <div className="h-14 px-4 flex items-center gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${theme.bg} text-white`}>
-                  {mainTab.toUpperCase()}
-                </span>
-                <span className="text-[11px] text-zinc-500">{tasks.length} mục</span>
-              </div>
-              <h1 className="text-[17px] font-semibold truncate -mt-0.5">Nhiệm vụ</h1>
-            </div>
-            
-            <button 
-              onClick={() => router.push(mainTab === "plan"? "/create/plan" : "/create/task")}
-              className={`w-9 h-9 grid place-items-center rounded-full ${theme.bg} ${theme.bgHover} text-white shadow-lg ${theme.shadow} active:scale-95 transition-all`}
-            >
-              <FiPlus size={20} />
-            </button>
-          </div>
 
-          {/* Main Tab: Plan | Task */}
-          <div className="px-4 pb-3">
+          {/* Main Tab: Task | Plan - giống trang chủ */}
+          <div className="px-4 pt-3 pb-2">
             <div className="bg-zinc-100 dark:bg-zinc-900 rounded-xl p-1 flex">
               <button
-                onClick={() => setMainTab("plan")}
-                className={`flex-1 py-2 rounded-lg text-[15px] font-semibold transition-all active:scale-95 ${
-                  mainTab === "plan" 
-                ? "bg-white dark:bg-zinc-800 shadow-sm text-green-600 dark:text-green-400" 
+                onClick={() => setMainTab("task")}
+                className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-1.5 text- font-semibold transition-all active:scale-95 ${
+                  mainTab === "task" 
+               ? "bg-white dark:bg-zinc-800 shadow-sm text-blue-600 dark:text-blue-400" 
                     : "text-zinc-500"
                 }`}
               >
-                Plan
+                <FiZap size={16} />
+                <span>Task</span>
               </button>
               <button
-                onClick={() => setMainTab("task")}
-                className={`flex-1 py-2 rounded-lg text-[15px] font-semibold transition-all active:scale-95 ${
-                  mainTab === "task" 
-                ? "bg-white dark:bg-zinc-800 shadow-sm text-blue-600 dark:text-blue-400" 
+                onClick={() => setMainTab("plan")}
+                className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-1.5 text- font-semibold transition-all active:scale-95 ${
+                  mainTab === "plan" 
+               ? "bg-white dark:bg-zinc-800 shadow-sm text-green-600 dark:text-green-400" 
                     : "text-zinc-500"
                 }`}
               >
-                Task
+                <FiCalendar size={16} />
+                <span>Plan</span>
               </button>
             </div>
           </div>
 
-          {/* Sub Tab */}
+          {/* Sub Tab: scroll ngang */}
           <div className="px-4 pb-3 overflow-x-auto scrollbar-hide">
             <div className="flex gap-2">
               {SUB_TABS.map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => setSubTab(tab.key)}
-                  className={`px-4 h-9 rounded-full text-[13px] font-medium whitespace-nowrap transition-all active:scale-95 ${
+                  className={`px-4 h-9 rounded-full text- font-medium whitespace-nowrap transition-all active:scale-95 ${
                     subTab === tab.key
-                    ? `${theme.activeBg} shadow-sm ${theme.shadow}`
+                   ? `${theme.bgLight} shadow-sm ${theme.shadow}`
                       : "bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200"
                   }`}
                 >
@@ -212,19 +198,19 @@ export default function TasksPage() {
           {loading? (
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 p-4 animate-pulse">
+                <div key={i} className="bg-white dark:bg-zinc-900 rounded- border border-zinc-200 dark:border-zinc-800 p-4 animate-pulse">
                   <div className="h-5 w-3/4 bg-zinc-200 dark:bg-zinc-800 rounded mb-2" />
                   <div className="h-4 w-1/2 bg-zinc-200 dark:bg-zinc-800 rounded" />
                 </div>
               ))}
             </div>
           ) : tasks.length === 0? (
-            <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-zinc-200 dark:border-zinc-800 p-12 text-center">
+            <div className="bg-white dark:bg-zinc-900 rounded- border border-zinc-200 dark:border-zinc-800 p-12 text-center">
               <FiInbox size={48} className="mx-auto mb-3 text-zinc-300 dark:text-zinc-700" />
-              <p className="text-[15px] font-medium text-zinc-600 dark:text-zinc-400 mb-1">
+              <p className="text- font-medium text-zinc-600 dark:text-zinc-400 mb-1">
                 Chưa có {mainTab === "task"? "task" : "plan"} nào
               </p>
-              <p className="text-[13px] text-zinc-500">
+              <p className="text- text-zinc-500 mb-4">
                 {subTab === "mine" && `Tạo ${mainTab} đầu tiên của bạn`}
                 {subTab === "saved" && `Lưu ${mainTab} để xem sau`}
                 {subTab === "doing" && `Nhận ${mainTab} để bắt đầu làm`}
@@ -233,8 +219,8 @@ export default function TasksPage() {
               </p>
               {subTab === "mine" && (
                 <button
-                  onClick={() => router.push(mainTab === "plan"? "/create/plan" : "/create/task")}
-                  className={`mt-4 px-5 h-10 rounded-xl ${theme.bg} ${theme.bgHover} text-white text-[15px] font-medium active:scale-95 transition-all`}
+                  onClick={() => router.push(mainTab === "task"? "/create/task" : "/create/plan")}
+                  className={`px-5 h-10 rounded-xl ${theme.bg} ${theme.bgHover} text-white text- font-medium active:scale-95 transition-all`}
                 >
                   Tạo ngay
                 </button>
@@ -259,8 +245,8 @@ export default function TasksPage() {
       </div>
 
       <style jsx global>{`
-      .scrollbar-hide::-webkit-scrollbar { display: none; }
-      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+     .scrollbar-hide::-webkit-scrollbar { display: none; }
+     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </>
   );
