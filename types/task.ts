@@ -6,7 +6,7 @@ export type AppMode = "task" | "plan";
 export type TaskStatus =
   | "open"
   | "full"
-  | "in_progress"
+  | "doing"
   | "completed"
   | "cancelled"
   | "deleted"
@@ -37,6 +37,8 @@ export type BaseItem = {
   slug: string;
   shortId: string;
   title: string;
+  assignees?: string[]; 
+  savedBy?: string[]; 
   description: string;
   category: string;
   tags: string[]; // ĐÃ CÓ
