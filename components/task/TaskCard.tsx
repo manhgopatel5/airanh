@@ -202,7 +202,7 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
                 className={isSaved? `${themeColor.fill} ${themeColor.text}` : "text-zinc-400 dark:text-zinc-500"} 
               />
             </motion.button>
-            {onShare && (
+{onShare && (
   <motion.button
     whileTap={{ scale: 0.8 }}
     onClick={(e) => {
@@ -212,7 +212,7 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
     }}
     className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all"
   >
-    <Share2 className="w-5 h-5 text-gray-400" />
+    <FiShare2 className="w-5 h-5 text-gray-400" />  // ← Đổi Share2 thành FiShare2
   </motion.button>
 )}
             {isOwner && (
