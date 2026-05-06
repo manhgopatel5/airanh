@@ -10,7 +10,7 @@ export type TaskStatus =
   | "completed"
   | "cancelled"
   | "deleted"
-  | "expired";
+  | "expired"
   | "pending"; 
 
 export type Visibility = "public" | "private" | "friends" | "unlisted";
