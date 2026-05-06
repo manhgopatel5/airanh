@@ -178,7 +178,7 @@ export default function TasksPage() {
     
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore &&!loading &&!loadingMore) {
+      if (entries[0]?.isIntersecting && hasMore &&!loading &&!loadingMore) {
           fetchTasks(false);
         }
       },
