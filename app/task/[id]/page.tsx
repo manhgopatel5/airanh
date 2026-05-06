@@ -691,9 +691,9 @@ const taskTime = isTask(task) && task.deadline?.seconds
               </motion.button>
             </div>
           </div>
-        </div>
+    
 
-      </div>
+      
 
 
 
