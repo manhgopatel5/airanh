@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { 
-  FiUsers, FiClock, FiDollarSign, FiMapPin, 
+  FiUsers, FiClock, FiMapPin, 
   FiBookmark, FiMoreHorizontal, FiTrash2 
 } from "react-icons/fi";
 import { useState, useCallback } from "react";
