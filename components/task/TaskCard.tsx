@@ -103,22 +103,22 @@ export default function TaskCard({ task, theme, onDelete }: Props) {
   return (
     <div
       onClick={goToTask}
-      className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 active:scale-[0.98] transition-all cursor-pointer"
+      className="bg-white dark:bg-zinc-900 rounded-xl border border-[#E5E5EA] dark:border-zinc-800 p-4 active:scale-[0.98] transition-all cursor-pointer"
       style={{ fontFamily: 'Georgia, serif' }}
     >
-      <div className="flex items-start justify-between gap-3 mb-2">
+      <div className="flex items-start justify-between gap-3 mb-2.5">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className={`px-2 py-0.5 rounded-md text-[13px] font-medium ${status.color}`}>
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <span className={`px-2.5 py-1 rounded-md text-[12px] font-semibold ${status.color}`}>
               {status.label}
             </span>
             {isTask(task) && task.price > 0 && (
-              <span className={`px-2 py-0.5 rounded-md ${themeColor.bg} ${themeColor.text} text-[13px] font-semibold`}>
+              <span className={`px-2.5 py-1 rounded-md bg-[#E8F0FE] dark:bg-[#1A73E8]/20 text-[#1A73E8] dark:text-[#8AB4F8] text-[12px] font-semibold`}>
                 {task.price.toLocaleString("vi-VN")}đ
               </span>
             )}
           </div>
-          <h3 className="font-semibold text-[16px] text-[#1C1C1E] dark:text-white line-clamp-2 leading-snug">
+          <h3 className="font-bold text-[17px] text-[#1C1C1E] dark:text-white line-clamp-2 leading-snug tracking-tight">
             {task.title}
           </h3>
         </div>
@@ -160,20 +160,20 @@ export default function TaskCard({ task, theme, onDelete }: Props) {
         </div>
       </div>
 
-      <div className="flex items-center gap-3 text-[14px] text-[#8E8E93] dark:text-zinc-400 flex-wrap">
+      <div className="flex items-center gap-3 text-[13px] text-[#8E8E93] dark:text-zinc-400 flex-wrap">
         {taskDate && (
           <div className="flex items-center gap-1">
-            <FiClock size={14} />
+            <FiClock size={13} />
             <span>{taskDate}</span>
           </div>
         )}
         <div className="flex items-center gap-1">
-          <FiUsers size={14} />
+          <FiUsers size={13} />
           <span>{applicants.length}/{isTask(task)? task.totalSlots : 1}</span>
         </div>
         {task.location?.city && (
           <div className="flex items-center gap-1 truncate">
-            <FiMapPin size={14} />
+            <FiMapPin size={13} />
             <span className="truncate">{task.location.city}</span>
           </div>
         )}
@@ -181,7 +181,7 @@ export default function TaskCard({ task, theme, onDelete }: Props) {
 
       {isApplied && (
         <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
-          <span className={`text-[14px] ${themeColor.text} font-medium`}>Đã ứng tuyển</span>
+          <span className={`text-[13px] ${themeColor.text} font-medium`}>Đã ứng tuyển</span>
         </div>
       )}
     </div>
