@@ -20,7 +20,7 @@ type Props = {
   onShare?: () => void;
 };
 
-export default function TaskCard({ task, theme, onDelete }: Props) {
+export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
   const router = useRouter();
   const { user } = useAuth();
   const db = getFirebaseDB();
@@ -214,15 +214,19 @@ export default function TaskCard({ task, theme, onDelete }: Props) {
                 className={isSaved? `${themeColor.fill} ${themeColor.text}` : "text-zinc-400 dark:text-zinc-500"} 
               />
             </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.8 }}
-              onClick={handleShare}
-              className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all"
-            >
-             <button onClick={() => onShare?.()}>
-  <Share2 className="w-5 h-5 text-gray-400" />
-</button>
-            </motion.button>
+            {onShare && (
+  <motion.button
+    whileTap={{ scale: 0.8 }}
+    onClick={(e) => {
+      e.stopPropagation();
+      vibrate(8);
+      onShare();
+    }}
+    className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all"
+  >
+    <Share2 className="w-5 h-5 text-gray-400" />
+  </motion.button>
+)}
             {isOwner && (
               <div className="relative">
                 <motion.button
