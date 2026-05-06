@@ -6,7 +6,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp } from "firebase/firestore";
 import {
-  FiChevronLeft, FiSend, FiClock, FiUsers, FiX, FiShare2,
+  FiChevronLeft, FiSend, FiClock, FiUsers, FiX,
   FiMapPin, FiDollarSign, FiCheckCircle, FiMessageCircle, 
   FiCalendar, FiMessageSquare, FiPhone, FiPlus, FiAlertTriangle, 
   FiStar, FiBookmark, FiMoreHorizontal
