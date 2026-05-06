@@ -5,7 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp } from "firebase/firestore";
-import { FiMessageSquare, FiPhone, FiPlus, FiAlertTriangle, FiStar } from "react-icons/fi";
+import {
+  FiChevronLeft, FiSend, FiClock, FiUsers, FiX, FiShare2,
+  FiMapPin, FiDollarSign, FiCheckCircle,
+  FiMessageCircle, FiCalendar, FiMessageSquare, FiPhone, 
+  FiPlus, FiAlertTriangle, FiStar, FiBookmark, FiMoreHorizontal
+} from "react-icons/fi";
 import {
   getTaskBySlug,
   joinTask,
@@ -380,135 +385,110 @@ const taskTime = isTask(task) && task.deadline?.seconds
             <FiChevronLeft size={24} />
           </button>
           <h1 className="font-semibold truncate flex-1 text-[17px]">Chi tiết</h1>
-          <button onClick={handleShare} className="p-2 rounded-full hover:bg-zinc-900/5 dark:hover:bg-white/5 active:scale-90 transition-all">
-            <FiShare2 size={18} className="text-zinc-600 dark:text-zinc-400" />
-          </button>
+<button className="p-2 rounded-full hover:bg-black/5 active:scale-90 transition-all">
+  <FiBookmark size={20} className="text-[#1C1C1E]" />
+</button>
+<button className="p-2 rounded-full hover:bg-black/5 active:scale-90 transition-all">
+  <FiMoreHorizontal size={20} className="text-[#1C1C1E]" />
+</button>
           
   
         </motion.div>
 
-        {/* Card Task chính - Style giống mẫu */}
-     <div className="bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden">
-          {/* Header: Avatar + Info */}
-          <div className="p-4">
-            <div className="flex gap-3">
-              <button onClick={() => router.push(`/profile/${task.userId}`)} className="shrink-0">
-                <div className="relative">
-                  <UserAvatar src={owner?.avatar} name={owner?.name} size={56} />
-                  {owner?.rating && owner.rating >= 4.8 && (
-                    <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-0.5">
-                      <FiCheckCircle className="text-white" size={14} />
-                    </div>
-                  )}
-                </div>
-              </button>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                 <span className="font-semibold text-[17px] text-zinc-900 dark:text-zinc-100">{owner?.name || "Minh Tran"}</span>
-                  {owner?.rating && (
-                    <div className="flex items-center gap-1 text-[17px]">
-                    <FiStar className="fill-yellow-400 text-yellow-400" size={15} />
-                   <span className="font-semibold text-[17px] text-zinc-900 dark:text-zinc-100">{owner.rating}</span>
-<span className="text-zinc-500 text-[15px]">({owner.reviewCount || 21} đánh giá)</span>
-                    </div>
-                  )}
-                <span className="text-zinc-500 text-[15px]">• Mới tham gia</span>
-                </div>
-
-                <h2 className="font-semibold text-[17px] leading-snug mb-2 text-zinc-900 dark:text-zinc-100">{task.title}</h2>
-
-               <div className="flex items-center gap-3 text-[15px] text-zinc-500 dark:text-zinc-400">
-                  <div className="flex items-center gap-1">
-                    <FiCalendar size={15} />
-                    <span>{taskDate}</span>
-                  </div>
-                  <span className="text-[15px]">•</span>
-                  <div className="flex items-center gap-1">
-                    <FiClock size={15} />
-                    <span>{taskTime}</span>
-                  </div>
-                  {isTask(task) && task.price > 0 && (
-                    <>
-                    <span className="px-2 py-0.5 rounded-md bg-[#E8F5E9] text-[#2E7D32] dark:bg-green-900/30 dark:text-green-400 text-[15px] font-semibold">
-                        {task.price.toLocaleString("vi-VN")} đ
-                      </span>
-                      <span className="text-[15px]">• Cố định</span>
-                    </>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => router.push(`/profile/${task.userId}`)}
-                  className="text-[#0a84ff] text-[15px] font-normal underline mt-1"
-                >
-                  Xem hồ sơ
-                </button>
-              </div>
-            </div>
-
-            {/* Tags + Phần thưởng */}
-            <div className="flex gap-2 mt-3">
-              <div className="flex-1 flex flex-wrap gap-1.5">
-                {task.tags?.map((tag, i) => (
-                 <span key={i} className="px-3 py-1.5 rounded-lg bg-[#E3F2FD] text-[#1976D2] dark:bg-[#0a84ff]/10 dark:text-[#0a84ff] text-[15px] font-normal">
-                    {tag}
-                  </span>
-                ))}
-                {!task.tags?.length && (
-                  <>
- <span className="px-3 py-1.5 rounded-lg bg-[#E3F2FD] text-[#1976D2] dark:bg-[#0a84ff]/10 dark:text-[#0a84ff] text-[15px] font-normal">Nhanh chóng</span>
-<span className="px-3 py-1.5 rounded-lg bg-[#E3F2FD] text-[#1976D2] dark:bg-[#0a84ff]/10 dark:text-[#0a84ff] text-[15px] font-normal">Uy tín</span>
-                  </>
-                )}
-              </div>
-            </div>
+       {/* Card Task chính */}
+<div className="bg-white mt-3 mx-4 rounded-2xl border border-[#E5E5E7] overflow-hidden">
+  <div className="p-4">
+    <div className="flex gap-3">
+      <div className="relative shrink-0">
+        <UserAvatar src={owner?.avatar} name={owner?.name} size={56} />
+        {owner?.rating && owner.rating >= 4.8 && (
+          <div className="absolute -bottom-1 -right-1 bg-[#00A86B] rounded-full p-0.5">
+            <FiCheckCircle className="text-white" size={14} />
           </div>
+        )}
+      </div>
 
-          {/* Divider */}
-          <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800" />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 mb-1">
+          <span className="font-semibold text-[17px] text-[#1C1C1E]">{owner?.name || "Minh Tran"}</span>
+        </div>
 
-          {/* 4 nút action */}
-          <div className="p-3 grid grid-cols-4 gap-2">
-            <button
-              onClick={handleQuickChat}
-              disabled={creatingChat || isOwner}
-              className="h-10 rounded-xl bg-white dark:bg-zinc-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex items-center justify-center gap-1.5 text-[15px] font-normal text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 active:scale-95 transition-all"
-            >
-              <FiMessageSquare size={18} />
-              <span className="hidden sm:inline">Nhắn tin</span>
-            </button>
+        <div className="flex items-center gap-1.5 mb-2 text-[15px]">
+          <FiStar className="fill-[#FFB800] text-[#FFB800]" size={16} />
+          <span className="font-semibold text-[#1C1C1E]">{owner?.rating || "4.9"}</span>
+          <span className="text-[#8E8E93]">({owner?.reviewCount || 21} đánh giá)</span>
+          <span className="text-[#8E8E93]">•</span>
+          <span className="text-[#00A86B]">Mới tham gia</span>
+        </div>
 
-            <button
-              onClick={() => window.open(`tel:${owner?.phone || ''}`)}
-              disabled={!owner?.phone}
-              className="h-10 rounded-xl bg-white dark:bg-zinc-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex items-center justify-center gap-1.5 text-[15px] font-normal text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 active:scale-95 transition-all"
-  >
-              <FiPhone size={18} />
-              <span className="hidden sm:inline">Gọi điện</span>
-            </button>
+        <h2 className="font-semibold text-[17px] leading-snug mb-3 text-[#1C1C1E]">{task.title}</h2>
 
-            <button
-              onClick={isApplied? handleCancelApply : handleJoinTask}
-              disabled={(!isApplied && (isFull || task.status!== "open")) || joining || isOwner}
-  className={`h-10 rounded-xl flex items-center justify-center gap-1.5 text-[15px] font-semibold active:scale-95 transition-all disabled:opacity-40 ${
-    isApplied
-    ? "bg-white dark:bg-zinc-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] text-zinc-700 dark:text-zinc-300"
-      : "bg-[#00A86B] hover:bg-[#009960] text-white"
-  }`}
-            >
-              <FiPlus size={18} />
-              <span className="hidden sm:inline">{isApplied? "Hủy" : "Nhận việc"}</span>
-            </button>
-
-            <button
-              onClick={() => toast.info("Đã gửi báo cáo")}
-    className="h-10 rounded-xl bg-white dark:bg-zinc-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex items-center justify-center gap-1.5 text-[15px] font-normal text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 active:scale-95 transition-all"
->
-              <FiAlertTriangle size={18} />
-              <span className="hidden sm:inline">Báo cáo</span>
-            </button>
+        <div className="flex items-center gap-2 text-[15px] text-[#8E8E93] flex-wrap">
+          <div className="flex items-center gap-1">
+            <FiCalendar size={16} />
+            <span>{taskDate}</span>
           </div>
+          <span>•</span>
+          <div className="flex items-center gap-1">
+            <FiClock size={16} />
+            <span>{taskTime}</span>
+          </div>
+          {isTask(task) && task.price > 0 && (
+            <>
+              <span className="px-2 py-0.5 rounded-md bg-[#E6F4EA] text-[#1E8E3E] text-[15px] font-semibold">
+                {task.price.toLocaleString("vi-VN")} đ
+              </span>
+              <span>• Cố định</span>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div className="h-px bg-[#E5E5E7]" />
+
+  <div className="p-4 grid grid-cols-4 gap-2">
+    <button
+      onClick={handleQuickChat}
+      disabled={creatingChat || isOwner}
+      className="h-12 rounded-2xl border border-[#E5E5E7] bg-white flex items-center justify-center gap-1.5 text-[15px] text-[#1C1C1E] hover:bg-[#F2F2F7] disabled:opacity-40 active:scale-95 transition-all"
+    >
+      <FiMessageSquare size={20} />
+      <span>Nhắn tin</span>
+    </button>
+
+    <button
+      onClick={() => window.open(`tel:${owner?.phone || ''}`)}
+      disabled={!owner?.phone}
+      className="h-12 rounded-2xl border border-[#E5E5E7] bg-white flex items-center justify-center gap-1.5 text-[15px] text-[#1C1C1E] hover:bg-[#F2F2F7] disabled:opacity-40 active:scale-95 transition-all"
+    >
+      <FiPhone size={20} />
+      <span>Gọi điện</span>
+    </button>
+
+    <button
+      onClick={isApplied? handleCancelApply : handleJoinTask}
+      disabled={(!isApplied && (isFull || task.status!== "open")) || joining || isOwner}
+      className={`h-12 rounded-2xl flex items-center justify-center gap-1.5 text-[15px] font-semibold active:scale-95 transition-all disabled:opacity-40 ${
+        isApplied
+       ? "border border-[#E5E5E7] bg-white text-[#1C1C1E]"
+          : "bg-[#00A86B] hover:bg-[#009960] text-white"
+      }`}
+    >
+      <FiPlus size={20} />
+      <span>{isApplied? "Hủy" : "Nhận việc"}</span>
+    </button>
+
+    <button
+      onClick={() => toast.info("Đã gửi báo cáo")}
+      className="h-12 rounded-2xl border border-[#E5E5E7] bg-white flex items-center justify-center gap-1.5 text-[15px] text-[#1C1C1E] hover:bg-[#F2F2F7] active:scale-95 transition-all"
+    >
+      <FiAlertTriangle size={20} className="text-[#FFB800]" />
+      <span>Báo cáo</span>
+    </button>
+  </div>
+</div>
 
       {/* Map mini */}
 {task.location?.lat && task.location?.lng && (
