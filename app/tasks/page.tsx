@@ -33,21 +33,27 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Plan = xanh lá, Task = xanh dương
+  // Task = xanh dương, Plan = xanh lá
   const theme = {
+    task: {
+      bg: "bg-gradient-to-r from-blue-500 to-blue-600",
+      bgSolid: "bg-blue-500",
+      bgHover: "hover:bg-blue-600",
+      text: "text-blue-600 dark:text-blue-400",
+      bgLight: "bg-blue-500 text-white",
+      bgPill: "bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400",
+      shadow: "shadow-blue-500/30",
+      icon: FiZap,
+    },
     plan: {
-      bg: "bg-green-500",
+      bg: "bg-gradient-to-r from-green-500 to-green-600",
+      bgSolid: "bg-green-500",
       bgHover: "hover:bg-green-600",
       text: "text-green-600 dark:text-green-400",
-      shadow: "shadow-green-500/20",
+      bgLight: "bg-green-500 text-white",
+      bgPill: "bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400",
+      shadow: "shadow-green-500/30",
       icon: FiCalendar,
-    },
-    task: {
-      bg: "bg-blue-500",
-      bgHover: "hover:bg-blue-600",
-      text: "text-blue-600 dark:text-blue-400", 
-      shadow: "shadow-blue-500/20",
-      icon: FiZap,
     }
   }[mainTab];
 
@@ -115,9 +121,9 @@ export default function TasksPage() {
 
       const snap = await getDocs(q);
       const data = snap.docs
-    .map(doc => ({ id: doc.id,...doc.data() } as Task))
-    .filter(t => t.status!== "deleted" && t.status!== "cancelled")
-    .sort((a, b) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
+     .map(doc => ({ id: doc.id,...doc.data() } as Task))
+     .filter(t => t.status!== "deleted" && t.status!== "cancelled")
+     .sort((a, b) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
       
       setTasks(data);
     } catch (err) {
@@ -132,17 +138,16 @@ export default function TasksPage() {
     <>
       <Toaster richColors position="top-center" />
       <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 select-none pb-28">
-        {/* ĐÃ BỎ THANH PROGRESS 0.5 Ở ĐÂY */}
-        
+        {/* Header - BỎ HẾT CHỮ "NHIỆM VỤ" VÀ DẤU + */}
         <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-800">
-          {/* Main Tab: Task | Plan */}
+          {/* Main Tab: Task | Plan - Giống trang chủ */}
           <div className="px-4 pt-3 pb-2">
             <div className="bg-zinc-100 dark:bg-zinc-900 rounded-xl p-1 flex">
               <button
                 onClick={() => setMainTab("task")}
                 className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-1.5 text- font-semibold transition-all active:scale-95 ${
                   mainTab === "task" 
-              ? "bg-white dark:bg-zinc-800 shadow-sm text-blue-600 dark:text-blue-400" 
+             ? "bg-white dark:bg-zinc-800 shadow-sm text-blue-600 dark:text-blue-400" 
                     : "text-zinc-500"
                 }`}
               >
@@ -153,7 +158,7 @@ export default function TasksPage() {
                 onClick={() => setMainTab("plan")}
                 className={`flex-1 h-10 rounded-lg flex items-center justify-center gap-1.5 text- font-semibold transition-all active:scale-95 ${
                   mainTab === "plan" 
-              ? "bg-white dark:bg-zinc-800 shadow-sm text-green-600 dark:text-green-400" 
+             ? "bg-white dark:bg-zinc-800 shadow-sm text-green-600 dark:text-green-400" 
                     : "text-zinc-500"
                 }`}
               >
@@ -163,7 +168,7 @@ export default function TasksPage() {
             </div>
           </div>
 
-          {/* Sub Tab */}
+          {/* Sub Tab - Đổi màu theo theme */}
           <div className="px-4 pb-3 overflow-x-auto scrollbar-hide">
             <div className="flex gap-2">
               {SUB_TABS.map((tab) => (
@@ -172,7 +177,7 @@ export default function TasksPage() {
                   onClick={() => setSubTab(tab.key)}
                   className={`px-4 h-9 rounded-full text- font-medium whitespace-nowrap transition-all active:scale-95 ${
                     subTab === tab.key
-                  ? `${theme.bg} text-white shadow-sm ${theme.shadow}`
+                 ? `${theme.bgLight} shadow-sm ${theme.shadow}`
                       : "bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200"
                   }`}
                 >
@@ -188,14 +193,14 @@ export default function TasksPage() {
           {loading? (
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="bg-white dark:bg-zinc-900 rounded- border-zinc-200 dark:border-zinc-800 p-4 animate-pulse">
+                <div key={i} className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 animate-pulse">
                   <div className="h-5 w-3/4 bg-zinc-200 dark:bg-zinc-800 rounded mb-2" />
                   <div className="h-4 w-1/2 bg-zinc-200 dark:bg-zinc-800 rounded" />
                 </div>
               ))}
             </div>
           ) : tasks.length === 0? (
-            <div className="bg-white dark:bg-zinc-900 rounded- border border-zinc-200 dark:border-zinc-800 p-12 text-center">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-12 text-center">
               <FiInbox size={48} className="mx-auto mb-3 text-zinc-300 dark:text-zinc-700" />
               <p className="text- font-medium text-zinc-600 dark:text-zinc-400 mb-1">
                 Chưa có {mainTab === "task"? "task" : "plan"} nào
@@ -210,7 +215,7 @@ export default function TasksPage() {
               {subTab === "mine" && (
                 <button
                   onClick={() => router.push(mainTab === "task"? "/create/task" : "/create/plan")}
-                  className={`px-5 h-10 rounded-xl ${theme.bg} ${theme.bgHover} text-white text- font-medium active:scale-95 transition-all`}
+                  className={`px-5 h-10 rounded-xl ${theme.bgSolid} ${theme.bgHover} text-white text- font-medium active:scale-95 transition-all`}
                 >
                   Tạo ngay
                 </button>
@@ -226,7 +231,7 @@ export default function TasksPage() {
                 className="space-y-3"
               >
                 {tasks.map((task) => (
-                  <TaskCard key={task.id} task={task} onDelete={(id) => setTasks(prev => prev.filter(t => t.id!== id))} />
+                  <TaskCard key={task.id} task={task} theme={mainTab} onDelete={(id) => setTasks(prev => prev.filter(t => t.id!== id))} />
                 ))}
               </motion.div>
             </AnimatePresence>
@@ -235,8 +240,8 @@ export default function TasksPage() {
       </div>
 
       <style jsx global>{`
-    .scrollbar-hide::-webkit-scrollbar { display: none; }
-    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+   .scrollbar-hide::-webkit-scrollbar { display: none; }
+   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </>
   );
