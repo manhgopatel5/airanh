@@ -12,7 +12,7 @@ import {
   FiStar, FiBookmark, FiMoreHorizontal
 } from "react-icons/fi";
 import {
-  getTaskBySlug,
+  
   joinTask,
   incrementTaskView,
 } from "@/lib/task";
