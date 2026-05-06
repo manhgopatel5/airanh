@@ -231,7 +231,7 @@ export default function TasksPage() {
               {subTab === "mine" && (
                 <button
                   onClick={() => router.push(mode === "task"? "/create/task" : "/create/plan")}
-                  className={`px-5 h-10 rounded-xl ${theme.bgLight} text-white text-sm font-medium active:scale-95 transition-all`}
+                 className={`px-5 h-10 rounded-xl ${theme[mode].bgLight} text-white text-sm font-medium active:scale-95 transition-all`}
                 >
                   Tạo ngay
                 </button>
