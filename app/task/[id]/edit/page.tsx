@@ -9,62 +9,101 @@ import { toast, Toaster } from "sonner";
 import type { Task } from "@/types/task";
 
 export default function EditTaskPage() {
-  const { id } = useParams();
+  const { id: taskId } = useParams();
   const router = useRouter();
   const db = getFirebaseDB();
   const auth = getFirebaseAuth();
 
   const [task, setTask] = useState<Task | null>(null);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true); // ✅ THÊM
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [price, setPrice] = useState(0);
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    price: 0,
+    totalSlots: 1,
+    category: "",
+    tags: [] as string[],
+    images: [] as string[],
+    requirements: "",
+    location: { address: "", city: "" },
+    isRemote: false,
+  });
 
+  // ✅ SỬA 1: Thêm authLoading
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, setCurrentUser);
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setAuthLoading(false); // Quan trọng
+    });
     return () => unsub();
   }, [auth]);
 
+  // ✅ SỬA 2: Đợi auth xong mới load task
   useEffect(() => {
-    if (!id || typeof id!== "string") return;
+    if (!taskId || typeof taskId!== "string" || authLoading) return; // Đợi auth
+
     const load = async () => {
-      const snap = await getDoc(doc(db, "tasks", id));
-      if (!snap.exists()) {
-        toast.error("Không tìm thấy");
+      try {
+        const snap = await getDoc(doc(db, "tasks", taskId));
+        if (!snap.exists()) {
+          toast.error("Không tìm thấy công việc");
+          router.push("/tasks");
+          return;
+        }
+
+        const data = { id: snap.id,...snap.data() } as Task;
+
+        // ✅ SỬA 3: Check user sau khi auth đã load
+        if (!user) {
+          toast.error("Bạn cần đăng nhập");
+          router.push("/login");
+          return;
+        }
+
+        if (data.userId!== user.uid) {
+          toast.error("Bạn không có quyền sửa");
+          router.push(`/task/${taskId}`); // ← Đây là chỗ đá bạn về
+          return;
+        }
+
+        setTask(data);
+        setForm({
+          title: data.title,
+          description: data.description || "",
+          price: "price" in data? data.price : 0,
+          totalSlots: "totalSlots" in data? data.totalSlots : 1,
+          category: data.category,
+          tags: data.tags || [],
+          images: data.images || [],
+          requirements: "requirements" in data? data.requirements : "",
+          location: data.location || { address: "", city: "" },
+          isRemote: "isRemote" in data? data.isRemote : false,
+        });
+      } catch (err) {
+        console.error(err);
+        toast.error("Lỗi tải dữ liệu");
         router.push("/tasks");
-        return;
+      } finally {
+        setLoading(false);
       }
-      const data = { id: snap.id,...snap.data() } as Task;
-
-      // Chỉ chủ task mới sửa được
-      if (data.userId!== currentUser?.uid) {
-        toast.error("Bạn không có quyền sửa");
-        router.push(`/task/${id}`);
-        return;
-      }
-
-      setTask(data);
-      setTitle(data.title);
-      setDescription(data.description || "");
-      setPrice("price" in data? data.price : 0);
-      setLoading(false);
     };
     load();
-  }, [id, currentUser, db, router]);
+  }, [taskId, user, authLoading, db, router]); // ✅ Thêm authLoading vào deps
 
   const handleSave = async () => {
-    if (!task ||!currentUser) return;
-    if (!title.trim()) return toast.error("Tiêu đề không được trống");
+    if (!task ||!user) return;
+    if (!form.title.trim()) return toast.error("Tiêu đề không được trống");
 
     setSaving(true);
     try {
       await updateDoc(doc(db, "tasks", task.id), {
-        title: title.trim(),
-        description: description.trim(),
-        price: price,
+        title: form.title.trim(),
+        description: form.description.trim(),
+        price: form.price,
         updatedAt: serverTimestamp(),
         edited: true,
         editedAt: serverTimestamp(),
@@ -78,7 +117,8 @@ export default function EditTaskPage() {
     }
   };
 
-  if (loading) return <div className="p-4">Đang tải...</div>;
+  // ✅ SỬA 4: Gộp loading
+  if (authLoading || loading) return <div className="p-4 text-center">Đang tải...</div>;
   if (!task) return null;
 
   return (
@@ -91,17 +131,17 @@ export default function EditTaskPage() {
           <div>
             <label className="text-sm font-medium">Tiêu đề</label>
             <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full mt-1 px-3 py-2 rounded-xl border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 outline-none"
+              value={form.title}
+              onChange={(e) => setForm({...form, title: e.target.value })}
+              className="w-full mt-1 px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 outline-none"
             />
           </div>
 
           <div>
             <label className="text-sm font-medium">Mô tả</label>
             <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              value={form.description}
+              onChange={(e) => setForm({...form, description: e.target.value })}
               rows={5}
               className="w-full mt-1 px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 outline-none"
             />
@@ -112,8 +152,8 @@ export default function EditTaskPage() {
               <label className="text-sm font-medium">Giá</label>
               <input
                 type="number"
-                value={price}
-                onChange={(e) => setPrice(Number(e.target.value))}
+                value={form.price}
+                onChange={(e) => setForm({...form, price: Number(e.target.value) })}
                 className="w-full mt-1 px-3 py-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 outline-none"
               />
             </div>
