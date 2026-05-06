@@ -72,23 +72,20 @@ export default function TasksPage() {
           q = query(
             baseCollection, 
             where("userId", "==", currentUser.uid), 
-            where("type", "==", mode),
-            where("status", "not-in", ["deleted", "cancelled"])
+            where("type", "==", mode)
           );
           break;
         case "saved":
           q = query(
             baseCollection, 
             where("savedBy", "array-contains", currentUser.uid), 
-            where("type", "==", mode),
-            where("status", "not-in", ["deleted", "cancelled"])
+            where("type", "==", mode)
           );
           break;
         case "doing":
           q = query(
             baseCollection, 
             where("assignees", "array-contains", currentUser.uid), 
-            where("status", "==", "doing"), 
             where("type", "==", mode)
           );
           break;
@@ -96,7 +93,6 @@ export default function TasksPage() {
           q = query(
             baseCollection, 
             where("applicants", "array-contains", currentUser.uid), 
-            where("status", "in", ["open", "pending"]), 
             where("type", "==", mode)
           );
           break;
@@ -104,7 +100,6 @@ export default function TasksPage() {
           q = query(
             baseCollection, 
             where("assignees", "array-contains", currentUser.uid), 
-            where("status", "==", "completed"), 
             where("type", "==", mode)
           );
           break;
@@ -112,16 +107,38 @@ export default function TasksPage() {
           q = query(
             baseCollection, 
             where("userId", "==", currentUser.uid), 
-            where("status", "==", "cancelled"), 
             where("type", "==", mode)
           );
           break;
       }
 
       const snap = await getDocs(q);
-      const data = snap.docs
-       .map(doc => ({ id: doc.id,...doc.data() } as Task))
-       .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      let data = snap.docs.map(doc => ({ id: doc.id,...doc.data() } as Task));
+
+      // Filter status ở client để khỏi tạo index
+      switch (subTab) {
+        case "mine":
+          data = data.filter(t => !["deleted", "cancelled"].includes(t.status));
+          break;
+        case "saved":
+          data = data.filter(t => !["deleted", "cancelled"].includes(t.status));
+          break;
+        case "doing":
+          data = data.filter(t => t.status === "doing");
+          break;
+        case "applied":
+          data = data.filter(t => ["open", "pending"].includes(t.status));
+          break;
+        case "completed":
+          data = data.filter(t => t.status === "completed");
+          break;
+        case "cancelled":
+          data = data.filter(t => t.status === "cancelled");
+          break;
+      }
+
+      // Sort mới nhất lên đầu
+      data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       
       setTasks(data);
     } catch (err: any) {
@@ -184,7 +201,7 @@ export default function TasksPage() {
                   onClick={() => setSubTab(tab.key)}
                   className={`px-4 h-8 rounded-full text-sm font-medium whitespace-nowrap transition-all active:scale-95 ${
   subTab === tab.key
-   ? `${theme[mode].bgLight} text-white shadow-sm ${theme[mode].shadow}`
+   ? `${theme.bgLight} text-white shadow-sm ${theme.shadow}`
     : "bg-[#F2F2F7] dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400"
 }`}
                 >
@@ -224,7 +241,7 @@ export default function TasksPage() {
               {subTab === "mine" && (
                 <button
                   onClick={() => router.push(mode === "task"? "/create/task" : "/create/plan")}
-                 className={`px-5 h-10 rounded-xl ${theme[mode].bgLight} text-white text-sm font-medium active:scale-95 transition-all`}
+                 className={`px-5 h-10 rounded-xl ${theme.bgLight} text-white text-sm font-medium active:scale-95 transition-all`}
                 >
                   Tạo ngay
                 </button>
@@ -252,7 +269,6 @@ export default function TasksPage() {
           )}
         </div>
       </div>
-
 
       <style jsx global>{`
 .scrollbar-hide::-webkit-scrollbar { display: none; }
