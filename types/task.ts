@@ -253,6 +253,8 @@ export type TaskListItem = Pick<
   | "type"
   | "deadline"
   | "startDate"
+  | "savedBy"     
+  | "applicants"  
 >;
 
 export type PlanListItem = Pick<
@@ -285,6 +287,8 @@ export type PlanListItem = Pick<
   | "costAmount"
   | "paymentMethod" // THÊM DÒNG NÀY
   | "milestones"
+  | "savedBy"      
+  | "applicants"  
 >;
 
 export type ItemListItem = TaskListItem | PlanListItem;
