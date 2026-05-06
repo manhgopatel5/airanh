@@ -206,13 +206,15 @@ export default function TasksPage() {
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (window.scrollY === 0) {
-      pullStartY.current = e.touches[0].clientY;
+      pullStartY.current = e.touches[0]?.clientY?? 0;
     }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (pullStartY.current > 0 && window.scrollY === 0) {
-      const distance = e.touches[0].clientY - pullStartY.current;
+      const touchY = e.touches[0]?.clientY;
+if (!touchY) return;
+const distance = touchY - pullStartY.current;
       if (distance > 0) {
         setPullDistance(Math.min(distance, 80));
       }
