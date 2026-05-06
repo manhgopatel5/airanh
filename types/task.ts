@@ -11,6 +11,7 @@ export type TaskStatus =
   | "cancelled"
   | "deleted"
   | "expired";
+  | "pending"; 
 
 export type Visibility = "public" | "private" | "friends" | "unlisted";
 export type BudgetType = "fixed" | "hourly" | "negotiable";
