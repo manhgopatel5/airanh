@@ -6,12 +6,12 @@ import { FiInbox, FiPlus } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import type { Task } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
 
-type MainTab = "task" | "plan";
+type MainTab = "plan" | "task"; // Đổi thứ tự: plan trước
 type SubTab = "mine" | "saved" | "doing" | "applied" | "completed";
 
 const SUB_TABS: { key: SubTab; label: string }[] = [
@@ -28,27 +28,28 @@ export default function TasksPage() {
   const router = useRouter();
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [mainTab, setMainTab] = useState<MainTab>("task");
+  const [mainTab, setMainTab] = useState<MainTab>("plan"); // Default Plan
   const [subTab, setSubTab] = useState<SubTab>("mine");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Đổi màu theme theo tab
-  const themeColor = mainTab === "task"? "green" : "blue";
+  // Đổi màu: Plan = xanh lá, Task = xanh dương
   const theme = {
-    green: {
+    plan: {
       bg: "bg-green-500",
       bgHover: "hover:bg-green-600",
       text: "text-green-600 dark:text-green-400",
-      shadow: "shadow-green-500/20"
+      shadow: "shadow-green-500/20",
+      activeBg: "bg-green-500 text-white",
     },
-    blue: {
+    task: {
       bg: "bg-blue-500",
-      bgHover: "hover:bg-blue-600", 
+      bgHover: "hover:bg-blue-600",
       text: "text-blue-600 dark:text-blue-400",
-      shadow: "shadow-blue-500/20"
+      shadow: "shadow-blue-500/20",
+      activeBg: "bg-blue-500 text-white",
     }
-  }[themeColor];
+  }[mainTab];
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -69,7 +70,7 @@ export default function TasksPage() {
     
     try {
       const baseCollection = collection(db, "tasks");
-      const typeFilter = mainTab === "task"? "task" : "plan";
+      const typeFilter = mainTab; // "plan" hoặc "task"
       let q;
       
       switch (subTab) {
@@ -77,8 +78,7 @@ export default function TasksPage() {
           q = query(
             baseCollection, 
             where("userId", "==", currentUser.uid),
-            where("type", "==", typeFilter),
-            orderBy("createdAt", "desc")
+            where("type", "==", typeFilter)
           );
           break;
         case "saved":
@@ -116,8 +116,10 @@ export default function TasksPage() {
 
       const snap = await getDocs(q);
       const data = snap.docs
-       .map(doc => ({ id: doc.id,...doc.data() } as Task))
-       .filter(t => t.status!== "deleted" && t.status!== "cancelled");
+      .map(doc => ({ id: doc.id,...doc.data() } as Task))
+      .filter(t => t.status!== "deleted" && t.status!== "cancelled")
+      .sort((a, b) => b.createdAt?.toMillis() - a.createdAt?.toMillis()); // Sort client
+      
       setTasks(data);
     } catch (err) {
       console.error(err);
@@ -131,7 +133,7 @@ export default function TasksPage() {
     <>
       <Toaster richColors position="top-center" />
       <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 select-none pb-28">
-        {/* Header sticky */}
+        {/* Header đã bỏ phần trên, chỉ giữ tab */}
         <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-800">
           <div className="h-0.5 w-full bg-zinc-200 dark:bg-zinc-800">
             <motion.div 
@@ -152,40 +154,40 @@ export default function TasksPage() {
             </div>
             
             <button 
-              onClick={() => router.push(mainTab === "task"? "/create/task" : "/create/plan")}
+              onClick={() => router.push(mainTab === "plan"? "/create/plan" : "/create/task")}
               className={`w-9 h-9 grid place-items-center rounded-full ${theme.bg} ${theme.bgHover} text-white shadow-lg ${theme.shadow} active:scale-95 transition-all`}
             >
               <FiPlus size={20} />
             </button>
           </div>
 
-          {/* Main Tab: Task | Plan */}
+          {/* Main Tab: Plan | Task */}
           <div className="px-4 pb-3">
-            <div className="bg-zinc-100 dark:bg-zinc-900 rounded-[24px] p-1 flex">
-              <button
-                onClick={() => setMainTab("task")}
-                className={`flex-1 py-2 rounded-[20px] text-[15px] font-semibold transition-all active:scale-95 ${
-                  mainTab === "task" 
-                   ? "bg-white dark:bg-zinc-800 shadow-sm text-green-600 dark:text-green-400" 
-                    : "text-zinc-500"
-                }`}
-              >
-                Task
-              </button>
+            <div className="bg-zinc-100 dark:bg-zinc-900 rounded-xl p-1 flex">
               <button
                 onClick={() => setMainTab("plan")}
-                className={`flex-1 py-2 rounded-[20px] text-[15px] font-semibold transition-all active:scale-95 ${
+                className={`flex-1 py-2 rounded-lg text-[15px] font-semibold transition-all active:scale-95 ${
                   mainTab === "plan" 
-                   ? "bg-white dark:bg-zinc-800 shadow-sm text-blue-600 dark:text-blue-400" 
+                ? "bg-white dark:bg-zinc-800 shadow-sm text-green-600 dark:text-green-400" 
                     : "text-zinc-500"
                 }`}
               >
                 Plan
               </button>
+              <button
+                onClick={() => setMainTab("task")}
+                className={`flex-1 py-2 rounded-lg text-[15px] font-semibold transition-all active:scale-95 ${
+                  mainTab === "task" 
+                ? "bg-white dark:bg-zinc-800 shadow-sm text-blue-600 dark:text-blue-400" 
+                    : "text-zinc-500"
+                }`}
+              >
+                Task
+              </button>
             </div>
           </div>
 
-          {/* Sub Tab: scroll ngang */}
+          {/* Sub Tab */}
           <div className="px-4 pb-3 overflow-x-auto scrollbar-hide">
             <div className="flex gap-2">
               {SUB_TABS.map((tab) => (
@@ -194,7 +196,7 @@ export default function TasksPage() {
                   onClick={() => setSubTab(tab.key)}
                   className={`px-4 h-9 rounded-full text-[13px] font-medium whitespace-nowrap transition-all active:scale-95 ${
                     subTab === tab.key
-                     ? `${theme.bg} text-white shadow-sm ${theme.shadow}`
+                    ? `${theme.activeBg} shadow-sm ${theme.shadow}`
                       : "bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200"
                   }`}
                 >
@@ -223,16 +225,16 @@ export default function TasksPage() {
                 Chưa có {mainTab === "task"? "task" : "plan"} nào
               </p>
               <p className="text-[13px] text-zinc-500">
-                {subTab === "mine" && "Tạo task đầu tiên của bạn"}
-                {subTab === "saved" && "Lưu task để xem sau"}
-                {subTab === "doing" && "Nhận task để bắt đầu làm"}
-                {subTab === "applied" && "Ứng tuyển task phù hợp"}
-                {subTab === "completed" && "Hoàn thành task đầu tiên"}
+                {subTab === "mine" && `Tạo ${mainTab} đầu tiên của bạn`}
+                {subTab === "saved" && `Lưu ${mainTab} để xem sau`}
+                {subTab === "doing" && `Nhận ${mainTab} để bắt đầu làm`}
+                {subTab === "applied" && `Ứng tuyển ${mainTab} phù hợp`}
+                {subTab === "completed" && `Hoàn thành ${mainTab} đầu tiên`}
               </p>
               {subTab === "mine" && (
                 <button
-                  onClick={() => router.push(mainTab === "task"? "/create/task" : "/create/plan")}
-                  className={`mt-4 px-5 h-10 rounded-xl ${theme.bg} ${theme.bgHover} text-white text-[14px] font-medium active:scale-95 transition-all`}
+                  onClick={() => router.push(mainTab === "plan"? "/create/plan" : "/create/task")}
+                  className={`mt-4 px-5 h-10 rounded-xl ${theme.bg} ${theme.bgHover} text-white text-[15px] font-medium active:scale-95 transition-all`}
                 >
                   Tạo ngay
                 </button>
@@ -257,8 +259,8 @@ export default function TasksPage() {
       </div>
 
       <style jsx global>{`
-       .scrollbar-hide::-webkit-scrollbar { display: none; }
-       .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </>
   );
