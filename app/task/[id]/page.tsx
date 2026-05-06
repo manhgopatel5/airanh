@@ -366,20 +366,12 @@ const taskTime = isTask(task) && task.deadline?.seconds
     <>
       <Toaster richColors position="top-center" />
       <div className="max-w-xl mx-auto bg-[#F2F2F7] dark:bg-black min-h-screen pb-4">
-        <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-[#E5E5EA] dark:border-zinc-800 px-4 py-3 flex gap-3 items-center">
-          <button onClick={() => router.back()} className="p-1 -ml-1 rounded-full hover:bg-zinc-900/5 dark:hover:bg-white/5 active:scale-90 transition-all">
-            <FiChevronLeft size={24} />
-          </button>
-          <h1 className="font-semibold truncate flex-1 text-[17px]">Chi tiết</h1>
-<button className="p-2 rounded-full hover:bg-black/5 active:scale-90 transition-all">
-  <FiBookmark size={20} className="text-[#1C1C1E]" />
-</button>
-<button className="p-2 rounded-full hover:bg-black/5 active:scale-90 transition-all">
-  <FiMoreHorizontal size={20} className="text-[#1C1C1E]" />
-</button>
-          
-  
-        </motion.div>
+ <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="sticky top-0 z-30 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-[#E5E5EA] dark:border-zinc-800 px-4 py-3 flex gap-3 items-center">
+  <button onClick={() => router.back()} className="p-1 -ml-1 rounded-full hover:bg-zinc-900/5 dark:hover:bg-white/5 active:scale-90 transition-all">
+    <FiChevronLeft size={24} />
+  </button>
+  <h1 className="font-semibold truncate flex-1 text-[17px]">Chi tiết</h1>
+</motion.div>
 
        {/* Card Task chính */}
 <div className="bg-white mt-3 mx-4 rounded-2xl border border-[#E5E5E7] overflow-hidden">
@@ -394,10 +386,18 @@ const taskTime = isTask(task) && task.deadline?.seconds
         )}
       </div>
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 mb-1">
-          <span className="font-semibold text-[17px] text-[#1C1C1E]">{owner?.name || "Minh Tran"}</span>
-        </div>
+ <div className="flex-1 min-w-0">
+  <div className="flex items-center justify-between gap-2 mb-1">
+    <span className="font-semibold text-[17px] text-[#1C1C1E] truncate">{owner?.name || "Minh Tran"}</span>
+    <div className="flex items-center gap-1 shrink-0">
+      <button className="p-1.5 rounded-full hover:bg-black/5 active:scale-90 transition-all">
+        <FiBookmark size={18} className="text-[#1C1C1E] dark:text-zinc-300" />
+      </button>
+      <button className="p-1.5 rounded-full hover:bg-black/5 active:scale-90 transition-all">
+        <FiMoreHorizontal size={18} className="text-[#1C1C1E] dark:text-zinc-300" />
+      </button>
+    </div>
+  </div>
 
         <div className="flex items-center gap-1.5 mb-2 text-[15px]">
           <FiStar className="fill-[#FFB800] text-[#FFB800]" size={16} />
