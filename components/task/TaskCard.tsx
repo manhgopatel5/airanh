@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { 
   FiUsers, FiClock, FiMapPin, FiBookmark, FiMoreHorizontal, 
-  FiTrash2, FiEdit2, FiCheck, FiEye
+  FiTrash2, FiEdit2, FiCheck, FiShare2, FiEye
 } from "react-icons/fi";
 import { useState, useCallback, useRef } from "react";
 import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
