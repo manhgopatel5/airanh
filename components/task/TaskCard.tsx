@@ -14,10 +14,11 @@ import { toast } from "sonner";
 
 type Props = {
   task: Task;
+  theme: "task" | "plan"; // THÊM PROP NÀY
   onDelete?: (id: string) => void;
 };
 
-export default function TaskCard({ task, onDelete }: Props) {
+export default function TaskCard({ task, theme, onDelete }: Props) {
   const router = useRouter();
   const { user } = useAuth();
   const db = getFirebaseDB();
@@ -32,13 +33,29 @@ export default function TaskCard({ task, onDelete }: Props) {
   const applicants = task.applicants || [];
   const isApplied = user && applicants.includes(user.uid);
 
+  // Màu theo theme: task = blue, plan = green
+  const themeColor = {
+    task: {
+      primary: "#1A73E8", // xanh dương
+      bg: "bg-[#E8F0FE]",
+      text: "text-[#1A73E8]",
+      fill: "fill-[#1A73E8]"
+    },
+    plan: {
+      primary: "#1E8E3E", // xanh lá
+      bg: "bg-[#E6F4EA]",
+      text: "text-[#1E8E3E]",
+      fill: "fill-[#1E8E3E]"
+    }
+  }[theme];
+
   const handleSave = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user) return router.push("/login");
     if (saving) return;
 
     setSaving(true);
-    const newSaved = !isSaved;
+    const newSaved =!isSaved;
     setIsSaved(newSaved);
 
     try {
@@ -66,23 +83,21 @@ export default function TaskCard({ task, onDelete }: Props) {
   const goToTask = () => router.push(`/task/${task.id}`);
 
   const taskDate = isTask(task) && task.deadline?.seconds 
-   ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
     : isPlan(task) && task.eventDate?.seconds
-   ? new Date(task.eventDate.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+? new Date(task.eventDate.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
     : "";
 
-const statusMap: Record<TaskStatus, { label: string; color: string }> = {
-  open: { label: "Đang tuyển", color: "bg-[#E6F4EA] text-[#1E8E3E]" },
-  full: { label: "Đã đủ", color: "bg-[#FEE8E8] text-[#D93025]" },
-  doing: { label: "Đang làm", color: "bg-[#E8F0FE] text-[#1A73E8]" },
-  completed: { label: "Hoàn thành", color: "bg-[#F1F3F4] text-[#5F6368]" },
-  cancelled: { label: "Đã hủy", color: "bg-[#F1F3F4] text-[#5F6368]" },
-  deleted: { label: "Đã xóa", color: "bg-[#F1F3F4] text-[#5F6368]" },
-  expired: { label: "Hết hạn", color: "bg-[#FEF7E0] text-[#F9AB00]" },
-  pending: { label: "Chờ duyệt", color: "bg-[#FEF7E0] text-[#F9AB00]" },
-};
-
-
+  const statusMap: Record<TaskStatus, { label: string; color: string }> = {
+    open: { label: "Đang tuyển", color: "bg-[#E6F4EA] text-[#1E8E3E]" },
+    full: { label: "Đã đủ", color: "bg-[#FEE8E8] text-[#D93025]" },
+    doing: { label: "Đang làm", color: "bg-[#E8F0FE] text-[#1A73E8]" },
+    completed: { label: "Hoàn thành", color: "bg-[#F1F3F4] text-[#5F6368]" },
+    cancelled: { label: "Đã hủy", color: "bg-[#F1F3F4] text-[#5F6368]" },
+    deleted: { label: "Đã xóa", color: "bg-[#F1F3F4] text-[#5F6368]" },
+    expired: { label: "Hết hạn", color: "bg-[#FEF7E0] text-[#F9AB00]" },
+    pending: { label: "Chờ duyệt", color: "bg-[#FEF7E0] text-[#F9AB00]" },
+  };
 
   const status = statusMap[task.status] || statusMap.open;
 
@@ -98,7 +113,7 @@ const statusMap: Record<TaskStatus, { label: string; color: string }> = {
               {status.label}
             </span>
             {isTask(task) && task.price > 0 && (
-              <span className="px-2 py-0.5 rounded-md bg-[#E6F4EA] text-[#1E8E3E] text- font-semibold">
+              <span className={`px-2 py-0.5 rounded-md ${themeColor.bg} ${themeColor.text} text- font-semibold`}>
                 {task.price.toLocaleString("vi-VN")}đ
               </span>
             )}
@@ -116,7 +131,7 @@ const statusMap: Record<TaskStatus, { label: string; color: string }> = {
           >
             <FiBookmark 
               size={18} 
-              className={isSaved? "fill-[#0a84ff] text-[#0a84ff]" : "text-[#8E8E93]"} 
+              className={isSaved? `${themeColor.fill} ${themeColor.text}` : "text-[#8E8E93]"} 
             />
           </button>
           {isOwner && (
@@ -166,7 +181,7 @@ const statusMap: Record<TaskStatus, { label: string; color: string }> = {
 
       {isApplied && (
         <div className="mt-2 pt-2 border-t border-[#E5E5E7] dark:border-zinc-800">
-          <span className="text- text-[#0a84ff] font-medium">Đã ứng tuyển</span>
+          <span className={`text- ${themeColor.text} font-medium`}>Đã ứng tuyển</span>
         </div>
       )}
     </div>
