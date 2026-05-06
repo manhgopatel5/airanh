@@ -17,7 +17,7 @@ type Friend = {
 type TaskData = {
   id: string;
   title: string;
-  price: number;
+  price: number; // = 0 nếu là PlanItem
 };
 
 export default function ShareTaskModal({
@@ -33,6 +33,8 @@ export default function ShareTaskModal({
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [sending, setSending] = useState(false);
+
+  const isPlan = task.price === 0;
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -60,7 +62,6 @@ export default function ShareTaskModal({
           const chatId = [user.uid, friendId].sort().join("_");
           const chatRef = doc(db, "chats", chatId);
 
-          // Tạo chat nếu chưa có
           await setDoc(
             chatRef,
             {
@@ -70,24 +71,22 @@ export default function ShareTaskModal({
             { merge: true }
           );
 
-          // Gửi tin nhắn type task_share
           const msgRef = collection(db, "chats", chatId, "messages");
           await addDoc(msgRef, {
             type: "task_share",
             senderId: user.uid,
             taskId: task.id,
             taskTitle: task.title,
-            taskPrice: task.price,
+            taskPrice: task.price, // = 0 nếu là PlanItem
             createdAt: serverTimestamp(),
             readBy: [user.uid],
           });
 
-          // Update lastMessage
           await setDoc(
             chatRef,
             {
               lastMessage: {
-                text: `Đã chia sẻ: ${task.title}`,
+                text: isPlan? `Đã chia sẻ kế hoạch: ${task.title}` : `Đã chia sẻ: ${task.title}`,
                 senderId: user.uid,
               },
               updatedAt: serverTimestamp(),
@@ -127,6 +126,18 @@ export default function ShareTaskModal({
               <X className="w-5 h-5 text-gray-400" />
             </button>
           </div>
+
+          {/* Preview task */}
+          <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl">
+            <p className="text-xs text-blue-600 dark:text-blue-400 font-bold">
+              📋 {isPlan? 'Kế hoạch cá nhân' : 'Công việc'}
+            </p>
+            <p className="font-semibold text-gray-900 dark:text-white mt-0.5">{task.title}</p>
+            <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mt-1">
+              {task.price > 0? `${task.price.toLocaleString()}đ` : 'Miễn phí'}
+            </p>
+          </div>
+
           <div className="mt-3 relative">
             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
