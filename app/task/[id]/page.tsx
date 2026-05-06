@@ -352,7 +352,7 @@ export default function TaskDetailPage() {
     }
   };
 
-  if (loading) return <TaskSkeleton />;
+ if (loading) return <div className="p-4 text-center">Đang tải...</div>;
   if (!task) return <div className="p-4 text-center">Không tìm thấy task</div>;
 
   const parentComments = comments.filter((c) =>!c.parentId);
@@ -722,16 +722,3 @@ const taskTime = isTask(task) && task.deadline?.seconds
   );
 }
 
-function TaskSkeleton() {
-  return (
-    <div className="max-w-xl mx-auto bg-[#F2F2F7] dark:bg-black min-h-screen animate-pulse">
-      <div className="h-14 bg-white dark:bg-black border-b border-[#E5E5EA] dark:border-zinc-800"></div>
-      <div className="p-4 space-y-4">
-        <Skeleton className="h-6 w-32 rounded-lg" />
-        <Skeleton className="h-48 rounded-2xl" />
-        <Skeleton className="h-24 rounded-2xl" />
-        <Skeleton className="h-32 rounded-2xl" />
-      </div>
-    </div>
-  );
-}
