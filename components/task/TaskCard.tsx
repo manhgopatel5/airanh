@@ -19,6 +19,7 @@ type Props = {
   theme: "task" | "plan";
   onDelete?: (id: string) => void;
   onShare?: (task: TaskListItem | PlanListItem) => void;
+  // XÓA DÒNG NÀY: onClose: () => void;
 };
 
 export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
@@ -96,7 +97,7 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
   };
 
   const taskDate = task.type === "task" && task.deadline?.seconds
-  ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
     : "";
 
   const statusMap: Record<TaskStatus, { label: string; color: string; dot: string }> = {
@@ -138,47 +139,53 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
           </h3>
         </div>
 
-        <div className="flex items-center gap-1 shrink-0">
-          <motion.button
-            whileTap={{ scale: 0.8 }}
+        <div className="flex items-center gap-1 shrink-0 relative z-[999]">
+          <button
+            type="button"
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               handleSave();
             }}
             disabled={saving}
-            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all disabled:opacity-50"
+            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all disabled:opacity-50 touch-manipulation select-none"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
           >
             <FiBookmark
               size={18}
               className={isSaved? `${themeColor.fill} ${themeColor.text}` : "text-zinc-400 dark:text-zinc-500"}
             />
-          </motion.button>
+          </button>
 
-          <motion.button
-            whileTap={{ scale: 0.8 }}
+          <button
+            type="button"
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               vibrate(8);
               onShare?.(task);
             }}
-            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all"
+            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all touch-manipulation select-none"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
           >
             <FiShare2 size={18} className="text-zinc-400 dark:text-zinc-500" />
-          </motion.button>
+          </button>
 
           {isOwner && (
             <div className="relative">
-              <motion.button
-                whileTap={{ scale: 0.8 }}
+              <button
+                type="button"
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   vibrate();
                   setShowMenu(!showMenu);
                 }}
-                className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5"
+                className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all touch-manipulation select-none"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 <FiMoreHorizontal size={18} className="text-zinc-400 dark:text-zinc-500" />
-              </motion.button>
+              </button>
               <AnimatePresence>
                 {showMenu && (
                   <>
@@ -196,21 +203,25 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
                       className="absolute right-0 top-10 bg-white/95 dark:bg-zinc-800/95 backdrop-blur-xl rounded-xl shadow-2xl border border-zinc-200/50 dark:border-zinc-700/50 py-1 z-20 min-w-[160px]"
                     >
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           vibrate();
+                          setShowMenu(false);
                           router.push(`/task/${task.id}/edit`);
                         }}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 w-full transition-colors"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 w-full transition-colors touch-manipulation"
                       >
                         <FiEdit2 size={16} /> Sửa
                       </button>
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
+                          setShowMenu(false);
                           handleDelete();
                         }}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 w-full transition-colors"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 w-full transition-colors touch-manipulation"
                       >
                         <FiTrash2 size={16} /> Xóa
                       </button>
