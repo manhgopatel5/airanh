@@ -10,19 +10,20 @@ import { useState, useCallback } from "react";
 import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
-import { type TaskStatus, type TaskListItem, type PlanListItem } from "@/types/task";
+import { type TaskStatus, type Task } from "@/types/task";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
 type Props = {
-  task: TaskListItem | PlanListItem;
+  task: Task;
   theme: "task" | "plan";
   onDelete?: (id: string) => void;
-  onShare?: (task: TaskListItem | PlanListItem) => void;
-  // XÓA DÒNG NÀY: onClose: () => void;
+  onShare?: (task: Task) => void;
 };
 
 export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
+  if (!task) return null;
+
   const router = useRouter();
   const { user } = useAuth();
   const db = getFirebaseDB();
@@ -30,8 +31,6 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
   const [isSaved, setIsSaved] = useState(task.savedBy?.includes(user?.uid || "") || false);
   const [saving, setSaving] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-
-  if (!task) return null;
 
   const isOwner = user?.uid === task.userId;
   const applicants = task.applicants || [];
@@ -97,7 +96,7 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
   };
 
   const taskDate = task.type === "task" && task.deadline?.seconds
-? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+   ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
     : "";
 
   const statusMap: Record<TaskStatus, { label: string; color: string; dot: string }> = {
