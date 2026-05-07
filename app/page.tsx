@@ -64,6 +64,7 @@ export default function Home() {
   const unsubRef = useRef<(() => void) | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const [shareTask, setShareTask] = useState<TaskListItem | PlanListItem | null>(null);
 
   useEffect(() => {
     if (db) return;
@@ -374,7 +375,7 @@ export default function Home() {
 {refreshing && <SkeletonList />}
 
 {!error && (
- <TaskFeed 
+<TaskFeed 
   tasks={filteredItems} 
   mode={mode} 
   activeTab={activeTab}
@@ -387,15 +388,16 @@ export default function Home() {
             {loadingMore && (
               <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
             )}
+
+          </div>
+        )}
+      </div>
 {shareTask && (
   <ShareTaskModal
     task={shareTask}
     onClose={() => setShareTask(null)}
   />
 )}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
