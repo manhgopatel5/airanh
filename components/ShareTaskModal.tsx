@@ -45,10 +45,8 @@ export default function ShareTaskModal({ task, onClose }: Props) {
         setLoading(true);
         const db = getFirebaseDB();
 
-        // 1. Lấy hết doc trong subcollection friends
         const friendsSnap = await getDocs(collection(db, "users", user.uid, "friends"));
         
-        // Lấy ID từ doc.id, không cần filter status nữa
         const friendIds = friendsSnap.docs.map(doc => doc.id);
         
         console.log("Friend IDs:", friendIds);
@@ -61,7 +59,6 @@ export default function ShareTaskModal({ task, onClose }: Props) {
           return;
         }
 
-        // 2. Batch load info từ collection users
         const allFriends: Friend[] = [];
         for (let i = 0; i < friendIds.length; i += 10) {
           const chunk = friendIds.slice(i, i + 10);
@@ -163,6 +160,23 @@ export default function ShareTaskModal({ task, onClose }: Props) {
             </button>
           </div>
 
+          {/* Search - ĐÃ LÊN TRÊN CÙNG */}
+          <div className="px-6 mb-3 shrink-0">
+            <div className="relative">
+              <FiSearch
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400"
+                size={18}
+              />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Tìm bạn bè..."
+                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
           {/* Task preview */}
           <div className="mx-6 mb-4 p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 shrink-0">
             <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 mb-1">
@@ -179,23 +193,6 @@ export default function ShareTaskModal({ task, onClose }: Props) {
                 {task.price.toLocaleString("vi-VN")}đ
               </p>
             )}
-          </div>
-
-          {/* Search - đã lên trên */}
-          <div className="px-6 mb-3 shrink-0">
-            <div className="relative">
-              <FiSearch
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400"
-                size={18}
-              />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm bạn bè..."
-                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
           </div>
 
           {/* Friends list */}
