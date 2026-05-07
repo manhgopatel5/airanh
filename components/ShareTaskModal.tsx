@@ -3,14 +3,14 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiX, FiSearch, FiCheck } from "react-icons/fi";
-import { TaskListItem, PlanListItem } from "@/types/task";
+import { Task } from "@/types/task";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
 import { collection, query, where, getDocs, limit, doc, getDoc } from "firebase/firestore";
 import { toast } from "sonner";
 
 type Props = {
-  task: TaskListItem | PlanListItem;
+  task: Task;
   onClose: () => void;
 };
 
@@ -23,6 +23,8 @@ type Friend = {
 };
 
 export default function ShareTaskModal({ task, onClose }: Props) {
+  if (!task?.id ||!task?.title ||!task?.type) return null;
+
   const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -43,7 +45,6 @@ export default function ShareTaskModal({ task, onClose }: Props) {
         setLoading(true);
         const db = getFirebaseDB();
 
-        // Lấy danh sách friend IDs từ user document
         const userSnap = await getDoc(doc(db, "users", user.uid));
         if (!userSnap.exists()) {
           if (isMounted) {
@@ -63,7 +64,6 @@ export default function ShareTaskModal({ task, onClose }: Props) {
           return;
         }
 
-        // Query tối đa 10 friends để tránh limit của 'in'
         const q = query(
           collection(db, "users"),
           where("__name__", "in", friendIds.slice(0, 10)),
@@ -129,8 +129,6 @@ export default function ShareTaskModal({ task, onClose }: Props) {
     }
   };
 
-  if (!task) return null;
-
   return (
     <AnimatePresence>
       <motion.div
@@ -172,7 +170,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
             <p className="font-bold text-base text-zinc-900 dark:text-white line-clamp-1 mb-1">
               {task.title}
             </p>
-            {task.type === "task" && task.price > 0 && (
+            {task.type === "task" && (task.price?? 0) > 0 && (
               <p className="text-sm font-bold text-blue-600 dark:text-blue-400">
                 {task.price.toLocaleString("vi-VN")}đ
               </p>
@@ -251,7 +249,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
                       <div
                         className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${
                           isSelected
-                           ? "bg-blue-500 border-blue-500"
+                          ? "bg-blue-500 border-blue-500"
                             : "border-zinc-300 dark:border-zinc-700"
                         }`}
                       >
