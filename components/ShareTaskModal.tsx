@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiX, FiSearch, FiCheck } from "react-icons/fi";
 import { TaskListItem, PlanListItem } from "@/types/task";
 import { useAuth } from "@/lib/AuthContext";
+import { getFirebaseDB } from "@/lib/firebase";
+import { collection, query, where, getDocs, limit, doc, getDoc } from "firebase/firestore";
 import { toast } from "sonner";
 
 type Props = {
@@ -39,19 +41,51 @@ export default function ShareTaskModal({ task, onClose }: Props) {
     const fetchFriends = async () => {
       try {
         setLoading(true);
+        const db = getFirebaseDB();
+
+        // Lấy danh sách friend IDs từ user document
+        const userSnap = await getDoc(doc(db, "users", user.uid));
+        if (!userSnap.exists()) {
+          if (isMounted) {
+            setFriends([]);
+            setLoading(false);
+          }
+          return;
+        }
+
+        const friendIds: string[] = userSnap.data()?.friends || [];
         
-        // Mock data - thay bằng query thật sau khi fix Firestore index
-        const mockFriends: Friend[] = [
-          { id: "1", name: "Signature Dazi", username: "", avatar: "", online: false },
-          { id: "2", name: "Lê Bảo Hồng Ân", username: "", avatar: "", online: false },
-        ];
+        if (friendIds.length === 0) {
+          if (isMounted) {
+            setFriends([]);
+            setLoading(false);
+          }
+          return;
+        }
+
+        // Query tối đa 10 friends để tránh limit của 'in'
+        const q = query(
+          collection(db, "users"),
+          where("__name__", "in", friendIds.slice(0, 10)),
+          limit(20)
+        );
+        
+        const snap = await getDocs(q);
+        const data = snap.docs.map((doc) => ({
+          id: doc.id,
+          name: doc.data().displayName || doc.data().name || "User",
+          username: doc.data().username || "",
+          avatar: doc.data().photoURL || doc.data().avatar || "",
+          online: doc.data().online || false,
+        }));
 
         if (isMounted) {
-          setFriends(mockFriends);
+          setFriends(data);
           setLoading(false);
         }
       } catch (err) {
         console.error("Load friends error:", err);
+        toast.error("Không tải được danh sách bạn bè");
         if (isMounted) {
           setFriends([]);
           setLoading(false);
@@ -83,11 +117,19 @@ export default function ShareTaskModal({ task, onClose }: Props) {
       return;
     }
 
-    // TODO: Gọi API gửi task cho bạn bè
-    toast.success(`Đã chia sẻ cho ${selected.length} người`);
-    if ("vibrate" in navigator) navigator.vibrate(10);
-    onClose();
+    try {
+      // TODO: Implement sendTaskToFriends
+      // await sendTaskToFriends(task.id, selected);
+      toast.success(`Đã chia sẻ cho ${selected.length} người`);
+      if ("vibrate" in navigator) navigator.vibrate(10);
+      onClose();
+    } catch (err) {
+      console.error("Send error:", err);
+      toast.error("Gửi thất bại");
+    }
   };
+
+  if (!task) return null;
 
   return (
     <AnimatePresence>
