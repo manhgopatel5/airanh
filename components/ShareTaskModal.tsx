@@ -41,7 +41,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
     const fetchFriends = async () => {
       try {
         setLoading(true);
-        const db = getFirebaseDB();
+       
 
         // Tạm mock data để tránh crash do Firestore index/rules
         // TODO: Xóa mock và dùng query thật sau khi tạo index
