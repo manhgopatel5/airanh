@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 import TaskFeed from "@/components/TaskFeed";
 import ModeToggle from "@/components/ModeToggle";
+import ShareTaskModal from "@/components/ShareTaskModal";
 import { useAppStore } from "@/store/app"; // Thêm dòng này
 import { Task, TaskItem, PlanItem, TaskListItem, PlanListItem, isTask, isPlan } from "@/types/task";
 import { FiMapPin, FiRefreshCw } from "react-icons/fi";
@@ -373,7 +374,12 @@ export default function Home() {
 {refreshing && <SkeletonList />}
 
 {!error && (
-  <TaskFeed tasks={filteredItems} mode={mode} activeTab={activeTab} />
+ <TaskFeed 
+  tasks={filteredItems} 
+  mode={mode} 
+  activeTab={activeTab}
+  onShare={(t) => setShareTask(t)} // ← THÊM DÒNG NÀY
+/>
 )}
 
         {!loading && hasMore && allItems.length > 0 && (
@@ -381,6 +387,12 @@ export default function Home() {
             {loadingMore && (
               <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
             )}
+{shareTask && (
+  <ShareTaskModal
+    task={shareTask}
+    onClose={() => setShareTask(null)}
+  />
+)}
           </div>
         )}
       </div>
