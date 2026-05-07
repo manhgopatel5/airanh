@@ -95,15 +95,8 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
     router.push(`/task/${task.id}`);
   };
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    vibrate(15);
-    setShowMenu(true);
-  };
-
   const taskDate = task.type === "task" && task.deadline?.seconds
-   ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+  ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
     : "";
 
   const statusMap: Record<TaskStatus, { label: string; color: string; dot: string }> = {
