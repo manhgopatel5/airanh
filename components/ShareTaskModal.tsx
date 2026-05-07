@@ -56,7 +56,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
       }
     };
     fetchFriends();
-  }, [user]);
+}, [user?.uid]);
 
   const filteredFriends = friends.filter((f) =>
     f.name.toLowerCase().includes(search.toLowerCase())
