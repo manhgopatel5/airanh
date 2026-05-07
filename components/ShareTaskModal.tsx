@@ -5,8 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiX, FiSearch, FiCheck } from "react-icons/fi";
 import { TaskListItem, PlanListItem } from "@/types/task";
 import { useAuth } from "@/lib/AuthContext";
-import { getFirebaseDB } from "@/lib/firebase";
-
 import { toast } from "sonner";
 
 type Props = {
@@ -41,10 +39,8 @@ export default function ShareTaskModal({ task, onClose }: Props) {
     const fetchFriends = async () => {
       try {
         setLoading(true);
-       
-
-        // Tạm mock data để tránh crash do Firestore index/rules
-        // TODO: Xóa mock và dùng query thật sau khi tạo index
+        
+        // Mock data - thay bằng query thật sau khi fix Firestore index
         const mockFriends: Friend[] = [
           { id: "1", name: "Signature Dazi", username: "", avatar: "", online: false },
           { id: "2", name: "Lê Bảo Hồng Ân", username: "", avatar: "", online: false },
@@ -54,39 +50,6 @@ export default function ShareTaskModal({ task, onClose }: Props) {
           setFriends(mockFriends);
           setLoading(false);
         }
-
-        /*
-        // Query thật - bật khi đã tạo index Firestore
-        const userSnap = await getDoc(doc(db, "users", user.uid));
-        const friendIds: string[] = userSnap.data()?.friends || [];
-
-        if (friendIds.length === 0) {
-          if (isMounted) {
-            setFriends([]);
-            setLoading(false);
-          }
-          return;
-        }
-
-        const q = query(
-          collection(db, "users"),
-          where("__name__", "in", friendIds.slice(0, 10)),
-          limit(20)
-        );
-        const snap = await getDocs(q);
-        const data = snap.docs.map((doc) => ({
-          id: doc.id,
-          name: doc.data().displayName || doc.data().name || "User",
-          username: doc.data().username || "",
-          avatar: doc.data().photoURL || doc.data().avatar || "",
-          online: doc.data().online || false,
-        }));
-        if (isMounted) {
-          setFriends(data);
-          setLoading(false);
-        }
-        */
-
       } catch (err) {
         console.error("Load friends error:", err);
         if (isMounted) {
@@ -121,8 +84,6 @@ export default function ShareTaskModal({ task, onClose }: Props) {
     }
 
     // TODO: Gọi API gửi task cho bạn bè
-    // await sendTaskToFriends(task.id, selected);
-
     toast.success(`Đã chia sẻ cho ${selected.length} người`);
     if ("vibrate" in navigator) navigator.vibrate(10);
     onClose();
@@ -142,7 +103,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="fixed inset-x-0 bottom-0 bg-white dark:bg-zinc-950 rounded-t-3xl max-h- flex flex-col"
+          className="fixed inset-x-0 bottom-0 bg-white dark:bg-zinc-950 rounded-t-3xl max-h-[85vh] flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
