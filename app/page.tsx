@@ -32,7 +32,10 @@ export default function ShareTaskModal({ task, onClose }: Props) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false); // ← Fix: tắt loading khi chưa có user
+      return;
+    }
 
     const fetchFriends = async () => {
       try {
@@ -76,7 +79,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
     };
 
     fetchFriends();
-  }, [user]);
+  }, );
 
   const filteredFriends = friends.filter((f) =>
     f.name.toLowerCase().includes(search.toLowerCase())
@@ -227,7 +230,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
                       <div
                         className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${
                           isSelected
-                         ? "bg-blue-500 border-blue-500"
+                        ? "bg-blue-500 border-blue-500"
                             : "border-zinc-300 dark:border-zinc-700"
                         }`}
                       >
