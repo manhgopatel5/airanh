@@ -78,14 +78,13 @@ export default function Home() {
     }
   }, [db]);
 
-  // Fix 1: Query filter đúng field, tránh dính task deleted/private
   const buildQuery = useCallback(
     (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
       if (!db) return null;
       const constraints: any[] = [
-        where("type", "==", mode), // ← Filter theo mode trước
-        where("visibility", "==", "public"), // ← Chỉ lấy public
-        where("status", "in", ["open", "full", "doing"]), // ← Bỏ deleted, cancelled, expired
+        where("type", "==", mode),
+        where("visibility", "==", "public"),
+        where("status", "in", ["open", "full", "doing"]),
         orderBy("createdAt", "desc"),
         limit(PAGE_SIZE),
       ];
@@ -94,10 +93,9 @@ export default function Home() {
       }
       return query(collection(db, "tasks"),...constraints);
     },
-    [db, mode] // ← Thêm mode vào deps
+    [db, mode]
   );
 
-  // Fix 2: Tách loadData, không để trong deps gây loop
   const loadData = useCallback(
     async (isRefresh = false) => {
       if (!db) return;
@@ -122,7 +120,6 @@ export default function Home() {
       const unsub = onSnapshot(
         q,
         (snap) => {
-          console.log("Firestore success, docs:", snap.docs.length);
           const data = snap.docs.map((doc) => ({
             id: doc.id,
            ...doc.data(),
@@ -154,10 +151,9 @@ export default function Home() {
       );
       unsubRef.current = unsub;
     },
-    [db, buildQuery] // ← Không loop vì buildQuery đã stable
+    [db, buildQuery]
   );
 
-  // Fix 3: Chỉ chạy khi db + mode đổi
   useEffect(() => {
     loadData();
     return () => {
@@ -166,7 +162,8 @@ export default function Home() {
         unsubRef.current = null;
       }
     };
-  }, [db, mode]); // ← Bỏ loadData khỏi deps
+  }, [db, mode]);
+
   const loadMore = useCallback(async () => {
     if (!db ||!lastDoc || loadingMore ||!hasMore) return;
     setLoadingMore(true);
@@ -176,7 +173,7 @@ export default function Home() {
       const snap = await getDocs(q);
       const newItems = snap.docs.map((doc) => ({
         id: doc.id,
-      ...doc.data(),
+       ...doc.data(),
       })) as Task[];
       setAllItems((prev) => [...prev,...newItems]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -206,24 +203,21 @@ export default function Home() {
     return () => observerRef.current?.disconnect();
   }, [hasMore, loadingMore, loadMore]);
 
-  // Fix 4: Map đúng type, không return [] cứng cho tab near/friends
   const filteredItems = useMemo(() => {
     let result = [...allItems];
 
-    // Filter theo mode: task hoặc plan
     if (mode === "task") {
       result = result.filter((t) => isTask(t));
     } else {
       result = result.filter((t) => isPlan(t));
     }
 
-    // Lọc thêm banned nếu có
     result = result.filter((t) => t.banned!== true && t.hidden!== true);
 
     if (mode === "task") {
       const taskListItems: TaskListItem[] = result.map((item) => {
         const task = item as TaskItem;
-        return {
+        const base: TaskListItem = {
           id: task.id,
           slug: task.slug || "",
           title: task.title || "",
@@ -243,34 +237,34 @@ export default function Home() {
           viewCount: task.viewCount?? 0,
           likeCount: task.likeCount?? 0,
           commentCount: task.commentCount?? 0,
-      ...(task.location && { location: task.location }),
           isRemote: task.isRemote?? false,
           likes: task.likes || [],
           budgetType: task.budgetType,
-          paymentMethod: task.paymentMethod,
           userId: task.userId,
           description: task.description || "",
           type: task.type,
-      ...(task.deadline && { deadline: task.deadline }),
-      ...(task.startDate && { startDate: task.startDate }),
           savedBy: task.savedBy || [],
           applicants: task.applicants || [],
         };
+
+        if (task.location) base.location = task.location;
+        if (task.paymentMethod) base.paymentMethod = task.paymentMethod;
+        if (task.deadline) base.deadline = task.deadline;
+        if (task.startDate) base.startDate = task.startDate;
+
+        return base;
       });
 
       if (activeTab === "hot") {
         taskListItems.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-      } else if (activeTab === "new") {
-        // Đã sort theo createdAt từ query rồi
       } else if (activeTab === "near" || activeTab === "friends") {
-        // TODO: Implement location/friends filter sau
         toast.info("Tính năng đang phát triển");
       }
       return taskListItems;
     } else {
       const planListItems: PlanListItem[] = result.map((item) => {
         const plan = item as PlanItem;
-        return {
+        const base: PlanListItem = {
           id: plan.id,
           slug: plan.slug || "",
           title: plan.title || "",
@@ -287,21 +281,24 @@ export default function Home() {
           viewCount: plan.viewCount?? 0,
           likeCount: plan.likeCount?? 0,
           commentCount: plan.commentCount?? 0,
-      ...(plan.location && { location: plan.location }),
           likes: plan.likes || [],
           userId: plan.userId,
           description: plan.description || "",
           eventDate: plan.eventDate,
-      ...(plan.endDate && { endDate: plan.endDate }),
           maxParticipants: plan.maxParticipants?? 0,
           currentParticipants: plan.currentParticipants?? 0,
           costType: plan.costType,
           costAmount: plan.costAmount?? 0,
-          paymentMethod: plan.paymentMethod,
           milestones: plan.milestones || [],
           savedBy: plan.savedBy || [],
           applicants: plan.applicants || [],
         };
+
+        if (plan.location) base.location = plan.location;
+        if (plan.paymentMethod) base.paymentMethod = plan.paymentMethod;
+        if (plan.endDate) base.endDate = plan.endDate;
+
+        return base;
       });
 
       if (activeTab === "hot") {
@@ -344,7 +341,7 @@ export default function Home() {
                   }}
                   className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
                     active
-                 ? `text-${tab.color}-600 dark:text-${tab.color}-400`
+                     ? `text-${tab.color}-600 dark:text-${tab.color}-400`
                       : "text-gray-400 dark:text-zinc-500"
                   }`}
                 >
