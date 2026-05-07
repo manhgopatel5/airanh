@@ -1,4 +1,4 @@
-"use client";
+  "use client";
 
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { getFirebaseDB } from "@/lib/firebase";
@@ -17,7 +17,7 @@ import {
 import TaskFeed from "@/components/TaskFeed";
 import ModeToggle from "@/components/ModeToggle";
 import { useAppStore } from "@/store/app";
-import { Task, TaskItem, PlanItem, TaskListItem, PlanListItem, isTask, isPlan } from "@/types/task";
+import { Task, TaskItem, PlanItem, isTask, isPlan } from "@/types/task";
 import { FiMapPin, FiRefreshCw } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 import { toast } from "sonner";
@@ -122,7 +122,7 @@ export default function Home() {
         (snap) => {
           const data = snap.docs.map((doc) => ({
             id: doc.id,
-           ...doc.data(),
+          ...doc.data(),
           })) as Task[];
           setAllItems(data);
           setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -173,7 +173,7 @@ export default function Home() {
       const snap = await getDocs(q);
       const newItems = snap.docs.map((doc) => ({
         id: doc.id,
-       ...doc.data(),
+      ...doc.data(),
       })) as Task[];
       setAllItems((prev) => [...prev,...newItems]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -207,107 +207,20 @@ export default function Home() {
     let result = [...allItems];
 
     if (mode === "task") {
-      result = result.filter((t) => isTask(t));
+      result = result.filter((t) => isTask(t)) as TaskItem[];
     } else {
-      result = result.filter((t) => isPlan(t));
+      result = result.filter((t) => isPlan(t)) as PlanItem[];
     }
 
     result = result.filter((t) => t.banned!== true && t.hidden!== true);
 
-    if (mode === "task") {
-      const taskListItems: TaskListItem[] = result.map((item) => {
-        const task = item as TaskItem;
-        const base: TaskListItem = {
-          id: task.id,
-          slug: task.slug || "",
-          title: task.title || "",
-          price: task.price?? 0,
-          currency: task.currency || "VND",
-          totalSlots: task.totalSlots?? 1,
-          joined: task.joined?? 0,
-          status: task.status,
-          userName: task.userName || "",
-          userAvatar: task.userAvatar || "",
-          userShortId: task.userShortId || "",
-          userUsername: task.userUsername || "",
-          createdAt: task.createdAt,
-          category: task.category || "other",
-          tags: task.tags || [],
-          images: task.images || [],
-          viewCount: task.viewCount?? 0,
-          likeCount: task.likeCount?? 0,
-          commentCount: task.commentCount?? 0,
-          isRemote: task.isRemote?? false,
-          likes: task.likes || [],
-          budgetType: task.budgetType,
-          userId: task.userId,
-          description: task.description || "",
-          type: task.type,
-          savedBy: task.savedBy || [],
-          applicants: task.applicants || [],
-        };
-
-        if (task.location) base.location = task.location;
-        if (task.paymentMethod) base.paymentMethod = task.paymentMethod;
-        if (task.deadline) base.deadline = task.deadline;
-        if (task.startDate) base.startDate = task.startDate;
-
-        return base;
-      });
-
-      if (activeTab === "hot") {
-        taskListItems.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-      } else if (activeTab === "near" || activeTab === "friends") {
-        toast.info("Tính năng đang phát triển");
-      }
-      return taskListItems;
-    } else {
-      const planListItems: PlanListItem[] = result.map((item) => {
-        const plan = item as PlanItem;
-        const base: PlanListItem = {
-          id: plan.id,
-          slug: plan.slug || "",
-          title: plan.title || "",
-          type: plan.type,
-          status: plan.status,
-          userName: plan.userName || "",
-          userAvatar: plan.userAvatar || "",
-          userShortId: plan.userShortId || "",
-          userUsername: plan.userUsername || "",
-          createdAt: plan.createdAt,
-          category: plan.category || "other",
-          tags: plan.tags || [],
-          images: plan.images || [],
-          viewCount: plan.viewCount?? 0,
-          likeCount: plan.likeCount?? 0,
-          commentCount: plan.commentCount?? 0,
-          likes: plan.likes || [],
-          userId: plan.userId,
-          description: plan.description || "",
-          eventDate: plan.eventDate,
-          maxParticipants: plan.maxParticipants?? 0,
-          currentParticipants: plan.currentParticipants?? 0,
-          costType: plan.costType,
-          costAmount: plan.costAmount?? 0,
-          milestones: plan.milestones || [],
-          savedBy: plan.savedBy || [],
-          applicants: plan.applicants || [],
-        };
-
-        if (plan.location) base.location = plan.location;
-        if (plan.paymentMethod) base.paymentMethod = plan.paymentMethod;
-        if (plan.endDate) base.endDate = plan.endDate;
-
-        return base;
-      });
-
-      if (activeTab === "hot") {
-        planListItems.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-      } else if (activeTab === "near" || activeTab === "friends") {
-        toast.info("Tính năng đang phát triển");
-      }
-      return planListItems;
+    if (activeTab === "hot") {
+      result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+    } else if (activeTab === "near" || activeTab === "friends") {
+      toast.info("Tính năng đang phát triển");
     }
+
+    return result as Task[];
   }, [allItems, mode, activeTab]);
 
   const handleRefresh = () => {
@@ -341,7 +254,7 @@ export default function Home() {
                   }}
                   className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
                     active
-                     ? `text-${tab.color}-600 dark:text-${tab.color}-400`
+                    ? `text-${tab.color}-600 dark:text-${tab.color}-400`
                       : "text-gray-400 dark:text-zinc-500"
                   }`}
                 >
