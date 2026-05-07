@@ -1,274 +1,176 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import {
-  FiUsers, FiClock, FiMapPin, FiBookmark, FiMoreHorizontal,
-  FiTrash2, FiEdit2, FiCheck, FiShare2, FiEye
-} from "react-icons/fi";
-
-import { useState, useCallback } from "react";
-import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
-import { getFirebaseDB } from "@/lib/firebase";
-import { useAuth } from "@/lib/AuthContext";
-import { type TaskStatus, type TaskListItem, type PlanListItem } from "@/types/task";
-import { toast } from "sonner";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { FiX, FiCopy, FiShare2, FiLink, FiTwitter, FiFacebook } from "react-icons/fi";
+import { TaskListItem, PlanListItem } from "@/types/task";
+import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
 
 type Props = {
   task: TaskListItem | PlanListItem;
-  theme: "task" | "plan";
-  onDelete?: (id: string) => void;
-  onShare?: (task: TaskListItem | PlanListItem) => void;
+  onClose: () => void;
 };
 
-export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
-  const router = useRouter();
-  const { user } = useAuth();
-  const db = getFirebaseDB();
+export default function ShareTaskModal({ task, onClose }: Props) {
+  const [copied, setCopied] = useState(false);
+  const taskUrl = `${window.location.origin}/task/${task.id}`;
 
-  const [isSaved, setIsSaved] = useState(task.savedBy?.includes(user?.uid || "") || false);
-  const [saving, setSaving] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
-
-  if (!task) return null;
-
-  const isOwner = user?.uid === task.userId;
-  const applicants = task.applicants || [];
-  const isApplied = user && applicants.includes(user.uid);
-
-  const themeColor = {
-    task: {
-      primary: "#0A84FF",
-      gradient: "from-[#0A84FF] to-[#0066CC]",
-      light: "bg-[#E8F0FE]",
-      text: "text-[#0A84FF]",
-      fill: "fill-[#0A84FF]",
-      shadow: "shadow-[0_4px_20px_rgba(10,132,255,0.25)]"
-    },
-    plan: {
-      primary: "#30D158",
-      gradient: "from-[#30D158] to-[#28B44C]",
-      light: "bg-[#E8F5E9]",
-      text: "text-[#30D158]",
-      fill: "fill-[#30D158]",
-      shadow: "shadow-[0_4px_20px_rgba(48,209,88,0.25)]"
-    }
-  }[theme];
-
-  const vibrate = (ms = 8) => {
-    if ("vibrate" in navigator) navigator.vibrate(ms);
-  };
-
-  const handleSave = useCallback(async () => {
-    if (!user) return router.push("/login");
-    if (saving) return;
-
-    vibrate(10);
-    setSaving(true);
-    const newSaved =!isSaved;
-    setIsSaved(newSaved);
-
+  const handleCopy = async () => {
     try {
-      await updateDoc(doc(db, "tasks", task.id), {
-        savedBy: newSaved? arrayUnion(user.uid) : arrayRemove(user.uid),
-      });
-      toast.success(newSaved? "Đã lưu" : "Đã bỏ lưu", { icon: "📌" });
+      await navigator.clipboard.writeText(taskUrl);
+      setCopied(true);
+      toast.success("Đã copy link", { icon: "🔗" });
+      setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      setIsSaved(!newSaved);
-      toast.error("Lỗi");
-    } finally {
-      setSaving(false);
+      toast.error("Không thể copy");
     }
-  }, [user, isSaved, saving, task.id, router, db]);
-
-  const handleDelete = useCallback(async () => {
-    if (!isOwner) return;
-    if (!confirm("Xóa task này?")) return;
-    vibrate(10);
-    await deleteDoc(doc(db, "tasks", task.id));
-    onDelete?.(task.id);
-    toast.success("Đã xóa");
-  }, [isOwner, task.id, onDelete, db]);
-
-  const goToTask = () => {
-    vibrate();
-    router.push(`/task/${task.id}`);
   };
 
-  const taskDate = task.type === "task" && task.deadline?.seconds
-? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
-    : "";
+  const handleShare = async (platform: "native" | "twitter" | "facebook") => {
+    const text = `${task.title} - Xem ngay trên Airanh`;
+    
+    if (platform === "native" && navigator.share) {
+      try {
+        await navigator.share({
+          title: task.title,
+          text: task.description || text,
+          url: taskUrl,
+        });
+        onClose();
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          toast.error("Lỗi chia sẻ");
+        }
+      }
+      return;
+    }
 
-  const statusMap: Record<TaskStatus, { label: string; color: string; dot: string }> = {
-    open: { label: "Đang tuyển", color: "bg-[#E6F4EA] text-[#1E8E3E] dark:bg-[#1E8E3E]/20 dark:text-[#81C995]", dot: "bg-[#1E8E3E]" },
-    full: { label: "Đã đủ", color: "bg-[#FEE8E8] text-[#D93025] dark:bg-[#D93025]/20 dark:text-[#F28B82]", dot: "bg-[#D93025]" },
-    doing: { label: "Đang làm", color: "bg-[#E8F0FE] text-[#1A73E8] dark:bg-[#1A73E8]/20 dark:text-[#8AB4F8]", dot: "bg-[#1A73E8]" },
-    completed: { label: "Hoàn thành", color: "bg-[#F1F3F4] text-[#5F6368] dark:bg-zinc-800 dark:text-zinc-400", dot: "bg-[#5F6368]" },
-    cancelled: { label: "Đã hủy", color: "bg-[#F1F3F4] text-[#5F6368] dark:bg-zinc-800 dark:text-zinc-400", dot: "bg-[#5F6368]" },
-    deleted: { label: "Đã xóa", color: "bg-[#F1F3F4] text-[#5F6368] dark:bg-zinc-800 dark:text-zinc-400", dot: "bg-[#5F6368]" },
-    expired: { label: "Hết hạn", color: "bg-[#FEF7E0] text-[#F9AB00] dark:bg-[#F9AB00]/20 dark:text-[#FDD663]", dot: "bg-[#F9AB00]" },
-    pending: { label: "Chờ duyệt", color: "bg-[#FEF7E0] text-[#F9AB00] dark:bg-[#F9AB00]/20 dark:text-[#FDD663]", dot: "bg-[#F9AB00]" },
+    let shareUrl = "";
+    if (platform === "twitter") {
+      shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(taskUrl)}`;
+    } else if (platform === "facebook") {
+      shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(taskUrl)}`;
+    }
+    
+    if (shareUrl) {
+      window.open(shareUrl, "_blank", "width=600,height=400");
+      onClose();
+    }
   };
-
-  const status = statusMap[task.status] || statusMap.open;
 
   return (
-    <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 p-4 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex-1 min-w-0 cursor-pointer" onClick={goToTask}>
-          <div className="flex items-center gap-2 mb-2.5 flex-wrap">
-            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${status.color}`}>
-              <div className={`w-1.5 h-1.5 rounded-full ${status.dot} animate-pulse`} />
-              {status.label}
-            </div>
-            {task.type === "task" && task.price > 0 && (
-              <div className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-[#0A84FF]/10 to-[#0066CC]/10 dark:from-[#0A84FF]/20 dark:to-[#0066CC]/20 text-[#0A84FF] dark:text-[#8AB4F8] text-xs font-bold">
-                {task.price.toLocaleString("vi-VN")}đ
-              </div>
-            )}
-            {task.viewCount && task.viewCount > 10 && (
-              <div className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
-                <FiEye size={12} />
-                <span>{task.viewCount}</span>
-              </div>
-            )}
-          </div>
-          <h3 className="font-bold text-sm text-zinc-900 dark:text-white line-clamp-2 leading-snug">
-            {task.title}
-          </h3>
-        </div>
-
-        <div className="flex items-center gap-1 shrink-0 relative z-[999]">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleSave();
-            }}
-            disabled={saving}
-            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all disabled:opacity-50 touch-manipulation select-none"
-            style={{ WebkitTapHighlightColor: 'transparent' }}
-          >
-            <FiBookmark
-              size={18}
-              className={isSaved? `${themeColor.fill} ${themeColor.text}` : "text-zinc-400 dark:text-zinc-500"}
-            />
-          </button>
-
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              vibrate(8);
-              onShare?.(task);
-            }}
-            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all touch-manipulation select-none"
-            style={{ WebkitTapHighlightColor: 'transparent' }}
-          >
-            <FiShare2 size={18} className="text-zinc-400 dark:text-zinc-500" />
-          </button>
-
-          {isOwner && (
-            <div className="relative">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  vibrate();
-                  setShowMenu(!showMenu);
-                }}
-                className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all touch-manipulation select-none"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                <FiMoreHorizontal size={18} className="text-zinc-400 dark:text-zinc-500" />
-              </button>
-              <AnimatePresence>
-                {showMenu && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowMenu(false);
-                      }}
-                    />
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                      className="absolute right-0 top-10 bg-white/95 dark:bg-zinc-800/95 backdrop-blur-xl rounded-xl shadow-2xl border border-zinc-200/50 dark:border-zinc-700/50 py-1 z-20 min-w-[160px]"
-                    >
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          vibrate();
-                          setShowMenu(false);
-                          router.push(`/task/${task.id}/edit`);
-                        }}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 w-full transition-colors touch-manipulation"
-                      >
-                        <FiEdit2 size={16} /> Sửa
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowMenu(false);
-                          handleDelete();
-                        }}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 w-full transition-colors touch-manipulation"
-                      >
-                        <FiTrash2 size={16} /> Xóa
-                      </button>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="cursor-pointer" onClick={goToTask}>
-        <div className="flex items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400 flex-wrap">
-          {taskDate && (
-            <div className="flex items-center gap-1">
-              <FiClock size={13} />
-              <span className="font-medium">{taskDate}</span>
-            </div>
-          )}
-          <div className="flex items-center gap-1">
-            <FiUsers size={13} />
-            <span className="font-medium">{applicants.length}/{task.type === "task"? task.totalSlots : 1}</span>
-          </div>
-          {task.location?.city && (
-            <div className="flex items-center gap-1 truncate">
-              <FiMapPin size={13} />
-              <span className="truncate font-medium">{task.location.city}</span>
-            </div>
-          )}
-        </div>
-
-        <AnimatePresence>
-          {isApplied && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-3 pt-3 border-t border-zinc-200/50 dark:border-zinc-800/50"
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          className="bg-white dark:bg-zinc-900 rounded-t-3xl w-full max-w-lg p-6 pb-8 shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-white">
+              Chia sẻ {task.type === "task" ? "công việc" : "kế hoạch"}
+            </h3>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-95 transition-all"
             >
-              <div className={`flex items-center gap-1.5 text-xs ${themeColor.text} font-semibold`}>
-                <FiCheck size={14} className="shrink-0" />
-                <span>Đã ứng tuyển</span>
+              <FiX size={20} className="text-zinc-500 dark:text-zinc-400" />
+            </button>
+          </div>
+
+          {/* Task info */}
+          <div className="mb-6 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700">
+            <p className="font-semibold text-sm text-zinc-900 dark:text-white line-clamp-2 mb-1">
+              {task.title}
+            </p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              bởi {task.userName}
+            </p>
+          </div>
+
+          {/* QR Code */}
+          <div className="flex justify-center mb-6">
+            <div className="p-4 bg-white rounded-2xl shadow-md">
+              <QRCodeSVG value={taskUrl} size={160} level="H" />
+            </div>
+          </div>
+
+          {/* Link copy */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
+              <FiLink size={18} className="text-zinc-400 shrink-0" />
+              <input
+                type="text"
+                value={taskUrl}
+                readOnly
+                className="flex-1 bg-transparent text-sm text-zinc-600 dark:text-zinc-300 outline-none truncate"
+              />
+              <button
+                onClick={handleCopy}
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 ${
+                  copied
+                    ? "bg-green-500 text-white"
+                    : "bg-blue-500 text-white hover:bg-blue-600"
+                }`}
+              >
+                {copied ? "Đã copy" : "Copy"}
+              </button>
+            </div>
+          </div>
+
+          {/* Share buttons */}
+          <div className="grid grid-cols-3 gap-3">
+            {navigator.share && (
+              <button
+                onClick={() => handleShare("native")}
+                className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-95 transition-all"
+              >
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                  <FiShare2 size={20} className="text-white" />
+                </div>
+                <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                  Khác
+                </span>
+              </button>
+            )}
+            
+            <button
+              onClick={() => handleShare("facebook")}
+              className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-95 transition-all"
+            >
+              <div className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center">
+                <FiFacebook size={20} className="text-white" />
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </div>
+              <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                Facebook
+              </span>
+            </button>
+
+            <button
+              onClick={() => handleShare("twitter")}
+              className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-95 transition-all"
+            >
+              <div className="w-12 h-12 rounded-full bg-black flex items-center justify-center">
+                <FiTwitter size={20} className="text-white" />
+              </div>
+              <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                Twitter
+              </span>
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
