@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiX, FiShare2, FiLink, FiTwitter, FiFacebook } from "react-icons/fi";
 import { TaskListItem, PlanListItem } from "@/types/task";
@@ -14,6 +14,11 @@ type Props = {
 
 export default function ShareTaskModal({ task, onClose }: Props) {
   const [copied, setCopied] = useState(false);
+  const [canShare, setCanShare] = useState(false);
+
+useEffect(() => {
+  setCanShare(typeof navigator !== "undefined" && !!navigator.share);
+}, []);
   const taskUrl = `${window.location.origin}/task/${task.id}`;
 
   const handleCopy = async () => {
@@ -131,7 +136,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
 
           {/* Share buttons */}
           <div className="grid grid-cols-3 gap-3">
- {typeof window !== "undefined" && navigator.share && (
+ {canShare && (
   <button
     onClick={() => handleShare("native")}
     className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-95 transition-all"
