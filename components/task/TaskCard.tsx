@@ -187,83 +187,92 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
             </h3>
           </div>
 
-          <div className="flex items-center gap-1 shrink-0">
-            <motion.button
-              whileTap={{ scale: 0.8 }}
-              onClick={handleSave}
-              disabled={saving}
-              className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all disabled:opacity-50"
-            >
-              <FiBookmark
-                size={18}
-                className={isSaved? `${themeColor.fill} ${themeColor.text}` : "text-zinc-400 dark:text-zinc-500"}
-              />
-            </motion.button>
+         <div className="flex items-center gap-1 shrink-0 relative z-20" onClick={(e) => e.stopPropagation()}>
+  <motion.button
+    whileTap={{ scale: 0.8 }}
+    onPointerDown={(e) => e.stopPropagation()}
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handleSave();
+    }}
+    disabled={saving}
+    className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all disabled:opacity-50"
+  >
+    <FiBookmark
+      size={18}
+      className={isSaved? `${themeColor.fill} ${themeColor.text}` : "text-zinc-400 dark:text-zinc-500"}
+    />
+  </motion.button>
 
-            <motion.button
-              whileTap={{ scale: 0.8 }}
+  <motion.button
+    whileTap={{ scale: 0.8 }}
+    onPointerDown={(e) => e.stopPropagation()}
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      vibrate(8);
+      onShare?.(task);
+    }}
+    className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all"
+  >
+    <FiShare2 size={18} className="text-zinc-400 dark:text-zinc-500" />
+  </motion.button>
+
+  {isOwner && (
+    <div className="relative">
+      <motion.button
+        whileTap={{ scale: 0.8 }}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          vibrate();
+          setShowMenu(!showMenu);
+        }}
+        className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5"
+      >
+        <FiMoreHorizontal size={18} className="text-zinc-400 dark:text-zinc-500" />
+      </motion.button>
+      <AnimatePresence>
+        {showMenu && (
+          <>
+            <div
+              className="fixed inset-0 z-10"
               onClick={(e) => {
                 e.stopPropagation();
-                vibrate(8);
-                onShare?.(task); // ← GỌI CALLBACK TỪ PAGE
+                setShowMenu(false);
               }}
-              className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              className="absolute right-0 top-10 bg-white/95 dark:bg-zinc-800/95 backdrop-blur-xl rounded-xl shadow-2xl border border-zinc-200/50 dark:border-zinc-700/50 py-1 z-20 min-w-[160px]"
             >
-              <FiShare2 size={18} className="text-zinc-400 dark:text-zinc-500" />
-            </motion.button>
-
-            {isOwner && (
-              <div className="relative">
-                <motion.button
-                  whileTap={{ scale: 0.8 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    vibrate();
-                    setShowMenu(!showMenu);
-                  }}
-                  className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5"
-                >
-                  <FiMoreHorizontal size={18} className="text-zinc-400 dark:text-zinc-500" />
-                </motion.button>
-                <AnimatePresence>
-                  {showMenu && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-10"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowMenu(false);
-                        }}
-                      />
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                        className="absolute right-0 top-10 bg-white/95 dark:bg-zinc-800/95 backdrop-blur-xl rounded-xl shadow-2xl border border-zinc-200/50 dark:border-zinc-700/50 py-1 z-20 min-w-[160px]"
-                      >
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            vibrate();
-                            router.push(`/task/${task.id}/edit`);
-                          }}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 w-full transition-colors"
-                        >
-                          <FiEdit2 size={16} /> Sửa
-                        </button>
-                        <button
-                          onClick={handleDelete}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 w-full transition-colors"
-                        >
-                          <FiTrash2 size={16} /> Xóa
-                        </button>
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
-          </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  vibrate();
+                  router.push(`/task/${task.id}/edit`);
+                }}
+                className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 w-full transition-colors"
+              >
+                <FiEdit2 size={16} /> Sửa
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 w-full transition-colors"
+              >
+                <FiTrash2 size={16} /> Xóa
+              </button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  )}
+</div>
         </div>
 
         <div className="flex items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400 flex-wrap">
