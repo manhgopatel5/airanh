@@ -9,7 +9,7 @@ import ShareTaskModal from "@/components/ShareTaskModal";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { collection, query, where, getDocs, limit, startAfter, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
-import type { Task, TaskListItem, PlanListItem } from "@/types/task";
+import type { Task } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
 import { useAppStore } from "@/store/app";
@@ -43,7 +43,7 @@ export default function TasksPage() {
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
-  const [shareTask, setShareTask] = useState<TaskListItem | PlanListItem | null>(null); // ← SỬA TYPE
+  const [shareTask, setShareTask] = useState<Task | null>(null);
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const pullStartY = useRef(0);
@@ -411,10 +411,10 @@ export default function TasksPage() {
                     transition={{ delay: idx * 0.05 }}
                   >
                     <TaskCard
-                      task={task as any}
+                      task={task}
                       theme={mode}
                       onDelete={(id) => setTasks(prev => prev.filter(t => t.id!== id))}
-                      onShare={(t) => setShareTask(t)} // ← TRUYỀN CALLBACK
+                      onShare={(t) => setShareTask(t)}
                     />
                   </motion.div>
                 ))}
@@ -434,12 +434,12 @@ export default function TasksPage() {
             </div>
           )}
 
-{shareTask && (
-  <ShareTaskModal
-    task={shareTask} // ← Truyền thẳng, không tạo object mới
-    onClose={() => setShareTask(null)}
-  />
-)}
+          {shareTask && (
+            <ShareTaskModal
+              task={shareTask}
+              onClose={() => setShareTask(null)}
+            />
+          )}
 
           <div ref={loadMoreRef} className="h-4" />
         </div>
