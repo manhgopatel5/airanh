@@ -45,17 +45,14 @@ export default function ShareTaskModal({ task, onClose }: Props) {
         setLoading(true);
         const db = getFirebaseDB();
 
-        // Lấy list friendId từ users/{uid}
-        const userSnap = await getDoc(doc(db, "users", user.uid));
-        if (!userSnap.exists()) {
-          if (isMounted) {
-            setFriends([]);
-            setLoading(false);
-          }
-          return;
-        }
-
-        const friendIds: string[] = userSnap.data()?.friends || [];
+        // 1. Lấy subcollection friends
+        const friendsSnap = await getDocs(collection(db, "users", user.uid, "friends"));
+        
+        const friendIds = friendsSnap.docs
+          .filter(doc => doc.data().status === "accepted")
+          .map(doc => doc.id);
+        
+        console.log("Friend IDs:", friendIds);
         
         if (friendIds.length === 0) {
           if (isMounted) {
@@ -65,18 +62,13 @@ export default function ShareTaskModal({ task, onClose }: Props) {
           return;
         }
 
-        // Batch 10 vì Firestore 'in' limit 10
-        const chunks = [];
-        for (let i = 0; i < friendIds.length; i += 10) {
-          chunks.push(friendIds.slice(i, i + 10));
-        }
-
+        // 2. Batch load info từ collection users
         const allFriends: Friend[] = [];
-        for (const chunk of chunks) {
+        for (let i = 0; i < friendIds.length; i += 10) {
+          const chunk = friendIds.slice(i, i + 10);
           const q = query(
             collection(db, "users"),
-            where(documentId(), "in", chunk),
-            limit(10)
+            where(documentId(), "in", chunk)
           );
           
           const snap = await getDocs(q);
@@ -90,6 +82,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
           allFriends.push(...data);
         }
 
+        console.log("Loaded friends:", allFriends);
         if (isMounted) {
           setFriends(allFriends);
           setLoading(false);
@@ -112,7 +105,8 @@ export default function ShareTaskModal({ task, onClose }: Props) {
   }, [user?.uid]);
 
   const filteredFriends = friends.filter((f) =>
-    f.name.toLowerCase().includes(search.toLowerCase())
+    f.name.toLowerCase().includes(search.toLowerCase()) ||
+    f.username.toLowerCase().includes(search.toLowerCase())
   );
 
   const toggleSelect = (id: string) => {
@@ -188,7 +182,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
             )}
           </div>
 
-          {/* Search - Đưa lên cao */}
+          {/* Search */}
           <div className="px-6 mb-3 shrink-0">
             <div className="relative">
               <FiSearch
