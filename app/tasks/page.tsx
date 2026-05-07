@@ -33,7 +33,7 @@ export default function TasksPage() {
   const router = useRouter();
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const { mode, setMode } = useAppStore();
+  const { mode = "task", setMode } = useAppStore();
   const [subTab, setSubTab] = useState<SubTab>("mine");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,7 +123,9 @@ export default function TasksPage() {
       }
 
       const snap = await getDocs(q);
-      let data = snap.docs.map(doc => ({ id: doc.id,...doc.data() } as Task));
+      let data = snap.docs
+       .map(doc => ({ id: doc.id,...doc.data() } as Task))
+       .filter(t => t?.id && t?.title && t?.type && t?.status);
 
       switch (subTab) {
         case "mine":
@@ -231,8 +233,10 @@ export default function TasksPage() {
   };
 
   const filteredTasks = tasks.filter(t =>
-   !searchQuery || t.title.toLowerCase().includes(searchQuery.toLowerCase())
+  !searchQuery || t.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const currentTheme = theme[mode] || theme.task;
 
   return (
     <>
@@ -263,7 +267,7 @@ export default function TasksPage() {
                 onClick={() => handleModeChange("task")}
                 className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
                   mode === "task"
-                   ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
+                  ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
                     : "text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -276,7 +280,7 @@ export default function TasksPage() {
                 onClick={() => handleModeChange("plan")}
                 className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
                   mode === "plan"
-                   ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
+                  ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
                     : "text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -297,7 +301,7 @@ export default function TasksPage() {
                     onClick={() => handleTabChange(tab.key)}
                     className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
                       subTab === tab.key
-                       ? `bg-gradient-to-r ${theme[mode].gradient} text-white ${theme[mode].shadow}`
+                      ? `bg-gradient-to-r ${currentTheme.gradient} text-white ${currentTheme.shadow}`
                         : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                     }`}
                   >
@@ -388,7 +392,7 @@ export default function TasksPage() {
                     vibrate(10);
                     router.push(mode === "task"? "/create/task" : "/create/plan");
                   }}
-                  className={`px-6 h-11 rounded-xl bg-gradient-to-r ${theme[mode].gradient} text-white text-sm font-semibold active:scale-95 transition-all ${theme[mode].shadow}`}
+                  className={`px-6 h-11 rounded-xl bg-gradient-to-r ${currentTheme.gradient} text-white text-sm font-semibold active:scale-95 transition-all ${currentTheme.shadow}`}
                 >
                   Tạo ngay
                 </button>
@@ -446,8 +450,8 @@ export default function TasksPage() {
       </div>
 
       <style jsx global>{`
-       .scrollbar-hide::-webkit-scrollbar { display: none; }
-       .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </>
   );
