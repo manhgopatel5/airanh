@@ -434,16 +434,12 @@ export default function TasksPage() {
             </div>
           )}
 
-          {shareTask && (
-            <ShareTaskModal
-              task={{
-                id: shareTask.id,
-                title: shareTask.title,
-                price: shareTask.type === 'task'? shareTask.price : 0 // ← FIX: Plan không có price
-              }}
-              onClose={() => setShareTask(null)}
-            />
-          )}
+{shareTask && (
+  <ShareTaskModal
+    task={shareTask} // ← Truyền thẳng, không tạo object mới
+    onClose={() => setShareTask(null)}
+  />
+)}
 
           <div ref={loadMoreRef} className="h-4" />
         </div>
