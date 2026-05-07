@@ -6,7 +6,7 @@ import { FiX, FiSearch, FiCheck } from "react-icons/fi";
 import { Task } from "@/types/task";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
-import { collection, query, where, getDocs, limit, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, limit, doc, getDoc, documentId } from "firebase/firestore";
 import { toast } from "sonner";
 
 type Props = {
@@ -23,7 +23,7 @@ type Friend = {
 };
 
 export default function ShareTaskModal({ task, onClose }: Props) {
-  if (!task?.id ||!task?.title ||!task?.type) return null;
+  if (!task?.id || !task?.title || !task?.type) return null;
 
   const { user } = useAuth();
   const [search, setSearch] = useState("");
@@ -45,6 +45,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
         setLoading(true);
         const db = getFirebaseDB();
 
+        // Lấy list friendId từ users/{uid}
         const userSnap = await getDoc(doc(db, "users", user.uid));
         if (!userSnap.exists()) {
           if (isMounted) {
@@ -64,23 +65,33 @@ export default function ShareTaskModal({ task, onClose }: Props) {
           return;
         }
 
-        const q = query(
-          collection(db, "users"),
-          where("__name__", "in", friendIds.slice(0, 10)),
-          limit(20)
-        );
-        
-        const snap = await getDocs(q);
-        const data = snap.docs.map((doc) => ({
-          id: doc.id,
-          name: doc.data().displayName || doc.data().name || "User",
-          username: doc.data().username || "",
-          avatar: doc.data().photoURL || doc.data().avatar || "",
-          online: doc.data().online || false,
-        }));
+        // Batch 10 vì Firestore 'in' limit 10
+        const chunks = [];
+        for (let i = 0; i < friendIds.length; i += 10) {
+          chunks.push(friendIds.slice(i, i + 10));
+        }
+
+        const allFriends: Friend[] = [];
+        for (const chunk of chunks) {
+          const q = query(
+            collection(db, "users"),
+            where(documentId(), "in", chunk),
+            limit(10)
+          );
+          
+          const snap = await getDocs(q);
+          const data = snap.docs.map((doc) => ({
+            id: doc.id,
+            name: doc.data().displayName || doc.data().name || "User",
+            username: doc.data().username || "",
+            avatar: doc.data().photoURL || doc.data().avatar || "",
+            online: doc.data().online || false,
+          }));
+          allFriends.push(...data);
+        }
 
         if (isMounted) {
-          setFriends(data);
+          setFriends(allFriends);
           setLoading(false);
         }
       } catch (err) {
@@ -107,7 +118,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
   const toggleSelect = (id: string) => {
     if ("vibrate" in navigator) navigator.vibrate(5);
     setSelected((prev) =>
-      prev.includes(id)? prev.filter((i) => i!== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
   };
 
@@ -164,20 +175,20 @@ export default function ShareTaskModal({ task, onClose }: Props) {
             <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 mb-1">
               <span>📋</span>
               <span className="font-semibold">
-                {task.type === "task"? "Công việc" : "Kế hoạch"}
+                {task.type === "task" ? "Công việc" : "Kế hoạch"}
               </span>
             </div>
             <p className="font-bold text-base text-zinc-900 dark:text-white line-clamp-1 mb-1">
               {task.title}
             </p>
-            {task.type === "task" && (task.price?? 0) > 0 && (
+            {task.type === "task" && (task.price ?? 0) > 0 && (
               <p className="text-sm font-bold text-blue-600 dark:text-blue-400">
                 {task.price.toLocaleString("vi-VN")}đ
               </p>
             )}
           </div>
 
-          {/* Search */}
+          {/* Search - Đưa lên cao */}
           <div className="px-6 mb-3 shrink-0">
             <div className="relative">
               <FiSearch
@@ -196,7 +207,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
 
           {/* Friends list */}
           <div className="flex-1 overflow-y-auto px-6 pb-4">
-            {loading? (
+            {loading ? (
               <div className="space-y-3">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="flex items-center gap-3">
@@ -208,9 +219,9 @@ export default function ShareTaskModal({ task, onClose }: Props) {
                   </div>
                 ))}
               </div>
-            ) : filteredFriends.length === 0? (
+            ) : filteredFriends.length === 0 ? (
               <div className="text-center py-12 text-zinc-400 text-sm">
-                {search? "Không tìm thấy bạn bè" : "Chưa có bạn bè nào"}
+                {search ? "Không tìm thấy bạn bè" : "Chưa có bạn bè nào"}
               </div>
             ) : (
               <div className="space-y-1">
@@ -223,7 +234,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
                       className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-900 active:scale-[0.98] transition-all"
                     >
                       <div className="relative shrink-0">
-                        {friend.avatar? (
+                        {friend.avatar ? (
                           <img
                             src={friend.avatar}
                             alt={friend.name}
@@ -243,13 +254,13 @@ export default function ShareTaskModal({ task, onClose }: Props) {
                           {friend.name}
                         </p>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                          {friend.online? "Đang hoạt động" : "Ngoại tuyến"}
+                          {friend.online ? "Đang hoạt động" : "Ngoại tuyến"}
                         </p>
                       </div>
                       <div
                         className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${
                           isSelected
-                          ? "bg-blue-500 border-blue-500"
+                            ? "bg-blue-500 border-blue-500"
                             : "border-zinc-300 dark:border-zinc-700"
                         }`}
                       >
