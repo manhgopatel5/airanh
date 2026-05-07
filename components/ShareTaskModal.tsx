@@ -6,7 +6,7 @@ import { FiX, FiSearch, FiCheck } from "react-icons/fi";
 import { TaskListItem, PlanListItem } from "@/types/task";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
-import { collection, query, where, getDocs, limit } from "firebase/firestore";
+import { collection, query, where, getDocs, limit, doc, getDoc } from "firebase/firestore";
 import { toast } from "sonner";
 
 type Props = {
@@ -30,14 +30,47 @@ export default function ShareTaskModal({ task, onClose }: Props) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.uid) {
+      setLoading(false);
+      setFriends([]);
+      return;
+    }
+
+    let isMounted = true;
+
     const fetchFriends = async () => {
       try {
+        setLoading(true);
         const db = getFirebaseDB();
-        // TODO: Thay bằng query thật của bạn - lấy danh sách bạn bè
+
+        // Tạm mock data để tránh crash do Firestore index/rules
+        // TODO: Xóa mock và dùng query thật sau khi tạo index
+        const mockFriends: Friend[] = [
+          { id: "1", name: "Signature Dazi", username: "", avatar: "", online: false },
+          { id: "2", name: "Lê Bảo Hồng Ân", username: "", avatar: "", online: false },
+        ];
+
+        if (isMounted) {
+          setFriends(mockFriends);
+          setLoading(false);
+        }
+
+        /*
+        // Query thật - bật khi đã tạo index Firestore
+        const userSnap = await getDoc(doc(db, "users", user.uid));
+        const friendIds: string[] = userSnap.data()?.friends || [];
+
+        if (friendIds.length === 0) {
+          if (isMounted) {
+            setFriends([]);
+            setLoading(false);
+          }
+          return;
+        }
+
         const q = query(
           collection(db, "users"),
-          where("followers", "array-contains", user.uid),
+          where("__name__", "in", friendIds.slice(0, 10)),
           limit(20)
         );
         const snap = await getDocs(q);
@@ -48,15 +81,27 @@ export default function ShareTaskModal({ task, onClose }: Props) {
           avatar: doc.data().photoURL || doc.data().avatar || "",
           online: doc.data().online || false,
         }));
-        setFriends(data);
+        if (isMounted) {
+          setFriends(data);
+          setLoading(false);
+        }
+        */
+
       } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+        console.error("Load friends error:", err);
+        if (isMounted) {
+          setFriends([]);
+          setLoading(false);
+        }
       }
     };
+
     fetchFriends();
-}, [user?.uid]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.uid]);
 
   const filteredFriends = friends.filter((f) =>
     f.name.toLowerCase().includes(search.toLowerCase())
@@ -89,7 +134,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 z-[999] bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       >
         <motion.div
@@ -97,11 +142,11 @@ export default function ShareTaskModal({ task, onClose }: Props) {
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="absolute bottom-0 left-0 right-0 bg-white dark:bg-zinc-950 rounded-t-3xl max-h-[85vh] flex flex-col"
+          className="fixed inset-x-0 bottom-0 bg-white dark:bg-zinc-950 rounded-t-3xl max-h- flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex justify-between items-center px-6 pt-5 pb-3">
+          <div className="flex justify-between items-center px-6 pt-5 pb-3 shrink-0">
             <h3 className="text-xl font-bold text-zinc-900 dark:text-white">
               Chia sẻ cho
             </h3>
@@ -114,7 +159,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
           </div>
 
           {/* Task preview */}
-          <div className="mx-6 mb-4 p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50">
+          <div className="mx-6 mb-4 p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 shrink-0">
             <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 mb-1">
               <span>📋</span>
               <span className="font-semibold">
@@ -132,7 +177,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
           </div>
 
           {/* Search */}
-          <div className="px-6 mb-3">
+          <div className="px-6 mb-3 shrink-0">
             <div className="relative">
               <FiSearch
                 className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400"
@@ -167,7 +212,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
                 {search? "Không tìm thấy bạn bè" : "Chưa có bạn bè nào"}
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {filteredFriends.map((friend) => {
                   const isSelected = selected.includes(friend.id);
                   return (
@@ -176,7 +221,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
                       onClick={() => toggleSelect(friend.id)}
                       className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-900 active:scale-[0.98] transition-all"
                     >
-                      <div className="relative">
+                      <div className="relative shrink-0">
                         {friend.avatar? (
                           <img
                             src={friend.avatar}
@@ -192,8 +237,8 @@ export default function ShareTaskModal({ task, onClose }: Props) {
                           <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-zinc-950 rounded-full" />
                         )}
                       </div>
-                      <div className="flex-1 text-left">
-                        <p className="font-semibold text-sm text-zinc-900 dark:text-white">
+                      <div className="flex-1 text-left min-w-0">
+                        <p className="font-semibold text-sm text-zinc-900 dark:text-white truncate">
                           {friend.name}
                         </p>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -201,7 +246,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
                         </p>
                       </div>
                       <div
-                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${
                           isSelected
                            ? "bg-blue-500 border-blue-500"
                             : "border-zinc-300 dark:border-zinc-700"
@@ -220,7 +265,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
 
           {/* Send button */}
           {selected.length > 0 && (
-            <div className="px-6 pb-6 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+            <div className="px-6 pb-6 pt-3 border-t border-zinc-200 dark:border-zinc-800 shrink-0">
               <button
                 onClick={handleSend}
                 className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-base active:scale-[0.98] transition-all shadow-lg shadow-blue-500/30"
