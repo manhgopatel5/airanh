@@ -9,7 +9,7 @@ import ShareTaskModal from "@/components/ShareTaskModal";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { collection, query, where, getDocs, limit, startAfter, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
-import type { Task } from "@/types/task";
+import type { Task, TaskListItem, PlanListItem } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
 import { useAppStore } from "@/store/app";
@@ -43,7 +43,7 @@ export default function TasksPage() {
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
-  const [shareTask, setShareTask] = useState<Task | null>(null);
+  const [shareTask, setShareTask] = useState<TaskListItem | PlanListItem | null>(null); // ← SỬA TYPE
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const pullStartY = useRef(0);
@@ -151,13 +151,13 @@ export default function TasksPage() {
       }
 
       data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-      
+
       if (isRefresh) {
         setTasks(data);
       } else {
         setTasks(prev => [...prev,...data]);
       }
-      
+
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
       setHasMore(snap.docs.length === PAGE_SIZE);
     } catch (err: any) {
@@ -174,13 +174,12 @@ export default function TasksPage() {
     fetchTasks(true);
   }, [currentUser, mode, subTab]);
 
-  // Native IntersectionObserver thay cho useInView
   useEffect(() => {
     if (!loadMoreRef.current) return;
-    
+
     const observer = new IntersectionObserver(
       (entries) => {
-      if (entries[0]?.isIntersecting && hasMore &&!loading &&!loadingMore) {
+        if (entries[0]?.isIntersecting && hasMore &&!loading &&!loadingMore) {
           fetchTasks(false);
         }
       },
@@ -215,8 +214,8 @@ export default function TasksPage() {
   const handleTouchMove = (e: React.TouchEvent) => {
     if (pullStartY.current > 0 && window.scrollY === 0) {
       const touchY = e.touches[0]?.clientY;
-if (!touchY) return;
-const distance = touchY - pullStartY.current;
+      if (!touchY) return;
+      const distance = touchY - pullStartY.current;
       if (distance > 0) {
         setPullDistance(Math.min(distance, 80));
       }
@@ -231,43 +230,40 @@ const distance = touchY - pullStartY.current;
     setPullDistance(0);
   };
 
-  const filteredTasks = tasks.filter(t => 
-!searchQuery || t.title.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredTasks = tasks.filter(t =>
+   !searchQuery || t.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
     <>
       <Toaster richColors position="top-center" />
-      <div 
+      <div
         className="min-h-screen bg-[#F2F2F7] dark:bg-black text-zinc-900 dark:text-zinc-100 select-none pb-28"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Pull to refresh indicator */}
         {pullDistance > 0 && (
-          <div 
+          <div
             className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl"
             style={{ height: `${pullDistance}px`, transition: pullDistance === 0? 'height 0.3s' : 'none' }}
           >
-            <FiRefreshCw 
-              className={`${pullDistance > 60? 'animate-spin' : ''} text-[#0A84FF]`} 
-              size={20} 
+            <FiRefreshCw
+              className={`${pullDistance > 60? 'animate-spin' : ''} text-[#0A84FF]`}
+              size={20}
             />
           </div>
         )}
 
-        {/* Header blur iOS style */}
         <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50">
-          
-          {/* Segmented Control */}
+
           <div className="px-4 pt-3 pb-2">
             <div className="flex items-center p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800">
               <button
                 onClick={() => handleModeChange("task")}
-                className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text- transition-all ${
+                className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
                   mode === "task"
-                ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
+                   ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
                     : "text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -278,9 +274,9 @@ const distance = touchY - pullStartY.current;
 
               <button
                 onClick={() => handleModeChange("plan")}
-                className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text- transition-all ${
+                className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
                   mode === "plan"
-                ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
+                   ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
                     : "text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -291,7 +287,6 @@ const distance = touchY - pullStartY.current;
             </div>
           </div>
 
-          {/* Sub Tabs + Search */}
           <div className="px-4 pb-3">
             <div className="flex items-center gap-2 mb-3">
               <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1">
@@ -300,9 +295,9 @@ const distance = touchY - pullStartY.current;
                     key={tab.key}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => handleTabChange(tab.key)}
-                    className={`px-4 h-9 rounded-full text- font-semibold whitespace-nowrap transition-all ${
+                    className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
                       subTab === tab.key
-                    ? `bg-gradient-to-r ${theme[mode].gradient} text-white ${theme[mode].shadow}`
+                       ? `bg-gradient-to-r ${theme[mode].gradient} text-white ${theme[mode].shadow}`
                         : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                     }`}
                   >
@@ -335,7 +330,7 @@ const distance = touchY - pullStartY.current;
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder={`Tìm ${mode}...`}
-                      className="w-full px-4 py-2.5 pr-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 outline-none text- focus:ring-2 focus:ring-[#0A84FF]/20"
+                      className="w-full px-4 py-2.5 pr-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 outline-none text-sm focus:ring-2 focus:ring-[#0A84FF]/20"
                     />
                     {searchQuery && (
                       <button
@@ -352,7 +347,6 @@ const distance = touchY - pullStartY.current;
           </div>
         </div>
 
-        {/* List */}
         <div className="max-w-[600px] mx-auto p-4">
           {loading? (
             <div className="space-y-3">
@@ -369,7 +363,7 @@ const distance = touchY - pullStartY.current;
               ))}
             </div>
           ) : filteredTasks.length === 0? (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 p-12 text-center"
@@ -377,10 +371,10 @@ const distance = touchY - pullStartY.current;
               <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
                 <FiInbox size={32} className="text-zinc-400" />
               </div>
-              <p className="text- font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
+              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
                 Chưa có {mode === "task"? "task" : "plan"} nào
               </p>
-              <p className="text- text-zinc-500 mb-6">
+              <p className="text-sm text-zinc-500 mb-6">
                 {subTab === "mine" && `Tạo ${mode} đầu tiên của bạn`}
                 {subTab === "saved" && `Lưu ${mode} để xem sau`}
                 {subTab === "doing" && `Nhận ${mode} để bắt đầu làm`}
@@ -394,7 +388,7 @@ const distance = touchY - pullStartY.current;
                     vibrate(10);
                     router.push(mode === "task"? "/create/task" : "/create/plan");
                   }}
-                  className={`px-6 h-11 rounded-xl bg-gradient-to-r ${theme[mode].gradient} text-white text- font-semibold active:scale-95 transition-all ${theme[mode].shadow}`}
+                  className={`px-6 h-11 rounded-xl bg-gradient-to-r ${theme[mode].gradient} text-white text-sm font-semibold active:scale-95 transition-all ${theme[mode].shadow}`}
                 >
                   Tạo ngay
                 </button>
@@ -416,12 +410,12 @@ const distance = touchY - pullStartY.current;
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.05 }}
                   >
-         <TaskCard 
-  task={task} 
-  theme={mode} 
-  onDelete={(id) => setTasks(prev => prev.filter(t => t.id !== id))}
-  onShare={() => setShareTask(task)}  // thêm dòng này
-/>
+                    <TaskCard
+                      task={task as any}
+                      theme={mode}
+                      onDelete={(id) => setTasks(prev => prev.filter(t => t.id!== id))}
+                      onShare={(t) => setShareTask(t)} // ← TRUYỀN CALLBACK
+                    />
                   </motion.div>
                 ))}
               </motion.div>
@@ -439,24 +433,25 @@ const distance = touchY - pullStartY.current;
               <FiRefreshCw className="animate-spin text-[#0A84FF]" size={24} />
             </div>
           )}
-{shareTask && (
-  <ShareTaskModal 
-    task={{ 
-      id: shareTask.id, 
-      title: shareTask.title, 
-      price: 'price' in shareTask ? shareTask.price : 0  // PlanItem không có price → = 0
-    }} 
-    onClose={() => setShareTask(null)} 
-  />
-)}
+
+          {shareTask && (
+            <ShareTaskModal
+              task={{
+                id: shareTask.id,
+                title: shareTask.title,
+                price: shareTask.type === 'task'? shareTask.price : 0 // ← FIX: Plan không có price
+              }}
+              onClose={() => setShareTask(null)}
+            />
+          )}
 
           <div ref={loadMoreRef} className="h-4" />
         </div>
       </div>
 
       <style jsx global>{`
- .scrollbar-hide::-webkit-scrollbar { display: none; }
- .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+       .scrollbar-hide::-webkit-scrollbar { display: none; }
+       .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </>
   );
