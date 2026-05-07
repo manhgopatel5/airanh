@@ -1,263 +1,401 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { FiX, FiSearch, FiCheck } from "react-icons/fi";
-import { Task } from "@/types/task";
-import { useAuth } from "@/lib/AuthContext";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { getFirebaseDB } from "@/lib/firebase";
-import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  limit,
+  startAfter,
+  getDocs,
+  QueryDocumentSnapshot,
+  DocumentData,
+  where,
+} from "firebase/firestore";
+import TaskFeed from "@/components/TaskFeed";
+import ModeToggle from "@/components/ModeToggle";
+import { useAppStore } from "@/store/app";
+import { Task, TaskItem, PlanItem, TaskListItem, PlanListItem, isTask, isPlan } from "@/types/task";
+import { FiMapPin, FiRefreshCw } from "react-icons/fi";
+import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 import { toast } from "sonner";
 
-type Props = {
-  task: Task;
-  onClose: () => void;
-};
+const PAGE_SIZE = 20;
+type TabId = "hot" | "near" | "friends" | "new";
 
-type Friend = {
-  id: string;
-  name: string;
-  username: string;
-  avatar: string;
-  online: boolean;
-};
+function SkeletonList() {
+  return (
+    <div className="space-y-3 px-4 animate-in fade-in duration-300">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div
+          key={i}
+          className="bg-white dark:bg-zinc-900 rounded-3xl p-4 border border-gray-100 dark:border-zinc-800"
+        >
+          <div className="flex gap-3 mb-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded-full animate-pulse" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-1/3 animate-pulse" />
+              <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-1/4 animate-pulse" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-3/4 animate-pulse" />
+            <div className="h-20 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded-2xl animate-pulse" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
-export default function ShareTaskModal({ task, onClose }: Props) {
-  if (!task?.id ||!task?.title ||!task?.type) return null;
-
-  const { user } = useAuth();
-  const [search, setSearch] = useState("");
-  const [friends, setFriends] = useState<Friend[]>([]);
-  const [selected, setSelected] = useState<string[]>([]);
+export default function Home() {
+  const [db, setDb] = useState<any>(null);
+  const mode = useAppStore((s) => s.mode);
+  const [activeTab, setActiveTab] = useState<TabId>("hot");
+  const [allItems, setAllItems] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const unsubRef = useRef<(() => void) | null>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!user) {
-      setLoading(false); // ← Fix: tắt loading khi chưa có user
-      return;
+    if (db) return;
+    try {
+      const _db = getFirebaseDB();
+      setDb(_db);
+      setError(null);
+    } catch (err) {
+      console.error("Firebase init error:", err);
+      setError("Không thể kết nối database");
+      setLoading(false);
     }
+  }, [db]);
 
-    const fetchFriends = async () => {
-      try {
-        const db = getFirebaseDB();
-
-        const userSnap = await getDoc(doc(db, "users", user.uid));
-        const friendIds: string[] = userSnap.data()?.friends || [];
-
-        if (friendIds.length === 0) {
-          setFriends([]);
-          setLoading(false);
-          return;
-        }
-
-        const chunks = [];
-        for (let i = 0; i < friendIds.length; i += 10) {
-          chunks.push(friendIds.slice(i, i + 10));
-        }
-
-        const allFriends: Friend[] = [];
-        for (const chunk of chunks) {
-          const q = query(collection(db, "users"), where("__name__", "in", chunk));
-          const snap = await getDocs(q);
-          const data = snap.docs.map((doc) => ({
-            id: doc.id,
-            name: doc.data().displayName || doc.data().name || "User",
-            username: doc.data().username || "",
-            avatar: doc.data().photoURL || doc.data().avatar || "",
-            online: doc.data().online || false,
-          }));
-          allFriends.push(...data);
-        }
-
-        setFriends(allFriends);
-      } catch (err) {
-        console.error("Load friends error:", err);
-        toast.error("Không tải được danh sách bạn bè");
-      } finally {
-        setLoading(false);
+  // Fix 1: Query filter đúng field, tránh dính task deleted/private
+  const buildQuery = useCallback(
+    (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
+      if (!db) return null;
+      const constraints: any[] = [
+        where("type", "==", mode), // ← Filter theo mode trước
+        where("visibility", "==", "public"), // ← Chỉ lấy public
+        where("status", "in", ["open", "full", "doing"]), // ← Bỏ deleted, cancelled, expired
+        orderBy("createdAt", "desc"),
+        limit(PAGE_SIZE),
+      ];
+      if (startAfterDoc) {
+        constraints.push(startAfter(startAfterDoc));
       }
-    };
-
-    fetchFriends();
-  }, );
-
-  const filteredFriends = friends.filter((f) =>
-    f.name.toLowerCase().includes(search.toLowerCase())
+      return query(collection(db, "tasks"),...constraints);
+    },
+    [db, mode] // ← Thêm mode vào deps
   );
 
-  const toggleSelect = (id: string) => {
-    if ("vibrate" in navigator) navigator.vibrate(5);
-    setSelected((prev) =>
-      prev.includes(id)? prev.filter((i) => i!== id) : [...prev, id]
-    );
-  };
+  // Fix 2: Tách loadData, không để trong deps gây loop
+  const loadData = useCallback(
+    async (isRefresh = false) => {
+      if (!db) return;
+      if (unsubRef.current) {
+        unsubRef.current();
+        unsubRef.current = null;
+      }
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
+      setError(null);
+      setAllItems([]);
+      setLastDoc(null);
+      setHasMore(true);
 
-  const handleSend = async () => {
-    if (selected.length === 0) {
-      toast.error("Chọn ít nhất 1 người bạn");
-      return;
-    }
+      const q = buildQuery();
+      if (!q) {
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
 
+      const unsub = onSnapshot(
+        q,
+        (snap) => {
+          console.log("Firestore success, docs:", snap.docs.length);
+          const data = snap.docs.map((doc) => ({
+            id: doc.id,
+           ...doc.data(),
+          })) as Task[];
+          setAllItems(data);
+          setLastDoc(snap.docs[snap.docs.length - 1] || null);
+          setHasMore(snap.docs.length === PAGE_SIZE);
+          setLoading(false);
+          setRefreshing(false);
+          setError(null);
+        },
+        (err) => {
+          console.error("Firestore error:", err.code, err.message);
+          if (err.code === "permission-denied") {
+            setAllItems([]);
+            setHasMore(false);
+            setError(null);
+            toast.info("Chưa có dữ liệu");
+          } else if (err.code === "failed-precondition") {
+            setError("Thiếu index database");
+            toast.error("Tạo index trong Firebase Console");
+          } else {
+            setError("Lỗi tải dữ liệu");
+            toast.error("Không thể tải dữ liệu");
+          }
+          setLoading(false);
+          setRefreshing(false);
+        }
+      );
+      unsubRef.current = unsub;
+    },
+    [db, buildQuery] // ← Không loop vì buildQuery đã stable
+  );
+
+  // Fix 3: Chỉ chạy khi db + mode đổi
+  useEffect(() => {
+    loadData();
+    return () => {
+      if (unsubRef.current) {
+        unsubRef.current();
+        unsubRef.current = null;
+      }
+    };
+  }, [db, mode]); // ← Bỏ loadData khỏi deps
+  const loadMore = useCallback(async () => {
+    if (!db ||!lastDoc || loadingMore ||!hasMore) return;
+    setLoadingMore(true);
     try {
-      // TODO: Gọi API của bạn để gửi task
-      // await sendTaskToUsers({ taskId: task.id, userIds: selected });
-
-      toast.success(`Đã chia sẻ cho ${selected.length} người`);
-      if ("vibrate" in navigator) navigator.vibrate(10);
-      onClose();
+      const q = buildQuery(lastDoc);
+      if (!q) return;
+      const snap = await getDocs(q);
+      const newItems = snap.docs.map((doc) => ({
+        id: doc.id,
+      ...doc.data(),
+      })) as Task[];
+      setAllItems((prev) => [...prev,...newItems]);
+      setLastDoc(snap.docs[snap.docs.length - 1] || null);
+      setHasMore(snap.docs.length === PAGE_SIZE);
     } catch (err) {
-      toast.error("Gửi thất bại");
+      console.error("Load more error:", err);
+      toast.error("Không thể tải thêm");
+    } finally {
+      setLoadingMore(false);
     }
+  }, [db, lastDoc, loadingMore, hasMore, buildQuery]);
+
+  useEffect(() => {
+    if (!loadMoreRef.current ||!hasMore) return;
+    if (observerRef.current) observerRef.current.disconnect();
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasMore &&!loadingMore) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observerRef.current.observe(loadMoreRef.current);
+    return () => observerRef.current?.disconnect();
+  }, [hasMore, loadingMore, loadMore]);
+
+  // Fix 4: Map đúng type, không return [] cứng cho tab near/friends
+  const filteredItems = useMemo(() => {
+    let result = [...allItems];
+
+    // Filter theo mode: task hoặc plan
+    if (mode === "task") {
+      result = result.filter((t) => isTask(t));
+    } else {
+      result = result.filter((t) => isPlan(t));
+    }
+
+    // Lọc thêm banned nếu có
+    result = result.filter((t) => t.banned!== true && t.hidden!== true);
+
+    if (mode === "task") {
+      const taskListItems: TaskListItem[] = result.map((item) => {
+        const task = item as TaskItem;
+        return {
+          id: task.id,
+          slug: task.slug || "",
+          title: task.title || "",
+          price: task.price?? 0,
+          currency: task.currency || "VND",
+          totalSlots: task.totalSlots?? 1,
+          joined: task.joined?? 0,
+          status: task.status,
+          userName: task.userName || "",
+          userAvatar: task.userAvatar || "",
+          userShortId: task.userShortId || "",
+          userUsername: task.userUsername || "",
+          createdAt: task.createdAt,
+          category: task.category || "other",
+          tags: task.tags || [],
+          images: task.images || [],
+          viewCount: task.viewCount?? 0,
+          likeCount: task.likeCount?? 0,
+          commentCount: task.commentCount?? 0,
+      ...(task.location && { location: task.location }),
+          isRemote: task.isRemote?? false,
+          likes: task.likes || [],
+          budgetType: task.budgetType,
+          paymentMethod: task.paymentMethod,
+          userId: task.userId,
+          description: task.description || "",
+          type: task.type,
+      ...(task.deadline && { deadline: task.deadline }),
+      ...(task.startDate && { startDate: task.startDate }),
+          savedBy: task.savedBy || [],
+          applicants: task.applicants || [],
+        };
+      });
+
+      if (activeTab === "hot") {
+        taskListItems.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+      } else if (activeTab === "new") {
+        // Đã sort theo createdAt từ query rồi
+      } else if (activeTab === "near" || activeTab === "friends") {
+        // TODO: Implement location/friends filter sau
+        toast.info("Tính năng đang phát triển");
+      }
+      return taskListItems;
+    } else {
+      const planListItems: PlanListItem[] = result.map((item) => {
+        const plan = item as PlanItem;
+        return {
+          id: plan.id,
+          slug: plan.slug || "",
+          title: plan.title || "",
+          type: plan.type,
+          status: plan.status,
+          userName: plan.userName || "",
+          userAvatar: plan.userAvatar || "",
+          userShortId: plan.userShortId || "",
+          userUsername: plan.userUsername || "",
+          createdAt: plan.createdAt,
+          category: plan.category || "other",
+          tags: plan.tags || [],
+          images: plan.images || [],
+          viewCount: plan.viewCount?? 0,
+          likeCount: plan.likeCount?? 0,
+          commentCount: plan.commentCount?? 0,
+      ...(plan.location && { location: plan.location }),
+          likes: plan.likes || [],
+          userId: plan.userId,
+          description: plan.description || "",
+          eventDate: plan.eventDate,
+      ...(plan.endDate && { endDate: plan.endDate }),
+          maxParticipants: plan.maxParticipants?? 0,
+          currentParticipants: plan.currentParticipants?? 0,
+          costType: plan.costType,
+          costAmount: plan.costAmount?? 0,
+          paymentMethod: plan.paymentMethod,
+          milestones: plan.milestones || [],
+          savedBy: plan.savedBy || [],
+          applicants: plan.applicants || [],
+        };
+      });
+
+      if (activeTab === "hot") {
+        planListItems.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+      } else if (activeTab === "near" || activeTab === "friends") {
+        toast.info("Tính năng đang phát triển");
+      }
+      return planListItems;
+    }
+  }, [allItems, mode, activeTab]);
+
+  const handleRefresh = () => {
+    if ("vibrate" in navigator) navigator.vibrate(10);
+    loadData(true);
   };
+
+  const tabs: { id: TabId; label: string; icon: any; color: string }[] = [
+    { id: "hot", label: "Hot", icon: HiFire, color: "orange" },
+    { id: "near", label: "Gần bạn", icon: FiMapPin, color: "emerald" },
+    { id: "friends", label: "Bạn bè", icon: HiUsers, color: "blue" },
+    { id: "new", label: "Mới", icon: HiSparkles, color: "purple" },
+  ];
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[999] bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      >
-        <motion.div
-          initial={{ y: "100%" }}
-          animate={{ y: 0 }}
-          exit={{ y: "100%" }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="fixed inset-x-0 bottom-0 bg-white dark:bg-zinc-950 rounded-t-3xl max-h-[85vh] flex flex-col"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="flex justify-between items-center px-6 pt-5 pb-3 shrink-0">
-            <h3 className="text-xl font-bold text-zinc-900 dark:text-white">
-              Chia sẻ cho
-            </h3>
+    <div className="min-h-screen pb-24 font-sans bg-gray-50 dark:bg-black">
+      <ModeToggle />
+
+      <div className="sticky top-0 z-40 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800">
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="flex justify-around">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const active = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    if ("vibrate" in navigator) navigator.vibrate(5);
+                  }}
+                  className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
+                    active
+                 ? `text-${tab.color}-600 dark:text-${tab.color}-400`
+                      : "text-gray-400 dark:text-zinc-500"
+                  }`}
+                >
+                  <Icon size={20} className={active? "scale-110" : ""} />
+                  <span className="text-xs font-bold mt-1">{tab.label}</span>
+                  <div
+                    className={`mt-1 h-0.5 rounded-full transition-all duration-300 ${
+                      active? `w-6 bg-${tab.color}-500` : "w-0"
+                    }`}
+                  />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="pt-4">
+        {error && (
+          <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
+            <div className="text-5xl mb-4">⚠️</div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+              {error}
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-zinc-400 mb-4">
+              Mở Console F12 để xem lỗi chi tiết
+            </p>
             <button
-              onClick={onClose}
-              className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-95 transition-all"
+              onClick={handleRefresh}
+              className="mt-4 px-6 py-2.5 rounded-xl bg-blue-500 text-white font-bold active:scale-95 transition flex items-center gap-2"
             >
-              <FiX size={22} className="text-zinc-500 dark:text-zinc-400" />
+              <FiRefreshCw className={refreshing? "animate-spin" : ""} />
+              Thử lại
             </button>
           </div>
+        )}
 
-          {/* Task preview */}
-          <div className="mx-6 mb-4 p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 shrink-0">
-            <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 mb-1">
-              <span>📋</span>
-              <span className="font-semibold">
-                {task.type === "task"? "Công việc" : "Kế hoạch"}
-              </span>
-            </div>
-            <p className="font-bold text-base text-zinc-900 dark:text-white line-clamp-1 mb-1">
-              {task.title}
-            </p>
-            {task.type === "task" && (task.price?? 0) > 0 && (
-              <p className="text-sm font-bold text-blue-600 dark:text-blue-400">
-                {task.price.toLocaleString("vi-VN")}đ
-              </p>
+        {loading || refreshing? (
+          <SkeletonList />
+        ) : (
+          <TaskFeed tasks={filteredItems} mode={mode} activeTab={activeTab} />
+        )}
+
+        {!loading && hasMore && allItems.length > 0 && (
+          <div ref={loadMoreRef} className="px-4 py-6 flex justify-center">
+            {loadingMore && (
+              <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
             )}
           </div>
-
-          {/* Search */}
-          <div className="px-6 mb-3 shrink-0">
-            <div className="relative">
-              <FiSearch
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400"
-                size={18}
-              />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm bạn bè..."
-                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          {/* Friends list */}
-          <div className="flex-1 overflow-y-auto px-6 pb-4">
-            {loading? (
-              <div className="space-y-3">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 w-1/3 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
-                      <div className="h-3 w-1/4 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : filteredFriends.length === 0? (
-              <div className="text-center py-12 text-zinc-400 text-sm">
-                {search? "Không tìm thấy bạn bè" : "Chưa có bạn bè nào"}
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {filteredFriends.map((friend) => {
-                  const isSelected = selected.includes(friend.id);
-                  return (
-                    <button
-                      key={friend.id}
-                      onClick={() => toggleSelect(friend.id)}
-                      className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-900 active:scale-[0.98] transition-all"
-                    >
-                      <div className="relative shrink-0">
-                        {friend.avatar? (
-                          <img
-                            src={friend.avatar}
-                            alt={friend.name}
-                            className="w-12 h-12 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg">
-                            {friend.name.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        {friend.online && (
-                          <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-zinc-950 rounded-full" />
-                        )}
-                      </div>
-                      <div className="flex-1 text-left min-w-0">
-                        <p className="font-semibold text-sm text-zinc-900 dark:text-white truncate">
-                          {friend.name}
-                        </p>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                          {friend.online? "Đang hoạt động" : "Ngoại tuyến"}
-                        </p>
-                      </div>
-                      <div
-                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${
-                          isSelected
-                        ? "bg-blue-500 border-blue-500"
-                            : "border-zinc-300 dark:border-zinc-700"
-                        }`}
-                      >
-                        {isSelected && (
-                          <FiCheck size={14} className="text-white" />
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Send button */}
-          {selected.length > 0 && (
-            <div className="px-6 pb-6 pt-3 border-t border-zinc-200 dark:border-zinc-800 shrink-0">
-              <button
-                onClick={handleSend}
-                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-base active:scale-[0.98] transition-all shadow-lg shadow-blue-500/30"
-              >
-                Gửi cho {selected.length} người
-              </button>
-            </div>
-          )}
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+        )}
+      </div>
+    </div>
   );
 }
