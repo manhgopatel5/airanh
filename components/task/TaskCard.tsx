@@ -22,8 +22,6 @@ type Props = {
 };
 
 export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
-  if (!task) return null;
-
   const router = useRouter();
   const { user } = useAuth();
   const db = getFirebaseDB();
@@ -33,8 +31,11 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
   const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
+    if (!task?.id) return;
     setIsSaved(!!user?.uid &&!!task.savedBy?.includes(user.uid));
-  }, [user?.uid, task.savedBy]);
+  }, [user?.uid, task?.savedBy, task?.id]);
+
+  if (!task?.id ||!task?.title ||!task?.type ||!task?.status) return null;
 
   const isOwner = user?.uid === task.userId;
   const applicants = task.applicants?? [];
@@ -100,7 +101,7 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
   };
 
   const taskDate = task.type === "task" && task.deadline?.seconds
-  ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+ ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
     : "";
 
   const statusMap: Record<TaskStatus, { label: string; color: string; dot: string }> = {
