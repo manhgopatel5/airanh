@@ -80,7 +80,8 @@ export default function TasksPage() {
 
   const fetchTasks = useCallback(async (isRefresh = false) => {
     if (!currentUser) {
-      setLoading(false); // ← Fix: tắt loading nếu chưa login
+      setLoading(false);
+      setTasks([]);
       return;
     }
     if (isRefresh) {
@@ -126,7 +127,7 @@ export default function TasksPage() {
       }
 
       const snap = await getDocs(q);
-      console.log("Firestore docs:", snap.docs.length); // ← Log check
+      console.log("Firestore docs:", snap.docs.length);
 
       let data = snap.docs.map(doc => {
         const d = doc.data();
@@ -135,10 +136,10 @@ export default function TasksPage() {
           title: d.title || "Không có tiêu đề",
           type: d.type || mode,
           status: d.status || "open",
-         ...d
+        ...d
         } as Task;
       })
-     .filter(t => t.id && t.title); // ← Nới lỏng filter
+    .filter(t => t.id && t.title);
 
       console.log("After filter:", data.length);
 
@@ -185,10 +186,10 @@ export default function TasksPage() {
       setLoadingMore(false);
       setRefreshing(false);
     }
-  }, [currentUser, mode, subTab, lastDoc, searchQuery, db]);
+  }, [currentUser, mode, subTab, searchQuery, db]); // ← Đã bỏ lastDoc
 
   useEffect(() => {
-    if (currentUser) fetchTasks(true); // ← Chỉ fetch khi có user
+    if (currentUser) fetchTasks(true);
   }, [currentUser, mode, subTab]);
 
   useEffect(() => {
@@ -248,7 +249,7 @@ export default function TasksPage() {
   };
 
   const filteredTasks = tasks.filter(t =>
-!searchQuery || t.title.toLowerCase().includes(searchQuery.toLowerCase())
+   !searchQuery || t.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const currentTheme = theme[mode] || theme.task;
@@ -282,7 +283,7 @@ export default function TasksPage() {
                 onClick={() => handleModeChange("task")}
                 className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
                   mode === "task"
-                 ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
+                ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
                     : "text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -295,7 +296,7 @@ export default function TasksPage() {
                 onClick={() => handleModeChange("plan")}
                 className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
                   mode === "plan"
-                 ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
+                ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
                     : "text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -316,7 +317,7 @@ export default function TasksPage() {
                     onClick={() => handleTabChange(tab.key)}
                     className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
                       subTab === tab.key
-                     ? `bg-gradient-to-r ${currentTheme.gradient} text-white ${currentTheme.shadow}`
+                    ? `bg-gradient-to-r ${currentTheme.gradient} text-white ${currentTheme.shadow}`
                         : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                     }`}
                   >
@@ -465,8 +466,8 @@ export default function TasksPage() {
       </div>
 
       <style jsx global>{`
-    .scrollbar-hide::-webkit-scrollbar { display: none; }
-    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+       .scrollbar-hide::-webkit-scrollbar { display: none; }
+       .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </>
   );
