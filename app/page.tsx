@@ -3,14 +3,14 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiX, FiSearch, FiCheck } from "react-icons/fi";
-import { TaskListItem, PlanListItem } from "@/types/task";
+import { Task } from "@/types/task";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { toast } from "sonner";
 
 type Props = {
-  task: TaskListItem | PlanListItem;
+  task: Task;
   onClose: () => void;
 };
 
@@ -23,6 +23,8 @@ type Friend = {
 };
 
 export default function ShareTaskModal({ task, onClose }: Props) {
+  if (!task?.id ||!task?.title ||!task?.type) return null;
+
   const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -36,7 +38,6 @@ export default function ShareTaskModal({ task, onClose }: Props) {
       try {
         const db = getFirebaseDB();
 
-        // Cách 1: Nếu user.friends là array id
         const userSnap = await getDoc(doc(db, "users", user.uid));
         const friendIds: string[] = userSnap.data()?.friends || [];
 
@@ -46,7 +47,6 @@ export default function ShareTaskModal({ task, onClose }: Props) {
           return;
         }
 
-        // Firestore 'in' chỉ cho 10 phần tử 1 lần
         const chunks = [];
         for (let i = 0; i < friendIds.length; i += 10) {
           chunks.push(friendIds.slice(i, i + 10));
@@ -148,7 +148,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
             <p className="font-bold text-base text-zinc-900 dark:text-white line-clamp-1 mb-1">
               {task.title}
             </p>
-            {task.type === "task" && task.price > 0 && (
+            {task.type === "task" && (task.price?? 0) > 0 && (
               <p className="text-sm font-bold text-blue-600 dark:text-blue-400">
                 {task.price.toLocaleString("vi-VN")}đ
               </p>
@@ -227,7 +227,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
                       <div
                         className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${
                           isSelected
-                           ? "bg-blue-500 border-blue-500"
+                         ? "bg-blue-500 border-blue-500"
                             : "border-zinc-300 dark:border-zinc-700"
                         }`}
                       >
