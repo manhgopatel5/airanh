@@ -18,10 +18,9 @@ type Props = {
   task: TaskListItem | PlanListItem;
   theme: "task" | "plan";
   onDelete?: (id: string) => void;
-  onShare?: () => void;
 };
 
-export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
+export default function TaskCard({ task, theme, onDelete }: Props) {
   const router = useRouter();
   const { user } = useAuth();
   const db = getFirebaseDB();
