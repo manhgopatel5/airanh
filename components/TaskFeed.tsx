@@ -11,9 +11,11 @@ type Props = {
   tasks: (TaskListItem | PlanListItem)[];
   mode: AppMode;
   activeTab: TabId;
+  onShare?: (task: TaskListItem | PlanListItem) => void; // ← THÊM
+  onDelete?: (id: string) => void; // ← THÊM nếu cần
 };
 
-export default function TaskFeed({ tasks, mode, activeTab }: Props) {
+export default function TaskFeed({ tasks, mode, activeTab, onShare, onDelete }: Props) {
   if (tasks.length === 0) {
     return <EmptyState tab={activeTab} type={mode} />;
   }
@@ -26,7 +28,12 @@ export default function TaskFeed({ tasks, mode, activeTab }: Props) {
           className="px-4"
           style={{ animationDelay: `${idx * 50}ms` }}
         >
-          <TaskCard task={task} theme={mode} />
+          <TaskCard 
+            task={task} 
+            theme={mode}
+            onShare={onShare} // ← THÊM
+            onDelete={onDelete} // ← THÊM nếu có
+          />
         </div>
       ))}
     </div>
