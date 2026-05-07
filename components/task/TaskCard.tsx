@@ -6,7 +6,7 @@ import {
   FiTrash2, FiEdit2, FiCheck, FiShare2, FiEye
 } from "react-icons/fi";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
@@ -28,13 +28,17 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
   const { user } = useAuth();
   const db = getFirebaseDB();
 
-  const [isSaved, setIsSaved] = useState(task.savedBy?.includes(user?.uid || "") || false);
+  const [isSaved, setIsSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
+  useEffect(() => {
+    setIsSaved(!!user?.uid &&!!task.savedBy?.includes(user.uid));
+  }, [user?.uid, task.savedBy]);
+
   const isOwner = user?.uid === task.userId;
-  const applicants = task.applicants || [];
-  const isApplied = user && applicants.includes(user.uid);
+  const applicants = task.applicants?? [];
+  const isApplied =!!user && applicants.includes(user.uid);
 
   const themeColor = {
     task: {
@@ -96,7 +100,7 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
   };
 
   const taskDate = task.type === "task" && task.deadline?.seconds
-   ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+  ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
     : "";
 
   const statusMap: Record<TaskStatus, { label: string; color: string; dot: string }> = {
@@ -111,6 +115,7 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
   };
 
   const status = statusMap[task.status] || statusMap.open;
+  const maxSlots = task.type === "task"? task.totalSlots?? 0 : task.maxParticipants?? 0;
 
   return (
     <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 p-4 shadow-sm hover:shadow-md transition-shadow">
@@ -121,12 +126,12 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
               <div className={`w-1.5 h-1.5 rounded-full ${status.dot} animate-pulse`} />
               {status.label}
             </div>
-            {task.type === "task" && task.price > 0 && (
+            {task.type === "task" && (task.price?? 0) > 0 && (
               <div className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-[#0A84FF]/10 to-[#0066CC]/10 dark:from-[#0A84FF]/20 dark:to-[#0066CC]/20 text-[#0A84FF] dark:text-[#8AB4F8] text-xs font-bold">
                 {task.price.toLocaleString("vi-VN")}đ
               </div>
             )}
-            {task.viewCount && task.viewCount > 10 && (
+            {(task.viewCount?? 0) > 10 && (
               <div className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
                 <FiEye size={12} />
                 <span>{task.viewCount}</span>
@@ -243,7 +248,7 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
           )}
           <div className="flex items-center gap-1">
             <FiUsers size={13} />
-            <span className="font-medium">{applicants.length}/{task.type === "task"? task.totalSlots : 1}</span>
+            <span className="font-medium">{applicants.length}/{maxSlots}</span>
           </div>
           {task.location?.city && (
             <div className="flex items-center gap-1 truncate">
