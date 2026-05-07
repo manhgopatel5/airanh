@@ -6,13 +6,13 @@ import {
   FiTrash2, FiEdit2, FiCheck, FiShare2, FiEye
 } from "react-icons/fi";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { type TaskStatus, type TaskListItem, type PlanListItem } from "@/types/task";
 import { toast } from "sonner";
-import { motion, useMotionValue, useTransform, AnimatePresence, type PanInfo } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 type Props = {
   task: TaskListItem | PlanListItem;
@@ -29,17 +29,6 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
   const [isSaved, setIsSaved] = useState(task.savedBy?.includes(user?.uid || "") || false);
   const [saving, setSaving] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-
-  const x = useMotionValue(0);
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  const swipeThreshold = -80;
-  const background = useTransform(
-    x,
-    [-100, 0],
-    ["linear-gradient(90deg, #0A84FF 0%, #0066CC 100%)", "transparent"]
-  );
-  const opacity = useTransform(x, [-100, -50, 0], [1, 0.5, 0]);
 
   if (!task) return null;
 
@@ -113,16 +102,8 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
     setShowMenu(true);
   };
 
-  const handleDragEnd = (_: any, info: PanInfo) => {
-    if (info.offset.x < swipeThreshold) {
-      handleSave();
-      vibrate(15);
-    }
-    x.set(0);
-  };
-
   const taskDate = task.type === "task" && task.deadline?.seconds
- ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+   ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
     : "";
 
   const statusMap: Record<TaskStatus, { label: string; color: string; dot: string }> = {
@@ -139,174 +120,152 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
   const status = statusMap[task.status] || statusMap.open;
 
   return (
-    <div className="relative">
-      <motion.div
-        style={{ background, opacity }}
-        className="absolute inset-0 rounded-2xl flex items-center justify-end pr-6"
-      >
-        <motion.div style={{ opacity }}>
-          <FiBookmark size={24} className="text-white" />
-        </motion.div>
-      </motion.div>
-
-      <motion.div
-        ref={cardRef}
-        drag="x"
-        dragConstraints={{ left: -120, right: 0 }}
-        dragElastic={0.2}
-        style={{ x }}
-        onDragEnd={handleDragEnd}
-        onContextMenu={handleContextMenu}
-        className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 p-4 relative z-10 shadow-sm hover:shadow-md transition-shadow"
-      >
-        <div className="flex items-start justify-between gap-3 mb-3">
-          {/* BẤM VÀO ĐÂY MỚI VÀO DETAIL */}
-          <div className="flex-1 min-w-0 cursor-pointer" onClick={goToTask}>
-            <div className="flex items-center gap-2 mb-2.5 flex-wrap">
-              <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${status.color}`}>
-                <div className={`w-1.5 h-1.5 rounded-full ${status.dot} animate-pulse`} />
-                {status.label}
-              </div>
-              {task.type === "task" && task.price > 0 && (
-                <div className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-[#0A84FF]/10 to-[#0066CC]/10 dark:from-[#0A84FF]/20 dark:to-[#0066CC]/20 text-[#0A84FF] dark:text-[#8AB4F8] text-xs font-bold">
-                  {task.price.toLocaleString("vi-VN")}đ
-                </div>
-              )}
-              {task.viewCount && task.viewCount > 10 && (
-                <div className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
-                  <FiEye size={12} />
-                  <span>{task.viewCount}</span>
-                </div>
-              )}
+    <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 p-4 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex-1 min-w-0 cursor-pointer" onClick={goToTask}>
+          <div className="flex items-center gap-2 mb-2.5 flex-wrap">
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${status.color}`}>
+              <div className={`w-1.5 h-1.5 rounded-full ${status.dot} animate-pulse`} />
+              {status.label}
             </div>
-            <h3 className="font-bold text-sm text-zinc-900 dark:text-white line-clamp-2 leading-snug">
-              {task.title}
-            </h3>
+            {task.type === "task" && task.price > 0 && (
+              <div className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-[#0A84FF]/10 to-[#0066CC]/10 dark:from-[#0A84FF]/20 dark:to-[#0066CC]/20 text-[#0A84FF] dark:text-[#8AB4F8] text-xs font-bold">
+                {task.price.toLocaleString("vi-VN")}đ
+              </div>
+            )}
+            {task.viewCount && task.viewCount > 10 && (
+              <div className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
+                <FiEye size={12} />
+                <span>{task.viewCount}</span>
+              </div>
+            )}
           </div>
+          <h3 className="font-bold text-sm text-zinc-900 dark:text-white line-clamp-2 leading-snug">
+            {task.title}
+          </h3>
+        </div>
 
-          <div className="flex items-center gap-1 shrink-0">
-            <motion.button
-              whileTap={{ scale: 0.8 }}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSave();
-              }}
-              disabled={saving}
-              className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all disabled:opacity-50"
-            >
-              <FiBookmark
-                size={18}
-                className={isSaved? `${themeColor.fill} ${themeColor.text}` : "text-zinc-400 dark:text-zinc-500"}
-              />
-            </motion.button>
+        <div className="flex items-center gap-1 shrink-0">
+          <motion.button
+            whileTap={{ scale: 0.8 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSave();
+            }}
+            disabled={saving}
+            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all disabled:opacity-50"
+          >
+            <FiBookmark
+              size={18}
+              className={isSaved? `${themeColor.fill} ${themeColor.text}` : "text-zinc-400 dark:text-zinc-500"}
+            />
+          </motion.button>
 
-            <motion.button
-              whileTap={{ scale: 0.8 }}
-              onClick={(e) => {
-                e.stopPropagation();
-                vibrate(8);
-                onShare?.(task);
-              }}
-              className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all"
-            >
-              <FiShare2 size={18} className="text-zinc-400 dark:text-zinc-500" />
-            </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.8 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              vibrate(8);
+              onShare?.(task);
+            }}
+            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all"
+          >
+            <FiShare2 size={18} className="text-zinc-400 dark:text-zinc-500" />
+          </motion.button>
 
-            {isOwner && (
-              <div className="relative">
-                <motion.button
-                  whileTap={{ scale: 0.8 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    vibrate();
-                    setShowMenu(!showMenu);
-                  }}
-                  className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5"
-                >
-                  <FiMoreHorizontal size={18} className="text-zinc-400 dark:text-zinc-500" />
-                </motion.button>
-                <AnimatePresence>
-                  {showMenu && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-10"
+          {isOwner && (
+            <div className="relative">
+              <motion.button
+                whileTap={{ scale: 0.8 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  vibrate();
+                  setShowMenu(!showMenu);
+                }}
+                className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5"
+              >
+                <FiMoreHorizontal size={18} className="text-zinc-400 dark:text-zinc-500" />
+              </motion.button>
+              <AnimatePresence>
+                {showMenu && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                      }}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                      className="absolute right-0 top-10 bg-white/95 dark:bg-zinc-800/95 backdrop-blur-xl rounded-xl shadow-2xl border border-zinc-200/50 dark:border-zinc-700/50 py-1 z-20 min-w-[160px]"
+                    >
+                      <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setShowMenu(false);
+                          vibrate();
+                          router.push(`/task/${task.id}/edit`);
                         }}
-                      />
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                        className="absolute right-0 top-10 bg-white/95 dark:bg-zinc-800/95 backdrop-blur-xl rounded-xl shadow-2xl border border-zinc-200/50 dark:border-zinc-700/50 py-1 z-20 min-w-[160px]"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 w-full transition-colors"
                       >
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            vibrate();
-                            router.push(`/task/${task.id}/edit`);
-                          }}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 w-full transition-colors"
-                        >
-                          <FiEdit2 size={16} /> Sửa
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete();
-                          }}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 w-full transition-colors"
-                        >
-                          <FiTrash2 size={16} /> Xóa
-                        </button>
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* BẤM VÀO ĐÂY CŨNG VÀO DETAIL */}
-        <div className="cursor-pointer" onClick={goToTask}>
-          <div className="flex items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400 flex-wrap">
-            {taskDate && (
-              <div className="flex items-center gap-1">
-                <FiClock size={13} />
-                <span className="font-medium">{taskDate}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-1">
-              <FiUsers size={13} />
-              <span className="font-medium">{applicants.length}/{task.type === "task"? task.totalSlots : 1}</span>
+                        <FiEdit2 size={16} /> Sửa
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete();
+                        }}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 w-full transition-colors"
+                      >
+                        <FiTrash2 size={16} /> Xóa
+                      </button>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
-            {task.location?.city && (
-              <div className="flex items-center gap-1 truncate">
-                <FiMapPin size={13} />
-                <span className="truncate font-medium">{task.location.city}</span>
-              </div>
-            )}
-          </div>
-
-          <AnimatePresence>
-            {isApplied && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-3 pt-3 border-t border-zinc-200/50 dark:border-zinc-800/50"
-              >
-                <div className={`flex items-center gap-1.5 text-xs ${themeColor.text} font-semibold`}>
-                  <FiCheck size={14} className="shrink-0" />
-                  <span>Đã ứng tuyển</span>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          )}
         </div>
-      </motion.div>
+      </div>
+
+      <div className="cursor-pointer" onClick={goToTask}>
+        <div className="flex items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400 flex-wrap">
+          {taskDate && (
+            <div className="flex items-center gap-1">
+              <FiClock size={13} />
+              <span className="font-medium">{taskDate}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-1">
+            <FiUsers size={13} />
+            <span className="font-medium">{applicants.length}/{task.type === "task"? task.totalSlots : 1}</span>
+          </div>
+          {task.location?.city && (
+            <div className="flex items-center gap-1 truncate">
+              <FiMapPin size={13} />
+              <span className="truncate font-medium">{task.location.city}</span>
+            </div>
+          )}
+        </div>
+
+        <AnimatePresence>
+          {isApplied && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-3 pt-3 border-t border-zinc-200/50 dark:border-zinc-800/50"
+            >
+              <div className={`flex items-center gap-1.5 text-xs ${themeColor.text} font-semibold`}>
+                <FiCheck size={14} className="shrink-0" />
+                <span>Đã ứng tuyển</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
