@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiX, FiCopy, FiShare2, FiLink, FiTwitter, FiFacebook } from "react-icons/fi";
+import { FiX, FiShare2, FiLink, FiTwitter, FiFacebook } from "react-icons/fi";
 import { TaskListItem, PlanListItem } from "@/types/task";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
