@@ -6,7 +6,7 @@ import { FiX, FiSearch, FiCheck } from "react-icons/fi";
 import { Task } from "@/types/task";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
-import { collection, query, where, getDocs, limit, doc, getDoc, documentId } from "firebase/firestore";
+import { collection, query, where, getDocs, documentId } from "firebase/firestore";
 import { toast } from "sonner";
 
 type Props = {
@@ -45,17 +45,13 @@ export default function ShareTaskModal({ task, onClose }: Props) {
         setLoading(true);
         const db = getFirebaseDB();
 
-        // Lấy list friendId từ users/{uid}
-        const userSnap = await getDoc(doc(db, "users", user.uid));
-        if (!userSnap.exists()) {
-          if (isMounted) {
-            setFriends([]);
-            setLoading(false);
-          }
-          return;
-        }
-
-        const friendIds: string[] = userSnap.data()?.friends || [];
+        // 1. Lấy hết doc trong subcollection friends
+        const friendsSnap = await getDocs(collection(db, "users", user.uid, "friends"));
+        
+        // Lấy ID từ doc.id, không cần filter status nữa
+        const friendIds = friendsSnap.docs.map(doc => doc.id);
+        
+        console.log("Friend IDs:", friendIds);
         
         if (friendIds.length === 0) {
           if (isMounted) {
@@ -65,31 +61,27 @@ export default function ShareTaskModal({ task, onClose }: Props) {
           return;
         }
 
-        // Batch 10 vì Firestore 'in' limit 10
-        const chunks = [];
-        for (let i = 0; i < friendIds.length; i += 10) {
-          chunks.push(friendIds.slice(i, i + 10));
-        }
-
+        // 2. Batch load info từ collection users
         const allFriends: Friend[] = [];
-        for (const chunk of chunks) {
+        for (let i = 0; i < friendIds.length; i += 10) {
+          const chunk = friendIds.slice(i, i + 10);
           const q = query(
             collection(db, "users"),
-            where(documentId(), "in", chunk),
-            limit(10)
+            where(documentId(), "in", chunk)
           );
           
           const snap = await getDocs(q);
           const data = snap.docs.map((doc) => ({
             id: doc.id,
-            name: doc.data().displayName || doc.data().name || "User",
+            name: doc.data().displayName || doc.data().name || doc.data().username || "User",
             username: doc.data().username || "",
-            avatar: doc.data().photoURL || doc.data().avatar || "",
+            avatar: doc.data().avatar || doc.data().photoURL || "",
             online: doc.data().online || false,
           }));
           allFriends.push(...data);
         }
 
+        console.log("Loaded friends:", allFriends);
         if (isMounted) {
           setFriends(allFriends);
           setLoading(false);
@@ -112,7 +104,8 @@ export default function ShareTaskModal({ task, onClose }: Props) {
   }, [user?.uid]);
 
   const filteredFriends = friends.filter((f) =>
-    f.name.toLowerCase().includes(search.toLowerCase())
+    f.name.toLowerCase().includes(search.toLowerCase()) ||
+    f.username.toLowerCase().includes(search.toLowerCase())
   );
 
   const toggleSelect = (id: string) => {
@@ -154,7 +147,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="fixed inset-x-0 bottom-0 bg-white dark:bg-zinc-950 rounded-t-3xl max-h-[85vh] flex flex-col"
+          className="fixed inset-x-0 bottom-0 bg-white dark:bg-zinc-950 rounded-t-3xl max-h- flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -188,7 +181,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
             )}
           </div>
 
-          {/* Search - Đưa lên cao */}
+          {/* Search - đã lên trên */}
           <div className="px-6 mb-3 shrink-0">
             <div className="relative">
               <FiSearch
