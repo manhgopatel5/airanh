@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import TaskFeed from "@/components/TaskFeed";
 import ModeToggle from "@/components/ModeToggle";
+import ShareTaskModal from "@/components/ShareTaskModal"; // ← Thêm
 import { useAppStore } from "@/store/app";
 import { Task, TaskItem, PlanItem, isTask, isPlan } from "@/types/task";
 import { FiMapPin, FiRefreshCw } from "react-icons/fi";
@@ -63,22 +64,17 @@ export default function Home() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [shareTask, setShareTask] = useState<Task | null>(null); // ← Thêm
+  const [showShareModal, setShowShareModal] = useState(false); // ← Thêm
   const unsubRef = useRef<(() => void) | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const handleShare = useCallback((task: Task) => {
     if ("vibrate" in navigator) navigator.vibrate(5);
-    const url = `${window.location.origin}/${mode}/${task.slug || task.id}`;
-    const title = task.title || "Xem bài đăng";
-
-    if (navigator.share) {
-      navigator.share({ title, url }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(url);
-      toast.success("Đã sao chép link");
-    }
-  }, [mode]);
+    setShareTask(task); // ← Đổi
+    setShowShareModal(true); // ← Đổi
+  }, []);
 
   useEffect(() => {
     if (db) return;
@@ -137,7 +133,7 @@ export default function Home() {
         (snap) => {
           const data = snap.docs.map((doc) => ({
             id: doc.id,
-          ...doc.data(),
+           ...doc.data(),
           })) as Task[];
           setAllItems(data);
           setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -188,7 +184,7 @@ export default function Home() {
       const snap = await getDocs(q);
       const newItems = snap.docs.map((doc) => ({
         id: doc.id,
-      ...doc.data(),
+       ...doc.data(),
       })) as Task[];
       setAllItems((prev) => [...prev,...newItems]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -269,7 +265,7 @@ export default function Home() {
                   }}
                   className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
                     active
-                    ? `text-${tab.color}-600 dark:text-${tab.color}-400`
+                     ? `text-${tab.color}-600 dark:text-${tab.color}-400`
                       : "text-gray-400 dark:text-zinc-500"
                   }`}
                 >
@@ -310,9 +306,9 @@ export default function Home() {
         {loading || refreshing? (
           <SkeletonList />
         ) : (
-          <TaskFeed 
-            tasks={filteredItems} 
-            mode={mode} 
+          <TaskFeed
+            tasks={filteredItems}
+            mode={mode}
             activeTab={activeTab}
             onShare={handleShare}
           />
@@ -326,6 +322,13 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {showShareModal && shareTask && (
+        <ShareTaskModal
+          task={shareTask}
+          onClose={() => setShowShareModal(false)}
+        />
+      )}
     </div>
   );
 }
