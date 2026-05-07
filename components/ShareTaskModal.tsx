@@ -6,7 +6,7 @@ import { FiX, FiSearch, FiCheck } from "react-icons/fi";
 import { Task } from "@/types/task";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
-import { collection, query, where, getDocs, limit, doc, getDoc, documentId } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc, documentId } from "firebase/firestore";
 import { toast } from "sonner";
 
 type Props = {
