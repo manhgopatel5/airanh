@@ -1,4 +1,4 @@
-  "use client";
+"use client";
 
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { getFirebaseDB } from "@/lib/firebase";
@@ -39,7 +39,6 @@ function SkeletonList() {
               <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-1/3 animate-pulse" />
               <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-1/4 animate-pulse" />
             </div>
-          </div>
           <div className="space-y-2">
             <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-3/4 animate-pulse" />
             <div className="h-20 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded-2xl animate-pulse" />
@@ -64,6 +63,19 @@ export default function Home() {
   const unsubRef = useRef<(() => void) | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  const handleShare = useCallback((task: Task) => {
+    if ("vibrate" in navigator) navigator.vibrate(5);
+    const url = `${window.location.origin}/${mode}/${task.slug || task.id}`;
+    const title = task.title || "Xem bài đăng";
+
+    if (navigator.share) {
+      navigator.share({ title, url }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(url);
+      toast.success("Đã sao chép link");
+    }
+  }, [mode]);
 
   useEffect(() => {
     if (db) return;
@@ -295,7 +307,12 @@ export default function Home() {
         {loading || refreshing? (
           <SkeletonList />
         ) : (
-          <TaskFeed tasks={filteredItems} mode={mode} activeTab={activeTab} />
+          <TaskFeed 
+            tasks={filteredItems} 
+            mode={mode} 
+            activeTab={activeTab}
+            onShare={handleShare}
+          />
         )}
 
         {!loading && hasMore && allItems.length > 0 && (
