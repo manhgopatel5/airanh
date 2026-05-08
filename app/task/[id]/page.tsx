@@ -100,6 +100,7 @@ useEffect(() => {
   const [editingComment, setEditingComment] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const [showMention, setShowMention] = useState(false);
+  const [mentionUsersList, setMentionUsersList] = useState<UserData[]>([]);
   const [mentionQuery, setMentionQuery] = useState("");
 
   const [loading, setLoading] = useState(true);
@@ -507,7 +508,7 @@ const handleAcceptApp = async (appId: string, applicantId: string) => {
   }
 };
 
-const [mentionUsersList, setMentionUsersList] = useState<UserData[]>([]);
+
 
 useEffect(() => {
   if (!db || !showMention) return;
