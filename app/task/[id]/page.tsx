@@ -250,6 +250,17 @@ useEffect(() => {
   loadOwner();
 }, [task?.userId, db]);
 
+
+useEffect(() => {
+  if (!db || !showMention) return;
+  const loadUsers = async () => {
+    const q = query(collection(db, "users"), limit(20));
+    const snap = await getDocs(q);
+    setMentionUsersList(snap.docs.map(d => ({ uid: d.id, ...d.data() } as UserData)));
+  };
+  loadUsers();
+}, [showMention, db]);
+  
 useEffect(() => {
   if (!task ||!isTask(task) ||!task.deadline?.seconds || task.status === "completed") {
     setIsUrgent(false);
@@ -510,15 +521,7 @@ const handleAcceptApp = async (appId: string, applicantId: string) => {
 
 
 
-useEffect(() => {
-  if (!db || !showMention) return;
-  const loadUsers = async () => {
-    const q = query(collection(db, "users"), limit(20));
-    const snap = await getDocs(q);
-    setMentionUsersList(snap.docs.map(d => ({ uid: d.id, ...d.data() } as UserData)));
-  };
-  loadUsers();
-}, [showMention, db]);
+
 
 const handleRejectApp = async (appId: string) => {
   try {
