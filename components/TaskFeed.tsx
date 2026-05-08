@@ -29,10 +29,12 @@ export default function TaskFeed({ tasks, mode, activeTab, onShare, onDelete, on
           className="px-4"
           style={{ animationDelay: `${idx * 50}ms` }}
         >
-     <TaskCard
+<TaskCard
   task={task}
   theme={mode}
-  {...(onTaskUpdate && { onTaskUpdate })} 
+  {...(onTaskUpdate && { onTaskUpdate })}
+  {...(onShare && { onShare })}
+  {...(onDelete && { onDelete })}
 />
         </div>
       ))}
