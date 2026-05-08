@@ -868,24 +868,14 @@ const taskTime = isTask(task) && task.deadline?.seconds
 
       <ImageGallery open={showImageGallery!== null} images={task.images || []} initialIndex={showImageGallery || 0} onClose={() => setShowImageGallery(null)} />
       {shareTask && (
+             {shareTask && (
         <ShareTaskModal
           task={shareTask}
           onClose={() => setShareTask(null)}
         />
       )}
     </div>
-
   </div>
-
 </>
   );
-}
-</div>
-
-  </div>
-
-</>
-
-  );
-
 }
