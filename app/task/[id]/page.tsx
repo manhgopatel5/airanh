@@ -512,6 +512,18 @@ const handleAcceptApp = async (appId: string, applicantId: string) => {
   }
 };
 
+const [mentionUsersList, setMentionUsersList] = useState<UserData[]>([]);
+
+useEffect(() => {
+  if (!showMention) return;
+  const loadUsers = async () => {
+    const q = query(collection(db, "users"), limit(20));
+    const snap = await getDocs(q);
+    setMentionUsersList(snap.docs.map(d => ({ uid: d.id, ...d.data() } as UserData)));
+  };
+  loadUsers();
+}, [showMention, db]);
+
 const handleRejectApp = async (appId: string) => {
   try {
     await updateDoc(doc(db, 'applications', appId), {
