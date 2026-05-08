@@ -131,20 +131,22 @@ export default function Home() {
         return;
       }
 
-      const unsub = onSnapshot(
-        q,
-        (snap) => {
-          const data = snap.docs.map((doc) => ({
-            id: doc.id,
-           ...doc.data(),
-          })) as Task[];
-          setAllItems(data);
-          setLastDoc(snap.docs[snap.docs.length - 1] || null);
-          setHasMore(snap.docs.length === PAGE_SIZE);
-          setLoading(false);
-          setRefreshing(false);
-          setError(null);
-        },
+ const unsub = onSnapshot(
+  q,
+  { includeMetadataChanges: true }, // ✅ THÊM DÒNG NÀY
+  (snap) => {
+    const data = snap.docs.map((doc) => ({
+      id: doc.id,
+     ...doc.data(),
+    })) as Task[];
+    console.log("FEED SNAPSHOT:", data.find(t => t.id === "4RYWTqzqL5A8coxkK7JB")); // ✅ Log check
+    setAllItems(data);
+    setLastDoc(snap.docs[snap.docs.length - 1] || null);
+    setHasMore(snap.docs.length === PAGE_SIZE);
+    setLoading(false);
+    setRefreshing(false);
+    setError(null);
+  },
         (err) => {
           console.error("Firestore error:", err.code, err.message);
           if (err.code === "permission-denied") {
