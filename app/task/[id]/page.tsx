@@ -129,10 +129,7 @@ export default function TaskDetailPage() {
     return () => unsub();
   }, [task?.id]);
 
-const isFull = useMemo(
-  () => acceptedCount >= (task && isTask(task)? task.totalSlots : 1),
-  [acceptedCount, task]
-);
+
 
 useEffect(() => {
   if (!task?.id) {
