@@ -11,8 +11,5 @@ export async function applyToTask(taskId: string, userId: string) {
     applicants: arrayUnion(userId),
   });
 
-  // Revalidate lại trang chủ để list update 1/1
-  revalidatePath("/");
-  revalidatePath("/task"); // Nếu có trang /task
-  revalidatePath(`/task/${taskId}`); // Revalidate cả detail
+  revalidatePath("/"); // Xoá cache trang chủ
 }
