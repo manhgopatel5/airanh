@@ -4,6 +4,8 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
+import { useCollection } from 'react-firebase-hooks/firestore';
+import { collection, query, where } from "firebase/firestore";
 import { doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp } from "firebase/firestore";
 import {
   FiSend, FiClock, FiUsers, FiX, FiCheckCircle, FiMessageCircle, 
@@ -125,6 +127,15 @@ const [saving, setSaving] = useState(false);
 const [showMenu, setShowMenu] = useState(false);
 const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
 const [shareTask, setShareTask] = useState<Task | null>(null);
+const [applicationsSnap] = useCollection(
+  task?.id? query(
+    collection(db, 'applications'),
+    where('taskId', '==', task.id),
+    where('status', '==', 'pending')
+  ) : null
+);
+
+const applications = applicationsSnap?.docs.map(d => ({ id: d.id,...d.data() })) || [];
 
 useEffect(() => {
   if (!task?.id) return;
@@ -457,6 +468,45 @@ useEffect(() => {
   const getReplies = (id: string) => comments.filter((c) => c.parentId === id);
   
 
+const handleAcceptApp = async (appId: string, applicantId: string) => {
+  if (!task) return;
+  try {
+    await updateDoc(doc(db, 'applications', appId), {
+      status: 'accepted',
+      updatedAt: serverTimestamp()
+    });
+    // Tạo chat tự động
+    const chatId = [currentUser!.uid, applicantId].sort().join("_");
+    await setDoc(doc(db, "chats", chatId), {
+      participants: [currentUser!.uid, applicantId],
+      lastMessage: `Bạn đã được duyệt cho task "${task.title}"`,
+      lastMessageAt: serverTimestamp(),
+      createdAt: serverTimestamp(),
+    }, { merge: true });
+    toast.success("Đã duyệt ứng viên");
+    navigator.vibrate?.(10);
+  } catch {
+    toast.error("Duyệt thất bại");
+  }
+};
+
+const handleRejectApp = async (appId: string) => {
+  try {
+    await updateDoc(doc(db, 'applications', appId), {
+      status: 'rejected',
+      updatedAt: serverTimestamp()
+    });
+    toast.success("Đã từ chối");
+  } catch {
+    toast.error("Lỗi");
+  }
+};
+
+const handleMessageApp = (uid: string) => {
+  const chatId = [currentUser!.uid, uid].sort().join('_');
+  router.push(`/tin-nhan/${chatId}`);
+};
+
 const taskDate = isTask(task) && task.deadline?.seconds 
   ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
   : isPlan(task) && task.eventDate?.seconds
@@ -641,62 +691,116 @@ const taskTime = isTask(task) && task.deadline?.seconds
 
   <div className="h-px bg-[#E5E5E7]" />
 
-{/* Action Bar - Level Hoàn Hảo */}
+{/* Action Bar - Chủ task vs Ứng viên */}
 <div className="px-4 pt-4 pb-2">
-  <div className="grid grid-cols-4 gap-2">
-    {/* Nhắn tin */}
-    <motion.button
-      whileTap={{ scale: 0.94 }}
-      onClick={handleQuickChat}
-      disabled={creatingChat || isOwner}
-      className="h-14 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 flex flex-col items-center justify-center gap-0.5 text-[#1C1C1E] dark:text-zinc-100 active:bg-[#E5E5EA] dark:active:bg-zinc-700 disabled:opacity-40 disabled:active:scale-100 transition-all"
-    >
-      <FiMessageSquare size={22} strokeWidth={2} />
-      <span className="text-[11px] font-medium">Nhắn tin</span>
-    </motion.button>
+  {isOwner? (
+    // CHỦ TASK: HIỆN LIST ỨNG VIÊN
+    <div className="rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 p-4">
+      <h3 className="font-semibold text-[17px] mb-3 text-[#1C1C1E] dark:text-zinc-100">
+        Ứng viên ({applications.length})
+      </h3>
 
-    {/* Gọi điện */}
-    <motion.button
-      whileTap={{ scale: 0.94 }}
-      onClick={() => owner?.phone && window.open(`tel:${owner.phone}`)}
-      disabled={!owner?.phone || isOwner}
-      className="h-14 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 flex flex-col items-center justify-center gap-0.5 text-[#1C1C1E] dark:text-zinc-100 active:bg-[#E5E5EA] dark:active:bg-zinc-700 disabled:opacity-40 disabled:active:scale-100 transition-all"
-    >
-      <FiPhone size={22} strokeWidth={2} />
-      <span className="text-[11px] font-medium">Gọi điện</span>
-    </motion.button>
-
-    {/* Ứng tuyển - Primary CTA */}
-    <motion.button
-      whileTap={{ scale: 0.94 }}
-      onClick={isApplied? handleCancelApply : handleJoinTask}
-      disabled={(!isApplied && (isFull || task.status!== "open")) || joining || isOwner}
-      className={`h-14 rounded-2xl flex flex-col items-center justify-center gap-0.5 font-semibold active:scale-95 disabled:opacity-40 disabled:active:scale-100 transition-all ${
-        isApplied
-         ? "bg-[#E8F5E9] dark:bg-green-950/40 text-[#00A86B] active:bg-[#D4EDDA] dark:active:bg-green-900/60"
-          : "bg-[#00A86B] active:bg-[#009960] text-white shadow-[0_4px_12px_rgba(0,168,107,0.25)]"
-      }`}
-    >
-      {joining? (
-        <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-      ) : isApplied? (
-        <FiCheckCircle size={22} strokeWidth={2.5} />
+      {applications.length === 0? (
+        <p className="text-center text-[15px] text-zinc-500 dark:text-zinc-400 py-4">
+          Chưa có ai ứng tuyển
+        </p>
       ) : (
-        <FiSend size={22} strokeWidth={2.5} />
-      )}
-      <span className="text-[11px]">{isApplied? "Đã ứng tuyển" : "Ứng tuyển"}</span>
-    </motion.button>
+        <div className="space-y-3">
+          {applications.map(app => (
+            <div key={app.id} className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <UserAvatar src={app.userAvatar} name={app.userName} size={40} />
+                <div className="min-w-0">
+                  <p className="font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100 truncate">
+                    {app.userName}
+                  </p>
+                  <p className="text-[13px] text-zinc-500 dark:text-zinc-400">
+                    {app.createdAt?.toDate().toLocaleDateString('vi-VN')}
+                  </p>
+                </div>
+              </div>
 
-    {/* Báo cáo */}
-    <motion.button
-      whileTap={{ scale: 0.94 }}
-      onClick={() => toast.info("Đã gửi báo cáo")}
-      className="h-14 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 flex flex-col items-center justify-center gap-0.5 text-[#FF9500] active:bg-[#E5E5EA] dark:active:bg-zinc-700 transition-all"
-    >
-      <FiAlertTriangle size={22} strokeWidth={2} />
-      <span className="text-[11px] font-medium">Báo cáo</span>
-    </motion.button>
-  </div>
+              <div className="flex gap-2 shrink-0">
+                <motion.button
+                  whileTap={{ scale: 0.94 }}
+                  onClick={() => handleMessageApp(app.userId)}
+                  className="px-3 py-2 rounded-xl bg-white dark:bg-zinc-700 text-[#0a84ff] font-semibold text-[13px] active:scale-95 transition-all"
+                >
+                  Nhắn tin
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.94 }}
+                  onClick={() => handleAcceptApp(app.id, app.userId)}
+                  className="px-3 py-2 rounded-xl bg-[#00A86B] text-white font-semibold text-[13px] active:scale-95 transition-all"
+                >
+                  Duyệt
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.94 }}
+                  onClick={() => handleRejectApp(app.id)}
+                  className="px-3 py-2 rounded-xl bg-[#FF3B30] text-white font-semibold text-[13px] active:scale-95 transition-all"
+                >
+                  Từ chối
+                </motion.button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  ) : (
+    // ỨNG VIÊN: 4 NÚT CŨ
+    <div className="grid grid-cols-4 gap-2">
+      <motion.button
+        whileTap={{ scale: 0.94 }}
+        onClick={handleQuickChat}
+        disabled={creatingChat || isOwner}
+        className="h-14 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 flex flex-col items-center justify-center gap-0.5 text-[#1C1C1E] dark:text-zinc-100 active:bg-[#E5E5EA] dark:active:bg-zinc-700 disabled:opacity-40 transition-all"
+      >
+        <FiMessageSquare size={22} strokeWidth={2} />
+        <span className="text-[11px] font-medium">Nhắn tin</span>
+      </motion.button>
+
+      <motion.button
+        whileTap={{ scale: 0.94 }}
+        onClick={() => owner?.phone && window.open(`tel:${owner.phone}`)}
+        disabled={!owner?.phone || isOwner}
+        className="h-14 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 flex flex-col items-center justify-center gap-0.5 text-[#1C1C1E] dark:text-zinc-100 active:bg-[#E5E5EA] dark:active:bg-zinc-700 disabled:opacity-40 transition-all"
+      >
+        <FiPhone size={22} strokeWidth={2} />
+        <span className="text-[11px] font-medium">Gọi điện</span>
+      </motion.button>
+
+      <motion.button
+        whileTap={{ scale: 0.94 }}
+        onClick={isApplied? handleCancelApply : handleJoinTask}
+        disabled={(!isApplied && (isFull || task.status!== "open")) || joining || isOwner}
+        className={`h-14 rounded-2xl flex flex-col items-center justify-center gap-0.5 font-semibold active:scale-95 disabled:opacity-40 transition-all ${
+          isApplied
+          ? "bg-[#E8F5E9] dark:bg-green-950/40 text-[#00A86B] active:bg-[#D4EDDA] dark:active:bg-green-900/60"
+            : "bg-[#00A86B] active:bg-[#009960] text-white shadow-[0_4px_12px_rgba(0,168,107,0.25)]"
+        }`}
+      >
+        {joining? (
+          <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        ) : isApplied? (
+          <FiCheckCircle size={22} strokeWidth={2.5} />
+        ) : (
+          <FiSend size={22} strokeWidth={2.5} />
+        )}
+        <span className="text-[11px]">{isApplied? "Đã ứng tuyển" : "Ứng tuyển"}</span>
+      </motion.button>
+
+      <motion.button
+        whileTap={{ scale: 0.94 }}
+        onClick={() => toast.info("Đã gửi báo cáo")}
+        className="h-14 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 flex flex-col items-center justify-center gap-0.5 text-[#FF9500] active:bg-[#E5E5EA] dark:active:bg-zinc-700 transition-all"
+      >
+        <FiAlertTriangle size={22} strokeWidth={2} />
+        <span className="text-[11px] font-medium">Báo cáo</span>
+      </motion.button>
+    </div>
+  )}
 </div>
 
       {/* Map mini */}
@@ -721,23 +825,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
   </>
 )}
 
-          {/* Danh sách ứng viên */}
-          {applicantsData.length > 0 && (
-            <>
-              <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800" />
-              <div className="p-3 flex items-center gap-2">
-                <div className="flex -space-x-2">
-                  {applicantsData.slice(0, 3).map((u) => (
-                    <UserAvatar key={u.uid} src={u.avatar} name={u.name} size={28} className="border-2 border-white dark:border-zinc-900" />
-                  ))}
-                </div>
-                <div className="flex items-center gap-1 text-[17px] text-zinc-600 dark:text-zinc-400">
-                  <FiUsers size={16} />
-                  <span>{applicantsData.length} người đang ứng tuyển</span>
-                </div>
-              </div>
-            </>
-          )}
+   
         
 
         {/* Mô tả chi tiết */}
