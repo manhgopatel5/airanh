@@ -81,6 +81,7 @@ export default function TaskDetailPage() {
   const [owner, setOwner] = useState<UserData | null>(null);
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const isOwner = currentUser?.uid === task?.userId;
   const [applications, setApplications] = useState<Application[]>([]);
   const acceptedCount = useMemo(
   () => applications.filter(app => app.status === 'accepted').length,
