@@ -6,7 +6,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 
 import { 
   doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp, 
-  onSnapshot, addDoc, limit, getDocs, collection, query, where, arrayUnion, deleteDoc
+  onSnapshot, addDoc, getDocs, collection, limit, query, where, arrayUnion, deleteDoc
 } from "firebase/firestore";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import {
@@ -984,7 +984,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
                   className="w-full px-4 py-2.5 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 outline-none text-[15px] focus:ring-2 focus:ring-[#0a84ff]/20 transition-all"
                   disabled={sending ||!currentUser}
                 />
-   {showMention && mentionUsersList.length > 0 && (
+  {showMention && mentionUsersList.length > 0 && (
   <div className="absolute bottom-12 left-0 w-64 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-[#E5E5EA] dark:border-zinc-800 max-h-60 overflow-auto z-50">
     <div className="p-2">
       <input
