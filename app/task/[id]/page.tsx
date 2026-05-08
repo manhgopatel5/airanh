@@ -177,6 +177,53 @@ const handleSave = async () => {
   }
 };
 
+
+const handleStartChat = async () => {
+  if (!currentUser || !task?.userId || !db) return;
+
+  try {
+    const chatId = [currentUser.uid, task.userId]
+      .sort()
+      .join("_");
+
+    const [currentUserDoc, ownerDoc] = await Promise.all([
+      getDoc(doc(db, "users", currentUser.uid)),
+      getDoc(doc(db, "users", task.userId)),
+    ]);
+
+    const currentData = currentUserDoc.data();
+    const ownerData = ownerDoc.data();
+
+    await setDoc(
+      doc(db, "chats", chatId),
+      {
+        members: [currentUser.uid, task.userId],
+        isGroup: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        membersInfo: {
+          [currentUser.uid]: {
+            name: currentData?.name || "User",
+            avatar: currentData?.avatar || "",
+            username: currentData?.username || "",
+          },
+          [task.userId]: {
+            name: ownerData?.name || "User",
+            avatar: ownerData?.avatar || "",
+            username: ownerData?.username || "",
+          },
+        },
+      },
+      { merge: true }
+    );
+
+    router.push(`/chat/${chatId}`);
+  } catch (err) {
+    console.error(err);
+    toast.error("Không thể mở chat");
+  }
+};
+
 const handleDelete = async () => {
   if (!isOwner ||!task) return;
   if (!confirm("Xóa công việc này?")) return;
@@ -479,37 +526,7 @@ const handleJoinTask = async () => {
     inputRef.current?.focus();
   };
 
-  const handleQuickChat = async () => {
-    if (!currentUser ||!owner || isOwner || creatingChat) return;
-    setCreatingChat(true);
-    try {
-      const chatId = [currentUser.uid, owner.uid].sort().join("_");
-      const chatRef = doc(db, "chats", chatId);
-      const chatSnap = await getDoc(chatRef);
 
-      if (!chatSnap.exists()) {
-        await setDoc(chatRef, {
-          participants: [currentUser.uid, owner.uid],
-          lastMessage: "Job này còn tuyển không anh?",
-          lastMessageAt: serverTimestamp(),
-          createdAt: serverTimestamp(),
-        });
-
-        await setDoc(doc(db, "chats", chatId, "messages", `msg_${Date.now()}`), {
-          text: `Hi anh, em thấy job "${task?.title}". Job này còn tuyển không ạ?`,
-          senderId: currentUser.uid,
-          createdAt: serverTimestamp(),
-        });
-      }
-
-      router.push(`/tin-nhan/${chatId}`);
-      navigator.vibrate?.(10);
-    } catch (err) {
-      toast.error("Không tạo được chat");
-    } finally {
-      setCreatingChat(false);
-    }
-  };
 
  if (loading) return <div className="p-4 text-center">Đang tải...</div>;
   if (!task) return <div className="p-4 text-center">Không tìm thấy task</div>;
@@ -528,7 +545,7 @@ const handleAcceptApp = async (appId: string, applicantId: string) => {
     // Tạo chat tự động
     const chatId = [currentUser!.uid, applicantId].sort().join("_");
     await setDoc(doc(db, "chats", chatId), {
-      participants: [currentUser!.uid, applicantId],
+      members: [currentUser!.uid, applicantId],
       lastMessage: `Bạn đã được duyệt cho task "${task.title}"`,
       lastMessageAt: serverTimestamp(),
       createdAt: serverTimestamp(),
@@ -558,7 +575,7 @@ const handleRejectApp = async (appId: string) => {
 
 const handleMessageApp = (uid: string) => {
   const chatId = [currentUser!.uid, uid].sort().join('_');
-  router.push(`/tin-nhan/${chatId}`);
+  router.push(`/chat/${chatId}`);
 };
 
 const taskDate = isTask(task) && task.deadline?.seconds 
@@ -810,7 +827,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
     <div className="grid grid-cols-4 gap-2">
       <motion.button
         whileTap={{ scale: 0.94 }}
-        onClick={handleQuickChat}
+        onClick={handleStartChat}
         disabled={creatingChat || isOwner}
         className="h-14 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 flex flex-col items-center justify-center gap-0.5 text-[#1C1C1E] dark:text-zinc-100 active:bg-[#E5E5EA] dark:active:bg-zinc-700 disabled:opacity-40 transition-all"
       >
