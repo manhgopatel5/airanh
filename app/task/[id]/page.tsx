@@ -23,7 +23,7 @@ import {
 } from "@/lib/taskCommentService";
 
 import type { TaskComment } from "@/types/task";
-import { isTask, isPlan, type Task } from "@/types/task";
+import { isTask, isPlan, type Task, type TaskStatus } from "@/types/task";
 
 import DOMPurify from "isomorphic-dompurify";
 import { toast, Toaster } from "sonner";
