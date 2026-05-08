@@ -19,10 +19,20 @@ service cloud.firestore {
     }
 
     // ========== TASKS + COMMENTS ==========
-    match /tasks/{taskId} {
-      allow read: if true;
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && request.auth.uid == resource.data.userId;
+   match /tasks/{taskId} {
+  allow read: if true;
+  allow create: if isSignedIn();
+  
+  allow update: if isSignedIn() && (
+    // Chủ task sửa được hết
+    request.auth.uid == resource.data.userId ||
+    // User khác chỉ được ứng tuyển/hủy + like + save
+    request.resource.data.diff(resource.data).changedKeys()
+      .hasOnly(['applicants', 'applicantCount', 'savedBy', 'likedBy', 'likeCount'])
+  );
+  
+  allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
+}
 
       // ✅ COMMENTS NẰM TRONG NÀY
       match /comments/{commentId} {
