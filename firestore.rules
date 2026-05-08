@@ -19,22 +19,21 @@ service cloud.firestore {
     }
 
     // ========== TASKS + COMMENTS ==========
-   match /tasks/{taskId} {
-  allow read: if true;
-  allow create: if isSignedIn();
-  
-  allow update: if isSignedIn() && (
-    // Chủ task sửa được hết
-    request.auth.uid == resource.data.userId ||
-    // User khác chỉ được ứng tuyển/hủy + like + save
-    request.resource.data.diff(resource.data).changedKeys()
-      .hasOnly(['applicants', 'applicantCount', 'savedBy', 'likedBy', 'likeCount'])
-  );
-  
-  allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
-}
+    match /tasks/{taskId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      
+      allow update: if isSignedIn() && (
+        // Chủ task sửa được hết
+        request.auth.uid == resource.data.userId ||
+        // User khác chỉ được like + save, KHÔNG được ứng tuyển trực tiếp vào tasks nữa
+        request.resource.data.diff(resource.data).changedKeys()
+          .hasOnly(['savedBy', 'likedBy', 'likeCount'])
+      );
+      
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
 
-      // ✅ COMMENTS NẰM TRONG NÀY
+      // COMMENTS
       match /comments/{commentId} {
         allow read: if true;
         allow create: if isSignedIn();
@@ -43,6 +42,36 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).changedKeys().hasOnly(['text', 'edited', 'updatedAt', 'likeCount', 'likedBy']);
         allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
       }
+    }
+
+    // ========== APPLICATIONS - THÊM MỚI ==========
+    match /applications/{appId} {
+      // Ứng viên và chủ task đều đọc được
+      allow read: if isSignedIn() && (
+        request.auth.uid == resource.data.userId || 
+        request.auth.uid == resource.data.taskOwnerId
+      );
+      
+      // Chỉ user mới tạo đơn ứng tuyển cho chính mình
+      allow create: if isSignedIn() 
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasAll(['userId', 'taskOwnerId', 'status', 'userName'])
+        && request.resource.data.status == 'pending';
+      
+      // Ứng viên hủy đơn hoặc chủ task duyệt/từ chối
+      allow update: if isSignedIn() && (
+        // Ứng viên tự hủy
+        request.auth.uid == resource.data.userId && 
+        request.resource.data.diff(resource.data).changedKeys().hasOnly(['status', 'updatedAt']) &&
+        request.resource.data.status == 'cancelled' ||
+        // Chủ task duyệt/từ chối
+        request.auth.uid == resource.data.taskOwnerId &&
+        request.resource.data.diff(resource.data).changedKeys().hasOnly(['status', 'updatedAt']) &&
+        request.resource.data.status in ['accepted', 'rejected']
+      );
+      
+      // Ứng viên xóa đơn của mình
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
     }
 
     match /task_likes/{likeId} {
