@@ -137,26 +137,31 @@ useEffect(() => {
   const [mentionUsersList, setMentionUsersList] = useState<UserData[]>([]);
 
 useEffect(() => {
-  if (!task?.id || !task?.userId) return;
+  if (!task?.id ||!task?.userId) return;
   const loadMentionUsers = async () => {
-    const appSnaps = await getDocs(query(
-      collection(db, 'applications'),
-      where('taskId', '==', task.id),
-      where('status', 'in', ['pending', 'accepted'])
-    ));
-    
-    const userIds = [task.userId,...appSnaps.docs.map(d => d.data().userId)];
-    const uniqueIds = [...new Set(userIds)];
-    
-    const userSnaps = await Promise.all(
-      uniqueIds.map(uid => getDoc(doc(db, "users", uid)))
-    );
-    
-    const users = userSnaps
-      .filter(s => s.exists())
-      .map(s => ({ uid: s.id,...s.data() } as UserData));
-    
-    setMentionUsersList(users);
+    try {
+      const appSnaps = await getDocs(query(
+        collection(db, 'applications'),
+        where('taskId', '==', task.id),
+        where('status', 'in', ['pending', 'accepted'])
+      ));
+      
+      const userIds = [task.userId,...appSnaps.docs.map(d => d.data()?.userId).filter(Boolean)];
+      const uniqueIds = [...new Set(userIds)];
+      if (uniqueIds.length === 0) return;
+      
+      const userSnaps = await Promise.all(
+        uniqueIds.map(uid => getDoc(doc(db, "users", uid)))
+      );
+      
+      const users = userSnaps
+       .filter(s => s.exists())
+       .map(s => ({ uid: s.id,...s.data() } as UserData));
+      
+      setMentionUsersList(users);
+    } catch (err) {
+      console.error("Load mention users error:", err);
+    }
   };
   loadMentionUsers();
 }, [task?.id, task?.userId, db]);
@@ -383,7 +388,7 @@ useEffect(() => {
     }
   }, [text]);
 
- const handleJoinTask = async () => {
+const handleJoinTask = async () => {
   if (!currentUser ||!task || isApplied || isFull || joining || isOwner) return;
   setJoining(true);
   
@@ -392,7 +397,7 @@ useEffect(() => {
       taskId: task.id,
       taskOwnerId: task.userId,
       userId: currentUser.uid,
-      userName: currentUser.displayName || 'User',
+      userName: currentUser.displayName || currentUser.email?.split('@')[0] || 'User', // thêm fallback
       userAvatar: currentUser.photoURL || '',
       status: 'pending',
       createdAt: serverTimestamp()
