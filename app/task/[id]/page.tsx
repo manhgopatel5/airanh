@@ -3,22 +3,19 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
-
-import { collection, query, where, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
-import { doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp, onSnapshot, addDoc, getDocs } from "firebase/firestore";
+import { db, auth } from "@/lib/firebase"; // Dùng db, auth trực tiếp
+import { 
+  doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp, 
+  onSnapshot, addDoc, getDocs, collection, query, where, arrayUnion, deleteDoc,
+  QueryDocumentSnapshot, DocumentData 
+} from "firebase/firestore";
 import {
   FiSend, FiClock, FiUsers, FiX, FiCheckCircle, FiMessageCircle, 
   FiCalendar, FiMessageSquare, FiPhone, FiAlertTriangle, 
-  FiStar, FiBookmark, FiMoreHorizontal, FiShare2 
+  FiStar, FiBookmark, FiMoreHorizontal, FiShare2, FiCheck, FiTrash2, FiEdit2
 } from "react-icons/fi";
 import ShareTaskModal from "@/components/ShareTaskModal";
-import {
-  
-  
-  incrementTaskView,
-} from "@/lib/task";
-
+import { incrementTaskView } from "@/lib/task";
 import {
   createComment,
   listenComments,
@@ -35,34 +32,94 @@ import { toast, Toaster } from "sonner";
 import Image from "next/image";
 import Linkify from "linkify-react";
 
-
 import { motion, AnimatePresence } from "framer-motion";
 import { CommentList } from "@/components/task/CommentList";
 import { ImageGallery } from "@/components/task/ImageGallery";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { createPortal } from "react-dom";
-import { FiCheck, FiTrash2, FiEdit2 } from "react-icons/fi";
-import { arrayUnion, deleteDoc } from "firebase/firestore";
 
-import { collection, query, where, onSnapshot, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
+type UserData = {
+  uid: string;
+  name: string;
+  avatar: string;
+  online?: boolean;
+  rating?: number;
+  reviewCount?: number;
+  joinedDate?: Timestamp;
+  phone?: string;
+};
 
-// Thêm state này
-const [applications, setApplications] = useState<Application[]>([]);
+type Application = {
+  id: string;
+  taskId: string;
+  taskOwnerId: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
+  createdAt: Timestamp;
+  updatedAt?: Timestamp;
+};
 
-// Thay useCollection bằng useEffect
-useEffect(() => {
-  if (!task?.id) {
-    setApplications([]);
-    return;
-  }
-  const q = query(collection(db, 'applications'), where('taskId', '==', task.id));
-  const unsub = onSnapshot(q, (snap) => {
-    setApplications(snap.docs.map(d => ({ id: d.id,...d.data() } as Application)));
-  }, (error) => {
-    console.error("Applications error:", error);
-  });
-  return () => unsub();
-}, [task?.id]);
+const Portal = ({ children }: { children: React.ReactNode }) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted? createPortal(children, document.body) : null;
+};
+
+const PRIMARY = "#0a84ff";
+
+export default function TaskDetailPage() {
+  const { id } = useParams();
+  const router = useRouter();
+
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const [task, setTask] = useState<Task | null>(null);
+  const [owner, setOwner] = useState<UserData | null>(null);
+  const [comments, setComments] = useState<TaskComment[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [applications, setApplications] = useState<Application[]>([]); // Thay useCollection
+
+  const [text, setText] = useState("");
+  const [replyTo, setReplyTo] = useState<TaskComment | null>(null);
+  const [editingComment, setEditingComment] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+  const [showMention, setShowMention] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [timeLeft, setTimeLeft] = useState("");
+  const [isUrgent, setIsUrgent] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const [creatingChat, setCreatingChat] = useState(false);
+  const [showImageGallery, setShowImageGallery] = useState<number | null>(null);
+  const [likingComments, setLikingComments] = useState<Set<string>>(new Set());
+  const [isApplied, setIsApplied] = useState(false);
+  const [mentionUsersList, setMentionUsersList] = useState<UserData[]>([]);
+  const [isSaved, setIsSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
+  const [shareTask, setShareTask] = useState<Task | null>(null);
+  const [acceptedCount, setAcceptedCount] = useState(0);
+
+  // Thay useCollection bằng useEffect
+  useEffect(() => {
+    if (!task?.id) {
+      setApplications([]);
+      return;
+    }
+    const q = query(collection(db, 'applications'), where('taskId', '==', task.id));
+    const unsub = onSnapshot(q, (snap) => {
+      setApplications(snap.docs.map(d => ({ id: d.id,...d.data() } as Application)));
+    }, (error) => {
+      console.error("Applications error:", error);
+    });
+    return () => unsub();
+  }, [task?.id]);
 
 
 
