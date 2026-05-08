@@ -331,23 +331,43 @@ useEffect(() => {
   }, [text]);
 
 const handleJoinTask = async () => {
-  if (!currentUser ||!task || isApplied || isFull || joining || isOwner) return;
+  if (!currentUser || !task || isApplied || isFull || joining || isOwner) return;
+
   setJoining(true);
-  
+
   try {
-    await addDoc(collection(db, 'applications'), {
+    const existingQuery = query(
+      collection(db, "applications"),
+      where("taskId", "==", task.id),
+      where("userId", "==", currentUser.uid)
+    );
+
+    const existingSnap = await getDocs(existingQuery);
+
+    if (!existingSnap.empty) {
+      toast.error("Bạn đã ứng tuyển rồi");
+      setJoining(false);
+      return;
+    }
+
+    await addDoc(collection(db, "applications"), {
       taskId: task.id,
       taskOwnerId: task.userId,
       userId: currentUser.uid,
-      userName: currentUser.displayName || currentUser.email?.split('@')[0] || 'User', // thêm fallback
-      userAvatar: currentUser.photoURL || '',
-      status: 'pending',
-      createdAt: serverTimestamp()
+      userName:
+        currentUser.displayName ||
+        currentUser.email?.split("@")[0] ||
+        "User",
+      userAvatar: currentUser.photoURL || "",
+      status: "pending",
+      createdAt: serverTimestamp(),
     });
-    toast.success("Ứng tuyển thành công!");
+
     setIsApplied(true);
+
+    toast.success("Ứng tuyển thành công!");
     navigator.vibrate?.(10);
-  } catch (err: any) {
+  } catch (err) {
     console.error(err);
     toast.error("Ứng tuyển thất bại");
   } finally {
