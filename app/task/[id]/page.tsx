@@ -610,45 +610,61 @@ const taskTime = isTask(task) && task.deadline?.seconds
 
   <div className="h-px bg-[#E5E5E7]" />
 
-  <div className="p-4 grid grid-cols-4 gap-2">
-    <button
+{/* Action Bar - Level Hoàn Hảo */}
+<div className="px-4 pt-4 pb-2">
+  <div className="grid grid-cols-4 gap-2">
+    {/* Nhắn tin */}
+    <motion.button
+      whileTap={{ scale: 0.94 }}
       onClick={handleQuickChat}
       disabled={creatingChat || isOwner}
-      className="h-12 rounded-2xl border border-[#E5E5E7] bg-white flex items-center justify-center gap-1.5 text-[15px] text-[#1C1C1E] hover:bg-[#F2F2F7] disabled:opacity-40 active:scale-95 transition-all"
+      className="h-14 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 flex flex-col items-center justify-center gap-0.5 text-[#1C1C1E] dark:text-zinc-100 active:bg-[#E5E5EA] dark:active:bg-zinc-700 disabled:opacity-40 disabled:active:scale-100 transition-all"
     >
-      <FiMessageSquare size={20} />
-      <span>Nhắn tin</span>
-    </button>
+      <FiMessageSquare size={22} strokeWidth={2} />
+      <span className="text-[11px] font-medium">Nhắn tin</span>
+    </motion.button>
 
-    <button
-      onClick={() => window.open(`tel:${owner?.phone || ''}`)}
-      disabled={!owner?.phone}
-      className="h-12 rounded-2xl border border-[#E5E5E7] bg-white flex items-center justify-center gap-1.5 text-[15px] text-[#1C1C1E] hover:bg-[#F2F2F7] disabled:opacity-40 active:scale-95 transition-all"
+    {/* Gọi điện */}
+    <motion.button
+      whileTap={{ scale: 0.94 }}
+      onClick={() => owner?.phone && window.open(`tel:${owner.phone}`)}
+      disabled={!owner?.phone || isOwner}
+      className="h-14 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 flex flex-col items-center justify-center gap-0.5 text-[#1C1C1E] dark:text-zinc-100 active:bg-[#E5E5EA] dark:active:bg-zinc-700 disabled:opacity-40 disabled:active:scale-100 transition-all"
     >
-      <FiPhone size={20} />
-      <span>Gọi điện</span>
-    </button>
+      <FiPhone size={22} strokeWidth={2} />
+      <span className="text-[11px] font-medium">Gọi điện</span>
+    </motion.button>
 
-<button
-  onClick={isApplied? handleCancelApply : handleJoinTask}
-  disabled={(!isApplied && (isFull || task.status!== "open")) || joining || isOwner}
-  className={`h-12 rounded-2xl flex items-center justify-center gap-1.5 text-[15px] font-semibold active:scale-95 transition-all disabled:opacity-40 ${
-    isApplied
-   ? "border border-[#E5E5E7] bg-white text-[#1C1C1E]"
-      : "bg-[#00A86B] hover:bg-[#009960] text-white"
-  }`}
->
-  {isApplied? <FiX size={20} /> : <FiSend size={20} />}
-  <span>{isApplied? "Hủy" : "Ứng tuyển"}</span>
-</button>
+    {/* Ứng tuyển - Primary CTA */}
+    <motion.button
+      whileTap={{ scale: 0.94 }}
+      onClick={isApplied? handleCancelApply : handleJoinTask}
+      disabled={(!isApplied && (isFull || task.status!== "open")) || joining || isOwner}
+      className={`h-14 rounded-2xl flex flex-col items-center justify-center gap-0.5 font-semibold active:scale-95 disabled:opacity-40 disabled:active:scale-100 transition-all ${
+        isApplied
+         ? "bg-[#E8F5E9] dark:bg-green-950/40 text-[#00A86B] active:bg-[#D4EDDA] dark:active:bg-green-900/60"
+          : "bg-[#00A86B] active:bg-[#009960] text-white shadow-[0_4px_12px_rgba(0,168,107,0.25)]"
+      }`}
+    >
+      {joining? (
+        <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+      ) : isApplied? (
+        <FiCheckCircle size={22} strokeWidth={2.5} />
+      ) : (
+        <FiSend size={22} strokeWidth={2.5} />
+      )}
+      <span className="text-[11px]">{isApplied? "Đã ứng tuyển" : "Ứng tuyển"}</span>
+    </motion.button>
 
-    <button
+    {/* Báo cáo */}
+    <motion.button
+      whileTap={{ scale: 0.94 }}
       onClick={() => toast.info("Đã gửi báo cáo")}
-      className="h-12 rounded-2xl border border-[#E5E5E7] bg-white flex items-center justify-center gap-1.5 text-[15px] text-[#1C1C1E] hover:bg-[#F2F2F7] active:scale-95 transition-all"
+      className="h-14 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 flex flex-col items-center justify-center gap-0.5 text-[#FF9500] active:bg-[#E5E5EA] dark:active:bg-zinc-700 transition-all"
     >
-      <FiAlertTriangle size={20} className="text-[#FFB800]" />
-      <span>Báo cáo</span>
-    </button>
+      <FiAlertTriangle size={22} strokeWidth={2} />
+      <span className="text-[11px] font-medium">Báo cáo</span>
+    </motion.button>
   </div>
 </div>
 
