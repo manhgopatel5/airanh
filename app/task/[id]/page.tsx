@@ -72,8 +72,13 @@ const PRIMARY = "#0a84ff";
 export default function TaskDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-const auth = useMemo(() => getFirebaseAuth(), []);
-const db = useMemo(() => getFirebaseDB(), []);
+const [auth, setAuth] = useState<any>(null);
+const [db, setDb] = useState<any>(null);
+
+useEffect(() => {
+  setAuth(getFirebaseAuth());
+  setDb(getFirebaseDB());
+}, []);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
