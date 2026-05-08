@@ -167,31 +167,34 @@ export function CommentList({
                 Trả lời
               </button>
 
-              {isOwnComment && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-           <button className="p-1 -m-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-full transition-all active:scale-90">
-  <FiMoreHorizontal size={16} />
-</button>
-                  </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="rounded-xl min-w-[180px] p-1">
-  <DropdownMenuItem 
-    onClick={() => onEdit(c.id)}
-    className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer"
-  >
-    <FiEdit2 size={16} />
-    <span>Chỉnh sửa bình luận</span>
-  </DropdownMenuItem>
-  <DropdownMenuItem
-    onClick={() => onDelete(c.id)}
-    className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-red-500 focus:text-red-500"
-  >
-    <FiTrash2 size={16} />
-    <span>Xóa bình luận</span>
-  </DropdownMenuItem>
-</DropdownMenuContent>
-                </DropdownMenu>
-              )}
+            {isOwnComment && (
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <button className="p-1 -m-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-full transition-all active:scale-90">
+        <FiMoreHorizontal size={16} className="text-zinc-500" />
+      </button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent 
+      align="end" 
+      side="top"
+      sideOffset={4}
+      className="rounded-xl min-w-[140px] p-1.5 bg-white dark:bg-zinc-900 shadow-lg border border-zinc-200 dark:border-zinc-800"
+    >
+      <DropdownMenuItem 
+        onClick={() => onEdit(c.id)}
+        className="px-3 py-2 text-[14px] font-medium rounded-lg cursor-pointer focus:bg-zinc-100 dark:focus:bg-zinc-800"
+      >
+        Chỉnh sửa
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        onClick={() => onDelete(c.id)}
+        className="px-3 py-2 text-[14px] font-medium rounded-lg cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-50 dark:focus:bg-red-950/50"
+      >
+        Xoá
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>
+)}
             </div>
           )}
 
