@@ -26,9 +26,9 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         // Chủ task sửa được hết
         request.auth.uid == resource.data.userId ||
-        // User khác chỉ được like + save, KHÔNG được ứng tuyển trực tiếp vào tasks nữa
+        // User khác chỉ được like + save + commentCount
         request.resource.data.diff(resource.data).changedKeys()
-          .hasOnly(['savedBy', 'likedBy', 'likeCount'])
+          .hasOnly(['savedBy', 'likedBy', 'likeCount', 'commentCount'])
       );
       
       allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
@@ -37,16 +37,44 @@ service cloud.firestore {
       match /comments/{commentId} {
         allow read: if true;
         allow create: if isSignedIn();
-        allow update: if isSignedIn() 
-          && request.auth.uid == resource.data.userId
-          && request.resource.data.diff(resource.data).changedKeys().hasOnly(['text', 'edited', 'updatedAt', 'likeCount', 'likedBy']);
+        
+        // ✅ SỬA: Cho phép 4 case update
+        allow update: if isSignedIn() && (
+          // Case 1: Chủ comment sửa nội dung
+          (
+            request.auth.uid == resource.data.userId &&
+            request.resource.data.diff(resource.data).changedKeys()
+              .hasOnly(['text', 'edited', 'updatedAt'])
+          ) ||
+          // Case 2: Ai cũng được like/unlike
+          (
+            request.resource.data.diff(resource.data).changedKeys()
+              .hasOnly(['likeCount', 'likedBy'])
+          ) ||
+          // Case 3: Chủ comment soft-delete comment của mình
+          (
+            request.auth.uid == resource.data.userId &&
+            request.resource.data.diff(resource.data).changedKeys()
+              .hasOnly(['deleted', 'text', 'updatedAt']) &&
+            request.resource.data.deleted == true
+          ) ||
+          // Case 4: Chủ comment cha xóa reply của người khác
+          (
+            resource.data.parentId != null &&
+            get(/databases/$(database)/documents/tasks/$(taskId)/comments/$(resource.data.parentId)).data.userId == request.auth.uid &&
+            request.resource.data.diff(resource.data).changedKeys()
+              .hasOnly(['deleted', 'text', 'updatedAt']) &&
+            request.resource.data.deleted == true
+          )
+        );
+        
         allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
       }
     }
 
-    // ========== APPLICATIONS - THÊM MỚI ==========
-match /applications/{appId} {
-  allow read: if isSignedIn();
+    // ========== APPLICATIONS ==========
+    match /applications/{appId} {
+      allow read: if isSignedIn();
       
       // Chỉ user mới tạo đơn ứng tuyển cho chính mình
       allow create: if isSignedIn() 
