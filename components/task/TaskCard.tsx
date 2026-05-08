@@ -3,12 +3,12 @@
 import { useRouter } from "next/navigation";
 import {
   FiUsers, FiClock, FiMapPin, FiBookmark, FiMoreHorizontal,
-  FiTrash2, FiEdit2, FiCheck, FiShare2, FiEye
+  FiTrash2, FiEdit2, FiCheck, FiShare2, FiEye, FiHeart
 } from "react-icons/fi";
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { type TaskStatus, type Task, isTask } from "@/types/task";
@@ -20,6 +20,7 @@ type Props = {
   theme: "task" | "plan";
   onDelete?: (id: string) => void;
   onShare?: (task: Task) => void;
+  onTaskUpdate?: (taskId: string, updates: Partial<Task>) => void; // ✅ Thêm
 };
 
 const Portal = ({ children }: { children: React.ReactNode }) => {
@@ -28,13 +29,16 @@ const Portal = ({ children }: { children: React.ReactNode }) => {
   return mounted? createPortal(children, document.body) : null;
 };
 
-export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
+export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
   const router = useRouter();
   const { user } = useAuth();
   const db = getFirebaseDB();
 
   const [isSaved, setIsSaved] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(task.likeCount || 0);
   const [saving, setSaving] = useState(false);
+  const [liking, setLiking] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const menuBtnRef = useRef<HTMLButtonElement>(null);
@@ -42,7 +46,9 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
   useEffect(() => {
     if (!task?.id) return;
     setIsSaved(!!user?.uid &&!!task.savedBy?.includes(user.uid));
-  }, [user?.uid, task?.savedBy, task?.id]);
+    setIsLiked(!!user?.uid &&!!task.likedBy?.includes(user.uid));
+    setLikeCount(task.likeCount || 0);
+  }, [user?.uid, task?.savedBy, task?.likedBy, task?.likeCount, task?.id]);
 
   useEffect(() => {
     const closeMenu = () => setShowMenu(false);
@@ -85,6 +91,7 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
     if ("vibrate" in navigator) navigator.vibrate(ms);
   };
 
+  // ✅ SỬA: handleSave với Optimistic Update
   const handleSave = useCallback(async () => {
     if (!user) return router.push("/login");
     if (saving) return;
@@ -92,20 +99,93 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
     vibrate(10);
     setSaving(true);
     const newSaved =!isSaved;
+    const oldSavedBy = task.savedBy || [];
+
+    // 1. Update UI ngay
     setIsSaved(newSaved);
+    onTaskUpdate?.(task.id, {
+      savedBy: newSaved
+       ? [...oldSavedBy, user.uid]
+        : oldSavedBy.filter(id => id!== user.uid)
+    });
 
     try {
+      // 2. Gọi Firebase
       await updateDoc(doc(db, "tasks", task.id), {
         savedBy: newSaved? arrayUnion(user.uid) : arrayRemove(user.uid),
       });
       toast.success(newSaved? "Đã lưu" : "Đã bỏ lưu", { icon: "📌" });
     } catch (err) {
+      // 3. Fail thì rollback
       setIsSaved(!newSaved);
+      onTaskUpdate?.(task.id, { savedBy: oldSavedBy });
       toast.error("Lỗi");
     } finally {
       setSaving(false);
     }
-  }, [user, isSaved, saving, task.id, router, db]);
+  }, [user, isSaved, saving, task, router, db, onTaskUpdate]);
+
+  // ✅ THÊM: handleLike với Optimistic Update
+  const handleLike = useCallback(async () => {
+    if (!user) return router.push("/login");
+    if (liking) return;
+
+    vibrate(10);
+    setLiking(true);
+    const newLiked =!isLiked;
+    const oldLikedBy = task.likedBy || [];
+    const oldLikeCount = task.likeCount || 0;
+
+    // 1. Update UI ngay
+    setIsLiked(newLiked);
+    setLikeCount(prev => newLiked? prev + 1 : prev - 1);
+    onTaskUpdate?.(task.id, {
+      likedBy: newLiked
+       ? [...oldLikedBy, user.uid]
+        : oldLikedBy.filter(id => id!== user.uid),
+      likeCount: newLiked? oldLikeCount + 1 : oldLikeCount - 1
+    });
+
+    try {
+      await updateDoc(doc(db, "tasks", task.id), {
+        likedBy: newLiked? arrayUnion(user.uid) : arrayRemove(user.uid),
+        likeCount: increment(newLiked? 1 : -1),
+      });
+    } catch (err) {
+      // Rollback
+      setIsLiked(!newLiked);
+      setLikeCount(oldLikeCount);
+      onTaskUpdate?.(task.id, { likedBy: oldLikedBy, likeCount: oldLikeCount });
+      toast.error("Lỗi");
+    } finally {
+      setLiking(false);
+    }
+  }, [user, isLiked, liking, task, db, onTaskUpdate]);
+
+  // ✅ THÊM: handleApply với Optimistic Update
+  const handleApply = useCallback(async () => {
+    if (!user) return router.push("/login");
+
+    const oldApplicants = task.applicants || [];
+    const isApplied = oldApplicants.includes(user.uid);
+    if (isApplied) return toast.info("Đã ứng tuyển");
+
+    vibrate(10);
+    // Update UI ngay
+    onTaskUpdate?.(task.id, {
+      applicants: [...oldApplicants, user.uid]
+    });
+
+    try {
+      await updateDoc(doc(db, "tasks", task.id), {
+        applicants: arrayUnion(user.uid),
+      });
+      toast.success("Đã ứng tuyển");
+    } catch (err) {
+      onTaskUpdate?.(task.id, { applicants: oldApplicants }); // Rollback
+      toast.error("Lỗi");
+    }
+  }, [user, task, db, onTaskUpdate]);
 
   const handleDelete = useCallback(async () => {
     if (!isOwner) return;
@@ -126,7 +206,7 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
   };
 
   const taskDate = task.type === "task" && task.deadline?.seconds
-   ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+  ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
     : "";
 
   const statusMap: Record<TaskStatus, { label: string; color: string; dot: string }> = {
@@ -141,9 +221,9 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
   };
 
   const isExpired = isTask(task) && task.deadline && task.deadline.seconds * 1000 < Date.now();
-const status = isExpired 
-  ? { label: "Đã hết hạn", color: "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B]", dot: "bg-[#FF3B30]" }
-  : statusMap[task.status] || statusMap.open;
+  const status = isExpired
+   ? { label: "Đã hết hạn", color: "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B]", dot: "bg-[#FF3B30]" }
+    : statusMap[task.status] || statusMap.open;
   const maxSlots = task.type === "task"? task.totalSlots?? 0 : task.maxParticipants?? 0;
 
   return (
@@ -173,6 +253,24 @@ const status = isExpired
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
+          {/* ✅ THÊM: Nút Like */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleLike();
+            }}
+            disabled={liking}
+            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all disabled:opacity-50 touch-manipulation select-none"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
+          >
+            <FiHeart
+              size={18}
+              className={isLiked? "fill-red-500 text-red-500" : "text-zinc-400 dark:text-zinc-500"}
+            />
+          </button>
+
           <button
             type="button"
             onClick={(e) => {
@@ -290,6 +388,12 @@ const status = isExpired
             <FiUsers size={13} />
             <span className="font-medium">{applicants.length}/{maxSlots}</span>
           </div>
+          {likeCount > 0 && (
+            <div className="flex items-center gap-1">
+              <FiHeart size={13} />
+              <span className="font-medium">{likeCount}</span>
+            </div>
+          )}
           {task.location?.city && (
             <div className="flex items-center gap-1 truncate">
               <FiMapPin size={13} />
