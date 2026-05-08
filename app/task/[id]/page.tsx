@@ -81,8 +81,15 @@ export default function TaskDetailPage() {
   const [owner, setOwner] = useState<UserData | null>(null);
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [applications, setApplications] = useState<Application[]>([]); // ✅ Đặt trong này
-
+  const [applications, setApplications] = useState<Application[]>([]);
+  const acceptedCount = useMemo(
+  () => applications.filter(app => app.status === 'accepted').length,
+  [applications]
+);
+  const isFull = useMemo(
+  () => acceptedCount >= (task && isTask(task)? task.totalSlots : 1),
+  [acceptedCount, task]
+);
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<TaskComment | null>(null);
   const [editingComment, setEditingComment] = useState<string | null>(null);
@@ -105,7 +112,7 @@ export default function TaskDetailPage() {
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const [shareTask, setShareTask] = useState<Task | null>(null);
-  const [acceptedCount, setAcceptedCount] = useState(0);
+ 
 
   // ✅ useEffect phải nằm trong component
   useEffect(() => {
