@@ -1,7 +1,7 @@
 "use client";
 
 import { Task } from "@/types/task";
-import TaskCard from "@/components/task/TaskCard";
+import TaskCardRealtime from "@/components/task/TaskCardRealtime";
 import EmptyState from "@/components/EmptyState";
 import { AppMode } from "@/types/app";
 
@@ -28,8 +28,8 @@ export default function TaskFeed({ tasks, mode, activeTab, onShare, onDelete }: 
           className="px-4"
           style={{ animationDelay: `${idx * 50}ms` }}
         >
- <TaskCard
-  task={task}
+<TaskCardRealtime
+  initialTask={task}
   theme={mode}
   {...(onShare && { onShare })}
   {...(onDelete && { onDelete })}
