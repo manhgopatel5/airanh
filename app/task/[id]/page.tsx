@@ -188,7 +188,7 @@ const [applicationsSnap] = useCollection<Application>(
   task?.id && isOwner? query(
     collection(db, 'applications').withConverter(appConverter),
     where('taskId', '==', task.id),
-    where('taskOwnerId', '==', currentUser?.uid) // ✅ chỉ chủ task mới xem được tất cả
+ 
   ) : null
 );
 
