@@ -34,9 +34,10 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
   const { user } = useAuth();
   const db = getFirebaseDB();
 
-
-  const [saving, setSaving] = useState(false);
-  const [liking, setLiking] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+const [saving, setSaving] = useState(false);
+ 
+ 
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const menuBtnRef = useRef<HTMLButtonElement>(null);
