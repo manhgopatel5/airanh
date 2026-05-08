@@ -591,18 +591,23 @@ const taskTime = isTask(task) && task.deadline?.seconds
             <span>{taskDate}</span>
           </div>
           <span>•</span>
-          <div className="flex items-center gap-1">
-            <FiClock size={16} />
-            <span>{taskTime}</span>
-          </div>
-          {isTask(task) && task.price > 0 && (
-            <>
-              <span className="px-2 py-0.5 rounded-md bg-[#E6F4EA] text-[#1E8E3E] text-[15px] font-semibold">
-                {task.price.toLocaleString("vi-VN")} đ
-              </span>
-              <span>• Cố định</span>
-            </>
-          )}
+<div className="flex items-center gap-1">
+  <FiClock size={16} />
+  <span>{taskTime}</span>
+</div>
+{isTask(task) && task.price > 0 && (
+  <>
+    <span className="px-2 py-0.5 rounded-md bg-[#E6F4EA] text-[#1E8E3E] text- font-semibold">
+      {task.price.toLocaleString("vi-VN")} đ
+    </span>
+    <span>• Cố định</span>
+    <span>•</span>
+    <div className="flex items-center gap-1">
+      <FiUsers size={16} />
+      <span>{applicants.length}/{task.totalSlots || 1}</span>
+    </div>
+  </>
+)}
         </div>
       </div>
     </div>
@@ -790,47 +795,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
     )}
   </div>
 )}
-      {/* Info chi tiết task */}
-<div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl shadow-sm space-y-3 text-[15px]">
-  {task.location && (task.location.address || task.location.city) && (
-    <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
-      <FiMapPin size={18} className="text-zinc-400" />
-      <span className="text-[15px]">{[task.location.address, task.location.city, task.location.country].filter(Boolean).join(", ")}</span>
-    </div>
-  )}
-
-  {isTask(task) && typeof task.price === 'number' && task.price > 0 && (
-    <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
-      <FiDollarSign size={18} className="text-zinc-400" />
-      <span className="font-medium text-zinc-900 dark:text-zinc-100 tabular-nums text-[15px]">
-        {task.price.toLocaleString("vi-VN")} {task.currency || "đ"}
-      </span>
-    </div>
-  )}
-
-  {isPlan(task) && task.costAmount && task.costType!== "free" && (
-    <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
-      <FiDollarSign size={18} className="text-zinc-400" />
-     <span className="font-medium text-zinc-900 dark:text-zinc-100 tabular-nums text-[15px]">
-        {task.costType === "share"? "Chia sẻ: " : "Chủ chi: "}
-        {task.costAmount.toLocaleString("vi-VN")}đ
-        {task.costDescription && ` - ${task.costDescription}`}
-      </span>
-    </div>
-  )}
-
-  <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
-    <FiUsers size={18} className="text-zinc-400" />
-<span className="text-[15px]">
-  {applicants.length}/{isTask(task) && task.totalSlots? task.totalSlots : 1} người ứng tuyển
-</span>
-  </div>
-
-  <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
-    <FiClock size={18} className="text-zinc-400" />
-    <span className="tabular-nums text-[15px]">{timeLeft}</span>
-  </div>
-</div>
+      
         {/* Khung bình luận */}
         <div className="p-4 space-y-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl shadow-sm">
          <div className="font-semibold text-[17px] text-zinc-900 dark:text-zinc-100">Bình luận ({comments.length})</div>
