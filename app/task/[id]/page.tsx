@@ -125,7 +125,7 @@ useEffect(() => {
 
 
 useEffect(() => {
-  if (!task?.id) {
+  if (!db || !task?.id) {
     setApplications([]);
     return;
   }
@@ -192,14 +192,18 @@ const handleDelete = async () => {
 
 
 useEffect(() => {
-  const unsub = onAuthStateChanged(auth, (user) => {
+  const firebaseAuth = getFirebaseAuth();
+  if (!firebaseAuth) return;
+
+  const unsub = onAuthStateChanged(firebaseAuth, (user) => {
     setCurrentUser(user);
   });
+
   return () => unsub();
-}, [auth]);
+}, []);
 
 useEffect(() => {
-  if (!id || typeof id!== "string") return;
+  if (!db || !id || typeof id !== "string") return;
   
   const loadTask = async () => {
     try {
@@ -237,8 +241,8 @@ useEffect(() => {
   loadTask();
 }, [id, router, db]);
 
- useEffect(() => {
-  if (!task?.userId) return;
+useEffect(() => {
+  if (!db || !task?.userId) return;
   const loadOwner = async () => {
     const snap = await getDoc(doc(db, "users", task.userId));
     if (snap.exists()) setOwner({ uid: snap.id,...snap.data() } as UserData);
@@ -507,7 +511,7 @@ const handleAcceptApp = async (appId: string, applicantId: string) => {
 const [mentionUsersList, setMentionUsersList] = useState<UserData[]>([]);
 
 useEffect(() => {
-  if (!showMention) return;
+  if (!db || !showMention) return;
   const loadUsers = async () => {
     const q = query(collection(db, "users"), limit(20));
     const snap = await getDocs(q);
