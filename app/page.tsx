@@ -6,10 +6,9 @@ import {
   collection,
   query,
   orderBy,
-  onSnapshot,
+  getDocs, // ✅ Bỏ onSnapshot
   limit,
   startAfter,
-  getDocs,
   QueryDocumentSnapshot,
   DocumentData,
   where,
@@ -17,7 +16,7 @@ import {
 } from "firebase/firestore";
 import TaskFeed from "@/components/TaskFeed";
 import ModeToggle from "@/components/ModeToggle";
-import ShareTaskModal from "@/components/ShareTaskModal"; // ← Thêm
+import ShareTaskModal from "@/components/ShareTaskModal";
 import { useAppStore } from "@/store/app";
 import { Task, TaskItem, PlanItem, isTask, isPlan } from "@/types/task";
 import { FiMapPin, FiRefreshCw } from "react-icons/fi";
@@ -37,13 +36,10 @@ function SkeletonList() {
         >
           <div className="flex gap-3 mb-3">
             <div className="w-10 h-10 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded-full animate-pulse" />
-
             <div className="flex-1 space-y-2">
               <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-1/3 animate-pulse" />
               <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-1/4 animate-pulse" />
             </div>
-          </div>
-
           <div className="space-y-2">
             <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-3/4 animate-pulse" />
             <div className="h-20 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded-2xl animate-pulse" />
@@ -65,16 +61,22 @@ export default function Home() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [shareTask, setShareTask] = useState<Task | null>(null); // ← Thêm
-  const [showShareModal, setShowShareModal] = useState(false); // ← Thêm
-  const unsubRef = useRef<(() => void) | null>(null);
+  const [shareTask, setShareTask] = useState<Task | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const handleShare = useCallback((task: Task) => {
     if ("vibrate" in navigator) navigator.vibrate(5);
-    setShareTask(task); // ← Đổi
-    setShowShareModal(true); // ← Đổi
+    setShareTask(task);
+    setShowShareModal(true);
+  }, []);
+
+  // ✅ THÊM: Update state local khi card đổi
+  const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) => {
+    setAllItems(prev => prev.map(t =>
+      t.id === taskId? {...t,...updates } : t
+    ));
   }, []);
 
   useEffect(() => {
@@ -91,32 +93,29 @@ export default function Home() {
   }, [db]);
 
   const buildQuery = useCallback(
-  (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
-    if (!db) return null;
-    const now = Timestamp.now();
-    const constraints: any[] = [
-      where("type", "==", mode),
-      where("visibility", "==", "public"),
-      where("status", "in", ["open", "full", "doing"]),
-      where("deadline", ">", now), // thêm: chỉ lấy task chưa hết hạn
-      orderBy("deadline", "asc"), // đổi từ createdAt sang deadline
-      limit(PAGE_SIZE),
-    ];
-    if (startAfterDoc) {
-      constraints.push(startAfter(startAfterDoc));
-    }
-    return query(collection(db, "tasks"),...constraints);
-  },
-  [db, mode]
-);
+    (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
+      if (!db) return null;
+      const now = Timestamp.now();
+      const constraints: any[] = [
+        where("type", "==", mode),
+        where("visibility", "==", "public"),
+        where("status", "in", ["open", "full", "doing"]),
+        where("deadline", ">", now),
+        orderBy("deadline", "asc"),
+        limit(PAGE_SIZE),
+      ];
+      if (startAfterDoc) {
+        constraints.push(startAfter(startAfterDoc));
+      }
+      return query(collection(db, "tasks"),...constraints);
+    },
+    [db, mode]
+  );
 
+  // ✅ SỬA: Dùng getDocs thay onSnapshot
   const loadData = useCallback(
     async (isRefresh = false) => {
       if (!db) return;
-      if (unsubRef.current) {
-        unsubRef.current();
-        unsubRef.current = null;
-      }
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
       setError(null);
@@ -131,54 +130,41 @@ export default function Home() {
         return;
       }
 
- const unsub = onSnapshot(
-  q,
-  { includeMetadataChanges: true }, // ✅ THÊM DÒNG NÀY
-  (snap) => {
-    const data = snap.docs.map((doc) => ({
-      id: doc.id,
-     ...doc.data(),
-    })) as Task[];
-    console.log("FEED SNAPSHOT:", data.find(t => t.id === "4RYWTqzqL5A8coxkK7JB")); // ✅ Log check
-    setAllItems(data);
-    setLastDoc(snap.docs[snap.docs.length - 1] || null);
-    setHasMore(snap.docs.length === PAGE_SIZE);
-    setLoading(false);
-    setRefreshing(false);
-    setError(null);
-  },
-        (err) => {
-          console.error("Firestore error:", err.code, err.message);
-          if (err.code === "permission-denied") {
-            setAllItems([]);
-            setHasMore(false);
-            setError(null);
-            toast.info("Chưa có dữ liệu");
-          } else if (err.code === "failed-precondition") {
-            setError("Thiếu index database");
-            toast.error("Tạo index trong Firebase Console");
-          } else {
-            setError("Lỗi tải dữ liệu");
-            toast.error("Không thể tải dữ liệu");
-          }
-          setLoading(false);
-          setRefreshing(false);
+      try {
+        const snap = await getDocs(q);
+        const data = snap.docs.map((doc) => ({
+          id: doc.id,
+         ...doc.data(),
+        })) as Task[];
+        setAllItems(data);
+        setLastDoc(snap.docs[snap.docs.length - 1] || null);
+        setHasMore(snap.docs.length === PAGE_SIZE);
+        setError(null);
+      } catch (err: any) {
+        console.error("Firestore error:", err.code, err.message);
+        if (err.code === "permission-denied") {
+          setAllItems([]);
+          setHasMore(false);
+          setError(null);
+          toast.info("Chưa có dữ liệu");
+        } else if (err.code === "failed-precondition") {
+          setError("Thiếu index database");
+          toast.error("Tạo index trong Firebase Console");
+        } else {
+          setError("Lỗi tải dữ liệu");
+          toast.error("Không thể tải dữ liệu");
         }
-      );
-      unsubRef.current = unsub;
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
     },
     [db, buildQuery]
   );
 
   useEffect(() => {
     loadData();
-    return () => {
-      if (unsubRef.current) {
-        unsubRef.current();
-        unsubRef.current = null;
-      }
-    };
-  }, [db, mode]);
+  }, [loadData]);
 
   const loadMore = useCallback(async () => {
     if (!db ||!lastDoc || loadingMore ||!hasMore) return;
@@ -205,7 +191,6 @@ export default function Home() {
   useEffect(() => {
     if (!loadMoreRef.current ||!hasMore) return;
     if (observerRef.current) observerRef.current.disconnect();
-
     observerRef.current = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting && hasMore &&!loadingMore) {
@@ -214,28 +199,23 @@ export default function Home() {
       },
       { threshold: 0.1 }
     );
-
     observerRef.current.observe(loadMoreRef.current);
     return () => observerRef.current?.disconnect();
   }, [hasMore, loadingMore, loadMore]);
 
   const filteredItems = useMemo(() => {
     let result = [...allItems];
-
     if (mode === "task") {
       result = result.filter((t) => isTask(t)) as TaskItem[];
     } else {
       result = result.filter((t) => isPlan(t)) as PlanItem[];
     }
-
     result = result.filter((t) => t.banned!== true && t.hidden!== true);
-
     if (activeTab === "hot") {
       result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
     } else if (activeTab === "near" || activeTab === "friends") {
       toast.info("Tính năng đang phát triển");
     }
-
     return result as Task[];
   }, [allItems, mode, activeTab]);
 
@@ -254,7 +234,6 @@ export default function Home() {
   return (
     <div className="min-h-screen pb-24 font-sans bg-gray-50 dark:bg-black">
       <ModeToggle />
-
       <div className="sticky top-0 z-40 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800">
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex justify-around">
@@ -269,18 +248,12 @@ export default function Home() {
                     if ("vibrate" in navigator) navigator.vibrate(5);
                   }}
                   className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
-                    active
-                     ? `text-${tab.color}-600 dark:text-${tab.color}-400`
-                      : "text-gray-400 dark:text-zinc-500"
+                    active? `text-${tab.color}-600 dark:text-${tab.color}-400` : "text-gray-400 dark:text-zinc-500"
                   }`}
                 >
                   <Icon size={20} className={active? "scale-110" : ""} />
                   <span className="text-xs font-bold mt-1">{tab.label}</span>
-                  <div
-                    className={`mt-1 h-0.5 rounded-full transition-all duration-300 ${
-                      active? `w-6 bg-${tab.color}-500` : "w-0"
-                    }`}
-                  />
+                  <div className={`mt-1 h-0.5 rounded-full transition-all duration-300 ${active? `w-6 bg-${tab.color}-500` : "w-0"}`} />
                 </button>
               );
             })}
@@ -292,16 +265,8 @@ export default function Home() {
         {error && (
           <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
             <div className="text-5xl mb-4">⚠️</div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-              {error}
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-zinc-400 mb-4">
-              Mở Console F12 để xem lỗi chi tiết
-            </p>
-            <button
-              onClick={handleRefresh}
-              className="mt-4 px-6 py-2.5 rounded-xl bg-blue-500 text-white font-bold active:scale-95 transition flex items-center gap-2"
-            >
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">{error}</h2>
+            <button onClick={handleRefresh} className="mt-4 px-6 py-2.5 rounded-xl bg-blue-500 text-white font-bold active:scale-95 transition flex items-center gap-2">
               <FiRefreshCw className={refreshing? "animate-spin" : ""} />
               Thử lại
             </button>
@@ -316,6 +281,7 @@ export default function Home() {
             mode={mode}
             activeTab={activeTab}
             onShare={handleShare}
+            onTaskUpdate={handleTaskUpdate} // ✅ Thêm
           />
         )}
 
@@ -329,10 +295,7 @@ export default function Home() {
       </div>
 
       {showShareModal && shareTask && (
-        <ShareTaskModal
-          task={shareTask}
-          onClose={() => setShowShareModal(false)}
-        />
+        <ShareTaskModal task={shareTask} onClose={() => setShowShareModal(false)} />
       )}
     </div>
   );
