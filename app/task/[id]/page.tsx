@@ -6,8 +6,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp } from "firebase/firestore";
 import {
-  FiSend, FiClock, FiUsers, FiX,
-  FiMapPin, FiDollarSign, FiCheckCircle, FiMessageCircle, 
+  FiSend, FiClock, FiUsers, FiX, FiCheckCircle, FiMessageCircle, 
   FiCalendar, FiMessageSquare, FiPhone, FiAlertTriangle, 
   FiStar, FiBookmark, FiMoreHorizontal, FiShare2 // thêm dòng này
 } from "react-icons/fi";
