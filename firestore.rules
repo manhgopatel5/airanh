@@ -45,12 +45,8 @@ service cloud.firestore {
     }
 
     // ========== APPLICATIONS - THÊM MỚI ==========
-    match /applications/{appId} {
-      // Ứng viên và chủ task đều đọc được
-      allow read: if isSignedIn() && (
-        request.auth.uid == resource.data.userId || 
-        request.auth.uid == resource.data.taskOwnerId
-      );
+match /applications/{appId} {
+  allow read: if isSignedIn();
       
       // Chỉ user mới tạo đơn ứng tuyển cho chính mình
       allow create: if isSignedIn() 
