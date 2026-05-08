@@ -719,49 +719,66 @@ const taskTime = isTask(task) && task.deadline?.seconds
           </div>
         )}
 
-   {/* Ảnh task - Perfect Thumbnail Grid */}
 {/* Ảnh task - Perfect Thumbnail Grid */}
 {task.images && task.images.length > 0 && (
-  <div className="px-4 pt-3 pb-4">
+  <div className="px-4 pt-3 pb-2">
     {task.images.length === 1? (
+      // 1 ảnh
       <motion.button
-        whileTap={{ scale: 0.96 }}
+        whileTap={{ scale: 0.94 }}
         onClick={() => setShowImageGallery(0)}
-        className="relative w-22 h-22 rounded-2xl overflow-hidden bg-[#F2F2F7] dark:bg-zinc-800"
+        className="relative w-20 h-20 rounded- overflow-hidden"
       >
         <Image
-          src={task.images[0]!} // ← thêm dấu!
+          src={task.images[0]!}
           alt="Ảnh đính kèm"
           fill
-          sizes="88px"
+          sizes="80px"
           className="object-cover"
+          priority
         />
       </motion.button>
     ) : task.images.length === 2? (
+      // 2 ảnh
       <div className="flex gap-2">
         {task.images.slice(0, 2).map((img, i) => (
           <motion.button
             key={i}
-            whileTap={{ scale: 0.96 }}
+            whileTap={{ scale: 0.94 }}
             onClick={() => setShowImageGallery(i)}
-            className="relative w-22 h-22 rounded-2xl overflow-hidden bg-[#F2F2F7] dark:bg-zinc-800"
+            className="relative w-20 h-20 rounded- overflow-hidden"
           >
-            <Image src={img!} alt="" fill sizes="88px" className="object-cover" /> {/* ← thêm! */}
+            <Image
+              src={img!}
+              alt=""
+              fill
+              sizes="80px"
+              className="object-cover"
+              priority={i === 0}
+            />
           </motion.button>
         ))}
       </div>
     ) : (
-      <div className="grid grid-cols-3 gap-2 max-w-[280px]">
+      // 3+ ảnh
+      <div className="grid grid-cols-3 gap-2 max-w-[264px]">
         {task.images.slice(0, 3).map((img, i) => (
           <motion.button
             key={i}
-            whileTap={{ scale: 0.96 }}
+            whileTap={{ scale: 0.94 }}
             onClick={() => setShowImageGallery(i)}
-            className="relative aspect-square rounded-2xl overflow-hidden bg-[#F2F2F7] dark:bg-zinc-800"
+            className="relative aspect-square rounded- overflow-hidden"
           >
-            <Image src={img!} alt="" fill sizes="88px" className="object-cover" /> {/* ← thêm! */}
+            <Image
+              src={img!}
+              alt=""
+              fill
+              sizes="80px"
+              className="object-cover"
+              priority={i === 0}
+            />
             {i === 2 && task.images!.length > 3 && (
-              <div className="absolute inset-0 bg-black/50 backdrop-blur- flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
                 <span className="text-white font-bold text-">
                   +{task.images!.length - 3}
                 </span>
