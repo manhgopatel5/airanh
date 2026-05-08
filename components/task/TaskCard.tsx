@@ -122,42 +122,7 @@ const [saving, setSaving] = useState(false);
     }
   }, [user, isSaved, saving, task, router, db, onTaskUpdate]);
 
-  // ✅ THÊM: handleLike với Optimistic Update
-  const handleLike = useCallback(async () => {
-    if (!user) return router.push("/login");
-    if (liking) return;
 
-    vibrate(10);
-    setLiking(true);
-    const newLiked =!isLiked;
-    const oldLikedBy = task.likedBy || [];
-    const oldLikeCount = task.likeCount || 0;
-
-    // 1. Update UI ngay
-    setIsLiked(newLiked);
-    setLikeCount(prev => newLiked? prev + 1 : prev - 1);
-    onTaskUpdate?.(task.id, {
-      likedBy: newLiked
-       ? [...oldLikedBy, user.uid]
-        : oldLikedBy.filter(id => id!== user.uid),
-      likeCount: newLiked? oldLikeCount + 1 : oldLikeCount - 1
-    });
-
-    try {
-      await updateDoc(doc(db, "tasks", task.id), {
-        likedBy: newLiked? arrayUnion(user.uid) : arrayRemove(user.uid),
-        likeCount: increment(newLiked? 1 : -1),
-      });
-    } catch (err) {
-      // Rollback
-      setIsLiked(!newLiked);
-      setLikeCount(oldLikeCount);
-      onTaskUpdate?.(task.id, { likedBy: oldLikedBy, likeCount: oldLikeCount });
-      toast.error("Lỗi");
-    } finally {
-      setLiking(false);
-    }
-  }, [user, isLiked, liking, task, db, onTaskUpdate]);
 
   // ✅ THÊM: handleApply với Optimistic Update
   const handleApply = useCallback(async () => {
