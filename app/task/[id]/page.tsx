@@ -108,7 +108,7 @@ useEffect(() => {
   const [timeLeft, setTimeLeft] = useState("");
   const [isUrgent, setIsUrgent] = useState(false);
   const [joining, setJoining] = useState(false);
-  const [creatingChat, setCreatingChat] = useState(false);
+ 
   const [showImageGallery, setShowImageGallery] = useState<number | null>(null);
   const [likingComments, setLikingComments] = useState<Set<string>>(new Set());
   const [isApplied, setIsApplied] = useState(false);
@@ -828,7 +828,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
       <motion.button
         whileTap={{ scale: 0.94 }}
         onClick={handleStartChat}
-        disabled={creatingChat || isOwner}
+        disabled={isOwner}
         className="h-14 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 flex flex-col items-center justify-center gap-0.5 text-[#1C1C1E] dark:text-zinc-100 active:bg-[#E5E5EA] dark:active:bg-zinc-700 disabled:opacity-40 transition-all"
       >
         <FiMessageSquare size={22} strokeWidth={2} />
