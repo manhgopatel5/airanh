@@ -33,7 +33,7 @@ export default function TaskFeed({ tasks, mode, activeTab, onShare, onDelete, on
   task={task}
   theme={mode}
   {...(onTaskUpdate && { onTaskUpdate })} 
-/>/>
+/>
         </div>
       ))}
     </div>
