@@ -11,6 +11,7 @@ import {
   FiCalendar, FiMessageSquare, FiPhone, FiPlus, FiAlertTriangle, 
   FiStar, FiBookmark, FiMoreHorizontal, FiShare2 // thêm dòng này
 } from "react-icons/fi";
+import ShareTaskModal from "@/components/ShareTaskModal";
 import {
   
   joinTask,
@@ -126,6 +127,7 @@ export default function TaskDetailPage({ onShare }: Props) {
 const [saving, setSaving] = useState(false);
 const [showMenu, setShowMenu] = useState(false);
 const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
+const [shareTask, setShareTask] = useState<Task | null>(null);
 
 useEffect(() => {
   if (!task?.id) return;
@@ -177,12 +179,7 @@ const handleDelete = async () => {
 
 const handleShare = () => {
   if (!task) return;
-  if (onShare) {
-    onShare(task); // Bật modal "Chia sẻ cho" 
-  } else {
-    navigator.clipboard.writeText(window.location.href);
-    toast.success("Đã copy link");
-  }
+  setShareTask(task); // Bật modal luôn, khỏi cần onShare
 };
 
   useEffect(() => {
@@ -870,6 +867,19 @@ const taskTime = isTask(task) && task.deadline?.seconds
 
 
       <ImageGallery open={showImageGallery!== null} images={task.images || []} initialIndex={showImageGallery || 0} onClose={() => setShowImageGallery(null)} />
+      {shareTask && (
+        <ShareTaskModal
+          task={shareTask}
+          onClose={() => setShareTask(null)}
+        />
+      )}
+    </div>
+
+  </div>
+
+</>
+  );
+}
 </div>
 
   </div>
