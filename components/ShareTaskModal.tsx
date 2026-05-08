@@ -147,7 +147,7 @@ const handleSend = async () => {
           taskId: task.id,
           taskTitle: task.title,
           taskType: task.type,
-          price: task.price || 0,
+          price: 'price' in task ? task.price : 0,
           senderId: user.uid,
           senderName: user.displayName || user.email || "User",
           senderAvatar: user.photoURL || "",
