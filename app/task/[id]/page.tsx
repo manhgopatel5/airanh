@@ -9,7 +9,7 @@ import {
   FiSend, FiClock, FiUsers, FiX,
   FiMapPin, FiDollarSign, FiCheckCircle, FiMessageCircle, 
   FiCalendar, FiMessageSquare, FiPhone, FiPlus, FiAlertTriangle, 
-  FiStar, FiBookmark, FiMoreHorizontal
+  FiStar, FiBookmark, FiMoreHorizontal, FiShare2 // thêm dòng này
 } from "react-icons/fi";
 import {
   
@@ -54,6 +54,7 @@ type UserData = {
   joinedDate?: Timestamp;
   phone?: string;
 };
+
 const Portal = ({ children }: { children: React.ReactNode }) => {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -62,7 +63,11 @@ const Portal = ({ children }: { children: React.ReactNode }) => {
 
 const PRIMARY = "#0a84ff";
 
-export default function TaskDetailPage() {
+type Props = {
+  onShare?: (task: Task) => void;
+};
+
+export default function TaskDetailPage({ onShare }: Props) {
   const auth = getFirebaseAuth();
   const db = getFirebaseDB();
   const { id } = useParams();
@@ -147,7 +152,7 @@ const handleSave = async () => {
   setIsSaved(newSaved);
   try {
     await updateDoc(doc(db, "tasks", task.id), {
-      savedBy: newSaved? arrayUnion(currentUser.uid) : arrayRemove(currentUser.uid),
+      savedBy: newSaved? arrayUnion(currentUser.uid) : arrayRemove(currentUser.uid), // thiếu arrayRemove
     });
     toast.success(newSaved? "Đã lưu" : "Đã bỏ lưu");
   } catch {
@@ -170,6 +175,15 @@ const handleDelete = async () => {
   }
 };
 
+const handleShare = () => {
+  if (!task) return;
+  if (onShare) {
+    onShare(task); // Bật modal "Chia sẻ cho" 
+  } else {
+    navigator.clipboard.writeText(window.location.href);
+    toast.success("Đã copy link");
+  }
+};
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
