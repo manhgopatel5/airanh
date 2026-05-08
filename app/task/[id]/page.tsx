@@ -551,7 +551,7 @@ export default function TaskDetailPage() {
   const status = isExpired
 ? { label: "Đã hết hạn", color: "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B]", dot: "bg-[#FF3B30]" }
     : statusMap[task.status] || statusMap.open;
-  const maxSlots = task.type === "task"? task.totalSlots?? 0 : task.maxParticipants?? 0;
+
 
   return (
     <>
