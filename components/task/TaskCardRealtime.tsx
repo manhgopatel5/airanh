@@ -17,16 +17,20 @@ export default function TaskCardRealtime({ initialTask, theme, onDelete, onShare
   const [task, setTask] = useState(initialTask);
   const db = getFirebaseDB();
 
+  // ✅ THÊM DÒNG NÀY: Sync khi initialTask đổi từ parent
+  useEffect(() => {
+    setTask(initialTask);
+  }, [initialTask]);
+
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "tasks", initialTask.id), (snap) => {
       if (snap.exists()) {
-        setTask({ id: snap.id, ...snap.data() } as Task);
+        setTask({ id: snap.id,...snap.data() } as Task);
       }
     });
     return () => unsub();
   }, [initialTask.id]);
 
-  // ✅ Sửa dòng này
   return (
     <TaskCard 
       task={task} 
