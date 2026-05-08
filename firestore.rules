@@ -26,9 +26,9 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         // Chủ task sửa được hết
         request.auth.uid == resource.data.userId ||
-        // User khác chỉ được like + save + commentCount
+        // User khác chỉ được like + save + apply + commentCount
         request.resource.data.diff(resource.data).changedKeys()
-          .hasOnly(['savedBy', 'likedBy', 'likeCount', 'commentCount'])
+          .hasOnly(['savedBy', 'likedBy', 'likeCount', 'commentCount', 'applicants', 'appliedCount']) // ✅ Thêm applicants + appliedCount
       );
       
       allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
