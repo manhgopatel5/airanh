@@ -1,7 +1,7 @@
 "use client";
 
 import { Task } from "@/types/task";
-import TaskCardRealtime from "@/components/task/TaskCardRealtime";
+import TaskCard from "@/components/task/TaskCard"; // ✅ Đổi từ TaskCardRealtime
 import EmptyState from "@/components/EmptyState";
 import { AppMode } from "@/types/app";
 
@@ -13,9 +13,10 @@ type Props = {
   activeTab: TabId;
   onShare?: (task: Task) => void;
   onDelete?: (id: string) => void;
+  onTaskUpdate?: (taskId: string, updates: Partial<Task>) => void; // ✅ Thêm
 };
 
-export default function TaskFeed({ tasks, mode, activeTab, onShare, onDelete }: Props) {
+export default function TaskFeed({ tasks, mode, activeTab, onShare, onDelete, onTaskUpdate }: Props) {
   if (tasks.length === 0) {
     return <EmptyState tab={activeTab} type={mode} />;
   }
@@ -28,12 +29,13 @@ export default function TaskFeed({ tasks, mode, activeTab, onShare, onDelete }: 
           className="px-4"
           style={{ animationDelay: `${idx * 50}ms` }}
         >
-<TaskCardRealtime
-  initialTask={task}
-  theme={mode}
-  {...(onShare && { onShare })}
-  {...(onDelete && { onDelete })}
-/>
+          <TaskCard
+            task={task}
+            theme={mode}
+            onTaskUpdate={onTaskUpdate} // ✅ Thêm
+            {...(onShare && { onShare })}
+            {...(onDelete && { onDelete })}
+          />
         </div>
       ))}
     </div>
