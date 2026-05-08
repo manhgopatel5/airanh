@@ -106,18 +106,19 @@ export default function TasksPage() {
         case "mine":
           q = query(baseCollection, where("userId", "==", currentUser.uid), where("type", "==", mode), limit(PAGE_SIZE));
           break;
-  case "expired": // thêm case này
-    const now = Timestamp.now();
-    const sevenDaysAgo = Timestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
-    q = query(
-      baseCollection, 
-      where("userId", "==", currentUser.uid), 
-      where("type", "==", mode),
-      where("deadline", "<", now),
-      where("deadline", ">", sevenDaysAgo),
-      orderBy("deadline", "desc"),
-      limit(PAGE_SIZE)
-    );
+  case "expired":
+  const now = Timestamp.now();
+  const sevenDaysAgo = Timestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+  q = query(
+    baseCollection, 
+    where("userId", "==", currentUser.uid), 
+    where("type", "==", "task"), // ép chỉ lấy task
+    where("deadline", "<", now),
+    where("deadline", ">", sevenDaysAgo),
+    orderBy("deadline", "desc"),
+    limit(PAGE_SIZE)
+  );
+  break;
     break;
         case "saved":
           q = query(baseCollection, where("savedBy", "array-contains", currentUser.uid), where("type", "==", mode), limit(PAGE_SIZE));
@@ -161,9 +162,9 @@ export default function TasksPage() {
         case "mine":
           data = data.filter(t =>!["deleted", "cancelled"].includes(t.status));
           break;
-case "expired": // thêm case này
-    data = data.filter(t => t.deadline?.seconds * 1000 < Date.now());
-    break;
+case "expired":
+  data = data.filter(t => t.type === "task" && t.deadline?.seconds * 1000 < Date.now());
+  break;
   case "saved":
     data = data.filter(t =>!["deleted", "cancelled"].includes(t.status));
     break;
