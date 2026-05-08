@@ -10,7 +10,7 @@ import { doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp
 import {
   FiSend, FiClock, FiUsers, FiX, FiCheckCircle, FiMessageCircle, 
   FiCalendar, FiMessageSquare, FiPhone, FiAlertTriangle, 
-  FiStar, FiBookmark, FiMoreHorizontal, FiShare2 // thêm dòng này
+  FiStar, FiBookmark, FiMoreHorizontal, FiShare2 
 } from "react-icons/fi";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import {
@@ -767,7 +767,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
       <span>•</span>
 <div className="flex items-center gap-1">
   <FiUsers size={16} />
-  <span>{applications.length}/{task.totalSlots || 1}</span> // dùng applications.length thay vì acceptedCount
+  <span>{applications.length}/{task.totalSlots || 1}</span> 
 </div>
     </>
   )}
