@@ -2,6 +2,7 @@
   "indexes": [
     {
       "collectionGroup": "tasks",
+      
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "type", "order": "ASCENDING" },
