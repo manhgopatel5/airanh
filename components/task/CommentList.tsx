@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { FiMoreHorizontal } from "react-icons/fi";
+import { FiMoreHorizontal, FiEdit2, FiTrash2 } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserAvatar } from "@/components/ui/UserAvatar";
@@ -170,21 +170,26 @@ export function CommentList({
               {isOwnComment && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="opacity-0 group-hover:opacity-100 p-1 -m-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-full transition-all active:scale-90">
-                      <FiMoreHorizontal size={16} />
-                    </button>
+           <button className="p-1 -m-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-full transition-all active:scale-90">
+  <FiMoreHorizontal size={16} />
+</button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="rounded-xl">
-                    <DropdownMenuItem onClick={() => onEdit(c.id)}>
-                      Chỉnh sửa
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => onDelete(c.id)}
-                      className="text-red-500 focus:text-red-500"
-                    >
-                      Xoá
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
+      <DropdownMenuContent align="start" className="rounded-xl min-w-[180px] p-1">
+  <DropdownMenuItem 
+    onClick={() => onEdit(c.id)}
+    className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer"
+  >
+    <FiEdit2 size={16} />
+    <span>Chỉnh sửa bình luận</span>
+  </DropdownMenuItem>
+  <DropdownMenuItem
+    onClick={() => onDelete(c.id)}
+    className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-red-500 focus:text-red-500"
+  >
+    <FiTrash2 size={16} />
+    <span>Xóa bình luận</span>
+  </DropdownMenuItem>
+</DropdownMenuContent>
                 </DropdownMenu>
               )}
             </div>
