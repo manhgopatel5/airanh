@@ -13,6 +13,7 @@ import {
   QueryDocumentSnapshot,
   DocumentData,
   where,
+  Timestamp,
 } from "firebase/firestore";
 import TaskFeed from "@/components/TaskFeed";
 import ModeToggle from "@/components/ModeToggle";
@@ -90,22 +91,24 @@ export default function Home() {
   }, [db]);
 
   const buildQuery = useCallback(
-    (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
-      if (!db) return null;
-      const constraints: any[] = [
-        where("type", "==", mode),
-        where("visibility", "==", "public"),
-        where("status", "in", ["open", "full", "doing"]),
-        orderBy("createdAt", "desc"),
-        limit(PAGE_SIZE),
-      ];
-      if (startAfterDoc) {
-        constraints.push(startAfter(startAfterDoc));
-      }
-      return query(collection(db, "tasks"),...constraints);
-    },
-    [db, mode]
-  );
+  (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
+    if (!db) return null;
+    const now = Timestamp.now();
+    const constraints: any[] = [
+      where("type", "==", mode),
+      where("visibility", "==", "public"),
+      where("status", "in", ["open", "full", "doing"]),
+      where("deadline", ">", now), // thêm: chỉ lấy task chưa hết hạn
+      orderBy("deadline", "asc"), // đổi từ createdAt sang deadline
+      limit(PAGE_SIZE),
+    ];
+    if (startAfterDoc) {
+      constraints.push(startAfter(startAfterDoc));
+    }
+    return query(collection(db, "tasks"),...constraints);
+  },
+  [db, mode]
+);
 
   const loadData = useCallback(
     async (isRefresh = false) => {
