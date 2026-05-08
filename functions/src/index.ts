@@ -3,7 +3,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { FirestoreEvent, QueryDocumentSnapshot } from "firebase-functions/v2/firestore";
-
+import { onSchedule } from "firebase-functions/v2/scheduler";
 initializeApp();
 const db = getFirestore();
 
@@ -154,6 +154,39 @@ export const acceptFriendRequest = onCall(
   }
 );
 
+// 5. Tự động xóa task hết hạn sau 7 ngày - chạy 2h sáng mỗi ngày
+export const cleanupExpiredTasks = onSchedule(
+  {
+    schedule: "0 2 * * *",
+    timeZone: "Asia/Ho_Chi_Minh",
+    region: "asia-southeast1",
+    memory: "128MiB", // tiết kiệm RAM
+  },
+  async () => {
+    const sevenDaysAgo = admin.firestore.Timestamp.fromDate(
+      new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    );
+
+    const expiredTasks = await db.collection("tasks")
+      .where("deadline", "<", sevenDaysAgo)
+      .where("status", "!=", "deleted")
+      .limit(500) // giới hạn 500 docs/lần tránh timeout
+      .get();
+
+    if (expiredTasks.empty) {
+      console.log("No expired tasks to delete");
+      return;
+    }
+
+    const batch = db.batch();
+    expiredTasks.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+    console.log(`Deleted ${expiredTasks.size} expired tasks`);
+  }
+);
 
 // 4. Function hủy kết bạn: A xóa B → B còn A nhưng status = "removed"
 export const unfriend = onCall(
