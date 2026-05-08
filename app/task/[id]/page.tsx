@@ -720,17 +720,17 @@ const taskTime = isTask(task) && task.deadline?.seconds
         )}
 
    {/* Ảnh task - Perfect Thumbnail Grid */}
+{/* Ảnh task - Perfect Thumbnail Grid */}
 {task.images && task.images.length > 0 && (
   <div className="px-4 pt-3 pb-4">
     {task.images.length === 1? (
-      // 1 ảnh: Thumbnail 88px, aspect vuông, bo góc mạnh
       <motion.button
         whileTap={{ scale: 0.96 }}
         onClick={() => setShowImageGallery(0)}
         className="relative w-22 h-22 rounded-2xl overflow-hidden bg-[#F2F2F7] dark:bg-zinc-800"
       >
         <Image
-          src={task.images[0]}
+          src={task.images[0]!} // ← thêm dấu!
           alt="Ảnh đính kèm"
           fill
           sizes="88px"
@@ -738,7 +738,6 @@ const taskTime = isTask(task) && task.deadline?.seconds
         />
       </motion.button>
     ) : task.images.length === 2? (
-      // 2 ảnh: 2 thumbnail ngang
       <div className="flex gap-2">
         {task.images.slice(0, 2).map((img, i) => (
           <motion.button
@@ -747,12 +746,11 @@ const taskTime = isTask(task) && task.deadline?.seconds
             onClick={() => setShowImageGallery(i)}
             className="relative w-22 h-22 rounded-2xl overflow-hidden bg-[#F2F2F7] dark:bg-zinc-800"
           >
-            <Image src={img} alt="" fill sizes="88px" className="object-cover" />
+            <Image src={img!} alt="" fill sizes="88px" className="object-cover" /> {/* ← thêm! */}
           </motion.button>
         ))}
       </div>
     ) : (
-      // 3+ ảnh: Grid 3 cột, ảnh cuối có overlay +N
       <div className="grid grid-cols-3 gap-2 max-w-[280px]">
         {task.images.slice(0, 3).map((img, i) => (
           <motion.button
@@ -761,10 +759,10 @@ const taskTime = isTask(task) && task.deadline?.seconds
             onClick={() => setShowImageGallery(i)}
             className="relative aspect-square rounded-2xl overflow-hidden bg-[#F2F2F7] dark:bg-zinc-800"
           >
-            <Image src={img} alt="" fill sizes="88px" className="object-cover" />
+            <Image src={img!} alt="" fill sizes="88px" className="object-cover" /> {/* ← thêm! */}
             {i === 2 && task.images!.length > 3 && (
-              <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center">
-                <span className="text-white font-bold text-[17px]">
+              <div className="absolute inset-0 bg-black/50 backdrop-blur- flex items-center justify-center">
+                <span className="text-white font-bold text-">
                   +{task.images!.length - 3}
                 </span>
               </div>
