@@ -484,21 +484,29 @@ const taskTime = isTask(task) && task.deadline?.seconds
   <div className="flex items-center justify-between gap-2 mb-1">
     <span className="font-semibold text-[17px] text-[#1C1C1E] truncate">{owner?.name || "Minh Tran"}</span>
 <div className="flex items-center gap-2 shrink-0">
-  <motion.button
-    whileTap={{ scale: 0.95 }}
-    onClick={handleSave}
-    disabled={saving}
-    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 ${
-      isSaved
-       ? "bg-blue-50 dark:bg-blue-950/50 text-[#0A84FF] dark:text-blue-400"
-        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700"
-    }`}
+  {/* Nút Share - dùng FiShare2 */}
+  <button
+    onClick={handleShare}
+    className="p-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-90 transition-all"
   >
-    {isSaved? <FiCheck size={18} /> : <FiBookmark size={18} />}
-    {isSaved? "Đã lưu" : "Lưu"}
-  </motion.button>
+    <FiShare2 size={18} className="text-zinc-600 dark:text-zinc-300" />
+  </button>
 
-  {isOwner && (
+  {!isOwner? (
+    <motion.button
+      whileTap={{ scale: 0.95 }}
+      onClick={handleSave}
+      disabled={saving}
+      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 ${
+        isSaved
+      ? "bg-blue-50 dark:bg-blue-950/50 text-[#0A84FF] dark:text-blue-400"
+        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+      }`}
+    >
+      {isSaved? <FiCheck size={18} /> : <FiBookmark size={18} />}
+      {isSaved? "Đã lưu" : "Lưu"}
+    </motion.button>
+  ) : (
     <div className="relative">
       <button
         onClick={(e) => {
@@ -506,7 +514,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
           e.stopPropagation();
           const rect = e.currentTarget.getBoundingClientRect();
           setMenuPos({
-            x: rect.right - 180,
+            x: rect.right - 200,
             y: rect.bottom + 8
           });
           setShowMenu(!showMenu);
@@ -527,12 +535,24 @@ const taskTime = isTask(task) && task.deadline?.seconds
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -10 }}
               transition={{ duration: 0.15 }}
-              className="fixed z-50 min-w-[180px] bg-white dark:bg-zinc-900 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 py-2 overflow-hidden"
+              className="fixed z-50 min-w-[200px] bg-white dark:bg-zinc-900 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 py-2 overflow-hidden"
               style={{
                 top: `${menuPos.y}px`,
                 left: `${menuPos.x}px`,
               }}
             >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSave();
+                  setShowMenu(false);
+                }}
+                className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
+              >
+                {isSaved? <FiCheck size={18} /> : <FiBookmark size={18} />}
+                {isSaved? "Đã lưu" : "Lưu công việc"}
+              </button>
+              <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
               <button
                 onClick={(e) => {
                   e.stopPropagation();
