@@ -419,9 +419,9 @@ useEffect(() => {
       where('status', 'in', ['pending', 'accepted'])
     );
     const snap = await getDocs(q);
-    if (!snap.empty) {
-      await deleteDoc(doc(db, 'applications', snap.docs[0].id));
-    }
+    if (!snap.empty && snap.docs[0]) {
+  await deleteDoc(doc(db, 'applications', snap.docs[0].id));
+}
     toast.success("Đã hủy ứng tuyển");
     navigator.vibrate?.(10);
   } catch {
