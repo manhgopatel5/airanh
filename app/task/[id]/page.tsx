@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { db, auth } from "@/lib/firebase"; // Dùng db, auth trực tiếp
+import { db, auth } from "@/lib/firebase";
 import { 
   doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp, 
   onSnapshot, addDoc, getDocs, collection, query, where, arrayUnion, deleteDoc,
@@ -80,7 +80,7 @@ export default function TaskDetailPage() {
   const [owner, setOwner] = useState<UserData | null>(null);
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [applications, setApplications] = useState<Application[]>([]); // Thay useCollection
+  const [applications, setApplications] = useState<Application[]>([]); // ✅ Đặt trong này
 
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<TaskComment | null>(null);
@@ -106,7 +106,7 @@ export default function TaskDetailPage() {
   const [shareTask, setShareTask] = useState<Task | null>(null);
   const [acceptedCount, setAcceptedCount] = useState(0);
 
-  // Thay useCollection bằng useEffect
+  // ✅ useEffect phải nằm trong component
   useEffect(() => {
     if (!task?.id) {
       setApplications([]);
@@ -120,169 +120,6 @@ export default function TaskDetailPage() {
     });
     return () => unsub();
   }, [task?.id]);
-
-
-
-
-type UserData = {
-  uid: string;
-  name: string;
-  avatar: string;
-  online?: boolean;
-  rating?: number;
-  reviewCount?: number;
-  joinedDate?: Timestamp;
-  phone?: string;
-};
-type Application = {
-  id: string;
-  taskId: string;
-  taskOwnerId: string;
-  userId: string;
-  userName: string;
-  userAvatar: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
-  createdAt: Timestamp;
-  updatedAt?: Timestamp;
-};
-
-const Portal = ({ children }: { children: React.ReactNode }) => {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  return mounted? createPortal(children, document.body) : null;
-};
-
-const PRIMARY = "#0a84ff";
-
-
-export default function TaskDetailPage() {
-  const auth = getFirebaseAuth();
-  const db = getFirebaseDB();
-  const { id } = useParams();
-  const router = useRouter();
-
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const [task, setTask] = useState<Task | null>(null);
-  const [owner, setOwner] = useState<UserData | null>(null);
- 
-  const [comments, setComments] = useState<TaskComment[]>([]);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-
-  const [text, setText] = useState("");
-  const [replyTo, setReplyTo] = useState<TaskComment | null>(null);
-  const [editingComment, setEditingComment] = useState<string | null>(null);
-  const [editText, setEditText] = useState("");
-  const [showMention, setShowMention] = useState(false);
-  const [mentionQuery, setMentionQuery] = useState("");
-
-  const [loading, setLoading] = useState(true);
-  
-
-  const [sending, setSending] = useState(false);
-  const [timeLeft, setTimeLeft] = useState("");
-  const [isUrgent, setIsUrgent] = useState(false);
-  const [joining, setJoining] = useState(false);
-  const [creatingChat, setCreatingChat] = useState(false);
- 
-  const [showImageGallery, setShowImageGallery] = useState<number | null>(null);
-  const [likingComments, setLikingComments] = useState<Set<string>>(new Set());
-
-  
-
-  const [isApplied, setIsApplied] = useState(false);
-
-useEffect(() => {
-  if (!currentUser?.uid || !task?.id) return;
-  const q = query(
-    collection(db, 'applications'),
-    where('taskId', '==', task.id),
-    where('userId', '==', currentUser.uid),
-    where('status', 'in', ['pending', 'accepted'])
-  );
-  const unsub = onSnapshot(q, (snap) => {
-    setIsApplied(!snap.empty);
-  });
-  return () => unsub();
-}, [currentUser?.uid, task?.id]);
-
-  const isOwner = useMemo(
-    () => currentUser?.uid === task?.userId,
-    [currentUser, task]
-  );
-
-  const [mentionUsersList, setMentionUsersList] = useState<UserData[]>([]);
-
-useEffect(() => {
-  if (!task?.id ||!task?.userId) return;
-  const loadMentionUsers = async () => {
-    try {
-      const appSnaps = await getDocs(query(
-        collection(db, 'applications'),
-        where('taskId', '==', task.id),
-        where('status', 'in', ['pending', 'accepted'])
-      ));
-      
-      const userIds = [task.userId,...appSnaps.docs.map(d => d.data()?.userId).filter(Boolean)];
-      const uniqueIds = [...new Set(userIds)];
-      if (uniqueIds.length === 0) return;
-      
-      const userSnaps = await Promise.all(
-        uniqueIds.map(uid => getDoc(doc(db, "users", uid)))
-      );
-      
-      const users = userSnaps
-       .filter(s => s.exists())
-       .map(s => ({ uid: s.id,...s.data() } as UserData));
-      
-      setMentionUsersList(users);
-    } catch (err) {
-      console.error("Load mention users error:", err);
-    }
-  };
-  loadMentionUsers();
-}, [task?.id, task?.userId, db]);
-
-const mentionUsers = useMemo(() => {
-  return mentionUsersList.filter(u => 
-    u.name.toLowerCase().includes(mentionQuery.toLowerCase())
-  );
-}, [mentionUsersList, mentionQuery]);
-  const [isSaved, setIsSaved] = useState(false);
-const [saving, setSaving] = useState(false);
-const [showMenu, setShowMenu] = useState(false);
-const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
-const [shareTask, setShareTask] = useState<Task | null>(null);
-const appConverter = {
-  toFirestore(app: Application): DocumentData {
-    return app;
-  },
-  fromFirestore(snapshot: QueryDocumentSnapshot): Application {
-    return { id: snapshot.id,...snapshot.data() } as Application;
-  }
-};
-const [applicationsSnap] = useCollection<Application>(
-  task?.id? query(
-    collection(db, 'applications').withConverter(appConverter),
-    where('taskId', '==', task.id)
-  ) : null
-);
-
-const [acceptedCount, setAcceptedCount] = useState(0);
-
-useEffect(() => {
-  if (!task?.id) return;
-  const q = query(
-    collection(db, 'applications'),
-    where('taskId', '==', task.id),
-    where('status', '==', 'accepted')
-  );
-  const unsub = onSnapshot(q, (snap) => {
-    setAcceptedCount(snap.size);
-  });
-  return () => unsub();
-}, [task?.id]);
 
 const isFull = useMemo(
   () => acceptedCount >= (task && isTask(task)? task.totalSlots : 1),
