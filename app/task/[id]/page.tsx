@@ -99,7 +99,7 @@ export default function TaskDetailPage() {
   const [showImageGallery, setShowImageGallery] = useState<number | null>(null);
   const [likingComments, setLikingComments] = useState<Set<string>>(new Set());
   const [isApplied, setIsApplied] = useState(false);
-  const [mentionUsersList, setMentionUsersList] = useState<UserData[]>([]);
+  
   const [isSaved, setIsSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
