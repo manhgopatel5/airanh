@@ -192,13 +192,6 @@
     },
     {
       "collectionGroup": "applications",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "taskId", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "applications",
       "queryScope": "COLLECTION", 
       "fields": [
         { "fieldPath": "taskId", "order": "ASCENDING" },
