@@ -185,10 +185,10 @@ const appConverter = {
   }
 };
 const [applicationsSnap] = useCollection<Application>(
-  task?.id? query(
+  task?.id && isOwner? query(
     collection(db, 'applications').withConverter(appConverter),
     where('taskId', '==', task.id),
-    where('status', '==', 'pending')
+    where('taskOwnerId', '==', currentUser?.uid) // ✅ chỉ chủ task mới xem được tất cả
   ) : null
 );
 
@@ -765,10 +765,10 @@ const taskTime = isTask(task) && task.deadline?.seconds
       </span>
       <span>• Cố định</span>
       <span>•</span>
-      <div className="flex items-center gap-1">
-        <FiUsers size={16} />
-        <span>{acceptedCount}/{task.totalSlots || 1}</span>
-      </div>
+<div className="flex items-center gap-1">
+  <FiUsers size={16} />
+  <span>{applications.length}/{task.totalSlots || 1}</span> // dùng applications.length thay vì acceptedCount
+</div>
     </>
   )}
 </div>
