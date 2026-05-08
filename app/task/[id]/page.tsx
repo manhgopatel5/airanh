@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
-
 import {
   doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp,
   addDoc, getDocs, collection, limit, query, where, arrayUnion, deleteDoc
