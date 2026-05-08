@@ -26,5 +26,13 @@ export default function TaskCardRealtime({ initialTask, theme, onDelete, onShare
     return () => unsub();
   }, [initialTask.id]);
 
-  return <TaskCard task={task} theme={theme} onDelete={onDelete} onShare={onShare} />;
+  // ✅ Sửa dòng này
+  return (
+    <TaskCard 
+      task={task} 
+      theme={theme} 
+      {...(onDelete && { onDelete })} 
+      {...(onShare && { onShare })} 
+    />
+  );
 }
