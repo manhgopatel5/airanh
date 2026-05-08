@@ -309,12 +309,7 @@ const [saving, setSaving] = useState(false);
             <FiUsers size={13} />
             <span className="font-medium">{applicants.length}/{maxSlots}</span>
           </div>
-          {likeCount > 0 && (
-            <div className="flex items-center gap-1">
-              <FiHeart size={13} />
-              <span className="font-medium">{likeCount}</span>
-            </div>
-          )}
+       
           {task.location?.city && (
             <div className="flex items-center gap-1 truncate">
               <FiMapPin size={13} />
