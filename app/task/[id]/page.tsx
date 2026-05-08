@@ -236,21 +236,38 @@ useEffect(() => {
     loadUsers();
   }, [task?.id, task?.userId, task?.applicants, db]);
 
-  useEffect(() => {
-    if (!task ||!isTask(task) ||!task.deadline?.seconds || task.status === "completed") return;
-    const tick = () => {
-      const diff = task.deadline!.seconds * 1000 - Date.now();
-      if (diff <= 0) return setTimeLeft("Đã hết hạn");
-      const d = Math.floor(diff / 86400000);
-      const h = Math.floor((diff % 86400000) / 3600000);
+useEffect(() => {
+  if (!task ||!isTask(task) ||!task.deadline?.seconds || task.status === "completed") {
+    setIsUrgent(false);
+    return;
+  }
+
+  const tick = () => {
+    const diff = task.deadline!.seconds * 1000 - Date.now();
+
+    if (diff <= 0) {
+      setTimeLeft("Đã hết hạn");
+      setIsUrgent(true);
+      return;
+    }
+
+    const totalHours = diff / 3600000;
+
+    if (totalHours <= 5) {
+      setIsUrgent(true);
+      const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
       const s = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(d > 0? `${d} ngày ${h}h` : `${h}h ${m}m ${s}s`);
-    };
-    tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
-  }, [task]);
+      setTimeLeft(`Còn ${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`);
+    } else {
+      setIsUrgent(false);
+    }
+  };
+
+  tick();
+  const interval = setInterval(tick, 1000);
+  return () => clearInterval(interval);
+}, [task]);
 
   useEffect(() => {
     if (!task?.id) return;
@@ -584,30 +601,39 @@ const taskTime = isTask(task) && task.deadline?.seconds
 
         <h2 className="font-semibold text-[17px] leading-snug mb-3 text-[#1C1C1E]">{task.title}</h2>
 
-        <div className="flex items-center gap-2 text-[15px] text-[#8E8E93] flex-wrap">
-          <div className="flex items-center gap-1">
-            <FiCalendar size={16} />
-            <span>{taskDate}</span>
-          </div>
-          <span>•</span>
-<div className="flex items-center gap-1">
-  <FiClock size={16} />
-  <span>{taskTime}</span>
-</div>
-{isTask(task) && task.price > 0 && (
-  <>
-    <span className="px-2 py-0.5 rounded-md bg-[#E6F4EA] text-[#1E8E3E] text- font-semibold">
-      {task.price.toLocaleString("vi-VN")} đ
-    </span>
-    <span>• Cố định</span>
-    <span>•</span>
-    <div className="flex items-center gap-1">
-      <FiUsers size={16} />
-      <span>{applicants.length}/{task.totalSlots || 1}</span>
+       <div className="flex items-center gap-2 text- text-[#8E8E93] flex-wrap">
+  {isUrgent? (
+    <div className="flex items-center gap-1 text-[#FF3B30] font-bold animate-pulse">
+      <FiClock size={16} />
+      <span className="tabular-nums">{timeLeft}</span>
     </div>
-  </>
-)}
-        </div>
+  ) : (
+    <>
+      <div className="flex items-center gap-1">
+        <FiCalendar size={16} />
+        <span>{taskDate}</span>
+      </div>
+      <span>•</span>
+      <div className="flex items-center gap-1">
+        <FiClock size={16} />
+        <span>{taskTime}</span>
+      </div>
+    </>
+  )}
+  {isTask(task) && task.price > 0 && (
+    <>
+      <span className="px-2 py-0.5 rounded-md bg-[#E6F4EA] text-[#1E8E3E] text- font-semibold">
+        {task.price.toLocaleString("vi-VN")} đ
+      </span>
+      <span>• Cố định</span>
+      <span>•</span>
+      <div className="flex items-center gap-1">
+        <FiUsers size={16} />
+        <span>{applicants.length}/{task.totalSlots || 1}</span>
+      </div>
+    </>
+  )}
+</div>
       </div>
     </div>
   </div>
