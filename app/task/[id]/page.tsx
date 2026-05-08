@@ -719,29 +719,62 @@ const taskTime = isTask(task) && task.deadline?.seconds
           </div>
         )}
 
-        {/* Ảnh task - THU NHỎ XÍU, ĐỂ DƯỚI MÔ TẢ */}
-        {task.images && task.images.length > 0 && (
-          <div className="mt-3 px-4">
-            <div className={`grid gap-1.5 rounded-2xl overflow-hidden ${task.images.length === 1? "grid-cols-1" : "grid-cols-3"}`}>
-              {task.images.slice(0, 3).map((img, i) => (
-                <motion.div key={i} whileTap={{ scale: 0.95 }} className="relative aspect-square" onClick={() => setShowImageGallery(i)}>
-                  <Image
-                    src={img}
-                    alt=""
-                    width={400}
-                    height={300}
-                    className="w-full h-full object-cover bg-[#E5E5EA] dark:bg-zinc-800 cursor-pointer"
-                  />
-                  {i === 2 && task.images!.length > 3 && (
-                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold text-lg">
-                      +{task.images!.length - 3}
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        )}
+   {/* Ảnh task - Perfect Thumbnail Grid */}
+{task.images && task.images.length > 0 && (
+  <div className="px-4 pt-3 pb-4">
+    {task.images.length === 1? (
+      // 1 ảnh: Thumbnail 88px, aspect vuông, bo góc mạnh
+      <motion.button
+        whileTap={{ scale: 0.96 }}
+        onClick={() => setShowImageGallery(0)}
+        className="relative w-22 h-22 rounded-2xl overflow-hidden bg-[#F2F2F7] dark:bg-zinc-800"
+      >
+        <Image
+          src={task.images[0]}
+          alt="Ảnh đính kèm"
+          fill
+          sizes="88px"
+          className="object-cover"
+        />
+      </motion.button>
+    ) : task.images.length === 2? (
+      // 2 ảnh: 2 thumbnail ngang
+      <div className="flex gap-2">
+        {task.images.slice(0, 2).map((img, i) => (
+          <motion.button
+            key={i}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => setShowImageGallery(i)}
+            className="relative w-22 h-22 rounded-2xl overflow-hidden bg-[#F2F2F7] dark:bg-zinc-800"
+          >
+            <Image src={img} alt="" fill sizes="88px" className="object-cover" />
+          </motion.button>
+        ))}
+      </div>
+    ) : (
+      // 3+ ảnh: Grid 3 cột, ảnh cuối có overlay +N
+      <div className="grid grid-cols-3 gap-2 max-w-[280px]">
+        {task.images.slice(0, 3).map((img, i) => (
+          <motion.button
+            key={i}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => setShowImageGallery(i)}
+            className="relative aspect-square rounded-2xl overflow-hidden bg-[#F2F2F7] dark:bg-zinc-800"
+          >
+            <Image src={img} alt="" fill sizes="88px" className="object-cover" />
+            {i === 2 && task.images!.length > 3 && (
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center">
+                <span className="text-white font-bold text-[17px]">
+                  +{task.images!.length - 3}
+                </span>
+              </div>
+            )}
+          </motion.button>
+        ))}
+      </div>
+    )}
+  </div>
+)}
       {/* Info chi tiết task */}
 <div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl shadow-sm space-y-3 text-[15px]">
   {task.location && (task.location.address || task.location.city) && (
