@@ -682,7 +682,13 @@ export default function TaskDetailPage() {
         </div>
 
         <h2 className="font-semibold text- leading-snug mb-3 text-[#1C1C1E]">{task.title}</h2>
-
+{/* Thêm status badge */}
+<div className="flex items-center gap-2 mb-3">
+  <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${status.color}`}>
+    <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${status.dot}`} />
+    {status.label}
+  </span>
+</div>
        <div className="flex items-center gap-2 text- text-[#8E8E93] flex-wrap">
   {isUrgent? (
     <div className="flex items-center gap-1 text-[#FF3B30] font-bold animate-pulse">
