@@ -6,7 +6,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { collection, query, where, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
-import { doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp, onSnapshot, addDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp, onSnapshot, addDoc, getDocs } from "firebase/firestore";
 import {
   FiSend, FiClock, FiUsers, FiX, FiCheckCircle, FiMessageCircle, 
   FiCalendar, FiMessageSquare, FiPhone, FiAlertTriangle, 
@@ -134,11 +134,38 @@ useEffect(() => {
     [currentUser, task]
   );
 
-  const mentionUsers = useMemo(() => {
-    const users = [...applicantsData];
-    if (owner &&!users.find(u => u.uid === owner.uid)) users.unshift(owner);
-    return users.filter(u => u.name.toLowerCase().includes(mentionQuery.toLowerCase()));
-  }, [applicantsData, owner, mentionQuery]);
+  const [mentionUsersList, setMentionUsersList] = useState<UserData[]>([]);
+
+useEffect(() => {
+  if (!task?.id || !task?.userId) return;
+  const loadMentionUsers = async () => {
+    const appSnaps = await getDocs(query(
+      collection(db, 'applications'),
+      where('taskId', '==', task.id),
+      where('status', 'in', ['pending', 'accepted'])
+    ));
+    
+    const userIds = [task.userId,...appSnaps.docs.map(d => d.data().userId)];
+    const uniqueIds = [...new Set(userIds)];
+    
+    const userSnaps = await Promise.all(
+      uniqueIds.map(uid => getDoc(doc(db, "users", uid)))
+    );
+    
+    const users = userSnaps
+      .filter(s => s.exists())
+      .map(s => ({ uid: s.id,...s.data() } as UserData));
+    
+    setMentionUsersList(users);
+  };
+  loadMentionUsers();
+}, [task?.id, task?.userId, db]);
+
+const mentionUsers = useMemo(() => {
+  return mentionUsersList.filter(u => 
+    u.name.toLowerCase().includes(mentionQuery.toLowerCase())
+  );
+}, [mentionUsersList, mentionQuery]);
   const [isSaved, setIsSaved] = useState(false);
 const [saving, setSaving] = useState(false);
 const [showMenu, setShowMenu] = useState(false);
