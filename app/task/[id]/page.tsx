@@ -8,6 +8,7 @@ import {
   doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp, 
   onSnapshot, addDoc, getDocs, collection, query, where, arrayUnion, deleteDoc
 } from "firebase/firestore";
+import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import {
   FiSend, FiClock, FiUsers, FiX, FiCheckCircle, FiMessageCircle, 
   FiCalendar, FiMessageSquare, FiPhone, FiAlertTriangle, 
