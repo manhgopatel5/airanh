@@ -6,8 +6,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 
 import { 
   doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp, 
-  onSnapshot, addDoc, getDocs, collection, query, where, arrayUnion, deleteDoc,
-  QueryDocumentSnapshot, DocumentData 
+  onSnapshot, addDoc, getDocs, collection, query, where, arrayUnion, deleteDoc
 } from "firebase/firestore";
 import {
   FiSend, FiClock, FiUsers, FiX, FiCheckCircle, FiMessageCircle, 
