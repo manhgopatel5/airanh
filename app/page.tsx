@@ -73,11 +73,11 @@ export default function Home() {
     setShowShareModal(true);
   }, []);
 
-  const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) => {
-    setAllItems(prev => prev.map(t =>
-      t.id === taskId? {...t,...updates } : t
-    ));
-  }, []);
+const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) => {
+  setAllItems(prev => prev.map(t =>
+    t.id === taskId? { ...t,...updates } as Task : t
+  ));
+}, []);
 
   useEffect(() => {
     if (db) return;
