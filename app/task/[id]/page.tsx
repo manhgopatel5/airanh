@@ -15,6 +15,7 @@ import {
 } from "react-icons/fi";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import { incrementTaskView } from "@/lib/task";
+import { applyToTask } from "@/app/actions/task"; 
 import {
   createComment,
   toggleLikeComment,
@@ -340,41 +341,29 @@ export default function TaskDetailPage() {
     }
   };
 
-  const handleJoinTask = async () => {
-    if (!currentUser ||!task || isApplied || isFull || joining || isOwner) return;
-    setJoining(true);
-    try {
-      const existingQuery = query(
-        collection(db, "applications"),
-        where("taskId", "==", task.id),
-        where("userId", "==", currentUser.uid)
-      );
-      const existingSnap = await getDocs(existingQuery);
-      if (!existingSnap.empty) {
-        toast.error("Bạn đã ứng tuyển rồi");
-        setJoining(false);
-        return;
-      }
-      await addDoc(collection(db, "applications"), {
-        taskId: task.id,
-        taskOwnerId: task.userId,
-        userId: currentUser.uid,
-        userName: currentUser.displayName || currentUser.email?.split("@")[0] || "User",
-        userAvatar: currentUser.photoURL || "",
-        status: "pending",
-        createdAt: serverTimestamp(),
-      });
-      setIsApplied(true);
-      toast.success("Ứng tuyển thành công!");
-      navigator.vibrate?.(10);
-      loadApplications(); // Reload lại list
-    } catch (err) {
-      console.error(err);
-      toast.error("Ứng tuyển thất bại");
-    } finally {
-      setJoining(false);
-    }
-  };
+  
+
+const handleJoinTask = async () => {
+  if (!currentUser || !task || isApplied || isFull || joining || isOwner) return;
+  setJoining(true);
+  
+  // Optimistic update cho UI mượt
+  const oldApplicants = task.applicants || [];
+  setTask(prev => ({ ...prev, applicants: [...oldApplicants, currentUser.uid] }));
+  
+  try {
+    await applyToTask(task.id, currentUser.uid); // Gọi server action
+    toast.success("Ứng tuyển thành công!");
+    navigator.vibrate?.(10);
+    await loadApplications(); // Reload list ứng viên trong detail
+  } catch (err) {
+    // Rollback nếu lỗi
+    setTask(prev => ({ ...prev, applicants: oldApplicants }));
+    toast.error("Ứng tuyển thất bại");
+  } finally {
+    setJoining(false);
+  }
+};};
 
   const handleCancelApply = async () => {
     if (!currentUser ||!task ||!isApplied || joining) return;
