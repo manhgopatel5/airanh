@@ -124,31 +124,6 @@ const [saving, setSaving] = useState(false);
 
 
 
-  // ✅ THÊM: handleApply với Optimistic Update
-  const handleApply = useCallback(async () => {
-    if (!user) return router.push("/login");
-
-    const oldApplicants = task.applicants || [];
-    const isApplied = oldApplicants.includes(user.uid);
-    if (isApplied) return toast.info("Đã ứng tuyển");
-
-    vibrate(10);
-    // Update UI ngay
-    onTaskUpdate?.(task.id, {
-      applicants: [...oldApplicants, user.uid]
-    });
-
-    try {
-      await updateDoc(doc(db, "tasks", task.id), {
-        applicants: arrayUnion(user.uid),
-      });
-      toast.success("Đã ứng tuyển");
-    } catch (err) {
-      onTaskUpdate?.(task.id, { applicants: oldApplicants }); // Rollback
-      toast.error("Lỗi");
-    }
-  }, [user, task, db, onTaskUpdate]);
-
   const handleDelete = useCallback(async () => {
     if (!isOwner) return;
     if (!confirm("Xóa task này?")) return;
