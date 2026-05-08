@@ -139,7 +139,7 @@ useEffect(() => {
     console.error("Applications error:", error);
   });
   return () => unsub();
-}, [task?.id, currentUser?.uid]); // ✅ Thêm currentUser?.uid vào deps
+}, [db, task?.id, currentUser?.uid]);
 
 useEffect(() => {
   if (!task?.id) return;
@@ -345,6 +345,7 @@ const handleJoinTask = async () => {
       createdAt: serverTimestamp()
     });
     toast.success("Ứng tuyển thành công!");
+    setIsApplied(true);
     navigator.vibrate?.(10);
   } catch (err: any) {
     console.error(err);
@@ -748,7 +749,10 @@ const taskTime = isTask(task) && task.deadline?.seconds
                     {app.userName}
                   </p>
                   <p className="text-[13px] text-zinc-500 dark:text-zinc-400">
-                    {app.createdAt?.toDate().toLocaleDateString('vi-VN')}
+                    {app.createdAt?.toDate
+  ? app.createdAt.toDate().toLocaleDateString('vi-VN')
+  : 'Đang cập nhật'}
+                    
                   </p>
                 </div>
               </div>
