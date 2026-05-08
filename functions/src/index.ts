@@ -288,10 +288,9 @@ export const cleanupExpiredTasks = onSchedule(
     );
 
     const expiredTasks = await db.collection("tasks")
-     .where("deadline", "<", sevenDaysAgo)
-     .where("status", "!=", "deleted")
-     .limit(500)
-     .get();
+    .where("deadline", "<", sevenDaysAgo)
+    .limit(500)
+    .get();
 
     if (expiredTasks.empty) {
       console.log("No expired tasks to delete");
