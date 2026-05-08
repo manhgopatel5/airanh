@@ -8,7 +8,7 @@ import {
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { type TaskStatus, type Task, isTask } from "@/types/task";
