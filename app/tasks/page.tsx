@@ -207,25 +207,31 @@ data = data.filter(t => t.type === "task" && t.deadline && t.deadline.seconds * 
     }
   }, [currentUser, mode, subTab, searchQuery, db]); // ← Đã bỏ lastDoc
 
-  useEffect(() => {
-    if (currentUser) fetchTasks(true);
-  }, [currentUser, mode, subTab]);
+const fetchTasksRef2 = useRef(fetchTasks);
+fetchTasksRef2.current = fetchTasks;
 
-  useEffect(() => {
-    if (!loadMoreRef.current) return;
+useEffect(() => {
+  if (currentUser) fetchTasksRef2.current(true);
+}, [currentUser, mode, subTab]);
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && hasMore &&!loading &&!loadingMore) {
-          fetchTasks(false);
-        }
-      },
-      { threshold: 0.1 }
-    );
+  const fetchTasksRef = useRef(fetchTasks);
+fetchTasksRef.current = fetchTasks;
 
-    observer.observe(loadMoreRef.current);
-    return () => observer.disconnect();
-  }, [hasMore, loading, loadingMore, fetchTasks]);
+useEffect(() => {
+  if (!loadMoreRef.current) return;
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting && hasMore &&!loading &&!loadingMore) {
+        fetchTasksRef.current(false);
+      }
+    },
+    { threshold: 0.1 }
+  );
+
+  observer.observe(loadMoreRef.current);
+  return () => observer.disconnect();
+}, [hasMore, loading, loadingMore]);
 
   const handleRefresh = async () => {
     vibrate(10);
