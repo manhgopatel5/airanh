@@ -8,13 +8,13 @@ import { useRouter } from "next/navigation";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
-import { collection, query, where, getDocs, limit, startAfter, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
+import { collection, query, where, getDocs, limit, startAfter, QueryDocumentSnapshot, DocumentData, Timestamp } from "firebase/firestore";
 import type { Task } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
 import { useAppStore } from "@/store/app";
 
-type SubTab = "mine" | "saved" | "doing" | "applied" | "completed" | "cancelled";
+type SubTab = "mine" | "saved" | "doing" | "applied" | "expired" | "completed" | "cancelled";
 
 const SUB_TABS: { key: SubTab; label: string }[] = [
   { key: "mine", label: "Của tôi" },
@@ -22,6 +22,7 @@ const SUB_TABS: { key: SubTab; label: string }[] = [
   { key: "doing", label: "Đang nhận" },
   { key: "applied", label: "Đã ứng tuyển" },
   { key: "completed", label: "Hoàn thành" },
+  { key: "expired", label: "Đã hết hạn" },
   { key: "cancelled", label: "Đã hủy" },
 ];
 
@@ -105,6 +106,19 @@ export default function TasksPage() {
         case "mine":
           q = query(baseCollection, where("userId", "==", currentUser.uid), where("type", "==", mode), limit(PAGE_SIZE));
           break;
+  case "expired": // thêm case này
+    const now = Timestamp.now();
+    const sevenDaysAgo = Timestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+    q = query(
+      baseCollection, 
+      where("userId", "==", currentUser.uid), 
+      where("type", "==", mode),
+      where("deadline", "<", now),
+      where("deadline", ">", sevenDaysAgo),
+      orderBy("deadline", "desc"),
+      limit(PAGE_SIZE)
+    );
+    break;
         case "saved":
           q = query(baseCollection, where("savedBy", "array-contains", currentUser.uid), where("type", "==", mode), limit(PAGE_SIZE));
           break;
@@ -147,6 +161,12 @@ export default function TasksPage() {
         case "mine":
           data = data.filter(t =>!["deleted", "cancelled"].includes(t.status));
           break;
+case "expired": // thêm case này
+    data = data.filter(t => t.deadline?.seconds * 1000 < Date.now());
+    break;
+  case "saved":
+    data = data.filter(t =>!["deleted", "cancelled"].includes(t.status));
+    break;
         case "saved":
           data = data.filter(t =>!["deleted", "cancelled"].includes(t.status));
           break;
