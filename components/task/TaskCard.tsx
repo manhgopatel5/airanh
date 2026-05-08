@@ -11,7 +11,7 @@ import { createPortal } from "react-dom";
 import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
-import { type TaskStatus, type Task } from "@/types/task";
+import { type TaskStatus, type Task, isTask } from "@/types/task";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -140,7 +140,10 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
     pending: { label: "Chờ duyệt", color: "bg-[#FEF7E0] text-[#F9AB00] dark:bg-[#F9AB00]/20 dark:text-[#FDD663]", dot: "bg-[#F9AB00]" },
   };
 
-  const status = statusMap[task.status] || statusMap.open;
+  const isExpired = isTask(task) && task.deadline?.seconds * 1000 < Date.now();
+const status = isExpired 
+  ? { label: "Đã hết hạn", color: "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B]", dot: "bg-[#FF3B30]" }
+  : statusMap[task.status] || statusMap.open;
   const maxSlots = task.type === "task"? task.totalSlots?? 0 : task.maxParticipants?? 0;
 
   return (
