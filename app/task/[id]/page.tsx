@@ -8,7 +8,7 @@ import { doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp
 import {
   FiSend, FiClock, FiUsers, FiX,
   FiMapPin, FiDollarSign, FiCheckCircle, FiMessageCircle, 
-  FiCalendar, FiMessageSquare, FiPhone, FiPlus, FiAlertTriangle, 
+  FiCalendar, FiMessageSquare, FiPhone, FiAlertTriangle, 
   FiStar, FiBookmark, FiMoreHorizontal, FiShare2 // thêm dòng này
 } from "react-icons/fi";
 import ShareTaskModal from "@/components/ShareTaskModal";
