@@ -1,9 +1,10 @@
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { initializeApp } from "firebase-admin/app";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { FirestoreEvent, QueryDocumentSnapshot } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
+
 initializeApp();
 const db = getFirestore();
 
@@ -79,7 +80,6 @@ export const onFriendAccepted = onDocumentCreated(
 );
 
 // 3. Function accept lời mời
-// 3. Function accept lời mời
 export const acceptFriendRequest = onCall(
   { region: "asia-southeast1" },
   async (request) => {
@@ -140,7 +140,6 @@ export const acceptFriendRequest = onCall(
             username: fromData?.username || "",
           },
         },
-        // THÊM 2 DÒNG NÀY: Xóa deletedFor để mở lại chat
         deletedFor: FieldValue.arrayRemove(uid),
         blockedUsers: FieldValue.arrayRemove(uid),
       },
@@ -151,40 +150,6 @@ export const acceptFriendRequest = onCall(
     await batch.commit();
 
     return { chatId };
-  }
-);
-
-// 5. Tự động xóa task hết hạn sau 7 ngày - chạy 2h sáng mỗi ngày
-export const cleanupExpiredTasks = onSchedule(
-  {
-    schedule: "0 2 * * *",
-    timeZone: "Asia/Ho_Chi_Minh",
-    region: "asia-southeast1",
-    memory: "128MiB", // tiết kiệm RAM
-  },
-  async () => {
-    const sevenDaysAgo = admin.firestore.Timestamp.fromDate(
-      new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    );
-
-    const expiredTasks = await db.collection("tasks")
-      .where("deadline", "<", sevenDaysAgo)
-      .where("status", "!=", "deleted")
-      .limit(500) // giới hạn 500 docs/lần tránh timeout
-      .get();
-
-    if (expiredTasks.empty) {
-      console.log("No expired tasks to delete");
-      return;
-    }
-
-    const batch = db.batch();
-    expiredTasks.docs.forEach(doc => {
-      batch.delete(doc.ref);
-    });
-
-    await batch.commit();
-    console.log(`Deleted ${expiredTasks.size} expired tasks`);
   }
 );
 
@@ -221,8 +186,7 @@ export const unfriend = onCall(
       const batch = db.batch();
 
       // A remove B
-      const myFriendRef =
-        db.doc(`users/${uid}/friends/${friendUid}`);
+      const myFriendRef = db.doc(`users/${uid}/friends/${friendUid}`);
 
       batch.set(
         myFriendRef,
@@ -235,72 +199,49 @@ export const unfriend = onCall(
       );
 
       // B vẫn giữ A
-      const theirFriendRef =
-        db.doc(`users/${friendUid}/friends/${uid}`);
+      const theirFriendRef = db.doc(`users/${friendUid}/friends/${uid}`);
 
-      const theirFriendDoc =
-        await theirFriendRef.get();
+      const theirFriendDoc = await theirFriendRef.get();
 
       if (theirFriendDoc.exists) {
-<<<<<<< Updated upstream
-        batch.set(
-          theirFriendRef,
-          {
-            status: "active",
-            removedBy: uid,
-            updatedAt: FieldValue.serverTimestamp(),
-          },
-          { merge: true }
-        );
+        const theirData = theirFriendDoc.data();
+
+        // Nếu họ đã hủy mình trước đó
+        if (theirData?.removedBy === friendUid) {
+          batch.set(
+            theirFriendRef,
+            {
+              status: "removed",
+              removedAt: FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          );
+        } else {
+          // Chỉ một phía hủy
+          batch.set(
+            theirFriendRef,
+            {
+              status: "active",
+              removedBy: uid,
+              updatedAt: FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          );
+        }
       }
-=======
-const theirFriendDoc = await theirFriendRef.get();
-
-if (theirFriendDoc.exists) {
-  const theirData = theirFriendDoc.data();
-
-  // Nếu họ đã hủy mình trước đó
-  if (theirData?.removedBy === friendUid) {
-    batch.set(
-      theirFriendRef,
-      {
-        status: "removed",
-        removedAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true }
-    );
-  } else {
-    // Chỉ một phía hủy
-    batch.set(
-      theirFriendRef,
-      {
-        status: "active",
-        removedBy: uid,
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true }
-    );
-  }
-}
->>>>>>> Stashed changes
 
       // update chat
-      const chatId =
-        [uid, friendUid].sort().join("_");
+      const chatId = [uid, friendUid].sort().join("_");
 
-      const chatRef =
-        db.doc(`chats/${chatId}`);
+      const chatRef = db.doc(`chats/${chatId}`);
 
-      const chatDoc =
-        await chatRef.get();
+      const chatDoc = await chatRef.get();
 
       if (chatDoc.exists) {
-        const userDoc =
-          await db.doc(`users/${uid}`).get();
+        const userDoc = await db.doc(`users/${uid}`).get();
 
-        const userName =
-          userDoc.data()?.name || "Người dùng";
+        const userName = userDoc.data()?.name || "Người dùng";
 
         batch.update(chatRef, {
           status: "active",
@@ -330,5 +271,39 @@ if (theirFriendDoc.exists) {
         `Lỗi server: ${error.message}`
       );
     }
+  }
+);
+
+// 5. Tự động xóa task hết hạn sau 7 ngày - chạy 2h sáng mỗi ngày
+export const cleanupExpiredTasks = onSchedule(
+  {
+    schedule: "0 2 * * *",
+    timeZone: "Asia/Ho_Chi_Minh",
+    region: "asia-southeast1",
+    memory: "128MiB",
+  },
+  async () => {
+    const sevenDaysAgo = Timestamp.fromDate(
+      new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    );
+
+    const expiredTasks = await db.collection("tasks")
+     .where("deadline", "<", sevenDaysAgo)
+     .where("status", "!=", "deleted")
+     .limit(500)
+     .get();
+
+    if (expiredTasks.empty) {
+      console.log("No expired tasks to delete");
+      return;
+    }
+
+    const batch = db.batch();
+    expiredTasks.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+    console.log(`Deleted ${expiredTasks.size} expired tasks`);
   }
 );
