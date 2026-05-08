@@ -115,20 +115,7 @@ export default function TaskDetailPage() {
   const [shareTask, setShareTask] = useState<Task | null>(null);
  
 
-  // ✅ useEffect phải nằm trong component
-  useEffect(() => {
-    if (!task?.id) {
-      setApplications([]);
-      return;
-    }
-    const q = query(collection(db, 'applications'), where('taskId', '==', task.id));
-    const unsub = onSnapshot(q, (snap) => {
-      setApplications(snap.docs.map(d => ({ id: d.id,...d.data() } as Application)));
-    }, (error) => {
-      console.error("Applications error:", error);
-    });
-    return () => unsub();
-  }, [task?.id]);
+ 
 
 
 
@@ -997,16 +984,16 @@ const taskTime = isTask(task) && task.deadline?.seconds
                   className="w-full px-4 py-2.5 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 outline-none text-[15px] focus:ring-2 focus:ring-[#0a84ff]/20 transition-all"
                   disabled={sending ||!currentUser}
                 />
-                {showMention && mentionUsers.length > 0 && (
-                  <div className="absolute bottom-12 left-0 w-64 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-[#E5E5EA] dark:border-zinc-800 max-h-60 overflow-auto z-50">
-                    <div className="p-2">
-                      <input
-                        placeholder="Tìm người..."
-                        value={mentionQuery}
-                        onChange={(e) => setMentionQuery(e.target.value)}
-                        className="w-full px-3 py-1.5 text-[15px] bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg outline-none mb-2"
-                      />
-                      {mentionUsers.map((user) => (
+   {showMention && mentionUsersList.length > 0 && (
+  <div className="absolute bottom-12 left-0 w-64 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-[#E5E5EA] dark:border-zinc-800 max-h-60 overflow-auto z-50">
+    <div className="p-2">
+      <input
+        placeholder="Tìm người..."
+        value={mentionQuery}
+        onChange={(e) => setMentionQuery(e.target.value)}
+        className="w-full px-3 py-1.5 text-[15px] bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg outline-none mb-2"
+      />
+      {mentionUsersList.map((user) => (
                         <button
                           key={user.uid}
                           onClick={() => handleSelectMention(user)}
