@@ -91,6 +91,7 @@ export default function TaskDetailPage() {
 
   const [sending, setSending] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
+  const [isUrgent, setIsUrgent] = useState(false);
   const [joining, setJoining] = useState(false);
   const [creatingChat, setCreatingChat] = useState(false);
  
