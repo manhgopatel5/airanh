@@ -4,21 +4,20 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 
-import { 
-  doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp, 
-  onSnapshot, addDoc, getDocs, collection, limit, query, where, arrayUnion, deleteDoc
+import {
+  doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp,
+  addDoc, getDocs, collection, limit, query, where, arrayUnion, deleteDoc
 } from "firebase/firestore";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import {
-  FiSend, FiClock, FiUsers, FiX, FiCheckCircle, FiMessageCircle, 
-  FiCalendar, FiMessageSquare, FiPhone, FiAlertTriangle, 
-  FiStar, FiBookmark, FiMoreHorizontal, FiShare2, FiCheck, FiTrash2, FiEdit2
+  FiSend, FiClock, FiUsers, FiX, FiCheckCircle, FiMessageCircle,
+  FiCalendar, FiMessageSquare, FiPhone, FiAlertTriangle,
+  FiStar, FiBookmark, FiMoreHorizontal, FiShare2, FiCheck, FiTrash2, FiEdit2, FiHeart
 } from "react-icons/fi";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import { incrementTaskView } from "@/lib/task";
 import {
   createComment,
-  listenComments,
   toggleLikeComment,
   deleteComment,
   editComment,
@@ -73,11 +72,11 @@ export default function TaskDetailPage() {
   const { id } = useParams();
   const router = useRouter();
 
-const [db, setDb] = useState<any>(null);
+  const [db, setDb] = useState<any>(null);
 
-useEffect(() => {
-  setDb(getFirebaseDB());
-}, []);
+  useEffect(() => {
+    setDb(getFirebaseDB());
+  }, []);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -108,173 +107,41 @@ useEffect(() => {
   const [timeLeft, setTimeLeft] = useState("");
   const [isUrgent, setIsUrgent] = useState(false);
   const [joining, setJoining] = useState(false);
- 
+
   const [showImageGallery, setShowImageGallery] = useState<number | null>(null);
   const [likingComments, setLikingComments] = useState<Set<string>>(new Set());
   const [isApplied, setIsApplied] = useState(false);
-  
+
   const [isSaved, setIsSaved] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [liking, setLiking] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const [shareTask, setShareTask] = useState<Task | null>(null);
- 
 
- 
-
-
-
-useEffect(() => {
-  if (!db || !task?.id) {
-    setApplications([]);
-    return;
-  }
-  const q = query(collection(db, 'applications'), where('taskId', '==', task.id));
-  const unsub = onSnapshot(q, (snap) => {
-    const apps = snap.docs.map(d => ({ id: d.id,...d.data() } as Application));
-    setApplications(apps);
-    // ✅ Cập nhật isApplied ở đây
-    setIsApplied(apps.some(app => app.userId === currentUser?.uid && ['pending', 'accepted'].includes(app.status)));
-  }, (error) => {
-    console.error("Applications error:", error);
-  });
-  return () => unsub();
-}, [db, task?.id, currentUser?.uid]);
-
-useEffect(() => {
-  if (!task?.id) return;
-  setIsSaved(!!currentUser?.uid &&!!task.savedBy?.includes(currentUser.uid));
-}, [currentUser?.uid, task?.savedBy, task?.id]);
-
-useEffect(() => {
-  const closeMenu = () => setShowMenu(false);
-  if (showMenu) {
-    window.addEventListener("scroll", closeMenu);
-    window.addEventListener("resize", closeMenu);
-  }
-  return () => {
-    window.removeEventListener("scroll", closeMenu);
-    window.removeEventListener("resize", closeMenu);
-  };
-}, [showMenu]);
-
-const handleSave = async () => {
-  if (!currentUser) return router.push("/login");
-  if (saving ||!task) return;
-  setSaving(true);
-  const newSaved =!isSaved;
-  setIsSaved(newSaved);
-  try {
-    await updateDoc(doc(db, "tasks", task.id), {
-      savedBy: newSaved? arrayUnion(currentUser.uid) : arrayRemove(currentUser.uid),
-    });
-    toast.success(newSaved? "Đã lưu" : "Đã bỏ lưu");
-  } catch {
-    setIsSaved(!newSaved);
-    toast.error("Lỗi");
-  } finally {
-    setSaving(false);
-  }
-};
-
-
-const handleStartChat = async () => {
-  if (!currentUser || !task?.userId || !db) return;
-
-  try {
-    const chatId = [currentUser.uid, task.userId]
-      .sort()
-      .join("_");
-
-    const [currentUserDoc, ownerDoc] = await Promise.all([
-      getDoc(doc(db, "users", currentUser.uid)),
-      getDoc(doc(db, "users", task.userId)),
-    ]);
-
-    const currentData = currentUserDoc.data();
-    const ownerData = ownerDoc.data();
-
-    await setDoc(
-      doc(db, "chats", chatId),
-      {
-        members: [currentUser.uid, task.userId],
-        isGroup: false,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        membersInfo: {
-          [currentUser.uid]: {
-            name: currentData?.name || "User",
-            avatar: currentData?.avatar || "",
-            username: currentData?.username || "",
-          },
-          [task.userId]: {
-            name: ownerData?.name || "User",
-            avatar: ownerData?.avatar || "",
-            username: ownerData?.username || "",
-          },
-        },
-      },
-      { merge: true }
-    );
-
-    router.push(`/chat/${chatId}`);
-  } catch (err) {
-    console.error(err);
-    toast.error("Không thể mở chat");
-  }
-};
-
-const handleDelete = async () => {
-  if (!isOwner ||!task) return;
-  if (!confirm("Xóa công việc này?")) return;
-  try {
-    await deleteDoc(doc(db, "tasks", task.id));
-    toast.success("Đã xóa");
-    router.push("/tasks");
-  } catch {
-    toast.error("Xóa thất bại");
-  }
-};
-
-
-
-useEffect(() => {
-  const firebaseAuth = getFirebaseAuth();
-  if (!firebaseAuth) return;
-
-  const unsub = onAuthStateChanged(firebaseAuth, (user) => {
-    setCurrentUser(user);
-  });
-
-  return () => unsub();
-}, []);
-
-useEffect(() => {
-  if (!db || !id || typeof id !== "string") return;
-  
+  // ✅ Load task bằng getDoc
   const loadTask = async () => {
+    if (!db ||!id || typeof id!== "string") return;
     try {
-      // ✅ Dùng getDoc với ID trực tiếp
       const snap = await getDoc(doc(db, "tasks", id));
-      console.log("Task ID:", id, "Exists:", snap.exists());
-
       if (!snap.exists()) {
         toast.error("Không tìm thấy công việc");
         router.replace("/404");
         return;
       }
-
       const data = snap.data();
-      
-      // ✅ Chỉ chặn nếu bị ban, cho xem hết các status khác
       if (data.banned) {
         toast.error("Công việc này đã bị khóa");
         router.replace("/");
         return;
       }
-
       const taskData = { id: snap.id,...data } as Task;
       setTask(taskData);
+      setIsSaved(!!currentUser?.uid &&!!taskData.savedBy?.includes(currentUser.uid));
+      setIsLiked(!!currentUser?.uid &&!!taskData.likedBy?.includes(currentUser.uid));
+      setLikeCount(taskData.likeCount || 0);
       incrementTaskView(taskData.id);
     } catch (err) {
       console.error("Load task error:", err);
@@ -284,80 +151,98 @@ useEffect(() => {
       setLoading(false);
     }
   };
-  
-  loadTask();
-}, [id, router, db]);
 
-useEffect(() => {
-  if (!db || !task?.userId) return;
-  const loadOwner = async () => {
-    const snap = await getDoc(doc(db, "users", task.userId));
-    if (snap.exists()) setOwner({ uid: snap.id,...snap.data() } as UserData);
-  };
-  loadOwner();
-}, [task?.userId, db]);
-
-
-useEffect(() => {
-  if (!db || !showMention) return;
-  const loadUsers = async () => {
-    const q = query(collection(db, "users"), limit(20));
-    const snap = await getDocs(q);
-    setMentionUsersList(snap.docs.map(d => ({ uid: d.id, ...d.data() } as UserData)));
-  };
-  loadUsers();
-}, [showMention, db]);
-  
-useEffect(() => {
-  if (!task ||!isTask(task) ||!task.deadline?.seconds || task.status === "completed") {
-    setIsUrgent(false);
-    return;
-  }
-
-  const tick = () => {
-    const diff = task.deadline!.seconds * 1000 - Date.now();
-
-    if (diff <= 0) {
-      setTimeLeft("Đã hết hạn");
-      setIsUrgent(true);
+  // ✅ Load applications bằng getDocs
+  const loadApplications = async () => {
+    if (!db ||!task?.id) {
+      setApplications([]);
       return;
     }
-
-    const totalHours = diff / 3600000;
-
-    if (totalHours <= 5) {
-      setIsUrgent(true);
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(`Còn ${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`);
-    } else {
-      setIsUrgent(false);
-    }
+    const q = query(collection(db, 'applications'), where('taskId', '==', task.id));
+    const snap = await getDocs(q);
+    const apps = snap.docs.map(d => ({ id: d.id,...d.data() } as Application));
+    setApplications(apps);
+    setIsApplied(apps.some(app => app.userId === currentUser?.uid && ['pending', 'accepted'].includes(app.status)));
   };
 
-  tick();
-  const interval = setInterval(tick, 1000);
-  return () => clearInterval(interval);
-}, [task]);
+  // ✅ Load comments bằng getDocs
+  const loadComments = async () => {
+    if (!task?.id) return;
+    const q = query(
+      collection(db, "tasks", task.id, "comments"),
+      limit(20)
+    );
+    const snap = await getDocs(q);
+    setComments(snap.docs.map(d => ({ id: d.id,...d.data() } as TaskComment)));
+  };
 
   useEffect(() => {
-    if (!task?.id) return;
-    const unsub = listenComments(
-      task.id,
-      (data) => {
-        setComments(data);
-      },
-      {
-        limit: 20,
-        onError: (err) => {
-          console.error("Listen comments error:", err);
-          toast.error("Lỗi tải bình luận");
-        }
+    const firebaseAuth = getFirebaseAuth();
+    if (!firebaseAuth) return;
+    const unsub = onAuthStateChanged(firebaseAuth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    loadTask();
+  }, [id, db]);
+
+  useEffect(() => {
+    if (!db ||!task?.userId) return;
+    const loadOwner = async () => {
+      const snap = await getDoc(doc(db, "users", task.userId));
+      if (snap.exists()) setOwner({ uid: snap.id,...snap.data() } as UserData);
+    };
+    loadOwner();
+  }, [task?.userId, db]);
+
+  useEffect(() => {
+    loadApplications();
+  }, [task?.id, db, currentUser?.uid]);
+
+  useEffect(() => {
+    loadComments();
+  }, [task?.id, db]);
+
+  useEffect(() => {
+    if (!db ||!showMention) return;
+    const loadUsers = async () => {
+      const q = query(collection(db, "users"), limit(20));
+      const snap = await getDocs(q);
+      setMentionUsersList(snap.docs.map(d => ({ uid: d.id,...d.data() } as UserData)));
+    };
+    loadUsers();
+  }, [showMention, db]);
+
+  useEffect(() => {
+    if (!task ||!isTask(task) ||!task.deadline?.seconds || task.status === "completed") {
+      setIsUrgent(false);
+      return;
+    }
+    const tick = () => {
+      const diff = task.deadline!.seconds * 1000 - Date.now();
+      if (diff <= 0) {
+        setTimeLeft("Đã hết hạn");
+        setIsUrgent(true);
+        return;
       }
-    );
-    return () => unsub && unsub();
-  }, [task?.id]);
+      const totalHours = diff / 3600000;
+      if (totalHours <= 5) {
+        setIsUrgent(true);
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        setTimeLeft(`Còn ${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`);
+      } else {
+        setIsUrgent(false);
+      }
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [task]);
 
   useEffect(() => {
     const lastAt = text.lastIndexOf("@");
@@ -377,78 +262,164 @@ useEffect(() => {
     }
   }, [text]);
 
-const handleJoinTask = async () => {
-  if (!currentUser || !task || isApplied || isFull || joining || isOwner) return;
-
-  setJoining(true);
-
-  try {
-    const existingQuery = query(
-      collection(db, "applications"),
-      where("taskId", "==", task.id),
-      where("userId", "==", currentUser.uid)
-    );
-
-    const existingSnap = await getDocs(existingQuery);
-
-    if (!existingSnap.empty) {
-      toast.error("Bạn đã ứng tuyển rồi");
-      setJoining(false);
-      return;
+  useEffect(() => {
+    const closeMenu = () => setShowMenu(false);
+    if (showMenu) {
+      window.addEventListener("scroll", closeMenu);
+      window.addEventListener("resize", closeMenu);
     }
+    return () => {
+      window.removeEventListener("scroll", closeMenu);
+      window.removeEventListener("resize", closeMenu);
+    };
+  }, [showMenu]);
 
-    await addDoc(collection(db, "applications"), {
-      taskId: task.id,
-      taskOwnerId: task.userId,
-      userId: currentUser.uid,
-      userName:
-        currentUser.displayName ||
-        currentUser.email?.split("@")[0] ||
-        "User",
-      userAvatar: currentUser.photoURL || "",
-      status: "pending",
-      createdAt: serverTimestamp(),
-    });
+  const handleSave = async () => {
+    if (!currentUser) return router.push("/login");
+    if (saving ||!task) return;
+    setSaving(true);
+    const newSaved =!isSaved;
+    setIsSaved(newSaved);
+    try {
+      await updateDoc(doc(db, "tasks", task.id), {
+        savedBy: newSaved? arrayUnion(currentUser.uid) : arrayRemove(currentUser.uid),
+      });
+      toast.success(newSaved? "Đã lưu" : "Đã bỏ lưu");
+    } catch {
+      setIsSaved(!newSaved);
+      toast.error("Lỗi");
+    } finally {
+      setSaving(false);
+    }
+  };
 
-    setIsApplied(true);
+  const handleLike = async () => {
+    if (!currentUser) return router.push("/login");
+    if (liking ||!task) return;
+    setLiking(true);
+    const newLiked =!isLiked;
+    setIsLiked(newLiked);
+    setLikeCount(prev => newLiked? prev + 1 : prev - 1);
+    try {
+      await updateDoc(doc(db, "tasks", task.id), {
+        likedBy: newLiked? arrayUnion(currentUser.uid) : arrayRemove(currentUser.uid),
+        likeCount: increment(newLiked? 1 : -1),
+      });
+    } catch {
+      setIsLiked(!newLiked);
+      setLikeCount(prev => newLiked? prev - 1 : prev + 1);
+      toast.error("Lỗi");
+    } finally {
+      setLiking(false);
+    }
+  };
 
-    toast.success("Ứng tuyển thành công!");
-    navigator.vibrate?.(10);
-  } catch (err) {
-    console.error(err);
-    toast.error("Ứng tuyển thất bại");
-  } finally {
-    setJoining(false);
-  }
-};
+  const handleStartChat = async () => {
+    if (!currentUser ||!task?.userId ||!db) return;
+    try {
+      const chatId = [currentUser.uid, task.userId].sort().join("_");
+      const [currentUserDoc][ownerDoc] = await Promise.all([
+        getDoc(doc(db, "users", currentUser.uid)),
+        getDoc(doc(db, "users", task.userId)),
+      ]);
+      const currentData = currentUserDoc.data();
+      const ownerData = ownerDoc.data();
+      await setDoc(doc(db, "chats", chatId), {
+        members: [currentUser.uid, task.userId],
+        isGroup: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        membersInfo: {
+          [currentUser.uid]: {
+            name: currentData?.name || "User",
+            avatar: currentData?.avatar || "",
+            username: currentData?.username || "",
+          },
+          [task.userId]: {
+            name: ownerData?.name || "User",
+            avatar: ownerData?.avatar || "",
+            username: ownerData?.username || "",
+          },
+        },
+      }, { merge: true });
+      router.push(`/chat/${chatId}`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Không thể mở chat");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!isOwner ||!task) return;
+    if (!confirm("Xóa công việc này?")) return;
+    try {
+      await deleteDoc(doc(db, "tasks", task.id));
+      toast.success("Đã xóa");
+      router.push("/tasks");
+    } catch {
+      toast.error("Xóa thất bại");
+    }
+  };
+
+  const handleJoinTask = async () => {
+    if (!currentUser ||!task || isApplied || isFull || joining || isOwner) return;
+    setJoining(true);
+    try {
+      const existingQuery = query(
+        collection(db, "applications"),
+        where("taskId", "==", task.id),
+        where("userId", "==", currentUser.uid)
+      );
+      const existingSnap = await getDocs(existingQuery);
+      if (!existingSnap.empty) {
+        toast.error("Bạn đã ứng tuyển rồi");
+        setJoining(false);
+        return;
+      }
+      await addDoc(collection(db, "applications"), {
+        taskId: task.id,
+        taskOwnerId: task.userId,
+        userId: currentUser.uid,
+        userName: currentUser.displayName || currentUser.email?.split("@")[0] || "User",
+        userAvatar: currentUser.photoURL || "",
+        status: "pending",
+        createdAt: serverTimestamp(),
+      });
+      setIsApplied(true);
+      toast.success("Ứng tuyển thành công!");
+      navigator.vibrate?.(10);
+      loadApplications(); // Reload lại list
+    } catch (err) {
+      console.error(err);
+      toast.error("Ứng tuyển thất bại");
+    } finally {
+      setJoining(false);
+    }
+  };
 
   const handleCancelApply = async () => {
-  if (!currentUser ||!task ||!isApplied || joining) return;
-  setJoining(true);
-  try {
-    // Tìm application của user này
-    const q = query(
-      collection(db, 'applications'),
-      where('taskId', '==', task.id),
-      where('userId', '==', currentUser.uid),
-      where('status', 'in', ['pending', 'accepted'])
-    );
-    const snap = await getDocs(q);
-    if (!snap.empty && snap.docs[0]) {
-  await deleteDoc(doc(db, 'applications', snap.docs[0].id));
-}
-    toast.success("Đã hủy ứng tuyển");
-    navigator.vibrate?.(10);
-  } catch {
-    toast.error("Hủy thất bại");
-  } finally {
-    setJoining(false);
-  }
-};
-
-
-
-
+    if (!currentUser ||!task ||!isApplied || joining) return;
+    setJoining(true);
+    try {
+      const q = query(
+        collection(db, 'applications'),
+        where('taskId', '==', task.id),
+        where('userId', '==', currentUser.uid),
+        where('status', 'in', ['pending', 'accepted'])
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty && snap.docs[0]) {
+        await deleteDoc(doc(db, 'applications', snap.docs[0].id));
+      }
+      toast.success("Đã hủy ứng tuyển");
+      navigator.vibrate?.(10);
+      loadApplications();
+    } catch {
+      toast.error("Hủy thất bại");
+    } finally {
+      setJoining(false);
+    }
+  };
 
   const handleSendComment = async () => {
     if (!currentUser ||!task ||!text.trim() || sending) return;
@@ -457,7 +428,7 @@ const handleJoinTask = async () => {
       id: tempId, taskId: task.id, userId: currentUser.uid,
       userName: currentUser.displayName || "Bạn", userAvatar: currentUser.photoURL || "",
       text: text.trim(), createdAt: Timestamp.now(), likeCount: 0, likedBy: [],
-    ...(replyTo && { parentId: replyTo.parentId || replyTo.id, replyToUserId: replyTo.userId, replyToUserName: replyTo.userName }),
+   ...(replyTo && { parentId: replyTo.parentId || replyTo.id, replyToUserId: replyTo.userId, replyToUserName: replyTo.userName }),
     };
     setComments(prev => [...prev, tempComment]);
     setText(""); setReplyTo(null); setSending(true);
@@ -465,8 +436,9 @@ const handleJoinTask = async () => {
     try {
       await createComment(task.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, {
         text: DOMPurify.sanitize(tempComment.text),
-      ...(replyTo && { parentId: replyTo.parentId || replyTo.id, replyToUserId: replyTo.userId, replyToUserName: replyTo.userName }),
+     ...(replyTo && { parentId: replyTo.parentId || replyTo.id, replyToUserId: replyTo.userId, replyToUserName: replyTo.userName }),
       });
+      loadComments(); // Reload lại comment
     } catch (err: any) {
       setComments(prev => prev.filter(c => c.id!== tempId));
       setText(tempComment.text);
@@ -513,6 +485,7 @@ const handleJoinTask = async () => {
       await editComment(commentId, currentUser!.uid, DOMPurify.sanitize(editText), task.id);
       setEditingComment(null); setEditText("");
       toast.success("Đã sửa");
+      loadComments();
     } catch {
       toast.error("Sửa thất bại");
     }
@@ -526,78 +499,86 @@ const handleJoinTask = async () => {
     inputRef.current?.focus();
   };
 
-
-
- if (loading) return <div className="p-4 text-center">Đang tải...</div>;
+  if (loading) return <div className="p-4 text-center">Đang tải...</div>;
   if (!task) return <div className="p-4 text-center">Không tìm thấy task</div>;
 
   const parentComments = comments.filter((c) =>!c.parentId);
   const getReplies = (id: string) => comments.filter((c) => c.parentId === id);
-  
 
-const handleAcceptApp = async (appId: string, applicantId: string) => {
-  if (!task) return;
-  try {
-    await updateDoc(doc(db, 'applications', appId), {
-      status: 'accepted',
-      updatedAt: serverTimestamp()
-    });
-    // Tạo chat tự động
-    const chatId = [currentUser!.uid, applicantId].sort().join("_");
-    await setDoc(doc(db, "chats", chatId), {
-      members: [currentUser!.uid, applicantId],
-      lastMessage: `Bạn đã được duyệt cho task "${task.title}"`,
-      lastMessageAt: serverTimestamp(),
-      createdAt: serverTimestamp(),
-    }, { merge: true });
-    toast.success("Đã duyệt ứng viên");
-    navigator.vibrate?.(10);
-  } catch {
-    toast.error("Duyệt thất bại");
-  }
-};
+  const handleAcceptApp = async (appId: string, applicantId: string) => {
+    if (!task) return;
+    try {
+      await updateDoc(doc(db, 'applications', appId), {
+        status: 'accepted',
+        updatedAt: serverTimestamp()
+      });
+      const chatId = [currentUser!.uid, applicantId].sort().join("_");
+      await setDoc(doc(db, "chats", chatId), {
+        members: [currentUser!.uid, applicantId],
+        lastMessage: `Bạn đã được duyệt cho task "${task.title}"`,
+        lastMessageAt: serverTimestamp(),
+        createdAt: serverTimestamp(),
+      }, { merge: true });
+      toast.success("Đã duyệt ứng viên");
+      navigator.vibrate?.(10);
+      loadApplications();
+    } catch {
+      toast.error("Duyệt thất bại");
+    }
+  };
 
+  const handleRejectApp = async (appId: string) => {
+    try {
+      await updateDoc(doc(db, 'applications', appId), {
+        status: 'rejected',
+        updatedAt: serverTimestamp()
+      });
+      toast.success("Đã từ chối");
+      loadApplications();
+    } catch {
+      toast.error("Lỗi");
+    }
+  };
 
+  const handleMessageApp = (uid: string) => {
+    const chatId = [currentUser!.uid, uid].sort().join('_');
+    router.push(`/chat/${chatId}`);
+  };
 
+  const taskDate = isTask(task) && task.deadline?.seconds
+ ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
+    : isPlan(task) && task.eventDate?.seconds
+ ? new Date(task.eventDate.seconds * 1000).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
+    : "Chưa xác định";
 
+  const taskTime = isTask(task) && task.deadline?.seconds
+ ? `${new Date(task.deadline.seconds * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(task.deadline.seconds * 1000 + 3*60*60*1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+    : isPlan(task) && task.eventDate?.seconds
+ ? `${new Date(task.eventDate.seconds * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(task.eventDate.seconds * 1000 + 3*60*60*1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+    : "";
 
-const handleRejectApp = async (appId: string) => {
-  try {
-    await updateDoc(doc(db, 'applications', appId), {
-      status: 'rejected',
-      updatedAt: serverTimestamp()
-    });
-    toast.success("Đã từ chối");
-  } catch {
-    toast.error("Lỗi");
-  }
-};
+  const statusMap: Record<TaskStatus, { label: string; color: string; dot: string }> = {
+    open: { label: "Đang tuyển", color: "bg-[#E6F4EA] text-[#1E8E3E] dark:bg-[#1E8E3E]/20 dark:text-[#81C995]", dot: "bg-[#1E8E3E]" },
+    full: { label: "Đã đủ", color: "bg-[#FEE8E8] text-[#D93025] dark:bg-[#D93025]/20 dark:text-[#F28B82]", dot: "bg-[#D93025]" },
+    doing: { label: "Đang làm", color: "bg-[#E8F0FE] text-[#1A73E8] dark:bg-[#1A73E8]/20 dark:text-[#8AB4F8]", dot: "bg-[#1A73E8]" },
+    completed: { label: "Hoàn thành", color: "bg-[#F1F3F4] text-[#5F6368] dark:bg-zinc-800 dark:text-zinc-400", dot: "bg-[#5F6368]" },
+    cancelled: { label: "Đã hủy", color: "bg-[#F1F3F4] text-[#5F6368] dark:bg-zinc-800 dark:text-zinc-400", dot: "bg-[#5F6368]" },
+    deleted: { label: "Đã xóa", color: "bg-[#F1F3F4] text-[#5F6368] dark:bg-zinc-800 dark:text-zinc-400", dot: "bg-[#5F6368]" },
+    expired: { label: "Hết hạn", color: "bg-[#FEF7E0] text-[#F9AB00] dark:bg-[#F9AB00]/20 dark:text-[#FDD663]", dot: "bg-[#F9AB00]" },
+    pending: { label: "Chờ duyệt", color: "bg-[#FEF7E0] text-[#F9AB00] dark:bg-[#F9AB00]/20 dark:text-[#FDD663]", dot: "bg-[#F9AB00]" },
+  };
 
-const handleMessageApp = (uid: string) => {
-  const chatId = [currentUser!.uid, uid].sort().join('_');
-  router.push(`/chat/${chatId}`);
-};
-
-const taskDate = isTask(task) && task.deadline?.seconds 
-  ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
-  : isPlan(task) && task.eventDate?.seconds
-  ? new Date(task.eventDate.seconds * 1000).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
-  : "Chưa xác định";
-
-const taskTime = isTask(task) && task.deadline?.seconds
-  ? `${new Date(task.deadline.seconds * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(task.deadline.seconds * 1000 + 3*60*60*1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
-  : isPlan(task) && task.eventDate?.seconds
-  ? `${new Date(task.eventDate.seconds * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(task.eventDate.seconds * 1000 + 3*60*60*1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
-  : "";
+  const isExpired = isTask(task) && task.deadline && task.deadline.seconds * 1000 < Date.now();
+  const status = isExpired
+? { label: "Đã hết hạn", color: "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B]", dot: "bg-[#FF3B30]" }
+    : statusMap[task.status] || statusMap.open;
+  const maxSlots = task.type === "task"? task.totalSlots?? 0 : task.maxParticipants?? 0;
 
   return (
     <>
       <Toaster richColors position="top-center" />
       <div className="max-w-xl mx-auto bg-[#F2F2F7] dark:bg-black min-h-screen pb-4">
-
-
-       {/* Card Task chính */}
-<div className="bg-white mt-3 mx-4 rounded-2xl border border-[#E5E5E7] overflow-hidden">
+       <div className="bg-white mt-3 mx-4 rounded-2xl border border-[#E5E5E7] overflow-hidden">
   <div className="p-4">
     <div className="flex gap-3">
       <div className="relative shrink-0">
@@ -611,7 +592,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
 
  <div className="flex-1 min-w-0">
   <div className="flex items-center justify-between gap-2 mb-1">
-    <span className="font-semibold text-[17px] text-[#1C1C1E] truncate">{owner?.name || "Minh Tran"}</span>
+    <span className="font-semibold text- text-[#1C1C1E] truncate">{owner?.name || "Minh Tran"}</span>
 <div className="flex items-center gap-2 shrink-0">
 <button
   onClick={() => task && setShareTask(task)}
@@ -627,7 +608,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
       disabled={saving}
       className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 ${
         isSaved
-      ? "bg-blue-50 dark:bg-blue-950/50 text-[#0A84FF] dark:text-blue-400"
+     ? "bg-blue-50 dark:bg-blue-950/50 text-[#0A84FF] dark:text-blue-400"
         : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700"
       }`}
     >
@@ -713,7 +694,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
 </div>
   </div>
 
-        <div className="flex items-center gap-1.5 mb-2 text-[15px]">
+        <div className="flex items-center gap-1.5 mb-2 text-">
           <FiStar className="fill-[#FFB800] text-[#FFB800]" size={16} />
           <span className="font-semibold text-[#1C1C1E]">{owner?.rating || "4.9"}</span>
           <span className="text-[#8E8E93]">({owner?.reviewCount || 21} đánh giá)</span>
@@ -721,7 +702,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
           <span className="text-[#00A86B]">Mới tham gia</span>
         </div>
 
-        <h2 className="font-semibold text-[17px] leading-snug mb-3 text-[#1C1C1E]">{task.title}</h2>
+        <h2 className="font-semibold text- leading-snug mb-3 text-[#1C1C1E]">{task.title}</h2>
 
        <div className="flex items-center gap-2 text- text-[#8E8E93] flex-wrap">
   {isUrgent? (
@@ -751,7 +732,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
       <span>•</span>
 <div className="flex items-center gap-1">
   <FiUsers size={16} />
-  <span>{applications.length}/{task.totalSlots || 1}</span> 
+  <span>{applications.length}/{task.totalSlots || 1}</span>
 </div>
     </>
   )}
@@ -762,17 +743,15 @@ const taskTime = isTask(task) && task.deadline?.seconds
 
   <div className="h-px bg-[#E5E5E7]" />
 
-{/* Action Bar - Chủ task vs Ứng viên */}
 <div className="px-4 pt-4 pb-2">
   {isOwner? (
-    // CHỦ TASK: HIỆN LIST ỨNG VIÊN
     <div className="rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 p-4">
-      <h3 className="font-semibold text-[17px] mb-3 text-[#1C1C1E] dark:text-zinc-100">
+      <h3 className="font-semibold text- mb-3 text-[#1C1C1E] dark:text-zinc-100">
         Ứng viên ({applications.length})
       </h3>
 
       {applications.length === 0? (
-        <p className="text-center text-[15px] text-zinc-500 dark:text-zinc-400 py-4">
+        <p className="text-center text- text-zinc-500 dark:text-zinc-400 py-4">
           Chưa có ai ứng tuyển
         </p>
       ) : (
@@ -782,15 +761,14 @@ const taskTime = isTask(task) && task.deadline?.seconds
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 <UserAvatar src={app.userAvatar} name={app.userName} size={40} />
                 <div className="min-w-0">
-                  <p className="font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100 truncate">
+                  <p className="font-semibold text- text-[#1C1C1E] dark:text-zinc-100 truncate">
                     {app.userName}
                   </p>
-                  <p className="text-[13px] text-zinc-500 dark:text-zinc-400">
+                  <p className="text- text-zinc-500 dark:text-zinc-400">
                     {app.createdAt?.toDate
-  ? app.createdAt.toDate().toLocaleDateString('vi-VN')
+ ? app.createdAt.toDate().toLocaleDateString('vi-VN')
   : 'Đang cập nhật'}
-                    
-                  </p>
+                                    </p>
                 </div>
               </div>
 
@@ -798,21 +776,21 @@ const taskTime = isTask(task) && task.deadline?.seconds
                 <motion.button
                   whileTap={{ scale: 0.94 }}
                   onClick={() => handleMessageApp(app.userId)}
-                  className="px-3 py-2 rounded-xl bg-white dark:bg-zinc-700 text-[#0a84ff] font-semibold text-[13px] active:scale-95 transition-all"
+                  className="px-3 py-2 rounded-xl bg-white dark:bg-zinc-700 text-[#0a84ff] font-semibold text- active:scale-95 transition-all"
                 >
                   Nhắn tin
                 </motion.button>
                 <motion.button
                   whileTap={{ scale: 0.94 }}
                   onClick={() => handleAcceptApp(app.id, app.userId)}
-                  className="px-3 py-2 rounded-xl bg-[#00A86B] text-white font-semibold text-[13px] active:scale-95 transition-all"
+                  className="px-3 py-2 rounded-xl bg-[#00A86B] text-white font-semibold text- active:scale-95 transition-all"
                 >
                   Duyệt
                 </motion.button>
                 <motion.button
                   whileTap={{ scale: 0.94 }}
                   onClick={() => handleRejectApp(app.id)}
-                  className="px-3 py-2 rounded-xl bg-[#FF3B30] text-white font-semibold text-[13px] active:scale-95 transition-all"
+                  className="px-3 py-2 rounded-xl bg-[#FF3B30] text-white font-semibold text- active:scale-95 transition-all"
                 >
                   Từ chối
                 </motion.button>
@@ -823,7 +801,6 @@ const taskTime = isTask(task) && task.deadline?.seconds
       )}
     </div>
   ) : (
-    // ỨNG VIÊN: 4 NÚT CŨ
     <div className="grid grid-cols-4 gap-2">
       <motion.button
         whileTap={{ scale: 0.94 }}
@@ -851,7 +828,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
         disabled={(!isApplied && (isFull || task.status!== "open")) || joining || isOwner}
         className={`h-14 rounded-2xl flex flex-col items-center justify-center gap-0.5 font-semibold active:scale-95 disabled:opacity-40 transition-all ${
           isApplied
-          ? "bg-[#E8F5E9] dark:bg-green-950/40 text-[#00A86B] active:bg-[#D4EDDA] dark:active:bg-green-900/60"
+        ? "bg-[#E8F5E9] dark:bg-green-950/40 text-[#00A86B] active:bg-[#D4EDDA] dark:active:bg-green-900/60"
             : "bg-[#00A86B] active:bg-[#009960] text-white shadow-[0_4px_12px_rgba(0,168,107,0.25)]"
         }`}
       >
@@ -888,26 +865,23 @@ const taskTime = isTask(task) && task.deadline?.seconds
           className="w-full h-full border-0"
           loading="lazy"
         />
-        <div className="absolute top-2 left-2 bg-white dark:bg-zinc-900 px-2 py-1 rounded-lg text-[13px] font-medium shadow">
+        <div className="absolute top-2 left-2 bg-white dark:bg-zinc-900 px-2 py-1 rounded-lg text- font-medium shadow">
           Bản đồ
         </div>
       </div>
-      <button className="w-full mt-2 text-[#0a84ff] font-semibold text-[17px]">
+      <button className="w-full mt-2 text-[#0a84ff] font-semibold text-">
         Xem chi tiết
       </button>
     </div>
   </>
 )}
 
-   
-        
-
         {/* Mô tả chi tiết */}
         {task.description && (
          <div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl shadow-sm">
-            <h3 className="font-semibold mb-2 text-[17px]">Mô tả chi tiết</h3>
+            <h3 className="font-semibold mb-2 text-">Mô tả chi tiết</h3>
             <Linkify options={{ target: "_blank", className: `text-[${PRIMARY}] hover:underline` }}>
-             <p className="text-[15px] text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-[22px]">{task.description}</p>
+             <p className="text- text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-">{task.description}</p>
             </Linkify>
           </div>
         )}
@@ -916,7 +890,6 @@ const taskTime = isTask(task) && task.deadline?.seconds
 {task.images && task.images.length > 0 && (
   <div className="px-4 pt-3 pb-2">
     {task.images.length === 1? (
-      // 1 ảnh
       <motion.button
         whileTap={{ scale: 0.94 }}
         onClick={() => setShowImageGallery(0)}
@@ -932,7 +905,6 @@ const taskTime = isTask(task) && task.deadline?.seconds
         />
       </motion.button>
     ) : task.images.length === 2? (
-      // 2 ảnh
       <div className="flex gap-2">
         {task.images.slice(0, 2).map((img, i) => (
           <motion.button
@@ -953,7 +925,6 @@ const taskTime = isTask(task) && task.deadline?.seconds
         ))}
       </div>
     ) : (
-      // 3+ ảnh
       <div className="grid grid-cols-3 gap-2 max-w-[264px]">
         {task.images.slice(0, 3).map((img, i) => (
           <motion.button
@@ -983,12 +954,12 @@ const taskTime = isTask(task) && task.deadline?.seconds
     )}
   </div>
 )}
-      
+
         {/* Khung bình luận */}
         <div className="p-4 space-y-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl shadow-sm">
-         <div className="font-semibold text-[17px] text-zinc-900 dark:text-zinc-100">Bình luận ({comments.length})</div>
+         <div className="font-semibold text- text-zinc-900 dark:text-zinc-100">Bình luận ({comments.length})</div>
           {parentComments.length === 0? (
-            <div className="text-center py-12 text-zinc-400 text-[15px]">
+            <div className="text-center py-12 text-zinc-400 text-">
               <FiMessageCircle size={48} className="mx-auto mb-3 opacity-30" />
               Chưa có bình luận nào<br />Hãy là người đầu tiên
             </div>
@@ -1015,13 +986,13 @@ const taskTime = isTask(task) && task.deadline?.seconds
               ))}
             </AnimatePresence>
           )}
-          
+
           <div ref={bottomRef} />
 
           {/* Ô nhập nằm trong khung bình luận */}
           <div className="sticky bottom-0 bg-white dark:bg-zinc-900 pt-3 -mx-4 px-4 pb-3 border-t border-[#E5E5EA] dark:border-zinc-800">
             {replyTo && (
-              <div className="text-[15px] dark:text-zinc-400 mb-2 flex items-center justify-between bg-[#F2F2F7] dark:bg-zinc-800 px-3.5 py-2 rounded-xl">
+              <div className="text- dark:text-zinc-400 mb-2 flex items-center justify-between bg-[#F2F2F7] dark:bg-zinc-800 px-3.5 py-2 rounded-xl">
                 <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
                 <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg active:scale-90 transition-all"><FiX size={14} /></button>
               </div>
@@ -1034,7 +1005,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
                   onChange={(e) => setText(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSendComment()}
                   placeholder={currentUser? "Viết bình luận..." : "Đăng nhập để bình luận"}
-                  className="w-full px-4 py-2.5 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 outline-none text-[15px] focus:ring-2 focus:ring-[#0a84ff]/20 transition-all"
+                  className="w-full px-4 py-2.5 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 outline-none text- focus:ring-2 focus:ring-[#0a84ff]/20 transition-all"
                   disabled={sending ||!currentUser}
                 />
   {showMention && mentionUsersList.length > 0 && (
@@ -1044,7 +1015,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
         placeholder="Tìm người..."
         value={mentionQuery}
         onChange={(e) => setMentionQuery(e.target.value)}
-        className="w-full px-3 py-1.5 text-[15px] bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg outline-none mb-2"
+        className="w-full px-3 py-1.5 text- bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg outline-none mb-2"
       />
       {mentionUsersList.map((user) => (
                         <button
@@ -1053,7 +1024,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
                           className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#F2F2F7] dark:hover:bg-zinc-800 rounded-lg text-left"
                         >
                           <UserAvatar src={user.avatar} name={user.name} size={24} />
-                         <span className="text-[15px]">{user.name}</span>
+                         <span className="text-">{user.name}</span>
                         </button>
                       ))}
                     </div>
@@ -1072,13 +1043,8 @@ const taskTime = isTask(task) && task.deadline?.seconds
           </div>
             </div>
 
-      
-
-
-
       <ImageGallery open={showImageGallery!== null} images={task.images || []} initialIndex={showImageGallery || 0} onClose={() => setShowImageGallery(null)} />
       {shareTask && (
-           
         <ShareTaskModal
           task={shareTask}
           onClose={() => setShareTask(null)}
