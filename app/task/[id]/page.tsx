@@ -72,8 +72,8 @@ const PRIMARY = "#0a84ff";
 export default function TaskDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const auth = getFirebaseAuth(); 
-  const db = getFirebaseDB();    
+const auth = useMemo(() => getFirebaseAuth(), []);
+const db = useMemo(() => getFirebaseDB(), []);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -186,12 +186,12 @@ const handleDelete = async () => {
 
 
 
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-    });
-    return () => unsub();
-  }, );
+useEffect(() => {
+  const unsub = onAuthStateChanged(auth, (user) => {
+    setCurrentUser(user);
+  });
+  return () => unsub();
+}, [auth]);
 
 useEffect(() => {
   if (!id || typeof id!== "string") return;
