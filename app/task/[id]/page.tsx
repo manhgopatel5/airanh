@@ -349,7 +349,7 @@ const handleJoinTask = async () => {
   
   // Optimistic update cho UI mượt
   const oldApplicants = task.applicants || [];
-  setTask(prev => ({ ...prev, applicants: [...oldApplicants, currentUser.uid] }));
+ setTask(prev => prev ? ({ ...prev, applicants: [...oldApplicants, currentUser.uid] }) : prev);
   
   try {
     await applyToTask(task.id, currentUser.uid); // Gọi server action
