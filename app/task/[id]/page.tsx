@@ -184,11 +184,10 @@ const appConverter = {
     return { id: snapshot.id,...snapshot.data() } as Application;
   }
 };
-const [applicationsSnap] = useCollection<Application>(
-  task?.id && isOwner? query(
+const [applicationsSnap, applicationsLoading, applicationsError] = useCollection<Application>(
+  task?.id? query(
     collection(db, 'applications').withConverter(appConverter),
-    where('taskId', '==', task.id),
- 
+    where('taskId', '==', task.id)
   ) : null
 );
 
