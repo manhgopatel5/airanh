@@ -88,7 +88,7 @@ export default function TaskDetailPage() {
 
   const [task, setTask] = useState<Task | null>(null);
   const [owner, setOwner] = useState<UserData | null>(null);
-  const [applicantsData, setApplicantsData] = useState<UserData[]>([]);
+ 
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
