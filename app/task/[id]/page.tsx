@@ -127,7 +127,22 @@ const isFull = useMemo(
   [acceptedCount, task]
 );
 
-
+useEffect(() => {
+  if (!task?.id) {
+    setApplications([]);
+    return;
+  }
+  const q = query(collection(db, 'applications'), where('taskId', '==', task.id));
+  const unsub = onSnapshot(q, (snap) => {
+    const apps = snap.docs.map(d => ({ id: d.id,...d.data() } as Application));
+    setApplications(apps);
+    // ✅ Cập nhật isApplied ở đây
+    setIsApplied(apps.some(app => app.userId === currentUser?.uid && ['pending', 'accepted'].includes(app.status)));
+  }, (error) => {
+    console.error("Applications error:", error);
+  });
+  return () => unsub();
+}, [task?.id, currentUser?.uid]); // ✅ Thêm currentUser?.uid vào deps
 
 useEffect(() => {
   if (!task?.id) return;
