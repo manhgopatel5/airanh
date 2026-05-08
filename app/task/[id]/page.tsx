@@ -113,10 +113,9 @@ export default function TaskDetailPage() {
   const [isApplied, setIsApplied] = useState(false);
 
   const [isSaved, setIsSaved] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
+  
   const [saving, setSaving] = useState(false);
-  const [liking, setLiking] = useState(false);
+ 
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const [shareTask, setShareTask] = useState<Task | null>(null);
@@ -140,8 +139,8 @@ export default function TaskDetailPage() {
       const taskData = { id: snap.id,...data } as Task;
       setTask(taskData);
       setIsSaved(!!currentUser?.uid &&!!taskData.savedBy?.includes(currentUser.uid));
-      setIsLiked(!!currentUser?.uid &&!!taskData.likedBy?.includes(currentUser.uid));
-      setLikeCount(taskData.likeCount || 0);
+      
+      
       incrementTaskView(taskData.id);
     } catch (err) {
       console.error("Load task error:", err);
