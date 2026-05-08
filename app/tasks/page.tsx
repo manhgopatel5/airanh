@@ -118,7 +118,7 @@ export default function TasksPage() {
     orderBy("deadline", "desc"),
     limit(PAGE_SIZE)
   );
-  break;
+  
     break;
         case "saved":
           q = query(baseCollection, where("savedBy", "array-contains", currentUser.uid), where("type", "==", mode), limit(PAGE_SIZE));
@@ -163,14 +163,12 @@ export default function TasksPage() {
           data = data.filter(t =>!["deleted", "cancelled"].includes(t.status));
           break;
 case "expired":
-  data = data.filter(t => t.type === "task" && t.deadline?.seconds * 1000 < Date.now());
+data = data.filter(t => t.type === "task" && t.deadline && t.deadline.seconds * 1000 < Date.now());
   break;
   case "saved":
     data = data.filter(t =>!["deleted", "cancelled"].includes(t.status));
     break;
-        case "saved":
-          data = data.filter(t =>!["deleted", "cancelled"].includes(t.status));
-          break;
+  
         case "doing":
           data = data.filter(t => t.status === "doing");
           break;
