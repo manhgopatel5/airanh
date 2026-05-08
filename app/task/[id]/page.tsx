@@ -15,7 +15,7 @@ import {
 import ShareTaskModal from "@/components/ShareTaskModal";
 import {
   
-  joinTask,
+  
   incrementTaskView,
 } from "@/lib/task";
 import {
