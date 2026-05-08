@@ -6,7 +6,7 @@ import { FiX, FiSearch, FiCheck } from "react-icons/fi";
 import { Task } from "@/types/task";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
-import { collection, query, where, getDocs, documentId } from "firebase/firestore";
+import { collection, query, where, getDocs, documentId, addDoc, serverTimestamp, doc, setDoc } from "firebase/firestore";
 import { toast } from "sonner";
 
 type Props = {
@@ -112,23 +112,60 @@ export default function ShareTaskModal({ task, onClose }: Props) {
     );
   };
 
-  const handleSend = async () => {
-    if (selected.length === 0) {
-      toast.error("Chọn ít nhất 1 người bạn");
-      return;
-    }
+const handleSend = async () => {
+  if (selected.length === 0) {
+    toast.error("Chọn ít nhất 1 người bạn");
+    return;
+  }
 
-    try {
-      // TODO: Implement sendTaskToFriends
-      // await sendTaskToFriends(task.id, selected);
-      toast.success(`Đã chia sẻ cho ${selected.length} người`);
-      if ("vibrate" in navigator) navigator.vibrate(10);
-      onClose();
-    } catch (err) {
-      console.error("Send error:", err);
-      toast.error("Gửi thất bại");
-    }
-  };
+  if (!user?.uid) {
+    toast.error("Bạn chưa đăng nhập");
+    return;
+  }
+
+  try {
+    const db = getFirebaseDB();
+    
+    await Promise.all(
+      selected.map(async (friendId) => {
+        const roomId = [user.uid, friendId].sort().join("_");
+        
+        // Tạo/update room chat
+        const chatRoomRef = doc(db, "chats", roomId);
+        await setDoc(chatRoomRef, {
+          participants: [user.uid, friendId],
+          lastMessage: `Đã chia sẻ: ${task.title}`,
+          lastMessageAt: serverTimestamp(),
+          lastSenderId: user.uid,
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+
+        // Thêm tin nhắn
+        const messagesRef = collection(db, "chats", roomId, "messages");
+        await addDoc(messagesRef, {
+          type: "task_share",
+          taskId: task.id,
+          taskTitle: task.title,
+          taskType: task.type,
+          price: task.price || 0,
+          senderId: user.uid,
+          senderName: user.displayName || user.email || "User",
+          senderAvatar: user.photoURL || "",
+          receiverId: friendId,
+          createdAt: serverTimestamp(),
+          read: false,
+        });
+      })
+    );
+
+    toast.success(`Đã gửi cho ${selected.length} người`);
+    if ("vibrate" in navigator) navigator.vibrate(10);
+    onClose();
+  } catch (err) {
+    console.error("Send error:", err);
+    toast.error("Gửi thất bại");
+  }
+};
 
   return (
     <AnimatePresence>
