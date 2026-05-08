@@ -176,14 +176,15 @@ export default function EditTaskPage() {
             <h1 className="text-lg font-bold text-zinc-900 dark:text-white">
               Sửa công việc
             </h1>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={handleSave}
-              disabled={saving}
-              className="px-4 py-2 rounded-full bg-gradient-to-r from-[#0A84FF] to-[#0066CC] text-white text-sm font-semibold disabled:opacity-50 shadow-lg shadow-blue-500/30 active:scale-95 transition-all"
-            >
-              {saving? "Đang lưu..." : "Lưu"}
-            </motion.button>
+ <motion.button
+  whileTap={{ scale: 0.95 }}
+  onClick={handleSave}
+  disabled={saving}
+  className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#0A84FF] to-[#0066CC] text-white text-sm font-semibold disabled:opacity-50 shadow-lg shadow-blue-500/30 active:scale-95 transition-all"
+>
+  <FiSave size={16} />
+  {saving? "Đang lưu..." : "Lưu"}
+</motion.button>
           </div>
         </div>
 
