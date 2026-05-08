@@ -190,23 +190,7 @@ const [saving, setSaving] = useState(false);
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-          {/* ✅ THÊM: Nút Like */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleLike();
-            }}
-            disabled={liking}
-            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all disabled:opacity-50 touch-manipulation select-none"
-            style={{ WebkitTapHighlightColor: 'transparent' }}
-          >
-            <FiHeart
-              size={18}
-              className={isLiked? "fill-red-500 text-red-500" : "text-zinc-400 dark:text-zinc-500"}
-            />
-          </button>
+       
 
           <button
             type="button"
