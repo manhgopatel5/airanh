@@ -6,7 +6,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { collection, query, where, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
-import { doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp, onSnapshot, addDoc } from "firebase/firestore";
 import {
   FiSend, FiClock, FiUsers, FiX, FiCheckCircle, FiMessageCircle, 
   FiCalendar, FiMessageSquare, FiPhone, FiAlertTriangle, 
@@ -111,17 +111,23 @@ export default function TaskDetailPage() {
   const [showImageGallery, setShowImageGallery] = useState<number | null>(null);
   const [likingComments, setLikingComments] = useState<Set<string>>(new Set());
 
-  const applicants = task?.applicants?? [];
+  
 
-  const isFull = useMemo(
-    () => applicants.length >= (task && isTask(task)? task.totalSlots : 1) || task?.status === "full",
-    [applicants, task]
-  );
+  const [isApplied, setIsApplied] = useState(false);
 
-  const isApplied = useMemo(
-    () =>!!currentUser && applicants.includes(currentUser.uid),
-    [applicants, currentUser]
+useEffect(() => {
+  if (!currentUser?.uid || !task?.id) return;
+  const q = query(
+    collection(db, 'applications'),
+    where('taskId', '==', task.id),
+    where('userId', '==', currentUser.uid),
+    where('status', 'in', ['pending', 'accepted'])
   );
+  const unsub = onSnapshot(q, (snap) => {
+    setIsApplied(!snap.empty);
+  });
+  return () => unsub();
+}, [currentUser?.uid, task?.id]);
 
   const isOwner = useMemo(
     () => currentUser?.uid === task?.userId,
@@ -152,6 +158,26 @@ const [applicationsSnap] = useCollection<Application>(
     where('taskId', '==', task.id),
     where('status', '==', 'pending')
   ) : null
+);
+
+const [acceptedCount, setAcceptedCount] = useState(0);
+
+useEffect(() => {
+  if (!task?.id) return;
+  const q = query(
+    collection(db, 'applications'),
+    where('taskId', '==', task.id),
+    where('status', '==', 'accepted')
+  );
+  const unsub = onSnapshot(q, (snap) => {
+    setAcceptedCount(snap.size);
+  });
+  return () => unsub();
+}, [task?.id]);
+
+const isFull = useMemo(
+  () => acceptedCount >= (task && isTask(task)? task.totalSlots : 1),
+  [acceptedCount, task]
 );
 
 const applications = applicationsSnap?.docs.map(d => d.data()) || [];
@@ -252,20 +278,14 @@ useEffect(() => {
   loadTask();
 }, [id, router, db]);
 
-  useEffect(() => {
-    if (!task) return;
-    const loadUsers = async () => {
-      
-      const userIds = [task.userId,...(task.applicants?? [])];
-      const uniqueIds = [...new Set(userIds)];
-      const snaps = await Promise.all(uniqueIds.map((uid) => getDoc(doc(db, "users", uid))));
-      const users = snaps.filter(s => s.exists()).map(s => ({ uid: s.id,...s.data() } as UserData));
-      setOwner(users.find((u) => u.uid === task.userId) || null);
-      setApplicantsData(users.filter((u) => (task.applicants?? []).includes(u.uid)));
-      
-    };
-    loadUsers();
-  }, [task?.id, task?.userId, task?.applicants, db]);
+ useEffect(() => {
+  if (!task?.userId) return;
+  const loadOwner = async () => {
+    const snap = await getDoc(doc(db, "users", task.userId));
+    if (snap.exists()) setOwner({ uid: snap.id,...snap.data() } as UserData);
+  };
+  loadOwner();
+}, [task?.userId, db]);
 
 useEffect(() => {
   if (!task ||!isTask(task) ||!task.deadline?.seconds || task.status === "completed") {
@@ -336,37 +356,53 @@ useEffect(() => {
     }
   }, [text]);
 
-  const handleJoinTask = async () => {
-    if (!currentUser ||!task || isApplied || isFull || joining || isOwner) return;
-    setJoining(true);
-    setTask(prev => prev? {...prev, applicants: [...(prev.applicants || []), currentUser.uid] } : null);
-    try {
-      await joinTask(task.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL });
-      toast.success("Ứng tuyển thành công!");
-      navigator.vibrate?.(10);
-    } catch (err: any) {
-      setTask(prev => prev? {...prev, applicants: (prev.applicants || []).filter(id => id!== currentUser.uid) } : null);
-      toast.error(err.message || "Ứng tuyển thất bại");
-    } finally {
-      setJoining(false);
-    }
-  };
+ const handleJoinTask = async () => {
+  if (!currentUser ||!task || isApplied || isFull || joining || isOwner) return;
+  setJoining(true);
+  
+  try {
+    await addDoc(collection(db, 'applications'), {
+      taskId: task.id,
+      taskOwnerId: task.userId,
+      userId: currentUser.uid,
+      userName: currentUser.displayName || 'User',
+      userAvatar: currentUser.photoURL || '',
+      status: 'pending',
+      createdAt: serverTimestamp()
+    });
+    toast.success("Ứng tuyển thành công!");
+    navigator.vibrate?.(10);
+  } catch (err: any) {
+    console.error(err);
+    toast.error("Ứng tuyển thất bại");
+  } finally {
+    setJoining(false);
+  }
+};
 
   const handleCancelApply = async () => {
-    if (!currentUser ||!task ||!isApplied || joining) return;
-    setJoining(true);
-    setTask(prev => prev? {...prev, applicants: (prev.applicants || []).filter(id => id!== currentUser.uid) } : null);
-    try {
-      await updateDoc(doc(db, "tasks", task.id), { applicants: arrayRemove(currentUser.uid) });
-      toast.success("Đã hủy ứng tuyển");
-      navigator.vibrate?.(10);
-    } catch {
-      setTask(prev => prev? {...prev, applicants: [...(prev.applicants || []), currentUser.uid] } : null);
-      toast.error("Hủy thất bại");
-    } finally {
-      setJoining(false);
+  if (!currentUser ||!task ||!isApplied || joining) return;
+  setJoining(true);
+  try {
+    // Tìm application của user này
+    const q = query(
+      collection(db, 'applications'),
+      where('taskId', '==', task.id),
+      where('userId', '==', currentUser.uid),
+      where('status', 'in', ['pending', 'accepted'])
+    );
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      await deleteDoc(doc(db, 'applications', snap.docs[0].id));
     }
-  };
+    toast.success("Đã hủy ứng tuyển");
+    navigator.vibrate?.(10);
+  } catch {
+    toast.error("Hủy thất bại");
+  } finally {
+    setJoining(false);
+  }
+};
 
 
 
@@ -699,7 +735,7 @@ const taskTime = isTask(task) && task.deadline?.seconds
       <span>•</span>
       <div className="flex items-center gap-1">
         <FiUsers size={16} />
-        <span>{applicants.length}/{task.totalSlots || 1}</span>
+        <span>{acceptedCount}/{task.totalSlots || 1}</span>
       </div>
     </>
   )}
