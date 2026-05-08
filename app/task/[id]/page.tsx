@@ -363,7 +363,7 @@ const handleJoinTask = async () => {
   } finally {
     setJoining(false);
   }
-};};
+};
 
   const handleCancelApply = async () => {
     if (!currentUser ||!task ||!isApplied || joining) return;
