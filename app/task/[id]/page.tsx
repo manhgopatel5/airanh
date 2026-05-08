@@ -239,7 +239,7 @@ const handleSave = async () => {
   setIsSaved(newSaved);
   try {
     await updateDoc(doc(db, "tasks", task.id), {
-      savedBy: newSaved? arrayUnion(currentUser.uid) : arrayRemove(currentUser.uid), // thiếu arrayRemove
+      savedBy: newSaved? arrayUnion(currentUser.uid) : arrayRemove(currentUser.uid),
     });
     toast.success(newSaved? "Đã lưu" : "Đã bỏ lưu");
   } catch {
