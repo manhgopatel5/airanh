@@ -291,26 +291,7 @@ export default function TaskDetailPage() {
     }
   };
 
-  const handleLike = async () => {
-    if (!currentUser) return router.push("/login");
-    if (liking ||!task) return;
-    setLiking(true);
-    const newLiked =!isLiked;
-    setIsLiked(newLiked);
-    setLikeCount(prev => newLiked? prev + 1 : prev - 1);
-    try {
-      await updateDoc(doc(db, "tasks", task.id), {
-        likedBy: newLiked? arrayUnion(currentUser.uid) : arrayRemove(currentUser.uid),
-        likeCount: increment(newLiked? 1 : -1),
-      });
-    } catch {
-      setIsLiked(!newLiked);
-      setLikeCount(prev => newLiked? prev - 1 : prev + 1);
-      toast.error("Lỗi");
-    } finally {
-      setLiking(false);
-    }
-  };
+
 
   const handleStartChat = async () => {
     if (!currentUser ||!task?.userId ||!db) return;
