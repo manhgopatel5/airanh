@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
-import { useCollection } from 'react-firebase-hooks/firestore';
+
 import { collection, query, where, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp, onSnapshot, addDoc, getDocs } from "firebase/firestore";
 import {
@@ -18,6 +18,7 @@ import {
   
   incrementTaskView,
 } from "@/lib/task";
+
 import {
   createComment,
   listenComments,
@@ -42,6 +43,26 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 import { createPortal } from "react-dom";
 import { FiCheck, FiTrash2, FiEdit2 } from "react-icons/fi";
 import { arrayUnion, deleteDoc } from "firebase/firestore";
+
+import { collection, query, where, onSnapshot, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
+
+// Thêm state này
+const [applications, setApplications] = useState<Application[]>([]);
+
+// Thay useCollection bằng useEffect
+useEffect(() => {
+  if (!task?.id) {
+    setApplications([]);
+    return;
+  }
+  const q = query(collection(db, 'applications'), where('taskId', '==', task.id));
+  const unsub = onSnapshot(q, (snap) => {
+    setApplications(snap.docs.map(d => ({ id: d.id,...d.data() } as Application)));
+  }, (error) => {
+    console.error("Applications error:", error);
+  });
+  return () => unsub();
+}, [task?.id]);
 
 
 
@@ -211,7 +232,7 @@ const isFull = useMemo(
   [acceptedCount, task]
 );
 
-const applications = applicationsSnap?.docs.map(d => d.data()) || [];
+
 
 useEffect(() => {
   if (!task?.id) return;
