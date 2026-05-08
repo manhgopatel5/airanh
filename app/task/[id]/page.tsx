@@ -6,7 +6,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 
 import { 
   doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp, 
-  onSnapshot, addDoc, getDocs, collection, query, where, arrayUnion, deleteDoc
+  onSnapshot, addDoc, limit, getDocs, collection, query, where, arrayUnion, deleteDoc
 } from "firebase/firestore";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import {
