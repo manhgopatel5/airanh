@@ -64,11 +64,8 @@ const Portal = ({ children }: { children: React.ReactNode }) => {
 
 const PRIMARY = "#0a84ff";
 
-type Props = {
-  onShare?: (task: Task) => void;
-};
 
-export default function TaskDetailPage({ onShare }: Props) {
+export default function TaskDetailPage() {
   const auth = getFirebaseAuth();
   const db = getFirebaseDB();
   const { id } = useParams();
@@ -177,10 +174,7 @@ const handleDelete = async () => {
   }
 };
 
-const handleShare = () => {
-  if (!task) return;
-  setShareTask(task); // Bật modal luôn, khỏi cần onShare
-};
+
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -481,13 +475,12 @@ const taskTime = isTask(task) && task.deadline?.seconds
   <div className="flex items-center justify-between gap-2 mb-1">
     <span className="font-semibold text-[17px] text-[#1C1C1E] truncate">{owner?.name || "Minh Tran"}</span>
 <div className="flex items-center gap-2 shrink-0">
-  {/* Nút Share - dùng FiShare2 */}
-  <button
-    onClick={handleShare}
-    className="p-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-90 transition-all"
-  >
-    <FiShare2 size={18} className="text-zinc-600 dark:text-zinc-300" />
-  </button>
+<button
+  onClick={() => task && setShareTask(task)}
+  className="p-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-90 transition-all"
+>
+  <FiShare2 size={18} className="text-zinc-600 dark:text-zinc-300" />
+</button>
 
   {!isOwner? (
     <motion.button
