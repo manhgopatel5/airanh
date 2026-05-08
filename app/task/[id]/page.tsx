@@ -318,7 +318,7 @@ export default function TaskDetailPage() {
     if (!currentUser ||!task?.userId ||!db) return;
     try {
       const chatId = [currentUser.uid, task.userId].sort().join("_");
-      const [currentUserDoc][ownerDoc] = await Promise.all([
+      const [currentUserDoc, ownerDoc] = await Promise.all([
         getDoc(doc(db, "users", currentUser.uid)),
         getDoc(doc(db, "users", task.userId)),
       ]);
