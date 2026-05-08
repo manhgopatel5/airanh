@@ -6,7 +6,8 @@ import {
   FiTrash2, FiEdit2, FiCheck, FiShare2, FiEye
 } from "react-icons/fi";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
@@ -21,6 +22,12 @@ type Props = {
   onShare?: (task: Task) => void;
 };
 
+const Portal = ({ children }: { children: React.ReactNode }) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted? createPortal(children, document.body) : null;
+};
+
 export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
   const router = useRouter();
   const { user } = useAuth();
@@ -29,11 +36,25 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
   const [isSaved, setIsSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!task?.id) return;
     setIsSaved(!!user?.uid &&!!task.savedBy?.includes(user.uid));
   }, [user?.uid, task?.savedBy, task?.id]);
+
+  useEffect(() => {
+    const closeMenu = () => setShowMenu(false);
+    if (showMenu) {
+      window.addEventListener("scroll", closeMenu);
+      window.addEventListener("resize", closeMenu);
+    }
+    return () => {
+      window.removeEventListener("scroll", closeMenu);
+      window.removeEventListener("resize", closeMenu);
+    };
+  }, [showMenu]);
 
   if (!task?.id ||!task?.title ||!task?.type ||!task?.status) return null;
 
@@ -90,9 +111,13 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
     if (!isOwner) return;
     if (!confirm("Xóa task này?")) return;
     vibrate(10);
-    await deleteDoc(doc(db, "tasks", task.id));
-    onDelete?.(task.id);
-    toast.success("Đã xóa");
+    try {
+      await deleteDoc(doc(db, "tasks", task.id));
+      onDelete?.(task.id);
+      toast.success("Đã xóa");
+    } catch {
+      toast.error("Xóa thất bại");
+    }
   }, [isOwner, task.id, onDelete, db]);
 
   const goToTask = () => {
@@ -101,7 +126,7 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
   };
 
   const taskDate = task.type === "task" && task.deadline?.seconds
- ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+   ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
     : "";
 
   const statusMap: Record<TaskStatus, { label: string; color: string; dot: string }> = {
@@ -119,7 +144,7 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
   const maxSlots = task.type === "task"? task.totalSlots?? 0 : task.maxParticipants?? 0;
 
   return (
-    <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 p-4 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 p-4 shadow-sm hover:shadow-md transition-shadow relative">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1 min-w-0 cursor-pointer" onClick={goToTask}>
           <div className="flex items-center gap-2 mb-2.5 flex-wrap">
@@ -144,7 +169,7 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
           </h3>
         </div>
 
-        <div className="flex items-center gap-1 shrink-0 relative z-[999]">
+        <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
             onClick={(e) => {
@@ -179,10 +204,16 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
           {isOwner && (
             <div className="relative">
               <button
+                ref={menuBtnRef}
                 type="button"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setMenuPos({
+                    x: rect.right - 180,
+                    y: rect.bottom + 8
+                  });
                   vibrate();
                   setShowMenu(!showMenu);
                 }}
@@ -191,52 +222,54 @@ export default function TaskCard({ task, theme, onDelete, onShare }: Props) {
               >
                 <FiMoreHorizontal size={18} className="text-zinc-400 dark:text-zinc-500" />
               </button>
-<AnimatePresence>
-  {showMenu && (
-    <>
-      <div
-        className="fixed inset-0 z-10"
-        onClick={(e) => {
-          e.stopPropagation();
-          setShowMenu(false);
-        }}
-      />
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: -10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: -10 }}
-        className="absolute right-0 top-10 bg-white dark:bg-zinc-900 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 py-2 z-20 min-w-[180px] overflow-hidden"
-      >
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            vibrate();
-            setShowMenu(false);
-            router.push(`/task/${task.id}/edit`);
-          }}
-          className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
-        >
-          <FiEdit2 size={18} />
-          Sửa công việc
-        </button>
-        <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowMenu(false);
-            handleDelete();
-          }}
-          className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 w-full transition-all active:scale-95"
-        >
-          <FiTrash2 size={18} />
-          Xóa
-        </button>
-      </motion.div>
-    </>
-  )}
-</AnimatePresence>
+              <AnimatePresence>
+                {showMenu && (
+                  <Portal>
+                    <div
+                      className="fixed inset-0 z-[9998]"
+                      onClick={() => setShowMenu(false)}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                      transition={{ duration: 0.15 }}
+                      className="fixed z-[9999] min-w-[180px] bg-white dark:bg-zinc-900 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 py-2 overflow-hidden"
+                      style={{
+                        top: `${menuPos.y}px`,
+                        left: `${menuPos.x}px`,
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          vibrate();
+                          setShowMenu(false);
+                          router.push(`/task/${task.id}/edit`);
+                        }}
+                        className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
+                      >
+                        <FiEdit2 size={18} />
+                        Sửa công việc
+                      </button>
+                      <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowMenu(false);
+                          handleDelete();
+                        }}
+                        className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 w-full transition-all active:scale-95"
+                      >
+                        <FiTrash2 size={18} />
+                        Xóa
+                      </button>
+                    </motion.div>
+                  </Portal>
+                )}
+              </AnimatePresence>
             </div>
           )}
         </div>
