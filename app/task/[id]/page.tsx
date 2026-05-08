@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, where } from "firebase/firestore";
+import { collection, query, where, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { doc, getDoc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp } from "firebase/firestore";
 import {
   FiSend, FiClock, FiUsers, FiX, FiCheckCircle, FiMessageCircle, 
@@ -138,15 +138,23 @@ const [saving, setSaving] = useState(false);
 const [showMenu, setShowMenu] = useState(false);
 const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
 const [shareTask, setShareTask] = useState<Task | null>(null);
+const appConverter = {
+  toFirestore(app: Application): DocumentData {
+    return app;
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot): Application {
+    return { id: snapshot.id,...snapshot.data() } as Application;
+  }
+};
 const [applicationsSnap] = useCollection<Application>(
   task?.id? query(
-    collection(db, 'applications'),
+    collection(db, 'applications').withConverter(appConverter),
     where('taskId', '==', task.id),
     where('status', '==', 'pending')
   ) : null
 );
 
-const applications = applicationsSnap?.docs.map(d => ({ id: d.id,...d.data() })) || [];
+const applications = applicationsSnap?.docs.map(d => d.data()) || [];
 
 useEffect(() => {
   if (!task?.id) return;
