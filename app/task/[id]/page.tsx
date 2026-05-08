@@ -358,7 +358,7 @@ const handleJoinTask = async () => {
     await loadApplications(); // Reload list ứng viên trong detail
   } catch (err) {
     // Rollback nếu lỗi
-    setTask(prev => ({ ...prev, applicants: oldApplicants }));
+   setTask(prev => prev ? ({ ...prev, applicants: oldApplicants }) : prev);
     toast.error("Ứng tuyển thất bại");
   } finally {
     setJoining(false);
