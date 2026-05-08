@@ -629,18 +629,18 @@ const taskTime = isTask(task) && task.deadline?.seconds
       <span>Gọi điện</span>
     </button>
 
-    <button
-      onClick={isApplied? handleCancelApply : handleJoinTask}
-      disabled={(!isApplied && (isFull || task.status!== "open")) || joining || isOwner}
-      className={`h-12 rounded-2xl flex items-center justify-center gap-1.5 text-[15px] font-semibold active:scale-95 transition-all disabled:opacity-40 ${
-        isApplied
-       ? "border border-[#E5E5E7] bg-white text-[#1C1C1E]"
-          : "bg-[#00A86B] hover:bg-[#009960] text-white"
-      }`}
-    >
-      <FiPlus size={20} />
-      <span>{isApplied? "Hủy" : "Nhận việc"}</span>
-    </button>
+<button
+  onClick={isApplied? handleCancelApply : handleJoinTask}
+  disabled={(!isApplied && (isFull || task.status!== "open")) || joining || isOwner}
+  className={`h-12 rounded-2xl flex items-center justify-center gap-1.5 text-[15px] font-semibold active:scale-95 transition-all disabled:opacity-40 ${
+    isApplied
+   ? "border border-[#E5E5E7] bg-white text-[#1C1C1E]"
+      : "bg-[#00A86B] hover:bg-[#009960] text-white"
+  }`}
+>
+  {isApplied? <FiX size={20} /> : <FiSend size={20} />}
+  <span>{isApplied? "Hủy" : "Ứng tuyển"}</span>
+</button>
 
     <button
       onClick={() => toast.info("Đã gửi báo cáo")}
