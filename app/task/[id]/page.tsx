@@ -460,7 +460,7 @@ const handleJoinTask = async () => {
   };
 
   const handleReply = (c: TaskComment) => { setReplyTo(c); inputRef.current?.focus(); };
-  const handleSelectMention = (user: UserData) => {
+    const handleSelectMention = (user: UserData) => {
     const lastAt = text.lastIndexOf("@");
     setText(text.slice(0, lastAt) + `@${user.name} `);
     setShowMention(false);
@@ -470,7 +470,7 @@ const handleJoinTask = async () => {
   if (loading) return <div className="p-4 text-center">Đang tải...</div>;
   if (!task) return <div className="p-4 text-center">Không tìm thấy task</div>;
 
-  const parentComments = comments.filter((c) =>!c.parentId);
+  const parentComments = comments.filter((c) => !c.parentId);
   const getReplies = (id: string) => comments.filter((c) => c.parentId === id);
 
   const handleAcceptApp = async (appId: string, applicantId: string) => {
@@ -514,15 +514,15 @@ const handleJoinTask = async () => {
   };
 
   const taskDate = isTask(task) && task.deadline?.seconds
- ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
+    ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
     : isPlan(task) && task.eventDate?.seconds
- ? new Date(task.eventDate.seconds * 1000).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
+    ? new Date(task.eventDate.seconds * 1000).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
     : "Chưa xác định";
 
   const taskTime = isTask(task) && task.deadline?.seconds
- ? `${new Date(task.deadline.seconds * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(task.deadline.seconds * 1000 + 3*60*60*1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+    ? `${new Date(task.deadline.seconds * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(task.deadline.seconds * 1000 + 3*60*60*1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
     : isPlan(task) && task.eventDate?.seconds
- ? `${new Date(task.eventDate.seconds * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(task.eventDate.seconds * 1000 + 3*60*60*1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+    ? `${new Date(task.eventDate.seconds * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(task.eventDate.seconds * 1000 + 3*60*60*1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
     : "";
 
   const statusMap: Record<TaskStatus, { label: string; color: string; dot: string }> = {
@@ -538,7 +538,7 @@ const handleJoinTask = async () => {
 
   const isExpired = isTask(task) && task.deadline && task.deadline.seconds * 1000 < Date.now();
   const status = isExpired
-? { label: "Đã hết hạn", color: "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B]", dot: "bg-[#FF3B30]" }
+    ? { label: "Đã hết hạn", color: "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B]", dot: "bg-[#FF3B30]" }
     : statusMap[task.status] || statusMap.open;
 
   return (
