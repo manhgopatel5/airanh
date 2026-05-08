@@ -139,14 +139,14 @@ export default function ShareTaskModal({ task, onClose }: Props) {
         className="fixed inset-0 z-[999] bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       >
-        <motion.div
-          initial={{ y: "100%" }}
-          animate={{ y: 0 }}
-          exit={{ y: "100%" }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="fixed inset-x-0 bottom-0 bg-white dark:bg-zinc-950 rounded-t-3xl max-h- flex flex-col"
-          onClick={(e) => e.stopPropagation()}
-        >
+   <motion.div
+  initial={{ y: "-100%" }}
+  animate={{ y: 0 }}
+  exit={{ y: "-100%" }}
+  transition={{ type: "spring", damping: 25, stiffness: 300 }}
+  className="fixed inset-x-0 top-0 bg-white dark:bg-zinc-950 rounded-b-3xl max-h-[85vh] flex flex-col shadow-2xl"
+  onClick={(e) => e.stopPropagation()}
+>
           {/* Header */}
           <div className="flex justify-between items-center px-6 pt-5 pb-3 shrink-0">
             <h3 className="text-xl font-bold text-zinc-900 dark:text-white">
