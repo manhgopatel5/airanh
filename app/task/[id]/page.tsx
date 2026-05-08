@@ -56,6 +56,17 @@ type UserData = {
   joinedDate?: Timestamp;
   phone?: string;
 };
+type Application = {
+  id: string;
+  taskId: string;
+  taskOwnerId: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
+  createdAt: Timestamp;
+  updatedAt?: Timestamp;
+};
 
 const Portal = ({ children }: { children: React.ReactNode }) => {
   const [mounted, setMounted] = useState(false);
@@ -127,7 +138,7 @@ const [saving, setSaving] = useState(false);
 const [showMenu, setShowMenu] = useState(false);
 const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
 const [shareTask, setShareTask] = useState<Task | null>(null);
-const [applicationsSnap] = useCollection(
+const [applicationsSnap] = useCollection<Application>(
   task?.id? query(
     collection(db, 'applications'),
     where('taskId', '==', task.id),
