@@ -15,6 +15,7 @@ import { type TaskStatus, type Task, isTask } from "@/types/task";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
+
 type Props = {
   task: Task;
   theme: "task" | "plan";
