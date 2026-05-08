@@ -34,9 +34,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
   const { user } = useAuth();
   const db = getFirebaseDB();
 
-  const [isSaved, setIsSaved] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(task.likeCount || 0);
+
   const [saving, setSaving] = useState(false);
   const [liking, setLiking] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -44,11 +42,9 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
   const menuBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (!task?.id) return;
-    setIsSaved(!!user?.uid &&!!task.savedBy?.includes(user.uid));
-    setIsLiked(!!user?.uid &&!!task.likedBy?.includes(user.uid));
-    setLikeCount(task.likeCount || 0);
-  }, [user?.uid, task?.savedBy, task?.likedBy, task?.likeCount, task?.id]);
+  if (!task?.id) return;
+  setIsSaved(!!user?.uid &&!!task.savedBy?.includes(user.uid));
+}, [user?.uid, task?.savedBy, task?.id]);
 
   useEffect(() => {
     const closeMenu = () => setShowMenu(false);
