@@ -535,9 +535,9 @@ const handleCancelApply = async () => {
   
     <>
       <Toaster richColors position="top-center" />
-      <div className="max-w-xl mx-auto bg-[#F2F2F7] dark:bg-black min-h-screen pb-4">
-       <div className="bg-white mt-3 mx-4 rounded-2xl border border-[#E5E5E7] overflow-hidden">
-  <div className="p-4">
+<div className="max-w-xl mx-auto bg-[#F2F2F7] dark:bg-black min-h-screen pb-4 px-3 pt-2">
+  <div className="bg-white dark:bg-zinc-900 rounded-3xl border-zinc-100 dark:border-zinc-800 shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden">
+    <div className="p-5">
     <div className="flex gap-3">
       <div className="relative shrink-0">
         <UserAvatar src={owner?.avatar} name={owner?.name} size={56} />
@@ -551,45 +551,46 @@ const handleCancelApply = async () => {
  <div className="flex-1 min-w-0">
   <div className="flex items-center justify-between gap-2 mb-1">
     <span className="font-semibold text- text-[#1C1C1E] truncate">{owner?.name || "Minh Tran"}</span>
-<div className="flex items-center gap-2 shrink-0">
-<button
-  onClick={() => task && setShareTask(task)}
-  className="p-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-90 transition-all"
->
-  <FiShare2 size={18} className="text-zinc-600 dark:text-zinc-300" />
-</button>
-
-  {!isOwner? (
+<div className="flex items-center gap-2.5 shrink-0">
+  {!isOwner && (
     <motion.button
-      whileTap={{ scale: 0.95 }}
+      whileTap={{ scale: 0.94 }}
       onClick={handleSave}
       disabled={saving}
-      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 ${
-        isSaved
-     ? "bg-blue-50 dark:bg-blue-950/50 text-[#0A84FF] dark:text-blue-400"
-        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700"
-      }`}
+      className="w-10 h-10 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-90 transition-all disabled:opacity-50"
     >
-      {isSaved? <FiCheck size={18} /> : <FiBookmark size={18} />}
-      {isSaved? "Đã lưu" : "Lưu"}
+      <FiBookmark 
+        size={20} 
+        className={isSaved? "fill-[#0A84FF] text-[#0A84FF]" : "text-zinc-600 dark:text-zinc-300"} 
+      />
     </motion.button>
-  ) : (
-    <div className="relative">
-      <button
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const rect = e.currentTarget.getBoundingClientRect();
-          setMenuPos({
-            x: rect.right - 200,
-            y: rect.bottom + 8
-          });
-          setShowMenu(!showMenu);
-        }}
-        className="p-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-90 transition-all"
-      >
-        <FiMoreHorizontal size={18} className="text-zinc-600 dark:text-zinc-300" />
-      </button>
+  )}
+
+  <motion.button
+    whileTap={{ scale: 0.94 }}
+    onClick={() => task && setShareTask(task)}
+    className="w-10 h-10 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-90 transition-all"
+  >
+    <FiShare2 size={20} className="text-zinc-600 dark:text-zinc-300" strokeWidth={2} />
+  </motion.button>
+
+  <div className="relative">
+    <motion.button
+      whileTap={{ scale: 0.94 }}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const rect = e.currentTarget.getBoundingClientRect();
+        setMenuPos({
+          x: rect.right - 200,
+          y: rect.bottom + 8
+        });
+        setShowMenu(!showMenu);
+      }}
+      className="w-10 h-10 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-90 transition-all"
+    >
+      <FiMoreHorizontal size={20} className="text-zinc-600 dark:text-zinc-300" strokeWidth={2.5} />
+    </motion.button>
       <AnimatePresence>
         {showMenu && (
           <Portal>
