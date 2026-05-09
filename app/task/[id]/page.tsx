@@ -91,7 +91,7 @@ const acceptedCount = useMemo(
   () => applications.filter(app => app.status === 'accepted').length,
   [applications]
 );
-const isFull = acceptedCount >= (isTask(task)? task.totalSlots : 1);
+const isFull = acceptedCount >= (task && isTask(task)? task.totalSlots : 1);
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<TaskComment | null>(null);
   const [editingComment, setEditingComment] = useState<string | null>(null);
