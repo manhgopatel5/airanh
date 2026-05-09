@@ -710,6 +710,8 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
   </div>
 </div>
 
+</div>
+
 <div className="px-4 pt-4 pb-2">
               {isOwner? (
                 <div className="rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 p-4">
