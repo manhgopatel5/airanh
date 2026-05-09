@@ -347,7 +347,7 @@ const handleJoinTask = async () => {
   setJoining(true);
 
   const oldApplicants = task.applicants || [];
-  const oldAppliedCount = (task && 'appliedCount' in task ? task.appliedCount : 0) || 0;
+  const oldAppliedCount = Number(task && 'appliedCount' in task ? task.appliedCount : 0) || 0;
   const oldApplications = applications;
 
   // Optimistic update cả 2
@@ -393,7 +393,7 @@ const handleJoinTask = async () => {
   setJoining(true);
 
   const oldApplicants = task.applicants || [];
-  const oldAppliedCount = (task && 'appliedCount' in task ? task.appliedCount : 0) || 0;
+ const oldAppliedCount = Number(task && 'appliedCount' in task ? task.appliedCount : 0) || 0;
   const oldApplications = applications;
 
   setTask(prev => prev? ({
