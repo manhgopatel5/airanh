@@ -1023,6 +1023,7 @@ const handleCancelApply = async () => {
           </div>
             </div>
 
+   </div>
       <ImageGallery open={showImageGallery!== null} images={task.images || []} initialIndex={showImageGallery || 0} onClose={() => setShowImageGallery(null)} />
       {shareTask && (
         <ShareTaskModal
