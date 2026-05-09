@@ -88,7 +88,7 @@ export default function TaskDetailPage() {
   const [applications, setApplications] = useState<Application[]>([]);
  
 
-const isFull = (task?.appliedCount || 0) >= (task && isTask(task)? task.totalSlots : 1);
+const isFull = isTask(task)? (task.appliedCount || 0) >= task.totalSlots : true;
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<TaskComment | null>(null);
   const [editingComment, setEditingComment] = useState<string | null>(null);
@@ -696,7 +696,7 @@ const handleCancelApply = async () => {
       <span>•</span>
 <div className="flex items-center gap-1">
   <FiUsers size={16} />
-  <span>{task?.appliedCount || 0}/{isTask(task)? task.totalSlots : 1}</span>
+ <span>{isTask(task) ? (task.appliedCount || 0) : 0}/{isTask(task) ? task.totalSlots : 1}</span>
 </div>
     </>
   )}
