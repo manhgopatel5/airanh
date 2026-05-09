@@ -319,21 +319,7 @@ const [saving, setSaving] = useState(false);
           )}
         </div>
 
-        <AnimatePresence>
-          {isApplied && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-3 pt-3 border-t border-zinc-200/50 dark:border-zinc-800/50"
-            >
-              <div className={`flex items-center gap-1.5 text-xs ${themeColor.text} font-semibold`}>
-                <FiCheck size={14} className="shrink-0" />
-                <span>Đã ứng tuyển</span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+  
       </div>
     </div>
   );
