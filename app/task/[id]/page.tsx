@@ -538,7 +538,8 @@ const handleCancelApply = async () => {
 <div className="max-w-xl mx-auto bg-[#F2F2F7] dark:bg-black min-h-screen pb-4 px-3 pt-2">
   <div className="bg-white dark:bg-zinc-900 rounded-3xl border-zinc-100 dark:border-zinc-800 shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden">
     <div className="p-5">
-        <div className="flex gap-3 items-start">
+       
+<div className="flex gap-3">
       <div className="relative shrink-0">
         <UserAvatar src={owner?.avatar} name={owner?.name} size={56} />
         {owner?.rating && owner.rating >= 4.8 && (
@@ -548,163 +549,161 @@ const handleCancelApply = async () => {
         )}
       </div>
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <span className="font-semibold text- text-[#1C1C1E] dark:text-zinc-100 block">{owner?.name || "Minh Tran"}</span>
-            
-            <div className="flex items-center gap-1.5 text- text-[#8E8E93] mt-0.5 mb-2">
-              <FiStar className="fill-[#FFB800] text-[#FFB800]" size={14} />
-              <span className="font-semibold text-[#1C1C1E] dark:text-zinc-100">{owner?.rating || "4.9"}</span>
-              <span>({owner?.reviewCount || 21} đánh giá)</span>
-              <span>•</span>
-              <span className="text-[#00A86B]">Mới tham gia</span>
-            </div>
+ <div className="flex-1 min-w-0">
+  <div className="flex items-center justify-between gap-2 mb-1">
+    <span className="font-semibold text- text-[#1C1C1E] truncate">{owner?.name || "Minh Tran"}</span>
+<div className="flex items-center gap-2.5 shrink-0">
+  {!isOwner && (
+    <motion.button
+      whileTap={{ scale: 0.94 }}
+      onClick={handleSave}
+      disabled={saving}
+      className="w-10 h-10 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-90 transition-all disabled:opacity-50"
+    >
+      <FiBookmark 
+        size={20} 
+        className={isSaved? "fill-[#0A84FF] text-[#0A84FF]" : "text-zinc-600 dark:text-zinc-300"} 
+      />
+    </motion.button>
+  )}
 
-            <h2 className="font-bold text- leading-snug text-[#1C1C1E] dark:text-zinc-100 mb-2">{task.title}</h2>
+ <motion.button
+  whileTap={{ scale: 0.94 }}
+  onClick={() => task && setShareTask(task)}
+  className="w-10 h-10 rounded-2xl bg-transparent flex items-center justify-center hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60 active:scale-90 transition-all"
+>
+  <FiShare2 size={20} className="text-zinc-600 dark:text-zinc-300" strokeWidth={2} />
+</motion.button>
 
-            <div className="flex items-center gap-2 mb-2">
-              <span className={`px-3 py-1.5 rounded-xl text- font-semibold ${status.color}`}>
-                <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${status.dot}`} />
-                {status.label}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2 text- text-[#8E8E93] flex-wrap">
-              {isUrgent? (
-                <div className="flex items-center gap-1 text-[#FF3B30] font-bold animate-pulse">
-                  <FiClock size={16} />
-                  <span className="tabular-nums">{timeLeft}</span>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center gap-1">
-                    <FiCalendar size={16} />
-                    <span>{taskDate}</span>
-                  </div>
-                  <span>•</span>
-                  <div className="flex items-center gap-1">
-                    <FiClock size={16} />
-                    <span>{taskTime}</span>
-                  </div>
-                </>
-              )}
-              {isTask(task) && task.price > 0 && (
-                <>
-                  <span className="px-2 py-0.5 rounded-lg bg-[#E6F4EA] text-[#1E8E3E] text- font-semibold">
-                    {task.price.toLocaleString("vi-VN")} đ
-                  </span>
-                  <span>• Cố định</span>
-                  <span>•</span>
-                  <div className="flex items-center gap-1">
-                    <FiUsers size={16} />
-                    <span>{isTask(task)? (task.appliedCount || 0) : 0}/{isTask(task)? task.totalSlots : 1}</span>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5 shrink-0">
-            {!isOwner && (
-              <motion.button
-                whileTap={{ scale: 0.94 }}
-                onClick={handleSave}
-                disabled={saving}
-                className="w-10 h-10 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-90 transition-all disabled:opacity-50"
-              >
-                <FiBookmark 
-                  size={20} 
-                  className={isSaved? "fill-[#0A84FF] text-[#0A84FF]" : "text-zinc-600 dark:text-zinc-300"} 
-                />
-              </motion.button>
-            )}
-
-            <motion.button
-              whileTap={{ scale: 0.94 }}
-              onClick={() => task && setShareTask(task)}
-              className="w-10 h-10 rounded-2xl bg-transparent flex items-center justify-center hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60 active:scale-90 transition-all"
+<div className="relative">
+  <motion.button
+    whileTap={{ scale: 0.94 }}
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const rect = e.currentTarget.getBoundingClientRect();
+      setMenuPos({
+        x: rect.right - 200,
+        y: rect.bottom + 8
+      });
+      setShowMenu(!showMenu);
+    }}
+    className="w-10 h-10 rounded-2xl bg-transparent flex items-center justify-center hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60 active:scale-90 transition-all"
+  >
+    <FiMoreHorizontal size={20} className="text-zinc-600 dark:text-zinc-300" strokeWidth={2.5} />
+  </motion.button>
+      <AnimatePresence>
+        {showMenu && (
+          <Portal>
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setShowMenu(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              transition={{ duration: 0.15 }}
+              className="fixed z-50 min-w-[200px] bg-white dark:bg-zinc-900 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 py-2 overflow-hidden"
+              style={{
+                top: `${menuPos.y}px`,
+                left: `${menuPos.x}px`,
+              }}
             >
-              <FiShare2 size={20} className="text-zinc-600 dark:text-zinc-300" strokeWidth={2} />
-            </motion.button>
-
-            <div className="relative">
-              <motion.button
-                whileTap={{ scale: 0.94 }}
+              <button
                 onClick={(e) => {
-                  e.preventDefault();
                   e.stopPropagation();
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  setMenuPos({
-                    x: rect.right - 200,
-                    y: rect.bottom + 8
-                  });
-                  setShowMenu(!showMenu);
+                  handleSave();
+                  setShowMenu(false);
                 }}
-                className="w-10 h-10 rounded-2xl bg-transparent flex items-center justify-center hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60 active:scale-90 transition-all"
+                className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
               >
-                <FiMoreHorizontal size={20} className="text-zinc-600 dark:text-zinc-300" strokeWidth={2.5} />
-              </motion.button>
-              <AnimatePresence>
-                {showMenu && (
-                  <Portal>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setShowMenu(false)}
-                    />
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                      transition={{ duration: 0.15 }}
-                      className="fixed z-50 min-w-[200px] bg-white dark:bg-zinc-900 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 py-2 overflow-hidden"
-                      style={{
-                        top: `${menuPos.y}px`,
-                        left: `${menuPos.x}px`,
-                      }}
-                    >
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSave();
-                          setShowMenu(false);
-                        }}
-                        className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
-                      >
-                        {isSaved? <FiCheck size={18} /> : <FiBookmark size={18} />}
-                        {isSaved? "Đã lưu" : "Lưu công việc"}
-                      </button>
-                      <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowMenu(false);
-                          router.push(`/task/${task.id}/edit`);
-                        }}
-                        className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
-                      >
-                        <FiEdit2 size={18} />
-                        Sửa công việc
-                      </button>
-                      <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowMenu(false);
-                          handleDelete();
-                        }}
-                        className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 w-full transition-all active:scale-95"
-                      >
-                        <FiTrash2 size={18} />
-                        Xóa
-                      </button>
-                    </motion.div>
-                  </Portal>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
+                {isSaved? <FiCheck size={18} /> : <FiBookmark size={18} />}
+                {isSaved? "Đã lưu" : "Lưu công việc"}
+              </button>
+              <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMenu(false);
+                  router.push(`/task/${task.id}/edit`);
+                }}
+                className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
+              >
+                <FiEdit2 size={18} />
+                Sửa công việc
+              </button>
+              <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMenu(false);
+                  handleDelete();
+                }}
+                className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 w-full transition-all active:scale-95"
+              >
+                <FiTrash2 size={18} />
+                Xóa
+              </button>
+            </motion.div>
+          </Portal>
+        )}
+      </AnimatePresence>
+    </div>
+ 
+</div>
+  </div>
+
+        <div className="flex items-center gap-1.5 mb-2 text-">
+          <FiStar className="fill-[#FFB800] text-[#FFB800]" size={16} />
+          <span className="font-semibold text-[#1C1C1E]">{owner?.rating || "4.9"}</span>
+          <span className="text-[#8E8E93]">({owner?.reviewCount || 21} đánh giá)</span>
+          <span className="text-[#8E8E93]">•</span>
+          <span className="text-[#00A86B]">Mới tham gia</span>
         </div>
+
+        <h2 className="font-semibold text- leading-snug mb-3 text-[#1C1C1E]">{task.title}</h2>
+{/* Thêm status badge */}
+<div className="flex items-center gap-2 mb-3">
+  <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${status.color}`}>
+    <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${status.dot}`} />
+    {status.label}
+  </span>
+</div>
+       <div className="flex items-center gap-2 text- text-[#8E8E93] flex-wrap">
+  {isUrgent? (
+    <div className="flex items-center gap-1 text-[#FF3B30] font-bold animate-pulse">
+      <FiClock size={16} />
+      <span className="tabular-nums">{timeLeft}</span>
+    </div>
+  ) : (
+    <>
+      <div className="flex items-center gap-1">
+        <FiCalendar size={16} />
+        <span>{taskDate}</span>
+      </div>
+      <span>•</span>
+      <div className="flex items-center gap-1">
+        <FiClock size={16} />
+        <span>{taskTime}</span>
+      </div>
+    </>
+  )}
+  {isTask(task) && task.price > 0 && (
+    <>
+      <span className="px-2 py-0.5 rounded-md bg-[#E6F4EA] text-[#1E8E3E] text- font-semibold">
+        {task.price.toLocaleString("vi-VN")} đ
+      </span>
+      <span>• Cố định</span>
+      <span>•</span>
+<div className="flex items-center gap-1">
+  <FiUsers size={16} />
+<span>{isTask(task) ? (task.appliedCount || 0) : 0}/{isTask(task) ? task.totalSlots : 1}</span>
+</div>
+    </>
+  )}
+</div>
+
       </div>
     </div>
   </div>
