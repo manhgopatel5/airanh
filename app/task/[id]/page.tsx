@@ -665,30 +665,42 @@ const handleCancelApply = async () => {
 
 {/* Phần task info đưa xuống dưới, căn trái */}
 <div className="mt-3">
-  {/* 3 badge nằm ngang trên tiêu đề */}
-  <div className="flex items-center gap-2 mb-3 flex-wrap">
-    {/* Badge Đang tuyển - xanh lá */}
-    <span className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 ${status.color}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
-      {status.label}
+  {/* 4 badge nằm ngang, không wrap, tự co chữ */}
+  <div className="flex items-center gap-1.5 mb-3 flex-nowrap overflow-hidden">
+    {/* 1. Badge Đang tuyển - xanh lá */}
+    <span className={`flex-1 min-w-0 px-2 py-1.5 rounded-xl text- sm:text-xs font-semibold flex items-center justify-center gap-1 ${status.color}`}>
+      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${status.dot}`} />
+      <span className="truncate">{status.label}</span>
     </span>
 
-    {/* Badge số người - tím/xanh dương */}
+    {/* 2. Badge số người - xanh dương */}
     {isTask(task) && (
-      <span className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#E8F0FE] text-[#1A73E8] dark:bg-[#1A73E8]/20 dark:text-[#8AB4F8] flex items-center gap-1.5">
-        <FiUsers size={14} />
-        {task.appliedCount || 0}/{task.totalSlots}
+      <span className="flex-1 min-w-0 px-2 py-1.5 rounded-xl text- sm:text-xs font-semibold bg-[#E8F0FE] text-[#1A73E8] dark:bg-[#1A73E8]/20 dark:text-[#8AB4F8] flex items-center justify-center gap-1">
+        <FiUsers size={12} className="shrink-0" />
+        <span className="truncate">{task.appliedCount || 0}/{task.totalSlots}</span>
       </span>
     )}
 
-    {/* Badge giá tiền - xanh dương nhạt */}
+    {/* 3. Badge giá tiền - xanh dương nhạt, giữ nguyên */}
     {isTask(task) && task.price > 0 && (
-      <span className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#E3F2FD] text-[#0A84FF] dark:bg-[#0A84FF]/20 dark:text-[#5AC8FA] flex items-center gap-1.5">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <span className="flex-1 min-w-0 px-1.5 py-1.5 rounded-xl text- sm:text-xs font-semibold bg-[#E3F2FD] text-[#0A84FF] dark:bg-[#0A84FF]/20 dark:text-[#5AC8FA] flex items-center justify-center gap-1">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
           <rect x="2" y="5" width="20" height="14" rx="2"/>
           <path d="M2 10h20"/>
         </svg>
-        {task.price.toLocaleString("vi-VN")} đ
+        <span className="truncate">{task.price.toLocaleString("vi-VN")} đ</span>
+      </span>
+    )}
+
+    {/* 4. Badge đếm ngược - cam/đỏ, nhấp nháy khi < 1h */}
+    {isTask(task) && task.deadline?.seconds && task.status !== "completed" && (
+      <span className={`flex-1 min-w-0 px-2 py-1.5 rounded-xl text- sm:text-xs font-semibold flex items-center justify-center gap-1 ${
+        isUrgent 
+          ? "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B] animate-pulse" 
+          : "bg-[#FEF7E0] text-[#F9AB00] dark:bg-[#F9AB00]/20 dark:text-[#FDD663]"
+      }`}>
+        <FiClock size={12} className="shrink-0" />
+        <span className="tabular-nums truncate">{timeLeft?.replace('Còn ', '') || "Hết hạn"}</span>
       </span>
     )}
   </div>
@@ -702,26 +714,17 @@ const handleCancelApply = async () => {
   )}
   
   <div className="flex items-center gap-2 text- text-[#8E8E93] flex-wrap">
-    {isUrgent? (
-      <div className="flex items-center gap-1 text-[#FF3B30] font-bold animate-pulse">
-        <FiClock size={16} />
-        <span className="tabular-nums">{timeLeft}</span>
-      </div>
-    ) : (
-      <>
-        <div className="flex items-center gap-1">
-          <FiCalendar size={16} />
-          <span>{taskDate}</span>
-        </div>
-        <span>•</span>
-        <div className="flex items-center gap-1">
-          <FiClock size={16} />
-          <span>{taskTime}</span>
-        </div>
-        <span>•</span>
-        <span>Cố định</span>
-      </>
-    )}
+    <div className="flex items-center gap-1">
+      <FiCalendar size={16} />
+      <span>{taskDate}</span>
+    </div>
+    <span>•</span>
+    <div className="flex items-center gap-1">
+      <FiClock size={16} />
+      <span>{taskTime}</span>
+    </div>
+    <span>•</span>
+    <span>Cố định</span>
   </div>
 </div>
 
