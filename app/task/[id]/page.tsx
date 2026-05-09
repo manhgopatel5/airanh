@@ -665,7 +665,13 @@ const handleCancelApply = async () => {
 
 {/* Phần task info đưa xuống dưới, căn trái */}
 <div className="mt-3">
-  <h2 className="font-semibold text- leading-snug mb-3 text-[#1C1C1E]">{task.title}</h2>
+  <h2 className="font-semibold text- leading-snug mb-2 text-[#1C1C1E]">{task.title}</h2>
+  
+  {task.description && (
+    <Linkify options={{ target: "_blank", className: `text-[${PRIMARY}] hover:underline` }}>
+      <p className="text- text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed mb-3">{task.description}</p>
+    </Linkify>
+  )}
   
   <div className="flex items-center gap-2 mb-3">
     <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${status.color}`}>
@@ -856,15 +862,7 @@ const handleCancelApply = async () => {
   </>
 )}
 
-        {/* Mô tả chi tiết */}
-        {task.description && (
-         <div className="p-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl shadow-sm">
-            <h3 className="font-semibold mb-2 text-">Mô tả chi tiết</h3>
-            <Linkify options={{ target: "_blank", className: `text-[${PRIMARY}] hover:underline` }}>
-             <p className="text- text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-">{task.description}</p>
-            </Linkify>
-          </div>
-        )}
+   
 
 {/* Ảnh task - Perfect Thumbnail Grid */}
 {task.images && task.images.length > 0 && (
