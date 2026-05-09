@@ -396,11 +396,13 @@ const handleJoinTask = async () => {
  const oldAppliedCount = Number(task && 'appliedCount' in task ? task.appliedCount : 0) || 0;
   const oldApplications = applications;
 
-  setTask(prev => prev? ({
- ...prev,
-    applicants: prev.applicants?.filter(id => id!== currentUser.uid) || [],
-    appliedCount: Math.max(0, (prev.appliedCount || 0) - 1)
-  }) : prev);
+setTask(prev => prev? ({
+  ...prev,
+  applicants: prev.applicants?.filter(id => id!== currentUser.uid) || [],
+  ...(isTask(prev)? { 
+    appliedCount: Math.max(0, (prev.appliedCount || 0) - 1) 
+  } : {})
+}) : prev);
 
   setApplications(prev => prev.filter(app => app.userId!== currentUser.uid));
 
