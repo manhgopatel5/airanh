@@ -354,7 +354,7 @@ const handleJoinTask = async () => {
   setTask(prev => prev? ({
  ...prev,
     applicants: [...oldApplicants, currentUser.uid],
-    ...(isTask(task) && { appliedCount: oldAppliedCount + 1 })
+   ...(isTask(task)? { appliedCount: oldAppliedCount + 1 } : {})
   }) : prev);
 
   const tempApp: Application = {
