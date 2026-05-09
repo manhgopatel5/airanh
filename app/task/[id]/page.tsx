@@ -553,13 +553,13 @@ const handleCancelApply = async () => {
     <div className="flex items-center justify-between gap-2 mb-1">
       <span className="font-semibold text- text-[#1C1C1E] truncate">{owner?.name || "Minh Tran"}</span>
       <div className="flex items-center gap-2.5 shrink-0">
-        {!isOwner && (
-          <motion.button
-            whileTap={{ scale: 0.94 }}
-            onClick={handleSave}
-            disabled={saving}
-            className="w-10 h-10 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-90 transition-all disabled:opacity-50"
-          >
+  {!isOwner && (
+  <motion.button
+    whileTap={{ scale: 0.94 }}
+    onClick={handleSave}
+    disabled={saving}
+    className="w-10 h-10 rounded-2xl bg-transparent flex items-center justify-center hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60 active:scale-90 transition-all disabled:opacity-50"
+  >
             <FiBookmark 
               size={20} 
               className={isSaved? "fill-[#0A84FF] text-[#0A84FF]" : "text-zinc-600 dark:text-zinc-300"} 
@@ -666,33 +666,33 @@ const handleCancelApply = async () => {
 {/* Phần task info đưa xuống dưới, căn trái */}
 <div className="mt-3">
   {/* 4 badge nằm ngang, không wrap, tự co chữ */}
-  <div className="flex items-center gap-1 mb-3 flex-nowrap overflow-hidden">
+  <div className="flex items-center gap-1.5 mb-3 flex-nowrap overflow-hidden">
     {/* 1. Badge Đang tuyển - không icon */}
-    <span className={`flex-1 min-w-0 px-2 py-1.5 rounded-xl text-[10px] sm:text-xs font-semibold flex items-center justify-center gap-1 ${status.color}`}>
-      <span className={`w-1 h-1 rounded-full shrink-0 ${status.dot}`} />
+    <span className={`flex-1 min-w-0 px-2 py-1.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-1 ${status.color}`}>
+      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${status.dot}`} />
       <span className="truncate">{status.label}</span>
     </span>
 
     {/* 2. Badge số người - có icon */}
     {isTask(task) && (
-      <span className="flex-1 min-w-0 px-2 py-1.5 rounded-xl text-[10px] sm:text-xs font-semibold bg-[#E8F0FE] text-[#1A73E8] dark:bg-[#1A73E8]/20 dark:text-[#8AB4F8] flex items-center justify-center gap-1">
-        <FiUsers size={11} className="shrink-0" />
+      <span className="flex-1 min-w-0 px-2 py-1.5 rounded-xl text-xs sm:text-sm font-semibold bg-[#E8F0FE] text-[#1A73E8] dark:bg-[#1A73E8]/20 dark:text-[#8AB4F8] flex items-center justify-center gap-1">
+        <FiUsers size={12} className="shrink-0" />
         <span className="truncate">{task.appliedCount || 0}/{task.totalSlots}</span>
       </span>
     )}
 
     {/* 3. Badge giá tiền - không icon, giữ nguyên */}
     {isTask(task) && task.price > 0 && (
-      <span className="flex-1 min-w-0 px-1.5 py-1.5 rounded-xl text-[10px] sm:text-xs font-semibold bg-[#E3F2FD] text-[#0A84FF] dark:bg-[#0A84FF]/20 dark:text-[#5AC8FA] flex items-center justify-center">
+      <span className="flex-1 min-w-0 px-2 py-1.5 rounded-xl text-xs sm:text-sm font-semibold bg-[#E3F2FD] text-[#0A84FF] dark:bg-[#0A84FF]/20 dark:text-[#5AC8FA] flex items-center justify-center">
         <span className="truncate">{task.price.toLocaleString("vi-VN")} đ</span>
       </span>
     )}
 
     {/* 4. Badge đếm ngược - không icon */}
-    {isTask(task) && task.deadline?.seconds && task.status!== "completed" && (
-      <span className={`flex-1 min-w-0 px-2 py-1.5 rounded-xl text-[10px] sm:text-xs font-semibold flex items-center justify-center ${
+    {isTask(task) && task.deadline?.seconds && task.status !== "completed" && (
+      <span className={`flex-1 min-w-0 px-2 py-1.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center ${
         isUrgent 
-         ? "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B] animate-pulse" 
+          ? "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B] animate-pulse" 
           : "bg-[#FEF7E0] text-[#F9AB00] dark:bg-[#F9AB00]/20 dark:text-[#FDD663]"
       }`}>
         <span className="tabular-nums truncate">{timeLeft?.replace('Còn ', '') || "Hết hạn"}</span>
@@ -700,15 +700,15 @@ const handleCancelApply = async () => {
     )}
   </div>
 
-  <h2 className="font-semibold text- leading-snug mb-2 text-[#1C1C1E]">{task.title}</h2>
+  <h2 className="font-semibold text-base leading-snug mb-2 text-[#1C1C1E]">{task.title}</h2>
   
   {task.description && (
     <Linkify options={{ target: "_blank", className: `text-[${PRIMARY}] hover:underline` }}>
-      <p className="text- text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed mb-3">{task.description}</p>
+      <p className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed mb-3">{task.description}</p>
     </Linkify>
   )}
   
-  <div className="flex items-center gap-2 text- text-[#8E8E93] flex-wrap">
+  <div className="flex items-center gap-2 text-sm text-[#8E8E93] flex-wrap">
     <div className="flex items-center gap-1">
       <FiCalendar size={16} />
       <span>{taskDate}</span>
@@ -724,7 +724,6 @@ const handleCancelApply = async () => {
 </div>
 
 <div className="h-px bg-[#E5E5E7] mt-4" />
-
 <div className="px-4 pt-4 pb-2">
   {isOwner? (
     <div className="rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 p-4">
