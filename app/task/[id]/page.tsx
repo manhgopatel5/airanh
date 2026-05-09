@@ -485,11 +485,13 @@ export default function TaskDetailPage() {
     router.push(`/chat/${chatId}`);
   };
 
-  const taskDate = isTask(task) && task.deadline?.seconds
-   ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
-    : isPlan(task) && task.eventDate?.seconds
-   ? new Date(task.eventDate.seconds * 1000).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
-    : "Chưa xác định";
+  const taskDate = isTask(task) && task.createdAt?.seconds
+  ? new Date(task.createdAt.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  : "Chưa xác định";
+
+const taskDeadline = isTask(task) && task.deadline?.seconds
+  ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  : "";
 
   
 
@@ -504,8 +506,7 @@ export default function TaskDetailPage() {
     pending: { label: "Chờ duyệt", color: "bg-[#FEF7E0] text-[#F9AB00] dark:bg-[#F9AB00]/20 dark:text-[#FDD663]", dot: "bg-[#F9AB00]" },
   };
 
-  const deadlineDate = isTask(task) && task.deadline?.seconds? new Date(task.deadline.seconds * 1000) : null;
-  const taskDeadline = deadlineDate? `${String(deadlineDate.getDate()).padStart(2,'0')}/${String(deadlineDate.getMonth()+1).padStart(2,'0')}` : "";
+  
   const isExpired = isTask(task) && task.deadline && task.deadline.seconds * 1000 < Date.now();
   const status = isExpired
    ? { label: "Đã hết hạn", color: "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B]", dot: "bg-[#FF3B30]" }
@@ -680,44 +681,34 @@ export default function TaskDetailPage() {
                 </Linkify>
               )}
               
-              {/* 3 khung thông tin: Ngày đăng - Còn lại - Hạn chót */}
-              <div className="flex items-center gap-2 mt-4">
-                {/* 1. Ngày đăng - flex-[2] rộng hơn */}
-                <div className="flex-[2] min-w-0 px-3 py-2.5 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800/60 border border-[#E5E5E7] dark:border-zinc-700">
-                  <div className="flex items-center gap-2">
-                    <FiCalendar size={16} className="shrink-0 text-[#8E8E93]" />
-                    <div className="min-w-0">
-                      <p className="text-xs text-[#8E8E93] leading-none mb-0.5">Ngày đăng</p>
-                      <p className="text-sm font-semibold text-[#1C1C1E] dark:text-zinc-100 truncate">{taskDate || "10/05/2026"}</p>
-                    </div>
-                  </div>
-                </div>
+              {/* 2 khung thông tin: Ngày đăng - Hạn chót */}
+<div className="flex items-center gap-3 mt-4">
+  {/* 1. Ngày đăng */}
+  <div className="flex-1 min-w-0 px-4 py-3 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800/60 border border-[#E5E5E7] dark:border-zinc-700">
+    <div className="flex flex-col items-center gap-1">
+      <div className="flex items-center gap-1.5">
+        <FiCalendar size={14} className="text-[#8E8E93]" />
+        <p className="text-xs text-[#8E8E93] font-medium">Ngày đăng</p>
+      </div>
+      <p className="text-base font-semibold text-[#1C1C1E] dark:text-zinc-100 tabular-nums">
+        {taskDate}
+      </p>
+    </div>
+  </div>
 
-                {/* 2. Còn lại - flex-[2] rộng bằng Ngày đăng */}
-                <div className="flex-[2] min-w-0 px-3 py-2.5 rounded-xl bg-[#FEF7E0] dark:bg-[#F9AB00]/10 border border-[#FDE68A] dark:border-[#F9AB00]/30">
-                  <div className="flex items-center gap-2">
-                    <FiClock size={16} className="shrink-0 text-[#F9AB00]" />
-                    <div className="min-w-0">
-                      <p className="text-xs text-[#F9AB00] leading-none mb-0.5">Còn lại</p>
-                      <p className={`text-sm font-semibold tabular-nums truncate ${isUrgent? "text-[#FF3B30] animate-pulse" : "text-[#1C1C1E] dark:text-zinc-100"}`}>
-                        {timeLeft?.replace('Còn ', '') || "2 ngày"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3. Hạn chót - flex-1 nhỏ hơn */}
-                <div className="flex-1 min-w-0 px-3 py-2.5 rounded-xl bg-[#FFE5E5] dark:bg-[#FF3B30]/10 border border-[#FECACA] dark:border-[#FF3B30]/30">
-                  <div className="flex items-center gap-2">
-                    <FiCalendar size={16} className="shrink-0 text-[#FF3B30]" />
-                    <div className="min-w-0">
-                      <p className="text-xs text-[#FF3B30] leading-none mb-0.5">Hạn chót</p>
-                      <p className="text-sm font-semibold text-[#FF3B30] truncate">{taskDeadline || "15/05"}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+  {/* 2. Hạn chót */}
+  <div className="flex-1 min-w-0 px-4 py-3 rounded-2xl bg-[#FFE5E5] dark:bg-[#FF3B30]/10 border border-[#FECACA] dark:border-[#FF3B30]/30">
+    <div className="flex flex-col items-center gap-1">
+      <div className="flex items-center gap-1.5">
+        <FiClock size={14} className="text-[#FF3B30]" />
+        <p className="text-xs text-[#FF3B30] font-medium">Hạn chót</p>
+      </div>
+      <p className="text-base font-semibold text-[#FF3B30] tabular-nums">
+        {taskDeadline || "Chưa có"}
+      </p>
+    </div>
+  </div>
+</div>
 
             <div className="px-4 pt-4 pb-2">
               {isOwner? (
