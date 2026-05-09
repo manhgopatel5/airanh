@@ -10,7 +10,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { toast, Toaster } from "sonner";
 import {
   MessageCircle, UserPlus, Check, UserMinus, ArrowLeft,
-  Star, Briefcase, MapPin, Clock, ExternalLink, ShieldCheck,
+  Star, Briefcase, MapPin, Clock, ShieldCheck,
   Share2, MoreVertical, Flag, Phone, Award, TrendingUp,
   Calendar, FileText, ChevronRight, Zap, Settings, QrCode, ScanLine, X
 } from "lucide-react";
