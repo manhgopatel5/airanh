@@ -12,7 +12,7 @@ import {
   MessageCircle, UserPlus, Check, UserMinus, ArrowLeft,
   Star, Briefcase, MapPin, Clock, ShieldCheck,
   Share2, MoreVertical, Flag, Phone, Award, TrendingUp,
-  Calendar, FileText, ChevronRight, Zap, Settings, QrCode, ScanLine, X
+  Calendar, FileText, ChevronRight, Settings, QrCode, ScanLine, X
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
