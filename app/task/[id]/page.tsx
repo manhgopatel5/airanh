@@ -649,7 +649,7 @@ const handleCancelApply = async () => {
         )}
       </AnimatePresence>
     </div>
-  )}
+ 
 </div>
   </div>
 
