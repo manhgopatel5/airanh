@@ -665,6 +665,34 @@ const handleCancelApply = async () => {
 
 {/* Phần task info đưa xuống dưới, căn trái */}
 <div className="mt-3">
+  {/* 3 badge nằm ngang trên tiêu đề */}
+  <div className="flex items-center gap-2 mb-3 flex-wrap">
+    {/* Badge Đang tuyển - xanh lá */}
+    <span className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 ${status.color}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+      {status.label}
+    </span>
+
+    {/* Badge số người - tím/xanh dương */}
+    {isTask(task) && (
+      <span className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#E8F0FE] text-[#1A73E8] dark:bg-[#1A73E8]/20 dark:text-[#8AB4F8] flex items-center gap-1.5">
+        <FiUsers size={14} />
+        {task.appliedCount || 0}/{task.totalSlots}
+      </span>
+    )}
+
+    {/* Badge giá tiền - xanh dương nhạt */}
+    {isTask(task) && task.price > 0 && (
+      <span className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#E3F2FD] text-[#0A84FF] dark:bg-[#0A84FF]/20 dark:text-[#5AC8FA] flex items-center gap-1.5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="2" y="5" width="20" height="14" rx="2"/>
+          <path d="M2 10h20"/>
+        </svg>
+        {task.price.toLocaleString("vi-VN")} đ
+      </span>
+    )}
+  </div>
+
   <h2 className="font-semibold text- leading-snug mb-2 text-[#1C1C1E]">{task.title}</h2>
   
   {task.description && (
@@ -672,13 +700,6 @@ const handleCancelApply = async () => {
       <p className="text- text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed mb-3">{task.description}</p>
     </Linkify>
   )}
-  
-  <div className="flex items-center gap-2 mb-3">
-    <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${status.color}`}>
-      <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${status.dot}`} />
-      {status.label}
-    </span>
-  </div>
   
   <div className="flex items-center gap-2 text- text-[#8E8E93] flex-wrap">
     {isUrgent? (
@@ -697,19 +718,8 @@ const handleCancelApply = async () => {
           <FiClock size={16} />
           <span>{taskTime}</span>
         </div>
-      </>
-    )}
-    {isTask(task) && task.price > 0 && (
-      <>
-        <span className="px-2 py-0.5 rounded-md bg-[#E6F4EA] text-[#1E8E3E] text- font-semibold">
-          {task.price.toLocaleString("vi-VN")} đ
-        </span>
-        <span>• Cố định</span>
         <span>•</span>
-        <div className="flex items-center gap-1">
-          <FiUsers size={16} />
-          <span>{isTask(task)? (task.appliedCount || 0) : 0}/{isTask(task)? task.totalSlots : 1}</span>
-        </div>
+        <span>Cố định</span>
       </>
     )}
   </div>
