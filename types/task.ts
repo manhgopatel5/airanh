@@ -99,9 +99,10 @@ export type TaskItem = BaseItem & {
   price: number;
   currency: string;
   budgetType: BudgetType;
-  paymentMethod?: PaymentMethod; // THÊM DÒNG NÀY
+  paymentMethod?: PaymentMethod;
   totalSlots: number;
   joined: number;
+  appliedCount?: number;  // ← THÊM DÒNG NÀY
   requirements?: string;
   isRemote: boolean;
   applicationDeadline?: Timestamp | null;
