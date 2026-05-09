@@ -685,9 +685,9 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
 <div className="flex items-center gap-3 mt-4">
   {/* 1. Ngày đăng */}
   <div className="flex-1 px-4 py-3.5 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800/60 border border-[#E5E5E7] dark:border-zinc-700">
-    <div className="flex items-center gap-3">
-      <FiCalendar size={20} className="shrink-0 text-[#8E8E93]" />
-      <div className="flex flex-col justify-center">
+    <div className="flex items-center justify-center gap-2.5">
+      <FiCalendar size={18} className="shrink-0 text-[#8E8E93]" />
+      <div className="text-center">
         <p className="text-xs text-[#8E8E93] leading-none">Ngày đăng</p>
         <p className="text-sm font-semibold text-[#1C1C1E] dark:text-zinc-100 tabular-nums leading-none mt-1">
           {taskDate}
@@ -698,9 +698,9 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
 
   {/* 2. Hạn chót */}
   <div className="flex-1 px-4 py-3.5 rounded-2xl bg-[#FFE5E5] dark:bg-[#FF3B30]/10 border border-[#FECACA] dark:border-[#FF3B30]/30">
-    <div className="flex items-center gap-3">
-      <FiClock size={20} className="shrink-0 text-[#FF3B30]" />
-      <div className="flex flex-col justify-center">
+    <div className="flex items-center justify-center gap-2.5">
+      <FiClock size={18} className="shrink-0 text-[#FF3B30]" />
+      <div className="text-center">
         <p className="text-xs text-[#FF3B30] leading-none">Hạn chót</p>
         <p className="text-sm font-semibold text-[#FF3B30] tabular-nums leading-none mt-1">
           {taskDeadline || "Chưa có"}
