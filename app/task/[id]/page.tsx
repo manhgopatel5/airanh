@@ -404,6 +404,7 @@ setTask(prev => prev? ({
   } : {})
 }) : prev);
 
+
   setApplications(prev => prev.filter(app => app.userId!== currentUser.uid));
 
   try {
