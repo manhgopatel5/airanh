@@ -928,92 +928,103 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
               </div>
             )}
 
-            <div className="p-4 space-y-4 bg-white dark:bg-zinc-900 mt-3 mx-4 rounded-2xl shadow-sm">
-              <div className="font-semibold text- text-zinc-900 dark:text-zinc-100">Bình luận ({comments.length})</div>
-              {parentComments.length === 0? (
-                <div className="text-center py-12 text-zinc-400 text-">
-                  <FiMessageCircle size={48} className="mx-auto mb-3 opacity-30" />
-                  Chưa có bình luận nào<br />Hãy là người đầu tiên
-                </div>
-              ) : (
-                <AnimatePresence>
-                  {parentComments.map((c) => (
-                    <CommentList
-                      key={c.id}
-                      comment={c}
-                      replies={getReplies(c.id)}
-                      currentUserId={currentUser?.uid}
-                      taskOwnerId={task.userId}
-                      onLike={handleLikeComment}
-                      onReply={handleReply}
-                      onDelete={handleDeleteComment}
-                      onEdit={(id) => { setEditingComment(id); setEditText(c.text); }}
-                      isEditing={editingComment === c.id}
-                      editText={editText}
-                      setEditText={setEditText}
-                      onSaveEdit={handleEditComment}
-                      onCancelEdit={() => { setEditingComment(null); setEditText(""); }}
-                      likingComments={likingComments}
-                    />
-                  ))}
-                </AnimatePresence>
-              )}
+          {/* Bình luận */}
+<div className="mt-4">
+  <div className="rounded-3xl bg-white dark:bg-zinc-900 border border-white dark:border-zinc-800 shadow-[0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] overflow-hidden">
+    <div className="px-5 py-4 border-b border-[#F2F2F7] dark:border-zinc-800">
+      <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
+        Bình luận ({comments.length})
+      </h3>
+    </div>
 
-              <div ref={bottomRef} />
+    <div className="px-5 py-4">
+      {parentComments.length === 0? (
+        <div className="text-center py-12 text-zinc-400 text-sm">
+          <FiMessageCircle size={48} className="mx-auto mb-3 opacity-30" />
+          Chưa có bình luận nào<br />Hãy là người đầu tiên
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <AnimatePresence>
+            {parentComments.map((c) => (
+              <CommentList
+                key={c.id}
+                comment={c}
+                replies={getReplies(c.id)}
+                currentUserId={currentUser?.uid}
+                taskOwnerId={task.userId}
+                onLike={handleLikeComment}
+                onReply={handleReply}
+                onDelete={handleDeleteComment}
+                onEdit={(id) => { setEditingComment(id); setEditText(c.text); }}
+                isEditing={editingComment === c.id}
+                editText={editText}
+                setEditText={setEditText}
+                onSaveEdit={handleEditComment}
+                onCancelEdit={() => { setEditingComment(null); setEditText(""); }}
+                likingComments={likingComments}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
 
-              <div className="sticky bottom-0 bg-white dark:bg-zinc-900 pt-3 -mx-4 px-4 pb-3 border-t border-[#E5E5EA] dark:border-zinc-800">
-                {replyTo && (
-                  <div className="text- dark:text-zinc-400 mb-2 flex items-center justify-between bg-[#F2F2F7] dark:bg-zinc-800 px-3.5 py-2 rounded-xl">
-                    <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
-                    <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg active:scale-90 transition-all"><FiX size={14} /></button>
-                  </div>
-                )}
-                <div className="flex gap-2 items-end relative">
-                  <div className="flex-1 relative">
-                    <input
-                      ref={inputRef}
-                      value={text}
-                      onChange={(e) => setText(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSendComment()}
-                      placeholder={currentUser? "Viết bình luận..." : "Đăng nhập để bình luận"}
-                      className="w-full px-4 py-2.5 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 outline-none text- focus:ring-2 focus:ring-[#0a84ff]/20 transition-all"
-                      disabled={sending ||!currentUser}
-                    />
-                    {showMention && mentionUsersList.length > 0 && (
-                      <div className="absolute bottom-12 left-0 w-64 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-[#E5E5EA] dark:border-zinc-800 max-h-60 overflow-auto z-50">
-                        <div className="p-2">
-                          <input
-                            placeholder="Tìm người..."
-                            value={mentionQuery}
-                            onChange={(e) => setMentionQuery(e.target.value)}
-                            className="w-full px-3 py-1.5 text- bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg outline-none mb-2"
-                          />
-                          {mentionUsersList.map((user) => (
-                            <button
-                              key={user.uid}
-                              onClick={() => handleSelectMention(user)}
-                              className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#F2F2F7] dark:hover:bg-zinc-800 rounded-lg text-left"
-                            >
-                              <UserAvatar src={user.avatar} name={user.name} size={24} />
-                              <span className="text-sm">{user.name}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    onClick={handleSendComment}
-                    disabled={!text.trim() || sending ||!currentUser}
-                    className={`p-2.5 rounded-full bg-[#0a84ff] hover:bg-[#0071e3] text-white disabled:bg-zinc-300 dark:disabled:bg-zinc-700 disabled:cursor-not-allowed active:scale-90 transition-all`}
+      <div ref={bottomRef} />
+    </div>
+
+    <div className="sticky bottom-0 bg-white dark:bg-zinc-900 px-5 py-3 border-t border-[#F2F2F7] dark:border-zinc-800">
+      {replyTo && (
+        <div className="text-sm dark:text-zinc-400 mb-2 flex items-center justify-between bg-[#F2F2F7] dark:bg-zinc-800 px-3.5 py-2 rounded-xl">
+          <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
+          <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg active:scale-90 transition-all"><FiX size={14} /></button>
+        </div>
+      )}
+      <div className="flex gap-2 items-end relative">
+        <div className="flex-1 relative">
+          <input
+            ref={inputRef}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSendComment()}
+            placeholder={currentUser? "Viết bình luận..." : "Đăng nhập để bình luận"}
+            className="w-full px-4 py-2.5 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 outline-none text-sm focus:ring-2 focus:ring-[#0a84ff]/20 transition-all"
+            disabled={sending ||!currentUser}
+          />
+          {showMention && mentionUsersList.length > 0 && (
+            <div className="absolute bottom-12 left-0 w-64 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-[#E5E5EA] dark:border-zinc-800 max-h-60 overflow-auto z-50">
+              <div className="p-2">
+                <input
+                  placeholder="Tìm người..."
+                  value={mentionQuery}
+                  onChange={(e) => setMentionQuery(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg outline-none mb-2"
+                />
+                {mentionUsersList.map((user) => (
+                  <button
+                    key={user.uid}
+                    onClick={() => handleSelectMention(user)}
+                    className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#F2F2F7] dark:hover:bg-zinc-800 rounded-lg text-left"
                   >
-                    <FiSend size={18} />
-                  </motion.button>
-                </div>
+                    <UserAvatar src={user.avatar} name={user.name} size={24} />
+                    <span className="text-sm">{user.name}</span>
+                  </button>
+                ))}
               </div>
             </div>
-          </div>
+          )}
+        </div>
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={handleSendComment}
+          disabled={!text.trim() || sending ||!currentUser}
+          className={`p-2.5 rounded-full bg-[#0a84ff] hover:bg-[#0071e3] text-white disabled:bg-zinc-300 dark:disabled:bg-zinc-700 disabled:cursor-not-allowed active:scale-90 transition-all`}
+        >
+          <FiSend size={18} />
+        </motion.button>
+      </div>
+    </div>
+  </div>
+</div>
         </div>
         <ImageGallery open={showImageGallery!== null} images={task.images || []} initialIndex={showImageGallery || 0} onClose={() => setShowImageGallery(null)} />
         {shareTask && (
