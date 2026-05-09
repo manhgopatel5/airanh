@@ -1,5 +1,5 @@
 "use client";
-
+import Link from "next/link"; 
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
@@ -721,40 +721,52 @@ const handleCancelApply = async () => {
         </p>
       ) : (
         <div className="space-y-3">
-          {applications.map(app => (
-            <div key={app.id} className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <UserAvatar src={app.userAvatar} name={app.userName} size={40} />
-                <div className="min-w-0">
-                  <p className="font-semibold text- text-[#1C1C1E] dark:text-zinc-100 truncate">
-                    {app.userName}
-                  </p>
-                  <p className="text- text-zinc-500 dark:text-zinc-400">
-                    {app.createdAt?.toDate
- ? app.createdAt.toDate().toLocaleDateString('vi-VN')
-  : 'Đang cập nhật'}
-                                    </p>
-                </div>
-              </div>
+    
 
-              <div className="flex gap-2 shrink-0">
+{applications.map(app => (
+  <div key={app.id} className="flex items-center justify-between gap-3">
+    <Link 
+      href={`/u/${app.userId}`}
+      className="flex items-center gap-3 min-w-0 flex-1 active:opacity-70"
+    >
+      <UserAvatar src={app.userAvatar} name={app.userName} size={40} />
+      <div className="min-w-0">
+        <p className="font-semibold text- text-[#1C1C1E] dark:text-zinc-100 truncate">
+          {app.userName}
+        </p>
+        <p className="text- text-zinc-500 dark:text-zinc-400">
+          {app.createdAt?.toDate ? app.createdAt.toDate().toLocaleDateString('vi-VN') : 'Đang cập nhật'}
+        </p>
+      </div>
+    </Link>
+
+               <div className="flex gap-2 shrink-0">
                 <motion.button
                   whileTap={{ scale: 0.94 }}
-                  onClick={() => handleMessageApp(app.userId)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMessageApp(app.userId);
+                  }}
                   className="px-3 py-2 rounded-xl bg-white dark:bg-zinc-700 text-[#0a84ff] font-semibold text- active:scale-95 transition-all"
                 >
                   Nhắn tin
                 </motion.button>
                 <motion.button
                   whileTap={{ scale: 0.94 }}
-                  onClick={() => handleAcceptApp(app.id, app.userId)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAcceptApp(app.id, app.userId);
+                  }}
                   className="px-3 py-2 rounded-xl bg-[#00A86B] text-white font-semibold text- active:scale-95 transition-all"
                 >
                   Duyệt
                 </motion.button>
                 <motion.button
                   whileTap={{ scale: 0.94 }}
-                  onClick={() => handleRejectApp(app.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRejectApp(app.id);
+                  }}
                   className="px-3 py-2 rounded-xl bg-[#FF3B30] text-white font-semibold text- active:scale-95 transition-all"
                 >
                   Từ chối
