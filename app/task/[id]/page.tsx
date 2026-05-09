@@ -15,7 +15,7 @@ import {
 } from "react-icons/fi";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import { incrementTaskView } from "@/lib/task";
-import { applyToTask } from "@/app/actions/task"; 
+
 import {
   createComment,
   toggleLikeComment,
@@ -25,7 +25,7 @@ import {
 
 import type { TaskComment } from "@/types/task";
 import { isTask, isPlan, type Task, type TaskStatus } from "@/types/task";
-
+import { applyToTask, cancelToTask } from "@/app/actions/task";
 import DOMPurify from "isomorphic-dompurify";
 import { toast, Toaster } from "sonner";
 import Image from "next/image";
@@ -87,11 +87,8 @@ export default function TaskDetailPage() {
   const isOwner = currentUser?.uid === task?.userId;
   const [applications, setApplications] = useState<Application[]>([]);
  
-const acceptedCount = useMemo(
-  () => applications.filter(app => app.status === 'accepted').length,
-  [applications]
-);
-const isFull = acceptedCount >= (task && isTask(task)? task.totalSlots : 1);
+
+const isFull = (task?.appliedCount || 0) >= (task && isTask(task)? task.totalSlots : 1);
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<TaskComment | null>(null);
   const [editingComment, setEditingComment] = useState<string | null>(null);
@@ -346,99 +343,41 @@ const handleJoinTask = async () => {
   if (!currentUser ||!task || isApplied || isFull || joining || isOwner) return;
   setJoining(true);
 
-  const oldApplicants = task.applicants || [];
-  const oldAppliedCount = Number(task && 'appliedCount' in task ? task.appliedCount : 0) || 0;
-  const oldApplications = applications;
-
-  // Optimistic update cả 2
-  setTask(prev => prev? ({
- ...prev,
-    applicants: [...oldApplicants, currentUser.uid],
-   ...(isTask(task)? { appliedCount: oldAppliedCount + 1 } : {})
-  }) : prev);
-
-  const tempApp: Application = {
-    id: `temp-${Date.now()}`,
-    taskId: task.id,
-    taskOwnerId: task.userId,
-    userId: currentUser.uid,
-    userName: currentUser.displayName || "Bạn",
-    userAvatar: currentUser.photoURL || "",
-    status: 'pending',
-    createdAt: Timestamp.now()
-  };
-  setApplications(prev => [...prev, tempApp]);
-
   try {
     await applyToTask(task.id, currentUser.uid);
     toast.success("Đã gửi yêu cầu ứng tuyển!");
     navigator.vibrate?.(10);
-    await loadApplications(); // Load lại để có id thật
-  } catch (err) {
-    setTask(prev => prev? ({
-   ...prev,
-      applicants: oldApplicants,
-      appliedCount: oldAppliedCount
-    }) : prev);
-    setApplications(oldApplications);
-    toast.error("Ứng tuyển thất bại");
+    await loadTask(); // Load lại để có appliedCount mới
+    await loadApplications(); // Load để check isApplied
+  } catch (err: any) {
+    toast.error(err.message || "Ứng tuyển thất bại");
     console.error(err);
   } finally {
     setJoining(false);
   }
 };
 
- const handleCancelApply = async () => {
+const handleCancelApply = async () => {
   if (!currentUser ||!task ||!isApplied || joining) return;
   setJoining(true);
 
-  const oldApplicants = task.applicants || [];
- const oldAppliedCount = Number(task && 'appliedCount' in task ? task.appliedCount : 0) || 0;
-  const oldApplications = applications;
-
-setTask(prev => prev? ({
-  ...prev,
-  applicants: prev.applicants?.filter(id => id!== currentUser.uid) || [],
-  ...(isTask(prev)? { 
-    appliedCount: Math.max(0, (prev.appliedCount || 0) - 1) 
-  } : {})
-}) : prev);
-
-
-  setApplications(prev => prev.filter(app => app.userId!== currentUser.uid));
-
   try {
-    const q = query(
-      collection(db, 'applications'),
-      where('taskId', '==', task.id),
-      where('userId', '==', currentUser.uid),
-      where('status', 'in', ['pending', 'accepted'])
-    );
-    const snap = await getDocs(q);
-if (!snap.empty) {
-  const firstDoc = snap.docs[0];
-  if (firstDoc) await deleteDoc(doc(db, 'applications', firstDoc.id));
-}
-
-    await updateDoc(doc(db, "tasks", task.id), {
-  applicants: arrayRemove(currentUser.uid),
-  ...(isTask(task) && { appliedCount: increment(-1) })
-});
-
+    await cancelToTask(task.id, currentUser.uid);
     toast.success("Đã hủy ứng tuyển");
     navigator.vibrate?.(10);
+    await loadTask();
+    await loadApplications();
   } catch {
-    setTask(prev => prev? ({
-   ...prev,
-      applicants: oldApplicants,
-      appliedCount: oldAppliedCount
-    }) : prev);
-    setApplications(oldApplications);
     toast.error("Hủy thất bại");
   } finally {
     setJoining(false);
   }
 };
+
+ 
+
+
+
 
   const handleSendComment = async () => {
     if (!currentUser ||!task ||!text.trim() || sending) return;
@@ -757,7 +696,7 @@ if (!snap.empty) {
       <span>•</span>
 <div className="flex items-center gap-1">
   <FiUsers size={16} />
-<span>{acceptedCount}/{isTask(task)? task.totalSlots : 1}</span>
+  <span>{task?.appliedCount || 0}/{isTask(task)? task.totalSlots : 1}</span>
 </div>
     </>
   )}
