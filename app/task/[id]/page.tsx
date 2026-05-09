@@ -344,22 +344,21 @@ export default function TaskDetailPage() {
   
 
 const handleJoinTask = async () => {
-  if (!currentUser || !task || isApplied || isFull || joining || isOwner) return;
+  if (!currentUser ||!task || isApplied || isFull || joining || isOwner) return;
   setJoining(true);
-  
-  // Optimistic update cho UI mượt
   const oldApplicants = task.applicants || [];
- setTask(prev => prev ? ({ ...prev, applicants: [...oldApplicants, currentUser.uid] }) : prev);
-  
+  setTask(prev => prev? ({...prev, applicants: [...oldApplicants, currentUser.uid] }) : prev);
+
   try {
-    await applyToTask(task.id, currentUser.uid); // Gọi server action
+    await applyToTask(task.id, currentUser.uid);
     toast.success("Ứng tuyển thành công!");
     navigator.vibrate?.(10);
-    await loadApplications(); // Reload list ứng viên trong detail
+    await loadApplications();
+    router.refresh(); // thêm dòng này để force refetch RSC
   } catch (err) {
-    // Rollback nếu lỗi
-   setTask(prev => prev ? ({ ...prev, applicants: oldApplicants }) : prev);
+    setTask(prev => prev? ({...prev, applicants: oldApplicants }) : prev);
     toast.error("Ứng tuyển thất bại");
+    console.error(err);
   } finally {
     setJoining(false);
   }
