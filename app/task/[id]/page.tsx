@@ -107,7 +107,7 @@ const isFull = acceptedCount >= (task && isTask(task)? task.totalSlots : 1);
   const [joining, setJoining] = useState(false);
 
   const [showImageGallery, setShowImageGallery] = useState<number | null>(null);
-const applicants = task?.applicants ?? [];
+
   const [likingComments, setLikingComments] = useState<Set<string>>(new Set());
 const isApplied = applications.some(app => app.userId === currentUser?.uid && ['pending', 'accepted'].includes(app.status));
 
