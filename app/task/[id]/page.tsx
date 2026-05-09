@@ -701,6 +701,7 @@ const handleCancelApply = async () => {
     </>
   )}
 </div>
+
       </div>
     </div>
   </div>
