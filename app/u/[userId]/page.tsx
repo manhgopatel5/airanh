@@ -12,7 +12,7 @@ import { toast, Toaster } from "sonner";
 import {
   MessageCircle, UserPlus, Check, UserMinus, ArrowLeft,
   Star, Briefcase, MapPin, Clock, ExternalLink, ShieldCheck,
-  Zap, ClipboardCheck, Share2, MoreVertical, Flag
+  Zap, Share2, MoreVertical, Flag
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
