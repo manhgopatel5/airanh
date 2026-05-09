@@ -666,40 +666,35 @@ const handleCancelApply = async () => {
 {/* Phần task info đưa xuống dưới, căn trái */}
 <div className="mt-3">
   {/* 4 badge nằm ngang, không wrap, tự co chữ */}
-  <div className="flex items-center gap-1.5 mb-3 flex-nowrap overflow-hidden">
-    {/* 1. Badge Đang tuyển - xanh lá */}
-    <span className={`flex-1 min-w-0 px-2 py-1.5 rounded-xl text- sm:text-xs font-semibold flex items-center justify-center gap-1 ${status.color}`}>
-      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${status.dot}`} />
+  <div className="flex items-center gap-1 mb-3 flex-nowrap overflow-hidden">
+    {/* 1. Badge Đang tuyển - không icon */}
+    <span className={`flex-1 min-w-0 px-2 py-1.5 rounded-xl text-[10px] sm:text-xs font-semibold flex items-center justify-center gap-1 ${status.color}`}>
+      <span className={`w-1 h-1 rounded-full shrink-0 ${status.dot}`} />
       <span className="truncate">{status.label}</span>
     </span>
 
-    {/* 2. Badge số người - xanh dương */}
+    {/* 2. Badge số người - có icon */}
     {isTask(task) && (
-      <span className="flex-1 min-w-0 px-2 py-1.5 rounded-xl text- sm:text-xs font-semibold bg-[#E8F0FE] text-[#1A73E8] dark:bg-[#1A73E8]/20 dark:text-[#8AB4F8] flex items-center justify-center gap-1">
-        <FiUsers size={12} className="shrink-0" />
+      <span className="flex-1 min-w-0 px-2 py-1.5 rounded-xl text-[10px] sm:text-xs font-semibold bg-[#E8F0FE] text-[#1A73E8] dark:bg-[#1A73E8]/20 dark:text-[#8AB4F8] flex items-center justify-center gap-1">
+        <FiUsers size={11} className="shrink-0" />
         <span className="truncate">{task.appliedCount || 0}/{task.totalSlots}</span>
       </span>
     )}
 
-    {/* 3. Badge giá tiền - xanh dương nhạt, giữ nguyên */}
+    {/* 3. Badge giá tiền - không icon, giữ nguyên */}
     {isTask(task) && task.price > 0 && (
-      <span className="flex-1 min-w-0 px-1.5 py-1.5 rounded-xl text- sm:text-xs font-semibold bg-[#E3F2FD] text-[#0A84FF] dark:bg-[#0A84FF]/20 dark:text-[#5AC8FA] flex items-center justify-center gap-1">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
-          <rect x="2" y="5" width="20" height="14" rx="2"/>
-          <path d="M2 10h20"/>
-        </svg>
+      <span className="flex-1 min-w-0 px-1.5 py-1.5 rounded-xl text-[10px] sm:text-xs font-semibold bg-[#E3F2FD] text-[#0A84FF] dark:bg-[#0A84FF]/20 dark:text-[#5AC8FA] flex items-center justify-center">
         <span className="truncate">{task.price.toLocaleString("vi-VN")} đ</span>
       </span>
     )}
 
-    {/* 4. Badge đếm ngược - cam/đỏ, nhấp nháy khi < 1h */}
-    {isTask(task) && task.deadline?.seconds && task.status !== "completed" && (
-      <span className={`flex-1 min-w-0 px-2 py-1.5 rounded-xl text- sm:text-xs font-semibold flex items-center justify-center gap-1 ${
+    {/* 4. Badge đếm ngược - không icon */}
+    {isTask(task) && task.deadline?.seconds && task.status!== "completed" && (
+      <span className={`flex-1 min-w-0 px-2 py-1.5 rounded-xl text-[10px] sm:text-xs font-semibold flex items-center justify-center ${
         isUrgent 
-          ? "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B] animate-pulse" 
+         ? "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B] animate-pulse" 
           : "bg-[#FEF7E0] text-[#F9AB00] dark:bg-[#F9AB00]/20 dark:text-[#FDD663]"
       }`}>
-        <FiClock size={12} className="shrink-0" />
         <span className="tabular-nums truncate">{timeLeft?.replace('Còn ', '') || "Hết hạn"}</span>
       </span>
     )}
