@@ -491,11 +491,7 @@ export default function TaskDetailPage() {
    ? new Date(task.eventDate.seconds * 1000).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
     : "Chưa xác định";
 
-  const taskTime = isTask(task) && task.deadline?.seconds
-   ? `${new Date(task.deadline.seconds * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(task.deadline.seconds * 1000 + 3*60*60*1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
-    : isPlan(task) && task.eventDate?.seconds
-   ? `${new Date(task.eventDate.seconds * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(task.eventDate.seconds * 1000 + 3*60*60*1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
-    : "";
+  
 
   const statusMap: Record<TaskStatus, { label: string; color: string; dot: string }> = {
     open: { label: "Đang tuyển", color: "bg-[#E6F4EA] text-[#1E8E3E] dark:bg-[#1E8E3E]/20 dark:text-[#81C995]", dot: "bg-[#1E8E3E]" },
