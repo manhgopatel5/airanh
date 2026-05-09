@@ -347,14 +347,14 @@ const handleJoinTask = async () => {
   setJoining(true);
 
   const oldApplicants = task.applicants || [];
-  const oldAppliedCount = task.appliedCount || 0;
+  const oldAppliedCount = (isTask(task)? task.appliedCount : 0) || 0;
   const oldApplications = applications;
 
   // Optimistic update cả 2
   setTask(prev => prev? ({
  ...prev,
     applicants: [...oldApplicants, currentUser.uid],
-    appliedCount: oldAppliedCount + 1
+    ...(isTask(task) && { appliedCount: oldAppliedCount + 1 })
   }) : prev);
 
   const tempApp: Application = {
@@ -393,7 +393,7 @@ const handleJoinTask = async () => {
   setJoining(true);
 
   const oldApplicants = task.applicants || [];
-  const oldAppliedCount = task.appliedCount || 0;
+  const oldAppliedCount = (isTask(task)? task.appliedCount : 0) || 0;
   const oldApplications = applications;
 
   setTask(prev => prev? ({
@@ -417,9 +417,9 @@ const handleJoinTask = async () => {
     }
 
     await updateDoc(doc(db, "tasks", task.id), {
-      applicants: arrayRemove(currentUser.uid),
-      appliedCount: increment(-1)
-    });
+  applicants: arrayRemove(currentUser.uid),
+  ...(isTask(task) && { appliedCount: increment(-1) })
+});
 
     toast.success("Đã hủy ứng tuyển");
     navigator.vibrate?.(10);
@@ -753,7 +753,7 @@ const handleJoinTask = async () => {
       <span>•</span>
 <div className="flex items-center gap-1">
   <FiUsers size={16} />
-<span>{task.applicants?.length || 0}/{task.totalSlots || 1}</span>
+<span>{acceptedCount}/{isTask(task)? task.totalSlots : 1}</span>
 </div>
     </>
   )}
