@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import {
   FiUsers, FiClock, FiMapPin, FiBookmark, FiMoreHorizontal,
-  FiTrash2, FiEdit2, FiCheck, FiShare2, FiEye
+  FiTrash2, FiEdit2, FiShare2, FiEye
 } from "react-icons/fi";
 
 import { useState, useCallback, useEffect, useRef } from "react";
