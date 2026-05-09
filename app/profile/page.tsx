@@ -1,256 +1,180 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { signOut, deleteUser } from "firebase/auth";
-import { useEffect, useState, useRef } from "react";
-import { useAuth } from "@/lib/AuthContext";
-import { useAppStore } from "@/store/app";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
 import {
-  doc, onSnapshot, updateDoc, serverTimestamp, getDoc, setDoc, deleteDoc
+  doc, getDoc, setDoc, deleteDoc, collection, query, where,
+  getDocs, serverTimestamp, Timestamp
 } from "firebase/firestore";
-import type { Timestamp } from "firebase/firestore";
-import {
-  getFirebaseDB,
-  getFirebaseAuth,
-  getFirebaseStorage
-} from "@/lib/firebase";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import {
-  HelpCircle, LogOut, Trash2, User, Shield, Lock,
-  Camera, Check, QrCode, Share2, ChevronRight, Settings,
-  Circle, Zap, ClipboardList, Star, ScanLine, X
-} from "lucide-react";
+import { getFirebaseDB } from "@/lib/firebase";
+import { useAuth } from "@/lib/AuthContext";
 import { toast, Toaster } from "sonner";
-import type { UploadTask } from "firebase/storage";
-import { nanoid } from "nanoid";
-import { Html5Qrcode } from "html5-qrcode";
+import {
+  MessageCircle, UserPlus, Check, UserMinus, ArrowLeft,
+  Star, Briefcase, MapPin, Clock, ExternalLink, ShieldCheck,
+  Share2, MoreVertical, Flag, Phone, Award, TrendingUp,
+  Calendar, FileText, ChevronRight, Zap, Settings, QrCode, ScanLine, X
+} from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { vi } from "date-fns/locale";
+import { motion, AnimatePresence } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
+import { Html5Qrcode } from "html5-qrcode";
 
-type UserData = {
+type PublicUser = {
   uid: string;
   name: string;
-  email: string;
-  phone?: string;
   userId: string;
   avatar: string;
   bio?: string;
+  title?: string;
+  location?: string;
   online?: boolean;
   lastSeen?: Timestamp;
-  createdAt?: Timestamp;
   emailVerified?: boolean;
-  hidePhone?: boolean;
-  stats?: { tasks: number; plans: number; completed: number; rating: number };
+  isVerifiedId?: boolean;
+  phone?: string;
+  skills?: string[];
+  portfolio?: { title: string; url: string; image?: string }[];
+  stats?: {
+    completed: number;
+    rating: number;
+    totalReviews: number;
+    responseRate?: number;
+    joinedDate?: Timestamp;
+  };
+  createdAt?: Timestamp;
 };
 
-export default function Profile() {
-  const db = getFirebaseDB();
-  const auth = getFirebaseAuth();
-  const storage = getFirebaseStorage();
+type TabType = "about" | "reviews" | "tasks";
+
+export default function PublicProfile() {
+  const { uid } = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  const mode = useAppStore((s) => s.mode);
-  const isPlan = mode === "plan";
+  const db = getFirebaseDB();
 
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [name, setName] = useState("");
-  const [editingName, setEditingName] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [targetUser, setTargetUser] = useState<PublicUser | null>(null);
+  const [currentUserData, setCurrentUserData] = useState<any>(null);
+  const [isFriend, setIsFriend] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>("about");
+  const [showMore, setShowMore] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [showScanQR, setShowScanQR] = useState(false);
-  const hasCheckedId = useRef(false);
-  const uploadTaskRef = useRef<UploadTask | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
-  const accentGradient = isPlan
-   ? "from-green-500 to-emerald-500"
-    : "from-sky-500 to-blue-600";
-
-  useEffect(() => {
-    if (user === null) router.replace("/login");
-  }, [user, router]);
-
-  useEffect(() => {
-    if (!user?.uid) return;
-    const unsub = onSnapshot(doc(db, "users", user.uid), (snap) => {
-      if (snap.exists()) {
-        const data = { uid: snap.id,...snap.data() } as UserData;
-        setUserData(data);
-        setName(data.name || "");
-        if (user &&!user.emailVerified &&!data.emailVerified) {
-          router.replace("/verify-email");
-        }
-      }
-    });
-    return () => unsub();
-  }, [user?.uid, router]);
-
-  useEffect(() => {
-    if (!user ||!userData || hasCheckedId.current) return;
-    if (userData.userId) {
-      hasCheckedId.current = true;
-      return;
-    }
-    const createId = async () => {
-      hasCheckedId.current = true;
-      let newId = `AIR${nanoid(6).toUpperCase()}`;
-      let attempts = 0;
-      while (attempts < 3) {
-        const snap = await getDoc(doc(db, "usernames", newId));
-        if (!snap.exists()) break;
-        newId = `AIR${nanoid(6).toUpperCase()}`;
-        attempts++;
-      }
-      await Promise.all([
-        updateDoc(doc(db, "users", user.uid), { userId: newId }),
-        setDoc(doc(db, "usernames", newId), { uid: user.uid }),
+  const fetchUser = useCallback(async () => {
+    if (!uid ||!user) return;
+    try {
+      const [userSnap, currentUserSnap] = await Promise.all([
+        getDoc(doc(db, "users", uid as string)),
+        getDoc(doc(db, "users", user.uid))
       ]);
-    };
-    createId().catch(() => {});
-  }, [user, userData]);
 
-  const handleUpdateName = async () => {
-    if (!user ||!name.trim() || name.length < 2) {
-      toast.error("Tên tối thiểu 2 ký tự");
-      return;
-    }
-    if (name === userData?.name) {
-      setEditingName(false);
-      return;
-    }
-    const oldName = userData?.name;
-    setEditingName(false);
-    setUserData((prev) => prev? {...prev, name: name.trim() } : null);
-    try {
-      await updateDoc(doc(db, "users", user.uid), { name: name.trim() });
-      toast.success("Cập nhật tên thành công");
-      if ("vibrate" in navigator) navigator.vibrate(8);
-    } catch {
-      toast.error("Cập nhật thất bại");
-      setUserData((prev) => prev? {...prev, name: oldName || "" } : null);
-      setName(oldName || "");
-    }
-  };
+      if (!userSnap.exists()) {
+        toast.error("Không tìm thấy người dùng");
+        router.replace("/404");
+        return;
+      }
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file ||!user) return;
-    if (!file.type.startsWith("image/")) return toast.error("Chỉ chấp nhận file ảnh");
-    if (file.size > 5 * 1024 * 1024) return toast.error("Ảnh không được vượt quá 5MB");
-    setUploading(true);
-    setUploadProgress(0);
-    try {
-      const storageRef = ref(storage, `avatars/${user.uid}`);
-      uploadTaskRef.current = uploadBytesResumable(storageRef, file);
-      uploadTaskRef.current.on(
-        "state_changed",
-        (snapshot) => {
-          const prog = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(Math.round(prog));
-        },
-        (err) => {
-          if (err.code!== "storage/canceled") toast.error("Upload thất bại");
-        },
-        async () => {
-          const task = uploadTaskRef.current;
-          if (!task) return;
-          const url = await getDownloadURL(task.snapshot.ref);
-          await updateDoc(doc(db, "users", user.uid), { avatar: url });
-          toast.success("Cập nhật avatar thành công");
-          if ("vibrate" in navigator) navigator.vibrate(8);
-          setUploading(false);
-        }
-      );
-    } catch {
-      toast.error("Upload lỗi");
-      setUploading(false);
+      const data = { uid: userSnap.id,...userSnap.data() } as PublicUser;
+      setTargetUser(data);
+      
+      if (currentUserSnap.exists()) {
+        setCurrentUserData(currentUserSnap.data());
+      }
+
+      const friendSnap = await getDoc(doc(db, "users", user.uid, "friends", userSnap.id));
+      setIsFriend(friendSnap.exists());
+
+    } catch (err) {
+      console.error(err);
+      toast.error("Có lỗi xảy ra");
+      router.back();
     } finally {
-      e.target.value = "";
+      setLoading(false);
     }
-  };
+  }, [uid, user, db, router]);
 
   useEffect(() => {
-    return () => {
-      if (uploadTaskRef.current) uploadTaskRef.current.cancel();
-    };
-  }, []);
+    fetchUser();
+  }, [fetchUser]);
+
+  const handleConnect = async () => {
+    if (!user ||!targetUser || actionLoading) return;
+    if (user.uid === targetUser.uid) return toast.error("Đây là bạn");
+
+    setActionLoading(true);
+    try {
+      await Promise.all([
+        setDoc(doc(db, "users", user.uid, "friends", targetUser.uid), {
+          createdAt: serverTimestamp(),
+          status: "accepted",
+          name: targetUser.name,
+          avatar: targetUser.avatar,
+          userId: targetUser.userId,
+          title: targetUser.title || ""
+        }),
+        setDoc(doc(db, "users", targetUser.uid, "friends", user.uid), {
+          createdAt: serverTimestamp(),
+          status: "accepted",
+          name: currentUserData?.name || user.displayName || "User",
+          avatar: currentUserData?.avatar || user.photoURL || "",
+          userId: currentUserData?.userId || "",
+          title: currentUserData?.title || ""
+        })
+      ]);
+      setIsFriend(true);
+      toast.success(`Đã kết nối với ${targetUser.name}`);
+      if ("vibrate" in navigator) navigator.vibrate(8);
+    } catch (err) {
+      console.error(err);
+      toast.error("Kết nối thất bại");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUnfriend = async () => {
+    if (!user ||!targetUser || actionLoading) return;
+    setActionLoading(true);
+    try {
+      await Promise.all([
+        deleteDoc(doc(db, "users", user.uid, "friends", targetUser.uid)),
+        deleteDoc(doc(db, "users", targetUser.uid, "friends", user.uid))
+      ]);
+      setIsFriend(false);
+      toast.success("Đã hủy kết nối");
+    } catch {
+      toast.error("Có lỗi xảy ra");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleChat = async () => {
+    if (!user ||!targetUser) return;
+    const chatId = [user.uid, targetUser.uid].sort().join("_");
+    router.push(`/chat/${chatId}`);
+  };
+
+  const handleCall = () => {
+    if (!targetUser?.phone) return toast.error("Người dùng chưa cập nhật số điện thoại");
+    window.open(`tel:${targetUser.phone}`);
+  };
 
   const handleShare = async () => {
-    if (!userData) return;
-    const url = `https://airanh.vercel.app/u/${userData.userId}`;
+    if (!targetUser) return;
+    const url = `https://airanh.vercel.app/profile/${targetUser.uid}`;
     if (navigator.share) {
-      await navigator.share({ title: userData.name || "Người dùng AIR", text: `Kết nối với tôi`, url });
+      await navigator.share({ title: targetUser.name, text: `Xem hồ sơ ${targetUser.name}`, url });
     } else {
       navigator.clipboard.writeText(url);
-      toast.success("Đã copy link hồ sơ");
-    }
-    if ("vibrate" in navigator) navigator.vibrate(8);
-  };
-
-  const handleLogout = async () => {
-    if (!user) return;
-    setShowLogoutModal(false);
-    updateDoc(doc(db, "users", user.uid), { online: false, lastSeen: serverTimestamp() }).catch(() => {});
-    try {
-      await signOut(auth);
-      window.location.href = "/login";
-    } catch {
-      toast.error("Đăng xuất thất bại");
+      toast.success("Đã copy link");
     }
   };
-
-  const handleDeleteAccount = async () => {
-    if (!user) return;
-    setShowDeleteModal(false);
-    try {
-      await Promise.all([
-        deleteDoc(doc(db, "users", user.uid)),
-        deleteDoc(doc(db, "usernames", userData?.userId || "")),
-      ]);
-      await deleteUser(user);
-      toast.success("Đã xóa tài khoản");
-      window.location.href = "/register";
-    } catch (err: unknown) {
-      const error = err as { code?: string };
-      if (error.code === "auth/requires-recent-login") {
-        toast.error("Vui lòng đăng nhập lại để xóa tài khoản");
-        await signOut(auth);
-        router.push("/login");
-      } else {
-        toast.error("Xóa thất bại");
-      }
-    }
-  };
-
-  useEffect(() => {
-    if (!user?.uid) return;
-    const updateOnline = () => updateDoc(doc(db, "users", user.uid), { online: true }).catch(() => {});
-    const updateOffline = () => updateDoc(doc(db, "users", user.uid), { online: false, lastSeen: serverTimestamp() }).catch(() => {});
-    const handleVisibility = () => { if (document.hidden) updateOffline(); else updateOnline(); };
-    updateOnline();
-    window.addEventListener("beforeunload", updateOffline);
-    document.addEventListener("visibilitychange", handleVisibility);
-    return () => {
-      updateOffline();
-      window.removeEventListener("beforeunload", updateOffline);
-      document.removeEventListener("visibilitychange", handleVisibility);
-    };
-  }, [user?.uid, db]);
-
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setShowLogoutModal(false);
-        setShowDeleteModal(false);
-        setShowQR(false);
-        setShowScanQR(false);
-      }
-    };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, []);
 
   const stopScan = () => {
     if (scannerRef.current?.isScanning) {
@@ -271,13 +195,13 @@ export default function Profile() {
           (decodedText) => {
             if ("vibrate" in navigator) navigator.vibrate(10);
             stopScan();
-            if (decodedText.includes("/u/")) {
-              const targetUserId = decodedText.split("/u/")[1];
-              if (targetUserId === userData?.userId) {
+            if (decodedText.includes("/profile/")) {
+              const targetUid = decodedText.split("/profile/")[1];
+              if (targetUid === targetUser?.uid) {
                 toast.error("Đây là mã của bạn");
                 return;
               }
-              router.push(`/u/${targetUserId}`);
+              router.push(`/profile/${targetUid}`);
             } else {
               toast.error("Mã QR không hợp lệ");
             }
@@ -291,162 +215,339 @@ export default function Profile() {
     };
     startScan();
     return () => stopScan();
-  }, [showScanQR, userData?.userId, router]);
+  }, [showScanQR, targetUser?.uid, router]);
 
-  if (!user ||!userData) return null;
+  const formatLastSeen = (timestamp?: Timestamp) => {
+    if (!timestamp) return "Lâu rồi";
+    return formatDistanceToNow(timestamp.toDate(), { addSuffix: true, locale: vi });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F2F2F7] dark:bg-black">
+        <div className="px-4 py-8 max-w-md mx-auto animate-pulse">
+          <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-zinc-800 mx-auto" />
+          <div className="h-7 bg-gray-200 dark:bg-zinc-800 rounded mt-4 w-48 mx-auto" />
+          <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded mt-2 w-32 mx-auto" />
+          <div className="grid grid-cols-3 gap-3 mt-6">
+            {[1,2,3].map(i => <div key={i} className="h-20 bg-gray-200 dark:bg-zinc-800 rounded-2xl" />)}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!targetUser) return null;
+  const isOwnProfile = user?.uid === targetUser.uid;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black pb-24 font-sans">
+    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black pb-24">
       <Toaster richColors position="top-center" />
 
-      {/* ── Header: avatar + name + status ── */}
-      <div className="px-6 pt-12 pb-6">
-        <div className="flex items-center gap-4">
-          {/* Avatar with upload + verified badge */}
-          <label className="relative cursor-pointer group flex-shrink-0">
+      {/* Header - đồng bộ size với Task */}
+      <div className="sticky top-0 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-[#E5E5EA] dark:border-zinc-800 z-10">
+        <div className="px-4 py-3 flex items-center justify-between max-w-md mx-auto">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.back()}
+              className="w-9 h-9 rounded-full flex items-center justify-center active:bg-[#E5E5EA] dark:active:bg-zinc-800 transition"
+            >
+              <ArrowLeft className="w-5 h-5 text-[#1C1C1E] dark:text-white" />
+            </button>
+            <h1 className="text- font-semibold text-[#1C1C1E] dark:text-white truncate">
+              {targetUser.name}
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button onClick={handleShare} className="w-9 h-9 rounded-full flex items-center justify-center active:bg-[#E5E5EA] dark:active:bg-zinc-800">
+              <Share2 className="w-5 h-5 text-[#1C1C1E] dark:text-white" />
+            </button>
+            {!isOwnProfile && (
+              <button onClick={() => setShowMore(!showMore)} className="w-9 h-9 rounded-full flex items-center justify-center active:bg-[#E5E5EA] dark:active:bg-zinc-800">
+                <MoreVertical className="w-5 h-5 text-[#1C1C1E] dark:text-white" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="px-4 py-6 max-w-md mx-auto">
+        {/* Avatar + Info - size chuẩn như Tin nhắn */}
+        <div className="text-center">
+          <div className="relative inline-block">
             <img
-              src={
-                userData.avatar ||
-                `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&size=176&background=8B5E3C&color=fff`
-              }
-              className="w-16 h-16 rounded-full object-cover"
-              alt="Avatar"
+              src={targetUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(targetUser.name)}&size=176&background=8B5E3C&color=fff`}
+              className="w-24 h-24 rounded-full object-cover ring-4 ring-white dark:ring-black shadow-xl"
+              alt=""
             />
-
-            {/* Verified badge */}
-            {userData.emailVerified && (
-              <div
-                className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-gradient-to-br ${accentGradient} flex items-center justify-center border-2 border-white dark:border-black`}
-              >
-                <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
-              </div>
-            )}
-
-            {/* Camera overlay on press */}
-            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-active:opacity-100 transition-opacity">
-              <Camera size={20} className="text-white" />
+            
+            <div className="absolute -bottom-1 -right-1 flex gap-1">
+              {targetUser.emailVerified && (
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#0A84FF] to-[#007AFF] flex items-center justify-center border-2 border-white dark:border-black shadow-lg">
+                  <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
+                </div>
+              )}
+              {targetUser.isVerifiedId && (
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#30D158] to-[#00C851] flex items-center justify-center border-2 border-white dark:border-black shadow-lg">
+                  <ShieldCheck className="w-3.5 h-3.5 text-white stroke-[3]" />
+                </div>
+              )}
             </div>
 
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleUpload}
-              disabled={uploading}
-            />
-
-            {/* Upload progress overlay */}
-            {uploading && (
-              <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center backdrop-blur-sm">
-                <span className="text-white text-xs font-bold">{uploadProgress}%</span>
-              </div>
+            {targetUser.online && (
+              <div className="absolute bottom-1 right-1 w-4 h-4 bg-[#30D158] rounded-full border-2 border-white dark:border-black" />
             )}
-          </label>
+          </div>
 
-          {/* Name (editable) + online status */}
-          <div className="flex-1 min-w-0">
-            {editingName? (
-              <div className="flex items-center gap-2">
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  onBlur={handleUpdateName}
-                  onKeyDown={(e) => e.key === "Enter" && handleUpdateName()}
-                  autoFocus
-                  className="text-2xl font-extrabold border-b-2 border-gray-300 dark:border-zinc-700 outline-none bg-transparent text-gray-900 dark:text-white flex-1 tracking-tight"
-                />
+          <h1 className="text- font-bold mt-4 text-[#1C1C1E] dark:text-white tracking-[-0.5px] leading-tight">
+            {targetUser.name}
+          </h1>
+
+          {targetUser.title && (
+            <p className="text- font-medium text-[#8E8E93] dark:text-zinc-400 mt-1">
+              {targetUser.title}
+            </p>
+          )}
+
+          <div className="flex items-center justify-center gap-3 mt-2 text- text-[#8E8E93] dark:text-zinc-500">
+            <span>@{targetUser.userId}</span>
+            {targetUser.location && (
+              <>
+                <span>•</span>
+                <span className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />{targetUser.location}
+                </span>
+              </>
+            )}
+          </div>
+
+          {!targetUser.online && targetUser.lastSeen && (
+            <p className="text- text-[#8E8E93] dark:text-zinc-500 mt-1 flex items-center justify-center gap-1">
+              <Clock className="w-3 h-3" />
+              Hoạt động {formatLastSeen(targetUser.lastSeen)}
+            </p>
+          )}
+
+          {targetUser.bio && (
+            <p className="text- text-[#3C3C43] dark:text-zinc-300 mt-4 px-4 leading-[1.4]">
+              {targetUser.bio}
+            </p>
+          )}
+        </div>
+
+        {/* Stats Cards - giống card Task */}
+        {targetUser.stats && (
+          <div className="grid grid-cols-3 gap-3 mt-6">
+            <div className="py-3 px-3 rounded-2xl bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-800">
+              <div className="flex items-center justify-center gap-1 text-[#FFB800] mb-1">
+                <Star className="w-4 h-4 fill-current" />
+                <span className="text- font-bold text-[#1C1C1E] dark:text-white">
+                  {targetUser.stats.rating || 0}
+                </span>
+              </div>
+              <p className="text- text-[#8E8E93] dark:text-zinc-500 font-medium">
+                {targetUser.stats.totalReviews || 0} đánh giá
+              </p>
+            </div>
+
+            <div className="py-3 px-3 rounded-2xl bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-800">
+              <div className="flex items-center justify-center gap-1 text-[#0A84FF] mb-1">
+                <Briefcase className="w-4 h-4" />
+                <span className="text- font-bold text-[#1C1C1E] dark:text-white">
+                  {targetUser.stats.completed || 0}
+                </span>
+              </div>
+              <p className="text- text-[#8E8E93] dark:text-zinc-500 font-medium">
+                Đã hoàn thành
+              </p>
+            </div>
+
+            <div className="py-3 px-3 rounded-2xl bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-800">
+              <div className="flex items-center justify-center gap-1 text-[#30D158] mb-1">
+                <TrendingUp className="w-4 h-4" />
+                <span className="text- font-bold text-[#1C1C1E] dark:text-white">
+                  {targetUser.stats.responseRate || 98}%
+                </span>
+              </div>
+              <p className="text- text-[#8E8E93] dark:text-zinc-500 font-medium">
+                Phản hồi
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* CTA Buttons */}
+        {!isOwnProfile && (
+          <div className="mt-6 space-y-3">
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={handleChat}
+              className="w-full py-4 rounded-2xl font-semibold text- bg-gradient-to-r from-[#0A84FF] to-[#007AFF] text-white flex items-center justify-center gap-2 active:scale-[0.98] transition shadow-lg shadow-blue-500/30"
+            >
+              <MessageCircle size={20} /> Nhắn tin
+            </motion.button>
+            
+            <div className="grid grid-cols-2 gap-3">
+              {targetUser.phone && (
                 <button
-                  onClick={handleUpdateName}
-                  className={`p-1.5 bg-gradient-to-br ${accentGradient} rounded-full`}
+                  onClick={handleCall}
+                  className="py-3.5 rounded-2xl font-semibold text- bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-800 text-[#1C1C1E] dark:text-white flex items-center justify-center gap-2 active:scale-[0.98] transition"
                 >
-                  <Check size={14} className="text-white" />
+                  <Phone size={18} /> Gọi điện
                 </button>
-              </div>
-            ) : (
-              <h1
-                onClick={() => setEditingName(true)}
-                className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight cursor-pointer leading-tight"
-              >
-                {userData.name}
-              </h1>
-            )}
-
-            <div className="flex items-center gap-1.5 mt-1">
-              <Circle
-                className={`w-2 h-2 fill-current ${
-                  userData.online? "text-green-500" : "text-gray-400"
-                }`}
-              />
-              <span className="text-sm text-gray-500 dark:text-zinc-400 font-medium">
-                {userData.online? "Đang hoạt động" : "Ngoại tuyến"}
-              </span>
+              )}
+              {isFriend? (
+                <button
+                  onClick={handleUnfriend}
+                  disabled={actionLoading}
+                  className="py-3.5 rounded-2xl font-semibold text- bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-800 text-[#1C1C1E] dark:text-white flex items-center justify-center gap-2 active:scale-[0.98] transition disabled:opacity-50"
+                >
+                  <UserMinus size={18} /> Hủy kết nối
+                </button>
+              ) : (
+                <button
+                  onClick={handleConnect}
+                  disabled={actionLoading}
+                  className="py-3.5 rounded-2xl font-semibold text- bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-800 text-[#1C1C1E] dark:text-white flex items-center justify-center gap-2 active:scale-[0.98] transition disabled:opacity-50"
+                >
+                  <UserPlus size={18} /> {actionLoading? "Đang kết nối..." : "Kết nối"}
+                </button>
+              )}
             </div>
+          </div>
+        )}
+
+        {/* Tabs */}
+        <div className="mt-8 -mx-4 px-4">
+          <div className="flex gap-1 bg-[#F2F2F7] dark:bg-zinc-900 p-1 rounded-xl">
+            {[
+              { id: "about", label: "Giới thiệu", icon: FileText },
+              { id: "reviews", label: "Đánh giá", icon: Star },
+              { id: "tasks", label: "Công việc", icon: Briefcase }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as TabType)}
+                className={`flex-1 py-2.5 rounded-lg text- font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                  activeTab === tab.id
+                  ? "bg-white dark:bg-black text-[#1C1C1E] dark:text-white shadow-sm"
+                    : "text-[#8E8E93] dark:text-zinc-500"
+                }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* ── Stats row: Task / Plan / Rating ── */}
-        <div className="flex items-center gap-2 mt-5">
-          <button
-            onClick={() => router.push("/tasks")}
-            className="flex-1 py-2.5 rounded-2xl bg-gray-50 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95 transition"
-          >
-            <ClipboardList className="w-4 h-4 text-gray-500 dark:text-zinc-400" />
-            <span className="text-sm font-bold text-gray-900 dark:text-white">
-              {userData.stats?.tasks?? 0}
-            </span>
-            <span className="text-xs text-gray-400 dark:text-zinc-500">Task</span>
-          </button>
+        {/* Tab Content */}
+        <div className="mt-6">
+          <AnimatePresence mode="wait">
+            {activeTab === "about" && (
+              <motion.div
+                key="about"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-4"
+              >
+                {targetUser.skills && targetUser.skills.length > 0 && (
+                  <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-4">
+                    <p className="text- font-bold text-[#8E8E93] dark:text-zinc-500 uppercase tracking-wider mb-3">
+                      Kỹ năng
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {targetUser.skills.map(skill => (
+                        <span key={skill} className="px-3 py-1.5 bg-[#F2F2F7] dark:bg-zinc-800 rounded-full text- font-medium text-[#1C1C1E] dark:text-white">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-          <button
-            onClick={() => router.push("/plans")}
-            className="flex-1 py-2.5 rounded-2xl bg-gray-50 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95 transition"
-          >
-            <Zap className="w-4 h-4 text-gray-500 dark:text-zinc-400" />
-            <span className="text-sm font-bold text-gray-900 dark:text-white">
-              {userData.stats?.plans?? 0}
-            </span>
-            <span className="text-xs text-gray-400 dark:text-zinc-500">Plan</span>
-          </button>
+                {targetUser.portfolio && targetUser.portfolio.length > 0 && (
+                  <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-4">
+                    <p className="text- font-bold text-[#8E8E93] dark:text-zinc-500 uppercase tracking-wider mb-3">
+                      Portfolio
+                    </p>
+                    <div className="space-y-2">
+                      {targetUser.portfolio.slice(0, 3).map((item, i) => (
+                        <a
+                          key={i}
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between p-3 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl active:opacity-70 transition"
+                        >
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            {item.image && (
+                              <img src={item.image} className="w-10 h-10 rounded-lg object-cover" alt="" />
+                            )}
+                            <span className="text- font-semibold text-[#1C1C1E] dark:text-white truncate">
+                              {item.title}
+                            </span>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-[#C7C7CC] dark:text-zinc-600 flex-shrink-0" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-          <button className="flex-1 py-2.5 rounded-2xl bg-gray-50 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95 transition">
-            <Star className="w-4 h-4 text-gray-500 dark:text-zinc-400" />
-            <span className="text-sm font-bold text-gray-900 dark:text-white">
-              {userData.stats?.rating?? 0}
-            </span>
-          </button>
+                {targetUser.stats?.joinedDate && (
+                  <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-4">
+                    <div className="flex items-center gap-3 text- text-[#3C3C43] dark:text-zinc-300">
+                      <Calendar className="w-5 h-5 text-[#8E8E93]" />
+                      <span>Tham gia từ {new Date(targetUser.stats.joinedDate.seconds * 1000).toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })}</span>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {activeTab === "reviews" && (
+              <motion.div
+                key="reviews"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-8 text-center"
+              >
+                <Award className="w-12 h-12 text-[#C7C7CC] dark:text-zinc-700 mx-auto mb-3" />
+                <p className="text- text-[#8E8E93] dark:text-zinc-500">Chưa có đánh giá nào</p>
+              </motion.div>
+            )}
+
+            {activeTab === "tasks" && (
+              <motion.div
+                key="tasks"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800 p-8 text-center"
+              >
+                <Briefcase className="w-12 h-12 text-[#C7C7CC] dark:text-zinc-700 mx-auto mb-3" />
+                <p className="text- text-[#8E8E93] dark:text-zinc-500">Chưa có công việc nào</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
+
+        {showMore &&!isOwnProfile && (
+          <div className="mt-3 p-2 bg-white dark:bg-zinc-900 rounded-2xl border border-[#E5E5EA] dark:border-zinc-800">
+            <button className="w-full flex items-center gap-3 px-4 py-3 text-left text-[#FF3B30] active:bg-[#F2F2F7] dark:active:bg-zinc-800 rounded-xl">
+              <Flag className="w-5 h-5" />
+              <span className="font-semibold text-">Báo cáo</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* ── Menu sections ── */}
-      <div className="px-6 mt-2 space-y-6">
-        {/* HỒ SƠ */}
-        <div>
-          <SectionLabel>HỒ SƠ</SectionLabel>
-          <Item label="Thông tin cá nhân" icon={User} onClick={() => router.push("/profile/edit")} />
-          <Item label="Mã QR của tôi" icon={QrCode} onClick={() => setShowQR(true)} />
-          <Item label="Quét mã QR" icon={ScanLine} onClick={() => setShowScanQR(true)} />
-          <Item label="Chia sẻ hồ sơ" icon={Share2} onClick={handleShare} />
-        </div>
-
-        {/* BẢO MẬT */}
-        <div>
-          <SectionLabel>BẢO MẬT</SectionLabel>
-          <Item label="Xác thực CCCD" icon={Shield} />
-          <Item label="Đổi mật khẩu" icon={Lock} onClick={() => router.push("/settings/change-password")} />
-        </div>
-
-        {/* HỖ TRỢ */}
-        <div>
-          <SectionLabel>HỖ TRỢ</SectionLabel>
-          <Item label="Trung tâm trợ giúp" icon={HelpCircle} />
-          <Item label="Cài đặt" icon={Settings} onClick={() => router.push("/settings")} />
-          <Item label="Đăng xuất" icon={LogOut} onClick={() => setShowLogoutModal(true)} danger />
-          <Item label="Xoá tài khoản" icon={Trash2} onClick={() => setShowDeleteModal(true)} danger />
-        </div>
-      </div>
-
-      {/* ── QR Modal ── */}
-      {showQR && userData.userId && (
+      {/* QR Modal */}
+      {showQR && targetUser.userId && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={() => setShowQR(false)}
@@ -455,16 +556,16 @@ export default function Profile() {
             className="bg-white dark:bg-zinc-900 rounded-3xl p-6 max-w-sm w-full"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-xl font-black text-center mb-1 text-gray-900 dark:text-white">
-              @{userData.userId}
+            <h3 className="text- font-bold text-center mb-1 text-[#1C1C1E] dark:text-white">
+              @{targetUser.userId}
             </h3>
-            <p className="text-sm text-center text-gray-500 mb-4">
-              Quét để kết nối với {userData.name}
+            <p className="text- text-center text-[#8E8E93] mb-4">
+              Quét để kết nối với {targetUser.name}
             </p>
 
             <div className="bg-white p-4 rounded-2xl flex items-center justify-center">
               <QRCodeSVG
-                value={`https://airanh.vercel.app/u/${userData.userId}`}
+                value={`https://airanh.vercel.app/profile/${targetUser.uid}`}
                 size={200}
                 level="H"
                 includeMargin
@@ -474,13 +575,13 @@ export default function Profile() {
             <div className="grid grid-cols-2 gap-3 mt-4">
               <button
                 onClick={handleShare}
-                className="py-3 rounded-2xl font-bold bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white flex items-center justify-center gap-2 active:scale-95 transition"
+                className="py-3 rounded-2xl font-semibold text- bg-[#F2F2F7] dark:bg-zinc-800 text-[#1C1C1E] dark:text-white flex items-center justify-center gap-2 active:scale-95 transition"
               >
                 <Share2 size={18} /> Chia sẻ
               </button>
               <button
                 onClick={() => { setShowQR(false); setShowScanQR(true); }}
-                className={`py-3 rounded-2xl font-bold bg-gradient-to-r ${accentGradient} text-white flex items-center justify-center gap-2 active:scale-95 transition`}
+                className="py-3 rounded-2xl font-semibold text- bg-gradient-to-r from-[#0A84FF] to-[#007AFF] text-white flex items-center justify-center gap-2 active:scale-95 transition"
               >
                 <ScanLine size={18} /> Quét mã
               </button>
@@ -489,7 +590,7 @@ export default function Profile() {
         </div>
       )}
 
-      {/* ── Scan QR fullscreen ── */}
+      {/* Scan QR fullscreen */}
       {showScanQR && (
         <div className="fixed inset-0 bg-black z-50">
           <div id="qr-reader" className="w-full h-full" />
@@ -500,121 +601,11 @@ export default function Profile() {
             <X className="w-5 h-5 text-white" />
           </button>
           <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-white text-center">
-            <p className="font-bold">Đưa mã QR vào khung</p>
-            <p className="text-sm opacity-70 mt-1">Tự động quét khi phát hiện</p>
+            <p className="font-bold text-">Đưa mã QR vào khung</p>
+            <p className="text- opacity-70 mt-1">Tự động quét khi phát hiện</p>
           </div>
         </div>
       )}
-
-      {/* ── Modals ── */}
-      {showLogoutModal && (
-        <Modal
-          title="Đăng xuất?"
-          desc="Bạn sẽ cần đăng nhập lại để sử dụng app"
-          onClose={() => setShowLogoutModal(false)}
-          onConfirm={handleLogout}
-          confirmText="Đăng xuất"
-          danger
-        />
-      )}
-      {showDeleteModal && (
-        <Modal
-          title="Xóa tài khoản?"
-          desc="Hành động này không thể hoàn tác. Toàn bộ dữ liệu sẽ bị xóa vĩnh viễn."
-          onClose={() => setShowDeleteModal(false)}
-          onConfirm={handleDeleteAccount}
-          confirmText="Xóa vĩnh viễn"
-          danger
-        />
-      )}
-    </div>
-  );
-}
-
-// ─── Sub-components ───────────────────────────────────────────────
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-xs font-bold text-gray-400 dark:text-zinc-600 tracking-wider mb-1 uppercase">
-      {children}
-    </p>
-  );
-}
-
-function Item({
-  label,
-  icon: Icon,
-  onClick,
-  danger,
-}: {
-  label: string;
-  icon: React.ElementType;
-  onClick?: () => void;
-  danger?: boolean;
-}) {
-  return (
-    <button
-      onClick={() => {
-        if ("vibrate" in navigator) navigator.vibrate(5);
-        onClick?.();
-      }}
-      className="w-full flex items-center justify-between py-4 active:opacity-50 transition-opacity"
-    >
-      <div className="flex items-center gap-3">
-        <Icon
-          className={`w-5 h-5 ${ danger? "text-red-500" : "text-gray-900 dark:text-white" }`}
-        />
-        <span
-          className={`text-base font-semibold ${ danger? "text-red-500" : "text-gray-900 dark:text-white" }`}
-        >
-          {label}
-        </span>
-      </div>
-      <ChevronRight className="w-4 h-4 text-gray-400" />
-    </button>
-  );
-}
-
-function Modal({
-  title,
-  desc,
-  onClose,
-  onConfirm,
-  confirmText,
-  danger,
-}: {
-  title: string;
-  desc: string;
-  onClose: () => void;
-  onConfirm: () => void;
-  confirmText: string;
-  danger?: boolean;
-}) {
-  return (
-    <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end justify-center z-50"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white dark:bg-zinc-900 w-full max-w-xl rounded-t-3xl p-6 animate-in slide-in-from-bottom"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="w-12 h-1 bg-gray-300 dark:bg-zinc-700 rounded-full mx-auto mb-4" />
-        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">{title}</h3>
-        <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">{desc}</p>
-        <button
-          onClick={onConfirm}
-          className={`w-full py-3.5 rounded-2xl font-semibold mb-3 active:scale-[0.98] transition ${ danger? "bg-red-500 text-white" : "bg-blue-500 text-white" }`}
-        >
-          {confirmText}
-        </button>
-        <button
-          onClick={onClose}
-          className="w-full py-3.5 bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100 rounded-2xl font-semibold"
-        >
-          Hủy
-        </button>
-      </div>
     </div>
   );
 }
