@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import {
   doc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp,
-  getDoc, getDocs, collection, limit, query, where, arrayUnion, deleteDoc
+  getDoc, getDocs, collection, increment, limit, query, where, arrayUnion, deleteDoc
 } from "firebase/firestore";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import {
@@ -86,14 +86,12 @@ export default function TaskDetailPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const isOwner = currentUser?.uid === task?.userId;
   const [applications, setApplications] = useState<Application[]>([]);
-  const acceptedCount = useMemo(
+ 
+const acceptedCount = useMemo(
   () => applications.filter(app => app.status === 'accepted').length,
   [applications]
 );
-  const isFull = useMemo(
-  () => acceptedCount >= (task && isTask(task)? task.totalSlots : 1),
-  [acceptedCount, task]
-);
+const isFull = acceptedCount >= (task?.totalSlots || 1);
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<TaskComment | null>(null);
   const [editingComment, setEditingComment] = useState<string | null>(null);
@@ -109,8 +107,9 @@ export default function TaskDetailPage() {
   const [joining, setJoining] = useState(false);
 
   const [showImageGallery, setShowImageGallery] = useState<number | null>(null);
+const applicants = task?.applicants ?? [];
   const [likingComments, setLikingComments] = useState<Set<string>>(new Set());
-  const [isApplied, setIsApplied] = useState(false);
+const isApplied = applications.some(app => app.userId === currentUser?.uid && ['pending', 'accepted'].includes(app.status));
 
   const [isSaved, setIsSaved] = useState(false);
   
@@ -161,7 +160,7 @@ export default function TaskDetailPage() {
     const snap = await getDocs(q);
     const apps = snap.docs.map(d => ({ id: d.id,...d.data() } as Application));
     setApplications(apps);
-    setIsApplied(apps.some(app => app.userId === currentUser?.uid && ['pending', 'accepted'].includes(app.status)));
+    
   };
 
   // ✅ Load comments bằng getDocs
@@ -346,17 +345,42 @@ export default function TaskDetailPage() {
 const handleJoinTask = async () => {
   if (!currentUser ||!task || isApplied || isFull || joining || isOwner) return;
   setJoining(true);
+
   const oldApplicants = task.applicants || [];
-  setTask(prev => prev? ({...prev, applicants: [...oldApplicants, currentUser.uid] }) : prev);
+  const oldAppliedCount = task.appliedCount || 0;
+  const oldApplications = applications;
+
+  // Optimistic update cả 2
+  setTask(prev => prev? ({
+ ...prev,
+    applicants: [...oldApplicants, currentUser.uid],
+    appliedCount: oldAppliedCount + 1
+  }) : prev);
+
+  const tempApp: Application = {
+    id: `temp-${Date.now()}`,
+    taskId: task.id,
+    taskOwnerId: task.userId,
+    userId: currentUser.uid,
+    userName: currentUser.displayName || "Bạn",
+    userAvatar: currentUser.photoURL || "",
+    status: 'pending',
+    createdAt: Timestamp.now()
+  };
+  setApplications(prev => [...prev, tempApp]);
 
   try {
     await applyToTask(task.id, currentUser.uid);
-    toast.success("Ứng tuyển thành công!");
+    toast.success("Đã gửi yêu cầu ứng tuyển!");
     navigator.vibrate?.(10);
-    await loadApplications();
-    router.refresh(); // thêm dòng này để force refetch RSC
+    await loadApplications(); // Load lại để có id thật
   } catch (err) {
-    setTask(prev => prev? ({...prev, applicants: oldApplicants }) : prev);
+    setTask(prev => prev? ({
+   ...prev,
+      applicants: oldApplicants,
+      appliedCount: oldAppliedCount
+    }) : prev);
+    setApplications(oldApplications);
     toast.error("Ứng tuyển thất bại");
     console.error(err);
   } finally {
@@ -364,29 +388,53 @@ const handleJoinTask = async () => {
   }
 };
 
-  const handleCancelApply = async () => {
-    if (!currentUser ||!task ||!isApplied || joining) return;
-    setJoining(true);
-    try {
-      const q = query(
-        collection(db, 'applications'),
-        where('taskId', '==', task.id),
-        where('userId', '==', currentUser.uid),
-        where('status', 'in', ['pending', 'accepted'])
-      );
-      const snap = await getDocs(q);
-      if (!snap.empty && snap.docs[0]) {
-        await deleteDoc(doc(db, 'applications', snap.docs[0].id));
-      }
-      toast.success("Đã hủy ứng tuyển");
-      navigator.vibrate?.(10);
-      loadApplications();
-    } catch {
-      toast.error("Hủy thất bại");
-    } finally {
-      setJoining(false);
+ const handleCancelApply = async () => {
+  if (!currentUser ||!task ||!isApplied || joining) return;
+  setJoining(true);
+
+  const oldApplicants = task.applicants || [];
+  const oldAppliedCount = task.appliedCount || 0;
+  const oldApplications = applications;
+
+  setTask(prev => prev? ({
+ ...prev,
+    applicants: prev.applicants?.filter(id => id!== currentUser.uid) || [],
+    appliedCount: Math.max(0, (prev.appliedCount || 0) - 1)
+  }) : prev);
+
+  setApplications(prev => prev.filter(app => app.userId!== currentUser.uid));
+
+  try {
+    const q = query(
+      collection(db, 'applications'),
+      where('taskId', '==', task.id),
+      where('userId', '==', currentUser.uid),
+      where('status', 'in', ['pending', 'accepted'])
+    );
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      await deleteDoc(doc(db, 'applications', snap.docs[0].id));
     }
-  };
+
+    await updateDoc(doc(db, "tasks", task.id), {
+      applicants: arrayRemove(currentUser.uid),
+      appliedCount: increment(-1)
+    });
+
+    toast.success("Đã hủy ứng tuyển");
+    navigator.vibrate?.(10);
+  } catch {
+    setTask(prev => prev? ({
+   ...prev,
+      applicants: oldApplicants,
+      appliedCount: oldAppliedCount
+    }) : prev);
+    setApplications(oldApplications);
+    toast.error("Hủy thất bại");
+  } finally {
+    setJoining(false);
+  }
+};
 
   const handleSendComment = async () => {
     if (!currentUser ||!task ||!text.trim() || sending) return;
@@ -705,7 +753,7 @@ const handleJoinTask = async () => {
       <span>•</span>
 <div className="flex items-center gap-1">
   <FiUsers size={16} />
-  <span>{applications.length}/{task.totalSlots || 1}</span>
+<span>{task.applicants?.length || 0}/{task.totalSlots || 1}</span>
 </div>
     </>
   )}
@@ -719,9 +767,9 @@ const handleJoinTask = async () => {
 <div className="px-4 pt-4 pb-2">
   {isOwner? (
     <div className="rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 p-4">
-      <h3 className="font-semibold text- mb-3 text-[#1C1C1E] dark:text-zinc-100">
-        Ứng viên ({applications.length})
-      </h3>
+ <h3 className="font-semibold text- mb-3 text-[#1C1C1E] dark:text-zinc-100">
+  Ứng viên ({applications.length})
+</h3>
 
       {applications.length === 0? (
         <p className="text-center text- text-zinc-500 dark:text-zinc-400 py-4">
