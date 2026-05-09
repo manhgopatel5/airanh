@@ -24,7 +24,7 @@ import {
 } from "@/lib/taskCommentService";
 
 import type { TaskComment } from "@/types/task";
-import { isTask, isPlan, type Task, type TaskStatus } from "@/types/task";
+import { isTask, type Task, type TaskStatus } from "@/types/task";
 import { applyToTask, cancelToTask } from "@/app/actions/task";
 import DOMPurify from "isomorphic-dompurify";
 import { toast, Toaster } from "sonner";
