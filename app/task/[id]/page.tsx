@@ -552,7 +552,7 @@ const taskDeadline = `${String(deadlineDate.getDate()).padStart(2,'0')}/${String
 
   <div className="flex-1 min-w-0">
     <div className="flex items-center justify-between gap-2 mb-1">
-      <span className="font-semibold text- text-[#1C1C1E] truncate">{owner?.name || "Minh Tran"}</span>
+      <span className="font-semibold text-sm text-[#1C1C1E] truncate">{owner?.name || "Minh Tran"}</span>
       <div className="flex items-center gap-2.5 shrink-0">
   {!isOwner && (
   <motion.button
@@ -654,7 +654,7 @@ const taskDeadline = `${String(deadlineDate.getDate()).padStart(2,'0')}/${String
       </div>
     </div>
 
-    <div className="flex items-center gap-1.5 text-">
+    <div className="flex items-center gap-1.5 text-sm">
       <FiStar className="fill-[#FFB800] text-[#FFB800]" size={16} />
       <span className="font-semibold text-[#1C1C1E]">{owner?.rating || "4.9"}</span>
       <span className="text-[#8E8E93]">({owner?.reviewCount || 21} đánh giá)</span>
@@ -749,7 +749,7 @@ const taskDeadline = `${String(deadlineDate.getDate()).padStart(2,'0')}/${String
 <div className="px-4 pt-4 pb-2">
   {isOwner? (
     <div className="rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 p-4">
- <h3 className="font-semibold text- mb-3 text-[#1C1C1E] dark:text-zinc-100">
+ <h3 className="font-semibold text-sm mb-3 text-[#1C1C1E] dark:text-zinc-100">
   Ứng viên ({applications.length})
 </h3>
 
@@ -769,7 +769,7 @@ const taskDeadline = `${String(deadlineDate.getDate()).padStart(2,'0')}/${String
     >
       <UserAvatar src={app.userAvatar} name={app.userName} size={40} />
       <div className="min-w-0">
-        <p className="font-semibold text- text-[#1C1C1E] dark:text-zinc-100 truncate">
+        <p className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100 truncate">
           {app.userName}
         </p>
         <p className="text- text-zinc-500 dark:text-zinc-400">
@@ -900,7 +900,7 @@ const taskDeadline = `${String(deadlineDate.getDate()).padStart(2,'0')}/${String
       <motion.button
         whileTap={{ scale: 0.94 }}
         onClick={() => setShowImageGallery(0)}
-        className="relative w-20 h-20 rounded- overflow-hidden"
+        className="relative w-20 h-20 rounded-xl overflow-hidden"
       >
         <Image
           src={task.images[0]!}
@@ -918,7 +918,7 @@ const taskDeadline = `${String(deadlineDate.getDate()).padStart(2,'0')}/${String
             key={i}
             whileTap={{ scale: 0.94 }}
             onClick={() => setShowImageGallery(i)}
-            className="relative w-20 h-20 rounded- overflow-hidden"
+            className="relative w-20 h-20 rounded-xl overflow-hidden"
           >
             <Image
               src={img!}
@@ -938,7 +938,7 @@ const taskDeadline = `${String(deadlineDate.getDate()).padStart(2,'0')}/${String
             key={i}
             whileTap={{ scale: 0.94 }}
             onClick={() => setShowImageGallery(i)}
-            className="relative aspect-square rounded- overflow-hidden"
+            className="relative aspect-square rounded-xl overflow-hidden"
           >
             <Image
               src={img!}
@@ -1031,7 +1031,7 @@ const taskDeadline = `${String(deadlineDate.getDate()).padStart(2,'0')}/${String
                           className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#F2F2F7] dark:hover:bg-zinc-800 rounded-lg text-left"
                         >
                           <UserAvatar src={user.avatar} name={user.name} size={24} />
-                         <span className="text-">{user.name}</span>
+                         <span className="text-sm">{user.name}</span>
                         </button>
                       ))}
                     </div>
