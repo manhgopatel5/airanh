@@ -70,7 +70,14 @@ export default function PublicProfile() {
       }
 
       const userDoc = userSnap.docs[0];
-      const data = { uid: userDoc.id,...userDoc.data() } as PublicUser;
+
+if (!userDoc) {
+  toast.error("Không tìm thấy người dùng");
+  router.replace("/404");
+  return;
+}
+
+const data = { uid: userDoc.id,...userDoc.data() } as PublicUser;
       setTargetUser(data);
 
       if (currentUserSnap.exists()) {
