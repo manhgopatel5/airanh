@@ -63,7 +63,7 @@ const [saving, setSaving] = useState(false);
 
   const isOwner = user?.uid === task.userId;
   const applicants = task.applicants?? [];
-  const isApplied =!!user && applicants.includes(user.uid);
+ 
 
   const themeColor = {
     task: {
