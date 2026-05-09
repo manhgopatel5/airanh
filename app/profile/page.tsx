@@ -3,8 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import {
-  doc, getDoc, setDoc, deleteDoc, collection, query, where,
-  getDocs, serverTimestamp, Timestamp
+  doc, getDoc, setDoc, deleteDoc, serverTimestamp, Timestamp
 } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
