@@ -414,9 +414,10 @@ setTask(prev => prev? ({
       where('status', 'in', ['pending', 'accepted'])
     );
     const snap = await getDocs(q);
-    if (!snap.empty) {
-      await deleteDoc(doc(db, 'applications', snap.docs[0].id));
-    }
+if (!snap.empty) {
+  const firstDoc = snap.docs[0];
+  if (firstDoc) await deleteDoc(doc(db, 'applications', firstDoc.id));
+}
 
     await updateDoc(doc(db, "tasks", task.id), {
   applicants: arrayRemove(currentUser.uid),
