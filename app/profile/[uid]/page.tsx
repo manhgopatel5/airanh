@@ -25,7 +25,7 @@ import {
   Clock,
   ExternalLink,
   Zap,
-  ArrowLeft,
+  
   Share2,
   Flag,
   Crown,
@@ -530,56 +530,55 @@ return (
           className="relative overflow-hidden rounded-3xl border border-zinc-200/80 bg-white shadow-sm"
         >
        {/* THÊM ĐOẠN NÀY */}
-  <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
+  <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+  <button
+    onClick={handleShare}
+    className="w-9 h-9 rounded-xl bg-white border border-zinc-200 flex items-center justify-center active:scale-95 transition-all shadow-sm"
+  >
+    <Share2 className="w-5 h-5 text-zinc-700" />
+  </button>
+  {!isOwnProfile && (
     <button
-      onClick={() => router.back()}
+      onClick={() => setShowMore(!showMore)}
       className="w-9 h-9 rounded-xl bg-white border border-zinc-200 flex items-center justify-center active:scale-95 transition-all shadow-sm"
     >
-      <ArrowLeft className="w-5 h-5 text-zinc-700" />
+      <MoreVertical className="w-5 h-5 text-zinc-700" />
     </button>
-
-    <div className="flex items-center gap-2">
-      <button
-        onClick={handleShare}
-        className="w-9 h-9 rounded-xl bg-white border border-zinc-200 flex items-center justify-center active:scale-95 transition-all shadow-sm"
-      >
-        <Share2 className="w-5 h-5 text-zinc-700" />
-      </button>
-      {!isOwnProfile && (
-        <button
-          onClick={() => setShowMore(!showMore)}
-          className="w-9 h-9 rounded-xl bg-white border border-zinc-200 flex items-center justify-center active:scale-95 transition-all shadow-sm"
-        >
-          <MoreVertical className="w-5 h-5 text-zinc-700" />
-        </button>
-      )}
-    </div>
+  )}
+</div>
   </div>
 
-          {/* Avatar */}
-         <div className="flex justify-center -mt-12">
-            <div className="relative">
-              <img
-                src={
-                  targetUser?.avatar ||
-                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                    targetUser?.name || "User"
-                  )}&size=200`
-                }
-                alt=""
-                className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md"
-              />
-              {targetUser?.online && (
-                <div className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-500 border-[3px] border-white" />
-              )}
-            </div>
-          </div>
+  
 
           {/* CONTENT */}
-          <div className="px-5 pt-14 pb-5">
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-1.5">
-                <h1 className="text-xl font-bold text-zinc-900">
+         // CŨ - DÒNG ~735
+<div className="px-5 pt-14 pb-5">
+  <div className="text-center">
+    <div className="flex items-center justify-center gap-1.5">
+      <h1 className="text-xl font-bold text-zinc-900">
+
+// MỚI
+<div className="px-5 pt-16 pb-5">
+  <div className="flex flex-col items-center text-center">
+    {/* AVATAR CHUYỂN XUỐNG ĐÂY */}
+    <div className="relative mb-3">
+      <img
+        src={
+          targetUser?.avatar ||
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(
+            targetUser?.name || "User"
+          )}&size=200`
+        }
+        alt=""
+        className="w-24 h-24 rounded-full object-cover border-4 border-zinc-100 shadow-sm"
+      />
+      {targetUser?.online && (
+        <div className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-500 border-[3px] border-white" />
+      )}
+    </div>
+
+    <div className="flex items-center justify-center gap-1.5">
+      <h1 className="text-xl font-bold text-zinc-900">
                   {targetUser?.name || "Unknown User"}
                 </h1>
                 {targetUser?.emailVerified && (
