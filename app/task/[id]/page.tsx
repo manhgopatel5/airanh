@@ -89,6 +89,7 @@ export default function TaskDetailPage() {
  
   const isFull = task && isTask(task)? (task.appliedCount || 0) >= task.totalSlots : false;
   const [text, setText] = useState("");
+  
   const [replyTo, setReplyTo] = useState<TaskComment | null>(null);
   const [editingComment, setEditingComment] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
@@ -114,6 +115,17 @@ export default function TaskDetailPage() {
  
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
+  const appsRef = useRef<HTMLDivElement>(null);
+
+useEffect(() => {
+  const handleClickOutside = (e: MouseEvent) => {
+    if (showAllApps && appsRef.current &&!appsRef.current.contains(e.target as Node)) {
+      setShowAllApps(false);
+    }
+  };
+  document.addEventListener('mousedown', handleClickOutside);
+  return () => document.removeEventListener('mousedown', handleClickOutside);
+}, [showAllApps]);
   const [shareTask, setShareTask] = useState<Task | null>(null);
     const loadTask = async () => {
     if (!db ||!id || typeof id!== "string") return;
@@ -718,7 +730,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
 
 <div className="pt-3 pb-2">
   {isOwner? (
-    <div className="rounded-3xl bg-white dark:bg-zinc-900 border border-white dark:border-zinc-800 shadow-[0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] overflow-hidden">
+    <div ref={appsRef} className="rounded-3xl bg-white dark:bg-zinc-900 border border-white dark:border-zinc-800 shadow-[0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] overflow-hidden">
       <div className="px-5 py-4">
         <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
           Ứng viên ({applications.length})
@@ -739,7 +751,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
               layout
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex items-center justify-between gap-3 px-5 py-4"
+              className="flex items-center justify-between gap-3 px-5 py-3.5"
             >
               <Link
                 href={`/profile/${app.userId}`}
@@ -756,38 +768,44 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
                 </div>
               </Link>
 
-              <div className="flex gap-2 shrink-0">
+              <div className="flex gap-1.5 shrink-0">
                 <motion.button
-                  whileTap={{ scale: 0.9 }}
+                  whileTap={{ scale: 0.88 }}
+                  whileHover={{ y: -1 }}
                   onClick={(e) => {
                     e.stopPropagation();
+                    navigator.vibrate?.(8);
                     handleMessageApp(app.userId);
                   }}
-                  className="w-9 h-9 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800 text-[#0a84ff] flex items-center justify-center active:scale-90 transition-all"
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-[#0a84ff] hover:bg-[#0a84ff]/8 active:bg-[#0a84ff]/15 transition-all"
                 >
-                  <FiMessageSquare size={18} strokeWidth={2} />
+                  <FiMessageSquare size={19} strokeWidth={2.2} />
                 </motion.button>
                 
                 <motion.button
-                  whileTap={{ scale: 0.9 }}
+                  whileTap={{ scale: 0.88 }}
+                  whileHover={{ y: -1 }}
                   onClick={(e) => {
                     e.stopPropagation();
+                    navigator.vibrate?.(8);
                     handleAcceptApp(app.id, app.userId);
                   }}
-                  className="w-9 h-9 rounded-xl bg-[#E8F5E9] dark:bg-green-950/40 text-[#00A86B] flex items-center justify-center active:scale-90 transition-all"
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-[#00A86B] hover:bg-[#00A86B]/8 active:bg-[#00A86B]/15 transition-all"
                 >
-                  <FiCheck size={20} strokeWidth={2.5} />
+                  <FiCheck size={21} strokeWidth={2.8} />
                 </motion.button>
                 
                 <motion.button
-                  whileTap={{ scale: 0.9 }}
+                  whileTap={{ scale: 0.88 }}
+                  whileHover={{ y: -1 }}
                   onClick={(e) => {
                     e.stopPropagation();
+                    navigator.vibrate?.(8);
                     handleRejectApp(app.id);
                   }}
-                  className="w-9 h-9 rounded-xl bg-[#FFE5E5] dark:bg-red-950/40 text-[#FF3B30] flex items-center justify-center active:scale-90 transition-all"
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-[#FF3B30] hover:bg-[#FF3B30]/8 active:bg-[#FF3B30]/15 transition-all"
                 >
-                  <FiX size={20} strokeWidth={2.5} />
+                  <FiX size={21} strokeWidth={2.8} />
                 </motion.button>
               </div>
             </motion.div>
