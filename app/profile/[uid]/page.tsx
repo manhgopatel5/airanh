@@ -518,9 +518,14 @@ const xp =
 
   })();
 
-  const achievements = useMemo(() => {
+  const achievements = useMemo<
+  { icon: string; label: string }[]
+>(() => {
 
-    const arr = [];
+    const arr: {
+  icon: string;
+  label: string;
+}[] = [];
 
     if (rating >= 4.8) {
       arr.push({
