@@ -97,6 +97,7 @@ export default function TaskDetailPage() {
   const [mentionQuery, setMentionQuery] = useState("");
 
   const [loading, setLoading] = useState(true);
+  const [showAllApps, setShowAllApps] = useState(false);
   const [sending, setSending] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
   const [isUrgent, setIsUrgent] = useState(false);
@@ -715,25 +716,31 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
 
 </div>
 
-<div className="pt-4 pb-2">
+<div className="pt-3 pb-2">
   {isOwner? (
     <div className="rounded-3xl bg-white dark:bg-zinc-900 border border-white dark:border-zinc-800 shadow-[0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] overflow-hidden">
-     <div className="px-5 py-4">
-  <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
-    Ứng viên ({applications.length})
-  </h3>
-</div>
+      <div className="px-5 py-4">
+        <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
+          Ứng viên ({applications.length})
+        </h3>
+      </div>
 
       {applications.length === 0? (
-        <div className="px-5 py-12 text-center">
+        <div className="px-5 pb-12 text-center">
           <p className="text-sm text-[#8E8E93] dark:text-zinc-500">
             Chưa có ai ứng tuyển
           </p>
         </div>
       ) : (
         <div className="divide-y divide-[#F2F2F7] dark:divide-zinc-800">
-          {applications.map(app => (
-            <div key={app.id} className="flex items-center justify-between gap-3 px-5 py-4">
+          {(showAllApps? applications : applications.slice(0, 1)).map(app => (
+            <motion.div 
+              key={app.id} 
+              layout
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex items-center justify-between gap-3 px-5 py-4"
+            >
               <Link
                 href={`/profile/${app.userId}`}
                 className="flex items-center gap-3 min-w-0 flex-1 active:opacity-70"
@@ -783,8 +790,18 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
                   <FiX size={20} strokeWidth={2.5} />
                 </motion.button>
               </div>
-            </div>
+            </motion.div>
           ))}
+
+          {applications.length > 1 && (
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowAllApps(!showAllApps)}
+              className="w-full px-5 py-3 text-sm font-semibold text-[#0a84ff] hover:bg-[#F2F2F7] dark:hover:bg-zinc-800 active:bg-[#E5E5EA] dark:active:bg-zinc-700 transition-all"
+            >
+              {showAllApps? 'Thu gọn' : `Xem thêm ${applications.length - 1} ứng viên`}
+            </motion.button>
+          )}
         </div>
       )}
     </div>
