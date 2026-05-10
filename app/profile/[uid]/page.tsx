@@ -550,8 +550,7 @@ return (
 
   
 
-          {/* CONTENT */}
-         // CŨ - DÒNG ~735
+ 
 <div className="px-5 pt-14 pb-5">
   <div className="text-center">
     <div className="flex items-center justify-center gap-1.5">
