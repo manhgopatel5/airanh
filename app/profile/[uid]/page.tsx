@@ -18,7 +18,7 @@ import {
   UserPlus,
   Check,
   UserMinus,
-  ArrowLeft,
+  
   Star,
   Briefcase,
   MapPin,
