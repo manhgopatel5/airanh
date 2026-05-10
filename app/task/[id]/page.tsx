@@ -785,43 +785,37 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
       </div>
     </Link>
 
-    <div className="flex gap-4 shrink-0">
-      <motion.button
-        whileTap={{ scale: 0.85 }}
-        onClick={(e) => {
-          e.stopPropagation();
-          navigator.vibrate?.(8);
-          handleMessageApp(app.userId);
-        }}
-        className="w-7 h-7 flex items-center justify-center text-[#0a84ff] active:opacity-60 transition-opacity"
-      >
-        <FiMessageSquare size={18} strokeWidth={2} />
-      </motion.button>
-      
-      <motion.button
-        whileTap={{ scale: 0.85 }}
-        onClick={(e) => {
-          e.stopPropagation();
-          navigator.vibrate?.(8);
-          handleAcceptApp(app.id, app.userId);
-        }}
-        className="w-7 h-7 flex items-center justify-center text-[#00A86B] active:opacity-60 transition-opacity"
-      >
-        <FiCheck size={19} strokeWidth={2.5} />
-      </motion.button>
-      
-      <motion.button
-        whileTap={{ scale: 0.85 }}
-        onClick={(e) => {
-          e.stopPropagation();
-          navigator.vibrate?.(8);
-          handleRejectApp(app.id);
-        }}
-        className="w-7 h-7 flex items-center justify-center text-[#FF3B30] active:opacity-60 transition-opacity"
-      >
-        <FiX size={19} strokeWidth={2.5} />
-      </motion.button>
-    </div>
+    <div className="flex gap-2 shrink-0">
+    <motion.button
+      whileTap={{ scale: 0.95 }}
+      onClick={(e) => {
+        e.stopPropagation();
+        navigator.vibrate?.(8);
+        handleAcceptApp(app.id, app.userId);
+      }}
+      className="h-8 px-3 rounded-full bg-[#E6F4EA] dark:bg-[#1E8E3E]/20 flex items-center gap-1.5 active:bg-[#D4EDDA] dark:active:bg-[#1E8E3E]/30 transition-all"
+    >
+      <div className="w-4 h-4 rounded-full bg-[#00A86B] flex items-center justify-center">
+        <FiCheck size={10} strokeWidth={3} className="text-white" />
+      </div>
+      <span className="text-xs font-semibold text-[#00A86B]">Đồng ý</span>
+    </motion.button>
+    
+    <motion.button
+      whileTap={{ scale: 0.95 }}
+      onClick={(e) => {
+        e.stopPropagation();
+        navigator.vibrate?.(8);
+        handleRejectApp(app.id);
+      }}
+      className="h-8 px-3 rounded-full bg-[#FFE5E5] dark:bg-[#FF3B30]/20 flex items-center gap-1.5 active:bg-[#FFD6D6] dark:active:bg-[#FF3B30]/30 transition-all"
+    >
+      <div className="w-4 h-4 rounded-full bg-[#FF3B30] flex items-center justify-center">
+        <FiX size={10} strokeWidth={3} className="text-white" />
+      </div>
+      <span className="text-xs font-semibold text-[#FF3B30]">Từ chối</span>
+    </motion.button>
+  </div>
   </motion.div>
 ))}
     </div>
@@ -855,7 +849,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
         disabled={(!isApplied && (isFull || task.status!== "open")) || joining || isOwner}
         className={`h-14 rounded-2xl flex flex-col items-center justify-center gap-0.5 font-semibold active:scale-95 disabled:opacity-40 transition-all ${
           isApplied
-       ? "bg-[#E8F5E9] dark:bg-green-950/40 text-[#00A86B] active:bg-[#D4EDDA] dark:active:bg-green-900/60"
+      ? "bg-[#E8F5E9] dark:bg-green-950/40 text-[#00A86B] active:bg-[#D4EDDA] dark:active:bg-green-900/60"
             : "bg-[#00A86B] active:bg-[#009960] text-white shadow-[0_4px_12px_rgba(0,168,107,0.25)]"
         }`}
       >
