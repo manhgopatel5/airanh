@@ -502,10 +502,7 @@ useEffect(() => {
     }
   };
 
-  const handleMessageApp = (uid: string) => {
-    const chatId = [currentUser!.uid, uid].sort().join('_');
-    router.push(`/chat/${chatId}`);
-  };
+
 
   const taskDate = isTask(task) && task.createdAt?.seconds
   ? new Date(task.createdAt.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
