@@ -514,1070 +514,372 @@ if (loading) {
     </div>
   );
 }
+if (!targetUser) return null;
 
-  if (!targetUser) return null;
+return (
+  <div className="min-h-screen bg-zinc-50 pb-28">
+    <Toaster richColors position="top-center" />
 
-  return (
-    <div className="
-      min-h-screen
-      isolate
-      bg-[#020617]
-      text-white
-      overflow-hidden
-      pb-32
-      relative
-    ">
-      <Toaster richColors position="top-center" />
-
-      <div className="
-        absolute inset-0
-        overflow-hidden
-        pointer-events-none
-      ">
-        <div className="
-          absolute top-[-120px] left-[-80px]
-          w-[320px] h-[320px]
-          rounded-full
-          bg-blue-500/20
-          blur-3xl
-        " />
-        <div className="
-          absolute top-[220px] right-[-120px]
-          w-[320px] h-[320px]
-          rounded-full
-          bg-fuchsia-500/20
-          blur-3xl
-        " />
-      </div>
-
-      <div className="
-        sticky top-0 z-40
-        backdrop-blur-2xl
-        bg-black/20
-        border-b border-white/5
-      ">
-        <div className="
-          px-4 py-3
-          flex items-center justify-between
-          max-w-md mx-auto
-        ">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.back()}
-              className="
-                w-10 h-10
-                rounded-2xl
-                bg-white/[0.06]
-                border border-white/10
-                flex items-center justify-center
-                active:scale-95
-                transition-all
-              "
-            >
-              <ArrowLeft className="w-5 h-5 text-white" />
-            </button>
-            <h1 className="
-              text-lg
-              font-black
-              tracking-[-0.03em]
-              text-white
-              truncate
-            ">
-              {targetUser?.name}
-            </h1>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleShare}
-              className="
-                w-10 h-10
-                rounded-2xl
-                bg-white/[0.06]
-                border border-white/10
-                flex items-center justify-center
-                active:scale-95
-                transition-all
-              "
-            >
-              <Share2 className="w-5 h-5 text-white" />
-            </button>
-
-            {!isOwnProfile && (
-              <button
-                onClick={() => setShowMore(!showMore)}
-                className="
-                  w-10 h-10
-                  rounded-2xl
-                  bg-white/[0.06]
-                  border border-white/10
-                  flex items-center justify-center
-                  active:scale-95
-                  transition-all
-                "
-              >
-                <MoreVertical className="w-5 h-5 text-white" />
-              </button>
-            )}
-          </div>
+    {/* HEADER */}
+    <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-zinc-200/80">
+      <div className="px-4 py-3 flex items-center justify-between max-w-md mx-auto">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.back()}
+            className="w-9 h-9 rounded-xl bg-zinc-100 border border-zinc-200 flex items-center justify-center active:scale-95 transition-all"
+          >
+            <ArrowLeft className="w-5 h-5 text-zinc-700" />
+          </button>
+          <h1 className="text-base font-bold text-zinc-900 truncate">
+            {targetUser?.name}
+          </h1>
         </div>
-      </div>
-                <div className="px-5 py-6 relative z-10">
-        <div className="max-w-md mx-auto">
 
-          {/* HERO CARD */}
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
-            className="
-              relative overflow-hidden
-              rounded-[34px]
-              border border-white/10
-              bg-white/[0.06]
-              backdrop-blur-2xl
-              shadow-[0_20px_80px_rgba(0,0,0,0.45)]
-            "
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleShare}
+            className="w-9 h-9 rounded-xl bg-zinc-100 border border-zinc-200 flex items-center justify-center active:scale-95 transition-all"
           >
+            <Share2 className="w-5 h-5 text-zinc-700" />
+          </button>
 
-            {/* glow */}
-            <div className="
-              absolute inset-0
-              bg-[radial-gradient(circle_at_top,#60A5FA22,transparent_55%)]
-            " />
-
-            {/* cover */}
-            <div className={`
-              relative h-36 overflow-hidden
-              bg-gradient-to-br ${rank.gradient}
-            `}>
-
-              <div className="
-                absolute inset-0
-                opacity-20
-                bg-black
-              " />
-
-              <div className="
-                absolute -bottom-16
-                left-1/2
-                -translate-x-1/2
-              ">
-
-                <div className="relative">
-
-                  {/* avatar glow */}
-                  <div className={`
-                    absolute inset-0
-                    rounded-full
-                    blur-2xl
-                    opacity-60
-                    scale-125
-                    bg-gradient-to-r ${rank.gradient}
-                  `} />
-
-                  <img
-                    src={
-                      targetUser?.avatar ||
-                      `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                        targetUser?.name || "User"
-                      )}&size=220`
-                    }
-                    alt=""
-                    className="
-                      relative
-                      w-32 h-32
-                      rounded-full
-                      object-cover
-                      border-[5px]
-                      border-[#0B1120]
-                      shadow-[0_10px_40px_rgba(0,0,0,0.45)]
-                    "
-                  />
-
-                  {/* online */}
-                  {targetUser?.online && (
-                    <div className="
-                      absolute bottom-3 right-3
-                      w-5 h-5
-                      rounded-full
-                      bg-green-500
-                      border-[3px]
-                      border-[#0B1120]
-                    ">
-                      <div className="
-                        absolute inset-0
-                        rounded-full
-                        bg-green-400
-                        animate-ping
-                        opacity-50
-                      " />
-                    </div>
-                  )}
-
-                </div>
-              </div>
-            </div>
-
-            {/* CONTENT */}
-            <div className="px-6 pt-20 pb-6">
-
-              {/* NAME */}
-              <div className="text-center">
-
-                <div className="
-                  flex items-center justify-center
-                  gap-2
-                ">
-                  <h1 className="
-                    text-[28px] sm:text-[30px]
-                    break-words
-                    leading-none
-                    font-black
-                    tracking-[-0.03em]
-                    text-white
-                  ">
-                    {targetUser?.name || "Unknown User"}
-                  </h1>
-
-                  {targetUser?.emailVerified && (
-                    <div className="
-                      w-7 h-7
-                      rounded-full
-                      bg-gradient-to-br
-                      from-sky-400
-                      to-blue-600
-                      flex items-center justify-center
-                      shadow-lg shadow-blue-500/30
-                    ">
-                      <Check className="
-                        w-4 h-4
-                        text-white
-                        stroke-[3]
-                      " />
-                    </div>
-                  )}
-                </div>
-
-                {targetUser?.title && (
-                  <p className="
-                    mt-2
-                    text-sm
-                    font-semibold
-                    text-zinc-300
-                  ">
-                    {targetUser?.title}
-                  </p>
-                )}
-
-                {/* LEVEL */}
-                <div className="
-                  flex justify-center
-                  mt-4
-                ">
-                  <motion.div
-                    whileHover={{ scale: 1.03 }}
-                    className={`
-                      px-4 py-2
-                      rounded-full
-                      bg-gradient-to-r ${rank.gradient}
-                      text-white
-                      flex items-center gap-2
-                      shadow-2xl ${rank.glow}
-                    `}
-                  >
-                    {rank.icon}
-
-                    <span className="
-                      font-bold
-                      text-sm
-                      tracking-[-0.01em]
-                    ">
-                      {rank.name}
-                    </span>
-
-                    <div className="
-                      px-2 py-0.5
-                      rounded-full
-                      bg-white/20
-                      text-xs
-                      font-black
-                    ">
-                      Lv.{level}
-                    </div>
-                  </motion.div>
-                </div>
-
-                {/* USERNAME */}
-                <div className="
-                  flex items-center justify-center
-                  gap-2 mt-4
-                  text-sm text-zinc-400
-                ">
-
-                  <span>
-                    @{targetUser?.userId}
-                  </span>
-
-                  {targetUser?.location && (
-                    <>
-                      <span>•</span>
-
-                      <div className="
-                        flex items-center gap-1
-                      ">
-                        <MapPin className="
-                          w-3.5 h-3.5
-                        " />
-
-                        <span>
-                          {targetUser?.location}
-                        </span>
-                      </div>
-                    </>
-                  )}
-
-                </div>
-
-                {/* STATUS */}
-                <div className="
-                  mt-3
-                  flex justify-center
-                ">
-
-                  {targetUser?.online ? (
-
-                    <div className="
-                      px-3 py-1.5
-                      rounded-full
-                      bg-green-500/15
-                      border border-green-500/20
-                      text-green-400
-                      text-xs
-                      font-semibold
-                      flex items-center gap-2
-                    ">
-                      <div className="
-                        w-2 h-2
-                        rounded-full
-                        bg-green-400
-                        animate-pulse
-                      " />
-
-                      Đang hoạt động
-                    </div>
-
-                  ) : (
-
-                    <div className="
-                      px-3 py-1.5
-                      rounded-full
-                      bg-white/5
-                      border border-white/10
-                      text-zinc-400
-                      text-xs
-                      font-semibold
-                      flex items-center gap-2
-                    ">
-                      <Clock className="
-                        w-3 h-3
-                      " />
-
-                      Hoạt động {formatLastSeen(targetUser?.lastSeen)}
-                    </div>
-
-                  )}
-
-                </div>
-
-                {/* BIO */}
-                {targetUser?.bio && (
-                  <p className="
-                    mt-5
-                    text-sm
-                    leading-7
-                    text-zinc-300
-                    px-1
-                  ">
-                    {targetUser?.bio}
-                  </p>
-                )}
-
-              </div>
-
-              {/* XP */}
-              <div className="mt-6">
-
-                <div className="
-                  flex items-center justify-between
-                  mb-2
-                ">
-                  <span className="
-                    text-xs
-                    font-semibold
-                    text-zinc-400
-                  ">
-                    Tiến trình level
-                  </span>
-
-                  <span className="
-                    text-xs
-                    font-bold
-                    text-zinc-300
-                  ">
-                    {currentLevelXP}/140 XP
-                  </span>
-                </div>
-
-                <div className="
-                  h-3 rounded-full
-                  bg-white/5
-                  overflow-hidden
-                  border border-white/5
-                ">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{
-                      width: `${progress}%`
-                    }}
-                    transition={{ duration: 1 }}
-                    className={`
-                      h-full rounded-full
-                      bg-gradient-to-r ${rank.gradient}
-                    `}
-                  />
-                </div>
-
-              </div>
-                            {/* TRUST SCORE */}
-              <div className="
-                mt-5
-                rounded-3xl
-                border border-white/10
-                bg-white/[0.04]
-                p-4
-              ">
-
-                <div className="
-                  flex items-center justify-between
-                ">
-
-                  <div>
-                    <p className="
-                      text-xs
-                      text-zinc-500
-                      font-semibold
-                    ">
-                      Độ uy tín
-                    </p>
-
-                    <div className="
-                      flex items-center gap-2
-                      mt-1
-                    ">
-                      <Shield className="
-                        w-5 h-5
-                        text-sky-400
-                      " />
-
-                      <span className="
-                        text-2xl
-                        font-black
-                        tracking-[-0.03em]
-                      ">
-                        {trustScore}%
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="
-                    px-3 py-2
-                    rounded-2xl
-                    bg-sky-500/10
-                    border border-sky-500/20
-                  ">
-                    <span className="
-                      text-xs
-                      font-bold
-                      text-sky-300
-                    ">
-                      Đáng tin cậy cao
-                    </span>
-                  </div>
-
-                </div>
-              </div>
-
-              {/* ACHIEVEMENTS */}
-              {achievements.length > 0 && (
-
-                <div className="mt-5">
-
-                  <p className="
-                    text-xs
-                    font-bold
-                    uppercase
-                    tracking-[0.18em]
-                    text-zinc-500
-                    mb-3
-                  ">
-                    Thành tựu
-                  </p>
-
-                  <div className="
-                    flex flex-wrap gap-2
-                  ">
-
-                    {achievements.map((item, i) => (
-
-                      <motion.div
-                        key={i}
-                        whileHover={{ y: -2 }}
-                        className="
-                          px-3 py-2
-                          rounded-2xl
-                          bg-white/[0.05]
-                          border border-white/10
-                          text-sm
-                          font-semibold
-                          text-zinc-200
-                          flex items-center gap-2
-                        "
-                      >
-                        <span>{item.icon}</span>
-
-                        <span>
-                          {item.label}
-                        </span>
-                      </motion.div>
-
-                    ))}
-
-                  </div>
-                </div>
-              )}
-
-            </div>
-          </motion.div>
-
-          {/* STATS */}
-          <div className="
-            grid grid-cols-3
-            gap-3 mt-5
-          ">
-
-            <motion.div
-              whileHover={{ y: -2 }}
-              className="
-                rounded-3xl
-                border border-white/10
-                bg-white/[0.06]
-                backdrop-blur-xl
-                p-4
-                text-center
-              "
-            >
-
-              <div className="
-                flex items-center justify-center
-                gap-1
-                text-yellow-400 mb-2
-              ">
-                <Star className="
-                  w-4 h-4 fill-current
-                " />
-
-                <span className="
-                  text-2xl
-                  font-black
-                  tracking-[-0.03em]
-                ">
-                  {rating || 0}
-                </span>
-              </div>
-
-              <p className="
-                text-xs
-                text-zinc-400
-              ">
-                {reviews} đánh giá
-              </p>
-
-            </motion.div>
-
-            <motion.div
-              whileHover={{ y: -2 }}
-              className="
-                rounded-3xl
-                border border-white/10
-                bg-white/[0.06]
-                backdrop-blur-xl
-                p-4
-                text-center
-              "
-            >
-
-              <div className="
-                flex items-center justify-center
-                gap-1
-                text-sky-400 mb-2
-              ">
-                <Briefcase className="
-                  w-4 h-4
-                " />
-
-                <span className="
-                  text-2xl
-                  font-black
-                  tracking-[-0.03em]
-                ">
-                  {completed}
-                </span>
-              </div>
-
-              <p className="
-                text-xs
-                text-zinc-400
-              ">
-                Hoàn thành
-              </p>
-
-            </motion.div>
-
-            <motion.div
-              whileHover={{ y: -2 }}
-              className="
-                rounded-3xl
-                border border-white/10
-                bg-white/[0.06]
-                backdrop-blur-xl
-                p-4
-                text-center
-              "
-            >
-
-              <div className="
-                flex items-center justify-center
-                gap-1
-                text-emerald-400 mb-2
-              ">
-                <Zap className="
-                  w-4 h-4
-                " />
-
-                <span className="
-                  text-2xl
-                  font-black
-                  tracking-[-0.03em]
-                ">
-                  {responseRate}%
-                </span>
-              </div>
-
-              <p className="
-                text-xs
-                text-zinc-400
-              ">
-                Phản hồi
-              </p>
-
-            </motion.div>
-
-          </div>
-                    {/* PROFILE COMPLETION */}
-          <motion.div
-            whileHover={{ y: -2 }}
-            className="
-              mt-5
-              rounded-[30px]
-              border border-white/10
-              bg-white/[0.05]
-              backdrop-blur-xl
-              p-5
-            "
-          >
-
-            <div className="
-              flex items-center justify-between
-            ">
-
-              <div>
-
-                <p className="
-                  text-xs
-                  font-semibold
-                  text-zinc-500
-                  uppercase
-                  tracking-[0.14em]
-                ">
-                  Hồ sơ
-                </p>
-
-                <h3 className="
-                  mt-1
-                  text-xl
-                  font-black
-                  tracking-[-0.03em]
-                ">
-                  Hoàn thiện {profileCompletion}%
-                </h3>
-
-              </div>
-
-              <Activity className="
-                w-8 h-8
-                text-sky-400
-              " />
-
-            </div>
-
-            <div className="
-              mt-4
-              h-3
-              rounded-full
-              overflow-hidden
-              bg-white/5
-            ">
-
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{
-                  width: `${profileCompletion}%`
-                }}
-                transition={{ duration: 1 }}
-                className="
-                  h-full rounded-full
-                  bg-gradient-to-r
-                  from-sky-400
-                  via-blue-500
-                  to-indigo-500
-                "
-              />
-
-            </div>
-
-          </motion.div>
-
-          {/* SKILLS */}
-          {targetUser?.skills &&
-            targetUser?.skills.length > 0 && (
-
-            <div className="mt-5">
-
-              <div className="
-                flex items-center justify-between
-                mb-3
-              ">
-
-                <p className="
-                  text-xs
-                  font-bold
-                  uppercase
-                  tracking-[0.18em]
-                  text-zinc-500
-                ">
-                  Kỹ năng
-                </p>
-
-                <ChevronRight className="
-                  w-4 h-4
-                  text-zinc-600
-                " />
-
-              </div>
-
-              <div className="
-                flex flex-wrap gap-2
-              ">
-
-                {targetUser?.skills.map((skill) => (
-
-                  <motion.div
-                    key={skill}
-                    whileHover={{
-                      scale: 1.03,
-                      y: -2,
-                    }}
-                    className="
-                      px-4 py-2.5
-                      rounded-2xl
-                      border border-white/10
-                      bg-white/[0.05]
-                      backdrop-blur-xl
-                      text-sm
-                      font-semibold
-                      text-zinc-200
-                    "
-                  >
-                    {skill}
-                  </motion.div>
-
-                ))}
-
-              </div>
-            </div>
-          )}
-
-          {/* PORTFOLIO */}
-          {targetUser?.portfolio &&
-            targetUser?.portfolio.length > 0 && (
-
-            <div className="mt-6">
-
-              <div className="
-                flex items-center justify-between
-                mb-3
-              ">
-
-                <p className="
-                  text-xs
-                  font-bold
-                  uppercase
-                  tracking-[0.18em]
-                  text-zinc-500
-                ">
-                  Portfolio
-                </p>
-
-                <ChevronRight className="
-                  w-4 h-4
-                  text-zinc-600
-                " />
-
-              </div>
-
-              <div className="space-y-3">
-
-                {targetUser?.portfolio
-                  .slice(0, 4)
-                  .map((item, i) => (
-
-                  <motion.a
-                    key={i}
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-
-                    whileHover={{ y: -2 }}
-
-                    className="
-                      group
-                      flex items-center justify-between
-                      rounded-[28px]
-                      border border-white/10
-                      bg-white/[0.05]
-                      backdrop-blur-xl
-                      p-5
-                    "
-                  >
-
-                    <div>
-
-                      <p className="
-                        text-base
-                        font-bold
-                        text-white
-                      ">
-                        {item.title}
-                      </p>
-
-                      <p className="
-                        text-xs
-                        text-zinc-500
-                        mt-1
-                      ">
-                        Portfolio project
-                      </p>
-
-                    </div>
-
-                    <div className="
-                      w-11 h-11
-                      rounded-2xl
-                      bg-white/5
-                      border border-white/10
-                      flex items-center justify-center
-                    ">
-
-                      <ExternalLink className="
-                        w-4 h-4
-                        text-zinc-400
-                      " />
-
-                    </div>
-
-                  </motion.a>
-
-                ))}
-
-              </div>
-            </div>
-          )}
-
-          {/* ACTIONS */}
           {!isOwnProfile && (
-
-            <div className="
-              mt-7
-              space-y-3
-            ">
-
-              {isFriend ? (
-                <>
-
-                  <motion.button
-                    whileTap={{
-                      scale: 0.98
-                    }}
-
-                    onClick={() =>
-                      router.push(`/chat/${targetUser?.uid}`)
-                    }
-
-                    className={`
-                      w-full h-14
-                      rounded-[26px]
-                      bg-gradient-to-r ${rank.gradient}
-                      text-white
-                      font-black
-                      tracking-[-0.02em]
-                      shadow-2xl ${rank.glow}
-                      flex items-center justify-center
-                      gap-2
-                    `}
-                  >
-
-                    <MessageCircle size={20} />
-
-                    Nhắn tin
-
-                  </motion.button>
-
-                  <motion.button
-                    whileTap={{
-                      scale: 0.98
-                    }}
-
-                    onClick={handleUnfriend}
-
-                    disabled={actionLoading}
-
-                    className="
-                      w-full h-14
-                      rounded-[26px]
-                      border border-white/10
-                      bg-white/[0.05]
-                      backdrop-blur-xl
-                      text-white
-                      font-bold
-                      flex items-center justify-center
-                      gap-2
-                    "
-                  >
-
-                    <UserMinus size={18} />
-
-                    Hủy kết nối
-
-                  </motion.button>
-
-                </>
-              ) : (
-
-                <motion.button
-                  whileTap={{
-                    scale: 0.98
-                  }}
-
-                  onClick={handleConnect}
-
-                  disabled={actionLoading}
-
-                  className={`
-                    w-full h-14
-                    rounded-[26px]
-                    bg-gradient-to-r ${rank.gradient}
-                    text-white
-                    font-black
-                    tracking-[-0.02em]
-                    shadow-2xl ${rank.glow}
-                    flex items-center justify-center
-                    gap-2
-                  `}
-                >
-
-                  <UserPlus size={20} />
-
-                  {actionLoading
-                    ? "Đang kết nối..."
-                    : "Mời nhận việc"}
-
-                </motion.button>
-
-              )}
-
-            </div>
+            <button
+              onClick={() => setShowMore(!showMore)}
+              className="w-9 h-9 rounded-xl bg-zinc-100 border border-zinc-200 flex items-center justify-center active:scale-95 transition-all"
+            >
+              <MoreVertical className="w-5 h-5 text-zinc-700" />
+            </button>
           )}
-
-          {/* REPORT */}
-          <AnimatePresence>
-            {showMore && !isOwnProfile && (
-
-              <motion.div
-                initial={{
-                  opacity: 0,
-                  y: 10,
-                }}
-
-                animate={{
-                  opacity: 1,
-                  y: 0,
-                }}
-
-                exit={{
-                  opacity: 0,
-                  y: 10,
-                }}
-
-                className="
-                  mt-4
-                  rounded-[28px]
-                  border border-red-500/20
-                  bg-red-500/10
-                  backdrop-blur-xl
-                  p-2
-                "
-              >
-
-                <button
-                  className="
-                    w-full
-                    flex items-center gap-3
-                    px-4 py-4
-                    rounded-2xl
-                    text-red-400
-                    font-bold
-                  "
-                >
-
-                  <Flag className="
-                    w-5 h-5
-                  " />
-
-                  Báo cáo người dùng
-
-                </button>
-
-              </motion.div>
-
-            )}
-          </AnimatePresence>
-
         </div>
       </div>
-
     </div>
 
-  
+    <div className="px-4 py-5">
+      <div className="max-w-md mx-auto space-y-4">
+        {/* HERO CARD */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="relative overflow-hidden rounded-3xl border border-zinc-200/80 bg-white shadow-sm"
+        >
+          {/* cover */}
+          <div className={`relative h-24 bg-gradient-to-br ${rank.gradient}`} />
+
+          {/* Avatar */}
+          <div className="absolute top-12 left-1/2 -translate-x-1/2">
+            <div className="relative">
+              <img
+                src={
+                  targetUser?.avatar ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    targetUser?.name || "User"
+                  )}&size=200`
+                }
+                alt=""
+                className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md"
+              />
+              {targetUser?.online && (
+                <div className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-500 border-[3px] border-white" />
+              )}
+            </div>
+          </div>
+
+          {/* CONTENT */}
+          <div className="px-5 pt-14 pb-5">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1.5">
+                <h1 className="text-xl font-bold text-zinc-900">
+                  {targetUser?.name || "Unknown User"}
+                </h1>
+                {targetUser?.emailVerified && (
+                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center">
+                    <Check className="w-3 h-3 text-white stroke-[3]" />
+                  </div>
+                )}
+              </div>
+
+              {targetUser?.title && (
+                <p className="mt-1 text-sm text-zinc-600">
+                  {targetUser?.title}
+                </p>
+              )}
+
+              {/* LEVEL */}
+              <div className="flex justify-center mt-3">
+                <div
+                  className={`px-3 py-1.5 rounded-full bg-gradient-to-r ${rank.gradient} text-white flex items-center gap-1.5 shadow-sm ${rank.glow}`}
+                >
+                  {rank.icon}
+                  <span className="font-semibold text-xs">{rank.name}</span>
+                  <div className="px-1.5 py-0.5 rounded-full bg-white/25 text-xs font-bold">
+                    Lv.{level}
+                  </div>
+                </div>
+              </div>
+
+              {/* USERNAME */}
+              <div className="flex items-center justify-center gap-2 mt-3 text-sm text-zinc-500">
+                <span>@{targetUser?.userId}</span>
+                {targetUser?.location && (
+                  <>
+                    <span>•</span>
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5" />
+                      <span>{targetUser?.location}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* STATUS */}
+              <div className="mt-3 flex justify-center">
+                {targetUser?.online? (
+                  <div className="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    Đang hoạt động
+                  </div>
+                ) : (
+                  <div className="px-2.5 py-1 rounded-full bg-zinc-100 border border-zinc-200 text-zinc-600 text-xs font-medium flex items-center gap-1.5">
+                    <Clock className="w-3 h-3" />
+                    Hoạt động {formatLastSeen(targetUser?.lastSeen)}
+                  </div>
+                )}
+              </div>
+
+              {/* BIO */}
+              {targetUser?.bio && (
+                <p className="mt-4 text-sm leading-6 text-zinc-600">
+                  {targetUser?.bio}
+                </p>
+              )}
+            </div>
+
+            {/* XP */}
+            <div className="mt-5">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-medium text-zinc-500">
+                  Tiến trình level
+                </span>
+                <span className="text-xs font-semibold text-zinc-700">
+                  {currentLevelXP}/140 XP
+                </span>
+              </div>
+              <div className="h-2 rounded-full bg-zinc-100 overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.8 }}
+                  className={`h-full rounded-full bg-gradient-to-r ${rank.gradient}`}
+                />
+              </div>
+            </div>
+    {/* TRUST SCORE */}
+<div className="mt-5 rounded-3xl border border-zinc-200/80 bg-white p-4 shadow-sm">
+  <div className="flex items-center justify-between">
+    <div>
+      <p className="text-xs text-zinc-500 font-medium">Độ uy tín</p>
+      <div className="flex items-center gap-2 mt-1">
+        <Shield className="w-5 h-5 text-blue-500" />
+        <span className="text-2xl font-bold text-zinc-900">
+          {trustScore}%
+        </span>
+      </div>
+    </div>
+    <div className="px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200">
+      <span className="text-xs font-semibold text-blue-600">
+        {trustScore >= 80
+          ? "Đáng tin cậy cao"
+          : trustScore >= 50
+          ? "Khá tin cậy"
+          : "Mới"}
+      </span>
+    </div>
+  </div>
+</div>
+
+{/* ACHIEVEMENTS */}
+{achievements.length > 0 && (
+  <div className="mt-5">
+    <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2.5 px-1">
+      Thành tựu
+    </p>
+    <div className="flex flex-wrap gap-2">
+      {achievements.map((item, i) => (
+        <div
+          key={i}
+          className="px-3 py-2 rounded-2xl bg-white border border-zinc-200/80 text-sm font-medium text-zinc-700 flex items-center gap-2 shadow-sm"
+        >
+          <span>{item.icon}</span>
+          <span>{item.label}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+</div>
+</motion.div>
+
+{/* STATS */}
+<div className="grid grid-cols-3 gap-3 mt-5">
+  <div className="rounded-3xl border border-zinc-200/80 bg-white p-4 text-center shadow-sm">
+    <div className="flex items-center justify-center gap-1 text-amber-500 mb-1">
+      <Star className="w-4 h-4 fill-current" />
+      <span className="text-xl font-bold">{rating || 0}</span>
+    </div>
+    <p className="text-xs text-zinc-500">{reviews} đánh giá</p>
+  </div>
+
+  <div className="rounded-3xl border border-zinc-200/80 bg-white p-4 text-center shadow-sm">
+    <div className="flex items-center justify-center gap-1 text-blue-500 mb-1">
+      <Briefcase className="w-4 h-4" />
+      <span className="text-xl font-bold">{completed}</span>
+    </div>
+    <p className="text-xs text-zinc-500">Hoàn thành</p>
+  </div>
+
+  <div className="rounded-3xl border border-zinc-200/80 bg-white p-4 text-center shadow-sm">
+    <div className="flex items-center justify-center gap-1 text-emerald-500 mb-1">
+      <Zap className="w-4 h-4" />
+      <span className="text-xl font-bold">{responseRate}%</span>
+    </div>
+    <p className="text-xs text-zinc-500">Phản hồi</p>
+  </div>
+</div>
+
+{/* PROFILE COMPLETION */}
+<div className="mt-5 rounded-3xl border border-zinc-200/80 bg-white p-4 shadow-sm">
+  <div className="flex items-center justify-between">
+    <div>
+      <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+        Hồ sơ
+      </p>
+      <h3 className="mt-0.5 text-lg font-bold text-zinc-900">
+        Hoàn thiện {profileCompletion}%
+      </h3>
+    </div>
+    <Activity className="w-7 h-7 text-blue-500" />
+  </div>
+  <div className="mt-3 h-2 rounded-full overflow-hidden bg-zinc-100">
+    <motion.div
+      initial={{ width: 0 }}
+      animate={{ width: `${profileCompletion}%` }}
+      transition={{ duration: 0.8 }}
+      className="h-full rounded-full bg-gradient-to-r from-blue-400 to-blue-600"
+    />
+  </div>
+</div>
+
+{/* SKILLS */}
+{targetUser?.skills && targetUser?.skills.length > 0 && (
+  <div className="mt-5">
+    <div className="flex items-center justify-between mb-2.5">
+      <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 px-1">
+        Kỹ năng
+      </p>
+      <ChevronRight className="w-4 h-4 text-zinc-400" />
+    </div>
+    <div className="flex flex-wrap gap-2">
+      {targetUser?.skills.map((skill) => (
+        <div
+          key={skill}
+          className="px-3.5 py-2 rounded-2xl border border-zinc-200/80 bg-white text-sm font-medium text-zinc-700 shadow-sm"
+        >
+          {skill}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+{/* PORTFOLIO */}
+{targetUser?.portfolio && targetUser?.portfolio.length > 0 && (
+  <div className="mt-6">
+    <div className="flex items-center justify-between mb-2.5">
+      <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 px-1">
+        Portfolio
+      </p>
+      <ChevronRight className="w-4 h-4 text-zinc-400" />
+    </div>
+    <div className="space-y-2.5">
+      {targetUser?.portfolio.slice(0, 4).map((item, i) => (
+        <a
+          key={i}
+          href={item.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex items-center justify-between rounded-3xl border border-zinc-200/80 bg-white p-4 shadow-sm active:scale-[0.98] transition-all"
+        >
+          <div>
+            <p className="text-sm font-semibold text-zinc-900">
+              {item.title}
+            </p>
+            <p className="text-xs text-zinc-500 mt-0.5">Portfolio project</p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-zinc-50 border border-zinc-200 flex items-center justify-center">
+            <ExternalLink className="w-4 h-4 text-zinc-400" />
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>
+)}
+
+{/* ACTIONS */}
+{!isOwnProfile && (
+  <div className="mt-6 space-y-2.5">
+    {isFriend ? (
+      <>
+        <button
+          onClick={() => router.push(`/chat/${targetUser?.uid}`)}
+          className={`w-full h-12 rounded-2xl bg-gradient-to-r ${rank.gradient} text-white font-semibold shadow-sm ${rank.glow} flex items-center justify-center gap-2 active:scale-[0.98] transition-all`}
+        >
+          <MessageCircle size={18} />
+          Nhắn tin
+        </button>
+        <button
+          onClick={handleUnfriend}
+          disabled={actionLoading}
+          className="w-full h-12 rounded-2xl border border-zinc-200 bg-white text-zinc-700 font-semibold flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all disabled:opacity-50"
+        >
+          <UserMinus size={18} />
+          Hủy kết nối
+        </button>
+      </>
+    ) : (
+      <button
+        onClick={handleConnect}
+        disabled={actionLoading}
+        className={`w-full h-12 rounded-2xl bg-gradient-to-r ${rank.gradient} text-white font-semibold shadow-sm ${rank.glow} flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50`}
+      >
+        <UserPlus size={18} />
+        {actionLoading ? "Đang kết nối..." : "Mời nhận việc"}
+      </button>
+    )}
+  </div>
+)}
+
+{/* REPORT */}
+<AnimatePresence>
+  {showMore && !isOwnProfile && (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 8 }}
+      className="mt-3 rounded-3xl border border-red-200 bg-red-50 p-1.5"
+    >
+      <button className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl text-red-600 font-semibold text-sm">
+        <Flag className="w-5 h-5" />
+        Báo cáo người dùng
+      </button>
+    </motion.div>
+  )}
+</AnimatePresence>
+
+        </div>
+      </div>
+    </div>
   );
 }
