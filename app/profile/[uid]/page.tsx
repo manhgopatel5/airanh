@@ -529,7 +529,32 @@ return (
           transition={{ duration: 0.3 }}
           className="relative overflow-hidden rounded-3xl border border-zinc-200/80 bg-white shadow-sm"
         >
-       
+       {/* THÊM ĐOẠN NÀY */}
+  <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
+    <button
+      onClick={() => router.back()}
+      className="w-9 h-9 rounded-xl bg-white border border-zinc-200 flex items-center justify-center active:scale-95 transition-all shadow-sm"
+    >
+      <ArrowLeft className="w-5 h-5 text-zinc-700" />
+    </button>
+
+    <div className="flex items-center gap-2">
+      <button
+        onClick={handleShare}
+        className="w-9 h-9 rounded-xl bg-white border border-zinc-200 flex items-center justify-center active:scale-95 transition-all shadow-sm"
+      >
+        <Share2 className="w-5 h-5 text-zinc-700" />
+      </button>
+      {!isOwnProfile && (
+        <button
+          onClick={() => setShowMore(!showMore)}
+          className="w-9 h-9 rounded-xl bg-white border border-zinc-200 flex items-center justify-center active:scale-95 transition-all shadow-sm"
+        >
+          <MoreVertical className="w-5 h-5 text-zinc-700" />
+        </button>
+      )}
+    </div>
+  </div>
 
           {/* Avatar */}
          <div className="flex justify-center -mt-12">
