@@ -518,19 +518,22 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
       <div className="max-w-xl mx-auto bg-[#F2F2F7] dark:bg-black min-h-screen pb-4 px-3 pt-2">
         <div className="bg-white dark:bg-zinc-900 rounded-3xl border-zinc-100 dark:border-zinc-800 shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden">
           <div className="p-5">
-            <div className="flex gap-3 items-start">
-              <div className="relative shrink-0">
-                <UserAvatar src={owner?.avatar} name={owner?.name} size={56} />
-                {owner?.rating && owner.rating >= 4.8 && (
-                  <div className="absolute -bottom-1 -right-1 bg-[#00A86B] rounded-full p-0.5">
-                    <FiCheckCircle className="text-white" size={14} />
-                  </div>
-                )}
-              </div>
+           <div className="flex gap-3 items-start">
+  <Link href={`/profile/${task.userId}`} className="relative shrink-0 active:opacity-70 transition-opacity">
+    <UserAvatar src={owner?.avatar} name={owner?.name} size={56} />
+    {owner?.rating && owner.rating >= 4.8 && (
+      <div className="absolute -bottom-1 -right-1 bg-[#00A86B] rounded-full p-0.5">
+        <FiCheckCircle className="text-white" size={14} />
+      </div>
+    )}
+  </Link>
 
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="font-semibold text-sm text-[#1C1C1E] truncate">{owner?.name || "Minh Tran"}</span>
+  <div className="flex-1 min-w-0">
+    <div className="flex items-center justify-between gap-2 mb-1">
+      <Link href={`/profile/${task.userId}`} className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100 truncate active:opacity-70 transition-opacity">
+        {owner?.name || "Minh Tran"}
+      </Link>
+      
                   <div className="flex items-center gap-2.5 shrink-0">
                     {!isOwner && (
                       <motion.button
