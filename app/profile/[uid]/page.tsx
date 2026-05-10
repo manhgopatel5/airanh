@@ -119,6 +119,20 @@ export default function PublicProfile() {
 
   const [loading, setLoading] =
     useState(true);
+const isOwnProfile =
+  user?.uid === targetUser?.uid;
+
+const completed =
+  targetUser?.stats?.completed || 0;
+
+const reviews =
+  targetUser?.stats?.totalReviews || 0;
+
+const rating =
+  targetUser?.stats?.rating || 0;
+
+const responseRate =
+  targetUser?.stats?.responseRate || 98;
 
   const [actionLoading, setActionLoading] =
     useState(false);
@@ -438,20 +452,7 @@ export default function PublicProfile() {
 
   if (!targetUser) return null;
 
-  const isOwnProfile =
-    user?.uid === targetUser.uid;
-
-  const completed =
-    targetUser.stats?.completed || 0;
-
-  const reviews =
-    targetUser.stats?.totalReviews || 0;
-
-  const rating =
-    targetUser.stats?.rating || 0;
-
-  const responseRate =
-    targetUser.stats?.responseRate || 98;
+ 
 
   const xp =
     completed * 12 +
