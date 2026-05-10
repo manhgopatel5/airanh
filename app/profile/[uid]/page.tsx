@@ -517,34 +517,7 @@ const xp =
     };
 
   })();
-
   const achievements = useMemo<
-  { icon: string; label: string }[]
->(() => {
-
-    const arr: {
-  icon: string;
-  label: string;
-}[] = [];
-
-    if (rating >= 4.8) {
-      arr.push({
-        icon: "⭐",
-        label: "Đánh giá xuất sắc",
-      });
-    }
-
-    if (responseRate >= 95) {
-      arr.push({
-        icon: "⚡",
-        label: "Phản hồi siêu nhanh",
-      });
-    }
-
-    if (completed >= 25) {
-      arr.push({
-        icon: "🏆",
-        label: "Hoàn thành const achievements = useMemo<
   { icon: string; label: string }[]
 >(() => {
 
@@ -599,6 +572,7 @@ const xp =
 ]);
   
   if (loading) {
+
 
     return (
       <div className="
