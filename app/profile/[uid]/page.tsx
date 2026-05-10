@@ -383,49 +383,7 @@ const xp =
       ) * 100
     );
 
-  // SAI - DÒNG 503-540
-const rank: RankData = useMemo(() => {
-  if (level >= 50) {
-    return {
-      name: "Huyền thoại",
-      icon: <Crown className="w-4 h-4" />,
-      gradient: "from-yellow-400 via-orange-400 to-amber-500", // OK
-      glow: "shadow-yellow-500/40", // ĐẬM QUÁ
-    };
-  }
-  if (level >= 35) {
-    return {
-      name: "Chuyên gia",
-      icon: <Gem className="w-4 h-4" />,
-      gradient: "from-violet-500 via-fuchsia-500 to-pink-500", // OK
-      glow: "shadow-fuchsia-500/30", // ĐẬM QUÁ
-    };
-  }
-  if (level >= 20) {
-    return {
-      name: "Đối tác uy tín",
-      icon: <Shield className="w-4 h-4" />,
-      gradient: "from-sky-500 via-blue-500 to-indigo-600", // OK
-      glow: "shadow-blue-500/30", // ĐẬM QUÁ
-    };
-  }
-  if (level >= 8) {
-    return {
-      name: "Đang phát triển",
-      icon: <Flame className="w-4 h-4" />,
-      gradient: "from-green-500 via-emerald-500 to-teal-500", // OK
-      glow: "shadow-green-500/30", // ĐẬM QUÁ
-    };
-  }
-  return {
-    name: "Mới tham gia",
-    icon: <Sparkles className="w-4 h-4" />,
-    gradient: "from-zinc-500 via-zinc-600 to-zinc-700", // XẤU VỚI LIGHT
-    glow: "shadow-zinc-500/20",
-  };
-}, [level]);
-
-// SỬA THÀNH
+  
 const rank: RankData = useMemo(() => {
   if (level >= 50) {
     return {
