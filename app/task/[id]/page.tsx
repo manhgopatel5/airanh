@@ -700,7 +700,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
               {/* 2 khung: Ngày đăng - Hạn chót */}
 <div className="flex items-center gap-3 mt-4">
   {/* 1. Ngày đăng */}
-  <div className="flex-1 px-4 py-3.5 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800/60 border border-[#E5E5E7] dark:border-zinc-700">
+  <div className="flex-1 px-3 py-3.5 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800/60 border border-[#E5E5E7] dark:border-zinc-700">
     <div className="flex items-center justify-center gap-2.5">
       <FiCalendar size={18} className="shrink-0 text-[#8E8E93]" />
       <div className="text-center">
@@ -713,7 +713,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
   </div>
 
   {/* 2. Hạn chót */}
-  <div className="flex-1 px-4 py-3.5 rounded-2xl bg-[#FFE5E5] dark:bg-[#FF3B30]/10 border border-[#FECACA] dark:border-[#FF3B30]/30">
+  <div className="flex-1 px-3 py-3.5 rounded-2xl bg-[#FFE5E5] dark:bg-[#FF3B30]/10 border border-[#FECACA] dark:border-[#FF3B30]/30">
     <div className="flex items-center justify-center gap-2.5">
       <FiClock size={18} className="shrink-0 text-[#FF3B30]" />
       <div className="text-center">
@@ -730,99 +730,97 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
 
 <div className="pt-3 pb-2">
   {isOwner? (
-    <div ref={appsRef} className="rounded-3xl bg-white dark:bg-zinc-900 border border-white dark:border-zinc-800 shadow-[0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] overflow-hidden">
-      <div className="px-5 py-4">
-        <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
-          Ứng viên ({applications.length})
-        </h3>
-      </div>
+   <div ref={appsRef} className="rounded-3xl bg-white dark:bg-zinc-900 border border-white dark:border-zinc-800 shadow-[0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] overflow-hidden">
+  <div className="px-5 py-4 flex items-center justify-between">
+    <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
+      Ứng viên ({applications.length})
+    </h3>
+    {applications.length > 1 && (
+      <button
+        onClick={() => setShowAllApps(!showAllApps)}
+        className="text-sm font-semibold text-[#0a84ff] active:opacity-60 transition-opacity"
+      >
+        {showAllApps? 'Thu gọn' : 'Xem tất cả'} ›
+      </button>
+    )}
+  </div>
 
-      {applications.length === 0? (
-        <div className="px-5 pb-12 text-center">
-          <p className="text-sm text-[#8E8E93] dark:text-zinc-500">
-            Chưa có ai ứng tuyển
-          </p>
-        </div>
-      ) : (
-        <div className="divide-y divide-[#F2F2F7] dark:divide-zinc-800">
-          {(showAllApps? applications : applications.slice(0, 1)).map(app => (
-            <motion.div 
-              key={app.id} 
-              layout
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex items-center justify-between gap-3 px-5 py-3.5"
-            >
-              <Link
-                href={`/profile/${app.userId}`}
-                className="flex items-center gap-3 min-w-0 flex-1 active:opacity-70"
-              >
-                <UserAvatar src={app.userAvatar} name={app.userName} size={44} />
-                <div className="min-w-0">
-                  <p className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100 truncate">
-                    {app.userName}
-                  </p>
-                  <p className="text-xs text-[#8E8E93] dark:text-zinc-500">
-                    {app.createdAt?.toDate? app.createdAt.toDate().toLocaleDateString('vi-VN') : 'Vừa xong'}
-                  </p>
-                </div>
-              </Link>
-
-              <div className="flex gap-1.5 shrink-0">
-                <motion.button
-                  whileTap={{ scale: 0.88 }}
-                  whileHover={{ y: -1 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigator.vibrate?.(8);
-                    handleMessageApp(app.userId);
-                  }}
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-[#0a84ff] hover:bg-[#0a84ff]/8 active:bg-[#0a84ff]/15 transition-all"
-                >
-                  <FiMessageSquare size={19} strokeWidth={2.2} />
-                </motion.button>
-                
-                <motion.button
-                  whileTap={{ scale: 0.88 }}
-                  whileHover={{ y: -1 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigator.vibrate?.(8);
-                    handleAcceptApp(app.id, app.userId);
-                  }}
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-[#00A86B] hover:bg-[#00A86B]/8 active:bg-[#00A86B]/15 transition-all"
-                >
-                  <FiCheck size={21} strokeWidth={2.8} />
-                </motion.button>
-                
-                <motion.button
-                  whileTap={{ scale: 0.88 }}
-                  whileHover={{ y: -1 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigator.vibrate?.(8);
-                    handleRejectApp(app.id);
-                  }}
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-[#FF3B30] hover:bg-[#FF3B30]/8 active:bg-[#FF3B30]/15 transition-all"
-                >
-                  <FiX size={21} strokeWidth={2.8} />
-                </motion.button>
-              </div>
-            </motion.div>
-          ))}
-
-          {applications.length > 1 && (
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setShowAllApps(!showAllApps)}
-              className="w-full px-5 py-3 text-sm font-semibold text-[#0a84ff] hover:bg-[#F2F2F7] dark:hover:bg-zinc-800 active:bg-[#E5E5EA] dark:active:bg-zinc-700 transition-all"
-            >
-              {showAllApps? 'Thu gọn' : `Xem thêm ${applications.length - 1} ứng viên`}
-            </motion.button>
-          )}
-        </div>
-      )}
+  {applications.length === 0? (
+    <div className="px-5 pb-12 text-center">
+      <p className="text-sm text-[#8E8E93] dark:text-zinc-500">
+        Chưa có ai ứng tuyển
+      </p>
     </div>
+  ) : (
+    <div className="divide-y divide-[#F2F2F7] dark:divide-zinc-800">
+      {(showAllApps? applications : applications.slice(0, 1)).map(app => (
+        <motion.div 
+          key={app.id} 
+          layout
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex items-center justify-between gap-3 px-5 py-3.5"
+        >
+          <Link
+            href={`/profile/${app.userId}`}
+            className="flex items-center gap-3 min-w-0 flex-1 active:opacity-70"
+          >
+            <UserAvatar src={app.userAvatar} name={app.userName} size={44} />
+            <div className="min-w-0">
+              <p className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100 truncate">
+                {app.userName}
+              </p>
+              <p className="text-xs text-[#8E8E93] dark:text-zinc-500">
+                {app.createdAt?.toDate? app.createdAt.toDate().toLocaleDateString('vi-VN') : 'Vừa xong'}
+              </p>
+            </div>
+          </Link>
+
+          <div className="flex gap-1.5 shrink-0">
+            <motion.button
+              whileTap={{ scale: 0.88 }}
+              whileHover={{ y: -1 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                navigator.vibrate?.(8);
+                handleMessageApp(app.userId);
+              }}
+              className="w-10 h-10 rounded-full flex items-center justify-center text-[#0a84ff] hover:bg-[#0a84ff]/8 active:bg-[#0a84ff]/15 transition-all"
+            >
+              <FiMessageSquare size={19} strokeWidth={2.2} />
+            </motion.button>
+            
+            <motion.button
+              whileTap={{ scale: 0.88 }}
+              whileHover={{ y: -1 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                navigator.vibrate?.(8);
+                handleAcceptApp(app.id, app.userId);
+              }}
+              className="w-10 h-10 rounded-full flex items-center justify-center text-[#00A86B] hover:bg-[#00A86B]/8 active:bg-[#00A86B]/15 transition-all"
+            >
+              <FiCheck size={21} strokeWidth={2.8} />
+            </motion.button>
+            
+            <motion.button
+              whileTap={{ scale: 0.88 }}
+              whileHover={{ y: -1 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                navigator.vibrate?.(8);
+                handleRejectApp(app.id);
+              }}
+              className="w-10 h-10 rounded-full flex items-center justify-center text-[#FF3B30] hover:bg-[#FF3B30]/8 active:bg-[#FF3B30]/15 transition-all"
+            >
+              <FiX size={21} strokeWidth={2.8} />
+            </motion.button>
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  )}
+</div>
   ) : (
     <div className="grid grid-cols-4 gap-2">
       <motion.button
