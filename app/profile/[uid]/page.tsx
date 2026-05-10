@@ -440,7 +440,7 @@ const xp =
       (
         [
          targetUser?.avatar,
-         targetUser?..bio,
+         targetUser?.bio,
          targetUser?.skills?.length,
           targetUser?.portfolio?.length,
           targetUser?.location,
