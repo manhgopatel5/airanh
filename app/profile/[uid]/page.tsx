@@ -453,71 +453,72 @@ const xp =
 
   const rank: RankData = (() => {
 
-    if (level >= 50) {
-      return {
-        name: "Huyền thoại",
-        icon: (
-          <Crown className="w-4 h-4" />
-        ),
-        gradient:
-          "from-yellow-400 via-orange-400 to-amber-500",
-        glow:
-          "shadow-yellow-500/40",
-      };
-    }
-
-    if (level >= 35) {
-      return {
-        name: "Chuyên gia",
-        icon: (
-          <Gem className="w-4 h-4" />
-        ),
-        gradient:
-          "from-violet-500 via-fuchsia-500 to-pink-500",
-        glow:
-          "shadow-fuchsia-500/30",
-      };
-    }
-
-    if (level >= 20) {
-      return {
-        name: "Đối tác uy tín",
-        icon: (
-          <Shield className="w-4 h-4" />
-        ),
-        gradient:
-          "from-sky-500 via-blue-500 to-indigo-600",
-        glow:
-          "shadow-blue-500/30",
-      };
-    }
-
-    if (level >= 8) {
-      return {
-        name: "Đang phát triển",
-        icon: (
-          <Flame className="w-4 h-4" />
-        ),
-        gradient:
-          "from-green-500 via-emerald-500 to-teal-500",
-        glow:
-          "shadow-green-500/30",
-      };
-    }
-
+  if (level >= 50) {
     return {
-      name: "Mới tham gia",
+      name: "Huyền thoại",
       icon: (
-        <Sparkles className="w-4 h-4" />
+        <Crown className="w-4 h-4" />
       ),
       gradient:
-        "from-zinc-500 via-zinc-600 to-zinc-700",
+        "from-yellow-400 via-orange-400 to-amber-500",
       glow:
-        "shadow-zinc-500/20",
+        "shadow-yellow-500/40",
     };
+  }
 
-  })();
-  const achievements = useMemo<
+  if (level >= 35) {
+    return {
+      name: "Chuyên gia",
+      icon: (
+        <Gem className="w-4 h-4" />
+      ),
+      gradient:
+        "from-violet-500 via-fuchsia-500 to-pink-500",
+      glow:
+        "shadow-fuchsia-500/30",
+    };
+  }
+
+  if (level >= 20) {
+    return {
+      name: "Đối tác uy tín",
+      icon: (
+        <Shield className="w-4 h-4" />
+      ),
+      gradient:
+        "from-sky-500 via-blue-500 to-indigo-600",
+      glow:
+        "shadow-blue-500/30",
+    };
+  }
+
+  if (level >= 8) {
+    return {
+      name: "Đang phát triển",
+      icon: (
+        <Flame className="w-4 h-4" />
+      ),
+      gradient:
+        "from-green-500 via-emerald-500 to-teal-500",
+      glow:
+        "shadow-green-500/30",
+    };
+  }
+
+  return {
+    name: "Mới tham gia",
+    icon: (
+      <Sparkles className="w-4 h-4" />
+    ),
+    gradient:
+      "from-zinc-500 via-zinc-600 to-zinc-700",
+    glow:
+      "shadow-zinc-500/20",
+  };
+
+})();
+
+const achievements = useMemo<
   { icon: string; label: string }[]
 >(() => {
 
@@ -570,17 +571,16 @@ const xp =
   trustScore,
   joinedDays,
 ]);
-  
-  if (loading) {
 
+if (loading) {
 
-    return (
-      <div className="
-        min-h-screen
-        bg-[#020617]
-        overflow-hidden
-        relative
-      ">
+  return (
+    <div className="
+      min-h-screen
+      bg-[#020617]
+      overflow-hidden
+      relative
+    ">
 
         <div className="
           absolute inset-0
