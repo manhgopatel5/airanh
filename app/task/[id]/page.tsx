@@ -707,14 +707,14 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
               )}
               
               {/* 2 khung: Ngày đăng - Hạn chót */}
-<div className="flex items-center gap-2.5 mt-4">
+<div className="flex items-center gap-2 mt-4">
   {/* 1. Ngày đăng */}
-  <div className="flex-1 px-2.5 py-3.5 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800/60 border border-[#E5E5E7] dark:border-zinc-700">
-    <div className="flex items-center justify-center gap-2">
-      <FiCalendar size={18} className="shrink-0 text-[#8E8E93]" />
+  <div className="flex-1 px-1.5 py-2.5 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800/60 border border-[#E5E5E7] dark:border-zinc-700">
+    <div className="flex items-center justify-center gap-1">
+      <FiCalendar size={14} className="shrink-0 text-[#8E8E93]" />
       <div className="text-center">
-        <p className="text-xs text-[#8E8E93] leading-none">Ngày đăng</p>
-        <p className="text-sm font-semibold text-[#1C1C1E] dark:text-zinc-100 tabular-nums leading-none mt-1">
+        <p className="text- text-[#8E8E93] leading-none">Ngày đăng</p>
+        <p className="text-xs font-semibold text-[#1C1C1E] dark:text-zinc-100 tabular-nums leading-none mt-0.5">
           {taskDate}
         </p>
       </div>
@@ -722,12 +722,12 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
   </div>
 
   {/* 2. Hạn chót */}
-  <div className="flex-1 px-2.5 py-3.5 rounded-2xl bg-[#FFE5E5] dark:bg-[#FF3B30]/10 border border-[#FECACA] dark:border-[#FF3B30]/30">
-    <div className="flex items-center justify-center gap-2">
-      <FiClock size={18} className="shrink-0 text-[#FF3B30]" />
+  <div className="flex-1 px-1.5 py-2.5 rounded-xl bg-[#FFE5E5] dark:bg-[#FF3B30]/10 border border-[#FECACA] dark:border-[#FF3B30]/30">
+    <div className="flex items-center justify-center gap-1">
+      <FiClock size={14} className="shrink-0 text-[#FF3B30]" />
       <div className="text-center">
-        <p className="text-xs text-[#FF3B30] leading-none">Hạn chót</p>
-        <p className="text-sm font-semibold text-[#FF3B30] tabular-nums leading-none mt-1">
+        <p className="text- text-[#FF3B30] leading-none">Hạn chót</p>
+        <p className="text-xs font-semibold text-[#FF3B30] tabular-nums leading-none mt-0.5">
           {taskDeadline || "Chưa có"}
         </p>
       </div>
@@ -762,76 +762,68 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
     </div>
   ) : (
     <div className="divide-y divide-[#F2F2F7] dark:divide-zinc-800">
-      {(showAllApps? applications : applications.slice(0, 1)).map(app => (
-        <div key={app.id}>
-          <motion.div 
-            layout
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="px-5 py-3"
-          >
-            <Link
-              href={`/profile/${app.userId}`}
-              className="flex items-center gap-3 active:opacity-70 mb-2.5"
-            >
-              <UserAvatar src={app.userAvatar} name={app.userName} size={40} />
-              <div className="min-w-0">
-                <p className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100 truncate">
-                  {app.userName}
-                </p>
-                <p className="text-xs text-[#8E8E93] dark:text-zinc-500">
-                  {app.createdAt?.toDate? app.createdAt.toDate().toLocaleDateString('vi-VN') : 'Vừa xong'} • Nộp {timeAgo(app.createdAt)}
-                </p>
-              </div>
-            </Link>
+     {(showAllApps? applications : applications.slice(0, 1)).map(app => (
+  <motion.div 
+    key={app.id} 
+    layout
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    className="flex items-center justify-between gap-3 px-5 py-3"
+  >
+    <Link
+      href={`/profile/${app.userId}`}
+      className="flex items-center gap-3 min-w-0 flex-1 active:opacity-70"
+    >
+      <UserAvatar src={app.userAvatar} name={app.userName} size={40} />
+      <div className="min-w-0">
+        <p className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100 truncate">
+          {app.userName}
+        </p>
+        <p className="text-xs text-[#8E8E93] dark:text-zinc-500">
+          {app.createdAt?.toDate? app.createdAt.toDate().toLocaleDateString('vi-VN') : 'Vừa xong'} • Nộp {timeAgo(app.createdAt)}
+        </p>
+      </div>
+    </Link>
 
-            <div className="flex rounded-xl border border-[#E5E5E7] dark:border-zinc-700 overflow-hidden bg-white dark:bg-zinc-900">
-              <motion.button
-                whileTap={{ scale: 0.96 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigator.vibrate?.(8);
-                  handleMessageApp(app.userId);
-                }}
-                className="flex-1 py-2.5 flex flex-col items-center justify-center gap-0.5 active:bg-[#F2F2F7] dark:active:bg-zinc-800 transition-colors"
-              >
-                <FiMessageSquare size={20} strokeWidth={2} className="text-[#0a84ff]" />
-                <span className="text-[11px] font-semibold text-[#0a84ff]">Nhắn tin</span>
-              </motion.button>
-              
-              <div className="w-px bg-[#E5E5E7] dark:bg-zinc-700" />
-              
-              <motion.button
-                whileTap={{ scale: 0.96 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigator.vibrate?.(8);
-                  handleAcceptApp(app.id, app.userId);
-                }}
-                className="flex-1 py-2.5 flex flex-col items-center justify-center gap-0.5 active:bg-[#F2F2F7] dark:active:bg-zinc-800 transition-colors"
-              >
-                <FiCheck size={20} strokeWidth={2.5} className="text-[#00A86B]" />
-                <span className="text-[11px] font-semibold text-[#1C1C1E] dark:text-zinc-100">Đồng ý</span>
-              </motion.button>
-              
-              <div className="w-px bg-[#E5E5E7] dark:bg-zinc-700" />
-              
-              <motion.button
-                whileTap={{ scale: 0.96 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigator.vibrate?.(8);
-                  handleRejectApp(app.id);
-                }}
-                className="flex-1 py-2.5 flex flex-col items-center justify-center gap-0.5 active:bg-[#F2F2F7] dark:active:bg-zinc-800 transition-colors"
-              >
-                <FiX size={20} strokeWidth={2.5} className="text-[#FF3B30]" />
-                <span className="text-[11px] font-semibold text-[#FF3B30]">Từ chối</span>
-              </motion.button>
-            </div>
-          </motion.div>
-        </div>
-      ))}
+    <div className="flex gap-4 shrink-0">
+      <motion.button
+        whileTap={{ scale: 0.85 }}
+        onClick={(e) => {
+          e.stopPropagation();
+          navigator.vibrate?.(8);
+          handleMessageApp(app.userId);
+        }}
+        className="w-7 h-7 flex items-center justify-center text-[#0a84ff] active:opacity-60 transition-opacity"
+      >
+        <FiMessageSquare size={18} strokeWidth={2} />
+      </motion.button>
+      
+      <motion.button
+        whileTap={{ scale: 0.85 }}
+        onClick={(e) => {
+          e.stopPropagation();
+          navigator.vibrate?.(8);
+          handleAcceptApp(app.id, app.userId);
+        }}
+        className="w-7 h-7 flex items-center justify-center text-[#00A86B] active:opacity-60 transition-opacity"
+      >
+        <FiCheck size={19} strokeWidth={2.5} />
+      </motion.button>
+      
+      <motion.button
+        whileTap={{ scale: 0.85 }}
+        onClick={(e) => {
+          e.stopPropagation();
+          navigator.vibrate?.(8);
+          handleRejectApp(app.id);
+        }}
+        className="w-7 h-7 flex items-center justify-center text-[#FF3B30] active:opacity-60 transition-opacity"
+      >
+        <FiX size={19} strokeWidth={2.5} />
+      </motion.button>
+    </div>
+  </motion.div>
+))}
     </div>
   )}
 </div>
