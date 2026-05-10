@@ -544,23 +544,59 @@ const xp =
     if (completed >= 25) {
       arr.push({
         icon: "🏆",
-        label: "Hoàn thành chuyên nghiệp",
-      });
-    }
+        label: "Hoàn thành const achievements = useMemo<
+  { icon: string; label: string }[]
+>(() => {
 
-    if (trustScore >= 90) {
-      arr.push({
-        icon: "🛡",
-        label: "Độ uy tín cao",
-      });
-    }
+  const arr: {
+    icon: string;
+    label: string;
+  }[] = [];
 
-    if (joinedDays <= 7) {
-      arr.push({
-        icon: "🌱",
-        label: "Mới tham gia",
-      });
-    }
+  if (rating >= 4.8) {
+    arr.push({
+      icon: "⭐",
+      label: "Đánh giá xuất sắc",
+    });
+  }
+
+  if (responseRate >= 95) {
+    arr.push({
+      icon: "⚡",
+      label: "Phản hồi siêu nhanh",
+    });
+  }
+
+  if (completed >= 25) {
+    arr.push({
+      icon: "🏆",
+      label: "Hoàn thành chuyên nghiệp",
+    });
+  }
+
+  if (trustScore >= 90) {
+    arr.push({
+      icon: "🛡",
+      label: "Độ uy tín cao",
+    });
+  }
+
+  if (joinedDays <= 7) {
+    arr.push({
+      icon: "🌱",
+      label: "Mới tham gia",
+    });
+  }
+
+  return arr;
+
+}, [
+  rating,
+  responseRate,
+  completed,
+  trustScore,
+  joinedDays,
+]);
   
   if (loading) {
 
