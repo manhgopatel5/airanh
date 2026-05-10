@@ -977,7 +977,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
 
     <div className="sticky bottom-0 bg-white dark:bg-zinc-900 px-5 py-3 border-t border-[#F2F2F7] dark:border-zinc-800">
       {replyTo && (
-        <div className="text-sm dark:text-zinc-400 mb-2 flex items-center justify-between bg-[#F2F2F7] dark:bg-zinc-800 px-3.5 py-2 rounded-xl">
+        <div className="text-sm dark:text-zinc-400 mb-2 flex items-center justify-between bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 px-3.5 py-2 rounded-xl">
           <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
           <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg active:scale-90 transition-all"><FiX size={14} /></button>
         </div>
@@ -990,7 +990,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSendComment()}
             placeholder={currentUser? "Viết bình luận..." : "Đăng nhập để bình luận"}
-            className="w-full px-4 py-2.5 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 outline-none text-sm focus:ring-2 focus:ring-[#0a84ff]/20 transition-all"
+            className="w-full px-4 py-2.5 rounded-full bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 outline-none text-sm focus:ring-2 focus:ring-[#0a84ff]/20 focus:border-[#0a84ff] transition-all"
             disabled={sending ||!currentUser}
           />
           {showMention && mentionUsersList.length > 0 && (
