@@ -815,9 +815,9 @@ const xp =
 
                   <img
                     src={
-                      targetUser.avatar ||
+                      targetUser?.avatar ||
                       `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                        targetUser.name || "User"
+                        targetUser?.name || "User"
                       )}&size=220`
                     }
                     alt=""
@@ -833,7 +833,7 @@ const xp =
                   />
 
                   {/* online */}
-                  {targetUser.online && (
+                  {targetUser?.online && (
                     <div className="
                       absolute bottom-3 right-3
                       w-5 h-5
@@ -874,10 +874,10 @@ const xp =
                     tracking-[-0.03em]
                     text-white
                   ">
-                    {targetUser.name || "Unknown User"}
+                    {targetUser?.name || "Unknown User"}
                   </h1>
 
-                  {targetUser.emailVerified && (
+                  {targetUser?.emailVerified && (
                     <div className="
                       w-7 h-7
                       rounded-full
@@ -896,14 +896,14 @@ const xp =
                   )}
                 </div>
 
-                {targetUser.title && (
+                {targetUser?.title && (
                   <p className="
                     mt-2
                     text-sm
                     font-semibold
                     text-zinc-300
                   ">
-                    {targetUser.title}
+                    {targetUser?.title}
                   </p>
                 )}
 
@@ -953,10 +953,10 @@ const xp =
                 ">
 
                   <span>
-                    @{targetUser.userId}
+                    @{targetUser?.userId}
                   </span>
 
-                  {targetUser.location && (
+                  {targetUser?.location && (
                     <>
                       <span>•</span>
 
@@ -968,7 +968,7 @@ const xp =
                         " />
 
                         <span>
-                          {targetUser.location}
+                          {targetUser?.location}
                         </span>
                       </div>
                     </>
@@ -982,7 +982,7 @@ const xp =
                   flex justify-center
                 ">
 
-                  {targetUser.online ? (
+                  {targetUser?.online ? (
 
                     <div className="
                       px-3 py-1.5
@@ -1020,7 +1020,7 @@ const xp =
                         w-3 h-3
                       " />
 
-                      Hoạt động {formatLastSeen(targetUser.lastSeen)}
+                      Hoạt động {formatLastSeen(targetUser?.lastSeen)}
                     </div>
 
                   )}
@@ -1028,7 +1028,7 @@ const xp =
                 </div>
 
                 {/* BIO */}
-                {targetUser.bio && (
+                {targetUser?.bio && (
                   <p className="
                     mt-5
                     text-sm
@@ -1036,7 +1036,7 @@ const xp =
                     text-zinc-300
                     px-1
                   ">
-                    {targetUser.bio}
+                    {targetUser?.bio}
                   </p>
                 )}
 
@@ -1396,8 +1396,8 @@ const xp =
           </motion.div>
 
           {/* SKILLS */}
-          {targetUser.skills &&
-            targetUser.skills.length > 0 && (
+          {targetUser?.skills &&
+            targetUser?.skills.length > 0 && (
 
             <div className="mt-5">
 
@@ -1427,7 +1427,7 @@ const xp =
                 flex flex-wrap gap-2
               ">
 
-                {targetUser.skills.map((skill) => (
+                {targetUser?.skills.map((skill) => (
 
                   <motion.div
                     key={skill}
@@ -1456,8 +1456,8 @@ const xp =
           )}
 
           {/* PORTFOLIO */}
-          {targetUser.portfolio &&
-            targetUser.portfolio.length > 0 && (
+          {targetUser?.portfolio &&
+            targetUser?.portfolio.length > 0 && (
 
             <div className="mt-6">
 
@@ -1485,7 +1485,7 @@ const xp =
 
               <div className="space-y-3">
 
-                {targetUser.portfolio
+                {targetUser?.portfolio
                   .slice(0, 4)
                   .map((item, i) => (
 
@@ -1568,7 +1568,7 @@ const xp =
                     }}
 
                     onClick={() =>
-                      router.push(`/chat/${targetUser.uid}`)
+                      router.push(`/chat/${targetUser?.uid}`)
                     }
 
                     className={`
