@@ -706,7 +706,7 @@ const xp =
     text-white
     truncate
   ">
-    {targetUser.name}
+    {targetUser?.name}
   </h1>
 
 </div>
