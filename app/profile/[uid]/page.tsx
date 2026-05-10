@@ -397,64 +397,7 @@ const responseRate =
     );
   };
 
-  if (loading) {
-
-    return (
-      <div className="
-        min-h-screen
-        bg-[#020617]
-        overflow-hidden
-        relative
-      ">
-
-        <div className="
-          absolute inset-0
-          bg-[radial-gradient(circle_at_top,#2563EB,transparent_40%)]
-          opacity-30
-        " />
-
-        <div className="
-          relative z-10
-          px-6 py-10
-          max-w-md mx-auto
-          animate-pulse
-        ">
-
-          <div className="
-            w-32 h-32
-            rounded-full
-            bg-white/10
-            mx-auto
-          " />
-
-          <div className="
-            h-8
-            rounded-2xl
-            bg-white/10
-            mt-6
-            w-56
-            mx-auto
-          " />
-
-          <div className="
-            h-4
-            rounded-xl
-            bg-white/10
-            mt-3
-            w-40
-            mx-auto
-          " />
-
-        </div>
-      </div>
-    );
-  }
-
-  if (!targetUser) return null;
-
- 
-
-  const xp =
+const xp =
     completed * 12 +
     reviews * 8 +
     Math.floor(rating * 20) +
@@ -613,6 +556,65 @@ const responseRate =
         label: "Mới tham gia",
       });
     }
+  
+  if (loading) {
+
+    return (
+      <div className="
+        min-h-screen
+        bg-[#020617]
+        overflow-hidden
+        relative
+      ">
+
+        <div className="
+          absolute inset-0
+          bg-[radial-gradient(circle_at_top,#2563EB,transparent_40%)]
+          opacity-30
+        " />
+
+        <div className="
+          relative z-10
+          px-6 py-10
+          max-w-md mx-auto
+          animate-pulse
+        ">
+
+          <div className="
+            w-32 h-32
+            rounded-full
+            bg-white/10
+            mx-auto
+          " />
+
+          <div className="
+            h-8
+            rounded-2xl
+            bg-white/10
+            mt-6
+            w-56
+            mx-auto
+          " />
+
+          <div className="
+            h-4
+            rounded-xl
+            bg-white/10
+            mt-3
+            w-40
+            mx-auto
+          " />
+
+        </div>
+      </div>
+    );
+  }
+
+  if (!targetUser) return null;
+
+ 
+
+ 
 
     return arr;
 
