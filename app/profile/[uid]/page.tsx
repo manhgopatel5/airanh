@@ -214,7 +214,7 @@ const responseRate =
       actionLoading
     ) return;
 
-    if (user.uid === targetUser.uid) {
+    if (user.uid === targetUser?.uid) {
       return toast.error("Đây là bạn");
     }
 
@@ -230,23 +230,23 @@ const responseRate =
             "users",
             user.uid,
             "friends",
-            targetUser.uid
+            targetUser?.uid
           ),
           {
             createdAt: serverTimestamp(),
             status: "accepted",
 
             name:
-              targetUser.name || "Unknown User",
+              targetUser?.name || "Unknown User",
 
             avatar:
-              targetUser.avatar || "",
+              targetUser?.avatar || "",
 
             userId:
-              targetUser.userId || "",
+              targetUser?.userId || "",
 
             title:
-              targetUser.title || "",
+              targetUser?.title || "",
           }
         ),
 
@@ -254,7 +254,7 @@ const responseRate =
           doc(
             db,
             "users",
-            targetUser.uid,
+            targetUser?.uid,
             "friends",
             user.uid
           ),
@@ -285,7 +285,7 @@ const responseRate =
       setIsFriend(true);
 
       toast.success(
-        `Đã kết nối với ${targetUser.name}`
+        `Đã kết nối với ${targetUser?.name}`
       );
 
       if ("vibrate" in navigator) {
@@ -325,7 +325,7 @@ const responseRate =
             "users",
             user.uid,
             "friends",
-            targetUser.uid
+           targetUser?.uid
           )
         ),
 
@@ -333,7 +333,7 @@ const responseRate =
           doc(
             db,
             "users",
-            targetUser.uid,
+            targetUser?.uid,
             "friends",
             user.uid
           )
@@ -361,13 +361,13 @@ const responseRate =
     if (!targetUser) return;
 
     const url =
-      `https://airanh.vercel.app/profile/${targetUser.uid}`;
+      `https://airanh.vercel.app/profile/${targetUser?.uid}`;
 
     if (navigator.share) {
 
       await navigator.share({
-        title: targetUser.name,
-        text: `Xem hồ sơ ${targetUser.name}`,
+        title: targetUser?.name,
+        text: `Xem hồ sơ ${targetUser?.name}`,
         url,
       });
 
@@ -426,11 +426,11 @@ const xp =
   );
 
   const joinedDays =
-    targetUser.createdAt?.seconds
+   targetUser?.createdAt?.seconds
       ? Math.floor(
           (
             Date.now() -
-            targetUser.createdAt.seconds * 1000
+            targetUser?.createdAt.seconds * 1000
           ) / 86400000
         )
       : 999;
@@ -439,14 +439,14 @@ const xp =
     Math.round(
       (
         [
-          targetUser.avatar,
-          targetUser.bio,
-          targetUser.skills?.length,
-          targetUser.portfolio?.length,
-          targetUser.location,
-          targetUser.title,
-          targetUser.emailVerified,
-          targetUser.isVerifiedId,
+         targetUser?.avatar,
+         targetUser?..bio,
+         targetUser?.skills?.length,
+          targetUser?.portfolio?.length,
+          targetUser?.location,
+         targetUser?.title,
+          targetUser?.emailVerified,
+         targetUser?.isVerifiedId,
         ].filter(Boolean).length / 8
       ) * 100
     );
