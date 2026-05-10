@@ -1,14 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-
-import {
-  useEffect,
-  useState,
-  useCallback,
-  useMemo,
-} from "react";
-
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   doc,
   getDoc,
@@ -17,12 +10,9 @@ import {
   serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
-
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
-
 import { toast, Toaster } from "sonner";
-
 import {
   MessageCircle,
   UserPlus,
@@ -46,14 +36,8 @@ import {
   Gem,
   ChevronRight,
 } from "lucide-react";
-
-import {
-  motion,
-  AnimatePresence,
-} from "framer-motion";
-
+import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
-
 import { vi } from "date-fns/locale";
 
 type PublicUser = {
@@ -61,33 +45,24 @@ type PublicUser = {
   name: string;
   userId: string;
   avatar: string;
-
   bio?: string;
   title?: string;
   location?: string;
-
   online?: boolean;
-
   lastSeen?: Timestamp;
-
   emailVerified?: boolean;
-
   isVerifiedId?: boolean;
-
   skills?: string[];
-
   portfolio?: {
     title: string;
     url: string;
   }[];
-
   stats?: {
     completed: number;
     rating: number;
     totalReviews: number;
     responseRate?: number;
   };
-
   createdAt?: Timestamp;
 };
 
@@ -99,73 +74,45 @@ type RankData = {
 };
 
 export default function PublicProfile() {
-
   const { uid } = useParams();
-
   const router = useRouter();
-
   const { user } = useAuth();
-
   const db = getFirebaseDB();
 
-  const [targetUser, setTargetUser] =
-    useState<PublicUser | null>(null);
+  const [targetUser, setTargetUser] = useState<PublicUser | null>(null);
+  const [currentUserData, setCurrentUserData] = useState<any>(null);
+  const [isFriend, setIsFriend] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [showMore, setShowMore] = useState(false);
 
-  const [currentUserData, setCurrentUserData] =
-    useState<any>(null);
+  // Fix 1: Dùng uid từ params thay vì targetUser?.uid vì lúc đầu targetUser = null
+  const isOwnProfile = user?.uid === uid;
 
-  const [isFriend, setIsFriend] =
-    useState(false);
-
-  const [loading, setLoading] =
-    useState(true);
-const isOwnProfile =
-  user?.uid === targetUser?.uid;
-
-const completed =
-  targetUser?.stats?.completed || 0;
-
-const reviews =
-  targetUser?.stats?.totalReviews || 0;
-
-const rating =
-  targetUser?.stats?.rating || 0;
-
-const responseRate =
-  targetUser?.stats?.responseRate || 98;
-
-  const [actionLoading, setActionLoading] =
-    useState(false);
-
-  const [showMore, setShowMore] =
-    useState(false);
+  // Fix 2: Mấy const này OK để ở đây vì có?. và default, nhưng đừng dùng để tính toán tiếp
+  const completed = targetUser?.stats?.completed || 0;
+  const reviews = targetUser?.stats?.totalReviews || 0;
+  const rating = targetUser?.stats?.rating || 0;
+  const responseRate = targetUser?.stats?.responseRate || 98;
 
   const fetchUser = useCallback(async () => {
-
-    if (!uid || !user) return;
+    if (!uid ||!user) return;
 
     try {
-
-      const [
-        userSnap,
-        currentUserSnap,
-      ] = await Promise.all([
+      const [userSnap, currentUserSnap] = await Promise.all([
         getDoc(doc(db, "users", uid as string)),
         getDoc(doc(db, "users", user.uid)),
       ]);
 
       if (!userSnap.exists()) {
-
         toast.error("Không tìm thấy người dùng");
-
         router.replace("/404");
-
         return;
       }
 
       const data = {
         uid: userSnap.id,
-        ...userSnap.data(),
+       ...userSnap.data(),
       } as PublicUser;
 
       setTargetUser(data);
@@ -175,37 +122,22 @@ const responseRate =
       }
 
       const friendSnap = await getDoc(
-        doc(
-          db,
-          "users",
-          user.uid,
-          "friends",
-          userSnap.id
-        )
+        doc(db, "users", user.uid, "friends", userSnap.id)
       );
 
       setIsFriend(friendSnap.exists());
-
     } catch (err) {
-
       console.error(err);
-
       toast.error("Có lỗi xảy ra");
-
       router.back();
-
     } finally {
-
       setLoading(false);
-
     }
-
   }, [uid, user, db, router]);
 
   useEffect(() => {
     fetchUser();
   }, [fetchUser]);
-
   const handleConnect = async () => {
 
     if (
@@ -451,81 +383,53 @@ const xp =
       ) * 100
     );
 
-  const rank: RankData = (() => {
-
+  const rank: RankData = useMemo(() => {
   if (level >= 50) {
     return {
       name: "Huyền thoại",
-      icon: (
-        <Crown className="w-4 h-4" />
-      ),
-      gradient:
-        "from-yellow-400 via-orange-400 to-amber-500",
-      glow:
-        "shadow-yellow-500/40",
+      icon: <Crown className="w-4 h-4" />,
+      gradient: "from-yellow-400 via-orange-400 to-amber-500",
+      glow: "shadow-yellow-500/40",
     };
   }
 
   if (level >= 35) {
     return {
       name: "Chuyên gia",
-      icon: (
-        <Gem className="w-4 h-4" />
-      ),
-      gradient:
-        "from-violet-500 via-fuchsia-500 to-pink-500",
-      glow:
-        "shadow-fuchsia-500/30",
+      icon: <Gem className="w-4 h-4" />,
+      gradient: "from-violet-500 via-fuchsia-500 to-pink-500",
+      glow: "shadow-fuchsia-500/30",
     };
   }
 
   if (level >= 20) {
     return {
       name: "Đối tác uy tín",
-      icon: (
-        <Shield className="w-4 h-4" />
-      ),
-      gradient:
-        "from-sky-500 via-blue-500 to-indigo-600",
-      glow:
-        "shadow-blue-500/30",
+      icon: <Shield className="w-4 h-4" />,
+      gradient: "from-sky-500 via-blue-500 to-indigo-600",
+      glow: "shadow-blue-500/30",
     };
   }
 
   if (level >= 8) {
     return {
       name: "Đang phát triển",
-      icon: (
-        <Flame className="w-4 h-4" />
-      ),
-      gradient:
-        "from-green-500 via-emerald-500 to-teal-500",
-      glow:
-        "shadow-green-500/30",
+      icon: <Flame className="w-4 h-4" />,
+      gradient: "from-green-500 via-emerald-500 to-teal-500",
+      glow: "shadow-green-500/30",
     };
   }
 
   return {
     name: "Mới tham gia",
-    icon: (
-      <Sparkles className="w-4 h-4" />
-    ),
-    gradient:
-      "from-zinc-500 via-zinc-600 to-zinc-700",
-    glow:
-      "shadow-zinc-500/20",
+    icon: <Sparkles className="w-4 h-4" />,
+    gradient: "from-zinc-500 via-zinc-600 to-zinc-700",
+    glow: "shadow-zinc-500/20",
   };
+}, [level]);
 
-})();
-
-const achievements = useMemo<
-  { icon: string; label: string }[]
->(() => {
-
-  const arr: {
-    icon: string;
-    label: string;
-  }[] = [];
+const achievements = useMemo<{ icon: string; label: string }[]>(() => {
+  const arr: { icon: string; label: string }[] = [];
 
   if (rating >= 4.8) {
     arr.push({
@@ -563,17 +467,9 @@ const achievements = useMemo<
   }
 
   return arr;
-
-}, [
-  rating,
-  responseRate,
-  completed,
-  trustScore,
-  joinedDays,
-]);
+}, [rating, responseRate, completed, trustScore, joinedDays]);
 
 if (loading) {
-
   return (
     <div className="
       min-h-screen
@@ -581,68 +477,47 @@ if (loading) {
       overflow-hidden
       relative
     ">
-
+      <div className="
+        absolute inset-0
+        bg-[radial-gradient(circle_at_top,#2563EB,transparent_40%)]
+        opacity-30
+      " />
+      <div className="
+        relative z-10
+        px-6 py-10
+        max-w-md mx-auto
+        animate-pulse
+      ">
         <div className="
-          absolute inset-0
-          bg-[radial-gradient(circle_at_top,#2563EB,transparent_40%)]
-          opacity-30
+          w-32 h-32
+          rounded-full
+          bg-white/10
+          mx-auto
         " />
-
         <div className="
-          relative z-10
-          px-6 py-10
-          max-w-md mx-auto
-          animate-pulse
-        ">
-
-          <div className="
-            w-32 h-32
-            rounded-full
-            bg-white/10
-            mx-auto
-          " />
-
-          <div className="
-            h-8
-            rounded-2xl
-            bg-white/10
-            mt-6
-            w-56
-            mx-auto
-          " />
-
-          <div className="
-            h-4
-            rounded-xl
-            bg-white/10
-            mt-3
-            w-40
-            mx-auto
-          " />
-
-        </div>
+          h-8
+          rounded-2xl
+          bg-white/10
+          mt-6
+          w-56
+          mx-auto
+        " />
+        <div className="
+          h-4
+          rounded-xl
+          bg-white/10
+          mt-3
+          w-40
+          mx-auto
+        " />
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   if (!targetUser) return null;
 
- 
-
- 
-
-    return arr;
-
-  }, [
-    rating,
-    responseRate,
-    completed,
-    trustScore,
-    joinedDays,
-  ]);
-
   return (
-
     <div className="
       min-h-screen
       isolate
@@ -652,18 +527,13 @@ if (loading) {
       pb-32
       relative
     ">
-
-      <Toaster
-        richColors
-        position="top-center"
-      />
+      <Toaster richColors position="top-center" />
 
       <div className="
         absolute inset-0
         overflow-hidden
         pointer-events-none
       ">
-
         <div className="
           absolute top-[-120px] left-[-80px]
           w-[320px] h-[320px]
@@ -671,7 +541,6 @@ if (loading) {
           bg-blue-500/20
           blur-3xl
         " />
-
         <div className="
           absolute top-[220px] right-[-120px]
           w-[320px] h-[320px]
@@ -679,7 +548,6 @@ if (loading) {
           bg-fuchsia-500/20
           blur-3xl
         " />
-
       </div>
 
       <div className="
@@ -688,92 +556,72 @@ if (loading) {
         bg-black/20
         border-b border-white/5
       ">
-
         <div className="
           px-4 py-3
           flex items-center justify-between
           max-w-md mx-auto
         ">
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.back()}
+              className="
+                w-10 h-10
+                rounded-2xl
+                bg-white/[0.06]
+                border border-white/10
+                flex items-center justify-center
+                active:scale-95
+                transition-all
+              "
+            >
+              <ArrowLeft className="w-5 h-5 text-white" />
+            </button>
+            <h1 className="
+              text-lg
+              font-black
+              tracking-[-0.03em]
+              text-white
+              truncate
+            ">
+              {targetUser?.name}
+            </h1>
+          </div>
 
-  <button
-    onClick={() => router.back()}
-    className="
-      w-10 h-10
-      rounded-2xl
-      bg-white/[0.06]
-      border border-white/10
-      flex items-center justify-center
-      active:scale-95
-      transition-all
-    "
-  >
-    <ArrowLeft className="
-      w-5 h-5
-      text-white
-    " />
-  </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleShare}
+              className="
+                w-10 h-10
+                rounded-2xl
+                bg-white/[0.06]
+                border border-white/10
+                flex items-center justify-center
+                active:scale-95
+                transition-all
+              "
+            >
+              <Share2 className="w-5 h-5 text-white" />
+            </button>
 
-  <h1 className="
-    text-lg
-    font-black
-    tracking-[-0.03em]
-    text-white
-    truncate
-  ">
-    {targetUser?.name}
-  </h1>
-
-</div>
-
-<div className="
-  flex items-center gap-2
-">
-
-  <button
-    onClick={handleShare}
-    className="
-      w-10 h-10
-      rounded-2xl
-      bg-white/[0.06]
-      border border-white/10
-      flex items-center justify-center
-      active:scale-95
-      transition-all
-    "
-  >
-    <Share2 className="
-      w-5 h-5
-      text-white
-    " />
-  </button>
-
-  {!isOwnProfile && (
-    <button
-      onClick={() =>
-        setShowMore(!showMore)
-      }
-      className="
-        w-10 h-10
-        rounded-2xl
-        bg-white/[0.06]
-        border border-white/10
-        flex items-center justify-center
-        active:scale-95
-        transition-all
-      "
-    >
-      <MoreVertical className="
-        w-5 h-5
-        text-white
-      " />
-    </button>
-  )}
-
-</div>
-
-</div>
+            {!isOwnProfile && (
+              <button
+                onClick={() => setShowMore(!showMore)}
+                className="
+                  w-10 h-10
+                  rounded-2xl
+                  bg-white/[0.06]
+                  border border-white/10
+                  flex items-center justify-center
+                  active:scale-95
+                  transition-all
+                "
+              >
+                <MoreVertical className="w-5 h-5 text-white" />
+              </button>
+            )}
+          </div>
         </div>
+      </div>
                 <div className="px-5 py-6 relative z-10">
         <div className="max-w-md mx-auto">
 
