@@ -383,48 +383,87 @@ const xp =
       ) * 100
     );
 
-  const rank: RankData = useMemo(() => {
+  // SAI - DÒNG 503-540
+const rank: RankData = useMemo(() => {
   if (level >= 50) {
     return {
       name: "Huyền thoại",
       icon: <Crown className="w-4 h-4" />,
-      gradient: "from-yellow-400 via-orange-400 to-amber-500",
-      glow: "shadow-yellow-500/40",
+      gradient: "from-yellow-400 via-orange-400 to-amber-500", // OK
+      glow: "shadow-yellow-500/40", // ĐẬM QUÁ
     };
   }
-
   if (level >= 35) {
     return {
       name: "Chuyên gia",
       icon: <Gem className="w-4 h-4" />,
-      gradient: "from-violet-500 via-fuchsia-500 to-pink-500",
-      glow: "shadow-fuchsia-500/30",
+      gradient: "from-violet-500 via-fuchsia-500 to-pink-500", // OK
+      glow: "shadow-fuchsia-500/30", // ĐẬM QUÁ
     };
   }
-
   if (level >= 20) {
     return {
       name: "Đối tác uy tín",
       icon: <Shield className="w-4 h-4" />,
-      gradient: "from-sky-500 via-blue-500 to-indigo-600",
-      glow: "shadow-blue-500/30",
+      gradient: "from-sky-500 via-blue-500 to-indigo-600", // OK
+      glow: "shadow-blue-500/30", // ĐẬM QUÁ
     };
   }
-
   if (level >= 8) {
     return {
       name: "Đang phát triển",
       icon: <Flame className="w-4 h-4" />,
-      gradient: "from-green-500 via-emerald-500 to-teal-500",
-      glow: "shadow-green-500/30",
+      gradient: "from-green-500 via-emerald-500 to-teal-500", // OK
+      glow: "shadow-green-500/30", // ĐẬM QUÁ
     };
   }
-
   return {
     name: "Mới tham gia",
     icon: <Sparkles className="w-4 h-4" />,
-    gradient: "from-zinc-500 via-zinc-600 to-zinc-700",
+    gradient: "from-zinc-500 via-zinc-600 to-zinc-700", // XẤU VỚI LIGHT
     glow: "shadow-zinc-500/20",
+  };
+}, [level]);
+
+// SỬA THÀNH
+const rank: RankData = useMemo(() => {
+  if (level >= 50) {
+    return {
+      name: "Huyền thoại",
+      icon: <Crown className="w-3.5 h-3.5" />,
+      gradient: "from-amber-400 to-orange-500",
+      glow: "shadow-amber-500/20",
+    };
+  }
+  if (level >= 35) {
+    return {
+      name: "Chuyên gia",
+      icon: <Gem className="w-3.5 h-3.5" />,
+      gradient: "from-violet-500 to-fuchsia-500",
+      glow: "shadow-violet-500/20",
+    };
+  }
+  if (level >= 20) {
+    return {
+      name: "Đối tác uy tín",
+      icon: <Shield className="w-3.5 h-3.5" />,
+      gradient: "from-blue-500 to-sky-500",
+      glow: "shadow-blue-500/20",
+    };
+  }
+  if (level >= 8) {
+    return {
+      name: "Đang phát triển",
+      icon: <Flame className="w-3.5 h-3.5" />,
+      gradient: "from-emerald-500 to-teal-500",
+      glow: "shadow-emerald-500/20",
+    };
+  }
+  return {
+    name: "Mới tham gia",
+    icon: <Sparkles className="w-3.5 h-3.5" />,
+    gradient: "from-zinc-400 to-zinc-500",
+    glow: "shadow-zinc-500/10",
   };
 }, [level]);
 
@@ -521,39 +560,7 @@ return (
     <Toaster richColors position="top-center" />
 
     {/* HEADER */}
-    <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-zinc-200/80">
-      <div className="px-4 py-3 flex items-center justify-between max-w-md mx-auto">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
-            className="w-9 h-9 rounded-xl bg-zinc-100 border border-zinc-200 flex items-center justify-center active:scale-95 transition-all"
-          >
-            <ArrowLeft className="w-5 h-5 text-zinc-700" />
-          </button>
-          <h1 className="text-base font-bold text-zinc-900 truncate">
-            {targetUser?.name}
-          </h1>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleShare}
-            className="w-9 h-9 rounded-xl bg-zinc-100 border border-zinc-200 flex items-center justify-center active:scale-95 transition-all"
-          >
-            <Share2 className="w-5 h-5 text-zinc-700" />
-          </button>
-
-          {!isOwnProfile && (
-            <button
-              onClick={() => setShowMore(!showMore)}
-              className="w-9 h-9 rounded-xl bg-zinc-100 border border-zinc-200 flex items-center justify-center active:scale-95 transition-all"
-            >
-              <MoreVertical className="w-5 h-5 text-zinc-700" />
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+  
 
     <div className="px-4 py-5">
       <div className="max-w-md mx-auto space-y-4">
@@ -564,11 +571,10 @@ return (
           transition={{ duration: 0.3 }}
           className="relative overflow-hidden rounded-3xl border border-zinc-200/80 bg-white shadow-sm"
         >
-          {/* cover */}
-          <div className={`relative h-24 bg-gradient-to-br ${rank.gradient}`} />
+       
 
           {/* Avatar */}
-          <div className="absolute top-12 left-1/2 -translate-x-1/2">
+         <div className="flex justify-center -mt-12">
             <div className="relative">
               <img
                 src={
