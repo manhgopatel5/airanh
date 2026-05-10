@@ -718,11 +718,11 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
 <div className="pt-4 pb-2">
   {isOwner? (
     <div className="rounded-3xl bg-white dark:bg-zinc-900 border border-white dark:border-zinc-800 shadow-[0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] overflow-hidden">
-      <div className="px-5 py-4 border-b border-[#F2F2F7] dark:border-zinc-800">
-        <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
-          Ứng viên ({applications.length})
-        </h3>
-      </div>
+     <div className="px-5 py-4">
+  <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
+    Ứng viên ({applications.length})
+  </h3>
+</div>
 
       {applications.length === 0? (
         <div className="px-5 py-12 text-center">
@@ -934,11 +934,11 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
           {/* Bình luận */}
 <div className="mt-4">
   <div className="rounded-3xl bg-white dark:bg-zinc-900 border border-white dark:border-zinc-800 shadow-[0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] overflow-hidden">
-    <div className="px-5 py-4 border-b border-[#F2F2F7] dark:border-zinc-800">
-      <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
-        Bình luận ({comments.length})
-      </h3>
-    </div>
+  <div className="px-5 py-4">
+  <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
+    Bình luận ({comments.length})
+  </h3>
+</div>
 
     <div className="px-5 py-4">
       {parentComments.length === 0? (
