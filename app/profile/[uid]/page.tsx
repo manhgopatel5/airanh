@@ -18,15 +18,15 @@ import {
   UserPlus,
   Check,
   UserMinus,
-  
+  MoreVertical,
   Star,
   Briefcase,
   MapPin,
   Clock,
   ExternalLink,
   Zap,
-  
-  
+  ArrowLeft,
+  Share2,
   Flag,
   Crown,
   Sparkles,
