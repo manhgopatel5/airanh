@@ -1106,45 +1106,49 @@ return (
       <p className="text-sm text-white/70 mt-1 font-medium">@{targetUser?.userId}</p>
     )}
 
-    {/* RANK BADGE - PREMIUM */}
-    <div className="flex justify-center mt-4 items-center gap-2">
-      <div className={`px-5 py-2 rounded-full bg-gradient-to-r ${rank.gradient} text-white flex items-center gap-2 shadow-xl border border-white/20`}>
-        {rank.icon}
-        <span className="font-bold text-sm">{rank.name}</span>
-        <div className="px-2.5 py-0.5 rounded-full bg-white/30 text-xs font-black backdrop-blur-sm">
-          Lv.{level}
-        </div>
-      </div>
-
-      <button
-        onClick={() => setShowLevelInfo(true)}
-        className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-2xl border border-white/10 flex items-center justify-center active:scale-90 transition-all shadow-xl"
-      >
-        <Info className="w-4 h-4 text-white" />
-      </button>
+  {/* RANK BADGE - PREMIUM */}
+<div className="flex justify-center mt-4 items-center gap-2">
+  <div className={`px-5 py-2.5 rounded-full bg-gradient-to-r ${rank.gradient} text-white flex items-center gap-2 shadow-2xl border border-white/30`}>
+    {rank.icon}
+    <span className="font-bold text-sm tracking-wide">{rank.name}</span>
+    <div className="px-2.5 py-1 rounded-full bg-white/30 text-xs font-black backdrop-blur-sm">
+      Lv.{level}
     </div>
+  </div>
 
-    {targetUser?.location && (
-      <div className="flex items-center justify-center gap-1.5 mt-4 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-xl border border-white/10">
-        <MapPin className="w-3.5 h-3.5 text-white" />
-        <span className="text-sm text-white font-medium">{targetUser?.location}</span>
-      </div>
-    )}
+  <button
+    onClick={() => setShowLevelInfo(true)}
+    className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-2xl border border-white/20 flex items-center justify-center active:scale-90 transition-all shadow-xl"
+  >
+    <Info className="w-4 h-4 text-white" />
+  </button>
+</div>
+
+{/* LOCATION + HOẠT ĐỘNG - GỘP CHUNG */}
+<div className="flex flex-wrap items-center justify-center gap-2 mt-4">
+  {targetUser?.location && (
+    <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-xl border border-white/10 shadow-lg">
+      <MapPin className="w-3.5 h-3.5 text-white" />
+      <span className="text-sm text-white font-medium">{targetUser?.location}</span>
+    </div>
+  )}
+  
+  <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-xl border border-white/10 shadow-lg">
+    <div className={`w-2 h-2 rounded-full ${targetUser?.online? 'bg-emerald-400 animate-pulse' : 'bg-zinc-300'}`} />
+    <span className="text-sm text-white font-medium">
+      {targetUser?.online
+       ? "Đang hoạt động"
+        : `Hoạt động ${formatLastSeen(targetUser?.lastSeen)}`}
+    </span>
   </div>
 </div>
-    {/* HOẠT ĐỘNG */}
-    <div className="mt-2.5 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md flex items-center gap-1.5">
-      <Clock className="w-3.5 h-3.5 text-white" />
-      <span className="text-xs text-white font-medium">
-        {targetUser?.online
-          ? "Đang hoạt động"
-          : `Hoạt động ${formatLastSeen(targetUser?.lastSeen)}`}
-      </span>
-    </div>
-  </div>
 
+{/* XÓA HOẠT ĐỘNG CŨ - ĐÃ GỘP Ở TRÊN */}
 
-<div className="px-4 -mt-10 relative z-10">
+</div>
+</div>
+
+<div className="px-4 pt-4 relative z-10">
   <div className="max-w-md mx-auto space-y-3">
 
 {/* STATS */}
