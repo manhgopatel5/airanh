@@ -21,6 +21,7 @@ import {
   MoreVertical,
   Star,
   Briefcase,
+  Info,
   MapPin,
   Clock,
   ExternalLink,
@@ -36,6 +37,7 @@ import {
   Gem,
   ChevronRight,
 } from "lucide-react";
+import * as Dialog from "@radix-ui/react-dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -288,6 +290,50 @@ export default function PublicProfile() {
     }
   };
 
+  const [showLevelInfo, setShowLevelInfo] = useState(false);
+
+const levelTiers = [
+  {
+    range: "1 - 7",
+    name: "Mới tham gia",
+    icon: <Sparkles className="w-4 h-4" />,
+    gradient: "from-sky-400 to-blue-600",
+    xp: "0 - 980",
+    perks: "Hồ sơ cơ bản, nhận việc đơn giản",
+  },
+  {
+    range: "8 - 19",
+    name: "Đang phát triển",
+    icon: <Flame className="w-4 h-4" />,
+    gradient: "from-emerald-500 to-teal-500",
+    xp: "980 - 2,660",
+    perks: "Ưu tiên hiển thị, badge xanh",
+  },
+  {
+    range: "20 - 34",
+    name: "Đối tác uy tín",
+    icon: <Shield className="w-4 h-4" />,
+    gradient: "from-blue-500 to-sky-500",
+    xp: "2,660 - 4,760",
+    perks: "Tick xanh, job giá trị cao",
+  },
+  {
+    range: "35 - 49",
+    name: "Chuyên gia",
+    icon: <Gem className="w-4 h-4" />,
+    gradient: "from-violet-500 to-fuchsia-500",
+    xp: "4,760 - 6,860",
+    perks: "Top đề xuất, hỗ trợ VIP",
+  },
+  {
+    range: "50+",
+    name: "Huyền thoại",
+    icon: <Crown className="w-4 h-4" />,
+    gradient: "from-amber-400 to-orange-500",
+    xp: "6,860+",
+    perks: "Tất cả quyền lợi + badge vàng",
+  },
+];
   const handleShare = async () => {
 
     if (!targetUser) return;
@@ -588,18 +634,25 @@ return (
                 </p>
               )}
 
-              {/* LEVEL */}
-              <div className="flex justify-center mt-3">
-                <div
-                  className={`px-3 py-1.5 rounded-full bg-gradient-to-r ${rank.gradient} text-white flex items-center gap-1.5 shadow-sm ${rank.glow}`}
-                >
-                  {rank.icon}
-                  <span className="font-semibold text-xs">{rank.name}</span>
-                  <div className="px-1.5 py-0.5 rounded-full bg-white/25 text-xs font-bold">
-                    Lv.{level}
-                  </div>
-                </div>
-              </div>
+{/* LEVEL */}
+<div className="flex justify-center mt-3 items-center gap-1.5">
+  <div
+    className={`px-3 py-1.5 rounded-full bg-gradient-to-r ${rank.gradient} text-white flex items-center gap-1.5 shadow-sm ${rank.glow}`}
+  >
+    {rank.icon}
+    <span className="font-semibold text-xs">{rank.name}</span>
+    <div className="px-1.5 py-0.5 rounded-full bg-white/25 text-xs font-bold">
+      Lv.{level}
+    </div>
+  </div>
+
+  <button
+    onClick={() => setShowLevelInfo(true)}
+    className="w-6 h-6 rounded-full bg-zinc-100 border border-zinc-200 flex items-center justify-center active:scale-95 transition-all"
+  >
+    <Info className="w-3.5 h-3.5 text-zinc-600" />
+  </button>
+</div>
 
               {/* LOCATION - BỎ USER ID */}
 {targetUser?.location && (
@@ -852,6 +905,123 @@ return (
     </motion.div>
   )}
 </AnimatePresence>
+<Dialog.Root open={showLevelInfo} onOpenChange={setShowLevelInfo}>
+  <Dialog.Portal>
+    <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
+    <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md max-h-[85vh] overflow-y-auto bg-white rounded-3xl p-5 z-50 shadow-2xl">
+      <Dialog.Title className="text-xl font-bold text-zinc-900 mb-4">
+        Hệ thống cấp độ Airanh
+      </Dialog.Title>
+
+      {/* CÔNG THỨC TÍNH XP */}
+      <div className="mb-5 p-4 rounded-2xl bg-blue-50 border border-blue-200">
+        <p className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-1.5">
+          <Zap className="w-4 h-4" />
+          Công thức tính XP
+        </p>
+        <div className="space-y-1.5 text-sm text-blue-800">
+          <div className="flex justify-between">
+            <span>Hoàn thành 1 job</span>
+            <span className="font-semibold">+12 XP</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Nhận 1 đánh giá</span>
+            <span className="font-semibold">+8 XP</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Rating trung bình</span>
+            <span className="font-semibold">+Rating × 20 XP</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Tỷ lệ phản hồi</span>
+            <span className="font-semibold">+{responseRate} XP</span>
+          </div>
+          <div className="pt-2 mt-2 border-t border-blue-300 flex justify-between font-bold">
+            <span>Tổng XP hiện tại</span>
+            <span>{xp} XP</span>
+          </div>
+          <div className="text-xs text-blue-700 mt-1">
+            Mỗi level cần 140 XP
+          </div>
+        </div>
+      </div>
+
+      {/* BẢNG RANK */}
+      <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2.5">
+        Các cấp độ
+      </p>
+      <div className="space-y-2.5">
+        {levelTiers.map((tier, i) => (
+          <div
+            key={i}
+            className={`p-3.5 rounded-2xl border ${
+              level >= parseInt(tier.range.split(" - ")[0])
+               ? "border-zinc-300 bg-zinc-50"
+                : "border-zinc-200 bg-white opacity-60"
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-8 h-8 rounded-xl bg-gradient-to-r ${tier.gradient} text-white flex items-center justify-center shadow-sm`}
+                >
+                  {tier.icon}
+                </div>
+                <div>
+                  <p className="font-bold text-zinc-900 text-sm">{tier.name}</p>
+                  <p className="text-xs text-zinc-500">Level {tier.range}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xs font-semibold text-zinc-700">{tier.xp}</p>
+                <p className="text-xs text-zinc-500">XP</p>
+              </div>
+            </div>
+            <p className="text-xs text-zinc-600 leading-5">{tier.perks}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* LEVEL HIỆN TẠI */}
+      <div className="mt-4 p-3 rounded-2xl bg-gradient-to-r from-zinc-900 to-zinc-800 text-white">
+        <p className="text-xs text-zinc-400 mb-1">Level hiện tại của bạn</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div
+              className={`w-10 h-10 rounded-xl bg-gradient-to-r ${rank.gradient} flex items-center justify-center`}
+            >
+              {rank.icon}
+            </div>
+            <div>
+              <p className="font-bold">{rank.name}</p>
+              <p className="text-xs text-zinc-300">Lv.{level}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="font-bold text-lg">{xp}</p>
+            <p className="text-xs text-zinc-400">XP</p>
+          </div>
+        </div>
+        <div className="mt-3">
+          <div className="flex justify-between text-xs mb-1">
+            <span className="text-zinc-400">Tiến trình</span>
+            <span className="text-zinc-300">{currentLevelXP}/140 XP</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-zinc-700 overflow-hidden">
+            <div
+              className={`h-full rounded-full bg-gradient-to-r ${rank.gradient}`}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      <Dialog.Close className="mt-5 w-full h-12 rounded-2xl bg-zinc-900 text-white font-semibold active:scale-[0.98] transition-all">
+        Đã hiểu
+      </Dialog.Close>
+    </Dialog.Content>
+  </Dialog.Portal>
+</Dialog.Root>
 
         </div>
       </div>
