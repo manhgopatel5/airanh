@@ -9,6 +9,8 @@ import {
   deleteDoc,
   serverTimestamp,
   Timestamp,
+  getDocs, // thêm
+  collection, // thêm
 } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
@@ -124,22 +126,21 @@ export default function PublicProfile() {
   const completed = targetUser?.stats?.completed || 0;
   const reviews = targetUser?.stats?.totalReviews || 0;
   const rating = targetUser?.stats?.rating || 0;
-  const responseRate = targetUser?.stats?.responseRate || 98;
+  
 
-  const xp =
-    completed * 12 +
-    reviews * 8 +
-    Math.floor(rating * 20) +
-    responseRate;
+const xp =
+  completed * 12 +
+  reviews * 8 +
+  Math.floor(rating * 20);
 
   const level = Math.max(1, Math.floor(xp / 300) + 1);
   const currentLevelXP = xp % 300;
   const progress = (currentLevelXP / 300) * 100;
 
-  const trustScore = Math.min(
-    100,
-    Math.floor(rating * 15 + completed * 1.2 + reviews + responseRate * 0.35)
-  );
+const trustScore = Math.min(
+  100,
+  Math.floor(rating * 15 + completed * 1.2 + reviews) // BỎ + responseRate * 0.35
+);
 
   const joinedDays =
     targetUser?.createdAt?.seconds
@@ -164,17 +165,18 @@ export default function PublicProfile() {
   // ===== 40 THÀNH TỰU =====
   const allAchievements = useMemo(() => [
     // Profile 20 cái
-    {
-      id: 1,
-      icon: <Zap className="w-5 h-5" />,
-      label: "Flash trả lời",
-      desc: "Rep tin nhắn nhanh hơn NYC",
-      unlocked: responseRate >= 95,
-      condition: "Phản hồi ≥ 95%",
-      color: "from-amber-400 to-orange-400",
-      borderColor: "border-amber-400",
-      category: "profile",
-    },
+  {
+    id: 1,
+    icon: <Users className="w-5 h-5" />,
+    label: "Bạn bè khắp nơi",
+    desc: "Kết nối 10+ người bạn",
+    unlocked: friendCount >= 10,
+    condition: "Có ≥ 10 bạn bè",
+    color: "from-pink-400 to-rose-400",
+    borderColor: "border-pink-400",
+    category: "profile",
+  },
+    
     {
       id: 2,
       icon: <Sparkles className="w-5 h-5" />,
@@ -607,6 +609,53 @@ export default function PublicProfile() {
     },
   ], [rating, responseRate, completed, trustScore, joinedDays, targetUser, reviews, profileCompletion, level]);
 
+  // Thêm state này dưới mấy state kia
+const [friendCount, setFriendCount] = useState(0);
+
+// Thêm vào trong fetchUser(), sau khi setTargetUser
+const fetchUser = useCallback(async () => {
+  if (!uid || !user) return;
+
+  try {
+    const [userSnap, currentUserSnap] = await Promise.all([
+      getDoc(doc(db, "users", uid as string)),
+      getDoc(doc(db, "users", user.uid)),
+    ]);
+
+    if (!userSnap.exists()) {
+      toast.error("Không tìm thấy người dùng");
+      router.replace("/404");
+      return;
+    }
+
+    const data = {
+      uid: userSnap.id,
+     ...userSnap.data(),
+    } as PublicUser;
+
+    setTargetUser(data);
+
+    if (currentUserSnap.exists()) {
+      setCurrentUserData(currentUserSnap.data());
+    }
+
+    const friendSnap = await getDoc(
+      doc(db, "users", user.uid, "friends", userSnap.id)
+    );
+    setIsFriend(friendSnap.exists());
+
+    // THÊM ĐOẠN NÀY: Đếm bạn bè của targetUser
+    const friendsCollection = await getDocs(collection(db, "users", uid as string, "friends"));
+    setFriendCount(friendsCollection.size);
+
+  } catch (err) {
+    console.error(err);
+    toast.error("Có lỗi xảy ra");
+    router.back();
+  } finally {
+    setLoading(false);
+  }
+}, [uid, user, db, router]);
   const isOwnProfile = user?.uid === uid;
 
   const fetchUser = useCallback(async () => {
@@ -1003,12 +1052,13 @@ return (
     <p className="text-xs text-zinc-500 leading-tight">Độ uy tín</p>
   </div>
 
+  {/* THAY TỪ PHẢN HỒI -> BẠN BÈ */}
   <div className="rounded-2xl border border-zinc-200 bg-white p-3 text-center shadow-sm">
-    <div className="flex items-center justify-center gap-1 text-amber-500 mb-1">
-      <Zap className="w-4 h-4" />
-      <span className="text-base font-bold">{responseRate}%</span>
+    <div className="flex items-center justify-center gap-1 text-pink-500 mb-1">
+      <Users className="w-4 h-4" />
+      <span className="text-base font-bold">{friendCount}</span>
     </div>
-    <p className="text-xs text-zinc-500 leading-tight">Phản hồi</p>
+    <p className="text-xs text-zinc-500 leading-tight">Bạn bè</p>
   </div>
 
   <div className="rounded-2xl border border-zinc-200 bg-white p-3 text-center shadow-sm">
