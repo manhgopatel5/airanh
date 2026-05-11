@@ -945,7 +945,7 @@ return (
     <Toaster richColors position="top-center" />
 
 {/* HEADER - TRẮNG SẠCH */}
-<div className="relative bg-white pt-3 pb-4">
+<div className="relative bg-white pt-2 pb-3">
 
 
   {/* AVATAR + INFO - GIẢM KHOẢNG CÁCH */}
@@ -978,16 +978,16 @@ return (
       )}
     </div>
 
-    <div className="flex items-center justify-center gap-1.5 mt-2.5">
-      <h1 className="text-xl font-bold text-zinc-900 tracking-tight">
-        {targetUser?.name || "Unknown User"}
-      </h1>
-      {targetUser?.emailVerified && (
-        <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
-          <Check className="w-3 h-3 text-white stroke-[3]" />
-        </div>
-      )}
+  <div className="flex items-center justify-center gap-1.5 mt-1.5">
+  <h1 className="text-xl font-bold text-zinc-900 tracking-tight">
+    {targetUser?.name || "Unknown User"}
+  </h1>
+  {targetUser?.emailVerified && (
+    <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
+      <Check className="w-3 h-3 text-white stroke-[3]" />
     </div>
+  )}
+</div>
 
     {/* BỎ USERID */}
 
@@ -1741,12 +1741,12 @@ return (
         </div>
       )}
 {/* GIỚI THIỆU - PHẦN 1 */}
-<div className="px-4 mt-5">
+<div className="px-4 mt-3">
   <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider px-1 mb-2.5">
     GIỚI THIỆU
   </p>
   <div className="bg-white rounded-3xl border border-zinc-200 overflow-hidden shadow-sm">
-    <div className="px-4 py-4">
+    <div className="px-4 py-6 min-h-[96px]">
       <p className={`text-sm leading-relaxed ${targetUser?.bio? 'text-zinc-900' : 'text-zinc-400'}`}>
         {targetUser?.bio || "Chưa có giới thiệu"}
       </p>
