@@ -1653,7 +1653,18 @@ return (
 <Dialog.Root open={showUserInfo} onOpenChange={setShowUserInfo}>
   <Dialog.Portal>
     <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
-    <Dialog.Content className="fixed inset-0 z-50 bg-zinc-50 overflow-y-auto">
+   <Dialog.Content
+  className="fixed inset-0 z-50 bg-zinc-50 overflow-y-auto"
+  onTouchStart={(e) => {
+    touchStartX.current = e.changedTouches[0]?.screenX?? 0;
+  }}
+  onTouchEnd={(e) => {
+    touchEndX.current = e.changedTouches[0]?.screenX?? 0;
+    if (touchEndX.current - touchStartX.current > 80) {
+      setShowUserInfo(false);
+    }
+  }}
+>
    
 
 {/* PROFILE HEADER CARD - TRẮNG */}
@@ -1691,10 +1702,14 @@ return (
 </h2>
 <p className="text-sm text-zinc-500 mt-0.5">@{targetUser?.userId || 'user'}</p>
 
-<div className="flex items-center gap-2 mt-3">
-  <div className="px-3 py-1 rounded-full bg-zinc-100 flex items-center gap-1.5">
-    <div className="w-1.5 h-1.5 rounded-full bg-zinc-900" />
-    <span className="text-xs font-bold text-zinc-900">Lv.{level}</span>
+<div className="mt-4 w-full max-w-xs">
+  <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3">
+    <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">
+      Giới thiệu
+    </p>
+    <p className="text-sm text-zinc-700 leading-relaxed">
+      {targetUser?.bio || "Chưa có giới thiệu"}
+    </p>
   </div>
             <div className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md flex items-center gap-1.5">
               <Sparkles className="w-3 h-3 text-white" />
