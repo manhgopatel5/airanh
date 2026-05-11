@@ -26,7 +26,6 @@ import {
   Clock,
   ExternalLink,
   Zap,
-  
   Share2,
   Flag,
   Crown,
@@ -36,12 +35,10 @@ import {
   Activity,
   Gem,
   ChevronRight,
-} from "lucide-react";
-import {
-  ...
   Coffee,
   Users,
   Heart,
+  Award,
   Mail,
   Music,
   Camera,
@@ -66,6 +63,7 @@ import {
   ThumbsUp,
   BookOpen,
   ShieldCheck,
+  Lock,
 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { motion, AnimatePresence } from "framer-motion";
