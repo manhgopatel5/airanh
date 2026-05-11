@@ -615,7 +615,7 @@ const trustScore = Math.min(
   const isOwnProfile = user?.uid === uid;
 
 const fetchUser = useCallback(async () => {
-  if (!uid || !user) return;
+  if (!uid || !user || typeof uid !== 'string') return; // THÊM typeof
 
   try {
     const [userSnap, currentUserSnap] = await Promise.all([
@@ -645,13 +645,18 @@ const fetchUser = useCallback(async () => {
     );
     setIsFriend(friendSnap.exists());
 
-    const friendsCollection = await getDocs(collection(db, "users", uid as string, "friends"));
-    setFriendCount(friendsCollection.size);
+    try {
+  const friendsCollection = await getDocs(collection(db, "users", uid as string, "friends"));
+  setFriendCount(friendsCollection.size);
+} catch (e) {
+  console.warn("Không đọc được số bạn bè:", e);
+  setFriendCount(0); // Set 0 nếu không có quyền đọc
+}
 
   } catch (err) {
     console.error(err);
     toast.error("Có lỗi xảy ra");
-    router.back();
+   
   } finally {
     setLoading(false);
   }
