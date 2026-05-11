@@ -118,7 +118,10 @@ export default function PublicProfile() {
   const [showMore, setShowMore] = useState(false);
 const [showAchievementInfo, setShowAchievementInfo] = useState(false);
 const [selectedAchievement, setSelectedAchievement] = useState<any>(null);
-
+ const completed = targetUser?.stats?.completed || 0;
+  const reviews = targetUser?.stats?.totalReviews || 0;
+  const rating = targetUser?.stats?.rating || 0;
+  const responseRate = targetUser?.stats?.responseRate || 98;
 const allAchievements = useMemo(() => [
  
   {
@@ -569,10 +572,7 @@ const allAchievements = useMemo(() => [
   const isOwnProfile = user?.uid === uid;
 
   // Fix 2: Mấy const này OK để ở đây vì có?. và default, nhưng đừng dùng để tính toán tiếp
-  const completed = targetUser?.stats?.completed || 0;
-  const reviews = targetUser?.stats?.totalReviews || 0;
-  const rating = targetUser?.stats?.rating || 0;
-  const responseRate = targetUser?.stats?.responseRate || 98;
+ 
 
   const fetchUser = useCallback(async () => {
     if (!uid ||!user) return;
