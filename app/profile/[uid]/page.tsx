@@ -298,40 +298,40 @@ const levelTiers = [
     name: "Mới tham gia",
     icon: <Sparkles className="w-4 h-4" />,
     gradient: "from-sky-400 to-blue-600",
-    xp: "0 - 980",
-    perks: "Hồ sơ cơ bản, nhận việc đơn giản",
+    xp: "0 - 2,100",
+    perks: "Bắt đầu hành trình trên Airanh",
   },
   {
     range: "8 - 19",
-    name: "Đang phát triển",
+    name: "Thành viên tích cực",
     icon: <Flame className="w-4 h-4" />,
     gradient: "from-emerald-500 to-teal-500",
-    xp: "980 - 2,660",
-    perks: "Ưu tiên hiển thị, badge xanh",
+    xp: "2,100 - 5,700",
+    perks: "Hoạt động thường xuyên, được đánh giá tốt",
   },
   {
     range: "20 - 34",
-    name: "Đối tác uy tín",
+    name: "Đối tác tin cậy",
     icon: <Shield className="w-4 h-4" />,
     gradient: "from-blue-500 to-sky-500",
-    xp: "2,660 - 4,760",
-    perks: "Tick xanh, job giá trị cao",
+    xp: "5,700 - 10,200",
+    perks: "Được cộng đồng tin tưởng cao",
   },
   {
     range: "35 - 49",
     name: "Chuyên gia",
     icon: <Gem className="w-4 h-4" />,
     gradient: "from-violet-500 to-fuchsia-500",
-    xp: "4,760 - 6,860",
-    perks: "Top đề xuất, hỗ trợ VIP",
+    xp: "10,200 - 14,700",
+    perks: "Kinh nghiệm dày dặn, uy tín hàng đầu",
   },
   {
     range: "50+",
     name: "Huyền thoại",
     icon: <Crown className="w-4 h-4" />,
     gradient: "from-amber-400 to-orange-500",
-    xp: "6,860+",
-    perks: "Tất cả quyền lợi + badge vàng",
+    xp: "14,700+",
+    perks: "Biểu tượng uy tín của cộng đồng",
   },
 ];
   const handleShare = async () => {
@@ -382,16 +382,16 @@ const xp =
     responseRate;
 
   const level =
-    Math.max(
-      1,
-      Math.floor(xp / 140) + 1
-    );
+  Math.max(
+    1,
+    Math.floor(xp / 300) + 1 
+  );
 
-  const currentLevelXP =
-    xp % 140;
+const currentLevelXP =
+  xp % 300; // ĐỔI
 
-  const progress =
-    (currentLevelXP / 140) * 100;
+const progress =
+  (currentLevelXP / 300) * 100; 
 
   const trustScore = Math.min(
     100,
@@ -449,7 +449,7 @@ const rank: RankData = useMemo(() => {
   }
   if (level >= 20) {
     return {
-      name: "Đối tác uy tín",
+      name: "Đối tác tin cậy",
       icon: <Shield className="w-3.5 h-3.5" />,
       gradient: "from-blue-500 to-sky-500",
       glow: "shadow-blue-500/20",
@@ -457,17 +457,16 @@ const rank: RankData = useMemo(() => {
   }
   if (level >= 8) {
     return {
-      name: "Đang phát triển",
+      name: "Thành viên tích cực",
       icon: <Flame className="w-3.5 h-3.5" />,
       gradient: "from-emerald-500 to-teal-500",
       glow: "shadow-emerald-500/20",
     };
   }
-  // ĐỔI MÀU Ở ĐÂY
   return {
     name: "Mới tham gia",
     icon: <Sparkles className="w-3.5 h-3.5" />,
-    gradient: "from-sky-400 to-blue-600", // XANH ĐỒNG BỘ
+    gradient: "from-sky-400 to-blue-600",
     glow: "shadow-blue-500/20",
   };
 }, [level]);
@@ -692,7 +691,7 @@ return (
                   Tiến trình level
                 </span>
                 <span className="text-xs font-semibold text-zinc-700">
-                  {currentLevelXP}/140 XP
+                  {currentLevelXP}/300 XP
                 </span>
               </div>
               <div className="h-2 rounded-full bg-zinc-100 overflow-hidden">
@@ -941,7 +940,7 @@ return (
             <span>{xp} XP</span>
           </div>
           <div className="text-xs text-blue-700 mt-1">
-            Mỗi level cần 140 XP
+            Mỗi level cần 300 XP
           </div>
         </div>
       </div>
@@ -1005,7 +1004,7 @@ return (
         <div className="mt-3">
           <div className="flex justify-between text-xs mb-1">
             <span className="text-zinc-400">Tiến trình</span>
-            <span className="text-zinc-300">{currentLevelXP}/140 XP</span>
+            <span className="text-zinc-300">{currentLevelXP}/300 XP</span>
           </div>
           <div className="h-1.5 rounded-full bg-zinc-700 overflow-hidden">
             <div
