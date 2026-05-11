@@ -631,7 +631,12 @@ return (
     <Info className="w-3.5 h-3.5 text-white" />
   </button>
 </div>
-
+{targetUser?.location && (
+  <div className="flex items-center justify-center gap-1 mt-3 text-sm text-white/80">
+    <MapPin className="w-3.5 h-3.5" />
+    <span>{targetUser?.location}</span>
+  </div>
+)}
     {/* HOẠT ĐỘNG */}
     <div className="mt-2.5 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md flex items-center gap-1.5">
       <Clock className="w-3.5 h-3.5 text-white" />
