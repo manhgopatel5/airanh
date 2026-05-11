@@ -905,23 +905,7 @@ return (
 
 {/* HEADER - TRẮNG SẠCH */}
 <div className="relative bg-white pt-3 pb-4">
-  {/* TOP ACTIONS */}
-  <div className="px-4 pb-2 flex items-center justify-end gap-2">
-    <button
-      onClick={handleShare}
-      className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center active:scale-90 transition-all"
-    >
-      <Share2 className="w-4 h-4 text-zinc-700" />
-    </button>
-    {!isOwnProfile && (
-      <button
-        onClick={() => setShowMore(!showMore)}
-        className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center active:scale-90 transition-all"
-      >
-        <MoreVertical className="w-4 h-4 text-zinc-700" />
-      </button>
-    )}
-  </div>
+
 
   {/* AVATAR + INFO - GIẢM KHOẢNG CÁCH */}
   <div className="flex flex-col items-center">
