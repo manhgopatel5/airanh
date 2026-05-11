@@ -417,11 +417,12 @@ const rank: RankData = useMemo(() => {
       glow: "shadow-emerald-500/20",
     };
   }
+  // ĐỔI MÀU Ở ĐÂY
   return {
     name: "Mới tham gia",
     icon: <Sparkles className="w-3.5 h-3.5" />,
-    gradient: "from-zinc-400 to-zinc-500",
-    glow: "shadow-zinc-500/10",
+    gradient: "from-sky-400 to-blue-600", // XANH ĐỒNG BỘ
+    glow: "shadow-blue-500/20",
   };
 }, [level]);
 
