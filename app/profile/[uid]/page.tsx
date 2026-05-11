@@ -1465,7 +1465,7 @@ return (
 </div>
       </div>
 
-      {/* TỔNG ĐIỂM */}
+     
       <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-500 to-sky-500 text-white">
         <div className="flex justify-between items-center">
           <span className="font-semibold">Tổng điểm uy tín</span>
