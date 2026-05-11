@@ -1733,6 +1733,7 @@ return (
               <div className="text-right">
                 <p className="text-2xl font-black text-blue-500">{profileCompletion}%</p>
               </div>
+</div>
             <div className="h-2 rounded-full bg-zinc-100 overflow-hidden">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-blue-500 to-sky-500 transition-all duration-500"
