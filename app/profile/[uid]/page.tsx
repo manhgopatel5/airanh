@@ -651,7 +651,24 @@ return (
 
 <div className="px-4 -mt-10 relative z-10">
   <div className="max-w-md mx-auto space-y-3">
-
+{achievements.length > 0 && (
+  <div className="mt-5">
+    <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2.5 px-1">
+      Thành tựu
+    </p>
+    <div className="flex flex-wrap gap-2">
+      {achievements.map((item, i) => (
+        <div
+          key={i}
+          className="px-3 py-2 rounded-2xl bg-white border border-zinc-200/80 text-sm font-medium text-zinc-700 flex items-center gap-2 shadow-sm"
+        >
+          <span>{item.icon}</span>
+          <span>{item.label}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
     {/* STATS */}
 <div className="grid grid-cols-4 gap-2">
   <div className="rounded-2xl border border-zinc-200 bg-white p-3 text-center shadow-sm">
