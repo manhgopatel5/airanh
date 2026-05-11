@@ -126,29 +126,29 @@ const [friendCount, setFriendCount] = useState(0); // CHUYỂN LÊN ĐÂY
   const [showMore, setShowMore] = useState(false);
   const [showAchievementInfo, setShowAchievementInfo] = useState(false);
   const [selectedAchievement, setSelectedAchievement] = useState<any>(null);
-  // Component hàng thông tin
+// Component hàng thông tin
 const InfoRow = ({
   icon,
   label,
   value,
-  verified = false,
-  empty = false
+  verified,
+  empty
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
-  verified?: boolean;
-  empty?: boolean;
+  verified?: boolean; // giữ nguyên
+  empty?: boolean; // giữ nguyên
 }) => (
   <div className="flex items-center justify-between px-4 py-4 active:bg-zinc-50 transition-colors">
     <div className="flex items-center gap-3 flex-1 min-w-0">
       <div className={`${empty? 'text-zinc-300' : 'text-zinc-400'}`}>
         {icon}
       </div>
-      <span className="text-[15px] text-zinc-700">{label}</span>
+      <span className="text- text-zinc-700">{label}</span>
     </div>
     <div className="flex items-center gap-1.5 flex-shrink-0">
-      <span className={`text-[15px] ${empty? 'text-zinc-400' : 'text-zinc-900 font-medium'}`}>
+      <span className={`text- ${empty? 'text-zinc-400' : 'text-zinc-900 font-medium'}`}>
         {value}
       </span>
       {verified && (
@@ -1750,12 +1750,12 @@ return (
           Thông tin cơ bản
         </p>
         <div className="bg-white rounded-3xl border border-zinc-200 overflow-hidden shadow-sm">
-          <InfoRow
-            icon={<Mail className="w-5 h-5" />}
-            label="Email"
-            value={targetUser?.emailVerified? "••••••@gmail.com" : "Chưa xác minh"}
-            verified={targetUser?.emailVerified}
-          />
+   <InfoRow
+  icon={<Mail className="w-5 h-5" />}
+  label="Email"
+  value={targetUser?.emailVerified? "••••••@gmail.com" : "Chưa xác minh"}
+  verified={!!targetUser?.emailVerified} // THÊM!!
+/>/>
           <Divider />
           <InfoRow
             icon={<User className="w-5 h-5" />}
@@ -1798,13 +1798,13 @@ return (
             value="Tiếng Việt"
           />
           <Divider />
-          <InfoRow
-            icon={<ShieldCheck className="w-5 h-5" />}
-            label="Xác minh CCCD"
-            value={targetUser?.isVerifiedId? "Đã xác minh" : "Chưa xác minh"}
-            verified={targetUser?.isVerifiedId}
-            empty={!targetUser?.isVerifiedId}
-          />
+  <InfoRow
+  icon={<ShieldCheck className="w-5 h-5" />}
+  label="Xác minh CCCD"
+  value={targetUser?.isVerifiedId? "Đã xác minh" : "Chưa xác minh"}
+  verified={!!targetUser?.isVerifiedId} // THÊM!!
+  empty={!targetUser?.isVerifiedId}
+/>
         </div>
       </div>
 
