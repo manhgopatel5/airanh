@@ -686,55 +686,54 @@ return (
   </div>
 </div>
 
-{/* ACHIEVEMENTS */}
-{achievements.length > 0 && (
-  <div className="mt-5">
-    <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2.5 px-1">
-      Thành tựu
-    </p>
-    <div className="flex flex-wrap gap-2">
-      {achievements.map((item, i) => (
-        <div
-          key={i}
-          className="px-3 py-2 rounded-2xl bg-white border border-zinc-200/80 text-sm font-medium text-zinc-700 flex items-center gap-2 shadow-sm"
-        >
-          <span>{item.icon}</span>
-          <span>{item.label}</span>
+        {/* ACHIEVEMENTS */}
+        {achievements.length > 0 && (
+          <div className="mt-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2.5 px-1">
+              Thành tựu
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {achievements.map((item, i) => (
+                <div
+                  key={i}
+                  className="px-3 py-2 rounded-2xl bg-white border border-zinc-200/80 text-sm font-medium text-zinc-700 flex items-center gap-2 shadow-sm"
+                >
+                  <span>{item.icon}</span>
+                  <span>{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </motion.div>
+
+    {/* STATS */}
+    <div className="grid grid-cols-3 gap-3 mt-5">
+      <div className="rounded-3xl border-zinc-200/80 bg-white p-4 text-center shadow-sm">
+        <div className="flex items-center justify-center gap-1 text-amber-500 mb-1">
+          <Star className="w-4 h-4 fill-current" />
+          <span className="text-xl font-bold">{rating || 0}</span>
         </div>
-      ))}
-    </div>
-  </div>
-)}
+        <p className="text-xs text-zinc-500">{reviews} đánh giá</p>
+      </div>
 
-</div>
-</motion.div>
+      <div className="rounded-3xl border border-zinc-200/80 bg-white p-4 text-center shadow-sm">
+        <div className="flex items-center justify-center gap-1 text-blue-500 mb-1">
+          <Briefcase className="w-4 h-4" />
+          <span className="text-xl font-bold">{completed}</span>
+        </div>
+        <p className="text-xs text-zinc-500">Hoàn thành</p>
+      </div>
 
-{/* STATS */}
-<div className="grid grid-cols-3 gap-3 mt-5">
-  <div className="rounded-3xl border border-zinc-200/80 bg-white p-4 text-center shadow-sm">
-    <div className="flex items-center justify-center gap-1 text-amber-500 mb-1">
-      <Star className="w-4 h-4 fill-current" />
-      <span className="text-xl font-bold">{rating || 0}</span>
+      <div className="rounded-3xl border border-zinc-200/80 bg-white p-4 text-center shadow-sm">
+        <div className="flex items-center justify-center gap-1 text-emerald-500 mb-1">
+          <Zap className="w-4 h-4" />
+          <span className="text-xl font-bold">{responseRate}%</span>
+        </div>
+        <p className="text-xs text-zinc-500">Phản hồi</p>
+      </div>
     </div>
-    <p className="text-xs text-zinc-500">{reviews} đánh giá</p>
-  </div>
-
-  <div className="rounded-3xl border border-zinc-200/80 bg-white p-4 text-center shadow-sm">
-    <div className="flex items-center justify-center gap-1 text-blue-500 mb-1">
-      <Briefcase className="w-4 h-4" />
-      <span className="text-xl font-bold">{completed}</span>
-    </div>
-    <p className="text-xs text-zinc-500">Hoàn thành</p>
-  </div>
-
-  <div className="rounded-3xl border border-zinc-200/80 bg-white p-4 text-center shadow-sm">
-    <div className="flex items-center justify-center gap-1 text-emerald-500 mb-1">
-      <Zap className="w-4 h-4" />
-      <span className="text-xl font-bold">{responseRate}%</span>
-    </div>
-    <p className="text-xs text-zinc-500">Phản hồi</p>
-  </div>
-</div>
 
 {/* PROFILE COMPLETION */}
 <div className="mt-5 rounded-3xl border border-zinc-200/80 bg-white p-4 shadow-sm">
