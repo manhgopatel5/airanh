@@ -333,17 +333,17 @@ const trustScore = Math.min(
       borderColor: "border-amber-400",
       category: "profile",
     },
-    {
-      id: 16,
-      icon: <Users className="w-5 h-5" />,
-      label: "Bạn bè khắp nơi",
-      desc: "Kết nối 20+ người",
-      unlocked: false,
-      condition: "Có 20+ bạn bè",
-      color: "from-pink-400 to-rose-400",
-      borderColor: "border-pink-400",
-      category: "profile",
-    },
+   {
+  id: 16,
+  icon: <Heart className="w-5 h-5" />,
+  label: "Bạn thân 50 người",
+  desc: "Mở rộng vòng kết nối",
+  unlocked: friendCount >= 50,
+  condition: "Có ≥ 50 bạn bè",
+  color: "from-rose-400 to-pink-500",
+  borderColor: "border-rose-400",
+  category: "profile",
+},
     {
       id: 17,
       icon: <TrendingUp className="w-5 h-5" />,
@@ -1400,42 +1400,43 @@ return (
       </p>
 
       {/* BREAKDOWN CHI TIẾT */}
-      <div className="space-y-3 mb-5">
-        <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
-          <div className="flex justify-between items-center mb-1">
-            <span className="text-sm font-semibold text-zinc-700">Đánh giá trung bình</span>
-            <span className="text-sm font-bold text-blue-600">
-              +{Math.min(Math.floor(rating * 8), 40)}/40
-            </span>
-          </div>
-          <p className="text-xs text-zinc-500">
-            {rating} sao × 8 điểm. Tối đa 40 điểm
-          </p>
-        </div>
+<div className="space-y-3 mb-5">
+  <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
+    <div className="flex justify-between items-center mb-1">
+      <span className="text-sm font-semibold text-zinc-700">Đánh giá trung bình</span>
+      <span className="text-sm font-bold text-blue-600">
+        +{Math.min(Math.floor(rating * 15), 40)}/40
+      </span>
+    </div>
+    <p className="text-xs text-zinc-500">
+      {rating} sao × 15 điểm. Tối đa 40 điểm
+    </p>
+  </div>
 
-        <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
-          <div className="flex justify-between items-center mb-1">
-            <span className="text-sm font-semibold text-zinc-700">Công việc hoàn thành</span>
-            <span className="text-sm font-bold text-blue-600">
-              +{Math.min(Math.floor(completed * 1.5), 30)}/30
-            </span>
-          </div>
-          <p className="text-xs text-zinc-500">
-            {completed} job × 1.5 điểm. Tối đa 30 điểm
-          </p>
-        </div>
+  <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
+    <div className="flex justify-between items-center mb-1">
+      <span className="text-sm font-semibold text-zinc-700">Công việc hoàn thành</span>
+      <span className="text-sm font-bold text-blue-600">
+        +{Math.min(Math.floor(completed * 1.2), 30)}/30
+      </span>
+    </div>
+    <p className="text-xs text-zinc-500">
+      {completed} job × 1.2 điểm. Tối đa 30 điểm
+    </p>
+  </div>
 
-        <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
-          <div className="flex justify-between items-center mb-1">
-            <span className="text-sm font-semibold text-zinc-700">Số lượng đánh giá</span>
-            <span className="text-sm font-bold text-blue-600">
-              +{Math.min(reviews, 15)}/15
-            </span>
-          </div>
-          <p className="text-xs text-zinc-500">
-            {reviews} đánh giá × 1 điểm. Tối đa 15 điểm
-          </p>
-        </div>
+  <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
+    <div className="flex justify-between items-center mb-1">
+      <span className="text-sm font-semibold text-zinc-700">Số lượng đánh giá</span>
+      <span className="text-sm font-bold text-blue-600">
+        +{Math.min(reviews, 15)}/15
+      </span>
+    </div>
+    <p className="text-xs text-zinc-500">
+      {reviews} đánh giá × 1 điểm. Tối đa 15 điểm
+    </p>
+  </div>
+</div>
 
         <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
           <div className="flex justify-between items-center mb-1">
