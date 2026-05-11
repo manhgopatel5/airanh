@@ -1142,7 +1142,7 @@ return (
       </span>
     </div>
   </div>
-</div>
+
 
 <div className="px-4 -mt-10 relative z-10">
   <div className="max-w-md mx-auto space-y-3">
@@ -1754,7 +1754,7 @@ return (
                     {item.unlocked? item.icon : <Lock className="w-4 h-4" />}
                   </div>
                 </div>
-                <p className="text- font-semibold text-zinc-700 text-center leading-tight line-clamp-2">{item.label}</p>
+                <p className="text-xs font-semibold text-zinc-700 text-center leading-tight line-clamp-2">{item.label}</p>
               </button>
             ))}
           </div>
