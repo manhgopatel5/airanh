@@ -80,6 +80,8 @@ type PublicUser = {
   userId: string;
   avatar: string;
   bio?: string;
+  birthday?: string;  
+  phone?: string;
   title?: string;
   location?: string;
   online?: boolean;
