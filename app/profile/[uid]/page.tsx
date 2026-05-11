@@ -561,9 +561,30 @@ return (
   <div className="min-h-screen bg-zinc-50 pb-28">
     <Toaster richColors position="top-center" />
 
-    {/* HEADER WAVE */}
-<div className="relative bg-gradient-to-b from-sky-400 to-blue-500 pt-6 pb-20">
-  <div className="absolute inset-x-0 bottom-0 h-16 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTQ0MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDE0NDAgNjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0wIDMwQzI0MCAxMCA0ODAgNTAgNzIwIDMwQzk2MCAxMCAxMjAwIDUwIDE0NDAgMzBWNTBIMFYzMFoiIGZpbGw9IiNGOEZBRkMiLz4KPC9zdmc+')] bg-bottom bg-no-repeat bg-cover" />
+{/* HEADER WAVE - GIỐNG 100% ẢNH */}
+<div className="relative bg-gradient-to-b from-[#5B9BFF] to-[#4A90E2] pt-6 pb-24">
+  {/* SÓNG 3 LỚP */}
+  <svg
+    className="absolute bottom-0 left-0 w-full"
+    viewBox="0 0 1440 120"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M0 60C240 30 480 90 720 60C960 30 1200 90 1440 60V120H0V60Z"
+      fill="#E3F2FD"
+      opacity="0.4"
+    />
+    <path
+      d="M0 70C240 45 480 95 720 70C960 45 1200 95 1440 70V120H0V70Z"
+      fill="#BBDEFB"
+      opacity="0.6"
+    />
+    <path
+      d="M0 80C240 60 480 100 720 80C960 60 1200 100 1440 80V120H0V80Z"
+      fill="#F8FAFC"
+    />
+  </svg>
   
   {/* TOP ACTIONS - BỎ NÚT BACK */}
   <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
@@ -651,27 +672,16 @@ return (
 
 <div className="px-4 -mt-10 relative z-10">
   <div className="max-w-md mx-auto space-y-3">
-{achievements.length > 0 && (
-  <div className="mt-5">
-    <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2.5 px-1">
-      Thành tựu
-    </p>
-    <div className="flex flex-wrap gap-2">
-      {achievements.map((item, i) => (
-        <div
-          key={i}
-          className="px-3 py-2 rounded-2xl bg-white border border-zinc-200/80 text-sm font-medium text-zinc-700 flex items-center gap-2 shadow-sm"
-        >
-          <span>{item.icon}</span>
-          <span>{item.label}</span>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
-    {/* STATS */}
+
+{/* STATS */}
 <div className="grid grid-cols-4 gap-2">
-  <div className="rounded-2xl border border-zinc-200 bg-white p-3 text-center shadow-sm">
+  <div className="rounded-2xl border border-zinc-200 bg-white p-3 text-center shadow-sm relative">
+    <button
+      onClick={() => setShowTrustInfo(true)}
+      className="absolute top-1 right-1 w-4 h-4 rounded-full bg-zinc-100 flex items-center justify-center active:scale-95"
+    >
+      <Info className="w-2.5 h-2.5 text-zinc-500" />
+    </button>
     <div className="flex items-center justify-center gap-1 text-blue-500 mb-1">
       <Shield className="w-4 h-4" />
       <span className="text-base font-bold">{trustScore}%</span>
@@ -703,6 +713,25 @@ return (
     <p className="text-xs text-zinc-500 leading-tight">Đánh giá</p>
   </div>
 </div>
+{/* THÀNH TỰU - ĐÃ CHUYỂN XUỐNG DƯỚI */}
+{achievements.length > 0 && (
+  <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+    <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2.5">
+      Thành tựu
+    </p>
+    <div className="flex flex-wrap gap-2">
+      {achievements.map((item, i) => (
+        <div
+          key={i}
+          className="px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-medium text-zinc-700 flex items-center gap-2"
+        >
+          <span>{item.icon}</span>
+          <span>{item.label}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
 
 {/* PROFILE COMPLETION */}
 <div className="mt-5 rounded-3xl border border-zinc-200/80 bg-white p-4 shadow-sm">
