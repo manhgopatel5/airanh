@@ -1755,7 +1755,7 @@ return (
   label="Email"
   value={targetUser?.emailVerified? "••••••@gmail.com" : "Chưa xác minh"}
   verified={!!targetUser?.emailVerified} // THÊM!!
-/>/>
+/>
           <Divider />
           <InfoRow
             icon={<User className="w-5 h-5" />}
