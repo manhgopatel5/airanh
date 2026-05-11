@@ -782,6 +782,16 @@ const handleMessage = async () => {
   
   setActionLoading(true);
   try {
+    // Check currentUserData có chưa
+    if (!currentUserData) {
+      const userSnap = await getDoc(doc(db, "users", user.uid));
+      if (!userSnap.exists()) {
+        toast.error("Không tìm thấy thông tin của bạn");
+        return;
+      }
+      setCurrentUserData(userSnap.data());
+    }
+
     const chatId = [user.uid, targetUser.uid].sort().join('_');
     const chatRef = doc(db, "chats", chatId);
     
@@ -803,15 +813,16 @@ const handleMessage = async () => {
           }
         },
         createdAt: serverTimestamp(),
-        lastMessage: null,
+        lastMessage: "",
+        lastMessageTime: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
     }
     
     router.push(`/chat/${chatId}`);
-  } catch (err) {
-    console.error(err);
-    toast.error("Không thể mở cuộc trò chuyện");
+  } catch (err: any) {
+    console.error("Lỗi tạo chat:", err);
+    toast.error(`Không thể mở cuộc trò chuyện: ${err.message}`);
   } finally {
     setActionLoading(false);
   }
