@@ -118,10 +118,49 @@ export default function PublicProfile() {
   const [showMore, setShowMore] = useState(false);
 const [showAchievementInfo, setShowAchievementInfo] = useState(false);
 const [selectedAchievement, setSelectedAchievement] = useState<any>(null);
- const completed = targetUser?.stats?.completed || 0;
-  const reviews = targetUser?.stats?.totalReviews || 0;
-  const rating = targetUser?.stats?.rating || 0;
-  const responseRate = targetUser?.stats?.responseRate || 98;
+const completed = targetUser?.stats?.completed || 0;
+const reviews = targetUser?.stats?.totalReviews || 0;
+const rating = targetUser?.stats?.rating || 0;
+const responseRate = targetUser?.stats?.responseRate || 98;
+
+const xp =
+  completed * 12 +
+  reviews * 8 +
+  Math.floor(rating * 20) +
+  responseRate;
+
+const level = Math.max(1, Math.floor(xp / 300) + 1);
+
+const currentLevelXP = xp % 300;
+
+const progress = (currentLevelXP / 300) * 100;
+
+const trustScore = Math.min(
+  100,
+  Math.floor(rating * 15 + completed * 1.2 + reviews + responseRate * 0.35)
+);
+
+const joinedDays =
+  targetUser?.createdAt?.seconds
+   ? Math.floor(
+        (Date.now() - targetUser.createdAt.seconds * 1000) / 86400000
+      )
+    : 0;
+
+const profileCompletion = Math.round(
+  ([
+    targetUser?.avatar,
+    targetUser?.bio,
+    targetUser?.skills?.length,
+    targetUser?.portfolio?.length,
+    targetUser?.location,
+    targetUser?.title,
+    targetUser?.emailVerified,
+    targetUser?.isVerifiedId,
+  ].filter(Boolean).length / 8) * 100
+);
+
+// ===== GIỜ MỚI KHAI BÁO useMemo =====
 const allAchievements = useMemo(() => [
  
   {
