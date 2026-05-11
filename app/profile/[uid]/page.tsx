@@ -561,44 +561,31 @@ return (
   <div className="min-h-screen bg-zinc-50 pb-28">
     <Toaster richColors position="top-center" />
 
-    {/* HEADER */}
+    {/* HEADER WAVE */}
+<div className="relative bg-gradient-to-b from-sky-400 to-blue-500 pt-6 pb-20">
+  <div className="absolute inset-x-0 bottom-0 h-16 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTQ0MCIgaGVpZ2h0PSI2MCIgdmlld0JveD0iMCAwIDE0NDAgNjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0wIDMwQzI0MCAxMCA0ODAgNTAgNzIwIDMwQzk2MCAxMCAxMjAwIDUwIDE0NDAgMzBWNTBIMFYzMFoiIGZpbGw9IiNGOEZBRkMiLz4KPC9zdmc+')] bg-bottom bg-no-repeat bg-cover" />
   
-
-    <div className="px-4 py-5">
-      <div className="max-w-md mx-auto space-y-4">
-        {/* HERO CARD */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="relative overflow-hidden rounded-3xl border border-zinc-200/80 bg-white shadow-sm"
-        >
-       {/* THÊM ĐOẠN NÀY */}
-  <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
-  <button
-    onClick={handleShare}
-    className="w-9 h-9 rounded-xl bg-white border border-zinc-200 flex items-center justify-center active:scale-95 transition-all shadow-sm"
-  >
-    <Share2 className="w-5 h-5 text-zinc-700" />
-  </button>
-  {!isOwnProfile && (
+  {/* TOP ACTIONS - BỎ NÚT BACK */}
+  <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
     <button
-      onClick={() => setShowMore(!showMore)}
-      className="w-9 h-9 rounded-xl bg-white border border-zinc-200 flex items-center justify-center active:scale-95 transition-all shadow-sm"
+      onClick={handleShare}
+      className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center active:scale-95 transition-all"
     >
-      <MoreVertical className="w-5 h-5 text-zinc-700" />
+      <Share2 className="w-5 h-5 text-white" />
     </button>
-  )}
-</div>
-  
+    {!isOwnProfile && (
+      <button
+        onClick={() => setShowMore(!showMore)}
+        className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center active:scale-95 transition-all"
+      >
+        <MoreVertical className="w-5 h-5 text-white" />
+      </button>
+    )}
+  </div>
 
-  
-
- 
-<div className="px-5 pt-16 pb-5">
-  <div className="flex flex-col items-center text-center">
-    {/* AVATAR CHUYỂN XUỐNG ĐÂY */}
-    <div className="relative mb-3">
+  {/* AVATAR + INFO CENTER */}
+  <div className="relative z-10 flex flex-col items-center pt-8">
+    <div className="relative">
       <img
         src={
           targetUser?.avatar ||
@@ -607,184 +594,86 @@ return (
           )}&size=200`
         }
         alt=""
-        className="w-24 h-24 rounded-full object-cover border-4 border-zinc-100 shadow-sm"
+        className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
       />
       {targetUser?.online && (
         <div className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-500 border-[3px] border-white" />
       )}
     </div>
 
-    <div className="flex items-center justify-center gap-1.5">
-      <h1 className="text-xl font-bold text-zinc-900">
-                  {targetUser?.name || "Unknown User"}
-                </h1>
-                {targetUser?.emailVerified && (
-                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center">
-                    <Check className="w-3 h-3 text-white stroke-[3]" />
-                  </div>
-                )}
-              </div>
-
-              {targetUser?.title && (
-                <p className="mt-1 text-sm text-zinc-600">
-                  {targetUser?.title}
-                </p>
-              )}
-
-{/* LEVEL */}
-<div className="flex justify-center mt-3 items-center gap-1.5">
-  <div
-    className={`px-3 py-1.5 rounded-full bg-gradient-to-r ${rank.gradient} text-white flex items-center gap-1.5 shadow-sm ${rank.glow}`}
-  >
-    {rank.icon}
-    <span className="font-semibold text-xs">{rank.name}</span>
-    <div className="px-1.5 py-0.5 rounded-full bg-white/25 text-xs font-bold">
-      Lv.{level}
+    <div className="flex items-center justify-center gap-1.5 mt-3">
+      <h1 className="text-xl font-bold text-white">
+        {targetUser?.name || "Unknown User"}
+      </h1>
+      {targetUser?.emailVerified && (
+        <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center">
+          <Check className="w-3 h-3 text-blue-500 stroke-[3]" />
+        </div>
+      )}
     </div>
-  </div>
 
-  <button
-    onClick={() => setShowLevelInfo(true)}
-    className="w-6 h-6 rounded-full bg-zinc-100 border border-zinc-200 flex items-center justify-center active:scale-95 transition-all"
-  >
-    <Info className="w-3.5 h-3.5 text-zinc-600" />
-  </button>
-</div>
-
-              {/* LOCATION - BỎ USER ID */}
-{targetUser?.location && (
-  <div className="flex items-center justify-center gap-1 mt-3 text-sm text-zinc-500">
-    <MapPin className="w-3.5 h-3.5" />
-    <span>{targetUser?.location}</span>
-  </div>
-)}
-
-              {/* STATUS */}
-              <div className="mt-3 flex justify-center">
-                {targetUser?.online? (
-                  <div className="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    Đang hoạt động
-                  </div>
-                ) : (
-                  <div className="px-2.5 py-1 rounded-full bg-zinc-100 border border-zinc-200 text-zinc-600 text-xs font-medium flex items-center gap-1.5">
-                    <Clock className="w-3 h-3" />
-                    Hoạt động {formatLastSeen(targetUser?.lastSeen)}
-                  </div>
-                )}
-              </div>
-
-              {/* BIO */}
-              {targetUser?.bio && (
-                <p className="mt-4 text-sm leading-6 text-zinc-600">
-                  {targetUser?.bio}
-                </p>
-              )}
-            </div>
-
-            {/* XP */}
-            <div className="mt-5">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-medium text-zinc-500">
-                  Tiến trình level
-                </span>
-                <span className="text-xs font-semibold text-zinc-700">
-                  {currentLevelXP}/300 XP
-                </span>
-              </div>
-              <div className="h-2 rounded-full bg-zinc-100 overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
-                  transition={{ duration: 0.8 }}
-                  className={`h-full rounded-full bg-gradient-to-r ${rank.gradient}`}
-                />
-              </div>
-            </div>
- {/* TRUST SCORE */}
-<div className="mt-5 rounded-3xl border border-zinc-200/80 bg-white p-4 shadow-sm">
-  <div className="flex items-center justify-between">
-    <div>
-      <div className="flex items-center gap-1.5">
-        <p className="text-xs text-zinc-500 font-medium">Độ uy tín</p>
-        <button
-          onClick={() => setShowTrustInfo(true)}
-          className="w-4 h-4 rounded-full bg-zinc-100 flex items-center justify-center active:scale-95"
-        >
-          <Info className="w-2.5 h-2.5 text-zinc-500" />
-        </button>
-      </div>
-      <div className="flex items-center gap-2 mt-1">
-        <Shield className="w-5 h-5 text-blue-500" />
-        <span className="text-2xl font-bold text-zinc-900">
-          {trustScore}%
-        </span>
+    {/* RANK BADGE */}
+    <div className="flex justify-center mt-3 items-center gap-1.5">
+      <div
+        className={`px-3 py-1.5 rounded-full bg-gradient-to-r ${rank.gradient} text-white flex items-center gap-1.5 shadow-md`}
+      >
+        {rank.icon}
+        <span className="font-semibold text-xs">{rank.name}</span>
+        <div className="px-1.5 py-0.5 rounded-full bg-white/25 text-xs font-bold">
+          Lv.{level}
+        </div>
       </div>
     </div>
-<div className="px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200">
-  <span className="text-xs font-semibold text-blue-600">
-    {trustScore >= 90
-      ? "Uy tín tuyệt đối"
-      : trustScore >= 70
-      ? "Đáng tin cậy cao"
-      : trustScore >= 40
-      ? "Khá tin cậy"
-      : trustScore >= 20
-      ? "Đang xây dựng"
-      : "Mới tham gia"} 
-  </span>
-</div>
+
+    {/* HOẠT ĐỘNG */}
+    <div className="mt-2.5 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md flex items-center gap-1.5">
+      <Clock className="w-3.5 h-3.5 text-white" />
+      <span className="text-xs text-white font-medium">
+        {targetUser?.online
+          ? "Đang hoạt động"
+          : `Hoạt động ${formatLastSeen(targetUser?.lastSeen)}`}
+      </span>
+    </div>
   </div>
 </div>
 
-        {/* ACHIEVEMENTS */}
-        {achievements.length > 0 && (
-          <div className="mt-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2.5 px-1">
-              Thành tựu
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {achievements.map((item, i) => (
-                <div
-                  key={i}
-                  className="px-3 py-2 rounded-2xl bg-white border border-zinc-200/80 text-sm font-medium text-zinc-700 flex items-center gap-2 shadow-sm"
-                >
-                  <span>{item.icon}</span>
-                  <span>{item.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </motion.div>
+<div className="px-4 -mt-10 relative z-10">
+  <div className="max-w-md mx-auto space-y-3">
 
     {/* STATS */}
-    <div className="grid grid-cols-3 gap-3 mt-5">
-      <div className="rounded-3xl border-zinc-200/80 bg-white p-4 text-center shadow-sm">
-        <div className="flex items-center justify-center gap-1 text-amber-500 mb-1">
-          <Star className="w-4 h-4 fill-current" />
-          <span className="text-xl font-bold">{rating || 0}</span>
-        </div>
-        <p className="text-xs text-zinc-500">{reviews} đánh giá</p>
-      </div>
-
-      <div className="rounded-3xl border border-zinc-200/80 bg-white p-4 text-center shadow-sm">
-        <div className="flex items-center justify-center gap-1 text-blue-500 mb-1">
-          <Briefcase className="w-4 h-4" />
-          <span className="text-xl font-bold">{completed}</span>
-        </div>
-        <p className="text-xs text-zinc-500">Hoàn thành</p>
-      </div>
-
-      <div className="rounded-3xl border border-zinc-200/80 bg-white p-4 text-center shadow-sm">
-        <div className="flex items-center justify-center gap-1 text-emerald-500 mb-1">
-          <Zap className="w-4 h-4" />
-          <span className="text-xl font-bold">{responseRate}%</span>
-        </div>
-        <p className="text-xs text-zinc-500">Phản hồi</p>
-      </div>
+<div className="grid grid-cols-4 gap-2">
+  <div className="rounded-2xl border border-zinc-200 bg-white p-3 text-center shadow-sm">
+    <div className="flex items-center justify-center gap-1 text-blue-500 mb-1">
+      <Shield className="w-4 h-4" />
+      <span className="text-base font-bold">{trustScore}%</span>
     </div>
+    <p className="text-xs text-zinc-500 leading-tight">Độ uy tín</p>
+  </div>
+
+  <div className="rounded-2xl border border-zinc-200 bg-white p-3 text-center shadow-sm">
+    <div className="flex items-center justify-center gap-1 text-amber-500 mb-1">
+      <Zap className="w-4 h-4" />
+      <span className="text-base font-bold">{responseRate}%</span>
+    </div>
+    <p className="text-xs text-zinc-500 leading-tight">Phản hồi</p>
+  </div>
+
+  <div className="rounded-2xl border border-zinc-200 bg-white p-3 text-center shadow-sm">
+    <div className="flex items-center justify-center gap-1 text-sky-500 mb-1">
+      <Briefcase className="w-4 h-4" />
+      <span className="text-base font-bold">{completed}</span>
+    </div>
+    <p className="text-xs text-zinc-500 leading-tight">Hoàn thành</p>
+  </div>
+
+  <div className="rounded-2xl border border-zinc-200 bg-white p-3 text-center shadow-sm">
+    <div className="flex items-center justify-center gap-1 text-yellow-500 mb-1">
+      <Star className="w-4 h-4 fill-current" />
+      <span className="text-base font-bold">{reviews}</span>
+    </div>
+    <p className="text-xs text-zinc-500 leading-tight">Đánh giá</p>
+  </div>
+</div>
 
 {/* PROFILE COMPLETION */}
 <div className="mt-5 rounded-3xl border border-zinc-200/80 bg-white p-4 shadow-sm">
