@@ -1463,7 +1463,7 @@ return (
       : "Chưa có dữ liệu. Tối đa 5 điểm"}
   </p>
 </div>
-      </div>
+  
 
      
       <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-500 to-sky-500 text-white">
