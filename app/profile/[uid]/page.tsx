@@ -776,7 +776,46 @@ const fetchUser = useCallback(async () => {
       setActionLoading(false);
     }
   };
-
+const handleMessage = async () => {
+  if (!user || !targetUser || actionLoading) return;
+  if (user.uid === targetUser.uid) return toast.error("Không thể tự nhắn cho mình");
+  
+  setActionLoading(true);
+  try {
+    const chatId = [user.uid, targetUser.uid].sort().join('_');
+    const chatRef = doc(db, "chats", chatId);
+    
+    const chatSnap = await getDoc(chatRef);
+    
+    if (!chatSnap.exists()) {
+      await setDoc(chatRef, {
+        participants: [user.uid, targetUser.uid],
+        participantInfo: {
+          [user.uid]: {
+            name: currentUserData?.name || user.displayName || "User",
+            avatar: currentUserData?.avatar || user.photoURL || "",
+            userId: currentUserData?.userId || ""
+          },
+          [targetUser.uid]: {
+            name: targetUser.name || "Unknown",
+            avatar: targetUser.avatar || "",
+            userId: targetUser.userId || ""
+          }
+        },
+        createdAt: serverTimestamp(),
+        lastMessage: null,
+        updatedAt: serverTimestamp()
+      });
+    }
+    
+    router.push(`/chat/${chatId}`);
+  } catch (err) {
+    console.error(err);
+    toast.error("Không thể mở cuộc trò chuyện");
+  } finally {
+    setActionLoading(false);
+  }
+};
   const levelTiers = [
     {
       range: "1 - 7",
@@ -1034,8 +1073,9 @@ return (
 {!isOwnProfile && (
   <div className="flex items-center justify-center gap-3 mt-3">
     <button
-      onClick={() => router.push(`/chat/${targetUser?.uid}`)}
-      className="w-11 h-11 rounded-full bg-blue-50 flex items-center justify-center active:scale-90 transition-all"
+      onClick={handleMessage}
+      disabled={actionLoading}
+      className="w-11 h-11 rounded-full bg-blue-50 flex items-center justify-center active:scale-90 transition-all disabled:opacity-50"
     >
       <MessageCircle className="w-5 h-5 text-blue-600" />
     </button>
