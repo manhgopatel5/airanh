@@ -37,6 +37,36 @@ import {
   Gem,
   ChevronRight,
 } from "lucide-react";
+import {
+  ...
+  Coffee,
+  Users,
+  Heart,
+  Mail,
+  Music,
+  Camera,
+  Sun,
+  Globe,
+  Gamepad2,
+  Utensils,
+  Dumbbell,
+  Film,
+  Plane,
+  Moon,
+  Gift,
+  Calendar,
+  ShoppingBag,
+  Mic,
+  Bike,
+  Palette,
+  Beer,
+  Map,
+  PartyPopper,
+  TrendingUp,
+  ThumbsUp,
+  BookOpen,
+  ShieldCheck,
+} from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
@@ -88,6 +118,454 @@ export default function PublicProfile() {
   const [showTrustInfo, setShowTrustInfo] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [showMore, setShowMore] = useState(false);
+const [showAchievementInfo, setShowAchievementInfo] = useState(false);
+const [selectedAchievement, setSelectedAchievement] = useState<any>(null);
+
+const allAchievements = useMemo(() => [
+ 
+  {
+    id: 1,
+    icon: <Zap className="w-5 h-5" />,
+    label: "Flash trả lời",
+    desc: "Rep tin nhắn nhanh hơn NYC",
+    unlocked: responseRate >= 95,
+    condition: "Phản hồi ≥ 95%",
+    color: "from-amber-400 to-orange-400",
+    borderColor: "border-amber-400",
+    category: "profile",
+  },
+  {
+    id: 2,
+    icon: <Sparkles className="w-5 h-5" />,
+    label: "Tân binh",
+    desc: "Chào mừng tới Airanh",
+    unlocked: joinedDays <= 30,
+    condition: "Tham gia < 30 ngày",
+    color: "from-emerald-400 to-teal-400",
+    borderColor: "border-emerald-400",
+    category: "profile",
+  },
+  {
+    id: 3,
+    icon: <Star className="w-5 h-5" />,
+    label: "5 sao lấp lánh",
+    desc: "Được crush cho 5 sao",
+    unlocked: rating >= 5.0 && reviews >= 1,
+    condition: "Rating = 5.0",
+    color: "from-yellow-400 to-amber-400",
+    borderColor: "border-yellow-400",
+    category: "profile",
+  },
+  {
+    id: 4,
+    icon: <Shield className="w-5 h-5" />,
+    label: "Chính chủ 100%",
+    desc: "Xác minh CCCD xong",
+    unlocked: targetUser?.isVerifiedId || false,
+    condition: "Xác minh CCCD",
+    color: "from-blue-400 to-sky-400",
+    borderColor: "border-blue-400",
+    category: "profile",
+  },
+  {
+    id: 5,
+    icon: <Briefcase className="w-5 h-5" />,
+    label: "Thợ cày",
+    desc: "Cày 50 job như trâu",
+    unlocked: completed >= 50,
+    condition: "Hoàn thành ≥ 50 job",
+    color: "from-indigo-400 to-blue-400",
+    borderColor: "border-indigo-400",
+    category: "profile",
+  },
+  {
+    id: 6,
+    icon: <Flame className="w-5 h-5" />,
+    label: "Streak 30 ngày",
+    desc: "Online không nghỉ ngày nào",
+    unlocked: joinedDays >= 30,
+    condition: "Tham gia ≥ 30 ngày",
+    color: "from-orange-400 to-red-400",
+    borderColor: "border-orange-400",
+    category: "profile",
+  },
+  {
+    id: 7,
+    icon: <Award className="w-5 h-5" />,
+    label: "Profile xịn sò",
+    desc: "Điền đủ 100% thông tin",
+    unlocked: profileCompletion >= 100,
+    condition: "Hồ sơ = 100%",
+    color: "from-green-400 to-emerald-400",
+    borderColor: "border-green-400",
+    category: "profile",
+  },
+  {
+    id: 8,
+    icon: <Mail className="w-5 h-5" />,
+    label: "Email real",
+    desc: "Xác thực email rồi",
+    unlocked: targetUser?.emailVerified || false,
+    condition: "Xác minh email",
+    color: "from-sky-400 to-blue-400",
+    borderColor: "border-sky-400",
+    category: "profile",
+  },
+  {
+    id: 9,
+    icon: <Camera className="w-5 h-5" />,
+    label: "Nhiếp ảnh gia",
+    desc: "Đăng 5+ ảnh portfolio",
+    unlocked: (targetUser?.portfolio?.length || 0) >= 5,
+    condition: "Portfolio ≥ 5 mục",
+    color: "from-teal-400 to-cyan-400",
+    borderColor: "border-teal-400",
+    category: "profile",
+  },
+  {
+    id: 10,
+    icon: <Crown className="w-5 h-5" />,
+    label: "Đại gia",
+    desc: "Cày 100 job không biết mệt",
+    unlocked: completed >= 100,
+    condition: "Hoàn thành ≥ 100 job",
+    color: "from-yellow-500 to-amber-500",
+    borderColor: "border-yellow-500",
+    category: "profile",
+  },
+  {
+    id: 11,
+    icon: <Clock className="w-5 h-5" />,
+    label: "Lão làng",
+    desc: "Tham gia 365 ngày",
+    unlocked: joinedDays >= 365,
+    condition: "Tham gia ≥ 1 năm",
+    color: "from-lime-400 to-green-400",
+    borderColor: "border-lime-400",
+    category: "profile",
+  },
+  {
+    id: 12,
+    icon: <Globe className="w-5 h-5" />,
+    label: "Quốc tế hóa",
+    desc: "Đi chơi với bạn nước ngoài",
+    unlocked: false,
+    condition: "Có task với user nước ngoài",
+    color: "from-indigo-400 to-purple-400",
+    borderColor: "border-indigo-400",
+    category: "profile",
+  },
+  {
+    id: 13,
+    icon: <Gem className="w-5 h-5" />,
+    label: "Kim cương",
+    desc: "Đạt level 50",
+    unlocked: level >= 50,
+    condition: "Đạt Lv.50",
+    color: "from-cyan-400 to-blue-500",
+    borderColor: "border-cyan-400",
+    category: "profile",
+  },
+  {
+    id: 14,
+    icon: <ShieldCheck className="w-5 h-5" />,
+    label: "Uy tín 100%",
+    desc: "Tin được như vàng 9999",
+    unlocked: trustScore >= 100,
+    condition: "Độ uy tín = 100%",
+    color: "from-blue-500 to-indigo-500",
+    borderColor: "border-blue-500",
+    category: "profile",
+  },
+  {
+    id: 15,
+    icon: <Crown className="w-5 h-5" />,
+    label: "Top 1%",
+    desc: "Lọt top 1% người dùng",
+    unlocked: trustScore >= 95,
+    condition: "Độ uy tín ≥ 95%",
+    color: "from-amber-400 to-yellow-500",
+    borderColor: "border-amber-400",
+    category: "profile",
+  },
+  {
+    id: 16,
+    icon: <Users className="w-5 h-5" />,
+    label: "Bạn bè khắp nơi",
+    desc: "Kết nối 20+ người",
+    unlocked: false,
+    condition: "Có 20+ bạn bè",
+    color: "from-pink-400 to-rose-400",
+    borderColor: "border-pink-400",
+    category: "profile",
+  },
+  {
+    id: 17,
+    icon: <TrendingUp className="w-5 h-5" />,
+    label: "Level 25+",
+    desc: "Chăm cày lên level",
+    unlocked: level >= 25,
+    condition: "Đạt Lv.25",
+    color: "from-purple-400 to-violet-400",
+    borderColor: "border-purple-400",
+    category: "profile",
+  },
+  {
+    id: 18,
+    icon: <ThumbsUp className="w-5 h-5" />,
+    label: "Được yêu thích",
+    desc: "50+ đánh giá tích cực",
+    unlocked: reviews >= 50,
+    condition: "Reviews ≥ 50",
+    color: "from-rose-400 to-pink-400",
+    borderColor: "border-rose-400",
+    category: "profile",
+  },
+  {
+    id: 19,
+    icon: <BookOpen className="w-5 h-5" />,
+    label: "Skill master",
+    desc: "Thêm 10+ kỹ năng",
+    unlocked: (targetUser?.skills?.length || 0) >= 10,
+    condition: "Skills ≥ 10",
+    color: "from-slate-400 to-gray-400",
+    borderColor: "border-slate-400",
+    category: "profile",
+  },
+  {
+    id: 20,
+    icon: <MapPin className="w-5 h-5" />,
+    label: "Dân chơi Sài Gòn",
+    desc: "Check-in Ho Chi Minh City",
+    unlocked: targetUser?.location?.includes("Hồ Chí Minh") || false,
+    condition: "Location ở HCM",
+    color: "from-emerald-400 to-green-500",
+    borderColor: "border-emerald-400",
+    category: "profile",
+  },
+
+  // ===== TASK ĐI CHƠI - 20 CÁI =====
+  {
+    id: 21,
+    icon: <Coffee className="w-5 h-5" />,
+    label: "Trùm cafe",
+    desc: "Tạo 5 kèo đi cafe",
+    unlocked: false, // TODO: đếm task cafe
+    condition: "Tạo 5 task cafe",
+    color: "from-amber-600 to-yellow-600",
+    borderColor: "border-amber-600",
+    category: "task",
+  },
+  {
+    id: 22,
+    icon: <Heart className="w-5 h-5" />,
+    label: "Ông mai bà mối",
+    desc: "Tạo 10 kèo hẹn hò",
+    unlocked: false,
+    condition: "Tạo 10 task hẹn hò",
+    color: "from-rose-400 to-pink-500",
+    borderColor: "border-rose-400",
+    category: "task",
+  },
+  {
+    id: 23,
+    icon: <Music className="w-5 h-5" />,
+    label: "Party king",
+    desc: "Tổ chức 3 buổi nhậu",
+    unlocked: false,
+    condition: "Tạo 3 task nhậu/party",
+    color: "from-purple-400 to-fuchsia-400",
+    borderColor: "border-purple-400",
+    category: "task",
+  },
+  {
+    id: 24,
+    icon: <Sun className="w-5 h-5" />,
+    label: "Dậy sớm",
+    desc: "Tạo task buổi sáng 10 lần",
+    unlocked: false,
+    condition: "Tạo 10 task buổi sáng",
+    color: "from-yellow-400 to-orange-400",
+    borderColor: "border-yellow-400",
+    category: "task",
+  },
+  {
+    id: 25,
+    icon: <Gamepad2 className="w-5 h-5" />,
+    label: "Game thủ",
+    desc: "Tạo 5 kèo chơi game",
+    unlocked: false,
+    condition: "Tạo 5 task game",
+    color: "from-violet-400 to-purple-400",
+    borderColor: "border-violet-400",
+    category: "task",
+  },
+  {
+    id: 26,
+    icon: <Utensils className="w-5 h-5" />,
+    label: "Food reviewer",
+    desc: "Tạo 10 kèo đi ăn",
+    unlocked: false,
+    condition: "Tạo 10 task ăn uống",
+    color: "from-orange-400 to-red-400",
+    borderColor: "border-orange-400",
+    category: "task",
+  },
+  {
+    id: 27,
+    icon: <Dumbbell className="w-5 h-5" />,
+    label: "Gymer",
+    desc: "Rủ 5 người đi tập gym",
+    unlocked: false,
+    condition: "Tạo 5 task gym",
+    color: "from-red-400 to-rose-400",
+    borderColor: "border-red-400",
+    category: "task",
+  },
+  {
+    id: 28,
+    icon: <Film className="w-5 h-5" />,
+    label: "Mọt phim",
+    desc: "Tạo 5 kèo xem phim",
+    unlocked: false,
+    condition: "Tạo 5 task xem phim",
+    color: "from-slate-400 to-zinc-400",
+    borderColor: "border-slate-400",
+    category: "task",
+  },
+  {
+    id: 29,
+    icon: <Plane className="w-5 h-5" />,
+    label: "Phượt thủ",
+    desc: "Tổ chức 3 chuyến đi chơi xa",
+    unlocked: false,
+    condition: "Tạo 3 task du lịch",
+    color: "from-sky-400 to-blue-500",
+    borderColor: "border-sky-400",
+    category: "task",
+  },
+  {
+    id: 30,
+    icon: <Moon className="w-5 h-5" />,
+    label: "Cú đêm",
+    desc: "Tạo 10 task buổi tối",
+    unlocked: false,
+    condition: "Tạo 10 task tối",
+    color: "from-indigo-500 to-purple-600",
+    borderColor: "border-indigo-500",
+    category: "task",
+  },
+  {
+    id: 31,
+    icon: <Gift className="w-5 h-5" />,
+    label: "Người hào phóng",
+    desc: "Tạo 5 task miễn phí",
+    unlocked: false,
+    condition: "Tạo 5 task free",
+    color: "from-pink-400 to-rose-400",
+    borderColor: "border-pink-400",
+    category: "task",
+  },
+  {
+    id: 32,
+    icon: <Users className="w-5 h-5" />,
+    label: "Nhóm trưởng",
+    desc: "Tạo task cho 10+ người",
+    unlocked: false,
+    condition: "Task có 10+ người join",
+    color: "from-cyan-400 to-blue-400",
+    borderColor: "border-cyan-400",
+    category: "task",
+  },
+  {
+    id: 33,
+    icon: <Calendar className="w-5 h-5" />,
+    label: "Siêu bận rộn",
+    desc: "Có task 7 ngày liên tiếp",
+    unlocked: false,
+    condition: "Tạo task 7 ngày liên tục",
+    color: "from-teal-400 to-green-400",
+    borderColor: "border-teal-400",
+    category: "task",
+  },
+ {
+    id: 34,
+    icon: <ShoppingBag className="w-5 h-5" />,
+    label: "Thánh shopping",
+    desc: "Rủ 5 người đi mua sắm",
+    unlocked: false,
+    condition: "Tạo 5 task shopping",
+    color: "from-fuchsia-400 to-pink-400",
+    borderColor: "border-fuchsia-400",
+    category: "task",
+  },
+  {
+    id: 35,
+    icon: <Mic className="w-5 h-5" />,
+    label: "Ca sĩ phòng trà",
+    desc: "Tổ chức 3 buổi karaoke",
+    unlocked: false,
+    condition: "Tạo 3 task karaoke",
+    color: "from-purple-500 to-pink-500",
+    borderColor: "border-purple-500",
+    category: "task",
+  },
+  {
+    id: 36,
+    icon: <Bike className="w-5 h-5" />,
+    label: "Vận động viên",
+    desc: "Rủ 5 người đi đạp xe/chạy bộ",
+    unlocked: false,
+    condition: "Tạo 5 task thể thao",
+    color: "from-green-500 to-emerald-500",
+    borderColor: "border-green-500",
+    category: "task",
+  },
+  {
+    id: 37,
+    icon: <Palette className="w-5 h-5" />,
+    label: "Nghệ sĩ",
+    desc: "Tổ chức workshop vẽ/nhạc",
+    unlocked: false,
+    condition: "Tạo 3 task workshop",
+    color: "from-rose-400 to-orange-400",
+    borderColor: "border-rose-400",
+    category: "task",
+  },
+  {
+    id: 38,
+    icon: <Beer className="w-5 h-5" />,
+    label: "Bợm nhậu",
+    desc: "Tạo 10 kèo nhậu",
+    unlocked: false,
+    condition: "Tạo 10 task nhậu",
+    color: "from-amber-500 to-yellow-600",
+    borderColor: "border-amber-500",
+    category: "task",
+  },
+  {
+    id: 39,
+    icon: <Map className="w-5 h-5" />,
+    label: "Hướng dẫn viên",
+    desc: "Dẫn 20 người đi chơi",
+    unlocked: false,
+    condition: "20+ người join task",
+    color: "from-blue-400 to-cyan-400",
+    borderColor: "border-blue-400",
+    category: "task",
+  },
+  {
+    id: 40,
+    icon: <PartyPopper className="w-5 h-5" />,
+    label: "Vua task",
+    desc: "Tạo 100 task đi chơi",
+    unlocked: false,
+    condition: "Tạo 100 task",
+    color: "from-gradient-to-r from-yellow-400 via-orange-400 to-red-400",
+    borderColor: "border-orange-400",
+    category: "task",
+  },
+], [rating, responseRate, completed, trustScore, joinedDays, targetUser, reviews, profileCompletion, level]);
 
   // Fix 1: Dùng uid từ params thay vì targetUser?.uid vì lúc đầu targetUser = null
   const isOwnProfile = user?.uid === uid;
@@ -561,103 +1039,101 @@ return (
   <div className="min-h-screen bg-zinc-50 pb-28">
     <Toaster richColors position="top-center" />
 
-{/* HEADER WAVE - GIỐNG 100% ẢNH */}
-<div className="relative bg-gradient-to-b from-[#5B9BFF] to-[#4A90E2] pt-6 pb-24">
-  {/* SÓNG 3 LỚP */}
-  <svg
-    className="absolute bottom-0 left-0 w-full"
-    viewBox="0 0 1440 120"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      d="M0 60C240 30 480 90 720 60C960 30 1200 90 1440 60V120H0V60Z"
-      fill="#E3F2FD"
-      opacity="0.4"
-    />
-    <path
-      d="M0 70C240 45 480 95 720 70C960 45 1200 95 1440 70V120H0V70Z"
-      fill="#BBDEFB"
-      opacity="0.6"
-    />
-    <path
-      d="M0 80C240 60 480 100 720 80C960 60 1200 100 1440 80V120H0V80Z"
-      fill="#F8FAFC"
-    />
-  </svg>
+{/* HEADER PREMIUM - KHÔNG SÓNG, CAO NHẤT */}
+<div className="relative bg-gradient-to-br from-[#6BA4FF] via-[#5A95F5] to-[#4A90E2] pt-0 pb-8">
+  {/* GLOW BACKGROUND */}
+  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.15),transparent_50%)]" />
+  <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.1),transparent_40%)]" />
   
-  {/* TOP ACTIONS - BỎ NÚT BACK */}
-  <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
+  {/* TOP ACTIONS */}
+  <div className="relative z-20 px-4 pt-3 pb-2 flex items-center justify-end gap-2">
     <button
       onClick={handleShare}
-      className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center active:scale-95 transition-all"
+      className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-2xl border border-white/10 flex items-center justify-center active:scale-90 transition-all shadow-xl"
     >
-      <Share2 className="w-5 h-5 text-white" />
+      <Share2 className="w-4 h-4 text-white" />
     </button>
     {!isOwnProfile && (
       <button
         onClick={() => setShowMore(!showMore)}
-        className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center active:scale-95 transition-all"
+        className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-2xl border border-white/10 flex items-center justify-center active:scale-90 transition-all shadow-xl"
       >
-        <MoreVertical className="w-5 h-5 text-white" />
+        <MoreVertical className="w-4 h-4 text-white" />
       </button>
     )}
   </div>
 
-  {/* AVATAR + INFO CENTER */}
-  <div className="relative z-10 flex flex-col items-center pt-8">
-    <div className="relative">
-      <img
-        src={
-          targetUser?.avatar ||
-          `https://ui-avatars.com/api/?name=${encodeURIComponent(
-            targetUser?.name || "User"
-          )}&size=200`
-        }
-        alt=""
-        className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
-      />
+  {/* AVATAR + INFO CENTER - ĐẨY LÊN CAO */}
+  <div className="relative z-10 flex flex-col items-center -mt-2">
+    <div className="relative group">
+      <div className="w-28 h-28 rounded-full bg-gradient-to-br from-white/40 to-white/10 p-1 shadow-2xl backdrop-blur-sm">
+        <div className="w-full h-full rounded-full bg-white p-0.5">
+          <img
+            src={
+              targetUser?.avatar ||
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                targetUser?.name || "User"
+              )}&size=200&background=4A90E2&color=fff`
+            }
+            alt=""
+            className="w-full h-full rounded-full object-cover"
+          />
+        </div>
+      </div>
       {targetUser?.online && (
-        <div className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-500 border-[3px] border-white" />
+        <div className="absolute bottom-1.5 right-1.5 w-5 h-5 rounded-full bg-emerald-400 border-[3px] border-white shadow-lg animate-pulse" />
+      )}
+      {isOwnProfile && (
+        <button className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-white shadow-xl flex items-center justify-center active:scale-95 transition-all border border-zinc-100">
+          <svg className="w-4 h-4 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </button>
       )}
     </div>
 
-    <div className="flex items-center justify-center gap-1.5 mt-3">
-      <h1 className="text-xl font-bold text-white">
+    <div className="flex items-center justify-center gap-1.5 mt-4">
+      <h1 className="text-2xl font-bold text-white tracking-tight">
         {targetUser?.name || "Unknown User"}
       </h1>
       {targetUser?.emailVerified && (
-        <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center">
-          <Check className="w-3 h-3 text-blue-500 stroke-[3]" />
+        <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-lg">
+          <Check className="w-3.5 h-3.5 text-[#4A90E2] stroke-[3]" />
         </div>
       )}
     </div>
 
-{/* RANK BADGE */}
-<div className="flex justify-center mt-3 items-center gap-1.5">
-  <div
-    className={`px-3 py-1.5 rounded-full bg-gradient-to-r ${rank.gradient} text-white flex items-center gap-1.5 shadow-md`}
-  >
-    {rank.icon}
-    <span className="font-semibold text-xs">{rank.name}</span>
-    <div className="px-1.5 py-0.5 rounded-full bg-white/25 text-xs font-bold">
-      Lv.{level}
-    </div>
-  </div>
+    {targetUser?.userId && (
+      <p className="text-sm text-white/70 mt-1 font-medium">@{targetUser?.userId}</p>
+    )}
 
-  <button
-    onClick={() => setShowLevelInfo(true)}
-    className="w-6 h-6 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center active:scale-95 transition-all"
-  >
-    <Info className="w-3.5 h-3.5 text-white" />
-  </button>
-</div>
-{targetUser?.location && (
-  <div className="flex items-center justify-center gap-1 mt-3 text-sm text-white/80">
-    <MapPin className="w-3.5 h-3.5" />
-    <span>{targetUser?.location}</span>
+    {/* RANK BADGE - PREMIUM */}
+    <div className="flex justify-center mt-4 items-center gap-2">
+      <div className={`px-5 py-2 rounded-full bg-gradient-to-r ${rank.gradient} text-white flex items-center gap-2 shadow-xl border border-white/20`}>
+        {rank.icon}
+        <span className="font-bold text-sm">{rank.name}</span>
+        <div className="px-2.5 py-0.5 rounded-full bg-white/30 text-xs font-black backdrop-blur-sm">
+          Lv.{level}
+        </div>
+      </div>
+
+      <button
+        onClick={() => setShowLevelInfo(true)}
+        className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-2xl border border-white/10 flex items-center justify-center active:scale-90 transition-all shadow-xl"
+      >
+        <Info className="w-4 h-4 text-white" />
+      </button>
+    </div>
+
+    {targetUser?.location && (
+      <div className="flex items-center justify-center gap-1.5 mt-4 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-xl border border-white/10">
+        <MapPin className="w-3.5 h-3.5 text-white" />
+        <span className="text-sm text-white font-medium">{targetUser?.location}</span>
+      </div>
+    )}
   </div>
-)}
+</div>
     {/* HOẠT ĐỘNG */}
     <div className="mt-2.5 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md flex items-center gap-1.5">
       <Clock className="w-3.5 h-3.5 text-white" />
@@ -713,25 +1189,107 @@ return (
     <p className="text-xs text-zinc-500 leading-tight">Đánh giá</p>
   </div>
 </div>
-{/* THÀNH TỰU - ĐÃ CHUYỂN XUỐNG DƯỚI */}
-{achievements.length > 0 && (
-  <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-    <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2.5">
-      Thành tựu
-    </p>
-    <div className="flex flex-wrap gap-2">
-      {achievements.map((item, i) => (
-        <div
-          key={i}
-          className="px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-medium text-zinc-700 flex items-center gap-2"
-        >
-          <span>{item.icon}</span>
-          <span>{item.label}</span>
-        </div>
-      ))}
-    </div>
+{/* THÀNH TỰU - THIẾT KẾ HEXAGON */}
+<div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+  <div className="flex items-center justify-between mb-3">
+    <p className="text-sm font-bold text-zinc-900">Thành tựu</p>
+    <button
+      onClick={() => {
+        setSelectedAchievement(null);
+        setShowAchievementInfo(true);
+      }}
+      className="w-5 h-5 rounded-full bg-zinc-100 flex items-center justify-center active:scale-95"
+    >
+      <Info className="w-3 h-3 text-zinc-500" />
+    </button>
   </div>
-)}
+  
+  <div className="grid grid-cols-3 gap-3">
+    {allAchievements.slice(0, 6).map((item) => (
+      <button
+        key={item.id}
+        onClick={() => {
+          setSelectedAchievement(item);
+          setShowAchievementInfo(true);
+        }}
+        className="flex flex-col items-center active:scale-95 transition-all"
+      >
+        {/* HEXAGON */}
+        <div className="relative w-16 h-16 mb-2">
+          <svg viewBox="0 0 100 100" className="w-full h-full">
+            <defs>
+              {item.unlocked && (
+                <linearGradient id={`gradient-${item.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor={item.color.includes('amber')? '#FBBF24' : 
+                    item.color.includes('emerald')? '#34D399' :
+                    item.color.includes('violet')? '#A78BFA' :
+                    item.color.includes('yellow')? '#FACC15' :
+                    item.color.includes('blue')? '#60A5FA' :
+                    item.color.includes('indigo')? '#818CF8' :
+                    item.color.includes('orange')? '#FB923C' :
+                    item.color.includes('rose')? '#FB7185' :
+                    item.color.includes('green')? '#4ADE80' :
+                    item.color.includes('sky')? '#38BDF8' :
+                    item.color.includes('purple')? '#C084FC' :
+                    item.color.includes('teal')? '#2DD4BF' :
+                    item.color.includes('lime')? '#A3E635' :
+                    item.color.includes('pink')? '#F472B6' :
+                    item.color.includes('cyan')? '#22D3EE' :
+                    item.color.includes('fuchsia')? '#E879F9' : '#60A5FA'
+                  } />
+                  <stop offset="100%" stopColor={item.color.includes('orange')? '#FB923C' : 
+                    item.color.includes('teal')? '#2DD4BF' :
+                    item.color.includes('fuchsia')? '#E879F9' :
+                    item.color.includes('amber')? '#FBBF24' :
+                    item.color.includes('sky')? '#38BDF8' :
+                    item.color.includes('blue')? '#3B82F6' :
+                    item.color.includes('red')? '#F87171' :
+                    item.color.includes('pink')? '#F472B6' :
+                    item.color.includes('emerald')? '#34D399' :
+                    item.color.includes('purple')? '#C084FC' :
+                    item.color.includes('yellow')? '#FACC15' :
+                    item.color.includes('indigo')? '#818CF8' : '#3B82F6'
+                  } />
+                </linearGradient>
+              )}
+            </defs>
+            <polygon
+              points="50 1 95 25 95 75 50 99 5 75 5 25"
+              fill={item.unlocked? `url(#gradient-${item.id})` : "none"}
+              stroke={item.unlocked? "none" : "#D4D4D8"}
+              strokeWidth="2"
+              strokeDasharray={item.unlocked? "none" : "4 4"}
+            />
+          </svg>
+          <div className={`absolute inset-0 flex items-center justify-center ${
+            item.unlocked? "text-white" : "text-zinc-400"
+          }`}>
+            {item.unlocked? item.icon : <Lock className="w-5 h-5" />}
+          </div>
+        </div>
+        
+        <p className="text-xs font-semibold text-zinc-900 text-center leading-tight">
+          {item.label}
+        </p>
+        <p className="text-[10px] text-zinc-500 text-center leading-tight mt-0.5 line-clamp-2">
+          {item.desc}
+        </p>
+      </button>
+    ))}
+  </div>
+
+  {allAchievements.length > 6 && (
+    <button
+      onClick={() => {
+        setSelectedAchievement(null);
+        setShowAchievementInfo(true);
+      }}
+      className="w-full mt-3 py-2 rounded-xl bg-zinc-50 text-xs font-semibold text-zinc-600 active:bg-zinc-100"
+    >
+      Xem tất cả {allAchievements.length} thành tựu
+    </button>
+  )}
+</div>
 
 {/* PROFILE COMPLETION */}
 <div className="mt-5 rounded-3xl border border-zinc-200/80 bg-white p-4 shadow-sm">
@@ -1072,6 +1630,140 @@ return (
 
       <Dialog.Close className="mt-5 w-full h-12 rounded-2xl bg-zinc-900 text-white font-semibold active:scale-[0.98] transition-all">
         Đã hiểu
+      </Dialog.Close>
+    </Dialog.Content>
+  </Dialog.Portal>
+</Dialog.Root>
+<Dialog.Root open={showAchievementInfo} onOpenChange={setShowAchievementInfo}>
+  <Dialog.Portal>
+    <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
+    <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md max-h-[85vh] overflow-y-auto bg-white rounded-3xl p-5 z-50 shadow-2xl">
+      {selectedAchievement? (
+        <>
+          <Dialog.Title className="text-xl font-bold text-zinc-900 mb-4 flex items-center gap-3">
+            <div 
+              className="w-12 h-12 rounded-2xl text-white flex items-center justify-center shadow-lg"
+              style={{
+                background: selectedAchievement.unlocked 
+                 ? `linear-gradient(135deg, ${selectedAchievement.color.includes('amber')? '#FBBF24' : 
+                      selectedAchievement.color.includes('emerald')? '#34D399' :
+                      selectedAchievement.color.includes('violet')? '#A78BFA' :
+                      selectedAchievement.color.includes('yellow')? '#FACC15' :
+                      selectedAchievement.color.includes('blue')? '#60A5FA' :
+                      selectedAchievement.color.includes('indigo')? '#818CF8' :
+                      selectedAchievement.color.includes('orange')? '#FB923C' :
+                      selectedAchievement.color.includes('rose')? '#FB7185' :
+                      selectedAchievement.color.includes('green')? '#4ADE80' :
+                      selectedAchievement.color.includes('sky')? '#38BDF8' :
+                      selectedAchievement.color.includes('purple')? '#C084FC' :
+                      selectedAchievement.color.includes('teal')? '#2DD4BF' :
+                      selectedAchievement.color.includes('lime')? '#A3E635' :
+                      selectedAchievement.color.includes('pink')? '#F472B6' :
+                      selectedAchievement.color.includes('cyan')? '#22D3EE' :
+                      selectedAchievement.color.includes('fuchsia')? '#E879F9' : '#60A5FA'}, ${
+                      selectedAchievement.color.includes('orange')? '#FB923C' : 
+                      selectedAchievement.color.includes('teal')? '#2DD4BF' :
+                      selectedAchievement.color.includes('fuchsia')? '#E879F9' :
+                      selectedAchievement.color.includes('amber')? '#FBBF24' :
+                      selectedAchievement.color.includes('sky')? '#38BDF8' :
+                      selectedAchievement.color.includes('blue')? '#3B82F6' :
+                      selectedAchievement.color.includes('red')? '#F87171' :
+                      selectedAchievement.color.includes('pink')? '#F472B6' :
+                      selectedAchievement.color.includes('emerald')? '#34D399' :
+                      selectedAchievement.color.includes('purple')? '#C084FC' :
+                      selectedAchievement.color.includes('yellow')? '#FACC15' :
+                      selectedAchievement.color.includes('indigo')? '#818CF8' : '#3B82F6'})`
+                  : '#F4F4F5'
+              }}
+            >
+              <div className={selectedAchievement.unlocked? "text-white" : "text-zinc-400"}>
+                {selectedAchievement.icon}
+              </div>
+            </div>
+            <div>
+              <p>{selectedAchievement.label}</p>
+              <p className="text-xs font-normal text-zinc-500 mt-0.5">
+                {selectedAchievement.category === 'task'? 'Thành tựu Task' : 'Thành tựu Profile'}
+              </p>
+            </div>
+          </Dialog.Title>
+          
+          <p className="text-sm text-zinc-600 mb-4 leading-6">{selectedAchievement.desc}</p>
+          
+          <div className={`p-4 rounded-2xl border ${selectedAchievement.unlocked? 'bg-emerald-50 border-emerald-200' : 'bg-zinc-50 border-zinc-200'}`}>
+            <p className="text-xs font-bold text-zinc-700 mb-2 uppercase tracking-wider">Điều kiện mở khóa</p>
+            <p className="text-sm text-zinc-700 font-medium">{selectedAchievement.condition}</p>
+          </div>
+          
+          {selectedAchievement.unlocked && (
+            <div className="mt-4 flex items-center gap-2 text-emerald-600 bg-emerald-50 px-3 py-2 rounded-xl">
+              <Check className="w-4 h-4 stroke-[3]" />
+              <span className="text-sm font-bold">Đã mở khóa</span>
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          <Dialog.Title className="text-xl font-bold text-zinc-900 mb-4">
+            Tất cả thành tựu
+          </Dialog.Title>
+          <p className="text-xs text-zinc-500 mb-4">
+            Đã mở khóa {allAchievements.filter(a => a.unlocked).length}/{allAchievements.length} thành tựu
+          </p>
+          <div className="grid grid-cols-3 gap-3">
+            {allAchievements.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setSelectedAchievement(item)}
+                className="flex flex-col items-center active:scale-95 transition-all"
+              >
+                <div 
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-1.5 ${
+                    item.unlocked? '' : 'bg-zinc-100 border-2 border-dashed border-zinc-300'
+                  }`}
+                  style={item.unlocked? {
+                    background: `linear-gradient(135deg, ${item.color.includes('amber')? '#FBBF24' : 
+                      item.color.includes('emerald')? '#34D399' :
+                      item.color.includes('violet')? '#A78BFA' :
+                      item.color.includes('yellow')? '#FACC15' :
+                      item.color.includes('blue')? '#60A5FA' :
+                      item.color.includes('indigo')? '#818CF8' :
+                      item.color.includes('orange')? '#FB923C' :
+                      item.color.includes('rose')? '#FB7185' :
+                      item.color.includes('green')? '#4ADE80' :
+                      item.color.includes('sky')? '#38BDF8' :
+                      item.color.includes('purple')? '#C084FC' :
+                      item.color.includes('teal')? '#2DD4BF' :
+                      item.color.includes('lime')? '#A3E635' :
+                      item.color.includes('pink')? '#F472B6' :
+                      item.color.includes('cyan')? '#22D3EE' :
+                      item.color.includes('fuchsia')? '#E879F9' : '#60A5FA'}, ${
+                      item.color.includes('orange')? '#FB923C' : 
+                      item.color.includes('teal')? '#2DD4BF' :
+                      item.color.includes('fuchsia')? '#E879F9' :
+                      item.color.includes('amber')? '#FBBF24' :
+                      item.color.includes('sky')? '#38BDF8' :
+                      item.color.includes('blue')? '#3B82F6' :
+                      item.color.includes('red')? '#F87171' :
+                      item.color.includes('pink')? '#F472B6' :
+                      item.color.includes('emerald')? '#34D399' :
+                      item.color.includes('purple')? '#C084FC' :
+                      item.color.includes('yellow')? '#FACC15' :
+                      item.color.includes('indigo')? '#818CF8' : '#3B82F6'})`
+                  } : {}}
+                >
+                  <div className={item.unlocked? "text-white" : "text-zinc-400"}>
+                    {item.unlocked? item.icon : <Lock className="w-4 h-4" />}
+                  </div>
+                </div>
+                <p className="text- font-semibold text-zinc-700 text-center leading-tight line-clamp-2">{item.label}</p>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      <Dialog.Close className="mt-5 w-full h-12 rounded-2xl bg-zinc-900 text-white font-semibold active:scale-[0.98] transition-all">
+        Đóng
       </Dialog.Close>
     </Dialog.Content>
   </Dialog.Portal>
