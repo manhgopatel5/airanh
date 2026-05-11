@@ -1716,7 +1716,7 @@ return (
             </div>
           </div>
         </div>
-      </div>
+      
 
       {/* COMPLETION PROGRESS - CHỈ CHỦ PROFILE */}
       {isOwnProfile && (
