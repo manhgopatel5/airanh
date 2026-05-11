@@ -126,7 +126,42 @@ const [friendCount, setFriendCount] = useState(0); // CHUYỂN LÊN ĐÂY
   const [showMore, setShowMore] = useState(false);
   const [showAchievementInfo, setShowAchievementInfo] = useState(false);
   const [selectedAchievement, setSelectedAchievement] = useState<any>(null);
-  
+  // Component hàng thông tin
+const InfoRow = ({
+  icon,
+  label,
+  value,
+  verified = false,
+  empty = false
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  verified?: boolean;
+  empty?: boolean;
+}) => (
+  <div className="flex items-center justify-between px-4 py-4 active:bg-zinc-50 transition-colors">
+    <div className="flex items-center gap-3 flex-1 min-w-0">
+      <div className={`${empty? 'text-zinc-300' : 'text-zinc-400'}`}>
+        {icon}
+      </div>
+      <span className="text-[15px] text-zinc-700">{label}</span>
+    </div>
+    <div className="flex items-center gap-1.5 flex-shrink-0">
+      <span className={`text-[15px] ${empty? 'text-zinc-400' : 'text-zinc-900 font-medium'}`}>
+        {value}
+      </span>
+      {verified && (
+        <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+          <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+
+const Divider = () => <div className="h-px bg-zinc-100 ml-[52px]" />;
 
   // ===== TÍNH TOÁN STATS - CHỈ KHAI BÁO 1 LẦN =====
   const completed = targetUser?.stats?.completed || 0;
@@ -1612,155 +1647,179 @@ return (
     </Dialog.Content>
   </Dialog.Portal>
 </Dialog.Root>
-{/* MODAL THÔNG TIN CÁ NHÂN - FULL PAGE */}
+{/* MODAL THÔNG TIN CÁ NHÂN - THIẾT KẾ MỚI */}
 <Dialog.Root open={showUserInfo} onOpenChange={setShowUserInfo}>
   <Dialog.Portal>
     <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
     <Dialog.Content className="fixed inset-0 z-50 bg-zinc-50 overflow-y-auto">
-      {/* HEADER */}
+      {/* HEADER GRADIENT */}
       <div className="sticky top-0 bg-white border-b border-zinc-200 z-10">
-        <div className="flex items-center justify-between px-4 py-3">
-          <Dialog.Close className="w-8 h-8 rounded-full flex items-center justify-center active:bg-zinc-100">
+        <div className="flex items-center justify-between px-4 py-3.5">
+          <Dialog.Close className="w-9 h-9 rounded-full flex items-center justify-center active:bg-zinc-100 transition-colors">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Dialog.Close>
-          <Dialog.Title className="text-base font-bold text-zinc-900">
+          <Dialog.Title className="text-[17px] font-bold text-zinc-900">
             Thông tin cá nhân
           </Dialog.Title>
-          <div className="w-8" />
+          {isOwnProfile && (
+            <button
+              onClick={() => router.push('/settings/profile')}
+              className="text-[15px] font-semibold text-blue-500 active:opacity-60"
+            >
+              Sửa
+            </button>
+          )}
+          {!isOwnProfile && <div className="w-9" />}
         </div>
       </div>
 
-      {/* USER INFO HEADER */}
-      <div className="bg-white px-4 py-5">
-        <div className="flex items-center gap-3">
-          <img
-            src={
-              targetUser?.avatar ||
-              `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                targetUser?.name || "User"
-              )}&size=200&background=E5E5E5&color=525252`
-            }
-            alt=""
-            className="w-16 h-16 rounded-full object-cover"
-          />
-          <div>
-            <div className="flex items-center gap-1.5">
-              <h2 className="text-lg font-bold text-zinc-900">
-                {targetUser?.name || "Unknown User"}
-              </h2>
-              {targetUser?.emailVerified && (
-                <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
-                  <Check className="w-3 h-3 text-white stroke-[3]" />
-                </div>
-              )}
+      {/* PROFILE HEADER CARD */}
+      <div className="bg-gradient-to-br from-blue-500 via-sky-500 to-cyan-500 px-5 pt-8 pb-20">
+        <div className="flex flex-col items-center">
+          <div className="relative">
+            <div className="w-24 h-24 rounded-full bg-white p-1 shadow-2xl">
+              <img
+                src={
+                  targetUser?.avatar ||
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(targetUser?.name || "User")}&size=200&background=3B82F6&color=fff`
+                }
+                alt=""
+                className="w-full h-full rounded-full object-cover"
+              />
             </div>
-            <p className="text-sm text-zinc-500">@{targetUser?.userId || 'user'}</p>
-            <div className="flex items-center gap-2 mt-1">
-              <div className="px-2 py-0.5 rounded-full bg-blue-50 text-xs font-bold text-blue-600">
-                Lv.{level}
+            {targetUser?.emailVerified && (
+              <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-blue-500 border-[3px] border-white flex items-center justify-center shadow-lg">
+                <Check className="w-4 h-4 text-white stroke-[3]" />
               </div>
-        <div className="flex items-center gap-1 text-xs text-zinc-500">
-  <Sparkles className="w-3 h-3" />
-  <span>
-    {joinedDays >= 999 
-      ? "Thành viên lâu năm" 
-      : joinedDays === 0 
-        ? "Tham gia Hôm nay"
-        : `Tham gia ${joinedDays} ngày trước`
-    }
-  </span>
-</div>
+            )}
+          </div>
+
+          <h2 className="text-xl font-bold text-white mt-4">
+            {targetUser?.name || "Unknown User"}
+          </h2>
+          <p className="text-sm text-blue-100 mt-0.5">@{targetUser?.userId || 'user'}</p>
+
+          <div className="flex items-center gap-2 mt-3">
+            <div className={`px-3 py-1 rounded-full bg-white/20 backdrop-blur-md flex items-center gap-1.5`}>
+              <div className="w-1.5 h-1.5 rounded-full bg-white" />
+              <span className="text-xs font-bold text-white">Lv.{level}</span>
+            </div>
+            <div className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3 text-white" />
+              <span className="text-xs font-bold text-white">
+                {joinedDays >= 999
+                 ? "Thành viên lâu năm"
+                  : joinedDays === 0
+                   ? "Tham gia Hôm nay"
+                    : `${joinedDays} ngày`
+                }
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* LIST INFO */}
-      <div className="mt-2 bg-white">
-        {/* Email */}
-        <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-100">
-          <div className="flex items-center gap-3">
-            <Mail className="w-5 h-5 text-zinc-400" />
-            <span className="text-sm text-zinc-700">Email</span>
-          </div>
-          <span className="text-sm text-zinc-900 font-medium">
-            {targetUser?.emailVerified? "••••••@gmail.com" : "Chưa xác minh"}
-          </span>
-        </div>
-
-        {/* Họ và tên */}
-        <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-100">
-          <div className="flex items-center gap-3">
-            <User className="w-5 h-5 text-zinc-400" />
-            <span className="text-sm text-zinc-700">Họ và tên</span>
-          </div>
-          <span className="text-sm text-zinc-900 font-medium">
-            {targetUser?.name || "Chưa cập nhật"}
-          </span>
-        </div>
-
-        {/* Ngày sinh */}
-        <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-100">
-          <div className="flex items-center gap-3">
-            <Calendar className="w-5 h-5 text-zinc-400" />
-            <span className="text-sm text-zinc-700">Ngày sinh</span>
-          </div>
-          <span className="text-sm text-zinc-900 font-medium">
-            {targetUser?.birthday || "Chưa cập nhật"}
-          </span>
-        </div>
-
-        {/* Số điện thoại */}
-        <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-100">
-          <div className="flex items-center gap-3">
-            <Phone className="w-5 h-5 text-zinc-400" />
-            <span className="text-sm text-zinc-700">Số điện thoại</span>
-          </div>
-          <span className="text-sm text-zinc-900 font-medium">
-            {targetUser?.phone? "••••••" + targetUser.phone.slice(-3) : "Chưa cập nhật"}
-          </span>
-        </div>
-
-        {/* Địa chỉ */}
-        <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-100">
-          <div className="flex items-center gap-3">
-            <MapPin className="w-5 h-5 text-zinc-400" />
-            <span className="text-sm text-zinc-700">Địa chỉ</span>
-          </div>
-          <span className="text-sm text-zinc-900 font-medium">
-            {targetUser?.location || "Chưa cập nhật"}
-          </span>
-        </div>
-
-        {/* Ngôn ngữ */}
-        <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-100">
-          <div className="flex items-center gap-3">
-            <Globe className="w-5 h-5 text-zinc-400" />
-            <span className="text-sm text-zinc-700">Ngôn ngữ</span>
-          </div>
-          <span className="text-sm text-zinc-900 font-medium">Tiếng Việt</span>
-        </div>
-
-        {/* Xác minh */}
-        <div className="flex items-center justify-between px-4 py-3.5">
-          <div className="flex items-center gap-3">
-            <ShieldCheck className="w-5 h-5 text-zinc-400" />
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm text-zinc-700">Xác minh</span>
-              {targetUser?.isVerifiedId && (
-                <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
-                  <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
-                </div>
-              )}
+      {/* COMPLETION PROGRESS - CHỈ CHỦ PROFILE */}
+      {isOwnProfile && (
+        <div className="px-4 -mt-12 relative z-10">
+          <div className="bg-white rounded-3xl p-5 shadow-xl border border-zinc-100">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm font-bold text-zinc-900">Hoàn thiện hồ sơ</p>
+                <p className="text-xs text-zinc-500 mt-0.5">Cập nhật để tăng độ uy tín</p>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-black text-blue-500">{profileCompletion}%</p>
+              </div>
+            <div className="h-2 rounded-full bg-zinc-100 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-blue-500 to-sky-500 transition-all duration-500"
+                style={{ width: `${profileCompletion}%` }}
+              />
             </div>
           </div>
-          <span className="text-sm text-zinc-900 font-medium">
-            {targetUser?.isVerifiedId? "Đã xác minh" : "Chưa xác minh"}
-          </span>
+        </div>
+      )}
+
+      {/* THÔNG TIN CƠ BẢN */}
+      <div className="px-4 mt-5">
+        <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider px-1 mb-2.5">
+          Thông tin cơ bản
+        </p>
+        <div className="bg-white rounded-3xl border border-zinc-200 overflow-hidden shadow-sm">
+          <InfoRow
+            icon={<Mail className="w-5 h-5" />}
+            label="Email"
+            value={targetUser?.emailVerified? "••••••@gmail.com" : "Chưa xác minh"}
+            verified={targetUser?.emailVerified}
+          />
+          <Divider />
+          <InfoRow
+            icon={<User className="w-5 h-5" />}
+            label="Họ và tên"
+            value={targetUser?.name || "Chưa cập nhật"}
+          />
+          <Divider />
+          <InfoRow
+            icon={<Calendar className="w-5 h-5" />}
+            label="Ngày sinh"
+            value={targetUser?.birthday || "Chưa cập nhật"}
+            empty={!targetUser?.birthday}
+          />
+          <Divider />
+          <InfoRow
+            icon={<Phone className="w-5 h-5" />}
+            label="Số điện thoại"
+            value={targetUser?.phone? "••••••" + targetUser.phone.slice(-3) : "Chưa cập nhật"}
+            empty={!targetUser?.phone}
+          />
         </div>
       </div>
+
+      {/* THÔNG TIN KHÁC */}
+      <div className="px-4 mt-4">
+        <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider px-1 mb-2.5">
+          Thông tin khác
+        </p>
+        <div className="bg-white rounded-3xl border border-zinc-200 overflow-hidden shadow-sm">
+          <InfoRow
+            icon={<MapPin className="w-5 h-5" />}
+            label="Địa chỉ"
+            value={targetUser?.location || "Chưa cập nhật"}
+            empty={!targetUser?.location}
+          />
+          <Divider />
+          <InfoRow
+            icon={<Globe className="w-5 h-5" />}
+            label="Ngôn ngữ"
+            value="Tiếng Việt"
+          />
+          <Divider />
+          <InfoRow
+            icon={<ShieldCheck className="w-5 h-5" />}
+            label="Xác minh CCCD"
+            value={targetUser?.isVerifiedId? "Đã xác minh" : "Chưa xác minh"}
+            verified={targetUser?.isVerifiedId}
+            empty={!targetUser?.isVerifiedId}
+          />
+        </div>
+      </div>
+
+      {/* NÚT HÀNH ĐỘNG - CHỈ CHỦ PROFILE */}
+      {isOwnProfile && (
+        <div className="px-4 mt-4 mb-8">
+          <button
+            onClick={() => router.push('/settings/profile')}
+            className="w-full h-14 rounded-2xl bg-gradient-to-r from-blue-500 to-sky-500 text-white font-bold text-[15px] shadow-lg shadow-blue-500/30 active:scale-[0.98] transition-all"
+          >
+            Cập nhật thông tin
+          </button>
+        </div>
+      )}
+
+      {!isOwnProfile && <div className="h-8" />}
     </Dialog.Content>
   </Dialog.Portal>
 </Dialog.Root>
