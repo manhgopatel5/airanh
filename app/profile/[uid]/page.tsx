@@ -955,7 +955,7 @@ return (
  <div
   key={i}
   className={`p-3.5 rounded-2xl border ${
-    level >= parseInt(tier.range.split(" - ") || "0")
+  level >= parseInt(tier.range.split(" - ")[0] || "0")
      ? "border-zinc-300 bg-zinc-50"
       : "border-zinc-200 bg-white opacity-60"
   }`}
