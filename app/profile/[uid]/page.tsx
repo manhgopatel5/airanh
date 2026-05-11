@@ -404,15 +404,12 @@ const progress =
     )
   );
 
-  const joinedDays =
-   targetUser?.createdAt?.seconds
-      ? Math.floor(
-          (
-            Date.now() -
-            targetUser?.createdAt.seconds * 1000
-          ) / 86400000
-        )
-      : 999;
+const joinedDays =
+  targetUser?.createdAt?.seconds
+    ? Math.floor(
+        (Date.now() - targetUser.createdAt.seconds * 1000) / 86400000
+      )
+    : 0; // ĐỔI 999 -> 0
 
   const profileCompletion =
     Math.round(
@@ -724,19 +721,19 @@ return (
         </span>
       </div>
     </div>
-    <div className="px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200">
-      <span className="text-xs font-semibold text-blue-600">
-        {trustScore >= 90
-         ? "Uy tín tuyệt đối"
-          : trustScore >= 70
-         ? "Đáng tin cậy cao"
-          : trustScore >= 40
-         ? "Khá tin cậy"
-          : trustScore >= 20
-         ? "Đang xây dựng"
-          : "Mới tham gia"}
-      </span>
-    </div>
+<div className="px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200">
+  <span className="text-xs font-semibold text-blue-600">
+    {trustScore >= 90
+      ? "Uy tín tuyệt đối"
+      : trustScore >= 70
+      ? "Đáng tin cậy cao"
+      : trustScore >= 40
+      ? "Khá tin cậy"
+      : trustScore >= 20
+      ? "Đang xây dựng"
+      : "Mới tham gia"} 
+  </span>
+</div>
   </div>
 </div>
 
@@ -1097,17 +1094,19 @@ return (
           </p>
         </div>
 
-        <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
-          <div className="flex justify-between items-center mb-1">
-            <span className="text-sm font-semibold text-zinc-700">Thời gian tham gia</span>
-            <span className="text-sm font-bold text-blue-600">
-              +{Math.min(Math.floor(joinedDays / 30), 5)}/5
-            </span>
-          </div>
-          <p className="text-xs text-zinc-500">
-            {joinedDays} ngày = {Math.floor(joinedDays / 30)} tháng. Tối đa 5 điểm
-          </p>
-        </div>
+   <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
+  <div className="flex justify-between items-center mb-1">
+    <span className="text-sm font-semibold text-zinc-700">Thời gian tham gia</span>
+    <span className="text-sm font-bold text-blue-600">
+      +{Math.min(Math.floor(joinedDays / 30), 5)}/5
+    </span>
+  </div>
+  <p className="text-xs text-zinc-500">
+    {joinedDays > 0
+      ? `${joinedDays} ngày = ${Math.floor(joinedDays / 30)} tháng. Tối đa 5 điểm`
+      : "Chưa có dữ liệu. Tối đa 5 điểm"}
+  </p>
+</div>
       </div>
 
       {/* TỔNG ĐIỂM */}
