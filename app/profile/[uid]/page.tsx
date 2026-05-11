@@ -1702,15 +1702,7 @@ return (
 </h2>
 <p className="text-sm text-zinc-500 mt-0.5">@{targetUser?.userId || 'user'}</p>
 
-<div className="mt-4 w-full max-w-xs">
-  <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3">
-    <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5">
-      Giới thiệu
-    </p>
-    <p className="text-sm text-zinc-700 leading-relaxed">
-      {targetUser?.bio || "Chưa có giới thiệu"}
-    </p>
-  </div>
+
             <div className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md flex items-center gap-1.5">
               <Sparkles className="w-3 h-3 text-white" />
               <span className="text-xs font-bold text-white">
@@ -1748,7 +1740,19 @@ return (
           </div>
         </div>
       )}
-
+{/* GIỚI THIỆU - PHẦN 1 */}
+<div className="px-4 mt-5">
+  <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider px-1 mb-2.5">
+    GIỚI THIỆU
+  </p>
+  <div className="bg-white rounded-3xl border border-zinc-200 overflow-hidden shadow-sm">
+    <div className="px-4 py-4">
+      <p className={`text-sm leading-relaxed ${targetUser?.bio? 'text-zinc-900' : 'text-zinc-400'}`}>
+        {targetUser?.bio || "Chưa có giới thiệu"}
+      </p>
+    </div>
+  </div>
+</
       {/* THÔNG TIN CƠ BẢN */}
       <div className="px-4 mt-5">
         <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider px-1 mb-2.5">
