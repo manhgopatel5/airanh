@@ -124,6 +124,8 @@ const [friendCount, setFriendCount] = useState(0); // CHUYỂN LÊN ĐÂY
   const [showTrustInfo, setShowTrustInfo] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  const touchStartX = useRef(0);
+const touchEndX = useRef(0);
   const [showAchievementInfo, setShowAchievementInfo] = useState(false);
   const [selectedAchievement, setSelectedAchievement] = useState<any>(null);
 // Component hàng thông tin
@@ -1652,31 +1654,17 @@ return (
   <Dialog.Portal>
     <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
     <Dialog.Content className="fixed inset-0 z-50 bg-zinc-50 overflow-y-auto">
-      {/* HEADER GRADIENT */}
-      <div className="sticky top-0 bg-white border-b border-zinc-200 z-10">
-        <div className="flex items-center justify-between px-4 py-3.5">
-          <Dialog.Close className="w-9 h-9 rounded-full flex items-center justify-center active:bg-zinc-100 transition-colors">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </Dialog.Close>
-          <Dialog.Title className="text-[17px] font-bold text-zinc-900">
-            Thông tin cá nhân
-          </Dialog.Title>
-          {isOwnProfile && (
-            <button
-              onClick={() => router.push('/settings/profile')}
-              className="text-[15px] font-semibold text-blue-500 active:opacity-60"
-            >
-              Sửa
-            </button>
-          )}
-          {!isOwnProfile && <div className="w-9" />}
-        </div>
-      </div>
+   
 
-      {/* PROFILE HEADER CARD */}
-      <div className="bg-gradient-to-br from-blue-500 via-sky-500 to-cyan-500 px-5 pt-8 pb-20">
+{/* PROFILE HEADER CARD - TRẮNG */}
+<div
+  className="bg-white px-5 pt-8 pb-20 border-b border-zinc-100"
+  onTouchStart={(e) => touchStartX.current = e.changedTouches[0].screenX}
+  onTouchEnd={(e) => {
+    touchEndX.current = e.changedTouches[0].screenX;
+    if (touchEndX.current - touchStartX.current > 80) setShowUserInfo(false);
+  }}
+>
         <div className="flex flex-col items-center">
           <div className="relative">
             <div className="w-24 h-24 rounded-full bg-white p-1 shadow-2xl">
@@ -1690,22 +1678,22 @@ return (
               />
             </div>
             {targetUser?.emailVerified && (
-              <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-blue-500 border-[3px] border-white flex items-center justify-center shadow-lg">
+           <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-blue-500 border-[3px] border-zinc-100 flex items-center justify-center shadow-lg">
                 <Check className="w-4 h-4 text-white stroke-[3]" />
               </div>
             )}
           </div>
 
-          <h2 className="text-xl font-bold text-white mt-4">
-            {targetUser?.name || "Unknown User"}
-          </h2>
-          <p className="text-sm text-blue-100 mt-0.5">@{targetUser?.userId || 'user'}</p>
+          <h2 className="text-xl font-bold text-zinc-900 mt-4">
+  {targetUser?.name || "Unknown User"}
+</h2>
+<p className="text-sm text-zinc-500 mt-0.5">@{targetUser?.userId || 'user'}</p>
 
-          <div className="flex items-center gap-2 mt-3">
-            <div className={`px-3 py-1 rounded-full bg-white/20 backdrop-blur-md flex items-center gap-1.5`}>
-              <div className="w-1.5 h-1.5 rounded-full bg-white" />
-              <span className="text-xs font-bold text-white">Lv.{level}</span>
-            </div>
+<div className="flex items-center gap-2 mt-3">
+  <div className="px-3 py-1 rounded-full bg-zinc-100 flex items-center gap-1.5">
+    <div className="w-1.5 h-1.5 rounded-full bg-zinc-900" />
+    <span className="text-xs font-bold text-zinc-900">Lv.{level}</span>
+  </div>
             <div className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md flex items-center gap-1.5">
               <Sparkles className="w-3 h-3 text-white" />
               <span className="text-xs font-bold text-white">
