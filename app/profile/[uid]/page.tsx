@@ -34,7 +34,7 @@ import {
   Sparkles,
   Flame,
   Shield,
-  Activity,
+  
   Gem,
   ChevronRight,
   Coffee,
