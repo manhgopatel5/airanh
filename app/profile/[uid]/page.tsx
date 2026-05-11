@@ -93,7 +93,7 @@ type PublicUser = {
     completed: number;
     rating: number;
     totalReviews: number;
-    responseRate?: number;
+    
   };
   createdAt?: Timestamp;
 };
@@ -607,7 +607,7 @@ const trustScore = Math.min(
       borderColor: "border-orange-400",
       category: "task",
     },
-  ], [rating, responseRate, completed, trustScore, joinedDays, targetUser, reviews, profileCompletion, level]);
+  ], [rating, completed, trustScore, joinedDays, targetUser, reviews, profileCompletion, level]);
 
   // Thêm state này dưới mấy state kia
 const [friendCount, setFriendCount] = useState(0);
@@ -1278,37 +1278,33 @@ return (
       </Dialog.Title>
 
       {/* CÔNG THỨC TÍNH XP */}
-      <div className="mb-5 p-4 rounded-2xl bg-blue-50 border border-blue-200">
-        <p className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-1.5">
-          <Zap className="w-4 h-4" />
-          Công thức tính XP
-        </p>
-        <div className="space-y-1.5 text-sm text-blue-800">
-          <div className="flex justify-between">
-            <span>Hoàn thành 1 job</span>
-            <span className="font-semibold">+12 XP</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Nhận 1 đánh giá</span>
-            <span className="font-semibold">+8 XP</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Rating trung bình</span>
-            <span className="font-semibold">+Rating × 20 XP</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Tỷ lệ phản hồi</span>
-            <span className="font-semibold">+{responseRate} XP</span>
-          </div>
-          <div className="pt-2 mt-2 border-t border-blue-300 flex justify-between font-bold">
-            <span>Tổng XP hiện tại</span>
-            <span>{xp} XP</span>
-          </div>
-          <div className="text-xs text-blue-700 mt-1">
-            Mỗi level cần 300 XP
-          </div>
-        </div>
-      </div>
+<div className="mb-5 p-4 rounded-2xl bg-blue-50 border border-blue-200">
+  <p className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-1.5">
+    <Zap className="w-4 h-4" />
+    Công thức tính XP
+  </p>
+  <div className="space-y-1.5 text-sm text-blue-800">
+    <div className="flex justify-between">
+      <span>Hoàn thành 1 job</span>
+      <span className="font-semibold">+12 XP</span>
+    </div>
+    <div className="flex justify-between">
+      <span>Nhận 1 đánh giá</span>
+      <span className="font-semibold">+8 XP</span>
+    </div>
+    <div className="flex justify-between">
+      <span>Rating trung bình</span>
+      <span className="font-semibold">+Rating × 20 XP</span>
+    </div>
+    <div className="pt-2 mt-2 border-t border-blue-300 flex justify-between font-bold">
+      <span>Tổng XP hiện tại</span>
+      <span>{xp} XP</span>
+    </div>
+    <div className="text-xs text-blue-700 mt-1">
+      Mỗi level cần 300 XP
+    </div>
+  </div>
+</div>
 
       {/* BẢNG RANK */}
       <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2.5">
