@@ -115,12 +115,14 @@ export default function PublicProfile() {
   const [currentUserData, setCurrentUserData] = useState<any>(null);
   const [isFriend, setIsFriend] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showLevelInfo, setShowLevelInfo] = useState(false);
+const [friendCount, setFriendCount] = useState(0); // CHUYỂN LÊN ĐÂY
   const [showTrustInfo, setShowTrustInfo] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [showAchievementInfo, setShowAchievementInfo] = useState(false);
   const [selectedAchievement, setSelectedAchievement] = useState<any>(null);
-  const [showLevelInfo, setShowLevelInfo] = useState(false);
+  
 
   // ===== TÍNH TOÁN STATS - CHỈ KHAI BÁO 1 LẦN =====
   const completed = targetUser?.stats?.completed || 0;
