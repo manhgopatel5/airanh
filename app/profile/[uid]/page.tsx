@@ -85,6 +85,7 @@ export default function PublicProfile() {
   const [currentUserData, setCurrentUserData] = useState<any>(null);
   const [isFriend, setIsFriend] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showTrustInfo, setShowTrustInfo] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [showMore, setShowMore] = useState(false);
 
@@ -703,11 +704,19 @@ return (
                 />
               </div>
             </div>
-    {/* TRUST SCORE */}
+ {/* TRUST SCORE */}
 <div className="mt-5 rounded-3xl border border-zinc-200/80 bg-white p-4 shadow-sm">
   <div className="flex items-center justify-between">
     <div>
-      <p className="text-xs text-zinc-500 font-medium">Độ uy tín</p>
+      <div className="flex items-center gap-1.5">
+        <p className="text-xs text-zinc-500 font-medium">Độ uy tín</p>
+        <button
+          onClick={() => setShowTrustInfo(true)}
+          className="w-4 h-4 rounded-full bg-zinc-100 flex items-center justify-center active:scale-95"
+        >
+          <Info className="w-2.5 h-2.5 text-zinc-500" />
+        </button>
+      </div>
       <div className="flex items-center gap-2 mt-1">
         <Shield className="w-5 h-5 text-blue-500" />
         <span className="text-2xl font-bold text-zinc-900">
@@ -717,11 +726,15 @@ return (
     </div>
     <div className="px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200">
       <span className="text-xs font-semibold text-blue-600">
-        {trustScore >= 80
-          ? "Đáng tin cậy cao"
-          : trustScore >= 50
-          ? "Khá tin cậy"
-          : "Mới"}
+        {trustScore >= 90
+         ? "Uy tín tuyệt đối"
+          : trustScore >= 70
+         ? "Đáng tin cậy cao"
+          : trustScore >= 40
+         ? "Khá tin cậy"
+          : trustScore >= 20
+         ? "Đang xây dựng"
+          : "Mới tham gia"}
       </span>
     </div>
   </div>
@@ -1021,7 +1034,102 @@ return (
     </Dialog.Content>
   </Dialog.Portal>
 </Dialog.Root>
+<Dialog.Root open={showTrustInfo} onOpenChange={setShowTrustInfo}>
+  <Dialog.Portal>
+    <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
+    <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md max-h-[85vh] overflow-y-auto bg-white rounded-3xl p-5 z-50 shadow-2xl">
+      <Dialog.Title className="text-xl font-bold text-zinc-900 mb-4 flex items-center gap-2">
+        <Shield className="w-5 h-5 text-blue-500" />
+        Độ uy tín được tính thế nào?
+      </Dialog.Title>
 
+      <p className="text-sm text-zinc-600 mb-4">
+        Độ uy tín phản ánh mức độ tin cậy của bạn dựa trên hoạt động thực tế. Điểm càng cao càng được ưu tiên.
+      </p>
+
+      {/* BREAKDOWN CHI TIẾT */}
+      <div className="space-y-3 mb-5">
+        <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-sm font-semibold text-zinc-700">Đánh giá trung bình</span>
+            <span className="text-sm font-bold text-blue-600">
+              +{Math.min(Math.floor(rating * 8), 40)}/40
+            </span>
+          </div>
+          <p className="text-xs text-zinc-500">
+            {rating} sao × 8 điểm. Tối đa 40 điểm
+          </p>
+        </div>
+
+        <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-sm font-semibold text-zinc-700">Công việc hoàn thành</span>
+            <span className="text-sm font-bold text-blue-600">
+              +{Math.min(Math.floor(completed * 1.5), 30)}/30
+            </span>
+          </div>
+          <p className="text-xs text-zinc-500">
+            {completed} job × 1.5 điểm. Tối đa 30 điểm
+          </p>
+        </div>
+
+        <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-sm font-semibold text-zinc-700">Số lượng đánh giá</span>
+            <span className="text-sm font-bold text-blue-600">
+              +{Math.min(reviews, 15)}/15
+            </span>
+          </div>
+          <p className="text-xs text-zinc-500">
+            {reviews} đánh giá × 1 điểm. Tối đa 15 điểm
+          </p>
+        </div>
+
+        <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-sm font-semibold text-zinc-700">Xác minh tài khoản</span>
+            <span className="text-sm font-bold text-blue-600">
+              +{(targetUser?.emailVerified? 5 : 0) + (targetUser?.isVerifiedId? 5 : 0)}/10
+            </span>
+          </div>
+          <p className="text-xs text-zinc-500">
+            Email {targetUser?.emailVerified? '✓ +5' : '✗ 0'}, CCCD {targetUser?.isVerifiedId? '✓ +5' : '✗ 0'}
+          </p>
+        </div>
+
+        <div className="p-3 rounded-2xl bg-zinc-50 border border-zinc-200">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-sm font-semibold text-zinc-700">Thời gian tham gia</span>
+            <span className="text-sm font-bold text-blue-600">
+              +{Math.min(Math.floor(joinedDays / 30), 5)}/5
+            </span>
+          </div>
+          <p className="text-xs text-zinc-500">
+            {joinedDays} ngày = {Math.floor(joinedDays / 30)} tháng. Tối đa 5 điểm
+          </p>
+        </div>
+      </div>
+
+      {/* TỔNG ĐIỂM */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-500 to-sky-500 text-white">
+        <div className="flex justify-between items-center">
+          <span className="font-semibold">Tổng điểm uy tín</span>
+          <span className="text-2xl font-bold">{trustScore}/100</span>
+        </div>
+        <div className="mt-2 h-2 rounded-full bg-white/30 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-white"
+            style={{ width: `${trustScore}%` }}
+          />
+        </div>
+      </div>
+
+      <Dialog.Close className="mt-5 w-full h-12 rounded-2xl bg-zinc-900 text-white font-semibold active:scale-[0.98] transition-all">
+        Đã hiểu
+      </Dialog.Close>
+    </Dialog.Content>
+  </Dialog.Portal>
+</Dialog.Root>
         </div>
       </div>
     </div>
