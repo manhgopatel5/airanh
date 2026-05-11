@@ -1752,7 +1752,7 @@ return (
       </p>
     </div>
   </div>
-</
+</div>
       {/* THÔNG TIN CƠ BẢN */}
       <div className="px-4 mt-5">
         <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider px-1 mb-2.5">
