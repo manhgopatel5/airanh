@@ -1027,6 +1027,33 @@ return (
 <div className="px-4 pt-3">
   <div className="max-w-md mx-auto space-y-3">
 
+{/* THÔNG TIN CÁ NHÂN - CĂN GIỮA + HIỆU ỨNG */}
+<div className="mb-3">
+  <button
+    onClick={() => setShowUserInfo(true)}
+    className="w-full rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-sky-50 p-4 shadow-sm active:scale-[0.98] transition-all relative overflow-hidden group"
+  >
+    {/* Hiệu ứng pulse gợi ý click */}
+    <div className="absolute inset-0 bg-gradient-to-r from-blue-400/0 via-blue-400/10 to-blue-400/0 animate-[shimmer_2s_infinite] -translate-x-full group-hover:animate-none" />
+    
+    <div className="flex items-center justify-center gap-2 relative">
+      <User className="w-4 h-4 text-blue-600 animate-pulse" />
+      <span className="text-sm font-bold text-blue-900 uppercase tracking-wide">
+        THÔNG TIN CÁ NHÂN
+      </span>
+      <ChevronRight className="w-4 h-4 text-blue-600 animate-pulse" />
+    </div>
+    
+    {/* Chỉ hiện với chủ profile */}
+    {isOwnProfile && (
+      <div className="mt-1.5 text-xs text-blue-700 font-medium">
+        Hoàn thiện {profileCompletion}%
+      </div>
+    )}
+  </button>
+</div>
+
+
 {/* STATS */}
 <div className="grid grid-cols-4 gap-2">
   <div className="rounded-2xl border border-zinc-200 bg-white p-3 text-center shadow-sm relative">
@@ -1170,28 +1197,7 @@ return (
   )}
 </div>
 
-{/* THÔNG TIN CÁ NHÂN - 1 HÀNG */}
-<div className="mb-3">
-  <button
-    onClick={() => setShowUserInfo(true)}
-    className="w-full rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm active:scale-[0.98] transition-all flex items-center justify-between"
-  >
-    <div className="flex items-center gap-3">
-      <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-        <User className="w-5 h-5 text-blue-600" />
-      </div>
-      <div className="text-left">
-        <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
-          THÔNG TIN CÁ NHÂN
-        </p>
-        <h3 className="text-sm font-bold text-zinc-900 mt-0.5">
-          Hoàn thiện {profileCompletion}%
-        </h3>
-      </div>
-    </div>
-    <ChevronRight className="w-5 h-5 text-zinc-400" />
-  </button>
-</div>
+
 
 {/* SKILLS */}
 {targetUser?.skills && targetUser?.skills.length > 0 && (
