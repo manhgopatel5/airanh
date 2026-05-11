@@ -551,12 +551,6 @@ return (
   
 
  
-<div className="px-5 pt-14 pb-5">
-  <div className="text-center">
-    <div className="flex items-center justify-center gap-1.5">
-      <h1 className="text-xl font-bold text-zinc-900">
-
-// MỚI
 <div className="px-5 pt-16 pb-5">
   <div className="flex flex-col items-center text-center">
     {/* AVATAR CHUYỂN XUỐNG ĐÂY */}
