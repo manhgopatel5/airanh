@@ -601,19 +601,13 @@ return (
                 </div>
               </div>
 
-              {/* USERNAME */}
-              <div className="flex items-center justify-center gap-2 mt-3 text-sm text-zinc-500">
-                <span>@{targetUser?.userId}</span>
-                {targetUser?.location && (
-                  <>
-                    <span>•</span>
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5" />
-                      <span>{targetUser?.location}</span>
-                    </div>
-                  </>
-                )}
-              </div>
+              {/* LOCATION - BỎ USER ID */}
+{targetUser?.location && (
+  <div className="flex items-center justify-center gap-1 mt-3 text-sm text-zinc-500">
+    <MapPin className="w-3.5 h-3.5" />
+    <span>{targetUser?.location}</span>
+  </div>
+)}
 
               {/* STATUS */}
               <div className="mt-3 flex justify-center">
