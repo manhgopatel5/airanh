@@ -888,41 +888,37 @@ return (
   <div className="min-h-screen bg-zinc-50 pb-28">
     <Toaster richColors position="top-center" />
 
-{/* HEADER PREMIUM - KHÔNG SÓNG, CAO NHẤT */}
-<div className="relative bg-gradient-to-br from-[#6BA4FF] via-[#5A95F5] to-[#4A90E2] pt-0 pb-8">
-  {/* GLOW BACKGROUND */}
-  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.15),transparent_50%)]" />
-  <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.1),transparent_40%)]" />
-  
+{/* HEADER - TRẮNG SẠCH */}
+<div className="relative bg-white pt-3 pb-4">
   {/* TOP ACTIONS */}
-  <div className="relative z-20 px-4 pt-3 pb-2 flex items-center justify-end gap-2">
+  <div className="px-4 pb-2 flex items-center justify-end gap-2">
     <button
       onClick={handleShare}
-      className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-2xl border border-white/10 flex items-center justify-center active:scale-90 transition-all shadow-xl"
+      className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center active:scale-90 transition-all"
     >
-      <Share2 className="w-4 h-4 text-white" />
+      <Share2 className="w-4 h-4 text-zinc-700" />
     </button>
     {!isOwnProfile && (
       <button
         onClick={() => setShowMore(!showMore)}
-        className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-2xl border border-white/10 flex items-center justify-center active:scale-90 transition-all shadow-xl"
+        className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center active:scale-90 transition-all"
       >
-        <MoreVertical className="w-4 h-4 text-white" />
+        <MoreVertical className="w-4 h-4 text-zinc-700" />
       </button>
     )}
   </div>
 
-  {/* AVATAR + INFO CENTER - ĐẨY LÊN CAO */}
-  <div className="relative z-10 flex flex-col items-center -mt-2">
-    <div className="relative group">
-      <div className="w-28 h-28 rounded-full bg-gradient-to-br from-white/40 to-white/10 p-1 shadow-2xl backdrop-blur-sm">
+  {/* AVATAR + INFO - GIẢM KHOẢNG CÁCH */}
+  <div className="flex flex-col items-center">
+    <div className="relative">
+      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-zinc-100 to-zinc-200 p-0.5 shadow-lg">
         <div className="w-full h-full rounded-full bg-white p-0.5">
           <img
             src={
               targetUser?.avatar ||
               `https://ui-avatars.com/api/?name=${encodeURIComponent(
                 targetUser?.name || "User"
-              )}&size=200&background=4A90E2&color=fff`
+              )}&size=200&background=E5E5E5&color=525252`
             }
             alt=""
             className="w-full h-full rounded-full object-cover"
@@ -930,11 +926,11 @@ return (
         </div>
       </div>
       {targetUser?.online && (
-        <div className="absolute bottom-1.5 right-1.5 w-5 h-5 rounded-full bg-emerald-400 border-[3px] border-white shadow-lg animate-pulse" />
+        <div className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-400 border-[2.5px] border-white shadow-md animate-pulse" />
       )}
       {isOwnProfile && (
-        <button className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-white shadow-xl flex items-center justify-center active:scale-95 transition-all border border-zinc-100">
-          <svg className="w-4 h-4 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-white shadow-lg flex items-center justify-center active:scale-95 transition-all border border-zinc-200">
+          <svg className="w-3.5 h-3.5 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
@@ -942,64 +938,49 @@ return (
       )}
     </div>
 
-    <div className="flex items-center justify-center gap-1.5 mt-4">
-      <h1 className="text-2xl font-bold text-white tracking-tight">
+    <div className="flex items-center justify-center gap-1.5 mt-2.5">
+      <h1 className="text-xl font-bold text-zinc-900 tracking-tight">
         {targetUser?.name || "Unknown User"}
       </h1>
       {targetUser?.emailVerified && (
-        <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-lg">
-          <Check className="w-3.5 h-3.5 text-[#4A90E2] stroke-[3]" />
+        <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
+          <Check className="w-3 h-3 text-white stroke-[3]" />
         </div>
       )}
     </div>
 
-    {targetUser?.userId && (
-      <p className="text-sm text-white/70 mt-1 font-medium">@{targetUser?.userId}</p>
-    )}
+    {/* BỎ USERID */}
 
-  {/* RANK BADGE - PREMIUM */}
-<div className="flex justify-center mt-4 items-center gap-2">
-  <div className={`px-5 py-2.5 rounded-full bg-gradient-to-r ${rank.gradient} text-white flex items-center gap-2 shadow-2xl border border-white/30`}>
-    {rank.icon}
-    <span className="font-bold text-sm tracking-wide">{rank.name}</span>
-    <div className="px-2.5 py-1 rounded-full bg-white/30 text-xs font-black backdrop-blur-sm">
-      Lv.{level}
+    {/* RANK BADGE + HOẠT ĐỘNG - THU NHỎ, GỘP HÀNG */}
+    <div className="flex items-center justify-center gap-1.5 mt-2.5">
+      <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${rank.gradient} text-white flex items-center gap-1.5 shadow-md`}>
+        <div className="w-3.5 h-3.5">{rank.icon}</div>
+        <span className="font-bold text-xs">{rank.name}</span>
+        <div className="px-1.5 py-0.5 rounded-full bg-white/30 text-[10px] font-black backdrop-blur-sm">
+          Lv.{level}
+        </div>
+      </div>
+
+      <button
+        onClick={() => setShowLevelInfo(true)}
+        className="w-6 h-6 rounded-full bg-zinc-100 flex items-center justify-center active:scale-90 transition-all"
+      >
+        <Info className="w-3 h-3 text-zinc-600" />
+      </button>
+
+      <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-zinc-100">
+        <div className={`w-1.5 h-1.5 rounded-full ${targetUser?.online? 'bg-emerald-500 animate-pulse' : 'bg-zinc-400'}`} />
+        <span className="text-xs text-zinc-600 font-medium">
+          {targetUser?.online
+          ? "Online"
+            : formatLastSeen(targetUser?.lastSeen)}
+        </span>
+      </div>
     </div>
   </div>
-
-  <button
-    onClick={() => setShowLevelInfo(true)}
-    className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-2xl border border-white/20 flex items-center justify-center active:scale-90 transition-all shadow-xl"
-  >
-    <Info className="w-4 h-4 text-white" />
-  </button>
 </div>
 
-{/* LOCATION + HOẠT ĐỘNG - GỘP CHUNG */}
-<div className="flex flex-wrap items-center justify-center gap-2 mt-4">
-  {targetUser?.location && (
-    <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-xl border border-white/10 shadow-lg">
-      <MapPin className="w-3.5 h-3.5 text-white" />
-      <span className="text-sm text-white font-medium">{targetUser?.location}</span>
-    </div>
-  )}
-  
-  <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-xl border border-white/10 shadow-lg">
-    <div className={`w-2 h-2 rounded-full ${targetUser?.online? 'bg-emerald-400 animate-pulse' : 'bg-zinc-300'}`} />
-    <span className="text-sm text-white font-medium">
-      {targetUser?.online
-       ? "Đang hoạt động"
-        : `Hoạt động ${formatLastSeen(targetUser?.lastSeen)}`}
-    </span>
-  </div>
-</div>
-
-{/* XÓA HOẠT ĐỘNG CŨ - ĐÃ GỘP Ở TRÊN */}
-
-</div>
-</div>
-
-<div className="px-4 pt-4 relative z-10">
+<div className="px-4 pt-3">
   <div className="max-w-md mx-auto space-y-3">
 
 {/* STATS */}
