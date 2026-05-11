@@ -1244,56 +1244,9 @@ return (
   </div>
 )}
 
-{/* ACTIONS */}
-{!isOwnProfile && (
-  <div className="mt-6 space-y-2.5">
-    {isFriend ? (
-      <>
-        <button
-          onClick={() => router.push(`/chat/${targetUser?.uid}`)}
-          className={`w-full h-12 rounded-2xl bg-gradient-to-r ${rank.gradient} text-white font-semibold shadow-sm ${rank.glow} flex items-center justify-center gap-2 active:scale-[0.98] transition-all`}
-        >
-          <MessageCircle size={18} />
-          Nhắn tin
-        </button>
-        <button
-          onClick={handleUnfriend}
-          disabled={actionLoading}
-          className="w-full h-12 rounded-2xl border border-zinc-200 bg-white text-zinc-700 font-semibold flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all disabled:opacity-50"
-        >
-          <UserMinus size={18} />
-          Hủy kết nối
-        </button>
-      </>
-    ) : (
-      <button
-        onClick={handleConnect}
-        disabled={actionLoading}
-        className={`w-full h-12 rounded-2xl bg-gradient-to-r ${rank.gradient} text-white font-semibold shadow-sm ${rank.glow} flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50`}
-      >
-        <UserPlus size={18} />
-        {actionLoading ? "Đang kết nối..." : "Mời nhận việc"}
-      </button>
-    )}
-  </div>
-)}
 
-{/* REPORT */}
-<AnimatePresence>
-  {showMore && !isOwnProfile && (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 8 }}
-      className="mt-3 rounded-3xl border border-red-200 bg-red-50 p-1.5"
-    >
-      <button className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl text-red-600 font-semibold text-sm">
-        <Flag className="w-5 h-5" />
-        Báo cáo người dùng
-      </button>
-    </motion.div>
-  )}
-</AnimatePresence>
+
+
 <Dialog.Root open={showLevelInfo} onOpenChange={setShowLevelInfo}>
   <Dialog.Portal>
     <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
