@@ -64,11 +64,13 @@ import {
   TrendingUp,
   ThumbsUp,
   BookOpen,
+  Phone,
   ShieldCheck,
   Lock,
 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { motion } from "framer-motion";
+const [showUserInfo, setShowUserInfo] = useState(false);
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 
@@ -1167,27 +1169,27 @@ return (
   )}
 </div>
 
-{/* PROFILE COMPLETION */}
-<div className="mt-5 rounded-3xl border border-zinc-200/80 bg-white p-4 shadow-sm">
-  <div className="flex items-center justify-between">
-    <div>
-      <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
-        Hồ sơ
-      </p>
-      <h3 className="mt-0.5 text-lg font-bold text-zinc-900">
-        Hoàn thiện {profileCompletion}%
-      </h3>
+{/* THÔNG TIN CÁ NHÂN - 1 HÀNG */}
+<div className="mb-3">
+  <button
+    onClick={() => setShowUserInfo(true)}
+    className="w-full rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm active:scale-[0.98] transition-all flex items-center justify-between"
+  >
+    <div className="flex items-center gap-3">
+      <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+        <User className="w-5 h-5 text-blue-600" />
+      </div>
+      <div className="text-left">
+        <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+          THÔNG TIN CÁ NHÂN
+        </p>
+        <h3 className="text-sm font-bold text-zinc-900 mt-0.5">
+          Hoàn thiện {profileCompletion}%
+        </h3>
+      </div>
     </div>
-    <Activity className="w-7 h-7 text-blue-500" />
-  </div>
-  <div className="mt-3 h-2 rounded-full overflow-hidden bg-zinc-100">
-    <motion.div
-      initial={{ width: 0 }}
-      animate={{ width: `${profileCompletion}%` }}
-      transition={{ duration: 0.8 }}
-      className="h-full rounded-full bg-gradient-to-r from-blue-400 to-blue-600"
-    />
-  </div>
+    <ChevronRight className="w-5 h-5 text-zinc-400" />
+  </button>
 </div>
 
 {/* SKILLS */}
@@ -1591,6 +1593,151 @@ return (
       <Dialog.Close className="mt-5 w-full h-12 rounded-2xl bg-zinc-900 text-white font-semibold active:scale-[0.98] transition-all">
         Đóng
       </Dialog.Close>
+    </Dialog.Content>
+  </Dialog.Portal>
+</Dialog.Root>
+{/* MODAL THÔNG TIN CÁ NHÂN - FULL PAGE */}
+<Dialog.Root open={showUserInfo} onOpenChange={setShowUserInfo}>
+  <Dialog.Portal>
+    <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
+    <Dialog.Content className="fixed inset-0 z-50 bg-zinc-50 overflow-y-auto">
+      {/* HEADER */}
+      <div className="sticky top-0 bg-white border-b border-zinc-200 z-10">
+        <div className="flex items-center justify-between px-4 py-3">
+          <Dialog.Close className="w-8 h-8 rounded-full flex items-center justify-center active:bg-zinc-100">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </Dialog.Close>
+          <Dialog.Title className="text-base font-bold text-zinc-900">
+            Thông tin cá nhân
+          </Dialog.Title>
+          <div className="w-8" />
+        </div>
+      </div>
+
+      {/* USER INFO HEADER */}
+      <div className="bg-white px-4 py-5">
+        <div className="flex items-center gap-3">
+          <img
+            src={
+              targetUser?.avatar ||
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                targetUser?.name || "User"
+              )}&size=200&background=E5E5E5&color=525252`
+            }
+            alt=""
+            className="w-16 h-16 rounded-full object-cover"
+          />
+          <div>
+            <div className="flex items-center gap-1.5">
+              <h2 className="text-lg font-bold text-zinc-900">
+                {targetUser?.name || "Unknown User"}
+              </h2>
+              {targetUser?.emailVerified && (
+                <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
+                  <Check className="w-3 h-3 text-white stroke-[3]" />
+                </div>
+              )}
+            </div>
+            <p className="text-sm text-zinc-500">@{targetUser?.userId || 'user'}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <div className="px-2 py-0.5 rounded-full bg-blue-50 text-xs font-bold text-blue-600">
+                Lv.{level}
+              </div>
+              <div className="flex items-center gap-1 text-xs text-zinc-500">
+                <Sparkles className="w-3 h-3" />
+                <span>Tham gia {joinedDays > 0? `${joinedDays} ngày trước` : "Hôm nay"}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* LIST INFO */}
+      <div className="mt-2 bg-white">
+        {/* Email */}
+        <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-100">
+          <div className="flex items-center gap-3">
+            <Mail className="w-5 h-5 text-zinc-400" />
+            <span className="text-sm text-zinc-700">Email</span>
+          </div>
+          <span className="text-sm text-zinc-900 font-medium">
+            {targetUser?.emailVerified? "••••••@gmail.com" : "Chưa xác minh"}
+          </span>
+        </div>
+
+        {/* Họ và tên */}
+        <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-100">
+          <div className="flex items-center gap-3">
+            <User className="w-5 h-5 text-zinc-400" />
+            <span className="text-sm text-zinc-700">Họ và tên</span>
+          </div>
+          <span className="text-sm text-zinc-900 font-medium">
+            {targetUser?.name || "Chưa cập nhật"}
+          </span>
+        </div>
+
+        {/* Ngày sinh */}
+        <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-100">
+          <div className="flex items-center gap-3">
+            <Calendar className="w-5 h-5 text-zinc-400" />
+            <span className="text-sm text-zinc-700">Ngày sinh</span>
+          </div>
+          <span className="text-sm text-zinc-900 font-medium">
+            {targetUser?.birthday || "Chưa cập nhật"}
+          </span>
+        </div>
+
+        {/* Số điện thoại */}
+        <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-100">
+          <div className="flex items-center gap-3">
+            <Phone className="w-5 h-5 text-zinc-400" />
+            <span className="text-sm text-zinc-700">Số điện thoại</span>
+          </div>
+          <span className="text-sm text-zinc-900 font-medium">
+            {targetUser?.phone? "••••••" + targetUser.phone.slice(-3) : "Chưa cập nhật"}
+          </span>
+        </div>
+
+        {/* Địa chỉ */}
+        <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-100">
+          <div className="flex items-center gap-3">
+            <MapPin className="w-5 h-5 text-zinc-400" />
+            <span className="text-sm text-zinc-700">Địa chỉ</span>
+          </div>
+          <span className="text-sm text-zinc-900 font-medium">
+            {targetUser?.location || "Chưa cập nhật"}
+          </span>
+        </div>
+
+        {/* Ngôn ngữ */}
+        <div className="flex items-center justify-between px-4 py-3.5 border-b border-zinc-100">
+          <div className="flex items-center gap-3">
+            <Globe className="w-5 h-5 text-zinc-400" />
+            <span className="text-sm text-zinc-700">Ngôn ngữ</span>
+          </div>
+          <span className="text-sm text-zinc-900 font-medium">Tiếng Việt</span>
+        </div>
+
+        {/* Xác minh */}
+        <div className="flex items-center justify-between px-4 py-3.5">
+          <div className="flex items-center gap-3">
+            <ShieldCheck className="w-5 h-5 text-zinc-400" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm text-zinc-700">Xác minh</span>
+              {targetUser?.isVerifiedId && (
+                <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+                  <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
+                </div>
+              )}
+            </div>
+          </div>
+          <span className="text-sm text-zinc-900 font-medium">
+            {targetUser?.isVerifiedId? "Đã xác minh" : "Chưa xác minh"}
+          </span>
+        </div>
+      </div>
     </Dialog.Content>
   </Dialog.Portal>
 </Dialog.Root>
