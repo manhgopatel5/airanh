@@ -835,8 +835,7 @@ export default function PublicProfile() {
 
 
 
-  return arr;
-}, [rating, responseRate, completed, trustScore, joinedDays]);
+
 
 if (loading) {
   return (
