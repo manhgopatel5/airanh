@@ -607,55 +607,9 @@ const trustScore = Math.min(
       borderColor: "border-orange-400",
       category: "task",
     },
-  ], [rating, completed, trustScore, joinedDays, targetUser, reviews, profileCompletion, level]);
+], [rating, completed, trustScore, joinedDays, targetUser, reviews, profileCompletion, level, friendCount]);
 
-  // Thêm state này dưới mấy state kia
-const [friendCount, setFriendCount] = useState(0);
-
-// Thêm vào trong fetchUser(), sau khi setTargetUser
-const fetchUser = useCallback(async () => {
-  if (!uid || !user) return;
-
-  try {
-    const [userSnap, currentUserSnap] = await Promise.all([
-      getDoc(doc(db, "users", uid as string)),
-      getDoc(doc(db, "users", user.uid)),
-    ]);
-
-    if (!userSnap.exists()) {
-      toast.error("Không tìm thấy người dùng");
-      router.replace("/404");
-      return;
-    }
-
-    const data = {
-      uid: userSnap.id,
-     ...userSnap.data(),
-    } as PublicUser;
-
-    setTargetUser(data);
-
-    if (currentUserSnap.exists()) {
-      setCurrentUserData(currentUserSnap.data());
-    }
-
-    const friendSnap = await getDoc(
-      doc(db, "users", user.uid, "friends", userSnap.id)
-    );
-    setIsFriend(friendSnap.exists());
-
-    // THÊM ĐOẠN NÀY: Đếm bạn bè của targetUser
-    const friendsCollection = await getDocs(collection(db, "users", uid as string, "friends"));
-    setFriendCount(friendsCollection.size);
-
-  } catch (err) {
-    console.error(err);
-    toast.error("Có lỗi xảy ra");
-    router.back();
-  } finally {
-    setLoading(false);
-  }
-}, [uid, user, db, router]);
+  
   const isOwnProfile = user?.uid === uid;
 
   
