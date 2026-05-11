@@ -612,18 +612,25 @@ return (
       )}
     </div>
 
-    {/* RANK BADGE */}
-    <div className="flex justify-center mt-3 items-center gap-1.5">
-      <div
-        className={`px-3 py-1.5 rounded-full bg-gradient-to-r ${rank.gradient} text-white flex items-center gap-1.5 shadow-md`}
-      >
-        {rank.icon}
-        <span className="font-semibold text-xs">{rank.name}</span>
-        <div className="px-1.5 py-0.5 rounded-full bg-white/25 text-xs font-bold">
-          Lv.{level}
-        </div>
-      </div>
+{/* RANK BADGE */}
+<div className="flex justify-center mt-3 items-center gap-1.5">
+  <div
+    className={`px-3 py-1.5 rounded-full bg-gradient-to-r ${rank.gradient} text-white flex items-center gap-1.5 shadow-md`}
+  >
+    {rank.icon}
+    <span className="font-semibold text-xs">{rank.name}</span>
+    <div className="px-1.5 py-0.5 rounded-full bg-white/25 text-xs font-bold">
+      Lv.{level}
     </div>
+  </div>
+
+  <button
+    onClick={() => setShowLevelInfo(true)}
+    className="w-6 h-6 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center active:scale-95 transition-all"
+  >
+    <Info className="w-3.5 h-3.5 text-white" />
+  </button>
+</div>
 
     {/* HOẠT ĐỘNG */}
     <div className="mt-2.5 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md flex items-center gap-1.5">
