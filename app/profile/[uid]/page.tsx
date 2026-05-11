@@ -782,14 +782,15 @@ const handleMessage = async () => {
   
   setActionLoading(true);
   try {
-    // Check currentUserData có chưa
-    if (!currentUserData) {
+    let currentUser = currentUserData;
+    if (!currentUser) {
       const userSnap = await getDoc(doc(db, "users", user.uid));
       if (!userSnap.exists()) {
         toast.error("Không tìm thấy thông tin của bạn");
         return;
       }
-      setCurrentUserData(userSnap.data());
+      currentUser = userSnap.data();
+      setCurrentUserData(currentUser);
     }
 
     const chatId = [user.uid, targetUser.uid].sort().join('_');
@@ -799,12 +800,12 @@ const handleMessage = async () => {
     
     if (!chatSnap.exists()) {
       await setDoc(chatRef, {
-        participants: [user.uid, targetUser.uid],
+        members: [user.uid, targetUser.uid], // rules dùng members
         participantInfo: {
           [user.uid]: {
-            name: currentUserData?.name || user.displayName || "User",
-            avatar: currentUserData?.avatar || user.photoURL || "",
-            userId: currentUserData?.userId || ""
+            name: currentUser?.name || user.displayName || "User",
+            avatar: currentUser?.avatar || user.photoURL || "",
+            userId: currentUser?.userId || ""
           },
           [targetUser.uid]: {
             name: targetUser.name || "Unknown",
@@ -815,7 +816,10 @@ const handleMessage = async () => {
         createdAt: serverTimestamp(),
         lastMessage: "",
         lastMessageTime: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        deletedFor: [], // rules check field này
+        status: 'active', // rules check field này
+        blockedUsers: [] // rules check field này
       });
     }
     
