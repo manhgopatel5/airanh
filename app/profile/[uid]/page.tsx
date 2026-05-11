@@ -69,7 +69,6 @@ import {
   Lock,
 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { motion } from "framer-motion";
 const [showUserInfo, setShowUserInfo] = useState(false);
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
