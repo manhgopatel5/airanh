@@ -69,7 +69,7 @@ import {
   Lock,
 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
-const [showUserInfo, setShowUserInfo] = useState(false);
+
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 
@@ -114,7 +114,7 @@ export default function PublicProfile() {
   const router = useRouter();
   const { user } = useAuth();
   const db = getFirebaseDB();
-
+  const [showUserInfo, setShowUserInfo] = useState(false);
   const [targetUser, setTargetUser] = useState<PublicUser | null>(null);
   const [currentUserData, setCurrentUserData] = useState<any>(null);
   const [isFriend, setIsFriend] = useState(false);
