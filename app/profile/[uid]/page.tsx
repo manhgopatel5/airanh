@@ -945,7 +945,7 @@ return (
     <Toaster richColors position="top-center" />
 
 {/* HEADER - TRẮNG SẠCH */}
-<div className="relative bg-white pt-2 pb-3">
+<div className="relative bg-white pt-2 pb-2">
 
 
   {/* AVATAR + INFO - GIẢM KHOẢNG CÁCH */}
@@ -1745,16 +1745,16 @@ return (
   <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider px-1 mb-2.5">
     GIỚI THIỆU
   </p>
-  <div className="bg-white rounded-3xl border border-zinc-200 overflow-hidden shadow-sm">
-    <div className="px-4 py-6 min-h-[96px]">
-      <p className={`text-sm leading-relaxed ${targetUser?.bio? 'text-zinc-900' : 'text-zinc-400'}`}>
-        {targetUser?.bio || "Chưa có giới thiệu"}
-      </p>
-    </div>
+ <div className="bg-white rounded-3xl border border-zinc-200 overflow-hidden shadow-sm">
+  <div className="px-4 py-6 min-h-[120px]">
+    <p className={`text-sm leading-relaxed ${targetUser?.bio? 'text-zinc-900' : 'text-zinc-400'}`}>
+      {targetUser?.bio || "Chưa có giới thiệu"}
+    </p>
   </div>
 </div>
+</div>
       {/* THÔNG TIN CƠ BẢN */}
-      <div className="px-4 mt-5">
+      <div className="px-4 mt-2">
         <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider px-1 mb-2.5">
           Thông tin cơ bản
         </p>
