@@ -20,7 +20,7 @@ import {
   UserPlus,
   Check,
   UserMinus,
-  
+  User, 
   Star,
   Briefcase,
   Info,
