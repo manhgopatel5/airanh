@@ -1660,15 +1660,11 @@ return (
 <div
   className="bg-white px-5 pt-8 pb-20 border-b border-zinc-100"
   onTouchStart={(e) => {
-    if (e.changedTouches.length > 0) {
-      touchStartX.current = e.changedTouches[0].screenX;
-    }
+    touchStartX.current = e.changedTouches[0]?.screenX?? 0;
   }}
   onTouchEnd={(e) => {
-    if (e.changedTouches.length > 0) {
-      touchEndX.current = e.changedTouches[0].screenX;
-      if (touchEndX.current - touchStartX.current > 80) setShowUserInfo(false);
-    }
+    touchEndX.current = e.changedTouches[0]?.screenX?? 0;
+    if (touchEndX.current - touchStartX.current > 80) setShowUserInfo(false);
   }}
 >
         <div className="flex flex-col items-center">
