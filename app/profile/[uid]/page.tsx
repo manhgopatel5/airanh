@@ -952,14 +952,14 @@ return (
       </p>
       <div className="space-y-2.5">
         {levelTiers.map((tier, i) => (
-          <div
-            key={i}
-            className={`p-3.5 rounded-2xl border ${
-              level >= parseInt(tier.range.split(" - ")[0])
-               ? "border-zinc-300 bg-zinc-50"
-                : "border-zinc-200 bg-white opacity-60"
-            }`}
-          >
+ <div
+  key={i}
+  className={`p-3.5 rounded-2xl border ${
+    level >= parseInt(tier.range.split(" - ") || "0")
+     ? "border-zinc-300 bg-zinc-50"
+      : "border-zinc-200 bg-white opacity-60"
+  }`}
+>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <div
