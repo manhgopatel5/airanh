@@ -951,32 +951,36 @@ return (
 
     {/* BỎ USERID */}
 
-    {/* RANK BADGE + HOẠT ĐỘNG - THU NHỎ, GỘP HÀNG */}
-    <div className="flex items-center justify-center gap-1.5 mt-2.5">
-      <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${rank.gradient} text-white flex items-center gap-1.5 shadow-md`}>
-        <div className="w-3.5 h-3.5">{rank.icon}</div>
-        <span className="font-bold text-xs">{rank.name}</span>
-        <div className="px-1.5 py-0.5 rounded-full bg-white/30 text-[10px] font-black backdrop-blur-sm">
-          Lv.{level}
-        </div>
-      </div>
-
-      <button
-        onClick={() => setShowLevelInfo(true)}
-        className="w-6 h-6 rounded-full bg-zinc-100 flex items-center justify-center active:scale-90 transition-all"
-      >
-        <Info className="w-3 h-3 text-zinc-600" />
-      </button>
-
-      <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-zinc-100">
-        <div className={`w-1.5 h-1.5 rounded-full ${targetUser?.online? 'bg-emerald-500 animate-pulse' : 'bg-zinc-400'}`} />
-        <span className="text-xs text-zinc-600 font-medium">
-          {targetUser?.online
-          ? "Online"
-            : formatLastSeen(targetUser?.lastSeen)}
-        </span>
-      </div>
+    {/* RANK BADGE - INFO NÚT NHỎ GÓC PHẢI */}
+<div className="mt-2.5 relative inline-block">
+  <div className={`px-4 py-1.5 rounded-full bg-gradient-to-r ${rank.gradient} text-white flex items-center gap-1.5 shadow-lg`}>
+    {rank.icon}
+    <span className="font-bold text-xs">{rank.name}</span>
+    <div className="px-2 py-0.5 rounded-full bg-white/30 text- font-black backdrop-blur-sm">
+      Lv.{level}
     </div>
+  </div>
+  
+  {/* Nút info nhỏ góc phải như ô Độ uy tín */}
+  <button
+    onClick={() => setShowLevelInfo(true)}
+    className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-zinc-100 flex items-center justify-center active:scale-95 shadow-sm"
+  >
+    <Info className="w-2.5 h-2.5 text-zinc-500" />
+  </button>
+</div>
+
+{/* HOẠT ĐỘNG - TÁCH XUỐNG HÀNG RIÊNG */}
+<div className="flex items-center justify-center mt-2">
+  <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-zinc-100">
+    <div className={`w-1.5 h-1.5 rounded-full ${targetUser?.online? 'bg-emerald-500 animate-pulse' : 'bg-zinc-400'}`} />
+    <span className="text-xs text-zinc-600 font-medium">
+      {targetUser?.online
+       ? "Online"
+        : formatLastSeen(targetUser?.lastSeen)}
+    </span>
+  </div>
+</div>
   </div>
 </div>
 
