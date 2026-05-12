@@ -362,7 +362,7 @@ export default function AdminReports() {
 
   const handleAction = async (report: Report, action: "resolved" | "rejected") => {
   // Reset modal trước
-  setConfirmModal({show: false, type: "", report: undefined, appeal: undefined, bulk: false});
+  setConfirmModal({show: false, type: ""});
   
   if (action === "resolved") {
     const userSnap = await getDocs(query(collection(db, "users"), where("uid", "==", report.targetId), limit(1)));
