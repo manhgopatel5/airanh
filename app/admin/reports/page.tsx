@@ -106,7 +106,8 @@ export default function AdminReports() {
         if (s === "pending") p++;
         else if (s === "resolved") r++;
         else if (s === "rejected") rej++;
-        if (data.createdAt?.toDate()? >= todayStart) today++;
+        const createdAt = data.createdAt?.toDate();
+if (createdAt && createdAt >= todayStart) today++;
       });
       setStats(prev => ({...prev, pending: p, resolved: r, rejected: rej, today }));
     });
