@@ -404,19 +404,37 @@ export default function AdminReports() {
   }
 
 const handleAction = async (report: Report, action: "resolved" | "rejected") => {
-  // Chỉ reset show + type, không cần set undefined
   setConfirmModal({show: false, type: ""});
   
   if (action === "resolved") {
-    const userSnap = await getDocs(query(collection(db, "users"), where("uid", "==", report.targetId), limit(1)));
-    const violationCount = userSnap.docs[0]?.data()?.violationCount || 0;
-    setConfirmModal({
-      show: true,
-      type: action,
-      report,
-      bulk: false,
-      violationCount: violationCount + 1
-    });
+    try {
+      // Fix: bỏ dấu ) dư
+      const userSnap = await getDocs(query(
+        collection(db, "users"), 
+        where("uid", "==", report.targetId), 
+        limit(1)
+      ));
+      
+      const violationCount = userSnap.docs[0]?.data()?.violationCount || 0;
+      setConfirmModal({
+        show: true,
+        type: action,
+        report,
+        bulk: false,
+        violationCount: violationCount + 1
+      });
+    } catch (err) {
+      console.error("Lỗi load violation:", err);
+      toast.error("Không load được thông tin user");
+      // Vẫn cho mở modal nhưng không có violationCount
+      setConfirmModal({
+        show: true,
+        type: action,
+        report,
+        bulk: false,
+        violationCount: 1
+      });
+    }
   } else {
     setConfirmModal({
       show: true,
