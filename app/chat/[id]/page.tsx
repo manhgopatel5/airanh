@@ -282,7 +282,7 @@ const handleTyping = useCallback(async () => {
 }, []);
 
 const sendMessage = useCallback(async () => {
-  if (!canSendMessage || isBlocked || isDeleted) {
+  if (isBlocked || isDeleted) {
   toast.error("Không thể nhắn tin");
   return;
 }
@@ -338,7 +338,7 @@ const sendMessage = useCallback(async () => {
 
   /* ================= SEND IMAGE ================= */
   const sendImage = async (file: File) => {
-    if (!canSendMessage || isBlocked || isDeleted) {
+ if (isBlocked || isDeleted) {
   toast.error("Không thể nhắn tin");
   return;
 }
@@ -439,7 +439,7 @@ const sendMessage = useCallback(async () => {
 
   /* ================= VOICE RECORDING ================= */
   const startRecording = async () => {
-    if (!canSendMessage || isBlocked || isDeleted) {
+    if (isBlocked || isDeleted) {
   toast.error("Không thể nhắn tin");
   return;
 }
@@ -1064,14 +1064,22 @@ const unpinMessage = async () => {
           </div>
         </div>
       )}
-
+{/* THÊM BANNER CẢNH BÁO Ở ĐÂY */}
+{!isFriend &&!isBlocked &&!isDeleted && (
+  <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/30 border-t border-amber-200/50 dark:border-amber-900/50">
+    <div className="flex items-center justify-center gap-2 text-xs text-amber-700 dark:text-amber-400 font-medium">
+      <Shield size={14} />
+      Các bạn chưa kết bạn. Hãy cẩn thận khi chia sẻ thông tin cá nhân
+    </div>
+  </div>
+)}
 {/* INPUT */}
 <div className="p-4 border-t border-gray-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-2xl">
   <div className="flex items-end gap-2">
     <input type="file" hidden ref={imageInputRef} accept="image/*" onChange={(e) => e.target.files?.[0] && sendImage(e.target.files[0])} />
     <button
       onClick={() => imageInputRef.current?.click()}
-      disabled={!canSendMessage || isBlocked || isDeleted}
+      disabled={isBlocked || isDeleted}
       className={`w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90 ${isBlocked || isDeleted? "opacity-50 cursor-not-allowed" : ""}`}
     >
       <ImageIcon size={22} className="text-gray-600 dark:text-zinc-400" />
@@ -1079,7 +1087,7 @@ const unpinMessage = async () => {
     <input type="file" hidden ref={fileInputRef} onChange={(e) => e.target.files?.[0] && sendFile(e.target.files[0])} />
     <button
       onClick={() => fileInputRef.current?.click()}
-      disabled={!canSendMessage || isBlocked || isDeleted}
+      disabled={isBlocked || isDeleted}
       className={`w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90 ${isBlocked || isDeleted? "opacity-50 cursor-not-allowed" : ""}`}
     >
       <Paperclip size={22} className="text-gray-600 dark:text-zinc-400" />
@@ -1087,57 +1095,54 @@ const unpinMessage = async () => {
 
     <button
       onClick={sendLocation}
-      disabled={!canSendMessage || isBlocked || isDeleted}
+      disabled={isBlocked || isDeleted}
       className={`w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-full transition-colors active:scale-90 ${isBlocked || isDeleted? "opacity-50 cursor-not-allowed" : ""}`}
     >
       <MapPin size={22} className="text-gray-600 dark:text-zinc-400" />
     </button>
 <div className="flex-1 relative">
-  <input
-    ref={inputRef}
-    value={text}
-    onChange={(e) => {
-      setText(e.target.value);
-      handleTyping();
-    }}
-    onKeyDown={(e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        if (!canSendMessage || isBlocked || isDeleted) return;
-
-if (text.trim()) sendMessage();
-      }
-    }}
-    disabled={!canSendMessage || isBlocked || isDeleted}
-placeholder={
-  !canSendMessage
-    ? "Các bạn không còn là bạn bè"
-    : isBlocked
-    ? "Bạn không thể nhắn tin"
-    : isDeleted
-    ? "Bạn đã xóa cuộc trò chuyện"
-    : "Nhắn tin..."
-}
-    className={`w-full px-5 py-3 bg-gray-100 dark:bg-zinc-900 rounded-3xl outline-none focus:ring-2 focus:ring-blue-500/30 text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 transition-all ${
-      isBlocked || isDeleted ? "opacity-50 cursor-not-allowed" : ""
-    }`}
-  />
+<input
+  ref={inputRef}
+  value={text}
+  onChange={(e) => {
+    setText(e.target.value);
+    handleTyping();
+  }}
+  onKeyDown={(e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (isBlocked || isDeleted) return; // ← Bỏ !canSendMessage
+      if (text.trim()) sendMessage();
+    }
+  }}
+  disabled={isBlocked || isDeleted} // ← Bỏ !canSendMessage
+  placeholder={
+    isBlocked
+      ? "Bạn không thể nhắn tin"
+      : isDeleted
+      ? "Bạn đã xóa cuộc trò chuyện"
+      : "Nhắn tin..." // ← Luôn cho nhắn
+  }
+  className={`w-full px-5 py-3 bg-gray-100 dark:bg-zinc-900 rounded-3xl outline-none focus:ring-2 focus:ring-blue-500/30 text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 transition-all ${
+    isBlocked || isDeleted ? "opacity-50 cursor-not-allowed" : ""
+  }`}
+/>
 </div>
 {text.trim() ? (
-  <button
-    onClick={sendMessage}
-    disabled={sending || !canSendMessage || isBlocked || isDeleted}
-    className="w-11 h-11 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full flex items-center justify-center active:scale-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/30"
-  >
-    {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-  </button>
+<button
+  onClick={sendMessage}
+  disabled={sending || isBlocked || isDeleted} // ← Bỏ !canSendMessage
+  className="w-11 h-11 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full flex items-center justify-center active:scale-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/30"
+>
+  {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+</button>
 ) : (
   <button
     onMouseDown={startRecording}
     onMouseUp={stopRecording}
     onTouchStart={startRecording}
     onTouchEnd={stopRecording}
-    disabled={!canSendMessage || isBlocked || isDeleted}
+    disabled={isBlocked || isDeleted}
     className={`w-11 h-11 ${recording ? "bg-red-500" : "bg-gradient-to-br from-blue-500 to-indigo-600"} text-white rounded-full flex items-center justify-center active:scale-90 transition-all shadow-lg ${
       isBlocked || isDeleted ? "opacity-50 cursor-not-allowed" : ""
     }`}
