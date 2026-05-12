@@ -195,77 +195,82 @@ export default function AdminReports() {
 
   // Xử lý report
   const executeAction = async (report: Report, action: "resolved" | "rejected") => {
-    if (!user) return;
-    setActionLoading(report.id);
+  if (!user) return;
+  setActionLoading(report.id);
 
-    try {
-      const batch = writeBatch(db);
-      const reportRef = doc(db, "reports", report.id);
-      const userRef = doc(db, "users", report.targetId);
-      
-      const userSnap = await getDoc(userRef);
-      const currentViolationCount = userSnap.data()?.violationCount || 0;
-      const newCount = currentViolationCount + 1;
-
-      batch.update(reportRef, {
-        status: action,
-        reviewedAt: serverTimestamp(),
-        reviewedBy: user.uid,
-        reviewedByName: user.displayName || "Admin"
-      });
-
-      if (action === "resolved") {
-        const updateData: any = { 
-          violationCount: increment(1),
-          lastViolationAt: serverTimestamp(),
-        };
-
-        if (newCount === 1) {
-          updateData.warning = true;
-          updateData.warningReason = REASON_LABEL[report.reason] || report.reason;
-          updateData.warningAt = serverTimestamp();
-          toast.success(`Đã cảnh cáo @${report.targetShortId} lần 1`);
-        } else if (newCount === 2) {
-          const banUntil = new Date();
-          banUntil.setDate(banUntil.getDate() + 3);
-          updateData.banned = true;
-          updateData.bannedUntil = banUntil;
-          updateData.bannedReason = REASON_LABEL[report.reason] || report.reason;
-          updateData.bannedAt = serverTimestamp();
-          updateData.bannedBy = user.uid;
-          toast.success(`Đã ban @${report.targetShortId} 3 ngày - Lần 2`);
-        } else if (newCount === 3) {
-          const banUntil = new Date();
-          banUntil.setDate(banUntil.getDate() + 7);
-          updateData.banned = true;
-          updateData.bannedUntil = banUntil;
-          updateData.bannedReason = REASON_LABEL[report.reason] || report.reason;
-          updateData.bannedAt = serverTimestamp();
-          updateData.bannedBy = user.uid;
-          toast.success(`Đã ban @${report.targetShortId} 7 ngày - Lần 3`);
-        } else {
-          updateData.banned = true;
-          updateData.bannedUntil = null;
-          updateData.bannedReason = REASON_LABEL[report.reason] || report.reason;
-          updateData.bannedAt = serverTimestamp();
-          updateData.bannedBy = user.uid;
-          toast.success(`Đã ban vĩnh viễn @${report.targetShortId} - Lần ${newCount}`);
-        }
-        
-        batch.update(userRef, updateData);
-      } else {
-        toast.success("Đã bỏ qua báo cáo");
-      }
-
-      await batch.commit();
-      setConfirmModal({show: false, type: ""});
-    } catch (err) {
-      console.error(err);
-      toast.error("Thao tác thất bại");
-    } finally {
-      setActionLoading(null);
+  try {
+    const batch = writeBatch(db);
+    const reportRef = doc(db, "reports", report.id);
+    const userRef = doc(db, "users", report.targetId);
+    
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) {
+      toast.error("Không tìm thấy user");
+      return;
     }
+    
+    const currentViolationCount = userSnap.data()?.violationCount || 0;
+    const newCount = currentViolationCount + 1;
+
+    batch.update(reportRef, {
+      status: action,
+      reviewedAt: serverTimestamp(),
+      reviewedBy: user.uid,
+      reviewedByName: user.displayName || "Admin"
+    });
+
+    if (action === "resolved") {
+      const updateData: any = { 
+        violationCount: increment(1),
+        lastViolationAt: serverTimestamp(),
+      };
+
+      if (newCount === 1) {
+        updateData.warning = true;
+        updateData.warningReason = REASON_LABEL[report.reason] || report.reason;
+        updateData.warningAt = serverTimestamp();
+        toast.success(`Đã cảnh cáo @${report.targetShortId} lần 1`);
+      } else if (newCount === 2) {
+        const banUntil = new Date();
+        banUntil.setDate(banUntil.getDate() + 3);
+        updateData.banned = true;
+        updateData.bannedUntil = banUntil;
+        updateData.bannedReason = REASON_LABEL[report.reason] || report.reason;
+        updateData.bannedAt = serverTimestamp();
+        updateData.bannedBy = user.uid;
+        toast.success(`Đã ban @${report.targetShortId} 3 ngày - Lần 2`);
+      } else if (newCount === 3) {
+        const banUntil = new Date();
+        banUntil.setDate(banUntil.getDate() + 7);
+        updateData.banned = true;
+        updateData.bannedUntil = banUntil;
+        updateData.bannedReason = REASON_LABEL[report.reason] || report.reason;
+        updateData.bannedAt = serverTimestamp();
+        updateData.bannedBy = user.uid;
+        toast.success(`Đã ban @${report.targetShortId} 7 ngày - Lần 3`);
+      } else {
+        updateData.banned = true;
+        updateData.bannedUntil = null;
+        updateData.bannedReason = REASON_LABEL[report.reason] || report.reason;
+        updateData.bannedAt = serverTimestamp();
+        updateData.bannedBy = user.uid;
+        toast.success(`Đã ban vĩnh viễn @${report.targetShortId} - Lần ${newCount}`);
+      }
+      
+      batch.update(userRef, updateData);
+    } else {
+      toast.success("Đã bỏ qua báo cáo");
+    }
+
+    await batch.commit();
+    setConfirmModal({show: false, type: ""});
+  } catch (err: any) {
+    console.error("Lỗi executeAction:", err);
+    toast.error(`Thao tác thất bại: ${err.message}`);
+  } finally {
+    setActionLoading(null);
   }
+}
 
   // Xử lý kháng cáo
   const executeAppeal = async (appeal: Appeal, action: "approved" | "rejected") => {
@@ -834,14 +839,18 @@ export default function AdminReports() {
                         {actionLoading === r.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <AlertTriangle className="w-4 h-4" />}
                         Xử lý vi phạm
                       </button>
-                      <button
-                        onClick={() => handleAction(r, "rejected")}
-                        disabled={actionLoading === r.id}
-                        className="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg disabled:opacity-50 font-medium"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                        Bỏ qua
-                      </button>
+          <button
+  onClick={() => setConfirmModal({
+    show: true,
+    type: "rejected",
+    report: r  // ← THÊM DÒNG NÀY
+  })}
+  disabled={actionLoading === r.id}
+  className="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg disabled:opacity-50 font-medium"
+>
+  <CheckCircle className="w-4 h-4" />
+  Bỏ qua
+</button>
                     </div>
                   )}
 
