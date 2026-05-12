@@ -143,8 +143,8 @@ useEffect(() => {
     doc(db, "chats", chatId),
     async (snap) => {
       if (!snap.exists()) {
-        // Doc chưa tạo hoặc chưa có quyền đọc -> đợi
-        // Không setLoadingFriend(false) ở đây để tránh flash UI
+        // Doc chưa tạo xong, đợi handleMessage tạo
+        // Không setLoadingFriend(false) để tránh flash UI
         return;
       }
 
@@ -178,7 +178,7 @@ useEffect(() => {
 
       const otherUser = data.membersInfo[otherUid];
       
-      // Load song để nhanh hơn
+      // Load song song để nhanh hơn
       const [friendSnap, friendDoc] = await Promise.all([
         getDoc(doc(db, "users", otherUid)),
         getDoc(doc(db, "users", user.uid, "friends", otherUid))
@@ -204,9 +204,9 @@ useEffect(() => {
     },
     (error) => {
       console.error("Lỗi load chat:", error);
-      // Chỉ redirect nếu không phải lỗi permission do doc chưa tồn tại
+      // Không redirect nếu chỉ là permission-denied do doc chưa tạo xong
       if (error.code === 'permission-denied') {
-        // Có thể doc chưa tạo xong, không toast lỗi
+        // Doc chưa tồn tại hoặc chưa có quyền -> đợi handleMessage tạo
         setLoadingFriend(false);
       } else {
         toast.error("Lỗi tải thông tin");
