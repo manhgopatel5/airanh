@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { collection, query, where, orderBy, onSnapshot, doc, serverTimestamp, writeBatch, limit, startAfter, getDocs } from "firebase/firestore";
+import { collection, query, where, orderBy, onSnapshot, doc, serverTimestamp, writeBatch, limit, startAfter, getDocs, getDoc, increment } from "firebase/firestore";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { Shield, CheckCircle, ExternalLink, Search, Loader2, Download, Filter, AlertTriangle, Ban, UserX, Clock, FileText, ChevronDown, TrendingUp } from "lucide-react";
@@ -64,7 +64,7 @@ export default function AdminReports() {
   const [lastDoc, setLastDoc] = useState<any>(null);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [confirmModal, setConfirmModal] = useState<{show: boolean, type: string, report?: Report, bulk?: boolean}>({show: false, type: ""});
+  const [confirmModal, setConfirmModal] = useState<{show: boolean, type: string, report?: Report, bulk?: boolean, violationCount?: number}>({show: false, type: ""});
 
   const isAdmin = user && ADMIN_UIDS.includes(user.uid);
 
@@ -127,14 +127,20 @@ export default function AdminReports() {
     }
   }, [lastDoc, loadingMore, hasMore, tab, reasonFilter, db]);
 
-  const executeAction = async (report: Report, action: "resolved" | "rejected", banDays?: number) => {
+  const executeAction = async (report: Report, action: "resolved" | "rejected") => {
     if (!user) return;
     setActionLoading(report.id);
 
     try {
       const batch = writeBatch(db);
       const reportRef = doc(db, "reports", report.id);
+      const userRef = doc(db, "users", report.targetId);
       
+      // Lấy số lần vi phạm hiện tại
+      const userSnap = await getDoc(userRef);
+      const currentViolationCount = userSnap.data()?.violationCount || 0;
+      const newCount = currentViolationCount + 1;
+
       batch.update(reportRef, {
         status: action,
         reviewedAt: serverTimestamp(),
@@ -143,18 +149,53 @@ export default function AdminReports() {
       });
 
       if (action === "resolved") {
-        const userRef = doc(db, "users", report.targetId);
-        const updateData: any = { banned: true, bannedAt: serverTimestamp(), bannedBy: user.uid };
-        if (banDays) {
+        const updateData: any = { 
+          violationCount: increment(1),
+          lastViolationAt: serverTimestamp(),
+        };
+
+        if (newCount === 1) {
+          // Lần 1: Chỉ cảnh cáo
+          updateData.warning = true;
+          updateData.warningReason = REASON_LABEL[report.reason] || report.reason;
+          updateData.warningAt = serverTimestamp();
+          toast.success(`Đã cảnh cáo @${report.targetShortId} lần 1`);
+        } else if (newCount === 2) {
+          // Lần 2: Ban 3 ngày
           const banUntil = new Date();
-          banUntil.setDate(banUntil.getDate() + banDays);
+          banUntil.setDate(banUntil.getDate() + 3);
+          updateData.banned = true;
           updateData.bannedUntil = banUntil;
+          updateData.bannedReason = REASON_LABEL[report.reason] || report.reason;
+          updateData.bannedAt = serverTimestamp();
+          updateData.bannedBy = user.uid;
+          toast.success(`Đã ban @${report.targetShortId} 3 ngày - Lần 2`);
+        } else if (newCount === 3) {
+          // Lần 3: Ban 7 ngày
+          const banUntil = new Date();
+          banUntil.setDate(banUntil.getDate() + 7);
+          updateData.banned = true;
+          updateData.bannedUntil = banUntil;
+          updateData.bannedReason = REASON_LABEL[report.reason] || report.reason;
+          updateData.bannedAt = serverTimestamp();
+          updateData.bannedBy = user.uid;
+          toast.success(`Đã ban @${report.targetShortId} 7 ngày - Lần 3`);
+        } else {
+          // Lần 4+: Ban vĩnh viễn
+          updateData.banned = true;
+          updateData.bannedUntil = null; // null = vĩnh viễn
+          updateData.bannedReason = REASON_LABEL[report.reason] || report.reason;
+          updateData.bannedAt = serverTimestamp();
+          updateData.bannedBy = user.uid;
+          toast.success(`Đã ban vĩnh viễn @${report.targetShortId} - Lần ${newCount}`);
         }
+        
         batch.update(userRef, updateData);
+      } else {
+        toast.success("Đã bỏ qua báo cáo");
       }
 
       await batch.commit();
-      toast.success(action === "resolved" ? `Đã ban @${report.targetShortId}` : "Đã bỏ qua báo cáo");
       setConfirmModal({show: false, type: ""});
     } catch (err) {
       console.error(err);
@@ -164,17 +205,27 @@ export default function AdminReports() {
     }
   }
 
-const handleAction = (
-  report: Report,
-  action: "resolved" | "rejected"
-) => {
-  setConfirmModal({
-    show: true,
-    type: action,
-    report,
-    bulk: false,
-  });
-};
+  const handleAction = async (report: Report, action: "resolved" | "rejected") => {
+    if (action === "resolved") {
+      // Check số lần vi phạm trước khi hiện modal
+      const userSnap = await getDoc(doc(db, "users", report.targetId));
+      const violationCount = userSnap.data()?.violationCount || 0;
+      setConfirmModal({
+        show: true,
+        type: action,
+        report,
+        bulk: false,
+        violationCount: violationCount + 1
+      });
+    } else {
+      setConfirmModal({
+        show: true,
+        type: action,
+        report,
+        bulk: false,
+      });
+    }
+  };
 
   const handleBulkAction = async (action: "resolved" | "rejected") => {
     if (!user || selectedIds.length === 0) return;
@@ -191,7 +242,7 @@ const handleAction = (
         });
       });
       await batch.commit();
-      toast.success(`Đã ${action === "resolved" ? "ban" : "bỏ qua"} ${selectedIds.length} báo cáo`);
+      toast.success(`Đã ${action === "resolved" ? "xử lý" : "bỏ qua"} ${selectedIds.length} báo cáo`);
       setSelectedIds([]);
       setConfirmModal({show: false, type: ""});
     } catch (err) {
@@ -251,24 +302,18 @@ const handleAction = (
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold mb-1">
-                  {confirmModal.bulk ? `${confirmModal.type === "resolved" ? "Ban" : "Bỏ qua"} ${selectedIds.length} báo cáo?` : 
-                   confirmModal.type === "resolved" ? `Ban @${confirmModal.report?.targetShortId}?` : "Bỏ qua báo cáo?"}
+                  {confirmModal.bulk ? `${confirmModal.type === "resolved" ? "Xử lý" : "Bỏ qua"} ${selectedIds.length} báo cáo?` : 
+                   confirmModal.type === "resolved" ? `Xử lý @${confirmModal.report?.targetShortId}?` : "Bỏ qua báo cáo?"}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {confirmModal.type === "resolved" ? "User sẽ bị cấm truy cập hệ thống" : "Báo cáo sẽ được đánh dấu đã xử lý"}
+                  {confirmModal.type === "resolved" && confirmModal.violationCount === 1 && "Lần 1: Cảnh cáo user"}
+                  {confirmModal.type === "resolved" && confirmModal.violationCount === 2 && "Lần 2: Ban 3 ngày"}
+                  {confirmModal.type === "resolved" && confirmModal.violationCount === 3 && "Lần 3: Ban 7 ngày"}
+                  {confirmModal.type === "resolved" && confirmModal.violationCount >= 4 && `Lần ${confirmModal.violationCount}: Ban vĩnh viễn`}
+                  {confirmModal.type === "rejected" && "Báo cáo sẽ được đánh dấu đã xử lý"}
                 </p>
               </div>
             </div>
-            {!confirmModal.bulk && confirmModal.type === "resolved" && (
-              <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                <p className="text-sm font-medium mb-2">Thời gian ban:</p>
-                <div className="flex gap-2">
-                  <button onClick={() => executeAction(confirmModal.report!, "resolved", 7)} className="flex-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium">7 ngày</button>
-                  <button onClick={() => executeAction(confirmModal.report!, "resolved", 30)} className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">30 ngày</button>
-                  <button onClick={() => executeAction(confirmModal.report!, "resolved")} className="flex-1 px-3 py-2 bg-red-700 hover:bg-red-800 text-white rounded-lg text-sm font-medium">Vĩnh viễn</button>
-                </div>
-              </div>
-            )}
             <div className="flex gap-3">
               <button onClick={() => setConfirmModal({show: false, type: ""})} className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg font-medium">
                 Hủy
@@ -277,8 +322,8 @@ const handleAction = (
                 <button onClick={() => handleBulkAction(confirmModal.type as any)} className={`flex-1 px-4 py-2 ${confirmModal.type === "resolved" ? "bg-red-600 hover:bg-red-700" : "bg-gray-600 hover:bg-gray-700"} text-white rounded-lg font-medium`}>
                   Xác nhận
                 </button>
-              ) : confirmModal.type !== "resolved" && (
-                <button onClick={() => executeAction(confirmModal.report!, "rejected")} className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium">
+              ) : (
+                <button onClick={() => executeAction(confirmModal.report!, confirmModal.type as any)} className={`flex-1 px-4 py-2 ${confirmModal.type === "resolved" ? "bg-red-600 hover:bg-red-700" : "bg-gray-600 hover:bg-gray-700"} text-white rounded-lg font-medium`}>
                   Xác nhận
                 </button>
               )}
@@ -404,7 +449,7 @@ const handleAction = (
               </span>
               <div className="flex gap-2">
                 <button onClick={() => setConfirmModal({show: true, type: "resolved", bulk: true})} disabled={actionLoading === "bulk"} className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium disabled:opacity-50">
-                  Ban tất cả
+                  Xử lý tất cả
                 </button>
                 <button onClick={() => setConfirmModal({show: true, type: "rejected", bulk: true})} disabled={actionLoading === "bulk"} className="px-3 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium disabled:opacity-50">
                   Bỏ qua tất cả
@@ -510,16 +555,8 @@ const handleAction = (
                         disabled={actionLoading === r.id}
                         className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg disabled:opacity-50 font-medium"
                       >
-                        {actionLoading === r.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserX className="w-4 h-4" />}
-                        Ban 7 ngày
-                      </button>
-                      <button
-                        onClick={() => handleAction(r, "resolved")}
-                        disabled={actionLoading === r.id}
-                        className="flex items-center gap-2 bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-lg disabled:opacity-50 font-medium"
-                      >
-                        <Ban className="w-4 h-4" />
-                        Ban vĩnh viễn
+                        {actionLoading === r.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <AlertTriangle className="w-4 h-4" />}
+                        Xử lý vi phạm
                       </button>
                       <button
                         onClick={() => handleAction(r, "rejected")}
