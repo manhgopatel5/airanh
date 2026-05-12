@@ -200,22 +200,28 @@ export default function AdminReports() {
       const reportRef = doc(db, "reports", report.id);
 
       const userQuery = query(
-        collection(db, "users"),
-        where("uid", "==", report.targetId),
-        limit(1)
-      );
-      const userSnap = await getDocs(userQuery);
+  collection(db, "users"),
+  where("uid", "==", report.targetId),
+  limit(1)
+);
+const userSnap = await getDocs(userQuery);
 
-      if (userSnap.empty) {
-        toast.error("Không tìm thấy user");
-        setActionLoading(null);
-        return;
-      }
+if (userSnap.empty) {
+  toast.error("Không tìm thấy user");
+  setActionLoading(null);
+  return;
+}
 
-      const userDoc = userSnap.docs[0];
-      const userRef = userDoc.ref;
-      const currentViolationCount = userDoc.data()?.violationCount || 0;
-      const newCount = currentViolationCount + 1;
+const userDoc = userSnap.docs[0];
+if (!userDoc) {
+  toast.error("Không tìm thấy user");
+  setActionLoading(null);
+  return;
+}
+
+const userRef = userDoc.ref;
+const currentViolationCount = userDoc.data()?.violationCount || 0;
+const newCount = currentViolationCount + 1;
 
       batch.update(reportRef, {
         status: action,
