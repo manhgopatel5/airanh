@@ -208,8 +208,9 @@ export default function AdminReports() {
     });
 
     if (action === "resolved") {
-      let userIdToBan = report.targetId;
+      let userIdToBan = report.targetId; // Mặc định cho report user
 
+      // Nếu báo cáo task thì phải lấy uid từ task
       if (report.type === "task") {
         const taskSnap = await getDocs(query(
           collection(db, "tasks"),
@@ -218,7 +219,7 @@ export default function AdminReports() {
         ));
         
         if (taskSnap.empty) {
-          toast.error("Không tìm thấy task");
+          toast.error("Không tìm thấy task để ban");
           setActionLoading(null);
           return;
         }
@@ -231,16 +232,24 @@ export default function AdminReports() {
         }
         
         const taskData = taskDoc.data();
-        if (!taskData?.authorId) {
-          toast.error("Task không có authorId");
+        // Task của bạn dùng userId
+        userIdToBan = taskData.userId 
+                   || taskData.authorId 
+                   || taskData.uid 
+                   || taskData.ownerId 
+                   || taskData.createdBy;
+        
+        if (!userIdToBan) {
+          toast.error(`Task không có author. Fields: ${Object.keys(taskData).join(', ')}`);
+          console.error('Task data:', taskData);
           setActionLoading(null);
           return;
         }
         
-        userIdToBan = taskData.authorId;
-        console.log('Task authorId:', userIdToBan);
+        console.log('Found task author:', userIdToBan, 'vs report targetShortId:', report.targetShortId);
       }
 
+      // Query user bằng uid thật
       const userQuery = query(
         collection(db, "users"),
         where("uid", "==", userIdToBan),
@@ -265,7 +274,7 @@ export default function AdminReports() {
       const userData = userDoc.data();
       const currentViolationCount = userData?.violationCount || 0;
       const newCount = currentViolationCount + 1;
-      const targetShortId = userData?.shortId || report.targetShortId;
+      const targetShortId = userData?.shortId || userData?.username || report.targetShortId;
 
       const updateData: any = {
         violationCount: increment(1),
