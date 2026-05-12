@@ -164,9 +164,17 @@ export default function AdminReports() {
     }
   }
 
- const handleAction = (report: Report, action: "resolved" | "rejected") => {{
-    setConfirmModal({show: true, type: action, report, bulk: false});
-  }
+const handleAction = (
+  report: Report,
+  action: "resolved" | "rejected"
+) => {
+  setConfirmModal({
+    show: true,
+    type: action,
+    report,
+    bulk: false,
+  });
+};
 
   const handleBulkAction = async (action: "resolved" | "rejected") => {
     if (!user || selectedIds.length === 0) return;
