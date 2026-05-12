@@ -68,7 +68,7 @@ const REASON_COLOR: Record<string, string> = {
 export default function AdminReports() {
   const auth = getFirebaseAuth();
   const db = getFirebaseDB();
-  const [user, loading] = useAuthState(auth);
+ const [user, loading, authError] = useAuthState(auth);
   const [reports, setReports] = useState<Report[]>([]);
   const [appeals, setAppeals] = useState<Appeal[]>([]);
   const [tab, setTab] = useState<Tab>("pending");
@@ -174,9 +174,20 @@ if (createdAt && createdAt >= todayStart) today++;
         setLastDoc(snap.docs[snap.docs.length - 1]);
         setHasMore(snap.docs.length === PAGE_SIZE);
       } else {
-        let q = query(collection(db, "reports"), orderBy("createdAt", "desc"), startAfter(lastDoc), limit(PAGE_SIZE));
-        if (tab!== "all") q = query(q, where("status", "==", tab));
-        if (reasonFilter!== "all") q = query(q, where("reason", "==", reasonFilter));
+        const constraints: any[] = [
+  orderBy("createdAt", "desc"),
+  limit(PAGE_SIZE)
+];
+
+if (tab !== "all") {
+  constraints.push(where("status", "==", tab));
+}
+
+if (reasonFilter !== "all") {
+  constraints.push(where("reason", "==", reasonFilter));
+}
+
+const q = query(collection(db, "reports"), ...constraints);
 
         const snap = await getDocs(q);
         const newDocs = snap.docs.map(d => ({ id: d.id,...d.data() } as Report));
@@ -416,7 +427,14 @@ const handleAction = async (report: Report, action: "resolved" | "rejected") => 
         limit(1)
       ));
       
-      const violationCount = userSnap.docs[0]?.data()?.violationCount || 0;
+      const firstDoc = userSnap.docs[0];
+
+if (!firstDoc) {
+  toast.error("Không tìm thấy user");
+  return;
+}
+
+const violationCount = firstDoc.data()?.violationCount || 0;
       setConfirmModal({
         show: true,
         type: action,
