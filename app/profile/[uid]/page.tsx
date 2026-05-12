@@ -796,32 +796,29 @@ const handleMessage = async () => {
     const chatId = [user.uid, targetUser.uid].sort().join('_');
     const chatRef = doc(db, "chats", chatId);
     
-    const chatSnap = await getDoc(chatRef);
-    
-    if (!chatSnap.exists()) {
-      await setDoc(chatRef, {
-        members: [user.uid, targetUser.uid], // rules check members
-        participantInfo: {
-          [user.uid]: {
-            name: currentUser?.name || user.displayName || "User",
-            avatar: currentUser?.avatar || user.photoURL || "",
-            userId: currentUser?.userId || ""
-          },
-          [targetUser.uid]: {
-            name: targetUser.name || "Unknown",
-            avatar: targetUser.avatar || "",
-            userId: targetUser.userId || ""
-          }
+    // Dùng setDoc với merge để không cần get trước, tránh lỗi permission
+    await setDoc(chatRef, {
+      members: [user.uid, targetUser.uid],
+      participantInfo: {
+        [user.uid]: {
+          name: currentUser?.name || user.displayName || "User",
+          avatar: currentUser?.avatar || user.photoURL || "",
+          userId: currentUser?.userId || ""
         },
-        createdAt: serverTimestamp(),
-        lastMessage: "",
-        lastMessageTime: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        deletedFor: [], // rules bắt buộc
-        status: 'active', // rules bắt buộc
-        blockedUsers: [] // rules check khi tạo message
-      });
-    }
+        [targetUser.uid]: {
+          name: targetUser.name || "Unknown",
+          avatar: targetUser.avatar || "",
+          userId: targetUser.userId || ""
+        }
+      },
+      createdAt: serverTimestamp(),
+      lastMessage: "",
+      lastMessageTime: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      deletedFor: [],
+      status: 'active',
+      blockedUsers: []
+    }, { merge: true });
     
     router.push(`/chat/${chatId}`);
   } catch (err: any) {
