@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link"; 
+import ReportModal from "@/components/ReportModal"; // đường dẫn tùy project bạn
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
@@ -79,7 +80,7 @@ export default function TaskDetailPage() {
   }, []);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
+  const [showReportModal, setShowReportModal] = useState(false);
   const [task, setTask] = useState<Task | null>(null);
   const [owner, setOwner] = useState<UserData | null>(null);
   const [comments, setComments] = useState<TaskComment[]>([]);
@@ -860,14 +861,17 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
         <span className="text-[11px]">{isApplied? "Đã ứng tuyển" : "Ứng tuyển"}</span>
       </motion.button>
 
-      <motion.button
-        whileTap={{ scale: 0.94 }}
-        onClick={() => toast.info("Đã gửi báo cáo")}
-        className="h-14 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 flex flex-col items-center justify-center gap-0.5 text-[#FF9500] active:bg-[#E5E5EA] dark:active:bg-zinc-700 transition-all"
-      >
-        <FiAlertTriangle size={22} strokeWidth={2} />
-        <span className="text-[11px] font-medium">Báo cáo</span>
-      </motion.button>
+<motion.button
+  whileTap={{ scale: 0.94 }}
+  onClick={() => {
+    if (!currentUser) return router.push("/login");
+    setShowReportModal(true);
+  }}
+  className="h-14 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 flex flex-col items-center justify-center gap-0.5 text-[#FF9500] active:bg-[#E5E5EA] dark:active:bg-zinc-700 transition-all"
+>
+  <FiAlertTriangle size={22} strokeWidth={2} />
+  <span className="text-[11px] font-medium">Báo cáo</span>
+</motion.button>
     </div>
   )}
 </div>
@@ -1060,6 +1064,19 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
 </div>
         </div>
 </div>
+{task && currentUser && (
+  <ReportModal
+    isOpen={showReportModal}
+    onClose={() => setShowReportModal(false)}
+    targetType="task"
+    targetId={task.id}
+    targetName={task.title}
+    targetShortId={owner?.name}
+    targetAvatar={owner?.avatar}
+    fromUid={currentUser.uid}
+    fromName={currentUser.displayName || "User"}
+  />
+)}
         <ImageGallery open={showImageGallery!== null} images={task.images || []} initialIndex={showImageGallery || 0} onClose={() => setShowImageGallery(null)} />
         {shareTask && (
           <ShareTaskModal
