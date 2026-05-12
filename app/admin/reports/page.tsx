@@ -164,7 +164,7 @@ export default function AdminReports() {
     }
   }
 
-  const handleAction = (report: Report, action: "resolved" | "rejected", banDays?: number) => {
+ const handleAction = (report: Report, action: "resolved" | "rejected") => {{
     setConfirmModal({show: true, type: action, report, bulk: false});
   }
 
