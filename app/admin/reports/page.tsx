@@ -106,7 +106,7 @@ export default function AdminReports() {
         if (s === "pending") p++;
         else if (s === "resolved") r++;
         else if (s === "rejected") rej++;
-        if (data.createdAt?.toDate() >= todayStart) today++;
+        if (data.createdAt?.toDate()? >= todayStart) today++;
       });
       setStats(prev => ({...prev, pending: p, resolved: r, rejected: rej, today }));
     });
@@ -481,7 +481,7 @@ const handleAction = async (report: Report, action: "resolved" | "rejected") => 
         REASON_LABEL[r.reason] || r.reason,
         r.note || "",
         r.fromName,
-        r.createdAt?.toDate().toLocaleString("vi-VN"),
+        r.createdAt?.toDate()?.toLocaleString("vi-VN"),
         r.status,
         r.reviewedByName || ""
       ].join(","))
@@ -834,8 +834,8 @@ const handleAction = async (report: Report, action: "resolved" | "rejected") => 
                           </div>
                         </div>
                         <div className="text-right text-xs text-[#8E8E93] dark:text-zinc-500 font-medium">
-                          <p>{a.createdAt?.toDate().toLocaleDateString("vi-VN")}</p>
-                          <p>{a.createdAt?.toDate().toLocaleTimeString("vi-VN")}</p>
+                          <p>{a.createdAt?.toDate()?.toLocaleDateString("vi-VN")}</p>
+                          <p>{a.createdAt?.toDate()?.toLocaleTimeString("vi-VN")}</p>
                         </div>
                       </div>
 
@@ -853,7 +853,7 @@ const handleAction = async (report: Report, action: "resolved" | "rejected") => 
                         {a.reviewedAt && (
                           <div className="flex items-center gap-4 text-[#8E8E93] dark:text-zinc-500 text-xs font-medium">
                             <span>Xử lý bởi: {a.reviewedByName || "Admin"}</span>
-                            <span>{a.reviewedAt.toDate().toLocaleString("vi-VN")}</span>
+                            <span>{a.reviewedAt?.toDate()?.toLocaleString("vi-VN")}</span>
                           </div>
                         )}
                       </div>
@@ -953,8 +953,8 @@ const handleAction = async (report: Report, action: "resolved" | "rejected") => 
                           </div>
                         </div>
                         <div className="text-right text-xs text-[#8E8E93] dark:text-zinc-500 font-medium">
-                          <p>{r.createdAt?.toDate().toLocaleDateString("vi-VN")}</p>
-                          <p>{r.createdAt?.toDate().toLocaleTimeString("vi-VN")}</p>
+                          <p>{r.createdAt?.toDate()?.toLocaleDateString("vi-VN")}</p>
+                          <p>{r.createdAt?.toDate()?.toLocaleTimeString("vi-VN")}</p>
                         </div>
                       </div>
 
@@ -976,7 +976,7 @@ const handleAction = async (report: Report, action: "resolved" | "rejected") => 
                         {r.reviewedAt && (
                           <div className="flex items-center gap-4 text-[#8E8E93] dark:text-zinc-500 text-xs font-medium">
                             <span>Xử lý bởi: {r.reviewedByName || "Admin"}</span>
-                            <span>{r.reviewedAt.toDate().toLocaleString("vi-VN")}</span>
+                            <span>{r.reviewedAt?.toDate()?.toLocaleString("vi-VN")}</span>
                           </div>
                         )}
                       </div>
