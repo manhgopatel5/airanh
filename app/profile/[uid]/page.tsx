@@ -27,7 +27,7 @@ import {
   Briefcase,
   Info,
   MapPin,
-  Clock,
+  
   ExternalLink,
   Zap,
   Share2,
