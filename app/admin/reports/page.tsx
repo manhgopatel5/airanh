@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { collection, query, where, orderBy, onSnapshot, doc, serverTimestamp, writeBatch, limit, startAfter, getDocs, getDoc, increment, updateDoc } from "firebase/firestore";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { Shield, CheckCircle, ExternalLink, Search, Loader2, Download, Filter, AlertTriangle, Ban, UserX, Clock, FileText, ChevronDown, TrendingUp, MessageSquare, Unlock, XCircle } from "lucide-react";
+import { Shield, CheckCircle, ExternalLink, Search, Loader2, Download, Filter, AlertTriangle, Ban, Clock, FileText, ChevronDown, TrendingUp, MessageSquare, Unlock, XCircle } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
