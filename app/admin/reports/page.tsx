@@ -463,6 +463,7 @@ export default function AdminReports() {
             {confirmModal.type === "rejected" && "Báo cáo/Kháng cáo sẽ được đánh dấu đã xử lý"}
           </p>
         </div>
+ </div>
       <div className="flex gap-3">
         <button 
           onClick={() => setConfirmModal({show: false, type: ""})} 
