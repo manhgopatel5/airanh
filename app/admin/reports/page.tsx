@@ -933,18 +933,18 @@ const newCount = currentViolationCount + 1;
                           Xoá task
                         </button>
                       )}
-                      <button
-                        onClick={() => setConfirmModal({
-                          show: true,
-                          type: "rejected",
-                          report: r
-                        })}
-                        disabled={actionLoading === r.id}
-                        className="flex items-center gap-2 bg-[#8E8E93] hover:bg-[#7A7A7A] text-white px-4 py-3 rounded-2xl disabled:opacity-50 font-semibold transition-all active:scale-95"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                        Bỏ qua
-                      </button>
+                    <button
+  onClick={() => setConfirmModal({
+    show: true,
+    type: "rejected",
+    report: r  // Thiếu dòng này nên bấm Xác nhận không có gì
+  })}
+  disabled={actionLoading === r.id}
+  className="flex items-center gap-2 bg-[#8E8E93] hover:bg-[#7A7A7A] text-white px-4 py-3 rounded-2xl disabled:opacity-50 font-semibold transition-all active:scale-95"
+>
+  <CheckCircle className="w-4 h-4" />
+  Bỏ qua
+</button>
                     </div>
                   )}
 
