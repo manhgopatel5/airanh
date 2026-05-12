@@ -751,7 +751,7 @@ if (!friendSnap.exists()) {
     // Chưa gửi thì tạo request mới
     const reqId = [user.uid, targetUser.uid].sort().join('_');
     
-    await setDoc(
+ await setDoc(
   doc(db, "friendRequests", reqId),
   {
     fromUserId: user.uid,
@@ -760,11 +760,10 @@ if (!friendSnap.exists()) {
     createdAt: serverTimestamp(),
     fromName: currentUserData?.name || user.displayName || "User",
     fromAvatar: currentUserData?.avatar || user.photoURL || "",
-    fromShortId: currentUserData?.userId || "",  // Đổi tên thành fromShortId
+    fromShortId: currentUserData?.userId || "",
     toName: targetUser.name,
     toAvatar: targetUser.avatar,
-    toUserId: targetUser.userId,
-    toShortId: targetUser.userId, // Thêm nếu cần
+    toShortId: targetUser.userId,
   }
 );
 
