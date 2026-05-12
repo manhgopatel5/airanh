@@ -424,67 +424,81 @@ export default function AdminReports() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Toaster position="top-center" />
       
-      {confirmModal.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setConfirmModal({show: false, type: ""})}>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
-            <div className="flex items-start gap-4 mb-4">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                confirmModal.type === "resolved" ? "bg-red-100 dark:bg-red-900/30" : 
-                confirmModal.type === "unban" ? "bg-green-100 dark:bg-green-900/30" :
-                "bg-gray-100 dark:bg-gray-700"
-              }`}>
-                {confirmModal.type === "resolved" && <Ban className="w-6 h-6 text-red-600" />}
-                {confirmModal.type === "unban" && <Unlock className="w-6 h-6 text-green-600" />}
-                {confirmModal.type === "rejected" && <XCircle className="w-6 h-6 text-gray-600" />}
-                {confirmModal.type === "approved" && <CheckCircle className="w-6 h-6 text-green-600" />}
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-1">
-                  {confirmModal.bulk ? `${confirmModal.type === "resolved" ? "Xử lý" : "Bỏ qua"} ${selectedIds.length} báo cáo?` : 
-                   confirmModal.type === "resolved" ? `Xử lý @${confirmModal.report?.targetShortId}?` : 
-                   confirmModal.type === "unban" ? `Gỡ ban cho @${confirmModal.report?.targetShortId}?` :
-                   confirmModal.type === "approved" ? `Chấp nhận kháng cáo của @${confirmModal.appeal?.userName}?` :
-                   confirmModal.type === "rejected" && confirmModal.appeal ? `Từ chối kháng cáo của @${confirmModal.appeal?.userName}?` :
-                   "Bỏ qua báo cáo?"}
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-  {confirmModal.type === "resolved" && confirmModal.violationCount === 1 && "Lần 1: Cảnh cáo user"}
-  {confirmModal.type === "resolved" && confirmModal.violationCount === 2 && "Lần 2: Ban 3 ngày"}
-  {confirmModal.type === "resolved" && confirmModal.violationCount === 3 && "Lần 3: Ban 7 ngày"}
-  {confirmModal.type === "resolved" && (confirmModal.violationCount || 0) >= 4 && `Lần ${confirmModal.violationCount}: Ban vĩnh viễn`}
-  {confirmModal.type === "unban" && "User sẽ được gỡ ban ngay lập tức"}
-  {confirmModal.type === "approved" && "User sẽ được gỡ ban ngay lập tức"}
-  {confirmModal.type === "rejected" && "Báo cáo/Kháng cáo sẽ được đánh dấu đã xử lý"}
-</p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button onClick={() => setConfirmModal({show: false, type: ""})} className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg font-medium">
-                Hủy
-              </button>
-              {confirmModal.bulk ? (
-                <button onClick={() => handleBulkAction(confirmModal.type as any)} className={`flex-1 px-4 py-2 ${confirmModal.type === "resolved" ? "bg-red-600 hover:bg-red-700" : "bg-gray-600 hover:bg-gray-700"} text-white rounded-lg font-medium`}>
-                  Xác nhận
-                </button>
-              ) : confirmModal.type === "unban" ? (
-                <button onClick={() => handleUnban(confirmModal.report!.targetId, confirmModal.report!.targetShortId)} className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium">
-                  Gỡ ban
-                </button>
-              ) : confirmModal.type === "approved" || confirmModal.type === "rejected" ? (
-                <button onClick={() => executeAppeal(confirmModal.appeal!, confirmModal.type as any)} className={`flex-1 px-4 py-2 ${confirmModal.type === "approved" ? "bg-green-600 hover:bg-green-700" : "bg-gray-600 hover:bg-gray-700"} text-white rounded-lg font-medium`}>
-                  Xác nhận
-                </button>
-              ) : (
-                <button onClick={() => executeAction(confirmModal.report!, confirmModal.type as any)} className={`flex-1 px-4 py-2 ${confirmModal.type === "resolved" ? "bg-red-600 hover:bg-red-700" : "bg-gray-600 hover:bg-gray-700"} text-white rounded-lg font-medium`}>
-                  Xác nhận
-                </button>
-              )}
-            </div>
-          </div>
+{confirmModal.show && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setConfirmModal({show: false, type: ""})}>
+    <motion.div 
+      initial={{ scale: 0.9, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6" 
+      onClick={e => e.stopPropagation()}
+    >
+      <div className="flex items-start gap-4 mb-4">
+        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+          confirmModal.type === "resolved" ? "bg-red-100 dark:bg-red-900/30" : 
+          confirmModal.type === "unban" ? "bg-green-100 dark:bg-green-900/30" :
+          confirmModal.type === "approved" ? "bg-green-100 dark:bg-green-900/30" :
+          "bg-gray-100 dark:bg-gray-700"
+        }`}>
+          {confirmModal.type === "resolved" && <Ban className="w-6 h-6 text-red-600" />}
+          {confirmModal.type === "unban" && <Unlock className="w-6 h-6 text-green-600" />}
+          {confirmModal.type === "approved" && <CheckCircle className="w-6 h-6 text-green-600" />}
+          {confirmModal.type === "rejected" && <XCircle className="w-6 h-6 text-gray-600" />}
         </div>
-      )}
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold mb-1">
+            {confirmModal.bulk ? `${confirmModal.type === "resolved" ? "Xử lý" : "Bỏ qua"} ${selectedIds.length} báo cáo?` : 
+             confirmModal.type === "resolved" ? `Xử lý @${confirmModal.report?.targetShortId}?` : 
+             confirmModal.type === "unban" ? `Gỡ ban cho @${confirmModal.report?.targetShortId}?` :
+             confirmModal.type === "approved" ? `Chấp nhận kháng cáo của @${confirmModal.appeal?.userName}?` :
+             confirmModal.type === "rejected" && confirmModal.appeal ? `Từ chối kháng cáo của @${confirmModal.appeal?.userName}?` :
+             "Bỏ qua báo cáo?"}
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {confirmModal.type === "resolved" && confirmModal.violationCount === 1 && "Lần 1: Cảnh cáo user"}
+            {confirmModal.type === "resolved" && confirmModal.violationCount === 2 && "Lần 2: Ban 3 ngày"}
+            {confirmModal.type === "resolved" && confirmModal.violationCount === 3 && "Lần 3: Ban 7 ngày"}
+            {confirmModal.type === "resolved" && (confirmModal.violationCount || 0) >= 4 && `Lần ${confirmModal.violationCount}: Ban vĩnh viễn`}
+            {confirmModal.type === "unban" && "User sẽ được gỡ ban ngay lập tức"}
+            {confirmModal.type === "approved" && "User sẽ được gỡ ban ngay lập tức"}
+            {confirmModal.type === "rejected" && "Báo cáo/Kháng cáo sẽ được đánh dấu đã xử lý"}
+          </p>
+        </div>
+      <div className="flex gap-3">
+        <button 
+          onClick={() => setConfirmModal({show: false, type: ""})} 
+          disabled={!!actionLoading}
+          className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Hủy
+        </button>
+        <button 
+          onClick={() => {
+            if (confirmModal.bulk) {
+              handleBulkAction(confirmModal.type as any);
+            } else if (confirmModal.type === "unban") {
+              handleUnban(confirmModal.report!.targetId, confirmModal.report!.targetShortId);
+            } else if (confirmModal.type === "approved" || confirmModal.type === "rejected") {
+              executeAppeal(confirmModal.appeal!, confirmModal.type as any);
+            } else {
+              executeAction(confirmModal.report!, confirmModal.type as any);
+            }
+          }}
+          disabled={!!actionLoading}
+          className={`flex-1 px-4 py-2 ${
+            confirmModal.type === "resolved" ? "bg-red-600 hover:bg-red-700" : 
+            confirmModal.type === "unban" || confirmModal.type === "approved" ? "bg-green-600 hover:bg-green-700" :
+            "bg-gray-600 hover:bg-gray-700"
+          } text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
+        >
+          {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+          {confirmModal.type === "unban" ? "Gỡ ban" : "Xác nhận"}
+        </button>
+      </div>
+    </motion.div>
+  </div>
+)}
 
-    <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 sticky top-0 z-10">
+<div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 sticky top-0 z-10">
   <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
 
     <div className="flex items-center justify-between mb-4">
