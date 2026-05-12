@@ -29,10 +29,9 @@ import {
   AlertTriangle,
   Ban,
   UserX,
-  Clock,
-  FileText,
+ 
   ChevronDown,
-  TrendingUp,
+  
 } from "lucide-react";
 
 import { toast, Toaster } from "sonner";
