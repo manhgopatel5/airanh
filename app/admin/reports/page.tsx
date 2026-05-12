@@ -863,5 +863,120 @@ export default function AdminReports() {
                             <span className={`px-3 py-1 rounded-xl text-xs font-semibold ${REASON_COLOR[r.reason] || REASON_COLOR.other}`}>
                               {REASON_LABEL[r.reason] || r.reason}
                             </span>
-                            <span className={`px-3 py-1 rounded-xl text-xs font-semibold ${
-                              r.status === "pending"? "bg-[#FFF3E0] dark
+                                                      <span className={`px-3 py-1 rounded-xl text-xs font-semibold ${
+                              r.status === "pending"? "bg-[#FFF3E0] dark:bg-[#FF9500]/20 text-[#FF9500]" :
+                              r.status === "resolved"? "bg-[#FFE5E5] dark:bg-[#FF3B30]/20 text-[#FF3B30]" :
+                              "bg-[#F2F2F7] dark:bg-zinc-800 text-[#8E8E93]"
+                            }`}>
+                              {r.status === "pending"? "Chờ xử lý" : r.status === "resolved"? "Đã ban" : "Đã bỏ qua"}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right text-xs text-[#8E8E93] dark:text-zinc-500 font-medium">
+                          <p>{r.createdAt?.toDate().toLocaleDateString("vi-VN")}</p>
+                          <p>{r.createdAt?.toDate().toLocaleTimeString("vi-VN")}</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2.5 text-sm">
+                        {r.note && (
+                          <div className="bg-[#F2F2F7] dark:bg-zinc-800/50 rounded-2xl p-3.5 border-l-4 border-[#0A84FF]">
+                            <div className="flex items-start gap-2.5">
+                              <FileText className="w-4 h-4 text-[#0A84FF] mt-0.5 flex-shrink-0" />
+                              <div>
+                                <p className="text-xs font-semibold text-[#8E8E93] dark:text-zinc-500 mb-0.5">Ghi chú từ người báo cáo:</p>
+                                <p className="text-[#1C1C1E] dark:text-zinc-300 leading-relaxed">{r.note}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-4 text-[#8E8E93] dark:text-zinc-500">
+                          <span className="font-medium"><b className="text-[#1C1C1E] dark:text-zinc-300">Người báo cáo:</b> {r.fromName}</span>
+                        </div>
+                        {r.reviewedAt && (
+                          <div className="flex items-center gap-4 text-[#8E8E93] dark:text-zinc-500 text-xs font-medium">
+                            <span>Xử lý bởi: {r.reviewedByName || "Admin"}</span>
+                            <span>{r.reviewedAt.toDate().toLocaleString("vi-VN")}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {tab === "pending" && (
+                    <div className="flex flex-wrap gap-2.5 mt-4 pt-4 border-t border-[#E5E5E7] dark:border-zinc-800">
+                      <button
+                        onClick={() => handleAction(r, "resolved")}
+                        disabled={actionLoading === r.id}
+                        className="flex items-center gap-2 bg-[#FF3B30] hover:bg-[#FF2D20] text-white px-4 py-3 rounded-2xl disabled:opacity-50 font-semibold transition-all active:scale-95"
+                      >
+                        {actionLoading === r.id? <Loader2 className="w-4 h-4 animate-spin" /> : <AlertTriangle className="w-4 h-4" />}
+                        Xử lý vi phạm
+                      </button>
+                      {r.type === "task" && (
+                        <button
+                          onClick={() => setConfirmModal({
+                            show: true,
+                            type: "delete",
+                            report: r
+                          })}
+                          disabled={actionLoading === r.id}
+                          className="flex items-center gap-2 bg-[#FF9500] hover:bg-[#E88500] text-white px-4 py-3 rounded-2xl disabled:opacity-50 font-semibold transition-all active:scale-95"
+                        >
+                          {actionLoading === r.id? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                          Xoá task
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setConfirmModal({
+                          show: true,
+                          type: "rejected",
+                          report: r
+                        })}
+                        disabled={actionLoading === r.id}
+                        className="flex items-center gap-2 bg-[#8E8E93] hover:bg-[#7A7A7A] text-white px-4 py-3 rounded-2xl disabled:opacity-50 font-semibold transition-all active:scale-95"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        Bỏ qua
+                      </button>
+                    </div>
+                  )}
+
+                  {tab === "resolved" && (
+                    <div className="flex flex-wrap gap-2.5 mt-4 pt-4 border-t border-[#E5E5E7] dark:border-zinc-800">
+                      <button
+                        onClick={() => setConfirmModal({
+                          show: true,
+                          type: "unban",
+                          report: r
+                        })}
+                        disabled={actionLoading === r.id}
+                        className="flex items-center gap-2 bg-[#34C759] hover:bg-[#30B350] text-white px-4 py-3 rounded-2xl disabled:opacity-50 font-semibold transition-all active:scale-95"
+                      >
+                        {actionLoading === r.id? <Loader2 className="w-4 h-4 animate-spin" /> : <Unlock className="w-4 h-4" />}
+                        Gỡ ban trước hạn
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+
+            {hasMore && (
+              <div className="mt-6 text-center">
+                <button
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="px-6 py-3.5 bg-[#0A84FF] hover:bg-[#007AFF] text-white rounded-2xl font-semibold disabled:opacity-50 inline-flex items-center gap-2 transition-all active:scale-95 shadow-lg shadow-[#0A84FF]/30"
+                >
+                  {loadingMore? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronDown className="w-4 h-4" />}
+                  Tải thêm
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
