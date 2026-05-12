@@ -12,8 +12,8 @@ type ReportModalProps = {
   targetType: "user" | "task" | "comment";
   targetId: string;
   targetName: string;
-  targetShortId?: string;
-  targetAvatar?: string;
+  targetShortId?: string | undefined; // thêm | undefined
+  targetAvatar?: string | undefined;  // thêm | undefined
   fromUid: string;
   fromName: string;
 };
