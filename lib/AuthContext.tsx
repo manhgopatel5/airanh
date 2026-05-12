@@ -1,5 +1,4 @@
 "use client";
-
 import {
   createContext,
   useEffect,
@@ -28,6 +27,7 @@ import {
   serverTimestamp as rtdbTimestamp,
 } from "firebase/database";
 import { nanoid } from "nanoid";
+import { useRouter, usePathname } from "next/navigation";
 
 export type AppUser = {
   uid: string;
@@ -46,6 +46,18 @@ export type AppUser = {
   bio?: string;
   hidden?: boolean;
   deletedAt?: any;
+  // Thêm field ban
+  banned?: boolean;
+  bannedUntil?: Timestamp | null;
+  bannedReason?: string;
+  bannedAt?: Timestamp;
+  bannedBy?: string;
+  violationCount?: number;
+  warning?: boolean;
+  warningReason?: string;
+  warningAt?: Timestamp;
+  lastViolationAt?: Timestamp;
+  unbannedAt?: Timestamp;
 };
 
 type AuthContextType = {
@@ -95,6 +107,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userData, setUserData] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();
+  const pathname = usePathname();
 
   const userDataUnsub = useRef<(() => void) | null>(null);
   const presenceUnsub = useRef<(() => void) | null>(null);
@@ -148,7 +163,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               let userId = "";
               for (let i = 0; i < 5; i++) {
                 userId = `AIR${nanoid(6).toUpperCase()}`;
-                // BỎ: check userIds
                 const q = await tx.get(doc(db, "users", firebaseUser.uid));
                 if (!q.exists()) break;
               }
@@ -188,10 +202,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 searchKeywords,
                 hidden: false,
                 deletedAt: null,
+                banned: false,
+                violationCount: 0,
               };
 
               tx.set(userRef, newUser);
-              // BỎ: tx.set(doc(db, "userIds", userId), { uid: firebaseUser.uid });
               tx.set(doc(db, "usernames", username), { uid: firebaseUser.uid });
               console.log("Tạo user xong:", userId, username);
             });
@@ -199,8 +214,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // USER CŨ
             const data = snap.data() as AppUser;
             console.log("User đã có:", data.userId);
-
-            // BỎ: check userIds
 
             const usernameDoc = await getDoc(doc(db, "usernames", data.username));
             if (!usernameDoc.exists()) {
@@ -239,9 +252,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
           userDataUnsub.current = onSnapshot(
             userRef,
-            (docSnap) => {
+            async (docSnap) => {
               if (docSnap.exists()) {
-                setUserData(docSnap.data() as AppUser);
+                const data = docSnap.data() as AppUser;
+                
+                // CHECK BAN - TỰ UNBAN NẾU HẾT HẠN
+                if (data.banned) {
+                  if (!data.bannedUntil) {
+                    // Ban vĩnh viễn
+                    if (pathname !== "/banned") router.push("/banned");
+                  } else {
+                    const banEndDate = data.bannedUntil.toDate();
+                    if (banEndDate < new Date()) {
+                      // Hết hạn → tự unban
+                      await updateDoc(userRef, {
+                        banned: false,
+                        bannedUntil: null,
+                        unbannedAt: serverTimestamp()
+                      });
+                      console.log("Auto unbanned:", firebaseUser.uid);
+                    } else {
+                      // Vẫn đang bị ban
+                      if (pathname !== "/banned") {
+                        router.push(`/banned?until=${banEndDate.getTime()}`);
+                      }
+                    }
+                  }
+                }
+                
+                setUserData(data);
                 console.log("userData loaded:", docSnap.data().userId);
               }
               setLoading(false);
@@ -297,7 +336,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }).catch(() => {});
       }
     };
-  }, [auth, db, rtdb]);
+  }, [auth, db, rtdb, pathname, router]);
 
   const value = useMemo(
     () => ({ user, userData, loading, error }),
