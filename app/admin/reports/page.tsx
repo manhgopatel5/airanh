@@ -279,20 +279,37 @@ export default function AdminReports() {
         </div>
       )}
 
-      <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <Shield className="w-8 h-8 text-blue-600" />
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold">Quản lý báo cáo</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Xử lý vi phạm cộng đồng</p>
-              </div>
-            <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition">
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Xuất CSV</span>
-            </button>
-          </div>
+    <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 sticky top-0 z-10">
+  <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
+
+    <div className="flex items-center justify-between mb-4">
+
+      <div className="flex items-center gap-3">
+        <Shield className="w-8 h-8 text-blue-600" />
+
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">
+            Quản lý báo cáo
+          </h1>
+
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Xử lý vi phạm cộng đồng
+          </p>
+        </div>
+      </div>
+
+      <button
+        onClick={handleExport}
+        className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition"
+      >
+        <Download className="w-4 h-4" />
+
+        <span className="hidden sm:inline">
+          Xuất CSV
+        </span>
+      </button>
+
+    </div>
 
           <div className="grid grid-cols-4 gap-3 mb-4">
             <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
