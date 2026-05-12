@@ -781,7 +781,7 @@ if (!friendSnap.exists()) {
     setActionLoading(false);
   }
 };
-};
+
 
   const handleUnfriend = async () => {
     if (!user ||!targetUser || actionLoading) return;
