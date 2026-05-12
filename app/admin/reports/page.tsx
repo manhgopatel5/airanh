@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { collection, query, where, orderBy, onSnapshot, updateDoc, doc, serverTimestamp, writeBatch, limit, startAfter, getDocs } from "firebase/firestore";
+import { collection, query, where, orderBy, onSnapshot, doc, serverTimestamp, writeBatch, limit, startAfter, getDocs } from "firebase/firestore";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { Shield, CheckCircle, XCircle, ExternalLink, Search, Loader2, Download, Filter, AlertTriangle, Ban, UserX, Clock, FileText, ChevronDown, Users, TrendingUp } from "lucide-react";
