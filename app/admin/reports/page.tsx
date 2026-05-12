@@ -192,96 +192,97 @@ export default function AdminReports() {
   }, [lastDoc, loadingMore, hasMore, tab, reasonFilter, db]);
 
   const executeAction = async (report: Report, action: "resolved" | "rejected") => {
-    if (!user) return;
-    setActionLoading(report.id);
+  if (!user) return;
+  setActionLoading(report.id);
 
-    try {
-      const batch = writeBatch(db);
-      const reportRef = doc(db, "reports", report.id);
+  try {
+    const batch = writeBatch(db);
+    const reportRef = doc(db, "reports", report.id);
 
+    batch.update(reportRef, {
+      status: action,
+      reviewedAt: serverTimestamp(),
+      reviewedBy: user.uid,
+      reviewedByName: user.displayName || "Admin"
+    });
+
+    if (action === "resolved") {
+      // Chỉ query user khi thực sự ban/cảnh cáo
       const userQuery = query(
-  collection(db, "users"),
-  where("uid", "==", report.targetId),
-  limit(1)
-);
-const userSnap = await getDocs(userQuery);
+        collection(db, "users"),
+        where("uid", "==", report.targetId),
+        limit(1)
+      );
+      const userSnap = await getDocs(userQuery);
 
-if (userSnap.empty) {
-  toast.error("Không tìm thấy user");
-  setActionLoading(null);
-  return;
-}
-
-const userDoc = userSnap.docs[0];
-if (!userDoc) {
-  toast.error("Không tìm thấy user");
-  setActionLoading(null);
-  return;
-}
-
-const userRef = userDoc.ref;
-const currentViolationCount = userDoc.data()?.violationCount || 0;
-const newCount = currentViolationCount + 1;
-
-      batch.update(reportRef, {
-        status: action,
-        reviewedAt: serverTimestamp(),
-        reviewedBy: user.uid,
-        reviewedByName: user.displayName || "Admin"
-      });
-
-      if (action === "resolved") {
-        const updateData: any = {
-          violationCount: increment(1),
-          lastViolationAt: serverTimestamp(),
-        };
-
-        if (newCount === 1) {
-          updateData.warning = true;
-          updateData.warningReason = REASON_LABEL[report.reason] || report.reason;
-          updateData.warningAt = serverTimestamp();
-          toast.success(`Đã cảnh cáo @${report.targetShortId} lần 1`);
-        } else if (newCount === 2) {
-          const banUntil = new Date();
-          banUntil.setDate(banUntil.getDate() + 3);
-          updateData.banned = true;
-          updateData.bannedUntil = banUntil;
-          updateData.bannedReason = REASON_LABEL[report.reason] || report.reason;
-          updateData.bannedAt = serverTimestamp();
-          updateData.bannedBy = user.uid;
-          toast.success(`Đã ban @${report.targetShortId} 3 ngày - Lần 2`);
-        } else if (newCount === 3) {
-          const banUntil = new Date();
-          banUntil.setDate(banUntil.getDate() + 7);
-          updateData.banned = true;
-          updateData.bannedUntil = banUntil;
-          updateData.bannedReason = REASON_LABEL[report.reason] || report.reason;
-          updateData.bannedAt = serverTimestamp();
-          updateData.bannedBy = user.uid;
-          toast.success(`Đã ban @${report.targetShortId} 7 ngày - Lần 3`);
-        } else {
-          updateData.banned = true;
-          updateData.bannedUntil = null;
-          updateData.bannedReason = REASON_LABEL[report.reason] || report.reason;
-          updateData.bannedAt = serverTimestamp();
-          updateData.bannedBy = user.uid;
-          toast.success(`Đã ban vĩnh viễn @${report.targetShortId} - Lần ${newCount}`);
-        }
-
-        batch.update(userRef, updateData);
-      } else {
-        toast.success("Đã bỏ qua báo cáo");
+      if (userSnap.empty) {
+        toast.error("Không tìm thấy user");
+        setActionLoading(null);
+        return;
       }
 
-      await batch.commit();
-      setConfirmModal({show: false, type: ""});
-    } catch (err: any) {
-      console.error("Lỗi executeAction:", err);
-      toast.error(`Thao tác thất bại: ${err.message}`);
-    } finally {
-      setActionLoading(null);
+      const userDoc = userSnap.docs[0];
+      if (!userDoc) {
+        toast.error("Không tìm thấy user");
+        setActionLoading(null);
+        return;
+      }
+
+      const userRef = userDoc.ref;
+      const currentViolationCount = userDoc.data()?.violationCount || 0;
+      const newCount = currentViolationCount + 1;
+
+      const updateData: any = {
+        violationCount: increment(1),
+        lastViolationAt: serverTimestamp(),
+      };
+
+      if (newCount === 1) {
+        updateData.warning = true;
+        updateData.warningReason = REASON_LABEL[report.reason] || report.reason;
+        updateData.warningAt = serverTimestamp();
+        toast.success(`Đã cảnh cáo @${report.targetShortId} lần 1`);
+      } else if (newCount === 2) {
+        const banUntil = new Date();
+        banUntil.setDate(banUntil.getDate() + 3);
+        updateData.banned = true;
+        updateData.bannedUntil = banUntil;
+        updateData.bannedReason = REASON_LABEL[report.reason] || report.reason;
+        updateData.bannedAt = serverTimestamp();
+        updateData.bannedBy = user.uid;
+        toast.success(`Đã ban @${report.targetShortId} 3 ngày - Lần 2`);
+      } else if (newCount === 3) {
+        const banUntil = new Date();
+        banUntil.setDate(banUntil.getDate() + 7);
+        updateData.banned = true;
+        updateData.bannedUntil = banUntil;
+        updateData.bannedReason = REASON_LABEL[report.reason] || report.reason;
+        updateData.bannedAt = serverTimestamp();
+        updateData.bannedBy = user.uid;
+        toast.success(`Đã ban @${report.targetShortId} 7 ngày - Lần 3`);
+      } else {
+        updateData.banned = true;
+        updateData.bannedUntil = null;
+        updateData.bannedReason = REASON_LABEL[report.reason] || report.reason;
+        updateData.bannedAt = serverTimestamp();
+        updateData.bannedBy = user.uid;
+        toast.success(`Đã ban vĩnh viễn @${report.targetShortId} - Lần ${newCount}`);
+      }
+
+      batch.update(userRef, updateData);
+    } else {
+      toast.success("Đã bỏ qua báo cáo");
     }
+
+    await batch.commit();
+    setConfirmModal({show: false, type: ""});
+  } catch (err: any) {
+    console.error("Lỗi executeAction:", err);
+    toast.error(`Thao tác thất bại: ${err.message}`);
+  } finally {
+    setActionLoading(null);
   }
+}
 
   const handleDeleteTask = async (taskId: string, taskName: string) => {
     if (!user) return;
