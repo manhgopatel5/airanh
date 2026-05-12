@@ -361,25 +361,30 @@ export default function AdminReports() {
   }
 
   const handleAction = async (report: Report, action: "resolved" | "rejected") => {
-    if (action === "resolved") {
-      const userSnap = await getDocs(query(collection(db, "users"), where("uid", "==", report.targetId), limit(1)));
-      const violationCount = userSnap.docs[0]?.data()?.violationCount || 0;
-      setConfirmModal({
-        show: true,
-        type: action,
-        report,
-        bulk: false,
-        violationCount: violationCount + 1
-      });
-    } else {
-      setConfirmModal({
-        show: true,
-        type: action,
-        report,
-        bulk: false,
-      });
-    }
-  };
+  // Reset modal trước
+  setConfirmModal({show: false, type: "", report: undefined, appeal: undefined, bulk: false});
+  
+  if (action === "resolved") {
+    const userSnap = await getDocs(query(collection(db, "users"), where("uid", "==", report.targetId), limit(1)));
+    const violationCount = userSnap.docs[0]?.data()?.violationCount || 0;
+    setConfirmModal({
+      show: true,
+      type: action,
+      report,
+      appeal: undefined, // Clear appeal
+      bulk: false,
+      violationCount: violationCount + 1
+    });
+  } else {
+    setConfirmModal({
+      show: true,
+      type: action,
+      report,
+      appeal: undefined, // Clear appeal
+      bulk: false,
+    });
+  }
+};
 
   const handleBulkAction = async (action: "resolved" | "rejected") => {
     if (!user || selectedIds.length === 0) return;
@@ -514,19 +519,28 @@ export default function AdminReports() {
                   Hủy
                 </button>
                 <button
-                  onClick={() => {
-                    if (confirmModal.bulk) {
-                      handleBulkAction(confirmModal.type as any);
-                    } else if (confirmModal.type === "unban") {
-                      handleUnban(confirmModal.report!.targetId, confirmModal.report!.targetShortId);
-                    } else if (confirmModal.type === "approved" || confirmModal.type === "rejected") {
-                      executeAppeal(confirmModal.appeal!, confirmModal.type as any);
-                    } else if (confirmModal.type === "delete") {
-                      handleDeleteTask(confirmModal.report!.targetId, confirmModal.report!.targetName);
-                    } else {
-                      executeAction(confirmModal.report!, confirmModal.type as any);
-                    }
-                  }}
+     onClick={() => {
+  console.log('Modal confirm:', confirmModal); // Debug
+  
+  if (confirmModal.bulk) {
+    handleBulkAction(confirmModal.type as any);
+  } else if (confirmModal.type === "unban") {
+    handleUnban(confirmModal.report!.targetId, confirmModal.report!.targetShortId);
+  } else if (confirmModal.type === "delete") {
+    handleDeleteTask(confirmModal.report!.targetId, confirmModal.report!.targetName);
+  } else if (confirmModal.type === "approved") {
+    executeAppeal(confirmModal.appeal!, confirmModal.type as any);
+  } else if (confirmModal.type === "rejected") {
+    // Tách riêng: nếu có appeal thì gọi appeal, có report thì gọi report
+    if (confirmModal.appeal) {
+      executeAppeal(confirmModal.appeal, confirmModal.type as any);
+    } else if (confirmModal.report) {
+      executeAction(confirmModal.report, confirmModal.type as any);
+    }
+  } else {
+    executeAction(confirmModal.report!, confirmModal.type as any);
+  }
+}}
                   disabled={!!actionLoading}
                   className={`flex-1 px-4 py-3 ${
                     confirmModal.type === "resolved" || confirmModal.type === "delete"? "bg-[#FF3B30] hover:bg-[#FF2D20]" :
