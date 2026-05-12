@@ -137,65 +137,84 @@ useEffect(() => {
     return;
   }
 
-  const unsub = onSnapshot(doc(db, "chats", chatId), async (snap) => {
-    if (!snap.exists()) {
-      setLoadingFriend(false);
-      setChatData(null);
-      return;
-    }
+  setLoadingFriend(true);
 
-    const data = snap.data() as ChatData;
+  const unsub = onSnapshot(
+    doc(db, "chats", chatId),
+    async (snap) => {
+      if (!snap.exists()) {
+        // Doc chưa tạo hoặc chưa có quyền đọc -> đợi
+        // Không setLoadingFriend(false) ở đây để tránh flash UI
+        return;
+      }
 
-    // Tự mở lại chat nếu trước đó mình đã xóa
-    if (data.deletedFor?.includes(user.uid)) {
-      await updateDoc(doc(db, "chats", chatId), {
-        deletedFor: arrayRemove(user.uid)
+      const data = snap.data() as ChatData;
+
+      // Tự mở lại chat nếu trước đó mình đã xóa
+      if (data.deletedFor?.includes(user.uid)) {
+        try {
+          await updateDoc(doc(db, "chats", chatId), {
+            deletedFor: arrayRemove(user.uid)
+          });
+        } catch (e) {
+          console.error("Lỗi mở lại chat:", e);
+        }
+        return; // Đợi snapshot mới sau khi update
+      }
+
+      if (!data.members?.includes(user.uid)) {
+        toast.error("Bạn không có quyền truy cập");
+        router.replace("/chat");
+        return;
+      }
+
+      const otherUid = data.members?.find((id: string) => id!== user.uid);
+
+      if (!otherUid ||!data.membersInfo?.[otherUid]) {
+        toast.error("Không tìm thấy người dùng");
+        router.replace("/chat");
+        return;
+      }
+
+      const otherUser = data.membersInfo[otherUid];
+      
+      // Load song để nhanh hơn
+      const [friendSnap, friendDoc] = await Promise.all([
+        getDoc(doc(db, "users", otherUid)),
+        getDoc(doc(db, "users", user.uid, "friends", otherUid))
+      ]);
+      
+      const friendData = friendSnap.data();
+      const isFriend = friendDoc.exists() && friendDoc.data()?.status!== "removed";
+
+      setFriend({
+        uid: otherUid,
+        name: otherUser.name || "User",
+        username: otherUser.username || "",
+        avatar: otherUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name)}&background=random`,
+        isOnline: isFriend? (friendData?.isOnline || false) : false,
+        lastSeen: friendData?.lastSeen,
+        userId: friendData?.userId || ""
       });
-      return; // Đợi snapshot mới
+
+      setIsFriend(isFriend);
+      setChatData(data);
+      setFriendId(otherUid);
+      setLoadingFriend(false);
+    },
+    (error) => {
+      console.error("Lỗi load chat:", error);
+      // Chỉ redirect nếu không phải lỗi permission do doc chưa tồn tại
+      if (error.code === 'permission-denied') {
+        // Có thể doc chưa tạo xong, không toast lỗi
+        setLoadingFriend(false);
+      } else {
+        toast.error("Lỗi tải thông tin");
+        router.replace("/chat");
+        setLoadingFriend(false);
+      }
     }
-
-    if (!data.members?.includes(user.uid)) {
-      toast.error("Bạn không có quyền truy cập");
-      router.replace("/chat");
-      return;
-    }
-
-    const otherUid = data.members?.find((id: string) => id!== user.uid);
-
-    if (!otherUid ||!data.membersInfo?.[otherUid]) {
-      toast.error("Không tìm thấy người dùng");
-      router.replace("/chat");
-      return;
-    }
-
-    const otherUser = data.membersInfo[otherUid];
-    const friendSnap = await getDoc(doc(db, "users", otherUid));
-    const friendData = friendSnap.data();
-    
-    // Check xem còn là bạn không
-    const friendDoc = await getDoc(doc(db, "users", user.uid, "friends", otherUid));
-    const isFriend = friendDoc.exists() && friendDoc.data()?.status!== "removed";
-    
-    setFriend({
-      uid: otherUid,
-      name: otherUser.name || "User",
-      username: otherUser.username || "",
-      avatar: otherUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name)}&background=random`,
-      isOnline: isFriend? (friendData?.isOnline || false) : false,
-      userId: friendData?.userId || ""
-    });
-
-    // Set friendId = null nếu đã unfriend để disable gửi tin
-setIsFriend(isFriend);
-    setChatData(data);
-setFriendId(otherUid);
-    setLoadingFriend(false);
-  }, (error) => {
-    console.error(error);
-    toast.error("Lỗi tải thông tin");
-    router.replace("/chat");
-    setLoadingFriend(false);
-  });
+  );
 
   return () => unsub();
 }, [chatId, user, authLoading, router, db]);
