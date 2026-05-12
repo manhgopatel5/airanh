@@ -144,26 +144,26 @@ export default function ReportModal({
     <AnimatePresence>
       {isOpen && (
         <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md"
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 40 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 40 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 pointer-events-none"
-          >
-            <div
-              ref={modalRef}
-              tabIndex={-1}
-              className="bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-md max-h-[90vh] overflow-hidden pointer-events-auto flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
+        <motion.div
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  exit={{ opacity: 0 }}
+  onClick={onClose}
+  className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-md" // z-[60]
+/>
+<motion.div
+  initial={{ opacity: 0, scale: 0.9, y: 40 }}
+  animate={{ opacity: 1, scale: 1, y: 0 }}
+  exit={{ opacity: 0, scale: 0.9, y: 40 }}
+  transition={{ type: "spring", damping: 25, stiffness: 300 }}
+  className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 pointer-events-none" // z-[60]
+>
+         <div
+  ref={modalRef}
+  tabIndex={-1}
+  className="bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-md max-h-[100dvh] sm:max-h-[90vh] pointer-events-auto flex flex-col"
+  onClick={(e) => e.stopPropagation()}
+>
               {/* Header */}
               <div className="px-5 pt-5 pb-3 border-b dark:border-zinc-800 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
