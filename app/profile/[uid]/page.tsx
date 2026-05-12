@@ -752,20 +752,21 @@ if (!friendSnap.exists()) {
     const reqId = [user.uid, targetUser.uid].sort().join('_');
     
     await setDoc(
-      doc(db, "friendRequests", reqId),
-      {
-        fromUserId: user.uid,
-        toUserId: targetUser.uid,
-        status: "pending",
-        createdAt: serverTimestamp(),
-        fromName: currentUserData?.name || user.displayName || "User",
-        fromAvatar: currentUserData?.avatar || user.photoURL || "",
-        fromUserId: currentUserData?.userId || "",
-        toName: targetUser.name,
-        toAvatar: targetUser.avatar,
-        toUserId: targetUser.userId,
-      }
-    );
+  doc(db, "friendRequests", reqId),
+  {
+    fromUserId: user.uid,
+    toUserId: targetUser.uid,
+    status: "pending",
+    createdAt: serverTimestamp(),
+    fromName: currentUserData?.name || user.displayName || "User",
+    fromAvatar: currentUserData?.avatar || user.photoURL || "",
+    fromShortId: currentUserData?.userId || "",  // Đổi tên thành fromShortId
+    toName: targetUser.name,
+    toAvatar: targetUser.avatar,
+    toUserId: targetUser.userId,
+    toShortId: targetUser.userId, // Thêm nếu cần
+  }
+);
 
     setHasSentRequest(true);
     setRequestId(reqId);
