@@ -6,7 +6,7 @@ import { useAuthState } from "react-firebase-hooks/auth";
 import { Shield, CheckCircle, ExternalLink, Search, Loader2, Download, Filter, AlertTriangle, Ban, Clock, FileText, ChevronDown, TrendingUp, MessageSquare, Unlock, XCircle } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 const ADMIN_UIDS = ["xKsvMeFGeCcM4dgyMrxQmH70FBE3", "ceWtvtIxZQMgWCzYxZiB3p0mSNi1"];
 const PAGE_SIZE = 20;
