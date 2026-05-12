@@ -693,7 +693,7 @@ setIsFriend(friendSnap.exists());
 if (!friendSnap.exists()) {
   const reqId = [user.uid, userSnap.id].sort().join('_');
   const reqSnap = await getDoc(doc(db, "friendRequests", reqId));
-  if (reqSnap.exists() && reqSnap.data().fromUserId === user.uid) {
+  if (reqSnap.exists() && reqSnap.data().from === user.uid) {
     setHasSentRequest(true);
     setRequestId(reqId);
   }
@@ -739,8 +739,8 @@ if (!friendSnap.exists()) {
 
   try {
     // Nếu đã gửi rồi thì hủy
-    if (hasSentRequest && requestId) {
-      await deleteDoc(doc(db, "friendRequests", requestId));
+    if (hasSentRequest && _requestId) {
+      await deleteDoc(doc(db, "friendRequests", _requestId));
       setHasSentRequest(false);
       setRequestId(null);
       toast.success("Đã hủy lời mời kết bạn");
@@ -751,21 +751,21 @@ if (!friendSnap.exists()) {
     // Chưa gửi thì tạo request mới
     const reqId = [user.uid, targetUser.uid].sort().join('_');
     
- await setDoc(
-  doc(db, "friendRequests", reqId),
-  {
-    fromUserId: user.uid,
-    toUserId: targetUser.uid,
-    status: "pending",
-    createdAt: serverTimestamp(),
-    fromName: currentUserData?.name || user.displayName || "User",
-    fromAvatar: currentUserData?.avatar || user.photoURL || "",
-    fromShortId: currentUserData?.userId || "",
-    toName: targetUser.name,
-    toAvatar: targetUser.avatar,
-    toShortId: targetUser.userId,
-  }
-);
+    await setDoc(
+      doc(db, "friendRequests", reqId),
+      {
+        from: user.uid,
+        to: targetUser.uid,
+        status: "pending",
+        createdAt: serverTimestamp(),
+        fromName: currentUserData?.name || user.displayName || "User",
+        fromAvatar: currentUserData?.avatar || user.photoURL || "",
+        fromShortId: currentUserData?.userId || "",
+        toName: targetUser.name,
+        toAvatar: targetUser.avatar,
+        toShortId: targetUser.userId,
+      }
+    );
 
     setHasSentRequest(true);
     setRequestId(reqId);
