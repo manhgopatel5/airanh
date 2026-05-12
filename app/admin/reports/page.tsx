@@ -250,6 +250,7 @@ export default function AdminReports() {
                   {confirmModal.type === "resolved" ? "User sẽ bị cấm truy cập hệ thống" : "Báo cáo sẽ được đánh dấu đã xử lý"}
                 </p>
               </div>
+            </div>
             {!confirmModal.bulk && confirmModal.type === "resolved" && (
               <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                 <p className="text-sm font-medium mb-2">Thời gian ban:</p>
@@ -287,7 +288,6 @@ export default function AdminReports() {
                 <h1 className="text-2xl md:text-3xl font-bold">Quản lý báo cáo</h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Xử lý vi phạm cộng đồng</p>
               </div>
-            </div>
             <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition">
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">Xuất CSV</span>
@@ -446,6 +446,7 @@ export default function AdminReports() {
                               {r.status === "pending" ? "Chờ xử lý" : r.status === "resolved" ? "Đã ban" : "Đã bỏ qua"}
                             </span>
                           </div>
+                        </div>
                         <div className="text-right text-xs text-gray-500 dark:text-gray-400">
                           <p>{r.createdAt?.toDate().toLocaleDateString("vi-VN")}</p>
                           <p>{r.createdAt?.toDate().toLocaleTimeString("vi-VN")}</p>
