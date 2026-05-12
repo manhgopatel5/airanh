@@ -69,6 +69,7 @@ export default function AdminReports() {
   const auth = getFirebaseAuth();
   const db = getFirebaseDB();
  const [user, loading, authError] = useAuthState(auth);
+
   const [reports, setReports] = useState<Report[]>([]);
   const [appeals, setAppeals] = useState<Appeal[]>([]);
   const [tab, setTab] = useState<Tab>("pending");
@@ -95,6 +96,7 @@ export default function AdminReports() {
   useEffect(() => {
     if (!isAdmin) return;
 
+
     const unsubReports = onSnapshot(collection(db, "reports"), (snap) => {
       let p = 0, r = 0, rej = 0, today = 0;
       const todayStart = new Date();
@@ -111,7 +113,13 @@ if (createdAt && createdAt >= todayStart) today++;
       });
       setStats(prev => ({...prev, pending: p, resolved: r, rejected: rej, today }));
     });
-
+if (authError) {
+  return (
+    <div className="flex items-center justify-center h-screen">
+      {authError.message}
+    </div>
+  );
+}
     const unsubAppeals = onSnapshot(
       query(collection(db, "appeals"), where("status", "==", "pending")),
       (snap) => {
