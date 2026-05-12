@@ -800,7 +800,7 @@ const handleMessage = async () => {
     
     if (!chatSnap.exists()) {
       await setDoc(chatRef, {
-        members: [user.uid, targetUser.uid], // rules dùng members
+        members: [user.uid, targetUser.uid], // rules check members
         participantInfo: {
           [user.uid]: {
             name: currentUser?.name || user.displayName || "User",
@@ -817,9 +817,9 @@ const handleMessage = async () => {
         lastMessage: "",
         lastMessageTime: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        deletedFor: [], // rules check field này
-        status: 'active', // rules check field này
-        blockedUsers: [] // rules check field này
+        deletedFor: [], // rules bắt buộc
+        status: 'active', // rules bắt buộc
+        blockedUsers: [] // rules check khi tạo message
       });
     }
     
