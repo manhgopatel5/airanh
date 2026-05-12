@@ -797,28 +797,28 @@ const handleMessage = async () => {
     const chatRef = doc(db, "chats", chatId);
     
     // Dùng setDoc với merge để không cần get trước, tránh lỗi permission
-    await setDoc(chatRef, {
-      members: [user.uid, targetUser.uid],
-      participantInfo: {
-        [user.uid]: {
-          name: currentUser?.name || user.displayName || "User",
-          avatar: currentUser?.avatar || user.photoURL || "",
-          userId: currentUser?.userId || ""
-        },
-        [targetUser.uid]: {
-          name: targetUser.name || "Unknown",
-          avatar: targetUser.avatar || "",
-          userId: targetUser.userId || ""
-        }
-      },
-      createdAt: serverTimestamp(),
-      lastMessage: "",
-      lastMessageTime: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      deletedFor: [],
-      status: 'active',
-      blockedUsers: []
-    }, { merge: true });
+await setDoc(chatRef, {
+  members: [user.uid, targetUser.uid],
+  membersInfo: {
+    [user.uid]: {
+      name: currentUser?.name || user.displayName || "User",
+      avatar: currentUser?.avatar || user.photoURL || "",
+      userId: currentUser?.userId || ""
+    },
+    [targetUser.uid]: {
+      name: targetUser.name || "Unknown",
+      avatar: targetUser.avatar || "",
+      userId: targetUser.userId || ""
+    }
+  },
+  createdAt: serverTimestamp(),
+  lastMessage: "",
+  lastMessageTime: serverTimestamp(),
+  updatedAt: serverTimestamp(),
+  deletedFor: [],
+  status: 'active',
+  blockedUsers: []
+}, { merge: true });
     
     router.push(`/chat/${chatId}`);
   } catch (err: any) {
