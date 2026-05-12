@@ -121,7 +121,7 @@ export default function PublicProfile() {
   const [currentUserData, setCurrentUserData] = useState<any>(null);
   const [isFriend, setIsFriend] = useState(false);
   const [hasSentRequest, setHasSentRequest] = useState(false); // ← THÊM
-const [requestId, setRequestId] = useState<string | null>(null);
+const [requestId, setRequestId] = useState<string | null>(null); // eslint-disable-line @typescript-eslint/no-unused-vars
   const [loading, setLoading] = useState(true);
   const [showLevelInfo, setShowLevelInfo] = useState(false);
 const [friendCount, setFriendCount] = useState(0); // CHUYỂN LÊN ĐÂY
@@ -736,13 +736,20 @@ if (!friendSnap.exists()) {
     return toast.info("Các bạn đã là bạn bè");
   }
 
-  if (hasSentRequest) {
-    return toast.info("Đã gửi lời mời kết bạn rồi");
-  }
-
   setActionLoading(true);
 
   try {
+    // Nếu đã gửi rồi thì hủy
+    if (hasSentRequest && requestId) {
+      await deleteDoc(doc(db, "friendRequests", requestId));
+      setHasSentRequest(false);
+      setRequestId(null);
+      toast.success("Đã hủy lời mời kết bạn");
+      if ("vibrate" in navigator) navigator.vibrate(8);
+      return;
+    }
+
+    // Chưa gửi thì tạo request mới
     const reqId = [user.uid, targetUser.uid].sort().join('_');
     
     await setDoc(
@@ -769,10 +776,11 @@ if (!friendSnap.exists()) {
     }
   } catch (err) {
     console.error(err);
-    toast.error("Gửi lời mời thất bại");
+    toast.error("Thao tác thất bại");
   } finally {
     setActionLoading(false);
   }
+};
 };
 
   const handleUnfriend = async () => {
@@ -1112,12 +1120,14 @@ return (
 <button
   onClick={isFriend ? handleUnfriend : handleConnect}
   disabled={actionLoading}
-  className="w-11 h-11 rounded-full bg-pink-50 flex items-center justify-center active:scale-90 transition-all disabled:opacity-50"
+  className={`w-11 h-11 rounded-full flex items-center justify-center active:scale-90 transition-all disabled:opacity-50 ${
+    hasSentRequest ? 'bg-zinc-200' : 'bg-pink-50'
+  }`}
 >
   {isFriend ? (
     <UserMinus className="w-5 h-5 text-pink-600" />
   ) : hasSentRequest ? (
-    <Clock className="w-5 h-5 text-pink-600" />
+    <Clock className="w-5 h-5 text-zinc-600" />
   ) : (
     <UserPlus className="w-5 h-5 text-pink-600" />
   )}
