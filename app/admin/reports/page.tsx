@@ -506,7 +506,7 @@ const handleAction = (
                   {tab === "pending" && (
                     <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t dark:border-gray-700">
                       <button
-                        onClick={() => handleAction(r, "resolved", 7)}
+                        onClick={() => handleAction(r, "resolved")}
                         disabled={actionLoading === r.id}
                         className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg disabled:opacity-50 font-medium"
                       >
