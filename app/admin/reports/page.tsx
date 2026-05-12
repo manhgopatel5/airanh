@@ -208,9 +208,8 @@ export default function AdminReports() {
     });
 
     if (action === "resolved") {
-      let userIdToBan = report.targetId; // Mặc định
+      let userIdToBan = report.targetId;
 
-      // Nếu báo cáo task thì phải lấy authorId từ task
       if (report.type === "task") {
         const taskSnap = await getDocs(query(
           collection(db, "tasks"),
@@ -224,11 +223,24 @@ export default function AdminReports() {
           return;
         }
         
-        userIdToBan = taskSnap.docs[0].data().authorId;
+        const taskDoc = taskSnap.docs[0];
+        if (!taskDoc) {
+          toast.error("Không tìm thấy task");
+          setActionLoading(null);
+          return;
+        }
+        
+        const taskData = taskDoc.data();
+        if (!taskData?.authorId) {
+          toast.error("Task không có authorId");
+          setActionLoading(null);
+          return;
+        }
+        
+        userIdToBan = taskData.authorId;
         console.log('Task authorId:', userIdToBan);
       }
 
-      // Giờ mới query user bằng uid thật
       const userQuery = query(
         collection(db, "users"),
         where("uid", "==", userIdToBan),
@@ -243,9 +255,17 @@ export default function AdminReports() {
       }
 
       const userDoc = userSnap.docs[0];
+      if (!userDoc) {
+        toast.error("Không tìm thấy user");
+        setActionLoading(null);
+        return;
+      }
+
       const userRef = userDoc.ref;
-      const currentViolationCount = userDoc.data()?.violationCount || 0;
+      const userData = userDoc.data();
+      const currentViolationCount = userData?.violationCount || 0;
       const newCount = currentViolationCount + 1;
+      const targetShortId = userData?.shortId || report.targetShortId;
 
       const updateData: any = {
         violationCount: increment(1),
@@ -256,7 +276,7 @@ export default function AdminReports() {
         updateData.warning = true;
         updateData.warningReason = REASON_LABEL[report.reason] || report.reason;
         updateData.warningAt = serverTimestamp();
-        toast.success(`Đã cảnh cáo @${userDoc.data().shortId} lần 1`);
+        toast.success(`Đã cảnh cáo @${targetShortId} lần 1`);
       } else if (newCount === 2) {
         const banUntil = new Date();
         banUntil.setDate(banUntil.getDate() + 3);
@@ -265,7 +285,7 @@ export default function AdminReports() {
         updateData.bannedReason = REASON_LABEL[report.reason] || report.reason;
         updateData.bannedAt = serverTimestamp();
         updateData.bannedBy = user.uid;
-        toast.success(`Đã ban @${userDoc.data().shortId} 3 ngày - Lần 2`);
+        toast.success(`Đã ban @${targetShortId} 3 ngày - Lần 2`);
       } else if (newCount === 3) {
         const banUntil = new Date();
         banUntil.setDate(banUntil.getDate() + 7);
@@ -274,14 +294,14 @@ export default function AdminReports() {
         updateData.bannedReason = REASON_LABEL[report.reason] || report.reason;
         updateData.bannedAt = serverTimestamp();
         updateData.bannedBy = user.uid;
-        toast.success(`Đã ban @${userDoc.data().shortId} 7 ngày - Lần 3`);
+        toast.success(`Đã ban @${targetShortId} 7 ngày - Lần 3`);
       } else {
         updateData.banned = true;
         updateData.bannedUntil = null;
         updateData.bannedReason = REASON_LABEL[report.reason] || report.reason;
         updateData.bannedAt = serverTimestamp();
         updateData.bannedBy = user.uid;
-        toast.success(`Đã ban vĩnh viễn @${userDoc.data().shortId} - Lần ${newCount}`);
+        toast.success(`Đã ban vĩnh viễn @${targetShortId} - Lần ${newCount}`);
       }
 
       batch.update(userRef, updateData);
