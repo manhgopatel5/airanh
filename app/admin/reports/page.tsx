@@ -1,13 +1,13 @@
 "use client"
 import { useEffect, useState } from "react";
 import { collection, query, where, orderBy, onSnapshot, updateDoc, doc, serverTimestamp } from "firebase/firestore";
-import { db, auth } from "@/firebase";
+import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase"; // Đổi path nếu file bạn ở chỗ khác
 import { useAuthState } from "react-firebase-hooks/auth";
 import { Shield, CheckCircle, XCircle, ExternalLink, Search, Loader2 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import Link from "next/link";
 
-const ADMIN_UIDS = ["xKsvMeFGeCcM4dgyMrxQmH70FBE3", "ceWtvtIxZQMgWCzYxZiB3p0mSNi1"]; // Thêm nhiều admin được
+const ADMIN_UIDS = ["xKsvMeFGeCcM4dgyMrxQmH70FBE3", "ceWtvtIxZQMgWCzYxZiB3p0mSNi1"];
 
 type Report = {
   id: string;
@@ -38,6 +38,8 @@ const REASON_LABEL: Record<string, string> = {
 };
 
 export default function AdminReports() {
+  const auth = getFirebaseAuth(); // ← Thêm dòng này
+  const db = getFirebaseDB(); // ← Thêm dòng này
   const [user, loading] = useAuthState(auth);
   const [reports, setReports] = useState<Report[]>([]);
   const [tab, setTab] = useState<Tab>("pending");
@@ -60,7 +62,7 @@ export default function AdminReports() {
     });
 
     return unsub;
-  }, [user, isAdmin, tab]);
+  }, [user, isAdmin, tab, db]);
 
   const handleAction = async (report: Report, action: "resolved" | "rejected", banDays?: number) => {
     if (!user || actionLoading) return;
@@ -102,23 +104,15 @@ export default function AdminReports() {
     r.fromName.toLowerCase().includes(search.toLowerCase())
   );
 
-  const stats = {
-    pending: tab === "pending" ? reports.length : 0,
-    resolved: tab === "resolved" ? reports.length : 0,
-    rejected: tab === "rejected" ? reports.length : 0,
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6">
       <Toaster position="top-center" />
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <Shield className="w-8 h-8 text-blue-600" />
           <h1 className="text-2xl md:text-3xl font-bold">Quản lý báo cáo</h1>
         </div>
 
-        {/* Tabs + Search */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 mb-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex gap-2">
@@ -152,7 +146,6 @@ export default function AdminReports() {
           </div>
         </div>
 
-        {/* List */}
         {filteredReports.length === 0 ? (
           <div className="text-center py-20 text-gray-500">
             Không có báo cáo nào
