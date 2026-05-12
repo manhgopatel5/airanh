@@ -448,14 +448,14 @@ export default function AdminReports() {
                    "Bỏ qua báo cáo?"}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {confirmModal.type === "resolved" && confirmModal.violationCount === 1 && "Lần 1: Cảnh cáo user"}
-                  {confirmModal.type === "resolved" && confirmModal.violationCount === 2 && "Lần 2: Ban 3 ngày"}
-                  {confirmModal.type === "resolved" && confirmModal.violationCount === 3 && "Lần 3: Ban 7 ngày"}
-                  {confirmModal.type === "resolved" && confirmModal.violationCount >= 4 && `Lần ${confirmModal.violationCount}: Ban vĩnh viễn`}
-                  {confirmModal.type === "unban" && "User sẽ được gỡ ban ngay lập tức"}
-                  {confirmModal.type === "approved" && "User sẽ được gỡ ban ngay lập tức"}
-                  {confirmModal.type === "rejected" && "Báo cáo/Kháng cáo sẽ được đánh dấu đã xử lý"}
-                </p>
+  {confirmModal.type === "resolved" && confirmModal.violationCount === 1 && "Lần 1: Cảnh cáo user"}
+  {confirmModal.type === "resolved" && confirmModal.violationCount === 2 && "Lần 2: Ban 3 ngày"}
+  {confirmModal.type === "resolved" && confirmModal.violationCount === 3 && "Lần 3: Ban 7 ngày"}
+  {confirmModal.type === "resolved" && (confirmModal.violationCount || 0) >= 4 && `Lần ${confirmModal.violationCount}: Ban vĩnh viễn`}
+  {confirmModal.type === "unban" && "User sẽ được gỡ ban ngay lập tức"}
+  {confirmModal.type === "approved" && "User sẽ được gỡ ban ngay lập tức"}
+  {confirmModal.type === "rejected" && "Báo cáo/Kháng cáo sẽ được đánh dấu đã xử lý"}
+</p>
               </div>
             </div>
             <div className="flex gap-3">
