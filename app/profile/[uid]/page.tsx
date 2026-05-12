@@ -23,6 +23,7 @@ import {
   UserMinus,
   User, 
   Star,
+  Clock, 
   Briefcase,
   Info,
   MapPin,
@@ -119,6 +120,8 @@ export default function PublicProfile() {
   const [targetUser, setTargetUser] = useState<PublicUser | null>(null);
   const [currentUserData, setCurrentUserData] = useState<any>(null);
   const [isFriend, setIsFriend] = useState(false);
+  const [hasSentRequest, setHasSentRequest] = useState(false); // ← THÊM
+const [requestId, setRequestId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showLevelInfo, setShowLevelInfo] = useState(false);
 const [friendCount, setFriendCount] = useState(0); // CHUYỂN LÊN ĐÂY
@@ -682,10 +685,22 @@ const fetchUser = useCallback(async () => {
       setCurrentUserData(currentUserSnap.data());
     }
 
-    const friendSnap = await getDoc(
-      doc(db, "users", user.uid, "friends", userSnap.id)
-    );
-    setIsFriend(friendSnap.exists());
+  const friendSnap = await getDoc(
+  doc(db, "users", user.uid, "friends", userSnap.id)
+);
+setIsFriend(friendSnap.exists());
+
+// THÊM ĐOẠN NÀY
+if (!friendSnap.exists()) {
+  const reqId = [user.uid, userSnap.id].sort().join('_');
+  const reqSnap = await getDoc(doc(db, "friendRequests", reqId));
+  if (reqSnap.exists() && reqSnap.data().fromUserId === user.uid) {
+    setHasSentRequest(true);
+    setRequestId(reqId);
+  }
+}
+// HẾT ĐOẠN THÊM
+
 
     try {
   const friendsCollection = await getDocs(collection(db, "users", uid as string, "friends"));
@@ -711,52 +726,54 @@ const fetchUser = useCallback(async () => {
   }, [fetchUser]);
 
   const handleConnect = async () => {
-    if (!user ||!targetUser || actionLoading) return;
+  if (!user || !targetUser || actionLoading) return;
 
-    if (user.uid === targetUser?.uid) {
-      return toast.error("Đây là bạn");
-    }
+  if (user.uid === targetUser?.uid) {
+    return toast.error("Đây là bạn");
+  }
 
-    setActionLoading(true);
+  if (isFriend) {
+    return toast.info("Các bạn đã là bạn bè");
+  }
 
-    try {
-      await Promise.all([
-        setDoc(
-          doc(db, "users", user.uid, "friends", targetUser?.uid),
-          {
-            createdAt: serverTimestamp(),
-            status: "accepted",
-            name: targetUser?.name || "Unknown User",
-            avatar: targetUser?.avatar || "",
-            userId: targetUser?.userId || "",
-            title: targetUser?.title || "",
-          }
-        ),
-        setDoc(
-          doc(db, "users", targetUser?.uid, "friends", user.uid),
-          {
-            createdAt: serverTimestamp(),
-            status: "accepted",
-            name: currentUserData?.name || user.displayName || "User",
-            avatar: currentUserData?.avatar || user.photoURL || "",
-            userId: currentUserData?.userId || "",
-            title: currentUserData?.title || "",
-          }
-        ),
-      ]);
+  if (hasSentRequest) {
+    return toast.info("Đã gửi lời mời kết bạn rồi");
+  }
 
-      setIsFriend(true);
-      toast.success(`Đã kết nối với ${targetUser?.name}`);
-      if ("vibrate" in navigator) {
-        navigator.vibrate(8);
+  setActionLoading(true);
+
+  try {
+    const reqId = [user.uid, targetUser.uid].sort().join('_');
+    
+    await setDoc(
+      doc(db, "friendRequests", reqId),
+      {
+        fromUserId: user.uid,
+        toUserId: targetUser.uid,
+        status: "pending",
+        createdAt: serverTimestamp(),
+        fromName: currentUserData?.name || user.displayName || "User",
+        fromAvatar: currentUserData?.avatar || user.photoURL || "",
+        fromUserId: currentUserData?.userId || "",
+        toName: targetUser.name,
+        toAvatar: targetUser.avatar,
+        toUserId: targetUser.userId,
       }
-    } catch (err) {
-      console.error(err);
-      toast.error("Kết nối thất bại");
-    } finally {
-      setActionLoading(false);
+    );
+
+    setHasSentRequest(true);
+    setRequestId(reqId);
+    toast.success(`Đã gửi lời mời tới ${targetUser.name}`);
+    if ("vibrate" in navigator) {
+      navigator.vibrate(8);
     }
-  };
+  } catch (err) {
+    console.error(err);
+    toast.error("Gửi lời mời thất bại");
+  } finally {
+    setActionLoading(false);
+  }
+};
 
   const handleUnfriend = async () => {
     if (!user ||!targetUser || actionLoading) return;
@@ -1092,17 +1109,19 @@ return (
       <MessageCircle className="w-5 h-5 text-blue-600" />
     </button>
     
-    <button
-      onClick={isFriend ? handleUnfriend : handleConnect}
-      disabled={actionLoading}
-      className="w-11 h-11 rounded-full bg-pink-50 flex items-center justify-center active:scale-90 transition-all disabled:opacity-50"
-    >
-      {isFriend ? (
-        <UserMinus className="w-5 h-5 text-pink-600" />
-      ) : (
-        <UserPlus className="w-5 h-5 text-pink-600" />
-      )}
-    </button>
+<button
+  onClick={isFriend ? handleUnfriend : handleConnect}
+  disabled={actionLoading}
+  className="w-11 h-11 rounded-full bg-pink-50 flex items-center justify-center active:scale-90 transition-all disabled:opacity-50"
+>
+  {isFriend ? (
+    <UserMinus className="w-5 h-5 text-pink-600" />
+  ) : hasSentRequest ? (
+    <Clock className="w-5 h-5 text-pink-600" />
+  ) : (
+    <UserPlus className="w-5 h-5 text-pink-600" />
+  )}
+</button>
 
     <button
       onClick={handleShare}
