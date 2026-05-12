@@ -120,7 +120,7 @@ export default function PublicProfile() {
   const [currentUserData, setCurrentUserData] = useState<any>(null);
   const [isFriend, setIsFriend] = useState(false);
   const [hasSentRequest, setHasSentRequest] = useState(false); // ← THÊM
-const [requestId, setRequestId] = useState<string | null>(null); // eslint-disable-line @typescript-eslint/no-unused-vars
+const [requestId, setRequestId] = useState<string | null>(null); 
   const [loading, setLoading] = useState(true);
   const [showLevelInfo, setShowLevelInfo] = useState(false);
 const [friendCount, setFriendCount] = useState(0); // CHUYỂN LÊN ĐÂY
