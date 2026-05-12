@@ -92,7 +92,13 @@ export default function AdminReports() {
   }>({show: false, type: ""});
 
   const isAdmin = user && ADMIN_UIDS.includes(user.uid);
-
+if (authError) {
+  return (
+    <div className="flex items-center justify-center h-screen">
+      {authError.message}
+    </div>
+  );
+}
   useEffect(() => {
     if (!isAdmin) return;
 
@@ -113,13 +119,7 @@ if (createdAt && createdAt >= todayStart) today++;
       });
       setStats(prev => ({...prev, pending: p, resolved: r, rejected: rej, today }));
     });
-if (authError) {
-  return (
-    <div className="flex items-center justify-center h-screen">
-      {authError.message}
-    </div>
-  );
-}
+
     const unsubAppeals = onSnapshot(
       query(collection(db, "appeals"), where("status", "==", "pending")),
       (snap) => {
