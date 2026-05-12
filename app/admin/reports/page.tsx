@@ -360,8 +360,8 @@ export default function AdminReports() {
     }
   }
 
-  const handleAction = async (report: Report, action: "resolved" | "rejected") => {
-  // Reset modal trước
+const handleAction = async (report: Report, action: "resolved" | "rejected") => {
+  // Chỉ reset show + type, không cần set undefined
   setConfirmModal({show: false, type: ""});
   
   if (action === "resolved") {
@@ -371,7 +371,6 @@ export default function AdminReports() {
       show: true,
       type: action,
       report,
-      appeal: undefined, // Clear appeal
       bulk: false,
       violationCount: violationCount + 1
     });
@@ -380,7 +379,6 @@ export default function AdminReports() {
       show: true,
       type: action,
       report,
-      appeal: undefined, // Clear appeal
       bulk: false,
     });
   }
