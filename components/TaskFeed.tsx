@@ -67,9 +67,10 @@ export default function TaskFeed({ tasks, mode, activeTab, onShare, onDelete, on
             whileHover={{y:-1}}
             transition={{type:"spring",stiffness:500,damping:30}}
           >
-            <TaskCard
-              task={task}
-              mode={mode}
+<TaskCard
+  task={task}
+  mode={mode}
+  theme={mode}
               onDelete={onDelete}
               {...(onShare && { 
                 onShare: () => onShare(task) 
