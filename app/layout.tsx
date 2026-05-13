@@ -1,6 +1,3 @@
-"use client";
-export const dynamic = "force-dynamic";
-
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -74,10 +71,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="vi" className={cn(inter.variable)} suppressHydrationWarning>
       <head>
-        {/* Preconnect */}
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://airanh.vercel.app" />
-        {/* Preload 6 lottie core HUHA */}
         <link rel="preload" href="/lotties/huha-loading-pull-full.lottie" as="fetch" crossOrigin="anonymous" />
         <link rel="preload" href="/lotties/huha-idle-full.lottie" as="fetch" crossOrigin="anonymous" />
         <link rel="preload" href="/lotties/huha-empty-full.lottie" as="fetch" crossOrigin="anonymous" />
@@ -105,7 +100,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </AuthProvider>
         </LazyMotion>
 
-        {/* JSON-LD */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
