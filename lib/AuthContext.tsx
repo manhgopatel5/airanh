@@ -473,27 +473,34 @@ export const AuthProvider = ({
 
               // REDIRECT BANNED
               if (stillBanned) {
-                setUserData(data);
+  setUserData(data);
 
-                setLoading(false);
+  setLoading(false);
 
-                if (!data.bannedUntil) {
-                  if (pathname !== "/banned") {
-                    router.replace("/banned");
-                  }
-                } else {
-                  const banEndDate =
-                    data.bannedUntil.toDate();
+  // Ban vĩnh viễn
+  if (!data.bannedUntil) {
+    router.replace("/banned");
+  }
 
-                  if (pathname !== "/banned") {
-                    router.replace(
-                      `/banned?until=${banEndDate.getTime()}`
-                    );
-                  }
-                }
+  // Ban có thời hạn
+  else {
+    const banEndDate =
+      data.bannedUntil.toDate();
 
-                return;
-              }
+    router.replace(
+      `/banned?until=${banEndDate.getTime()}`
+    );
+  }
+
+  // Logout luôn
+  setTimeout(async () => {
+    try {
+      await auth.signOut();
+    } catch {}
+  }, 300);
+
+  return;
+}
 
               // EXIT BANNED PAGE
               if (pathname === "/banned") {
