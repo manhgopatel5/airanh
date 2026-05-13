@@ -273,7 +273,13 @@ const q = query(collection(db, "reports"), ...constraints);
         return;
       }
 
-      const userDoc = userSnap.docs[0];
+    const userDoc = userSnap.docs[0];
+
+if (!userDoc ||!userDoc.exists()) {
+  toast.error("Không tìm thấy user");
+  setActionLoading(null);
+  return;
+
       const userRef = userDoc.ref;
       const userData = userDoc.data();
       const currentViolationCount = userData?.violationCount || 0;
