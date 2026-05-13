@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { FiShare, FiPlusSquare, FiX, FiDownload } from "react-icons/fi";
 import { HiDevicePhoneMobile } from "react-icons/hi2";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const DISMISS_KEY = "installPromptDismissed";
 const DISMISS_DAYS = 7;
@@ -13,8 +15,10 @@ export default function InstallPrompt() {
   const [isIOS, setIsIOS] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // ✅ LOTTIE
+  const phoneLottie = "/lotties/huha-celebrate-full.lottie";
+
   useEffect(() => {
-    // Check standalone mỗi lần mount
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       (window.navigator as any).standalone === true;
@@ -24,7 +28,6 @@ export default function InstallPrompt() {
       return;
     }
 
-    // Check dismiss có hết hạn chưa
     const dismissed = localStorage.getItem(DISMISS_KEY);
     if (dismissed) {
       const dismissedTime = parseInt(dismissed);
@@ -35,22 +38,18 @@ export default function InstallPrompt() {
     const ua = window.navigator.userAgent.toLowerCase();
     const isIosDevice = /iphone|ipad|ipod/.test(ua);
 
-    // iOS: Hiện hướng dẫn thủ công
     if (isIosDevice) {
       setIsIOS(true);
-      // Delay 3s cho UX, không hiện ngay khi vào app
       timeoutRef.current = setTimeout(() => setShow(true), 3000);
       return;
     }
 
-    // Android: Dùng beforeinstallprompt
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
       setShow(true);
     };
 
-    // Ẩn khi đã cài xong
     const handleAppInstalled = () => {
       setShow(false);
       setDeferredPrompt(null);
@@ -70,7 +69,6 @@ export default function InstallPrompt() {
   const handleInstall = useCallback(async () => {
     if (!deferredPrompt) return;
 
-    // Analytics
     if (typeof window!== "undefined" && (window as any).gtag) {
       (window as any).gtag("event", "pwa_install_prompt_shown");
     }
@@ -78,9 +76,9 @@ export default function InstallPrompt() {
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
 
-    // Dismiss nếu user bấm Hủy
     if (outcome === "accepted") {
       setShow(false);
+      navigator.vibrate?.([10,20,10]);
       if ((window as any).gtag) (window as any).gtag("event", "pwa_installed");
     } else {
       handleDismiss();
@@ -93,60 +91,62 @@ export default function InstallPrompt() {
     localStorage.setItem(DISMISS_KEY, Date.now().toString());
   }, []);
 
-  if (!show) return null;
-
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 animate-in slide-in-from-bottom duration-300">
-      <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-gray-200 dark:border-zinc-700 rounded-3xl shadow-2xl shadow-gray-900/10 dark:shadow-black/40 p-4">
-        <button
-          onClick={handleDismiss}
-          className="absolute top-2 right-2 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-400 dark:text-zinc-500 transition-colors"
-        >
-          <FiX size={18} />
-        </button>
+    <AnimatePresence>
+      {show && (
+        <motion.div initial={{y:100,opacity:0}} animate={{y:0,opacity:1}} exit={{y:100,opacity:0}} transition={{type:"spring",damping:25,stiffness:300}} className="fixed bottom-4 left-4 right-4 z-50">
+          <div className="bg-white/95 dark:bg-zinc-950/95 backdrop-blur-2xl border border-zinc-200/50 dark:border-zinc-800 rounded-3xl shadow-2xl p-4">
+            <button
+              onClick={handleDismiss}
+              className="absolute top-2.5 right-2.5 p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 transition-colors"
+            >
+              <FiX size={18} />
+            </button>
 
-        <div className="flex items-start gap-3 pr-6">
-          <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/30">
-            <HiDevicePhoneMobile size={24} className="text-white" />
-          </div>
-
-          <div className="flex-1 space-y-2">
-            <h3 className="font-bold text-base text-gray-900 dark:text-gray-100">
-              Cài đặt ứng dụng
-            </h3>
-
-            {isIOS? (
-              <div className="text-sm text-gray-600 dark:text-zinc-400 space-y-2">
-                <p>Thêm vào màn hình chính để dùng như app:</p>
-                <div className="flex items-center gap-2 text-xs bg-gray-100 dark:bg-zinc-800 rounded-xl px-3 py-2">
-                  <FiShare size={14} className="text-blue-500" />
-                  <span>Nhấn</span>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">Chia sẻ</span>
-                  <span>→</span>
-                  <FiPlusSquare size={14} className="text-blue-500" />
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">Thêm vào MH chính</span>
+            <div className="flex items-start gap-3 pr-6">
+              <div className="relative w-12 h-12 shrink-0">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] rounded-2xl blur-xl opacity-30" />
+                <div className="relative w-12 h-12 bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] rounded-2xl flex items-center justify-center shadow-lg">
+                  <DotLottieReact src={phoneLottie} autoplay loop style={{width:28,height:28}} />
                 </div>
-                <p className="text-xs text-gray-500 dark:text-zinc-500">
-                  Nút Chia sẻ nằm ở dưới cùng Safari
-                </p>
               </div>
-            ) : (
-              <>
-                <p className="text-sm text-gray-600 dark:text-zinc-400">
-                  Cài đặt để truy cập nhanh, dùng offline và nhận thông báo
-                </p>
-                <button
-                  onClick={handleInstall}
-                  className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-2.5 rounded-2xl font-semibold text-sm shadow-lg shadow-blue-500/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                >
-                  <FiDownload size={18} />
-                  Cài đặt ngay
-                </button>
-              </>
-            )}
+
+              <div className="flex-1 space-y-2.5">
+                <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">
+                  Cài đặt ứng dụng
+                </h3>
+
+                {isIOS? (
+                  <div className="text-sm text-zinc-600 dark:text-zinc-400 space-y-2.5">
+                    <p>Thêm vào màn hình chính:</p>
+                    <div className="flex items-center gap-2 text-xs bg-zinc-100 dark:bg-zinc-900 rounded-2xl px-3 py-2.5 border border-zinc-200 dark:border-zinc-800">
+                      <FiShare size={14} className="text-[#0042B2]" />
+                      <span>Chia sẻ</span>
+                      <span>→</span>
+                      <FiPlusSquare size={14} className="text-[#0042B2]" />
+                      <span className="font-semibold">Thêm vào MH chính</span>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                      Truy cập nhanh, offline, nhận thông báo
+                    </p>
+                    <button
+                      onClick={handleInstall}
+                      className="w-full h-11 text-white font-bold text-sm rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg"
+                      style={{background:'linear-gradient(135deg,#0042B2,#0066FF)',boxShadow:'0 8px 20px -6px rgba(0,66,178,0.5)'}}
+                    >
+                      <FiDownload size={18} />
+                      Cài đặt ngay
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
