@@ -121,17 +121,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <EmailGuard>
             <ClientLayout>{children}</ClientLayout>
           </EmailGuard>
-          <Toaster 
-            position="top-center" 
-            richColors 
-            toastOptions={{
-              classNames: {
-                toast: "rounded-2xl border-[#E5E5E7] dark:border-zinc-800 font-sans",
-                title: "font-semibold",
-                description: "text-sm",
-              }
-            }}
-          />
+       <Toaster 
+  position="top-center" 
+  richColors 
+  style={{ zIndex: 999999 }} // THÊM DÒNG NÀY
+  toastOptions={{
+    classNames: {
+      toast: "rounded-2xl border-[#E5E5E7] dark:border-zinc-800 font-sans",
+      title: "font-semibold",
+      description: "text-sm",
+    }
+  }}
+/>
         </AuthProvider>
       </body>
     </html>
