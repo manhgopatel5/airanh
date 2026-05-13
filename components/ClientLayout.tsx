@@ -143,13 +143,11 @@ export default function ClientLayout({ children }: Props) {
 
 if (user && banData.banned) {
 
-  const bannedUntil =
-    banData.bannedUntil &&
-    typeof (banData.bannedUntil as any)?.toDate === "function"
-      ? (banData.bannedUntil as any).toDate()
-      : banData.bannedUntil
-      ? new Date(banData.bannedUntil)
-      : null;
+const bannedUntil =
+  banData.bannedUntil &&
+  typeof (banData.bannedUntil as any)?.toDate === "function"
+    ? (banData.bannedUntil as any).toDate()
+    : null;
 
   const isPermanent = !bannedUntil;
 
