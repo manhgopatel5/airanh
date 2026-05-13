@@ -1,3 +1,6 @@
+"use client";
+export const dynamic = "force-dynamic";
+
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -15,14 +18,14 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://huha.vn"),
+  metadataBase: new URL("https://airanh.vercel.app"),
   title: {
     default: "HUHA - Việc vặt gần bạn",
     template: "%s | HUHA",
   },
   description: "Kết nối việc vặt 800K, gần bạn, xong ngay. Thuê người hoặc nhận việc trong 5 phút.",
   keywords: ["huha", "việc vặt", "freelance", "giúp việc", "ship", "task", "vietnam"],
-  authors: [{ name: "HUHA Team", url: "https://huha.vn" }],
+  authors: [{ name: "HUHA Team", url: "https://airanh.vercel.app" }],
   creator: "HUHA",
   publisher: "HUHA",
   applicationName: "HUHA",
@@ -40,7 +43,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "vi_VN",
-    url: "https://huha.vn",
+    url: "https://airanh.vercel.app",
     siteName: "HUHA",
     title: "HUHA - Việc vặt gần bạn",
     description: "Thuê người hoặc nhận việc 800K, gần bạn, xong ngay.",
@@ -71,9 +74,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="vi" className={cn(inter.variable)} suppressHydrationWarning>
       <head>
-        {/* Preconnect - Zomato pattern */}
+        {/* Preconnect */}
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://huha.vn" />
+        <link rel="dns-prefetch" href="https://airanh.vercel.app" />
         {/* Preload 6 lottie core HUHA */}
         <link rel="preload" href="/lotties/huha-loading-pull-full.lottie" as="fetch" crossOrigin="anonymous" />
         <link rel="preload" href="/lotties/huha-idle-full.lottie" as="fetch" crossOrigin="anonymous" />
@@ -110,7 +113,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               "@context": "https://schema.org",
               "@type": "WebApplication",
               name: "HUHA",
-              url: "https://huha.vn",
+              url: "https://airanh.vercel.app",
               applicationCategory: "BusinessApplication",
               operatingSystem: "Web, iOS, Android",
             }),
