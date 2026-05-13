@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import FCMProvider from "@/components/FCMProvider";
 import { useEffect, useMemo } from "react";
 import BottomNav from "@/components/BottomNav";
-import { Toaster } from "react-hot-toast";
+
 import { useAuth } from "@/lib/AuthContext";
 
 type Props = {
@@ -48,13 +48,7 @@ export default function ClientLayout({ children }: Props) {
 
       {!isPublic && user &&!isChatDetail &&!isCreate && <BottomNav />}
 
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          className: "text-sm font-sans",
-          duration: 3000,
-        }}
-      />
+  
     </div>
   );
 }
