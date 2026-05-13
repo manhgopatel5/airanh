@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FiChevronLeft, FiX, FiZoomIn, FiZoomOut } from "react-icons/fi";
 import { motion, AnimatePresence, useMotionValue } from "framer-motion";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -19,6 +20,7 @@ export function ImageGallery({ open, images, initialIndex, onClose }: Props) {
   const [isZoomed, setIsZoomed] = useState(false);
   const [showUI, setShowUI] = useState(true);
   const [scale, setScale] = useState(1);
+  const [loading, setLoading] = useState(true);
 
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -26,44 +28,40 @@ export function ImageGallery({ open, images, initialIndex, onClose }: Props) {
   const lastTapRef = useRef(0);
   const hideUITimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Reset khi đổi ảnh hoặc đóng
+  const loadingLottie = "/lotties/huha-loading-pull-full.lottie";
+
   useEffect(() => {
     setCurrentIndex(initialIndex);
     setIsZoomed(false);
     setScale(1);
     x.set(0);
     y.set(0);
+    setLoading(true);
   }, [initialIndex, open, x, y]);
 
-  // Preload ảnh trước/sau
   useEffect(() => {
     if (!open) return;
-const preload = (idx: number) => {
-  if (idx >= 0 && idx < images.length) {
-    const src = images[idx];
-    if (src) {
-      const img = new Image();
-      img.src = src;
-    }
-  }
-};
+    const preload = (idx: number) => {
+      if (idx >= 0 && idx < images.length) {
+        const src = images[idx];
+        if (src) { const img = new Image(); img.src = src; }
+      }
+    };
     preload(currentIndex + 1);
     preload(currentIndex - 1);
   }, [currentIndex, images, open]);
 
-  // Auto hide UI
   useEffect(() => {
     if (!showUI) return;
     if (hideUITimeoutRef.current) clearTimeout(hideUITimeoutRef.current);
     hideUITimeoutRef.current = setTimeout(() => setShowUI(false), 3000);
-    return () => {
-      if (hideUITimeoutRef.current) clearTimeout(hideUITimeoutRef.current);
-    };
+    return () => { if (hideUITimeoutRef.current) clearTimeout(hideUITimeoutRef.current); };
   }, [showUI, currentIndex]);
 
   const paginate = (newDirection: number) => {
     if (isZoomed) return;
     setDirection(newDirection);
+    setLoading(true);
     setCurrentIndex((prev) => {
       const next = prev + newDirection;
       if (next < 0) return images.length - 1;
@@ -75,40 +73,24 @@ const preload = (idx: number) => {
 
   const handleDoubleTap = () => {
     const now = Date.now();
-    if (now - lastTapRef.current < 300) {
-      toggleZoom();
-    }
+    if (now - lastTapRef.current < 300) toggleZoom();
     lastTapRef.current = now;
   };
 
   const toggleZoom = () => {
     if (isZoomed) {
-      setScale(1);
-      x.set(0);
-      y.set(0);
-      setIsZoomed(false);
+      setScale(1); x.set(0); y.set(0); setIsZoomed(false);
     } else {
-      setScale(2.5);
-      setIsZoomed(true);
+      setScale(2.5); setIsZoomed(true);
     }
     setShowUI(true);
+    navigator.vibrate?.(5);
   };
 
   const variants = {
-    enter: (direction: number) => ({
-      x: direction > 0? 1000 : -1000,
-      opacity: 0,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
-      zIndex: 1,
-    },
-    exit: (direction: number) => ({
-      x: direction < 0? 1000 : -1000,
-      opacity: 0,
-      zIndex: 0,
-    }),
+    enter: (direction: number) => ({ x: direction > 0? 1000 : -1000, opacity: 0 }),
+    center: { x: 0, opacity: 1, zIndex: 1 },
+    exit: (direction: number) => ({ x: direction < 0? 1000 : -1000, opacity: 0, zIndex: 0 }),
   };
 
   useEffect(() => {
@@ -128,81 +110,43 @@ const preload = (idx: number) => {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-full max-h-full w-screen h-screen bg-black border-0 p-0 overflow-hidden">
-        {/* UI Overlay */}
+      <DialogContent className="max-w-full max-h-full w-screen h-screen bg-black/95 border-0 p-0 overflow-hidden">
         <AnimatePresence>
           {showUI && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 z-50 pointer-events-none"
-            >
-              {/* Top bar */}
-              <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/60 to-transparent pointer-events-auto">
+            <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="absolute inset-0 z-50 pointer-events-none">
+              <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/80 to-transparent pointer-events-auto">
                 <div className="flex items-center justify-between max-w-7xl mx-auto">
-                  <div className="px-3 py-1.5 bg-black/50 backdrop-blur-xl text-white text- rounded-full tabular-nums">
+                  <div className="px-3 py-1.5 bg-black/60 backdrop-blur-2xl text-white text-sm rounded-full font-medium" style={{border:'1px solid rgba(0,66,178,0.3)'}}>
                     {currentIndex + 1} / {images.length}
                   </div>
                   <div className="flex gap-2">
-                    <button
-                      onClick={toggleZoom}
-                      className="p-2.5 bg-black/50 backdrop-blur-xl hover:bg-black/70 text-white rounded-full active:scale-90 transition-all"
-                    >
+                    <button onClick={toggleZoom} className="p-2.5 bg-black/60 backdrop-blur-2xl hover:bg-[#0042B2]/80 text-white rounded-2xl active:scale-90 transition-all">
                       {isZoomed? <FiZoomOut size={20} /> : <FiZoomIn size={20} />}
                     </button>
-                    <button
-                      onClick={onClose}
-                      className="p-2.5 bg-black/50 backdrop-blur-xl hover:bg-black/70 text-white rounded-full active:scale-90 transition-all"
-                    >
+                    <button onClick={onClose} className="p-2.5 bg-black/60 backdrop-blur-2xl hover:bg-red-500/80 text-white rounded-2xl active:scale-90 transition-all">
                       <FiX size={20} />
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* Nav buttons */}
               {images.length > 1 &&!isZoomed && (
                 <>
-                  <button
-                    onClick={() => paginate(-1)}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-black/50 backdrop-blur-xl hover:bg-black/70 text-white rounded-full active:scale-90 transition-all pointer-events-auto"
-                  >
+                  <button onClick={() => paginate(-1)} className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-black/60 backdrop-blur-2xl hover:bg-[#0042B2]/80 text-white rounded-2xl active:scale-90 transition-all pointer-events-auto">
                     <FiChevronLeft size={24} />
                   </button>
-                  <button
-                    onClick={() => paginate(1)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-black/50 backdrop-blur-xl hover:bg-black/70 text-white rounded-full active:scale-90 transition-all pointer-events-auto"
-                  >
+                  <button onClick={() => paginate(1)} className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-black/60 backdrop-blur-2xl hover:bg-[#0042B2]/80 text-white rounded-2xl active:scale-90 transition-all pointer-events-auto">
                     <FiChevronLeft size={24} className="rotate-180" />
                   </button>
                 </>
               )}
 
-              {/* Thumbnail bar */}
               {images.length > 1 && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 max-w-full px-4 pointer-events-auto">
-                  <div className="flex gap-2 p-2 bg-black/50 backdrop-blur-xl rounded-2xl overflow-x-auto scrollbar-hide">
+                  <div className="flex gap-2 p-2 bg-black/60 backdrop-blur-2xl rounded-2xl overflow-x-auto scrollbar-hide" style={{border:'1px solid rgba(255,255,255,0.1)'}}>
                     {images.map((img, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => {
-                          setDirection(idx > currentIndex? 1 : -1);
-                          setCurrentIndex(idx);
-                          setShowUI(true);
-                        }}
-                        className={cn(
-                          "relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden transition-all",
-                          idx === currentIndex
-                           ? "ring-2 ring-white scale-110"
-                            : "opacity-50 hover:opacity-100"
-                        )}
-                      >
-                        <img
-                          src={img}
-                          alt=""
-                          className="w-full h-full object-cover"
-                        />
+                      <button key={idx} onClick={() => { setDirection(idx > currentIndex? 1 : -1); setCurrentIndex(idx); setShowUI(true); setLoading(true); }} className={cn("relative flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden transition-all", idx === currentIndex? "ring-2 scale-110" : "opacity-60 hover:opacity-100")} style={{ringColor:idx===currentIndex?'#0042B2':undefined}}>
+                        <img src={img} alt="" className="w-full h-full object-cover" />
                       </button>
                     ))}
                   </div>
@@ -212,29 +156,19 @@ const preload = (idx: number) => {
           )}
         </AnimatePresence>
 
-        {/* Image container */}
-        <div
-          className="relative w-full h-full flex items-center justify-center"
-          onClick={() => setShowUI(!showUI)}
-        >
+        <div className="relative w-full h-full flex items-center justify-center" onClick={() => setShowUI(!showUI)}>
+          {loading && (
+            <div className="absolute inset-0 flex items-center justify-center z-40">
+              <div className="w-20 h-20"><DotLottieReact src={loadingLottie} autoplay loop /></div>
+            </div>
+          )}
           <AnimatePresence initial={false} custom={direction} mode="popLayout">
-            <motion.div
-              key={currentIndex}
-              custom={direction}
-              variants={variants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{
-                x: { type: "spring", stiffness: 300, damping: 30 },
-                opacity: { duration: 0.2 },
-              }}
-              className="absolute inset-0 flex items-center justify-center"
-            >
+            <motion.div key={currentIndex} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" transition={{ x: { type: "spring", stiffness: 300, damping: 30 }, opacity: { duration: 0.2 } }} className="absolute inset-0 flex items-center justify-center">
               <motion.img
                 ref={imgRef}
                 src={images[currentIndex]}
                 alt=""
+                onLoad={() => setLoading(false)}
                 drag={isZoomed? true : "x"}
                 dragConstraints={isZoomed? { left: -200, right: 200, top: -200, bottom: 200 } : { left: 0, right: 0 }}
                 dragElastic={isZoomed? 0.2 : 1}
