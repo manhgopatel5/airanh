@@ -589,32 +589,45 @@ export const AuthProvider = ({
     };
   }, [auth, db, rtdb, pathname, router]);
 
-  // REALTIME WARNING TOAST - ĐẶT NGOÀI onSnapshot
-  useEffect(() => {
-    if (!userData || loading || !db) return;
+  // REALTIME WARNING TOAST
+useEffect(() => {
+  if (!userData || loading || !db) return;
+  if (userData.banned || userData.status === "banned") return;
 
-    const isBanned = userData.banned || userData.status === "banned";
-    const warningKey = `${userData.uid}_${userData.warningAt?.seconds || 0}`;
+  // Dùng toMillis() để key unique tuyệt đối
+  const warningTime = userData.warningAt?.toMillis() || 0;
+  const warningKey = `${userData.uid}_${warningTime}`;
 
-    if (
-      userData.warning &&
-      !userData.warningSeen &&
-      !isBanned &&
-      warningToastShown.current !== warningKey
-    ) {
-      warningToastShown.current = warningKey;
+  // Reset ref khi đổi user
+  if (warningToastShown.current && !warningToastShown.current.startsWith(userData.uid)) {
+    warningToastShown.current = null;
+  }
 
+  if (
+    userData.warning === true &&
+    userData.warningSeen === false &&
+    warningToastShown.current !== warningKey
+  ) {
+    warningToastShown.current = warningKey;
+    
+    // Delay 300ms cho chắc chắn Toaster đã render xong
+    const timer = setTimeout(() => {
       import("sonner").then(({ toast }) => {
-        toast.warning("⚠️ CẢNH CÁO VI PHẠM", {
-          description: `Lý do: ${userData.warningReason || "Vi phạm cộng đồng"}. Nếu tiếp tục vi phạm tài khoản sẽ bị khóa.`,
+        console.log("FIRING TOAST FOR:", userData.username);
+        toast.warning(userData.warningTitle || "⚠️ CẢNH CÁO VI PHẠM", {
+          description: userData.warningMessage || `Lý do: ${userData.warningReason}. Nếu tiếp tục vi phạm tài khoản sẽ bị khóa.`,
           duration: 10000,
           id: "warning-toast",
           action: {
             label: "Đã hiểu",
-            onClick: () => {
-              updateDoc(doc(db, "users", userData.uid), {
-                warningSeen: true
-              }).catch(() => {});
+            onClick: async () => {
+              try {
+                await updateDoc(doc(db, "users", userData.uid), {
+                  warningSeen: true
+                });
+              } catch (e) {
+                console.error("Set warningSeen failed:", e);
+              }
             }
           },
           classNames: {
@@ -624,8 +637,11 @@ export const AuthProvider = ({
           }
         });
       });
-    }
-  }, [userData, loading, db]);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }
+}, [userData?.warning, userData?.warningSeen, userData?.warningAt, userData?.banned, userData?.status, userData?.uid, loading, db]);
 
   const value = useMemo(
     () => ({
