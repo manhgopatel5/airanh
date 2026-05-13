@@ -23,8 +23,6 @@ import {
   runTransaction,
 } from "firebase/firestore";
 
-
-
 import { nanoid } from "nanoid";
 import { useRouter, usePathname } from "next/navigation";
 
@@ -140,6 +138,7 @@ export const AuthProvider = ({
 
   const visibilityHandlerRef = useRef<any>(null);
   const beforeUnloadHandlerRef = useRef<any>(null);
+  const warningToastShown = useRef<string | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -410,161 +409,130 @@ export const AuthProvider = ({
           beforeUnloadHandlerRef.current = handleBeforeUnload;
 
           // USER SNAPSHOT
-userDataUnsub.current = onSnapshot(
-  userRef,
+          userDataUnsub.current = onSnapshot(
+            userRef,
 
-  async (docSnap) => {
-    if (!docSnap.exists()) {
-      setUserData(null);
-      setLoading(false);
-      return;
-    }
+            async (docSnap) => {
+              if (!docSnap.exists()) {
+                setUserData(null);
+                setLoading(false);
+                return;
+              }
 
-    const data = docSnap.data() as AppUser;
+              const data = docSnap.data() as AppUser;
 
-    const isBanned =
-      data.banned ||
-      data.status === "banned";
+              const isBanned =
+                data.banned ||
+                data.status === "banned";
 
-    // AUTO UNBAN
-    if (
-      isBanned &&
-      data.bannedUntil &&
-      typeof data.bannedUntil.toDate === "function"
-    ) {
-      const banEndDate = data.bannedUntil.toDate();
+              // AUTO UNBAN
+              if (
+                isBanned &&
+                data.bannedUntil &&
+                typeof data.bannedUntil.toDate === "function"
+              ) {
+                const banEndDate = data.bannedUntil.toDate();
 
-      if (banEndDate < new Date()) {
-        try {
-          await updateDoc(userRef, {
-            banned: false,
-            bannedUntil: null,
-            status: "active",
-            unbannedAt: serverTimestamp(),
-            warning: false,
-            warningReason: null,
-            warningSeen: false,
-          });
+                if (banEndDate < new Date()) {
+                  try {
+                    await updateDoc(userRef, {
+                      banned: false,
+                      bannedUntil: null,
+                      status: "active",
+                      unbannedAt: serverTimestamp(),
+                      warning: false,
+                      warningReason: null,
+                      warningSeen: false,
+                    });
 
-          data.banned = false;
-          data.status = "active";
+                    data.banned = false;
+                    data.status = "active";
 
-          console.log(
-            "Auto unbanned:",
-            firebaseUser.uid
-          );
-        } catch (e) {
-          console.error("Auto unban failed:", e);
-        }
-      }
-    }
+                    console.log(
+                      "Auto unbanned:",
+                      firebaseUser.uid
+                    );
+                  } catch (e) {
+                    console.error("Auto unban failed:", e);
+                  }
+                }
+              }
 
-    const stillBanned =
-      data.banned ||
-      data.status === "banned";
+              const stillBanned =
+                data.banned ||
+                data.status === "banned";
 
-    // WARNING REALTIME
-    if (
-      data.warning &&
-      !data.warningSeen &&
-      !stillBanned
-    ) {
-      setTimeout(async () => {
-        const { toast } = await import("sonner");
-        
-        toast.warning("⚠️ CẢNH CÁO VI PHẠM", {
-          description: `Lý do: ${data.warningReason || "Vi phạm cộng đồng"}. Nếu tiếp tục vi phạm tài khoản sẽ bị khóa.`,
-          duration: 10000,
-          action: {
-            label: "Đã hiểu",
-            onClick: () => {
-              updateDoc(doc(db, "users", data.uid), {
-                warningSeen: true
-              }).catch(() => {});
+              // REDIRECT BANNED
+              if (stillBanned) {
+                setUserData(data);
+                setLoading(false);
+
+                const bannedKey = `banned_${data.uid}_${data.bannedAt?.seconds || 0}`;
+
+                if (sessionStorage.getItem(bannedKey) !== "shown") {
+                  sessionStorage.setItem(bannedKey, "shown");
+
+                  setTimeout(async () => {
+                    const { toast } = await import("sonner");
+
+                    if (!data.bannedUntil) {
+                      toast.error("⛔ TÀI KHOẢN ĐÃ BỊ KHÓA VĨNH VIỄN", {
+                        description: `Lý do: ${data.bannedReason || "Vi phạm cộng đồng"}`,
+                        duration: 10000,
+                        classNames: {
+                          toast: "bg-[#FFE5E5] border-2 border-[#FF3B30] dark:bg-[#FF3B30]/20 rounded-2xl",
+                          title: "text-[#FF3B30] font-bold text-base",
+                          description: "text-[#1C1C1E] dark:text-zinc-300",
+                        }
+                      });
+                    } else {
+                      const until = data.bannedUntil.toDate();
+                      toast.error("⛔ TÀI KHOẢN ĐÃ BỊ KHÓA", {
+                        description: `Lý do: ${data.bannedReason || "Vi phạm cộng đồng"}\nMở khóa lúc: ${until.toLocaleString("vi-VN")}`,
+                        duration: 10000,
+                        classNames: {
+                          toast: "bg-[#FFE5E5] border-2 border-[#FF3B30] dark:bg-[#FF3B30]/20 rounded-2xl",
+                          title: "text-[#FF3B30] font-bold text-base",
+                          description: "text-[#1C1C1E] dark:text-zinc-300 whitespace-pre-line",
+                        }
+                      });
+                    }
+                  }, 300);
+                }
+
+                if (!data.bannedUntil) {
+                  router.replace("/banned");
+                } else {
+                  const banEndDate = data.bannedUntil.toDate();
+                  router.replace(`/banned?until=${banEndDate.getTime()}`);
+                }
+
+                setTimeout(async () => {
+                  try {
+                    await auth.signOut();
+                  } catch {}
+                }, 1500);
+
+                return;
+              }
+
+              // EXIT BANNED PAGE
+              if (pathname === "/banned") {
+                router.replace("/");
+              }
+
+              setUserData(data);
+              setLoading(false);
+
+              console.log("userData loaded:", data.userId);
+            },
+
+            (err) => {
+              console.error("Snapshot error:", err);
+              setError(err.message);
+              setLoading(false);
             }
-          },
-          classNames: {
-            toast: "bg-[#FFF3E0] border-2 border-[#FF9500] dark:bg-[#FF9500]/20 rounded-2xl",
-            title: "text-[#FF9500] font-bold text-base",
-            description: "text-[#1C1C1E] dark:text-zinc-300",
-          }
-        });
-      }, 300);
-    }
-
-    // REDIRECT BANNED
-    if (stillBanned) {
-      setUserData(data);
-      setLoading(false);
-
-      const bannedKey = `banned_${data.uid}_${data.bannedAt?.seconds || 0}`;
-
-      if (sessionStorage.getItem(bannedKey) !== "shown") {
-        sessionStorage.setItem(bannedKey, "shown");
-
-        setTimeout(async () => {
-          const { toast } = await import("sonner");
-
-          if (!data.bannedUntil) {
-            toast.error("⛔ TÀI KHOẢN ĐÃ BỊ KHÓA VĨNH VIỄN", {
-              description: `Lý do: ${data.bannedReason || "Vi phạm cộng đồng"}`,
-              duration: 10000,
-              classNames: {
-                toast: "bg-[#FFE5E5] border-2 border-[#FF3B30] dark:bg-[#FF3B30]/20 rounded-2xl",
-                title: "text-[#FF3B30] font-bold text-base",
-                description: "text-[#1C1C1E] dark:text-zinc-300",
-              }
-            });
-          } else {
-            const until = data.bannedUntil.toDate();
-            toast.error("⛔ TÀI KHOẢN ĐÃ BỊ KHÓA", {
-              description: `Lý do: ${data.bannedReason || "Vi phạm cộng đồng"}\nMở khóa lúc: ${until.toLocaleString("vi-VN")}`,
-              duration: 10000,
-              classNames: {
-                toast: "bg-[#FFE5E5] border-2 border-[#FF3B30] dark:bg-[#FF3B30]/20 rounded-2xl",
-                title: "text-[#FF3B30] font-bold text-base",
-                description: "text-[#1C1C1E] dark:text-zinc-300 whitespace-pre-line",
-              }
-            });
-          }
-        }, 300);
-      }
-
-      // Redirect sau toast
-      if (!data.bannedUntil) {
-        router.replace("/banned");
-      } else {
-        const banEndDate = data.bannedUntil.toDate();
-        router.replace(`/banned?until=${banEndDate.getTime()}`);
-      }
-
-      // logout chậm hơn để redirect ổn định
-      setTimeout(async () => {
-        try {
-          await auth.signOut();
-        } catch {}
-      }, 1500);
-
-      return;
-    }
-
-    // EXIT BANNED PAGE
-    if (pathname === "/banned") {
-      router.replace("/");
-    }
-
-    setUserData(data);
-    setLoading(false);
-
-    console.log("userData loaded:", data.userId);
-  },
-
-  (err) => {
-    console.error("Snapshot error:", err);
-    setError(err.message);
-    setLoading(false);
-  }
-);
+          );
         } catch (e: any) {
           console.error("Auth error:", e);
 
@@ -582,8 +550,6 @@ userDataUnsub.current = onSnapshot(
         setLoading(false);
       }
     );
-
- 
 
     return () => {
       unsubAuth();
@@ -622,6 +588,44 @@ userDataUnsub.current = onSnapshot(
       }
     };
   }, [auth, db, rtdb, pathname, router]);
+
+  // REALTIME WARNING TOAST - ĐẶT NGOÀI onSnapshot
+  useEffect(() => {
+    if (!userData || loading || !db) return;
+
+    const isBanned = userData.banned || userData.status === "banned";
+    const warningKey = `${userData.uid}_${userData.warningAt?.seconds || 0}`;
+
+    if (
+      userData.warning &&
+      !userData.warningSeen &&
+      !isBanned &&
+      warningToastShown.current !== warningKey
+    ) {
+      warningToastShown.current = warningKey;
+
+      import("sonner").then(({ toast }) => {
+        toast.warning("⚠️ CẢNH CÁO VI PHẠM", {
+          description: `Lý do: ${userData.warningReason || "Vi phạm cộng đồng"}. Nếu tiếp tục vi phạm tài khoản sẽ bị khóa.`,
+          duration: 10000,
+          id: "warning-toast",
+          action: {
+            label: "Đã hiểu",
+            onClick: () => {
+              updateDoc(doc(db, "users", userData.uid), {
+                warningSeen: true
+              }).catch(() => {});
+            }
+          },
+          classNames: {
+            toast: "bg-[#FFF3E0] border-2 border-[#FF9500] dark:bg-[#FF9500]/20 rounded-2xl",
+            title: "text-[#FF9500] font-bold text-base",
+            description: "text-[#1C1C1E] dark:text-zinc-300",
+          }
+        });
+      });
+    }
+  }, [userData, loading, db]);
 
   const value = useMemo(
     () => ({
