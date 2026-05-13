@@ -114,7 +114,41 @@ export default function ForgotPasswordPage() {
               {cooldown > 0 && <div className="w-full bg-zinc-200 rounded-full h-1.5 overflow-hidden"><motion.div initial={{width:"100%"}} animate={{width:"0%"}} transition={{duration:cooldown,ease:"linear"}} className="h-full" style={{background:'#0042B2'}} /></div>}
 
               <motion.button type="submit" whileTap={{scale:0.98}} disabled={loading || checking || (sent && cooldown > 0)} className="w-full h-12 rounded-xl text-white font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg" style={{background:'linear-gradient(135deg,#0042B2,#1A5FFF)',boxShadow:'0 8px 20px rgba(0,66,178,0.3)'}}>
-                {checking? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Đang kiểm tra...</> : loading? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Đang gửi...</> : cooldown > 0? <><FiSend size={18} />Gửi lại sau {cooldown}s</> : <><FiSend size={18} />Gửi link đặt lại</>}
+                {checking ? (
+  <>
+    <div className="w-5 h-5">
+      <DotLottieReact
+        src={loadingLottie}
+        autoplay
+        loop
+        style={{ width: 20, height: 20 }}
+      />
+    </div>
+    Đang kiểm tra...
+  </>
+) : loading ? (
+  <>
+    <div className="w-5 h-5">
+      <DotLottieReact
+        src={loadingLottie}
+        autoplay
+        loop
+        style={{ width: 20, height: 20 }}
+      />
+    </div>
+    Đang gửi...
+  </>
+) : cooldown > 0 ? (
+  <>
+    <FiSend size={18} />
+    Gửi lại sau {cooldown}s
+  </>
+) : (
+  <>
+    <FiSend size={18} />
+    Gửi link đặt lại
+  </>
+)}
               </motion.button>
             </form>
 
