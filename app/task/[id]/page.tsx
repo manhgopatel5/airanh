@@ -1000,11 +1000,11 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
         <div className="space-y-4">
           <AnimatePresence>
             {parentComments.map((c) => (
-              <CommentList
-                key={c.id}
-                comment={c}
-                replies={getReplies(c.id)}
-                currentUserId={currentUser?.uid}
+<CommentList
+  key={c.id}
+  comment={c}
+  replies={getReplies(c.id)}
+  currentUserId={currentUser?.uid || null}
                 taskOwnerId={task.userId}
                 onLike={handleLikeComment}
                 onReply={handleReply}
