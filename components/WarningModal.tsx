@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { FiAlertOctagon, FiShield, FiCheck } from "react-icons/fi";
 
