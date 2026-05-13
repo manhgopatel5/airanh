@@ -43,6 +43,7 @@
     "html5-qrcode": "^2.3.8",
     "isomorphic-dompurify": "^3.9.0",
     "linkify-react": "^4.3.2",
+    "lottie-react": "^2.4.1",
     "lucide-react": "^0.453.0",
     "nanoid": "^5.1.9",
     "next": "^15.5.15",

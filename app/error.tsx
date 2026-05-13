@@ -1,6 +1,10 @@
 "use client";
+
 import { useEffect } from "react";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+
+import LottiePlayer from "@/components/ui/LottiePlayer";
+
+import errorAnimation from "@/public/lotties/huha-error-shake.json";
 
 export default function Error({
   error,
@@ -17,10 +21,9 @@ export default function Error({
     <div className="fixed inset-0 z-[9999] bg-[#FAFAFB] dark:bg-zinc-950 grid place-items-center p-6">
       <div className="w-full max-w-sm text-center">
         <div className="w-32 h-32 mx-auto mb-6">
-          <DotLottieReact
-            src="/lotties/huha-empty-full.lottie"
-            loop
-            autoplay
+          <LottiePlayer
+            animationData={errorAnimation}
+            className="w-full h-full"
           />
         </div>
 
@@ -34,7 +37,7 @@ export default function Error({
 
         <button
           onClick={reset}
-          className="w-full h-12 rounded-2xl bg-gradient-to-r from-[#0042B2] to-[#00C853] text-white font-semibold active:scale-98 transition-all"
+          className="w-full h-12 rounded-2xl bg-gradient-to-r from-[#0042B2] to-[#00C853] text-white font-semibold active:scale-[0.98] transition-all"
         >
           Thử lại
         </button>
