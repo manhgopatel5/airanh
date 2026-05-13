@@ -299,7 +299,7 @@ const checkBanned = async (uid: string) => {
       await updateUserDoc(res.user, db);
 const bannedData = await checkBanned(res.user.uid);
 
-if (bannedData?.banned) {
+if (bannedData && bannedData.banned) {
   await signOut(auth);
 
   if (bannedData.until) {
@@ -384,7 +384,7 @@ if (bannedData?.banned) {
       await updateUserDoc(user, db);
 const bannedData = await checkBanned(user.uid);
 
-if (bannedData?.banned) {
+if (bannedData && bannedData.banned) {
   await signOut(auth);
 
   if (bannedData.until) {
