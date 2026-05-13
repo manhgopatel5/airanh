@@ -1064,7 +1064,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
       </div>
     </div>
   </div>
-</div>
+
         </div>
 </div>
 </motion.div>
