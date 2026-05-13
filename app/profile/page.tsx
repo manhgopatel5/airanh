@@ -148,7 +148,7 @@ export default function Profile() {
 
   const handleShare = async () => {
     if (!userData) return;
-    const url = `https://huha.vn/u/${userData.userId}`;
+    const url = `https://airanh.vercel.app/u/${userData.userId}`;
     if (navigator.share) {
       await navigator.share({ title: userData.name || "Người dùng HUHA", text: `Kết nối với tôi`, url });
     } else {
@@ -354,7 +354,7 @@ export default function Profile() {
             <h3 className="text-xl font-black text-center mb-1 text-zinc-900 dark:text-white">@{userData.userId}</h3>
             <p className="text-sm text-center text-zinc-500 mb-4">Quét để kết nối với {userData.name}</p>
             <div className="bg-white p-4 rounded-2xl flex items-center justify-center">
-              <QRCodeSVG value={`https://huha.vn/u/${userData.userId}`} size={200} level="H" includeMargin />
+              <QRCodeSVG value={`https://airanh.vercel.app/u/${userData.userId}`} size={200} level="H" includeMargin />
             </div>
             <div className="grid grid-cols-2 gap-3 mt-4">
               <button onClick={handleShare} className="py-3 rounded-2xl font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white flex items-center justify-center gap-2 active:scale-95 transition">
