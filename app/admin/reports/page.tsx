@@ -306,7 +306,7 @@ if (newCount === 1) {
 
   updateData.warningAt = serverTimestamp();
 
-  updateData.status = "warning";
+  
 
   toast.success(`Đã cảnh cáo @${targetShortId} lần 1`);
 
