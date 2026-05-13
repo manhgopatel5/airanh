@@ -22,9 +22,18 @@ import { Task, TaskItem, PlanItem, isTask, isPlan } from "@/types/task";
 import { FiMapPin, FiRefreshCw } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion"; // THÊM
+import { DotLottieReact } from '@lottiefiles/dotlottie-react'; // THÊM
 
 const PAGE_SIZE = 20;
 type TabId = "hot" | "near" | "friends" | "new";
+
+// THÊM: Animation variants dùng chung
+const pageVariants = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 }
+};
 
 function SkeletonList() {
   return (
@@ -133,7 +142,7 @@ export default function Home() {
         const snap = await getDocs(q);
         const data = snap.docs.map((doc) => ({
           id: doc.id,
-         ...doc.data(),
+        ...doc.data(),
         })) as Task[];
         setAllItems(data);
         setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -174,7 +183,7 @@ export default function Home() {
       const snap = await getDocs(q);
       const newItems = snap.docs.map((doc) => ({
         id: doc.id,
-       ...doc.data(),
+      ...doc.data(),
       })) as Task[];
       setAllItems((prev) => [...prev,...newItems]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -202,7 +211,6 @@ export default function Home() {
     return () => observerRef.current?.disconnect();
   }, [hasMore, loadingMore, loadMore]);
 
-  // FIX: Bỏ toast.info ra khỏi useMemo để không spam
   const filteredItems = useMemo(() => {
     let result = [...allItems];
     if (mode === "task") {
@@ -217,7 +225,6 @@ export default function Home() {
     return result as Task[];
   }, [allItems, mode, activeTab]);
 
-  // FIX: Dùng useEffect riêng cho toast
   useEffect(() => {
     if (activeTab === "near" || activeTab === "friends") {
       toast.info("Tính năng đang phát triển", {
@@ -240,11 +247,15 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen pb-24 font-sans bg-gray-50 dark:bg-black">
+    <motion.div 
+      {...pageVariants}
+      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+      className="min-h-screen pb-24 font-sans bg-gray-50 dark:bg-black"
+    >
       <ModeToggle />
       <div className="sticky top-0 z-40 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800">
         <div className="max-w-2xl mx-auto px-4">
-          <div className="flex justify-around">
+          <div className="flex justify-around relative">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const active = activeTab === tab.id;
@@ -255,13 +266,19 @@ export default function Home() {
                     setActiveTab(tab.id);
                     if ("vibrate" in navigator) navigator.vibrate(5);
                   }}
-                  className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
+                  className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 relative ${
                     active? `text-${tab.color}-600 dark:text-${tab.color}-400` : "text-gray-400 dark:text-zinc-500"
                   }`}
                 >
                   <Icon size={20} className={active? "scale-110" : ""} />
                   <span className="text-xs font-bold mt-1">{tab.label}</span>
-                  <div className={`mt-1 h-0.5 rounded-full transition-all duration-300 ${active? `w-6 bg-${tab.color}-500` : "w-0"}`} />
+                  {active && (
+                    <motion.div 
+                      layoutId="activeTabIndicator"
+                      className={`absolute bottom-0 h-0.5 w-6 bg-${tab.color}-500 rounded-full`}
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    />
+                  )}
                 </button>
               );
             })}
@@ -270,45 +287,67 @@ export default function Home() {
       </div>
 
       <div className="pt-4">
-        {error && (
-          <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
-            <div className="text-5xl mb-4">⚠️</div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">{error}</h2>
-            <button onClick={handleRefresh} className="mt-4 px-6 py-2.5 rounded-xl bg-blue-500 text-white font-bold active:scale-95 transition flex items-center gap-2">
-              <FiRefreshCw className={refreshing? "animate-spin" : ""} />
-              Thử lại
-            </button>
-          </div>
-        )}
-
-        {loading || refreshing? (
-          <SkeletonList />
-        ) : filteredItems.length === 0 &&!error? (
-          <div className="flex flex-col items-center justify-center px-6 py-20 text-center animate-in fade-in duration-300">
-            <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
-              Chưa có {mode === "task"? "nhiệm vụ" : "kế hoạch"} nào
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-zinc-500 mb-6">
-              Hãy là người đầu tiên tạo {mode === "task"? "nhiệm vụ" : "kế hoạch"}
-            </p>
-            <button
-              onClick={handleRefresh}
-              className="px-6 py-2.5 rounded-xl bg-blue-500 text-white font-bold active:scale-95 transition flex items-center gap-2"
+        <AnimatePresence mode="wait">
+          {error && (
+            <motion.div 
+              key="error"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center px-6 py-20 text-center"
             >
-              <FiRefreshCw />
-              Tải lại
-            </button>
-          </div>
-        ) : (
-          <TaskFeed
-            tasks={filteredItems}
-            mode={mode}
-            activeTab={activeTab}
-            onShare={handleShare}
-            onTaskUpdate={handleTaskUpdate}
-          />
-        )}
+              <div className="text-5xl mb-4">⚠️</div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">{error}</h2>
+              <button onClick={handleRefresh} className="mt-4 px-6 py-2.5 rounded-xl bg-blue-500 text-white font-bold active:scale-95 transition flex items-center gap-2">
+                <FiRefreshCw className={refreshing? "animate-spin" : ""} />
+                Thử lại
+              </button>
+            </motion.div>
+          )}
+
+          {loading || refreshing? (
+            <motion.div key="skeleton">
+              <SkeletonList />
+            </motion.div>
+          ) : filteredItems.length === 0 &&!error? (
+            <motion.div 
+              key="empty"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center justify-center px-6 py-20 text-center"
+            >
+              <DotLottieReact 
+                src="/lotties/empty.lottie" 
+                loop 
+                autoplay 
+                style={{ height: 200, width: 200 }}
+              />
+              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2 mt-4">
+                Chưa có {mode === "task"? "nhiệm vụ" : "kế hoạch"} nào
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-zinc-500 mb-6">
+                Hãy là người đầu tiên tạo {mode === "task"? "nhiệm vụ" : "kế hoạch"}
+              </p>
+              <button
+                onClick={handleRefresh}
+                className="px-6 py-2.5 rounded-xl bg-blue-500 text-white font-bold active:scale-95 transition flex items-center gap-2"
+              >
+                <FiRefreshCw />
+                Tải lại
+              </button>
+            </motion.div>
+          ) : (
+            <motion.div key="feed">
+              <TaskFeed
+                tasks={filteredItems}
+                mode={mode}
+                activeTab={activeTab}
+                onShare={handleShare}
+                onTaskUpdate={handleTaskUpdate}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {!loading && hasMore && allItems.length > 0 && (
           <div ref={loadMoreRef} className="px-4 py-6 flex justify-center">
@@ -322,6 +361,6 @@ export default function Home() {
       {showShareModal && shareTask && (
         <ShareTaskModal task={shareTask} onClose={() => setShowShareModal(false)} />
       )}
-    </div>
+    </motion.div>
   );
 }
