@@ -470,6 +470,26 @@ export const AuthProvider = ({
               const stillBanned =
                 data.banned ||
                 data.status === "banned";
+// WARNING REALTIME
+if (
+  data.warning &&
+  data.warningReason &&
+  !stillBanned &&
+  sessionStorage.getItem(
+    `warning_${data.uid}_${data.warningAt?.seconds || 0}`
+  ) !== "shown"
+) {
+  sessionStorage.setItem(
+    `warning_${data.uid}_${data.warningAt?.seconds || 0}`,
+    "shown"
+  );
+
+  setTimeout(() => {
+    alert(
+      `⚠️ CẢNH CÁO VI PHẠM\n\nLý do: ${data.warningReason}\n\nNếu tiếp tục vi phạm tài khoản sẽ bị khóa.`
+    );
+  }, 300);
+}
 
               // REDIRECT BANNED
               if (stillBanned) {
