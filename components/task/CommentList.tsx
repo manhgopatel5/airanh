@@ -33,7 +33,7 @@ export function CommentList({ comment: c, replies, currentUserId, taskOwnerId, o
   const [showAllReplies, setShowAllReplies] = useState(false);
   const editInputRef = useRef<HTMLInputElement>(null);
   const displayReplies = showAllReplies? replies : replies.slice(0, 1);
-  const likeLottie = "/lotties/huha-celebrate-full.lottie";
+  
 
   useEffect(() => { if (isEditing) editInputRef.current?.focus(); }, [isEditing]);
 
