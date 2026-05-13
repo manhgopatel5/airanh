@@ -60,6 +60,8 @@ export type AppUser = {
   warningReason?: string;
   warningAt?: Timestamp;
   lastViolationAt?: Timestamp;
+  warningTitle?: string; 
+  warningMessage?: string; 
 
   unbannedAt?: Timestamp;
 };
