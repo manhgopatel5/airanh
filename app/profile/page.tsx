@@ -5,21 +5,11 @@ import { signOut, deleteUser } from "firebase/auth";
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { useAppStore } from "@/store/app";
-import {
-  doc, onSnapshot, updateDoc, serverTimestamp, getDoc, setDoc, deleteDoc
-} from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, serverTimestamp, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import type { Timestamp } from "firebase/firestore";
-import {
-  getFirebaseDB,
-  getFirebaseAuth,
-  getFirebaseStorage
-} from "@/lib/firebase";
+import { getFirebaseDB, getFirebaseAuth, getFirebaseStorage } from "@/lib/firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import {
-  HelpCircle, LogOut, Trash2, User, Shield, Lock,
-  Camera, Check, QrCode, Share2, ChevronRight, Settings,
-  Circle, Zap, ClipboardList, Star, ScanLine, X
-} from "lucide-react";
+import { HelpCircle, LogOut, Trash2, User, Shield, Lock, Camera, Check, QrCode, Share2, ChevronRight, Settings, Circle, Zap, ClipboardList, Star, ScanLine, X } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import type { UploadTask } from "firebase/storage";
 import { nanoid } from "nanoid";
@@ -64,13 +54,9 @@ export default function Profile() {
   const uploadTaskRef = useRef<UploadTask | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
-  const accentGradient = isPlan
-   ? "from-green-500 to-emerald-500"
-    : "from-sky-500 to-blue-600";
+  const accentGradient = isPlan? "from-[#00C853] to-[#00E676]" : "from-[#0042B2] to-[#1A5FFF]";
 
-  useEffect(() => {
-    if (user === null) router.replace("/login");
-  }, [user, router]);
+  useEffect(() => { if (user === null) router.replace("/login"); }, [user, router]);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -79,28 +65,23 @@ export default function Profile() {
         const data = { uid: snap.id,...snap.data() } as UserData;
         setUserData(data);
         setName(data.name || "");
-        if (user &&!user.emailVerified &&!data.emailVerified) {
-          router.replace("/verify-email");
-        }
+        if (user &&!user.emailVerified &&!data.emailVerified) router.replace("/verify-email");
       }
     });
     return () => unsub();
-  }, [user?.uid, router]);
+  }, [user?.uid, router, user, db]);
 
   useEffect(() => {
     if (!user ||!userData || hasCheckedId.current) return;
-    if (userData.userId) {
-      hasCheckedId.current = true;
-      return;
-    }
+    if (userData.userId) { hasCheckedId.current = true; return; }
     const createId = async () => {
       hasCheckedId.current = true;
-      let newId = `AIR${nanoid(6).toUpperCase()}`;
+      let newId = `HUHA${nanoid(6).toUpperCase()}`;
       let attempts = 0;
       while (attempts < 3) {
         const snap = await getDoc(doc(db, "usernames", newId));
         if (!snap.exists()) break;
-        newId = `AIR${nanoid(6).toUpperCase()}`;
+        newId = `HUHA${nanoid(6).toUpperCase()}`;
         attempts++;
       }
       await Promise.all([
@@ -109,24 +90,18 @@ export default function Profile() {
       ]);
     };
     createId().catch(() => {});
-  }, [user, userData]);
+  }, [user, userData, db]);
 
   const handleUpdateName = async () => {
-    if (!user ||!name.trim() || name.length < 2) {
-      toast.error("Tên tối thiểu 2 ký tự");
-      return;
-    }
-    if (name === userData?.name) {
-      setEditingName(false);
-      return;
-    }
+    if (!user ||!name.trim() || name.length < 2) return toast.error("Tên tối thiểu 2 ký tự");
+    if (name === userData?.name) return setEditingName(false);
     const oldName = userData?.name;
     setEditingName(false);
     setUserData((prev) => prev? {...prev, name: name.trim() } : null);
     try {
       await updateDoc(doc(db, "users", user.uid), { name: name.trim() });
       toast.success("Cập nhật tên thành công");
-      if ("vibrate" in navigator) navigator.vibrate(8);
+      navigator.vibrate?.(8);
     } catch {
       toast.error("Cập nhật thất bại");
       setUserData((prev) => prev? {...prev, name: oldName || "" } : null);
@@ -150,16 +125,14 @@ export default function Profile() {
           const prog = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           setUploadProgress(Math.round(prog));
         },
-        (err) => {
-          if (err.code!== "storage/canceled") toast.error("Upload thất bại");
-        },
+        (err) => { if (err.code!== "storage/canceled") toast.error("Upload thất bại"); },
         async () => {
           const task = uploadTaskRef.current;
           if (!task) return;
           const url = await getDownloadURL(task.snapshot.ref);
           await updateDoc(doc(db, "users", user.uid), { avatar: url });
           toast.success("Cập nhật avatar thành công");
-          if ("vibrate" in navigator) navigator.vibrate(8);
+          navigator.vibrate?.(8);
           setUploading(false);
         }
       );
@@ -171,22 +144,18 @@ export default function Profile() {
     }
   };
 
-  useEffect(() => {
-    return () => {
-      if (uploadTaskRef.current) uploadTaskRef.current.cancel();
-    };
-  }, []);
+  useEffect(() => { return () => { if (uploadTaskRef.current) uploadTaskRef.current.cancel(); }; }, []);
 
   const handleShare = async () => {
     if (!userData) return;
-    const url = `https://airanh.vercel.app/u/${userData.userId}`;
+    const url = `https://huha.vn/u/${userData.userId}`;
     if (navigator.share) {
-      await navigator.share({ title: userData.name || "Người dùng AIR", text: `Kết nối với tôi`, url });
+      await navigator.share({ title: userData.name || "Người dùng HUHA", text: `Kết nối với tôi`, url });
     } else {
       navigator.clipboard.writeText(url);
       toast.success("Đã copy link hồ sơ");
     }
-    if ("vibrate" in navigator) navigator.vibrate(8);
+    navigator.vibrate?.(8);
   };
 
   const handleLogout = async () => {
@@ -269,7 +238,7 @@ export default function Profile() {
           { facingMode: "environment" },
           { fps: 10, qrbox: { width: 250, height: 250 } },
           (decodedText) => {
-            if ("vibrate" in navigator) navigator.vibrate(10);
+            navigator.vibrate?.(10);
             stopScan();
             if (decodedText.includes("/u/")) {
               const targetUserId = decodedText.split("/u/")[1];
@@ -296,46 +265,22 @@ export default function Profile() {
   if (!user ||!userData) return null;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black pb-24 font-sans">
+    <div className="min-h-screen bg-white dark:bg-black pb-24">
       <Toaster richColors position="top-center" />
 
-      {/* ── Header: avatar + name + status ── */}
       <div className="px-6 pt-12 pb-6">
         <div className="flex items-center gap-4">
-          {/* Avatar with upload + verified badge */}
           <label className="relative cursor-pointer group flex-shrink-0">
-            <img
-              src={
-                userData.avatar ||
-                `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&size=176&background=8B5E3C&color=fff`
-              }
-              className="w-16 h-16 rounded-full object-cover"
-              alt="Avatar"
-            />
-
-            {/* Verified badge */}
+            <img src={userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&size=176&background=0042B2&color=fff`} className="w-16 h-16 rounded-full object-cover" alt="Avatar" />
             {userData.emailVerified && (
-              <div
-                className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-gradient-to-br ${accentGradient} flex items-center justify-center border-2 border-white dark:border-black`}
-              >
+              <div className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-gradient-to-br ${accentGradient} flex items-center justify-center border-2 border-white dark:border-black`}>
                 <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
               </div>
             )}
-
-            {/* Camera overlay on press */}
             <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-active:opacity-100 transition-opacity">
               <Camera size={20} className="text-white" />
             </div>
-
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleUpload}
-              disabled={uploading}
-            />
-
-            {/* Upload progress overlay */}
+            <input type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
             {uploading && (
               <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center backdrop-blur-sm">
                 <span className="text-white text-xs font-bold">{uploadProgress}%</span>
@@ -343,101 +288,59 @@ export default function Profile() {
             )}
           </label>
 
-          {/* Name (editable) + online status */}
           <div className="flex-1 min-w-0">
             {editingName? (
               <div className="flex items-center gap-2">
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  onBlur={handleUpdateName}
-                  onKeyDown={(e) => e.key === "Enter" && handleUpdateName()}
-                  autoFocus
-                  className="text-2xl font-extrabold border-b-2 border-gray-300 dark:border-zinc-700 outline-none bg-transparent text-gray-900 dark:text-white flex-1 tracking-tight"
-                />
-                <button
-                  onClick={handleUpdateName}
-                  className={`p-1.5 bg-gradient-to-br ${accentGradient} rounded-full`}
-                >
+                <input value={name} onChange={(e) => setName(e.target.value)} onBlur={handleUpdateName} onKeyDown={(e) => e.key === "Enter" && handleUpdateName()} autoFocus className="text-2xl font-extrabold border-b-2 border-zinc-300 dark:border-zinc-700 outline-none bg-transparent text-zinc-900 dark:text-white flex-1 tracking-tight" />
+                <button onClick={handleUpdateName} className={`p-1.5 bg-gradient-to-br ${accentGradient} rounded-full`}>
                   <Check size={14} className="text-white" />
                 </button>
               </div>
             ) : (
-              <h1
-                onClick={() => setEditingName(true)}
-                className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight cursor-pointer leading-tight"
-              >
+              <h1 onClick={() => setEditingName(true)} className="text-2xl font-extrabold text-zinc-900 dark:text-white tracking-tight cursor-pointer leading-tight">
                 {userData.name}
               </h1>
             )}
-
             <div className="flex items-center gap-1.5 mt-1">
-              <Circle
-                className={`w-2 h-2 fill-current ${
-                  userData.online? "text-green-500" : "text-gray-400"
-                }`}
-              />
-              <span className="text-sm text-gray-500 dark:text-zinc-400 font-medium">
-                {userData.online? "Đang hoạt động" : "Ngoại tuyến"}
-              </span>
+              <Circle className={`w-2 h-2 fill-current ${userData.online? "text-green-500" : "text-zinc-400"}`} />
+              <span className="text-sm text-zinc-500 font-medium">{userData.online? "Đang hoạt động" : "Ngoại tuyến"}</span>
             </div>
           </div>
         </div>
 
-        {/* ── Stats row: Task / Plan / Rating ── */}
         <div className="flex items-center gap-2 mt-5">
-          <button
-            onClick={() => router.push("/tasks")}
-            className="flex-1 py-2.5 rounded-2xl bg-gray-50 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95 transition"
-          >
-            <ClipboardList className="w-4 h-4 text-gray-500 dark:text-zinc-400" />
-            <span className="text-sm font-bold text-gray-900 dark:text-white">
-              {userData.stats?.tasks?? 0}
-            </span>
-            <span className="text-xs text-gray-400 dark:text-zinc-500">Task</span>
+          <button onClick={() => router.push("/tasks")} className="flex-1 py-2.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95 transition">
+            <ClipboardList className="w-4 h-4 text-zinc-500" />
+            <span className="text-sm font-bold text-zinc-900 dark:text-white">{userData.stats?.tasks?? 0}</span>
+            <span className="text-xs text-zinc-400">Task</span>
           </button>
-
-          <button
-            onClick={() => router.push("/plans")}
-            className="flex-1 py-2.5 rounded-2xl bg-gray-50 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95 transition"
-          >
-            <Zap className="w-4 h-4 text-gray-500 dark:text-zinc-400" />
-            <span className="text-sm font-bold text-gray-900 dark:text-white">
-              {userData.stats?.plans?? 0}
-            </span>
-            <span className="text-xs text-gray-400 dark:text-zinc-500">Plan</span>
+          <button onClick={() => router.push("/plans")} className="flex-1 py-2.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95 transition">
+            <Zap className="w-4 h-4 text-zinc-500" />
+            <span className="text-sm font-bold text-zinc-900 dark:text-white">{userData.stats?.plans?? 0}</span>
+            <span className="text-xs text-zinc-400">Plan</span>
           </button>
-
-          <button className="flex-1 py-2.5 rounded-2xl bg-gray-50 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95 transition">
-            <Star className="w-4 h-4 text-gray-500 dark:text-zinc-400" />
-            <span className="text-sm font-bold text-gray-900 dark:text-white">
-              {userData.stats?.rating?? 0}
-            </span>
+          <button className="flex-1 py-2.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95 transition">
+            <Star className="w-4 h-4 text-zinc-500" />
+            <span className="text-sm font-bold text-zinc-900 dark:text-white">{userData.stats?.rating?? 0}</span>
           </button>
         </div>
       </div>
 
-      {/* ── Menu sections ── */}
       <div className="px-6 mt-2 space-y-6">
-        {/* HỒ SƠ */}
         <div>
-          <SectionLabel>HỒ SƠ</SectionLabel>
+          <p className="text-xs font-bold text-zinc-400 tracking-wider mb-1 uppercase">HỒ SƠ</p>
           <Item label="Thông tin cá nhân" icon={User} onClick={() => router.push("/profile/edit")} />
           <Item label="Mã QR của tôi" icon={QrCode} onClick={() => setShowQR(true)} />
           <Item label="Quét mã QR" icon={ScanLine} onClick={() => setShowScanQR(true)} />
           <Item label="Chia sẻ hồ sơ" icon={Share2} onClick={handleShare} />
         </div>
-
-        {/* BẢO MẬT */}
         <div>
-          <SectionLabel>BẢO MẬT</SectionLabel>
+          <p className="text-xs font-bold text-zinc-400 tracking-wider mb-1 uppercase">BẢO MẬT</p>
           <Item label="Xác thực CCCD" icon={Shield} />
           <Item label="Đổi mật khẩu" icon={Lock} onClick={() => router.push("/settings/change-password")} />
         </div>
-
-        {/* HỖ TRỢ */}
         <div>
-          <SectionLabel>HỖ TRỢ</SectionLabel>
+          <p className="text-xs font-bold text-zinc-400 tracking-wider mb-1 uppercase">HỖ TRỢ</p>
           <Item label="Trung tâm trợ giúp" icon={HelpCircle} />
           <Item label="Cài đặt" icon={Settings} onClick={() => router.push("/settings")} />
           <Item label="Đăng xuất" icon={LogOut} onClick={() => setShowLogoutModal(true)} danger />
@@ -445,43 +348,19 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* ── QR Modal ── */}
       {showQR && userData.userId && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-          onClick={() => setShowQR(false)}
-        >
-          <div
-            className="bg-white dark:bg-zinc-900 rounded-3xl p-6 max-w-sm w-full"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-xl font-black text-center mb-1 text-gray-900 dark:text-white">
-              @{userData.userId}
-            </h3>
-            <p className="text-sm text-center text-gray-500 mb-4">
-              Quét để kết nối với {userData.name}
-            </p>
-
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowQR(false)}>
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-black text-center mb-1 text-zinc-900 dark:text-white">@{userData.userId}</h3>
+            <p className="text-sm text-center text-zinc-500 mb-4">Quét để kết nối với {userData.name}</p>
             <div className="bg-white p-4 rounded-2xl flex items-center justify-center">
-              <QRCodeSVG
-                value={`https://airanh.vercel.app/u/${userData.userId}`}
-                size={200}
-                level="H"
-                includeMargin
-              />
+              <QRCodeSVG value={`https://huha.vn/u/${userData.userId}`} size={200} level="H" includeMargin />
             </div>
-
             <div className="grid grid-cols-2 gap-3 mt-4">
-              <button
-                onClick={handleShare}
-                className="py-3 rounded-2xl font-bold bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white flex items-center justify-center gap-2 active:scale-95 transition"
-              >
+              <button onClick={handleShare} className="py-3 rounded-2xl font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white flex items-center justify-center gap-2 active:scale-95 transition">
                 <Share2 size={18} /> Chia sẻ
               </button>
-              <button
-                onClick={() => { setShowQR(false); setShowScanQR(true); }}
-                className={`py-3 rounded-2xl font-bold bg-gradient-to-r ${accentGradient} text-white flex items-center justify-center gap-2 active:scale-95 transition`}
-              >
+              <button onClick={() => { setShowQR(false); setShowScanQR(true); }} className={`py-3 rounded-2xl font-bold bg-gradient-to-r ${accentGradient} text-white flex items-center justify-center gap-2 active:scale-95 transition`}>
                 <ScanLine size={18} /> Quét mã
               </button>
             </div>
@@ -489,14 +368,10 @@ export default function Profile() {
         </div>
       )}
 
-      {/* ── Scan QR fullscreen ── */}
       {showScanQR && (
         <div className="fixed inset-0 bg-black z-50">
           <div id="qr-reader" className="w-full h-full" />
-          <button
-            onClick={stopScan}
-            className="absolute top-6 right-6 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center"
-          >
+          <button onClick={stopScan} className="absolute top-6 right-6 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center">
             <X className="w-5 h-5 text-white" />
           </button>
           <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-white text-center">
@@ -506,112 +381,35 @@ export default function Profile() {
         </div>
       )}
 
-      {/* ── Modals ── */}
-      {showLogoutModal && (
-        <Modal
-          title="Đăng xuất?"
-          desc="Bạn sẽ cần đăng nhập lại để sử dụng app"
-          onClose={() => setShowLogoutModal(false)}
-          onConfirm={handleLogout}
-          confirmText="Đăng xuất"
-          danger
-        />
-      )}
-      {showDeleteModal && (
-        <Modal
-          title="Xóa tài khoản?"
-          desc="Hành động này không thể hoàn tác. Toàn bộ dữ liệu sẽ bị xóa vĩnh viễn."
-          onClose={() => setShowDeleteModal(false)}
-          onConfirm={handleDeleteAccount}
-          confirmText="Xóa vĩnh viễn"
-          danger
-        />
-      )}
+      {showLogoutModal && <Modal title="Đăng xuất?" desc="Bạn sẽ cần đăng nhập lại để sử dụng app" onClose={() => setShowLogoutModal(false)} onConfirm={handleLogout} confirmText="Đăng xuất" danger />}
+      {showDeleteModal && <Modal title="Xóa tài khoản?" desc="Hành động này không thể hoàn tác. Toàn bộ dữ liệu sẽ bị xóa vĩnh viễn." onClose={() => setShowDeleteModal(false)} onConfirm={handleDeleteAccount} confirmText="Xóa vĩnh viễn" danger />}
     </div>
   );
 }
 
-// ─── Sub-components ───────────────────────────────────────────────
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function Item({ label, icon: Icon, onClick, danger }: { label: string; icon: React.ElementType; onClick?: () => void; danger?: boolean }) {
   return (
-    <p className="text-xs font-bold text-gray-400 dark:text-zinc-600 tracking-wider mb-1 uppercase">
-      {children}
-    </p>
-  );
-}
-
-function Item({
-  label,
-  icon: Icon,
-  onClick,
-  danger,
-}: {
-  label: string;
-  icon: React.ElementType;
-  onClick?: () => void;
-  danger?: boolean;
-}) {
-  return (
-    <button
-      onClick={() => {
-        if ("vibrate" in navigator) navigator.vibrate(5);
-        onClick?.();
-      }}
-      className="w-full flex items-center justify-between py-4 active:opacity-50 transition-opacity"
-    >
+    <button onClick={() => { navigator.vibrate?.(5); onClick?.(); }} className="w-full flex items-center justify-between py-4 active:opacity-50 transition-opacity">
       <div className="flex items-center gap-3">
-        <Icon
-          className={`w-5 h-5 ${ danger? "text-red-500" : "text-gray-900 dark:text-white" }`}
-        />
-        <span
-          className={`text-base font-semibold ${ danger? "text-red-500" : "text-gray-900 dark:text-white" }`}
-        >
-          {label}
-        </span>
+        <Icon className={`w-5 h-5 ${danger? "text-red-500" : "text-zinc-900 dark:text-white"}`} />
+        <span className={`text-base font-semibold ${danger? "text-red-500" : "text-zinc-900 dark:text-white"}`}>{label}</span>
       </div>
-      <ChevronRight className="w-4 h-4 text-gray-400" />
+      <ChevronRight className="w-4 h-4 text-zinc-400" />
     </button>
   );
 }
 
-function Modal({
-  title,
-  desc,
-  onClose,
-  onConfirm,
-  confirmText,
-  danger,
-}: {
-  title: string;
-  desc: string;
-  onClose: () => void;
-  onConfirm: () => void;
-  confirmText: string;
-  danger?: boolean;
-}) {
+function Modal({ title, desc, onClose, onConfirm, confirmText, danger }: { title: string; desc: string; onClose: () => void; onConfirm: () => void; confirmText: string; danger?: boolean }) {
   return (
-    <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end justify-center z-50"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white dark:bg-zinc-900 w-full max-w-xl rounded-t-3xl p-6 animate-in slide-in-from-bottom"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="w-12 h-1 bg-gray-300 dark:bg-zinc-700 rounded-full mx-auto mb-4" />
-        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">{title}</h3>
-        <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">{desc}</p>
-        <button
-          onClick={onConfirm}
-          className={`w-full py-3.5 rounded-2xl font-semibold mb-3 active:scale-[0.98] transition ${ danger? "bg-red-500 text-white" : "bg-blue-500 text-white" }`}
-        >
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end justify-center z-50" onClick={onClose}>
+      <div className="bg-white dark:bg-zinc-900 w-full max-w-xl rounded-t-3xl p-6 animate-in slide-in-from-bottom" onClick={(e) => e.stopPropagation()}>
+        <div className="w-12 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mb-4" />
+        <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-2">{title}</h3>
+        <p className="text-sm text-zinc-500 mb-6">{desc}</p>
+        <button onClick={onConfirm} className={`w-full py-3.5 rounded-2xl font-semibold mb-3 active:scale-[0.98] transition ${danger? "bg-red-500 text-white" : "text-white"}`} style={{ background: danger? undefined : "#0042B2" }}>
           {confirmText}
         </button>
-        <button
-          onClick={onClose}
-          className="w-full py-3.5 bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100 rounded-2xl font-semibold"
-        >
+        <button onClick={onClose} className="w-full py-3.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-2xl font-semibold">
           Hủy
         </button>
       </div>
