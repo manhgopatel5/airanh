@@ -5,7 +5,8 @@ import ClientLayout from "@/components/ClientLayout";
 import { AuthProvider } from "@/lib/AuthContext";
 import EmailGuard from "@/components/EmailGuard";
 import { cn } from "@/lib/utils";
-import { Toaster } from "sonner"; // 1. Import
+import { Toaster } from "sonner";
+import { LazyMotion, domAnimation } from "framer-motion"; // THÊM
 
 const geist = Geist({
   subsets: ['latin'],
@@ -117,23 +118,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className="font-sans bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight">
-        <AuthProvider>
-          <EmailGuard>
-            <ClientLayout>{children}</ClientLayout>
-          </EmailGuard>
-       <Toaster 
-  position="top-center" 
-  richColors 
-  style={{ zIndex: 999999 }} // THÊM DÒNG NÀY
-  toastOptions={{
-    classNames: {
-      toast: "rounded-2xl border-[#E5E5E7] dark:border-zinc-800 font-sans",
-      title: "font-semibold",
-      description: "text-sm",
-    }
-  }}
-/>
-        </AuthProvider>
+        <LazyMotion features={domAnimation}>
+          <AuthProvider>
+            <EmailGuard>
+              <ClientLayout>{children}</ClientLayout>
+            </EmailGuard>
+            <Toaster 
+              position="top-center" 
+              richColors 
+              style={{ zIndex: 999999 }}
+              toastOptions={{
+                classNames: {
+                  toast: "rounded-2xl border-[#E5E5E7] dark:border-zinc-800 font-sans",
+                  title: "font-semibold",
+                  description: "text-sm",
+                }
+              }}
+            />
+          </AuthProvider>
+        </LazyMotion>
       </body>
     </html>
   );
