@@ -8,8 +8,8 @@
 
 @layer base {
   :root {
-    --color-primary: 59 130 246;
-    --color-primary-dark: 37 99 235;
+    --color-primary: 0 66 178; /* HUHA Blue #0042B2 */
+    --color-primary-dark: 0 200 83; /* HUHA Green #00C853 */
     --header-height: 60px;
     --bottom-nav-height: 70px;
     --radius-sm: 0.75rem;
@@ -18,12 +18,44 @@
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-    color-scheme: light dark; /* ✅ FIX 4 */ --background: oklch(1 0 0); --foreground: oklch(0.145 0 0); --card: oklch(1 0 0); --card-foreground: oklch(0.145 0 0); --popover: oklch(1 0 0); --popover-foreground: oklch(0.145 0 0); --primary: oklch(0.205 0 0); --primary-foreground: oklch(0.985 0 0); --secondary: oklch(0.97 0 0); --secondary-foreground: oklch(0.205 0 0); --muted: oklch(0.97 0 0); --muted-foreground: oklch(0.556 0 0); --accent: oklch(0.97 0 0); --accent-foreground: oklch(0.205 0 0); --destructive: oklch(0.577 0.245 27.325); --border: oklch(0.922 0 0); --input: oklch(0.922 0 0); --ring: oklch(0.708 0 0); --chart-1: oklch(0.87 0 0); --chart-2: oklch(0.556 0 0); --chart-3: oklch(0.439 0 0); --chart-4: oklch(0.371 0 0); --chart-5: oklch(0.269 0 0); --radius: 0.625rem; --sidebar: oklch(0.985 0 0); --sidebar-foreground: oklch(0.145 0 0); --sidebar-primary: oklch(0.205 0 0); --sidebar-primary-foreground: oklch(0.985 0 0); --sidebar-accent: oklch(0.97 0 0); --sidebar-accent-foreground: oklch(0.205 0 0); --sidebar-border: oklch(0.922 0 0); --sidebar-ring: oklch(0.708 0 0);
+    color-scheme: light dark;
+    --background: oklch(0.985 0 0); /* HUHA #FAFAFB */
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.45 0.19 264); /* #0042B2 */
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.72 0.17 145); /* #00C853 */
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.45 0.19 264);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --radius: 0.625rem;
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.45 0.19 264);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.45 0.19 264);
   }
 
   .dark {
-    --color-primary: 96 165 250;
-    --color-primary-dark: 59 130 246;
+    --color-primary: 0 132 255;
+    --color-primary-dark: 0 200 83;
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);
@@ -36,7 +68,7 @@
     --secondary-foreground: oklch(0.985 0 0);
     --muted: oklch(0.269 0 0);
     --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
+    --accent: oklch(0.72 0.17 145);
     --accent-foreground: oklch(0.985 0 0);
     --destructive: oklch(0.704 0.191 22.216);
     --border: oklch(1 0 0 / 10%);
@@ -49,7 +81,7 @@
     --chart-5: oklch(0.269 0 0);
     --sidebar: oklch(0.205 0 0);
     --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary: oklch(0.45 0.19 264);
     --sidebar-primary-foreground: oklch(0.985 0 0);
     --sidebar-accent: oklch(0.269 0 0);
     --sidebar-accent-foreground: oklch(0.985 0 0);
@@ -60,7 +92,7 @@
     --font-heading: var(--font-sans);
     --font-sans: var(--font-sans);
   }
-  * {
+    * {
       @apply border-border;
   }
   body {
@@ -74,7 +106,7 @@
 /* ================= BASE ================= */
 
 @layer base {
-    * {
+        * {
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -86,19 +118,17 @@
   html,
   body {
     height: 100%;
-    @apply bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100;
+    @apply bg-[#FAFAFB] dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-feature-settings: 'tnum' 1; /* ✅ FIX 5: Số monospaced */
-    scrollbar-gutter: stable; /* ✅ FIX 6: Không nhảy layout */
-    /* ❌ BỎ overscroll-behavior: none ở body ✅ FIX 2 */
+    font-feature-settings: 'tnum' 1;
+    scrollbar-gutter: stable;
   }
 
   body {
     margin: 0;
   }
 
-  /* ✅ FIX 3: @apply không dùng trong base, chuyển sang class thường */
   input,
   textarea,
   select {
@@ -125,14 +155,14 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 dark:bg-zinc-700 rounded-full;
+    @apply bg-zinc-300 dark:bg-zinc-700 rounded-full;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-400 dark:bg-zinc-600;
+    @apply bg-zinc-400 dark:bg-zinc-600;
   }
 
-    * {
+        * {
     scrollbar-width: thin;
     scrollbar-color: rgb(209 213 219) transparent;
   }
@@ -141,11 +171,10 @@
     scrollbar-color: rgb(63 63 70) transparent;
   }
 
-  /* ✅ FIX 8: Focus visible cho a11y */
   button:focus-visible,
   a:focus-visible,
   input:focus-visible {
-    @apply outline-none ring-2 ring-blue-500/50 ring-offset-2 ring-offset-white dark:ring-offset-zinc-950;
+    @apply outline-none ring-2 ring-[#0042B2]/50 ring-offset-2 ring-offset-white dark:ring-offset-zinc-950;
   }
 }
 
@@ -154,12 +183,12 @@
 .chat-container {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* ✅ FIX 1: Fallback */
-  @apply bg-gray-50 dark:bg-zinc-950;
-  overscroll-behavior: none; /* ✅ FIX 2: Chỉ chat không bounce */
+  height: 100vh;
+  @apply bg-[#FAFAFB] dark:bg-zinc-950;
+  overscroll-behavior: none;
 }
 
-@supports (height: 100dvh) { /* ✅ FIX 1 */
+@supports (height: 100dvh) {
   .chat-container {
     height: 100dvh;
   }
@@ -176,7 +205,7 @@
   padding: 12px;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
-  contain: layout style paint; /* ✅ FIX 10: Tối ưu render */
+  contain: layout style paint;
 }
 
 .input-bar {
@@ -185,7 +214,7 @@
   left: 0;
   right: 0;
   @apply bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl;
-  @apply border-t border-gray-100 dark:border-zinc-800;
+  @apply border-t border-zinc-100 dark:border-zinc-800;
   padding: 8px;
   min-height: 56px;
   padding-bottom: calc(8px + env(safe-area-inset-bottom));
@@ -195,36 +224,36 @@
 
 @layer components {
   .input {
-    @apply w-full px-4 py-3 rounded-2xl border border-gray-200 dark:border-zinc-700;
-    @apply bg-gray-50 dark:bg-zinc-900 text-gray-900 dark:text-gray-100;
-    @apply placeholder:text-gray-400 dark:placeholder:text-zinc-500;
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500; /* ✅ FIX 8 */
+    @apply w-full px-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-700;
+    @apply bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100;
+    @apply placeholder:text-zinc-400 dark:placeholder:text-zinc-500;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0042B2]/20 focus-visible:border-[#0042B2];
     @apply transition-all duration-200;
   }
 
   .btn {
-    @apply bg-gradient-to-r from-blue-500 to-indigo-600 text-white;
+    @apply bg-gradient-to-r from-[#0042B2] to-[#00C853] text-white;
     @apply px-6 py-3 rounded-2xl font-semibold text-sm;
-    @apply shadow-lg shadow-blue-500/30 active:scale-[0.98];
+    @apply shadow-lg shadow-[#0042B2]/30 active:scale-[0.98];
     @apply transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
-    @apply bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100;
+    @apply bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100;
     @apply px-6 py-3 rounded-2xl font-semibold text-sm;
     @apply active:scale-[0.98] transition-all duration-200;
   }
 
   .card {
     @apply bg-white dark:bg-zinc-900 rounded-3xl;
-    @apply border border-gray-100 dark:border-zinc-800;
-    @apply shadow-sm shadow-gray-100/50 dark:shadow-black/20;
+    @apply border border-zinc-100 dark:border-zinc-800;
+    @apply shadow-sm shadow-zinc-100/50 dark:shadow-black/20;
     @apply p-4;
   }
 
   .glass {
     @apply bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl;
-    @apply border border-gray-100/50 dark:border-zinc-800/50;
+    @apply border border-zinc-100/50 dark:border-zinc-800/50;
   }
 }
 
@@ -240,7 +269,7 @@
   }
 
   .text-gradient {
-    @apply bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-[#0042B2] to-[#00C853] bg-clip-text text-transparent;
   }
 
   .no-scrollbar::-webkit-scrollbar {
@@ -252,34 +281,34 @@
     scrollbar-width: none;
   }
 
-  /* ✅ FIX 9: will-change cho GPU */
   .animate-in {
     will-change: transform, opacity;
     animation: slideIn 0.3s ease-out;
   }
 
-  /* ✅ FIX 7: Tôn trọng prefers-reduced-motion */
+  /* HUHA LOTTIE - Zomato style */
+  [data-lottie], .huha-lottie {
+    will-change: transform;
+    transform: translateZ(0);
+    contain: layout style paint;
+  }
+
+  .huha-reduce [data-lottie],
+  .huha-reduce .huha-lottie,
+  .huha-reduce * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
   @media (prefers-reduced-motion: no-preference) {
     @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-
     @keyframes slideFromBottom {
-      from {
-        opacity: 0;
-        transform: translateY(100%);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(100%); }
+      to { opacity: 1; transform: translateY(0); }
     }
   }
 
@@ -289,7 +318,5 @@
   }
 }
 @keyframes shimmer {
-  100% { 
-    transform: translateX(100%); 
-  }
+  100% { transform: translateX(100%); }
 }
