@@ -8,6 +8,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { toast, Toaster } from "sonner";
 import { motion } from "framer-motion";
 import { FiArrowLeft, FiSave, FiX, FiPlus } from "react-icons/fi";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import type { Task } from "@/types/task";
 
 const CATEGORIES = [
@@ -31,6 +32,9 @@ export default function EditTaskPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [tagInput, setTagInput] = useState("");
+
+  const loadingLottie = "/lotties/huha-loading-pull-full.lottie";
+  const successLottie = "/lotties/huha-celebrate-full.lottie";
 
   const [form, setForm] = useState({
     title: "",
@@ -111,11 +115,13 @@ export default function EditTaskPage() {
     if (tag &&!form.tags.includes(tag)) {
       setForm({...form, tags: [...form.tags, tag] });
       setTagInput("");
+      navigator.vibrate?.(5);
     }
   };
 
   const removeTag = (tag: string) => {
     setForm({...form, tags: form.tags.filter((t) => t!== tag) });
+    navigator.vibrate?.(5);
   };
 
   const handleSave = async () => {
@@ -138,7 +144,6 @@ export default function EditTaskPage() {
         editedAt: serverTimestamp(),
       };
 
-      // Chỉ update field có trong type task
       if (task.type === "task") {
         updateData.price = form.price;
         updateData.totalSlots = form.totalSlots;
@@ -148,6 +153,7 @@ export default function EditTaskPage() {
 
       await updateDoc(doc(db, "tasks", task.id), updateData);
       toast.success("Đã cập nhật");
+      navigator.vibrate?.([10,20,10]);
       router.push(`/task/${task.id}`);
     } catch (err: any) {
       console.error(err);
@@ -157,73 +163,79 @@ export default function EditTaskPage() {
     }
   };
 
-  if (authLoading || loading) return <EditSkeleton />;
+  if (authLoading || loading) return <EditSkeleton lottie={loadingLottie} />;
   if (!task) return null;
 
   return (
     <>
       <Toaster richColors position="top-center" />
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+      <div className="min-h-screen bg-zinc-50 dark:bg-black">
         {/* Header */}
-        <div className="sticky top-0 z-20 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-800">
-          <div className="flex items-center justify-between px-4 py-3 max-w-2xl mx-auto">
-            <button
+        <div className="sticky top-0 z-20 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b border-zinc-200/50 dark:border-zinc-900">
+          <div className="flex items-center justify-between px-4 h-14 max-w-2xl mx-auto">
+            <motion.button
+              whileTap={{scale:0.9}}
               onClick={() => router.back()}
-              className="p-2 -ml-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-95 transition-all"
+              className="p-2 -ml-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-95 transition-all"
             >
               <FiArrowLeft size={22} className="text-zinc-900 dark:text-white" />
-            </button>
-            <h1 className="text-lg font-bold text-zinc-900 dark:text-white">
+            </motion.button>
+            <h1 className="text-[17px] font-bold text-zinc-900 dark:text-white">
               Sửa công việc
             </h1>
- <motion.button
-  whileTap={{ scale: 0.95 }}
-  onClick={handleSave}
-  disabled={saving}
-  className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#0A84FF] to-[#0066CC] text-white text-sm font-semibold disabled:opacity-50 shadow-lg shadow-blue-500/30 active:scale-95 transition-all"
->
-  <FiSave size={16} />
-  {saving? "Đang lưu..." : "Lưu"}
-</motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-1.5 px-4 h-9 rounded-xl text-white text-[14px] font-semibold disabled:opacity-50 shadow-lg active:scale-95 transition-all"
+              style={{background:'linear-gradient(135deg,#0042B2,#1A5FFF)',boxShadow:'0 4px 14px rgba(0,66,178,0.3)'}}
+            >
+              {saving? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <FiSave size={16} />
+              )}
+              {saving? "Đang lưu" : "Lưu"}
+            </motion.button>
           </div>
         </div>
 
         {/* Form */}
-        <div className="px-4 py-6 space-y-6 max-w-2xl mx-auto pb-28">
+        <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} className="px-4 py-6 space-y-5 max-w-2xl mx-auto pb-28">
           <div>
-            <label className="block text-sm font-semibold text-zinc-900 dark:text-white mb-2">
+            <label className="block text-[13px] font-semibold text-zinc-900 dark:text-white mb-2">
               Tiêu đề <span className="text-red-500">*</span>
             </label>
             <input
               value={form.title}
               onChange={(e) => setForm({...form, title: e.target.value })}
-              placeholder="VD: Trông trẻ theo giờ"
+              placeholder="VD: Thiết kế logo quán cafe"
               maxLength={100}
-              className="w-full px-4 py-3.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-base text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:ring-2 focus:ring-[#0A84FF] focus:border-transparent transition-all"
+              className="w-full px-4 h-12 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:ring-2 focus:ring-[#0042B2]/30 focus:border-[#0042B2] transition-all"
             />
-            <p className="text-xs text-zinc-500 mt-1.5">{form.title.length}/100</p>
+            <p className="text-[12px] text-zinc-500 mt-1.5 text-right">{form.title.length}/100</p>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-zinc-900 dark:text-white mb-2">
+            <label className="block text-[13px] font-semibold text-zinc-900 dark:text-white mb-2">
               Mô tả chi tiết
             </label>
             <textarea
               value={form.description}
               onChange={(e) => setForm({...form, description: e.target.value })}
               placeholder="Mô tả công việc, yêu cầu, thời gian..."
-              rows={6}
+              rows={5}
               maxLength={1000}
-              className="w-full px-4 py-3.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-base text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:ring-2 focus:ring-[#0A84FF] focus:border-transparent transition-all resize-none"
+              className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:ring-2 focus:ring-[#0042B2]/30 focus:border-[#0042B2] transition-all resize-none"
             />
-            <p className="text-xs text-zinc-500 mt-1.5">{form.description.length}/1000</p>
+            <p className="text-[12px] text-zinc-500 mt-1.5 text-right">{form.description.length}/1000</p>
           </div>
 
           {task.type === "task" && (
             <>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-semibold text-zinc-900 dark:text-white mb-2">
+                  <label className="block text-[13px] font-semibold text-zinc-900 dark:text-white mb-2">
                     Giá tiền
                   </label>
                   <div className="relative">
@@ -232,16 +244,14 @@ export default function EditTaskPage() {
                       value={form.price}
                       onChange={(e) => setForm({...form, price: Number(e.target.value) })}
                       placeholder="0"
-                      className="w-full pl-4 pr-12 py-3.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-base text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-[#0A84FF] focus:border-transparent transition-all"
+                      className="w-full pl-4 pr-10 h-12 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-[15px] text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-[#0042B2]/30 focus:border-[#0042B2] transition-all"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-sm font-medium">
-                      đ
-                    </span>
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-[13px] font-medium">đ</span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-zinc-900 dark:text-white mb-2">
+                  <label className="block text-[13px] font-semibold text-zinc-900 dark:text-white mb-2">
                     Số lượng
                   </label>
                   <input
@@ -249,120 +259,112 @@ export default function EditTaskPage() {
                     value={form.totalSlots}
                     onChange={(e) => setForm({...form, totalSlots: Number(e.target.value) })}
                     min={1}
-                    className="w-full px-4 py-3.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-base text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-[#0A84FF] focus:border-transparent transition-all"
+                    className="w-full px-4 h-12 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-[15px] text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-[#0042B2]/30 focus:border-[#0042B2] transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-zinc-900 dark:text-white mb-2">
+                <label className="block text-[13px] font-semibold text-zinc-900 dark:text-white mb-2">
                   Yêu cầu
                 </label>
                 <textarea
                   value={form.requirements}
                   onChange={(e) => setForm({...form, requirements: e.target.value })}
-                  placeholder="VD: Có kinh nghiệm, biết nấu ăn..."
+                  placeholder="VD: Có kinh nghiệm, biết Figma..."
                   rows={3}
-                  className="w-full px-4 py-3.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-base text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:ring-2 focus:ring-[#0A84FF] focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:ring-2 focus:ring-[#0042B2]/30 focus:border-[#0042B2] transition-all resize-none"
                 />
               </div>
             </>
           )}
 
           <div>
-            <label className="block text-sm font-semibold text-zinc-900 dark:text-white mb-2">
+            <label className="block text-[13px] font-semibold text-zinc-900 dark:text-white mb-2">
               Danh mục
             </label>
             <select
               value={form.category}
               onChange={(e) => setForm({...form, category: e.target.value })}
-              className="w-full px-4 py-3.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-base text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-[#0A84FF] focus:border-transparent transition-all"
+              className="w-full px-4 h-12 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-[15px] text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-[#0042B2]/30 focus:border-[#0042B2] transition-all"
             >
               <option value="">Chọn danh mục</option>
               {CATEGORIES.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
+                <option key={c.value} value={c.value}>{c.label}</option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-zinc-900 dark:text-white mb-2">
+            <label className="block text-[13px] font-semibold text-zinc-900 dark:text-white mb-2">
               Tags
             </label>
-            <div className="flex gap-2 mb-2">
+            <div className="flex gap-2 mb-2.5">
               <input
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
                 placeholder="Nhập tag và Enter"
-                className="flex-1 px-4 py-3 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-base text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:ring-2 focus:ring-[#0A84FF] focus:border-transparent transition-all"
+                className="flex-1 px-4 h-11 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-[14px] text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:ring-2 focus:ring-[#0042B2]/30 focus:border-[#0042B2] transition-all"
               />
-              <button
+              <motion.button
+                whileTap={{scale:0.9}}
                 onClick={addTag}
-                className="px-4 rounded-2xl bg-[#0A84FF] text-white active:scale-95 transition-all"
+                className="w-11 h-11 rounded-xl text-white flex items-center justify-center active:scale-95 transition-all"
+                style={{background:'#0042B2'}}
               >
                 <FiPlus size={20} />
-              </button>
+              </motion.button>
             </div>
             <div className="flex flex-wrap gap-2">
               {form.tags.map((tag) => (
-                <div
+                <motion.div
                   key={tag}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/50 text-[#0A84FF] text-sm font-medium"
+                  initial={{scale:0.8,opacity:0}}
+                  animate={{scale:1,opacity:1}}
+                  className="flex items-center gap-1.5 pl-3 pr-2 h-7 rounded-full text-[13px] font-medium"
+                  style={{background:'rgba(0,66,178,0.1)',color:'#0042B2'}}
                 >
                   {tag}
-                  <button onClick={() => removeTag(tag)} className="hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-full p-0.5">
+                  <button onClick={() => removeTag(tag)} className="hover:bg-[#0042B2]/20 rounded-full p-0.5 transition-colors">
                     <FiX size={14} />
                   </button>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
 
           {task.type === "task" && (
-            <div className="flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-              <span className="text-sm font-semibold text-zinc-900 dark:text-white">
-                Làm việc từ xa
-              </span>
+            <div className="flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
+              <div>
+                <p className="text-[14px] font-semibold text-zinc-900 dark:text-white">Làm việc từ xa</p>
+                <p className="text-[12px] text-zinc-500 mt-0.5">Cho phép làm online</p>
+              </div>
               <button
                 onClick={() => setForm({...form, isRemote:!form.isRemote })}
-                className={`relative w-12 h-7 rounded-full transition-all ${
-                  form.isRemote? "bg-[#0A84FF]" : "bg-zinc-300 dark:bg-zinc-700"
-                }`}
+                className={`relative w-12 h-[28px] rounded-full transition-all duration-300 ${form.isRemote? "" : "bg-zinc-300 dark:bg-zinc-700"}`}
+                style={{background:form.isRemote?'#0042B2':undefined}}
               >
-                <div
-                  className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all ${
-                    form.isRemote? "left-6" : "left-1"
-                  }`}
-                />
+                <div className={`absolute top-[3px] w-[22px] h-[22px] bg-white rounded-full shadow-md transition-all duration-300 ${form.isRemote? "left-[22px]" : "left-[3px]"}`} />
               </button>
             </div>
           )}
-        </div>
+        </motion.div>
       </div>
     </>
   );
 }
 
-function EditSkeleton() {
+function EditSkeleton({ lottie }: { lottie: string }) {
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      <div className="sticky top-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-800 px-4 py-3">
-        <div className="flex items-center justify-between max-w-2xl mx-auto">
-          <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
-          <div className="h-6 w-32 bg-zinc-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
-          <div className="w-16 h-9 rounded-full bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
-        </div>
+    <div className="min-h-screen bg-zinc-50 dark:bg-black flex flex-col">
+      <div className="sticky top-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b border-zinc-200/50 dark:border-zinc-900 px-4 h-14 flex items-center justify-between">
+        <div className="w-9 h-9 rounded-xl bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+        <div className="h-5 w-28 bg-zinc-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
+        <div className="w-16 h-9 rounded-xl bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
       </div>
-      <div className="px-4 py-6 space-y-6 max-w-2xl mx-auto">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="space-y-2">
-            <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
-            <div className="h-12 bg-zinc-200 dark:bg-zinc-800 rounded-2xl animate-pulse" />
-          </div>
-        ))}
+      <div className="flex-1 flex items-center justify-center">
+        <div className="w-20 h-20"><DotLottieReact src={lottie} autoplay loop /></div>
       </div>
     </div>
   );
