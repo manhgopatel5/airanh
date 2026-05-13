@@ -288,15 +288,28 @@ setHasMore(snap.docs.length === PAGE_SIZE);
         lastViolationAt: serverTimestamp(),
       };
 
- if (newCount === 1) {
+if (newCount === 1) {
+
   updateData.warning = true;
+
+  updateData.warningTitle = "Tài khoản bị cảnh cáo";
+
+  updateData.warningMessage =
+    `Bạn đã bị cảnh cáo vì: ${
+      REASON_LABEL[report.reason] || report.reason
+    }`;
 
   updateData.warningReason =
     REASON_LABEL[report.reason] || report.reason;
 
+  updateData.warningSeen = false;
+
   updateData.warningAt = serverTimestamp();
 
+  updateData.status = "warning";
+
   toast.success(`Đã cảnh cáo @${targetShortId} lần 1`);
+
 
 } else if (newCount === 2) {
 
