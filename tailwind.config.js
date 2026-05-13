@@ -16,8 +16,8 @@ const config: Config = {
 
   safelist: [
     {
-      pattern: /^(bg|text|border)-(slate|gray|zinc|neutral|stone|red|green|blue|yellow|purple|violet|emerald|indigo)-(50|100|200|300|400|500|600|700|800|900)$/,
-      variants: ["hover", "dark", "dark:hover", "group-hover"],
+      pattern: /^(bg|text|border|from|to|ring)-(slate|gray|zinc|neutral|stone|red|green|blue|yellow|purple|violet|emerald|indigo)-(50|100|200|300|400|500|600|700|800|900)$/,
+      variants: ["hover", "dark:hover", "group-hover"],
     },
     {
       pattern: /^(from|to)-(blue|violet|purple|indigo|emerald)-(400|500|600)$/,
@@ -34,106 +34,57 @@ const config: Config = {
       pattern: /^shadow-(blue|violet|purple|indigo|emerald)-(400|500|600)\/(20|30)$/,
       variants: ["hover", "group-hover"],
     },
-    "animate-shimmer",
-    "bg-blue-900/40",
-    "bg-violet-900/40",
-    "bg-emerald-900/40",
+    // ✅ HUHA SAFELIST
+    "bg-huha-blue", "text-huha-blue", "border-huha-blue", "from-huha-blue", "to-huha-blue",
+    "bg-huha-green", "text-huha-green", "border-huha-green", "from-huha-green", "to-huha-green",
+    "bg-huha-blue/10", "bg-huha-green/10", "bg-huha-blue/20", "bg-huha-green/20",
+    "animate-huha-pop", "animate-lottie-bounce", "animate-pull-refresh",
+    "animate-shimmer", "bg-blue-900/40", "bg-violet-900/40", "bg-emerald-900/40",
   ],
 
   theme: {
-    container: {
-      center: true,
-      padding: "1rem",
-      screens: {
-        "2xl": "1400px",
-      },
-    },
-
-    screens: {
-      xs: "475px",
-      ...defaultTheme.screens,
-      "3xl": "1600px",
-    },
+    container: { center: true, padding: "1rem", screens: { "2xl": "1400px" } },
+    screens: { xs: "475px", ...defaultTheme.screens, "3xl": "1600px" },
 
     extend: {
       colors: {
-        // ✅ GIỮ LẠI COLORS CUSTOM CỦA BRO
+        // ✅ HUHA BRAND COLORS
+        huha: {
+          blue: "#0042B2",
+          "blue-dark": "#00308F",
+          "blue-light": "#1A5FFF",
+          green: "#00C853",
+          "green-dark": "#009624",
+          "green-light": "#00E676",
+        },
+        // giữ lại colors custom
         border: "rgb(var(--border) / <alpha-value>)",
         bg: "rgb(var(--bg) / <alpha-value>)",
         "bg-secondary": "rgb(var(--bg-secondary) / <alpha-value>)",
         "bg-card": "rgb(var(--bg-card) / <alpha-value>)",
         text: "rgb(var(--text) / <alpha-value>)",
         "text-secondary": "rgb(var(--text-secondary) / <alpha-value>)",
-        danger: {
-          DEFAULT: "rgb(var(--danger) / <alpha-value>)",
-          hover: "rgb(var(--danger-hover) / <alpha-value>)",
-        },
+        danger: { DEFAULT: "rgb(var(--danger) / <alpha-value>)", hover: "rgb(var(--danger-hover) / <alpha-value>)" },
         success: "rgb(var(--success) / <alpha-value>)",
         warning: "rgb(var(--warning) / <alpha-value>)",
-
-        // ✅ THÊM COLORS SHADCN UI - DÙNG HSL
+        // shadcn
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-          hover: "rgb(var(--primary-hover) / <alpha-value>)",
-          active: "rgb(var(--primary-active) / <alpha-value>)",
-        },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
+        card: { DEFAULT: "hsl(var(--card))", foreground: "hsl(var(--card-foreground))" },
+        popover: { DEFAULT: "hsl(var(--popover))", foreground: "hsl(var(--popover-foreground))" },
+        primary: { DEFAULT: "hsl(var(--primary))", foreground: "hsl(var(--primary-foreground))", hover: "rgb(var(--primary-hover) / <alpha-value>)", active: "rgb(var(--primary-active) / <alpha-value>)" },
+        secondary: { DEFAULT: "hsl(var(--secondary))", foreground: "hsl(var(--secondary-foreground))" },
+        muted: { DEFAULT: "hsl(var(--muted))", foreground: "hsl(var(--muted-foreground))" },
+        accent: { DEFAULT: "hsl(var(--accent))", foreground: "hsl(var(--accent-foreground))" },
+        destructive: { DEFAULT: "hsl(var(--destructive))", foreground: "hsl(var(--destructive-foreground))" },
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
-        chart: {
-          "1": "hsl(var(--chart-1))",
-          "2": "hsl(var(--chart-2))",
-          "3": "hsl(var(--chart-3))",
-          "4": "hsl(var(--chart-4))",
-          "5": "hsl(var(--chart-5))",
-        },
-        sidebar: {
-          DEFAULT: "hsl(var(--sidebar))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
-        },
+        chart: { "1": "hsl(var(--chart-1))", "2": "hsl(var(--chart-2))", "3": "hsl(var(--chart-3))", "4": "hsl(var(--chart-4))", "5": "hsl(var(--chart-5))" },
+        sidebar: { DEFAULT: "hsl(var(--sidebar))", foreground: "hsl(var(--sidebar-foreground))", primary: "hsl(var(--sidebar-primary))", "primary-foreground": "hsl(var(--sidebar-primary-foreground))", accent: "hsl(var(--sidebar-accent))", "accent-foreground": "hsl(var(--sidebar-accent-foreground))", border: "hsl(var(--sidebar-border))", ring: "hsl(var(--sidebar-ring))" },
       },
 
       fontFamily: {
-        sans: [
-          'var(--font-inter)',
-          '"SF Pro Rounded"',
-          '"SF Pro Display"',
-          '-apple-system',
-          'BlinkMacSystemFont',
-          ...defaultTheme.fontFamily.sans,
-        ],
+        sans: ['var(--font-inter)', '"SF Pro Rounded"', '"SF Pro Display"', '-apple-system', 'BlinkMacSystemFont', ...defaultTheme.fontFamily.sans],
         mono: ["var(--font-mono)", ...defaultTheme.fontFamily.mono],
       },
 
@@ -148,43 +99,28 @@ const config: Config = {
         '3xl': ['30px', { lineHeight: '36px', letterSpacing: '-0.03em' }],
       },
 
-      spacing: {
-        '0.5': '2px',
-        '1.5': '6px',
-        '2.5': '10px',
-        '3.5': '14px',
-      },
-
-      fontWeight: {
-        normal: '400',
-        medium: '500',
-        semibold: '600',
-        bold: '700',
-        extrabold: '800',
-      },
+      spacing: { '0.5': '2px', '1.5': '6px', '2.5': '10px', '3.5': '14px' },
 
       keyframes: {
-        "slide-up": {
-          from: { opacity: "0", transform: "translateY(10px)" },
-          to: { opacity: "1", transform: "translateY(0)" },
+        "slide-up": { from: { opacity: "0", transform: "translateY(10px)" }, to: { opacity: "1", transform: "translateY(0)" } },
+        "slide-down": { from: { opacity: "0", transform: "translateY(-10px)" }, to: { opacity: "1", transform: "translateY(0)" } },
+        "fade-in": { from: { opacity: "0" }, to: { opacity: "1" } },
+        "scale-in": { from: { opacity: "0", transform: "scale(0.95)" }, to: { opacity: "1", transform: "scale(1)" } },
+        shimmer: { "100%": { transform: "translateX(100%)" } },
+        spin: { to: { transform: "rotate(360deg)" } },
+        // ✅ HUHA ANIMATIONS
+        "huha-pop": {
+          "0%": { transform: "scale(0.9)", opacity: "0" },
+          "50%": { transform: "scale(1.05)" },
+          "100%": { transform: "scale(1)", opacity: "1" },
         },
-        "slide-down": {
-          from: { opacity: "0", transform: "translateY(-10px)" },
-          to: { opacity: "1", transform: "translateY(0)" },
+        "lottie-bounce": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-4px)" },
         },
-        "fade-in": {
-          from: { opacity: "0" },
-          to: { opacity: "1" },
-        },
-        "scale-in": {
-          from: { opacity: "0", transform: "scale(0.95)" },
-          to: { opacity: "1", transform: "scale(1)" },
-        },
-        shimmer: {
-          "100%": { transform: "translateX(100%)" },
-        },
-        spin: {
-          to: { transform: "rotate(360deg)" },
+        "pull-refresh": {
+          "0%": { transform: "rotate(0deg) scale(0.8)" },
+          "100%": { transform: "rotate(360deg) scale(1)" },
         },
       },
       animation: {
@@ -194,16 +130,13 @@ const config: Config = {
         "scale-in": "scale-in 0.2s ease-out",
         shimmer: "shimmer 2s infinite",
         spin: "spin 1s linear infinite",
+        // ✅ HUHA
+        "huha-pop": "huha-pop 0.35s cubic-bezier(0.22,1,0.36,1)",
+        "lottie-bounce": "lottie-bounce 1.2s ease-in-out infinite",
+        "pull-refresh": "pull-refresh 0.8s ease-out",
       },
 
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-        xl: "0.75rem",
-        "2xl": "1rem",
-        "3xl": "1.5rem",
-      },
+      borderRadius: { lg: "var(--radius)", md: "calc(var(--radius) - 2px)", sm: "calc(var(--radius) - 4px)", xl: "0.75rem", "2xl": "1rem", "3xl": "1.5rem" },
 
       boxShadow: {
         sm: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
@@ -212,27 +145,18 @@ const config: Config = {
         lg: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
         "dark-sm": "0 1px 2px 0 rgb(0 0 0 / 0.3)",
         "dark-md": "0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3)",
+        // ✅ HUHA GLOW
+        "huha-blue": "0 8px 24px -8px rgba(0,66,178,0.35)",
+        "huha-green": "0 8px 24px -8px rgba(0,200,83,0.35)",
       },
 
-      willChange: {
-        transform: "transform",
-        opacity: "opacity",
-        scroll: "scroll-position",
-      },
+      willChange: { transform: "transform", opacity: "opacity", scroll: "scroll-position" },
     },
   },
 
   plugins: [forms, typography, containerQueries, animate],
-
-  corePlugins: {
-    aspectRatio: false,
-    touchAction: false,
-    scrollSnapType: false,
-  },
-
-  future: {
-    hoverOnlyWhenSupported: true,
-  },
+  corePlugins: { aspectRatio: false, touchAction: false, scrollSnapType: false },
+  future: { hoverOnlyWhenSupported: true },
 };
 
 export default config;
