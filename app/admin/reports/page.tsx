@@ -405,12 +405,26 @@ setHasMore(snap.docs.length === PAGE_SIZE);
 
       if (action === "approved") {
         batch.update(userRef, {
-          banned: false,
-          bannedUntil: null,
-          unbannedAt: serverTimestamp(),
-          unbannedBy: user.uid,
-          unbanReason: "Kháng cáo được chấp nhận"
-        });
+
+  banned: false,
+  bannedUntil: null,
+  bannedReason: null,
+  bannedAt: null,
+  bannedBy: null,
+
+  warning: false,
+  warningReason: null,
+  warningAt: null,
+
+  status: "active",
+
+  violationCount: 0,
+  lastViolationAt: null,
+
+  unbannedAt: serverTimestamp(),
+  unbannedBy: user.uid,
+  unbanReason: "Kháng cáo được chấp nhận",
+});
         toast.success(`Đã gỡ ban cho @${appeal.userName}`);
       } else {
         toast.success("Đã từ chối kháng cáo");
@@ -426,27 +440,85 @@ setHasMore(snap.docs.length === PAGE_SIZE);
     }
   }
 
-  const handleUnban = async (userId: string, userName: string) => {
-    if (!user) return;
-    setActionLoading(userId);
+const handleUnban = async (
+  report: Report
+) => {
+  if (!user) return;
 
-    try {
-      await updateDoc(doc(db, "users", userId), {
-        banned: false,
-        bannedUntil: null,
-        unbannedAt: serverTimestamp(),
-        unbannedBy: user.uid,
-        unbanReason: "Gỡ ban thủ công bởi admin"
-      });
-      toast.success(`Đã gỡ ban cho @${userName}`);
-      setConfirmModal({show: false, type: ""});
-    } catch (err) {
-      console.error(err);
-      toast.error("Gỡ ban thất bại");
-    } finally {
-      setActionLoading(null);
+  setActionLoading(report.id);
+
+  try {
+
+    let userId = report.targetId;
+
+    // Nếu là task report -> lấy owner task
+    if (report.type === "task") {
+
+      const taskSnap = await getDoc(
+        doc(db, "tasks", report.targetId)
+      );
+
+      if (!taskSnap.exists()) {
+        toast.error("Không tìm thấy task");
+        return;
+      }
+
+      userId = taskSnap.data().userId;
+
+      if (!userId) {
+        toast.error("Task không có userId");
+        return;
+      }
     }
+
+    await updateDoc(doc(db, "users", userId), {
+
+      // RESET BAN
+      banned: false,
+      bannedUntil: null,
+      bannedReason: null,
+      bannedAt: null,
+      bannedBy: null,
+
+      // RESET WARNING
+      warning: false,
+      warningReason: null,
+      warningAt: null,
+
+      // RESET STATUS
+      status: "active",
+
+      // RESET VIOLATION
+      violationCount: 0,
+      lastViolationAt: null,
+
+      // UNBAN INFO
+      unbannedAt: serverTimestamp(),
+      unbannedBy: user.uid,
+      unbanReason: "Gỡ ban thủ công bởi admin",
+    });
+
+    toast.success(
+      `Đã gỡ ban cho @${report.targetShortId}`
+    );
+
+    setConfirmModal({
+      show: false,
+      type: "",
+    });
+
+  } catch (err) {
+
+    console.error("UNBAN ERROR:", err);
+
+    toast.error("Gỡ ban thất bại");
+
+  } finally {
+
+    setActionLoading(null);
+
   }
+};
 
 const handleAction = async (report: Report, action: "resolved" | "rejected") => {
   setConfirmModal({ show: false, type: "" });
@@ -652,7 +724,7 @@ const handleAction = async (report: Report, action: "resolved" | "rejected") => 
   if (confirmModal.bulk) {
     handleBulkAction(confirmModal.type as any);
   } else if (confirmModal.type === "unban") {
-    handleUnban(confirmModal.report!.targetId, confirmModal.report!.targetShortId);
+  handleUnban(confirmModal.report!);
   } else if (confirmModal.type === "delete") {
     handleDeleteTask(confirmModal.report!.targetId, confirmModal.report!.targetName);
   } else if (confirmModal.type === "approved") {
