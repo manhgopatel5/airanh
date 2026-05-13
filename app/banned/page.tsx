@@ -32,8 +32,11 @@ export default function BannedPage() {
 
   const until = params.get("until");
 
-  useEffect(() => {
-    if (!user) return;
+useEffect(() => {
+  if (!user) {
+    setLoading(false);
+    return;
+  }
 
     const fetchData = async () => {
       const userDoc = await getDoc(doc(db, "users", user.uid));
@@ -99,7 +102,14 @@ export default function BannedPage() {
     );
   }
 
-  const banEndDate = until? new Date(Number(until)) : userData?.bannedUntil?.toDate();
+  const banEndDate = until
+  ? new Date(Number(until))
+  : userData?.bannedUntil &&
+    typeof userData.bannedUntil.toDate === "function"
+    ? userData.bannedUntil.toDate()
+    : userData?.bannedUntil
+      ? new Date(userData.bannedUntil)
+      : null;
   const isPermanent =!banEndDate;
   const violationCount = userData?.violationCount || 0;
 
