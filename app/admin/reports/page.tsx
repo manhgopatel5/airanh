@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { collection, query, where, orderBy, onSnapshot, doc, serverTimestamp, writeBatch, limit, startAfter, getDocs, increment, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, query, where, orderBy, onSnapshot, doc, serverTimestamp, writeBatch, limit, startAfter, getDocs, getDoc, increment, updateDoc, deleteDoc } from "firebase/firestore";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { Shield, CheckCircle, ExternalLink, Search, Loader2, Download, Filter, AlertTriangle, Ban, Clock, FileText, ChevronDown, TrendingUp, MessageSquare, Unlock, XCircle, Trash2 } from "lucide-react";
@@ -232,27 +232,16 @@ const q = query(collection(db, "reports"), ...constraints);
 
       // Nếu báo cáo task thì phải lấy uid từ task
       if (report.type === "task") {
-        const taskSnap = await getDocs(query(
-          collection(db, "tasks"),
-          where("__name__", "==", report.targetId),
-          limit(1)
-        ));
+        const taskRef = doc(db, "tasks", report.targetId);
+        const taskSnap = await getDoc(taskRef);
         
-        if (taskSnap.empty) {
+        if (!taskSnap.exists()) {
           toast.error("Không tìm thấy task để ban");
           setActionLoading(null);
           return;
         }
         
-        const taskDoc = taskSnap.docs[0];
-        if (!taskDoc) {
-          toast.error("Không tìm thấy task");
-          setActionLoading(null);
-          return;
-        }
-        
-        const taskData = taskDoc.data();
-        // Task của bạn dùng userId
+        const taskData = taskSnap.data();
         userIdToBan = taskData.userId 
                    || taskData.authorId 
                    || taskData.uid 
@@ -279,17 +268,12 @@ const q = query(collection(db, "reports"), ...constraints);
 
       if (userSnap.empty) {
         toast.error(`Không tìm thấy user với uid: ${userIdToBan}`);
+        console.error('Report:', report);
         setActionLoading(null);
         return;
       }
 
       const userDoc = userSnap.docs[0];
-      if (!userDoc) {
-        toast.error("Không tìm thấy user");
-        setActionLoading(null);
-        return;
-      }
-
       const userRef = userDoc.ref;
       const userData = userDoc.data();
       const currentViolationCount = userData?.violationCount || 0;
