@@ -572,14 +572,7 @@ userDataUnsub.current = onSnapshot(
   }
 );
 
-      (err) => {
-        console.error("Auth error:", err);
-
-        setError("Lỗi xác thực");
-
-        setLoading(false);
-      }
-    );
+ 
 
     return () => {
       unsubAuth();
