@@ -73,11 +73,11 @@ export default function Home() {
     setShowShareModal(true);
   }, []);
 
-const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) => {
-  setAllItems(prev => prev.map(t =>
-    t.id === taskId? { ...t,...updates } as Task : t
-  ));
-}, []);
+  const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) => {
+    setAllItems(prev => prev.map(t =>
+      t.id === taskId? {...t,...updates } as Task : t
+    ));
+  }, []);
 
   useEffect(() => {
     if (db) return;
@@ -133,7 +133,7 @@ const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) =>
         const snap = await getDocs(q);
         const data = snap.docs.map((doc) => ({
           id: doc.id,
-        ...doc.data(),
+         ...doc.data(),
         })) as Task[];
         setAllItems(data);
         setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -174,7 +174,7 @@ const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) =>
       const snap = await getDocs(q);
       const newItems = snap.docs.map((doc) => ({
         id: doc.id,
-      ...doc.data(),
+       ...doc.data(),
       })) as Task[];
       setAllItems((prev) => [...prev,...newItems]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
@@ -202,6 +202,7 @@ const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) =>
     return () => observerRef.current?.disconnect();
   }, [hasMore, loadingMore, loadMore]);
 
+  // FIX: Bỏ toast.info ra khỏi useMemo để không spam
   const filteredItems = useMemo(() => {
     let result = [...allItems];
     if (mode === "task") {
@@ -212,11 +213,19 @@ const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) =>
     result = result.filter((t) => t.banned!== true && t.hidden!== true);
     if (activeTab === "hot") {
       result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-    } else if (activeTab === "near" || activeTab === "friends") {
-      toast.info("Tính năng đang phát triển");
     }
     return result as Task[];
   }, [allItems, mode, activeTab]);
+
+  // FIX: Dùng useEffect riêng cho toast
+  useEffect(() => {
+    if (activeTab === "near" || activeTab === "friends") {
+      toast.info("Tính năng đang phát triển", {
+        id: "tab-dev",
+        duration: 2000
+      });
+    }
+  }, [activeTab]);
 
   const handleRefresh = () => {
     if ("vibrate" in navigator) navigator.vibrate(10);
@@ -274,6 +283,23 @@ const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) =>
 
         {loading || refreshing? (
           <SkeletonList />
+        ) : filteredItems.length === 0 &&!error? (
+          <div className="flex flex-col items-center justify-center px-6 py-20 text-center animate-in fade-in duration-300">
+            <div className="text-6xl mb-4">🔍</div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
+              Chưa có {mode === "task"? "nhiệm vụ" : "kế hoạch"} nào
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-zinc-500 mb-6">
+              Hãy là người đầu tiên tạo {mode === "task"? "nhiệm vụ" : "kế hoạch"}
+            </p>
+            <button
+              onClick={handleRefresh}
+              className="px-6 py-2.5 rounded-xl bg-blue-500 text-white font-bold active:scale-95 transition flex items-center gap-2"
+            >
+              <FiRefreshCw />
+              Tải lại
+            </button>
+          </div>
         ) : (
           <TaskFeed
             tasks={filteredItems}
