@@ -515,19 +515,17 @@ const onTouchMove = (
                   }}
                   className="flex flex-col items-center py-3 px-2 flex-1 relative transition-all active:scale-95"
                 >
-                  <Icon
-                    size={20}
-                    color={
-                      active
-                        ? activeColor
-                        : undefined
-                    }
-                    className={
-                      !active
-                        ? "text-gray-400 dark:text-zinc-500"
-                        : ""
-                    }
-                  />
+<Icon
+  size={20}
+  className={
+    active
+      ? ""
+      : "text-gray-400 dark:text-zinc-500"
+  }
+  style={{
+    color: active ? activeColor : undefined,
+  }}
+/>
 
                   <span
                     className="text-xs font-bold mt-1"
