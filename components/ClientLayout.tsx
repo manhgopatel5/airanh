@@ -20,6 +20,7 @@ import {
 import FCMProvider from "@/components/FCMProvider";
 import BottomNav from "@/components/BottomNav";
 import WarningModal from "@/components/WarningModal";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 type Props = {
   children: React.ReactNode;
@@ -78,12 +79,31 @@ export default function ClientLayout({ children }: Props) {
   const isCreate =
     pathname.startsWith("/create");
 
+  /* ================= HUHA LOTTIE PREFETCH - Zomato style ================= */
+
+  useEffect(() => {
+    if (typeof window!== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      document.documentElement.classList.add("huha-reduce");
+    }
+    const idle = (window as any).requestIdleCallback || ((cb: any) => setTimeout(cb, 800));
+    idle(() => {
+      [
+        "/lotties/huha-loading-pull-full.lottie",
+        "/lotties/huha-error-shake-full.lottie",
+        "/lotties/huha-empty-full.lottie",
+        "/lotties/huha-success-check-full.lottie",
+        "/lotties/huha-celebrate-full.lottie",
+        "/lotties/huha-wallet-open-full.lottie",
+      ].forEach(s => fetch(s, {priority:"low"}).catch(()=>{}));
+    });
+  }, []);
+
   /* ================= REDIRECT ================= */
 
   useEffect(() => {
     if (loading) return;
 
-    if (!user && !isPublic) {
+    if (!user &&!isPublic) {
       router.replace("/login");
     }
   }, [user, loading, isPublic, router]);
@@ -126,7 +146,7 @@ export default function ClientLayout({ children }: Props) {
         const warningSeen =
           data.warningSeen === true;
 
-        if (hasWarning && !warningSeen) {
+        if (hasWarning &&!warningSeen) {
 
           setWarningData({
             reason:
@@ -140,7 +160,7 @@ export default function ClientLayout({ children }: Props) {
 
             message:
               data.warningMessage ||
-              "Bạn đã vi phạm Tiêu chuẩn cộng đồng của AIR",
+              "Bạn đã vi phạm Tiêu chuẩn cộng đồng của HUHA",
 
             warningAt:
               data.warningAt,
@@ -169,9 +189,11 @@ export default function ClientLayout({ children }: Props) {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-white dark:bg-black flex items-center justify-center">
+      <div className="fixed inset-0 bg-[#FAFAFB] dark:bg-zinc-950 flex items-center justify-center">
 
-        <div className="w-10 h-10 rounded-full border-4 border-[#0A84FF]/20 border-t-[#0A84FF] animate-spin" />
+        <div className="w-36 h-36">
+          <DotLottieReact src="/lotties/huha-loading-pull-full.lottie" loop autoplay />
+        </div>
 
       </div>
     );
@@ -184,17 +206,17 @@ export default function ClientLayout({ children }: Props) {
     const bannedUntil =
       banData.bannedUntil &&
       typeof (banData.bannedUntil as any)
-        ?.toDate === "function"
-        ? (banData.bannedUntil as any)
-            .toDate()
+       ?.toDate === "function"
+       ? (banData.bannedUntil as any)
+           .toDate()
         : null;
 
     const isPermanent =
-      !bannedUntil;
+     !bannedUntil;
 
     const remainMs =
       bannedUntil
-        ? bannedUntil.getTime() -
+       ? bannedUntil.getTime() -
           Date.now()
         : 0;
 
@@ -204,34 +226,27 @@ export default function ClientLayout({ children }: Props) {
         remainMs /
           1000 /
           60 /
-          60 /
           24
       )
     );
 
     return (
 
-      <div className="fixed inset-0 z-[999999999] bg-[#F5F5F7] dark:bg-black flex items-center justify-center p-4 overflow-hidden">
+      <div className="fixed inset-0 z-[999999999] bg-[#F5F7FA] dark:bg-black flex items-center justify-center p-4 overflow-hidden">
 
         {/* BACKGROUND */}
         <div className="absolute inset-0 backdrop-blur-[6px]" />
 
-        <div className="absolute top-[120px] w-[280px] h-[280px] bg-[#0A84FF]/10 blur-3xl rounded-full" />
+        <div className="absolute top-[120px] w-[280px] h-[280px] bg-[#0042B2]/10 blur-3xl rounded-full" />
 
         {/* CARD */}
         <div className="relative w-full max-w-md bg-white dark:bg-zinc-900 rounded-[36px] shadow-[0_10px_40px_rgba(0,0,0,0.08)] border border-[#E5E5EA] dark:border-zinc-800 overflow-hidden">
 
           <div className="p-7">
 
-            {/* ICON */}
-            <div className="w-28 h-28 rounded-[34px] bg-gradient-to-br from-[#0A84FF] to-[#5AC8FA] flex items-center justify-center mx-auto shadow-[0_10px_40px_rgba(10,132,255,0.35)] mb-7">
-
-              <ShieldX
-                className="text-white"
-                size={52}
-                strokeWidth={2.2}
-              />
-
+            {/* ICON - HUHA LOTTIE */}
+            <div className="w-28 h-28 mx-auto mb-7">
+              <DotLottieReact src="/lotties/huha-error-shake-full.lottie" loop autoplay />
             </div>
 
             {/* TITLE */}
@@ -243,16 +258,16 @@ export default function ClientLayout({ children }: Props) {
 
             <p className="text-center text-[15px] text-[#8E8E93] dark:text-zinc-400 leading-relaxed mb-7">
 
-              Bạn đã vi phạm Tiêu chuẩn cộng đồng của AIR
+              Bạn đã vi phạm Tiêu chuẩn cộng đồng của HUHA
 
             </p>
 
             {/* REASON */}
-            <div className="bg-gradient-to-r from-[#F0F8FF] to-[#E6F4FF] dark:from-[#0A84FF]/10 dark:to-[#5AC8FA]/10 border border-[#BEE3FF] dark:border-[#0A84FF]/20 rounded-[28px] p-5 mb-5">
+            <div className="bg-gradient-to-r from-[#0042B2]/5 to-[#00C853]/5 dark:from-[#0042B2]/10 dark:to-[#00C853]/10 border border-[#0042B2]/20 dark:border-[#0042B2]/20 rounded-[28px] p-5 mb-5">
 
               <div className="flex items-start gap-4">
 
-                <div className="w-11 h-11 rounded-full bg-[#0A84FF] flex items-center justify-center shrink-0 shadow-lg">
+                <div className="w-11 h-11 rounded-full bg-[#0042B2] flex items-center justify-center shrink-0 shadow-lg">
 
                   <ShieldX
                     className="text-white"
@@ -263,7 +278,7 @@ export default function ClientLayout({ children }: Props) {
 
                 <div className="flex-1">
 
-                  <p className="text-[#0A84FF] font-bold text-[15px] mb-1">
+                  <p className="text-[#0042B2] font-bold text-[15px] mb-1">
 
                     Lý do vi phạm
 
@@ -279,7 +294,7 @@ export default function ClientLayout({ children }: Props) {
                   <p className="text-[#8E8E93] dark:text-zinc-500 text-[13px] mt-2">
 
                     {isPermanent
-                      ? "Khóa vĩnh viễn"
+                     ? "Khóa vĩnh viễn"
                       : `Còn ${remainDays} ngày`}
 
                   </p>
@@ -331,7 +346,7 @@ export default function ClientLayout({ children }: Props) {
 
                   </div>
 
-                  <div className="w-14 h-14 rounded-2xl bg-[#0A84FF] flex items-center justify-center shadow-lg shadow-[#0A84FF]/20">
+                  <div className="w-14 h-14 rounded-2xl bg-[#0042B2] flex items-center justify-center shadow-lg shadow-[#0042B2]/20">
 
                     <Clock3
                       className="text-white"
@@ -350,7 +365,7 @@ export default function ClientLayout({ children }: Props) {
               onClick={() => {
                 router.replace("/login");
               }}
-              className="w-full h-16 rounded-[24px] bg-gradient-to-r from-[#0A84FF] to-[#7DD3FC] text-white font-black text-[18px] shadow-[0_10px_30px_rgba(10,132,255,0.35)] active:scale-[0.98] transition-all"
+              className="w-full h-16 rounded-[24px] bg-gradient-to-r from-[#0042B2] to-[#00C853] text-white font-black text-[18px] shadow-[0_10px_30px_rgba(0,66,178,0.35)] active:scale-[0.98] transition-all"
             >
 
               Quay lại
@@ -367,7 +382,7 @@ export default function ClientLayout({ children }: Props) {
 
   return (
 
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors font-sans">
+    <div className="min-h-screen bg-gradient-to-b from-[#FAFAFB] to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors font-sans">
 
       {/* FCM */}
       {user && (
@@ -377,8 +392,8 @@ export default function ClientLayout({ children }: Props) {
       {/* PAGE */}
       <div
         className={
-          !isChatDetail && !isCreate
-            ? "pb-24"
+         !isChatDetail &&!isCreate
+           ? "pb-24"
             : ""
         }
       >
@@ -388,8 +403,8 @@ export default function ClientLayout({ children }: Props) {
       {/* BOTTOM NAV */}
       {!isPublic &&
         user &&
-        !isChatDetail &&
-        !isCreate && (
+       !isChatDetail &&
+       !isCreate && (
           <BottomNav />
         )}
 
