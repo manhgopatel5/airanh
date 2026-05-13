@@ -24,13 +24,13 @@ type Props = {
 
   reason: string;
 
-  title?: string;
+  title?: string | undefined;
 
-  message?: string;
+  message?: string | undefined;
 
- warningAt?: Timestamp | undefined;
+  warningAt?: Timestamp | undefined;
 
-  onClose?: () => void;
+  onClose?: (() => void) | undefined;
 };
 
 export default function WarningModal({
