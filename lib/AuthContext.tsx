@@ -473,22 +473,31 @@ export const AuthProvider = ({
 // WARNING REALTIME
 if (
   data.warning &&
-  data.warningReason &&
-  !stillBanned &&
-  sessionStorage.getItem(
-    `warning_${data.uid}_${data.warningAt?.seconds || 0}`
-  ) !== "shown"
+  !stillBanned
 ) {
-  sessionStorage.setItem(
-    `warning_${data.uid}_${data.warningAt?.seconds || 0}`,
-    "shown"
-  );
+  const warningKey = `warning_${data.uid}_${
+    data.warningAt?.seconds || 0
+  }`;
 
-  setTimeout(() => {
-    alert(
-      `⚠️ CẢNH CÁO VI PHẠM\n\nLý do: ${data.warningReason}\n\nNếu tiếp tục vi phạm tài khoản sẽ bị khóa.`
+  if (
+    sessionStorage.getItem(warningKey) !== "shown"
+  ) {
+    sessionStorage.setItem(
+      warningKey,
+      "shown"
     );
-  }, 300);
+
+    setTimeout(() => {
+      alert(
+        `⚠️ CẢNH CÁO VI PHẠM\n\n` +
+        `Lý do: ${
+          data.warningReason ||
+          "Vi phạm cộng đồng"
+        }\n\n` +
+        `Nếu tiếp tục vi phạm tài khoản sẽ bị khóa.`
+      );
+    }, 300);
+  }
 }
 
              // REDIRECT BANNED
