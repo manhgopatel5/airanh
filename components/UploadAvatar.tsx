@@ -1,16 +1,18 @@
 "use client";
 
-import { getFirebaseStorage, getFirebaseDB, getFirebaseAuth } from "@/lib/firebase"; // ✅ FIX
+import { getFirebaseStorage, getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
 import { useRef, useState, useEffect } from "react";
 import { FiCamera, FiLoader, FiCheck, FiX } from "react-icons/fi";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function UploadAvatar() {
-  const storage = getFirebaseStorage(); // ✅ FIX
-  const db = getFirebaseDB(); // ✅ FIX
-  const auth = getFirebaseAuth(); // ✅ FIX
+  const storage = getFirebaseStorage();
+  const db = getFirebaseDB();
+  const auth = getFirebaseAuth();
 
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -20,6 +22,8 @@ export default function UploadAvatar() {
   const inputRef = useRef<HTMLInputElement>(null);
   const uploadTaskRef = useRef<ReturnType<typeof uploadBytesResumable> | null>(null);
   const previewUrlRef = useRef<string | null>(null);
+
+  const successLottie = "/lotties/huha-celebrate-full.lottie";
 
   useEffect(() => {
     return () => {
@@ -31,7 +35,7 @@ export default function UploadAvatar() {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     const user = auth.currentUser;
-    if (!file || !user) return;
+    if (!file ||!user) return;
 
     if (!user.uid) {
       setError("Vui lòng đăng nhập lại");
@@ -42,6 +46,7 @@ export default function UploadAvatar() {
     setUploading(true);
     setSuccess(false);
     setProgress(0);
+    navigator.vibrate?.(5);
 
     uploadTaskRef.current?.cancel();
     if (previewUrlRef.current) {
@@ -59,7 +64,7 @@ export default function UploadAvatar() {
       if (!processFile.type.startsWith("image/")) {
         throw new Error("Chỉ chấp nhận file ảnh");
       }
-      if (processFile.size > 5 * 1024 * 1024) {
+      if (processFile.size > 5 * 1024) {
         throw new Error("Ảnh không được vượt quá 5MB");
       }
 
@@ -104,7 +109,7 @@ export default function UploadAvatar() {
           setProgress(Math.round(prog));
         },
         async (err) => {
-          if (attempt < 2 && err.code !== "storage/canceled") {
+          if (attempt < 2 && err.code!== "storage/canceled") {
             console.warn(`Upload fail lần ${attempt}, retry...`);
             await new Promise(r => setTimeout(r, 1000 * attempt));
             return uploadWithRetry(storageRef, blob, user, attempt + 1).then(resolve).catch(reject);
@@ -124,7 +129,8 @@ export default function UploadAvatar() {
 
             setSuccess(true);
             setUploading(false);
-            setTimeout(() => setSuccess(false), 2000);
+            navigator.vibrate?.([10,20,10]);
+            setTimeout(() => setSuccess(false), 2200);
             resolve();
           } catch (e) {
             reject(e);
@@ -157,7 +163,7 @@ export default function UploadAvatar() {
           ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, size, size);
 
           canvas.toBlob(
-            (blob) => blob ? resolve(blob) : reject(new Error("Compress failed")),
+            (blob) => blob? resolve(blob) : reject(new Error("Compress failed")),
             "image/jpeg",
             0.85
           );
@@ -175,6 +181,7 @@ export default function UploadAvatar() {
     setUploading(false);
     setProgress(0);
     setPreview(null);
+    navigator.vibrate?.(5);
     if (previewUrlRef.current) {
       URL.revokeObjectURL(previewUrlRef.current);
       previewUrlRef.current = null;
@@ -197,27 +204,31 @@ export default function UploadAvatar() {
       <button
         onClick={() => inputRef.current?.click()}
         disabled={uploading}
-        className="group relative flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors disabled:opacity-50"
+        className="group relative flex items-center gap-3 text-sm font-semibold transition-colors disabled:opacity-50"
+        style={{color:'#0042B2'}}
       >
         <div className="relative">
-          <img
+          <motion.img
+            whileHover={{scale:1.03}}
             src={
               preview ||
               user?.photoURL ||
-              `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || "U")}&background=random`
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || "U")}&background=0042B2&color=fff`
             }
-            className="w-20 h-20 rounded-full object-cover ring-4 ring-white dark:ring-zinc-900 shadow-lg"
+            className="w-20 h-20 rounded-full object-cover ring-4 ring-white dark:ring-zinc-950 shadow-xl"
             alt="avatar"
           />
 
-          <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            {uploading ? (
+          <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+            {uploading? (
               <div className="text-white text-center">
                 <FiLoader className="animate-spin mx-auto mb-1" size={20} />
                 <span className="text-xs font-bold">{progress}%</span>
               </div>
-            ) : success ? (
-              <FiCheck className="text-white" size={24} />
+            ) : success? (
+              <div className="w-8 h-8">
+                <DotLottieReact src={successLottie} autoplay style={{width:32,height:32}} />
+              </div>
             ) : (
               <FiCamera className="text-white" size={24} />
             )}
@@ -226,17 +237,18 @@ export default function UploadAvatar() {
           {uploading && (
             <>
               <svg className="absolute inset-0 -rotate-90" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="48" fill="none" stroke="rgb(59 130 246 / 0.3)" strokeWidth="4" />
+                <circle cx="50" cy="50" r="48" fill="none" stroke="rgba(0,66,178,0.2)" strokeWidth="4" />
                 <circle
                   cx="50"
                   cy="50"
                   r="48"
                   fill="none"
-                  stroke="rgb(59 130 246)"
+                  stroke="#0042B2"
                   strokeWidth="4"
                   strokeDasharray={`${progress * 3.01} 301`}
                   strokeLinecap="round"
                   className="transition-all duration-300"
+                  style={{filter:'drop-shadow(0 0 6px rgba(0,66,178,0.5))'}}
                 />
               </svg>
               <button
@@ -244,20 +256,30 @@ export default function UploadAvatar() {
                   e.stopPropagation();
                   handleCancel();
                 }}
-                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-colors"
+                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1.5 shadow-lg hover:bg-red-600 transition-colors"
               >
-                <FiX size={14} />
+                <FiX size={12} />
               </button>
             </>
           )}
+
+          <AnimatePresence>
+            {success && (
+              <motion.div initial={{scale:0}} animate={{scale:1.2}} exit={{scale:0}} className="absolute -inset-2 pointer-events-none">
+                <DotLottieReact src={successLottie} autoplay style={{width:96,height:96,marginLeft:-8,marginTop:-8}} />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        <span>Đổi ảnh đại diện</span>
+        <span className="hover:underline">Đổi ảnh đại diện</span>
       </button>
 
-      {error && (
-        <p className="text-xs text-red-500 mt-2 absolute max-w-[200px]">{error}</p>
-      )}
+      <AnimatePresence>
+        {error && (
+          <motion.p initial={{opacity:0,y:-5}} animate={{opacity:1,y:0}} exit={{opacity:0}} className="text-xs text-red-500 mt-2 absolute max-w-[200px] font-medium">{error}</motion.p>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
