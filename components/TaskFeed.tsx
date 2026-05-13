@@ -71,14 +71,17 @@ export default function TaskFeed({ tasks, mode, activeTab, onShare, onDelete, on
   task={task}
   mode={mode}
   theme={mode}
-              onDelete={onDelete}
-              {...(onShare && { 
-                onShare: () => onShare(task) 
-              })}
-              {...(onTaskUpdate && { 
-                onTaskUpdate: (updates: Partial<Task>) => onTaskUpdate(task.id, updates) 
-              })}
-            />
+  {...(onDelete && {
+    onDelete,
+  })}
+  {...(onShare && { 
+    onShare: () => onShare(task) 
+  })}
+  {...(onTaskUpdate && { 
+    onTaskUpdate: (updates: Partial<Task>) =>
+      onTaskUpdate(task.id, updates)
+  })}
+/>
           </motion.div>
         ))}
       </AnimatePresence>
