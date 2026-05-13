@@ -74,12 +74,11 @@ export default function TaskFeed({ tasks, mode, activeTab, onShare, onDelete, on
   {...(onDelete && {
     onDelete,
   })}
-  {...(onShare && { 
-    onShare: () => onShare(task) 
+  {...(onShare && {
+    onShare: () => onShare(task)
   })}
-  {...(onTaskUpdate && { 
-    onTaskUpdate: (updates: Partial<Task>) =>
-      onTaskUpdate(task.id, updates)
+  {...(onTaskUpdate && {
+    onTaskUpdate,
   })}
 />
           </motion.div>
