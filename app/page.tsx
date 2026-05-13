@@ -119,21 +119,18 @@ export default function Home() {
         )
       );
 
-      // celebrate
-      if (
-        updates.status === "done" ||
-        updates.completed
-      ) {
-        setShowCelebrate(true);
+// celebrate
+if (updates.completed === true) {
+  setShowCelebrate(true);
 
-        if ("vibrate" in navigator) {
-          navigator.vibrate([10, 20, 10]);
-        }
+  if ("vibrate" in navigator) {
+    navigator.vibrate([10, 20, 10]);
+  }
 
-        setTimeout(() => {
-          setShowCelebrate(false);
-        }, 1800);
-      }
+  setTimeout(() => {
+    setShowCelebrate(false);
+  }, 1800);
+}
     },
     []
   );
