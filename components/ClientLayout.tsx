@@ -138,7 +138,13 @@ export default function ClientLayout({ children }: Props) {
 
   /* ================= LOADING ================= */
 
-  if (loading) return null;
+  if (loading) {
+  return (
+    <div className="fixed inset-0 bg-white dark:bg-black flex items-center justify-center">
+      <div className="w-10 h-10 border-4 border-[#0A84FF]/20 border-t-[#0A84FF] rounded-full animate-spin" />
+    </div>
+  );
+}
 {/* ================= BAN SCREEN ================= */}
 
 if (user && banData.banned) {
@@ -280,7 +286,9 @@ const bannedUntil =
 
           {/* BUTTON */}
           <button
-            onClick={() => router.back()}
+            onClick={() => {
+  window.location.href = "/login";
+}}
             className="w-full h-16 rounded-[24px] bg-gradient-to-r from-[#0A84FF] to-[#7DD3FC] text-white font-black text-[18px] shadow-[0_10px_30px_rgba(10,132,255,0.35)] active:scale-[0.98] transition-all"
           >
             Quay lại
