@@ -11,7 +11,7 @@ import {
 } from "react";
 
 import { onAuthStateChanged, User } from "firebase/auth";
-
+import { toast } from "sonner"; // THÊM Ở ĐẦU FILE
 import {
   doc,
   getDoc,
@@ -193,13 +193,12 @@ export const AuthProvider = ({
           beforeUnloadHandlerRef.current = null;
         }
 
-        if (!firebaseUser) {
-          setUserData(null);
-
-          setLoading(false);
-
-          return;
-        }
+ if (!firebaseUser) {
+  setUserData(null);
+  setLoading(false);
+  warningToastShown.current = null; // THÊM DÒNG NÀY
+  return;
+}
 
         try {
           const userRef = doc(db, "users", firebaseUser.uid);
@@ -595,15 +594,10 @@ export const AuthProvider = ({
 useEffect(() => {
   if (!userData || loading || !db) return;
   if (userData.banned || userData.status === "banned") return;
+  if (!userData.warningAt) return;
 
-  // Dùng toMillis() để key unique tuyệt đối
-  const warningTime = userData.warningAt?.toMillis() || 0;
+  const warningTime = userData.warningAt.toMillis();
   const warningKey = `${userData.uid}_${warningTime}`;
-
-  // Reset ref khi đổi user
-  if (warningToastShown.current && !warningToastShown.current.startsWith(userData.uid)) {
-    warningToastShown.current = null;
-  }
 
   if (
     userData.warning === true &&
@@ -612,38 +606,30 @@ useEffect(() => {
   ) {
     warningToastShown.current = warningKey;
     
-    // Delay 300ms cho chắc chắn Toaster đã render xong
-    const timer = setTimeout(() => {
-      import("sonner").then(({ toast }) => {
-        console.log("FIRING TOAST FOR:", userData.username);
-        toast.warning(userData.warningTitle || "⚠️ CẢNH CÁO VI PHẠM", {
-          description: userData.warningMessage || `Lý do: ${userData.warningReason}. Nếu tiếp tục vi phạm tài khoản sẽ bị khóa.`,
-          duration: 10000,
-          id: "warning-toast",
-          action: {
-            label: "Đã hiểu",
-            onClick: async () => {
-              try {
-                await updateDoc(doc(db, "users", userData.uid), {
-                  warningSeen: true
-                });
-              } catch (e) {
-                console.error("Set warningSeen failed:", e);
-              }
-            }
-          },
-          classNames: {
-            toast: "bg-[#FFF3E0] border-2 border-[#FF9500] dark:bg-[#FF9500]/20 rounded-2xl",
-            title: "text-[#FF9500] font-bold text-base",
-            description: "text-[#1C1C1E] dark:text-zinc-300",
+    toast.warning(userData.warningTitle || "⚠️ CẢNH CÁO VI PHẠM", {
+      description: userData.warningMessage || `Lý do: ${userData.warningReason}. Nếu tiếp tục vi phạm tài khoản sẽ bị khóa.`,
+      duration: 10000,
+      id: "warning-toast",
+      action: {
+        label: "Đã hiểu",
+        onClick: async () => {
+          try {
+            await updateDoc(doc(db, "users", userData.uid), {
+              warningSeen: true
+            });
+          } catch (e) {
+            console.error("Set warningSeen failed:", e);
           }
-        });
-      });
-    }, 300);
-
-    return () => clearTimeout(timer);
+        }
+      },
+      classNames: {
+        toast: "bg-[#FFF3E0] border-2 border-[#FF9500] dark:bg-[#FF9500]/20 rounded-2xl",
+        title: "text-[#FF9500] font-bold text-base",
+        description: "text-[#1C1C1E] dark:text-zinc-300",
+      }
+    });
   }
-}, [userData?.warning, userData?.warningSeen, userData?.warningAt, userData?.banned, userData?.status, userData?.uid, loading, db]);
+}, [userData?.warning, userData?.warningSeen, userData?.warningAt, userData?.uid, loading, db]);
 
   const value = useMemo(
     () => ({
