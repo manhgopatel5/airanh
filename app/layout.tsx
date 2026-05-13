@@ -71,14 +71,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="vi" className={cn(inter.variable)} suppressHydrationWarning>
       <head>
-        {/* Preconnect + preload lottie core - như Zomato */}
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        {/* Preconnect - Zomato pattern */}
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://huha.vn" />
-        {/* Preload 4 lottie quan trọng nhất */}
+        {/* Preload 6 lottie core HUHA */}
+        <link rel="preload" href="/lotties/huha-loading-pull-full.lottie" as="fetch" crossOrigin="anonymous" />
         <link rel="preload" href="/lotties/huha-idle-full.lottie" as="fetch" crossOrigin="anonymous" />
         <link rel="preload" href="/lotties/huha-empty-full.lottie" as="fetch" crossOrigin="anonymous" />
         <link rel="preload" href="/lotties/huha-success-check-full.lottie" as="fetch" crossOrigin="anonymous" />
         <link rel="preload" href="/lotties/huha-error-shake-full.lottie" as="fetch" crossOrigin="anonymous" />
+        <link rel="preload" href="/lotties/huha-celebrate-full.lottie" as="fetch" crossOrigin="anonymous" />
       </head>
       <body className="font-sans bg-[#FAFAFB] dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 antialiased overscroll-none tracking-tight">
         <LazyMotion features={domAnimation} strict>
