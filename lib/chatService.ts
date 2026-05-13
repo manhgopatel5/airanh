@@ -32,6 +32,13 @@ export class ChatError extends Error {
   }
 }
 
+/* ================= HUHA CONSTANTS ================= */
+const HUHA = {
+  MAX_MESSAGE: 2000,
+  MAX_ATTACHMENTS: 5,
+  TYPING_TIMEOUT: 3000,
+} as const;
+
 /* ================= TYPES ================= */
 export type Message = {
   id: string;
@@ -70,7 +77,7 @@ export type Chat = {
 
 /* ================= HELPERS ================= */
 const validateUser = (user?: User | null) => {
-  if (!user?.uid) throw new ChatError("Bạn cần đăng nhập");
+  if (!user?.uid) throw new ChatError("Bạn cần đăng nhập HUHA");
 };
 
 /* ================= GET OR CREATE CHAT ================= */
@@ -78,7 +85,7 @@ export const getOrCreateConversation = async (
   user1: string,
   user2: string
 ): Promise<string | null> => {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   if (!user1 ||!user2 || user1 === user2) return null;
 
@@ -122,11 +129,12 @@ export const sendMessage = async (
     replyTo?: Message["replyTo"];
   }
 ): Promise<string | null> => {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   validateUser(user);
   if (!chatId ||!payload.type) throw new ChatError("Thiếu dữ liệu");
   if (payload.type === "text" &&!payload.text?.trim()) throw new ChatError("Tin nhắn trống");
+  if (payload.text && payload.text.length > HUHA.MAX_MESSAGE) throw new ChatError(`Tối đa ${HUHA.MAX_MESSAGE} ký tự`);
 
   const chatRef = doc(db, "chats", chatId);
   const chatSnap = await getDoc(chatRef);
@@ -140,19 +148,19 @@ export const sendMessage = async (
 
   const lastMessageText =
     payload.type === "text"
-     ? payload.text!.slice(0, 50)
+    ? payload.text!.slice(0, 50)
       : payload.type === "image"
-     ? "📷 Ảnh"
+    ? "📷 Ảnh"
       : payload.type === "file"
-     ? `📎 Tệp đính kèm`
+    ? `📎 Tệp đính kèm`
       : payload.type === "location"
-     ? "📍 Vị trí"
+    ? "📍 Vị trí"
       : "";
 
   batch.set(msgRef, {
     chatId,
     senderId: user.uid,
-   ...payload,
+  ...payload,
     text: payload.text?.trim() || "",
     createdAt: serverTimestamp(),
     seenBy: [user.uid],
@@ -187,7 +195,7 @@ export const listenMessages = (
   callback: (msgs: Message[], hasMore: boolean) => void,
   options?: { limit?: number; startAfterDoc?: QueryDocumentSnapshot<DocumentData> }
 ): Unsubscribe => {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   if (!chatId ||!userId) return () => {};
 
@@ -207,9 +215,9 @@ export const listenMessages = (
     q,
     (snapshot) => {
       const data = snapshot.docs
-       .map((d) => ({ id: d.id,...d.data() } as Message))
-       .filter((m) =>!m.deletedFor?.includes(userId))
-       .reverse();
+      .map((d) => ({ id: d.id,...d.data() } as Message))
+      .filter((m) =>!m.deletedFor?.includes(userId))
+      .reverse();
       callback(data, snapshot.docs.length === (options?.limit || 50));
     },
     (err) => {
@@ -225,7 +233,7 @@ export const listenConversations = (
   callback: (data: Chat[]) => void,
   onError?: (err: Error) => void
 ): Unsubscribe => {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   if (!userId) return () => {};
 
@@ -286,7 +294,7 @@ export const setTyping = async (
   userId: string,
   isTyping: boolean
 ): Promise<void> => {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   if (!chatId ||!userId) return;
   const key = `${chatId}_${userId}`;
@@ -303,7 +311,7 @@ export const setTyping = async (
         [`typing.${userId}`]: false,
       }).catch(() => {});
       typingTimers.delete(key);
-    }, 3000);
+    }, HUHA.TYPING_TIMEOUT);
     typingTimers.set(key, timer);
   } else {
     if (typingTimers.has(key)) {
@@ -322,7 +330,7 @@ export const editMessage = async (
   messageId: string,
   newText: string
 ): Promise<void> => {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   if (!chatId ||!messageId ||!newText.trim()) throw new ChatError("Dữ liệu không hợp lệ");
 
@@ -350,7 +358,7 @@ export const deleteMessage = async (
   userId: string,
   deleteForEveryone: boolean = false
 ): Promise<void> => {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   if (!chatId ||!messageId ||!userId) throw new ChatError("Thiếu thông tin");
 
@@ -406,7 +414,7 @@ export const addReaction = async (
   userId: string,
   emoji: string
 ): Promise<void> => {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   if (!chatId ||!messageId ||!userId) return;
   const msgRef = doc(db, "chats", chatId, "messages", messageId);
@@ -420,7 +428,7 @@ export const removeReaction = async (
   messageId: string,
   userId: string
 ): Promise<void> => {
-  const db = getFirebaseDB(); // ✅ Thêm db
+  const db = getFirebaseDB();
 
   if (!chatId ||!messageId ||!userId) return;
   const msgRef = doc(db, "chats", chatId, "messages", messageId);
