@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Smile } from "lucide-react";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const EMOJI_LIST = [
   "😀", "😂", "😍", "🤔", "😭", "😡", "👍", "👎", "❤️", "🔥",
@@ -15,7 +17,11 @@ type Props = {
 
 export default function EmojiPicker({ onSelect, align = "left" }: Props) {
   const [open, setOpen] = useState(false);
+  const [burstEmoji, setBurstEmoji] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+
+  // ✅ LOTTIE
+  const burstLottie = "/lotties/huha-celebrate-full.lottie";
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -27,47 +33,68 @@ export default function EmojiPicker({ onSelect, align = "left" }: Props) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
-  // preventDefault + stopPropagation để không trigger parent
   const toggleOpen = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setOpen(!open);
+    navigator.vibrate?.(5);
   }, [open]);
 
   const handleSelect = useCallback((e: React.MouseEvent, emoji: string) => {
     e.preventDefault();
     e.stopPropagation();
-    onSelect(emoji);
-    setOpen(false);
+    setBurstEmoji(emoji);
+    navigator.vibrate?.([5,10,5]);
+    setTimeout(() => {
+      onSelect(emoji);
+      setOpen(false);
+      setBurstEmoji(null);
+    }, 180);
   }, [onSelect]);
 
   return (
     <div className="relative" ref={ref}>
       <button
         onClick={toggleOpen}
-        className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 transition active:scale-90"
+        className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition active:scale-90 relative"
         aria-label="Chọn emoji"
       >
-        <Smile size={20} className="text-gray-500 dark:text-zinc-400" />
+        <Smile size={20} className="text-zinc-500 dark:text-zinc-400 group-hover:text-[#0042B2] transition-colors" />
+        {/* Burst khi chọn */}
+        <AnimatePresence>
+          {burstEmoji && (
+            <motion.div initial={{scale:0,opacity:0}} animate={{scale:1.5,opacity:1}} exit={{scale:2,opacity:0}} className="absolute inset-0 pointer-events-none flex items-center justify-center">
+              <span className="text-xl">{burstEmoji}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </button>
 
-      {open && (
-        <div
-          className={`absolute bottom-full mb-2 p-2 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-gray-100 dark:border-zinc-800 grid grid-cols-5 gap-1 z-50 w-64 ${
-            align === "right"? "right-0" : "left-0"
-          }`}
-        >
-          {EMOJI_LIST.map((e) => (
-            <button
-              key={e}
-              onClick={(ev) => handleSelect(ev, e)}
-              className="text-2xl p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-zinc-800 transition active:scale-90"
-            >
-              {e}
-            </button>
-          ))}
-        </div>
-      )}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{opacity:0,scale:0.9,y:8}}
+            animate={{opacity:1,scale:1,y:0}}
+            exit={{opacity:0,scale:0.9,y:8}}
+            transition={{type:"spring",damping:22,stiffness:320}}
+            className={`absolute bottom-full mb-2 p-2.5 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-zinc-200/50 dark:border-zinc-800 grid grid-cols-5 gap-1 z-50 w-64 ${
+              align === "right"? "right-0" : "left-0"
+            }`}
+          >
+            {EMOJI_LIST.map((e) => (
+              <motion.button
+                key={e}
+                whileHover={{scale:1.15}}
+                whileTap={{scale:0.85}}
+                onClick={(ev) => handleSelect(ev, e)}
+                className="text-2xl p-2.5 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition relative"
+              >
+                {e}
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
