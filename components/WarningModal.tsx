@@ -28,7 +28,7 @@ type Props = {
 
   message?: string;
 
-  warningAt?: Timestamp;
+ warningAt?: Timestamp | undefined;
 
   onClose?: () => void;
 };
