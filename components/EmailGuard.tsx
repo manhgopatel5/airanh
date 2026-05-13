@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { sendEmailVerification } from "firebase/auth";
 import { toast } from "sonner";
-import { FiMail, FiLoader } from "react-icons/fi";
+
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { motion } from "framer-motion";
 
