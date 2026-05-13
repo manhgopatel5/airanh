@@ -183,26 +183,33 @@ export default function ReportModal({
   className="bg-white dark:bg-zinc-950 rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-md max-h-[100dvh] sm:max-h-[90vh] pointer-events-auto flex flex-col overflow-hidden"
   onClick={(e) => e.stopPropagation()}
 >
-              {/* Header */}
-              <div className="px-5 pt-5 pb-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 bg-red-100 dark:bg-red-900/20 rounded-2xl flex items-center justify-center relative overflow-hidden">
-                    {/* ✅ LOTTIE THAY AlertTriangle */}
-                    <DotLottieReact src={warningLottie} autoplay loop={false} style={{width:30,height:30}} />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold">Báo cáo vi phạm</h3>
-                    <p className="text-xs text-gray-500 dark:text-zinc-400">
-                      Giúp cộng đồng an toàn hơn
-                    </p>
-                  </div>
-                <button
-                  onClick={onClose}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl transition active:scale-95"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+             {/* Header */}
+<div className="px-5 pt-5 pb-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between shrink-0">
+  <div className="flex items-center gap-3">
+    <div className="w-11 h-11 bg-red-100 dark:bg-red-900/20 rounded-2xl flex items-center justify-center relative overflow-hidden">
+      <DotLottieReact
+        src={warningLottie}
+        autoplay
+        loop={false}
+        style={{ width: 30, height: 30 }}
+      />
+    </div>
+
+    <div>
+      <h3 className="text-lg font-bold">Báo cáo vi phạm</h3>
+      <p className="text-xs text-gray-500 dark:text-zinc-400">
+        Giúp cộng đồng an toàn hơn
+      </p>
+    </div>
+  </div>
+
+  <button
+    onClick={onClose}
+    className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl transition active:scale-95"
+  >
+    <X className="w-5 h-5" />
+  </button>
+</div>
 
               {success? (
                 <div className="flex-1 flex flex-col items-center justify-center py-12 px-6 relative">
