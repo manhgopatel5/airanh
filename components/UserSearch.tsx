@@ -255,39 +255,47 @@ export default function UserSearch() {
       )}
 
       <div className="space-y-2">
-        <AnimatePresence>
-          {!loading &&
-            results.map((u, i) => (
-              <motion.div
-                key={u.uid}
-                initial={{opacity:0,x:-12}}
-                animate={{opacity:1,x:0}}
-                exit={{opacity:0,x:12}}
-                transition={{delay:i*0.03}}
-                className="flex items-center justify-between p-3 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800"
-              >
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <img
-                    src={
-                      u.avatar ||
-                      `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || "U")}&background=0042B2&color=fff`
-                    }
-                    alt={u.name || "User avatar"}
-                    className="w-11 h-11 rounded-full object-cover flex-shrink-0 ring-2 ring-zinc-100 dark:ring-zinc-800"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-sm truncate">{u.name || "User"}</p>
-                    <p className="text-xs text-zinc-500 truncate">
-                      {u.userId? `@${u.userId}` : u.email}
-                    </p>
-                  </div>
-                <div className="flex-shrink-0 ml-2">
-                  {renderButton(u)}
-                </div>
-              </motion.div>
-            ))}
-        </AnimatePresence>
-      </div>
+  <AnimatePresence>
+    {!loading &&
+      results.map((u, i) => (
+        <motion.div
+          key={u.uid}
+          initial={{ opacity: 0, x: -12 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 12 }}
+          transition={{ delay: i * 0.03 }}
+          className="flex items-center justify-between p-3 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800"
+        >
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <img
+              src={
+                u.avatar ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  u.name || "U"
+                )}&background=0042B2&color=fff`
+              }
+              alt={u.name || "User avatar"}
+              className="w-11 h-11 rounded-full object-cover flex-shrink-0 ring-2 ring-zinc-100 dark:ring-zinc-800"
+            />
+
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-sm truncate">
+                {u.name || "User"}
+              </p>
+
+              <p className="text-xs text-zinc-500 truncate">
+                {u.userId ? `@${u.userId}` : u.email}
+              </p>
+            </div>
+
+            <div className="flex-shrink-0 ml-2">
+              {renderButton(u)}
+            </div>
+          </div>
+        </motion.div>
+      ))}
+  </AnimatePresence>
+</div>
     </div>
   );
 }
