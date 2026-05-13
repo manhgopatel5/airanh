@@ -11,6 +11,7 @@ import {
   browserLocalPersistence,
   browserSessionPersistence,
   sendEmailVerification,
+  signOut,
   GoogleAuthProvider,
   signInWithPopup,
   sendSignInLinkToEmail,
@@ -198,6 +199,42 @@ export default function Login() {
     }
   };
 
+const checkBanned = async (uid: string) => {
+  const db = dbRef.current;
+  if (!db) return false;
+
+  const snap = await getDoc(doc(db, "users", uid));
+
+  if (!snap.exists()) return false;
+
+  const data = snap.data();
+
+  if (!data?.banned) return false;
+
+  // Ban vĩnh viễn
+  if (!data.bannedUntil) {
+    return {
+      banned: true,
+      until: null,
+    };
+  }
+
+  // Ban có thời hạn
+  const until =
+    typeof data.bannedUntil?.toDate === "function"
+      ? data.bannedUntil.toDate()
+      : new Date(data.bannedUntil);
+
+  // Hết hạn
+  if (until.getTime() < Date.now()) {
+    return false;
+  }
+
+  return {
+    banned: true,
+    until,
+  };
+};
   const handleMagicLink = async () => {
     const auth = authRef.current;
     if (!auth) return;
@@ -260,6 +297,19 @@ export default function Login() {
 
       const res = await signInWithPopup(auth, provider);
       await updateUserDoc(res.user, db);
+const bannedData = await checkBanned(res.user.uid);
+
+if (bannedData?.banned) {
+  await signOut(auth);
+
+  if (bannedData.until) {
+    router.replace(`/banned?until=${bannedData.until.getTime()}`);
+  } else {
+    router.replace("/banned");
+  }
+
+  return;
+}
       localStorage.setItem("last_email", res.user.email || "");
       toast.success("Đăng nhập thành công");
       router.replace(redirectTo);
@@ -332,6 +382,19 @@ export default function Login() {
       }
 
       await updateUserDoc(user, db);
+const bannedData = await checkBanned(user.uid);
+
+if (bannedData?.banned) {
+  await signOut(auth);
+
+  if (bannedData.until) {
+    router.replace(`/banned?until=${bannedData.until.getTime()}`);
+  } else {
+    router.replace("/banned");
+  }
+
+  return;
+}
       localStorage.setItem("last_email", form.email);
 
       failedAttempts.current = 0;
