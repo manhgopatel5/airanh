@@ -356,32 +356,40 @@ if (updates.completed === true) {
   }, [allItems, mode, activeTab]);
 
   // PULL REFRESH
-  const onTouchStart = (
-    e: React.TouchEvent
-  ) => {
-    if (window.scrollY === 0) {
-      pullRef.current = {
-        startY: e.touches[0].clientY,
-        pulling: true,
-      };
-    }
-  };
+const onTouchStart = (
+  e: React.TouchEvent
+) => {
+  const touch = e.touches[0];
 
-  const onTouchMove = (
-    e: React.TouchEvent
-  ) => {
-    if (!pullRef.current.pulling) return;
+  if (!touch) return;
 
-    const dy =
-      e.touches[0].clientY -
-      pullRef.current.startY;
+  if (window.scrollY === 0) {
+    pullRef.current = {
+      startY: touch.clientY,
+      pulling: true,
+    };
+  }
+};
 
-    if (dy > 80 && !refreshing) {
-      pullRef.current.pulling = false;
+const onTouchMove = (
+  e: React.TouchEvent
+) => {
+  if (!pullRef.current.pulling) return;
 
-      handleRefresh();
-    }
-  };
+  const touch = e.touches[0];
+
+  if (!touch) return;
+
+  const dy =
+    touch.clientY -
+    pullRef.current.startY;
+
+  if (dy > 80 && !refreshing) {
+    pullRef.current.pulling = false;
+
+    handleRefresh();
+  }
+};
 
   const handleRefresh = () => {
     if ("vibrate" in navigator) {
