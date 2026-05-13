@@ -144,11 +144,29 @@ export function ImageGallery({ open, images, initialIndex, onClose }: Props) {
               {images.length > 1 && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 max-w-full px-4 pointer-events-auto">
                   <div className="flex gap-2 p-2 bg-black/60 backdrop-blur-2xl rounded-2xl overflow-x-auto scrollbar-hide" style={{border:'1px solid rgba(255,255,255,0.1)'}}>
-                    {images.map((img, idx) => (
-                      <button key={idx} onClick={() => { setDirection(idx > currentIndex? 1 : -1); setCurrentIndex(idx); setShowUI(true); setLoading(true); }} className={cn("relative flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden transition-all", idx === currentIndex? "ring-2 scale-110" : "opacity-60 hover:opacity-100")} style={{ringColor:idx===currentIndex?'#0042B2':undefined}}>
-                        <img src={img} alt="" className="w-full h-full object-cover" />
-                      </button>
-                    ))}
+{images.map((img, idx) => (
+  <button
+    key={idx}
+    onClick={() => {
+      setDirection(idx > currentIndex ? 1 : -1);
+      setCurrentIndex(idx);
+      setShowUI(true);
+      setLoading(true);
+    }}
+    className={cn(
+      "relative flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden transition-all duration-200",
+      idx === currentIndex
+        ? "ring-2 ring-[#0042B2] scale-110"
+        : "opacity-60 hover:opacity-100"
+    )}
+  >
+    <img
+      src={img}
+      alt=""
+      className="w-full h-full object-cover"
+    />
+  </button>
+))}
                   </div>
                 </div>
               )}
