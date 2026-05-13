@@ -491,19 +491,45 @@ if (
   }, 300);
 }
 
-              // REDIRECT BANNED
-              if (stillBanned) {
+             // REDIRECT BANNED
+if (stillBanned) {
   setUserData(data);
 
   setLoading(false);
 
-  // Ban vĩnh viễn
-  if (!data.bannedUntil) {
-    router.replace("/banned");
+  const bannedKey = `banned_${data.uid}_${
+    data.bannedAt?.seconds || 0
+  }`;
+
+  // HIỆN THÔNG BÁO REALTIME
+  if (
+    sessionStorage.getItem(bannedKey) !== "shown"
+  ) {
+    sessionStorage.setItem(bannedKey, "shown");
+
+    let message = "";
+
+    if (!data.bannedUntil) {
+      message =
+        `⛔ TÀI KHOẢN ĐÃ BỊ KHÓA VĨNH VIỄN\n\n` +
+        `Lý do: ${data.bannedReason || "Vi phạm cộng đồng"}`;
+    } else {
+      const until =
+        data.bannedUntil.toDate();
+
+      message =
+        `⛔ TÀI KHOẢN ĐÃ BỊ KHÓA\n\n` +
+        `Lý do: ${data.bannedReason || "Vi phạm cộng đồng"}\n\n` +
+        `Mở khóa lúc:\n${until.toLocaleString("vi-VN")}`;
+    }
+
+    alert(message);
   }
 
-  // Ban có thời hạn
-  else {
+  // Redirect sau alert
+  if (!data.bannedUntil) {
+    router.replace("/banned");
+  } else {
     const banEndDate =
       data.bannedUntil.toDate();
 
@@ -512,12 +538,12 @@ if (
     );
   }
 
-  // Logout luôn
+  // logout chậm hơn để redirect ổn định
   setTimeout(async () => {
     try {
       await auth.signOut();
     } catch {}
-  }, 300);
+  }, 1500);
 
   return;
 }
