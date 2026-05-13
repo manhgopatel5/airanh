@@ -9,6 +9,8 @@ import { FiChevronLeft, FiMapPin, FiCalendar, FiBriefcase } from "react-icons/fi
 import { formatTaskPrice } from "@/types/task";
 import Link from "next/link";
 import Image from "next/image";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { motion } from "framer-motion";
 
 type UserProfile = {
   uid: string;
@@ -31,6 +33,8 @@ export default function UserProfilePage() {
   const [tasks, setTasks] = useState<TaskListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"open" | "completed">("open");
+
+  const emptyLottie = "/lotties/huha-task-full.lottie";
 
   useEffect(() => {
     if (!uid || typeof uid!== "string") return;
@@ -69,31 +73,34 @@ export default function UserProfilePage() {
     tab === "open"? ["open", "full"].includes(t.status) : t.status === "completed"
   );
 
-  if (loading) return <div className="max-w-xl mx-auto p-4 space-y-4 animate-pulse"><div className="h-32 bg-gray-200 dark:bg-zinc-800 rounded-3xl" /></div>;
-  if (!user) return <div className="flex flex-col items-center justify-center min-h-screen text-gray-400"><div className="text-6xl mb-4">😢</div><p>Không tìm thấy người dùng</p></div>;
+  if (loading) return <div className="max-w-xl mx-auto p-4 space-y-4 animate-pulse"><div className="h-40 bg-zinc-200 dark:bg-zinc-900 rounded-3xl" /></div>;
+  if (!user) return <div className="flex flex-col items-center justify-center min-h-screen text-zinc-400"><div className="text-6xl mb-4">😢</div><p>Không tìm thấy người dùng</p></div>;
 
   return (
-    <div className="max-w-xl mx-auto bg-gray-50 dark:bg-zinc-950 min-h-screen pb-20">
+    <div className="max-w-xl mx-auto bg-zinc-50 dark:bg-black min-h-screen pb-20">
       {/* HEADER */}
-      <div className="sticky top-0 z-30 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800 px-4 py-3 flex items-center gap-3">
-        <button onClick={() => router.back()} className="p-2 -ml-2 active:scale-90"><FiChevronLeft size={24} /></button>
+      <div className="sticky top-0 z-30 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-900 px-4 py-3 flex items-center gap-3">
+        <button onClick={() => router.back()} className="p-2 -ml-2 active:scale-90 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-900"><FiChevronLeft size={24} /></button>
         <h1 className="font-bold text-lg truncate">{user.displayName || "User"}</h1>
       </div>
 
       {/* PROFILE CARD */}
-      <div className="bg-white dark:bg-zinc-900 p-6 border-b border-gray-100 dark:border-zinc-800">
+      <div className="bg-white dark:bg-zinc-950 p-6 border-b border-zinc-200 dark:border-zinc-900">
         <div className="flex items-start gap-4">
-          <Image
-            src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || "U")}&size=128`}
-            alt={user.displayName || "User avatar"}
-            width={80}
-            height={80}
-            className="w-20 h-20 rounded-full object-cover ring-4 ring-gray-50 dark:ring-zinc-800"
-          />
+          <div className="relative">
+            <Image
+              src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || "U")}&size=128&background=0042B2&color=fff`}
+              alt={user.displayName || "User avatar"}
+              width={80}
+              height={80}
+              className="w-20 h-20 rounded-full object-cover ring-4 ring-zinc-100 dark:ring-zinc-900"
+            />
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#00C853] rounded-full border-3 border-white dark:border-zinc-950" />
+          </div>
           <div className="flex-1">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{user.displayName || "Ẩn danh"}</h2>
-            {user.bio && <p className="text-sm text-gray-600 dark:text-zinc-400 mt-1 line-clamp-2">{user.bio}</p>}
-            <div className="flex items-center gap-4 mt-3 text-xs text-gray-500 dark:text-zinc-400">
+            <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{user.displayName || "Ẩn danh"}</h2>
+            {user.bio && <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1.5 line-clamp-2 leading-relaxed">{user.bio}</p>}
+            <div className="flex items-center gap-4 mt-3 text-xs text-zinc-500">
               {user.location && (
                 <div className="flex items-center gap-1">
                   <FiMapPin size={14} />
@@ -111,28 +118,22 @@ export default function UserProfilePage() {
         </div>
 
         {/* STATS */}
-        <div className="grid grid-cols-3 gap-4 mt-6 text-center">
-          <div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{tasks.length}</div>
-            <div className="text-xs text-gray-500 dark:text-zinc-400">Công việc</div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              {tasks.filter((t) => t.status === "completed").length}
+        <div className="grid grid-cols-3 gap-4 mt-6">
+          {[
+            {label:"Công việc",val:tasks.length},
+            {label:"Hoàn thành",val:tasks.filter((t) => t.status === "completed").length},
+            {label:"Đánh giá",val:user.rating?.toFixed(1) || "—"},
+          ].map(s=>(
+            <div key={s.label} className="text-center p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50">
+              <div className="text-2xl font-black" style={{color:'#0042B2'}}>{s.val}</div>
+              <div className="text-xs text-zinc-500 mt-0.5">{s.label}</div>
             </div>
-            <div className="text-xs text-gray-500 dark:text-zinc-400">Hoàn thành</div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              {user.rating?.toFixed(1) || "—"}
-            </div>
-            <div className="text-xs text-gray-500 dark:text-zinc-400">Đánh giá</div>
-          </div>
+          ))}
         </div>
       </div>
 
       {/* TABS */}
-      <div className="bg-white dark:bg-zinc-900 px-4 border-b border-gray-100 dark:border-zinc-800 flex gap-6">
+      <div className="bg-white dark:bg-zinc-950 px-4 border-b border-zinc-200 dark:border-zinc-900 flex gap-6 sticky top-[57px] z-20">
         {[
           { key: "open", label: "Đang mở" },
           { key: "completed", label: "Đã xong" },
@@ -140,13 +141,16 @@ export default function UserProfilePage() {
           <button
             key={t.key}
             onClick={() => setTab(t.key as any)}
-            className={`py-3 text-sm font-semibold border-b-2 transition ${
+            className={`py-3.5 text-sm font-bold border-b-2.5 transition relative ${
               tab === t.key
-            ? "border-blue-500 text-blue-500"
-                : "border-transparent text-gray-500 dark:text-zinc-400"
+            ? "text-[#0042B2]"
+                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
             }`}
           >
             {t.label}
+            {tab === t.key && (
+              <motion.div layoutId="profile-tab" className="absolute bottom-0 left-0 right-0 h-0.5" style={{background:'#0042B2'}} />
+            )}
           </button>
         ))}
       </div>
@@ -154,50 +158,53 @@ export default function UserProfilePage() {
       {/* TASK LIST */}
       <div className="p-4 space-y-3">
         {filteredTasks.length === 0 && (
-          <div className="text-center text-gray-400 dark:text-zinc-500 text-sm py-12">
-            <FiBriefcase size={40} className="mx-auto mb-3 opacity-50" />
-            Chưa có công việc nào
+          <div className="text-center py-16">
+            <div className="w-20 h-20 mx-auto mb-3 opacity-60">
+              <DotLottieReact src={emptyLottie} autoplay loop style={{width:80,height:80}} />
+            </div>
+            <p className="text-zinc-500 text-sm font-medium">Chưa có công việc nào</p>
           </div>
         )}
-        {filteredTasks.map((task) => (
-          <Link
-            key={task.id}
-            href={`/task/${task.slug}`}
-            className="block bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-gray-100 dark:border-zinc-800 active:scale-[0.98] transition"
-          >
-            <div className="flex gap-3">
-              {task.images?.[0] && (
-                <Image 
-                  src={task.images[0]} 
-                  alt={task.title || "Task image"}
-                  width={64}
-                  height={64}
-                  className="w-16 h-16 rounded-xl object-cover flex-shrink-0" 
-                />
-              )}
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100 line-clamp-1">{task.title}</h3>
-                <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-zinc-400">
-                  <span className="font-bold text-emerald-600">
-                    {task.type === "task" ? formatTaskPrice((task as any).price) : "Miễn phí"}
-                  </span>
-                  <span>•</span>
-                  <span>
-                    {task.type === "task" ? `${(task as any).joined}/${(task as any).totalSlots}` : "Kế hoạch"} người
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 mt-2 text-xs">
-                  <span className={`px-2 py-0.5 rounded-full font-semibold ${
-                    task.status === "open"? "bg-green-100 text-green-700" :
-                    task.status === "full"? "bg-orange-100 text-orange-700" :
-                    "bg-blue-100 text-blue-700"
-                  }`}>
-                    {task.status === "open"? "Đang mở" : task.status === "full"? "Đã đủ" : "Hoàn thành"}
-                  </span>
+        {filteredTasks.map((task,i) => (
+          <motion.div key={task.id} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{delay:i*0.04}}>
+            <Link
+              href={`/task/${task.slug}`}
+              className="block bg-white dark:bg-zinc-950 rounded-3xl p-4 border border-zinc-200/60 dark:border-zinc-900 active:scale-[0.98] transition hover:shadow-lg hover:shadow-zinc-200/50 dark:hover:shadow-black/20"
+            >
+              <div className="flex gap-3.5">
+                {task.images?.[0] && (
+                  <Image 
+                    src={task.images[0]} 
+                    alt={task.title || "Task image"}
+                    width={68}
+                    height={68}
+                    className="w-17 h-17 rounded-2xl object-cover flex-shrink-0 bg-zinc-100" 
+                  />
+                )}
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-zinc-900 dark:text-zinc-100 line-clamp-1">{task.title}</h3>
+                  <div className="flex items-center gap-2 mt-1.5 text-xs">
+                    <span className="font-bold" style={{color:'#00C853'}}>
+                      {task.type === "task" ? formatTaskPrice((task as any).price) : "Miễn phí"}
+                    </span>
+                    <span className="text-zinc-300">•</span>
+                    <span className="text-zinc-500">
+                      {task.type === "task" ? `${(task as any).joined}/${(task as any).totalSlots}` : "Kế hoạch"}
+                    </span>
+                  </div>
+                  <div className="mt-2.5">
+                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                      task.status === "open"? "bg-[#00C853]/10 text-[#00C853]" :
+                      task.status === "full"? "bg-orange-500/10 text-orange-600" :
+                      "bg-[#0042B2]/10 text-[#0042B2]"
+                    }`}>
+                      {task.status === "open"? "Đang mở" : task.status === "full"? "Đã đủ" : "Hoàn thành"}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          </Link>
+            </Link>
+          </motion.div>
         ))}
       </div>
     </div>
