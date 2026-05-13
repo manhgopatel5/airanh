@@ -5,6 +5,7 @@ import ClientLayout from "@/components/ClientLayout";
 import { AuthProvider } from "@/lib/AuthContext";
 import EmailGuard from "@/components/EmailGuard";
 import { cn } from "@/lib/utils";
+import { Toaster } from "sonner"; // 1. Import
 
 const geist = Geist({
   subsets: ['latin'],
@@ -120,6 +121,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <EmailGuard>
             <ClientLayout>{children}</ClientLayout>
           </EmailGuard>
+          <Toaster 
+            position="top-center" 
+            richColors 
+            toastOptions={{
+              classNames: {
+                toast: "rounded-2xl border-[#E5E5E7] dark:border-zinc-800 font-sans",
+                title: "font-semibold",
+                description: "text-sm",
+              }
+            }}
+          />
         </AuthProvider>
       </body>
     </html>
