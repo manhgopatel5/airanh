@@ -116,6 +116,7 @@ export default function TaskDetailPage() {
   const [saving, setSaving] = useState(false);
  
   const [showMenu, setShowMenu] = useState(false);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const appsRef = useRef<HTMLDivElement>(null);
 
@@ -485,6 +486,11 @@ useEffect(() => {
         createdAt: serverTimestamp(),
       }, { merge: true });
       toast.success("Đã duyệt ứng viên");
+      setShowSuccessAnimation(true);
+
+setTimeout(() => {
+  setShowSuccessAnimation(false);
+}, 1800);
       navigator.vibrate?.(10);
       loadApplications();
     } catch {
@@ -1095,6 +1101,15 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
             onClose={() => setShareTask(null)}
           />
         )}
+        {showSuccessAnimation && (
+  <div className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center">
+    <DotLottieReact
+      src={successLottie}
+      autoplay
+      style={{ width: 260, height: 260 }}
+    />
+  </div>
+)}
       </div>
     </>
   );
