@@ -37,7 +37,11 @@ export default function ClientLayout({ children }: Props) {
   const { user, loading } = useAuth();
 
   const [warningOpen, setWarningOpen] = useState(false);
-
+  const [banData, setBanData] = useState({
+  banned: false,
+  bannedReason: "",
+  bannedUntil: null as Timestamp | null,
+});
   const [warningData, setWarningData] = useState<WarningData>({
     reason: "",
     title: "",
@@ -90,6 +94,11 @@ export default function ClientLayout({ children }: Props) {
         }
 
         const data = snap.data();
+        setBanData({
+  banned: data.banned || false,
+  bannedReason: data.bannedReason || "",
+  bannedUntil: data.bannedUntil || null,
+});
 
         const hasWarning = data.warning === true;
 
