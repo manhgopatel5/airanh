@@ -9,7 +9,7 @@ import {
   ReactNode,
   useContext,
 } from "react";
-
+import { toast } from "sonner"; 
 import { onAuthStateChanged, User } from "firebase/auth";
 
 import {
@@ -40,6 +40,7 @@ export type AppUser = {
   username: string;
   userId: string;
   email: string;
+  warningSeen?: boolean; 
   emailVerified: boolean;
   avatar: string;
   isOnline: boolean;
@@ -415,209 +416,161 @@ export const AuthProvider = ({
           beforeUnloadHandlerRef.current = handleBeforeUnload;
 
           // USER SNAPSHOT
-          userDataUnsub.current = onSnapshot(
-            userRef,
+userDataUnsub.current = onSnapshot(
+  userRef,
 
-            async (docSnap) => {
-              if (!docSnap.exists()) {
-                setUserData(null);
-
-                setLoading(false);
-
-                return;
-              }
-
-              const data = docSnap.data() as AppUser;
-
-              const isBanned =
-                data.banned ||
-                data.status === "banned";
-
-              // AUTO UNBAN
-              if (
-                isBanned &&
-                data.bannedUntil &&
-                typeof data.bannedUntil.toDate === "function"
-              ) {
-                const banEndDate = data.bannedUntil.toDate();
-
-                if (banEndDate < new Date()) {
-                  try {
-                    await updateDoc(userRef, {
-                      banned: false,
-
-                      bannedUntil: null,
-
-                      status: "active",
-
-                      unbannedAt: serverTimestamp(),
-                    });
-
-                    data.banned = false;
-
-                    data.status = "active";
-
-                    console.log(
-                      "Auto unbanned:",
-                      firebaseUser.uid
-                    );
-                  } catch (e) {
-                    console.error("Auto unban failed:", e);
-                  }
-                }
-              }
-
-              const stillBanned =
-                data.banned ||
-                data.status === "banned";
-// WARNING REALTIME
-if (
-  data.warning &&
-  !stillBanned
-) {
-  const warningKey = `warning_${data.uid}_${
-    data.warningAt?.seconds || 0
-  }`;
-
-  if (
-    sessionStorage.getItem(warningKey) !== "shown"
-  ) {
-    sessionStorage.setItem(
-      warningKey,
-      "shown"
-    );
-
-    setTimeout(() => {
-      alert(
-        `⚠️ CẢNH CÁO VI PHẠM\n\n` +
-        `Lý do: ${
-          data.warningReason ||
-          "Vi phạm cộng đồng"
-        }\n\n` +
-        `Nếu tiếp tục vi phạm tài khoản sẽ bị khóa.`
-      );
-    }, 300);
-  }
-}
-
-             // REDIRECT BANNED
-if (stillBanned) {
-  setUserData(data);
-
-  setLoading(false);
-
-  const bannedKey = `banned_${data.uid}_${
-    data.bannedAt?.seconds || 0
-  }`;
-
-  // HIỆN THÔNG BÁO REALTIME
-  if (
-    sessionStorage.getItem(bannedKey) !== "shown"
-  ) {
-    sessionStorage.setItem(bannedKey, "shown");
-
-    let message = "";
-
-    if (!data.bannedUntil) {
-      message =
-        `⛔ TÀI KHOẢN ĐÃ BỊ KHÓA VĨNH VIỄN\n\n` +
-        `Lý do: ${data.bannedReason || "Vi phạm cộng đồng"}`;
-    } else {
-      const until =
-        data.bannedUntil.toDate();
-
-      message =
-        `⛔ TÀI KHOẢN ĐÃ BỊ KHÓA\n\n` +
-        `Lý do: ${data.bannedReason || "Vi phạm cộng đồng"}\n\n` +
-        `Mở khóa lúc:\n${until.toLocaleString("vi-VN")}`;
+  async (docSnap) => {
+    if (!docSnap.exists()) {
+      setUserData(null);
+      setLoading(false);
+      return;
     }
 
-    alert(message);
-  }
+    const data = docSnap.data() as AppUser;
 
-  // Redirect sau alert
-  if (!data.bannedUntil) {
-    router.replace("/banned");
-  } else {
-    const banEndDate =
-      data.bannedUntil.toDate();
+    const isBanned =
+      data.banned ||
+      data.status === "banned";
 
-    router.replace(
-      `/banned?until=${banEndDate.getTime()}`
-    );
-  }
+    // AUTO UNBAN
+    if (
+      isBanned &&
+      data.bannedUntil &&
+      typeof data.bannedUntil.toDate === "function"
+    ) {
+      const banEndDate = data.bannedUntil.toDate();
 
-  // logout chậm hơn để redirect ổn định
-  setTimeout(async () => {
-    try {
-      await auth.signOut();
-    } catch {}
-  }, 1500);
+      if (banEndDate < new Date()) {
+        try {
+          await updateDoc(userRef, {
+            banned: false,
+            bannedUntil: null,
+            status: "active",
+            unbannedAt: serverTimestamp(),
+            warning: false,
+            warningReason: null,
+            warningSeen: false,
+          });
 
-  return;
-}
+          data.banned = false;
+          data.status = "active";
 
-              // EXIT BANNED PAGE
-              if (pathname === "/banned") {
-                router.replace("/");
-              }
-
-              setUserData(data);
-
-              setLoading(false);
-
-              console.log(
-                "userData loaded:",
-                data.userId
-              );
-            },
-
-            (err) => {
-              console.error("Snapshot error:", err);
-
-              setError(err.message);
-
-              setLoading(false);
-            }
+          console.log(
+            "Auto unbanned:",
+            firebaseUser.uid
           );
-
-          // RTDB PRESENCE
-          const statusRef = ref(
-            rtdb,
-            `/status/${firebaseUser.uid}`
-          );
-
-          const connectedRef = ref(
-            rtdb,
-            ".info/connected"
-          );
-
-          presenceUnsub.current = onValue(
-            connectedRef,
-            (snap) => {
-              if (!snap.val()) return;
-
-              onDisconnect(statusRef).set({
-                isOnline: false,
-
-                lastSeen: rtdbTimestamp(),
-              });
-
-              set(statusRef, {
-                isOnline: true,
-
-                lastSeen: rtdbTimestamp(),
-              });
-            }
-          );
-        } catch (e: any) {
-          console.error("Auth error:", e);
-
-          setError(e.message);
-
-          setLoading(false);
+        } catch (e) {
+          console.error("Auto unban failed:", e);
         }
-      },
+      }
+    }
+
+    const stillBanned =
+      data.banned ||
+      data.status === "banned";
+
+    // WARNING REALTIME
+    if (
+      data.warning &&
+      !data.warningSeen &&
+      !stillBanned
+    ) {
+      setTimeout(async () => {
+        const { toast } = await import("sonner");
+        
+        toast.warning("⚠️ CẢNH CÁO VI PHẠM", {
+          description: `Lý do: ${data.warningReason || "Vi phạm cộng đồng"}. Nếu tiếp tục vi phạm tài khoản sẽ bị khóa.`,
+          duration: 10000,
+          action: {
+            label: "Đã hiểu",
+            onClick: () => {
+              updateDoc(doc(db, "users", data.uid), {
+                warningSeen: true
+              }).catch(() => {});
+            }
+          },
+          classNames: {
+            toast: "bg-[#FFF3E0] border-2 border-[#FF9500] dark:bg-[#FF9500]/20 rounded-2xl",
+            title: "text-[#FF9500] font-bold text-base",
+            description: "text-[#1C1C1E] dark:text-zinc-300",
+          }
+        });
+      }, 300);
+    }
+
+    // REDIRECT BANNED
+    if (stillBanned) {
+      setUserData(data);
+      setLoading(false);
+
+      const bannedKey = `banned_${data.uid}_${data.bannedAt?.seconds || 0}`;
+
+      if (sessionStorage.getItem(bannedKey) !== "shown") {
+        sessionStorage.setItem(bannedKey, "shown");
+
+        setTimeout(async () => {
+          const { toast } = await import("sonner");
+
+          if (!data.bannedUntil) {
+            toast.error("⛔ TÀI KHOẢN ĐÃ BỊ KHÓA VĨNH VIỄN", {
+              description: `Lý do: ${data.bannedReason || "Vi phạm cộng đồng"}`,
+              duration: 10000,
+              classNames: {
+                toast: "bg-[#FFE5E5] border-2 border-[#FF3B30] dark:bg-[#FF3B30]/20 rounded-2xl",
+                title: "text-[#FF3B30] font-bold text-base",
+                description: "text-[#1C1C1E] dark:text-zinc-300",
+              }
+            });
+          } else {
+            const until = data.bannedUntil.toDate();
+            toast.error("⛔ TÀI KHOẢN ĐÃ BỊ KHÓA", {
+              description: `Lý do: ${data.bannedReason || "Vi phạm cộng đồng"}\nMở khóa lúc: ${until.toLocaleString("vi-VN")}`,
+              duration: 10000,
+              classNames: {
+                toast: "bg-[#FFE5E5] border-2 border-[#FF3B30] dark:bg-[#FF3B30]/20 rounded-2xl",
+                title: "text-[#FF3B30] font-bold text-base",
+                description: "text-[#1C1C1E] dark:text-zinc-300 whitespace-pre-line",
+              }
+            });
+          }
+        }, 300);
+      }
+
+      // Redirect sau toast
+      if (!data.bannedUntil) {
+        router.replace("/banned");
+      } else {
+        const banEndDate = data.bannedUntil.toDate();
+        router.replace(`/banned?until=${banEndDate.getTime()}`);
+      }
+
+      // logout chậm hơn để redirect ổn định
+      setTimeout(async () => {
+        try {
+          await auth.signOut();
+        } catch {}
+      }, 1500);
+
+      return;
+    }
+
+    // EXIT BANNED PAGE
+    if (pathname === "/banned") {
+      router.replace("/");
+    }
+
+    setUserData(data);
+    setLoading(false);
+
+    console.log("userData loaded:", data.userId);
+  },
+
+  (err) => {
+    console.error("Snapshot error:", err);
+    setError(err.message);
+    setLoading(false);
+  }
+);
 
       (err) => {
         console.error("Auth error:", err);
