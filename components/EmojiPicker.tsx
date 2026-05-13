@@ -62,12 +62,35 @@ export default function EmojiPicker({ onSelect, align = "left" }: Props) {
         <Smile size={20} className="text-zinc-500 dark:text-zinc-400 group-hover:text-[#0042B2] transition-colors" />
         {/* Burst khi chọn */}
         <AnimatePresence>
-          {burstEmoji && (
-            <motion.div initial={{scale:0,opacity:0}} animate={{scale:1.5,opacity:1}} exit={{scale:2,opacity:0}} className="absolute inset-0 pointer-events-none flex items-center justify-center">
-              <span className="text-xl">{burstEmoji}</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
+  {burstEmoji && (
+    <motion.div
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      exit={{ scale: 1.8, opacity: 0 }}
+      className="absolute inset-0 pointer-events-none flex items-center justify-center"
+    >
+      <div className="relative w-16 h-16 flex items-center justify-center">
+        <DotLottieReact
+          src={burstLottie}
+          autoplay
+          style={{
+            width: 64,
+            height: 64,
+            position: "absolute",
+          }}
+        />
+
+        <motion.span
+          initial={{ scale: 0.5 }}
+          animate={{ scale: 1.3 }}
+          className="text-2xl relative z-10"
+        >
+          {burstEmoji}
+        </motion.span>
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
       </button>
 
       <AnimatePresence>
