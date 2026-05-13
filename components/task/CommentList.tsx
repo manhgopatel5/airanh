@@ -84,24 +84,94 @@ export function CommentList({ comment: c, replies, currentUserId, taskOwnerId, o
             )}
           </div>
 
-          {!c.deleted &&!isEditing && (
-            <div className="flex items-center gap-4 mt-1.5 px-0 text-[13px] text-zinc-500">
-              <span>{timeAgo(c.createdAt)}</span>
-              <motion.button whileTap={{scale:0.9}} onClick={()=>{onLike(c.id);navigator.vibrate?.(5)}} disabled={likingComments.has(c.id)} className={cn("font-semibold hover:underline disabled:opacity-50",liked&&"text-red-500")}>
-                {liked? "Đã thích" : "Thích"}
-              </motion.button>
-              <button onClick={()=>onReply(c)} className="font-semibold hover:underline">Trả lời</button>
-              {isOwnComment && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild><button className="p-1 -m-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-full"><FiMoreHorizontal size={16} className="text-zinc-500" /></button></DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" side="top" sideOffset={4} className="rounded-2xl min-w-[140px] p-1.5 bg-white dark:bg-zinc-950 shadow-xl border border-zinc-200 dark:border-zinc-900">
-                    <DropdownMenuItem onClick={()=>onEdit(c.id)} className="px-3 py-2 text-[14px] font-medium rounded-xl cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900">Chỉnh sửa</DropdownMenuItem>
-                    <DropdownMenuItem onClick={()=>onDelete(c.id)} className="px-3 py-2 text-[14px] font-medium rounded-xl cursor-pointer text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30">Xoá</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-            </div>
-          )}
+{!c.deleted && !isEditing && (
+  <div className="flex items-center gap-4 mt-1.5 px-0 text-[13px] text-zinc-500">
+    <span>{timeAgo(c.createdAt)}</span>
+
+    <motion.button
+      whileTap={{ scale: 0.82 }}
+      onClick={() => {
+        onLike(c.id);
+        navigator.vibrate?.(5);
+      }}
+      disabled={likingComments.has(c.id)}
+      className={cn(
+        "relative font-semibold hover:underline disabled:opacity-50 transition-all duration-200",
+        liked && "text-red-500"
+      )}
+    >
+      <AnimatePresence>
+        {liked && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0, y: 6 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{
+              type: "spring",
+              stiffness: 500,
+              damping: 18,
+            }}
+            className="absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none z-10"
+          >
+            <DotLottieReact
+              src="/lotties/huha-celebrate-full.lottie"
+              autoplay
+              style={{
+                width: 48,
+                height: 48,
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <span className="relative z-[2]">
+        {liked ? "Đã thích" : "Thích"}
+      </span>
+    </motion.button>
+
+    <button
+      onClick={() => onReply(c)}
+      className="font-semibold hover:underline transition-colors hover:text-[#0042B2]"
+    >
+      Trả lời
+    </button>
+
+    {isOwnComment && (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="p-1 -m-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-full transition-colors">
+            <FiMoreHorizontal
+              size={16}
+              className="text-zinc-500"
+            />
+          </button>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent
+          align="end"
+          side="top"
+          sideOffset={4}
+          className="rounded-2xl min-w-[140px] p-1.5 bg-white dark:bg-zinc-950 shadow-xl border border-zinc-200 dark:border-zinc-900"
+        >
+          <DropdownMenuItem
+            onClick={() => onEdit(c.id)}
+            className="px-3 py-2 text-[14px] font-medium rounded-xl cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900"
+          >
+            Chỉnh sửa
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={() => onDelete(c.id)}
+            className="px-3 py-2 text-[14px] font-medium rounded-xl cursor-pointer text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+          >
+            Xoá
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )}
+  </div>
+)}
 
           <AnimatePresence>
             {displayReplies.map((r) => (
