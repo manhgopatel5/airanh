@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { collection, query, where, orderBy, onSnapshot, doc, serverTimestamp, writeBatch, limit, startAfter, getDocs, increment, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, query, where, orderBy, onSnapshot, doc, serverTimestamp, writeBatch, limit, startAfter, getDocs, getDoc, increment, updateDoc, deleteDoc } from "firebase/firestore";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { Shield, CheckCircle, ExternalLink, Search, Loader2, Download, Filter, AlertTriangle, Ban, Clock, FileText, ChevronDown, TrendingUp, MessageSquare, Unlock, XCircle, Trash2 } from "lucide-react";
@@ -227,31 +227,38 @@ const q = query(collection(db, "reports"), ...constraints);
     });
 
     if (action === "resolved") {
-      const q = query(
-        collection(db, "users"), 
-        where("shortId", "==", report.targetShortId), 
-        limit(1)
-      );
-      const snap = await getDocs(q);
+      let userIdToBan = "";
 
-      if (snap.empty) {
-        toast.error(`Không tìm thấy user @${report.targetShortId}`);
+      if (report.type === "task") {
+        const taskSnap = await getDoc(doc(db, "tasks", report.targetId));
+        if (!taskSnap.exists()) {
+          toast.error("Không tìm thấy task");
+          setActionLoading(null);
+          return;
+        }
+        userIdToBan = taskSnap.data().userId;
+        if (!userIdToBan) {
+          toast.error("Task không có userId");
+          setActionLoading(null);
+          return;
+        }
+      } else {
+        userIdToBan = report.targetId;
+      }
+
+      const userRef = doc(db, "users", userIdToBan);
+      const userSnap = await getDoc(userRef);
+
+      if (!userSnap.exists()) {
+        toast.error(`User không tồn tại: ${userIdToBan}`);
         setActionLoading(null);
         return;
       }
 
-      const userDoc = snap.docs[0];
-      if (!userDoc) {
-        toast.error(`Không tìm thấy user @${report.targetShortId}`);
-        setActionLoading(null);
-        return;
-      }
-
-      const userRef = userDoc.ref;
-      const userData = userDoc.data();
+      const userData = userSnap.data();
       const currentViolationCount = userData?.violationCount || 0;
       const newCount = currentViolationCount + 1;
-      const targetShortId = userData?.shortId || userData?.username || report.targetShortId;
+      const targetShortId = userData?.username || userData?.shortId || report.targetShortId;
 
       const updateData: any = {
         violationCount: increment(1),
