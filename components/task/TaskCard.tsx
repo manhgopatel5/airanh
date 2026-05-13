@@ -8,6 +8,7 @@ import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/fir
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { type TaskStatus, type Task, isTask } from "@/types/task";
+import { AppMode } from "@/types/app";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
