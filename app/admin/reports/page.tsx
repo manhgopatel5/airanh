@@ -228,9 +228,8 @@ const q = query(collection(db, "reports"), ...constraints);
     });
 
     if (action === "resolved") {
-      let userIdToBan = report.targetId; // Mặc định cho report user
+      let userIdToBan = report.targetId;
 
-      // Nếu báo cáo task thì phải lấy uid từ task
       if (report.type === "task") {
         const taskRef = doc(db, "tasks", report.targetId);
         const taskSnap = await getDoc(taskRef);
@@ -242,47 +241,27 @@ const q = query(collection(db, "reports"), ...constraints);
         }
         
         const taskData = taskSnap.data();
-        userIdToBan = taskData.userId 
-                   || taskData.authorId 
-                   || taskData.uid 
-                   || taskData.ownerId 
-                   || taskData.createdBy;
+        userIdToBan = taskData.userId;
         
         if (!userIdToBan) {
-          toast.error(`Task không có author. Fields: ${Object.keys(taskData).join(', ')}`);
+          toast.error(`Task không có userId`);
           console.error('Task data:', taskData);
           setActionLoading(null);
           return;
         }
-        
-        console.log('Found task author:', userIdToBan, 'vs report targetShortId:', report.targetShortId);
       }
 
-      // Query user bằng uid thật
-      const userQuery = query(
-        collection(db, "users"),
-        where("uid", "==", userIdToBan),
-        limit(1)
-      );
-      const userSnap = await getDocs(userQuery);
+      // Dùng doc ID = uid
+      const userRef = doc(db, "users", userIdToBan);
+      const userSnap = await getDoc(userRef);
 
-      if (userSnap.empty) {
-        toast.error(`Không tìm thấy user với uid: ${userIdToBan}`);
-        console.error('Report:', report);
+      if (!userSnap.exists()) {
+        toast.error(`Không tìm thấy user với ID: ${userIdToBan}`);
         setActionLoading(null);
         return;
       }
 
-    const userDoc = userSnap.docs[0];
-
-if (!userDoc ||!userDoc.exists()) {
-  toast.error("Không tìm thấy user");
-  setActionLoading(null);
-  return;
-  }
-
-      const userRef = userDoc.ref;
-      const userData = userDoc.data();
+      const userData = userSnap.data();
       const currentViolationCount = userData?.violationCount || 0;
       const newCount = currentViolationCount + 1;
       const targetShortId = userData?.shortId || userData?.username || report.targetShortId;
