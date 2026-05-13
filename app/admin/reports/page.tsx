@@ -212,14 +212,6 @@ const q = query(collection(db, "reports"), ...constraints);
   }, [lastDoc, loadingMore, hasMore, tab, reasonFilter, db]);
 
   const executeAction = async (report: Report, action: "resolved" | "rejected") => {
-  console.log('=== DEBUG REPORT ===', {
-    id: report.id,
-    type: report.type,
-    targetId: report.targetId,
-    targetShortId: report.targetShortId,
-    targetName: report.targetName
-  });
-  
   if (!user) return;
   setActionLoading(report.id);
 
@@ -235,49 +227,25 @@ const q = query(collection(db, "reports"), ...constraints);
     });
 
     if (action === "resolved") {
-      let userIdToBan = report.targetId;
+      // BỎ QUA VIỆC LẤY TASK, TÌM USER BẰNG SHORTID LUÔN
+      const q = query(
+        collection(db, "users"), 
+        where("shortId", "==", report.targetShortId), 
+        limit(1)
+      );
+      const snap = await getDocs(q);
 
-      if (report.type === "task") {
-        console.log('Getting task:', report.targetId);
-        const taskSnap = await getDoc(doc(db, "tasks", report.targetId));
-        
-        if (!taskSnap.exists()) {
-          toast.error("Task không tồn tại");
-          console.error('Task not found:', report.targetId);
-          setActionLoading(null);
-          return;
-        }
-        
-        const taskData = taskSnap.data();
-        console.log('Task data:', taskData);
-        userIdToBan = taskData.userId;
-        console.log('userIdToBan from task:', userIdToBan);
-        
-        if (!userIdToBan) {
-          toast.error("Task không có userId");
-          setActionLoading(null);
-          return;
-        }
-      } else {
-        console.log('Report user, userIdToBan:', userIdToBan);
-      }
-
-      console.log('Finding user:', userIdToBan);
-      const userRef = doc(db, "users", userIdToBan);
-      const userSnap = await getDoc(userRef);
-
-      if (!userSnap.exists()) {
-        toast.error(`User không tồn tại trong DB: ${userIdToBan}`);
-        console.error('User not found. Check users collection for ID:', userIdToBan);
+      if (snap.empty) {
+        toast.error(`Không tìm thấy user @${report.targetShortId}`);
         setActionLoading(null);
         return;
       }
 
-      console.log('User found:', userSnap.data());
-      const userData = userSnap.data();
+      const userRef = snap.docs[0].ref;
+      const userData = snap.docs[0].data();
       const currentViolationCount = userData?.violationCount || 0;
       const newCount = currentViolationCount + 1;
-      const targetShortId = userData?.shortId || userData?.username || report.targetShortId;
+      const targetShortId = userData?.shortId || report.targetShortId;
 
       const updateData: any = {
         violationCount: increment(1),
