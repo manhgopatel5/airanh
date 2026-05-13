@@ -172,6 +172,7 @@ setTimeout(() => {
   if (!task) return null;
 
   return (
+    
     <>
       <Toaster richColors position="top-center" />
       <div className="min-h-screen bg-zinc-50 dark:bg-black">
@@ -363,6 +364,15 @@ setTimeout(() => {
           )}
         </motion.div>
       </div>
+            {showSuccess && (
+  <div className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center">
+    <DotLottieReact
+      src={successLottie}
+      autoplay
+      style={{ width: 260, height: 260 }}
+    />
+  </div>
+)}
     </>
   );
 }
@@ -378,15 +388,7 @@ function EditSkeleton({ lottie }: { lottie: string }) {
       <div className="flex-1 flex items-center justify-center">
         <div className="w-20 h-20"><DotLottieReact src={lottie} autoplay loop /></div>
       </div>
-      {showSuccess && (
-  <div className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center">
-    <DotLottieReact
-      src={successLottie}
-      autoplay
-      style={{ width: 260, height: 260 }}
-    />
-  </div>
-)}
+
     </div>
   );
 }
