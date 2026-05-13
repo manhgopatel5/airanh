@@ -150,9 +150,16 @@ export default function FriendRequests() {
         <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{background:'rgba(0,66,178,0.1)'}}>
           <FiUserPlus className="text-[#0042B2]" size={18} />
         </div>
-        <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">
-          Lời mời kết bạn
-        </h3>
+<div className="flex items-center gap-1.5">
+  <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">
+    Lời mời kết bạn
+  </h3>
+
+  <HiSparkles
+    size={16}
+    className="text-[#00C853] animate-pulse"
+  />
+</div>
         {list.length > 0 && (
           <span className="text-xs font-bold text-white px-2 py-0.5 rounded-lg" style={{background:'#0042B2'}}>
             {list.length}
