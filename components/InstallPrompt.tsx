@@ -112,9 +112,16 @@ export default function InstallPrompt() {
               </div>
 
               <div className="flex-1 space-y-2.5">
-                <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">
-                  Cài đặt ứng dụng
-                </h3>
+<div className="flex items-center gap-2">
+  <HiDevicePhoneMobile
+    size={18}
+    className="text-[#0042B2]"
+  />
+
+  <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">
+    Cài đặt ứng dụng
+  </h3>
+</div>
 
                 {isIOS? (
                   <div className="text-sm text-zinc-600 dark:text-zinc-400 space-y-2.5">
