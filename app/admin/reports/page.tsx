@@ -227,7 +227,6 @@ const q = query(collection(db, "reports"), ...constraints);
     });
 
     if (action === "resolved") {
-      // BỎ QUA VIỆC LẤY TASK, TÌM USER BẰNG SHORTID LUÔN
       const q = query(
         collection(db, "users"), 
         where("shortId", "==", report.targetShortId), 
@@ -241,11 +240,18 @@ const q = query(collection(db, "reports"), ...constraints);
         return;
       }
 
-      const userRef = snap.docs[0].ref;
-      const userData = snap.docs[0].data();
+      const userDoc = snap.docs[0];
+      if (!userDoc) {
+        toast.error(`Không tìm thấy user @${report.targetShortId}`);
+        setActionLoading(null);
+        return;
+      }
+
+      const userRef = userDoc.ref;
+      const userData = userDoc.data();
       const currentViolationCount = userData?.violationCount || 0;
       const newCount = currentViolationCount + 1;
-      const targetShortId = userData?.shortId || report.targetShortId;
+      const targetShortId = userData?.shortId || userData?.username || report.targetShortId;
 
       const updateData: any = {
         violationCount: increment(1),
