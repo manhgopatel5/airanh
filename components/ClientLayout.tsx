@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { doc, onSnapshot, Timestamp } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
@@ -23,12 +23,11 @@ type WarningData = {
 
 export default function ClientLayout({ children }: Props) {
   const pathname = usePathname() || "";
-  const router = useRouter();
   const { user, loading } = useAuth();
 
   const [warningOpen, setWarningOpen] = useState(false);
   const [banData, setBanData] = useState<{
-    banned: boolean | null; // null = chưa load xong
+    banned: boolean | null;
     bannedReason: string;
     bannedUntil: Timestamp | null;
   }>({
@@ -60,18 +59,10 @@ export default function ClientLayout({ children }: Props) {
   const isChatDetail = /^\/chat\/[^/]+$/.test(pathname);
   const isCreate = pathname.startsWith("/create");
 
-  /* ================= REDIRECT ================= */
-  useEffect(() => {
-    if (loading) return;
-    if (!user &&!isPublic) {
-      router.replace("/login");
-    }
-  }, [user, loading, isPublic, router, pathname]);
-
   /* ================= WARNING + BAN ================= */
   useEffect(() => {
     if (!user) {
-      setBanData({ banned: false, bannedReason: "", bannedUntil: null });
+      setBanData({ banned: null, bannedReason: "", bannedUntil: null }); // reset về null để chờ load lại
       return;
     }
 
@@ -114,11 +105,11 @@ export default function ClientLayout({ children }: Props) {
     );
 
     return () => unsub();
-  }, [user]);
+  }, );
 
   /* ================= LOADING ================= */
-  // 1. Đang check auth
-  if (loading) {
+  // 1. Đang check auth hoặc chưa load xong ban data
+  if (loading || (user && banData.banned === null)) {
     return (
       <div className="fixed inset-0 bg-white dark:bg-black flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-[#0A84FF]/20 border-t-[#0A84FF] rounded-full animate-spin" />
@@ -126,17 +117,8 @@ export default function ClientLayout({ children }: Props) {
     );
   }
 
-  // 2. Chưa login mà vào route private -> chặn render, chờ redirect
+  // 2. Chưa login mà vào route private -> chặn render. Để page tự redirect
   if (!user &&!isPublic) {
-    return (
-      <div className="fixed inset-0 bg-white dark:bg-black flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-[#0A84FF]/20 border-t-[#0A84FF] rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  // 3. Đã login nhưng chưa load xong data ban -> chờ
-  if (user && banData.banned === null) {
     return (
       <div className="fixed inset-0 bg-white dark:bg-black flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-[#0A84FF]/20 border-t-[#0A84FF] rounded-full animate-spin" />
@@ -149,7 +131,7 @@ export default function ClientLayout({ children }: Props) {
     const bannedUntil =
       banData.bannedUntil &&
       typeof (banData.bannedUntil as any)?.toDate === "function"
-       ? (banData.bannedUntil as any).toDate()
+      ? (banData.bannedUntil as any).toDate()
         : null;
 
     const isPermanent =!bannedUntil;
@@ -158,7 +140,6 @@ export default function ClientLayout({ children }: Props) {
 
     return (
       <div className="fixed inset-0 z-[999999999] bg-[#F5F5F7] dark:bg-black flex items-center justify-center p-4 overflow-hidden">
-        {/* Giữ nguyên UI ban của bạn */}
         <div className="absolute inset-0 backdrop-blur-[6px]" />
         <div className="absolute top-[120px] w-[280px] h-[280px] bg-[#0A84FF]/10 blur-3xl rounded-full" />
         <div className="relative w-full max-w-md bg-white dark:bg-zinc-900 rounded-[36px] shadow-[0_10px_40px_rgba(0,0,0,0.08)] border border-[#E5E5EA] dark:border-zinc-800 overflow-hidden">
