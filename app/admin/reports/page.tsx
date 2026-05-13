@@ -114,7 +114,11 @@ if (authError) {
         if (s === "pending") p++;
         else if (s === "resolved") r++;
         else if (s === "rejected") rej++;
-        const createdAt = data.createdAt?.toDate();
+        const createdAt =
+  data.createdAt &&
+  typeof data.createdAt.toDate === "function"
+    ? data.createdAt.toDate()
+    : null;
 if (createdAt && createdAt >= todayStart) today++;
       });
       setStats(prev => ({...prev, pending: p, resolved: r, rejected: rej, today }));
@@ -150,9 +154,20 @@ if (createdAt && createdAt >= todayStart) today++;
       });
       return unsub;
     } else {
-      let q = query(collection(db, "reports"), orderBy("createdAt", "desc"), limit(PAGE_SIZE));
-      if (tab!== "all") q = query(q, where("status", "==", tab));
-      if (reasonFilter!== "all") q = query(q, where("reason", "==", reasonFilter));
+     const constraints: any[] = [];
+
+if (tab !== "all") {
+  constraints.push(where("status", "==", tab));
+}
+
+if (reasonFilter !== "all") {
+  constraints.push(where("reason", "==", reasonFilter));
+}
+
+constraints.push(orderBy("createdAt", "desc"));
+constraints.push(limit(PAGE_SIZE));
+
+const q = query(collection(db, "reports"), ...constraints);
 
       const unsub = onSnapshot(q, (snap) => {
         const docs = snap.docs.map(d => ({ id: d.id,...d.data() } as Report));
@@ -182,10 +197,7 @@ if (createdAt && createdAt >= todayStart) today++;
         setLastDoc(snap.docs[snap.docs.length - 1]);
         setHasMore(snap.docs.length === PAGE_SIZE);
       } else {
-        const constraints: any[] = [
-  orderBy("createdAt", "desc"),
-  limit(PAGE_SIZE)
-];
+        const constraints: any[] = [];
 
 if (tab !== "all") {
   constraints.push(where("status", "==", tab));
@@ -195,13 +207,24 @@ if (reasonFilter !== "all") {
   constraints.push(where("reason", "==", reasonFilter));
 }
 
+constraints.push(orderBy("createdAt", "desc"));
+constraints.push(startAfter(lastDoc));
+constraints.push(limit(PAGE_SIZE));
+
 const q = query(collection(db, "reports"), ...constraints);
 
-        const snap = await getDocs(q);
-        const newDocs = snap.docs.map(d => ({ id: d.id,...d.data() } as Report));
-        setReports(prev => [...prev,...newDocs]);
-        setLastDoc(snap.docs[snap.docs.length - 1]);
-        setHasMore(snap.docs.length === PAGE_SIZE);
+const snap = await getDocs(q);
+
+const newDocs = snap.docs.map(
+  d => ({ id: d.id, ...d.data() } as Report)
+);
+
+setReports(prev => [...prev, ...newDocs]);
+
+setLastDoc(snap.docs[snap.docs.length - 1]);
+
+setHasMore(snap.docs.length === PAGE_SIZE);
+        
       }
     } catch (err) {
       console.error(err);
@@ -388,25 +411,33 @@ const q = query(collection(db, "reports"), ...constraints);
   }
 
 const handleAction = async (report: Report, action: "resolved" | "rejected") => {
-  setConfirmModal({show: false, type: ""});
-  
+  setConfirmModal({ show: false, type: "" });
+
   if (action === "resolved") {
     try {
-      // Fix: bỏ dấu ) dư
-      const userSnap = await getDocs(query(
-        collection(db, "users"), 
-        where("uid", "==", report.targetId), 
-        limit(1)
-      ));
-      
-      const firstDoc = userSnap.docs[0];
+      let userId = report.targetId;
 
-if (!firstDoc) {
-  toast.error("Không tìm thấy user");
-  return;
-}
+      // Nếu report task -> lấy owner của task
+      if (report.type === "task") {
+        const taskSnap = await getDoc(doc(db, "tasks", report.targetId));
 
-const violationCount = firstDoc.data()?.violationCount || 0;
+        if (!taskSnap.exists()) {
+          toast.error("Không tìm thấy task");
+          return;
+        }
+
+        userId = taskSnap.data().userId;
+      }
+
+      const userSnap = await getDoc(doc(db, "users", userId));
+
+      if (!userSnap.exists()) {
+        toast.error("Không tìm thấy user");
+        return;
+      }
+
+      const violationCount = userSnap.data()?.violationCount || 0;
+
       setConfirmModal({
         show: true,
         type: action,
@@ -414,10 +445,12 @@ const violationCount = firstDoc.data()?.violationCount || 0;
         bulk: false,
         violationCount: violationCount + 1
       });
+
     } catch (err) {
       console.error("Lỗi load violation:", err);
+
       toast.error("Không load được thông tin user");
-      // Vẫn cho mở modal nhưng không có violationCount
+
       setConfirmModal({
         show: true,
         type: action,
@@ -490,19 +523,25 @@ const violationCount = firstDoc.data()?.violationCount || 0;
   if (loading) return <div className="flex items-center justify-center h-screen bg-white dark:bg-black"><Loader2 className="animate-spin w-8 h-8 text-[#0A84FF]" /></div>;
   if (!isAdmin) return <div className="flex items-center justify-center h-screen bg-white dark:bg-black text-red-500 text-xl font-semibold">403 - Không có quyền</div>;
 
-  const filteredReports = useMemo(() => reports.filter(r => {
-    const s = search.toLowerCase();
-    return r.targetName.toLowerCase().includes(s) ||
-           r.targetShortId.toLowerCase().includes(s) ||
-           r.fromName.toLowerCase().includes(s) ||
-           r.note?.toLowerCase().includes(s);
-  }), [reports, search]);
+  const filteredReports = useMemo(() => {
+  const s = search.toLowerCase();
 
-  const filteredAppeals = useMemo(() => appeals.filter(a => {
-    const s = search.toLowerCase();
-    return a.userName.toLowerCase().includes(s) ||
-           a.appealText.toLowerCase().includes(s);
-  }), [appeals, search]);
+  return reports.filter(r =>
+    (r.targetName || "").toLowerCase().includes(s) ||
+    (r.targetShortId || "").toLowerCase().includes(s) ||
+    (r.fromName || "").toLowerCase().includes(s) ||
+    (r.note || "").toLowerCase().includes(s)
+  );
+}, [reports, search]);
+
+  const filteredAppeals = useMemo(() => {
+  const s = search.toLowerCase();
+
+  return appeals.filter(a =>
+    (a.userName || "").toLowerCase().includes(s) ||
+    (a.appealText || "").toLowerCase().includes(s)
+  );
+}, [appeals, search]);
 
   return (
     <div className="min-h-screen bg-[#F2F2F7] dark:bg-black pb-24">
