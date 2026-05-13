@@ -7,10 +7,10 @@ import { FiAlertOctagon, FiShield, FiCheck } from "react-icons/fi";
 type Props = {
   open: boolean;
   reason: string;
-  title?: string;
-  message?: string;
+  title?: string | undefined; // THÊM | undefined
+  message?: string | undefined; // THÊM | undefined  
   uid: string;
-  warningAt?: any;
+  warningAt?: Timestamp | undefined; // THÊM | undefined
 };
 
 export default function WarningModal({ open, reason, title, message, uid, warningAt }: Props) {
