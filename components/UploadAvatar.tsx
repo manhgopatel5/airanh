@@ -264,11 +264,43 @@ export default function UploadAvatar() {
           )}
 
           <AnimatePresence>
-            {success && (
-              <motion.div initial={{scale:0}} animate={{scale:1.2}} exit={{scale:0}} className="absolute -inset-2 pointer-events-none">
-                <DotLottieReact src={successLottie} autoplay style={{width:96,height:96,marginLeft:-8,marginTop:-8}} />
-              </motion.div>
-            )}
+{success && (
+  <>
+    {/* Lottie burst */}
+    <motion.div
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1.15, opacity: 1 }}
+      exit={{ scale: 0, opacity: 0 }}
+      className="absolute -inset-3 pointer-events-none"
+    >
+      <DotLottieReact
+        src={successLottie}
+        autoplay
+        style={{
+          width: 110,
+          height: 110,
+          marginLeft: -14,
+          marginTop: -14,
+        }}
+      />
+    </motion.div>
+
+    {/* Success badge */}
+    <motion.div
+      initial={{ scale: 0, y: 10 }}
+      animate={{ scale: 1, y: 0 }}
+      exit={{ scale: 0 }}
+      transition={{
+        type: "spring",
+        stiffness: 500,
+        damping: 18,
+      }}
+      className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-[#00C853]/95 backdrop-blur-xl border-2 border-white dark:border-zinc-950 flex items-center justify-center shadow-[0_0_20px_rgba(0,200,83,0.45)]"
+    >
+      <FiCheck size={16} className="text-white stroke-[3]" />
+    </motion.div>
+  </>
+)}
           </AnimatePresence>
         </div>
 
