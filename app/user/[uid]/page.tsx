@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { doc, getDoc, collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { TaskListItem } from "@/types/task";
-import { FiChevronLeft, FiMapPin, FiCalendar, FiBriefcase } from "react-icons/fi";
+import { FiChevronLeft, FiMapPin, FiCalendar } from "react-icons/fi";
 import { formatTaskPrice } from "@/types/task";
 import Link from "next/link";
 import Image from "next/image";
