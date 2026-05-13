@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FiArrowLeft, FiFileText, FiPhone, FiMail, FiUser } from "react-icons/fi";
+import { FiArrowLeft, FiPhone, FiMail, FiUser } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
