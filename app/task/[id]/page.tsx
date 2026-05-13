@@ -796,10 +796,18 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
       }}
       className="h-8 px-3 rounded-full bg-[#E6F4EA] dark:bg-[#00C853]/20 flex items-center gap-1.5 active:bg-[#D4EDDA] dark:active:bg-[#00C853]/30 transition-all"
     >
-      <div className="w-4 h-4 rounded-full bg-[#00C853] flex items-center justify-center">
+      <div
+  className="w-4 h-4 rounded-full flex items-center justify-center"
+  style={{ background: SUCCESS }}
+>
         <FiCheck size={10} strokeWidth={3} className="text-white" />
       </div>
-      <span className="text-[12px] font-semibold text-[#00C853]">Đồng ý</span>
+      <span
+  className="text-[12px] font-semibold"
+  style={{ color: SUCCESS }}
+>
+  Đồng ý
+</span>
     </motion.button>
 
     <motion.button
