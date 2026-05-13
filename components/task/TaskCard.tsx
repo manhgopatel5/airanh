@@ -14,6 +14,7 @@ import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 type Props = {
   task: Task;
+  mode: AppMode;
   theme: "task" | "plan";
   onDelete?: (id: string) => void;
   onShare?: (task: Task) => void;
