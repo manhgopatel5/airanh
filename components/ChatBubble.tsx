@@ -130,7 +130,7 @@ export default function ChatBubble({
                 <p className="text-sm font-semibold truncate">{msg.taskTitle}</p>
               </div>
             </div>
-            {msg.price > 0 && (
+            {(msg.price ?? 0) > 0 && (
               <p className={`text-sm font-bold mt-1.5 ${isMe? "text-white" : "text-[#00C853]"}`}>
                 {msg.price?.toLocaleString("vi-VN")}đ
               </p>
