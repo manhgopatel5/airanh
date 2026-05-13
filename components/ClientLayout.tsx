@@ -24,7 +24,7 @@ type WarningData = {
   reason: string;
   title: string;
   message: string;
-  warningAt?: Timestamp;
+  warningAt: Timestamp | undefined;
 };
 
 export default function ClientLayout({ children }: Props) {
