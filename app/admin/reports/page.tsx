@@ -294,31 +294,61 @@ setHasMore(snap.docs.length === PAGE_SIZE);
         updateData.warningAt = serverTimestamp();
         toast.success(`Đã cảnh cáo @${targetShortId} lần 1`);
       } else if (newCount === 2) {
-        const banUntil = new Date();
-        banUntil.setDate(banUntil.getDate() + 3);
-        updateData.banned = true;
-        updateData.bannedUntil = banUntil;
-        updateData.bannedReason = REASON_LABEL[report.reason] || report.reason;
-        updateData.bannedAt = serverTimestamp();
-        updateData.bannedBy = user.uid;
-        toast.success(`Đã ban @${targetShortId} 3 ngày`);
+  updateData.warning = false;
+
+  const banUntil = new Date();
+
+  banUntil.setDate(banUntil.getDate() + 3);
+
+  updateData.banned = true;
+
+  updateData.bannedUntil = banUntil;
+
+  updateData.bannedReason =
+    REASON_LABEL[report.reason] || report.reason;
+
+  updateData.bannedAt = serverTimestamp();
+
+  updateData.bannedBy = user.uid;
+
+  toast.success(`Đã ban @${targetShortId} 3 ngày`);
+}
       } else if (newCount === 3) {
-        const banUntil = new Date();
-        banUntil.setDate(banUntil.getDate() + 7);
-        updateData.banned = true;
-        updateData.bannedUntil = banUntil;
-        updateData.bannedReason = REASON_LABEL[report.reason] || report.reason;
-        updateData.bannedAt = serverTimestamp();
-        updateData.bannedBy = user.uid;
-        toast.success(`Đã ban @${targetShortId} 7 ngày`);
-      } else {
-        updateData.banned = true;
-        updateData.bannedUntil = null;
-        updateData.bannedReason = REASON_LABEL[report.reason] || report.reason;
-        updateData.bannedAt = serverTimestamp();
-        updateData.bannedBy = user.uid;
-        toast.success(`Đã ban vĩnh viễn @${targetShortId}`);
-      }
+  updateData.warning = false;
+
+  const banUntil = new Date();
+
+  banUntil.setDate(banUntil.getDate() + 7);
+
+  updateData.banned = true;
+
+  updateData.bannedUntil = banUntil;
+
+  updateData.bannedReason =
+    REASON_LABEL[report.reason] || report.reason;
+
+  updateData.bannedAt = serverTimestamp();
+
+  updateData.bannedBy = user.uid;
+
+  toast.success(`Đã ban @${targetShortId} 7 ngày`);
+}
+  } else {
+  updateData.warning = false;
+
+  updateData.banned = true;
+
+  updateData.bannedUntil = null;
+
+  updateData.bannedReason =
+    REASON_LABEL[report.reason] || report.reason;
+
+  updateData.bannedAt = serverTimestamp();
+
+  updateData.bannedBy = user.uid;
+
+  toast.success(`Đã ban vĩnh viễn @${targetShortId}`);
+}
 
       batch.update(userRef, updateData);
     } else {
