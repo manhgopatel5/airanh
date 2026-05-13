@@ -1,102 +1,56 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
 import { AuthProvider } from "@/lib/AuthContext";
 import EmailGuard from "@/components/EmailGuard";
 import { cn } from "@/lib/utils";
 import { Toaster } from "sonner";
-import { LazyMotion, domAnimation } from "framer-motion"; // THÊM
+import { LazyMotion, domAnimation } from "framer-motion";
 
-const geist = Geist({
+const inter = Inter({
   subsets: ['latin'],
   variable: '--font-sans',
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://airanh.vercel.app"),
+  metadataBase: new URL("https://huha.vn"),
   title: {
-    default: "AIR",
-    template: "%s | AIR",
+    default: "HUHA - Việc vặt gần bạn",
+    template: "%s | HUHA",
   },
-  description: "Kết nối người cần việc và người tìm việc nhanh chóng, an toàn",
-  keywords: ["social", "task", "freelance", "vietnam", "kết nối", "airanh", "việc làm tự do"],
-  authors: [{ name: "Airanh Team", url: "https://airanh.vercel.app" }],
-  creator: "Airanh",
-  publisher: "Airanh",
-  applicationName: "AIR",
+  description: "Kết nối việc vặt 800K, gần bạn, xong ngay. Thuê người hoặc nhận việc trong 5 phút.",
+  keywords: ["huha", "việc vặt", "freelance", "giúp việc", "ship", "task", "vietnam"],
+  authors: [{ name: "HUHA Team", url: "https://huha.vn" }],
+  creator: "HUHA",
+  publisher: "HUHA",
+  applicationName: "HUHA",
   referrer: "origin-when-cross-origin",
   formatDetection: { telephone: false, email: false, address: false },
-
-  alternates: {
-    canonical: "/",
-  },
-
+  alternates: { canonical: "/" },
   icons: {
     icon: [
-      { url: "/favicon-16.PNG", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-32.PNG", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
     ],
-    apple: [{ url: "/apple-icon-180.PNG", sizes: "180x180", type: "image/png" }],
-    shortcut: "/favicon.ico",
+    apple: [{ url: "/apple-icon-180.png", sizes: "180x180", type: "image/png" }],
   },
-
   manifest: "/manifest.json",
-
   openGraph: {
     type: "website",
     locale: "vi_VN",
-    url: "https://airanh.vercel.app",
-    siteName: "AIR",
-    title: "AIR - Nền tảng việc làm tự do",
-    description: "Kết nối người cần việc và người tìm việc nhanh chóng, an toàn",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "AIR",
-      },
-    ],
+    url: "https://huha.vn",
+    siteName: "HUHA",
+    title: "HUHA - Việc vặt gần bạn",
+    description: "Thuê người hoặc nhận việc 800K, gần bạn, xong ngay.",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "HUHA" }],
   },
-
   twitter: {
     card: "summary_large_image",
-    title: "AIR - Nền tảng việc làm tự do",
-    description: "Kết nối người cần việc và người tìm việc nhanh chóng, an toàn",
+    title: "HUHA - Việc vặt gần bạn",
+    description: "Thuê người hoặc nhận việc 800K, gần bạn, xong ngay.",
     images: ["/og-image.png"],
-    creator: "@airanh",
-  },
-
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "AIR",
-    startupImage: [
-      { url: "/splash-1290x2796.PNG", media: "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" },
-      { url: "/splash-1179x2556.PNG", media: "(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" },
-      { url: "/splash-1170x2532.PNG", media: "(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" },
-      { url: "/splash-1125x2436.PNG", media: "(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" },
-      { url: "/splash-1242x2688.PNG", media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)" },
-      { url: "/splash-828x1792.PNG", media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" },
-      { url: "/splash-750x1334.PNG", media: "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" },
-      { url: "/splash-2048x2732.PNG", media: "(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" },
-      { url: "/splash-1668x2388.PNG", media: "(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" },
-      { url: "/splash-1536x2048.PNG", media: "(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)" },
-    ],
-  },
-
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
   },
 };
 
@@ -105,20 +59,29 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  viewportFit: "contain",
-  themeColor: "#ffffff",
-  colorScheme: "light",
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#0042B2" },
+    { media: "(prefers-color-scheme: dark)", color: "#0A0A0A" },
+  ],
+  colorScheme: "light dark",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi" className={cn("font-sans", geist.variable)} suppressHydrationWarning>
+    <html lang="vi" className={cn(inter.variable)} suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Preconnect + preload lottie core - như Zomato */}
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://huha.vn" />
+        {/* Preload 4 lottie quan trọng nhất */}
+        <link rel="preload" href="/lotties/huha-idle-full.lottie" as="fetch" crossOrigin="anonymous" />
+        <link rel="preload" href="/lotties/huha-empty-full.lottie" as="fetch" crossOrigin="anonymous" />
+        <link rel="preload" href="/lotties/huha-success-check-full.lottie" as="fetch" crossOrigin="anonymous" />
+        <link rel="preload" href="/lotties/huha-error-shake-full.lottie" as="fetch" crossOrigin="anonymous" />
       </head>
-      <body className="font-sans bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight">
-        <LazyMotion features={domAnimation}>
+      <body className="font-sans bg-[#FAFAFB] dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 antialiased overscroll-none tracking-tight">
+        <LazyMotion features={domAnimation} strict>
           <AuthProvider>
             <EmailGuard>
               <ClientLayout>{children}</ClientLayout>
@@ -126,17 +89,31 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Toaster 
               position="top-center" 
               richColors 
-              style={{ zIndex: 999999 }}
+              closeButton
               toastOptions={{
                 classNames: {
-                  toast: "rounded-2xl border-[#E5E5E7] dark:border-zinc-800 font-sans",
+                  toast: "rounded-2xl border-zinc-200 dark:border-zinc-800 font-sans backdrop-blur-xl",
                   title: "font-semibold",
-                  description: "text-sm",
                 }
               }}
             />
           </AuthProvider>
         </LazyMotion>
+
+        {/* JSON-LD */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              name: "HUHA",
+              url: "https://huha.vn",
+              applicationCategory: "BusinessApplication",
+              operatingSystem: "Web, iOS, Android",
+            }),
+          }}
+        />
       </body>
     </html>
   );
