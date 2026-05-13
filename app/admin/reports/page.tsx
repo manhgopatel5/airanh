@@ -288,12 +288,18 @@ setHasMore(snap.docs.length === PAGE_SIZE);
         lastViolationAt: serverTimestamp(),
       };
 
-      if (newCount === 1) {
-        updateData.warning = true;
-        updateData.warningReason = REASON_LABEL[report.reason] || report.reason;
-        updateData.warningAt = serverTimestamp();
-        toast.success(`Đã cảnh cáo @${targetShortId} lần 1`);
-      } else if (newCount === 2) {
+ if (newCount === 1) {
+  updateData.warning = true;
+
+  updateData.warningReason =
+    REASON_LABEL[report.reason] || report.reason;
+
+  updateData.warningAt = serverTimestamp();
+
+  toast.success(`Đã cảnh cáo @${targetShortId} lần 1`);
+
+} else if (newCount === 2) {
+
   updateData.warning = false;
 
   const banUntil = new Date();
@@ -312,8 +318,9 @@ setHasMore(snap.docs.length === PAGE_SIZE);
   updateData.bannedBy = user.uid;
 
   toast.success(`Đã ban @${targetShortId} 3 ngày`);
-}
-      } else if (newCount === 3) {
+
+} else if (newCount === 3) {
+
   updateData.warning = false;
 
   const banUntil = new Date();
@@ -332,8 +339,9 @@ setHasMore(snap.docs.length === PAGE_SIZE);
   updateData.bannedBy = user.uid;
 
   toast.success(`Đã ban @${targetShortId} 7 ngày`);
-}
-  } else {
+
+} else {
+
   updateData.warning = false;
 
   updateData.banned = true;
