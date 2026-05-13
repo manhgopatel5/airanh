@@ -35,7 +35,7 @@ export default function EditTaskPage() {
 
   const loadingLottie = "/lotties/huha-loading-pull-full.lottie";
   const successLottie = "/lotties/huha-celebrate-full.lottie";
-
+  const [showSuccess, setShowSuccess] = useState(false);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -153,6 +153,11 @@ export default function EditTaskPage() {
 
       await updateDoc(doc(db, "tasks", task.id), updateData);
       toast.success("Đã cập nhật");
+      setShowSuccess(true);
+
+setTimeout(() => {
+  setShowSuccess(false);
+}, 1800);
       navigator.vibrate?.([10,20,10]);
       router.push(`/task/${task.id}`);
     } catch (err: any) {
@@ -190,11 +195,18 @@ export default function EditTaskPage() {
               className="flex items-center gap-1.5 px-4 h-9 rounded-xl text-white text-[14px] font-semibold disabled:opacity-50 shadow-lg active:scale-95 transition-all"
               style={{background:'linear-gradient(135deg,#0042B2,#1A5FFF)',boxShadow:'0 4px 14px rgba(0,66,178,0.3)'}}
             >
-              {saving? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <FiSave size={16} />
-              )}
+{saving ? (
+  <div className="w-5 h-5">
+    <DotLottieReact
+      src={loadingLottie}
+      autoplay
+      loop
+      style={{ width: 20, height: 20 }}
+    />
+  </div>
+) : (
+  <FiSave size={16} />
+)}
               {saving? "Đang lưu" : "Lưu"}
             </motion.button>
           </div>
@@ -366,6 +378,15 @@ function EditSkeleton({ lottie }: { lottie: string }) {
       <div className="flex-1 flex items-center justify-center">
         <div className="w-20 h-20"><DotLottieReact src={lottie} autoplay loop /></div>
       </div>
+      {showSuccess && (
+  <div className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center">
+    <DotLottieReact
+      src={successLottie}
+      autoplay
+      style={{ width: 260, height: 260 }}
+    />
+  </div>
+)}
     </div>
   );
 }
