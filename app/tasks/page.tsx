@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiSearch, FiX } from "react-icons/fi";
+import { FiSearch, FiRefreshCw, FiX } from "react-icons/fi";
 import { HiBolt, HiCalendarDays } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 import ShareTaskModal from "@/components/ShareTaskModal";
@@ -230,10 +230,20 @@ export default function TasksPage() {
     return () => observer.disconnect();
   }, [hasMore, loading, loadingMore]);
 
-  const handleRefresh = async () => {
-    vibrate(10);
+const handleRefresh = async () => {
+  if (refreshing) return;
+
+  setRefreshing(true);
+
+  try {
     await fetchTasks(true);
-  };
+    navigator.vibrate?.(10);
+  } finally {
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 600);
+  }
+};
 
   const handleTabChange = (newTab: SubTab) => {
     vibrate();
@@ -342,15 +352,34 @@ export default function TasksPage() {
                   </motion.button>
                 ))}
               </div>
-              <button
-                onClick={() => {
-                  vibrate();
-                  setShowSearch(!showSearch);
-                }}
-                className="p-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 active:scale-90 transition-all"
-              >
-                <FiSearch size={18} className="text-zinc-600 dark:text-zinc-400" />
-              </button>
+              <div className="flex items-center gap-2">
+  <button
+    onClick={() => {
+      vibrate();
+      setShowSearch(!showSearch);
+    }}
+    className="p-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 active:scale-90 transition-all"
+  >
+    <FiSearch
+      size={18}
+      className="text-zinc-600 dark:text-zinc-400"
+    />
+  </button>
+
+  <motion.button
+    whileTap={{ scale: 0.92 }}
+    onClick={handleRefresh}
+    disabled={refreshing}
+    className="p-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 active:scale-90 transition-all disabled:opacity-50"
+  >
+    <FiRefreshCw
+      size={18}
+      className={`text-zinc-600 dark:text-zinc-400 ${
+        refreshing ? "animate-spin" : ""
+      }`}
+    />
+  </motion.button>
+</div>
             </div>
 
             <AnimatePresence>
