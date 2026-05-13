@@ -479,6 +479,7 @@ const handleRefresh = async () => {
                     <TaskCard
                       task={task}
                       theme={mode}
+                      mode={mode}
                       onDelete={(id) => setTasks(prev => prev.filter(t => t.id!== id))}
                       onShare={(t) => setShareTask(t)}
                     />
