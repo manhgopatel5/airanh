@@ -6,7 +6,7 @@ import { sendEmailVerification, reload, signOut } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { toast, Toaster } from "sonner";
-import { FiMail, FiCheckCircle, FiRefreshCw, FiLogOut, FiSend } from "react-icons/fi";
+import { FiCheckCircle, FiRefreshCw, FiLogOut, FiSend } from "react-icons/fi";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { motion } from "framer-motion";
 
