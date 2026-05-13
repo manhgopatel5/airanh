@@ -102,6 +102,7 @@ export type TaskItem = BaseItem & {
   paymentMethod?: PaymentMethod;
   totalSlots: number;
   joined: number;
+  completed?: boolean;
   appliedCount?: number;  // ← THÊM DÒNG NÀY
   requirements?: string;
   isRemote: boolean;
@@ -140,7 +141,7 @@ export type PlanParticipant = {
 
 export type PlanItem = BaseItem & {
   type: "plan";
-  
+  completed?: boolean;
   // Timeline
   eventDate: Timestamp; // Ngày giờ chính diễn ra
   endDate?: Timestamp; // Kết thúc
