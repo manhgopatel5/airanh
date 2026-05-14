@@ -4,7 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { HiPlus } from "react-icons/hi2";
 import { useEffect, useTransition, useCallback, useMemo } from "react";
 import { useAppStore } from "@/store/app";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import idle from "@/public/lotties/huha-idle.json";
 import searching from "@/public/lotties/huha-searching.json";
 import taskLottie from "@/public/lotties/huha-task.json";
