@@ -2,7 +2,9 @@
 
 import { useAppStore } from "@/store/app";
 import { motion } from "framer-motion";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import LottiePlayer from "@/components/LottiePlayer";
+import taskLottie from "@/public/lotties/huha-task.json";
+import celebrate from "@/public/lotties/huha-celebrate.json";
 
 export default function ModeToggle() {
   const { mode, setMode } = useAppStore();
@@ -42,11 +44,11 @@ export default function ModeToggle() {
             style={{ WebkitTapHighlightColor: "transparent" }}
           >
             <div className="w-5 h-5 -ml-0.5">
-              <DotLottieReact
-                src="/lotties/huha-task-full.lottie"
+              <LottiePlayer
+                animationData={taskLottie}
                 autoplay={isTask}
                 loop={isTask}
-                style={{ width: 20, height: 20 }}
+                className="w-5 h-5"
               />
             </div>
             Task
@@ -60,11 +62,11 @@ export default function ModeToggle() {
             style={{ WebkitTapHighlightColor: "transparent" }}
           >
             <div className="w-5 h-5 -ml-0.5">
-              <DotLottieReact
-                src="/lotties/huha-celebrate-full.lottie"
+              <LottiePlayer
+                animationData={celebrate}
                 autoplay={!isTask}
                 loop={!isTask}
-                style={{ width: 20, height: 20 }}
+                className="w-5 h-5"
               />
             </div>
             Plan
