@@ -3,13 +3,18 @@
 import { useRouter, usePathname } from "next/navigation";
 import { HiPlus } from "react-icons/hi2";
 import { useEffect, useTransition, useCallback, useMemo } from "react";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { useAppStore } from "@/store/app";
+import LottiePlayer from "@/components/LottiePlayer";
+import idle from "@/public/lotties/huha-idle.json";
+import searching from "@/public/lotties/huha-searching.json";
+import taskLottie from "@/public/lotties/huha-task.json";
+import walletOpen from "@/public/lotties/huha-wallet-open.json";
+import celebrate from "@/public/lotties/huha-celebrate.json";
 
 type NavItem = {
   path: string;
   label: string;
-  lottie: string;
+  lottie: any;
 };
 
 export default function BottomNav() {
@@ -39,23 +44,23 @@ export default function BottomNav() {
   }, [pathname]);
 
   const items: NavItem[] = useMemo(() => [
-    { path: "/", label: "Trang chủ", lottie: "/lotties/huha-idle-full.lottie" },
-    { path: "/messages", label: "Tin nhắn", lottie: "/lotties/huha-searching-full.lottie" },
+    { path: "/", label: "Trang chủ", lottie: idle },
+    { path: "/messages", label: "Tin nhắn", lottie: searching },
   ], []);
 
   const rightItems: NavItem[] = useMemo(() => [
-    { path: "/tasks", label: "Nhiệm vụ", lottie: "/lotties/huha-task-full.lottie" },
-    { path: "/profile", label: "Hồ sơ", lottie: "/lotties/huha-wallet-open-full.lottie" },
+    { path: "/tasks", label: "Nhiệm vụ", lottie: taskLottie },
+    { path: "/profile", label: "Hồ sơ", lottie: walletOpen },
   ], []);
 
   const activeBg = isPlan
-   ? "bg-green-500/10 dark:bg-green-500/20"
+ ? "bg-green-500/10 dark:bg-green-500/20"
     : "bg-sky-500/10 dark:bg-sky-500/20";
   const activeText = isPlan
-   ? "text-green-600 dark:text-green-400"
+ ? "text-green-600 dark:text-green-400"
     : "text-sky-600 dark:text-sky-400";
   const fabGradient = isPlan
-   ? "from-green-500 to-emerald-500 shadow-green-500/25"
+ ? "from-green-500 to-emerald-500 shadow-green-500/25"
     : "from-sky-500 to-blue-600 shadow-sky-500/25";
   const fabHref = isPlan? "/create/plan" : "/create/task";
 
@@ -79,14 +84,11 @@ export default function BottomNav() {
 
         <div className="relative z-10 flex flex-col items-center">
           <div className={`w-7 h-7 -mb-0.5 transition-transform duration-300 ${active? "scale-110" : "scale-100"}`}>
-            <DotLottieReact
-              src={item.lottie}
+            <LottiePlayer
+              animationData={item.lottie}
               autoplay={active}
               loop={active}
-              style={{ width: 28, height: 28 }}
-              // freeze at first frame when inactive
-              speed={active? 1 : 0}
-              data-lottie
+              className="w-7 h-7"
             />
           </div>
           <span
@@ -121,11 +123,11 @@ export default function BottomNav() {
                   <div className={`w-[56px] h-[56px] rounded-full bg-gradient-to-br ${fabGradient} flex items-center justify-center shadow-lg ring-4 ring-white dark:ring-zinc-900 transition-all group-hover:shadow-xl`}>
                     {/* Lottie celebrate - luôn play nhẹ */}
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                      <DotLottieReact
-                        src="/lotties/huha-celebrate-full.lottie"
+                      <LottiePlayer
+                        animationData={celebrate}
                         autoplay
                         loop
-                        style={{ width: 56, height: 56 }}
+                        className="w-14 h-14"
                       />
                     </div>
                     <HiPlus className="text-white relative z-10 transition-transform group-hover:rotate-90" size={26} strokeWidth={2.5} />
@@ -142,7 +144,7 @@ export default function BottomNav() {
       {/* Reduce motion */}
       <style jsx global>{`
         @media (prefers-reduced-motion: reduce) {
-          [data-lottie] { display: none!important; }
+         .lottie-player { animation: none!important; }
         }
       `}</style>
     </div>
