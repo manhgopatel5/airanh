@@ -4,9 +4,10 @@ import { searchUsers } from "@/lib/userService";
 import { sendFriendRequest, cancelFriendRequest, getFriendStatus } from "@/lib/friendService";
 import { useAuth } from "@/lib/AuthContext";
 import { FiSearch, FiUserPlus, FiCheck, FiX, FiUserX, FiAlertCircle, FiUsers, FiClock } from "react-icons/fi";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import LottiePlayer from "@/components/LottiePlayer";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
 
 type UserResult = {
   uid: string;
@@ -187,7 +188,7 @@ export default function UserSearch() {
         {/* Error */}
         <AnimatePresence>
           {error && (
-            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-2.5 p-3.5 mb-4 bg-red-50 dark:bg-red-950/20 border-red-200/50 dark:border-red-900/50 rounded-2xl">
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-2.5 p-3.5 mb-4 bg-red-50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-900/50 rounded-2xl">
               <div className="w-8 h-8 rounded-xl bg-red-500/10 grid place-items-center flex-shrink-0">
                 <FiAlertCircle size={16} className="text-red-600" />
               </div>
@@ -217,7 +218,7 @@ export default function UserSearch() {
             <div className="relative">
               <div className="absolute inset-0 bg-[#0a84ff]/20 rounded-full blur-xl animate-pulse" />
               <div className="relative w-14 h-14">
-                <DotLottieReact src="/lotties/huha-loading-pull-full.lottie" autoplay loop style={{ width: 56, height: 56 }} />
+                <LottiePlayer animationData={loadingPull} autoplay loop className="w-14 h-14" aria-label="Đang tải" />
               </div>
             </div>
             <p className="text-sm text-zinc-500 font-medium">Đang tìm kiếm...</p>
