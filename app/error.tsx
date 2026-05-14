@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import errorShake from "@/public/lotties/huha-error-shake.json";
 
 export default function Error({
