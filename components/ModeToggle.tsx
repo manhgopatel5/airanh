@@ -2,7 +2,7 @@
 
 import { useAppStore } from "@/store/app";
 import { motion } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import taskLottie from "@/public/lotties/huha-task.json";
 import celebrate from "@/public/lotties/huha-celebrate.json";
 
