@@ -8,7 +8,8 @@ import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { useAuth } from "@/lib/useAuth";
 import LottiePlayer from "@/components/LottiePlayer";
-import { loadingPull, successCheck } from "@/components/illustrations";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import successCheck from "@/public/lotties/huha-success-check.json";
 
 type Category = { id: string; label: string; emoji: string; suggestions: string[] };
 type CostType = "free" | "share" | "host" | "ticket";
