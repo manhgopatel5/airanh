@@ -5,7 +5,7 @@ import { collection, addDoc, serverTimestamp, query, where, getDocs } from "fire
 import { getFirebaseDB } from "@/lib/firebase";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import warningShake from "@/public/lotties/huha-error-shake.json";
 import celebrate from "@/public/lotties/huha-celebrate.json";
 import loadingPull from "@/public/lotties/huha-loading-pull.json";
