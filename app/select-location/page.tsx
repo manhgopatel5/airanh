@@ -4,8 +4,9 @@ import { useState, useEffect, useMemo, useDeferredValue, useCallback } from "rea
 import { useRouter } from "next/navigation";
 import { FiChevronLeft, FiSearch, FiMapPin, FiCheck, FiX, FiNavigation } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
-import { loadingPull, celebrate } from "@/components/illustrations";
+import LottiePlayer from "@/components/ui/LottiePlayer";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import celebrate from "@/public/lotties/huha-celebrate.json";
 import { toast, Toaster } from "sonner";
 
 type Province = { ProvinceID: number; ProvinceName: string };
