@@ -7,9 +7,10 @@ import { sendPasswordResetEmail, fetchSignInMethodsForEmail } from "firebase/aut
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { toast, Toaster } from "sonner";
-import { FiMail, FiArrowLeft, FiAlertCircle, FiSend, FiCheck } from "react-icons/fi";
-import { motion } from "framer-motion";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { FiMail, FiArrowLeft, FiAlertCircle, FiSend, FiCheck, FiClock } from "react-icons/fi";
+import { motion, AnimatePresence } from "framer-motion";
+import LottiePlayer from "@/components/LottiePlayer";
+import { loadingPull } from "@/components/illustrations";
 
 export default function ForgotPasswordPage() {
   const auth = getFirebaseAuth();
@@ -26,7 +27,6 @@ export default function ForgotPasswordPage() {
   const [cooldown, setCooldown] = useState(0);
 
   const redirectTo = searchParams.get("redirect") || "/login";
-  const loadingLottie = "/lotties/huha-loading-pull-full.lottie";
 
   useEffect(() => {
     const lastEmail = localStorage.getItem("last_email");
@@ -43,11 +43,9 @@ export default function ForgotPasswordPage() {
 
   const checkRateLimit = async (email: string) => {
     try {
-      const rateLimitRef = doc(db, "rate_limits", email);
-      const snap = await getDoc(rateLimitRef);
+      const snap = await getDoc(doc(db, "rate_limits", email));
       if (snap.exists()) {
-        const data = snap.data();
-        const lastSent = data.lastResetSent?.toMillis() || 0;
+        const lastSent = snap.data().lastResetSent?.toMillis() || 0;
         const diff = Date.now() - lastSent;
         if (diff < 60000) return Math.ceil((60000 - diff) / 1000);
       }
@@ -57,9 +55,8 @@ export default function ForgotPasswordPage() {
 
   const updateRateLimit = async (email: string) => {
     try {
-      const rateLimitRef = doc(db, "rate_limits", email);
-      await setDoc(rateLimitRef, { lastResetSent: serverTimestamp(), count: 1 }, { merge: true });
-    } catch (err) { console.error("Rate limit update failed", err); }
+      await setDoc(doc(db, "rate_limits", email), { lastResetSent: serverTimestamp(), count: 1 }, { merge: true });
+    } catch {}
   };
 
   const handleReset = async (e?: React.FormEvent) => {
@@ -67,20 +64,28 @@ export default function ForgotPasswordPage() {
     if (!email) return setError("Vui lòng nhập email"), emailRef.current?.focus();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setError("Email không hợp lệ");
     if (cooldown > 0) return;
+
     try {
       setChecking(true); setError("");
       const waitTime = await checkRateLimit(email);
-      if (waitTime > 0) { setCooldown(waitTime); setError(`Vui lòng đợi ${waitTime}s trước khi gửi lại`); setChecking(false); return; }
+      if (waitTime > 0) { setCooldown(waitTime); setError(`Vui lòng đợi ${waitTime}s`); return; }
+
       const methods = await fetchSignInMethodsForEmail(auth, email);
-      if (methods.length === 0) { setError("Email chưa đăng ký tài khoản"); setChecking(false); return; }
+      if (!methods.length) { setError("Email chưa đăng ký tài khoản"); return; }
+
       setChecking(false); setLoading(true);
-      await sendPasswordResetEmail(auth, email, { url: window.location.origin + redirectTo });
+      await sendPasswordResetEmail(auth, email, { url: `${window.location.origin}${redirectTo}` });
       await updateRateLimit(email);
       localStorage.setItem("last_email", email);
       setSent(true); setCooldown(60);
       toast.success("Đã gửi link đặt lại mật khẩu");
+      navigator.vibrate?.(8);
     } catch (err: any) {
-      const errorMap: Record<string, string> = { "auth/invalid-email": "Email không hợp lệ", "auth/too-many-requests": "Gửi quá nhiều lần, thử lại sau", "auth/network-request-failed": "Lỗi mạng, kiểm tra kết nối" };
+      const errorMap: Record<string, string> = {
+        "auth/invalid-email": "Email không hợp lệ",
+        "auth/too-many-requests": "Gửi quá nhiều lần",
+        "auth/network-request-failed": "Lỗi mạng"
+      };
       setError(errorMap[err.code] || "Gửi email thất bại");
     } finally { setLoading(false); setChecking(false); }
   };
@@ -88,72 +93,94 @@ export default function ForgotPasswordPage() {
   return (
     <>
       <Toaster richColors position="top-center" />
-      <div className="min-h-screen bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-sm">
-          <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} className="bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl p-6 border border-white/20">
-            <button onClick={() => router.back()} className="mb-4 w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-zinc-200 hover:bg-zinc-50 active:scale-95 transition-all">
-              <FiArrowLeft className="text-zinc-700" size={20} />
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-zinc-950 rounded-3xl shadow-xl p-6 border-zinc-200/60 dark:border-zinc-800">
+            {/* Back */}
+            <button onClick={() => router.back()} className="mb-5 w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center active:scale-95 transition-all">
+              <FiArrowLeft className="w-5 h-5 text-zinc-700 dark:text-zinc-300" />
             </button>
 
+            {/* Header */}
             <div className="text-center mb-6">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-3xl flex items-center justify-center shadow-lg" style={{background:'linear-gradient(135deg,#0042B2,#1A5FFF)',boxShadow:'0 8px 20px rgba(0,66,178,0.3)'}}>
+              <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200 }} className="w-16 h-16 mx-auto mb-4 rounded-3xl bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] flex items-center justify-center shadow-lg shadow-[#0042B2]/25">
                 <FiMail className="text-white" size={28} />
-              </div>
-              <h1 className="text-2xl font-bold text-zinc-900 mb-1.5">Quên mật khẩu?</h1>
-              <p className="text-sm text-zinc-600">{sent? "Kiểm tra email để đặt lại mật khẩu" : "Nhập email để nhận link đặt lại"}</p>
+              </motion.div>
+              <h1 className="text-2xl font-black tracking-tight">Quên mật khẩu?</h1>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1.5">{sent? "Kiểm tra email để đặt lại" : "Nhập email để nhận link"}</p>
             </div>
 
-            {error && <motion.div initial={{opacity:0,y:-10}} animate={{opacity:1,y:0}} className="bg-red-50 border border-red-200 text-red-600 px-3 py-2.5 rounded-xl mb-4 flex items-center gap-2 text-sm"><FiAlertCircle size={16} className="flex-shrink-0" />{error}</motion.div>}
-            {sent && <motion.div initial={{opacity:0,y:-10}} animate={{opacity:1,y:0}} className="bg-[#E8F1FF] border border-[#0042B2]/20 text-[#0042B2] px-3 py-2.5 rounded-xl mb-4 flex items-center gap-2 text-sm"><FiCheck size={16} className="flex-shrink-0" />Đã gửi! Kiểm tra hộp thư và Spam</motion.div>}
+            {/* Alerts */}
+            <AnimatePresence>
+              {error && (
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mb-4 p-3 rounded-2xl bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900 flex items-start gap-2.5">
+                  <FiAlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-700 dark:text-red-400 font-medium leading-snug">{error}</p>
+                </motion.div>
+              )}
+              {sent &&!error && (
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-4 p-3 rounded-2xl bg-[#E8F1FF] dark:bg-[#0042B2]/10 border-[#0042B2]/20 flex items-start gap-2.5">
+                  <FiCheck className="w-4 h-4 text-[#0042B2] flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-[#0042B2] font-bold">Đã gửi thành công!</p>
+                    <p className="text-xs text-[#0042B2]/80 mt-0.5">Kiểm tra hộp thư và mục Spam</p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
+            {/* Form */}
             <form onSubmit={handleReset} className="space-y-4">
               <div>
-                <div className="relative"><FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} /><input ref={emailRef} type="email" placeholder="Email của bạn" autoComplete="email" className={`w-full pl-10 pr-3 h-11 rounded-xl border text-sm ${error? "border-red-500" : "border-zinc-300 dark:border-zinc-800"} bg-white dark:bg-zinc-950 focus:ring-2 focus:ring-[#0042B2]/30 outline-none`} value={email} onChange={(e) => { setEmail(e.target.value); if (error) setError(""); }} disabled={sent && cooldown > 0} /></div>
+                <div className="relative group">
+                  <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400 group-focus-within:text-[#0042B2] transition-colors" />
+                  <input ref={emailRef} type="email" value={email} onChange={(e) => { setEmail(e.target.value); if (error) setError(""); }} placeholder="Email của bạn" autoComplete="email" disabled={sent && cooldown > 0} className={`w-full h-12 pl-11 pr-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-2 ${error? "border-red-500" : "border-transparent focus:border-[#0042B2]"} outline-none text- font-medium transition-all disabled:opacity-60`} />
+                </div>
               </div>
 
-              {cooldown > 0 && <div className="w-full bg-zinc-200 rounded-full h-1.5 overflow-hidden"><motion.div initial={{width:"100%"}} animate={{width:"0%"}} transition={{duration:cooldown,ease:"linear"}} className="h-full" style={{background:'#0042B2'}} /></div>}
+              {/* Cooldown */}
+              <AnimatePresence>
+                {cooldown > 0 && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-zinc-500 flex items-center gap-1.5"><FiClock size={14} />Có thể gửi lại sau</span>
+                      <span className="font-bold text-[#0042B2]">{cooldown}s</span>
+                    </div>
+                    <div className="h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                      <motion.div initial={{ width: "100%" }} animate={{ width: "0%" }} transition={{ duration: cooldown, ease: "linear" }} className="h-full bg-[#0042B2] rounded-full" />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-              <motion.button type="submit" whileTap={{scale:0.98}} disabled={loading || checking || (sent && cooldown > 0)} className="w-full h-12 rounded-xl text-white font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg" style={{background:'linear-gradient(135deg,#0042B2,#1A5FFF)',boxShadow:'0 8px 20px rgba(0,66,178,0.3)'}}>
-                {checking ? (
-  <>
-    <div className="w-5 h-5">
-      <DotLottieReact
-        src={loadingLottie}
-        autoplay
-        loop
-        style={{ width: 20, height: 20 }}
-      />
-    </div>
-    Đang kiểm tra...
-  </>
-) : loading ? (
-  <>
-    <div className="w-5 h-5">
-      <DotLottieReact
-        src={loadingLottie}
-        autoplay
-        loop
-        style={{ width: 20, height: 20 }}
-      />
-    </div>
-    Đang gửi...
-  </>
-) : cooldown > 0 ? (
-  <>
-    <FiSend size={18} />
-    Gửi lại sau {cooldown}s
-  </>
-) : (
-  <>
-    <FiSend size={18} />
-    Gửi link đặt lại
-  </>
-)}
+              <motion.button type="submit" whileTap={{ scale: 0.98 }} disabled={loading || checking || (sent && cooldown > 0)} className="w-full h-12 rounded-2xl bg-[#0042B2] text-white font-bold text- shadow-lg shadow-[#0042B2]/25 hover:shadow-xl hover:shadow-[#0042B2]/30 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+                {checking || loading? (
+                  <>
+                    <LottiePlayer animationData={loadingPull} loop autoplay className="w-5 h-5" />
+                    <span>{checking? "Đang kiểm tra..." : "Đang gửi..."}</span>
+                  </>
+                ) : cooldown > 0? (
+                  <>
+                    <FiSend size={18} />
+                    <span>Gửi lại sau {cooldown}s</span>
+                  </>
+                ) : (
+                  <>
+                    <FiSend size={18} />
+                    <span>Gửi link đặt lại</span>
+                  </>
+                )}
               </motion.button>
             </form>
 
-            <p className="text-center text-sm text-zinc-600 mt-4">Nhớ mật khẩu? <Link href={`/login${redirectTo!=="/login"? `?redirect=${redirectTo}` : ""}`} className="font-semibold hover:underline" style={{color:'#0042B2'}}>Đăng nhập ngay</Link></p>
+            <div className="mt-6 pt-5 border-t border-zinc-200 dark:border-zinc-800">
+              <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
+                Nhớ mật khẩu? <Link href={`/login${redirectTo!== "/login"? `?redirect=${redirectTo}` : ""}`} className="font-bold text-[#0042B2] hover:underline">Đăng nhập</Link>
+              </p>
+            </div>
           </motion.div>
+
+          <p className="text-center text-xs text-zinc-500 mt-4 px-4">Link có hiệu lực 1 giờ • Kiểm tra cả mục Spam</p>
         </div>
       </div>
     </>
