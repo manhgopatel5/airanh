@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiBriefcase, FiCalendar, FiChevronDown, FiArrowLeft, FiZap, FiUsers, FiDollarSign, FiClock, FiMapPin, FiHelpCircle, FiTrendingUp } from "react-icons/fi";
 import LottiePlayer from "@/components/LottiePlayer";
-import { loadingPull } from "@/components/illustrations";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
 
 const CASES = [
   { type: "task", title: "Shipper giao hàng gấp", desc: "50k • Q1 → Q7 • 2h", icon: FiBriefcase, color: "#0042B2", bg: "from-[#0042B2]/10 to-[#1A5FFF]/10" },
