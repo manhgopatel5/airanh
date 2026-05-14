@@ -17,57 +17,74 @@ export async function applyToTask(taskId: string, userId: string) {
   if (!taskSnap.exists) throw new Error("Task not found");
   if (!userSnap.exists) throw new Error("User not found");
 
-  const taskData = taskSnap.data();
-  const userData = userSnap.data();
+  const taskData = taskSnap.data()!;
+  const userData = userSnap.data()!;
 
-  // Check đã đủ slot chưa
-  const currentApplied = taskData?.appliedCount || 0;
-  const totalSlots = taskData?.totalSlots || 1;
+  // Check đã apply chưa
+  if (taskData.applicants?.includes(userId)) throw new Error("Already applied");
+
+  const currentApplied = taskData.appliedCount || 0;
+  const totalSlots = taskData.totalSlots || 1;
   if (currentApplied >= totalSlots) throw new Error("Task is full");
 
   await db.runTransaction(async (tx) => {
-    // 1. Update count trong tasks - đây là source cho cả list + detail
+    const freshTask = await tx.get(taskRef);
+    const freshData = freshTask.data()!;
+    
+    // Check lại trong transaction
+    if ((freshData.appliedCount || 0) >= (freshData.totalSlots || 1)) {
+      throw new Error("Task is full");
+    }
+
     tx.update(taskRef, {
       applicants: FieldValue.arrayUnion(userId),
       appliedCount: FieldValue.increment(1),
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
-    // 2. Tạo doc applications để owner duyệt
     tx.set(appRef, {
       taskId,
-      taskOwnerId: taskData?.userId,
+      taskOwnerId: taskData.userId,
       userId,
-      userName: userData?.name || "User",
-      userAvatar: userData?.avatar || "",
+      userName: userData.name || "User",
+      userAvatar: userData.avatar || "",
       status: 'pending',
-      createdAt: FieldValue.serverTimestamp()
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
   });
 
   revalidatePath("/");
   revalidatePath(`/task/${taskId}`);
+  revalidatePath("/tasks");
 }
 
 export async function cancelToTask(taskId: string, userId: string) {
   const db = adminDb();
   const taskRef = db.collection("tasks").doc(taskId);
 
+  // Query phải chạy ngoài transaction
+  const q = db.collection('applications')
+    .where('taskId', '==', taskId)
+    .where('userId', '==', userId)
+    .where('status', 'in', ['pending', 'accepted']);
+  
+  const snap = await q.get();
+
   await db.runTransaction(async (tx) => {
-    // 1. Tìm và xóa doc applications
-    const q = db.collection('applications')
-      .where('taskId', '==', taskId)
-      .where('userId', '==', userId)
-      .where('status', 'in', ['pending', 'accepted']);
-    const snap = await tx.get(q);
+    // Xóa applications
     snap.docs.forEach(d => tx.delete(d.ref));
 
-    // 2. Update count trong tasks
+    // Update task
     tx.update(taskRef, {
       applicants: FieldValue.arrayRemove(userId),
       appliedCount: FieldValue.increment(-1),
+      assignees: FieldValue.arrayRemove(userId), // thêm dòng này nếu đã accept
+      updatedAt: FieldValue.serverTimestamp(),
     });
   });
 
   revalidatePath("/");
   revalidatePath(`/task/${taskId}`);
+  revalidatePath("/tasks");
 }
