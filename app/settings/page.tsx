@@ -16,7 +16,8 @@ import {
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/LottiePlayer";
-import { celebrate, loadingPull } from "@/components/illustrations";
+import celebrate from "@/public/lotties/huha-celebrate.json";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
 
 type Settings = {
   theme: "light" | "dark" | "system";
