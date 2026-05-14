@@ -8,7 +8,7 @@ import { TaskListItem, formatTaskPrice } from "@/types/task";
 import { FiChevronLeft, FiMapPin, FiCalendar } from "react-icons/fi";
 import Link from "next/link";
 import Image from "next/image";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import taskAnim from "@/public/lotties/huha-task.json";
 import { motion } from "framer-motion";
 
