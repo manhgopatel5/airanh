@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-
-import LottiePlayer from "@/components/ui/LottiePlayer";
-
-import errorAnimation from "@/public/lotties/huha-error-shake.json";
+import LottiePlayer from "@/components/LottiePlayer";
+import { errorShake } from "@/components/illustrations";
 
 export default function Error({
   error,
@@ -20,12 +18,14 @@ export default function Error({
   return (
     <div className="fixed inset-0 z-[9999] bg-[#FAFAFB] dark:bg-zinc-950 grid place-items-center p-6">
       <div className="w-full max-w-sm text-center">
-        <div className="w-32 h-32 mx-auto mb-6">
-          <LottiePlayer
-            animationData={errorAnimation}
-            className="w-full h-full"
-          />
-        </div>
+        <LottiePlayer
+          animationData={errorShake}
+          loop={false}
+          autoplay
+          className="w-32 h-32 mx-auto mb-6"
+          aria-label="Lỗi ứng dụng"
+          pauseWhenHidden={false}
+        />
 
         <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">
           Ối, có lỗi rồi!
@@ -36,8 +36,13 @@ export default function Error({
         </p>
 
         <button
-          onClick={reset}
-          className="w-full h-12 rounded-2xl bg-gradient-to-r from-[#0042B2] to-[#00C853] text-white font-semibold active:scale-[0.98] transition-all"
+          onClick={() => {
+            if (typeof navigator!== "undefined" && "vibrate" in navigator) {
+              navigator.vibrate(10);
+            }
+            reset();
+          }}
+          className="w-full h-12 rounded-2xl bg-[#0042B2] text-white font-semibold active:scale-[0.98] transition-all hover:opacity-90"
         >
           Thử lại
         </button>
