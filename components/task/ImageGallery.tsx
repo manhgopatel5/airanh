@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FiChevronLeft, FiX, FiZoomIn, FiZoomOut } from "react-icons/fi";
 import { motion, AnimatePresence, useMotionValue } from "framer-motion";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import LottiePlayer from "@/components/LottiePlayer";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -27,8 +28,6 @@ export function ImageGallery({ open, images, initialIndex, onClose }: Props) {
   const imgRef = useRef<HTMLImageElement>(null);
   const lastTapRef = useRef(0);
   const hideUITimeoutRef = useRef<NodeJS.Timeout>();
-
-  const loadingLottie = "/lotties/huha-loading-pull-full.lottie";
 
   useEffect(() => {
     setCurrentIndex(initialIndex);
@@ -148,7 +147,7 @@ export function ImageGallery({ open, images, initialIndex, onClose }: Props) {
   <button
     key={idx}
     onClick={() => {
-      setDirection(idx > currentIndex ? 1 : -1);
+      setDirection(idx > currentIndex? 1 : -1);
       setCurrentIndex(idx);
       setShowUI(true);
       setLoading(true);
@@ -156,7 +155,7 @@ export function ImageGallery({ open, images, initialIndex, onClose }: Props) {
     className={cn(
       "relative flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden transition-all duration-200",
       idx === currentIndex
-        ? "ring-2 ring-[#0042B2] scale-110"
+       ? "ring-2 ring-[#0042B2] scale-110"
         : "opacity-60 hover:opacity-100"
     )}
   >
@@ -177,7 +176,7 @@ export function ImageGallery({ open, images, initialIndex, onClose }: Props) {
         <div className="relative w-full h-full flex items-center justify-center" onClick={() => setShowUI(!showUI)}>
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center z-40">
-              <div className="w-20 h-20"><DotLottieReact src={loadingLottie} autoplay loop /></div>
+              <LottiePlayer animationData={loadingPull} autoplay loop className="w-20 h-20" />
             </div>
           )}
           <AnimatePresence initial={false} custom={direction} mode="popLayout">
