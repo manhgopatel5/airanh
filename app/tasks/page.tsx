@@ -14,7 +14,8 @@ import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
 import { useAppStore } from "@/store/app";
 import LottiePlayer from "@/components/LottiePlayer";
-import { task as taskAnim, loadingPull } from "@/components/illustrations";
+import taskAnim from "@/public/lotties/huha-task.json";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
 
 type SubTab = "mine" | "saved" | "doing" | "applied" | "expired" | "completed" | "cancelled";
 
@@ -53,8 +54,8 @@ export default function TasksPage() {
   const [pullDistance, setPullDistance] = useState(0);
 
   const theme = {
-    task: { primary: "#0042B2", gradient: "from-[#0042B2] to-[#1A5FFF]", text: "text-[#0042B2]", shadow: "shadow-[0_8px_28px_rgba(0,66,178,0.35)]" },
-    plan: { primary: "#00C853", gradient: "from-[#00C853] to-[#00E676]", text: "text-[#00C853]", shadow: "shadow-[0_8px_28px_rgba(0,200,83,0.35)]" }
+    task: { primary: "#0042B2", gradient: "from-[#0042B2] to-[#1A5FFF]", text: "text-[#0042B2]", shadow: "shadow- shadow-[0_8px_28px_rgba(0,66,178,0.35)]" },
+    plan: { primary: "#00C853", gradient: "from-[#00C853] to-[#00E676]", text: "text-[#00C853]", shadow: "shadow- shadow-[0_8px_28px_rgba(0,200,83,0.35)]" }
   };
 
   const vibrate = (ms = 8) => { if (typeof navigator!== "undefined" && "vibrate" in navigator) navigator.vibrate(ms); };
