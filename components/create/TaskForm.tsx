@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { FiDollarSign, FiUsers, FiClock, FiWifi } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { useAuth } from "@/lib/AuthContext";
+import LottiePlayer from "@/components/LottiePlayer";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
 
 const CATEGORIES = [
   { id: "delivery", label: "Giao hàng", icon: "🚚" },
@@ -177,8 +179,8 @@ export default function TaskForm() {
         <textarea value={form.requirements} onChange={(e) => setForm({...form, requirements: e.target.value })} placeholder="Kỹ năng cần có, kinh nghiệm..." rows={3} className="w-full px-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 focus:ring-2 focus:ring-[#0042B2]/30 outline-none resize-none" />
       </div>
 
-      <motion.button whileTap={{scale:0.98}} onClick={handleSubmit} disabled={loading} className="w-full h-[52px] rounded-2xl text-white font-bold text-base shadow-lg disabled:opacity-50 flex items-center justify-center gap-2" style={{background:'linear-gradient(135deg,#0042B2,#1A5FFF)',boxShadow:'0 8px 20px rgba(0,66,178,0.3)'}}>
-        {loading? <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Đang đăng...</> : "Đăng công việc HUHA"}
+      <motion.button whileTap={{scale:0.98}} onClick={handleSubmit} disabled={loading} className="w-full h- rounded-2xl text-white font-bold text-base shadow-lg disabled:opacity-50 flex items-center justify-center gap-2" style={{background:'linear-gradient(135deg,#0042B2,#1A5FFF)',boxShadow:'0 8px 20px rgba(0,66,178,0.3)'}}>
+        {loading? <><LottiePlayer animationData={loadingPull} autoplay loop className="w-5 h-5" /> Đang đăng...</> : "Đăng công việc HUHA"}
       </motion.button>
     </div>
   );
