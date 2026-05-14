@@ -11,7 +11,7 @@ import { vi } from "date-fns/locale";
 import { FiCheck, FiTrash2, FiBell, FiHeart, FiMessageCircle, FiUserPlus, FiBriefcase } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/LottiePlayer";
-import { loadingPull } from "@/components/illustrations";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
 
 type Notification = {
   id: string; toUserId: string; fromUserId: string; fromUserName: string; fromUserAvatar: string;
