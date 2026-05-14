@@ -6,6 +6,9 @@ import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
 import { FiCheck, FiLoader } from "react-icons/fi";
+import { motion } from "framer-motion";
+import LottiePlayer from "@/components/LottiePlayer";
+import celebrate from "@/public/lotties/huha-celebrate.json";
 
 type Props = {
   currentName: string;
@@ -46,6 +49,7 @@ export default function EditProfile({ currentName, onClose }: Props) {
     if (err) {
       setError(err);
       setTouched(true);
+      navigator.vibrate?.(10);
       return;
     }
 
@@ -77,6 +81,7 @@ export default function EditProfile({ currentName, onClose }: Props) {
       ]);
 
       setSuccess(true);
+      navigator.vibrate?.([10,20,10]);
       setTimeout(() => onClose?.(), 800);
     } catch (err) {
       setError("Có lỗi xảy ra, thử lại sau");
@@ -89,33 +94,40 @@ export default function EditProfile({ currentName, onClose }: Props) {
   const isValid = !validate(name.trim()) && name.trim()!== currentName;
 
   return (
-    <div className="space-y-4">
+    <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className="space-y-4">
       <div>
         <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
           Tên hiển thị
         </label>
 
-        <input
-          value={name}
-          onChange={(e) => {
-            setName(e.target.value);
-            setSuccess(false);
-          }}
-          onBlur={() => setTouched(true)}
-          onKeyDown={(e) => e.key === "Enter" && save()}
-          placeholder="Nhập tên của bạn"
-          maxLength={30}
-          autoFocus
-          className={`w-full px-4 py-3 rounded-2xl border bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 transition-all ${
-            errorMsg
-             ? "border-red-500 focus:ring-red-500/20 focus:border-red-500"
-              : "border-gray-200 dark:border-zinc-700 focus:ring-blue-500/20 focus:border-blue-500"
-          }`}
-        />
+        <div className="relative">
+          <input
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              setSuccess(false);
+            }}
+            onBlur={() => setTouched(true)}
+            onKeyDown={(e) => e.key === "Enter" && save()}
+            placeholder="Nhập tên của bạn"
+            maxLength={30}
+            autoFocus
+            className={`w-full px-4 py-3 rounded-2xl border bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 transition-all ${
+              errorMsg
+               ? "border-red-500 focus:ring-red-500/20 focus:border-red-500"
+                : "border-gray-200 dark:border-zinc-700 focus:ring-[#0042B2]/20 focus:border-[#0042B2]"
+            }`}
+          />
+          {success && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-6 h-6" />
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center justify-between mt-1.5 px-1">
           <p className="text-xs text-red-500 h-4">{errorMsg || error}</p>
-          <p className="text-xs text-gray-400 dark:text-zinc-500">
+          <p className={`text-xs ${name.length > 25 ? 'text-amber-500' : 'text-gray-400 dark:text-zinc-500'}`}>
             {name.length}/30
           </p>
         </div>
@@ -129,8 +141,9 @@ export default function EditProfile({ currentName, onClose }: Props) {
            ? "bg-emerald-500 text-white"
             : loading ||!isValid
            ? "bg-gray-300 dark:bg-zinc-700 text-gray-500 dark:text-zinc-400 cursor-not-allowed"
-            : "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
+            : "text-white shadow-lg"
         }`}
+        style={!success && !loading && isValid ? {background:'linear-gradient(135deg,#0042B2,#0066FF)',boxShadow:'0 10px 24px -8px rgba(0,66,178,0.4)'} : {}}
       >
         {loading? (
           <>
@@ -146,6 +159,6 @@ export default function EditProfile({ currentName, onClose }: Props) {
           "Lưu thay đổi"
         )}
       </button>
-    </div>
+    </motion.div>
   );
 }
