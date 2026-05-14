@@ -10,7 +10,7 @@ import { FiArrowLeft, FiTrash2, FiSave, FiX, FiDollarSign, FiUsers, FiMapPin, Fi
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/LottiePlayer";
-import { loadingPull } from "@/components/illustrations";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
 
 export default function EditTaskPage() {
   const router = useRouter();
