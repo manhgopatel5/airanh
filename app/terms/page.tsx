@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { FiArrowLeft, FiPhone, FiMail, FiUser } from "react-icons/fi";
 import { motion } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import plan from "@/public/lotties/huha-task.json";
 
 export default function TermsPage() {
