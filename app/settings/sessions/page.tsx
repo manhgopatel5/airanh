@@ -8,8 +8,9 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { ChevronLeft, Smartphone, Monitor, Laptop, Trash2, MapPin, ShieldCheck } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
-import { celebrate } from "@/components/illustrations";
+import LottiePlayer from "@/components/ui/LottiePlayer";
+
+import celebrate from "@/public/lotties/huha-celebrate.json";
 
 type Session = {
   id: string;
