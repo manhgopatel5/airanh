@@ -11,7 +11,8 @@ import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/LottiePlayer";
-import { loadingPull, celebrate } from "@/components/illustrations";
+import celebrate from "@/public/lotties/huha-celebrate.json";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
 
 type TabId = "hot" | "near" | "friends" | "new";
 const PAGE_SIZE = 15;
