@@ -7,9 +7,10 @@ import { doc, onSnapshot, runTransaction, arrayUnion, arrayRemove, updateDoc } f
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { incrementTaskView } from "@/lib/taskService";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import LottiePlayer from "@/components/LottiePlayer";
+import celebrate from "@/public/lotties/huha-celebrate.json";
 
 type Props = { taskId: string; chatCount?: number; initialLikes?: string[]; isBookmarked?: boolean };
 
@@ -156,7 +157,7 @@ export default function TaskActions({ taskId, chatCount = 0, initialLikes = [], 
             <AnimatePresence>
               {showLikeBurst && (
                 <motion.div initial={{ opacity: 0, scale: 0.3 }} animate={{ opacity: [0, 1, 0], scale: [0.3, 1.6, 2.2], y: [0, -8, -16] }} exit={{ opacity: 0 }} transition={{ duration: 0.85, ease: "easeOut" }} className="absolute inset-0 pointer-events-none z-10">
-                  <DotLottieReact src="/lotties/huha-celebrate-full.lottie" autoplay style={{ width: 44, height: 44, marginLeft: -12, marginTop: -12 }} />
+                  <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-11 h-11 -ml-3 -mt-3" />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -204,7 +205,7 @@ export default function TaskActions({ taskId, chatCount = 0, initialLikes = [], 
           <AnimatePresence>
             {showShareBurst && (
               <motion.div initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1.5 }} exit={{ opacity: 0, scale: 2 }} transition={{ duration: 0.7 }} className="absolute inset-0 pointer-events-none">
-                <DotLottieReact src="/lotties/huha-celebrate-full.lottie" autoplay style={{ width: 36, height: 36, marginLeft: -4, marginTop: -4, opacity: 0.8 }} />
+                <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-9 h-9 -ml-1 -mt-1 opacity-80" />
               </motion.div>
             )}
           </AnimatePresence>
