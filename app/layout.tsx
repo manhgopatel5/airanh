@@ -84,6 +84,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           "huha-error-shake",
           "huha-celebrate",
           "huha-idle",
+          "huha-task",
+          "huha-searching",
+          "huha-wallet-open",
         ].map((name) => (
           <link
             key={name}
