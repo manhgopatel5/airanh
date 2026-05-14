@@ -10,7 +10,8 @@ import { createTask } from "@/lib/task";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import LottiePlayer from "@/components/LottiePlayer";
-import { loadingPull, successCheck } from "@/components/illustrations";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import successCheck from "@/public/lotties/huha-success-check.json";
 import {
   FiX, FiCheck, FiPlus, FiMapPin, FiEye, FiCopy,
   FiZap, FiStar, FiLayers, FiTrendingUp, FiLock, FiGlobe,
