@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { FiShare, FiPlusSquare, FiX, FiDownload } from "react-icons/fi";
 import { HiDevicePhoneMobile } from "react-icons/hi2";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { motion, AnimatePresence } from "framer-motion";
+import LottiePlayer from "@/components/LottiePlayer";
+import celebrate from "@/public/lotties/huha-celebrate.json";
 
 const DISMISS_KEY = "installPromptDismissed";
 const DISMISS_DAYS = 7;
@@ -14,9 +15,6 @@ export default function InstallPrompt() {
   const [show, setShow] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // ✅ LOTTIE
-  const phoneLottie = "/lotties/huha-celebrate-full.lottie";
 
   useEffect(() => {
     const isStandalone =
@@ -107,7 +105,7 @@ export default function InstallPrompt() {
               <div className="relative w-12 h-12 shrink-0">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] rounded-2xl blur-xl opacity-30" />
                 <div className="relative w-12 h-12 bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] rounded-2xl flex items-center justify-center shadow-lg">
-                  <DotLottieReact src={phoneLottie} autoplay loop style={{width:28,height:28}} />
+                  <LottiePlayer animationData={celebrate} autoplay loop className="w-7 h-7" />
                 </div>
               </div>
 
