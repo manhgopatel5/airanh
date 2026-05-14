@@ -8,8 +8,8 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { ChevronLeft, UserX, Search, ShieldOff } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
-import { celebrate } from "@/components/illustrations";
+import LottiePlayer from "@/components/ui/LottiePlayer";
+import celebrate from "@/public/lotties/huha-celebrate.json";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 
 type BlockedUser = { uid: string; name: string; avatar: string; blockedAt: any; };
