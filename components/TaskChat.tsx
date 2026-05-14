@@ -37,7 +37,6 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
   const [replyingTo, setReplyingTo] = useState<MessageType | null>(null);
   const [canComment, setCanComment] = useState(false);
   const [showEmoji, setShowEmoji] = useState<string | null>(null);
-  const [typingUsers, setTypingUsers] = useState<string[]>([]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastDocRef = useRef<QueryDocumentSnapshot<DocumentData> | null>(null);
@@ -259,7 +258,7 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
 
                       {/* Bubble */}
                       <div className="relative group/bubble">
-                        <div className={`px-3.5 py-2 shadow-sm relative ${isMe? "bg-[#0a84ff] text-white rounded- rounded-br-[4px]" : "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white border-zinc-100 dark:border-zinc-700/50 rounded- rounded-bl-[4px]"}`}>
+                        <div className={`px-3.5 py-2 shadow-sm relative ${isMe? "bg-[#0a84ff] text-white rounded- rounded-br-" : "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white border border-zinc-100 dark:border-zinc-700/50 rounded- rounded-bl-"}`}>
                           <p className="text- leading- whitespace-pre-wrap break-words">{msg.text}</p>
 
                           {/* Actions */}
@@ -315,7 +314,7 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
           <AnimatePresence>
             {replyingTo && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mb-2 overflow-hidden">
-                <div className="flex items-center justify-between px-3 py-2 bg-[#0a84ff]/5 dark:bg-[#0a84ff]/10 border-[#0a84ff]/20 rounded-2xl">
+                <div className="flex items-center justify-between px-3 py-2 bg-[#0a84ff]/5 dark:bg-[#0a84ff]/10 border border-[#0a84ff]/20 rounded-2xl">
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     <FiCornerUpLeft size={14} className="text-[#0a84ff] flex-shrink-0" />
                     <div className="min-w-0">
