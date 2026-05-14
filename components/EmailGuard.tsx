@@ -7,7 +7,7 @@ import { sendEmailVerification } from "firebase/auth";
 import { toast } from "sonner";
 
 import { motion } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import loadingPull from "@/public/lotties/huha-loading-pull.json";
 import celebrate from "@/public/lotties/huha-celebrate.json";
 
