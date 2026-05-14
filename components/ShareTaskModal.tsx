@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
 import { collection, query, where, getDocs, documentId, addDoc, serverTimestamp, doc, setDoc } from "firebase/firestore";
 import { toast } from "sonner";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import loadingPull from "@/public/lotties/huha-loading-pull.json";
 import searching from "@/public/lotties/huha-searching.json";
 import celebrate from "@/public/lotties/huha-celebrate.json";
