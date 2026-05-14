@@ -20,7 +20,7 @@ import {
 import FCMProvider from "@/components/FCMProvider";
 import BottomNav from "@/components/BottomNav";
 import WarningModal from "@/components/WarningModal";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import loadingPull from "@/public/lotties/huha-loading-pull.json";
 import errorShake from "@/public/lotties/huha-error-shake.json";
 
