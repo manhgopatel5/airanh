@@ -8,7 +8,10 @@ import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
 import { collection, query, where, getDocs, documentId, addDoc, serverTimestamp, doc, setDoc } from "firebase/firestore";
 import { toast } from "sonner";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import LottiePlayer from "@/components/LottiePlayer";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import searching from "@/public/lotties/huha-searching.json";
+import celebrate from "@/public/lotties/huha-celebrate.json";
 
 type Props = { task: Task; onClose: () => void; };
 type Friend = { id: string; name: string; username: string; avatar: string; online: boolean; };
@@ -23,10 +26,6 @@ export default function ShareTaskModal({ task, onClose }: Props) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-
-  const loadingLottie = "/lotties/huha-loading-pull-full.lottie";
-  const emptyLottie = "/lotties/huha-searching-full.lottie";
-  const celebrateLottie = "/lotties/huha-celebrate-full.lottie";
 
   useEffect(() => {
     if (!user?.uid) { setLoading(false); return; }
@@ -113,7 +112,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
           {showSuccess && (
             <motion.div initial={{opacity:0,scale:0.8}} animate={{opacity:1,scale:1}} exit={{opacity:0}}
               className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-              <DotLottieReact src={celebrateLottie} autoplay style={{width:280,height:280}} />
+              <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-[280px] h-[280px]" />
             </motion.div>
           )}
         </AnimatePresence>
@@ -127,7 +126,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
           <div className="flex items-center justify-between px-5 pt-5 pb-3">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8">
-                <DotLottieReact src={celebrateLottie} autoplay loop style={{width:32,height:32}} />
+                <LottiePlayer animationData={celebrate} autoplay loop className="w-8 h-8" />
               </div>
               <h3 className="text-[22px] font-extrabold tracking-tight">Chia sẻ</h3>
             </div>
@@ -164,12 +163,12 @@ export default function ShareTaskModal({ task, onClose }: Props) {
           <div className="flex-1 overflow-y-auto px-2 pb-2">
             {loading? (
               <div className="flex flex-col items-center justify-center py-16">
-                <DotLottieReact src={loadingLottie} autoplay loop style={{width:80,height:80}} />
+                <LottiePlayer animationData={loadingPull} autoplay loop className="w-20 h-20" />
                 <p className="text-sm text-zinc-500 mt-2">Đang tải bạn bè...</p>
               </div>
             ) : filtered.length === 0? (
               <div className="flex flex-col items-center justify-center py-12">
-                <DotLottieReact src={emptyLottie} autoplay loop style={{width:140,height:140}} />
+                <LottiePlayer animationData={searching} autoplay loop className="w-[140px] h-[140px]" />
                 <p className="text-[15px] font-medium text-zinc-500 mt-2">
                   {search? "Không tìm thấy" : "Chưa có bạn bè"}
                 </p>
@@ -212,7 +211,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
                   className="w-full h-[52px] rounded-2xl font-extrabold text-[16px] text-white active:scale-[0.98] transition-all disabled:opacity-70 flex items-center justify-center gap-2"
                   style={{background:'linear-gradient(135deg,#0042B2,#0066FF)', boxShadow:'0 10px 24px -8px rgba(0,66,178,0.4)'}}>
                   {sending? (
-                    <DotLottieReact src={loadingLottie} autoplay loop style={{width:28,height:28}} />
+                    <LottiePlayer animationData={loadingPull} autoplay loop className="w-7 h-7" />
                   ) : (
                     <>Gửi cho {selected.length} người</>
                   )}
