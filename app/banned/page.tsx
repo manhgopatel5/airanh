@@ -8,7 +8,7 @@ import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { doc, getDoc, addDoc, collection, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 import { toast, Toaster } from "sonner";
 import LottiePlayer from "react-lottie-player";
-import { loadingPull } from "@/components/illustrations";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
 
 type UserData = {
   banned: boolean;
