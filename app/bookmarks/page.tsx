@@ -10,8 +10,8 @@ import TaskCard from "@/components/TaskCard";
 import { FiBookmark, FiArrowLeft, FiSearch, FiFilter, FiGrid, FiList } from "react-icons/fi";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
-import { loadingPull } from "@/components/illustrations";
+import LottiePlayer from "react-lottie-player";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
 import { toast, Toaster } from "sonner";
 
 export default function BookmarksPage() {
