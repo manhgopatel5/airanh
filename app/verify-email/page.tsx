@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { toast, Toaster } from "sonner";
 import { FiCheckCircle, FiRefreshCw, FiLogOut, FiSend } from "react-icons/fi";
 import LottiePlayer from "@/components/LottiePlayer";
-import { celebrate } from "@/components/illustrations";
+import celebrate from "@/public/lotties/huha-celebrate.json";
 import { motion } from "framer-motion";
 
 const vibrate = (p: number | number[]) => {
@@ -86,14 +86,13 @@ export default function VerifyEmailPage() {
       </div>
 
       <div className="h-screen w-screen flex items-center justify-center px-5 font-sans relative z-10">
-        <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{type:"spring",damping:22}} className="w-full max-w-[400px]">
+        <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{type:"spring",damping:22}} className="w-full max-w-">
           <div className="text-center mb-8">
             <div className="relative w-24 h-24 mx-auto mb-6">
               <div className="absolute inset-0 bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] rounded-3xl blur-2xl opacity-50 animate-pulse" />
               <div className="relative w-full h-full bg-gradient-to-br from-[#0042B2] via-[#0055DD] to-[#1A5FFF] rounded-3xl flex items-center justify-center shadow-2xl shadow-[#0042B2]/40 ring-1 ring-white/20">
                 <LottiePlayer animationData={celebrate} loop autoplay className="w-14 h-14" aria-label="Email" pauseWhenHidden={false} />
               </div>
-            </div>
             <h1 className="text-3xl font-black text-zinc-900 dark:text-white mb-2 tracking-tight">Xác thực email</h1>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium px-4">Chúng tôi đã gửi link xác thực tới</p>
             <p className="text-base font-bold mt-1.5 break-all px-4" style={{color:'#0042B2'}}>{user.email}</p>
@@ -107,7 +106,7 @@ export default function VerifyEmailPage() {
               </motion.button>
 
               <motion.button whileTap={{scale:0.98}} onClick={handleResend} disabled={sending || cooldown>0} className="w-full h-14 rounded-2xl font-bold text-base bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-2 border-zinc-200 dark:border-zinc-800 hover:border-[#0042B2]/50 flex items-center justify-center gap-2.5 disabled:opacity-50">
-                {sending? <><div className="w-5 h-5 border-[3px] border-zinc-400/30 border-t-[#0042B2] rounded-full animate-spin"/>Đang gửi...</> : cooldown>0? <><FiSend size={18}/>Gửi lại sau {cooldown}s</> : <><FiSend size={18}/>Gửi lại email</>}
+                {sending? <><div className="w-5 h-5 border- border-zinc-400/30 border-t-[#0042B2] rounded-full animate-spin"/>Đang gửi...</> : cooldown>0? <><FiSend size={18}/>Gửi lại sau {cooldown}s</> : <><FiSend size={18}/>Gửi lại email</>}
               </motion.button>
             </div>
 
