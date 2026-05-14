@@ -9,7 +9,7 @@ import { toast, Toaster } from "sonner";
 import { FiArrowLeft, FiTrash2, FiSave, FiX, FiDollarSign, FiUsers, FiMapPin, FiAlertCircle } from "react-icons/fi";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import loadingPull from "@/public/lotties/huha-loading-pull.json";
 
 export default function EditTaskPage() {
