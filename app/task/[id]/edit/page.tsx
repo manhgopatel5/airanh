@@ -8,7 +8,8 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { toast, Toaster } from "sonner";
 import { motion } from "framer-motion";
 import { FiArrowLeft, FiSave, FiX, FiPlus } from "react-icons/fi";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import LottiePlayer from "@/components/LottiePlayer";
+import { loadingPull, celebrate } from "@/components/illustrations";
 import type { Task } from "@/types/task";
 
 const CATEGORIES = [
@@ -32,10 +33,8 @@ export default function EditTaskPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [tagInput, setTagInput] = useState("");
-
-  const loadingLottie = "/lotties/huha-loading-pull-full.lottie";
-  const successLottie = "/lotties/huha-celebrate-full.lottie";
   const [showSuccess, setShowSuccess] = useState(false);
+
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -50,39 +49,19 @@ export default function EditTaskPage() {
   });
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setAuthLoading(false);
-    });
+    const unsub = onAuthStateChanged(auth, (u) => { setUser(u); setAuthLoading(false); });
     return () => unsub();
   }, [auth]);
 
   useEffect(() => {
     if (!taskId || typeof taskId!== "string" || authLoading) return;
-
     const load = async () => {
       try {
         const snap = await getDoc(doc(db, "tasks", taskId));
-        if (!snap.exists()) {
-          toast.error("Không tìm thấy công việc");
-          router.push("/tasks");
-          return;
-        }
-
+        if (!snap.exists()) { toast.error("Không tìm thấy công việc"); router.push("/tasks"); return; }
         const data = { id: snap.id,...snap.data() } as Task;
-
-        if (!user) {
-          toast.error("Bạn cần đăng nhập");
-          router.push("/login");
-          return;
-        }
-
-        if (data.userId!== user.uid) {
-          toast.error("Bạn không có quyền sửa");
-          router.push(`/task/${taskId}`);
-          return;
-        }
-
+        if (!user) { toast.error("Bạn cần đăng nhập"); router.push("/login"); return; }
+        if (data.userId!== user.uid) { toast.error("Bạn không có quyền sửa"); router.push(`/task/${taskId}`); return; }
         setTask(data);
         setForm({
           title: data.title,
@@ -93,19 +72,11 @@ export default function EditTaskPage() {
           tags: data.tags || [],
           images: data.images || [],
           requirements: "requirements" in data? data.requirements : "",
-          location: {
-            address: data.location?.address || "",
-            city: data.location?.city || "",
-          },
+          location: { address: data.location?.address || "", city: data.location?.city || "" },
           isRemote: "isRemote" in data? data.isRemote : false,
         });
-      } catch (err) {
-        console.error(err);
-        toast.error("Lỗi tải dữ liệu");
-        router.push("/tasks");
-      } finally {
-        setLoading(false);
-      }
+      } catch (err) { console.error(err); toast.error("Lỗi tải dữ liệu"); router.push("/tasks"); }
+      finally { setLoading(false); }
     };
     load();
   }, [taskId, user, authLoading, db, router]);
@@ -118,18 +89,13 @@ export default function EditTaskPage() {
       navigator.vibrate?.(5);
     }
   };
-
-  const removeTag = (tag: string) => {
-    setForm({...form, tags: form.tags.filter((t) => t!== tag) });
-    navigator.vibrate?.(5);
-  };
+  const removeTag = (tag: string) => { setForm({...form, tags: form.tags.filter(t => t!== tag) }); navigator.vibrate?.(5); };
 
   const handleSave = async () => {
     if (!task ||!user) return;
     if (!form.title.trim()) return toast.error("Tiêu đề không được trống");
     if (form.price < 0) return toast.error("Giá không hợp lệ");
     if (form.totalSlots < 1) return toast.error("Số lượng phải >= 1");
-
     setSaving(true);
     try {
       const updateData: any = {
@@ -143,252 +109,110 @@ export default function EditTaskPage() {
         edited: true,
         editedAt: serverTimestamp(),
       };
-
       if (task.type === "task") {
         updateData.price = form.price;
         updateData.totalSlots = form.totalSlots;
         updateData.requirements = form.requirements.trim();
         updateData.isRemote = form.isRemote;
       }
-
       await updateDoc(doc(db, "tasks", task.id), updateData);
       toast.success("Đã cập nhật");
       setShowSuccess(true);
-
-setTimeout(() => {
-  setShowSuccess(false);
-}, 1800);
+      setTimeout(() => setShowSuccess(false), 1800);
       navigator.vibrate?.([10,20,10]);
       router.push(`/task/${task.id}`);
-    } catch (err: any) {
-      console.error(err);
-      toast.error("Lưu thất bại");
-    } finally {
-      setSaving(false);
-    }
+    } catch (err) { console.error(err); toast.error("Lưu thất bại"); }
+    finally { setSaving(false); }
   };
 
-  if (authLoading || loading) return <EditSkeleton lottie={loadingLottie} />;
+  if (authLoading || loading) return <EditSkeleton />;
   if (!task) return null;
 
   return (
-    
     <>
       <Toaster richColors position="top-center" />
       <div className="min-h-screen bg-zinc-50 dark:bg-black">
-        {/* Header */}
-        <div className="sticky top-0 z-20 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b border-zinc-200/50 dark:border-zinc-900">
+        <div className="sticky top-0 z-20 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b">
           <div className="flex items-center justify-between px-4 h-14 max-w-2xl mx-auto">
-            <motion.button
-              whileTap={{scale:0.9}}
-              onClick={() => router.back()}
-              className="p-2 -ml-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-95 transition-all"
-            >
-              <FiArrowLeft size={22} className="text-zinc-900 dark:text-white" />
+            <motion.button whileTap={{scale:0.9}} onClick={() => router.back()} className="p-2 -ml-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900">
+              <FiArrowLeft size={22} />
             </motion.button>
-            <h1 className="text-[17px] font-bold text-zinc-900 dark:text-white">
-              Sửa công việc
-            </h1>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={handleSave}
-              disabled={saving}
-              className="flex items-center gap-1.5 px-4 h-9 rounded-xl text-white text-[14px] font-semibold disabled:opacity-50 shadow-lg active:scale-95 transition-all"
-              style={{background:'linear-gradient(135deg,#0042B2,#1A5FFF)',boxShadow:'0 4px 14px rgba(0,66,178,0.3)'}}
-            >
-{saving ? (
-  <div className="w-5 h-5">
-    <DotLottieReact
-      src={loadingLottie}
-      autoplay
-      loop
-      style={{ width: 20, height: 20 }}
-    />
-  </div>
-) : (
-  <FiSave size={16} />
-)}
+            <h1 className="text-[17px] font-bold">Sửa công việc</h1>
+            <motion.button whileTap={{scale:0.95}} onClick={handleSave} disabled={saving} className="flex items-center gap-1.5 px-4 h-9 rounded-xl text-white text-[14px] font-semibold disabled:opacity-50" style={{background:'linear-gradient(135deg,#0042B2,#1A5FFF)'}}>
+              {saving? <LottiePlayer animationData={loadingPull} loop autoplay className="w-5 h-5"/> : <FiSave size={16}/>}
               {saving? "Đang lưu" : "Lưu"}
             </motion.button>
           </div>
         </div>
 
-        {/* Form */}
         <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} className="px-4 py-6 space-y-5 max-w-2xl mx-auto pb-28">
           <div>
-            <label className="block text-[13px] font-semibold text-zinc-900 dark:text-white mb-2">
-              Tiêu đề <span className="text-red-500">*</span>
-            </label>
-            <input
-              value={form.title}
-              onChange={(e) => setForm({...form, title: e.target.value })}
-              placeholder="VD: Thiết kế logo quán cafe"
-              maxLength={100}
-              className="w-full px-4 h-12 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:ring-2 focus:ring-[#0042B2]/30 focus:border-[#0042B2] transition-all"
-            />
+            <label className="block text-[13px] font-semibold mb-2">Tiêu đề <span className="text-red-500">*</span></label>
+            <input value={form.title} onChange={e=>setForm({...form,title:e.target.value})} maxLength={100} className="w-full px-4 h-12 rounded-2xl bg-white dark:bg-zinc-950 border outline-none focus:ring-2 focus:ring-[#0042B2]/30"/>
             <p className="text-[12px] text-zinc-500 mt-1.5 text-right">{form.title.length}/100</p>
           </div>
 
           <div>
-            <label className="block text-[13px] font-semibold text-zinc-900 dark:text-white mb-2">
-              Mô tả chi tiết
-            </label>
-            <textarea
-              value={form.description}
-              onChange={(e) => setForm({...form, description: e.target.value })}
-              placeholder="Mô tả công việc, yêu cầu, thời gian..."
-              rows={5}
-              maxLength={1000}
-              className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:ring-2 focus:ring-[#0042B2]/30 focus:border-[#0042B2] transition-all resize-none"
-            />
+            <label className="block text-[13px] font-semibold mb-2">Mô tả chi tiết</label>
+            <textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} rows={5} maxLength={1000} className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-zinc-950 border outline-none focus:ring-2 focus:ring-[#0042B2]/30 resize-none"/>
             <p className="text-[12px] text-zinc-500 mt-1.5 text-right">{form.description.length}/1000</p>
           </div>
 
-          {task.type === "task" && (
+          {task.type==="task" && (
             <>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[13px] font-semibold text-zinc-900 dark:text-white mb-2">
-                    Giá tiền
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={form.price}
-                      onChange={(e) => setForm({...form, price: Number(e.target.value) })}
-                      placeholder="0"
-                      className="w-full pl-4 pr-10 h-12 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-[15px] text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-[#0042B2]/30 focus:border-[#0042B2] transition-all"
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-[13px] font-medium">đ</span>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[13px] font-semibold text-zinc-900 dark:text-white mb-2">
-                    Số lượng
-                  </label>
-                  <input
-                    type="number"
-                    value={form.totalSlots}
-                    onChange={(e) => setForm({...form, totalSlots: Number(e.target.value) })}
-                    min={1}
-                    className="w-full px-4 h-12 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-[15px] text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-[#0042B2]/30 focus:border-[#0042B2] transition-all"
-                  />
-                </div>
+                <div><label className="block text-[13px] font-semibold mb-2">Giá tiền</label><div className="relative"><input type="number" value={form.price} onChange={e=>setForm({...form,price:Number(e.target.value)})} className="w-full pl-4 pr-10 h-12 rounded-2xl bg-white dark:bg-zinc-950 border outline-none focus:ring-2 focus:ring-[#0042B2]/30"/><span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-[13px]">đ</span></div></div>
+                <div><label className="block text-[13px] font-semibold mb-2">Số lượng</label><input type="number" value={form.totalSlots} onChange={e=>setForm({...form,totalSlots:Number(e.target.value)})} min={1} className="w-full px-4 h-12 rounded-2xl bg-white dark:bg-zinc-950 border outline-none focus:ring-2 focus:ring-[#0042B2]/30"/></div>
               </div>
-
-              <div>
-                <label className="block text-[13px] font-semibold text-zinc-900 dark:text-white mb-2">
-                  Yêu cầu
-                </label>
-                <textarea
-                  value={form.requirements}
-                  onChange={(e) => setForm({...form, requirements: e.target.value })}
-                  placeholder="VD: Có kinh nghiệm, biết Figma..."
-                  rows={3}
-                  className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-[15px] text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:ring-2 focus:ring-[#0042B2]/30 focus:border-[#0042B2] transition-all resize-none"
-                />
-              </div>
+              <div><label className="block text-[13px] font-semibold mb-2">Yêu cầu</label><textarea value={form.requirements} onChange={e=>setForm({...form,requirements:e.target.value})} rows={3} className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-zinc-950 border outline-none focus:ring-2 focus:ring-[#0042B2]/30 resize-none"/></div>
             </>
           )}
 
           <div>
-            <label className="block text-[13px] font-semibold text-zinc-900 dark:text-white mb-2">
-              Danh mục
-            </label>
-            <select
-              value={form.category}
-              onChange={(e) => setForm({...form, category: e.target.value })}
-              className="w-full px-4 h-12 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-[15px] text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-[#0042B2]/30 focus:border-[#0042B2] transition-all"
-            >
+            <label className="block text-[13px] font-semibold mb-2">Danh mục</label>
+            <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})} className="w-full px-4 h-12 rounded-2xl bg-white dark:bg-zinc-950 border outline-none focus:ring-2 focus:ring-[#0042B2]/30">
               <option value="">Chọn danh mục</option>
-              {CATEGORIES.map((c) => (
-                <option key={c.value} value={c.value}>{c.label}</option>
-              ))}
+              {CATEGORIES.map(c=><option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
           </div>
 
           <div>
-            <label className="block text-[13px] font-semibold text-zinc-900 dark:text-white mb-2">
-              Tags
-            </label>
+            <label className="block text-[13px] font-semibold mb-2">Tags</label>
             <div className="flex gap-2 mb-2.5">
-              <input
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
-                placeholder="Nhập tag và Enter"
-                className="flex-1 px-4 h-11 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-[14px] text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:ring-2 focus:ring-[#0042B2]/30 focus:border-[#0042B2] transition-all"
-              />
-              <motion.button
-                whileTap={{scale:0.9}}
-                onClick={addTag}
-                className="w-11 h-11 rounded-xl text-white flex items-center justify-center active:scale-95 transition-all"
-                style={{background:'#0042B2'}}
-              >
-                <FiPlus size={20} />
-              </motion.button>
+              <input value={tagInput} onChange={e=>setTagInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(e.preventDefault(),addTag())} placeholder="Nhập tag và Enter" className="flex-1 px-4 h-11 rounded-xl bg-white dark:bg-zinc-950 border outline-none focus:ring-2 focus:ring-[#0042B2]/30"/>
+              <motion.button whileTap={{scale:0.9}} onClick={addTag} className="w-11 h-11 rounded-xl text-white flex items-center justify-center" style={{background:'#0042B2'}}><FiPlus size={20}/></motion.button>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {form.tags.map((tag) => (
-                <motion.div
-                  key={tag}
-                  initial={{scale:0.8,opacity:0}}
-                  animate={{scale:1,opacity:1}}
-                  className="flex items-center gap-1.5 pl-3 pr-2 h-7 rounded-full text-[13px] font-medium"
-                  style={{background:'rgba(0,66,178,0.1)',color:'#0042B2'}}
-                >
-                  {tag}
-                  <button onClick={() => removeTag(tag)} className="hover:bg-[#0042B2]/20 rounded-full p-0.5 transition-colors">
-                    <FiX size={14} />
-                  </button>
-                </motion.div>
-              ))}
-            </div>
+            <div className="flex flex-wrap gap-2">{form.tags.map(tag=><motion.div key={tag} initial={{scale:0.8,opacity:0}} animate={{scale:1,opacity:1}} className="flex items-center gap-1.5 pl-3 pr-2 h-7 rounded-full text-[13px] font-medium" style={{background:'rgba(0,66,178,0.1)',color:'#0042B2'}}>{tag}<button onClick={()=>removeTag(tag)} className="hover:bg-[#0042B2]/20 rounded-full p-0.5"><FiX size={14}/></button></motion.div>)}</div>
           </div>
 
-          {task.type === "task" && (
-            <div className="flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
-              <div>
-                <p className="text-[14px] font-semibold text-zinc-900 dark:text-white">Làm việc từ xa</p>
-                <p className="text-[12px] text-zinc-500 mt-0.5">Cho phép làm online</p>
-              </div>
-              <button
-                onClick={() => setForm({...form, isRemote:!form.isRemote })}
-                className={`relative w-12 h-[28px] rounded-full transition-all duration-300 ${form.isRemote? "" : "bg-zinc-300 dark:bg-zinc-700"}`}
-                style={{background:form.isRemote?'#0042B2':undefined}}
-              >
-                <div className={`absolute top-[3px] w-[22px] h-[22px] bg-white rounded-full shadow-md transition-all duration-300 ${form.isRemote? "left-[22px]" : "left-[3px]"}`} />
-              </button>
+          {task.type==="task" && (
+            <div className="flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-zinc-950 border">
+              <div><p className="text-[14px] font-semibold">Làm việc từ xa</p><p className="text-[12px] text-zinc-500 mt-0.5">Cho phép làm online</p></div>
+              <button onClick={()=>setForm({...form,isRemote:!form.isRemote})} className={`relative w-12 h-[28px] rounded-full transition-all ${form.isRemote?"":"bg-zinc-300 dark:bg-zinc-700"}`} style={{background:form.isRemote?'#0042B2':undefined}}><div className={`absolute top-[3px] w-[22px] h-[22px] bg-white rounded-full shadow-md transition-all ${form.isRemote?"left-[22px]":"left-[3px]"}`}/></button>
             </div>
           )}
         </motion.div>
       </div>
-            {showSuccess && (
-  <div className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center">
-    <DotLottieReact
-      src={successLottie}
-      autoplay
-      style={{ width: 260, height: 260 }}
-    />
-  </div>
-)}
+      {showSuccess && (
+        <div className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center">
+          <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-64 h-64"/>
+        </div>
+      )}
     </>
   );
 }
 
-function EditSkeleton({ lottie }: { lottie: string }) {
+function EditSkeleton() {
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black flex flex-col">
-      <div className="sticky top-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b border-zinc-200/50 dark:border-zinc-900 px-4 h-14 flex items-center justify-between">
-        <div className="w-9 h-9 rounded-xl bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
-        <div className="h-5 w-28 bg-zinc-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
-        <div className="w-16 h-9 rounded-xl bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+    <div className="min-h-screen bg-zinc-50 dark:bg-black flex-col">
+      <div className="sticky top-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b px-4 h-14 flex items-center justify-between">
+        <div className="w-9 h-9 rounded-xl bg-zinc-200 dark:bg-zinc-800 animate-pulse"/>
+        <div className="h-5 w-28 bg-zinc-200 dark:bg-zinc-800 rounded-lg animate-pulse"/>
+        <div className="w-16 h-9 rounded-xl bg-zinc-200 dark:bg-zinc-800 animate-pulse"/>
       </div>
       <div className="flex-1 flex items-center justify-center">
-        <div className="w-20 h-20"><DotLottieReact src={lottie} autoplay loop /></div>
+        <LottiePlayer animationData={loadingPull} loop autoplay className="w-20 h-20"/>
       </div>
-
     </div>
   );
 }
