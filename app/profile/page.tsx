@@ -16,7 +16,8 @@ import { Html5Qrcode } from "html5-qrcode";
 import { QRCodeSVG } from "qrcode.react";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/LottiePlayer";
-import { celebrate, loadingPull } from "@/components/illustrations";
+import celebrate from "@/public/lotties/huha-celebrate.json";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
 
 type UserData = {
   uid: string; name: string; email: string; phone?: string; userId: string; avatar: string; bio?: string;
