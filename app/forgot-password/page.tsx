@@ -9,7 +9,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { toast, Toaster } from "sonner";
 import { FiMail, FiArrowLeft, FiAlertCircle, FiSend, FiCheck, FiClock } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import loadingPull from "@/public/lotties/huha-loading-pull.json";
 
 export default function ForgotPasswordPage() {
