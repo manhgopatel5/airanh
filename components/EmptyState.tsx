@@ -1,9 +1,18 @@
 "use client";
+
 import { HiPlus } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import LottiePlayer from "@/components/LottiePlayer";
+import emptyLottie from "@/public/lotties/huha-empty.json";
+import searching from "@/public/lotties/huha-searching.json";
+import taskLottie from "@/public/lotties/huha-task.json";
+import planLottie from "@/public/lotties/huha-plan.json";
+import celebrate from "@/public/lotties/huha-celebrate.json";
+import idle from "@/public/lotties/huha-idle.json";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import walletOpen from "@/public/lotties/huha-wallet-open.json";
 
 type TabId = "hot" | "near" | "new" | "friends";
 type PostType = "task" | "plan";
@@ -13,7 +22,7 @@ const CONTENT_POOL = {
     hot: {
       titles: ["Không ai đăng hết luôn á? Ủa alo? 📢"],
       descs: ["Người khác chưa đăng vì đang chờ bạn đó 👀"],
-      lottie: "/lotties/huha-empty-full.lottie",
+      lottie: emptyLottie,
       suggests: [
         "Tuyển 5 người đi bắt chồng ngoại tình 😭",
         "Giả làm người yêu tui 1 buổi gặp họ hàng 🙃",
@@ -24,7 +33,7 @@ const CONTENT_POOL = {
     near: {
       titles: ["Đăng cái gì đó cho khu này xôm lên đi 🔥"],
       descs: ["Im lặng đáng sợ luôn á 😱"],
-      lottie: "/lotties/huha-searching-full.lottie",
+      lottie: searching,
       suggests: [
         "Ship giùm hộp cơm tui đói sắp xỉu 🍱",
         "Mua thuốc panadol giùm cái coi 😵",
@@ -35,7 +44,7 @@ const CONTENT_POOL = {
     new: {
       titles: ["Nhanh tay còn kịp, chậm là mất 👀"],
       descs: ["Đây là nơi săn job nhanh hơn crush rep tin nhắn 💬"],
-      lottie: "/lotties/huha-task-full.lottie",
+      lottie: taskLottie,
       suggests: [
         "Cần người cứu gấp sắp toi rồi 🆘",
         "In tài liệu gấp, máy in tui phản chủ rồi 🖨️",
@@ -46,7 +55,7 @@ const CONTENT_POOL = {
     friends: {
       titles: [" Kèo người quen, tiền ít nhưng drama nhiều 🌚"],
       descs: [" Giúp nhau hôm nay, mai cưới nhớ gửi thiệp 😌"],
-      lottie: "/lotties/huha-plan-full.lottie",
+      lottie: planLottie,
       suggests: [
         "Qua phụ dọn nhà, tui bao ăn 🧹",
         "Việc cho người quen thôi, qua Cam kiếm tiền",
@@ -60,7 +69,7 @@ const CONTENT_POOL = {
     hot: {
       titles: ["Kèo này mà bỏ là phí thanh xuân đó 😭🔥"],
       descs: ["Join lẹ kẻo full slot đó 👀"],
-      lottie: "/lotties/huha-celebrate-full.lottie",
+      lottie: celebrate,
       suggests: [
         "Cafe sáng tám chuyện chill đê ☕",
         "Đi ăn chung cho tui đỡ ngại đi một mình 🍜",
@@ -71,7 +80,7 @@ const CONTENT_POOL = {
     near: {
       titles: ["Ê khu này im ắng quá nghe 🤨"],
       descs: ["Không cần đi xa, vui ngay gần nhà 😏"],
-      lottie: "/lotties/huha-idle-full.lottie",
+      lottie: idle,
       suggests: [
         "Cafe gần nhà cho tiện ghé nào ☕",
         "Chạy bộ 5 phút nghỉ 30 phút🏃",
@@ -82,7 +91,7 @@ const CONTENT_POOL = {
     new: {
       titles: ["Chưa ai mở kèo mới hết bây 😗"],
       descs: ["Plan mới đăng, còn nóng hổi 🆕"],
-      lottie: "/lotties/huha-loading-pull-full.lottie",
+      lottie: loadingPull,
       suggests: [
         "Kèo tối nay Q1 luôn không tụi bây 🍻",
         "Đi ăn không đặt bàn nhanh nào 😤",
@@ -93,7 +102,7 @@ const CONTENT_POOL = {
     friends: {
       titles: ["Mấy đứa đâu rồi vào nhanh 😏"],
       descs: ["Kèo người quen, không đi là kỳ đó 😏"],
-      lottie: "/lotties/huha-wallet-open-full.lottie",
+      lottie: walletOpen,
       suggests: [
         "Mai sinh nhật tao làm lớn đê 🎂",
         "Nhà ai có cơm cho tui ăn ké với đói quá 😭",
@@ -178,7 +187,7 @@ export default function EmptyState({ tab, type = "task" }: Props) {
         className={`w-20 h-20 rounded-2xl ${theme.iconBg} flex items-center justify-center mb-5`}
       >
         <div className="w-14 h-14">
-          <DotLottieReact src={content.lottie} loop autoplay />
+          <LottiePlayer animationData={content.lottie} loop autoplay className="w-14 h-14" />
         </div>
       </motion.div>
 
