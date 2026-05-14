@@ -15,8 +15,10 @@ import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
 import { ChevronLeft, Smartphone, Lock, Check, Shield } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
-import { celebrate, loadingPull } from "@/components/illustrations";
+import LottiePlayer from "@/components/ui/LottiePlayer";
+
+import celebrate from "@/public/lotties/huha-celebrate.json";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
 
 declare global { interface Window { recaptchaVerifier?: RecaptchaVerifier; } }
 
