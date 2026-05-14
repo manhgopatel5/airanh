@@ -1,312 +1,150 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import {
-  multiFactor,
-  PhoneAuthProvider,
-  PhoneMultiFactorGenerator,
-  RecaptchaVerifier,
-  PhoneMultiFactorInfo,
-} from "firebase/auth";
-import { doc, updateDoc } from "firebase/firestore";
-import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
-import {
-  ChevronLeft,
-  Smartphone,
-  Shield,
-  Check,
-  AlertTriangle,
-} from "lucide-react";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { getFirebaseDB } from "@/lib/firebase";
+import { ChevronLeft, Copy, RefreshCw, Zap, Eye, EyeOff, KeyRound, Webhook } from "lucide-react";
 import { toast, Toaster } from "sonner";
+import { nanoid } from "nanoid";
+import { motion } from "framer-motion";
+import LottiePlayer from "@/components/LottiePlayer";
+import { celebrate, loadingPull } from "@/components/illustrations";
 
-declare global {
-  interface Window {
-    recaptchaVerifier?: RecaptchaVerifier;
-  }
-}
-
-export default function TwoFAPage() {
+export default function ApiPage() {
   const db = getFirebaseDB();
-  const auth = getFirebaseAuth();
   const router = useRouter();
   const { user } = useAuth();
+  const [apiKey, setApiKey] = useState("");
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [showKey, setShowKey] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  const [enabled, setEnabled] = useState(false);
-  const [phone, setPhone] = useState("");
-  const [code, setCode] = useState("");
-  const [verificationId, setVerificationId] = useState("");
-  const [step, setStep] = useState<"idle" | "verify">("idle");
-  const [enrolledPhone, setEnrolledPhone] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const recaptchaRef = useRef<HTMLDivElement>(null);
-
-  // =========================
-  // 🔐 LOAD MFA STATE
-  // =========================
   useEffect(() => {
+    if (!user?.uid) return;
+    const unsub = onSnapshot(doc(db, "users", user.uid), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setApiKey(data.settings?.apiKey ?? "");
+        setWebhookUrl(data.settings?.webhookUrl ?? "");
+      }
+    });
+    return () => unsub();
+  }, [user?.uid, db]);
+
+  const generateKey = async () => {
     if (!user) return;
-
-    const factors = multiFactor(user).enrolledFactors;
-    setEnabled(factors.length > 0);
-
-    const factor = factors.find((f) => f.factorId === "phone");
-
-    if (factor) {
-      const phoneFactor = factor as PhoneMultiFactorInfo;
-      setEnrolledPhone(
-        phoneFactor.displayName || phoneFactor.phoneNumber || ""
-      );
-    } else {
-      setEnrolledPhone("");
-    }
-  }, [user]);
-
-  // =========================
-  // 🤖 INIT RECAPTCHA
-  // =========================
-  useEffect(() => {
-    if (!recaptchaRef.current || window.recaptchaVerifier) return;
-
-    window.recaptchaVerifier = new RecaptchaVerifier(
-      auth,
-      recaptchaRef.current,
-      {
-        size: "invisible",
-      }
-    );
-  }, [auth]);
-
-  // =========================
-  // 📩 SEND OTP
-  // =========================
-  const sendCode = async () => {
-    if (!user || !phone) return toast.error("Nhập số điện thoại");
-
-    if (!/^(\+84|0)[3|5|7|8|9][0-9]{8}$/.test(phone)) {
-      return toast.error("SĐT không hợp lệ");
-    }
-
-    const formattedPhone = phone.startsWith("0")
-      ? `+84${phone.slice(1)}`
-      : phone;
-
-    setLoading(true);
-
+    if (!confirm("Tạo key mới sẽ vô hiệu hóa key cũ. Tiếp tục?")) return;
+    setGenerating(true);
     try {
-      const session = await multiFactor(user).getSession();
-      const provider = new PhoneAuthProvider(auth);
-
-      const verId = await provider.verifyPhoneNumber(
-        {
-          phoneNumber: formattedPhone,
-          session,
-        },
-        window.recaptchaVerifier!
-      );
-
-      setVerificationId(verId);
-      setStep("verify");
-
-      toast.success("Đã gửi OTP");
-    } catch (err: any) {
-      if (err.code === "auth/too-many-requests") {
-        toast.error("Thử lại sau");
-      } else {
-        toast.error("Gửi OTP thất bại");
-      }
-    } finally {
-      setLoading(false);
-    }
+      const newKey = `huha_${nanoid(32)}`;
+      await updateDoc(doc(db, "users", user.uid), { "settings.apiKey": newKey });
+      toast.success("Đã tạo API key mới");
+      navigator.vibrate?.(10);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 1200);
+    } catch { toast.error("Không thể tạo key"); }
+    finally { setGenerating(false); }
   };
 
-  // =========================
-  // ✅ ENABLE 2FA
-  // =========================
-  const enable2FA = async () => {
-    if (!user || !verificationId) {
-      return toast.error("Thiếu phiên xác thực");
-    }
-
-    if (!code || code.length !== 6) {
-      return toast.error("Nhập đủ 6 số OTP");
-    }
-
-    setLoading(true);
-
-    try {
-      const cred = PhoneAuthProvider.credential(verificationId, code);
-      const assertion = PhoneMultiFactorGenerator.assertion(cred);
-
-      await multiFactor(user).enroll(assertion, phone);
-
-      await updateDoc(doc(db, "users", user.uid), {
-        "settings.2fa": true,
-      });
-
-      setEnabled(true);
-      setEnrolledPhone(phone);
-      setStep("idle");
-      setPhone("");
-      setCode("");
-      setVerificationId("");
-
-      toast.success("Đã bật xác thực 2 lớp");
-    } catch (err: any) {
-      if (err.code === "auth/invalid-verification-code") {
-        toast.error("OTP sai");
-      } else if (err.code === "auth/code-expired") {
-        toast.error("OTP hết hạn");
-      } else {
-        toast.error("Thất bại");
-      }
-    } finally {
-      setLoading(false);
-    }
+  const copyKey = async () => {
+    if (!apiKey) return;
+    await navigator.clipboard.writeText(apiKey);
+    toast.success("Đã copy");
+    navigator.vibrate?.(5);
   };
 
-  // =========================
-  // ❌ DISABLE 2FA
-  // =========================
-  const disable2FA = async () => {
+  const saveWebhook = async () => {
     if (!user) return;
-
-    if (!confirm("Tắt 2FA sẽ giảm bảo mật tài khoản. Tiếp tục?")) return;
-
-    setLoading(true);
-
-    try {
-      const factors = multiFactor(user).enrolledFactors;
-      const factor = factors.find((f) => f.factorId === "phone");
-
-      if (factor) {
-        await multiFactor(user).unenroll(factor);
-
-        await updateDoc(doc(db, "users", user.uid), {
-          "settings.2fa": false,
-        });
-
-        setEnabled(false);
-        setEnrolledPhone("");
-
-        toast.success("Đã tắt 2FA");
-      }
-    } catch {
-      toast.error("Thất bại");
-    } finally {
-      setLoading(false);
-    }
+    await updateDoc(doc(db, "users", user.uid), { "settings.webhookUrl": webhookUrl });
+    toast.success("Đã lưu webhook");
   };
 
-  // =========================
-  // UI
-  // =========================
+  const testWebhook = async () => {
+    if (!webhookUrl) return toast.error("Nhập URL webhook");
+    setTesting(true);
+    try {
+      const res = await fetch(webhookUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event: "test", timestamp: Date.now(), app: "huha" }) });
+      if (!res.ok) throw new Error();
+      toast.success("Webhook hoạt động");
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 1200);
+    } catch { toast.error("Webhook lỗi"); }
+    finally { setTesting(false); }
+  };
+
   return (
-    <div className="min-h-screen bg-white dark:bg-black pb-24 font-sans">
+    <>
       <Toaster richColors position="top-center" />
-      <div ref={recaptchaRef} />
-
-      <div className="px-6 pt-12 pb-6 flex items-center gap-3 sticky top-0 bg-white/80 dark:bg-black/80 backdrop-blur-xl z-10">
-        <button
-          onClick={() => router.back()}
-          className="p-2 -ml-2 active:scale-90 transition"
-        >
-          <ChevronLeft className="w-6 h-6 text-gray-900 dark:text-white" />
-        </button>
-        <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-          Xác thực 2 lớp
-        </h1>
-      </div>
-
-      <div className="px-6 space-y-5">
-        {/* STATUS */}
-        <div
-          className={`rounded-2xl p-4 ${
-            enabled
-              ? "bg-green-50 dark:bg-green-950/30"
-              : "bg-gray-50 dark:bg-zinc-900"
-          }`}
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <Shield
-              className={`w-5 h-5 ${
-                enabled
-                  ? "text-green-600 dark:text-green-400"
-                  : "text-gray-400"
-              }`}
-            />
-            <span className="font-bold text-gray-900 dark:text-white">
-              {enabled ? "Đã bật" : "Chưa bật"}
-            </span>
-            {enabled && (
-              <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
-            )}
+      <div className="min-h-screen bg-zinc-50 dark:bg-black pb-28">
+        <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b border-zinc-200/50 dark:border-zinc-900">
+          <div className="max-w-xl mx-auto px-4 h-14 flex items-center gap-3">
+            <motion.button whileTap={{ scale: 0.9 }} onClick={() => router.back()} className="p-2 -ml-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900">
+              <ChevronLeft className="w-6 h-6" />
+            </motion.button>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] flex items-center justify-center shadow-lg shadow-[#0042B2]/20">
+                <KeyRound className="w-4 h-4 text-white" />
+              </div>
+              <h1 className="text-xl font-black tracking-tight">API & Webhook</h1>
+            </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-zinc-400">
-            {enabled
-              ? `Bảo vệ bằng OTP gửi tới ${enrolledPhone}`
-              : "Bật 2FA để yêu cầu OTP khi đăng nhập thiết bị lạ"}
-          </p>
         </div>
 
-        {/* INPUT PHONE */}
-        {!enabled && step === "idle" && (
-          <>
-            <div className="bg-amber-50 dark:bg-amber-950/30 rounded-2xl p-4 flex gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-600" />
-              <p className="text-xs">
-                Mất SĐT sẽ không thể đăng nhập. Hãy dùng số chính chủ.
-              </p>
+        <div className="max-w-xl mx-auto px-4 py-5 space-y-4">
+          {/* API KEY */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-900 p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xs font-bold text-zinc-500 tracking-wider">API KEY</h2>
+              <button onClick={() => setShowKey(v =>!v)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl">
+                {showKey? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
-
-            <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-gray-100 dark:bg-zinc-900">
-              <Smartphone className="w-5 h-5 text-gray-400" />
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="0901234567"
-                className="flex-1 bg-transparent outline-none"
-              />
+            <div className="p-4 bg-zinc-50 dark:bg-zinc-900 rounded-2xl font-mono text-sm mb-4 break-all border-zinc-200 dark:border-zinc-800">
+              {apiKey? (showKey? apiKey : "•".repeat(40)) : <span className="text-zinc-400">Chưa tạo</span>}
             </div>
+            <div className="flex gap-2.5">
+              <motion.button whileTap={{ scale: 0.97 }} onClick={copyKey} disabled={!apiKey} className="flex-1 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-900 font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
+                <Copy className="w-4 h-4" /> Copy
+              </motion.button>
+              <motion.button whileTap={{ scale: 0.97 }} onClick={generateKey} disabled={generating} className="flex-1 h-11 rounded-2xl bg-[#0042B2] text-white font-semibold disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-[#0042B2]/25">
+                {generating? <LottiePlayer animationData={loadingPull} loop autoplay className="w-4 h-4" /> : <RefreshCw className="w-4 h-4" />}
+                {generating? "Đang tạo..." : "Tạo mới"}
+              </motion.button>
+            </div>
+          </motion.div>
 
-            <button
-              onClick={sendCode}
-              disabled={loading}
-              className="w-full py-3.5 rounded-2xl bg-sky-500 text-white"
-            >
-              {loading ? "Đang gửi..." : "Gửi mã OTP"}
-            </button>
-          </>
-        )}
+          {/* WEBHOOK */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-900 p-6 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <Webhook className="w-4 h-4 text-zinc-500" />
+              <h2 className="text-xs font-bold text-zinc-500 tracking-wider">WEBHOOK</h2>
+            </div>
+            <input value={webhookUrl} onChange={(e) => setWebhookUrl(e.target.value)} placeholder="https://your-server.com/webhook" className="w-full px-4 h-12 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 outline-none focus:ring-2 focus:ring-[#0042B2]/30 focus:border-[#0042B2] mb-3" />
+            <div className="flex gap-2.5">
+              <motion.button whileTap={{ scale: 0.97 }} onClick={saveWebhook} className="flex-1 h-11 rounded-2xl bg-[#0042B2] text-white font-semibold shadow-lg shadow-[#0042B2]/25">Lưu</motion.button>
+              <motion.button whileTap={{ scale: 0.97 }} onClick={testWebhook} disabled={testing ||!webhookUrl} className="flex-1 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-900 font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
+                {testing? <LottiePlayer animationData={loadingPull} loop autoplay className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
+                {testing? "Testing..." : "Test"}
+              </motion.button>
+            </div>
+            <p className="text-xs text-zinc-500 mt-3">Webhook sẽ nhận POST khi có sự kiện task/plan mới</p>
+          </motion.div>
 
-        {/* VERIFY */}
-        {!enabled && step === "verify" && (
-          <>
-            <input
-              value={code}
-              onChange={(e) =>
-                setCode(e.target.value.replace(/\D/g, ""))
-              }
-              maxLength={6}
-              className="w-full text-center text-2xl"
-            />
+          <div className="bg-[#E8F1FF] dark:bg-[#0042B2]/10 border-[#0042B2]/20 rounded-2xl p-4">
+            <p className="text-xs text-[#0042B2] dark:text-[#8AB4F8] leading-relaxed">• Giữ API key bí mật\n• Key có quyền truy cập dữ liệu của bạn\n• Dùng header: Authorization: Bearer YOUR_KEY</p>
+          </div>
+        </div>
 
-            <button onClick={enable2FA}>
-              Xác nhận & bật 2FA
-            </button>
-          </>
-        )}
-
-        {/* DISABLE */}
-        {enabled && (
-          <button onClick={disable2FA} className="bg-red-500 text-white">
-            Tắt 2FA
-          </button>
+        {showSuccess && (
+          <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
+            <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-24 h-24" />
+          </div>
         )}
       </div>
-    </div>
+    </>
   );
 }
