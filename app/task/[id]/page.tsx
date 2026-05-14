@@ -36,7 +36,8 @@ import { CommentList } from "@/components/task/CommentList";
 import { ImageGallery } from "@/components/task/ImageGallery";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { createPortal } from "react-dom";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import LottiePlayer from "@/components/LottiePlayer";
+import { loadingPull, celebrate } from "@/components/illustrations";
 
 type UserData = {
   uid: string;
@@ -121,9 +122,7 @@ export default function TaskDetailPage() {
   const appsRef = useRef<HTMLDivElement>(null);
 
   // ✅ LOTTIE HUHA
-  const loadingLottie = "/lotties/huha-loading-pull-full.lottie";
-  const commentLottie = "/lotties/huha-celebrate-full.lottie";
-  const successLottie = "/lotties/huha-celebrate-full.lottie";
+ 
 useEffect(() => {
   const handleClickOutside = (e: MouseEvent) => {
     if (showAllApps && appsRef.current &&!appsRef.current.contains(e.target as Node)) {
@@ -510,7 +509,7 @@ setTimeout(() => {
       toast.error("Lỗi");
     }
   };
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-black"><div className="w-20 h-20"><DotLottieReact src={loadingLottie} autoplay loop /></div></div>;
+ if (loading) return <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-black"><LottiePlayer animationData={loadingPull} loop autoplay className="w-20 h-20" /></div>;
   if (!task) return <div className="p-4 text-center">Không tìm thấy task</div>;
 
   const parentComments = comments.filter((c) =>!c.parentId);
@@ -993,7 +992,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
     <div className="px-5 py-4">
       {parentComments.length === 0? (
         <div className="text-center py-12 text-zinc-400 text-[14px]">
-          <div className="w-12 h-12 mx-auto mb-3 opacity-40"><DotLottieReact src={commentLottie} autoplay loop /></div>
+         <div className="w-12 h-12 mx-auto mb-3 opacity-40"><LottiePlayer animationData={celebrate} loop autoplay className="w-12 h-12" /></div>
           Chưa có bình luận nào<br />Hãy là người đầu tiên
         </div>
       ) : (
@@ -1101,13 +1100,9 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
             onClose={() => setShareTask(null)}
           />
         )}
-        {showSuccessAnimation && (
+ {showSuccessAnimation && (
   <div className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center">
-    <DotLottieReact
-      src={successLottie}
-      autoplay
-      style={{ width: 260, height: 260 }}
-    />
+    <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-64 h-64" />
   </div>
 )}
       </div>
