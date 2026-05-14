@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { FiArrowLeft, FiPhone, FiMail, FiUser } from "react-icons/fi";
 import { motion } from "framer-motion";
 import LottiePlayer from "@/components/LottiePlayer";
-import { plan } from "@/components/illustrations";
+import plan from "@/public/lotties/huha-task.json";
 
 export default function TermsPage() {
   const router = useRouter();
@@ -55,7 +55,7 @@ export default function TermsPage() {
             </p>
           </div>
 
-          <div className="space-y-5 text-sm text-zinc-700 dark:text-zinc-300 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="space-y-5 text-sm text-zinc-700 dark:text-zinc-300 max-h- overflow-y-auto pr-2 custom-scrollbar">
             <section>
               <h2 className="font-bold text-zinc-900 dark:text-white mb-2 text-base">1. Giới thiệu</h2>
               <p className="leading-relaxed">
