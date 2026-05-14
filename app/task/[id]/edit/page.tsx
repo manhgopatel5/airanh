@@ -9,7 +9,8 @@ import { toast, Toaster } from "sonner";
 import { motion } from "framer-motion";
 import { FiArrowLeft, FiSave, FiX, FiPlus } from "react-icons/fi";
 import LottiePlayer from "@/components/LottiePlayer";
-import { loadingPull, celebrate } from "@/components/illustrations";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import celebrate from "@/public/lotties/huha-celebrate.json";
 import type { Task } from "@/types/task";
 
 const CATEGORIES = [
