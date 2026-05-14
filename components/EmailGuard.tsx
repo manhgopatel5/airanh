@@ -6,8 +6,10 @@ import { useEffect, useState } from "react";
 import { sendEmailVerification } from "firebase/auth";
 import { toast } from "sonner";
 
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { motion } from "framer-motion";
+import LottiePlayer from "@/components/LottiePlayer";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import celebrate from "@/public/lotties/huha-celebrate.json";
 
 export default function EmailGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -17,10 +19,6 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
   const [showModal, setShowModal] = useState(false);
 
   const publicRoutes = ["/login", "/register", "/forgot-password", "/terms", "/privacy", "/verify-email"];
-
-  // ✅ LOTTIE
-  const loadingLottie = "/lotties/huha-loading-pull-full.lottie";
-  const mailLottie = "/lotties/huha-celebrate-full.lottie";
 
   useEffect(() => {
     if (!loading && !user && !publicRoutes.includes(pathname)) {
@@ -61,7 +59,7 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
     return (
       <div className="fixed inset-0 z-50 bg-white dark:bg-zinc-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <DotLottieReact src={loadingLottie} autoplay loop style={{width:80,height:80}} />
+          <LottiePlayer animationData={loadingPull} autoplay loop className="w-20 h-20" />
           <img src="/logo.png" alt="AIR" className="w-12 h-12 opacity-60" />
         </div>
       </div>
@@ -77,7 +75,7 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
   if (!user) {
     return (
       <div className="fixed inset-0 z-50 bg-white dark:bg-zinc-950 flex items-center justify-center">
-        <DotLottieReact src={loadingLottie} autoplay loop style={{width:80,height:80}} />
+        <LottiePlayer animationData={loadingPull} autoplay loop className="w-20 h-20" />
       </div>
     );
   }
@@ -92,7 +90,7 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
             <div className="w-20 h-20 mx-auto mb-5 relative">
               <div className="absolute inset-0 bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] rounded-3xl blur-2xl opacity-30" />
               <div className="relative w-20 h-20 bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] rounded-3xl flex items-center justify-center shadow-xl">
-                <DotLottieReact src={mailLottie} autoplay loop style={{width:48,height:48}} />
+                <LottiePlayer animationData={celebrate} autoplay loop className="w-12 h-12" />
               </div>
             </div>
 
@@ -114,7 +112,7 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
             >
               {sending ? (
                 <>
-                  <div className="w-5 h-5"><DotLottieReact src={loadingLottie} autoplay loop style={{width:20,height:20}} /></div>
+                  <div className="w-5 h-5"><LottiePlayer animationData={loadingPull} autoplay loop className="w-5 h-5" /></div>
                   Đang gửi...
                 </>
               ) : (
