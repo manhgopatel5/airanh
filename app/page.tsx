@@ -20,7 +20,7 @@ import {
 import TaskFeed from "@/components/TaskFeed";
 import ModeToggle from "@/components/ModeToggle";
 import ShareTaskModal from "@/components/ShareTaskModal";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 
 import { useAppStore } from "@/store/app";
 import { Task, TaskItem, PlanItem, isTask, isPlan } from "@/types/task";
