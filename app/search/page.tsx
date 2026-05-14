@@ -10,7 +10,7 @@ import { FiSearch, FiX, FiMapPin } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import celebrate from "@/public/lotties/huha-celebrate.json";
 import loadingPull from "@/public/lotties/huha-loading-pull.json";
 
