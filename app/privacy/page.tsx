@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { FiArrowLeft, FiShield, FiPhone, FiMail, FiUser, FiChevronRight } from "react-icons/fi";
 import { motion } from "framer-motion";
 import LottiePlayer from "@/components/LottiePlayer";
-import { loadingPull } from "@/components/illustrations";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
 
 export default function PrivacyPage() {
   const router = useRouter();
