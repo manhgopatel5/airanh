@@ -11,7 +11,7 @@ import { doc, getDoc, updateDoc, serverTimestamp, Firestore, runTransaction } fr
 import { nanoid } from "nanoid";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import loadingPull from "@/public/lotties/huha-loading-pull.json";
 
 export default function Login() {
