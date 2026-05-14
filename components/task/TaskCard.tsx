@@ -11,7 +11,8 @@ import { type TaskStatus, type Task, isTask } from "@/types/task";
 import { AppMode } from "@/types/app";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import LottiePlayer from "@/components/LottiePlayer";
+import celebrate from "@/public/lotties/huha-celebrate.json";
 
 type Props = {
   task: Task;
@@ -38,8 +39,6 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const menuBtnRef = useRef<HTMLButtonElement>(null);
-
-  const saveLottie = "/lotties/huha-celebrate-full.lottie";
 
   useEffect(() => {
     if (!task?.id) return;
@@ -146,7 +145,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
 
         <div className="flex items-center gap-1 shrink-0">
           <motion.button whileTap={{scale:0.9}} onClick={(e)=>{e.preventDefault();e.stopPropagation();handleSave();}} disabled={saving} className="p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-90 transition-all disabled:opacity-50">
-            {saving? <div className="w-[18px] h-[18px]"><DotLottieReact src={saveLottie} autoplay loop /></div> : <FiBookmark size={18} className={isSaved? `${themeColor.fill} ${themeColor.text}` : "text-zinc-400"} />}
+            {saving? <LottiePlayer animationData={celebrate} autoplay loop className="w-[18px] h-[18px]" /> : <FiBookmark size={18} className={isSaved? `${themeColor.fill} ${themeColor.text}` : "text-zinc-400"} />}
           </motion.button>
 
           <motion.button whileTap={{scale:0.9}} onClick={(e)=>{e.preventDefault();e.stopPropagation();vibrate(8);onShare?.(task);}} className="p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900">
