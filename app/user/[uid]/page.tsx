@@ -9,7 +9,7 @@ import { FiChevronLeft, FiMapPin, FiCalendar } from "react-icons/fi";
 import Link from "next/link";
 import Image from "next/image";
 import LottiePlayer from "@/components/LottiePlayer";
-import { task as taskAnim } from "@/components/illustrations";
+import taskAnim from "@/public/lotties/huha-task.json";
 import { motion } from "framer-motion";
 
 type UserProfile = {
@@ -98,7 +98,7 @@ export default function UserProfilePage() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-zinc-950 px-4 border-b flex gap-6 sticky top-[57px] z-20">
+      <div className="bg-white dark:bg-zinc-950 px-4 border-b flex gap-6 sticky top- z-20">
         {(["open","completed"] as const).map(k=>(
           <button key={k} onClick={()=>setTab(k)} className={`py-3.5 text-sm font-bold border-b-2 transition relative ${tab===k?"text-[#0042B2] border-[#0042B2]":"border-transparent text-zinc-500"}`}>
             {k==="open"?"Đang mở":"Đã xong"}
@@ -118,7 +118,7 @@ export default function UserProfilePage() {
           <motion.div key={task.id} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{delay:i*0.04}}>
             <Link href={`/task/${task.slug}`} className="block bg-white dark:bg-zinc-950 rounded-3xl p-4 border active:scale-[0.98] transition">
               <div className="flex gap-3.5">
-                {task.images?.[0] && <Image src={task.images[0]} alt={task.title} width={68} height={68} className="w-[68px] h-[68px] rounded-2xl object-cover bg-zinc-100"/>}
+                {task.images?.[0] && <Image src={task.images[0]} alt={task.title} width={68} height={68} className="w- h- rounded-2xl object-cover bg-zinc-100"/>}
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold line-clamp-1">{task.title}</h3>
                   <div className="flex items-center gap-2 mt-1.5 text-xs">
