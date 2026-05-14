@@ -9,8 +9,9 @@ import { incrementTaskView } from "@/lib/task";
 import { TaskListItem, PlanListItem } from "@/types/task";
 import { AppMode } from "@/types/app";
 import { toast, Toaster } from "sonner";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { motion, AnimatePresence } from "framer-motion";
+import LottiePlayer from "@/components/LottiePlayer";
+import celebrate from "@/public/lotties/huha-celebrate.json";
 
 type Props = { task: TaskListItem | PlanListItem; mode: AppMode; onDelete?: (id: string) => void };
 
@@ -116,7 +117,7 @@ function TaskCard({ task, mode }: Props) {
   return (
     <>
       <Toaster richColors position="top-center" />
-      <motion.article whileHover={{ y: -2 }} whileTap={{ scale: 0.99 }} onClick={handleClick} onHoverStart={() => { setIsHovered(true); router.prefetch(`/${mode}/${task.slug}`); }} onHoverEnd={() => setIsHovered(false)} className="group relative bg-white dark:bg-zinc-900 rounded- overflow-hidden border-zinc-100/80 dark:border-zinc-800/80 shadow-sm hover:shadow-xl hover:shadow-black/5 dark:hover:shadow-black/20 transition-all duration-300 cursor-pointer">
+      <motion.article whileHover={{ y: -2 }} whileTap={{ scale: 0.99 }} onClick={handleClick} onHoverStart={() => { setIsHovered(true); router.prefetch(`/${mode}/${task.slug}`); }} onHoverEnd={() => setIsHovered(false)} className="group relative bg-white dark:bg-zinc-900 rounded- overflow-hidden border border-zinc-100/80 dark:border-zinc-800/80 shadow-sm hover:shadow-xl hover:shadow-black/5 dark:hover:shadow-black/20 transition-all duration-300 cursor-pointer">
         {/* Top accent */}
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#0a84ff] via-[#5e5ce6] to-[#0a84ff] opacity-0 group-hover:opacity-100 transition-opacity" />
 
@@ -147,7 +148,7 @@ function TaskCard({ task, mode }: Props) {
             <div className="flex items-center gap-1 -mr-1">
               <motion.button whileTap={{ scale: 0.85 }} onClick={handleLike} disabled={liking} className="relative w-8 h-8 grid place-items-center rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:bg-zinc-200 dark:active:bg-zinc-700 transition-colors">
                 <AnimatePresence>
-                  {showLikeBurst && <motion.div initial={{ scale: 0, opacity: 1 }} animate={{ scale: 1.8, opacity: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }} className="absolute inset-0 pointer-events-none"><DotLottieReact src="/lotties/huha-celebrate-full.lottie" autoplay style={{ width: 32, height: 32, marginLeft: -4, marginTop: -4 }} /></motion.div>}
+                  {showLikeBurst && <motion.div initial={{ scale: 0, opacity: 1 }} animate={{ scale: 1.8, opacity: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }} className="absolute inset-0 pointer-events-none"><LottiePlayer animationData={celebrate} autoplay loop={false} className="w-8 h-8 -ml-0 -mt-0" /></motion.div>}
                 </AnimatePresence>
                 <FiHeart size={16} className={`transition-all ${liked? "fill-red-500 text-red-500 scale-110" : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"}`} strokeWidth={liked? 0 : 2} />
               </motion.button>
@@ -215,7 +216,6 @@ function TaskCard({ task, mode }: Props) {
                 </div>
                 <span className="text-xs font-medium tabular-nums">{task.commentCount || 0}</span>
               </div>
-            </div>
             <div className="flex items-center gap-1">
               <button onClick={handleShare} className="w-7 h-7 grid place-items-center rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 active:scale-90 transition-all">
                 <FiShare2 size={14} />
@@ -239,14 +239,13 @@ function TaskCard({ task, mode }: Props) {
 
 function Skeleton() {
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded- border-zinc-100 dark:border-zinc-800 p-4 animate-pulse">
+    <div className="bg-white dark:bg-zinc-900 rounded- border border-zinc-100 dark:border-zinc-800 p-4 animate-pulse">
       <div className="flex gap-3 mb-3">
         <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800" />
         <div className="flex-1 space-y-2">
           <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded-lg w-1/3" />
           <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-1/4" />
         </div>
-      </div>
       <div className="space-y-2">
         <div className="h-5 bg-zinc-200 dark:bg-zinc-800 rounded-lg w-3/4" />
         <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-full" />
