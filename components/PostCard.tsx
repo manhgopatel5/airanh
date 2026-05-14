@@ -9,8 +9,9 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { Timestamp } from "firebase/firestore";
 import Linkify from "linkify-react";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { motion, AnimatePresence } from "framer-motion";
+import LottiePlayer from "@/components/LottiePlayer";
+import celebrate from "@/public/lotties/huha-celebrate.json";
 
 type Post = {
   id: string;
@@ -39,9 +40,6 @@ export default function PostCard({ post, onDelete }: Props) {
   const [showMenu, setShowMenu] = useState(false);
   const [showLikeBurst, setShowLikeBurst] = useState(false);
 
-  // ✅ LOTTIE
-  const likeLottie = "/lotties/huha-celebrate-full.lottie";
-
   if (!post) return null;
 
   const liked = user && localLikes.includes(user.uid);
@@ -56,7 +54,7 @@ export default function PostCard({ post, onDelete }: Props) {
     const willLike =!liked;
 
     const newLikes = liked
-    ? localLikes.filter((id) => id!== user.uid)
+   ? localLikes.filter((id) => id!== user.uid)
       : [...localLikes, user.uid];
     setLocalLikes(newLikes);
 
@@ -194,7 +192,7 @@ export default function PostCard({ post, onDelete }: Props) {
               className: "text-[#0042B2] dark:text-[#5B8DEF] hover:underline font-medium",
             }}
           >
-            <p className="text-[15px] text-zinc-900 dark:text-zinc-100 leading-relaxed whitespace-pre-wrap break-words">
+            <p className="text- text-zinc-900 dark:text-zinc-100 leading-relaxed whitespace-pre-wrap break-words">
               {post.content}
             </p>
           </Linkify>
@@ -203,7 +201,7 @@ export default function PostCard({ post, onDelete }: Props) {
         {post.images && post.images.length > 0 && (
           <div
             className={`grid gap-1.5 rounded-2xl overflow-hidden ${
-              post.images.length === 1? "grid-cols-1" : post.images.length === 2? "grid-cols-2" : "grid-cols-2"
+             post.images.length === 1? "grid-cols-1" : post.images.length === 2? "grid-cols-2" : "grid-cols-2"
             }`}
           >
             {post.images.slice(0, 4).map((img, i) => (
@@ -214,9 +212,9 @@ export default function PostCard({ post, onDelete }: Props) {
                   onError={(e) => { e.currentTarget.src = "/placeholder.png"; }}
                   className={`w-full object-cover ${
                     post.images!.length === 1
-                    ? "max-h-[420px]"
+                   ? "max-h-"
                       : post.images!.length === 3 && i === 0
-                    ? "row-span-2 h-full min-h-[260px]"
+                   ? "row-span-2 h-full min-h-"
                       : "h-44"
                   }`}
                   alt=""
@@ -248,7 +246,7 @@ export default function PostCard({ post, onDelete }: Props) {
               <AnimatePresence>
                 {showLikeBurst && (
                   <motion.div initial={{opacity:0,scale:0.5}} animate={{opacity:1,scale:1.6}} exit={{opacity:0}} className="absolute inset-0 pointer-events-none">
-                    <DotLottieReact src={likeLottie} autoplay style={{width:36,height:36,marginLeft:-9,marginTop:-9}} />
+                    <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-9 h-9 -ml-2.5 -mt-2.5" />
                   </motion.div>
                 )}
               </AnimatePresence>
