@@ -37,7 +37,8 @@ import { ImageGallery } from "@/components/task/ImageGallery";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { createPortal } from "react-dom";
 import LottiePlayer from "@/components/LottiePlayer";
-import { loadingPull, celebrate } from "@/components/illustrations";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import celebrate from "@/public/lotties/huha-celebrate.json";
 
 type UserData = {
   uid: string;
