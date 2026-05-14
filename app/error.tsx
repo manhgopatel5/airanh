@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import LottiePlayer from "@/components/LottiePlayer";
-import { errorShake } from "@/components/illustrations";
+import errorShake from "@/public/lotties/huha-error-shake.json";
 
 export default function Error({
   error,
@@ -16,7 +16,7 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-[#FAFAFB] dark:bg-zinc-950 grid place-items-center p-6">
+    <div className="fixed inset-0 z- bg-[#FAFAFB] dark:bg-zinc-950 grid place-items-center p-6">
       <div className="w-full max-w-sm text-center">
         <LottiePlayer
           animationData={errorShake}
