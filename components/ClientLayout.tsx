@@ -20,7 +20,9 @@ import {
 import FCMProvider from "@/components/FCMProvider";
 import BottomNav from "@/components/BottomNav";
 import WarningModal from "@/components/WarningModal";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import LottiePlayer from "@/components/LottiePlayer";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import errorShake from "@/public/lotties/huha-error-shake.json";
 
 type Props = {
   children: React.ReactNode;
@@ -88,13 +90,13 @@ export default function ClientLayout({ children }: Props) {
     const idle = (window as any).requestIdleCallback || ((cb: any) => setTimeout(cb, 800));
     idle(() => {
       [
-        "/lotties/huha-loading-pull-full.lottie",
-        "/lotties/huha-error-shake-full.lottie",
-        "/lotties/huha-empty-full.lottie",
-        "/lotties/huha-success-check-full.lottie",
-        "/lotties/huha-celebrate-full.lottie",
-        "/lotties/huha-wallet-open-full.lottie",
-      ].forEach(s => fetch(s, {priority:"low"}).catch(()=>{}));
+        "/lotties/huha-loading-pull.json",
+        "/lotties/huha-error-shake.json",
+        "/lotties/huha-empty.json",
+        "/lotties/huha-success-check.json",
+        "/lotties/huha-celebrate.json",
+        "/lotties/huha-wallet-open.json",
+      ].forEach(s => fetch(s, {priority:"low"} as any).catch(()=>{}));
     });
   }, []);
 
@@ -192,7 +194,7 @@ export default function ClientLayout({ children }: Props) {
       <div className="fixed inset-0 bg-[#FAFAFB] dark:bg-zinc-950 flex items-center justify-center">
 
         <div className="w-36 h-36">
-          <DotLottieReact src="/lotties/huha-loading-pull-full.lottie" loop autoplay />
+          <LottiePlayer animationData={loadingPull} loop autoplay className="w-36 h-36" />
         </div>
 
       </div>
@@ -206,17 +208,17 @@ export default function ClientLayout({ children }: Props) {
     const bannedUntil =
       banData.bannedUntil &&
       typeof (banData.bannedUntil as any)
-       ?.toDate === "function"
-       ? (banData.bannedUntil as any)
-           .toDate()
+      ?.toDate === "function"
+      ? (banData.bannedUntil as any)
+          .toDate()
         : null;
 
     const isPermanent =
-     !bannedUntil;
+    !bannedUntil;
 
     const remainMs =
       bannedUntil
-       ? bannedUntil.getTime() -
+      ? bannedUntil.getTime() -
           Date.now()
         : 0;
 
@@ -224,9 +226,7 @@ export default function ClientLayout({ children }: Props) {
       0,
       Math.floor(
         remainMs /
-          1000 /
-          60 /
-          24
+          1000 / 60 / 60 / 24
       )
     );
 
@@ -246,7 +246,7 @@ export default function ClientLayout({ children }: Props) {
 
             {/* ICON - HUHA LOTTIE */}
             <div className="w-28 h-28 mx-auto mb-7">
-              <DotLottieReact src="/lotties/huha-error-shake-full.lottie" loop autoplay />
+              <LottiePlayer animationData={errorShake} loop autoplay className="w-28 h-28" />
             </div>
 
             {/* TITLE */}
@@ -294,7 +294,7 @@ export default function ClientLayout({ children }: Props) {
                   <p className="text-[#8E8E93] dark:text-zinc-500 text-[13px] mt-2">
 
                     {isPermanent
-                     ? "Khóa vĩnh viễn"
+                    ? "Khóa vĩnh viễn"
                       : `Còn ${remainDays} ngày`}
 
                   </p>
@@ -392,8 +392,8 @@ export default function ClientLayout({ children }: Props) {
       {/* PAGE */}
       <div
         className={
-         !isChatDetail &&!isCreate
-           ? "pb-24"
+        !isChatDetail &&!isCreate
+          ? "pb-24"
             : ""
         }
       >
@@ -403,8 +403,8 @@ export default function ClientLayout({ children }: Props) {
       {/* BOTTOM NAV */}
       {!isPublic &&
         user &&
-       !isChatDetail &&
-       !isCreate && (
+      !isChatDetail &&
+      !isCreate && (
           <BottomNav />
         )}
 
