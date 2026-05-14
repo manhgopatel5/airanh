@@ -1,21 +1,20 @@
 "use client";
 import { TaskListItem } from "@/types/task";
 import TaskCard from "@/components/TaskCard";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { motion } from "framer-motion";
+import LottiePlayer from "@/components/LottiePlayer";
+import taskLottie from "@/public/lotties/huha-task.json";
 
 type Props = {
   plans: TaskListItem[];
 };
 
 export default function PlanFeed({ plans }: Props) {
-  const emptyLottie = "/lotties/huha-task-full.lottie";
-
   if (plans.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
         <motion.div initial={{scale:0.8,opacity:0}} animate={{scale:1,opacity:1}} transition={{type:"spring",damping:18}} className="w-24 h-24 mb-4">
-          <DotLottieReact src={emptyLottie} autoplay loop style={{width:96,height:96}} />
+          <LottiePlayer animationData={taskLottie} autoplay loop className="w-24 h-24" />
         </motion.div>
         <h2 className="text-2xl font-black tracking-tight" style={{background:'linear-gradient(135deg,#0042B2,#0066FF)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>
           Thành phố đang yên ắng
