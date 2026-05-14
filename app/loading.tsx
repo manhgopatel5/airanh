@@ -12,11 +12,11 @@ export default function Loading() {
           loop
           autoplay
           className="w-36 h-36"
-          aria-label="Đang tải HUHA"
+          aria-label="Loading..."
           pauseWhenHidden={false}
         />
         <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 animate-pulse">
-          Đang tải HUHA...
+          Loading...
         </p>
       </div>
     </div>
