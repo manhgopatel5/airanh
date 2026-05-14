@@ -10,7 +10,7 @@ import { toast, Toaster } from "sonner";
 import { FiMail, FiArrowLeft, FiAlertCircle, FiSend, FiCheck, FiClock } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/LottiePlayer";
-import { loadingPull } from "@/components/illustrations";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
 
 export default function ForgotPasswordPage() {
   const auth = getFirebaseAuth();
