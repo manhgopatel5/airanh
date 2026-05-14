@@ -12,7 +12,8 @@ import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/LottiePlayer";
-import { celebrate, loadingPull } from "@/components/illustrations";
+import celebrate from "@/public/lotties/huha-celebrate.json";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
 
 type PublicUser = {
   uid: string; name: string; userId: string; avatar: string; bio?: string; birthday?: string; phone?: string;
