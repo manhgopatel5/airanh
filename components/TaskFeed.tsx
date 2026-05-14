@@ -34,7 +34,7 @@ const itemVariants = {
     scale: 1,
     transition: { type: "spring", stiffness: 450, damping: 28, mass: 0.6 },
   },
-  exit: { opacity: 0, y: -12, scale: 0.96, transition: { duration: 0.2 } },
+  exit: { opacity: 0, y: -12, scale: 0.96, transition: { duration: 0.18 } },
 };
 
 export default function TaskFeed({ tasks, mode, activeTab, onShare, onDelete, onTaskUpdate }: Props) {
@@ -94,10 +94,10 @@ export default function TaskFeed({ tasks, mode, activeTab, onShare, onDelete, on
           </div>
 
           <div className="flex items-center gap-1">
-            <motion.button whileTap={{ scale: 0.9 }} onClick={() => setShowFilters(!showFilters)} className={`w-8 h-8 grid place-items-center rounded-lg transition-colors ${showFilters? "bg-[#0a84ff]/10 text-[#0a84ff]" : "hover:bg-black/5 dark:hover:bg-white/10 text-[#8e8e93]"}`}>
+            <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setShowFilters(!showFilters); navigator.vibrate?.(3); }} className={`w-8 h-8 grid place-items-center rounded-lg transition-colors ${showFilters? "bg-[#0a84ff]/10 text-[#0a84ff]" : "hover:bg-black/5 dark:hover:bg-white/10 text-[#8e8e93]"}`}>
               <FiSliders size={16} />
             </motion.button>
-            <motion.button whileTap={{ scale: 0.9 }} onClick={() => setViewMode(viewMode === "list"? "grid" : "list")} className="w-8 h-8 grid place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-[#8e8e93] transition-colors">
+            <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setViewMode(viewMode === "list"? "grid" : "list"); navigator.vibrate?.(3); }} className="w-8 h-8 grid place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-[#8e8e93] transition-colors">
               {viewMode === "list"? <FiGrid size={16} /> : <FiList size={16} />}
             </motion.button>
           </div>
@@ -113,7 +113,7 @@ export default function TaskFeed({ tasks, mode, activeTab, onShare, onDelete, on
                   { id: "price", label: "Giá cao" },
                   { id: "distance", label: "Gần nhất" },
                 ].map((opt) => (
-                  <button key={opt.id} onClick={() => setSortBy(opt.id as any)} className={`h-7 px-3 rounded-full text-xs font-medium transition-all active:scale-95 ${sortBy === opt.id? "bg-[#0a84ff] text-white shadow-md shadow-[#0a84ff]/20" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"}`}>
+                  <button key={opt.id} onClick={() => { setSortBy(opt.id as any); navigator.vibrate?.(3); }} className={`h-7 px-3 rounded-full text-xs font-medium transition-all active:scale-95 ${sortBy === opt.id? "bg-[#0a84ff] text-white shadow-md shadow-[#0a84ff]/20" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"}`}>
                     {opt.label}
                   </button>
                 ))}
