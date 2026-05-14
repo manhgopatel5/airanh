@@ -5,7 +5,10 @@ import { collection, addDoc, serverTimestamp, query, where, getDocs } from "fire
 import { getFirebaseDB } from "@/lib/firebase";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import LottiePlayer from "@/components/LottiePlayer";
+import warningShake from "@/public/lotties/huha-error-shake.json";
+import celebrate from "@/public/lotties/huha-celebrate.json";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
 
 type ReportModalProps = {
   isOpen: boolean;
@@ -13,8 +16,8 @@ type ReportModalProps = {
   targetType: "user" | "task" | "comment";
   targetId: string;
   targetName: string;
-  targetShortId?: string | undefined; // thêm | undefined
-  targetAvatar?: string | undefined; // thêm | undefined
+  targetShortId?: string | undefined;
+  targetAvatar?: string | undefined;
   fromUid: string;
   fromName: string;
 };
@@ -44,11 +47,6 @@ export default function ReportModal({
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
-
-  // ✅ THÊM LOTTIE - không xóa gì
-  const warningLottie = "/lotties/huha-error-shake-full.lottie";
-  const successLottie = "/lotties/huha-celebrate-full.lottie";
-  const loadingLottie = "/lotties/huha-loading-pull-full.lottie";
 
   // Reset state khi đóng/mở
   useEffect(() => {
@@ -187,12 +185,7 @@ export default function ReportModal({
 <div className="px-5 pt-5 pb-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between shrink-0">
   <div className="flex items-center gap-3">
     <div className="w-11 h-11 bg-red-100 dark:bg-red-900/20 rounded-2xl flex items-center justify-center relative overflow-hidden">
-      <DotLottieReact
-        src={warningLottie}
-        autoplay
-        loop={false}
-        style={{ width: 30, height: 30 }}
-      />
+      <LottiePlayer animationData={warningShake} autoplay loop={false} className="w-[30px] h-[30px]" />
     </div>
 
     <div>
@@ -213,9 +206,9 @@ export default function ReportModal({
 
               {success? (
                 <div className="flex-1 flex flex-col items-center justify-center py-12 px-6 relative">
-                  {/* ✅ CONFETTI BACKGROUND */}
+                  {/* CONFETTI BACKGROUND */}
                   <div className="absolute inset-0 pointer-events-none opacity-60">
-                    <DotLottieReact src={successLottie} autoplay loop={false} style={{width:'100%',height:'100%'}} />
+                    <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-full h-full" />
                   </div>
                   <motion.div
                     initial={{ scale: 0, rotate: -20 }}
@@ -223,8 +216,7 @@ export default function ReportModal({
                     transition={{ type: "spring", damping: 14, stiffness: 300 }}
                     className="w-28 h-28 flex items-center justify-center mb-3 relative z-10"
                   >
-                    {/* ✅ LOTTIE THAY Check */}
-                    <DotLottieReact src={successLottie} autoplay style={{width:112,height:112}} />
+                    <LottiePlayer animationData={celebrate} autoplay className="w-28 h-28" />
                   </motion.div>
                   <p className="text-xl font-bold mb-1 relative z-10">Đã gửi báo cáo</p>
                   <p className="text-sm text-zinc-500 text-center relative z-10">
@@ -279,7 +271,7 @@ export default function ReportModal({
                             }}
                             className={`w-full flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all ${
                               isActive
-                              ? "border-[#0042B2] bg-[#0042B2]/8 dark:bg-[#0042B2]/15 shadow-md shadow-[#0042B2]/10"
+                             ? "border-[#0042B2] bg-[#0042B2]/8 dark:bg-[#0042B2]/15 shadow-md shadow-[#0042B2]/10"
                                 : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900/50"
                             }`}
                           >
@@ -319,7 +311,7 @@ export default function ReportModal({
                       <div className="flex justify-between items-center mt-1.5">
                         <p className="text-xs text-zinc-500">
                           {reason === "other" && note.length < 10
-                          ? `Cần thêm ${10 - note.length} ký tự`
+                         ? `Cần thêm ${10 - note.length} ký tự`
                             : "Không bắt buộc"}
                         </p>
                         <p className="text-xs text-zinc-500 font-medium">
@@ -346,9 +338,8 @@ export default function ReportModal({
                     >
                       {loading? (
                         <>
-                          {/* ✅ LOTTIE THAY Loader2 */}
                           <div className="w-5 h-5">
-                            <DotLottieReact src={loadingLottie} autoplay loop style={{width:20,height:20}} />
+                            <LottiePlayer animationData={loadingPull} autoplay loop className="w-5 h-5" />
                           </div>
                           Đang gửi...
                         </>
