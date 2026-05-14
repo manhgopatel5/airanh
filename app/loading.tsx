@@ -1,7 +1,7 @@
 "use client";
 
 import LottiePlayer from "@/components/LottiePlayer";
-import { loadingPull } from "@/components/illustrations";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
 
 export default function Loading() {
   return (
