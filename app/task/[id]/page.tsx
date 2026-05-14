@@ -36,7 +36,7 @@ import { CommentList } from "@/components/task/CommentList";
 import { ImageGallery } from "@/components/task/ImageGallery";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { createPortal } from "react-dom";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import loadingPull from "@/public/lotties/huha-loading-pull.json";
 import celebrate from "@/public/lotties/huha-celebrate.json";
 
