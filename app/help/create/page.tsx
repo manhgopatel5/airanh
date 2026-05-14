@@ -2,55 +2,60 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  FiBriefcase, FiCalendar, FiChevronDown, FiArrowLeft,
-  FiZap, FiUsers, FiDollarSign, FiClock, FiMapPin, FiHelpCircle,
-} from "react-icons/fi";
+import { FiBriefcase, FiCalendar, FiChevronDown, FiArrowLeft, FiZap, FiUsers, FiDollarSign, FiClock, FiMapPin, FiHelpCircle, FiTrendingUp } from "react-icons/fi";
+import LottiePlayer from "@/components/LottiePlayer";
+import { loadingPull } from "@/components/illustrations";
 
 const CASES = [
-  { type: "task", title: "Cần shipper giao hàng gấp", desc: "Bạn trả 50k cho 1 người giao từ Q1 sang Q7 trong 2h", icon: FiBriefcase },
-  { type: "plan", title: "Rủ team đi ăn lẩu cuối tuần", desc: "10 người, share tiền, tối T7 ở Q1", icon: FiCalendar },
-  { type: "task", title: "Thuê design logo cho shop", desc: "Budget 500k, cần 2 option, deadline 3 ngày", icon: FiBriefcase },
-  { type: "plan", title: "Workshop Figma cho newbie", desc: "Miễn phí, 20 slot, chiều CN tại The Cafe", icon: FiCalendar },
+  { type: "task", title: "Shipper giao hàng gấp", desc: "50k • Q1 → Q7 • 2h", icon: FiBriefcase, color: "#0042B2", bg: "from-[#0042B2]/10 to-[#1A5FFF]/10" },
+  { type: "plan", title: "Team đi ăn lẩu cuối tuần", desc: "10 người • Share bill • T7", icon: FiCalendar, color: "#00C853", bg: "from-[#00C853]/10 to-[#00E676]/10" },
+  { type: "task", title: "Design logo cho shop", desc: "500k • 2 option • 3 ngày", icon: FiBriefcase, color: "#0042B2", bg: "from-[#0042B2]/10 to-[#1A5FFF]/10" },
+  { type: "plan", title: "Workshop Figma newbie", desc: "Free • 20 slot • CN", icon: FiCalendar, color: "#00C853", bg: "from-[#00C853]/10 to-[#00E676]/10" },
 ];
 
 const COMPARISON = [
-  { label: "Bạn là", task: { text: "Người thuê", icon: FiBriefcase }, plan: { text: "Người tổ chức", icon: FiUsers } },
-  { label: "Người khác là", task: { text: "Người làm thuê", icon: FiZap }, plan: { text: "Người tham gia", icon: FiUsers } },
-  { label: "Chi phí", task: { text: "Bạn trả toàn bộ", icon: FiDollarSign }, plan: { text: "Free / Share / Bạn trả", icon: FiDollarSign } },
-  { label: "Thời gian", task: { text: "Deadline hoàn thành", icon: FiClock }, plan: { text: "Ngày giờ diễn ra", icon: FiCalendar } },
-  { label: "Địa điểm", task: { text: "Làm online hoặc tại chỗ", icon: FiMapPin }, plan: { text: "Địa điểm offline cụ thể", icon: FiMapPin } },
+  { label: "Vai trò", task: "Người thuê", plan: "Người tổ chức", icon: FiUsers },
+  { label: "Người khác", task: "Người làm", plan: "Người tham gia", icon: FiZap },
+  { label: "Chi phí", task: "Bạn trả", plan: "Share / Free", icon: FiDollarSign },
+  { label: "Thời gian", task: "Deadline", plan: "Lịch hẹn", icon: FiClock },
+  { label: "Địa điểm", task: "Online/Offline", plan: "Địa điểm cụ thể", icon: FiMapPin },
 ];
 
 const STEPS = {
-  task: ["Nhập tiêu đề + mô tả công việc rõ ràng", "Chọn danh mục, đặt giá + số người cần", "Set deadline + địa điểm làm việc", "Đăng & chờ người ứng tuyển"],
-  plan: ["Nhập tên + mô tả hoạt động", "Chọn ngày giờ + địa điểm tổ chức", "Set số người + loại chi phí", "Đăng & mời bạn bè tham gia"],
+  task: ["Mô tả công việc rõ ràng", "Đặt giá + số người cần", "Chọn deadline", "Đăng & chờ ứng tuyển"],
+  plan: ["Tên hoạt động + mô tả", "Chọn ngày giờ + địa điểm", "Set số người + chi phí", "Đăng & mời bạn bè"],
 };
 
 export default function CreateHelpPage() {
   const [activeTab, setActiveTab] = useState<"compare" | "cases">("compare");
-  const [openStep, setOpenStep] = useState<"task" | "plan" | null>(null);
+  const [openStep, setOpenStep] = useState<"task" | "plan" | null>("task");
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-50 via-white to-zinc-50 dark:from-zinc-950 dark:via-zinc-950 dark:to-black">
-      <div className="bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b border-zinc-200/80 dark:border-zinc-900 sticky top-0 z-20">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <Link href="/create" className="p-2 -ml-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors active:scale-95">
+    <div className="min-h-screen bg-zinc-50 dark:bg-black">
+      {/* Header */}
+      <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b border-zinc-200/50 dark:border-zinc-900">
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
+          <Link href="/create" className="w-9 h-9 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 flex items-center justify-center -ml-1 active:scale-95 transition-all">
             <FiArrowLeft size={20} className="text-zinc-700 dark:text-zinc-300" />
           </Link>
           <div>
-            <h1 className="text-lg font-bold text-zinc-900 dark:text-white">Chọn loại bài đăng</h1>
-            <p className="text-xs text-zinc-500">Hướng dẫn chi tiết</p>
+            <h1 className="text-lg font-black tracking-tight">Chọn loại bài đăng</h1>
+            <p className="text-xs text-zinc-500 -mt-0.5">Công việc hay Kế hoạch?</p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} className="mb-8">
-          <div className="p-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl grid grid-cols-2 gap-1">
-            {[{id:"compare",label:"So sánh",icon:FiHelpCircle},{id:"cases",label:"Ví dụ",icon:FiZap}].map((tab) => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === tab.id? "bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white shadow-sm" : "text-zinc-500"}`}>
-                <tab.icon size={16} />{tab.label}
+      <div className="max-w-2xl mx-auto px-4 py-6 pb-24">
+        {/* Tabs */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+          <div className="p-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl grid-cols-2 gap-1">
+            {[
+              { id: "compare", label: "So sánh", icon: FiHelpCircle },
+              { id: "cases", label: "Ví dụ thực tế", icon: FiTrendingUp },
+            ].map((tab) => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`h-10 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${activeTab === tab.id? "bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white shadow-sm" : "text-zinc-500 hover:text-zinc-700"}`}>
+                <tab.icon size={16} />
+                {tab.label}
               </button>
             ))}
           </div>
@@ -58,86 +63,116 @@ export default function CreateHelpPage() {
 
         <AnimatePresence mode="wait">
           {activeTab === "compare"? (
-            <motion.div key="compare" initial={{opacity:0,x:-20}} animate={{opacity:1,x:0}} exit={{opacity:0,x:20}} className="space-y-6">
-              <div className="rounded-3xl border border-zinc-200 dark:border-zinc-900 bg-white dark:bg-zinc-950 overflow-hidden">
-                <div className="grid grid-cols-3 bg-zinc-50 dark:bg-zinc-900/50 p-4 border-b border-zinc-200 dark:border-zinc-900">
-                  <div className="text-xs font-bold text-zinc-400 uppercase">Tiêu chí</div>
-                  <div className="flex items-center gap-2 text-sm font-bold" style={{color:'#0042B2'}}><FiBriefcase size={16} />Công việc</div>
-                  <div className="flex items-center gap-2 text-sm font-bold text-[#00C853]"><FiCalendar size={16} />Kế hoạch</div>
+            <motion.div key="compare" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }} className="space-y-5">
+              {/* Comparison Table */}
+              <div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 shadow-sm overflow-hidden">
+                <div className="grid grid-cols-3 gap-4 p-4 bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-900">
+                  <div className="text-xs font-bold text-zinc-500 uppercase tracking-wider">So sánh</div>
+                  <div className="flex items-center gap-1.5 text-sm font-black text-[#0042B2]"><FiBriefcase size={16} />Công việc</div>
+                  <div className="flex items-center gap-1.5 text-sm font-black text-[#00C853]"><FiCalendar size={16} />Kế hoạch</div>
                 </div>
                 {COMPARISON.map((row, idx) => (
-                  <div key={idx} className="grid grid-cols-3 gap-4 p-4 border-b border-zinc-100 dark:border-zinc-900/50 last:border-0">
-                    <div className="text-sm font-medium text-zinc-500">{row.label}</div>
-                    <div className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300"><row.task.icon className="flex-shrink-0 mt-0.5" style={{color:'#0042B2'}} size={16} /><span>{row.task.text}</span></div>
-                    <div className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300"><row.plan.icon className="text-[#00C853] flex-shrink-0 mt-0.5" size={16} /><span>{row.plan.text}</span></div>
-                  </div>
+                  <motion.div key={row.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} className="grid grid-cols-3 gap-4 p-4 border-b border-zinc-100 dark:border-zinc-900/50 last:border-0 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors">
+                    <div className="flex items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                      <row.icon size={14} className="text-zinc-400" />
+                      {row.label}
+                    </div>
+                    <div className="text-sm font-semibold text-zinc-900 dark:text-white">{row.task}</div>
+                    <div className="text-sm font-semibold text-zinc-900 dark:text-white">{row.plan}</div>
+                  </motion.div>
                 ))}
               </div>
 
+              {/* Steps */}
               <div className="space-y-3">
-                {(["task","plan"] as const).map((type) => (
-                  <div key={type} className="rounded-2xl border border-zinc-200 dark:border-zinc-900 bg-white dark:bg-zinc-950 overflow-hidden">
-                    <button onClick={() => setOpenStep(openStep === type? null : type)} className="w-full p-5 flex items-center justify-between text-left">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{background:type==="task"?'rgba(0,66,178,0.1)':'rgba(0,200,83,0.1)'}}>
-                          {type === "task"? <FiBriefcase style={{color:'#0042B2'}} size={20} /> : <FiCalendar className="text-[#00C853]" size={20} />}
+                {(["task", "plan"] as const).map((type) => (
+                  <motion.div key={type} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: type === "plan"? 0.1 : 0 }} className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 shadow-sm overflow-hidden">
+                    <button onClick={() => setOpenStep(openStep === type? null : type)} className="w-full p-5 flex items-center justify-between hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors">
+                      <div className="flex items-center gap-3.5">
+                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${type === "task"? "bg-[#E8F1FF] dark:bg-[#0042B2]/20" : "bg-[#E8F5E9] dark:bg-[#00C853]/20"}`}>
+                          {type === "task"? <FiBriefcase className="text-[#0042B2]" size={20} /> : <FiCalendar className="text-[#00C853]" size={20} />}
                         </div>
-                        <div>
-                          <div className="font-bold text-zinc-900 dark:text-white">Cách tạo {type === "task"? "Công việc" : "Kế hoạch"}</div>
-                          <div className="text-xs text-zinc-500">{STEPS[type].length} bước đơn giản</div>
+                        <div className="text-left">
+                          <h3 className="font-black text-base">Cách tạo {type === "task"? "Công việc" : "Kế hoạch"}</h3>
+                          <p className="text-xs text-zinc-500 mt-0.5">{STEPS[type].length} bước • 2 phút</p>
                         </div>
                       </div>
-                      <FiChevronDown className={`text-zinc-400 transition-transform ${openStep === type? "rotate-180" : ""}`} size={20} />
+                      <motion.div animate={{ rotate: openStep === type? 180 : 0 }}><FiChevronDown className="text-zinc-400" size={20} /></motion.div>
                     </button>
                     <AnimatePresence>
                       {openStep === type && (
-                        <motion.div initial={{height:0}} animate={{height:"auto"}} exit={{height:0}} className="overflow-hidden">
+                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                           <div className="px-5 pb-5 space-y-3">
                             {STEPS[type].map((step, i) => (
-                              <div key={i} className="flex gap-3">
-                                <div className="flex-shrink-0 w-6 h-6 rounded-full text-white text-xs font-bold flex items-center justify-center" style={{background:type==="task"?'#0042B2':'#00C853'}}>{i + 1}</div>
-                                <div className="text-sm text-zinc-600 dark:text-zinc-400 pt-0.5">{step}</div>
-                              </div>
+                              <motion.div key={i} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="flex gap-3">
+                                <div className={`flex-shrink-0 w-6 h-6 rounded-full text-white text-xs font-black flex items-center justify-center mt-0.5 ${type === "task"? "bg-[#0042B2]" : "bg-[#00C853]"}`}>{i + 1}</div>
+                                <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed pt-0.5">{step}</p>
+                              </motion.div>
                             ))}
                           </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </motion.div>
           ) : (
-            <motion.div key="cases" initial={{opacity:0,x:20}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-20}} className="space-y-3">
-              <p className="text-sm text-zinc-500 text-center mb-4">Click vào ví dụ để tạo nhanh</p>
+            <motion.div key="cases" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} className="space-y-3">
+              <div className="text-center mb-1">
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">Chọn ví dụ để tạo nhanh</p>
+              </div>
               {CASES.map((item, idx) => (
-                <motion.div key={idx} initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:idx*0.05}}>
+                <motion.div key={idx} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}>
                   <Link href={`/create/${item.type}?template=${idx}`} className="block group">
-                    <div className="p-5 rounded-2xl border border-zinc-200 dark:border-zinc-900 bg-white dark:bg-zinc-950 hover:border-transparent hover:shadow-xl transition-all active:scale-[0.98]">
+                    <div className="p-5 rounded-3xl bg-white dark:bg-zinc-950 border-2 border-zinc-200/60 dark:border-zinc-800 hover:border-transparent hover:shadow-xl hover:shadow-black/5 active:scale-[0.98] transition-all">
                       <div className="flex items-start gap-4">
-                        <div className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform" style={{background:item.type==="task"?'rgba(0,66,178,0.1)':'rgba(0,200,83,0.1)'}}>
-                          <item.icon style={{color:item.type==="task"?'#0042B2':'#00C853'}} size={22} />
+                        <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${item.bg} flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0`}>
+                          <item.icon style={{ color: item.color }} size={22} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-bold text-zinc-900 dark:text-white">{item.title}</h3>
-                            <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{background:item.type==="task"?'rgba(0,66,178,0.1)':'rgba(0,200,83,0.1)',color:item.type==="task"?'#0042B2':'#00C853'}}>{item.type === "task"? "Công việc" : "Kế hoạch"}</span>
+                          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                            <h3 className="font-bold text-zinc-900 dark:text-white leading-tight">{item.title}</h3>
+                            <span className="text-xs font-bold px-2 py-1 rounded-lg flex-shrink-0" style={{ background: `${item.color}15`, color: item.color }}>{item.type === "task"? "Công việc" : "Kế hoạch"}</span>
                           </div>
-                          <p className="text-sm text-zinc-500">{item.desc}</p>
+                          <p className="text-sm text-zinc-600 dark:text-zinc-400">{item.desc}</p>
                         </div>
-                        <FiChevronDown className="text-zinc-300 -rotate-90 group-hover:translate-x-1 transition-transform" size={20} />
+                        <FiChevronDown className="text-zinc-300 -rotate-90 group-hover:translate-x-1 transition-all flex-shrink-0 mt-1" size={20} />
                       </div>
                     </div>
                   </Link>
                 </motion.div>
               ))}
+
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="pt-4">
+                <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900 flex gap-3">
+                  <FiZap className="text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" size={18} />
+                  <div>
+                    <p className="text-sm font-bold text-amber-900 dark:text-amber-200">Mẹo</p>
+                    <p className="text-xs text-amber-800 dark:text-amber-300 mt-0.5 leading-relaxed">Mô tả càng chi tiết, càng nhanh có người nhận. Thêm ảnh minh họa tăng 3x tỷ lệ thành công!</p>
+                  </div>
+                </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.4}} className="mt-8 grid grid-cols-2 gap-3">
-          <Link href="/create/task" className="p-4 rounded-2xl text-white text-center font-bold shadow-lg active:scale-95 transition-transform" style={{background:'linear-gradient(135deg,#0042B2,#1A5FFF)',boxShadow:'0 8px 20px rgba(0,66,178,0.3)'}}>Tạo Công việc</Link>
-          <Link href="/create/plan" className="p-4 rounded-2xl text-white text-center font-bold shadow-lg active:scale-95 transition-transform" style={{background:'linear-gradient(135deg,#00C853,#00E676)',boxShadow:'0 8px 20px rgba(0,200,83,0.3)'}}>Tạo Kế hoạch</Link>
+        {/* CTA */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="mt-8 grid grid-cols-2 gap-3">
+          <Link href="/create/task" className="group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] rounded-2xl" />
+            <div className="relative h-14 rounded-2xl flex items-center justify-center gap-2 text-white font-bold shadow-lg shadow-[#0042B2]/25 group-active:scale-95 transition-transform">
+              <FiBriefcase size={18} />
+              <span>Tạo Công việc</span>
+            </div>
+          </Link>
+          <Link href="/create/plan" className="group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#00C853] to-[#00E676] rounded-2xl" />
+            <div className="relative h-14 rounded-2xl flex items-center justify-center gap-2 text-white font-bold shadow-lg shadow-[#00C853]/25 group-active:scale-95 transition-transform">
+              <FiCalendar size={18} />
+              <span>Tạo Kế hoạch</span>
+            </div>
+          </Link>
         </motion.div>
       </div>
     </div>
