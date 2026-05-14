@@ -13,7 +13,7 @@ import type { Task } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
 import { useAppStore } from "@/store/app";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import taskAnim from "@/public/lotties/huha-task.json";
 import loadingPull from "@/public/lotties/huha-loading-pull.json";
 
