@@ -31,14 +31,12 @@ import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
-// NEW: dùng central illustrations
-import {
-  loadingPull,
-  errorShake,
-  celebrate,
-  empty,
-  walletOpen,
-} from "@/components/illustrations";
+// import trực tiếp, không dùng illustrations
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import errorShake from "@/public/lotties/huha-error-shake.json";
+import celebrate from "@/public/lotties/huha-celebrate.json";
+import empty from "@/public/lotties/huha-empty.json";
+import walletOpen from "@/public/lotties/huha-wallet-open.json";
 
 const PAGE_SIZE = 20;
 type TabId = "hot" | "near" | "friends" | "new";
@@ -293,7 +291,7 @@ export default function Home() {
 
         {!loading && hasMore && allItems.length > 0 && (
           <div ref={loadMoreRef} className="py-6 flex justify-center">
-            {loadingMore && <LottiePlayer animationData={loadingPull} className="w-[40px] h-[40px]" aria-label="Tải thêm" />}
+            {loadingMore && <LottiePlayer animationData={loadingPull} autoplay loop className="w-[40px] h-[40px]" aria-label="Tải thêm" />}
           </div>
         )}
       </div>
