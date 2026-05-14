@@ -2,8 +2,9 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Smile } from "lucide-react";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { motion, AnimatePresence } from "framer-motion";
+import LottiePlayer from "@/components/LottiePlayer";
+import celebrate from "@/public/lotties/huha-celebrate.json";
 
 const EMOJI_LIST = [
   "😀", "😂", "😍", "🤔", "😭", "😡", "👍", "👎", "❤️", "🔥",
@@ -19,9 +20,6 @@ export default function EmojiPicker({ onSelect, align = "left" }: Props) {
   const [open, setOpen] = useState(false);
   const [burstEmoji, setBurstEmoji] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
-
-  // ✅ LOTTIE
-  const burstLottie = "/lotties/huha-celebrate-full.lottie";
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -70,14 +68,11 @@ export default function EmojiPicker({ onSelect, align = "left" }: Props) {
       className="absolute inset-0 pointer-events-none flex items-center justify-center"
     >
       <div className="relative w-16 h-16 flex items-center justify-center">
-        <DotLottieReact
-          src={burstLottie}
+        <LottiePlayer
+          animationData={celebrate}
           autoplay
-          style={{
-            width: 64,
-            height: 64,
-            position: "absolute",
-          }}
+          loop={false}
+          className="w-16 h-16 absolute"
         />
 
         <motion.span
@@ -101,7 +96,7 @@ export default function EmojiPicker({ onSelect, align = "left" }: Props) {
             exit={{opacity:0,scale:0.9,y:8}}
             transition={{type:"spring",damping:22,stiffness:320}}
             className={`absolute bottom-full mb-2 p-2.5 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-zinc-200/50 dark:border-zinc-800 grid grid-cols-5 gap-1 z-50 w-64 ${
-              align === "right"? "right-0" : "left-0"
+             align === "right"? "right-0" : "left-0"
             }`}
           >
             {EMOJI_LIST.map((e) => (
