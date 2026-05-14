@@ -5,7 +5,7 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { FiShield, FiCheck, FiAlertTriangle, FiX } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import errorShake from "@/public/lotties/huha-error-shake.json";
 
 type Props = {
