@@ -6,6 +6,8 @@ import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
 import { getAuth } from "firebase/auth";
 import { getApp } from "firebase/app";
+import LottiePlayer from "@/components/LottiePlayer";
+import loadingPull from "@/public/lotties/huha-loading-pull.json";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { useAppStore } from "@/store/app";
 import {
@@ -297,6 +299,7 @@ export default function ChatClient() {
     return () => { isMounted = false; if (unsubscribe) unsubscribe(); };
   }, [user?.uid, authLoading, db, isPlan]);
 const createNotification = useCallback(async (targetUid: string, notif: Omit<NotificationItem, "id" | "createdAt" | "read">) => {
+  if (!targetUid) return;
     try {
       const notifRef = doc(collection(db, "notifications", targetUid, "items"));
       await setDoc(notifRef, {...notif, read: false, createdAt: serverTimestamp()});
@@ -557,7 +560,7 @@ const createNotification = useCallback(async (targetUid: string, notif: Omit<Not
   };
 
   if (authLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black"><div className="flex flex-col items-center gap-3"><FiLoader className={`animate-spin ${primaryText}`} size={32} /><p className="text-[14px] text-gray-500">Đang tải...</p></div></div>;
+    return <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black"><div className="flex flex-col items-center gap-3"><LottiePlayer animationData={loadingPull} loop autoplay className="w-12 h-12" /><p className="text-[14px] text-gray-500">Đang tải...</p></div></div>;
   }
 
   return (
