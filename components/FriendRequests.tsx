@@ -12,8 +12,9 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { collection, query, where, getDocs, documentId } from "firebase/firestore";
 import { FiUserPlus, FiCheck, FiX, FiClock } from "react-icons/fi";
 import { HiSparkles } from "react-icons/hi";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { motion, AnimatePresence } from "framer-motion";
+import LottiePlayer from "@/components/LottiePlayer";
+import celebrate from "@/public/lotties/huha-celebrate.json";
 
 type UserData = {
   uid: string;
@@ -31,10 +32,6 @@ export default function FriendRequests() {
   const [acceptedId, setAcceptedId] = useState<string | null>(null);
 
   const userMapRef = useRef<Record<string, UserData>>({});
-
-  // ✅ LOTTIE
-  const acceptLottie = "/lotties/huha-celebrate-full.lottie";
-  const emptyLottie = "/lotties/huha-celebrate-full.lottie";
 
   /* ================= LOAD REQUEST + USERS ================= */
   useEffect(() => {
@@ -72,7 +69,7 @@ export default function FriendRequests() {
           snap.forEach((doc) => {
             newUsers[doc.id] = {
               uid: doc.id,
-            ...(doc.data() as any),
+           ...(doc.data() as any),
             };
           });
         })
@@ -184,7 +181,7 @@ export default function FriendRequests() {
       {!loading && list.length === 0 && (
         <div className="flex flex-col items-center py-8 text-zinc-400">
           <div className="w-16 h-16 opacity-60">
-            <DotLottieReact src={emptyLottie} autoplay loop style={{width:64,height:64}} />
+            <LottiePlayer animationData={celebrate} autoplay loop className="w-16 h-16" />
           </div>
           <p className="font-semibold text-sm mt-2">Không có lời mời nào</p>
         </div>
@@ -207,7 +204,7 @@ export default function FriendRequests() {
             >
               {isAccepted && (
                 <div className="absolute inset-0 pointer-events-none">
-                  <DotLottieReact src={acceptLottie} autoplay style={{width:'100%',height:'100%'}} />
+                  <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-full h-full" />
                 </div>
               )}
               <div className="flex items-center gap-3 flex-1 min-w-0 relative z-10">
