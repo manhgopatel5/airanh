@@ -19,7 +19,7 @@ import {
   FiSearch, FiMessageSquare, FiUserPlus, FiUsers, FiCheck, FiX,
   FiUpload, FiUserX, FiBell, FiAtSign, FiInbox,
 } from "react-icons/fi";
-import { RiAddLine, RiPushpinFill } from "react-icons/ri";
+import { RiAddLine } from "react-icons/ri";
 import Link from "next/link";
 import { toast, Toaster } from "sonner";
 import { ScanLine } from "lucide-react";
