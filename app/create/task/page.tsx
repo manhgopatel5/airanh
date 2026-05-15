@@ -640,6 +640,7 @@ const handleDragEnd = (_: any, info: PanInfo) => {
           {["fixed", "hourly", "negotiable"].map((t, i) => (
             <button
               key={t}
+              type="button"
               onClick={() =>
                 setForm({
                   ...form,
@@ -670,10 +671,7 @@ const handleDragEnd = (_: any, info: PanInfo) => {
                   ...form,
                   price: e.target.value
                     .replace(/\D/g, "")
-                    .replace(
-                      /\B(?=(\d{3})+(?!\d))/g,
-                      "."
-                    ),
+                    .replace(/\B(?=(\d{3})+(?!\d))/g, "."),
                 })
               }
               placeholder="0"
@@ -693,12 +691,13 @@ const handleDragEnd = (_: any, info: PanInfo) => {
 
               <div className="flex items-center gap-1 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl p-1">
                 <button
+                  type="button"
                   onClick={() =>
                     setForm({
                       ...form,
                       totalSlots: Math.max(
                         1,
-                        parseInt(form.totalSlots) - 1
+                        parseInt(form.totalSlots || "1") - 1
                       ).toString(),
                     })
                   }
@@ -712,12 +711,13 @@ const handleDragEnd = (_: any, info: PanInfo) => {
                 </span>
 
                 <button
+                  type="button"
                   onClick={() =>
                     setForm({
                       ...form,
                       totalSlots: Math.min(
                         20,
-                        parseInt(form.totalSlots) + 1
+                        parseInt(form.totalSlots || "1") + 1
                       ).toString(),
                     })
                   }
@@ -763,6 +763,7 @@ const handleDragEnd = (_: any, info: PanInfo) => {
         {URGENCY.map((u) => (
           <motion.button
             key={u.id}
+            type="button"
             whileTap={{ scale: 0.96 }}
             onClick={() =>
               setForm({
@@ -868,6 +869,7 @@ const handleDragEnd = (_: any, info: PanInfo) => {
           </div>
 
           <button
+            type="button"
             onClick={() =>
               setForm({
                 ...form,
@@ -884,6 +886,11 @@ const handleDragEnd = (_: any, info: PanInfo) => {
               animate={{
                 x: form.isRemote ? 20 : 2,
               }}
+              transition={{
+                type: "spring",
+                stiffness: 500,
+                damping: 30,
+              }}
               className="absolute top-1 w-5 h-5 bg-white rounded-full shadow-md"
             />
           </button>
@@ -893,7 +900,8 @@ const handleDragEnd = (_: any, info: PanInfo) => {
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
-            className="flex gap-2"
+            exit={{ height: 0, opacity: 0 }}
+            className="flex gap-2 overflow-hidden"
           >
             <input
               value={form.address}
@@ -908,6 +916,7 @@ const handleDragEnd = (_: any, info: PanInfo) => {
             />
 
             <button
+              type="button"
               onClick={handleGetLocation}
               className="w-11 h-11 grid place-items-center bg-[#0a84ff]/10 hover:bg-[#0a84ff]/20 text-[#0a84ff] rounded-xl active:scale-95 transition-all"
             >
