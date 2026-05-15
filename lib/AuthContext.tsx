@@ -391,16 +391,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthContext.Provider value={value}>
       {children}
-      {userData && (
-        <WarningModal
-          open={showWarningModal}
-          reason={userData.warningReason || "Vi phạm cộng đồng"}
-          title={userData.warningTitle}
-          message={userData.warningMessage}
-          uid={userData.uid}
-          warningAt={userData.warningAt}
-        />
-      )}
+{userData && (
+  <WarningModal
+    open={showWarningModal}
+    reason={userData.warningReason || "Vi phạm cộng đồng"}
+    uid={userData.uid}
+    {...(userData.warningTitle
+      ? { title: userData.warningTitle }
+      : {})}
+    {...(userData.warningMessage
+      ? { message: userData.warningMessage }
+      : {})}
+    {...(userData.warningAt
+      ? { warningAt: userData.warningAt }
+      : {})}
+  />
+)}
     </AuthContext.Provider>
   );
 };
