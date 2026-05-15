@@ -87,7 +87,7 @@ likeCount: number;
 commentCount: number;
 shareCount: number;
 bookmarkCount: number;
-
+distance?: number;
 rating?: number; // THÊM
 ratingCount?: number; // optional luôn
 
