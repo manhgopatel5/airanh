@@ -936,6 +936,59 @@ setTimeout(() => {
     <span>21+</span>
   </div>
 </div>
+<div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 p-5 shadow-sm">
+  <div className="flex items-center justify-between mb-4">
+    <h3 className="font-bold">Độ tuổi phù hợp</h3>
+
+    <span className="text-sm font-bold text-[#0042B2]">
+      {ageRange[0]} - {ageRange[1]} tuổi
+    </span>
+  </div>
+
+  <div className="space-y-4">
+    <div>
+      <div className="flex justify-between text-xs text-zinc-500 mb-1">
+        <span>Tối thiểu</span>
+        <span>{ageRange[0]}+</span>
+      </div>
+
+      <input
+        type="range"
+        min={13}
+        max={40}
+        value={ageRange[0]}
+        onChange={(e) =>
+          setAgeRange([
+            Number(e.target.value),
+            Math.max(Number(e.target.value), ageRange[1]),
+          ])
+        }
+        className="w-full accent-[#0042B2]"
+      />
+    </div>
+
+    <div>
+      <div className="flex justify-between text-xs text-zinc-500 mb-1">
+        <span>Tối đa</span>
+        <span>{ageRange[1]}</span>
+      </div>
+
+      <input
+        type="range"
+        min={18}
+        max={60}
+        value={ageRange[1]}
+        onChange={(e) =>
+          setAgeRange([
+            ageRange[0],
+            Math.max(ageRange[0], Number(e.target.value)),
+          ])
+        }
+        className="w-full accent-[#0042B2]"
+      />
+    </div>
+  </div>
+</div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 p-4 shadow-sm">
                       <h4 className="font-bold text- mb-3">Ảnh bìa</h4>
