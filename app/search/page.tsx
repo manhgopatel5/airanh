@@ -149,7 +149,12 @@ export default function SearchPage() {
 
       if (activeTab === "near" && userLocation) {
         data = data
-         .map((t) => ({...t, distance: t.location?.lat? getDistance(userLocation, { lat: t.location.lat, lng: t.location.lng }) : 9999 }))
+        .map((t) => ({
+  ...t, 
+  distance: t.location?.lat && t.location?.lng 
+    ? getDistance(userLocation, { lat: t.location.lat, lng: t.location.lng }) 
+    : 9999 
+}))
          .filter((t: any) => t.distance < 50)
          .sort((a: any, b: any) => a.distance - b.distance);
       }
