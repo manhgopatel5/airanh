@@ -624,7 +624,19 @@ const createNotification = useCallback(async (targetUid: string, notif: Omit<Not
                 <div key={friend.uid} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-900">
                   <div className="flex items-center gap-3">
                     <div className="relative"><img src={friend.avatar} alt="" className="w-12 h-12 rounded-full" />{friend.isOnline && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />}</div>
-                    <div><p className="font-medium">{friend.name}</p><p className="text-[13px] text-gray-500">@{friend.username}</p></div>
+                    <div>
+  <p className="font-medium">{friend.name}</p>
+
+  <p className="text-[13px] text-gray-500">
+    @{friend.username}
+  </p>
+
+  <p className="text-[12px] text-gray-400">
+    {friend.isOnline
+      ? "Đang hoạt động"
+      : formatLastSeen(friend.lastSeen)}
+  </p>
+</div>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => handleStartChatWithFriend(friend.uid)} className={`w-8 h-8 ${primaryBg} rounded-full flex items-center justify-center`}><FiMessageSquare className="text-white" size={14} /></button>
