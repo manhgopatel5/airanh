@@ -16,7 +16,7 @@ type Props = {
   message?: string;
   warningAt?: Timestamp | null;
   onClose?: () => void;
-};};
+};
 
 export default function WarningModal({ open, uid, reason, title, message, warningAt, onClose }: Props) {
   const [checked, setChecked] = useState(false);
