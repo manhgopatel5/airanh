@@ -15,6 +15,7 @@ type Props = {
   animationData: object;
   loop?: boolean;
   autoplay?: boolean;
+  play?: boolean;
   className?: string;
   speed?: number;
   playOnHover?: boolean;
@@ -27,6 +28,7 @@ function LottiePlayer({
   animationData,
   loop = true,
   autoplay = true,
+  play,
   className = "h-24 w-24",
   speed = 1,
   playOnHover = false,
@@ -36,59 +38,97 @@ function LottiePlayer({
 }: Props) {
   const ref = useRef<LottieRefCurrentProps>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
   const [isInView, setIsInView] = useState(!pauseWhenHidden);
   const [reducedMotion, setReducedMotion] = useState(false);
 
-  // 1. Tôn trọng reduced motion
+  // Support cả play và autoplay
+  const shouldAutoplay = play ?? autoplay;
+
+  // Reduced motion
   useEffect(() => {
-    const m = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(m.matches);
-    const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
-    m.addEventListener("change", handler);
-    return () => m.removeEventListener("change", handler);
+    const media = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    );
+
+    setReducedMotion(media.matches);
+
+    const handler = (e: MediaQueryListEvent) => {
+      setReducedMotion(e.matches);
+    };
+
+    media.addEventListener("change", handler);
+
+    return () => {
+      media.removeEventListener("change", handler);
+    };
   }, []);
 
-  // 2. Pause khi out of viewport
+  // Pause khi ra khỏi viewport
   useEffect(() => {
-    if (!pauseWhenHidden ||!containerRef.current) return;
-    const io = new IntersectionObserver(
-      ([entry]) => setIsInView(entry.isIntersecting),
-      { threshold: 0.1 }
+    if (!pauseWhenHidden || !containerRef.current) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting);
+      },
+      {
+        threshold: 0.1,
+      }
     );
-    io.observe(containerRef.current);
-    return () => io.disconnect();
+
+    observer.observe(containerRef.current);
+
+    return () => observer.disconnect();
   }, [pauseWhenHidden]);
 
-  // 3. Control play/pause
+  // Control animation
   useEffect(() => {
     if (!ref.current) return;
+
     if (reducedMotion) {
       ref.current.pause();
       ref.current.goToAndStop(0, true);
       return;
     }
-    if (isInView && (autoplay ||!playOnHover)) {
-      ref.current.setSpeed(speed);
+
+    ref.current.setSpeed(speed);
+
+    if (isInView && (shouldAutoplay || !playOnHover)) {
       ref.current.play();
     } else {
       ref.current.pause();
     }
-  }, [isInView, autoplay, playOnHover, speed, reducedMotion]);
+  }, [
+    isInView,
+    shouldAutoplay,
+    playOnHover,
+    speed,
+    reducedMotion,
+  ]);
 
   return (
     <div
       ref={containerRef}
       className={className}
-      onMouseEnter={() => playOnHover && ref.current?.play()}
-      onMouseLeave={() => playOnHover && ref.current?.pause()}
+      onMouseEnter={() => {
+        if (playOnHover) {
+          ref.current?.play();
+        }
+      }}
+      onMouseLeave={() => {
+        if (playOnHover) {
+          ref.current?.pause();
+        }
+      }}
       role="img"
       aria-label={ariaLabel}
     >
       <Lottie
         lottieRef={ref}
         animationData={animationData}
-        loop={loop &&!reducedMotion}
-        autoplay={false} // tự control ở trên
+        loop={loop && !reducedMotion}
+        autoplay={false}
         onComplete={onComplete}
         rendererSettings={{
           preserveAspectRatio: "xMidYMid meet",
