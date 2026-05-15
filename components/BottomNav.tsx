@@ -1,20 +1,18 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
 import { HiPlus } from "react-icons/hi2";
-import { useEffect, useTransition, useCallback, useMemo } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { motion } from "framer-motion";
+import { useEffect, useState, useTransition, useCallback, useMemo } from "react";
 import { useAppStore } from "@/store/app";
+import { useAuthStore } from "@/store/auth";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import idle from "@/public/lotties/huha-idle.json";
-import searching from "@/public/lotties/huha-searching.json";
-import taskLottie from "@/public/lotties/huha-task.json";
-import walletOpen from "@/public/lotties/huha-wallet-open.json";
-import celebrate from "@/public/lotties/huha-celebrate.json";
+import Image from "next/image";
 
 type NavItem = {
   path: string;
   label: string;
-  lottie: any;
+  lottieFile: string;
 };
 
 export default function BottomNav() {
@@ -23,7 +21,24 @@ export default function BottomNav() {
   const [, startTransition] = useTransition();
 
   const mode = useAppStore((s) => s.mode);
+  const user = useAuthStore((s) => s.user);
   const isPlan = mode === "plan";
+
+  // Lottie states
+  const [idleLottie, setIdleLottie] = useState<any>(null);
+  const [searchingLottie, setSearchingLottie] = useState<any>(null);
+  const [taskLottie, setTaskLottie] = useState<any>(null);
+  const [walletOpenLottie, setWalletOpenLottie] = useState<any>(null);
+  const [celebrateLottie, setCelebrateLottie] = useState<any>(null);
+
+  // Fetch Lottie files
+  useEffect(() => {
+    fetch('/lotties/huha-idle.json').then(r => r.json()).then(setIdleLottie).catch(() => {});
+    fetch('/lotties/huha-searching.json').then(r => r.json()).then(setSearchingLottie).catch(() => {});
+    fetch('/lotties/huha-task.json').then(r => r.json()).then(setTaskLottie).catch(() => {});
+    fetch('/lotties/huha-wallet-open.json').then(r => r.json()).then(setWalletOpenLottie).catch(() => {});
+    fetch('/lotties/huha-celebrate.json').then(r => r.json()).then(setCelebrateLottie).catch(() => {});
+  }, []);
 
   // Prefetch routes
   useEffect(() => {
@@ -44,28 +59,42 @@ export default function BottomNav() {
   }, [pathname]);
 
   const items: NavItem[] = useMemo(() => [
-    { path: "/", label: "Trang chủ", lottie: idle },
-    { path: "/messages", label: "Tin nhắn", lottie: searching },
+    { path: "/", label: "Trang chủ", lottieFile: "idle" },
+    { path: "/messages", label: "Tin nhắn", lottieFile: "searching" },
   ], []);
 
   const rightItems: NavItem[] = useMemo(() => [
-    { path: "/tasks", label: "Nhiệm vụ", lottie: taskLottie },
-    { path: "/profile", label: "Hồ sơ", lottie: walletOpen },
+    { path: "/tasks", label: "Nhiệm vụ", lottieFile: "task" },
+    { path: "/profile", label: "Hồ sơ", lottieFile: "wallet" },
   ], []);
 
+  const getLottieData = (key: string) => {
+    switch(key) {
+      case "idle": return idleLottie;
+      case "searching": return searchingLottie;
+      case "task": return taskLottie;
+      case "wallet": return walletOpenLottie;
+      default: return null;
+    }
+  };
+
   const activeBg = isPlan
- ? "bg-green-500/10 dark:bg-green-500/20"
+   ? "bg-green-500/10 dark:bg-green-500/20"
     : "bg-sky-500/10 dark:bg-sky-500/20";
   const activeText = isPlan
- ? "text-green-600 dark:text-green-400"
+   ? "text-green-600 dark:text-green-400"
     : "text-sky-600 dark:text-sky-400";
   const fabGradient = isPlan
- ? "from-green-500 to-emerald-500 shadow-green-500/25"
+   ? "from-green-500 to-emerald-500 shadow-green-500/25"
     : "from-sky-500 to-blue-600 shadow-sky-500/25";
   const fabHref = isPlan? "/create/plan" : "/create/task";
 
+  // Avatar URL với fallback
+  const avatarUrl = user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || 'U')}&background=${isPlan? '00C853' : '0042B2'}&color=fff&bold=true`;
+
   const NavButton = ({ item }: { item: NavItem }) => {
     const active = isActive(item.path);
+    const lottieData = getLottieData(item.lottieFile);
 
     return (
       <button
@@ -75,7 +104,6 @@ export default function BottomNav() {
         className="relative flex flex-col items-center justify-center flex-1 h-[64px] active:scale-95 transition-transform duration-150 will-change-transform min-w-0"
         style={{ WebkitTapHighlightColor: 'transparent' }}
       >
-        {/* Active pill */}
         <div
           className={`absolute inset-2 rounded-2xl transition-all duration-300 ${
             active? `${activeBg} scale-100 opacity-100` : "scale-90 opacity-0"
@@ -84,12 +112,28 @@ export default function BottomNav() {
 
         <div className="relative z-10 flex flex-col items-center">
           <div className={`w-7 h-7 -mb-0.5 transition-transform duration-300 ${active? "scale-110" : "scale-100"}`}>
-            <LottiePlayer
-              animationData={item.lottie}
-              autoplay={active}
-              loop={active}
-              className="w-7 h-7"
-            />
+            {item.path === "/profile"? (
+              <Image
+                src={avatarUrl}
+                alt="avatar"
+                width={28}
+                height={28}
+                className="rounded-lg object-cover"
+                unoptimized
+                onError={(e) => {
+                  e.currentTarget.src = `https://ui-avatars.com/api/?name=U&background=${isPlan? '00C853' : '0042B2'}&color=fff`;
+                }}
+              />
+            ) : lottieData? (
+              <LottiePlayer
+                animationData={lottieData}
+                autoplay={active}
+                loop={active}
+                className="w-7 h-7"
+              />
+            ) : (
+              <div className="w-7 h-7 bg-zinc-200 dark:bg-zinc-700 rounded-lg animate-pulse" />
+            )}
           </div>
           <span
             className={`text-[11px] font-semibold tracking-tight transition-colors ${
@@ -121,15 +165,16 @@ export default function BottomNav() {
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   <div className={`w-[56px] h-[56px] rounded-full bg-gradient-to-br ${fabGradient} flex items-center justify-center shadow-lg ring-4 ring-white dark:ring-zinc-900 transition-all group-hover:shadow-xl`}>
-                    {/* Lottie celebrate - luôn play nhẹ */}
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                      <LottiePlayer
-                        animationData={celebrate}
-                        autoplay
-                        loop
-                        className="w-14 h-14"
-                      />
-                    </div>
+                    {celebrateLottie && (
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        <LottiePlayer
+                          animationData={celebrateLottie}
+                          autoplay
+                          loop
+                          className="w-14 h-14"
+                        />
+                      </div>
+                    )}
                     <HiPlus className="text-white relative z-10 transition-transform group-hover:rotate-90" size={26} strokeWidth={2.5} />
                   </div>
                 </button>
@@ -141,10 +186,9 @@ export default function BottomNav() {
         </div>
       </div>
 
-      {/* Reduce motion */}
       <style jsx global>{`
         @media (prefers-reduced-motion: reduce) {
-         .lottie-player { animation: none!important; }
+        .lottie-player { animation: none!important; }
         }
       `}</style>
     </div>
