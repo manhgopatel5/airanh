@@ -454,7 +454,7 @@ const handleDragEnd = (_: any, info: PanInfo) => {
                   <div>
                     <div className="text-[13px] text-zinc-500 mb-2 px-1">Chọn danh mục</div>
                     <div className="grid grid-cols-4 gap-2">
-                      {ALL_CATEGORIES.map(c => (
+                     {CATEGORIES.map(c => (
                         <button key={c.id} onClick={() => setForm({...form, category: c.id, price: c.basePrice.toLocaleString('vi-VN'), tags: [] })} className="relative active:scale-95 transition-transform">
                           <div className={`flex flex-col rounded-2xl border-2 p-2.5 items-center justify-center gap-1.5 min-h-[72px] transition-all ${form.category === c.id? "border-[#0a84ff] bg-[#0a84ff]/5 shadow-sm shadow-[#0a84ff]/10" : "border-[#E5E5EA] dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-300"}`}>
                             <div className="text-[22px] leading-none">{c.icon}</div>
@@ -546,10 +546,8 @@ const handleDragEnd = (_: any, info: PanInfo) => {
                         </div>
                       </div>
                     )}
-                  </div>
                 </motion.div>
               )}
-{/* Tiếp Step 2 - Urgency */}
                   <div className="bg-white dark:bg-zinc-900 rounded-3xl border-2 border-[#E5E5EA] dark:border-zinc-800 p-5 shadow-sm">
                     <div className="flex items-center gap-2.5 mb-4">
                       <div className="w-9 h-9 rounded-xl bg-amber-500/10 grid place-items-center">
