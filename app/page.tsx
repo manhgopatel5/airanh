@@ -275,7 +275,7 @@ export default function Home() {
             </motion.div>
           ) : filteredItems.length === 0? (
             <motion.div key="empty" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center px-6 py-16 text-center">
-              <LottiePlayer animationData={isPlanMode? walletOpen : empty} loop className="w-[220px] h-[220px]" pauseWhenHidden aria-label="Trống" />
+              <LottiePlayer animationData={isPlanMode? walletOpen : empty} loop className="w-[220px] h-[220px]"  aria-label="Trống" />
               <h3 className="text-lg font-bold mt-2">Chưa có {mode === "task"? "nhiệm vụ" : "kế hoạch"} nào</h3>
               <p className="text-sm text-zinc-500 mb-6">Hãy là người đầu tiên tạo</p>
               <button onClick={handleRefresh} className="px-6 py-2.5 rounded-xl text-white font-bold active:scale-95 flex items-center gap-2" style={{ backgroundColor: activeColor }}>
