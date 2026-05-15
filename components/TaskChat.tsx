@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { getFirebaseDB } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, Timestamp, limit, startAfter, QueryDocumentSnapshot, DocumentData, doc, updateDoc, arrayUnion, getDoc, getDocs } from "firebase/firestore";
-import { FiSend, FiMessageCircle, FiTrash2, FiCornerUpLeft, FiX, FiSmile, FiMoreHorizontal } from "react-icons/fi";
+import { FiSend, FiMessageCircle, FiTrash2, FiCornerUpLeft, FiX, FiSmile } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
