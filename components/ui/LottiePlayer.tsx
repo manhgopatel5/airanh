@@ -20,7 +20,7 @@ type Props = {
   play?: boolean;
   className?: string;
   speed?: number;
-  pauseWhenHidden?: boolean; // đã có
+  
   "aria-label"?: string;
   onComplete?: () => void;
   fallback?: React.ReactNode;
@@ -33,7 +33,7 @@ function LottiePlayer({
   play,
   className = "w-24 h-24",
   speed = 1,
-  pauseWhenHidden = true, // thêm dòng này
+
   "aria-label": ariaLabel,
   onComplete,
   fallback,
