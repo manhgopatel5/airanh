@@ -5,14 +5,38 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import emptyLottie from "@/public/lotties/huha-empty.json";
-import searching from "@/public/lotties/huha-searching.json";
-import taskLottie from "@/public/lotties/huha-task.json";
-import planLottie from "@/public/lotties/huha-plan.json";
-import celebrate from "@/public/lotties/huha-celebrate.json";
-import idle from "@/public/lotties/huha-idle.json";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
-import walletOpen from "@/public/lotties/huha-wallet-open.json";
+import emptyLottieData from "@/public/lotties/huha-empty.json";
+import searchingData from "@/public/lotties/huha-searching.json";
+import taskLottieData from "@/public/lotties/huha-task.json";
+import planLottieData from "@/public/lotties/huha-plan.json";
+import celebrateData from "@/public/lotties/huha-celebrate.json";
+import idleData from "@/public/lotties/huha-idle.json";
+import loadingPullData from "@/public/lotties/huha-loading-pull.json";
+import walletOpenData from "@/public/lotties/huha-wallet-open.json";
+
+const emptyLottie =
+  (emptyLottieData as any).default || emptyLottieData;
+
+const searching =
+  (searchingData as any).default || searchingData;
+
+const taskLottie =
+  (taskLottieData as any).default || taskLottieData;
+
+const planLottie =
+  (planLottieData as any).default || planLottieData;
+
+const celebrate =
+  (celebrateData as any).default || celebrateData;
+
+const idle =
+  (idleData as any).default || idleData;
+
+const loadingPull =
+  (loadingPullData as any).default || loadingPullData;
+
+const walletOpen =
+  (walletOpenData as any).default || walletOpenData;
 
 type TabId = "hot" | "near" | "new" | "friends";
 type PostType = "task" | "plan";
