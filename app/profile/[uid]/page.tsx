@@ -446,7 +446,7 @@ successTimeoutRef.current = setTimeout(() => {
           </div>
 
           {/* SKILLS */}
-          {targetUser.skills?.length > 0 && (
+        {(targetUser.skills?.length ?? 0) > 0 && (
             <div>
               <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider px-1 mb-2.5">Kỹ năng</h3>
               <div className="flex flex-wrap gap-2">
