@@ -322,7 +322,7 @@ export default function CreateTaskProMax() {
   });
 
   const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const category = useMemo(() => ALL_CATEGORIES.find(c => c.id === form.category)!, [form.category]);
+ const category = useMemo(() => CATEGORIES.find(c => c.id === form.category)!, [form.category]);
   
   const progress = (step / 3) * 100;
   const basePrice = parseInt(form.price.replace(/\./g, "") || "0");
