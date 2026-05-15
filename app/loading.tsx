@@ -13,7 +13,6 @@ export default function Loading() {
           autoplay
           className="w-36 h-36"
           aria-label="Loading..."
-         
         />
         <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 animate-pulse">
           Loading...
