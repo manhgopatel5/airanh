@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle, FiSend, FiSmartphone } from "react-icons/fi";
 import { FcGoogle } from "react-icons/fc";
-import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence, sendEmailVerification, signOut, GoogleAuthProvider, signInWithPopup, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, Auth } from "firebase/auth";
+import { signInWithEmailAndPassword, User, setPersistence, browserLocalPersistence, browserSessionPersistence, sendEmailVerification, GoogleAuthProvider, signInWithPopup, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, Auth } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { doc, getDoc, updateDoc, serverTimestamp, Firestore, runTransaction } from "firebase/firestore";
 import { nanoid } from "nanoid";
@@ -39,7 +39,7 @@ export default function Login() {
     authRef.current = getFirebaseAuth();
     dbRef.current = getFirebaseDB();
 
-    if (window.PublicKeyCredential) {
+    if (typeof window !== "undefined" && window.PublicKeyCredential) {
       PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable?.().then(setPasskeySupported);
     }
 
@@ -84,10 +84,10 @@ export default function Login() {
       if (err) newErrors[key] = err;
     });
     setErrors(newErrors);
-    return!Object.keys(newErrors).length;
+   return Object.keys(newErrors).length === 0;
   };
 
-  const updateUserDoc = async (user: any, db: Firestore) => {
+const updateUserDoc = async (user: User, db: Firestore) => {
     const userRef = doc(db, "users", user.uid);
     const snap = await getDoc(userRef).catch(() => null);
     if (!snap?.exists()) {
@@ -115,16 +115,19 @@ export default function Login() {
         tx.set(doc(db, "usernames", username), { uid: user.uid });
       });
     } else {
-      await updateDoc(userRef, { online: true, lastSeen: serverTimestamp() });
+     await updateDoc(userRef, {
+  isOnline: true,
+  lastSeen: serverTimestamp(),
+});
     }
   };
 
   const handleLogin = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (form.honeypot ||!validate()) return;
+    if (form.honeypot || !validate()) return;
 
     const auth = authRef.current; const db = dbRef.current;
-    if (!auth ||!db) return;
+    if (!auth || !db) return;
 
     const lastFail = localStorage.getItem("login_fail_time");
     if (failedAttempts.current >= 3 && lastFail && Date.now() - parseInt(lastFail) < 30000) {
@@ -165,7 +168,7 @@ export default function Login() {
 
   const handleGoogleLogin = async () => {
     const auth = authRef.current; const db = dbRef.current;
-    if (!auth ||!db) return;
+    if (!auth || !db) return;
     try {
       setGoogleLoading(true);
       await setPersistence(auth, remember? browserLocalPersistence : browserSessionPersistence);
@@ -186,7 +189,11 @@ export default function Login() {
 
   const handleMagicLink = async () => {
     const auth = authRef.current;
-    if (!auth ||!form.email ||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+    if (
+  !auth ||
+  !form.email ||
+  !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)
+) {
       return setErrors({ email: "Nhập email hợp lệ trước" });
     }
     try {
@@ -207,7 +214,13 @@ export default function Login() {
   if (authChecking) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center">
-        <LottiePlayer animationData={loadingPull} loop autoplay className="w-20 h-20" />
+        <LottiePlayer
+  animationData={loadingPull}
+  loop
+  autoplay
+  aria-label="Loading"
+  className="w-20 h-20"
+/>
       </div>
     );
   }
@@ -250,7 +263,7 @@ export default function Login() {
               <div>
                 <div className="relative group">
                   <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400 group-focus-within:text-[#0042B2] transition-colors" />
-                  <input ref={emailRef} type="email" value={form.email} onChange={(e) => { setForm({...form, email: e.target.value}); if (errors.email) setErrors({...errors, email: ""}); }} placeholder="Email" className={`w-full h-12 pl-11 pr-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-2 ${errors.email? "border-red-500" : "border-transparent focus:border-[#0042B2]"} outline-none text- font-medium transition-all`} />
+                  <input ref={emailRef} type="email" value={form.email} onChange={(e) => { setForm(prev => ({ ...prev, email: e.target.value })); if (errors.email) setErrors(prev => ({ ...prev, email: "" })); }} placeholder="Email" className={`w-full h-12 pl-11 pr-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-2 ${errors.email? "border-red-500" : "border-transparent focus:border-[#0042B2]"} outline-none  font-medium transition-all`} />
                 </div>
                 {errors.email && <p className="text-xs text-red-500 mt-1.5 ml-1">{errors.email}</p>}
               </div>
@@ -258,7 +271,10 @@ export default function Login() {
               <div>
                 <div className="relative group">
                   <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400 group-focus-within:text-[#0042B2] transition-colors" />
-                  <input type={show? "text" : "password"} value={form.password} onChange={(e) => { setForm({...form, password: e.target.value}); if (errors.password) setErrors({...errors, password: ""}); }} placeholder="Mật khẩu" className={`w-full h-12 pl-11 pr-11 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-2 ${errors.password? "border-red-500" : "border-transparent focus:border-[#0042B2]"} outline-none text- font-medium transition-all`} />
+                  <input type={show? "text" : "password"} value={form.password} onChange={(e) => { setForm(prev => ({
+  ...prev,
+  password: e.target.value,
+})); if (errors.password) setErrors({...errors, password: ""}); }} placeholder="Mật khẩu" className={`w-full h-12 pl-11 pr-11 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-2 ${errors.password? "border-red-500" : "border-transparent focus:border-[#0042B2]"} outline-none font-medium transition-all`} />
                   <button type="button" onClick={() => setShow(!show)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 p-1">
                     {show? <FiEyeOff size={18} /> : <FiEye size={18} />}
                   </button>
@@ -274,7 +290,7 @@ export default function Login() {
                 <Link href="/forgot-password" className="text-sm font-semibold text-[#0042B2] hover:underline">Quên mật khẩu?</Link>
               </div>
 
-              <motion.button type="submit" whileTap={{ scale: 0.98 }} disabled={loading || googleLoading || magicLoading} className="w-full h-12 rounded-2xl bg-[#0042B2] text-white font-bold text- shadow-lg shadow-[#0042B2]/25 hover:shadow-xl hover:shadow-[#0042B2]/30 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+              <motion.button type="submit" whileTap={{ scale: 0.98 }} disabled={loading || googleLoading || magicLoading} className="w-full h-12 rounded-2xl bg-[#0042B2] text-white font-bold shadow-lg shadow-[#0042B2]/25 hover:shadow-xl hover:shadow-[#0042B2]/30 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
                 {loading? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Đang đăng nhập...</> : "Đăng nhập"}
               </motion.button>
             </form>
