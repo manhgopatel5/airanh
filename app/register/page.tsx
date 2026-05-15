@@ -52,9 +52,16 @@ export default function Register() {
 
   useEffect(() => {
     if (!auth) return;
-    if (window.PublicKeyCredential?.isUserVerifyingPlatformAuthenticatorAvailable) {
-      PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(setPasskeySupported);
-    }
+if (
+  typeof window !== "undefined" &&
+  "PublicKeyCredential" in window &&
+  typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === "function"
+) {
+  PublicKeyCredential
+    .isUserVerifyingPlatformAuthenticatorAvailable()
+    .then(setPasskeySupported)
+    .catch(() => setPasskeySupported(false));
+}
     if (isSignInWithEmailLink(auth, window.location.href)) {
       let email = localStorage.getItem("emailForSignIn") || window.prompt("Nhập email để xác nhận");
       if (email) {
