@@ -596,13 +596,22 @@ const createNotification = useCallback(async (targetUid: string, notif: Omit<Not
             notifLoading? <div className="p-4">Đang tải...</div> :
             notifications.length === 0? <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center"><FiBell className="text-gray-400 mb-4" size={48} /><h3 className="text-[20px] font-semibold">Chưa có thông báo</h3></div> :
             <>
-  <div className="flex items-center justify-end px-4 py-2 border-b border-gray-100 dark:border-zinc-900">
-    <button
-      onClick={handleMarkAllRead}
-      className={`text-[13px] font-medium ${primaryText}`}
-    >
-      Đọc tất cả
-    </button>
+  <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 dark:border-zinc-900">
+<div className="flex items-center gap-4">
+  <button
+    onClick={handleMarkAllRead}
+    className={`text-[13px] font-medium ${primaryText}`}
+  >
+    Đọc tất cả
+  </button>
+
+  <button
+    onClick={handleClearAllNotifications}
+    className="text-[13px] font-medium text-red-500"
+  >
+    Xóa hết
+  </button>
+</div>
   </div>
 
   <div className="divide-y divide-gray-100 dark:divide-zinc-900">
