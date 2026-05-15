@@ -8,15 +8,15 @@ import { toast } from "sonner";
 import LottiePlayer from "@/components/ui/LottiePlayer";
 import errorShake from "@/public/lotties/huha-error-shake.json";
 
-type Props = {
+ttype Props = {
   open: boolean;
   uid: string;
   reason: string;
   title?: string;
   message?: string;
-  warningAt?: Timestamp;
+  warningAt?: Timestamp | null;
   onClose?: () => void;
-};
+};};
 
 export default function WarningModal({ open, uid, reason, title, message, warningAt, onClose }: Props) {
   const [checked, setChecked] = useState(false);
