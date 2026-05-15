@@ -131,16 +131,16 @@ useEffect(() => {
       aria-label={ariaLabel}
     >
       <Lottie
-        lottieRef={ref}
-        animationData={animationData}
-        loop={loop && !reducedMotion}
-        autoplay={false}
-        onComplete={onComplete}
-        rendererSettings={{
-          preserveAspectRatio: "xMidYMid meet",
-          progressiveLoad: true,
-        }}
-      />
+  lottieRef={ref}
+  animationData={animationData}
+  loop={loop && !reducedMotion}
+  autoplay={false}
+  {...(onComplete ? { onComplete } : {})}
+  rendererSettings={{
+    preserveAspectRatio: "xMidYMid meet",
+    progressiveLoad: true,
+  }}
+/>
     </div>
   );
 }
