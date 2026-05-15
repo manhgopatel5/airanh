@@ -101,8 +101,13 @@ export default function ChatDetailPage() {
         router.replace("/chat");
         return;
       }
-      const otherUid = data.members.find((id) => id!== user.uid)!;
-      const otherUser = data.membersInfo[otherUid];
+   const otherUid = data.members.find((id) => id !== user.uid)!;
+
+const otherUser = data.membersInfo?.[otherUid] ?? {
+  name: "User",
+  username: "",
+  avatar: "",
+};
       const [friendSnap, friendDoc] = await Promise.all([
         getDoc(doc(db, "users", otherUid)),
         getDoc(doc(db, "users", user.uid, "friends", otherUid))
