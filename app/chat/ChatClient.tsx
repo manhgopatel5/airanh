@@ -578,7 +578,8 @@ const createNotification = useCallback(async (targetUid: string, notif: Omit<Not
             </div>
             <div className="grid grid-cols-5 mt-3.5 px-0.5">
               {[{ key: "all", label: "Tất cả" }, { key: "friends", label: "Bạn bè" }, { key: "notifications", label: "Thông báo", badge: unreadNotifications }, { key: "unread", label: "Chưa đọc" }, { key: "group", label: "Nhóm" }].map((tab) => (
-                <button key={tab.key} onClick={() => setActiveTab(tab.key as any)} className={`relative py-2 text-[15px] whitespace-nowrap transition-colors duration-200 flex items-center justify-center gap-1.5 ${activeTab === tab.key? "text-black dark:text-white font-semibold" : "text-[#8e8e93] dark:text-zinc-500 font-normal hover:text-gray-700 dark:hover:text-zinc-400"}`}>
+                <button key={tab.key} onClick={() => setActiveTab(tab.key as any)} className={`relative py-2 text-[15px] whitespace-nowrap transition-colors duration-200 flex items-center justify-center gap-1.5 ${activeTab === tab.key
+  ? `${primaryText} font-semibold` : "text-[#8e8e93] dark:text-zinc-500 font-normal hover:text-gray-700 dark:hover:text-zinc-400"}`}>
                   {tab.label}
                   {tab.badge? <span className="min-w-[18px] h-[18px] px-1 bg-[#ff3b30] rounded-full flex items-center justify-center"><span className="text-[11px] leading-none font-medium text-white">{tab.badge > 99? "99+" : tab.badge}</span></span> : null}
                   {activeTab === tab.key && <div className="absolute -bottom-[1px] left-0 right-0 h-[2.5px] bg-black dark:bg-white rounded-full" />}
