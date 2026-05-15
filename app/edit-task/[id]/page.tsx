@@ -64,10 +64,10 @@ export default function EditTaskPage() {
 if (
   task?.type === "task" &&
   form.totalSlots !== undefined &&
-  form.totalSlots < task.joined
+  form.totalSlots < taskItem.joined
 ) {
   newErrors.totalSlots =
-    `Không được nhỏ hơn ${task.joined} người đã tham gia`;
+    `Không được nhỏ hơn ${taskItem.joined} người đã tham gia`;
 }
     setErrors(newErrors);
     return!Object.keys(newErrors).length;
@@ -113,6 +113,12 @@ if (
   }
 
   if (!task) return null;
+const taskItem = task.type === "task" ? task : null;
+
+if (!taskItem) {
+  router.replace("/");
+  return null;
+}
 
   return (
     <>
@@ -170,8 +176,8 @@ if (
 
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-white dark:bg-zinc-950 rounded-3xl p-5 border-zinc-200/60 dark:border-zinc-800 shadow-sm">
               <label className="block text-sm font-bold mb-2.5 flex items-center gap-1.5"><FiUsers size={14} className="text-[#0042B2]" />Số người <span className="text-red-500">*</span></label>
-              <input type="number" min={task.joined} value={form.totalSlots} onChange={(e) => setForm(prev => ({...prev, totalSlots: parseInt(e.target.value) || 1}))} className={`w-full h-12 px-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-2 ${errors.totalSlots? "border-red-500" : "border-transparent focus:border-[#0042B2]"} outline-none font-bold text-lg transition-all`} />
-              {errors.totalSlots? <p className="text-xs text-red-500 mt-2">{errors.totalSlots}</p> : <p className="text-xs text-zinc-500 mt-2">Đã có {task.joined} người</p>}
+              <input type="number" min={taskItem.joined} value={form.totalSlots} onChange={(e) => setForm(prev => ({...prev, totalSlots: parseInt(e.target.value) || 1}))} className={`w-full h-12 px-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-2 ${errors.totalSlots? "border-red-500" : "border-transparent focus:border-[#0042B2]"} outline-none font-bold text-lg transition-all`} />
+              {errors.totalSlots? <p className="text-xs text-red-500 mt-2">{errors.totalSlots}</p> : <p className="text-xs text-zinc-500 mt-2">Đã có {taskItem.joined} người</p>}
             </motion.div>
           </div>
 
