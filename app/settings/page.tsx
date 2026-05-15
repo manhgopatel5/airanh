@@ -10,8 +10,7 @@ import {
   ChevronLeft, Moon, Sun, Palette, Bell, Clock, Mail,
   Eye, EyeOff, UserX, Shield, Lock, Smartphone, Key, Trash2,
   Globe, Download, Zap, Database, Info, LogOut,
-  ChevronRight, Monitor, Languages, MapPin, Calendar,
-  MessageSquare, Users, AtSign, Settings as SettingsIcon
+  ChevronRight, Monitor, Languages, MapPin, Calendar, Users, AtSign, Settings as SettingsIcon
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
