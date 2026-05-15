@@ -710,7 +710,7 @@ export default function CreatePlanPro() {
                 <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 space-y-4">
                   {/* Categories */}
                   <div>
-                    <p className="text- text-zinc-600 dark:text-zinc-400 mb-3 px-1 font-medium">Chọn loại hoạt động</p>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-3 px-1 font-medium">Chọn loại hoạt động</p>
                     <div className="grid grid-cols-4 gap-2.5">
                       {CATEGORIES.map(c => {
                         const active = category.id === c.id;
@@ -730,11 +730,11 @@ export default function CreatePlanPro() {
                   {/* Title */}
                   <div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 p-5 shadow-sm">
                     <div className="flex items-start gap-3">
-                      <span className="text- mt-1">{category.emoji}</span>
+                      <span className="text-3xl mt-1">{category.emoji}</span>
                       <div className="flex-1">
                         <input value={title} onChange={e => setTitle(e.target.value.slice(0, 50))} placeholder={category.suggestions[0]} className="w-full text-2xl font-black bg-transparent outline-none placeholder:text-zinc-300 dark:placeholder:text-zinc-700" autoFocus />
                         <div className="flex items-center justify-between mt-3">
-                          <div className="flex flex-wrap gap-1.5 max-w-">
+                          <div className="flex flex-wrap gap-1.5 max-w-full">
                             {category.suggestions.slice(0, 5).map(s => (
                               <button key={s} onClick={() => setTitle(s)} className="px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 text- font-medium active:scale-95 transition-all">{s}</button>
                             ))}
@@ -802,6 +802,7 @@ export default function CreatePlanPro() {
                           <span className="text-zinc-600">Bình chọn</span>
                         </label>
                       </div>
+</div>
                     <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Tìm địa điểm, quán, địa chỉ..." className="w-full h-12 px-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-2 border-transparent focus:border-[#0042B2] outline-none font-medium" />
                     {currentAddress && <p className="text- mt-2 text-[#0042B2] truncate">📍 {currentAddress}</p>}
                     <div className="flex gap-1.5 mt-3 overflow-x-auto scrollbar-hide">
@@ -916,7 +917,7 @@ export default function CreatePlanPro() {
               <motion.div initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }} onClick={e => e.stopPropagation()} className="w-full max-w-md bg-white dark:bg-zinc-950 rounded-3xl p-5 max-h- shadow-2xl">
                 <div className="w-10 h-1 bg-zinc-300 rounded-full mx-auto mb-4" />
                 <h3 className="text-xl font-black mb-4">Mẫu có sẵn</h3>
-                <div className="space-y-2 max-h- overflow-y-auto">
+             <div className="space-y-2 max-h-[60vh] overflow-y-auto">
                   {TEMPLATES.map(t => (
                     <button key={t.name} onClick={() => useTemplate(t)} className="w-full p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 flex items-center gap-3 text-left">
                       <div className="w-11 h-11 rounded-xl bg-[#0042B2]/10 grid place-items-center text-xl">{CATEGORIES.find(c => c.id === t.cat)?.emoji}</div>
@@ -951,7 +952,7 @@ export default function CreatePlanPro() {
         {/* Loading */}
         <AnimatePresence>
           {loading && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z- z- bg-white dark:bg-black grid place-items-center">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[9999] bg-white dark:bg-black grid place-items-center">
               <div className="text-center">
                 <LottiePlayer animationData={loadingPull} loop autoplay className="w-24 h-24 mx-auto" />
                 <p className="mt-4 font-bold text-lg">Đang tạo kế hoạch...</p>
