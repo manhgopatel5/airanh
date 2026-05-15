@@ -597,7 +597,11 @@ const createNotification = useCallback(async (targetUid: string, notif: Omit<Not
             notifications.length === 0? <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center"><FiBell className="text-gray-400 mb-4" size={48} /><h3 className="text-[20px] font-semibold">Chưa có thông báo</h3></div> :
             <div className="divide-y divide-gray-100 dark:divide-zinc-900">
               {notifications.map((notif) => (
-                <div key={notif.id} className={`px-4 py-3 flex items-start gap-3 ${!notif.read? "bg-[#0a84ff]/5" : ""}`}>
+               <div
+  key={notif.id}
+  onClick={() => !notif.read && handleMarkNotificationRead(notif.id)}
+  className={`px-4 py-3 flex items-start gap-3 ${!notif.read ? "bg-[#0a84ff]/5" : ""}`}
+>
                   <img src={notif.fromAvatar} alt="" className="w-12 h-12 rounded-full" />
                   <div className="flex-1">
                     <p className="text-[15px]"><span className="font-semibold">{notif.fromName}</span> {notif.message}</p>
