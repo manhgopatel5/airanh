@@ -7,7 +7,7 @@ import { collection, query, where, onSnapshot, orderBy, doc, getDoc } from "fire
 import { getFirebaseDB } from "@/lib/firebase";
 import { TaskListItem } from "@/types/task";
 import TaskCard from "@/components/TaskCard";
-import { FiBookmark, FiArrowLeft, FiSearch, FiFilter, FiGrid, FiList } from "react-icons/fi";
+import { FiBookmark, FiArrowLeft, FiSearch, FiGrid, FiList } from "react-icons/fi";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
