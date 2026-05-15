@@ -1051,19 +1051,22 @@ setTimeout(() => {
         <span>{ageRange[1]}</span>
       </div>
 
-      <input
-        type="range"
-        min={18}
-        max={60}
-        value={ageRange[1]}
-        onChange={(e) =>
-          setAgeRange([
-            ageRange[0],
-            Math.max(ageRange[0], Number(e.target.value)),
-          ])
-        }
-        className="w-full accent-[#0042B2]"
-      />
+   <input
+  type="range"
+  min={18}
+  max={60}
+  value={ageRange[1] ?? 35}
+  onChange={(e) =>
+    setAgeRange([
+      ageRange[0] ?? 18,
+      Math.max(
+        ageRange[0] ?? 18,
+        Number(e.target.value)
+      ),
+    ])
+  }
+  className="w-full accent-[#0042B2]"
+/>
     </div>
   </div>
 </div>
