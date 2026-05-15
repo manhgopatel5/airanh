@@ -117,8 +117,28 @@ function TaskCard({ task, mode }: Props) {
   return (
     <>
       <Toaster richColors position="top-center" />
-      <motion.article whileHover={{ y: -2 }} whileTap={{ scale: 0.99 }} onClick={handleClick} onHoverStart={() => { setIsHovered(true); router.prefetch(`/${mode}/${task.slug}`); }} onHoverEnd={() => setIsHovered(false)} className="group relative bg-white dark:bg-zinc-900 rounded- overflow-hidden border border-zinc-100/80 dark:border-zinc-800/80 shadow-sm hover:shadow-xl hover:shadow-black/5 dark:hover:shadow-black/20 transition-all duration-300 cursor-pointer">
-        {/* Top accent */}
+      <motion.article
+  whileHover={{ y: -2 }}
+  whileTap={{ scale: 0.99 }}
+  onClick={handleClick}
+  onHoverStart={() => {
+    setIsHovered(true);
+    router.prefetch(`/${mode}/${task.slug}`);
+  }}
+  onHoverEnd={() => setIsHovered(false)}
+  className={`
+    group relative overflow-hidden cursor-pointer
+    bg-white dark:bg-zinc-900
+    rounded-3xl
+    border
+    transition-all duration-300
+    ${
+      isHovered
+        ? "border-[#0a84ff]/20 shadow-2xl shadow-[#0a84ff]/10"
+        : "border-zinc-100/80 dark:border-zinc-800/80 shadow-sm"
+    }
+  `}
+>
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#0a84ff] via-[#5e5ce6] to-[#0a84ff] opacity-0 group-hover:opacity-100 transition-opacity" />
 
         <div className="p-4">
@@ -158,7 +178,18 @@ function TaskCard({ task, mode }: Props) {
           {/* Content */}
           <div className="space-y-2.5">
             <div className="flex items-start justify-between gap-3">
-              <h3 className="font-bold text- leading-snug text-zinc-900 dark:text-white line-clamp-2 flex-1 group-hover:text-[#0a84ff] transition-colors">{task.title}</h3>
+             <h3
+  className={`
+    flex-1 line-clamp-2
+    font-bold leading-snug
+    transition-all duration-300
+    ${
+      isHovered
+        ? "text-[#0a84ff]"
+        : "text-zinc-900 dark:text-white"
+    }
+  `}
+>{task.title}</h3>
               {task.type === "task" && taskData.price!== undefined && (
                 <div className="text-right flex-shrink-0">
                   <div className="text-lg font-extrabold tracking-tight" style={{ color: "#00C853", fontVariantNumeric: "tabular-nums" }}>{formatPrice(taskData.price, taskData.currency)}</div>
@@ -193,7 +224,11 @@ function TaskCard({ task, mode }: Props) {
               <div className={`grid gap-1.5 mt-1 ${task.images.length === 1? "grid-cols-1" : task.images.length === 2? "grid-cols-2" : "grid-cols-3"}`}>
                 {task.images.slice(0, 3).map((img, i) => (
                   <div key={i} className={`relative overflow-hidden bg-zinc-100 dark:bg-zinc-800 ${task.images.length === 1? "aspect-[16/9] rounded-2xl" : "aspect-[4/3] rounded-xl"} group/img`}>
-                    <img src={img} alt="" loading="lazy" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    <img src={img} alt="" loading="lazy" className={`
+  w-full h-full object-cover
+  transition-transform duration-700
+  ${isHovered ? "scale-105" : "scale-100"}
+`} />
                     {i === 2 && task.images.length > 3 && <div className="absolute inset-0 bg-black/60 backdrop-blur-sm grid place-items-center text-white font-bold text-lg">+{task.images.length - 3}</div>}
                   </div>
                 ))}
@@ -232,7 +267,18 @@ function TaskCard({ task, mode }: Props) {
         </div>
 
         {/* Hover glow */}
-        <div className="absolute inset-0 rounded- opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ boxShadow: "inset 0 1px rgba(10,132,255,0.1)" }} />
+       <div
+  className={`
+    absolute inset-0 pointer-events-none
+    transition-opacity duration-300
+    ${isHovered ? "opacity-100" : "opacity-0"}
+  `}
+  style={{
+    boxShadow: "inset 0 1px rgba(10,132,255,0.12)",
+    background:
+      "linear-gradient(to bottom, rgba(10,132,255,0.03), transparent)",
+  }}
+/>
       </motion.article>
     </>
   );
