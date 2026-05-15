@@ -450,7 +450,7 @@ successTimeoutRef.current = setTimeout(() => {
             <div>
               <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider px-1 mb-2.5">Kỹ năng</h3>
               <div className="flex flex-wrap gap-2">
-                {targetUser.skills.map((skill) => (
+               {(targetUser.skills ?? []).map((skill) => (
                   <span key={skill} className="px-4 py-2 rounded-2xl bg-white dark:bg-zinc-950 border-zinc-200/60 dark:border-zinc-800 text-sm font-medium shadow-sm">{skill}</span>
                 ))}
               </div>
