@@ -91,7 +91,7 @@ export default function VerifyEmailPage() {
             <div className="relative w-24 h-24 mx-auto mb-6">
               <div className="absolute inset-0 bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] rounded-3xl blur-2xl opacity-50 animate-pulse" />
               <div className="relative w-full h-full bg-gradient-to-br from-[#0042B2] via-[#0055DD] to-[#1A5FFF] rounded-3xl flex items-center justify-center shadow-2xl shadow-[#0042B2]/40 ring-1 ring-white/20">
-                <LottiePlayer animationData={celebrate} loop autoplay className="w-14 h-14" aria-label="Email" pauseWhenHidden={false} />
+                <LottiePlayer animationData={celebrate} loop autoplay className="w-14 h-14" aria-label="Email" ={false} />
               </div>
             </div>
             <h1 className="text-3xl font-black text-zinc-900 dark:text-white mb-2 tracking-tight">Xác thực email</h1>
