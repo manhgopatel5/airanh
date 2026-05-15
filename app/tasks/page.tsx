@@ -8,7 +8,19 @@ import { useRouter } from "next/navigation";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy, limit, startAfter, QueryDocumentSnapshot, DocumentData, Timestamp } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  orderBy,
+  limit,
+  startAfter,
+  QueryDocumentSnapshot,
+  DocumentData,
+  Timestamp,
+  Query,
+} from "firebase/firestore";
 import type { Task } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
@@ -74,7 +86,7 @@ export default function TasksPage() {
 
     try {
       const base = collection(db, "tasks");
-      let q: any;
+     let q: Query<DocumentData>;
 
       switch (subTab) {
         case "mine": q = query(base, where("userId","==",currentUser.uid), where("type","==",mode), orderBy("createdAt","desc"), limit(PAGE_SIZE)); break;
@@ -89,7 +101,7 @@ export default function TasksPage() {
 
       if (lastDoc &&!isRefresh) q = query(q, startAfter(lastDoc));
 
-      const snap = await getDocs(q);
+     const snap = await getDocs<DocumentData>(q);
       let data = snap.docs.map(d => {
   const docData = d.data() as Omit<Task, 'id'>;
   return { id: d.id, ...docData } as Task;
@@ -99,7 +111,9 @@ export default function TasksPage() {
       data.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
 
       setTasks(prev => isRefresh? data : [...prev,...data]);
-      setLastDoc(snap.docs[snap.docs.length-1] || null);
+    const lastVisible = snap.docs.at(-1) ?? null;
+
+setLastDoc(lastVisible);
       setHasMore(snap.docs.length === PAGE_SIZE);
     } catch (err) { console.error(err); toast.error("Tải dữ liệu thất bại"); }
     finally { setLoading(false); setLoadingMore(false); setRefreshing(false); }
