@@ -8,19 +8,17 @@ const Lottie = dynamic(
   () => import("lottie-react").then((mod) => mod.default),
   {
     ssr: false,
-    loading: () => <div className="w-full h-full bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded-lg" />
+    loading: () => <div className="w-full h-full bg-transparent" />
   }
 );
 
 type Props = {
-  animationData: object | null | undefined;
+  animationData?: object | null;
   loop?: boolean;
   autoplay?: boolean;
   play?: boolean;
   className?: string;
   speed?: number;
-  playOnHover?: boolean;
-  pauseWhenHidden?: boolean;
   "aria-label"?: string;
   onComplete?: () => void;
   fallback?: React.ReactNode;
@@ -38,47 +36,39 @@ function LottiePlayer({
   fallback,
 }: Props) {
   const lottieRef = useRef<LottieRefCurrentProps>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const [hasError, setHasError] = useState(false);
-  
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const shouldAutoplay = play ?? autoplay;
 
   useEffect(() => {
-    if (!lottieRef.current) return;
+    if (!lottieRef.current || !isMounted) return;
     try {
       lottieRef.current.setSpeed(speed);
-      if (shouldAutoplay) {
-        lottieRef.current.play();
-      } else {
-        lottieRef.current.pause();
-      }
+      shouldAutoplay ? lottieRef.current.play() : lottieRef.current.pause();
     } catch (e) {
-      console.error('Lottie error:', e);
       setHasError(true);
     }
-  }, [speed, shouldAutoplay]);
+  }, [speed, shouldAutoplay, isMounted]);
 
-  // Fix chính: không render gì nếu data null/undefined hoặc lỗi
-  if (!animationData || hasError) {
-    return fallback || null;
+  if (!isMounted || !animationData || hasError) {
+    return fallback ? <div className={className}>{fallback}</div> : null;
   }
 
   return (
-    <div
-      className={className}
-      role="img"
-      aria-label={ariaLabel}
-    >
+    <div className={className} role="img" aria-label={ariaLabel}>
       <Lottie
         lottieRef={lottieRef}
         animationData={animationData}
         loop={loop}
         autoplay={shouldAutoplay}
         onError={() => setHasError(true)}
-        onComplete={onComplete}
-        style={{
-          width: "100%",
-          height: "100%",
-        }}
+        onComplete={onComplete ?? undefined}
+        style={{ width: "100%", height: "100%" }}
       />
     </div>
   );
