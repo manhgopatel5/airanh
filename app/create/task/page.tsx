@@ -304,7 +304,7 @@ export default function CreateTaskProMax() {
   const [success, setSuccess] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [friends, setFriends] = useState<any[]>([]);
+
   const [savedTasks, setSavedTasks] = useState(0);
 
   const now = new Date();
@@ -340,11 +340,25 @@ export default function CreateTaskProMax() {
   }, [auth, router]);
 
   useEffect(() => {
-    if (!user?.uid) return;
-    getDocs(query(collection(db, 'tasks'), where('createdBy', '==', user.uid))).then(s => setSavedTasks(s.size));
-    const q = query(collection(db, 'friends'), where('userId', '==', user.uid));
-    return onSnapshot(q, snap => setFriends(snap.docs.map(d => ({ id: d.id, ...d.data(), name: d.data().friendName || d.data().name || "Bạn" }))));
-  }, [user, db]);
+  if (!user?.uid) return;
+
+  getDocs(
+    query(
+      collection(db, "tasks"),
+      where("createdBy", "==", user.uid)
+    )
+  ).then((s) => setSavedTasks(s.size));
+
+  // preload friends for future features
+  const q = query(
+    collection(db, "friends"),
+    where("userId", "==", user.uid)
+  );
+
+  const unsub = onSnapshot(q, () => {});
+
+  return () => unsub();
+}, [user?.uid, db]);
 const handleDragEnd = (_: any, info: PanInfo) => {
     if (Math.abs(info.offset.x) < 50) return setDragX(0);
     if (info.offset.x < -50 && step < 3 && canNext) setStep(s => s + 1);
