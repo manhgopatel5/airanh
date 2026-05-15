@@ -121,15 +121,7 @@ export default function ChatClient() {
     }
   }, []);
 
-  const savePinned = useCallback((values: string[]): void => {
-    try {
-      setPinned(values);
-      localStorage.setItem(PINNED_KEY, JSON.stringify(values));
-      if (typeof navigator!== "undefined" && "vibrate" in navigator) navigator.vibrate(10);
-    } catch (error) {
-      console.error("Failed to save pinned chats:", error);
-    }
-  }, []);
+
 
   // Load notifications
   useEffect(() => {
