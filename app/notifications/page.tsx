@@ -5,6 +5,7 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, orderBy, Timestamp, writeBatch, limit, startAfter, getDocs } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthContext";
 import { useRouter } from "next/navigation";
+
 import { toast, Toaster } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -56,7 +57,15 @@ export default function NotificationsPage() {
   }, [lastDoc, loadingMore, user?.uid, db]);
 
   const groupedNotifs = useMemo(() => {
-    const groups: Record<string, Notification[]> = { "Hôm nay": [], "Hôm qua": [], "Cũ hơn": [] };
+    const groups: {
+  "Hôm nay": Notification[];
+  "Hôm qua": Notification[];
+  "Cũ hơn": Notification[];
+} = {
+  "Hôm nay": [],
+  "Hôm qua": [],
+  "Cũ hơn": [],
+};
     const now = new Date(); const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
     notifications.forEach((n) => {
@@ -109,9 +118,21 @@ export default function NotificationsPage() {
   const setObserver = useCallback((node: HTMLDivElement | null, isRead: boolean, id: string) => {
     if (!node || isRead) return;
     if (!observerRef.current) {
-      observerRef.current = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => { if (entry.isIntersecting) markAsRead(id); });
-      }, { threshold: 0.5 });
+  observerRef.current = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        const notifId =
+          entry.target.getAttribute("data-id");
+
+        if (notifId) {
+          markAsRead(notifId);
+        }
+      }
+    });
+  },
+  { threshold: 0.5 }
+);
     }
     observerRef.current.observe(node);
   }, [markAsRead]);
@@ -193,7 +214,14 @@ export default function NotificationsPage() {
                       data-id={n.id}
                       ref={(node) => setObserver(node, n.isRead, n.id)}
                       onClick={() => selectedIds.length? setSelectedIds((prev) => prev.includes(n.id)? prev.filter(id => id!== n.id) : [...prev, n.id]) : handleClickNotif(n)}
-                      onLongPress={() => setSelectedIds((prev) => prev.includes(n.id)? prev : [...prev, n.id])}
+                      onContextMenu={(e) => {
+  e.preventDefault();
+  setSelectedIds((prev) =>
+    prev.includes(n.id)
+      ? prev
+      : [...prev, n.id]
+  );
+}}
                       className={`group relative bg-white dark:bg-zinc-950 rounded-3xl p-4 border-2 transition-all active:scale-[0.98] cursor-pointer ${n.isRead? "border-zinc-200/60 dark:border-zinc-800" : "border-[#0042B2]/30 bg-[#F5F9FF] dark:bg-[#0042B2]/5"} ${selectedIds.includes(n.id)? "ring-2 ring-[#0042B2] border-[#0042B2]" : ""}`}
                     >
                       {!n.isRead && <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-[#0042B2] animate-pulse" />}
@@ -208,7 +236,7 @@ export default function NotificationsPage() {
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <p className="text- leading-snug">
+                         <p className="text-sm leading-snug">
                             <span className="font-bold text-zinc-900 dark:text-white">{n.fromUserName}</span>
                             <span className="text-zinc-700 dark:text-zinc-300"> {n.content}</span>
                           </p>
@@ -218,7 +246,9 @@ export default function NotificationsPage() {
                           </p>
                         </div>
 
-                        <button onClick={(e) => { e.stopPropagation(); deleteNotif(n.id); }} className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center justify-center text-zinc-400 hover:text-red-500 transition-all flex-shrink-0">
+                       <button
+  type="button"
+  onClick={(e) => { e.stopPropagation(); deleteNotif(n.id); }} className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center justify-center text-zinc-400 hover:text-red-500 transition-all flex-shrink-0">
                           <FiTrash2 size={16} />
                         </button>
                       </div>
