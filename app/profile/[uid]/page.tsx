@@ -6,6 +6,7 @@ import { doc, getDoc, setDoc, deleteDoc, serverTimestamp, Timestamp, getDocs, co
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { toast, Toaster } from "sonner";
+import { useRef } from "react";
 import { MessageCircle, UserPlus, Check, UserMinus, User, Star, Clock, Briefcase, Info, MapPin, ExternalLink, Zap, Share2, Flag, Crown, Sparkles, Flame, Shield, Gem, ChevronRight, Coffee, Users, Heart, Award, Mail, Music, Camera, Sun, Globe, Gamepad2, Utensils, Dumbbell, Film, Plane, Moon, Gift, Calendar, ShoppingBag, Mic, Bike, Palette, Beer, Map, PartyPopper, TrendingUp, ThumbsUp, BookOpen, Phone, ShieldCheck, Lock } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { formatDistanceToNow } from "date-fns";
@@ -23,11 +24,27 @@ type PublicUser = {
 };
 
 export default function PublicProfile() {
-  const { uid } = useParams();
+const params = useParams();
+const uid = Array.isArray(params.uid)
+  ? params.uid[0]
+  : params.uid;
   const router = useRouter();
   const { user } = useAuth();
   const db = getFirebaseDB();
+ const successTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
 
+  return () => {
+
+    if (successTimeoutRef.current) {
+
+      clearTimeout(successTimeoutRef.current);
+
+    }
+
+  };
+
+}, []);
   const [targetUser, setTargetUser] = useState<PublicUser | null>(null);
   const [currentUserData, setCurrentUserData] = useState<any>(null);
   const [isFriend, setIsFriend] = useState(false);
@@ -51,6 +68,12 @@ export default function PublicProfile() {
   const rating = targetUser?.stats?.rating || 0;
   const xp = completed * 12 + reviews * 8 + Math.floor(rating * 20);
   const level = Math.max(1, Math.floor(xp / 300) + 1);
+  const currentLevelXp = (level - 1) * 300;
+const nextLevelXp = level * 300;
+const progress = Math.min(
+  100,
+  ((xp - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100
+);
   const trustScore = Math.min(100, Math.floor(rating * 15 + completed * 1.2 + reviews));
   const joinedDays = targetUser?.createdAt?.seconds? Math.floor((Date.now() - targetUser.createdAt.seconds * 1000) / 86400000) : 999;
   const profileCompletion = Math.round(([targetUser?.avatar, targetUser?.bio, targetUser?.skills?.length, targetUser?.portfolio?.length, targetUser?.location, targetUser?.title, targetUser?.emailVerified, targetUser?.isVerifiedId].filter(Boolean).length / 8) * 100);
@@ -147,7 +170,15 @@ export default function PublicProfile() {
         });
         setHasSentRequest(true);
         toast.success(`Đã gửi lời mời tới ${targetUser.name}`);
-        setShowSuccess(true); setTimeout(() => setShowSuccess(false), 1200);
+setShowSuccess(true);
+
+if (successTimeoutRef.current) {
+  clearTimeout(successTimeoutRef.current);
+}
+
+successTimeoutRef.current = setTimeout(() => {
+  setShowSuccess(false);
+}, 1200);
       }
       navigator.vibrate?.(8);
     } catch { toast.error("Thao tác thất bại"); } finally { setActionLoading(false); }
@@ -184,12 +215,23 @@ export default function PublicProfile() {
     } catch { toast.error("Không thể mở chat"); } finally { setActionLoading(false); }
   };
 
-  const handleShare = async () => {
+ const handleShare = async () => {
+  try {
     const url = `https://airanh.vercel.app/profile/${targetUser?.uid}`;
-    if (navigator.share) await navigator.share({ title: targetUser?.name, url });
-    else { navigator.clipboard.writeText(url); toast.success("Đã copy link"); }
+
+    if (navigator.share) {
+      await navigator.share({
+        title: targetUser?.name,
+        url,
+      });
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast.success("Đã copy link");
+    }
+
     navigator.vibrate?.(5);
-  };
+  } catch {}
+};
 
   const formatLastSeen = (timestamp?: Timestamp) => timestamp? formatDistanceToNow(timestamp.toDate(), { addSuffix: true, locale: vi }) : "Lâu rồi";
 
@@ -319,11 +361,33 @@ export default function PublicProfile() {
             </div>
             <div className="grid grid-cols-3 gap-3.5">
               {allAchievements.slice(0, 6).map((item) => (
-                <motion.button key={item.id} whileTap={{ scale: 0.92 }} onClick={() => { setSelectedAchievement(item); setShowAchievementInfo(true); }} className="flex flex-col items-center">
+  <motion.button
+    key={item.id}
+    whileTap={{ scale: 0.92 }}
+    onClick={() => setSelectedAchievement(item)}
+    className="flex flex-col items-center"
+  >
                   <div className="relative w-16 h-16 mb-2">
-                    <svg viewBox="0 100 100" className="w-full h-full">
-                      <polygon points="50 1 95 25 95 75 50 99 5 75 5 25" fill={item.unlocked? `url(#grad-${item.id})` : "none"} stroke={item.unlocked? "none" : "#E4E4E7"} strokeWidth="2" strokeDasharray={item.unlocked? "none" : "4 4"} />
-                      <defs>{item.unlocked && <linearGradient id={`grad-${item.id}`}><stop offset="0%" stopColor="#60A5FA" /><stop offset="100%" stopColor="#3B82F6" /></linearGradient>}</defs>
+                    <svg viewBox="0 0 100 100" className="w-full h-full">
+                      <polygon
+  points="50 1 95 25 95 75 50 99 5 75 5 25"
+  fill={
+    item.unlocked
+      ? `url(#achievement-grad-${item.id})`
+      : "none"
+  }
+  stroke={item.unlocked ? "none" : "#E4E4E7"}
+  strokeWidth="2"
+  strokeDasharray={item.unlocked ? "none" : "4 4"}
+/>
+                      <defs>
+  {item.unlocked && (
+    <linearGradient id={`achievement-grad-${item.id}`}>
+      <stop offset="0%" stopColor="#60A5FA" />
+      <stop offset="100%" stopColor="#3B82F6" />
+    </linearGradient>
+  )}
+</defs>
                     </svg>
                     <div className={`absolute inset-0 flex items-center justify-center ${item.unlocked? "text-white" : "text-zinc-400"}`}>{item.unlocked? item.icon : <Lock className="w-5 h-5" />}</div>
                   </div>
@@ -368,7 +432,13 @@ export default function PublicProfile() {
                 {/* Header */}
                 <div className="bg-white dark:bg-zinc-950 px-6 pt-8 pb-16 text-center">
                   <div className="w-24 h-24 mx-auto rounded-3xl overflow-hidden shadow-xl ring-4 ring-white dark:ring-zinc-950">
-                    <img src={targetUser.avatar} className="w-full h-full object-cover" alt="" />
+                   <img
+  src={
+    targetUser.avatar ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      targetUser.name
+    )}&size=200&background=0042B2&color=fff`
+  } className="w-full h-full object-cover" alt="" />
                   </div>
                   <h3 className="text-2xl font-black mt-4">{targetUser.name}</h3>
                   <p className="text-zinc-500 font-mono">@{targetUser.userId}</p>
@@ -530,6 +600,113 @@ export default function PublicProfile() {
             </Dialog.Content>
           </Dialog.Portal>
         </Dialog.Root>
+{/* ACHIEVEMENT DETAIL */}
+<AnimatePresence>
+  {selectedAchievement && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[999] bg-black/60 backdrop-blur-md flex items-center justify-center p-5"
+      onClick={() => setSelectedAchievement(null)}
+    >
+      <motion.div
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 20 }}
+        transition={{
+  type: "spring",
+  stiffness: 260,
+  damping: 20,
+}}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-sm rounded-[2rem] bg-white dark:bg-zinc-950 border border-zinc-200/60 dark:border-zinc-800 overflow-hidden shadow-2xl"
+      >
+        {/* TOP */}
+        <div
+          className={`relative p-7 bg-gradient-to-br ${selectedAchievement.color}`}
+        >
+          <button
+            onClick={() => setSelectedAchievement(null)}
+            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 backdrop-blur-md text-white text-lg font-bold"
+          >
+            ×
+          </button>
+
+          <div className="flex flex-col items-center text-center">
+            <div className="w-24 h-24 rounded-[2rem] bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-xl mb-4">
+              <div className="scale-150">
+                {selectedAchievement.unlocked ? (
+                  selectedAchievement.icon
+                ) : (
+                  <Lock className="w-8 h-8" />
+                )}
+              </div>
+            </div>
+
+            <h3 className="text-2xl font-black text-white">
+              {selectedAchievement.label}
+            </h3>
+
+            <p className="text-white/80 text-sm mt-2">
+              {selectedAchievement.desc}
+            </p>
+          </div>
+        </div>
+
+        {/* BODY */}
+        <div className="p-5 space-y-4">
+          <div className="rounded-2xl bg-zinc-100 dark:bg-zinc-900 p-4">
+            <p className="text-xs uppercase tracking-wider text-zinc-500 font-bold mb-1">
+              Điều kiện mở khóa
+            </p>
+
+            <p className="font-semibold">
+              {selectedAchievement.condition}
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 rounded-2xl bg-zinc-100 dark:bg-zinc-900 p-4 text-center">
+              <p className="text-xs text-zinc-500 font-medium mb-1">
+                Loại
+              </p>
+
+              <p className="font-bold capitalize">
+                {selectedAchievement.category}
+              </p>
+            </div>
+
+            <div className="flex-1 rounded-2xl bg-zinc-100 dark:bg-zinc-900 p-4 text-center">
+              <p className="text-xs text-zinc-500 font-medium mb-1">
+                Trạng thái
+              </p>
+
+              <p
+                className={`font-bold ${
+                  selectedAchievement.unlocked
+                    ? "text-[#00C853]"
+                    : "text-zinc-500"
+                }`}
+              >
+                {selectedAchievement.unlocked
+                  ? "Đã mở"
+                  : "Chưa mở"}
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setSelectedAchievement(null)}
+            className="w-full h-12 rounded-2xl bg-[#0042B2] text-white font-bold active:scale-[0.98] transition-all"
+          >
+            Đóng
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
       </div>
     </>
   );
