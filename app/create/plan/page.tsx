@@ -890,6 +890,61 @@ setTimeout(() => {
               {step === 3 && (
                 <motion.div key="s3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 space-y-4">
                   {/* Invite Friends */}
+<div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 p-5 shadow-sm">
+  <div className="flex items-center justify-between mb-4">
+    <h3 className="font-bold">Yêu cầu tham gia</h3>
+
+    <span className="text-xs text-zinc-400">
+      {requirements.length}/5
+    </span>
+  </div>
+
+  <div className="flex gap-2">
+    <input
+      value={reqInput}
+      onChange={(e) => setReqInput(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          addReq();
+        }
+      }}
+      placeholder="Ví dụ: Mang áo khoác"
+      className="flex-1 h-11 px-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 outline-none"
+    />
+
+    <button
+      onClick={addReq}
+      className="px-4 rounded-2xl bg-[#0042B2] text-white font-bold active:scale-95"
+    >
+      Thêm
+    </button>
+  </div>
+
+  {requirements.length > 0 && (
+    <div className="flex flex-wrap gap-2 mt-4">
+      {requirements.map((r) => (
+        <div
+          key={r}
+          className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-zinc-100 dark:bg-zinc-900"
+        >
+          <span className="text-sm font-medium">
+            {r}
+          </span>
+
+          <button
+            onClick={() =>
+              setRequirements((p) => p.filter((x) => x !== r))
+            }
+            className="text-zinc-500 hover:text-red-500"
+          >
+            <FiX size={14} />
+          </button>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
                   <div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-bold flex items-center gap-2"><FiUsers size={18} className="text-[#0042B2]" />Mời bạn bè</h3>
