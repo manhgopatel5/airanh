@@ -938,89 +938,268 @@ const handleDragEnd = (_: any, info: PanInfo) => {
     exit={{ opacity: 0, x: -16 }}
     className="p-4 space-y-3"
   >
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { k: "autoMatch", icon: FiZap, label: "Duyệt tự động", desc: "Nhận ngay", color: "blue" },
-                      { k: "needApproval", icon: FiUserCheck, label: "Duyệt tay", desc: "Chọn lọc", color: "green" },
-                      { k: "milestones", icon: FiLayers, label: "Chia giai đoạn", desc: "An toàn", color: "purple" },
-                      { k: "allowBids", icon: FiTrendingUp, label: "Đấu thầu", desc: "Giá tốt", color: "amber" },
-                      { k: "nda", icon: FiLock, label: "Bảo mật NDA", desc: "Riêng tư", color: "red" },
-                      { k: "featured", icon: FiStar, label: "Ghim PRO", desc: "+50k", color: "amber", pro: true },
-                    ].map(item => {
-                      const Icon = item.icon;
-                      const active = (form as any)[item.k];
-                      const isDisabled = (item.k === "autoMatch" && form.needApproval) || (item.k === "needApproval" && form.autoMatch);
-                      
-                      return (
-                        <motion.button key={item.k} whileTap={{ scale: 0.96 }} onClick={() => {
-                          if (isDisabled) return;
-                          if (item.k === "autoMatch") setForm({...form, autoMatch: !active, needApproval: false });
-                          else if (item.k === "needApproval") setForm({...form, needApproval: !active, autoMatch: false });
-                          else setForm({...form, [item.k]: !active });
-                        }} disabled={isDisabled} className={`relative p-4 rounded-3xl border-2 text-left transition-all ${isDisabled? "opacity-40 cursor-not-allowed" : active? "border-[#0a84ff] bg-[#0a84ff]/5 shadow-md shadow-[#0a84ff]/10" : "border-[#E5E5EA] dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:shadow-sm"}`}>
-                          <div className={`w-10 h-10 rounded-2xl grid place-items-center mb-3 ${active? "bg-[#0a84ff]" : "bg-[#F2F2F7] dark:bg-zinc-800"}`}>
-                            <Icon size={20} className={active? "text-white" : "text-zinc-500"} />
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="font-semibold text-">{item.label}</div>
-                            {item.pro && <span className="text- px-1.5 py-0.5 rounded-md bg-amber-500 text-white font-bold">PRO</span>}
-                          </div>
-                          <div className="text- text-zinc-500 mt-0.5">{item.desc}</div>
-                          {active && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-3 right-3 w-5 h-5 bg-[#0a84ff] rounded-full grid place-items-center"><FiCheck size={12} className="text-white" strokeWidth={3} /></motion.div>}
-                        </motion.button>
-                      );
-                    })}
-                  </div>
+    {/* Options Grid */}
+    <div className="grid grid-cols-2 gap-3">
+      {[
+        {
+          k: "autoMatch",
+          icon: FiZap,
+          label: "Duyệt tự động",
+          desc: "Nhận ngay",
+          color: "blue",
+        },
+        {
+          k: "needApproval",
+          icon: FiUserCheck,
+          label: "Duyệt tay",
+          desc: "Chọn lọc",
+          color: "green",
+        },
+        {
+          k: "milestones",
+          icon: FiLayers,
+          label: "Chia giai đoạn",
+          desc: "An toàn",
+          color: "purple",
+        },
+        {
+          k: "allowBids",
+          icon: FiTrendingUp,
+          label: "Đấu thầu",
+          desc: "Giá tốt",
+          color: "amber",
+        },
+        {
+          k: "nda",
+          icon: FiLock,
+          label: "Bảo mật NDA",
+          desc: "Riêng tư",
+          color: "red",
+        },
+        {
+          k: "featured",
+          icon: FiStar,
+          label: "Ghim PRO",
+          desc: "+50k",
+          color: "amber",
+          pro: true,
+        },
+      ].map((item) => {
+        const Icon = item.icon;
+        const active = (form as any)[item.k];
 
-                  {/* Images */}
-                  <div className="bg-white dark:bg-zinc-900 rounded-3xl border-2 border-[#E5E5EA] dark:border-zinc-800 p-5">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="font-semibold">Hình ảnh minh họa</span>
-                      <span className="text- px-2.5 py-1 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 font-medium tabular-nums">{form.images.length}/5</span>
-                    </div>
-                    <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
-                      {form.images.map((url, i) => (
-                        <div key={i} className="relative w-20 h-20 rounded-2xl overflow-hidden shrink-0 group">
-                          <img src={url} alt="" className="w-full h-full object-cover" />
-                          <button onClick={() => { const n = [...form.images]; n.splice(i, 1); setForm({...form, images: n }); const f = [...imageFiles]; f.splice(i, 1); setImageFiles(f); }} className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 grid place-items-center transition-opacity">
-                            <FiX size={20} className="text-white" />
-                          </button>
-                        </div>
-                      ))}
-                      {form.images.length < 5 && (
-                        <button onClick={() => fileRef.current?.click()} className="w-20 h-20 rounded-2xl border-2 border-dashed border-[#E5E5EA] dark:border-zinc-700 hover:border-[#0a84ff] hover:bg-[#0a84ff]/5 grid place-items-center shrink-0 transition-all group active:scale-95">
-                          <FiPlus size={24} className="text-zinc-400 group-hover:text-[#0a84ff] transition-colors" />
-                        </button>
-                      )}
-                    </div>
-                    <input ref={fileRef} type="file" accept="image/*" multiple onChange={e => handleFiles(e.target.files)} className="hidden" />
-                  </div>
+        const isDisabled =
+          (item.k === "autoMatch" && form.needApproval) ||
+          (item.k === "needApproval" && form.autoMatch);
 
-                  {/* Visibility */}
-                  <div className="bg-white dark:bg-zinc-900 rounded-3xl border-2 border-[#E5E5EA] dark:border-zinc-800 p-5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 grid place-items-center">
-                          <FiGlobe size={18} className="text-zinc-600" />
-                        </div>
-                        <div>
-                          <div className="font-semibold">Chế độ hiển thị</div>
-                          <div className="text- text-zinc-500">Ai có thể xem bài đăng</div>
-                        </div>
-                      <select value={form.visibility} onChange={e => setForm({...form, visibility: e.target.value as any })} className="px-3.5 py-2 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl font-medium outline-none border-2 border-transparent focus:border-[#0a84ff] transition-all">
-                        <option value="public">🌍 Công khai</option>
-                        <option value="friends">👥 Bạn bè</option>
-                        <option value="private">🔒 Riêng tư</option>
-                      </select>
-                    </div>
-                  </div>
-                </motion.div>
+        return (
+          <motion.button
+            key={item.k}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => {
+              if (isDisabled) return;
+
+              if (item.k === "autoMatch") {
+                setForm({
+                  ...form,
+                  autoMatch: !active,
+                  needApproval: false,
+                });
+              } else if (item.k === "needApproval") {
+                setForm({
+                  ...form,
+                  needApproval: !active,
+                  autoMatch: false,
+                });
+              } else {
+                setForm({
+                  ...form,
+                  [item.k]: !active,
+                });
+              }
+            }}
+            disabled={isDisabled}
+            className={`relative p-4 rounded-3xl border-2 text-left transition-all ${
+              isDisabled
+                ? "opacity-40 cursor-not-allowed"
+                : active
+                ? "border-[#0a84ff] bg-[#0a84ff]/5 shadow-md shadow-[#0a84ff]/10"
+                : "border-[#E5E5EA] dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:shadow-sm"
+            }`}
+          >
+            <div
+              className={`w-10 h-10 rounded-2xl grid place-items-center mb-3 ${
+                active
+                  ? "bg-[#0a84ff]"
+                  : "bg-[#F2F2F7] dark:bg-zinc-800"
+              }`}
+            >
+              <Icon
+                size={20}
+                className={
+                  active ? "text-white" : "text-zinc-500"
+                }
+              />
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <div className="font-semibold text-[14px]">
+                {item.label}
+              </div>
+
+              {item.pro && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500 text-white font-bold">
+                  PRO
+                </span>
               )}
-            </AnimatePresence>
-          </motion.div>
+            </div>
+
+            <div className="text-[12px] text-zinc-500 mt-0.5">
+              {item.desc}
+            </div>
+
+            {active && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="absolute top-3 right-3 w-5 h-5 bg-[#0a84ff] rounded-full grid place-items-center"
+              >
+                <FiCheck
+                  size={12}
+                  className="text-white"
+                  strokeWidth={3}
+                />
+              </motion.div>
+            )}
+          </motion.button>
+        );
+      })}
+    </div>
+
+    {/* Images */}
+    <div className="bg-white dark:bg-zinc-900 rounded-3xl border-2 border-[#E5E5EA] dark:border-zinc-800 p-5">
+      <div className="flex items-center justify-between mb-3">
+        <span className="font-semibold">
+          Hình ảnh minh họa
+        </span>
+
+        <span className="text-[12px] px-2.5 py-1 rounded-full bg-[#F2F2F7] dark:bg-zinc-800 font-medium tabular-nums">
+          {form.images.length}/5
+        </span>
+      </div>
+
+      <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
+        {form.images.map((url, i) => (
+          <div
+            key={i}
+            className="relative w-20 h-20 rounded-2xl overflow-hidden shrink-0 group"
+          >
+            <img
+              src={url}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+
+            <button
+              onClick={() => {
+                const n = [...form.images];
+                n.splice(i, 1);
+
+                setForm({
+                  ...form,
+                  images: n,
+                });
+
+                const f = [...imageFiles];
+                f.splice(i, 1);
+
+                setImageFiles(f);
+              }}
+              className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 grid place-items-center transition-opacity"
+            >
+              <FiX size={20} className="text-white" />
+            </button>
+          </div>
+        ))}
+
+        {form.images.length < 5 && (
+          <button
+            onClick={() => fileRef.current?.click()}
+            className="w-20 h-20 rounded-2xl border-2 border-dashed border-[#E5E5EA] dark:border-zinc-700 hover:border-[#0a84ff] hover:bg-[#0a84ff]/5 grid place-items-center shrink-0 transition-all group active:scale-95"
+          >
+            <FiPlus
+              size={24}
+              className="text-zinc-400 group-hover:text-[#0a84ff] transition-colors"
+            />
+          </button>
+        )}
+      </div>
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={(e) => handleFiles(e.target.files)}
+        className="hidden"
+      />
+    </div>
+
+    {/* Visibility */}
+    <div className="bg-white dark:bg-zinc-900 rounded-3xl border-2 border-[#E5E5EA] dark:border-zinc-800 p-5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 grid place-items-center">
+            <FiGlobe
+              size={18}
+              className="text-zinc-600"
+            />
+          </div>
+
+          <div>
+            <div className="font-semibold">
+              Chế độ hiển thị
+            </div>
+
+            <div className="text-[12px] text-zinc-500">
+              Ai có thể xem bài đăng
+            </div>
+          </div>
         </div>
+
+        <select
+          value={form.visibility}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              visibility: e.target.value as any,
+            })
+          }
+          className="px-3.5 py-2 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl font-medium outline-none border-2 border-transparent focus:border-[#0a84ff] transition-all"
+        >
+          <option value="public">
+            🌍 Công khai
+          </option>
+
+          <option value="friends">
+            👥 Bạn bè
+          </option>
+
+          <option value="private">
+            🔒 Riêng tư
+          </option>
+        </select>
+      </div>
+    </div>
+  </motion.div>
+)}
+
+</AnimatePresence>
+</motion.div>
+</div>
+
 {/* Footer Actions */}
-        <div className="fixed bottom-0 inset-x-0 z-30 bg-white/90 dark:bg-black/90 backdrop-blur-2xl border-t border-[#E5E5EA] dark:border-zinc-800">
+<div className="fixed bottom-0 inset-x-0 z-30 bg-white/90 dark:bg-black/90 backdrop-blur-2xl border-t border-[#E5E5EA] dark:border-zinc-800">
           <div className="max-w-[680px] mx-auto px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
             <div className="flex items-center gap-3">
               {step > 1 && (
