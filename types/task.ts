@@ -46,12 +46,13 @@ export type BaseItem = {
   images: string[];
   attachments?: string[];
   
-  // Owner
-  userId: string;
-  userName: string;
-  userAvatar: string;
-  userShortId?: string;
-  userUsername?: string;
+// Owner
+userId: string;
+userName: string;
+userAvatar: string;
+userShortId?: string;
+userUsername?: string;
+userVerified?: boolean;
 
   // Status
   status: TaskStatus;
@@ -238,6 +239,7 @@ export type TaskListItem = Pick<
   | "userAvatar"
   | "userShortId"
   | "userUsername"
+  | "userVerified"
   | "createdAt"
   | "category"
   | "tags"
@@ -270,6 +272,7 @@ export type PlanListItem = Pick<
   | "userAvatar"
   | "userShortId"
   | "userUsername"
+  | "userVerified"
   | "createdAt"
   | "category"
   | "tags"
