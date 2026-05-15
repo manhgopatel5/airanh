@@ -7,7 +7,7 @@ import { getFirebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { toast, Toaster } from "sonner";
 import { FiCheckCircle, FiRefreshCw, FiLogOut, FiSend } from "react-icons/fi";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import celebrate from "@/public/lotties/huha-celebrate.json";
 import { motion } from "framer-motion";
 
