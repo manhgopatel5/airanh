@@ -11,7 +11,7 @@ import {
   Eye, EyeOff, UserX, Shield, Lock, Smartphone, Key, Trash2,
   Globe, Download, Zap, Database, Info, LogOut,
   ChevronRight, Monitor, Languages, MapPin, Calendar, Users, AtSign, Settings as SettingsIcon,
-  Copy, Check
+  Copy
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
