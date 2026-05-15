@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Smile } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import celebrate from "@/public/lotties/huha-celebrate.json";
 
 const EMOJI_LIST = [
