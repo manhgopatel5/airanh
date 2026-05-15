@@ -625,8 +625,9 @@ const createNotification = useCallback(async (targetUid: string, notif: Omit<Not
                   </div>
                 </div>
               ))}
-            </div>
-          ) : activeTab === "friends"? (
+                   </div>
+          </>
+          ) : activeTab === "friends" ? (
             friendsLoading? <div className="p-4">Đang tải...</div> :
             <div className="divide-y divide-gray-100 dark:divide-zinc-900">
               {filteredFriendsList.map((friend) => (
