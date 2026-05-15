@@ -146,20 +146,48 @@ export default function StoragePage() {
   );
 }
 
-function StorageItem({ label, icon: Icon, size, color, onClear, loading }: any) {
+function StorageItem({
+  label,
+  icon: Icon,
+  size,
+  color,
+  onClear,
+  loading,
+}: any) {
   return (
     <div className="flex items-center justify-between px-5 py-4">
       <div className="flex items-center gap-3.5">
-        <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: `${color}15` }}>
+        <div
+          className="w-10 h-10 rounded-2xl flex items-center justify-center"
+          style={{ backgroundColor: `${color}15` }}
+        >
           <Icon className="w-5 h-5" style={{ color }} />
         </div>
+
         <div>
-          <p className="font-semibold text-">{label}</p>
-          <p className="text-xs text-zinc-500">{size.toFixed(1)} MB</p>
+          <p className="font-semibold">{label}</p>
+          <p className="text-xs text-zinc-500">
+            {size.toFixed(1)} MB
+          </p>
         </div>
+      </div>
+
       {onClear && (
-        <motion.button whileTap={{ scale: 0.9 }} onClick={onClear} disabled={loading} className="px-4 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-900 text-sm font-semibold active:scale-95 disabled:opacity-50">
-          {loading? <LottiePlayer animationData={loadingPull} loop autoplay className="w-4 h-4" /> : "Xóa"}
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={onClear}
+          disabled={loading}
+          className="px-4 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-900 text-sm font-semibold active:scale-95 disabled:opacity-50 flex items-center justify-center"
+        >
+          {loading ? (
+            <LottiePlayer
+              animationData={loadingPull}
+              loop
+              className="w-4 h-4"
+            />
+          ) : (
+            "Xóa"
+          )}
         </motion.button>
       )}
     </div>
