@@ -62,19 +62,19 @@ function LottiePlayer({
     return fallback ? <div className={className}>{fallback}</div> : null;
   }
 
-  return (
-    <div className={className} role="img" aria-label={ariaLabel}>
-      <Lottie
-        lottieRef={lottieRef}
-        animationData={animationData}
-        loop={loop}
-        autoplay={shouldAutoplay}
-        onError={() => setHasError(true)}
-        onComplete={onComplete ?? undefined}
-        style={{ width: "100%", height: "100%" }}
-      />
-    </div>
-  );
+return (
+  <div className={className} role="img" aria-label={ariaLabel}>
+    <Lottie
+      lottieRef={lottieRef}
+      animationData={animationData}
+      loop={loop}
+      autoplay={shouldAutoplay}
+      onError={() => setHasError(true)}
+      onComplete={onComplete || null} // đổi dòng này
+      style={{ width: "100%", height: "100%" }}
+    />
+  </div>
+);
 }
 
 export default memo(LottiePlayer);
