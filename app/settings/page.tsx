@@ -230,36 +230,38 @@ export default function SettingsPage() {
     vibrate(5);
   }, [settings.apiKey]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-black">
-        <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b border-zinc-200/50 dark:border-zinc-900">
-          <div className="max-w-xl mx-auto px-4 h-14 flex items-center gap-3">
-            <div className="w-6 h-6 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
-            <div className="w-32 h-5 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
-          </div>
-        </div>
-        <div className="max-w-xl mx-auto px-4 py-5 space-y-4">
-          {[1,2,3,4].map(i => (
-            <div key={i} className="bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-200/60 dark:border-zinc-900 overflow-hidden">
-              <div className="px-5 pt-4 pb-2"><div className="w-20 h-3 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" /></div>
-              {[1,2,3].map(j => (
-                <div key={j} className="px-5 py-4 border-t border-zinc-100 dark:border-zinc-900">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
-                      <div className="w-24 h-4 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
-                    </div>
-                    <div className="w-4 h-4 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ))}
+ if (loading) {
+  return (
+    <div className="min-h-screen bg-zinc-50 dark:bg-black">
+      <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b border-zinc-200/50 dark:border-zinc-900">
+        <div className="max-w-xl mx-auto px-4 h-14 flex items-center gap-3">
+          <div className="w-6 h-6 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+          <div className="w-32 h-5 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
         </div>
       </div>
-    );
-  }
+      <div className="max-w-xl mx-auto px-4 py-5 space-y-4">
+        {[1,2,3,4,5].map(i => (
+          <div key={i} className="bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-200/60 dark:border-zinc-900 overflow-hidden">
+            <div className="px-5 pt-4 pb-2">
+              <div className="w-20 h-3 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+            </div>
+            {[1,2,3].map(j => (
+              <div key={j} className="px-5 py-4 border-t border-zinc-100 dark:border-zinc-900">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+                    <div className="w-28 h-4 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+                  </div>
+                  <div className="w-4 h-4 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
   return (
     <>
