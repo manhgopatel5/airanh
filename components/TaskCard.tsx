@@ -10,7 +10,7 @@ import { TaskListItem, PlanListItem } from "@/types/task";
 import { AppMode } from "@/types/app";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import celebrate from "@/public/lotties/huha-celebrate.json";
 
 type Props = { task: TaskListItem | PlanListItem; mode: AppMode; onDelete?: (id: string) => void };
@@ -216,6 +216,7 @@ function TaskCard({ task, mode }: Props) {
                 </div>
                 <span className="text-xs font-medium tabular-nums">{task.commentCount || 0}</span>
               </div>
+            </div>
             <div className="flex items-center gap-1">
               <button onClick={handleShare} className="w-7 h-7 grid place-items-center rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 active:scale-90 transition-all">
                 <FiShare2 size={14} />
@@ -246,6 +247,7 @@ function Skeleton() {
           <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded-lg w-1/3" />
           <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-1/4" />
         </div>
+      </div>
       <div className="space-y-2">
         <div className="h-5 bg-zinc-200 dark:bg-zinc-800 rounded-lg w-3/4" />
         <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-full" />
