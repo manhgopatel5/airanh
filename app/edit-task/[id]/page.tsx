@@ -8,7 +8,7 @@ import { Task, UpdateTaskInput, isTask } from "@/types/task";
 import { toast, Toaster } from "sonner";
 import { FiArrowLeft, FiTrash2, FiSave, FiX, FiDollarSign, FiUsers, FiMapPin, FiAlertCircle } from "react-icons/fi";
 import Link from "next/link";
-import { isTask } from "@/types";
+
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
 import loadingPull from "@/public/lotties/huha-loading-pull.json";
@@ -61,9 +61,8 @@ export default function EditTaskPage() {
     if (!form.description || form.description.length < 20) newErrors.description = "Mô tả tối thiểu 20 ký tự";
     if (form.price !== undefined && form.price < 1000) newErrors.price = "Giá tối thiểu 1.000đ";
     if (!form.totalSlots || form.totalSlots < 1) newErrors.totalSlots = "Số người tối thiểu 1";
-    if (
-  task &&
-  isTask(task) &&
+if (
+  task?.type === "task" &&
   form.totalSlots !== undefined &&
   form.totalSlots < task.joined
 ) {
