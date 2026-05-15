@@ -1,16 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef } from "react";
 import type { LottieRefCurrentProps } from "lottie-react";
 
 const Lottie = dynamic(
   () => import("lottie-react").then((mod) => mod.default),
   {
     ssr: false,
-    loading: () => (
-      <div className="aspect-square w-full animate-pulse rounded-2xl bg-slate-100" />
-    ),
   }
 );
 
@@ -18,129 +15,45 @@ type Props = {
   animationData: any;
   loop?: boolean;
   autoplay?: boolean;
-  play?: boolean;
   className?: string;
   speed?: number;
-  playOnHover?: boolean;
-  pauseWhenHidden?: boolean;
   "aria-label"?: string;
-  onComplete?: () => void;
 };
 
 function LottiePlayer({
   animationData,
   loop = true,
   autoplay = true,
-  play,
-  className = "h-24 w-24",
+  className = "w-24 h-24",
   speed = 1,
-  playOnHover = false,
-  pauseWhenHidden = true,
   "aria-label": ariaLabel,
-  onComplete,
 }: Props) {
-  const ref = useRef<LottieRefCurrentProps>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const lottieRef = useRef<LottieRefCurrentProps>(null);
 
-  const [isInView, setIsInView] = useState(!pauseWhenHidden);
-  const [reducedMotion, setReducedMotion] = useState(false);
-
-  const shouldAutoplay = play ?? autoplay;
-
-  // Reduced motion
   useEffect(() => {
-    const media = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    );
+    if (!lottieRef.current) return;
 
-    setReducedMotion(media.matches);
+    lottieRef.current.setSpeed(speed);
 
-    const handler = (e: MediaQueryListEvent) => {
-      setReducedMotion(e.matches);
-    };
-
-    media.addEventListener("change", handler);
-
-    return () => {
-      media.removeEventListener("change", handler);
-    };
-  }, []);
-
-  // Pause khi ra khỏi viewport
-  useEffect(() => {
-    if (!pauseWhenHidden || !containerRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries: IntersectionObserverEntry[]) => {
-        const entry = entries.at(0);
-
-        if (!entry) return;
-
-        setIsInView(entry.isIntersecting);
-      },
-      {
-        threshold: 0.1,
-      }
-    );
-
-    observer.observe(containerRef.current);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [pauseWhenHidden]);
-
-  // Control animation
-  useEffect(() => {
-    if (!ref.current) return;
-
-    if (reducedMotion) {
-      ref.current.pause();
-      ref.current.goToAndStop(0, true);
-      return;
-    }
-
-    ref.current.setSpeed(speed);
-
-    if (isInView && (shouldAutoplay || !playOnHover)) {
-      ref.current.play();
+    if (autoplay) {
+      lottieRef.current.play();
     } else {
-      ref.current.pause();
+      lottieRef.current.pause();
     }
-  }, [
-    isInView,
-    shouldAutoplay,
-    playOnHover,
-    speed,
-    reducedMotion,
-  ]);
+  }, [speed, autoplay]);
+
+  if (!animationData) return null;
 
   return (
-    <div
-      ref={containerRef}
-      className={className}
-      onMouseEnter={() => {
-        if (playOnHover) {
-          ref.current?.play();
-        }
-      }}
-      onMouseLeave={() => {
-        if (playOnHover) {
-          ref.current?.pause();
-        }
-      }}
-      role="img"
-      aria-label={ariaLabel}
-    >
+    <div className={className} role="img" aria-label={ariaLabel}>
       <Lottie
-        lottieRef={ref}
+        lottieRef={lottieRef}
         animationData={animationData}
-        loop={loop && !reducedMotion}
-        autoplay={false}
-        {...(onComplete ? { onComplete } : {})}
-        rendererSettings={{
-          preserveAspectRatio: "xMidYMid meet",
-          progressiveLoad: true,
+        loop={loop}
+        autoplay={autoplay}
+        style={{
+          width: "100%",
+          height: "100%",
         }}
       />
     </div>
