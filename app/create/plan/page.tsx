@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { getFirebaseDB } from "@/lib/firebase";
 import { collection, query, where, onSnapshot, limit, doc, getDoc, updateDoc, Timestamp, addDoc } from 'firebase/firestore';
-import { FiX, FiCheck, FiPlus, FiChevronRight, FiUpload, FiClock, FiMapPin, FiEye, FiCopy, FiNavigation, FiZap, FiUsers, FiCalendar } from "react-icons/fi";
+import { FiX, FiCheck, FiChevronRight, FiUpload, FiClock, FiMapPin, FiEye, FiCopy, FiNavigation, FiZap, FiUsers, FiCalendar } from "react-icons/fi";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { useAuth } from "@/lib/useAuth";
