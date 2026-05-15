@@ -7,7 +7,7 @@ import { FiX, FiCheck, FiPlus, FiChevronRight, FiUpload, FiClock, FiMapPin, FiEy
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { useAuth } from "@/lib/useAuth";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import loadingPull from "@/public/lotties/huha-loading-pull.json";
 import successCheck from "@/public/lotties/huha-success-check.json";
 
@@ -60,6 +60,7 @@ const TEMPLATES = [
   { name: "Boardgame Đêm Thứ 7", cat: "game", title: "Boardgame Ma Sói & Catan tối T7", loc: "Boardgame Station - Q3", time: "19:30" },
   { name: "Date Night Lãng Mạn", cat: "date", title: "Date night rooftop ngắm Sài Gòn", loc: "EON 51 - Bitexco", time: "19:30" },
   { name: "Acoustic Chill Tối", cat: "music", title: "Nghe acoustic live band thư giãn", loc: "Yoko Cafe - Q3", time: "20:00" },
+];
   const QUICK_ACTIVITIES = [
   { 
     name: "Shopping Săn Sale", 
