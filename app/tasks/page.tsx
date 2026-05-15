@@ -90,7 +90,10 @@ export default function TasksPage() {
       if (lastDoc &&!isRefresh) q = query(q, startAfter(lastDoc));
 
       const snap = await getDocs(q);
-      let data = snap.docs.map(d => ({ id: d.id,...d.data() } as Task)).filter(t => t.id && t.title);
+      let data = snap.docs.map(d => {
+  const docData = d.data() as Omit<Task, 'id'>;
+  return { id: d.id, ...docData } as Task;
+}).filter(t => t.id && t.title);
 
       if (searchQuery) data = data.filter(t => t.title.toLowerCase().includes(searchQuery.toLowerCase()));
       data.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
