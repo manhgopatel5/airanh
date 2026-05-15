@@ -136,11 +136,18 @@ if (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-zinc-950 rounded-3xl p-5 border-zinc-200/60 dark:border-zinc-800 shadow-sm">
             <label className="block text-sm font-bold mb-2.5 text-zinc-900 dark:text-white">Tiêu đề <span className="text-red-500">*</span></label>
             <input value={form.title} onChange={(e) => { setForm(prev => ({...prev, title: e.target.value})); if (errors.title) setErrors(prev => ({...prev, title: ""})); }} placeholder="VD: Cần shipper giao hàng gấp Q1 → Q7" className={`w-full h-12 px-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-2 ${errors.title? "border-red-500" : "border-transparent focus:border-[#0042B2]"} outline-none font-medium transition-all`} />
-            <div className="flex justify-between mt-2">
-              {errors.title? <p className="text-xs text-zinc-500">
-  {(form.title ?? "").length}/100 ký tự
-</p>}
-            </div>
+           <div className="flex justify-between mt-2">
+  {errors.title ? (
+    <p className="text-xs text-red-500 flex items-center gap-1">
+      <FiAlertCircle size={12} />
+      {errors.title}
+    </p>
+  ) : (
+    <p className="text-xs text-zinc-500">
+      {(form.title ?? "").length}/100 ký tự
+    </p>
+  )}
+</div>
           </motion.div>
 
           {/* Description */}
