@@ -49,31 +49,22 @@ const sortedTasks = useMemo(() => {
   switch (sortBy) {
     case "price":
       return sorted.sort((a, b) => {
-        const priceA =
-          a.type === "task" ? a.price || 0 : 0;
-
-        const priceB =
-          b.type === "task" ? b.price || 0 : 0;
+        const priceA = a.type === "task" ? a.price ?? 0 : 0;
+        const priceB = b.type === "task" ? b.price ?? 0 : 0;
 
         return priceB - priceA;
       });
 
     case "distance":
-      return sorted.sort((a, b) => {
-        const distanceA =
-          "distance" in a ? a.distance || 999 : 999;
-
-        const distanceB =
-          "distance" in b ? b.distance || 999 : 999;
-
-        return distanceA - distanceB;
-      });
+      return sorted.sort(
+        (a, b) => (a.distance ?? 999) - (b.distance ?? 999)
+      );
 
     default:
       return sorted.sort(
         (a, b) =>
-          (b.createdAt?.toMillis?.() || 0) -
-          (a.createdAt?.toMillis?.() || 0)
+          (b.createdAt?.toMillis?.() ?? 0) -
+          (a.createdAt?.toMillis?.() ?? 0)
       );
   }
 }, [tasks, sortBy]);
