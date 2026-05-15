@@ -485,12 +485,21 @@ const Section = memo(({ title, delay = 0, children }: { title: string; delay?: n
     <div className="divide-y divide-zinc-100 dark:divide-zinc-900">{children}</div>
   </motion.div>
 ));
+Section.displayName = "Section";
 
-const SettingItem = memo(({ label, icon: Icon, value, onClick, danger }: any) => (
+interface SettingItemProps {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  value?: string;
+  onClick?: () => void;
+  danger?: boolean;
+}
+
+const SettingItem = memo(({ label, icon: Icon, value, onClick, danger }: SettingItemProps) => (
   <button onClick={() => { vibrate(5); onClick?.(); }} className="w-full flex items-center justify-between px-5 py-4 active:bg-zinc-50 dark:active:bg-zinc-900 transition">
     <div className="flex items-center gap-3">
       <Icon className={`w-5 h-5 ${danger? "text-red-500" : "text-zinc-700 dark:text-zinc-300"}`} />
-      <span className={`text-[15px] font-medium ${danger? "text-red-500" : "text-zinc-900 dark:text-white"}`}>{label}</span>
+      <span className={`text- font-medium ${danger? "text-red-500" : "text-zinc-900 dark:text-white"}`}>{label}</span>
     </div>
     <div className="flex items-center gap-2">
       {value && <span className="text-sm text-zinc-500">{value}</span>}
@@ -498,10 +507,11 @@ const SettingItem = memo(({ label, icon: Icon, value, onClick, danger }: any) =>
     </div>
   </button>
 ));
+SettingItem.displayName = "SettingItem";
 
 interface SelectItemProps<T extends string> {
   label: string;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   value: string;
   options: { label: string; value: T }[];
   onChange: (value: T) => void;
@@ -518,7 +528,7 @@ function SelectItem<T extends string>({ label, icon: Icon, value, options, onCha
       >
         <div className="flex items-center gap-3">
           <Icon className="w-5 h-5 text-zinc-700 dark:text-zinc-300" />
-          <span className="text-[15px] font-medium text-zinc-900 dark:text-white">{label}</span>
+          <span className="text- font-medium text-zinc-900 dark:text-white">{label}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-zinc-500">{value}</span>
@@ -543,12 +553,20 @@ function SelectItem<T extends string>({ label, icon: Icon, value, options, onCha
     </div>
   );
 }
+SelectItem.displayName = "SelectItem";
 
-const ToggleItem = memo(({ label, icon: Icon, checked, onChange }: any) => (
+interface ToggleItemProps {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+}
+
+const ToggleItem = memo(({ label, icon: Icon, checked, onChange }: ToggleItemProps) => (
   <div className="flex items-center justify-between px-5 py-4">
     <div className="flex items-center gap-3">
       <Icon className="w-5 h-5 text-zinc-700 dark:text-zinc-300" />
-      <span className="text-[15px] font-medium text-zinc-900 dark:text-white">{label}</span>
+      <span className="text- font-medium text-zinc-900 dark:text-white">{label}</span>
     </div>
     <button
       onClick={() => { vibrate(5); onChange(!checked); }}
@@ -561,13 +579,29 @@ const ToggleItem = memo(({ label, icon: Icon, checked, onChange }: any) => (
     </button>
   </div>
 ));
+ToggleItem.displayName = "ToggleItem";
 
-const TimeRangeItem = memo(({ label, icon: Icon, enabled, from, to, onChange }: any) => (
+interface TimeRangeValue {
+  enabled: boolean;
+  from: string;
+  to: string;
+}
+
+interface TimeRangeItemProps {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  enabled: boolean;
+  from: string;
+  to: string;
+  onChange: (value: TimeRangeValue) => void;
+}
+
+const TimeRangeItem = memo(({ label, icon: Icon, enabled, from, to, onChange }: TimeRangeItemProps) => (
   <div className="px-5 py-4">
     <div className="flex items-center justify-between mb-3">
       <div className="flex items-center gap-3">
         <Icon className="w-5 h-5 text-zinc-700 dark:text-zinc-300" />
-        <span className="text-[15px] font-medium text-zinc-900 dark:text-white">{label}</span>
+        <span className="text- font-medium text-zinc-900 dark:text-white">{label}</span>
       </div>
       <button
         onClick={() => onChange({ enabled:!enabled, from, to })}
@@ -599,8 +633,18 @@ const TimeRangeItem = memo(({ label, icon: Icon, enabled, from, to, onChange }: 
     )}
   </div>
 ));
+TimeRangeItem.displayName = "TimeRangeItem";
 
-const Modal = memo(({ title, desc, onClose, onConfirm, confirmText, danger }: any) => (
+interface ModalProps {
+  title: string;
+  desc: string;
+  onClose: () => void;
+  onConfirm: () => void;
+  confirmText: string;
+  danger?: boolean;
+}
+
+const Modal = memo(({ title, desc, onClose, onConfirm, confirmText, danger }: ModalProps) => (
   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end justify-center" onClick={onClose}>
     <motion.div initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }} onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-zinc-950 w-full max-w-xl rounded-t-3xl p-6">
       <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mb-5" />
@@ -611,3 +655,4 @@ const Modal = memo(({ title, desc, onClose, onConfirm, confirmText, danger }: an
     </motion.div>
   </motion.div>
 ));
+Modal.displayName = "Modal";
