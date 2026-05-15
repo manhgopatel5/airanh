@@ -24,7 +24,7 @@ export default function Error({
           autoplay
           className="w-32 h-32 mx-auto mb-6"
           aria-label="Lỗi ứng dụng"
-          pauseWhenHidden={false}
+         
         />
 
         <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">
