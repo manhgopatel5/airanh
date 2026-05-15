@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { collection, query, where, onSnapshot, orderBy, doc, getDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
-import { TaskListItem } from "@/types/task";
+import { ItemListItem } from "@/types/task";
 import TaskCard from "@/components/TaskCard";
 import { FiBookmark, FiArrowLeft, FiSearch, FiGrid, FiList } from "react-icons/fi";
 import Link from "next/link";
@@ -18,7 +18,7 @@ export default function BookmarksPage() {
   const db = useMemo(() => getFirebaseDB(), []);
   const router = useRouter();
   const { user } = useAuth();
-  const [tasks, setTasks] = useState<TaskListItem[]>([]);
+ const [tasks, setTasks] = useState<ItemListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "task" | "plan">("all");
