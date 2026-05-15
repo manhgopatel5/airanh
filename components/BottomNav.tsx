@@ -3,7 +3,7 @@
 
 import { HiPlus } from "react-icons/hi2";
 import { useRouter, usePathname } from "next/navigation";
-import { motion } from "framer-motion";
+
 import { useEffect, useState, useTransition, useCallback, useMemo } from "react";
 import { useAppStore } from "@/store/app";
 // XÓA dòng này: import { useAuthStore } from "@/store/auth";
