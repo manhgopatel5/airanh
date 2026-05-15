@@ -161,7 +161,11 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
         groups.push({ date, messages: [] });
         currentDate = date;
       }
-      groups[groups.length - 1].messages.push(msg);
+     const lastGroup = groups.at(-1);
+
+if (lastGroup) {
+  lastGroup.messages.push(msg);
+}
     });
     return groups;
   }, [messages]);
