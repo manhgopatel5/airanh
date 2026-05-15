@@ -480,6 +480,7 @@ export default function CreatePlanPro() {
   const [step, setStep] = useState(1);
   const [dragX, setDragX] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
 
@@ -659,6 +660,13 @@ export default function CreatePlanPro() {
 
       localStorage.removeItem("plan_draft_v2");
       toast.success("🎉 Tạo kế hoạch thành công!");
+navigator.vibrate?.([10, 50, 10]);
+
+setSuccess(true);
+
+setTimeout(() => {
+  router.push("/");
+}, 1800);
       navigator.vibrate?.([10, 50, 10]);
       setTimeout(() => router.push("/"), 800);
     } catch (error) {
@@ -948,7 +956,34 @@ export default function CreatePlanPro() {
             </motion.div>
           )}
         </AnimatePresence>
+{/* Success */}
+<AnimatePresence>
+  {success && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[99999] bg-white dark:bg-black grid place-items-center"
+    >
+      <div className="text-center px-6">
+        <LottiePlayer
+          animationData={successCheck}
+          loop={false}
+          autoplay
+          className="w-36 h-36 mx-auto"
+        />
 
+        <h2 className="mt-4 text-2xl font-black text-zinc-900 dark:text-white">
+          Thành công!
+        </h2>
+
+        <p className="mt-2 text-zinc-500 dark:text-zinc-400">
+          Kế hoạch của bạn đã được tạo
+        </p>
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
         {/* Loading */}
         <AnimatePresence>
           {loading && (
