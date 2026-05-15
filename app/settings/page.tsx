@@ -491,7 +491,7 @@ Section.displayName = "Section";
 
 interface SettingItemProps {
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   value?: string;
   onClick?: () => void;
   danger?: boolean;
@@ -513,7 +513,7 @@ SettingItem.displayName = "SettingItem";
 
 interface SelectItemProps<T extends string> {
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   value: string;
   options: { label: string; value: T }[];
   onChange: (value: T) => void;
@@ -559,7 +559,7 @@ SelectItem.displayName = "SelectItem";
 
 interface ToggleItemProps {
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   checked: boolean;
   onChange: (value: boolean) => void;
 }
@@ -591,7 +591,7 @@ interface TimeRangeValue {
 
 interface TimeRangeItemProps {
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   enabled: boolean;
   from: string;
   to: string;
