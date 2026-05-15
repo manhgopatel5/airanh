@@ -268,10 +268,10 @@ successTimeoutRef.current = setTimeout(() => {
     const url = `https://airanh.vercel.app/profile/${targetUser?.uid}`;
 
     if (navigator.share) {
-      await navigator.share({
-        title: targetUser?.name,
-        url,
-      });
+    await navigator.share({
+  title: `${targetUser?.name || "Người dùng"} • HUHA`,
+  url,
+});
     } else {
       await navigator.clipboard.writeText(url);
       toast.success("Đã copy link");
