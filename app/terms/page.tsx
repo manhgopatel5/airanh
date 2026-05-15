@@ -43,7 +43,7 @@ export default function TermsPage() {
                   autoplay
                   className="w-11 h-11"
                   aria-label="Điều khoản"
-                  pauseWhenHidden={false}
+                
                 />
               </div>
             </div>
