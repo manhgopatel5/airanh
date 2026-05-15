@@ -658,7 +658,7 @@ const createNotification = useCallback(async (targetUid: string, notif: Omit<Not
                     <button onClick={() => fileInputRef.current?.click()} className="h-11 border rounded-xl flex items-center justify-center gap-1.5"><FiUpload size={18} />Ảnh</button>
                     <button className="h-11 border rounded-xl flex items-center justify-center gap-1.5"><FiUserPlus size={18} />ID</button>
                   </div>
-                  <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nhập @username" className="w-full h-11 px-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20" />
+                  <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nhập @username" className={`w-full h-11 px-3 border rounded-xl outline-none focus:ring-2 ${primaryRing} ${primaryBorder}`} />
                   <button onClick={() => handleAddFriend()} disabled={adding ||!search.trim()} className={`w-full h-11 ${primaryBg} text-white rounded-xl font-medium disabled:opacity-50`}>{adding? "Đang gửi..." : "Gửi lời mời"}</button>
                   <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleScanFromFile} />
                 </div>
