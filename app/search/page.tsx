@@ -190,7 +190,7 @@ export default function SearchPage() {
   useEffect(() => {
     if (!loadMoreRef.current ||!hasMore || loading || loadingMore) return;
     const observer = new IntersectionObserver(
-     (entries) => { if (entries[0]?.isIntersecting) fetchTasks(false); },},
+     (entries) => { if (entries[0]?.isIntersecting) fetchTasks(false); },
       { threshold: 0.1 }
     );
     observer.observe(loadMoreRef.current);
