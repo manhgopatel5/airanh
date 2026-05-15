@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import LottiePlayer from "@/components/ui/LottiePlayer";
+
+// Import kiểu này để không crash nếu file thiếu
 import emptyLottie from "@/public/lotties/huha-empty.json";
 import searching from "@/public/lotties/huha-searching.json";
 import taskLottie from "@/public/lotties/huha-task.json";
@@ -16,6 +18,16 @@ import walletOpen from "@/public/lotties/huha-wallet-open.json";
 
 type TabId = "hot" | "near" | "new" | "friends";
 type PostType = "task" | "plan";
+
+// Fallback SVG nếu Lottie lỗi
+const EmptyIcon = ({ type }: { type: PostType }) => (
+  <svg className={`w-14 h-14 ${type === 'task' ? 'text-[#0042B2]' : 'text-[#00C853]'}`} viewBox="0 0 56 56" fill="none">
+    <rect x="8" y="12" width="40" height="32" rx="6" fill="currentColor" opacity="0.1"/>
+    <rect x="14" y="18" width="28" height="4" rx="2" fill="currentColor" opacity="0.3"/>
+    <rect x="14" y="26" width="20" height="4" rx="2" fill="currentColor" opacity="0.3"/>
+    <rect x="14" y="34" width="24" height="4" rx="2" fill="currentColor" opacity="0.3"/>
+  </svg>
+);
 
 const CONTENT_POOL = {
   task: {
@@ -165,7 +177,7 @@ export default function EmptyState({ tab, type = "task" }: Props) {
       lottie: pool.lottie,
       suggests: getRandomItems(pool.suggests, 4),
     });
-  }, [type, tab]);
+  }, [type, tab, pool]);
 
   const handleSuggestClick = (suggest: string) => {
     if ("vibrate" in navigator) navigator.vibrate(5);
@@ -179,7 +191,7 @@ export default function EmptyState({ tab, type = "task" }: Props) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+    <div className="flex flex-col items-center justify-center py-16 px-6 text-center font-sans">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -187,7 +199,17 @@ export default function EmptyState({ tab, type = "task" }: Props) {
         className={`w-20 h-20 rounded-2xl ${theme.iconBg} flex items-center justify-center mb-5`}
       >
         <div className="w-14 h-14">
-          <LottiePlayer animationData={content.lottie} loop autoplay className="w-14 h-14" />
+          {content.lottie ? (
+            <LottiePlayer 
+              animationData={content.lottie} 
+              loop 
+              autoplay 
+              className="w-14 h-14"
+              fallback={<EmptyIcon type={type} />}
+            />
+          ) : (
+            <EmptyIcon type={type} />
+          )}
         </div>
       </motion.div>
 
@@ -196,11 +218,11 @@ export default function EmptyState({ tab, type = "task" }: Props) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25, delay: 0.05 }}
       >
-        <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
+        <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-2 font-sans">
           {content.title}
         </h3>
 
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6 whitespace-pre-line leading-relaxed max-w-xs">
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6 whitespace-pre-line leading-relaxed max-w-xs font-sans">
           {content.desc}
         </p>
       </motion.div>
@@ -215,7 +237,7 @@ export default function EmptyState({ tab, type = "task" }: Props) {
           <button
             key={suggest}
             onClick={() => handleSuggestClick(suggest)}
-            className={`px-3.5 py-1.5 rounded-full ${theme.tagBg} ${theme.tagText} text-sm font-medium active:scale-95 transition-all`}
+            className={`px-3.5 py-1.5 rounded-full ${theme.tagBg} ${theme.tagText} text-sm font-medium active:scale-95 transition-all font-sans`}
           >
             {suggest}
           </button>
@@ -229,7 +251,7 @@ export default function EmptyState({ tab, type = "task" }: Props) {
       >
         <button
           onClick={handleCreateClick}
-          className={`px-5 py-2.5 rounded-xl ${theme.buttonBg} ${theme.buttonText} font-semibold text-sm flex items-center gap-2 active:scale-95 transition-all shadow-sm shadow-[#0042B2]/20`}
+          className={`px-5 py-2.5 rounded-xl ${theme.buttonBg} ${theme.buttonText} font-semibold text-sm flex items-center gap-2 active:scale-95 transition-all shadow-sm font-sans`}
         >
           <HiPlus size={20} strokeWidth={2.5} />
           {type === "task"? "Đăng việc mới" : "Tạo kế hoạch"}
