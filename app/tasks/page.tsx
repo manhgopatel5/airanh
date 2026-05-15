@@ -123,7 +123,19 @@ setLastDoc(lastVisible);
 
   useEffect(() => {
     if (!loadMoreRef.current) return;
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting && hasMore &&!loading &&!loadingMore) fetchTasks(false); }, { threshold: 0.1 });
+ const obs = new IntersectionObserver((entries) => {
+  const entry = entries[0];
+
+  if (
+    entry &&
+    entry.isIntersecting &&
+    hasMore &&
+    !loading &&
+    !loadingMore
+  ) {
+    fetchTasks(false);
+  }
+}, { threshold: 0.1 });
     obs.observe(loadMoreRef.current);
     return () => obs.disconnect();
   }, [hasMore, loading, loadingMore, fetchTasks]);
