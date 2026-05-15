@@ -603,8 +603,7 @@ const handleDragEnd = (_: any, info: PanInfo) => {
                           <button onClick={handleGetLocation} className="w-11 h-11 grid place-items-center bg-[#0a84ff]/10 hover:bg-[#0a84ff]/20 text-[#0a84ff] rounded-xl active:scale-95 transition-all">
                             <FiNavigation size={16} />
                           </button>
-                        </motion.div>
-                      )}
+                 
                     </div>
                   </div>
                 </motion.div>
