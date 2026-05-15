@@ -12,7 +12,7 @@ import { getFunctions, httpsCallable } from "firebase/functions";
 import { useAppStore } from "@/store/app";
 import {
   collection, query, where, onSnapshot, doc, getDoc, setDoc,
-  limit, updateDoc, arrayRemove, Timestamp, Unsubscribe, QuerySnapshot,
+  limit, updateDoc, Timestamp, Unsubscribe, QuerySnapshot,
   DocumentData, orderBy, writeBatch, serverTimestamp,
 } from "firebase/firestore";
 import {
