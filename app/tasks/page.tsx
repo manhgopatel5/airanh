@@ -56,7 +56,7 @@ export default function TasksPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [shareTask, setShareTask] = useState<Task | null>(null);
@@ -101,7 +101,7 @@ export default function TasksPage() {
 
       if (lastDoc &&!isRefresh) q = query(q, startAfter(lastDoc));
 
-     const snap = await getDocs<DocumentData>(q);
+     const snap = await getDocs(q);
       let data = snap.docs.map(d => {
   const docData = d.data() as Omit<Task, 'id'>;
   return { id: d.id, ...docData } as Task;
