@@ -81,12 +81,15 @@ userVerified?: boolean;
   // Search
   searchKeywords: string[];
 
-  // Stats
-  viewCount: number;
-  likeCount: number;
-  commentCount: number;
-  shareCount: number;
-  bookmarkCount: number;
+// Stats
+viewCount: number;
+likeCount: number;
+commentCount: number;
+shareCount: number;
+bookmarkCount: number;
+
+rating?: number; // THÊM
+ratingCount?: number; // optional luôn
 
   // Relations
   applicants?: string[];
@@ -247,6 +250,8 @@ export type TaskListItem = Pick<
   | "viewCount"
   | "likeCount"
   | "commentCount"
+  | "rating"
+| "ratingCount"
   | "location"
   | "isRemote"
   | "likes"
@@ -280,6 +285,8 @@ export type PlanListItem = Pick<
   | "viewCount"
   | "likeCount"
   | "commentCount"
+| "rating"
+| "ratingCount"
   | "location"
   | "likes"
   | "userId"
