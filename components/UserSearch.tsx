@@ -3,7 +3,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { searchUsers } from "@/lib/userService";
 import { sendFriendRequest, cancelFriendRequest, getFriendStatus } from "@/lib/friendService";
 import { useAuth } from "@/lib/AuthContext";
-import { FiSearch, FiUserPlus, FiCheck, FiX, FiUserX, FiAlertCircle, FiUsers, FiClock } from "react-icons/fi";
+import { FiSearch, FiUserPlus, FiCheck, FiX, FiAlertCircle, FiUsers, FiClock } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import LottiePlayer from "@/components/ui/LottiePlayer";
