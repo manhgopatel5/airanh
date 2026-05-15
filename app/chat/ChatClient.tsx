@@ -17,7 +17,7 @@ import {
 } from "firebase/firestore";
 import {
   FiSearch, FiMessageSquare, FiUserPlus, FiUsers, FiCheck, FiX,
-  FiUpload, FiLoader, FiUserX, FiBell, FiAtSign, FiInbox,
+  FiUpload, FiUserX, FiBell, FiAtSign, FiInbox,
 } from "react-icons/fi";
 import { RiAddLine, RiPushpinFill } from "react-icons/ri";
 import Link from "next/link";
