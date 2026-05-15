@@ -10,7 +10,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { Timestamp } from "firebase/firestore";
 import Linkify from "linkify-react";
 import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import celebrate from "@/public/lotties/huha-celebrate.json";
 
 type Post = {
