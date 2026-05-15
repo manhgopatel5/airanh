@@ -912,6 +912,30 @@ setTimeout(() => {
                   </div>
 
                   {/* Cover & Options */}
+<div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 p-5 shadow-sm">
+  <div className="flex items-center justify-between mb-3">
+    <h3 className="font-bold">Độ tuổi tối thiểu</h3>
+
+    <span className="text-sm font-bold text-[#0042B2]">
+      {minAge === 0 ? "Mọi lứa tuổi" : `${minAge}+`}
+    </span>
+  </div>
+
+  <input
+    type="range"
+    min={0}
+    max={21}
+    value={minAge}
+    onChange={(e) => setMinAge(Number(e.target.value))}
+    className="w-full accent-[#0042B2]"
+  />
+
+  <div className="flex justify-between text-xs text-zinc-400 mt-1">
+    <span>0+</span>
+    <span>18+</span>
+    <span>21+</span>
+  </div>
+</div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 p-4 shadow-sm">
                       <h4 className="font-bold text- mb-3">Ảnh bìa</h4>
