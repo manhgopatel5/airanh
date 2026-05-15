@@ -110,8 +110,8 @@ const CATEGORIES = [
       { title: "Làm landing page", desc: ["+ Tốc độ dưới 2s", "+ Chuẩn mobile", "+ Gắn pixel đầy đủ", "+ A-B test 2 bản", "+ Tối ưu CR"] }
     ]
   },
-];
-id: "translate", name: "Dịch thuật", icon: "🌐", color: "#5856d6", basePrice: 200000,
+{
+    id: "translate", name: "Dịch thuật", icon: "🌐", color: "#5856d6", basePrice: 200000,
     suggestions: [
       { title: "Dịch hợp đồng Anh-Việt", desc: ["+ Thuật ngữ pháp lý chuẩn", "+ Bảo mật tuyệt đối", "+ Dò 2 lần", "+ Giao file Word", "+ Có dấu công ty nếu cần"] },
       { title: "Phiên dịch hội thảo", desc: ["+ Cabin hoặc đuổi", "+ Kinh nghiệm 3 năm trở lên", "+ Nghiên cứu tài liệu trước", "+ Đúng giờ tác phong tốt", "+ Thiết bị kèm theo"] },
