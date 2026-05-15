@@ -2,7 +2,7 @@
 import { TaskListItem } from "@/types/task";
 import TaskCard from "@/components/TaskCard";
 import { motion } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import taskLottie from "@/public/lotties/huha-task.json";
 
 type Props = {
