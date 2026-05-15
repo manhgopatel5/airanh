@@ -389,9 +389,20 @@ const otherUser = data.membersInfo?.[otherUid] ?? {
     }
   };
 
-  const pinMessage = async (msgId: string) => {
-    toast.info("Tính năng ghim sẽ cập nhật sau");
-  };
+ const pinMessage = async (msgId: string) => {
+  if (!chatId) return;
+
+  try {
+    await updateDoc(doc(db, "chats", chatId), {
+      pinnedMessage: msgId,
+    });
+
+    toast.success("Đã ghim tin nhắn");
+  } catch (error) {
+    console.error(error);
+    toast.error("Không thể ghim tin nhắn");
+  }
+};
 
   const filteredMessages = useMemo(() => {
     if (!searchQuery.trim()) return messages;
