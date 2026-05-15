@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { memo, useEffect, useRef, useState } from "react";
 import type { LottieRefCurrentProps } from "lottie-react";
 
+
 const Lottie = dynamic(
   () => import("lottie-react").then((mod) => mod.default),
   {
