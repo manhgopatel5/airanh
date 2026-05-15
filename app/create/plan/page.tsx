@@ -1033,10 +1033,10 @@ setTimeout(() => {
         max={40}
         value={ageRange[0]}
         onChange={(e) =>
-          setAgeRange([
-            Number(e.target.value),
-            Math.max(Number(e.target.value), ageRange[1]),
-          ])
+         setAgeRange([
+  Number(e.target.value),
+  Math.max(Number(e.target.value), ageRange[1] || 18),
+])
         }
         className="w-full accent-[#0042B2]"
       />
