@@ -181,7 +181,7 @@ export default function Register() {
 
               <div>
                 <div className="relative"><FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={18} /><input type={showPass? "text" : "password"} placeholder="Mật khẩu" autoComplete="new-password" className={`w-full pl-11 pr-11 h-12 rounded-2xl border-2 text-sm ${touched.password && errors.password? "border-red-500" : "border-zinc-200 dark:border-zinc-800 focus:border-[#0042B2]"} bg-zinc-50 dark:bg-zinc-900 focus:ring-2 focus:ring-[#0042B2]/20 outline-none transition-all`} value={form.password} onChange={handleChange("password")} onBlur={() => handleBlur("password")} /><button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600">{showPass? <FiEyeOff size={18} /> : <FiEye size={18} />}</button></div>
-                {form.password && <div className="flex gap-1 mt-2"><Array.from({ length: 4 }).map((_, i) => <div key={i} className={`h-1 flex-1 rounded-full transition-all ${i < passStrength? passStrength < 2? "bg-red-500" : passStrength < 3? "bg-yellow-500" : "bg-[#00C853]" : "bg-zinc-200 dark:bg-zinc-800"}`} />)}</div>}
+              {form.password && <div className="flex gap-1 mt-2">{Array.from({ length: 4 }).map((_, i) => <div key={i} className={`h-1 flex-1 rounded-full transition-all ${i < passStrength? passStrength < 2? "bg-red-500" : passStrength < 3? "bg-yellow-500" : "bg-[#00C853]" : "bg-zinc-200 dark:bg-zinc-800"}`} />)}</div>}
                 {touched.password && errors.password && <p className="text-red-500 text-xs mt-1.5 ml-1">{errors.password}</p>}
               </div>
 
