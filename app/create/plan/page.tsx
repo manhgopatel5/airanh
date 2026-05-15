@@ -667,8 +667,7 @@ setSuccess(true);
 setTimeout(() => {
   router.push("/");
 }, 1800);
-      navigator.vibrate?.([10, 50, 10]);
-      setTimeout(() => router.push("/"), 800);
+  
     } catch (error) {
       console.error(error);
       toast.error("Tạo thất bại, thử lại");
@@ -752,7 +751,50 @@ setTimeout(() => {
                       </div>
                     </div>
                   </div>
+{/* Quick Activities */}
+<div>
+  <div className="flex items-center justify-between mb-3 px-1">
+    <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300">
+      Hoạt động nhanh
+    </p>
 
+    <span className="text-xs text-zinc-400">
+      Chạm để dùng ngay
+    </span>
+  </div>
+
+  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+    {QUICK_ACTIVITIES.map((item) => (
+      <button
+        key={item.name}
+        onClick={() => useTemplate(item)}
+        className="shrink-0 w-[220px] p-4 rounded-3xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-[#0042B2] text-left transition-all active:scale-95"
+      >
+        <div className="flex items-start gap-3">
+          <div className="text-3xl">
+            {CATEGORIES.find((c) => c.id === item.cat)?.emoji}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="font-black truncate">
+              {item.name}
+            </p>
+
+            <p className="text-sm text-zinc-500 line-clamp-2 mt-1">
+              {item.title}
+            </p>
+
+            <div className="flex items-center gap-2 mt-3 text-xs text-zinc-400">
+              <span>{item.loc}</span>
+              <span>•</span>
+              <span>{item.time}</span>
+            </div>
+          </div>
+        </div>
+      </button>
+    ))}
+  </div>
+</div>
                   {/* Description */}
                   <div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 p-5 shadow-sm">
                     <textarea value={desc} onChange={e => setDesc(e.target.value.slice(0, 300))} placeholder="Mô tả thêm về hoạt động, vibe, yêu cầu..." rows={3} className="w-full text- leading-relaxed bg-transparent outline-none resize-none placeholder:text-zinc-400" />
