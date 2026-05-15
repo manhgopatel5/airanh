@@ -103,6 +103,7 @@ export default function StoragePage() {
                   <span className="text-lg font-bold text-[#0042B2]">{percent}%</span>
                 </div>
               </div>
+            </div>
             <div className="flex gap-1.5 h-2">
               <motion.div initial={{ width: 0 }} animate={{ width: `${(storage.images / storage.total) * 100}%` }} className="bg-[#0042B2] rounded-full" />
               <motion.div initial={{ width: 0 }} animate={{ width: `${(storage.messages / storage.total) * 100}%` }} className="bg-[#00C853] rounded-full" />
@@ -156,7 +157,6 @@ function StorageItem({ label, icon: Icon, size, color, onClear, loading }: any) 
           <p className="font-semibold text-">{label}</p>
           <p className="text-xs text-zinc-500">{size.toFixed(1)} MB</p>
         </div>
-      </div>
       {onClear && (
         <motion.button whileTap={{ scale: 0.9 }} onClick={onClear} disabled={loading} className="px-4 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-900 text-sm font-semibold active:scale-95 disabled:opacity-50">
           {loading? <LottiePlayer animationData={loadingPull} loop autoplay className="w-4 h-4" /> : "Xóa"}
