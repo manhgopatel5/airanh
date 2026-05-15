@@ -7,7 +7,55 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { toast, Toaster } from "sonner";
 import { useRef } from "react";
-import { MessageCircle, UserPlus, Check, UserMinus, User, Star, Clock, Briefcase, Info, MapPin, ExternalLink, Zap, Share2, Flag, Crown, Sparkles, Flame, Shield, Gem, ChevronRight, Coffee, Users, Heart, Award, Mail, Music, Camera, Sun, Globe, Gamepad2, Utensils, Dumbbell, Film, Plane, Moon, Gift, Calendar, ShoppingBag, Mic, Bike, Palette, Beer, Map, PartyPopper, TrendingUp, ThumbsUp, BookOpen, Phone, ShieldCheck, Lock } from "lucide-react";
+import {
+  MessageCircle,
+  UserPlus,
+  Check,
+  UserMinus,
+  User,
+  Star,
+  Clock,
+  Briefcase,
+  Info,
+  MapPin,
+  Share2,
+  Crown,
+  Sparkles,
+  Flame,
+  Shield,
+  Gem,
+  ChevronRight,
+  Coffee,
+  Users,
+  Heart,
+  Award,
+  Mail,
+  Music,
+  Camera,
+  Sun,
+  Globe,
+  Gamepad2,
+  Utensils,
+  Dumbbell,
+  Film,
+  Plane,
+  Moon,
+  Gift,
+  Calendar,
+  ShoppingBag,
+  Mic,
+  Bike,
+  Palette,
+  Beer,
+  Map,
+  PartyPopper,
+  TrendingUp,
+  ThumbsUp,
+  BookOpen,
+  Phone,
+  ShieldCheck,
+  Lock
+} from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
