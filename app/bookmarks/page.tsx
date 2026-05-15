@@ -48,7 +48,7 @@ export default function BookmarksPage() {
             const snaps = await Promise.all(chunk.map((id) => getDoc(doc(db, "tasks", id))));
             return snaps
              .filter((s) => s.exists() && s.data()?.status!== "cancelled" &&!s.data()?.banned)
-             .map((s) => ({ id: s.id,...s.data() } as TaskListItem));
+             .map((s) => ({ id: s.id, ...s.data() } as ItemListItem));
           })
         );
 
