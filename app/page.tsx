@@ -31,13 +31,6 @@ import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
-// import trực tiếp, không dùng illustrations
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
-import errorShake from "@/public/lotties/huha-error-shake.json";
-import celebrate from "@/public/lotties/huha-celebrate.json";
-import empty from "@/public/lotties/huha-empty.json";
-import walletOpen from "@/public/lotties/huha-wallet-open.json";
-
 const PAGE_SIZE = 20;
 type TabId = "hot" | "near" | "friends" | "new";
 
@@ -70,11 +63,27 @@ export default function Home() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showCelebrate, setShowCelebrate] = useState(false);
 
+  // Lottie states - dùng fetch thay import
+  const [loadingPullLottie, setLoadingPullLottie] = useState<any>(null);
+  const [errorShakeLottie, setErrorShakeLottie] = useState<any>(null);
+  const [celebrateLottie, setCelebrateLottie] = useState<any>(null);
+  const [emptyLottie, setEmptyLottie] = useState<any>(null);
+  const [walletOpenLottie, setWalletOpenLottie] = useState<any>(null);
+
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const pullRef = useRef({ startY: 0, pulling: false });
 
   const activeColor = useMemo(() => (isPlanMode? "#00C853" : "#0042B2"), [isPlanMode]);
+
+  // Load Lottie JSON
+  useEffect(() => {
+    fetch('/lotties/huha-loading-pull.json').then(r => r.json()).then(setLoadingPullLottie);
+    fetch('/lotties/huha-error-shake.json').then(r => r.json()).then(setErrorShakeLottie);
+    fetch('/lotties/huha-celebrate.json').then(r => r.json()).then(setCelebrateLottie);
+    fetch('/lotties/huha-empty.json').then(r => r.json()).then(setEmptyLottie);
+    fetch('/lotties/huha-wallet-open.json').then(r => r.json()).then(setWalletOpenLottie);
+  }, []);
 
   const handleShare = useCallback((task: Task) => {
     vibrate(5);
@@ -225,17 +234,17 @@ export default function Home() {
       <ModeToggle />
 
       <AnimatePresence>
-        {refreshing && (
+        {refreshing && loadingPullLottie && (
           <motion.div initial={{ y: -40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -40, opacity: 0 }} className="fixed top-14 left-1/2 -translate-x-1/2 z-50">
-            <LottiePlayer animationData={loadingPull} autoplay loop className="w-[60px] h-[60px]" aria-label="Đang làm mới" />
+            <LottiePlayer animationData={loadingPullLottie} autoplay loop className="w-[60px] h-[60px]" aria-label="Đang làm mới" />
           </motion.div>
         )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {showCelebrate && (
+        {showCelebrate && celebrateLottie && (
           <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center">
-            <LottiePlayer animationData={celebrate} loop={false} autoplay className="w-[300px] h-[300px]" aria-label="Hoàn thành" />
+            <LottiePlayer animationData={celebrateLottie} loop={false} autoplay className="w-[300px] h-[300px]" aria-label="Hoàn thành" />
           </motion.div>
         )}
       </AnimatePresence>
@@ -262,7 +271,7 @@ export default function Home() {
         <AnimatePresence mode="wait">
           {error? (
             <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center px-6 py-20 text-center">
-              <LottiePlayer animationData={errorShake} loop={false} className="w-[180px] h-[180px]" aria-label="Lỗi" />
+              {errorShakeLottie && <LottiePlayer animationData={errorShakeLottie} loop={false} className="w-[180px] h-[180px]" aria-label="Lỗi" />}
               <h2 className="text-xl font-bold mt-2">{error}</h2>
               <button onClick={handleRefresh} className="mt-4 px-6 py-2.5 rounded-xl text-white font-bold active:scale-95 flex items-center gap-2" style={{ backgroundColor: activeColor }}>
                 <FiRefreshCw /> Thử lại
@@ -270,12 +279,20 @@ export default function Home() {
             </motion.div>
           ) : loading &&!refreshing? (
             <motion.div key="loading" className="flex flex-col items-center py-20">
-              <LottiePlayer animationData={loadingPull} loop className="w-[120px] h-[120px]" aria-label="Đang tải" />
+              {loadingPullLottie && <LottiePlayer animationData={loadingPullLottie} loop className="w-[120px] h-[120px]" aria-label="Đang tải" />}
               <p className="text-sm text-zinc-500 mt-2">Đang tải...</p>
             </motion.div>
           ) : filteredItems.length === 0? (
             <motion.div key="empty" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center px-6 py-16 text-center">
-              <LottiePlayer animationData={isPlanMode? walletOpen : empty} loop className="w-[220px] h-[220px]"  aria-label="Trống" />
+              {emptyLottie && walletOpenLottie && (
+                <LottiePlayer
+                  animationData={isPlanMode? walletOpenLottie : emptyLottie}
+                  loop
+                  className="w-[220px] h-[220px]"
+                  aria-label="Trống"
+                  fallback={<div className="w-[220px] h-[220px] bg-zinc-100 dark:bg-zinc-800 rounded-2xl" />}
+                />
+              )}
               <h3 className="text-lg font-bold mt-2">Chưa có {mode === "task"? "nhiệm vụ" : "kế hoạch"} nào</h3>
               <p className="text-sm text-zinc-500 mb-6">Hãy là người đầu tiên tạo</p>
               <button onClick={handleRefresh} className="px-6 py-2.5 rounded-xl text-white font-bold active:scale-95 flex items-center gap-2" style={{ backgroundColor: activeColor }}>
@@ -291,7 +308,7 @@ export default function Home() {
 
         {!loading && hasMore && allItems.length > 0 && (
           <div ref={loadMoreRef} className="py-6 flex justify-center">
-            {loadingMore && <LottiePlayer animationData={loadingPull} autoplay loop className="w-[40px] h-[40px]" aria-label="Tải thêm" />}
+            {loadingMore && loadingPullLottie && <LottiePlayer animationData={loadingPullLottie} autoplay loop className="w-[40px] h-[40px]" aria-label="Tải thêm" />}
           </div>
         )}
       </div>
