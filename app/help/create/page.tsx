@@ -46,6 +46,26 @@ export default function CreateHelpPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 pb-24">
+<motion.div
+  initial={{ opacity: 0, scale: 0.9 }}
+  animate={{ opacity: 1, scale: 1 }}
+  className="flex flex-col items-center justify-center py-6"
+>
+  <LottiePlayer
+    animationData={loadingPull}
+    loop
+    autoplay
+    className="w-28 h-28"
+  />
+
+  <h2 className="text-xl font-black mt-2 text-zinc-900 dark:text-white">
+    Chưa biết chọn gì?
+  </h2>
+
+  <p className="text-sm text-zinc-500 text-center mt-1 max-w-sm">
+    So sánh nhanh giữa Công việc và Kế hoạch để đăng đúng loại bài phù hợp nhất.
+  </p>
+</motion.div>
         {/* Tabs */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
           <div className="p-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl grid-cols-2 gap-1">
