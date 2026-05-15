@@ -4,15 +4,18 @@ import dynamic from "next/dynamic";
 import { memo, useEffect, useRef, useState } from "react";
 import type { LottieRefCurrentProps } from "lottie-react";
 
-const Lottie = dynamic(() => import("lottie-react"), {
-  ssr: false,
-  loading: () => (
-    <div className="aspect-square w-full animate-pulse rounded-2xl bg-slate-100" />
-  ),
-});
+const Lottie = dynamic(
+  () => import("lottie-react").then((mod) => mod.default),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="aspect-square w-full animate-pulse rounded-2xl bg-slate-100" />
+    ),
+  }
+);
 
 type Props = {
-  animationData: object;
+  animationData: any;
   loop?: boolean;
   autoplay?: boolean;
   play?: boolean;
@@ -42,7 +45,6 @@ function LottiePlayer({
   const [isInView, setIsInView] = useState(!pauseWhenHidden);
   const [reducedMotion, setReducedMotion] = useState(false);
 
-  // Support cả play và autoplay
   const shouldAutoplay = play ?? autoplay;
 
   // Reduced motion
@@ -64,29 +66,29 @@ function LottiePlayer({
     };
   }, []);
 
-// Pause khi ra khỏi viewport
-useEffect(() => {
-  if (!pauseWhenHidden || !containerRef.current) return;
+  // Pause khi ra khỏi viewport
+  useEffect(() => {
+    if (!pauseWhenHidden || !containerRef.current) return;
 
-  const observer = new IntersectionObserver(
-    (entries: IntersectionObserverEntry[]) => {
-      const entry = entries.at(0);
+    const observer = new IntersectionObserver(
+      (entries: IntersectionObserverEntry[]) => {
+        const entry = entries.at(0);
 
-      if (!entry) return;
+        if (!entry) return;
 
-      setIsInView(entry.isIntersecting);
-    },
-    {
-      threshold: 0.1,
-    }
-  );
+        setIsInView(entry.isIntersecting);
+      },
+      {
+        threshold: 0.1,
+      }
+    );
 
-  observer.observe(containerRef.current);
+    observer.observe(containerRef.current);
 
-  return () => {
-    observer.disconnect();
-  };
-}, [pauseWhenHidden]);
+    return () => {
+      observer.disconnect();
+    };
+  }, [pauseWhenHidden]);
 
   // Control animation
   useEffect(() => {
@@ -131,16 +133,16 @@ useEffect(() => {
       aria-label={ariaLabel}
     >
       <Lottie
-  lottieRef={ref}
-  animationData={animationData}
-  loop={loop && !reducedMotion}
-  autoplay={false}
-  {...(onComplete ? { onComplete } : {})}
-  rendererSettings={{
-    preserveAspectRatio: "xMidYMid meet",
-    progressiveLoad: true,
-  }}
-/>
+        lottieRef={ref}
+        animationData={animationData}
+        loop={loop && !reducedMotion}
+        autoplay={false}
+        {...(onComplete ? { onComplete } : {})}
+        rendererSettings={{
+          preserveAspectRatio: "xMidYMid meet",
+          progressiveLoad: true,
+        }}
+      />
     </div>
   );
 }
