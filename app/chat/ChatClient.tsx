@@ -596,68 +596,288 @@ const createNotification = useCallback(async (targetUid: string, notif: Omit<Not
   </div>
 
   <div className="divide-y divide-gray-100 dark:divide-zinc-900">
-              {notifications.map((notif) => (
-               <div
-  key={notif.id}
-  onClick={() => !notif.read && handleMarkNotificationRead(notif.id)}
-  className={`px-4 py-3 flex items-start gap-3 ${!notif.read ? "bg-[#0a84ff]/5" : ""}`}
->
-                  <img src={notif.fromAvatar} alt="" className="w-12 h-12 rounded-full" />
-                  <div className="flex-1">
-                    <p className="text-[15px]"><span className="font-semibold">{notif.fromName}</span> {notif.message}</p>
-                    <p className="text-[13px] text-gray-500 mt-0.5">{formatNotifTime(notif.createdAt)}</p>
-                    {notif.type === "friend_request" &&!notif.read && (
-                      <div className="flex gap-2 mt-2">
-                        <button onClick={() => handleAcceptFriendRequest(notif)} className={`px-4 h-7 ${primaryBg} text-white rounded-full text-[13px]`}>Chấp nhận</button>
-                        <button onClick={() => handleDeclineFriendRequest(notif)} className="px-4 h-7 bg-gray-200 dark:bg-zinc-800 rounded-full text-[13px]">Từ chối</button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+              {groupedNotifications.today.length > 0 && (
+  <>
+    <div className="px-4 py-2 text-[13px] font-semibold text-gray-500">
+      Hôm nay
+    </div>
+
+    {groupedNotifications.today.map((notif) => (
+      <div
+        key={notif.id}
+        onClick={() =>
+          !notif.read &&
+          handleMarkNotificationRead(notif.id)
+        }
+        className={`px-4 py-3 flex items-start gap-3 transition-colors ${
+          !notif.read
+            ? "bg-[#0a84ff]/5"
+            : "hover:bg-gray-50 dark:hover:bg-zinc-900"
+        }`}
+      >
+        <div className="relative shrink-0">
+          <img
+            src={notif.fromAvatar}
+            alt=""
+            className="w-12 h-12 rounded-full object-cover"
+          />
+
+          {!notif.read && (
+            <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#0a84ff]" />
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-[15px] leading-5 text-black dark:text-white">
+              <span className="font-semibold">
+                {notif.fromName}
+              </span>{" "}
+              {notif.message}
+            </p>
+
+            <div className="shrink-0">
+              {getNotificationIcon(notif.type)}
+            </div>
+          </div>
+
+          <p className="text-[13px] text-gray-500 mt-1">
+            {formatNotifTime(notif.createdAt)}
+          </p>
+
+          {notif.type === "friend_request" &&
+            !notif.read && (
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAcceptFriendRequest(notif);
+                  }}
+                  className={`px-4 h-8 ${primaryBg} text-white rounded-full text-[13px] font-medium active:scale-95 transition-transform`}
+                >
+                  Chấp nhận
+                </button>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeclineFriendRequest(notif);
+                  }}
+                  className="px-4 h-8 bg-gray-200 dark:bg-zinc-800 rounded-full text-[13px] font-medium active:scale-95 transition-transform"
+                >
+                  Từ chối
+                </button>
+              </div>
+            )}
+        </div>
+      </div>
+    ))}
+  </>
+)}
+
+{groupedNotifications.earlier.length > 0 && (
+  <>
+    <div className="px-4 py-2 text-[13px] font-semibold text-gray-500 border-t border-gray-100 dark:border-zinc-900">
+      Trước đó
+    </div>
+
+    {groupedNotifications.earlier.map((notif) => (
+      <div
+        key={notif.id}
+        onClick={() =>
+          !notif.read &&
+          handleMarkNotificationRead(notif.id)
+        }
+        className={`px-4 py-3 flex items-start gap-3 transition-colors ${
+          !notif.read
+            ? "bg-[#0a84ff]/5"
+            : "hover:bg-gray-50 dark:hover:bg-zinc-900"
+        }`}
+      >
+        <div className="relative shrink-0">
+          <img
+            src={notif.fromAvatar}
+            alt=""
+            className="w-12 h-12 rounded-full object-cover"
+          />
+
+          {!notif.read && (
+            <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#0a84ff]" />
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-[15px] leading-5 text-black dark:text-white">
+              <span className="font-semibold">
+                {notif.fromName}
+              </span>{" "}
+              {notif.message}
+            </p>
+
+            <div className="shrink-0">
+              {getNotificationIcon(notif.type)}
+            </div>
+          </div>
+
+          <p className="text-[13px] text-gray-500 mt-1">
+            {formatNotifTime(notif.createdAt)}
+          </p>
+
+          {notif.type === "friend_request" &&
+            !notif.read && (
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAcceptFriendRequest(notif);
+                  }}
+                  className={`px-4 h-8 ${primaryBg} text-white rounded-full text-[13px] font-medium active:scale-95 transition-transform`}
+                >
+                  Chấp nhận
+                </button>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeclineFriendRequest(notif);
+                  }}
+                  className="px-4 h-8 bg-gray-200 dark:bg-zinc-800 rounded-full text-[13px] font-medium active:scale-95 transition-transform"
+                >
+                  Từ chối
+                </button>
+              </div>
+            )}
+        </div>
+      </div>
+    ))}
+  </>
+)}
                    </div>
           </>
           ) : activeTab === "friends" ? (
-            friendsLoading? <div className="p-4">Đang tải...</div> :
+            friendsLoading ? (
+              <div className="p-4">Đang tải...</div>
+            ) : (
+              <div className="divide-y divide-gray-100 dark:divide-zinc-900">
+                {filteredFriendsList.map((friend) => (
+                  <div
+                    key={friend.uid}
+                    className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-900"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <img
+                          src={friend.avatar}
+                          alt=""
+                          className="w-12 h-12 rounded-full"
+                        />
+
+                        {friend.isOnline && (
+                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+                        )}
+                      </div>
+
+                      <div>
+                        <p className="font-medium">
+                          {friend.name}
+                        </p>
+
+                        <p className="text-[13px] text-gray-500">
+                          @{friend.username}
+                        </p>
+
+                        <p className="text-[12px] text-gray-400">
+                          {friend.isOnline
+                            ? "Đang hoạt động"
+                            : formatLastSeen(friend.lastSeen)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() =>
+                          handleStartChatWithFriend(friend.uid)
+                        }
+                        className={`w-8 h-8 ${primaryBg} rounded-full flex items-center justify-center`}
+                      >
+                        <FiMessageSquare
+                          className="text-white"
+                          size={14}
+                        />
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          handleRemoveFriend(
+                            friend.uid,
+                            friend.name
+                          )
+                        }
+                        className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center"
+                      >
+                        <FiUserX
+                          className="text-white"
+                          size={14}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : loading ? (
+            <div className="p-4">Đang tải...</div>
+          ) : (
             <div className="divide-y divide-gray-100 dark:divide-zinc-900">
-              {filteredFriendsList.map((friend) => (
-                <div key={friend.uid} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-900">
-                  <div className="flex items-center gap-3">
-                    <div className="relative"><img src={friend.avatar} alt="" className="w-12 h-12 rounded-full" />{friend.isOnline && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />}</div>
-                    <div>
-  <p className="font-medium">{friend.name}</p>
+              {[...pinnedChats, ...normalChats].map((chat) => (
+                <Link
+                  key={chat.chatId}
+                  href={`/chat/${chat.chatId}`}
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-900 active:bg-gray-100"
+                >
+                  <div className="relative">
+                    <img
+                      src={chat.avatar}
+                      alt=""
+                      className="w-12 h-12 rounded-full"
+                    />
 
-  <p className="text-[13px] text-gray-500">
-    @{friend.username}
-  </p>
+                    {chat.isOnline &&
+                      !chat.isGroup && (
+                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+                      )}
+                  </div>
 
-  <p className="text-[12px] text-gray-400">
-    {friend.isOnline
-      ? "Đang hoạt động"
-      : formatLastSeen(friend.lastSeen)}
-  </p>
-</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline justify-between">
+                      <p className="font-medium truncate">
+                        {chat.name}
+                      </p>
+
+                      <span className="text-[12px] text-gray-500">
+                        {formatMessageTime(chat.updatedAt)}
+                      </span>
+                    </div>
+
+                    <p className="text-[14px] text-gray-500 truncate">
+                      {chat.lastMessage ||
+                        "Bắt đầu trò chuyện"}
+                    </p>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => handleStartChatWithFriend(friend.uid)} className={`w-8 h-8 ${primaryBg} rounded-full flex items-center justify-center`}><FiMessageSquare className="text-white" size={14} /></button>
-                    <button onClick={() => handleRemoveFriend(friend.uid, friend.name)} className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center"><FiUserX className="text-white" size={14} /></button>
-                  </div>
-                </div>
+
+                  {chat.unreadCount ? (
+                    <span
+                      className={`min-w-[20px] h-5 px-1.5 ${primaryBgSolid} rounded-full flex items-center justify-center text-[11px] text-white`}
+                    >
+                      {chat.unreadCount}
+                    </span>
+                  ) : null}
+                </Link>
               ))}
             </div>
-          ) : loading? <div className="p-4">Đang tải...</div> :
-          <div className="divide-y divide-gray-100 dark:divide-zinc-900">
-            {[...pinnedChats,...normalChats].map((chat) => (
-              <Link key={chat.chatId} href={`/chat/${chat.chatId}`} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-900 active:bg-gray-100">
-                <div className="relative"><img src={chat.avatar} alt="" className="w-12 h-12 rounded-full" />{chat.isOnline &&!chat.isGroup && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />}</div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline justify-between"><p className="font-medium truncate">{chat.name}</p><span className="text-[12px] text-gray-500">{formatMessageTime(chat.updatedAt)}</span></div>
-                  <p className="text-[14px] text-gray-500 truncate">{chat.lastMessage || "Bắt đầu trò chuyện"}</p>
-                </div>
-                {chat.unreadCount? <span className={`min-w-[20px] h-5 px-1.5 ${primaryBgSolid} rounded-full flex items-center justify-center text-[11px] text-white`}>{chat.unreadCount}</span> : null}
-              </Link>
-            ))}
-          </div>}
+          )}
         </div>
 
         {showAdd && (
