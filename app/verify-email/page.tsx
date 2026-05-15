@@ -93,6 +93,7 @@ export default function VerifyEmailPage() {
               <div className="relative w-full h-full bg-gradient-to-br from-[#0042B2] via-[#0055DD] to-[#1A5FFF] rounded-3xl flex items-center justify-center shadow-2xl shadow-[#0042B2]/40 ring-1 ring-white/20">
                 <LottiePlayer animationData={celebrate} loop autoplay className="w-14 h-14" aria-label="Email" pauseWhenHidden={false} />
               </div>
+            </div>
             <h1 className="text-3xl font-black text-zinc-900 dark:text-white mb-2 tracking-tight">Xác thực email</h1>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium px-4">Chúng tôi đã gửi link xác thực tới</p>
             <p className="text-base font-bold mt-1.5 break-all px-4" style={{color:'#0042B2'}}>{user.email}</p>
