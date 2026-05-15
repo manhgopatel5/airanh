@@ -14,7 +14,7 @@ type Props = {
   reason: string;
   title?: string;
   message?: string;
-  warningAt?: Timestamp | null;
+warningAt?: Timestamp | null | undefined;
   onClose?: () => void;
 };
 
