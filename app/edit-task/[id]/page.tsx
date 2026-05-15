@@ -62,7 +62,7 @@ export default function EditTaskPage() {
     if (form.price !== undefined && form.price < 1000) newErrors.price = "Giá tối thiểu 1.000đ";
     if (!form.totalSlots || form.totalSlots < 1) newErrors.totalSlots = "Số người tối thiểu 1";
 if (
-  task?.type === "task" &&
+  taskItem &&
   form.totalSlots !== undefined &&
   form.totalSlots < taskItem.joined
 ) {
