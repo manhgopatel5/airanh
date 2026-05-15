@@ -301,6 +301,7 @@ export default function CreateTaskProMax() {
   const [step, setStep] = useState(1);
   const [dragX, setDragX] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [friends, setFriends] = useState<any[]>([]);
@@ -405,9 +406,14 @@ const handleDragEnd = (_: any, info: PanInfo) => {
         invites: form.invites, needApproval: form.needApproval,
       } as any, user);
 
-      toast.success("🎉 Đăng thành công!");
-      navigator.vibrate?.([10, 50, 10]);
-      setTimeout(() => router.push("/"), 800);
+      setSuccess(true);
+
+toast.success("🎉 Đăng thành công!");
+navigator.vibrate?.([10, 50, 10]);
+
+setTimeout(() => {
+  router.push("/");
+}, 1800);
     } catch (e: any) {
       toast.error(e.message || "Có lỗi xảy ra");
     } finally { setSubmitting(false); }
@@ -1295,18 +1301,71 @@ const handleDragEnd = (_: any, info: PanInfo) => {
           )}
         </AnimatePresence>
 
-        {/* Success Overlay */}
-        <AnimatePresence>
-          {submitting && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-white dark:bg-black grid place-items-center">
-              <div className="text-center">
-                <LottiePlayer animationData={loadingPull} loop autoplay className="w-24 h-24 mx-auto" />
-                <p className="mt-4 font-semibold text-lg">Đang tạo công việc...</p>
-                <p className="text- text-zinc-500 mt-1">Vui lòng chờ trong giây lát</p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+   {/* Loading Overlay */}
+<AnimatePresence>
+  {submitting && !success && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] bg-white dark:bg-black grid place-items-center"
+    >
+      <div className="text-center">
+        <LottiePlayer
+          animationData={loadingPull}
+          loop
+          autoplay
+          className="w-24 h-24 mx-auto"
+        />
+
+        <p className="mt-4 font-semibold text-lg">
+          Đang tạo công việc...
+        </p>
+
+        <p className="text-zinc-500 mt-1">
+          Vui lòng chờ trong giây lát
+        </p>
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
+
+{/* Success Overlay */}
+<AnimatePresence>
+  {success && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[101] bg-white dark:bg-black grid place-items-center"
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{
+          type: "spring",
+          stiffness: 200,
+          damping: 20,
+        }}
+        className="text-center px-6"
+      >
+        <LottiePlayer
+          animationData={successCheck}
+          autoplay
+          className="w-32 h-32 mx-auto"
+        />
+
+        <h2 className="text-2xl font-bold mt-2">
+          Đăng thành công 🎉
+        </h2>
+
+        <p className="text-zinc-500 mt-2">
+          Công việc của bạn đang được hiển thị
+        </p>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
       </div>
 
       <style jsx global>{`
