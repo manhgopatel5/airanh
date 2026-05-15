@@ -481,10 +481,7 @@ const createNotification = useCallback(async (targetUid: string, notif: Omit<Not
     finally { setAdding(false); }
   }, [user, groupName, selected, db, router, createNotification]);
 
-  const handleTogglePin = useCallback((chatId: string): void => {
-    const newPinned = pinned.includes(chatId)? pinned.filter((id) => id!== chatId) : [...pinned, chatId];
-    savePinned(newPinned); toast.success(newPinned.includes(chatId)? "Đã ghim cuộc trò chuyện" : "Đã bỏ ghim");
-  }, [pinned, savePinned]);
+ 
 
   const handleDeleteChat = useCallback(async (chat: ChatItem): Promise<void> => {
     if (!user?.uid) { toast.error("Chưa đăng nhập"); return; }
