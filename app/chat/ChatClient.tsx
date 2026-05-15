@@ -683,7 +683,7 @@ const createNotification = useCallback(async (targetUid: string, notif: Omit<Not
                 <div className="space-y-3">
                   <input value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="Tên nhóm" className="w-full h-11 px-3 border rounded-xl outline-none" maxLength={30} />
                   <div className="max-h-60 overflow-auto border rounded-xl">
-                    {friends.map(f => (
+                    {friendsForGroup.map(f => (
                       <label key={f.uid} className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer">
                         <input type="checkbox" checked={selected.includes(f.uid)} onChange={e => setSelected(s => e.target.checked? [...s, f.uid] : s.filter(id => id!== f.uid))} />
                         <img src={f.avatar} className="w-8 h-8 rounded-full" alt="" />
