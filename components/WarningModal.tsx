@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import LottiePlayer from "@/components/ui/LottiePlayer";
 import errorShake from "@/public/lotties/huha-error-shake.json";
 
-ttype Props = {
+type Props = {
   open: boolean;
   uid: string;
   reason: string;
