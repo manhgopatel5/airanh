@@ -1,18 +1,19 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import type { LottieRefCurrentProps } from "lottie-react";
 
 const Lottie = dynamic(
   () => import("lottie-react").then((mod) => mod.default),
   {
     ssr: false,
+    loading: () => <div className="w-full h-full bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded-lg" />
   }
 );
 
 type Props = {
-  animationData: object;
+  animationData: object | null | undefined;
   loop?: boolean;
   autoplay?: boolean;
   play?: boolean;
@@ -22,6 +23,7 @@ type Props = {
   pauseWhenHidden?: boolean;
   "aria-label"?: string;
   onComplete?: () => void;
+  fallback?: React.ReactNode;
 };
 
 function LottiePlayer({
@@ -33,25 +35,32 @@ function LottiePlayer({
   speed = 1,
   "aria-label": ariaLabel,
   onComplete,
+  fallback,
 }: Props) {
   const lottieRef = useRef<LottieRefCurrentProps>(null);
-
-  // hỗ trợ cả play và autoplay
+  const [hasError, setHasError] = useState(false);
+  
   const shouldAutoplay = play ?? autoplay;
 
   useEffect(() => {
     if (!lottieRef.current) return;
-
-    lottieRef.current.setSpeed(speed);
-
-    if (shouldAutoplay) {
-      lottieRef.current.play();
-    } else {
-      lottieRef.current.pause();
+    try {
+      lottieRef.current.setSpeed(speed);
+      if (shouldAutoplay) {
+        lottieRef.current.play();
+      } else {
+        lottieRef.current.pause();
+      }
+    } catch (e) {
+      console.error('Lottie error:', e);
+      setHasError(true);
     }
   }, [speed, shouldAutoplay]);
 
-  if (!animationData) return null;
+  // Fix chính: không render gì nếu data null/undefined hoặc lỗi
+  if (!animationData || hasError) {
+    return fallback || null;
+  }
 
   return (
     <div
@@ -64,7 +73,8 @@ function LottiePlayer({
         animationData={animationData}
         loop={loop}
         autoplay={shouldAutoplay}
-        {...(onComplete ? { onComplete } : {})}
+        onError={() => setHasError(true)}
+        onComplete={onComplete}
         style={{
           width: "100%",
           height: "100%",
