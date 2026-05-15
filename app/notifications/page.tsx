@@ -115,7 +115,7 @@ export default function NotificationsPage() {
     } catch { toast.error("Lỗi xóa"); }
   }, [selectedIds, db]);
 
-  const setObserver = useCallback((node: HTMLDivElement | null, isRead: boolean, id: string) => {
+  const setObserver = useCallback((node: HTMLDivElement | null, isRead: boolean) => {
     if (!node || isRead) return;
     if (!observerRef.current) {
   observerRef.current = new IntersectionObserver(
@@ -212,7 +212,7 @@ export default function NotificationsPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.03 }}
                       data-id={n.id}
-                      ref={(node) => setObserver(node, n.isRead, n.id)}
+                     ref={(node) => setObserver(node, n.isRead)}
                       onClick={() => selectedIds.length? setSelectedIds((prev) => prev.includes(n.id)? prev.filter(id => id!== n.id) : [...prev, n.id]) : handleClickNotif(n)}
                       onContextMenu={(e) => {
   e.preventDefault();
