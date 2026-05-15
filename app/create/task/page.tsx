@@ -9,7 +9,7 @@ import { collection, query, where, onSnapshot, getDocs, Timestamp } from "fireba
 import { createTask } from "@/lib/task";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
+import LottiePlayer from "@/components/ui/LottiePlayer";
 import loadingPull from "@/public/lotties/huha-loading-pull.json";
 import successCheck from "@/public/lotties/huha-success-check.json";
 import {
