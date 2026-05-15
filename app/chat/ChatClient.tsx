@@ -11,7 +11,7 @@ import loadingPull from "@/public/lotties/huha-loading-pull.json";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { useAppStore } from "@/store/app";
 import {
-  collection, query, where, onSnapshot, doc, getDoc, arrayUnion, setDoc,
+  collection, query, where, onSnapshot, doc, getDoc, setDoc,
   limit, updateDoc, arrayRemove, Timestamp, Unsubscribe, QuerySnapshot,
   DocumentData, orderBy, writeBatch, serverTimestamp,
 } from "firebase/firestore";
