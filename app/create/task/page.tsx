@@ -448,171 +448,487 @@ const handleDragEnd = (_: any, info: PanInfo) => {
         <div className="max-w-[680px] mx-auto pb-28">
           <motion.div drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.15} onDrag={(_, i) => setDragX(i.offset.x)} onDragEnd={handleDragEnd} style={{ x: dragX }}>
             <AnimatePresence mode="wait" initial={false}>
-              {/* STEP 1 */}
-              {step === 1 && (
-                <motion.div key="s1" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} className="p-4 space-y-3">
-                  <div>
-                    <div className="text-[13px] text-zinc-500 mb-2 px-1">Chọn danh mục</div>
-                    <div className="grid grid-cols-4 gap-2">
-                     {CATEGORIES.map(c => (
-                        <button key={c.id} onClick={() => setForm({...form, category: c.id, price: c.basePrice.toLocaleString('vi-VN'), tags: [] })} className="relative active:scale-95 transition-transform">
-                          <div className={`flex flex-col rounded-2xl border-2 p-2.5 items-center justify-center gap-1.5 min-h-[72px] transition-all ${form.category === c.id? "border-[#0a84ff] bg-[#0a84ff]/5 shadow-sm shadow-[#0a84ff]/10" : "border-[#E5E5EA] dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-300"}`}>
-                            <div className="text-[22px] leading-none">{c.icon}</div>
-                            <div className={`text-[11px] font-medium leading-tight text-center ${form.category === c.id? "text-[#0a84ff] font-semibold" : "text-zinc-700 dark:text-zinc-300"}`}>{c.name}</div>
-                          </div>
-                          {form.category === c.id && (
-                            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[#0a84ff] rounded-full grid place-items-center shadow-md">
-                              <FiCheck size={12} className="text-white" strokeWidth={3} />
-                            </motion.div>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+ {/* STEP 1 */}
+{step === 1 && (
+  <motion.div
+    key="s1"
+    initial={{ opacity: 0, x: 16 }}
+    animate={{ opacity: 1, x: 0 }}
+    exit={{ opacity: 0, x: -16 }}
+    className="p-4 space-y-3"
+  >
+    <div>
+      <div className="text-[13px] text-zinc-500 mb-2 px-1">
+        Chọn danh mục
+      </div>
 
-                  <div className="space-y-3">
-                    <div className="relative">
-                      <input value={form.title} onChange={e => setForm({...form, title: e.target.value.slice(0, 100) })} placeholder="Bạn cần làm gì?" className="w-full h-12 pl-4 pr-16 rounded-2xl bg-white dark:bg-zinc-900 border-2 border-[#E5E5EA] dark:border-zinc-800 focus:border-[#0a84ff] focus:ring-4 focus:ring-[#0a84ff]/10 outline-none text-[15px] font-medium transition-all" autoFocus />
-                      <span className={`absolute right-4 top-1/2 -translate-y-1/2 text-[13px] font-medium tabular-nums ${form.title.length < 10? "text-red-500" : "text-zinc-400"}`}>{form.title.length}/10</span>
-                    </div>
-                    <div className="flex gap-1.5 flex-wrap">
-                      {category.suggestions.slice(0, 5).map(item => (
-                        <button key={item.title} onClick={() => setForm(f => ({...f, title: item.title, description: item.desc.join("\n") }))} className="px-3 py-1.5 rounded-full bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-800 hover:border-[#0a84ff]/50 hover:bg-[#0a84ff]/5 text-[12px] text-zinc-600 dark:text-zinc-400 hover:text-[#0a84ff] transition-all active:scale-95">
-                          {item.title}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+      <div className="grid grid-cols-4 gap-2">
+        {CATEGORIES.map((c) => (
+          <button
+            key={c.id}
+            onClick={() =>
+              setForm({
+                ...form,
+                category: c.id,
+                price: c.basePrice.toLocaleString("vi-VN"),
+                tags: [],
+              })
+            }
+            className="relative active:scale-95 transition-transform"
+          >
+            <div
+              className={`flex flex-col rounded-2xl border-2 p-2.5 items-center justify-center gap-1.5 min-h-[72px] transition-all ${
+                form.category === c.id
+                  ? "border-[#0a84ff] bg-[#0a84ff]/5 shadow-sm shadow-[#0a84ff]/10"
+                  : "border-[#E5E5EA] dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-300"
+              }`}
+            >
+              <div className="text-[22px] leading-none">{c.icon}</div>
 
-                  <div className="bg-white dark:bg-zinc-900 rounded-2xl border-2 border-[#E5E5EA] dark:border-zinc-800 focus-within:border-[#0a84ff] focus-within:ring-4 focus-within:ring-[#0a84ff]/10 transition-all">
-                    <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value.slice(0, 2000) })} placeholder="Mô tả chi tiết yêu cầu, mục tiêu, kết quả mong muốn..." rows={5} className="w-full p-4 rounded-2xl bg-transparent outline-none resize-none text-[15px] leading-relaxed placeholder:text-zinc-400" />
-                    <div className="px-4 pb-3 flex items-center justify-between">
-                      <div className="flex gap-1.5 flex-wrap">
-                        {(category.suggestions.find(s => s.title === form.title)?.desc || []).slice(0, 3).map(t => (
-                          <button key={t} onClick={() => setForm(f => ({...f, description: f.description + (f.description? "\n" : "") + t }))} className="text-[11px] px-2 py-1 rounded-lg bg-[#F2F2F7] dark:bg-zinc-800 hover:bg-[#E5E5EA] text-zinc-600 transition-colors">
-                            {t.slice(0, 20)}...
-                          </button>
-                        ))}
-                      </div>
-                      <span className={`text-[12px] tabular-nums ${form.description.length < 20? "text-red-500" : "text-zinc-400"}`}>{form.description.length}/20</span>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
+              <div
+                className={`text-[11px] font-medium leading-tight text-center ${
+                  form.category === c.id
+                    ? "text-[#0a84ff] font-semibold"
+                    : "text-zinc-700 dark:text-zinc-300"
+                }`}
+              >
+                {c.name}
+              </div>
+            </div>
 
-              {/* STEP 2 */}
-              {step === 2 && (
-                <motion.div key="s2" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} className="p-4 space-y-3">
-                  {/* Budget Card */}
-                  <div className="bg-white dark:bg-zinc-900 rounded-3xl border-2 border-[#E5E5EA] dark:border-zinc-800 p-5 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0a84ff] to-[#0066cc] grid place-items-center shadow-md shadow-[#0a84ff]/20">
-                          <span className="text-[11px] font-bold text-white">VNĐ</span>
-                        </div>
-                        <span className="font-semibold text-[16px]">Ngân sách</span>
-                      </div>
-                      <div className="flex bg-[#F2F2F7] dark:bg-zinc-800 p-1 rounded-xl">
-                        {["fixed", "hourly", "negotiable"].map((t, i) => (
-                          <button key={t} onClick={() => setForm({...form, budgetType: t as any })} className={`px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all ${form.budgetType === t? "bg-white dark:bg-zinc-700 shadow-sm text-zinc-900 dark:text-white" : "text-zinc-500"}`}>
-                            {["Cố định", "Theo giờ", "Thỏa thuận"][i]}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+            {form.category === c.id && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[#0a84ff] rounded-full grid place-items-center shadow-md"
+              >
+                <FiCheck
+                  size={12}
+                  className="text-white"
+                  strokeWidth={3}
+                />
+              </motion.div>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
 
-                    {form.budgetType!== "negotiable"? (
-                      <>
-                        <div className="relative">
-                          <input type="text" inputMode="numeric" value={form.price} onChange={e => setForm({...form, price: e.target.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ".") })} placeholder="0" className="w-full h-[60px] pl-5 pr-16 bg-[#F2F2F7] dark:bg-zinc-800 rounded-2xl outline-none focus:ring-4 focus:ring-[#0a84ff]/20 text-[28px] font-bold tracking-tight tabular-nums transition-all" />
-                          <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[15px] font-medium text-zinc-400">VND</span>
-                        </div>
-                        <div className="flex items-center gap-5 mt-4">
-                          <div className="flex items-center gap-2.5">
-                            <span className="text-[14px] text-zinc-600">Số người:</span>
-                            <div className="flex items-center gap-1 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl p-1">
-                              <button onClick={() => setForm({...form, totalSlots: Math.max(1, parseInt(form.totalSlots) - 1).toString() })} className="w-8 h-8 grid place-items-center rounded-lg hover:bg-white dark:hover:bg-zinc-700 active:scale-90">−</button>
-                              <span className="w-8 text-center font-semibold tabular-nums">{form.totalSlots}</span>
-                              <button onClick={() => setForm({...form, totalSlots: Math.min(20, parseInt(form.totalSlots) + 1).toString() })} className="w-8 h-8 grid place-items-center rounded-lg hover:bg-white dark:hover:bg-zinc-700 active:scale-90">+</button>
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="h-[60px] grid place-items-center bg-[#F2F2F7] dark:bg-zinc-800 rounded-2xl">
-                        <div className="flex items-center gap-2 text-zinc-500">
-                          <LottiePlayer animationData={loadingPull} loop autoplay className="w-6 h-6 opacity-60" />
-                          <span className="text-[15px]">Thương lượng sau</span>
-                        </div>
-                      </div>
-                    )}
-                </motion.div>
-              )}
-                  <div className="bg-white dark:bg-zinc-900 rounded-3xl border-2 border-[#E5E5EA] dark:border-zinc-800 p-5 shadow-sm">
-                    <div className="flex items-center gap-2.5 mb-4">
-                      <div className="w-9 h-9 rounded-xl bg-amber-500/10 grid place-items-center">
-                        <FiZap size={18} className="text-amber-600" />
-                      </div>
-                      <span className="font-semibold text-">Mức độ ưu tiên</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2.5">
-                      {URGENCY.map(u => (
-                        <motion.button key={u.id} whileTap={{ scale: 0.96 }} onClick={() => setForm({...form, urgency: u.id })} className={`relative p-3.5 rounded-2xl border-2 text-left transition-all ${form.urgency === u.id? "border-[#0a84ff] bg-[#0a84ff]/5 shadow-sm" : "border-[#E5E5EA] dark:border-zinc-800 hover:border-zinc-300"}`}>
-                          <div className={`text- font-semibold ${form.urgency === u.id? "text-[#0a84ff]" : ""}`}>{u.name}</div>
-                          <div className="text- text-zinc-500 mt-1">{u.time}</div>
-                          {form.urgency === u.id && (
-                            <motion.div layoutId="urgency" className="absolute inset-0 border-2 border-[#0a84ff] rounded-2xl pointer-events-none" />
-                          )}
-                        </motion.button>
-                      ))}
-                    </div>
-                  </div>
+    <div className="space-y-3">
+      <div className="relative">
+        <input
+          value={form.title}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              title: e.target.value.slice(0, 100),
+            })
+          }
+          placeholder="Bạn cần làm gì?"
+          className="w-full h-12 pl-4 pr-16 rounded-2xl bg-white dark:bg-zinc-900 border-2 border-[#E5E5EA] dark:border-zinc-800 focus:border-[#0a84ff] focus:ring-4 focus:ring-[#0a84ff]/10 outline-none text-[15px] font-medium transition-all"
+          autoFocus
+        />
 
-                  {/* Time & Location */}
-                  <div className="grid grid-cols-1 gap-3">
-                    <div className="bg-white dark:bg-zinc-900 rounded-3xl border-2 border-[#E5E5EA] dark:border-zinc-800 p-5">
-                      <div className="flex items-center gap-2 mb-3">
-                        <FiCalendar size={16} className="text-zinc-500" />
-                        <span className="text- font-medium text-zinc-700 dark:text-zinc-300">Thời gian</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text- text-zinc-500 mb-1.5 block">Bắt đầu</label>
-                          <input type="datetime-local" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value })} className="w-full h-11 px-3 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl outline-none text- font-medium border-2 border-transparent focus:border-[#0a84ff] transition-all" />
-                        </div>
-                        <div>
-                          <label className="text- text-zinc-500 mb-1.5 block">Kết thúc</label>
-                          <input type="datetime-local" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value })} className="w-full h-11 px-3 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl outline-none text- font-medium border-2 border-transparent focus:border-[#0a84ff] transition-all" />
-                        </div>
-                      </div>
-                    </div>
+        <span
+          className={`absolute right-4 top-1/2 -translate-y-1/2 text-[13px] font-medium tabular-nums ${
+            form.title.length < 10
+              ? "text-red-500"
+              : "text-zinc-400"
+          }`}
+        >
+          {form.title.length}/10
+        </span>
+      </div>
 
-                    <div className="bg-white dark:bg-zinc-900 rounded-3xl border-2 border-[#E5E5EA] dark:border-zinc-800 p-5">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <FiMapPin size={16} className="text-zinc-500" />
-                          <span className="text- font-medium text-zinc-700 dark:text-zinc-300">Làm việc từ xa</span>
-                        </div>
-                        <button onClick={() => setForm({...form, isRemote: !form.isRemote })} className={`relative w-12 h-7 rounded-full transition-colors ${form.isRemote? "bg-[#0a84ff]" : "bg-zinc-300 dark:bg-zinc-700"}`}>
-                          <motion.div animate={{ x: form.isRemote? 20 : 2 }} className="absolute top-1 w-5 h-5 bg-white rounded-full shadow-md" />
-                        </button>
-                      </div>
-                      {!form.isRemote && (
-                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="flex gap-2">
-                          <input value={form.address} onChange={e => setForm({...form, address: e.target.value })} placeholder="Nhập địa chỉ..." className="flex-1 h-11 px-3 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl outline-none text-" />
-                          <button onClick={handleGetLocation} className="w-11 h-11 grid place-items-center bg-[#0a84ff]/10 hover:bg-[#0a84ff]/20 text-[#0a84ff] rounded-xl active:scale-95 transition-all">
-                            <FiNavigation size={16} />
-                          </button>
-                 
-                    </div>
-                  </div>
-                </motion.div>
-              )}
+      <div className="flex gap-1.5 flex-wrap">
+        {category.suggestions.slice(0, 5).map((item) => (
+          <button
+            key={item.title}
+            onClick={() =>
+              setForm((f) => ({
+                ...f,
+                title: item.title,
+                description: item.desc.join("\n"),
+              }))
+            }
+            className="px-3 py-1.5 rounded-full bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-800 hover:border-[#0a84ff]/50 hover:bg-[#0a84ff]/5 text-[12px] text-zinc-600 dark:text-zinc-400 hover:text-[#0a84ff] transition-all active:scale-95"
+          >
+            {item.title}
+          </button>
+        ))}
+      </div>
+    </div>
 
-              {/* STEP 3 */}
-              {step === 3 && (
-                <motion.div key="s3" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} className="p-4 space-y-3">
-                  {/* Options Grid */}
+    <div className="bg-white dark:bg-zinc-900 rounded-2xl border-2 border-[#E5E5EA] dark:border-zinc-800 focus-within:border-[#0a84ff] focus-within:ring-4 focus-within:ring-[#0a84ff]/10 transition-all">
+      <textarea
+        value={form.description}
+        onChange={(e) =>
+          setForm({
+            ...form,
+            description: e.target.value.slice(0, 2000),
+          })
+        }
+        placeholder="Mô tả chi tiết yêu cầu, mục tiêu, kết quả mong muốn..."
+        rows={5}
+        className="w-full p-4 rounded-2xl bg-transparent outline-none resize-none text-[15px] leading-relaxed placeholder:text-zinc-400"
+      />
+
+      <div className="px-4 pb-3 flex items-center justify-between">
+        <div className="flex gap-1.5 flex-wrap">
+          {(category.suggestions.find(
+            (s) => s.title === form.title
+          )?.desc || [])
+            .slice(0, 3)
+            .map((t) => (
+              <button
+                key={t}
+                onClick={() =>
+                  setForm((f) => ({
+                    ...f,
+                    description:
+                      f.description +
+                      (f.description ? "\n" : "") +
+                      t,
+                  }))
+                }
+                className="text-[11px] px-2 py-1 rounded-lg bg-[#F2F2F7] dark:bg-zinc-800 hover:bg-[#E5E5EA] text-zinc-600 transition-colors"
+              >
+                {t.slice(0, 20)}...
+              </button>
+            ))}
+        </div>
+
+        <span
+          className={`text-[12px] tabular-nums ${
+            form.description.length < 20
+              ? "text-red-500"
+              : "text-zinc-400"
+          }`}
+        >
+          {form.description.length}/20
+        </span>
+      </div>
+    </div>
+  </motion.div>
+)}
+
+{/* STEP 2 */}
+{step === 2 && (
+  <motion.div
+    key="s2"
+    initial={{ opacity: 0, x: 16 }}
+    animate={{ opacity: 1, x: 0 }}
+    exit={{ opacity: 0, x: -16 }}
+    className="p-4 space-y-3"
+  >
+    {/* Budget Card */}
+    <div className="bg-white dark:bg-zinc-900 rounded-3xl border-2 border-[#E5E5EA] dark:border-zinc-800 p-5 shadow-sm">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0a84ff] to-[#0066cc] grid place-items-center shadow-md shadow-[#0a84ff]/20">
+            <span className="text-[11px] font-bold text-white">
+              VNĐ
+            </span>
+          </div>
+
+          <span className="font-semibold text-[16px]">
+            Ngân sách
+          </span>
+        </div>
+
+        <div className="flex bg-[#F2F2F7] dark:bg-zinc-800 p-1 rounded-xl">
+          {["fixed", "hourly", "negotiable"].map((t, i) => (
+            <button
+              key={t}
+              onClick={() =>
+                setForm({
+                  ...form,
+                  budgetType: t as any,
+                })
+              }
+              className={`px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
+                form.budgetType === t
+                  ? "bg-white dark:bg-zinc-700 shadow-sm text-zinc-900 dark:text-white"
+                  : "text-zinc-500"
+              }`}
+            >
+              {["Cố định", "Theo giờ", "Thỏa thuận"][i]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {form.budgetType !== "negotiable" ? (
+        <>
+          <div className="relative">
+            <input
+              type="text"
+              inputMode="numeric"
+              value={form.price}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  price: e.target.value
+                    .replace(/\D/g, "")
+                    .replace(
+                      /\B(?=(\d{3})+(?!\d))/g,
+                      "."
+                    ),
+                })
+              }
+              placeholder="0"
+              className="w-full h-[60px] pl-5 pr-16 bg-[#F2F2F7] dark:bg-zinc-800 rounded-2xl outline-none focus:ring-4 focus:ring-[#0a84ff]/20 text-[28px] font-bold tracking-tight tabular-nums transition-all"
+            />
+
+            <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[15px] font-medium text-zinc-400">
+              VND
+            </span>
+          </div>
+
+          <div className="flex items-center gap-5 mt-4">
+            <div className="flex items-center gap-2.5">
+              <span className="text-[14px] text-zinc-600">
+                Số người:
+              </span>
+
+              <div className="flex items-center gap-1 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl p-1">
+                <button
+                  onClick={() =>
+                    setForm({
+                      ...form,
+                      totalSlots: Math.max(
+                        1,
+                        parseInt(form.totalSlots) - 1
+                      ).toString(),
+                    })
+                  }
+                  className="w-8 h-8 grid place-items-center rounded-lg hover:bg-white dark:hover:bg-zinc-700 active:scale-90"
+                >
+                  −
+                </button>
+
+                <span className="w-8 text-center font-semibold tabular-nums">
+                  {form.totalSlots}
+                </span>
+
+                <button
+                  onClick={() =>
+                    setForm({
+                      ...form,
+                      totalSlots: Math.min(
+                        20,
+                        parseInt(form.totalSlots) + 1
+                      ).toString(),
+                    })
+                  }
+                  className="w-8 h-8 grid place-items-center rounded-lg hover:bg-white dark:hover:bg-zinc-700 active:scale-90"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="h-[60px] grid place-items-center bg-[#F2F2F7] dark:bg-zinc-800 rounded-2xl">
+          <div className="flex items-center gap-2 text-zinc-500">
+            <LottiePlayer
+              animationData={loadingPull}
+              loop
+              autoplay
+              className="w-6 h-6 opacity-60"
+            />
+
+            <span className="text-[15px]">
+              Thương lượng sau
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+
+    {/* Priority */}
+    <div className="bg-white dark:bg-zinc-900 rounded-3xl border-2 border-[#E5E5EA] dark:border-zinc-800 p-5 shadow-sm">
+      <div className="flex items-center gap-2.5 mb-4">
+        <div className="w-9 h-9 rounded-xl bg-amber-500/10 grid place-items-center">
+          <FiZap size={18} className="text-amber-600" />
+        </div>
+
+        <span className="font-semibold text-[15px]">
+          Mức độ ưu tiên
+        </span>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2.5">
+        {URGENCY.map((u) => (
+          <motion.button
+            key={u.id}
+            whileTap={{ scale: 0.96 }}
+            onClick={() =>
+              setForm({
+                ...form,
+                urgency: u.id,
+              })
+            }
+            className={`relative p-3.5 rounded-2xl border-2 text-left transition-all ${
+              form.urgency === u.id
+                ? "border-[#0a84ff] bg-[#0a84ff]/5 shadow-sm"
+                : "border-[#E5E5EA] dark:border-zinc-800 hover:border-zinc-300"
+            }`}
+          >
+            <div
+              className={`text-[14px] font-semibold ${
+                form.urgency === u.id
+                  ? "text-[#0a84ff]"
+                  : ""
+              }`}
+            >
+              {u.name}
+            </div>
+
+            <div className="text-[12px] text-zinc-500 mt-1">
+              {u.time}
+            </div>
+
+            {form.urgency === u.id && (
+              <motion.div
+                layoutId="urgency"
+                className="absolute inset-0 border-2 border-[#0a84ff] rounded-2xl pointer-events-none"
+              />
+            )}
+          </motion.button>
+        ))}
+      </div>
+    </div>
+
+    {/* Time & Location */}
+    <div className="grid grid-cols-1 gap-3">
+      <div className="bg-white dark:bg-zinc-900 rounded-3xl border-2 border-[#E5E5EA] dark:border-zinc-800 p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <FiCalendar
+            size={16}
+            className="text-zinc-500"
+          />
+
+          <span className="text-[14px] font-medium text-zinc-700 dark:text-zinc-300">
+            Thời gian
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-[12px] text-zinc-500 mb-1.5 block">
+              Bắt đầu
+            </label>
+
+            <input
+              type="datetime-local"
+              value={form.startDate}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  startDate: e.target.value,
+                })
+              }
+              className="w-full h-11 px-3 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl outline-none text-[14px] font-medium border-2 border-transparent focus:border-[#0a84ff] transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="text-[12px] text-zinc-500 mb-1.5 block">
+              Kết thúc
+            </label>
+
+            <input
+              type="datetime-local"
+              value={form.endDate}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  endDate: e.target.value,
+                })
+              }
+              className="w-full h-11 px-3 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl outline-none text-[14px] font-medium border-2 border-transparent focus:border-[#0a84ff] transition-all"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-zinc-900 rounded-3xl border-2 border-[#E5E5EA] dark:border-zinc-800 p-5">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <FiMapPin
+              size={16}
+              className="text-zinc-500"
+            />
+
+            <span className="text-[14px] font-medium text-zinc-700 dark:text-zinc-300">
+              Làm việc từ xa
+            </span>
+          </div>
+
+          <button
+            onClick={() =>
+              setForm({
+                ...form,
+                isRemote: !form.isRemote,
+              })
+            }
+            className={`relative w-12 h-7 rounded-full transition-colors ${
+              form.isRemote
+                ? "bg-[#0a84ff]"
+                : "bg-zinc-300 dark:bg-zinc-700"
+            }`}
+          >
+            <motion.div
+              animate={{
+                x: form.isRemote ? 20 : 2,
+              }}
+              className="absolute top-1 w-5 h-5 bg-white rounded-full shadow-md"
+            />
+          </button>
+        </div>
+
+        {!form.isRemote && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            className="flex gap-2"
+          >
+            <input
+              value={form.address}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  address: e.target.value,
+                })
+              }
+              placeholder="Nhập địa chỉ..."
+              className="flex-1 h-11 px-3 bg-[#F2F2F7] dark:bg-zinc-800 rounded-xl outline-none text-[14px]"
+            />
+
+            <button
+              onClick={handleGetLocation}
+              className="w-11 h-11 grid place-items-center bg-[#0a84ff]/10 hover:bg-[#0a84ff]/20 text-[#0a84ff] rounded-xl active:scale-95 transition-all"
+            >
+              <FiNavigation size={16} />
+            </button>
+          </motion.div>
+        )}
+      </div>
+    </div>
+  </motion.div>
+)}
+
+{/* STEP 3 */}
+{step === 3 && (
+  <motion.div
+    key="s3"
+    initial={{ opacity: 0, x: 16 }}
+    animate={{ opacity: 1, x: 0 }}
+    exit={{ opacity: 0, x: -16 }}
+    className="p-4 space-y-3"
+  >
                   <div className="grid grid-cols-2 gap-3">
                     {[
                       { k: "autoMatch", icon: FiZap, label: "Duyệt tự động", desc: "Nhận ngay", color: "blue" },
