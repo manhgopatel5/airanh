@@ -64,23 +64,29 @@ function LottiePlayer({
     };
   }, []);
 
-  // Pause khi ra khỏi viewport
-  useEffect(() => {
-    if (!pauseWhenHidden || !containerRef.current) return;
+// Pause khi ra khỏi viewport
+useEffect(() => {
+  if (!pauseWhenHidden || !containerRef.current) return;
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsInView(entry.isIntersecting);
-      },
-      {
-        threshold: 0.1,
-      }
-    );
+  const observer = new IntersectionObserver(
+    (entries: IntersectionObserverEntry[]) => {
+      const entry = entries.at(0);
 
-    observer.observe(containerRef.current);
+      if (!entry) return;
 
-    return () => observer.disconnect();
-  }, [pauseWhenHidden]);
+      setIsInView(entry.isIntersecting);
+    },
+    {
+      threshold: 0.1,
+    }
+  );
+
+  observer.observe(containerRef.current);
+
+  return () => {
+    observer.disconnect();
+  };
+}, [pauseWhenHidden]);
 
   // Control animation
   useEffect(() => {
