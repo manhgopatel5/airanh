@@ -880,6 +880,17 @@ setTimeout(() => {
                         ))}
                       </div>
                       {costType!== "free" && costType!== "host" && (
+{costType === "share" && costAmount > 0 && (
+  <div className="mt-2 text-center">
+    <span className="text-xs text-zinc-500">
+      Mỗi người khoảng
+    </span>
+
+    <p className="text-sm font-bold text-[#0042B2]">
+      {splitCost.toLocaleString("vi-VN")}đ
+    </p>
+  </div>
+)}
                         <input type="number" value={costAmount || ""} onChange={e => setCostAmount(Number(e.target.value))} placeholder="0" className="w-full mt-2 h-9 px-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 outline-none font-bold text-center" />
                       )}
                     </div>
