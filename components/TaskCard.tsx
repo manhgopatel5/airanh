@@ -43,7 +43,7 @@ function TaskCard({ task, mode }: Props) {
   const statusConfig = {
     open: { text: "Đang tuyển", color: "#30d158", bg: "bg-[#30d158]/10", textCls: "text-[#30d158]", icon: null },
     full: { text: "Đã đủ", color: "#ff9f0a", bg: "bg-[#ff9f0a]/10", textCls: "text-[#ff9f0a]", icon: null },
-    in_progress: { text: "Đang làm", color: "#0a84ff", bg: "bg-[#0a84ff]/10", textCls: "text-[#0a84ff]", icon: null },
+    doing: { text: "Đang làm", color: "#0a84ff", bg: "bg-[#0a84ff]/10", textCls: "text-[#0a84ff]", icon: null },
     completed: { text: "Hoàn thành", color: "#0a84ff", bg: "bg-[#0a84ff]/10", textCls: "text-[#0a84ff]", icon: FiCheckCircle },
     cancelled: { text: "Đã hủy", color: "#8e8e93", bg: "bg-zinc-100 dark:bg-zinc-800", textCls: "text-zinc-500", icon: null },
   } as const;
@@ -172,7 +172,7 @@ function TaskCard({ task, mode }: Props) {
             <div className="flex items-center gap-1 -mr-1">
               <motion.button whileTap={{ scale: 0.85 }} onClick={handleLike} disabled={liking} className="relative w-8 h-8 grid place-items-center rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:bg-zinc-200 dark:active:bg-zinc-700 transition-colors">
                 <AnimatePresence>
-                  {showLikeBurst && <motion.div initial={{ scale: 0, opacity: 1 }} animate={{ scale: 1.8, opacity: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }} className="absolute inset-0 pointer-events-none"><LottiePlayer animationData={celebrate} autoplay loop={false} className="w-8 h-8 -ml-0 -mt-0" /></motion.div>}
+                  {showLikeBurst && <motion.div initial={{ scale: 0, opacity: 1 }} animate={{ scale: 1.8, opacity: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }} className="absolute inset-0 pointer-events-none"><LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-8 h-8 -ml-0 -mt-0" /></motion.div>}
                 </AnimatePresence>
                 <FiHeart size={16} className={`transition-all ${liked? "fill-red-500 text-red-500 scale-110" : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"}`} strokeWidth={liked? 0 : 2} />
               </motion.button>
