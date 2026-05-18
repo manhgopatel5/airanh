@@ -12,12 +12,18 @@ import { vi } from "date-fns/locale";
 import { FiCheck, FiTrash2, FiBell, FiHeart, FiMessageCircle, FiUserPlus, FiBriefcase } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import * as L from "@/components/illustrations";
 
 type Notification = {
   id: string; toUserId: string; fromUserId: string; fromUserName: string; fromUserAvatar: string;
   type: "like" | "comment" | "friend_request" | "task_apply" | "system";
   content: string; isRead: boolean; createdAt: Timestamp; link?: string;
+};
+
+const vibrate = (pattern: number | number[]) => {
+  if (typeof navigator!== "undefined" && "vibrate" in navigator) {
+    try { navigator.vibrate(pattern); } catch {}
+  }
 };
 
 export default function NotificationsPage() {
@@ -58,14 +64,14 @@ export default function NotificationsPage() {
 
   const groupedNotifs = useMemo(() => {
     const groups: {
-  "Hôm nay": Notification[];
-  "Hôm qua": Notification[];
-  "Cũ hơn": Notification[];
-} = {
-  "Hôm nay": [],
-  "Hôm qua": [],
-  "Cũ hơn": [],
-};
+      "Hôm nay": Notification[];
+      "Hôm qua": Notification[];
+      "Cũ hơn": Notification[];
+    } = {
+      "Hôm nay": [],
+      "Hôm qua": [],
+      "Cũ hơn": [],
+    };
     const now = new Date(); const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
     notifications.forEach((n) => {
@@ -93,7 +99,7 @@ export default function NotificationsPage() {
       unreadIds.slice(0, 450).forEach((id) => batch.update(doc(db, "notifications", id), { isRead: true }));
       await batch.commit();
       toast.success("Đã đánh dấu tất cả đã đọc");
-      navigator.vibrate?.(8);
+      vibrate(8);
     } catch { toast.error("Lỗi"); }
   }, [notifications, db]);
 
@@ -111,28 +117,24 @@ export default function NotificationsPage() {
       await batch.commit();
       toast.success(`Đã xóa ${selectedIds.length} thông báo`);
       setSelectedIds([]);
-      navigator.vibrate?.(8);
+      vibrate(8);
     } catch { toast.error("Lỗi xóa"); }
   }, [selectedIds, db]);
 
   const setObserver = useCallback((node: HTMLDivElement | null, isRead: boolean) => {
     if (!node || isRead) return;
     if (!observerRef.current) {
-  observerRef.current = new IntersectionObserver(
-  (entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        const notifId =
-          entry.target.getAttribute("data-id");
-
-        if (notifId) {
-          markAsRead(notifId);
-        }
-      }
-    });
-  },
-  { threshold: 0.5 }
-);
+      observerRef.current = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const notifId = entry.target.getAttribute("data-id");
+              if (notifId) markAsRead(notifId);
+            }
+          });
+        },
+        { threshold: 0.5 }
+      );
     }
     observerRef.current.observe(node);
   }, [markAsRead]);
@@ -142,7 +144,7 @@ export default function NotificationsPage() {
   const handleClickNotif = useCallback((n: Notification) => {
     if (!n.isRead) markAsRead(n.id);
     if (n.link) router.push(n.link);
-    navigator.vibrate?.(5);
+    vibrate(5);
   }, [markAsRead, router]);
 
   const getIcon = (type: string) => {
@@ -157,7 +159,7 @@ export default function NotificationsPage() {
 
   if (loading) return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center">
-      <LottiePlayer animationData={loadingPull} loop autoplay className="w-20 h-20" />
+      <LottiePlayer animationData={L.loadingPull} loop autoplay className="w-20 h-20" />
     </div>
   );
 
@@ -175,13 +177,33 @@ export default function NotificationsPage() {
             <AnimatePresence mode="wait">
               {selectedIds.length > 0? (
                 <motion.div key="select" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="flex items-center gap-2">
-                  <button onClick={deleteSelected} className="h-9 px-3 rounded-xl bg-red-500 text-white font-bold text-sm flex items-center gap-1.5 active:scale-95">
+                  <button
+                    onTouchStart={() => vibrate(5)}
+                    onClick={deleteSelected}
+                    type="button"
+                    className="h-9 px-3 rounded-xl bg-red-500 text-white font-bold text-sm flex items-center gap-1.5 active:scale-95"
+                  >
                     <FiTrash2 size={16} /> Xóa ({selectedIds.length})
                   </button>
-                  <button onClick={() => setSelectedIds([])} className="h-9 px-3 rounded-xl bg-zinc-100 dark:bg-zinc-900 font-semibold text-sm">Hủy</button>
+                  <button
+                    onTouchStart={() => vibrate(5)}
+                    onClick={() => setSelectedIds([])}
+                    type="button"
+                    className="h-9 px-3 rounded-xl bg-zinc-100 dark:bg-zinc-900 font-semibold text-sm"
+                  >
+                    Hủy
+                  </button>
                 </motion.div>
               ) : unreadCount > 0? (
-                <motion.button key="read" initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={markAllAsRead} className="h-9 px-3 rounded-xl bg-[#E8F1FF] dark:bg-[#0042B2]/20 text-[#0042B2] font-bold text-sm flex items-center gap-1.5 active:scale-95">
+                <motion.button
+                  key="read"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  onTouchStart={() => vibrate(5)}
+                  onClick={markAllAsRead}
+                  type="button"
+                  className="h-9 px-3 rounded-xl bg-[#E8F1FF] dark:bg-[#0042B2]/20 text-[#0042B2] font-bold text-sm flex items-center gap-1.5 active:scale-95"
+                >
                   <FiCheck size={16} /> Đọc hết
                 </motion.button>
               ) : null}
@@ -212,16 +234,12 @@ export default function NotificationsPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.03 }}
                       data-id={n.id}
-                     ref={(node) => setObserver(node, n.isRead)}
+                      ref={(node) => setObserver(node, n.isRead)}
                       onClick={() => selectedIds.length? setSelectedIds((prev) => prev.includes(n.id)? prev.filter(id => id!== n.id) : [...prev, n.id]) : handleClickNotif(n)}
                       onContextMenu={(e) => {
-  e.preventDefault();
-  setSelectedIds((prev) =>
-    prev.includes(n.id)
-      ? prev
-      : [...prev, n.id]
-  );
-}}
+                        e.preventDefault();
+                        setSelectedIds((prev) => prev.includes(n.id)? prev : [...prev, n.id]);
+                      }}
                       className={`group relative bg-white dark:bg-zinc-950 rounded-3xl p-4 border-2 transition-all active:scale-[0.98] cursor-pointer ${n.isRead? "border-zinc-200/60 dark:border-zinc-800" : "border-[#0042B2]/30 bg-[#F5F9FF] dark:bg-[#0042B2]/5"} ${selectedIds.includes(n.id)? "ring-2 ring-[#0042B2] border-[#0042B2]" : ""}`}
                     >
                       {!n.isRead && <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-[#0042B2] animate-pulse" />}
@@ -236,7 +254,7 @@ export default function NotificationsPage() {
                         </div>
 
                         <div className="flex-1 min-w-0">
-                         <p className="text-sm leading-snug">
+                          <p className="text-sm leading-snug">
                             <span className="font-bold text-zinc-900 dark:text-white">{n.fromUserName}</span>
                             <span className="text-zinc-700 dark:text-zinc-300"> {n.content}</span>
                           </p>
@@ -246,9 +264,12 @@ export default function NotificationsPage() {
                           </p>
                         </div>
 
-                       <button
-  type="button"
-  onClick={(e) => { e.stopPropagation(); deleteNotif(n.id); }} className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center justify-center text-zinc-400 hover:text-red-500 transition-all flex-shrink-0">
+                        <button
+                          type="button"
+                          onTouchStart={() => vibrate(5)}
+                          onClick={(e) => { e.stopPropagation(); deleteNotif(n.id); }}
+                          className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center justify-center text-zinc-400 hover:text-red-500 transition-all flex-shrink-0"
+                        >
                           <FiTrash2 size={16} />
                         </button>
                       </div>
@@ -261,8 +282,14 @@ export default function NotificationsPage() {
 
           {lastDoc && (
             <div className="px-4 mt-6">
-              <button onClick={loadMore} disabled={loadingMore} className="w-full h-11 rounded-2xl bg-white dark:bg-zinc-950 border-zinc-200/60 dark:border-zinc-800 font-semibold text-sm active:scale-[0.98] disabled:opacity-50 shadow-sm">
-                {loadingMore? <LottiePlayer animationData={loadingPull} loop autoplay className="w-5 h-5 mx-auto" /> : "Tải thêm thông báo"}
+              <button
+                onTouchStart={() => vibrate(5)}
+                onClick={loadMore}
+                disabled={loadingMore}
+                type="button"
+                className="w-full h-11 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200/60 dark:border-zinc-800 font-semibold text-sm active:scale-[0.98] disabled:opacity-50 shadow-sm"
+              >
+                {loadingMore? <LottiePlayer animationData={L.loadingPull} loop autoplay className="w-5 h-5 mx-auto" /> : "Tải thêm thông báo"}
               </button>
             </div>
           )}
