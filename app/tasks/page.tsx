@@ -26,8 +26,8 @@ import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
 import { useAppStore } from "@/store/app";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import taskAnim from "@/public/lotties/huha-task.json";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import * as L from "@/components/illustrations";
+import { cn } from "@/lib/utils";
 
 type SubTab = "mine" | "saved" | "doing" | "applied" | "expired" | "completed" | "cancelled";
 
@@ -65,11 +65,6 @@ export default function TasksPage() {
   const pullStartY = useRef(0);
   const [pullDistance, setPullDistance] = useState(0);
 
-  const theme = {
-    task: { primary: "#0042B2", gradient: "from-[#0042B2] to-[#1A5FFF]", text: "text-[#0042B2]", shadow: "shadow- shadow-[0_8px_28px_rgba(0,66,178,0.35)]" },
-    plan: { primary: "#00C853", gradient: "from-[#00C853] to-[#00E676]", text: "text-[#00C853]", shadow: "shadow- shadow-[0_8px_28px_rgba(0,200,83,0.35)]" }
-  };
-
   const vibrate = (ms = 8) => { if (typeof navigator!== "undefined" && "vibrate" in navigator) navigator.vibrate(ms); };
 
   useEffect(() => {
@@ -104,14 +99,14 @@ export default function TasksPage() {
      const snap = await getDocs(q);
       let data = snap.docs.map(d => {
   const docData = d.data() as Omit<Task, 'id'>;
-  return { id: d.id, ...docData } as Task;
+  return { id: d.id,...docData } as Task;
 }).filter(t => t.id && t.title);
 
       if (searchQuery) data = data.filter(t => t.title.toLowerCase().includes(searchQuery.toLowerCase()));
       data.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
 
       setTasks(prev => isRefresh? data : [...prev,...data]);
-    const lastVisible = snap.docs.at(-1) ?? null;
+    const lastVisible = snap.docs.at(-1)?? null;
 
 setLastDoc(lastVisible);
       setHasMore(snap.docs.length === PAGE_SIZE);
@@ -130,8 +125,8 @@ setLastDoc(lastVisible);
     entry &&
     entry.isIntersecting &&
     hasMore &&
-    !loading &&
-    !loadingMore
+   !loading &&
+   !loadingMore
   ) {
     fetchTasks(false);
   }
@@ -149,23 +144,22 @@ setLastDoc(lastVisible);
   const handleTouchEnd = ()=>{ if(pullDistance>60) handleRefresh(); pullStartY.current=0; setPullDistance(0); };
 
   const filteredTasks = tasks.filter(t=>!searchQuery || t.title.toLowerCase().includes(searchQuery.toLowerCase()));
-  const currentTheme = theme[mode];
 
   return (
     <>
       <Toaster richColors position="top-center" />
-      <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 select-none pb-28" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+      <div className="min-h-screen bg-background text-foreground select-none pb-28" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
         {pullDistance>0 && (
-          <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl" style={{height:`${pullDistance}px`}}>
-            <LottiePlayer animationData={loadingPull} loop autoplay className="w-6 h-6" />
+          <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-xl" style={{height:`${pullDistance}px`}}>
+            <LottiePlayer animationData={L.loadingPull} loop autoplay className="w-6 h-6" />
           </div>
         )}
 
-        <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b">
+        <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-2xl border-b border-border">
           <div className="px-4 pt-3 pb-2">
-            <div className="flex items-center p-1 rounded-2xl bg-zinc-100 dark:bg-zinc-900">
+            <div className="flex items-center p-1 rounded-2xl bg-secondary">
               {(["task","plan"] as const).map(m=>(
-                <button key={m} onClick={()=>handleModeChange(m)} className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all ${mode===m?"bg-white dark:bg-zinc-950 shadow-sm":"text-zinc-500"}`}>
+                <button key={m} onClick={()=>handleModeChange(m)} className={cn("flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all", mode===m?"bg-card shadow-sm":"text-muted-foreground")}>
                   {m==="task"?<HiBolt className="w-4 h-4"/>:<HiCalendarDays className="w-4 h-4"/>}{m==="task"?"Task":"Plan"}
                 </button>
               ))}
@@ -174,16 +168,16 @@ setLastDoc(lastVisible);
 
           <div className="px-4 pb-3">
             <div className="flex items-center gap-2 mb-3">
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1">
+              <div className="flex gap-2 overflow-x-auto no-scrollbar flex-1">
                 {SUB_TABS.map(tab=>(
-                  <motion.button key={tab.key} whileTap={{scale:0.95}} onClick={()=>handleTabChange(tab.key)} className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${subTab===tab.key?`bg-gradient-to-r ${currentTheme.gradient} text-white ${currentTheme.shadow}`:"bg-zinc-100 dark:bg-zinc-900 text-zinc-600"}`}>
+                  <motion.button key={tab.key} whileTap={{scale:0.95}} onClick={()=>handleTabChange(tab.key)} className={cn("px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-all", subTab===tab.key?"bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg shadow-primary/35":"bg-secondary text-muted-foreground")}>
                     {tab.label}
                   </motion.button>
                 ))}
               </div>
               <div className="flex gap-2">
-                <button onClick={()=>{vibrate();setShowSearch(!showSearch);}} className="p-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 active:scale-90"><FiSearch size={18}/></button>
-                <motion.button whileTap={{scale:0.92}} onClick={handleRefresh} disabled={refreshing} className="p-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 disabled:opacity-50"><FiRefreshCw size={18} className={refreshing?"animate-spin":""}/></motion.button>
+                <button onClick={()=>{vibrate();setShowSearch(!showSearch);}} className="p-2.5 rounded-xl bg-secondary active:scale-90 transition-all"><FiSearch size={18}/></button>
+                <motion.button whileTap={{scale:0.92}} onClick={handleRefresh} disabled={refreshing} className="p-2.5 rounded-xl bg-secondary disabled:opacity-50 transition-all"><FiRefreshCw size={18} className={refreshing?"animate-spin":""}/></motion.button>
               </div>
             </div>
 
@@ -191,8 +185,8 @@ setLastDoc(lastVisible);
               {showSearch && (
                 <motion.div initial={{height:0,opacity:0}} animate={{height:"auto",opacity:1}} exit={{height:0,opacity:0}} className="overflow-hidden">
                   <div className="relative">
-                    <input autoFocus value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder={`Tìm ${mode}...`} className="w-full px-4 py-3 pr-10 rounded-2xl bg-zinc-100 dark:bg-zinc-900 outline-none text-sm focus:ring-2 focus:ring-[#0042B2]/30"/>
-                    {searchQuery && <button onClick={()=>setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-zinc-200"><FiX size={16}/></button>}
+                    <input autoFocus value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder={`Tìm ${mode}...`} className="w-full px-4 py-3 pr-10 rounded-2xl bg-secondary outline-none text-sm focus:ring-2 focus:ring-primary/30 transition-all"/>
+                    {searchQuery && <button onClick={()=>setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted transition-colors"><FiX size={16}/></button>}
                   </div>
                 </motion.div>
               )}
@@ -200,15 +194,15 @@ setLastDoc(lastVisible);
           </div>
         </div>
 
-        <div className="max-w- mx-auto p-4">
+        <div className="max-w-2xl mx-auto p-4">
           {loading? (
-            <div className="space-y-3">{[...Array(3)].map((_,i)=><div key={i} className="bg-white dark:bg-zinc-950 rounded-3xl border p-4 animate-pulse"><div className="flex gap-3"><div className="w-12 h-12 bg-zinc-200 dark:bg-zinc-900 rounded-2xl"/><div className="flex-1 space-y-2"><div className="h-4 w-3/4 bg-zinc-200 dark:bg-zinc-900 rounded-lg"/><div className="h-3 w-1/2 bg-zinc-200 dark:bg-zinc-900 rounded-lg"/></div></div></div>)}</div>
+            <div className="space-y-3">{[...Array(3)].map((_,i)=><div key={i} className="bg-card rounded-3xl border border-border p-4 animate-pulse"><div className="flex gap-3"><div className="w-12 h-12 bg-muted rounded-2xl"/><div className="flex-1 space-y-2"><div className="h-4 w-3/4 bg-muted rounded-lg"/><div className="h-3 w-1/2 bg-muted rounded-lg"/></div></div></div>)}</div>
           ) : filteredTasks.length===0? (
-            <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} className="bg-white dark:bg-zinc-950 rounded-3xl border p-12 text-center">
-              <LottiePlayer animationData={taskAnim} loop className="w-24 h-24 mx-auto mb-4" aria-label="Trống"/>
-              <p className="text-base font-bold mb-1">Chưa có {mode==="task"?"task":"plan"} nào</p>
-              <p className="text-sm text-zinc-500 mb-6">{subTab==="mine"&&`Tạo ${mode} đầu tiên`}{subTab==="saved"&&"Lưu để xem sau"}</p>
-              {subTab==="mine" && <button onClick={()=>{vibrate(10);router.push(mode==="task"?"/create/task":"/create/plan");}} className={`px-6 h-12 rounded-2xl bg-gradient-to-r ${currentTheme.gradient} text-white text-sm font-bold active:scale-95 ${currentTheme.shadow}`}>Tạo ngay</button>}
+            <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} className="bg-card rounded-3xl border border-border p-12 text-center">
+              <LottiePlayer animationData={L.task} loop className="w-24 h-24 mx-auto mb-4" aria-label="Trống"/>
+              <p className="text-base font-bold mb-1 text-foreground">Chưa có {mode==="task"?"task":"plan"} nào</p>
+              <p className="text-sm text-muted-foreground mb-6">{subTab==="mine"&&`Tạo ${mode} đầu tiên`}{subTab==="saved"&&"Lưu để xem sau"}</p>
+              {subTab==="mine" && <button onClick={()=>{vibrate(10);router.push(mode==="task"?"/create/task":"/create/plan");}} className="px-6 h-12 rounded-2xl bg-gradient-to-r from-primary to-accent text-primary-foreground text-sm font-bold active:scale-95 shadow-lg shadow-primary/35">Tạo ngay</button>}
             </motion.div>
           ) : (
             <motion.div initial={{opacity:0}} animate={{opacity:1}} className="space-y-3">
@@ -220,12 +214,11 @@ setLastDoc(lastVisible);
             </motion.div>
           )}
 
-          {loadingMore && <div className="flex justify-center py-6"><LottiePlayer animationData={loadingPull} loop className="w-8 h-8"/></div>}
+          {loadingMore && <div className="flex justify-center py-6"><LottiePlayer animationData={L.loadingPull} loop className="w-8 h-8"/></div>}
           {shareTask && <ShareTaskModal task={shareTask} onClose={()=>setShareTask(null)}/>}
           <div ref={loadMoreRef} className="h-4"/>
         </div>
       </div>
-      <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}`}</style>
     </>
   );
 }
