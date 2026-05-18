@@ -815,10 +815,19 @@ const submit = async () => {
 location: form.isRemote
   ? undefined
   : {
-      address: form.address.trim(),
-      city: form.city,
-      lat: form.lat,
-      lng: form.lng,
+      address:
+        form.address.trim(),
+
+      city:
+        form.city.trim(),
+
+      ...(form.lat !== null && {
+        lat: form.lat,
+      }),
+
+      ...(form.lng !== null && {
+        lng: form.lng,
+      }),
     },
 
         urgency: form.urgency,
