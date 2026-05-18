@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
+
+import { useState, useEffect, useMemo, useDeferredValue, useCallback, useRef, memo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { collection, query, where, orderBy, limit, getDocs, startAfter, QueryDocumentSnapshot, DocumentData, onSnapshot } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
@@ -11,7 +12,7 @@ import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import * as L from "@/components/illustrations";
 
 type TabId = "hot" | "near" | "friends" | "new";
 const PAGE_SIZE = 15;
@@ -22,6 +23,12 @@ type CacheValue = { tasks: TaskListItem[]; lastDoc: QueryDocumentSnapshot<Docume
 const taskCache = new Map<CacheKey, CacheValue>();
 
 const MemoTaskCard = memo(TaskCard);
+
+const vibrate = (pattern: number | number[]) => {
+  if (typeof navigator!== "undefined" && "vibrate" in navigator) {
+    try { navigator.vibrate(pattern); } catch {}
+  }
+};
 
 export default function SearchPage() {
   const db = getFirebaseDB();
@@ -66,7 +73,10 @@ export default function SearchPage() {
 
   // 3. Realtime friends list
   useEffect(() => {
-    if (!user?.uid || activeTab!== "friends") return;
+    if (!user?.uid || activeTab!== "friends") {
+      setFriendIds([]);
+      return;
+    }
     if (friendsUnsub.current) friendsUnsub.current();
     friendsUnsub.current = onSnapshot(
       query(collection(db, "friends"), where("userId", "==", user.uid)),
@@ -149,12 +159,12 @@ export default function SearchPage() {
 
       if (activeTab === "near" && userLocation) {
         data = data
-        .map((t) => ({
-  ...t, 
-  distance: t.location?.lat && t.location?.lng 
-    ? getDistance(userLocation, { lat: t.location.lat, lng: t.location.lng }) 
-    : 9999 
-}))
+         .map((t) => ({
+           ...t,
+            distance: t.location?.lat && t.location?.lng
+             ? getDistance(userLocation, { lat: t.location.lat, lng: t.location.lng })
+              : 9999
+          }))
          .filter((t: any) => t.distance < 50)
          .sort((a: any, b: any) => a.distance - b.distance);
       }
@@ -190,7 +200,7 @@ export default function SearchPage() {
   useEffect(() => {
     if (!loadMoreRef.current ||!hasMore || loading || loadingMore) return;
     const observer = new IntersectionObserver(
-     (entries) => { if (entries[0]?.isIntersecting) fetchTasks(false); },
+      (entries) => { if (entries[0]?.isIntersecting) fetchTasks(false); },
       { threshold: 0.1 }
     );
     observer.observe(loadMoreRef.current);
@@ -221,7 +231,7 @@ export default function SearchPage() {
                 className="w-full pl-11 pr-11 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-[#0042B2]/30 focus:border-[#0042B2] outline-none transition-all"
               />
               {keyword && (
-                <button onClick={() => setKeyword("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-full" aria-label="Xóa">
+                <button onTouchStart={() => vibrate(5)} onClick={() => setKeyword("")} type="button" className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-full" aria-label="Xóa">
                   <FiX size={18} className="text-zinc-500" />
                 </button>
               )}
@@ -236,7 +246,9 @@ export default function SearchPage() {
                     role="tab"
                     aria-selected={active}
                     whileTap={{ scale: 0.97 }}
+                    onTouchStart={() => vibrate(5)}
                     onClick={() => setActiveTab(tab.id)}
+                    type="button"
                     className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${active? "bg-white dark:bg-zinc-950 text-[#0042B2] shadow-sm" : "text-zinc-600 dark:text-zinc-400"}`}
                   >
                     <Icon size={18} />
@@ -260,7 +272,7 @@ export default function SearchPage() {
                   <FiRefreshCw size={32} className="text-red-500" />
                 </div>
                 <p className="font-bold text-lg">{error}</p>
-                <button onClick={() => fetchTasks(true)} className="mt-4 px-6 h-11 rounded-2xl bg-[#0042B2] text-white font-semibold active:scale-95">
+                <button onTouchStart={() => vibrate(5)} onClick={() => fetchTasks(true)} type="button" className="mt-4 px-6 h-11 rounded-2xl bg-[#0042B2] text-white font-semibold active:scale-95">
                   Thử lại
                 </button>
               </motion.div>
@@ -283,11 +295,13 @@ export default function SearchPage() {
             <div ref={loadMoreRef} className="py-4">
               <motion.button
                 whileTap={{ scale: 0.98 }}
+                onTouchStart={() => vibrate(5)}
                 onClick={() => fetchTasks(false)}
                 disabled={loadingMore}
+                type="button"
                 className="w-full h-11 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 font-semibold text-sm active:scale-[0.98] disabled:opacity-50 shadow-sm"
               >
-                {loadingMore? <LottiePlayer animationData={loadingPull} loop autoplay className="w-5 h-5 mx-auto" /> : "Tải thêm"}
+                {loadingMore? <LottiePlayer animationData={L.loadingPull} loop autoplay className="w-5 h-5 mx-auto" /> : "Tải thêm"}
               </motion.button>
             </div>
           )}
@@ -333,7 +347,7 @@ function Empty({ tab, hasKeyword, hasLocation, locationError, onRetryLocation }:
       <p className="font-bold text-lg">{messages[tab]}</p>
       <p className="text-sm mt-1 text-zinc-500">
         {tab === "near" && locationError? (
-          <button onClick={onRetryLocation} className="text-[#0042B2] font-semibold">Bật lại GPS</button>
+          <button onTouchStart={() => vibrate(5)} onClick={onRetryLocation} type="button" className="text-[#0042B2] font-semibold">Bật lại GPS</button>
         ) : "Thử từ khóa khác hoặc đổi tab"}
       </p>
     </div>
