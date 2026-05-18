@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { toast, Toaster } from "sonner";
 import { FiCheckCircle, FiRefreshCw, FiLogOut, FiSend } from "react-icons/fi";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import celebrate from "@/assets/lotties/huha-celebrate.json";
+import * as L from "@/components/illustrations";
 import { motion } from "framer-motion";
 
 const vibrate = (p: number | number[]) => {
@@ -91,7 +91,7 @@ export default function VerifyEmailPage() {
             <div className="relative w-24 h-24 mx-auto mb-6">
               <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-3xl blur-2xl opacity-50 animate-pulse" />
               <div className="relative w-full h-full bg-gradient-to-br from-primary to-accent rounded-3xl flex items-center justify-center shadow-2xl shadow-primary/40 ring-1 ring-white/20">
-                <LottiePlayer animationData={celebrate} loop autoplay className="w-14 h-14" aria-label="Email" />
+                <LottiePlayer animationData={L.celebrate} loop autoplay className="w-14 h-14" aria-label="Email" />
               </div>
             </div>
             <h1 className="text-3xl font-black text-foreground mb-2 tracking-tight">Xác thực email</h1>
