@@ -184,6 +184,7 @@ export type CreateTaskInput = {
   totalSlots: number;
   visibility?: Visibility;
   category?: string;
+  urgency?: "once" | "weekly" | "ongoing";
   tags?: string[];
   images?: string[];
   attachments?: string[];
