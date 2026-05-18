@@ -4,7 +4,7 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, Timestamp, limit, startAfter, QueryDocumentSnapshot, DocumentData, doc, updateDoc, arrayUnion, getDoc, getDocs } from "firebase/firestore";
 import { FiSend, FiMessageCircle, FiTrash2, FiCornerUpLeft, FiX, FiSmile } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
+import { toast, Toaster } from "sonner";
 
 type UserType = { uid: string; name: string; avatar?: string };
 type MessageType = {
@@ -112,6 +112,7 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
       console.error("Lỗi gửi tin:", err);
       setText(trimmed);
       toast.error("Gửi thất bại");
+      navigator.vibrate?.(15);
     } finally {
       setSending(false);
       inputRef.current?.focus();
@@ -161,17 +162,16 @@ export default function TaskChat({ taskId, currentUser }: TaskChatProps) {
         groups.push({ date, messages: [] });
         currentDate = date;
       }
-     const lastGroup = groups.at(-1);
-
-if (lastGroup) {
-  lastGroup.messages.push(msg);
-}
+      const lastGroup = groups.at(-1);
+      if (lastGroup) lastGroup.messages.push(msg);
     });
     return groups;
   }, [messages]);
 
   return (
     <div className="mt-4 border-t border-black/5 dark:border-white/5">
+      <Toaster richColors position="top-center" />
+
       {/* Header */}
       <div className="flex items-center justify-between py-3 px-1">
         <div className="flex items-center gap-2">
@@ -185,7 +185,7 @@ if (lastGroup) {
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="relative h-[320px] overflow-y-auto overscroll-contain px-1 -mx-1" onScroll={(e) => { if (e.currentTarget.scrollTop < 50 && hasMore && !loadingMore) loadMore(); }}>
+      <div ref={scrollRef} className="relative h- bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-100 dark:border-zinc-800 overflow-y-auto overscroll-contain" onScroll={(e) => { if (e.currentTarget.scrollTop < 50 && hasMore && !loadingMore) loadMore(); }}>
         {/* Load more */}
         <AnimatePresence>
           {hasMore && !loading && (
@@ -199,7 +199,7 @@ if (lastGroup) {
 
         {/* Loading skeleton */}
         {loading && (
-          <div className="space-y-3 py-3">
+          <div className="space-y-3 p-3">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="flex gap-2.5 animate-pulse">
                 <div className="w-8 h-8 bg-zinc-200 dark:bg-zinc-800 rounded-full" />
@@ -224,7 +224,7 @@ if (lastGroup) {
         )}
 
         {/* Messages list */}
-        <div className="space-y-0.5 pb-3">
+        <div className="space-y-0.5 p-1">
           {groupedMessages.map((group, groupIdx) => (
             <div key={groupIdx}>
               {/* Date separator */}
