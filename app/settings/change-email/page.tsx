@@ -10,9 +10,7 @@ import { ChevronLeft, Mail, Lock, AtSign, AlertTriangle } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-
-import celebrate from "@/public/lotties/huha-celebrate.json";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import * as L from "@/components/illustrations";
 
 const vibrate = (pattern: number | number[]) => {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
@@ -34,17 +32,17 @@ export default function ChangeEmailPage() {
   const handleChange = async () => {
     if (!user?.email) return toast.error("Tài khoản không có email");
     if (!isPasswordProvider) return toast.error("Tài khoản Google/Facebook không thể đổi email tại đây");
-    if (!newEmail || !password) return toast.error("Nhập đủ thông tin");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) return toast.error("Email không hợp lệ");
-    if (newEmail.toLowerCase() === user.email.toLowerCase()) return toast.error("Email mới phải khác email hiện tại");
+    if (!newEmail.trim() || !password) return toast.error("Nhập đủ thông tin");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail.trim())) return toast.error("Email không hợp lệ");
+    if (newEmail.trim().toLowerCase() === user.email.toLowerCase()) return toast.error("Email mới phải khác email hiện tại");
 
     setLoading(true);
     try {
       const credential = EmailAuthProvider.credential(user.email, password);
       await reauthenticateWithCredential(user, credential);
-      await updateEmail(user, newEmail);
+      await updateEmail(user, newEmail.trim());
       await sendEmailVerification(user);
-      await updateDoc(doc(db, "users", user.uid), { email: newEmail, emailVerified: false });
+      await updateDoc(doc(db, "users", user.uid), { email: newEmail.trim(), emailVerified: false });
       setShowSuccess(true);
       vibrate([10, 20, 10]);
       setTimeout(() => {
@@ -131,8 +129,8 @@ export default function ChangeEmailPage() {
               </div>
             </div>
 
-            <motion.button whileTap={{ scale: 0.98 }} onTouchStart={() => vibrate(5)} onClick={handleChange} disabled={loading || !newEmail || !password} type="button" className="w-full h-12 rounded-2xl bg-[#0042B2] text-white font-semibold disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-[#0042B2]/25">
-              {loading ? <LottiePlayer animationData={loadingPull} loop autoplay className="w-5 h-5" /> : <Mail className="w-5 h-5" />}
+            <motion.button whileTap={{ scale: 0.98 }} onTouchStart={() => vibrate(5)} onClick={handleChange} disabled={loading || !newEmail.trim() || !password} type="button" className="w-full h-12 rounded-2xl bg-[#0042B2] text-white font-semibold disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-[#0042B2]/25">
+              {loading ? <LottiePlayer animationData={L.loadingPull} loop autoplay className="w-5 h-5" /> : <Mail className="w-5 h-5" />}
               {loading ? "Đang xử lý..." : "Đổi email"}
             </motion.button>
 
@@ -144,7 +142,7 @@ export default function ChangeEmailPage() {
           {showSuccess && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/20 backdrop-blur-sm">
               <div className="bg-white dark:bg-zinc-950 rounded-3xl p-8 shadow-2xl">
-                <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-24 h-24 mx-auto" />
+                <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-24 h-24 mx-auto" />
                 <p className="text-center font-bold mt-3">Đã gửi link xác thực!</p>
                 <p className="text-center text-sm text-zinc-500 mt-1">Kiểm tra email mới</p>
               </div>
