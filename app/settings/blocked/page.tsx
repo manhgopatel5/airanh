@@ -94,17 +94,39 @@ export default function BlockedPage() {
               <div className="space-y-3">
                 {filtered.map((u, idx) => (
                   <motion.div key={u.uid} layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: unblocking === u.uid ? 0.5 : 1, y: 0, scale: unblocking === u.uid ? 0.98 : 1 }} exit={{ opacity: 0, x: -100 }} transition={{ delay: idx * 0.03 }} className="bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-200/60 dark:border-zinc-900 p-4 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                        <UserAvatar src={u.avatar} name={u.name} size={48} />
-                        <div className="min-w-0 flex-1">
-                          <p className="font-bold truncate">{u.name}</p>
-                          <p className="text-xs text-zinc-500 mt-0.5">Chặn từ {new Date(u.blockedAt).toLocaleDateString("vi-VN")}</p>
-                        </div>
-                      <motion.button whileTap={{ scale: 0.95 }} onTouchStart={() => vibrate(5)} onClick={() => unblock(u.uid)} disabled={!!unblocking} type="button" className="px-4 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-900 font-semibold text-sm active:scale-95 disabled:opacity-50 shrink-0">
-                        Bỏ chặn
-                      </motion.button>
-                    </div>
+                  <div className="flex items-center justify-between">
+  <div className="flex items-center gap-3.5 min-w-0 flex-1">
+    <UserAvatar
+      src={u.avatar}
+      name={u.name}
+      size={48}
+    />
+
+    <div className="min-w-0 flex-1">
+      <p className="font-bold truncate">
+        {u.name}
+      </p>
+
+      <p className="text-xs text-zinc-500 mt-0.5">
+        Chặn từ{" "}
+        {new Date(
+          u.blockedAt
+        ).toLocaleDateString("vi-VN")}
+      </p>
+    </div>
+  </div>
+
+  <motion.button
+    whileTap={{ scale: 0.95 }}
+    onTouchStart={() => vibrate(5)}
+    onClick={() => unblock(u.uid)}
+    disabled={!!unblocking}
+    type="button"
+    className="px-4 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-900 font-semibold text-sm active:scale-95 disabled:opacity-50 shrink-0"
+  >
+    Bỏ chặn
+  </motion.button>
+</div>
                   </motion.div>
                 ))}
               </div>
