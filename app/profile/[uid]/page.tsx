@@ -61,8 +61,7 @@ import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import celebrate from "@/public/lotties/huha-celebrate.json";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import * as L from "@/components/illustrations";
 
 type PublicUser = {
   uid: string; name: string; userId: string; avatar: string; bio?: string; birthday?: string; phone?: string;
@@ -293,7 +292,7 @@ successTimeoutRef.current = setTimeout(() => {
   if (loading) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center">
-        <LottiePlayer animationData={loadingPull} loop autoplay className="w-20 h-20" />
+        <LottiePlayer animationData={L.loadingPull} loop autoplay className="w-20 h-20" />
       </div>
     );
   }
@@ -459,7 +458,7 @@ successTimeoutRef.current = setTimeout(() => {
         </div>
 
         <AnimatePresence>
-          {showSuccess && <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center"><LottiePlayer animationData={celebrate} autoplay loop={false} className="w-32 h-32" /></motion.div>}
+          {showSuccess && <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center"><LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-32 h-32" /></motion.div>}
         </AnimatePresence>
         {/* USER INFO DIALOG */}
         <Dialog.Root open={showUserInfo} onOpenChange={setShowUserInfo}>
