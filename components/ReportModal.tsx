@@ -3,12 +3,10 @@ import { useState, useEffect, useRef } from "react";
 import { X, Shield, Megaphone, UserX, Ban, Flame, HelpCircle, Check } from "lucide-react";
 import { collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
-import { toast } from "sonner";
+import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import warningShake from "@/public/lotties/huha-error-shake.json";
-import celebrate from "@/public/lotties/huha-celebrate.json";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import * as L from "@/components/illustrations";
 
 type ReportModalProps = {
   isOpen: boolean;
@@ -72,19 +70,21 @@ export default function ReportModal({
   useEffect(() => {
     if (isOpen) modalRef.current?.focus();
   }, [isOpen]);
+
+  // Lock scroll body
   useEffect(() => {
-  if (isOpen) {
-    document.body.style.overflow = 'hidden';
-    document.body.style.touchAction = 'none';
-  } else {
-    document.body.style.overflow = '';
-    document.body.style.touchAction = '';
-  }
-  return () => {
-    document.body.style.overflow = '';
-    document.body.style.touchAction = '';
-  };
-}, [isOpen]);
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+  }, [isOpen]);
 
   const handleSubmit = async () => {
     if (!reason) {
@@ -161,54 +161,55 @@ export default function ReportModal({
     <AnimatePresence>
       {isOpen && (
         <>
-        <motion.div
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  exit={{ opacity: 0 }}
-  onClick={onClose}
-  className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-xl"
-/>
-<motion.div
-  initial={{ opacity: 0, scale: 0.96, y: 30 }}
-  animate={{ opacity: 1, scale: 1, y: 0 }}
-  exit={{ opacity: 0, scale: 0.96, y: 30 }}
-  transition={{ type: "spring", damping: 28, stiffness: 340 }}
-  className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 pointer-events-none"
->
-         <div
-  ref={modalRef}
-  tabIndex={-1}
-  className="bg-white dark:bg-zinc-950 rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-md max-h-[100dvh] sm:max-h-[90vh] pointer-events-auto flex flex-col overflow-hidden"
-  onClick={(e) => e.stopPropagation()}
->
-             {/* Header */}
-<div className="px-5 pt-5 pb-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between shrink-0">
-  <div className="flex items-center gap-3">
-    <div className="w-11 h-11 bg-red-100 dark:bg-red-900/20 rounded-2xl flex items-center justify-center relative overflow-hidden">
-      <LottiePlayer animationData={warningShake} autoplay loop={false} className="w-[30px] h-[30px]" />
-    </div>
+          <Toaster richColors position="top-center" />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 z- bg-black/70 backdrop-blur-xl"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 30 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 30 }}
+            transition={{ type: "spring", damping: 28, stiffness: 340 }}
+            className="fixed inset-0 z- flex items-end sm:items-center justify-center p-0 sm:p-4 pointer-events-none"
+          >
+            <div
+              ref={modalRef}
+              tabIndex={-1}
+              className="bg-white dark:bg-zinc-950 rounded-t- sm:rounded- shadow-2xl w-full sm:max-w-md max-h- sm:max-h- pointer-events-auto flex flex-col overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="px-5 pt-5 pb-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 bg-red-100 dark:bg-red-900/20 rounded-2xl flex items-center justify-center relative overflow-hidden">
+                    <LottiePlayer animationData={L.errorShake} autoplay loop={false} className="w- h-" />
+                  </div>
 
-    <div>
-      <h3 className="text-lg font-bold">Báo cáo vi phạm</h3>
-      <p className="text-xs text-gray-500 dark:text-zinc-400">
-        Giúp cộng đồng an toàn hơn
-      </p>
-    </div>
-  </div>
+                  <div>
+                    <h3 className="text-lg font-bold">Báo cáo vi phạm</h3>
+                    <p className="text-xs text-gray-500 dark:text-zinc-400">
+                      Giúp cộng đồng an toàn hơn
+                    </p>
+                  </div>
+                </div>
 
-  <button
-    onClick={onClose}
-    className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl transition active:scale-95"
-  >
-    <X className="w-5 h-5" />
-  </button>
-</div>
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl transition active:scale-95"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
               {success? (
                 <div className="flex-1 flex flex-col items-center justify-center py-12 px-6 relative">
                   {/* CONFETTI BACKGROUND */}
                   <div className="absolute inset-0 pointer-events-none opacity-60">
-                    <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-full h-full" />
+                    <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-full h-full" />
                   </div>
                   <motion.div
                     initial={{ scale: 0, rotate: -20 }}
@@ -216,7 +217,7 @@ export default function ReportModal({
                     transition={{ type: "spring", damping: 14, stiffness: 300 }}
                     className="w-28 h-28 flex items-center justify-center mb-3 relative z-10"
                   >
-                    <LottiePlayer animationData={celebrate} autoplay className="w-28 h-28" />
+                    <LottiePlayer animationData={L.celebrate} autoplay className="w-28 h-28" />
                   </motion.div>
                   <p className="text-xl font-bold mb-1 relative z-10">Đã gửi báo cáo</p>
                   <p className="text-sm text-zinc-500 text-center relative z-10">
@@ -229,7 +230,7 @@ export default function ReportModal({
                   <div className="flex-1 overflow-y-auto px-5 py-4">
                     {/* Target info */}
                     <div className="mb-5 p-3.5 rounded-2xl border" style={{background:'rgba(0,66,178,0.04)',borderColor:'rgba(0,66,178,0.15)'}}>
-                      <p className="text-[11px] text-zinc-500 mb-1.5 font-bold tracking-wider">
+                      <p className="text- text-zinc-500 mb-1.5 font-bold tracking-wider">
                         ĐANG BÁO CÁO
                       </p>
                       <div className="flex items-center gap-3">
@@ -271,7 +272,7 @@ export default function ReportModal({
                             }}
                             className={`w-full flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all ${
                               isActive
-                             ? "border-[#0042B2] bg-[#0042B2]/8 dark:bg-[#0042B2]/15 shadow-md shadow-[#0042B2]/10"
+                            ? "border-[#0042B2] bg-[#0042B2]/8 dark:bg-[#0042B2]/15 shadow-md shadow-[#0042B2]/10"
                                 : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900/50"
                             }`}
                           >
@@ -311,7 +312,7 @@ export default function ReportModal({
                       <div className="flex justify-between items-center mt-1.5">
                         <p className="text-xs text-zinc-500">
                           {reason === "other" && note.length < 10
-                         ? `Cần thêm ${10 - note.length} ký tự`
+                        ? `Cần thêm ${10 - note.length} ký tự`
                             : "Không bắt buộc"}
                         </p>
                         <p className="text-xs text-zinc-500 font-medium">
@@ -339,7 +340,7 @@ export default function ReportModal({
                       {loading? (
                         <>
                           <div className="w-5 h-5">
-                            <LottiePlayer animationData={loadingPull} autoplay loop className="w-5 h-5" />
+                            <LottiePlayer animationData={L.loadingPull} autoplay loop className="w-5 h-5" />
                           </div>
                           Đang gửi...
                         </>
