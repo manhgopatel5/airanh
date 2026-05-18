@@ -75,28 +75,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://firestore.googleapis.com" crossOrigin="anonymous" />
-
-        {/* PRELOAD critical Lotties - để LottiePlayer PRO load instant */}
-        {[
-          "huha-loading-pull",
-          "huha-empty",
-          "huha-success-check",
-          "huha-error-shake",
-          "huha-celebrate",
-          "huha-idle",
-          "huha-task",
-          "huha-searching",
-          "huha-wallet-open",
-        ].map((name) => (
-          <link
-            key={name}
-            rel="preload"
-            href={`/lotties/${name}.json`}
-            as="fetch"
-            type="application/json"
-            crossOrigin="anonymous"
-          />
-        ))}
       </head>
 
       <body className="font-sans bg-[#FAFAFB] dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 antialiased overscroll-none tracking-tight">
