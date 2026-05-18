@@ -1366,7 +1366,7 @@ requirements.some(
 
             requirements,
 
-           cover: uploadedCoverUrl || "",
+           cover: cover || "",
 
             createdBy:
               user?.uid,
