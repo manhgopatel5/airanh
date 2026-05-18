@@ -86,14 +86,25 @@ export default function ChangePasswordPage() {
       <>
         <Toaster richColors position="top-center" />
         <div className="min-h-screen bg-background pb-28">
-          <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b border-zinc-200/50 dark:border-zinc-900">
-            <div className="max-w-xl mx-auto px-4 h-14 flex items-center gap-3">
-              <motion.button whileTap={{ scale: 0.9 }} onTouchStart={() => vibrate(5)} onClick={() => router.back()} type="button" className="p-2 -ml-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900">
-                <ChevronLeft className="w-6 h-6" />
-              </motion.button>
-              <h1 className="text-xl font-black tracking-tight">Đổi mật khẩu</h1>
-            </div>
-          <div className="max-w-xl mx-auto px-4 py-6">
+      <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b border-zinc-200/50 dark:border-zinc-900">
+  <div className="max-w-xl mx-auto px-4 h-14 flex items-center gap-3">
+    <motion.button
+      whileTap={{ scale: 0.9 }}
+      onTouchStart={() => vibrate(5)}
+      onClick={() => router.back()}
+      type="button"
+      className="p-2 -ml-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900"
+    >
+      <ChevronLeft className="w-6 h-6" />
+    </motion.button>
+
+    <h1 className="text-xl font-black tracking-tight">
+      Đổi mật khẩu
+    </h1>
+  </div>
+</div>
+
+<div className="max-w-xl mx-auto px-4 py-6">
             <div className="bg-[#FFF4E5] dark:bg-orange-950/30 border border-orange-500/20 rounded-2xl p-4">
               <p className="text-sm text-orange-700 dark:text-orange-400">Tài khoản của bạn đăng nhập bằng Google/Facebook. Không thể đổi mật khẩu tại đây.</p>
             </div>
