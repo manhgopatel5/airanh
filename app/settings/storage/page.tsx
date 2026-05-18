@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback, memo } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { doc, updateDoc, onSnapshot, deleteDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, updateDoc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
 import { signOut, deleteUser } from "firebase/auth";
 import {
