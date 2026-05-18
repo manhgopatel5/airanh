@@ -1,6 +1,5 @@
 "use client";
-
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   listenFriendRequests,
   acceptRequest,
@@ -13,8 +12,9 @@ import { collection, query, where, getDocs, documentId } from "firebase/firestor
 import { FiUserPlus, FiCheck, FiX, FiClock } from "react-icons/fi";
 import { HiSparkles } from "react-icons/hi";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast, Toaster } from "sonner";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import celebrate from "@/public/lotties/huha-celebrate.json";
+import * as L from "@/components/illustrations";
 
 type UserData = {
   uid: string;
@@ -69,7 +69,7 @@ export default function FriendRequests() {
           snap.forEach((doc) => {
             newUsers[doc.id] = {
               uid: doc.id,
-           ...(doc.data() as any),
+          ...(doc.data() as any),
             };
           });
         })
@@ -96,9 +96,12 @@ export default function FriendRequests() {
 
       try {
         await acceptRequest(req);
+        toast.success("Đã chấp nhận lời mời");
       } catch (err) {
         console.error("❌ lỗi accept:", err);
         setList((prev) => [...prev, req]);
+        toast.error("Thao tác thất bại");
+        navigator.vibrate?.(15);
       } finally {
         setProcessing(null);
       }
@@ -119,9 +122,12 @@ export default function FriendRequests() {
 
       try {
         await rejectRequest(id, user.uid);
+        toast.success("Đã từ chối");
       } catch (err) {
         console.error("❌ lỗi reject:", err);
         if (req) setList((prev) => [...prev, req]);
+        toast.error("Thao tác thất bại");
+        navigator.vibrate?.(15);
       } finally {
         setProcessing(null);
       }
@@ -143,20 +149,17 @@ export default function FriendRequests() {
 
   return (
     <div className="bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-100 dark:border-zinc-800 shadow-sm p-4 space-y-3">
+      <Toaster richColors position="top-center" />
       <div className="flex items-center gap-2">
         <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{background:'rgba(0,66,178,0.1)'}}>
           <FiUserPlus className="text-[#0042B2]" size={18} />
         </div>
-<div className="flex items-center gap-1.5">
-  <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">
-    Lời mời kết bạn
-  </h3>
-
-  <HiSparkles
-    size={16}
-    className="text-[#00C853] animate-pulse"
-  />
-</div>
+        <div className="flex items-center gap-1.5">
+          <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">
+            Lời mời kết bạn
+          </h3>
+          <HiSparkles size={16} className="text-[#00C853] animate-pulse" />
+        </div>
         {list.length > 0 && (
           <span className="text-xs font-bold text-white px-2 py-0.5 rounded-lg" style={{background:'#0042B2'}}>
             {list.length}
@@ -181,7 +184,7 @@ export default function FriendRequests() {
       {!loading && list.length === 0 && (
         <div className="flex flex-col items-center py-8 text-zinc-400">
           <div className="w-16 h-16 opacity-60">
-            <LottiePlayer animationData={celebrate} autoplay loop className="w-16 h-16" />
+            <LottiePlayer animationData={L.celebrate} autoplay loop className="w-16 h-16" />
           </div>
           <p className="font-semibold text-sm mt-2">Không có lời mời nào</p>
         </div>
@@ -204,7 +207,7 @@ export default function FriendRequests() {
             >
               {isAccepted && (
                 <div className="absolute inset-0 pointer-events-none">
-                  <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-full h-full" />
+                  <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-full h-full" />
                 </div>
               )}
               <div className="flex items-center gap-3 flex-1 min-w-0 relative z-10">
@@ -234,7 +237,7 @@ export default function FriendRequests() {
                   whileTap={{scale:0.9}}
                   onClick={() => handleAccept(req)}
                   disabled={isProcessing}
-                  className="w-9 h-9 rounded-xl text-white flex items-center justify-center shadow-md disabled:opacity-50"
+                  className="w-9 h-9 rounded-xl text-white flex items-center justify-center shadow-md disabled:opacity-50 active:scale-95"
                   style={{background:'linear-gradient(135deg,#0042B2,#0066FF)'}}
                 >
                   <FiCheck size={16} />
@@ -244,7 +247,7 @@ export default function FriendRequests() {
                   whileTap={{scale:0.9}}
                   onClick={() => handleReject(req.id)}
                   disabled={isProcessing}
-                  className="w-9 h-9 rounded-xl bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 flex items-center justify-center hover:bg-zinc-300 dark:hover:bg-zinc-700"
+                  className="w-9 h-9 rounded-xl bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 flex items-center justify-center hover:bg-zinc-300 dark:hover:bg-zinc-700 disabled:opacity-50 active:scale-95"
                 >
                   <FiX size={16} />
                 </motion.button>
