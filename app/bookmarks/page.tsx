@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { collection, query, where, onSnapshot, orderBy, doc, getDoc, Timestamp, Unsubscribe } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, doc, getDoc, Unsubscribe } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { ItemListItem } from "@/types/task";
 import TaskCard from "@/components/TaskCard";
