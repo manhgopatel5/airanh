@@ -6,9 +6,9 @@ import { updateProfile } from "firebase/auth";
 import { useRef, useState, useEffect, useMemo } from "react";
 import { FiCamera, FiLoader, FiCheck, FiX, FiImage, FiTrash2 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
+import { toast, Toaster } from "sonner";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import celebrate from "@/public/lotties/huha-celebrate.json";
+import * as L from "@/components/illustrations";
 
 export default function UploadAvatar() {
   const storage = useMemo(() => getFirebaseStorage(), []);
@@ -77,6 +77,7 @@ export default function UploadAvatar() {
       toast.error(err.message || "Lỗi upload");
       setUploading(false);
       setPreview(null);
+      navigator.vibrate?.(15);
     } finally {
       if (inputRef.current) inputRef.current.value = "";
     }
@@ -131,7 +132,7 @@ export default function UploadAvatar() {
           const offsetX = (img.width - size) / 2;
           const offsetY = (img.height - size) / 2;
           ctx.imageSmoothingQuality = "high";
-          ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, size, size);
+          ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, size);
           canvas.toBlob((blob) => (blob? resolve(blob) : reject(new Error("Compress failed"))), "image/webp", 0.88);
         };
         img.onerror = () => reject(new Error("Không đọc được ảnh"));
@@ -165,6 +166,7 @@ export default function UploadAvatar() {
 
   return (
     <div className="relative group/avatar">
+      <Toaster richColors position="top-center" />
       <input ref={inputRef} type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} disabled={uploading} />
 
       <div className="relative" onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }} onDragLeave={() => setIsDragging(false)} onDrop={handleDrop}>
@@ -201,7 +203,7 @@ export default function UploadAvatar() {
                   </motion.div>
                 ) : success? (
                   <motion.div key="success" initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-12 h-12">
-                    <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-12 h-12" aria-label="Thành công" />
+                    <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-12 h-12" aria-label="Thành công" />
                   </motion.div>
                 ) : (
                   <motion.div key="camera" initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="text-white">
@@ -216,7 +218,7 @@ export default function UploadAvatar() {
               {success && (
                 <>
                   <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1.15, opacity: 1 }} exit={{ scale: 0, opacity: 0 }} className="absolute -inset-3 pointer-events-none">
-                    <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-[110px] h-[110px] -ml-3.5 -mt-3.5" />
+                    <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-[110px] h-[110px] -ml-3.5 -mt-3.5" />
                   </motion.div>
                   <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0 }} transition={{ type: "spring", stiffness: 500, damping: 15 }} className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-[#00C853] border-3 border-white dark:border-zinc-900 grid place-items-center shadow-lg">
                     <FiCheck size={16} className="text-white" strokeWidth={3} />
