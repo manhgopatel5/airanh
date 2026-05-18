@@ -1,14 +1,11 @@
 "use client";
-
 import { useState, useCallback } from "react";
 import { FiDownload, FiMapPin, FiFile } from "react-icons/fi";
 import Linkify from "linkify-react";
 import EmojiPicker from "./EmojiPicker";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import taskLottie from "@/public/lotties/huha-task.json";
-import celebrate from "@/public/lotties/huha-celebrate.json";
-
+import * as L from "@/components/illustrations";
 import type { Message } from "@/types/message";
 
 type Friend = {
@@ -50,7 +47,7 @@ export default function ChatBubble({
     msg.createdAt &&
     typeof msg.createdAt === "object" &&
     "seconds" in msg.createdAt
-  ? new Date(msg.createdAt.seconds * 1000).toLocaleTimeString([], {
+? new Date(msg.createdAt.seconds * 1000).toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
         })
@@ -96,7 +93,7 @@ export default function ChatBubble({
           <div
             className={`text-xs mb-1 px-3 py-1.5 rounded-2xl max-w-full truncate ${
               isMe
-            ? "bg-[#0042B2]/30 text-white/90"
+          ? "bg-[#0042B2]/30 text-white/90"
                 : "bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
             }`}
           >
@@ -113,13 +110,13 @@ export default function ChatBubble({
             onDoubleClick={() => onReply?.(msg)}
             className={`px-4 py-3 rounded-3xl shadow-sm w-64 ${
               isMe
-            ? "bg-gradient-to-r from-[#0042B2] to-[#0066FF] text-white rounded-br-lg"
+          ? "bg-gradient-to-r from-[#0042B2] to-[#0066FF] text-white rounded-br-lg"
                 : "bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-bl-lg"
             }`}
           >
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 shrink-0">
-                <LottiePlayer animationData={taskLottie} autoplay loop className="w-8 h-8" />
+                <LottiePlayer animationData={L.task} autoplay loop className="w-8 h-8" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className={`text-xs font-bold uppercase tracking-wide ${isMe? "text-white/80" : "text-[#0042B2]"}`}>
@@ -142,7 +139,7 @@ export default function ChatBubble({
             onDoubleClick={() => onReply?.(msg)}
             className={`px-4 py-2.5 rounded-3xl text-sm shadow-sm leading-relaxed break-words relative ${
               isMe
-            ? "bg-gradient-to-r from-[#0042B2] to-[#1A5FFF] text-white rounded-br-lg"
+          ? "bg-gradient-to-r from-[#0042B2] to-[#1A5FFF] text-white rounded-br-lg"
                 : "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-bl-lg"
             }`}
           >
@@ -157,7 +154,7 @@ export default function ChatBubble({
             <AnimatePresence>
               {showCopied && (
                 <motion.div initial={{opacity:0,y:5}} animate={{opacity:1,y:0}} exit={{opacity:0}} className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black/90 text-white text-xs px-2.5 py-1.5 rounded-xl whitespace-nowrap flex items-center gap-1.5">
-                  <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-4 h-4" />
+                  <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-4 h-4" />
                   Đã copy
                 </motion.div>
               )}
@@ -194,7 +191,7 @@ export default function ChatBubble({
             rel="noopener noreferrer"
             className={`flex items-center gap-3 px-4 py-3 rounded-3xl shadow-sm transition active:scale-[0.98] ${
               isMe
-            ? "bg-gradient-to-r from-[#0042B2] to-[#1A5FFF] text-white"
+          ? "bg-gradient-to-r from-[#0042B2] to-[#1A5FFF] text-white"
                 : "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
             }`}
           >
@@ -218,7 +215,7 @@ export default function ChatBubble({
             rel="noopener noreferrer"
             className={`flex items-center gap-3 px-4 py-3 rounded-3xl shadow-sm transition active:scale-[0.98] ${
               isMe
-            ? "bg-gradient-to-r from-[#0042B2] to-[#1A5FFF] text-white"
+          ? "bg-gradient-to-r from-[#0042B2] to-[#1A5FFF] text-white"
                 : "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
             }`}
           >
