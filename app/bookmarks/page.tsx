@@ -14,7 +14,7 @@ import LottiePlayer from "@/components/ui/LottiePlayer";
 import * as L from "@/components/illustrations";
 import { toast, Toaster } from "sonner";
 
-const PINNED_KEY = "pinned_chats";
+
 const BATCH_SIZE = 10;
 
 export default function BookmarksPage() {
