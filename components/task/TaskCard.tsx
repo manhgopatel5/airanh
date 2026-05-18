@@ -1,5 +1,4 @@
 "use client";
-
 import { useRouter } from "next/navigation";
 import { FiUsers, FiClock, FiMapPin, FiBookmark, FiMoreHorizontal, FiTrash2, FiEdit2, FiShare2, FiEye } from "react-icons/fi";
 import { useState, useCallback, useEffect, useRef } from "react";
@@ -12,7 +11,13 @@ import { AppMode } from "@/types/app";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import celebrate from "@/public/lotties/huha-celebrate.json";
+import * as L from "@/components/illustrations";
+
+type Friend = {
+  id: string;
+  name: string;
+  avatar: string;
+};
 
 type Props = {
   task: Task;
@@ -85,6 +90,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
       setIsSaved(!newSaved);
       onTaskUpdate?.(task.id, { savedBy: oldSavedBy });
       toast.error("Lỗi");
+      navigator.vibrate?.(15);
     } finally {
       setSaving(false);
     }
@@ -100,6 +106,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
       toast.success("Đã xóa");
     } catch {
       toast.error("Xóa thất bại");
+      navigator.vibrate?.(15);
     }
   }, [isOwner, task.id, onDelete, db]);
 
@@ -140,12 +147,12 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
               <div className="flex items-center gap-1 text-xs text-zinc-500"><FiEye size={12} /><span>{task.viewCount}</span></div>
             )}
           </div>
-          <h3 className="font-bold text-[15px] text-zinc-900 dark:text-white line-clamp-2 leading-snug">{task.title}</h3>
+          <h3 className="font-bold text- text-zinc-900 dark:text-white line-clamp-2 leading-snug">{task.title}</h3>
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
           <motion.button whileTap={{scale:0.9}} onClick={(e)=>{e.preventDefault();e.stopPropagation();handleSave();}} disabled={saving} className="p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-90 transition-all disabled:opacity-50">
-            {saving? <LottiePlayer animationData={celebrate} autoplay loop className="w-[18px] h-[18px]" /> : <FiBookmark size={18} className={isSaved? `${themeColor.fill} ${themeColor.text}` : "text-zinc-400"} />}
+            {saving? <LottiePlayer animationData={L.celebrate} autoplay loop className="w- h-" /> : <FiBookmark size={18} className={isSaved? `${themeColor.fill} ${themeColor.text}` : "text-zinc-400"} />}
           </motion.button>
 
           <motion.button whileTap={{scale:0.9}} onClick={(e)=>{e.preventDefault();e.stopPropagation();vibrate(8);onShare?.(task);}} className="p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900">
@@ -161,7 +168,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
                 {showMenu && (
                   <Portal>
                     <div className="fixed inset-0 z-[9998]" onClick={()=>setShowMenu(false)} />
-                    <motion.div initial={{opacity:0,scale:0.95,y:-10}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95,y:-10}} className="fixed z-[9999] min-w-[180px] bg-white dark:bg-zinc-950 rounded-2xl shadow-2xl ring-1 ring-black/5 py-2 overflow-hidden" style={{top:`${menuPos.y}px`,left:`${menuPos.x}px`}}>
+                    <motion.div initial={{opacity:0,scale:0.95,y:-10}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95,y:-10}} className="fixed z-[9999] min-w- bg-white dark:bg-zinc-950 rounded-2xl shadow-2xl ring-1 ring-black/5 py-2 overflow-hidden" style={{top:`${menuPos.y}px`,left:`${menuPos.x}px`}}>
                       <button onClick={(e)=>{e.stopPropagation();vibrate();setShowMenu(false);router.push(`/task/${task.id}/edit`);}} className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-[#E8F1FF] dark:hover:bg-[#0042B2]/20 hover:text-[#0042B2] w-full">
                         <FiEdit2 size={18} />Sửa
                       </button>
