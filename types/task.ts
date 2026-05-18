@@ -110,6 +110,7 @@ export type TaskItem = BaseItem & {
   appliedCount?: number;  // ← THÊM DÒNG NÀY
   requirements?: string;
   isRemote: boolean;
+  
   applicationDeadline?: Timestamp | null;
   deadline?: Timestamp | null;
   startDate?: Timestamp | null;
@@ -188,6 +189,13 @@ export type CreateTaskInput = {
   tags?: string[];
   images?: string[];
   attachments?: string[];
+    milestones?: boolean;
+  autoMatch?: boolean;
+  allowBids?: boolean;
+  featured?: boolean;
+  nda?: boolean;
+  invites?: string[];
+  needApproval?: boolean;
   requirements?: string;
   location?: BaseItem["location"];
   isRemote?: boolean;
