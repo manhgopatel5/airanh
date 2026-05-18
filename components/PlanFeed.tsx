@@ -1,9 +1,9 @@
 "use client";
 import { TaskListItem } from "@/types/task";
-import TaskCard from "@/components/TaskCard";
+import TaskCard from "@/components/task/TaskCard";
 import { motion } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import taskLottie from "@/public/lotties/huha-task.json";
+import * as L from "@/components/illustrations";
 
 type Props = {
   plans: TaskListItem[];
@@ -14,7 +14,7 @@ export default function PlanFeed({ plans }: Props) {
     return (
       <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
         <motion.div initial={{scale:0.8,opacity:0}} animate={{scale:1,opacity:1}} transition={{type:"spring",damping:18}} className="w-24 h-24 mb-4">
-          <LottiePlayer animationData={taskLottie} autoplay loop className="w-24 h-24" />
+          <LottiePlayer animationData={L.task} autoplay loop className="w-24 h-24" />
         </motion.div>
         <h2 className="text-2xl font-black tracking-tight" style={{background:'linear-gradient(135deg,#0042B2,#0066FF)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>
           Thành phố đang yên ắng
@@ -29,6 +29,7 @@ export default function PlanFeed({ plans }: Props) {
               key={t}
               whileTap={{scale:0.95}}
               whileHover={{scale:1.03}}
+              onClick={() => navigator.vibrate?.(5)}
               className="px-4 py-2 rounded-full text-sm font-semibold active:scale-95 transition"
               style={{background:'rgba(0,66,178,0.08)',color:'#0042B2'}}
             >
