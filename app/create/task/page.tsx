@@ -1930,8 +1930,7 @@ location: form.isRemote
   setImageFiles(nextFiles);
 
   vibrate(5);
-}
-                }}
+}}
                 className="absolute inset-0 grid place-items-center bg-black/70 opacity-0 transition-opacity group-hover:opacity-100"
               >
                 <FiX
