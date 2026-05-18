@@ -405,41 +405,44 @@ if (field === "totalSlots") {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="bg-white dark:bg-zinc-950 rounded-3xl p-5 border border-zinc-200/60 dark:border-zinc-800 shadow-sm"
-            >
-              <label className="block text-sm font-bold mb-2.5 flex items-center gap-1.5">
-                <FiUsers size={14} className="text-[#0042B2]" />
-                Số người <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                min={task.joined}
-                value={form.totalSlots}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value) || 1;
-                  setForm((prev) => ({...prev, totalSlots: val }));
-                  if (errors.totalSlots)
-                    setErrors((prev) => ({...prev, totalSlots: "" }));
-                }}
-                className={`w-full h-12 px-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-2 ${
-                  errors.totalSlots
-                   ? "border-red-500"
-                    : "border-transparent focus:border-[#0042B2]"
-                } outline-none font-bold text-lg transition-all`}
-              />
-              {errors.totalSlots? (
-                <p className="text-xs text-red-500 mt-2">{errors.totalSlots}</p>
-              ) : (
-          {isTask(task) && (
-  <p className="text-xs text-zinc-500 mt-2">
-    Đã có {task.joined} người tham gia
-  </p>
-)
-              )}
-            </motion.div>
+  initial={{ opacity: 0, y: 12 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.15 }}
+  className="bg-white dark:bg-zinc-950 rounded-3xl p-5 border border-zinc-200/60 dark:border-zinc-800 shadow-sm"
+>
+  <label className="block text-sm font-bold mb-2.5 flex items-center gap-1.5">
+    <FiUsers size={14} className="text-[#0042B2]" />
+    Số người <span className="text-red-500">*</span>
+  </label>
+  <input
+    type="number"
+    min={isTask(task) ? task.joined : 1}
+    value={form.totalSlots}
+    onChange={(e) => {
+      const val = parseInt(e.target.value) || 1;
+      setForm((prev) => ({...prev, totalSlots: val }));
+      if (errors.totalSlots)
+        setErrors((prev) => ({...prev, totalSlots: "" }));
+    }}
+    className={`w-full h-12 px-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-2 ${
+      errors.totalSlots
+       ? "border-red-500"
+        : "border-transparent focus:border-[#0042B2]"
+    } outline-none font-bold text-lg transition-all`}
+  />
+  {errors.totalSlots ? (
+    <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
+      <FiAlertCircle size={12} />
+      {errors.totalSlots}
+    </p>
+  ) : (
+    isTask(task) && (
+      <p className="text-xs text-zinc-500 mt-2">
+        Đã có {task.joined} người tham gia
+      </p>
+    )
+  )}
+</motion.div>
           </div>
 
           {/* Location */}
