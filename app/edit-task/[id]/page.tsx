@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
-import { getTaskById, updateTask, deleteItem } from "@/lib/task";
+import { updateTask, deleteItem } from "@/lib/task";
 import { Task, UpdateTaskInput, isTask } from "@/types/task";
 import { toast, Toaster } from "sonner";
 import {
