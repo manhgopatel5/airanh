@@ -37,8 +37,7 @@ import { ImageGallery } from "@/components/task/ImageGallery";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { createPortal } from "react-dom";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
-import celebrate from "@/public/lotties/huha-celebrate.json";
+import * as L from "@/components/illustrations";
 
 type UserData = {
   uid: string;
@@ -510,7 +509,7 @@ setTimeout(() => {
       toast.error("Lỗi");
     }
   };
- if (loading) return <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-black"><LottiePlayer animationData={loadingPull} loop autoplay className="w-20 h-20" /></div>;
+ if (loading) return <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-black"><LottiePlayer animationData={L.loadingPull} loop autoplay className="w-20 h-20" /></div>;
   if (!task) return <div className="p-4 text-center">Không tìm thấy task</div>;
 
   const parentComments = comments.filter((c) =>!c.parentId);
@@ -565,7 +564,8 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
                   <div className="flex items-center gap-2.5 shrink-0">
                     {!isOwner && (
                       <motion.button
-                        whileTap={{ scale: 0.94 }}
+                       whileTap={{ scale: 0.94 }}
+  onTouchStart={() => vibrate()}
                         onClick={handleSave}
                         disabled={saving}
                         className="w-10 h-10 rounded-2xl bg-transparent flex items-center justify-center hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60 active:scale-90 transition-all disabled:opacity-50"
@@ -578,7 +578,8 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
                     )}
 
                     <motion.button
-                      whileTap={{ scale: 0.94 }}
+                       whileTap={{ scale: 0.94 }}
+  onTouchStart={() => vibrate()}
                       onClick={() => task && setShareTask(task)}
                       className="w-10 h-10 rounded-2xl bg-transparent flex items-center justify-center hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60 active:scale-90 transition-all"
                     >
@@ -587,7 +588,8 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
 
                     <div className="relative">
                       <motion.button
-                        whileTap={{ scale: 0.94 }}
+                       whileTap={{ scale: 0.94 }}
+  onTouchStart={() => vibrate()}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -839,7 +841,8 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
   ) : (
     <div className="grid grid-cols-4 gap-2">
       <motion.button
-        whileTap={{ scale: 0.94 }}
+       whileTap={{ scale: 0.94 }}
+  onTouchStart={() => vibrate()}
         onClick={handleStartChat}
         disabled={isOwner}
         className="h-14 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 flex flex-col items-center justify-center gap-0.5 text-[#1C1C1E] dark:text-zinc-100 active:bg-[#E5E5EA] dark:active:bg-zinc-700 disabled:opacity-40 transition-all"
@@ -849,7 +852,8 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
       </motion.button>
 
       <motion.button
-        whileTap={{ scale: 0.94 }}
+       whileTap={{ scale: 0.94 }}
+  onTouchStart={() => vibrate()}
         onClick={() => owner?.phone && window.open(`tel:${owner.phone}`)}
         disabled={!owner?.phone || isOwner}
         className="h-14 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 flex flex-col items-center justify-center gap-0.5 text-[#1C1C1E] dark:text-zinc-100 active:bg-[#E5E5EA] dark:active:bg-zinc-700 disabled:opacity-40 transition-all"
@@ -859,7 +863,8 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
       </motion.button>
 
       <motion.button
-        whileTap={{ scale: 0.94 }}
+      whileTap={{ scale: 0.94 }}
+  onTouchStart={() => vibrate()}
         onClick={isApplied? handleCancelApply : handleJoinTask}
         disabled={(!isApplied && (isFull || task.status!== "open")) || joining || isOwner}
         className={`h-14 rounded-2xl flex flex-col items-center justify-center gap-0.5 font-semibold active:scale-95 disabled:opacity-40 transition-all ${
@@ -879,7 +884,8 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
       </motion.button>
 
 <motion.button
-  whileTap={{ scale: 0.94 }}
+ whileTap={{ scale: 0.94 }}
+  onTouchStart={() => vibrate()}
   onClick={() => {
     if (!currentUser) return router.push("/login");
     setShowReportModal(true);
@@ -918,7 +924,8 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
               <div className="px-4 pt-3 pb-2">
                 {task.images.length === 1? (
                   <motion.button
-                    whileTap={{ scale: 0.94 }}
+                   whileTap={{ scale: 0.94 }}
+  onTouchStart={() => vibrate()}
                     onClick={() => setShowImageGallery(0)}
                     className="relative w-20 h-20 rounded-xl overflow-hidden"
                   >
@@ -936,7 +943,8 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
                     {task.images.slice(0, 2).map((img, i) => (
                       <motion.button
                         key={i}
-                        whileTap={{ scale: 0.94 }}
+                       whileTap={{ scale: 0.94 }}
+  onTouchStart={() => vibrate()}
                         onClick={() => setShowImageGallery(i)}
                         className="relative w-20 h-20 rounded-xl overflow-hidden"
                       >
@@ -956,7 +964,8 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
                     {task.images.slice(0, 3).map((img, i) => (
                       <motion.button
                         key={i}
-                        whileTap={{ scale: 0.94 }}
+                       whileTap={{ scale: 0.94 }}
+  onTouchStart={() => vibrate()}
                         onClick={() => setShowImageGallery(i)}
                         className="relative aspect-square rounded-xl overflow-hidden"
                       >
@@ -993,7 +1002,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
     <div className="px-5 py-4">
       {parentComments.length === 0? (
         <div className="text-center py-12 text-zinc-400 text-[14px]">
-         <div className="w-12 h-12 mx-auto mb-3 opacity-40"><LottiePlayer animationData={celebrate} loop autoplay className="w-12 h-12" /></div>
+         <div className="w-12 h-12 mx-auto mb-3 opacity-40"><LottiePlayer animationData={L.celebrate} loop autoplay className="w-12 h-12" /></div>
           Chưa có bình luận nào<br />Hãy là người đầu tiên
         </div>
       ) : (
@@ -1103,7 +1112,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
         )}
  {showSuccessAnimation && (
   <div className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center">
-    <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-64 h-64" />
+    <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-64 h-64" />
   </div>
 )}
       </div>
