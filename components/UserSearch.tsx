@@ -5,9 +5,9 @@ import { sendFriendRequest, cancelFriendRequest, getFriendStatus } from "@/lib/f
 import { useAuth } from "@/lib/AuthContext";
 import { FiSearch, FiUserPlus, FiCheck, FiX, FiAlertCircle, FiUsers, FiClock } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
+import { toast, Toaster } from "sonner";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import * as L from "@/components/illustrations";
 
 type UserResult = {
   uid: string;
@@ -20,7 +20,7 @@ type UserResult = {
 };
 
 export default function UserSearch() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [keyword, setKeyword] = useState("");
   const [results, setResults] = useState<UserResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -97,6 +97,7 @@ export default function UserSearch() {
       }
     } catch (err: any) {
       toast.error(err.message || "Gửi lời mời thất bại");
+      navigator.vibrate?.(15);
     } finally {
       if (mountedRef.current) setSending(null);
     }
@@ -114,6 +115,7 @@ export default function UserSearch() {
       }
     } catch (err: any) {
       toast.error(err.message || "Hủy thất bại");
+      navigator.vibrate?.(15);
     } finally {
       if (mountedRef.current) setSending(null);
     }
@@ -156,16 +158,39 @@ export default function UserSearch() {
     pending: results.filter((r) => r.status === "pending_sent").length,
   }), [results]);
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-white dark:bg-black">
+        <LottiePlayer animationData={L.loadingPull} loop autoplay className="w-14 h-14" />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-[560px] mx-auto">
+      <Toaster richColors position="top-center" />
+
       {/* Search header */}
       <div className="sticky top-0 z-20 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl pt-4 pb-3 -mx-4 px-4 border-b border-black/5 dark:border-white/5">
         <div className="relative group">
           <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-[#0a84ff] transition-colors" size={18} />
-          <input ref={inputRef} value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="Tìm theo ID, tên, email..." className="w-full h-12 pl-11 pr-11 bg-zinc-100 dark:bg-zinc-900 rounded-2xl outline-none text- font-medium placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-[#0a84ff]/20 focus:shadow-lg transition-all" autoComplete="off" />
+          <input
+            ref={inputRef}
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="Tìm theo ID, tên, email..."
+            className="w-full h-12 pl-11 pr-11 bg-zinc-100 dark:bg-zinc-900 rounded-2xl outline-none text- font-medium placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 focus:ring-[#0a84ff]/20 focus:shadow-lg transition-all"
+            autoComplete="off"
+          />
           <AnimatePresence>
             {keyword && (
-              <motion.button initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }} onClick={() => { setKeyword(""); inputRef.current?.focus(); }} className="absolute right-2.5 top-1/2 -translate-y-1/2 w-7 h-7 grid place-items-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition-all">
+              <motion.button
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                onClick={() => { setKeyword(""); inputRef.current?.focus(); }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-7 h-7 grid place-items-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition-all"
+              >
                 <FiX size={16} className="text-zinc-500" />
               </motion.button>
             )}
@@ -204,7 +229,14 @@ export default function UserSearch() {
             <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2.5 px-1">Tìm gần đây</p>
             <div className="flex flex-wrap gap-2">
               {recentSearches.map((search, i) => (
-                <motion.button key={search} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.03 }} onClick={() => setKeyword(search)} className="px-3.5 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-sm font-medium active:scale-95 transition-all">
+                <motion.button
+                  key={search}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.03 }}
+                  onClick={() => setKeyword(search)}
+                  className="px-3.5 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-sm font-medium active:scale-95 transition-all"
+                >
                   {search}
                 </motion.button>
               ))}
@@ -218,9 +250,8 @@ export default function UserSearch() {
             <div className="relative">
               <div className="absolute inset-0 bg-[#0a84ff]/20 rounded-full blur-xl animate-pulse" />
               <div className="relative w-14 h-14">
-                <LottiePlayer animationData={loadingPull} autoplay loop className="w-14 h-14" aria-label="Đang tải" />
+                <LottiePlayer animationData={L.loadingPull} autoplay loop className="w-14 h-14" aria-label="Đang tải" />
               </div>
-            </div>
             <p className="text-sm text-zinc-500 font-medium">Đang tìm kiếm...</p>
           </div>
         )}
@@ -253,11 +284,23 @@ export default function UserSearch() {
         <div className="space-y-2">
           <AnimatePresence mode="popLayout">
             {!loading && results.map((u, i) => (
-              <motion.div key={u.uid} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ delay: i * 0.02, type: "spring", stiffness: 400, damping: 25 }} layout className="group relative">
+              <motion.div
+                key={u.uid}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ delay: i * 0.02, type: "spring", stiffness: 400, damping: 25 }}
+                layout
+                className="group relative"
+              >
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-[#0a84ff]/0 via-[#0a84ff]/5 to-[#0a84ff]/0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="relative flex items-center gap-3.5 p-3.5 rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700 hover:shadow-md hover:shadow-black/5 transition-all">
                   <div className="relative flex-shrink-0">
-                    <img src={u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || "U")}&background=0a84ff&color=fff&bold=true`} alt={u.name} className="w-12 h-12 rounded-2xl object-cover ring-2 ring-white dark:ring-zinc-900 shadow-sm" />
+                    <img
+                      src={u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || "U")}&background=0a84ff&color=fff&bold=true`}
+                      alt={u.name}
+                      className="w-12 h-12 rounded-2xl object-cover ring-2 ring-white dark:ring-zinc-900 shadow-sm"
+                    />
                     {u.status === "friends" && <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#00C853] rounded-full grid place-items-center ring-2 ring-white dark:ring-zinc-900"><FiCheck size={10} className="text-white" strokeWidth={3} /></div>}
                   </div>
                   <div className="flex-1 min-w-0">
