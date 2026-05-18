@@ -71,7 +71,7 @@ export default function ChatClient() {
   const primaryText = isPlan? "text-green-600 dark:text-green-400" : "text-[#0a84ff]";
   const primaryRing = isPlan? "focus:ring-green-500/20" : "focus:ring-[#0a84ff]/20";
   const primaryBorder = isPlan? "focus:border-green-500" : "focus:border-[#0a84ff]";
-  const primaryBgSolid = isPlan? "bg-green-500" : "bg-[#0a84ff]";
+ 
 
   const [items, setItems] = useState<ChatItem[]>([]);
   const [friends, setFriends] = useState<FriendItem[]>([]);
