@@ -88,16 +88,20 @@
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
   }
+  
   .theme {
     --font-heading: var(--font-sans);
     --font-sans: var(--font-sans);
   }
+  
     * {
-      @apply border-border;
+    @apply border-border;
   }
+  
   body {
     @apply bg-background text-foreground;
   }
+  
   html {
     @apply font-sans;
   }
@@ -106,7 +110,7 @@
 /* ================= BASE ================= */
 
 @layer base {
-        * {
+    * {
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -118,7 +122,7 @@
   html,
   body {
     height: 100%;
-    @apply bg-[#FAFAFB] dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100;
+    @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: 'tnum' 1;
@@ -133,15 +137,7 @@
   textarea,
   select {
     font-size: 16px;
-    background-color: theme('colors.white');
-    color: theme('colors.gray.900');
-  }
-
-  .dark input,
-  .dark textarea,
-  .dark select {
-    background-color: theme('colors.zinc.900');
-    color: theme('colors.gray.100');
+    @apply bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100;
   }
 
   /* SCROLLBAR */
@@ -162,7 +158,7 @@
     @apply bg-zinc-400 dark:bg-zinc-600;
   }
 
-        * {
+    * {
     scrollbar-width: thin;
     scrollbar-color: rgb(209 213 219) transparent;
   }
@@ -173,8 +169,9 @@
 
   button:focus-visible,
   a:focus-visible,
-  input:focus-visible {
-    @apply outline-none ring-2 ring-[#0042B2]/50 ring-offset-2 ring-offset-white dark:ring-offset-zinc-950;
+  input:focus-visible,
+  textarea:focus-visible {
+    @apply outline-none ring-2 ring-primary/50 ring-offset-2 ring-offset-background;
   }
 }
 
@@ -184,7 +181,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  @apply bg-[#FAFAFB] dark:bg-zinc-950;
+  @apply bg-background;
   overscroll-behavior: none;
 }
 
@@ -214,7 +211,7 @@
   left: 0;
   right: 0;
   @apply bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl;
-  @apply border-t border-zinc-100 dark:border-zinc-800;
+  @apply border-t border-border;
   padding: 8px;
   min-height: 56px;
   padding-bottom: calc(8px + env(safe-area-inset-bottom));
@@ -224,36 +221,36 @@
 
 @layer components {
   .input {
-    @apply w-full px-4 py-3 rounded-2xl border-zinc-200 dark:border-zinc-700;
-    @apply bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100;
-    @apply placeholder:text-zinc-400 dark:placeholder:text-zinc-500;
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0042B2]/20 focus-visible:border-[#0042B2];
+    @apply w-full px-4 py-3 rounded-2xl border border-border;
+    @apply bg-zinc-50 dark:bg-zinc-900 text-foreground;
+    @apply placeholder:text-muted-foreground;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary;
     @apply transition-all duration-200;
   }
 
   .btn {
-    @apply bg-gradient-to-r from-[#0042B2] to-[#00C853] text-white;
+    @apply bg-gradient-to-r from-primary to-accent text-primary-foreground;
     @apply px-6 py-3 rounded-2xl font-semibold text-sm;
-    @apply shadow-lg shadow-[#0042B2]/30 active:scale-[0.98];
+    @apply shadow-lg shadow-primary/30 active:scale-[0.98];
     @apply transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
-    @apply bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100;
+    @apply bg-secondary text-secondary-foreground;
     @apply px-6 py-3 rounded-2xl font-semibold text-sm;
     @apply active:scale-[0.98] transition-all duration-200;
   }
 
   .card {
-    @apply bg-white dark:bg-zinc-900 rounded-3xl;
-    @apply border border-zinc-100 dark:border-zinc-800;
+    @apply bg-card rounded-3xl;
+    @apply border border-border;
     @apply shadow-sm shadow-zinc-100/50 dark:shadow-black/20;
     @apply p-4;
   }
 
   .glass {
     @apply bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl;
-    @apply border border-zinc-100/50 dark:border-zinc-800/50;
+    @apply border border-border/50;
   }
 }
 
@@ -269,7 +266,7 @@
   }
 
   .text-gradient {
-    @apply bg-gradient-to-r from-[#0042B2] to-[#00C853] bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
   }
 
   .no-scrollbar::-webkit-scrollbar {
@@ -317,6 +314,7 @@
     animation: slideFromBottom 0.3s ease-out;
   }
 }
+
 @keyframes shimmer {
   100% { transform: translateX(100%); }
 }
