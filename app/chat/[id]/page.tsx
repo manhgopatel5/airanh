@@ -19,7 +19,7 @@ import { formatDistanceToNow, format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import * as L from "@/components/illustrations";
 
 type UserData = {
   uid: string; name: string; username: string; avatar: string;
@@ -444,7 +444,7 @@ const otherUser = data.membersInfo?.[otherUid] ?? {
   if (authLoading || loadingFriend ||!user) {
     return (
       <div className="h-screen flex items-center justify-center bg-white dark:bg-zinc-950">
-        <LottiePlayer animationData={loadingPull} loop autoplay className="w-20 h-20" />
+    <LottiePlayer animationData={L.loadingPull} loop autoplay className="w-20 h-20" />
       </div>
     );
   }
