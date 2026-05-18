@@ -1003,7 +1003,7 @@ setCoverFile(file);
       }
 
       setLocating(true);
-let mounted = true;
+
       navigator.geolocation.getCurrentPosition(
         async (
           position
