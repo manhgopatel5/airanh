@@ -1,17 +1,18 @@
 "use client";
-
 import { useRouter } from "next/navigation";
 import { FiHeart, FiMessageCircle, FiShare2, FiMoreHorizontal, FiTrash2 } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
-import { useState, useCallback } from "react";
-import { doc, runTransaction, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { doc, onSnapshot, runTransaction, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
+import { incrementTaskView } from "@/lib/taskService";
 import { Timestamp } from "firebase/firestore";
 import Linkify from "linkify-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast, Toaster } from "sonner";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import celebrate from "@/public/lotties/huha-celebrate.json";
+import * as L from "@/components/illustrations";
 
 type Post = {
   id: string;
@@ -33,17 +34,29 @@ type Props = {
 export default function PostCard({ post, onDelete }: Props) {
   const router = useRouter();
   const { user } = useAuth();
-  const db = getFirebaseDB();
+  const db = useMemo(() => getFirebaseDB(), []);
 
   const [localLikes, setLocalLikes] = useState<string[]>(post.likes || []);
   const [liking, setLiking] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showLikeBurst, setShowLikeBurst] = useState(false);
+  const [showShareBurst, setShowShareBurst] = useState(false);
 
   if (!post) return null;
 
   const liked = user && localLikes.includes(user.uid);
   const isOwner = user?.uid === post.userId;
+
+  useEffect(() => {
+    if (!post.id) return;
+    const unsub = onSnapshot(doc(db, "posts", post.id), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setLocalLikes(Array.isArray(data.likes)? data.likes : []);
+      }
+    }, (err) => console.error("Listen likes error:", err));
+    return () => unsub();
+  }, [post.id, db]);
 
   const handleLike = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -52,16 +65,15 @@ export default function PostCard({ post, onDelete }: Props) {
 
     setLiking(true);
     const willLike =!liked;
-
-    const newLikes = liked
-   ? localLikes.filter((id) => id!== user.uid)
-      : [...localLikes, user.uid];
+    const newLikes = willLike? [...localLikes, user.uid] : localLikes.filter((id) => id!== user.uid);
     setLocalLikes(newLikes);
 
     if (willLike) {
       setShowLikeBurst(true);
       navigator.vibrate?.([5,10,5]);
       setTimeout(() => setShowLikeBurst(false), 700);
+    } else {
+      navigator.vibrate?.(5);
     }
 
     try {
@@ -75,11 +87,14 @@ export default function PostCard({ post, onDelete }: Props) {
 
         transaction.update(ref, {
           likes: hasLiked? arrayRemove(user.uid) : arrayUnion(user.uid),
+          likeCount: hasLiked? currentLikes.length - 1 : currentLikes.length + 1,
         });
       });
     } catch (err) {
       console.error("Lỗi like:", err);
       setLocalLikes(post.likes || []);
+      toast.error("Thao tác thất bại");
+      navigator.vibrate?.(15);
     } finally {
       setLiking(false);
     }
@@ -92,14 +107,19 @@ export default function PostCard({ post, onDelete }: Props) {
     const url = `${window.location.origin}/post/${post.id}`;
     const title = post.content?.slice(0, 50) || "Xem bài viết";
 
+    setShowShareBurst(true);
+    setTimeout(() => setShowShareBurst(false), 700);
+
     if (navigator.share) {
       try {
         await navigator.share({ title, url });
+        toast.success("Đã chia sẻ");
       } catch (err) {
         console.warn("Share cancelled");
       }
     } else {
       await navigator.clipboard.writeText(url);
+      toast.success("Đã sao chép link", { icon: "🔗" });
     }
   }, [post.id, post.content]);
 
@@ -110,6 +130,7 @@ export default function PostCard({ post, onDelete }: Props) {
     navigator.vibrate?.(15);
     await deleteDoc(doc(db, "posts", post.id));
     onDelete?.(post.id);
+    toast.success("Đã xóa bài viết");
   }, [isOwner, post.id, onDelete, db]);
 
   const goToPost = useCallback(() => router.push(`/post/${post.id}`), [router, post.id]);
@@ -140,6 +161,7 @@ export default function PostCard({ post, onDelete }: Props) {
       onMouseEnter={handleMouseEnter}
       className="bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-100 dark:border-zinc-900 shadow-sm active:scale-[0.99] transition-all duration-200 cursor-pointer overflow-hidden group hover:shadow-xl hover:shadow-zinc-200/50 dark:hover:shadow-black/30"
     >
+      <Toaster richColors position="top-center" />
       <div className="p-4 space-y-3">
         <div className="flex items-center justify-between gap-3">
           <button onClick={goToProfile} className="flex items-center gap-3 flex-1 min-w-0">
@@ -201,7 +223,7 @@ export default function PostCard({ post, onDelete }: Props) {
         {post.images && post.images.length > 0 && (
           <div
             className={`grid gap-1.5 rounded-2xl overflow-hidden ${
-             post.images.length === 1? "grid-cols-1" : post.images.length === 2? "grid-cols-2" : "grid-cols-2"
+            post.images.length === 1? "grid-cols-1" : post.images.length === 2? "grid-cols-2" : "grid-cols-2"
             }`}
           >
             {post.images.slice(0, 4).map((img, i) => (
@@ -212,9 +234,9 @@ export default function PostCard({ post, onDelete }: Props) {
                   onError={(e) => { e.currentTarget.src = "/placeholder.png"; }}
                   className={`w-full object-cover ${
                     post.images!.length === 1
-                   ? "max-h-"
+                  ? "max-h-"
                       : post.images!.length === 3 && i === 0
-                   ? "row-span-2 h-full min-h-"
+                  ? "row-span-2 h-full min-h-"
                       : "h-44"
                   }`}
                   alt=""
@@ -246,7 +268,7 @@ export default function PostCard({ post, onDelete }: Props) {
               <AnimatePresence>
                 {showLikeBurst && (
                   <motion.div initial={{opacity:0,scale:0.5}} animate={{opacity:1,scale:1.6}} exit={{opacity:0}} className="absolute inset-0 pointer-events-none">
-                    <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-9 h-9 -ml-2.5 -mt-2.5" />
+                    <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-9 h-9 -ml-2.5 -mt-2.5" />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -265,8 +287,15 @@ export default function PostCard({ post, onDelete }: Props) {
             <span className="text-xs font-semibold">{post.commentCount || 0}</span>
           </button>
 
-          <button onClick={handleShare} className="flex items-center gap-1.5 active:scale-90 transition group/share ml-auto hover:text-[#00C853]">
+          <button onClick={handleShare} className="flex items-center gap-1.5 active:scale-90 transition group/share ml-auto hover:text-[#00C853] relative">
             <FiShare2 className="group-hover/share:text-[#00C853] transition-colors" size={18} />
+            <AnimatePresence>
+              {showShareBurst && (
+                <motion.div initial={{opacity:0,scale:0.5}} animate={{opacity:1,scale:1.5}} exit={{opacity:0}} className="absolute inset-0 pointer-events-none">
+                  <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-9 h-9 -ml-1 -mt-1 opacity-80" />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </button>
         </div>
       </div>
