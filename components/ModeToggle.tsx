@@ -1,10 +1,8 @@
 "use client";
-
 import { useAppStore } from "@/store/app";
 import { motion } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import taskLottie from "@/public/lotties/huha-task.json";
-import celebrate from "@/public/lotties/huha-celebrate.json";
+import * as L from "@/components/illustrations";
 
 export default function ModeToggle() {
   const { mode, setMode } = useAppStore();
@@ -25,7 +23,7 @@ export default function ModeToggle() {
             layoutId="mode-pill"
             className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl shadow-lg"
             style={{
-              left: isTask ? 4 : "calc(50% + 0px)",
+              left: isTask? 4 : "calc(50% + 0px)",
               background: isTask
                 ? "linear-gradient(135deg, #0042B2, #1A5FFF)"
                 : "linear-gradient(135deg, #00C853, #00E676)",
@@ -39,13 +37,13 @@ export default function ModeToggle() {
           <button
             onClick={() => handleSet("task")}
             className={`relative z-10 flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl font-bold text-sm transition-colors ${
-              isTask ? "text-white" : "text-zinc-500 dark:text-zinc-400"
+              isTask? "text-white" : "text-zinc-500 dark:text-zinc-400"
             }`}
             style={{ WebkitTapHighlightColor: "transparent" }}
           >
             <div className="w-5 h-5 -ml-0.5">
               <LottiePlayer
-                animationData={taskLottie}
+                animationData={L.task}
                 autoplay={isTask}
                 loop={isTask}
                 className="w-5 h-5"
@@ -57,13 +55,13 @@ export default function ModeToggle() {
           <button
             onClick={() => handleSet("plan")}
             className={`relative z-10 flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl font-bold text-sm transition-colors ${
-              !isTask ? "text-white" : "text-zinc-500 dark:text-zinc-400"
+              !isTask? "text-white" : "text-zinc-500 dark:text-zinc-400"
             }`}
             style={{ WebkitTapHighlightColor: "transparent" }}
           >
             <div className="w-5 h-5 -ml-0.5">
               <LottiePlayer
-                animationData={celebrate}
+                animationData={L.celebrate}
                 autoplay={!isTask}
                 loop={!isTask}
                 className="w-5 h-5"
