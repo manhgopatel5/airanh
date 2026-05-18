@@ -26,7 +26,7 @@ const vibrate = (pattern: number | number[]) => {
 
 export default function ChangePasswordPage() {
   const db = getFirebaseDB();
-  const auth = getFirebaseAuth();
+
   const router = useRouter();
   const { user } = useAuth();
   const [oldPass, setOldPass] = useState("");
