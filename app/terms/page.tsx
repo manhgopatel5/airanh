@@ -5,7 +5,7 @@ import { FiArrowLeft, FiPhone, FiMail, FiUser, FiShield, FiAlertTriangle } from 
 import { motion } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
 import * as L from "@/components/illustrations";
-import { cn } from "@/lib/utils";
+
 
 export default function TermsPage() {
   const router = useRouter();
