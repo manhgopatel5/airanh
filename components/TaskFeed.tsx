@@ -6,6 +6,7 @@ import { AppMode } from "@/types/app";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { useMemo, useState, useRef, useEffect } from "react";
 import { FiGrid, FiList, FiSliders, FiTrendingUp, FiMapPin, FiUsers, FiClock } from "react-icons/fi";
+import { toast } from "sonner";
 
 type TabId = "hot" | "near" | "friends" | "new";
 
@@ -43,31 +44,30 @@ export default function TaskFeed({ tasks, mode, activeTab, onShare, onDelete, on
   const [showFilters, setShowFilters] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-const sortedTasks = useMemo(() => {
-  const sorted = [...tasks];
+  const sortedTasks = useMemo(() => {
+    const sorted = [...tasks];
 
-  switch (sortBy) {
-    case "price":
-      return sorted.sort((a, b) => {
-        const priceA = a.type === "task" ? a.price ?? 0 : 0;
-        const priceB = b.type === "task" ? b.price ?? 0 : 0;
+    switch (sortBy) {
+      case "price":
+        return sorted.sort((a, b) => {
+          const priceA = a.type === "task"? a.price?? 0 : 0;
+          const priceB = b.type === "task"? b.price?? 0 : 0;
+          return priceB - priceA;
+        });
 
-        return priceB - priceA;
-      });
+      case "distance":
+        return sorted.sort(
+          (a, b) => (a.distance?? 999) - (b.distance?? 999)
+        );
 
-    case "distance":
-      return sorted.sort(
-        (a, b) => (a.distance ?? 999) - (b.distance ?? 999)
-      );
-
-    default:
-      return sorted.sort(
-        (a, b) =>
-          (b.createdAt?.toMillis?.() ?? 0) -
-          (a.createdAt?.toMillis?.() ?? 0)
-      );
-  }
-}, [tasks, sortBy]);
+      default:
+        return sorted.sort(
+          (a, b) =>
+            (b.createdAt?.toMillis?.()?? 0) -
+            (a.createdAt?.toMillis?.()?? 0)
+        );
+    }
+  }, [tasks, sortBy]);
 
   const tabConfig = useMemo(() => ({
     hot: { icon: FiTrendingUp, label: "Hot", color: "#ff3b30" },
