@@ -303,23 +303,31 @@ export default function Profile() {
     return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(num);
   };
 
-  if (!user ||!userData) {
-    return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-black pb-28">
-        <div className="px-6 pt-12 pb-6">
-          <div className="flex items-center gap-4 animate-pulse">
-            <div className="w-20 h-20 rounded-3xl bg-zinc-200 dark:bg-zinc-800" />
-            <div className="flex-1">
-              <div className="h-7 w-40 bg-zinc-200 dark:bg-zinc-800 rounded-lg mb-2" />
-              <div className="h-4 w-32 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
-            </div>
-          <div className="grid grid-cols-3 gap-2.5 mt-6">
-            {[1,2,3].map(i => <div key={i} className="h-20 bg-zinc-200 dark:bg-zinc-800 rounded-2xl" />)}
+  if (!user || !userData) {
+  return (
+    <div className="min-h-screen bg-zinc-50 dark:bg-black pb-28">
+      <div className="px-6 pt-12 pb-6">
+        <div className="flex items-center gap-4 animate-pulse">
+          <div className="w-20 h-20 rounded-3xl bg-zinc-200 dark:bg-zinc-800" />
+
+          <div className="flex-1">
+            <div className="h-7 w-40 bg-zinc-200 dark:bg-zinc-800 rounded-lg mb-2" />
+            <div className="h-4 w-32 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
           </div>
         </div>
+
+        <div className="grid grid-cols-3 gap-2.5 mt-6">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-20 bg-zinc-200 dark:bg-zinc-800 rounded-2xl"
+            />
+          ))}
+        </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
     <>
