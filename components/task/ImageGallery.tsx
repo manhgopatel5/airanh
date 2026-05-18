@@ -1,11 +1,10 @@
 "use client";
-
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FiChevronLeft, FiX, FiZoomIn, FiZoomOut } from "react-icons/fi";
 import { motion, AnimatePresence, useMotionValue } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import * as L from "@/components/illustrations";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -57,7 +56,7 @@ export function ImageGallery({ open, images, initialIndex, onClose }: Props) {
     return () => { if (hideUITimeoutRef.current) clearTimeout(hideUITimeoutRef.current); };
   }, [showUI, currentIndex]);
 
-  const paginate = (newDirection: number) => {
+  const paginate = useCallback((newDirection: number) => {
     if (isZoomed) return;
     setDirection(newDirection);
     setLoading(true);
@@ -68,15 +67,16 @@ export function ImageGallery({ open, images, initialIndex, onClose }: Props) {
       return next;
     });
     setShowUI(true);
-  };
+    navigator.vibrate?.(5);
+  }, [isZoomed, images.length]);
 
-  const handleDoubleTap = () => {
+  const handleDoubleTap = useCallback(() => {
     const now = Date.now();
     if (now - lastTapRef.current < 300) toggleZoom();
     lastTapRef.current = now;
-  };
+  }, []);
 
-  const toggleZoom = () => {
+  const toggleZoom = useCallback(() => {
     if (isZoomed) {
       setScale(1); x.set(0); y.set(0); setIsZoomed(false);
     } else {
@@ -84,7 +84,7 @@ export function ImageGallery({ open, images, initialIndex, onClose }: Props) {
     }
     setShowUI(true);
     navigator.vibrate?.(5);
-  };
+  }, [isZoomed, x, y]);
 
   const variants = {
     enter: (direction: number) => ({ x: direction > 0? 1000 : -1000, opacity: 0 }),
@@ -103,7 +103,7 @@ export function ImageGallery({ open, images, initialIndex, onClose }: Props) {
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [open, isZoomed]);
+  }, [open, isZoomed, paginate, onClose]);
 
   if (!images.length) return null;
 
@@ -143,29 +143,30 @@ export function ImageGallery({ open, images, initialIndex, onClose }: Props) {
               {images.length > 1 && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 max-w-full px-4 pointer-events-auto">
                   <div className="flex gap-2 p-2 bg-black/60 backdrop-blur-2xl rounded-2xl overflow-x-auto scrollbar-hide" style={{border:'1px solid rgba(255,255,255,0.1)'}}>
-{images.map((img, idx) => (
-  <button
-    key={idx}
-    onClick={() => {
-      setDirection(idx > currentIndex? 1 : -1);
-      setCurrentIndex(idx);
-      setShowUI(true);
-      setLoading(true);
-    }}
-    className={cn(
-      "relative flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden transition-all duration-200",
-      idx === currentIndex
-       ? "ring-2 ring-[#0042B2] scale-110"
-        : "opacity-60 hover:opacity-100"
-    )}
-  >
-    <img
-      src={img}
-      alt=""
-      className="w-full h-full object-cover"
-    />
-  </button>
-))}
+                    {images.map((img, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          setDirection(idx > currentIndex? 1 : -1);
+                          setCurrentIndex(idx);
+                          setShowUI(true);
+                          setLoading(true);
+                          navigator.vibrate?.(5);
+                        }}
+                        className={cn(
+                          "relative flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden transition-all duration-200",
+                          idx === currentIndex
+                       ? "ring-2 ring-[#0042B2] scale-110"
+                            : "opacity-60 hover:opacity-100"
+                        )}
+                      >
+                        <img
+                          src={img}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
@@ -176,7 +177,7 @@ export function ImageGallery({ open, images, initialIndex, onClose }: Props) {
         <div className="relative w-full h-full flex items-center justify-center" onClick={() => setShowUI(!showUI)}>
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center z-40">
-              <LottiePlayer animationData={loadingPull} autoplay loop className="w-20 h-20" />
+              <LottiePlayer animationData={L.loadingPull} autoplay loop className="w-20 h-20" />
             </div>
           )}
           <AnimatePresence initial={false} custom={direction} mode="popLayout">
