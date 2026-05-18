@@ -99,21 +99,38 @@ export default function VerifyEmailPage() {
             <p className="text-base font-bold mt-1.5 break-all px-4 text-primary">{user.email}</p>
           </div>
 
-          <div className="glass rounded-3xl p-6 shadow-2xl">
+          <div className="glass rounded-3xl p-6 shadow-2xl border border-border">
             <div className="space-y-3">
-              <motion.button whileTap={{ scale: 0.98 }} onClick={handleCheck} disabled={checking} className="relative w-full h-14 rounded-2xl text-primary-foreground text-base font-bold shadow-xl disabled:opacity-60 flex items-center justify-center gap-2.5 bg-gradient-to-r from-accent to-accent/80">
+              <motion.button 
+                whileTap={{ scale: 0.98 }} 
+                onClick={handleCheck} 
+                disabled={checking} 
+                aria-busy={checking}
+                className="relative w-full h-14 rounded-2xl text-primary-foreground text-base font-bold shadow-xl disabled:opacity-60 flex items-center justify-center gap-2.5 bg-gradient-to-r from-accent to-accent/80"
+              >
                 {checking? <FiRefreshCw className="animate-spin" size={20} /> : <FiCheckCircle size={20} />}
                 {checking? "Đang kiểm tra..." : "Tôi đã xác thực"}
               </motion.button>
 
-              <motion.button whileTap={{ scale: 0.98 }} onClick={handleResend} disabled={sending || cooldown > 0} className="w-full h-14 rounded-2xl font-bold text-base bg-secondary text-secondary-foreground border-2 border-border hover:border-primary/50 flex items-center justify-center gap-2.5 disabled:opacity-50">
+              <motion.button 
+                whileTap={{ scale: 0.98 }} 
+                onClick={handleResend} 
+                disabled={sending || cooldown > 0} 
+                aria-busy={sending}
+                className="w-full h-14 rounded-2xl font-bold text-base bg-secondary text-secondary-foreground border-2 border-border hover:border-primary/50 flex items-center justify-center gap-2.5 disabled:opacity-50 transition-colors"
+              >
                 {sending? <><div className="w-5 h-5 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />Đang gửi...</> : cooldown > 0? <><FiSend size={18} />Gửi lại sau {cooldown}s</> : <><FiSend size={18} />Gửi lại email</>}
               </motion.button>
             </div>
 
             <div className="relative my-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div><div className="relative flex justify-center text-xs"><span className="bg-card px-3 text-muted-foreground">hoặc</span></div></div>
 
-            <button onClick={handleLogout} disabled={loggingOut} className="w-full h-12 rounded-2xl font-semibold text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex items-center justify-center gap-2 disabled:opacity-50 transition-all">
+            <button 
+              onClick={handleLogout} 
+              disabled={loggingOut} 
+              aria-busy={loggingOut}
+              className="w-full h-12 rounded-2xl font-semibold text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
+            >
               <FiLogOut size={16} />{loggingOut? "Đang đăng xuất..." : "Dùng tài khoản khác"}
             </button>
           </div>
