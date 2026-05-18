@@ -163,11 +163,11 @@ export default function EditTaskPage() {
     if (field === "price") {
       if (value < 1000) return "Giá tối thiểu 1.000đ";
     }
-    if (field === "totalSlots") {
-      if (!value || value < 1) return "Số người tối thiểu 1";
-      if (task && value < task.joined)
-        return `Không được nhỏ hơn ${task.joined} người đã tham gia`;
-    }
+if (field === "totalSlots") {
+  if (!value || value < 1) return "Số người tối thiểu 1";
+  if (task && isTask(task) && value < task.joined)
+    return `Không được nhỏ hơn ${task.joined} người đã tham gia`;
+}
     return "";
   };
 
