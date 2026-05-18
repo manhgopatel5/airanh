@@ -30,6 +30,7 @@ import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 20;
 type TabId = "hot" | "near" | "friends" | "new";
@@ -67,7 +68,8 @@ export default function Home() {
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const pullRef = useRef({ startY: 0, pulling: false });
 
-  const activeColor = useMemo(() => (isPlanMode? "#00C853" : "#0042B2"), [isPlanMode]);
+  const activeColorClass = useMemo(() => (isPlanMode? "text-accent" : "text-primary"), [isPlanMode]);
+  const activeBgClass = useMemo(() => (isPlanMode? "bg-accent" : "bg-primary"), [isPlanMode]);
 
   const handleShare = useCallback((task: Task) => {
     vibrate(5);
@@ -220,7 +222,7 @@ export default function Home() {
     <motion.div
       {...pageVariants}
       transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-      className="min-h-screen pb-24 font-sans bg-gray-50 dark:bg-black"
+      className="min-h-screen pb-24 font-sans bg-background"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
     >
@@ -238,7 +240,7 @@ export default function Home() {
               animationData={L.loadingPull}
               autoplay
               loop
-              className="w-[60px] h-[60px]"
+              className="w- h-"
               aria-label="Đang làm mới"
             />
           </motion.div>
@@ -264,7 +266,7 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      <div className="sticky top-0 z-40 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800">
+      <div className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border">
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex justify-around">
             {tabs.map((tab) => {
@@ -281,17 +283,15 @@ export default function Home() {
                 >
                   <Icon
                     size={20}
-                    className={active? "" : "text-gray-400 dark:text-zinc-500"}
-                    style={{ color: active? activeColor : undefined }}
+                    className={cn(active? activeColorClass : "text-muted-foreground")}
                   />
-                  <span className="text-xs font-bold mt-1" style={{ color: active? activeColor : undefined }}>
+                  <span className={cn("text-xs font-bold mt-1", active? activeColorClass : "text-muted-foreground")}>
                     {tab.label}
                   </span>
                   {active && (
                     <motion.div
                       layoutId="tab"
-                      className="absolute bottom-0 h-0.5 w-8 rounded-full"
-                      style={{ backgroundColor: activeColor }}
+                      className={cn("absolute bottom-0 h-0.5 w-8 rounded-full", activeBgClass)}
                       transition={{ type: "spring", stiffness: 500, damping: 30 }}
                     />
                   )}
@@ -307,11 +307,10 @@ export default function Home() {
           {error? (
             <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center px-6 py-20 text-center">
               <LottiePlayer animationData={L.errorShake} loop={false} className="w-[180px] h-[180px]" aria-label="Lỗi" />
-              <h2 className="text-xl font-bold mt-2">{error}</h2>
+              <h2 className="text-xl font-bold mt-2 text-foreground">{error}</h2>
               <button
                 onClick={handleRefresh}
-                className="mt-4 px-6 py-2.5 rounded-xl text-white font-bold active:scale-95 flex items-center gap-2"
-                style={{ backgroundColor: activeColor }}
+                className={cn("mt-4 px-6 py-2.5 rounded-xl text-primary-foreground font-bold active:scale-95 flex items-center gap-2", activeBgClass)}
               >
                 <FiRefreshCw /> Thử lại
               </button>
@@ -319,7 +318,7 @@ export default function Home() {
           ) : loading &&!refreshing? (
             <motion.div key="loading" className="flex flex-col items-center py-20">
               <LottiePlayer animationData={L.loadingPull} loop className="w-[120px] h-[120px]" aria-label="Đang tải" />
-              <p className="text-sm text-zinc-500 mt-2">Đang tải...</p>
+              <p className="text-sm text-muted-foreground mt-2">Đang tải...</p>
             </motion.div>
           ) : filteredItems.length === 0? (
             <motion.div
@@ -333,14 +332,13 @@ export default function Home() {
                 loop
                 className="w-[220px] h-[220px]"
                 aria-label="Trống"
-                fallback={<div className="w-[220px] h-[220px] bg-zinc-100 dark:bg-zinc-800 rounded-2xl" />}
+                fallback={<div className="w-[220px] h-[220px] bg-muted rounded-2xl" />}
               />
-              <h3 className="text-lg font-bold mt-2">Chưa có {mode === "task"? "nhiệm vụ" : "kế hoạch"} nào</h3>
-              <p className="text-sm text-zinc-500 mb-6">Hãy là người đầu tiên tạo</p>
+              <h3 className="text-lg font-bold mt-2 text-foreground">Chưa có {mode === "task"? "nhiệm vụ" : "kế hoạch"} nào</h3>
+              <p className="text-sm text-muted-foreground mb-6">Hãy là người đầu tiên tạo</p>
               <button
                 onClick={handleRefresh}
-                className="px-6 py-2.5 rounded-xl text-white font-bold active:scale-95 flex items-center gap-2"
-                style={{ backgroundColor: activeColor }}
+                className={cn("px-6 py-2.5 rounded-xl text-primary-foreground font-bold active:scale-95 flex items-center gap-2", activeBgClass)}
               >
                 <FiRefreshCw /> Tải lại
               </button>
@@ -354,7 +352,7 @@ export default function Home() {
 
         {!loading && hasMore && allItems.length > 0 && (
           <div ref={loadMoreRef} className="py-6 flex justify-center">
-            {loadingMore && <LottiePlayer animationData={L.loadingPull} autoplay loop className="w-[40px] h-[40px]" aria-label="Tải thêm" />}
+            {loadingMore && <LottiePlayer animationData={L.loadingPull} autoplay loop className="w- h-" aria-label="Tải thêm" />}
           </div>
         )}
       </div>
