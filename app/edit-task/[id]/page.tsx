@@ -63,58 +63,86 @@ export default function EditTaskPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    authRef.current = getFirebaseAuth();
-    dbRef.current = getFirebaseDB();
+  authRef.current = getFirebaseAuth();
+  dbRef.current = getFirebaseDB();
 
-    if (!user) {
-      router.replace("/login");
-      return;
-    }
+  if (!user) {
+    router.replace("/login");
+    return;
+  }
 
-    const loadTask = async () => {
-      try {
-        const data = await getTaskById(taskId);
-        if (!data ||!isTask(data)) {
-          toast.error("Không tìm thấy công việc");
-          router.replace("/");
-          return;
-        }
-        if (data.userId !== user.uid) {
-          toast.error("Bạn không có quyền chỉnh sửa");
-          router.replace(`/task/${taskId}`);
-          return;
-        }
-        if (data.status !== "open") {
-          toast.error("Chỉ sửa được công việc đang mở");
-          router.replace(`/task/${taskId}`);
-          return;
-        }
+  const loadTask = async () => {
+    const db = dbRef.current;
+    if (!db) return;
 
-        setTask(data);
-        setForm({
-          title: data.title ?? "",
-          description: data.description ?? "",
-          price: data.price ?? 0,
-          totalSlots: data.totalSlots ?? 1,
-          category: data.category ?? "",
-          tags: data.tags ?? [],
-          images: data.images ?? [],
-          requirements: data.requirements ?? "",
-          location: {
-            address: data.location?.address ?? "",
-            city: data.location?.city ?? "",
-          },
-          isRemote: data.isRemote ?? false,
-        });
-      } catch {
-        toast.error("Tải dữ liệu thất bại");
+    try {
+      // 1. Lấy task chính
+      const taskDoc = await getDoc(doc(db, "tasks", taskId));
+      
+      if (!taskDoc.exists()) {
+        toast.error("Không tìm thấy công việc");
         router.replace("/");
-      } finally {
-        setLoading(false);
+        return;
       }
-    };
-    loadTask();
-  }, [taskId, user, router]);
+
+      const data = taskDoc.data();
+      
+      // 2. Check quyền
+      if (data.userId !== user.uid) {
+        toast.error("Bạn không có quyền chỉnh sửa");
+        router.replace(`/task/${taskId}`);
+        return;
+      }
+      if (data.status !== "open") {
+        toast.error("Chỉ sửa được công việc đang mở");
+        router.replace(`/task/${taskId}`);
+        return;
+      }
+
+      // 3. Đếm số người đã join - THÊM ĐOẠN NÀY
+      const appsSnap = await getDocs(collection(db, "tasks", taskId, "applications"));
+      const joined = appsSnap.size; // hoặc filter: appsSnap.docs.filter(d => d.data().status === "accepted").length
+
+      // 4. Set state với joined
+      const taskData = {
+        id: taskDoc.id,
+        ...data,
+        joined, // Thêm field này
+      } as Task;
+
+      if (!isTask(taskData)) {
+        toast.error("Dữ liệu không hợp lệ");
+        router.replace("/");
+        return;
+      }
+
+      setTask(taskData);
+      setForm({
+        title: data.title ?? "",
+        description: data.description ?? "",
+        price: data.price ?? 0,
+        totalSlots: data.totalSlots ?? 1,
+        category: data.category ?? "",
+        tags: data.tags ?? [],
+        images: data.images ?? [],
+        requirements: data.requirements ?? "",
+        location: {
+          address: data.location?.address ?? "",
+          city: data.location?.city ?? "",
+        },
+        isRemote: data.isRemote ?? false,
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Tải dữ liệu thất bại");
+      router.replace("/");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  loadTask();
+}, [taskId, user, router]);
 
   const validateField = (field: keyof UpdateTaskInput, value: any) => {
     if (field === "title") {
