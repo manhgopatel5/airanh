@@ -380,19 +380,21 @@ if (field === "totalSlots") {
               </label>
               <div className="relative">
                 <input
-                  type="number"
-                  value={form.price}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value) || 0;
-                    setForm((prev) => ({...prev, price: val }));
-                    if (errors.price) setErrors((prev) => ({...prev, price: "" }));
-                  }}
-                  className={`w-full h-12 pl-4 pr-12 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-2 ${
-                    errors.price
-                     ? "border-red-500"
-                      : "border-transparent focus:border-[#0042B2]"
-                  } outline-none font-bold text-lg transition-all`}
-                />
+  type="number"
+  min={isTask(task) ? task.joined : 1}
+  value={form.totalSlots}
+  onChange={(e) => {
+    const val = parseInt(e.target.value) || 1;
+    setForm((prev) => ({...prev, totalSlots: val }));
+    if (errors.totalSlots)
+      setErrors((prev) => ({...prev, totalSlots: "" }));
+  }}
+  className={`w-full h-12 px-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-2 ${
+    errors.totalSlots
+     ? "border-red-500"
+      : "border-transparent focus:border-[#0042B2]"
+  } outline-none font-bold text-lg transition-all`}
+/>
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500 font-medium">
                   đ
                 </span>
@@ -431,9 +433,11 @@ if (field === "totalSlots") {
               {errors.totalSlots? (
                 <p className="text-xs text-red-500 mt-2">{errors.totalSlots}</p>
               ) : (
-                <p className="text-xs text-zinc-500 mt-2">
-                  Đã có {task.joined} người tham gia
-                </p>
+          {isTask(task) && (
+  <p className="text-xs text-zinc-500 mt-2">
+    Đã có {task.joined} người tham gia
+  </p>
+)}
               )}
             </motion.div>
           </div>
