@@ -1,12 +1,23 @@
 "use client";
-import { useState, useEffect } from "react";
-import { doc, updateDoc, serverTimestamp, Timestamp } from "firebase/firestore";
-import { getFirebaseDB } from "@/lib/firebase";
-import { FiShield, FiCheck, FiAlertTriangle, FiX } from "react-icons/fi";
+import { useSearchParams } from "next/navigation";
+import { useState, useEffect, useMemo } from "react";
+import { Ban, Clock, Send, CheckCircle2, Loader2, AlertCircle, MessageSquare, Shield, XCircle, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
+import { doc, getDoc, addDoc, collection, serverTimestamp, query, where, getDocs, updateDoc } from "firebase/firestore";
+import { toast, Toaster } from "sonner";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import errorShake from "@/public/lotties/huha-error-shake.json";
+import * as L from "@/components/illustrations";
+
+type UserData = {
+  banned: boolean;
+  bannedUntil?: any;
+  bannedReason?: string;
+  bannedAt?: any;
+  violationCount?: number;
+  appealSent?: boolean;
+};
 
 type Props = {
   open: boolean;
@@ -14,18 +25,50 @@ type Props = {
   reason: string;
   title?: string;
   message?: string;
-warningAt?: Timestamp | null | undefined;
+  warningAt?: any;
   onClose?: () => void;
 };
 
 export default function WarningModal({ open, uid, reason, title, message, warningAt, onClose }: Props) {
+  const auth = getFirebaseAuth();
+  const db = useMemo(() => getFirebaseDB(), []);
+  const [user] = useAuthState(auth);
+
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [appealText, setAppealText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [hasAppealed, setHasAppealed] = useState(false);
+  const [showAppealForm, setShowAppealForm] = useState(false);
   const [checked, setChecked] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(3);
 
+  // Load user data + check appeal
   useEffect(() => {
-    if (open &&!checked) {
-      setCountdown(3);
+    if (!open ||!uid) return;
+    setLoading(true);
+
+    const fetchData = async () => {
+      try {
+        const userDoc = await getDoc(doc(db, "users", uid));
+        if (userDoc.exists()) setUserData(userDoc.data() as UserData);
+
+        const appealQuery = query(collection(db, "appeals"), where("userId", "==", uid), where("status", "==", "pending"));
+        const appealSnap = await getDocs(appealQuery);
+        setHasAppealed(!appealSnap.empty);
+      } catch (e) {
+        console.error("Load warning data error:", e);
+      } finally {
+        setLoading(false);
+        navigator.vibrate?.(10);
+      }
+    };
+    fetchData();
+  }, [open, uid, db]);
+
+  // Countdown
+  useEffect(() => {
+    if (open &&!checked && countdown > 0) {
       const timer = setInterval(() => {
         setCountdown((c) => {
           if (c <= 1) {
@@ -37,27 +80,56 @@ export default function WarningModal({ open, uid, reason, title, message, warnin
       }, 1000);
       return () => clearInterval(timer);
     }
-  }, [open, checked]);
+  }, [open, checked, countdown]);
 
+  // Reset khi đóng
   useEffect(() => {
     if (!open) {
       setChecked(false);
       setLoading(false);
       setCountdown(3);
+      setShowAppealForm(false);
+      setAppealText("");
     }
   }, [open]);
 
-  if (!open) return null;
-
-  const warningDate = warningAt?.toDate? warningAt.toDate() : new Date();
-  const canConfirm = checked && countdown === 0 &&!loading;
+  const handleAppeal = async () => {
+    if (!user ||!appealText.trim() || appealText.trim().length < 20) {
+      toast.error("Nội dung kháng cáo phải ít nhất 20 ký tự");
+      navigator.vibrate?.(15);
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await addDoc(collection(db, "appeals"), {
+        userId: user.uid,
+        userName: user.displayName || "Unknown",
+        userEmail: user.email,
+        reason: userData?.bannedReason || reason || "Không rõ",
+        appealText: appealText.trim(),
+        status: "pending",
+        createdAt: serverTimestamp(),
+        violationCount: userData?.violationCount || 0,
+      });
+      toast.success("Đã gửi kháng cáo • Admin xem xét 24-48h");
+      setHasAppealed(true);
+      setShowAppealForm(false);
+      setAppealText("");
+      navigator.vibrate?.([10, 20, 10]);
+    } catch (err) {
+      console.error("Appeal error:", err);
+      toast.error("Gửi kháng cáo thất bại");
+      navigator.vibrate?.(15);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleConfirm = async () => {
-    if (!canConfirm) return;
+    if (!checked || countdown > 0 || loading) return;
     setLoading(true);
     navigator.vibrate?.([10, 20, 10]);
     try {
-      const db = getFirebaseDB();
       await updateDoc(doc(db, "users", uid), {
         warning: false,
         warningSeen: true,
@@ -73,10 +145,18 @@ export default function WarningModal({ open, uid, reason, title, message, warnin
     }
   };
 
+  if (!open) return null;
+
+  const warningDate = warningAt?.toDate?.()? warningAt.toDate() : warningAt? new Date(warningAt) : new Date();
+  const violationCount = userData?.violationCount || 0;
+  const canConfirm = checked && countdown === 0 &&!loading;
+
   return (
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-[9999999] flex items-center justify-center p-4">
+          <Toaster richColors position="top-center" />
+
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -108,7 +188,7 @@ export default function WarningModal({ open, uid, reason, title, message, warnin
                   className="absolute top-4 right-4 w-8 h-8 grid place-items-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition-all"
                   aria-label="Đóng"
                 >
-                  <FiX size={18} className="text-zinc-400" />
+                  <XCircle size={18} className="text-zinc-400" />
                 </button>
 
                 {/* Icon */}
@@ -121,7 +201,7 @@ export default function WarningModal({ open, uid, reason, title, message, warnin
                   <div className="absolute inset-0 bg-amber-500/20 rounded-full blur-xl animate-pulse" />
                   <div className="relative w-full h-full">
                     <LottiePlayer
-                      animationData={errorShake}
+                      animationData={L.errorShake}
                       loop
                       autoplay
                       className="w-full h-full"
@@ -161,7 +241,7 @@ export default function WarningModal({ open, uid, reason, title, message, warnin
                   <div className="relative p-5">
                     <div className="flex items-start gap-3.5">
                       <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 grid place-items-center shadow-lg shadow-amber-500/25 flex-shrink-0">
-                        <FiShield className="text-white" size={18} strokeWidth={2.5} />
+                        <Shield className="text-white" size={18} strokeWidth={2.5} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1.5">
@@ -198,13 +278,13 @@ export default function WarningModal({ open, uid, reason, title, message, warnin
                   className="mt-4 grid grid-cols-3 gap-2"
                 >
                   {[
-                    { label: "Lần 1", active: true, color: "bg-amber-500" },
-                    { label: "Lần 2", active: false, color: "bg-zinc-200 dark:bg-zinc-800" },
-                    { label: "Lần 3", active: false, color: "bg-zinc-200 dark:bg-zinc-800" },
+                    { label: "Lần 1", active: violationCount >= 1, color: "bg-amber-500" },
+                    { label: "Lần 2", active: violationCount >= 2, color: "bg-orange-500" },
+                    { label: "Lần 3", active: violationCount >= 3, color: "bg-red-500" },
                   ].map((level, i) => (
                     <div key={i} className="text-center">
-                      <div className={`h-1.5 rounded-full transition-all ${level.active? level.color : level.color}`} />
-                      <p className={`text-[10px] mt-1.5 font-medium ${level.active? "text-amber-600 dark:text-amber-400" : "text-zinc-400"}`}>
+                      <div className={`h-1.5 rounded-full transition-all ${level.active? level.color : "bg-zinc-200 dark:bg-zinc-800"}`} />
+                      <p className={`text-[10px] mt-1.5 font-medium ${level.active? "text-zinc-900 dark:text-white" : "text-zinc-400"}`}>
                         {level.label}
                       </p>
                     </div>
@@ -219,7 +299,7 @@ export default function WarningModal({ open, uid, reason, title, message, warnin
                   className="mt-5 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800"
                 >
                   <div className="flex gap-2.5">
-                    <FiAlertTriangle size={16} className="text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" />
+                    <AlertCircle size={16} className="text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" />
                     <p className="text-[13px] leading-[18px] text-zinc-600 dark:text-zinc-400">
                       <span className="font-semibold text-zinc-900 dark:text-white">Lưu ý quan trọng:</span> Vi phạm lần 2 sẽ bị khóa 7 ngày. Lần 3 khóa vĩnh viễn.
                     </p>
@@ -244,7 +324,7 @@ export default function WarningModal({ open, uid, reason, title, message, warnin
                       className="peer sr-only"
                     />
                     <div className="w-5 h-5 rounded-lg border-2 border-zinc-300 dark:border-zinc-600 peer-checked:bg-[#0a84ff] peer-checked:border-[#0a84ff] transition-all grid place-items-center">
-                      <FiCheck className="text-white opacity-0 peer-checked:opacity-100 transition-opacity" size={12} strokeWidth={3.5} />
+                      <Check className="text-white opacity-0 peer-checked:opacity-100 transition-opacity" size={12} strokeWidth={3.5} />
                     </div>
                   </div>
                   <span className="flex-1 text-[14px] font-medium leading-snug text-zinc-900 dark:text-white group-active:opacity-70 transition-opacity">
