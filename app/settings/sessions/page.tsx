@@ -33,7 +33,7 @@ const vibrate = (pattern: number | number[]) => {
 
 export default function SessionsPage() {
   const db = getFirebaseDB();
-  const auth = getFirebaseAuth();
+
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
 
