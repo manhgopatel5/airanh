@@ -5,14 +5,19 @@ import { useRouter } from "next/navigation";
 import { FiChevronLeft, FiSearch, FiMapPin, FiCheck, FiX, FiNavigation } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
-import celebrate from "@/public/lotties/huha-celebrate.json";
+import * as L from "@/components/illustrations";
 import { toast, Toaster } from "sonner";
 
 type Province = { ProvinceID: number; ProvinceName: string };
 type District = { DistrictID: number; DistrictName: string };
 type Ward = { WardCode: string; WardName: string };
 type Step = "province" | "district" | "ward" | "street";
+
+const vibrate = (pattern: number | number[]) => {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+    try { navigator.vibrate(pattern); } catch {}
+  }
+};
 
 export default function SelectLocationPage() {
   const router = useRouter();
@@ -146,7 +151,7 @@ export default function SelectLocationPage() {
     };
     localStorage.setItem("task_location", JSON.stringify(location));
     setShowSuccess(true);
-    navigator.vibrate?.([10, 20, 10]);
+    vibrate([10, 20, 10]);
     setTimeout(() => {
       setShowSuccess(false);
       router.back();
@@ -166,7 +171,7 @@ export default function SelectLocationPage() {
     else if (step === "district") { setSelectedDistrict(item); setStep("ward"); }
     else { setSelectedWard(item); setStep("street"); }
     setSearch("");
-    navigator.vibrate?.(5);
+    vibrate(5);
   }, [step]);
 
   const getTitle = () => {
@@ -216,6 +221,7 @@ export default function SelectLocationPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.02 }}
             onClick={() => handleSelect(item)}
+            type="button"
             className={`w-full p-4 rounded-2xl text-left font-medium active:scale-[0.98] transition-all border-2 ${
               getSelected(item)
                 ? "bg-[#E8F1FF] dark:bg-[#0042B2]/20 border-[#0042B2] text-[#0042B2]"
@@ -238,7 +244,7 @@ export default function SelectLocationPage() {
       <div className="min-h-screen bg-zinc-50 dark:bg-black">
         <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b border-zinc-200/50 dark:border-zinc-900">
           <div className="max-w-xl mx-auto px-4 py-3 flex items-center gap-3">
-            <motion.button whileTap={{ scale: 0.9 }} onClick={handleBack} className="p-2 -ml-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900">
+            <motion.button whileTap={{ scale: 0.9 }} onTouchStart={() => vibrate(5)} onClick={handleBack} type="button" className="p-2 -ml-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900">
               <FiChevronLeft size={24} />
             </motion.button>
             <h1 className="font-bold text-lg flex-1 truncate">{getTitle()}</h1>
@@ -254,13 +260,13 @@ export default function SelectLocationPage() {
                   className="w-full pl-10 pr-10 h-11 bg-zinc-100 dark:bg-zinc-900 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-[#0042B2]/30"
                 />
                 {search && (
-                  <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-full">
+                  <button onClick={() => setSearch("")} type="button" className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-full">
                     <FiX size={14} />
                   </button>
                 )}
               </div>
               {step === "province" && (
-                <motion.button whileTap={{ scale: 0.95 }} onClick={useCurrentLocation} className="w-11 h-11 bg-[#0042B2] text-white rounded-2xl flex items-center justify-center shadow-lg shadow-[#0042B2]/25">
+                <motion.button whileTap={{ scale: 0.95 }} onTouchStart={() => vibrate(5)} onClick={useCurrentLocation} type="button" className="w-11 h-11 bg-[#0042B2] text-white rounded-2xl flex items-center justify-center shadow-lg shadow-[#0042B2]/25">
                   <FiNavigation size={18} />
                 </motion.button>
               )}
@@ -272,17 +278,17 @@ export default function SelectLocationPage() {
           <AnimatePresence mode="wait">
             <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               {step === "ward" && (
-                <button onClick={() => { setSelectedWard(null); setStep("street"); }} className="w-full p-4 mb-3 bg-white dark:bg-zinc-950 hover:bg-zinc-50 dark:hover:bg-zinc-900 rounded-2xl text-zinc-500 font-medium border-2 border-dashed border-zinc-300 dark:border-zinc-700">
+                <button onTouchStart={() => vibrate(5)} onClick={() => { setSelectedWard(null); setStep("street"); }} type="button" className="w-full p-4 mb-3 bg-white dark:bg-zinc-950 hover:bg-zinc-50 dark:hover:bg-zinc-900 rounded-2xl text-zinc-500 font-medium border-2 border-dashed border-zinc-300 dark:border-zinc-700">
                   Bỏ qua chọn phường/xã
                 </button>
               )}
               {step !== "street" ? renderList() : (
                 <div className="space-y-4">
-                  <div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-900 p-5 shadow-sm">
+                  <div className="bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-200/60 dark:border-zinc-900 p-5 shadow-sm">
                     <p className="text-xs text-zinc-500 mb-1.5">Địa chỉ đã chọn</p>
                     <p className="font-bold text-lg leading-snug">{[selectedWard?.WardName, selectedDistrict?.DistrictName, selectedProvince?.ProvinceName].filter(Boolean).join(", ")}</p>
                   </div>
-                  <div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-900 p-5 shadow-sm">
+                  <div className="bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-200/60 dark:border-zinc-900 p-5 shadow-sm">
                     <label className="text-sm font-semibold mb-2.5 block">Số nhà, tên đường (không bắt buộc)</label>
                     <input
                       placeholder="VD: 123 Nguyễn Huệ"
@@ -292,7 +298,7 @@ export default function SelectLocationPage() {
                       autoFocus
                     />
                   </div>
-                  <motion.button whileTap={{ scale: 0.98 }} onClick={handleSave} className="w-full h-12 rounded-2xl bg-[#0042B2] text-white font-semibold shadow-lg shadow-[#0042B2]/25 flex items-center justify-center gap-2">
+                  <motion.button whileTap={{ scale: 0.98 }} onTouchStart={() => vibrate(5)} onClick={handleSave} type="button" className="w-full h-12 rounded-2xl bg-[#0042B2] text-white font-semibold shadow-lg shadow-[#0042B2]/25 flex items-center justify-center gap-2">
                     <FiCheck size={20} />Xác nhận địa điểm
                   </motion.button>
                 </div>
@@ -303,7 +309,7 @@ export default function SelectLocationPage() {
 
         {loading && step === "province" && !provinces.length && (
           <div className="fixed inset-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center">
-            <LottiePlayer animationData={loadingPull} loop autoplay className="w-20 h-20" />
+            <LottiePlayer animationData={L.loadingPull} loop autoplay className="w-20 h-20" />
           </div>
         )}
 
@@ -311,7 +317,7 @@ export default function SelectLocationPage() {
           {showSuccess && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/20 backdrop-blur-sm">
               <div className="bg-white dark:bg-zinc-950 rounded-3xl p-8 shadow-2xl">
-                <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-24 h-24 mx-auto" />
+                <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-24 h-24 mx-auto" />
                 <p className="text-center font-bold mt-3">Đã chọn địa điểm!</p>
               </div>
             </motion.div>
