@@ -16,8 +16,7 @@ import { Html5Qrcode } from "html5-qrcode";
 import { QRCodeSVG } from "qrcode.react";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import celebrate from "@/public/lotties/huha-celebrate.json";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import * as L from "@/components/illustrations";
 
 type UserData = {
   uid: string; name: string; email: string; phone?: string; userId: string; avatar: string; bio?: string;
@@ -314,7 +313,6 @@ export default function Profile() {
               <div className="h-7 w-40 bg-zinc-200 dark:bg-zinc-800 rounded-lg mb-2" />
               <div className="h-4 w-32 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
             </div>
-          </div>
           <div className="grid grid-cols-3 gap-2.5 mt-6">
             {[1,2,3].map(i => <div key={i} className="h-20 bg-zinc-200 dark:bg-zinc-800 rounded-2xl" />)}
           </div>
@@ -356,7 +354,7 @@ export default function Profile() {
                 {uploading && (
                   <div className="absolute inset-0 bg-black/70 rounded-3xl flex items-center justify-center backdrop-blur-md">
                     <div className="text-center">
-                      <LottiePlayer animationData={loadingPull} loop autoplay className="w-8 h-8 mx-auto" />
+                      <LottiePlayer animationData={L.loadingPull} loop autoplay className="w-8 h-8 mx-auto" />
                       <span className="text-white text-xs font-bold mt-1 block">{uploadProgress}%</span>
                     </div>
                   </div>
@@ -378,7 +376,7 @@ export default function Profile() {
                     className="text-2xl font-black border-b-2 border-zinc-300 dark:border-zinc-700 outline-none bg-transparent flex-1 tracking-tight"
                     maxLength={50}
                   />
-                  <motion.button whileTap={{ scale: 0.9 }} onClick={handleUpdateName} className={`p-2 bg-gradient-to-br ${accentGradient} rounded-xl shadow-lg`} aria-label="Lưu tên">
+                  <motion.button whileTap={{ scale: 0.9 }} onTouchStart={() => vibrate(5)} onClick={handleUpdateName} type="button" className={`p-2 bg-gradient-to-br ${accentGradient} rounded-xl shadow-lg`} aria-label="Lưu tên">
                     <Check size={16} className="text-white" />
                   </motion.button>
                 </div>
@@ -407,7 +405,9 @@ export default function Profile() {
               <motion.button
                 key={stat.label}
                 whileTap={{ scale: 0.96 }}
-                onClick={() => { vibrate(5); stat.onClick?.(); }}
+                onTouchStart={() => vibrate(5)}
+                onClick={stat.onClick}
+                type="button"
                 className="py-3.5 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200/60 dark:border-zinc-900 shadow-sm hover:shadow-md transition-all disabled:opacity-50 active:scale-95"
                 disabled={!stat.onClick}
               >
@@ -459,10 +459,10 @@ export default function Profile() {
                   <QRCodeSVG value={`https://airanh.vercel.app/u/${userData.userId}`} size={200} level="H" includeMargin />
                 </div>
                 <div className="grid grid-cols-2 gap-3 mt-5">
-                  <motion.button whileTap={{ scale: 0.97 }} onClick={handleShare} className="h-12 rounded-2xl font-bold bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95">
+                  <motion.button whileTap={{ scale: 0.97 }} onTouchStart={() => vibrate(5)} onClick={handleShare} type="button" className="h-12 rounded-2xl font-bold bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95">
                     <Share2 size={18} /> Chia sẻ
                   </motion.button>
-                  <motion.button whileTap={{ scale: 0.97 }} onClick={() => { setShowQR(false); setShowScanQR(true); }} className={`h-12 rounded-2xl font-bold bg-gradient-to-r ${accentGradient} text-white flex items-center justify-center gap-2 shadow-lg active:scale-95`}>
+                  <motion.button whileTap={{ scale: 0.97 }} onTouchStart={() => vibrate(5)} onClick={() => { setShowQR(false); setShowScanQR(true); }} type="button" className={`h-12 rounded-2xl font-bold bg-gradient-to-r ${accentGradient} text-white flex items-center justify-center gap-2 shadow-lg active:scale-95`}>
                     <ScanLine size={18} /> Quét mã
                   </motion.button>
                 </div>
@@ -476,9 +476,9 @@ export default function Profile() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black z-50">
               <div id="qr-reader" className="w-full h-full" />
               <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 border-2 border-white/80 rounded-3xl shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 border-2 border-white/80 rounded-3xl shadow-[0_0_9999px_rgba(0,0,0,0.6)]" />
               </div>
-              <motion.button whileTap={{ scale: 0.9 }} onClick={stopScan} className="absolute top-6 right-6 w-11 h-11 rounded-2xl bg-black/60 backdrop-blur-xl flex items-center justify-center border border-white/20" aria-label="Đóng">
+              <motion.button whileTap={{ scale: 0.9 }} onTouchStart={() => vibrate(5)} onClick={stopScan} type="button" className="absolute top-6 right-6 w-11 h-11 rounded-2xl bg-black/60 backdrop-blur-xl flex items-center justify-center border border-white/20" aria-label="Đóng">
                 <X className="w-5 h-5 text-white" />
               </motion.button>
               <div className="absolute bottom-24 left-1/2 -translate-x-1/2 text-white text-center px-6">
@@ -497,7 +497,7 @@ export default function Profile() {
         <AnimatePresence>
           {showSuccess && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
-              <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-28 h-28" />
+              <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-28 h-28" />
             </motion.div>
           )}
         </AnimatePresence>
@@ -510,7 +510,9 @@ const Item = ({ label, icon: Icon, onClick, danger }: { label: string; icon: any
   return (
     <motion.button
       whileTap={{ scale: 0.99 }}
-      onClick={() => { vibrate(5); onClick?.(); }}
+      onTouchStart={() => vibrate(5)}
+      onClick={onClick}
+      type="button"
       className="w-full flex items-center justify-between px-5 py-4 active:bg-zinc-50 dark:active:bg-zinc-900 transition-colors"
     >
       <div className="flex items-center gap-3.5">
@@ -533,13 +535,15 @@ const Modal = ({ title, desc, onClose, onConfirm, confirmText, danger, accent }:
         <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6 leading-relaxed">{desc}</p>
         <motion.button
           whileTap={{ scale: 0.98 }}
-          onClick={() => { vibrate(5); onConfirm(); }}
+          onTouchStart={() => vibrate(5)}
+          onClick={onConfirm}
+          type="button"
           className={`w-full h-12 rounded-2xl font-bold mb-3 text-white shadow-lg active:scale-95 ${danger? "bg-red-500 shadow-red-500/25" : ""}`}
           style={!danger? { background: accent, boxShadow: `0 8px 20px ${accent}40` } : {}}
         >
           {confirmText}
         </motion.button>
-        <motion.button whileTap={{ scale: 0.98 }} onClick={onClose} className="w-full h-12 bg-zinc-100 dark:bg-zinc-900 rounded-2xl font-semibold active:scale-95">
+        <motion.button whileTap={{ scale: 0.98 }} onTouchStart={() => vibrate(5)} onClick={onClose} type="button" className="w-full h-12 bg-zinc-100 dark:bg-zinc-900 rounded-2xl font-semibold active:scale-95">
           Hủy
         </motion.button>
       </motion.div>
