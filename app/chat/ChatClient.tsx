@@ -17,7 +17,8 @@ import {
 } from "firebase/firestore";
 import {
   FiSearch, FiMessageSquare, FiUserPlus, FiUsers, FiCheck, FiX,
-  FiUpload, FiUserX, FiBell, FiAtSign, FiInbox,
+  FiUpload, FiUserX, FiBell, FiAtSign, FiInbox, FiMoreVertical,
+  FiPin, FiTrash2,
 } from "react-icons/fi";
 import { RiAddLine } from "react-icons/ri";
 import Link from "next/link";
@@ -57,7 +58,9 @@ export default function ChatClient() {
   const { user, loading: authLoading } = useAuth();
   const db = getFirebaseDB();
   const router = useRouter();
-  const unsubRef = useRef<Unsubscribe | null>(null);
+  const chatsUnsubRef = useRef<Unsubscribe | null>(null);
+  const notifUnsubRef = useRef<Unsubscribe | null>(null);
+  const friendsUnsubRef = useRef<Unsubscribe | null>(null);
 
   const mode = useAppStore((s) => s.mode);
   const isPlan = mode === "plan";
@@ -90,12 +93,15 @@ export default function ChatClient() {
   const [scanMode, setScanMode] = useState<"camera" | "upload">("camera");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const qrReaderFileId = "qr-reader-file-temp";
 
+  // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(search), DEBOUNCE_DELAY);
     return () => clearTimeout(timer);
   }, [search]);
 
+  // Online status
   useEffect(() => {
     const handleOnline = () => { setIsOnline(true); toast.success("Đã kết nối lại"); };
     const handleOffline = () => { setIsOnline(false); toast.error("Mất kết nối mạng"); };
@@ -108,6 +114,7 @@ export default function ChatClient() {
     };
   }, []);
 
+  // Load pinned chats
   useEffect(() => {
     try {
       const pinnedData = localStorage.getItem(PINNED_KEY);
@@ -121,15 +128,24 @@ export default function ChatClient() {
     }
   }, []);
 
+  const togglePin = useCallback((chatId: string) => {
+    setPinned(prev => {
+      const newPinned = prev.includes(chatId)
+       ? prev.filter(id => id!== chatId)
+        : [...prev, chatId];
+      localStorage.setItem(PINNED_KEY, JSON.stringify(newPinned));
+      return newPinned;
+    });
+  }, []);
 
-
-  // Load notifications
+  // Load notifications - FIX: proper cleanup
   useEffect(() => {
     if (!user?.uid) return;
     setNotifLoading(true);
     const notifRef = collection(db, "notifications", user.uid, "items");
     const q = query(notifRef, orderBy("createdAt", "desc"), limit(50));
-    const unsub = onSnapshot(q, (snapshot) => {
+
+    notifUnsubRef.current = onSnapshot(q, (snapshot) => {
       const notifs: NotificationItem[] = [];
       snapshot.forEach((doc) => {
         notifs.push({ id: doc.id,...doc.data() } as NotificationItem);
@@ -140,74 +156,108 @@ export default function ChatClient() {
       console.error("Notifications error:", error);
       setNotifLoading(false);
     });
-    return () => unsub();
+
+    return () => {
+      if (notifUnsubRef.current) {
+        notifUnsubRef.current();
+        notifUnsubRef.current = null;
+      }
+    };
   }, [user?.uid, db]);
 
-  // Load friends
+  // Load friends - FIX: proper cleanup + use friends collection
   useEffect(() => {
     if (!user?.uid || activeTab!== "friends") return;
+    let isMounted = true;
     setFriendsLoading(true);
-    const timeout = setTimeout(() => setFriendsLoading(false), 800);
+
     const friendsRef = collection(db, "users", user.uid, "friends");
-    const q = query(friendsRef);
-    const unsub = onSnapshot(q, async (snapshot) => {
-      clearTimeout(timeout);
+    const q = query(friendsRef, where("status", "==", "accepted"));
+
+    friendsUnsubRef.current = onSnapshot(q, async (snapshot) => {
+      if (!isMounted) return;
       try {
-        const activeFriendIds = snapshot.docs.filter(d => d.data()?.status!== "removed").map(d => d.id);
-        const friendsData: FriendItem[] = [];
-        const allIds = [...new Set([...activeFriendIds])];
-        if (allIds.length === 0) { setFriends([]); setFriendsLoading(false); return; }
+        const friendIds = snapshot.docs.map(d => d.id);
+        if (friendIds.length === 0) {
+          setFriends([]);
+          setFriendsLoading(false);
+          return;
+        }
+
         const chunks: string[][] = [];
-        for (let i = 0; i < allIds.length; i += BATCH_SIZE) chunks.push(allIds.slice(i, i + BATCH_SIZE));
+        for (let i = 0; i < friendIds.length; i += BATCH_SIZE) {
+          chunks.push(friendIds.slice(i, i + BATCH_SIZE));
+        }
+
+        const friendsData: FriendItem[] = [];
         await Promise.all(chunks.map(async (chunk) => {
           const userDocs = await Promise.all(chunk.map(id => getDoc(doc(db, "users", id))));
           userDocs.forEach((userDoc) => {
             if (userDoc.exists()) {
               const data = userDoc.data();
+              const friendDoc = snapshot.docs.find(d => d.id === userDoc.id);
               friendsData.push({
-                uid: userDoc.id, name: data.name || "User", username: data.username || "",
+                uid: userDoc.id,
+                name: data.name || "User",
+                username: data.username || "",
                 avatar: data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || "U")}&background=random`,
-                userId: data.userId || "", isOnline: Boolean(data.isOnline), lastSeen: data.lastSeen,
-                mutualFriends: data.mutualFriends || 0,
-                isDeletedByThem: Boolean(snapshot.docs.find(d => d.id === userDoc.id)?.data()?.removedBy),
+                userId: data.userId || "",
+                isOnline: Boolean(data.isOnline),
+                lastSeen: data.lastSeen,
+                mutualFriends: friendDoc?.data()?.mutualFriends || 0,
+                isDeletedByThem: Boolean(friendDoc?.data()?.removedBy),
               });
             }
           });
         }));
+
         friendsData.sort((a, b) => {
           if (a.isOnline!== b.isOnline) return b.isOnline? 1 : -1;
           return a.name.localeCompare(b.name);
         });
-        setFriends(friendsData);
+
+        if (isMounted) setFriends(friendsData);
       } catch (error) {
         console.error("Error loading friends:", error);
-        setFriends([]);
+        if (isMounted) setFriends([]);
       } finally {
-        setFriendsLoading(false);
+        if (isMounted) setFriendsLoading(false);
       }
     }, (error) => {
-      clearTimeout(timeout);
       console.error("Friends listener error:", error);
-      setFriends([]);
-      setFriendsLoading(false);
+      if (isMounted) {
+        setFriends([]);
+        setFriendsLoading(false);
+      }
     });
-    return () => { clearTimeout(timeout); unsub(); };
+
+    return () => {
+      isMounted = false;
+      if (friendsUnsubRef.current) {
+        friendsUnsubRef.current();
+        friendsUnsubRef.current = null;
+      }
+    };
   }, [user?.uid, activeTab, db]);
 
-  // Load chats
+  // Load chats - FIX: cleanup + retry + isPlan dependency
   useEffect(() => {
     if (authLoading ||!user?.uid) return;
     let retryCount = 0;
     let isMounted = true;
+
     const setupListener = (): Unsubscribe => {
       const chatsQuery = query(collection(db, "chats"), where("members", "array-contains", user.uid));
+
       const unsubscribe = onSnapshot(chatsQuery, async (snapshot: QuerySnapshot<DocumentData>) => {
-        retryCount = 0;
         if (!isMounted) return;
+        retryCount = 0;
         setLoading(true);
+
         try {
           const rawChats: RawChat[] = [];
           const userIdsToFetch = new Set<string>();
+
           snapshot.forEach((document) => {
             const chatData = document.data();
             const isGroupChat = Boolean(chatData.isGroup);
@@ -219,42 +269,67 @@ export default function ChatClient() {
               rawChats.push({ id: document.id, c: chatData, other: otherUserId, isGroup: false });
             }
           });
+
           const usersMap: Record<string, any> = {};
           if (userIdsToFetch.size > 0) {
             const userIds = Array.from(userIdsToFetch);
             const chunks: string[][] = [];
-            for (let i = 0; i < userIds.length; i += BATCH_SIZE) chunks.push(userIds.slice(i, i + BATCH_SIZE));
+            for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
+              chunks.push(userIds.slice(i, i + BATCH_SIZE));
+            }
             await Promise.all(chunks.map(async (chunk) => {
               const userDocs = await Promise.all(chunk.map((userId) => getDoc(doc(db, "users", userId))));
-              userDocs.forEach((userDoc) => { if (userDoc.exists()) usersMap[userDoc.id] = userDoc.data(); });
+              userDocs.forEach((userDoc) => {
+                if (userDoc.exists()) usersMap[userDoc.id] = userDoc.data();
+              });
             }));
           }
+
           const chatList: ChatItem[] = rawChats.map((raw) => {
             const chatData = raw.c;
             if (raw.isGroup) {
               return {
-                uid: raw.id, chatId: raw.id, name: chatData.groupName || "Nhóm", username: "",
+                uid: raw.id,
+                chatId: raw.id,
+                name: chatData.groupName || "Nhóm",
+                username: "",
                 avatar: chatData.groupAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(chatData.groupName || "N")}&background=${isPlan? "22c55e" : "0a84ff"}&color=fff&bold=true`,
-                userId: "", lastMessage: typeof chatData.lastMessage === 'string'? chatData.lastMessage : chatData.lastMessage?.text || "",
-                lastSenderId: chatData.lastSenderId || chatData.lastMessage?.senderId, lastSenderName: chatData.lastSenderName,
-                updatedAt: chatData.updatedAt, unreadCount: chatData.unread?.[user.uid] || 0,
+                userId: "",
+                lastMessage: typeof chatData.lastMessage === 'string'? chatData.lastMessage : chatData.lastMessage?.text || "",
+                lastSenderId: chatData.lastSenderId || chatData.lastMessage?.senderId,
+                lastSenderName: chatData.lastSenderName,
+                updatedAt: chatData.updatedAt,
+                unreadCount: chatData.unread?.[user.uid] || 0,
                 isTyping: Object.entries(chatData.typing || {}).some(([userId, isTyping]) => userId!== user.uid && Boolean(isTyping)),
-                isGroup: true, members: chatData.members || [], isOnline: false,
-                blockedUsers: chatData.blockedUsers || [], deletedFor: chatData.deletedFor || [],
+                isGroup: true,
+                members: chatData.members || [],
+                isOnline: false,
+                blockedUsers: chatData.blockedUsers || [],
+                deletedFor: chatData.deletedFor || [],
               };
             } else {
               const userData = usersMap[raw.other || ""] || {};
               return {
-                uid: raw.other || "", chatId: raw.id, name: userData.name || "User", username: userData.username || "",
+                uid: raw.other || "",
+                chatId: raw.id,
+                name: userData.name || "User",
+                username: userData.username || "",
                 avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || "U")}&background=random`,
-                userId: userData.userId || "", lastMessage: typeof chatData.lastMessage === 'string'? chatData.lastMessage : chatData.lastMessage?.text || "",
-                lastSenderId: chatData.lastSenderId || chatData.lastMessage?.senderId, lastSenderName: "",
-                updatedAt: chatData.updatedAt, isOnline: Boolean(userData.isOnline), unreadCount: chatData.unread?.[user.uid] || 0,
-                isTyping: Boolean(raw.other && chatData.typing?.[raw.other]), isGroup: false,
-                blockedUsers: chatData.blockedUsers || [], deletedFor: chatData.deletedFor || [],
+                userId: userData.userId || "",
+                lastMessage: typeof chatData.lastMessage === 'string'? chatData.lastMessage : chatData.lastMessage?.text || "",
+                lastSenderId: chatData.lastSenderId || chatData.lastMessage?.senderId,
+                lastSenderName: "",
+                updatedAt: chatData.updatedAt,
+                isOnline: Boolean(userData.isOnline),
+                unreadCount: chatData.unread?.[user.uid] || 0,
+                isTyping: Boolean(raw.other && chatData.typing?.[raw.other]),
+                isGroup: false,
+                blockedUsers: chatData.blockedUsers || [],
+                deletedFor: chatData.deletedFor || [],
               };
             }
           });
+
           const visibleChats = chatList.filter(chat =>!chat.deletedFor?.includes(user.uid));
           const pinnedChats = JSON.parse(localStorage.getItem(PINNED_KEY) || "[]");
           visibleChats.sort((a, b) => {
@@ -265,6 +340,7 @@ export default function ChatClient() {
             const bTime = b.updatedAt?.seconds || 0;
             return bTime - aTime;
           });
+
           if (isMounted) setItems(visibleChats);
         } catch (error) {
           console.error("Error processing chats:", error);
@@ -278,205 +354,364 @@ export default function ChatClient() {
         if (retryCount < MAX_RETRIES && error.code!== "permission-denied") {
           retryCount++;
           const delay = RETRY_DELAY * retryCount;
-          setTimeout(() => { if (isMounted) setupListener(); }, delay);
+          setTimeout(() => {
+            if (isMounted) setupListener();
+          }, delay);
         } else if (error.code!== "permission-denied") {
           toast.error("Không thể kết nối realtime");
         }
         setLoading(false);
       });
-      unsubRef.current = unsubscribe;
+
+      chatsUnsubRef.current = unsubscribe;
       return unsubscribe;
     };
+
     const unsubscribe = setupListener();
-    return () => { isMounted = false; if (unsubscribe) unsubscribe(); };
-  }, [user?.uid, authLoading, db, isPlan]);
-const createNotification = useCallback(async (targetUid: string, notif: Omit<NotificationItem, "id" | "createdAt" | "read">) => {
-  if (!targetUid) return;
+    return () => {
+      isMounted = false;
+      if (unsubscribe) unsubscribe();
+      if (chatsUnsubRef.current) {
+        chatsUnsubRef.current();
+        chatsUnsubRef.current = null;
+      }
+    };
+  }, [user?.uid, authLoading, db, isPlan]); // FIX: thêm isPlan
+  const createNotification = useCallback(async (targetUid: string, notif: Omit<NotificationItem, "id" | "createdAt" | "read">) => {
+    if (!targetUid || targetUid === user?.uid) return; // FIX: không spam chính mình
     try {
       const notifRef = doc(collection(db, "notifications", targetUid, "items"));
       await setDoc(notifRef, {...notif, read: false, createdAt: serverTimestamp()});
     } catch (error) { console.error("Create notification error:", error); }
-  }, [db]);
+  }, [db, user?.uid]);
 
-  const stopScan = async (closeModal = true) => {
+  const stopScan = useCallback(async (closeModal = true) => {
     try {
       if (scannerRef.current) {
         if (scannerRef.current.isScanning) await scannerRef.current.stop();
         await scannerRef.current.clear();
         scannerRef.current = null;
       }
-    } catch {}
+    } catch (e) { console.error("Stop scan error:", e); }
     if (closeModal) setShowScanQR(false);
-  };
+  }, []);
 
-  const handleScanFromFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // FIX: cleanup DOM element sau khi scan file
+  const handleScanFromFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    let qrReader = document.getElementById("qr-reader-file");
-    if (!qrReader) { qrReader = document.createElement("div"); qrReader.id = "qr-reader-file"; qrReader.style.display = "none"; document.body.appendChild(qrReader); }
-    const html5QrCode = new Html5Qrcode("qr-reader-file");
+
+    const tempId = qrReaderFileId;
+    let qrReader = document.getElementById(tempId);
+    if (!qrReader) {
+      qrReader = document.createElement("div");
+      qrReader.id = tempId;
+      qrReader.style.display = "none";
+      document.body.appendChild(qrReader);
+    }
+
+    const html5QrCode = new Html5Qrcode(tempId);
     try {
       const result = await html5QrCode.scanFile(file, false);
       let userId = "";
       if (result.includes("/u/")) userId = result.split("/u/")[1] || "";
       else if (result.startsWith("@")) userId = result.slice(1);
       else userId = result.trim();
-      if (userId) { setSearch(userId); setAddMode("friend"); setShowAdd(true); toast.success("Đã quét QR thành công"); }
-      else toast.error("Mã QR không hợp lệ");
-    } catch { toast.error("Không đọc được QR từ ảnh"); }
-    finally { await html5QrCode.clear(); e.target.value = ""; }
-  };
+
+      if (userId) {
+        setSearch(userId);
+        setAddMode("friend");
+        setShowAdd(true);
+        toast.success("Đã quét QR thành công");
+      } else {
+        toast.error("Mã QR không hợp lệ");
+      }
+    } catch (err) {
+      console.error("Scan file error:", err);
+      toast.error("Không đọc được QR từ ảnh");
+    } finally {
+      try { await html5QrCode.clear(); } catch {}
+      if (qrReader && qrReader.parentNode) qrReader.parentNode.removeChild(qrReader); // FIX: remove DOM
+      e.target.value = "";
+    }
+  }, []);
 
   useEffect(() => {
     if (!showScanQR || scanMode!== "camera") return;
+    let isMounted = true;
+
     const startScan = async () => {
       const html5QrCode = new Html5Qrcode("qr-reader");
       scannerRef.current = html5QrCode;
       try {
-        await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } },
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
           (decodedText) => {
+            if (!isMounted) return;
             if ("vibrate" in navigator) navigator.vibrate(10);
             let userId = "";
             if (decodedText.includes("/u/")) userId = decodedText.split("/u/")[1] || "";
             else if (decodedText.startsWith("@")) userId = decodedText.slice(1);
             else userId = decodedText.trim();
-            if (userId) { setSearch(userId); setAddMode("friend"); setShowAdd(true); stopScan(); toast.success("Đã quét QR"); }
-            else toast.error("Mã QR không hợp lệ");
-          }, () => {}
+            if (userId) {
+              setSearch(userId);
+              setAddMode("friend");
+              setShowAdd(true);
+              stopScan();
+              toast.success("Đã quét QR");
+            } else {
+              toast.error("Mã QR không hợp lệ");
+            }
+          },
+          () => {}
         );
-      } catch { toast.error("Không mở được camera"); setShowScanQR(false); }
+      } catch (err) {
+        console.error("Camera error:", err);
+        toast.error("Không mở được camera");
+        setShowScanQR(false);
+      }
     };
+
     startScan();
-    return () => { stopScan(false); };
-  }, [showScanQR, scanMode]);
+    return () => {
+      isMounted = false;
+      stopScan(false);
+    };
+  }, [showScanQR, scanMode, stopScan]);
 
   const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<void> => {
-    event?.preventDefault(); setAdding(true);
+    event?.preventDefault();
+    if (!user?.uid) { toast.error("Chưa đăng nhập"); return; }
+
+    const keyword = search.trim().replace("@", "");
+    if (!keyword) { toast.error("Vui lòng nhập username"); return; }
+
+    setAdding(true);
     try {
-      const auth = getAuth(); await auth.authStateReady();
-      const currentUser = auth.currentUser;
-      if (!currentUser?.uid) { toast.error("Chưa đăng nhập. F5 lại trang."); return; }
-      const keyword = search.trim().replace("@", "");
-      if (!keyword) { toast.error("Vui lòng nhập username"); return; }
-      let targetUserId: string | null = null;
       const lowerKeyword = keyword.toLowerCase();
       const usernameDoc = await getDoc(doc(db, "usernames", lowerKeyword));
-      if (usernameDoc.exists()) targetUserId = usernameDoc.data().uid;
-      if (!targetUserId) { toast.error(`Không tìm thấy @${keyword}`); return; }
-      if (targetUserId === currentUser.uid) { toast.error("Không thể thêm chính mình"); return; }
-      const requestId = `${currentUser.uid}_${targetUserId}`;
-      await setDoc(doc(db, "friendRequests", requestId), { from: currentUser.uid, to: targetUserId, status: "pending", createdAt: serverTimestamp() });
-      toast.success("Đã gửi lời mời kết bạn"); setShowAdd(false); setSearch("");
+      if (!usernameDoc.exists()) {
+        toast.error(`Không tìm thấy @${keyword}`);
+        return;
+      }
+
+      const targetUserId = usernameDoc.data().uid;
+      if (targetUserId === user.uid) {
+        toast.error("Không thể thêm chính mình");
+        return;
+      }
+
+      const requestId = `${user.uid}_${targetUserId}`;
+      await setDoc(doc(db, "friendRequests", requestId), {
+        from: user.uid,
+        to: targetUserId,
+        status: "pending",
+        createdAt: serverTimestamp()
+      });
+
+      // Tạo notification
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      const userData = userDoc.data();
+      await createNotification(targetUserId, {
+        type: "friend_request",
+        fromUid: user.uid,
+        fromName: userData?.name || "Người dùng",
+        fromAvatar: userData?.avatar || "",
+        title: "Lời mời kết bạn",
+        message: "đã gửi lời mời kết bạn cho bạn"
+      });
+
+      toast.success("Đã gửi lời mời kết bạn");
+      setShowAdd(false);
+      setSearch("");
     } catch (error: any) {
-      console.error("Add friend error:", error.code, error.message);
+      console.error("Add friend error:", error);
       if (error.code === 'permission-denied') toast.error("Đã gửi lời mời hoặc các bạn đã là bạn bè");
       else toast.error(`Lỗi: ${error.message || "Không thể gửi lời mời"}`);
-    } finally { setAdding(false); }
-  }, [search, db]);
+    } finally {
+      setAdding(false);
+    }
+  }, [search, db, user?.uid, createNotification]);
 
   const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) => {
-    if (!user?.uid) return; setAdding(true);
+    if (!user?.uid) return;
+    setAdding(true);
     try {
       const functions = getFunctions(getApp(), "asia-southeast1");
       const acceptFn = httpsCallable(functions, 'acceptFriendRequest');
       const result = await acceptFn({ fromUid: notif.fromUid, notifId: notif.id });
       const data = result.data as { chatId: string };
-      toast.success(`Đã kết bạn với ${notif.fromName}`); router.push(`/chat/${data.chatId}`);
+
+      // FIX: mark notification as read
+      await updateDoc(doc(db, "notifications", user.uid, "items", notif.id), { read: true });
+
+      toast.success(`Đã kết bạn với ${notif.fromName}`);
+      router.push(`/chat/${data.chatId}`);
     } catch (error: any) {
       console.error(error);
       if (error.code === 'functions/not-found') toast.error("Lời mời đã hết hạn");
       else if (error.code === 'functions/already-exists') toast.error("Các bạn đã là bạn bè");
       else toast.error("Lỗi: " + error.message);
-    } finally { setAdding(false); }
-  }, [user?.uid, router]);
+    } finally {
+      setAdding(false);
+    }
+  }, [user?.uid, router, db]);
 
   const handleDeclineFriendRequest = useCallback(async (notif: NotificationItem) => {
-    const auth = getAuth(); await auth.authStateReady();
-    const currentUser = auth.currentUser; if (!currentUser?.uid) return;
+    if (!user?.uid) return;
     try {
       const batch = writeBatch(db);
-      batch.delete(doc(db, "notifications", currentUser.uid, "items", notif.id));
-      const requestId = `${notif.fromUid}_${currentUser.uid}`;
+      batch.delete(doc(db, "notifications", user.uid, "items", notif.id));
+      const requestId = `${notif.fromUid}_${user.uid}`;
       batch.delete(doc(db, "friendRequests", requestId));
-      await batch.commit(); toast.success("Đã từ chối lời mời");
-    } catch (error) { console.error("Decline error:", error); toast.error("Lỗi từ chối"); }
-  }, [db]);
+      await batch.commit();
+      toast.success("Đã từ chối lời mời");
+    } catch (error) {
+      console.error("Decline error:", error);
+      toast.error("Lỗi từ chối");
+    }
+  }, [db, user?.uid]);
 
   const handleMarkNotificationRead = useCallback(async (notifId: string) => {
     if (!user?.uid) return;
-    try { await updateDoc(doc(db, "notifications", user.uid, "items", notifId), { read: true }); }
-    catch (error) { console.error("Mark read error:", error); }
+    try {
+      await updateDoc(doc(db, "notifications", user.uid, "items", notifId), { read: true });
+    } catch (error) { console.error("Mark read error:", error); }
   }, [user?.uid, db]);
 
   const handleMarkAllRead = useCallback(async () => {
     if (!user?.uid) return;
+    const unreadNotifs = notifications.filter(n =>!n.read);
+    if (unreadNotifs.length === 0) return;
+
     try {
       const batch = writeBatch(db);
-      notifications.filter(n =>!n.read).forEach(notif => {
+      unreadNotifs.forEach(notif => {
         batch.update(doc(db, "notifications", user.uid, "items", notif.id), { read: true });
       });
-      await batch.commit(); toast.success("Đã đánh dấu tất cả");
-    } catch (error) { console.error("Mark all read error:", error); }
+      await batch.commit();
+      toast.success("Đã đánh dấu tất cả");
+    } catch (error) {
+      console.error("Mark all read error:", error);
+      toast.error("Lỗi đánh dấu");
+    }
   }, [user?.uid, db, notifications]);
 
   const handleClearAllNotifications = useCallback(async () => {
-    if (!user?.uid) return; if (!confirm("Xóa tất cả thông báo?")) return;
+    if (!user?.uid || notifications.length === 0) return;
+    if (!confirm("Xóa tất cả thông báo? Hành động này không thể hoàn tác.")) return;
+
     try {
       const batch = writeBatch(db);
       notifications.forEach(notif => batch.delete(doc(db, "notifications", user.uid, "items", notif.id)));
-      await batch.commit(); toast.success("Đã xóa tất cả");
-    } catch (error) { console.error("Clear all error:", error); }
+      await batch.commit();
+      toast.success("Đã xóa tất cả");
+    } catch (error) {
+      console.error("Clear all error:", error);
+      toast.error("Lỗi xóa thông báo");
+    }
   }, [user?.uid, db, notifications]);
 
   const handleStartChatWithFriend = useCallback(async (friendId: string) => {
-    const auth = getAuth(); await auth.authStateReady();
-    const currentUser = auth.currentUser; if (!currentUser?.uid) return;
-    const chatId = [currentUser.uid, friendId].sort().join("_");
-    const [currentUserDoc, friendDoc] = await Promise.all([getDoc(doc(db, "users", currentUser.uid)), getDoc(doc(db, "users", friendId))]);
-    const currentData = currentUserDoc.data(); const friendData = friendDoc.data();
-    await setDoc(doc(db, "chats", chatId), {
-      members: [currentUser.uid, friendId], isGroup: false, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
-      membersInfo: {
-        [currentUser.uid]: { name: currentData?.name || "User", avatar: currentData?.avatar || "", username: currentData?.username || "" },
-        [friendId]: { name: friendData?.name || "User", avatar: friendData?.avatar || "", username: friendData?.username || "" }
-      }
-    }, { merge: true });
-    router.push(`/chat/${chatId}`);
-  }, [db, router]);
+    if (!user?.uid) return;
+    const chatId = [user.uid, friendId].sort().join("_");
+
+    try {
+      const [currentUserDoc, friendDoc] = await Promise.all([
+        getDoc(doc(db, "users", user.uid)),
+        getDoc(doc(db, "users", friendId))
+      ]);
+
+      const currentData = currentUserDoc.data();
+      const friendData = friendDoc.data();
+
+      await setDoc(doc(db, "chats", chatId), {
+        members: [user.uid, friendId],
+        isGroup: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        membersInfo: {
+          [user.uid]: { name: currentData?.name || "User", avatar: currentData?.avatar || "", username: currentData?.username || "" },
+          [friendId]: { name: friendData?.name || "User", avatar: friendData?.avatar || "", username: friendData?.username || "" }
+        }
+      }, { merge: true });
+
+      router.push(`/chat/${chatId}`);
+    } catch (error) {
+      console.error("Start chat error:", error);
+      toast.error("Không thể mở chat");
+    }
+  }, [db, router, user?.uid]);
 
   const handleRemoveFriend = useCallback(async (friendId: string, friendName: string) => {
-    if (!user?.uid) return; if (!window.confirm(`Xóa ${friendName} khỏi danh sách bạn bè?`)) return;
+    if (!user?.uid) return;
+    if (!window.confirm(`Xóa ${friendName} khỏi danh sách bạn bè?`)) return;
+
     setAdding(true);
     try {
       const functions = getFunctions(getApp(), "asia-southeast1");
       const unfriend = httpsCallable(functions, 'unfriend');
-      await unfriend({ friendUid: friendId }); toast.success("Đã hủy kết bạn");
-    } catch (error: any) { console.error("Remove friend error:", error); toast.error(`Lỗi: ${error.message || "Không thể xóa"}`); }
-    finally { setAdding(false); }
+      await unfriend({ friendUid: friendId });
+      toast.success("Đã hủy kết bạn");
+    } catch (error: any) {
+      console.error("Remove friend error:", error);
+      toast.error(`Lỗi: ${error.message || "Không thể xóa"}`);
+    } finally {
+      setAdding(false);
+    }
   }, [user?.uid]);
 
   const handleCreateGroup = useCallback(async (): Promise<void> => {
-    if (!user) { toast.error("Chưa đăng nhập"); return; }
+    if (!user?.uid) { toast.error("Chưa đăng nhập"); return; }
+
     const trimmedName = groupName.trim();
     if (!trimmedName) { toast.error("Vui lòng nhập tên nhóm"); return; }
     if (selected.length < 1) { toast.error("Vui lòng chọn ít nhất 1 thành viên"); return; }
     if (trimmedName.length > 50) { toast.error("Tên nhóm tối đa 50 ký tự"); return; }
+
     setAdding(true);
     try {
       const groupRef = doc(collection(db, "chats"));
-      const groupData = { members: [user.uid,...selected], isGroup: true, groupName: trimmedName, admins: [user.uid], createdAt: serverTimestamp(), updatedAt: serverTimestamp(), lastMessage: `${user.displayName || "Bạn"} đã tạo nhóm`, lastSenderName: "Hệ thống" };
+      const groupData = {
+        members: [user.uid,...selected],
+        isGroup: true,
+        groupName: trimmedName,
+        admins: [user.uid],
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        lastMessage: `${user.displayName || "Bạn"} đã tạo nhóm`,
+        lastSenderName: "Hệ thống"
+      };
       await setDoc(groupRef, groupData);
-      const userDoc = await getDoc(doc(db, "users", user.uid)); const userData = userDoc.data();
-      await Promise.all(selected.map(memberId => createNotification(memberId, { type: "group_invite", fromUid: user.uid, fromName: userData?.name || "Người dùng", fromAvatar: userData?.avatar || "", title: "Mời vào nhóm", message: `đã thêm bạn vào nhóm "${trimmedName}"`, groupId: groupRef.id, chatId: groupRef.id })));
-      toast.success("Đã tạo nhóm thành công"); router.push(`/chat/${groupRef.id}`); setShowAdd(false); setGroupName(""); setSelected([]);
-    } catch (error: any) { console.error("Create group error:", error); toast.error(`Lỗi tạo nhóm: ${error.message || "Vui lòng thử lại"}`); }
-    finally { setAdding(false); }
+
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      const userData = userDoc.data();
+      await Promise.all(selected.map(memberId => createNotification(memberId, {
+        type: "group_invite",
+        fromUid: user.uid,
+        fromName: userData?.name || "Người dùng",
+        fromAvatar: userData?.avatar || "",
+        title: "Mời vào nhóm",
+        message: `đã thêm bạn vào nhóm "${trimmedName}"`,
+        groupId: groupRef.id,
+        chatId: groupRef.id
+      })));
+
+      toast.success("Đã tạo nhóm thành công");
+      router.push(`/chat/${groupRef.id}`);
+      setShowAdd(false);
+      setGroupName("");
+      setSelected([]);
+    } catch (error: any) {
+      console.error("Create group error:", error);
+      toast.error(`Lỗi tạo nhóm: ${error.message || "Vui lòng thử lại"}`);
+    } finally {
+      setAdding(false);
+    }
   }, [user, groupName, selected, db, router, createNotification]);
 
- 
-
- 
-
+  // FIX: memo deps để tránh tạo lại function
   const formatMessageTime = useCallback((timestamp?: Timestamp): string => {
     if (!timestamp?.toDate) return "";
     const date = timestamp.toDate();
@@ -487,11 +722,16 @@ const createNotification = useCallback(async (targetUid: string, notif: Omit<Not
 
   const formatLastSeen = useCallback((timestamp?: Timestamp): string => {
     if (!timestamp?.toDate) return "Lâu rồi";
-    const date = timestamp.toDate(); const now = new Date();
-    const diffMs = now.getTime() - date.getTime(); const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60); const diffDays = Math.floor(diffHours / 24);
-    if (diffMins < 1) return "Vừa xong"; if (diffMins < 60) return `${diffMins} phút trước`;
-    if (diffHours < 24) return `${diffHours} giờ trước`; if (diffDays < 7) return `${diffDays} ngày trước`;
+    const date = timestamp.toDate();
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffMins < 1) return "Vừa xong";
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    if (diffDays < 7) return `${diffDays} ngày trước`;
     return format(date, "dd/MM/yyyy");
   }, []);
 
@@ -503,16 +743,26 @@ const createNotification = useCallback(async (targetUid: string, notif: Omit<Not
   const filteredChats = useMemo(() => {
     const query = debounced.toLowerCase().trim();
     let filtered = items;
-    if (query) filtered = filtered.filter((item) => item.name.toLowerCase().includes(query) || item.username.toLowerCase().includes(query) || item.userId.toLowerCase().includes(query));
+    if (query) {
+      filtered = filtered.filter((item) =>
+        item.name.toLowerCase().includes(query) ||
+        item.username.toLowerCase().includes(query) ||
+        item.userId.toLowerCase().includes(query)
+      );
+    }
     if (activeTab === "unread") filtered = filtered.filter((item) => (item.unreadCount || 0) > 0);
     else if (activeTab === "group") filtered = filtered.filter((item) => item.isGroup);
     return filtered;
-  }, [items, debounced, activeTab, user?.uid]);
+  }, [items, debounced, activeTab]);
 
   const filteredFriendsList = useMemo(() => {
     const query = debounced.toLowerCase().trim();
     if (!query) return friends;
-    return friends.filter(f => f.name.toLowerCase().includes(query) || f.username.toLowerCase().includes(query) || f.userId.toLowerCase().includes(query));
+    return friends.filter(f =>
+      f.name.toLowerCase().includes(query) ||
+      f.username.toLowerCase().includes(query) ||
+      f.userId.toLowerCase().includes(query)
+    );
   }, [friends, debounced]);
 
   const { pinnedChats, normalChats } = useMemo(() => {
@@ -521,11 +771,18 @@ const createNotification = useCallback(async (targetUid: string, notif: Omit<Not
     return { pinnedChats: pinnedList, normalChats: normalList };
   }, [filteredChats, pinned]);
 
-  const friendsForGroup = useMemo(() => items.filter((item) =>!item.isGroup), [items]);
+  // FIX: dùng friends thay vì items
+  const friendsForGroup = useMemo(() => friends.filter((f) =>!f.isDeletedByThem), [friends]);
+
   const unreadNotifications = useMemo(() => notifications.filter(n =>!n.read).length, [notifications]);
+
   const groupedNotifications = useMemo(() => {
-    const today: NotificationItem[] = []; const earlier: NotificationItem[] = [];
-    notifications.forEach(notif => { if (notif.createdAt?.toDate && isToday(notif.createdAt.toDate())) today.push(notif); else earlier.push(notif); });
+    const today: NotificationItem[] = [];
+    const earlier: NotificationItem[] = [];
+    notifications.forEach(notif => {
+      if (notif.createdAt?.toDate && isToday(notif.createdAt.toDate())) today.push(notif);
+      else earlier.push(notif);
+    });
     return { today, earlier };
   }, [notifications]);
 
@@ -541,7 +798,12 @@ const createNotification = useCallback(async (targetUid: string, notif: Omit<Not
   };
 
   if (authLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black"><div className="flex flex-col items-center gap-3"><LottiePlayer animationData={loadingPull} loop autoplay className="w-12 h-12" /><p className="text-[14px] text-gray-500">Đang tải...</p></div></div>;
+    return <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
+      <div className="flex flex-col items-center gap-3">
+        <LottiePlayer animationData={loadingPull} loop autoplay className="w-12 h-12" />
+        <p className="text-[14px] text-gray-500">Đang tải...</p>
+      </div>
+    </div>;
   }
 
   return (
@@ -553,365 +815,335 @@ const createNotification = useCallback(async (targetUid: string, notif: Omit<Not
             <div className="flex items-center gap-2.5">
               <div className="relative flex-1">
                 <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
-                <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={activeTab === "friends"? "Tìm bạn bè" : activeTab === "notifications"? "Tìm thông báo" : "Tìm kiếm"} className={`w-full h-[38px] pl-[34px] pr-3.5 bg-[#f2f7] dark:bg-zinc-900 rounded-[10px] text-[15px] font-normal outline-none border-0 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 ${primaryRing} transition-all placeholder:text-gray-400`} autoComplete="off" autoCorrect="off" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={activeTab === "friends"? "Tìm bạn bè" : activeTab === "notifications"? "Tìm thông báo" : "Tìm kiếm"}
+                  className={`w-full h-[38px] pl-[34px] pr-3.5 bg-[#f2f7] dark:bg-zinc-900 rounded-[10px] text-[15px] font-normal outline-none border-0 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 ${primaryRing} transition-all placeholder:text-gray-400`}
+                  autoComplete="off"
+                  autoCorrect="off"
+                />
               </div>
-              <button onClick={() => setShowAdd(true)} className={`w-[38px] h-[38px] ${primaryBg} ${primaryHover} ${primaryActive} rounded-[10px] flex items-center justify-center shadow-sm active:scale-95 transition-all duration-150`} aria-label="Tạo mới"><RiAddLine className="text-white" size={22} strokeWidth={2.5} /></button>
+              <button
+                onClick={() => setShowAdd(true)}
+                className={`w-[38px] h-[38px] ${primaryBg} ${primaryHover} ${primaryActive} rounded-[10px] flex items-center justify-center shadow-sm active:scale-95 transition-all duration-150`}
+                aria-label="Tạo mới"
+              >
+                <RiAddLine className="text-white" size={22} strokeWidth={2.5} />
+              </button>
             </div>
             <div className="grid grid-cols-5 mt-3.5 px-0.5">
-              {[{ key: "all", label: "Tất cả" }, { key: "friends", label: "Bạn bè" }, { key: "notifications", label: "Thông báo", badge: unreadNotifications }, { key: "unread", label: "Chưa đọc" }, { key: "group", label: "Nhóm" }].map((tab) => (
-                <button key={tab.key} onClick={() => setActiveTab(tab.key as any)} className={`relative py-2 text-[15px] whitespace-nowrap transition-colors duration-200 flex items-center justify-center gap-1.5 ${activeTab === tab.key
-  ? `${primaryText} font-semibold` : "text-[#8e8e93] dark:text-zinc-500 font-normal hover:text-gray-700 dark:hover:text-zinc-400"}`}>
+              {[
+                { key: "all", label: "Tất cả" },
+                { key: "friends", label: "Bạn bè" },
+                { key: "notifications", label: "Thông báo", badge: unreadNotifications },
+                { key: "unread", label: "Chưa đọc" },
+                { key: "group", label: "Nhóm" }
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key as any)}
+                  className={`relative py-2 text-[15px] whitespace-nowrap transition-colors duration-200 flex items-center justify-center gap-1.5 ${
+                    activeTab === tab.key
+                     ? `${primaryText} font-semibold`
+                      : "text-[#8e8e93] dark:text-zinc-500 font-normal hover:text-gray-700 dark:hover:text-zinc-400"
+                  }`}
+                >
                   {tab.label}
-                  {tab.badge? <span className="min-w-[18px] h-[18px] px-1 bg-[#ff3b30] rounded-full flex items-center justify-center"><span className="text-[11px] leading-none font-medium text-white">{tab.badge > 99? "99+" : tab.badge}</span></span> : null}
+                  {tab.badge? (
+                    <span className="min-w-[18px] h-[18px] px-1 bg-[#ff3b30] rounded-full flex items-center justify-center">
+                      <span className="text-[11px] leading-none font-medium text-white">{tab.badge > 99? "99+" : tab.badge}</span>
+                    </span>
+                  ) : null}
                   {activeTab === tab.key && <div className="absolute -bottom-[1px] left-0 right-0 h-[2.5px] bg-black dark:bg-white rounded-full" />}
                 </button>
               ))}
-              {!isOnline && <span className="ml-auto text-[12px] text-orange-500 font-medium flex items-center gap-1"><span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse" />Offline</span>}
+              {!isOnline && (
+                <span className="ml-auto text-[12px] text-orange-500 font-medium flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse" />Offline
+                </span>
+              )}
             </div>
           </div>
         </div>
 
         <div className="pb-24">
-          {/* Render logic giữ nguyên từ file gốc - đã rút gọn để tiết kiệm */}
           {activeTab === "notifications"? (
-            notifLoading? <div className="p-4">Đang tải...</div> :
-            notifications.length === 0? <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center"><FiBell className="text-gray-400 mb-4" size={48} /><h3 className="text-[20px] font-semibold">Chưa có thông báo</h3></div> :
-            <>
-  <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 dark:border-zinc-900">
-    <div className="flex items-center gap-4">
-      <button
-        onClick={handleMarkAllRead}
-        className={`text-[13px] font-medium ${primaryText}`}
-      >
-        Đọc tất cả
-      </button>
-
-      <button
-        onClick={handleClearAllNotifications}
-        className="text-[13px] font-medium text-red-500"
-      >
-        Xóa hết
-      </button>
-    </div>
-  </div>
-
-  <div className="divide-y divide-gray-100 dark:divide-zinc-900">
-              {groupedNotifications.today.length > 0 && (
-  <>
-    <div className="px-4 py-2 text-[13px] font-semibold text-gray-500">
-      Hôm nay
-    </div>
-
-    {groupedNotifications.today.map((notif) => (
-      <div
-        key={notif.id}
-        onClick={() =>
-          !notif.read &&
-          handleMarkNotificationRead(notif.id)
-        }
-        className={`px-4 py-3 flex items-start gap-3 transition-colors ${
-          !notif.read
-            ? "bg-[#0a84ff]/5"
-            : "hover:bg-gray-50 dark:hover:bg-zinc-900"
-        }`}
-      >
-        <div className="relative shrink-0">
-          <img
-            src={notif.fromAvatar}
-            alt=""
-            className="w-12 h-12 rounded-full object-cover"
-          />
-
-          {!notif.read && (
-            <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#0a84ff]" />
-          )}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-[15px] leading-5 text-black dark:text-white">
-              <span className="font-semibold">
-                {notif.fromName}
-              </span>{" "}
-              {notif.message}
-            </p>
-
-            <div className="shrink-0">
-              {getNotificationIcon(notif.type)}
-            </div>
-          </div>
-
-          <p className="text-[13px] text-gray-500 mt-1">
-            {formatNotifTime(notif.createdAt)}
-          </p>
-
-          {notif.type === "friend_request" &&
-            !notif.read && (
-              <div className="flex gap-2 mt-3">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAcceptFriendRequest(notif);
-                  }}
-                  className={`px-4 h-8 ${primaryBg} text-white rounded-full text-[13px] font-medium active:scale-95 transition-transform`}
-                >
-                  Chấp nhận
-                </button>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeclineFriendRequest(notif);
-                  }}
-                  className="px-4 h-8 bg-gray-200 dark:bg-zinc-800 rounded-full text-[13px] font-medium active:scale-95 transition-transform"
-                >
-                  Từ chối
-                </button>
+            notifLoading? (
+              <div className="flex flex-col items-center justify-center min-h-[60vh]">
+                <LottiePlayer animationData={loadingPull} loop autoplay className="w-12 h-12" />
               </div>
-            )}
-        </div>
-      </div>
-    ))}
-  </>
-)}
-
-{groupedNotifications.earlier.length > 0 && (
-  <>
-    <div className="px-4 py-2 text-[13px] font-semibold text-gray-500 border-t border-gray-100 dark:border-zinc-900">
-      Trước đó
-    </div>
-
-    {groupedNotifications.earlier.map((notif) => (
-      <div
-        key={notif.id}
-        onClick={() =>
-          !notif.read &&
-          handleMarkNotificationRead(notif.id)
-        }
-        className={`px-4 py-3 flex items-start gap-3 transition-colors ${
-          !notif.read
-            ? "bg-[#0a84ff]/5"
-            : "hover:bg-gray-50 dark:hover:bg-zinc-900"
-        }`}
-      >
-        <div className="relative shrink-0">
-          <img
-            src={notif.fromAvatar}
-            alt=""
-            className="w-12 h-12 rounded-full object-cover"
-          />
-
-          {!notif.read && (
-            <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#0a84ff]" />
-          )}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-[15px] leading-5 text-black dark:text-white">
-              <span className="font-semibold">
-                {notif.fromName}
-              </span>{" "}
-              {notif.message}
-            </p>
-
-            <div className="shrink-0">
-              {getNotificationIcon(notif.type)}
-            </div>
-          </div>
-
-          <p className="text-[13px] text-gray-500 mt-1">
-            {formatNotifTime(notif.createdAt)}
-          </p>
-
-          {notif.type === "friend_request" &&
-            !notif.read && (
-              <div className="flex gap-2 mt-3">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAcceptFriendRequest(notif);
-                  }}
-                  className={`px-4 h-8 ${primaryBg} text-white rounded-full text-[13px] font-medium active:scale-95 transition-transform`}
-                >
-                  Chấp nhận
-                </button>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeclineFriendRequest(notif);
-                  }}
-                  className="px-4 h-8 bg-gray-200 dark:bg-zinc-800 rounded-full text-[13px] font-medium active:scale-95 transition-transform"
-                >
-                  Từ chối
-                </button>
+            ) : notifications.length === 0? (
+              <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
+                <FiBell className="text-gray-400 mb-4" size={48} />
+                <h3 className="text-[20px] font-semibold">Chưa có thông báo</h3>
+                <p className="text-[15px] text-gray-500 mt-2">Thông báo về bạn bè và hoạt động sẽ hiện ở đây</p>
               </div>
-            )}
-        </div>
-      </div>
-    ))}
-  </>
-)}
-                   </div>
-          </>
-          ) : activeTab === "friends" ? (
-            friendsLoading ? (
-              <div className="p-4">Đang tải...</div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 dark:border-zinc-900">
+                  <div className="flex items-center gap-4">
+                    <button onClick={handleMarkAllRead} className={`text-[13px] font-medium ${primaryText}`}>
+                      Đọc tất cả
+                    </button>
+                    <button onClick={handleClearAllNotifications} className="text-[13px] font-medium text-red-500">
+                      Xóa hết
+                    </button>
+                  </div>
+                </div>
+                <div className="divide-y divide-gray-100 dark:divide-zinc-900">
+                  {groupedNotifications.today.length > 0 && (
+                    <>
+                      <div className="px-4 py-2 text-[13px] font-semibold text-gray-500">Hôm nay</div>
+                      {groupedNotifications.today.map((notif) => (
+                        <div
+                          key={notif.id}
+                          onClick={() =>!notif.read && handleMarkNotificationRead(notif.id)}
+                          className={`px-4 py-3 flex items-start gap-3 transition-colors ${
+                           !notif.read? "bg-[#0a84ff]/5" : "hover:bg-gray-50 dark:hover:bg-zinc-900"
+                          }`}
+                        >
+                          <div className="relative shrink-0">
+                            <img src={notif.fromAvatar} alt="" className="w-12 h-12 rounded-full object-cover" />
+                            {!notif.read && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#0a84ff]" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="text-[15px] leading-5 text-black dark:text-white">
+                                <span className="font-semibold">{notif.fromName}</span> {notif.message}
+                              </p>
+                              <div className="shrink-0">{getNotificationIcon(notif.type)}</div>
+                            </div>
+                            <p className="text-[13px] text-gray-500 mt-1">{formatNotifTime(notif.createdAt)}</p>
+                            {notif.type === "friend_request" &&!notif.read && (
+                              <div className="flex gap-2 mt-3">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleAcceptFriendRequest(notif); }}
+                                  className={`px-4 h-8 ${primaryBg} text-white rounded-full text-[13px] font-medium active:scale-95 transition-transform`}
+                                >
+                                  Chấp nhận
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleDeclineFriendRequest(notif); }}
+                                  className="px-4 h-8 bg-gray-200 dark:bg-zinc-800 rounded-full text-[13px] font-medium active:scale-95 transition-transform"
+                                >
+                                  Từ chối
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  {groupedNotifications.earlier.length > 0 && (
+                    <>
+                      <div className="px-4 py-2 text-[13px] font-semibold text-gray-500 border-t border-gray-100 dark:border-zinc-900">Trước đó</div>
+                      {groupedNotifications.earlier.map((notif) => (
+                        <div
+                          key={notif.id}
+                          onClick={() =>!notif.read && handleMarkNotificationRead(notif.id)}
+                          className={`px-4 py-3 flex items-start gap-3 transition-colors ${
+                           !notif.read? "bg-[#0a84ff]/5" : "hover:bg-gray-50 dark:hover:bg-zinc-900"
+                          }`}
+                        >
+                          <div className="relative shrink-0">
+                            <img src={notif.fromAvatar} alt="" className="w-12 h-12 rounded-full object-cover" />
+                            {!notif.read && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#0a84ff]" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="text-[15px] leading-5 text-black dark:text-white">
+                                <span className="font-semibold">{notif.fromName}</span> {notif.message}
+                              </p>
+                              <div className="shrink-0">{getNotificationIcon(notif.type)}</div>
+                            </div>
+                            <p className="text-[13px] text-gray-500 mt-1">{formatNotifTime(notif.createdAt)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              </>
+            )
+          ) : activeTab === "friends"? (
+            friendsLoading? (
+              <div className="flex flex-col items-center justify-center min-h-[60vh]">
+                <LottiePlayer animationData={loadingPull} loop autoplay className="w-12 h-12" />
+              </div>
+            ) : filteredFriendsList.length === 0? (
+              <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
+                <FiUsers className="text-gray-400 mb-4" size={48} />
+                <h3 className="text-[20px] font-semibold">{debounced? "Không tìm thấy" : "Chưa có bạn bè"}</h3>
+                <p className="text-[15px] text-gray-500 mt-2">{debounced? "Thử từ khóa khác" : "Thêm bạn để bắt đầu trò chuyện"}</p>
+              </div>
             ) : (
               <div className="divide-y divide-gray-100 dark:divide-zinc-900">
                 {filteredFriendsList.map((friend) => (
-                  <div
-                    key={friend.uid}
-                    className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-900"
-                  >
-                    <div className="flex items-center gap-3">
+                  <div key={friend.uid} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-900">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className="relative">
-                        <img
-                          src={friend.avatar}
-                          alt=""
-                          className="w-12 h-12 rounded-full"
-                        />
-
-                        {friend.isOnline && (
-                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
-                        )}
+                        <img src={friend.avatar} alt="" className="w-12 h-12 rounded-full" />
+                        {friend.isOnline && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-black" />}
                       </div>
-
-                      <div>
-                        <p className="font-medium">
-                          {friend.name}
-                        </p>
-
-                        <p className="text-[13px] text-gray-500">
-                          @{friend.username}
-                        </p>
-
-                        <p className="text-[12px] text-gray-400">
-                          {friend.isOnline
-                            ? "Đang hoạt động"
-                            : formatLastSeen(friend.lastSeen)}
-                        </p>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{friend.name}</p>
+                        <p className="text-[13px] text-gray-500 truncate">@{friend.username}</p>
+                        <p className="text-[12px] text-gray-400">{friend.isOnline? "Đang hoạt động" : formatLastSeen(friend.lastSeen)}</p>
                       </div>
                     </div>
-
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 shrink-0">
                       <button
-                        onClick={() =>
-                          handleStartChatWithFriend(friend.uid)
-                        }
-                        className={`w-8 h-8 ${primaryBg} rounded-full flex items-center justify-center`}
+                        onClick={() => handleStartChatWithFriend(friend.uid)}
+                        className={`w-9 h-9 ${primaryBg} rounded-full flex items-center justify-center active:scale-95 transition-transform`}
                       >
-                        <FiMessageSquare
-                          className="text-white"
-                          size={14}
-                        />
+                        <FiMessageSquare className="text-white" size={16} />
                       </button>
-
                       <button
-                        onClick={() =>
-                          handleRemoveFriend(
-                            friend.uid,
-                            friend.name
-                          )
-                        }
-                        className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center"
+                        onClick={() => handleRemoveFriend(friend.uid, friend.name)}
+                        className="w-9 h-9 bg-red-500 rounded-full flex items-center justify-center active:scale-95 transition-transform"
                       >
-                        <FiUserX
-                          className="text-white"
-                          size={14}
-                        />
+                        <FiUserX className="text-white" size={16} />
                       </button>
                     </div>
                   </div>
                 ))}
               </div>
             )
-          ) : loading ? (
-            <div className="p-4">Đang tải...</div>
+          ) : loading? (
+            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+              <LottiePlayer animationData={loadingPull} loop autoplay className="w-12 h-12" />
+            </div>
+          ) : [...pinnedChats,...normalChats].length === 0? (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
+              <FiMessageSquare className="text-gray-400 mb-4" size={48} />
+              <h3 className="text-[20px] font-semibold">{debounced? "Không tìm thấy" : "Chưa có cuộc trò chuyện"}</h3>
+              <p className="text-[15px] text-gray-500 mt-2">{debounced? "Thử từ khóa khác" : "Bắt đầu nhắn tin với bạn bè"}</p>
+            </div>
           ) : (
             <div className="divide-y divide-gray-100 dark:divide-zinc-900">
-              {[...pinnedChats, ...normalChats].map((chat) => (
-                <Link
-                  key={chat.chatId}
-                  href={`/chat/${chat.chatId}`}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-900 active:bg-gray-100"
-                >
-                  <div className="relative">
-                    <img
-                      src={chat.avatar}
-                      alt=""
-                      className="w-12 h-12 rounded-full"
-                    />
-
-                    {chat.isOnline &&
-                      !chat.isGroup && (
-                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
-                      )}
+              {pinnedChats.length > 0 && (
+                <>
+                  <div className="px-4 py-2 text-[13px] font-semibold text-gray-500 flex items-center gap-1.5">
+                    <FiPin size={14} /> Đã ghim
                   </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline justify-between">
-                      <p className="font-medium truncate">
-                        {chat.name}
-                      </p>
-
-                      <span className="text-[12px] text-gray-500">
-                        {formatMessageTime(chat.updatedAt)}
-                      </span>
-                    </div>
-
-                    <p className="text-[14px] text-gray-500 truncate">
-                      {chat.lastMessage ||
-                        "Bắt đầu trò chuyện"}
-                    </p>
-                  </div>
-
-                  {chat.unreadCount ? (
-                    <span
-                      className={`min-w-[20px] h-5 px-1.5 ${primaryBgSolid} rounded-full flex items-center justify-center text-[11px] text-white`}
-                    >
-                      {chat.unreadCount}
-                    </span>
-                  ) : null}
-                </Link>
-              ))}
+                  {pinnedChats.map((chat) => (
+                    <ChatRow key={chat.chatId} chat={chat} isPinned={true} onTogglePin={togglePin} formatMessageTime={formatMessageTime} />
+                  ))}
+                </>
+              )}
+              {normalChats.length > 0 && (
+                <>
+                  {pinnedChats.length > 0 && <div className="px-4 py-2 text-[13px] font-semibold text-gray-500">Tin nhắn</div>}
+                  {normalChats.map((chat) => (
+                    <ChatRow key={chat.chatId} chat={chat} isPinned={false} onTogglePin={togglePin} formatMessageTime={formatMessageTime} />
+                  ))}
+                </>
+              )}
             </div>
           )}
         </div>
 
         {showAdd && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40" onClick={() => setShowAdd(false)}>
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setShowAdd(false)}>
             <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between mb-4"><h2 className="text-xl font-bold">Tin nhắn mới</h2><button onClick={() => setShowAdd(false)}><FiX size={24} /></button></div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold">Tin nhắn mới</h2>
+                <button onClick={() => setShowAdd(false)} className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center justify-center">
+                  <FiX size={20} />
+                </button>
+              </div>
               <div className="grid grid-cols-2 gap-2 mb-4 p-1 bg-gray-100 dark:bg-zinc-800 rounded-xl">
-                <button onClick={() => setAddMode("friend")} className={`h-9 rounded-lg font-medium ${addMode === "friend"? "bg-white dark:bg-zinc-700 shadow" : ""}`}>Thêm bạn</button>
-                <button onClick={() => setAddMode("group")} className={`h-9 rounded-lg font-medium ${addMode === "group"? "bg-white dark:bg-zinc-700 shadow" : ""}`}>Tạo nhóm</button>
+                <button
+                  onClick={() => setAddMode("friend")}
+                  className={`h-9 rounded-lg font-medium transition-all ${addMode === "friend"? "bg-white dark:bg-zinc-700 shadow" : "text-gray-600 dark:text-zinc-400"}`}
+                >
+                  Thêm bạn
+                </button>
+                <button
+                  onClick={() => setAddMode("group")}
+                  className={`h-9 rounded-lg font-medium transition-all ${addMode === "group"? "bg-white dark:bg-zinc-700 shadow" : "text-gray-600 dark:text-zinc-400"}`}
+                >
+                  Tạo nhóm
+                </button>
               </div>
               {addMode === "friend"? (
                 <div className="space-y-3">
                   <div className="grid grid-cols-3 gap-2">
-                    <button onClick={() => { setShowScanQR(true); setScanMode("camera"); }} className="h-11 border rounded-xl flex items-center justify-center gap-1.5"><ScanLine size={18} />Quét</button>
-                    <button onClick={() => fileInputRef.current?.click()} className="h-11 border rounded-xl flex items-center justify-center gap-1.5"><FiUpload size={18} />Ảnh</button>
-                    <button className="h-11 border rounded-xl flex items-center justify-center gap-1.5"><FiUserPlus size={18} />ID</button>
+                    <button
+                      onClick={() => { setShowScanQR(true); setScanMode("camera"); }}
+                      className="h-11 border border-gray-200 dark:border-zinc-700 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
+                    >
+                      <ScanLine size={18} />Quét
+                    </button>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="h-11 border border-gray-200 dark:border-zinc-700 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
+                    >
+                      <FiUpload size={18} />Ảnh
+                    </button>
+                    <button className="h-11 border border-gray-200 dark:border-zinc-700 rounded-xl flex items-center justify-center gap-1.5">
+                      <FiUserPlus size={18} />ID
+                    </button>
                   </div>
-                  <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nhập @username" className={`w-full h-11 px-3 border rounded-xl outline-none focus:ring-2 ${primaryRing} ${primaryBorder}`} />
-                  <button onClick={() => handleAddFriend()} disabled={adding ||!search.trim()} className={`w-full h-11 ${primaryBg} text-white rounded-xl font-medium disabled:opacity-50`}>{adding? "Đang gửi..." : "Gửi lời mời"}</button>
+                  <input
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder="Nhập @username"
+                    className={`w-full h-11 px-3 border border-gray-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 ${primaryRing} ${primaryBorder} bg-white dark:bg-zinc-900`}
+                  />
+                  <button
+                    onClick={() => handleAddFriend()}
+                    disabled={adding ||!search.trim()}
+                    className={`w-full h-11 ${primaryBg} text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all`}
+                  >
+                    {adding? "Đang gửi..." : "Gửi lời mời"}
+                  </button>
                   <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleScanFromFile} />
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <input value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="Tên nhóm" className="w-full h-11 px-3 border rounded-xl outline-none" maxLength={30} />
-                  <div className="max-h-60 overflow-auto border rounded-xl">
-                    {friendsForGroup.map(f => (
-                      <label key={f.uid} className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer">
-                        <input type="checkbox" checked={selected.includes(f.uid)} onChange={e => setSelected(s => e.target.checked? [...s, f.uid] : s.filter(id => id!== f.uid))} />
-                        <img src={f.avatar} className="w-8 h-8 rounded-full" alt="" />
-                        <span className="flex-1">{f.name}</span>
-                      </label>
-                    ))}
+  <input
+  value={groupName}
+  onChange={e => setGroupName(e.target.value)}
+  placeholder="Tên nhóm"
+  maxLength={50}
+  className="w-full h-11 px-3 border border-gray-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 focus:ring-[#0a84ff]/20 focus:border-[#0a84ff] bg-white dark:bg-zinc-900"
+/>
+                  <div className="max-h-60 overflow-auto border border-gray-200 dark:border-zinc-700 rounded-xl divide-y divide-gray-100 dark:divide-zinc-800">
+                    {friendsForGroup.length === 0? (
+                      <div className="p-8 text-center text-gray-500">
+                        <FiUsers size={32} className="mx-auto mb-2 opacity-50" />
+                        <p className="text-[14px]">Chưa có bạn bè để tạo nhóm</p>
+                      </div>
+                    ) : (
+                      friendsForGroup.map(f => (
+                        <label key={f.uid} className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selected.includes(f.uid)}
+                            onChange={e => setSelected(s => e.target.checked? [...s, f.uid] : s.filter(id => id!== f.uid))}
+                            className="w-5 h-5 rounded border-gray-300 text-[#0a84ff] focus:ring-[#0a84ff]"
+                          />
+                          <img src={f.avatar} className="w-9 h-9 rounded-full object-cover" alt="" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[15px] font-medium truncate">{f.name}</p>
+                            <p className="text-[13px] text-gray-500 truncate">@{f.username}</p>
+                          </div>
+                          {f.isOnline && <span className="w-2 h-2 bg-green-500 rounded-full" />}
+                        </label>
+                      ))
+                    )}
                   </div>
-                  <button onClick={handleCreateGroup} disabled={adding ||!groupName.trim() || selected.length < 1} className={`w-full h-11 ${primaryBg} text-white rounded-xl font-medium disabled:opacity-50`}>Tạo nhóm ({selected.length + 1})</button>
+                  <button
+                    onClick={handleCreateGroup}
+                    disabled={adding ||!groupName.trim() || selected.length < 1}
+                    className={`w-full h-11 ${primaryBg} text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all`}
+                  >
+                    {adding? "Đang tạo..." : `Tạo nhóm (${selected.length + 1})`}
+                  </button>
                 </div>
               )}
             </div>
@@ -919,14 +1151,162 @@ const createNotification = useCallback(async (targetUid: string, notif: Omit<Not
         )}
 
         {showScanQR && (
-          <div className="fixed inset-0 bg-black z-[60]">
-            <div id="qr-reader" className="w-full h-full" />
-            <div id="qr-reader-file" className="hidden" />
-            <button onClick={() => stopScan()} className="absolute top-6 right-6 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center"><FiX className="text-white" size={20} /></button>
+        <div className="fixed inset-0 bg-black z-[60]">
+            <div className="relative w-full h-full">
+              <div id="qr-reader" className="w-full h-full" />
+              <div id="qr-reader-file" className="hidden" />
+
+              {/* Overlay khung quét */}
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute inset-0 bg-black/50" />
+               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] rounded-3xl border-2 border-white/30" style={{boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)'}}>
+                  <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-2xl" />
+                  <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-2xl" />
+                  <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-2xl" />
+                  <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-2xl" />
+                </div>
+              </div>
+
+              {/* Header */}
+              <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/60 to-transparent">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-white text-[17px] font-semibold">Quét mã QR</h3>
+                  <button
+                    onClick={() => stopScan()}
+                    className="w-9 h-9 rounded-full bg-black/40 backdrop-blur flex items-center justify-center active:scale-95 transition-transform"
+                  >
+                    <FiX className="text-white" size={20} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/60 to-transparent">
+                <p className="text-white/80 text-[14px] text-center mb-4">Đưa mã QR vào khung để quét</p>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full h-11 bg-white/10 backdrop-blur border border-white/20 rounded-xl text-white font-medium active:scale-95 transition-transform flex items-center justify-center gap-2"
+                >
+                  <FiUpload size={18} />Chọn ảnh từ thư viện
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
       <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}`}</style>
     </>
+  );
+}
+
+// Tách ChatRow component để tránh re-render cả list
+function ChatRow({
+  chat,
+  isPinned,
+  onTogglePin,
+  formatMessageTime
+}: {
+  chat: ChatItem;
+  isPinned: boolean;
+  onTogglePin: (id: string) => void;
+  formatMessageTime: (t?: Timestamp) => string;
+}) {
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current &&!menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showMenu]);
+
+  return (
+    <div className="relative group">
+      <Link
+        href={`/chat/${chat.chatId}`}
+        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-900 active:bg-gray-100 dark:active:bg-zinc-800 transition-colors"
+      >
+        <div className="relative shrink-0">
+          <img src={chat.avatar} alt="" className="w-14 h-14 rounded-full object-cover" />
+          {chat.isOnline &&!chat.isGroup && (
+            <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[#30d158] rounded-full border-2 border-white dark:border-black" />
+          )}
+          {isPinned && (
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-[#0a84ff] rounded-full flex items-center justify-center">
+              <FiPin className="text-white" size={10} />
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline justify-between gap-2 mb-0.5">
+            <p className="font-semibold text- truncate text-black dark:text-white">
+              {chat.name}
+            </p>
+            <span className="text- text-[#8e8e93] dark:text-zinc-500 shrink-0">
+              {formatMessageTime(chat.updatedAt)}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <p className={`text- truncate flex-1 ${
+              (chat.unreadCount || 0) > 0
+              ? "font-medium text-black dark:text-white"
+                : "text-[#8e8e93] dark:text-zinc-500"
+            }`}>
+              {chat.isTyping? (
+                <span className="text-[#0a84ff] italic">Đang nhập...</span>
+              ) : chat.lastSenderId && chat.lastSenderName && chat.isGroup? (
+                `${chat.lastSenderName}: ${chat.lastMessage}`
+              ) : (
+                chat.lastMessage || "Bắt đầu trò chuyện"
+              )}
+            </p>
+            {chat.unreadCount? (
+              <span className={`min-w- h-5 px-1.5 ${chat.unreadCount > 9? 'px-1' : ''} bg-[#0a84ff] rounded-full flex items-center justify-center shrink-0`}>
+                <span className="text- leading-none font-medium text-white">
+                  {chat.unreadCount > 99? "99+" : chat.unreadCount}
+                </span>
+              </span>
+            ) : null}
+          </div>
+        </div>
+      </Link>
+
+      {/* Menu 3 chấm */}
+      <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity" ref={menuRef}>
+        <button
+          onClick={(e) => { e.preventDefault(); setShowMenu(!showMenu); }}
+          className="w-8 h-8 rounded-full hover:bg-gray-200 dark:hover:bg-zinc-700 flex items-center justify-center"
+        >
+          <FiMoreVertical size={18} className="text-gray-600 dark:text-zinc-400" />
+        </button>
+
+        {showMenu && (
+          <div className="absolute right-0 top-9 w-48 bg-white dark:bg-zinc-800 rounded-xl shadow-2xl border border-gray-100 dark:border-zinc-700 py-1 z-50">
+            <button
+              onClick={(e) => { e.preventDefault(); onTogglePin(chat.chatId); setShowMenu(false); }}
+              className="w-full px-4 py-2.5 text-left text- hover:bg-gray-50 dark:hover:bg-zinc-700 flex items-center gap-3"
+            >
+              <FiPin size={16} />
+              {isPinned? "Bỏ ghim" : "Ghim hội thoại"}
+            </button>
+            <button
+              onClick={(e) => { e.preventDefault(); toast.info("Tính năng đang phát triển"); setShowMenu(false); }}
+              className="w-full px-4 py-2.5 text-left text- hover:bg-gray-50 dark:hover:bg-zinc-700 flex items-center gap-3 text-red-500"
+            >
+              <FiTrash2 size={16} />
+              Xóa hội thoại
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
