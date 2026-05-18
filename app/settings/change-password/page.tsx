@@ -9,7 +9,7 @@ import {
   EmailAuthProvider
 } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore";
-import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
+import { getFirebaseDB } from "@/lib/firebase";
 import { ChevronLeft, Lock, EyeOff, Eye, Shield, CheckCircle2 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
