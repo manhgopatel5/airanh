@@ -70,6 +70,11 @@ const Portal = ({ children }: { children: React.ReactNode }) => {
 
 const PRIMARY = "#0042B2";
 const SUCCESS = "#00C853";
+const vibrate = () => {
+  if (typeof navigator !== "undefined" && navigator.vibrate) {
+    navigator.vibrate(10);
+  }
+};
 
 export default function TaskDetailPage() {
   const { id } = useParams();
