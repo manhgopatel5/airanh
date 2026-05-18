@@ -8,9 +8,9 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { incrementTaskView } from "@/lib/taskService";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
+import { toast, Toaster } from "sonner";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import celebrate from "@/public/lotties/huha-celebrate.json";
+import * as L from "@/components/illustrations";
 
 type Props = { taskId: string; chatCount?: number; initialLikes?: string[]; isBookmarked?: boolean };
 
@@ -79,6 +79,7 @@ export default function TaskActions({ taskId, chatCount = 0, initialLikes = [], 
       console.error("Lỗi like:", err);
       setLikes(likes);
       toast.error("Thao tác thất bại");
+      navigator.vibrate?.(15);
     } finally {
       setLiking(false);
     }
@@ -134,11 +135,13 @@ export default function TaskActions({ taskId, chatCount = 0, initialLikes = [], 
     } catch {
       setBookmarked(!newState);
       toast.error("Thao tác thất bại");
+      navigator.vibrate?.(15);
     }
   }, [user, bookmarked, taskId, router, db]);
 
   return (
     <div className="flex items-center justify-between pt-2.5 mt-1 border-t border-zinc-100/80 dark:border-zinc-800/50">
+      <Toaster richColors position="top-center" />
       <div className="flex items-center gap-1">
         {/* Like */}
         <motion.button whileTap={{ scale: 0.85 }} onClick={handleLike} disabled={liking} className="group relative flex items-center gap-1.5 h-8 px-2.5 -ml-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:bg-zinc-200 dark:active:bg-zinc-700 transition-colors disabled:opacity-60">
@@ -157,7 +160,7 @@ export default function TaskActions({ taskId, chatCount = 0, initialLikes = [], 
             <AnimatePresence>
               {showLikeBurst && (
                 <motion.div initial={{ opacity: 0, scale: 0.3 }} animate={{ opacity: [0, 1, 0], scale: [0.3, 1.6, 2.2], y: [0, -8, -16] }} exit={{ opacity: 0 }} transition={{ duration: 0.85, ease: "easeOut" }} className="absolute inset-0 pointer-events-none z-10">
-                  <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-11 h-11 -ml-3 -mt-3" />
+                  <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-11 h-11 -ml-3 -mt-3" />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -172,7 +175,7 @@ export default function TaskActions({ taskId, chatCount = 0, initialLikes = [], 
         {/* Comment */}
         <motion.button whileTap={{ scale: 0.9 }} onClick={handleChat} className="flex items-center gap-1.5 h-8 px-2.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:bg-zinc-200 dark:active:bg-zinc-700 transition-colors group">
           <FiMessageCircle size={18} className="text-zinc-500 group-hover:text-[#0a84ff] transition-colors" strokeWidth={2} />
-          <span className="text-sm font-semibold text-zinc-600 dark:text-zinc-400 tabular-nums min-w-[16px]">{chatCount > 99? "99+" : chatCount}</span>
+          <span className="text-sm font-semibold text-zinc-600 dark:text-zinc-400 tabular-nums min-w-">{chatCount > 99? "99+" : chatCount}</span>
         </motion.button>
       </div>
 
@@ -205,7 +208,7 @@ export default function TaskActions({ taskId, chatCount = 0, initialLikes = [], 
           <AnimatePresence>
             {showShareBurst && (
               <motion.div initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1.5 }} exit={{ opacity: 0, scale: 2 }} transition={{ duration: 0.7 }} className="absolute inset-0 pointer-events-none">
-                <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-9 h-9 -ml-1 -mt-1 opacity-80" />
+                <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-9 h-9 -ml-1 -mt-1 opacity-80" />
               </motion.div>
             )}
           </AnimatePresence>
