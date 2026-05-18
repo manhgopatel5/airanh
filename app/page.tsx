@@ -24,7 +24,6 @@ import * as L from "@/components/illustrations";
 
 import { useAppStore } from "@/store/app";
 import type {
-  Task,
   TaskItem,
   PlanItem,
   BaseFeedItem,
@@ -32,7 +31,7 @@ import type {
   PlanListItem,
 } from "@/types/task";
 
-import { isTask, isPlan } from "@/types/task";
+
 
 import { FiMapPin, FiRefreshCw } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
@@ -52,7 +51,7 @@ const pageVariants = {
 };
 
 const vibrate = (p: number | number[]) => {
-  if (typeof navigator!== "undefined" && "vibrate" in navigator) {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
     navigator.vibrate(p);
   }
 };
@@ -70,29 +69,52 @@ export default function Home() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
- const handleShare = useCallback((task: FeedTask) => {
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [showCelebrate, setShowCelebrate] = useState(false);
 
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-  const pullRef = useRef({ startY: 0, pulling: false });
+const [shareTask, setShareTask] =
+  useState<FeedTask | null>(null);
 
-  const activeColorClass = useMemo(() => (isPlanMode? "text-accent" : "text-primary"), [isPlanMode]);
-  const activeBgClass = useMemo(() => (isPlanMode? "bg-accent" : "bg-primary"), [isPlanMode]);
+const [showShareModal, setShowShareModal] =
+  useState(false);
 
-const handleShare = useCallback((task: FeedTask) => {
+const [showCelebrate, setShowCelebrate] =
+  useState(false);
+
+const observerRef =
+  useRef<IntersectionObserver | null>(null);
+
+const loadMoreRef =
+  useRef<HTMLDivElement>(null);
+
+const pullRef = useRef({
+  startY: 0,
+  pulling: false,
+});
+
+const activeColorClass = useMemo(
+  () => (isPlanMode ? "text-accent" : "text-primary"),
+  [isPlanMode]
+);
+
+const activeBgClass = useMemo(
+  () => (isPlanMode ? "bg-accent" : "bg-primary"),
+  [isPlanMode]
+);
+
+const handleShare = useCallback(
+  (task: FeedTask) => {
     vibrate(5);
     setShareTask(task);
     setShowShareModal(true);
-  }, []);
+  },
+  []
+);
 
-  const handleTaskUpdate = useCallback(
+const handleTaskUpdate = useCallback(
   (
     taskId: string,
     updates: Partial<FeedTask>
   ) => {
-    setAllItems((prev) => prev.map((t) => (t.id === taskId? ({...t,...updates } as Task) : t)));
+    setAllItems((prev) => prev.map((t) => (t.id === taskId? ({...t,...updates } as FeedTask) : t)));
     if (updates.completed === true) {
       setShowCelebrate(true);
       vibrate([10, 20, 10]);
@@ -173,7 +195,7 @@ const handleShare = useCallback((task: FeedTask) => {
   }, [loadData]);
 
   const loadMore = useCallback(async () => {
-    if (!db ||!lastDoc || loadingMore ||!hasMore) return;
+   if (!db || !lastDoc || loadingMore || !hasMore) return;
     setLoadingMore(true);
     try {
       const q = buildQuery(lastDoc);
@@ -202,12 +224,31 @@ const handleShare = useCallback((task: FeedTask) => {
     return () => observerRef.current?.disconnect();
   }, [hasMore, loadMore]);
 
-  const filteredItems = useMemo(() => {
-    let result = allItems.filter((t) =>!t.banned &&!t.hidden);
-    result = mode === "task"? (result.filter(isTask) as TaskItem[]) : (result.filter(isPlan) as PlanItem[]);
-    if (activeTab === "hot") result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-   return result as FeedTask[];
-  }, [allItems, mode, activeTab]);
+const filteredItems = useMemo(() => {
+  let result = allItems.filter(
+    (t) => !t.banned && !t.hidden
+  );
+
+  if (mode === "task") {
+    result = result.filter(
+      (t) => t.type === "task"
+    );
+  } else {
+    result = result.filter(
+      (t) => t.type === "plan"
+    );
+  }
+
+  if (activeTab === "hot") {
+    result.sort(
+      (a, b) =>
+        (b.likeCount || 0) -
+        (a.likeCount || 0)
+    );
+  }
+
+  return result;
+}, [allItems, mode, activeTab]);
 
   const handleRefresh = useCallback(() => {
     vibrate(10);
