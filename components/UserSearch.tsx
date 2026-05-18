@@ -245,16 +245,27 @@ export default function UserSearch() {
         )}
 
         {/* Loading */}
-        {loading && (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <div className="relative">
-              <div className="absolute inset-0 bg-[#0a84ff]/20 rounded-full blur-xl animate-pulse" />
-              <div className="relative w-14 h-14">
-                <LottiePlayer animationData={L.loadingPull} autoplay loop className="w-14 h-14" aria-label="Đang tải" />
-              </div>
-            <p className="text-sm text-zinc-500 font-medium">Đang tìm kiếm...</p>
-          </div>
-        )}
+       {loading && (
+  <div className="flex flex-col items-center justify-center py-16 gap-3">
+    <div className="relative">
+      <div className="absolute inset-0 bg-[#0a84ff]/20 rounded-full blur-xl animate-pulse" />
+
+      <div className="relative w-14 h-14">
+        <LottiePlayer
+          animationData={L.loadingPull}
+          autoplay
+          loop
+          className="w-14 h-14"
+          aria-label="Đang tải"
+        />
+      </div>
+    </div>
+
+    <p className="text-sm text-zinc-500 font-medium">
+      Đang tìm kiếm...
+    </p>
+  </div>
+)}
 
         {/* No user */}
         {!user?.uid && keyword && (
