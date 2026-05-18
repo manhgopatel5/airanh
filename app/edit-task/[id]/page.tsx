@@ -437,7 +437,7 @@ if (field === "totalSlots") {
   <p className="text-xs text-zinc-500 mt-2">
     Đã có {task.joined} người tham gia
   </p>
-)}
+)
               )}
             </motion.div>
           </div>
