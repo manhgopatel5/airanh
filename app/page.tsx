@@ -1,5 +1,4 @@
 "use client";
-export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { getFirebaseDB } from "@/lib/firebase";
@@ -21,6 +20,7 @@ import TaskFeed from "@/components/TaskFeed";
 import ModeToggle from "@/components/ModeToggle";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import LottiePlayer from "@/components/ui/LottiePlayer";
+import * as L from "@/components/illustrations";
 
 import { useAppStore } from "@/store/app";
 import { Task, TaskItem, PlanItem, isTask, isPlan } from "@/types/task";
@@ -63,27 +63,11 @@ export default function Home() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showCelebrate, setShowCelebrate] = useState(false);
 
-  // Lottie states - dùng fetch thay import
-  const [loadingPullLottie, setLoadingPullLottie] = useState<any>(null);
-  const [errorShakeLottie, setErrorShakeLottie] = useState<any>(null);
-  const [celebrateLottie, setCelebrateLottie] = useState<any>(null);
-  const [emptyLottie, setEmptyLottie] = useState<any>(null);
-  const [walletOpenLottie, setWalletOpenLottie] = useState<any>(null);
-
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const pullRef = useRef({ startY: 0, pulling: false });
 
   const activeColor = useMemo(() => (isPlanMode? "#00C853" : "#0042B2"), [isPlanMode]);
-
-  // Load Lottie JSON
-  useEffect(() => {
-    fetch('/lotties/huha-loading-pull.json').then(r => r.json()).then(setLoadingPullLottie);
-    fetch('/lotties/huha-error-shake.json').then(r => r.json()).then(setErrorShakeLottie);
-    fetch('/lotties/huha-celebrate.json').then(r => r.json()).then(setCelebrateLottie);
-    fetch('/lotties/huha-empty.json').then(r => r.json()).then(setEmptyLottie);
-    fetch('/lotties/huha-wallet-open.json').then(r => r.json()).then(setWalletOpenLottie);
-  }, []);
 
   const handleShare = useCallback((task: Task) => {
     vibrate(5);
@@ -150,7 +134,10 @@ export default function Home() {
       } catch (err: any) {
         console.error(err);
         if (err.code === "permission-denied") toast.info("Chưa có dữ liệu");
-        else {
+        else if (err.code === "failed-precondition") {
+          setError("Thiếu index Firestore");
+          toast.error("Cần tạo index cho query");
+        } else {
           setError("Lỗi tải dữ liệu");
           toast.error("Không thể tải");
         }
@@ -162,7 +149,9 @@ export default function Home() {
     [db, buildQuery]
   );
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const loadMore = useCallback(async () => {
     if (!db ||!lastDoc || loadingMore ||!hasMore) return;
@@ -207,6 +196,7 @@ export default function Home() {
     const touch = e.touches[0];
     if (touch && window.scrollY === 0) pullRef.current = { startY: touch.clientY, pulling: true };
   };
+  
   const onTouchMove = (e: React.TouchEvent) => {
     if (!pullRef.current.pulling) return;
     const dy = (e.touches[0]?.clientY || 0) - pullRef.current.startY;
@@ -216,12 +206,15 @@ export default function Home() {
     }
   };
 
-  const tabs = useMemo(() => [
-    { id: "hot" as TabId, label: "Hot", icon: HiFire },
-    { id: "near" as TabId, label: "Gần bạn", icon: FiMapPin },
-    { id: "friends" as TabId, label: "Bạn bè", icon: HiUsers },
-    { id: "new" as TabId, label: "Mới", icon: HiSparkles },
-  ], []);
+  const tabs = useMemo(
+    () => [
+      { id: "hot" as TabId, label: "Hot", icon: HiFire },
+      { id: "near" as TabId, label: "Gần bạn", icon: FiMapPin },
+      { id: "friends" as TabId, label: "Bạn bè", icon: HiUsers },
+      { id: "new" as TabId, label: "Mới", icon: HiSparkles },
+    ],
+    []
+  );
 
   return (
     <motion.div
@@ -234,17 +227,39 @@ export default function Home() {
       <ModeToggle />
 
       <AnimatePresence>
-        {refreshing && loadingPullLottie && (
-          <motion.div initial={{ y: -40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -40, opacity: 0 }} className="fixed top-14 left-1/2 -translate-x-1/2 z-50">
-            <LottiePlayer animationData={loadingPullLottie} autoplay loop className="w-[60px] h-[60px]" aria-label="Đang làm mới" />
+        {refreshing && (
+          <motion.div
+            initial={{ y: -40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -40, opacity: 0 }}
+            className="fixed top-14 left-1/2 -translate-x-1/2 z-50"
+          >
+            <LottiePlayer
+              animationData={L.loadingPull}
+              autoplay
+              loop
+              className="w-[60px] h-[60px]"
+              aria-label="Đang làm mới"
+            />
           </motion.div>
         )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {showCelebrate && celebrateLottie && (
-          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center">
-            <LottiePlayer animationData={celebrateLottie} loop={false} autoplay className="w-[300px] h-[300px]" aria-label="Hoàn thành" />
+        {showCelebrate && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center"
+          >
+            <LottiePlayer
+              animationData={L.celebrate}
+              loop={false}
+              autoplay
+              className="w-[300px] h-[300px]"
+              aria-label="Hoàn thành"
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -256,10 +271,30 @@ export default function Home() {
               const Icon = tab.icon;
               const active = activeTab === tab.id;
               return (
-                <button key={tab.id} onClick={() => { setActiveTab(tab.id); vibrate(5); }} className="flex flex-col items-center py-3 px-2 flex-1 relative transition-all active:scale-95">
-                  <Icon size={20} className={active? "" : "text-gray-400 dark:text-zinc-500"} style={{ color: active? activeColor : undefined }} />
-                  <span className="text-xs font-bold mt-1" style={{ color: active? activeColor : undefined }}>{tab.label}</span>
-                  {active && <motion.div layoutId="tab" className="absolute bottom-0 h-0.5 w-8 rounded-full" style={{ backgroundColor: activeColor }} transition={{ type: "spring", stiffness: 500, damping: 30 }} />}
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    vibrate(5);
+                  }}
+                  className="flex flex-col items-center py-3 px-2 flex-1 relative transition-all active:scale-95"
+                >
+                  <Icon
+                    size={20}
+                    className={active? "" : "text-gray-400 dark:text-zinc-500"}
+                    style={{ color: active? activeColor : undefined }}
+                  />
+                  <span className="text-xs font-bold mt-1" style={{ color: active? activeColor : undefined }}>
+                    {tab.label}
+                  </span>
+                  {active && (
+                    <motion.div
+                      layoutId="tab"
+                      className="absolute bottom-0 h-0.5 w-8 rounded-full"
+                      style={{ backgroundColor: activeColor }}
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    />
+                  )}
                 </button>
               );
             })}
@@ -271,31 +306,42 @@ export default function Home() {
         <AnimatePresence mode="wait">
           {error? (
             <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center px-6 py-20 text-center">
-              {errorShakeLottie && <LottiePlayer animationData={errorShakeLottie} loop={false} className="w-[180px] h-[180px]" aria-label="Lỗi" />}
+              <LottiePlayer animationData={L.errorShake} loop={false} className="w-[180px] h-[180px]" aria-label="Lỗi" />
               <h2 className="text-xl font-bold mt-2">{error}</h2>
-              <button onClick={handleRefresh} className="mt-4 px-6 py-2.5 rounded-xl text-white font-bold active:scale-95 flex items-center gap-2" style={{ backgroundColor: activeColor }}>
+              <button
+                onClick={handleRefresh}
+                className="mt-4 px-6 py-2.5 rounded-xl text-white font-bold active:scale-95 flex items-center gap-2"
+                style={{ backgroundColor: activeColor }}
+              >
                 <FiRefreshCw /> Thử lại
               </button>
             </motion.div>
           ) : loading &&!refreshing? (
             <motion.div key="loading" className="flex flex-col items-center py-20">
-              {loadingPullLottie && <LottiePlayer animationData={loadingPullLottie} loop className="w-[120px] h-[120px]" aria-label="Đang tải" />}
+              <LottiePlayer animationData={L.loadingPull} loop className="w-[120px] h-[120px]" aria-label="Đang tải" />
               <p className="text-sm text-zinc-500 mt-2">Đang tải...</p>
             </motion.div>
           ) : filteredItems.length === 0? (
-            <motion.div key="empty" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center px-6 py-16 text-center">
-              {emptyLottie && walletOpenLottie && (
-                <LottiePlayer
-                  animationData={isPlanMode? walletOpenLottie : emptyLottie}
-                  loop
-                  className="w-[220px] h-[220px]"
-                  aria-label="Trống"
-                  fallback={<div className="w-[220px] h-[220px] bg-zinc-100 dark:bg-zinc-800 rounded-2xl" />}
-                />
-              )}
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center px-6 py-16 text-center"
+            >
+              <LottiePlayer
+                animationData={isPlanMode? L.walletOpen : L.empty}
+                loop
+                className="w-[220px] h-[220px]"
+                aria-label="Trống"
+                fallback={<div className="w-[220px] h-[220px] bg-zinc-100 dark:bg-zinc-800 rounded-2xl" />}
+              />
               <h3 className="text-lg font-bold mt-2">Chưa có {mode === "task"? "nhiệm vụ" : "kế hoạch"} nào</h3>
               <p className="text-sm text-zinc-500 mb-6">Hãy là người đầu tiên tạo</p>
-              <button onClick={handleRefresh} className="px-6 py-2.5 rounded-xl text-white font-bold active:scale-95 flex items-center gap-2" style={{ backgroundColor: activeColor }}>
+              <button
+                onClick={handleRefresh}
+                className="px-6 py-2.5 rounded-xl text-white font-bold active:scale-95 flex items-center gap-2"
+                style={{ backgroundColor: activeColor }}
+              >
                 <FiRefreshCw /> Tải lại
               </button>
             </motion.div>
@@ -308,7 +354,7 @@ export default function Home() {
 
         {!loading && hasMore && allItems.length > 0 && (
           <div ref={loadMoreRef} className="py-6 flex justify-center">
-            {loadingMore && loadingPullLottie && <LottiePlayer animationData={loadingPullLottie} autoplay loop className="w-[40px] h-[40px]" aria-label="Tải thêm" />}
+            {loadingMore && <LottiePlayer animationData={L.loadingPull} autoplay loop className="w-[40px] h-[40px]" aria-label="Tải thêm" />}
           </div>
         )}
       </div>
