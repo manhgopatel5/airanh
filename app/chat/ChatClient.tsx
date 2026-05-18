@@ -971,7 +971,8 @@ export default function ChatClient() {
           ) : activeTab === "friends"? (
             friendsLoading? (
               <div className="flex flex-col items-center justify-center min-h-[60vh]">
-                <LottiePlayer animationData={loadingPull} loop autoplay className="w-12 h-12" />
+                <LottiePlayer animationData={L.loadingPull 
+} loop autoplay className="w-12 h-12" />
               </div>
             ) : filteredFriendsList.length === 0? (
               <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
@@ -1014,7 +1015,7 @@ export default function ChatClient() {
             )
           ) : loading? (
             <div className="flex flex-col items-center justify-center min-h-[60vh]">
-              <LottiePlayer animationData={loadingPull} loop autoplay className="w-12 h-12" />
+              <LottiePlayer animationData={L.loadingPull} loop autoplay className="w-12 h-12" />
             </div>
           ) : [...pinnedChats,...normalChats].length === 0? (
             <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
