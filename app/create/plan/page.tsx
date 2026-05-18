@@ -1,19 +1,79 @@
 "use client";
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { getFirebaseDB } from "@/lib/firebase";
-import { collection, query, where, onSnapshot, limit, doc, getDoc, updateDoc, Timestamp, addDoc } from 'firebase/firestore';
-import { FiX, FiCheck, FiChevronRight, FiUpload, FiClock, FiMapPin, FiEye, FiCopy, FiNavigation, FiZap, FiUsers } from "react-icons/fi";
-import { toast, Toaster } from "sonner";
-import { motion, AnimatePresence, PanInfo } from "framer-motion";
-import { useAuth } from "@/lib/useAuth";
-import LottiePlayer from "@/components/ui/LottiePlayer";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
-import successCheck from "@/public/lotties/huha-success-check.json";
 
-type Category = { id: string; label: string; emoji: string; suggestions: string[] };
-type CostType = "free" | "share" | "host" | "ticket";
-type Privacy = "public" | "friends" | "friends_except" | "private";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
+
+import { useRouter } from "next/navigation";
+
+import { getFirebaseDB } from "@/lib/firebase";
+
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  limit,
+  doc,
+  getDoc,
+  updateDoc,
+  Timestamp,
+  addDoc,
+} from "firebase/firestore";
+
+import {
+  FiX,
+  FiCheck,
+  FiChevronRight,
+  FiUpload,
+  FiClock,
+  FiMapPin,
+  FiEye,
+  FiCopy,
+  FiNavigation,
+  FiZap,
+  FiUsers,
+} from "react-icons/fi";
+
+import {
+  toast,
+  Toaster,
+} from "sonner";
+
+import {
+  motion,
+  AnimatePresence,
+  PanInfo,
+} from "framer-motion";
+
+import { useAuth } from "@/lib/useAuth";
+
+import LottiePlayer from "@/components/ui/LottiePlayer";
+
+import * as L from "@/components/illustrations";
+
+type Category = {
+  id: string;
+  label: string;
+  emoji: string;
+  suggestions: string[];
+};
+
+type CostType =
+  | "free"
+  | "share"
+  | "host"
+  | "ticket";
+
+type Privacy =
+  | "public"
+  | "friends"
+  | "friends_except"
+  | "private";
 
 const CATEGORIES: Category[] = [
   { id: "cafe", label: "Cafe", emoji: "☕", suggestions: ["Cafe sáng T7", "Work date", "Cafe chill", "Làm việc", "Cafe view đẹp", "Cafe mèo", "Study cafe", "Cafe acoustic", "Cafe rooftop", "Cafe sách"] },
@@ -105,7 +165,7 @@ const TEMPLATES = [
     time: "17:00" 
   },
 ];
-
+const SWIPE_THRESHOLD = 80;
 const POPULAR_PLACES = [
   // ==================== HÀ NỘI ====================
 
@@ -468,531 +528,2008 @@ const POPULAR_PLACES = [
 ];
 
 
+const vibrate = (
+  pattern: number | number[]
+) => {
+  if (
+    typeof navigator !== "undefined" &&
+    "vibrate" in navigator
+  ) {
+    navigator.vibrate(pattern);
+  }
+};
+const formatLocalDate = (
+  date: Date
+) => {
+  const offset =
+    date.getTimezoneOffset();
 
+  const localDate =
+    new Date(
+      date.getTime() -
+        offset * 60 * 1000
+    );
+
+  return localDate
+    .toISOString()
+    .slice(0, 16);
+};
 export default function CreatePlanPro() {
   const router = useRouter();
-  const { user } = useAuth();
-  const fileRef = useRef<HTMLInputElement>(null);
 
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [nearbyPlaces, setNearbyPlaces] = useState<string[]>([]);
-  const [locating, setLocating] = useState(false);
-  const [step, setStep] = useState(1);
-  const [dragX, setDragX] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
-  const [showTemplates, setShowTemplates] = useState(false);
+  const { user } = useAuth();
+
+  const fileRef =
+    useRef<HTMLInputElement | null>(
+      null
+    );
+
+  const [
+    userLocation,
+    setUserLocation,
+  ] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+
+  const [
+    nearbyPlaces,
+    setNearbyPlaces,
+  ] = useState<string[]>([]);
+
+  const [locating, setLocating] =
+    useState(false);
+
+  const [step, setStep] =
+    useState(1);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [success, setSuccess] =
+    useState(false);
+
+  const [
+    showPreview,
+    setShowPreview,
+  ] = useState(false);
+
+  const [
+    showTemplates,
+    setShowTemplates,
+  ] = useState(false);
 
   // Form state
-  const [title, setTitle] = useState("");
-  const [desc, setDesc] = useState("");
-  const [category, setCategory] = useState<Category>(CATEGORIES[0]!);
-  const [location, setLocation] = useState("");
-  const [locationDetail, setLocationDetail] = useState("");
-  const [time, setTime] = useState("");
-  const [duration, setDuration] = useState(2);
-  const [maxPeople, setMaxPeople] = useState(4);
-  const [costType, setCostType] = useState<CostType>("share");
-  const [costAmount, setCostAmount] = useState(0);
-  const [privacy, setPrivacy] = useState<Privacy>("public");
-  const [cover, setCover] = useState<string | null>(null);
-  const [invites, setInvites] = useState<string[]>([]);
-  const [requirements, setRequirements] = useState<string[]>([]);
-  const [reqInput, setReqInput] = useState("");
-  const [minAge, setMinAge] = useState(0);
-  const [needApproval, setNeedApproval] = useState(false);
-  const [pollLocation, setPollLocation] = useState(false);
-  const [pollTime, setPollTime] = useState(false);
-  const [searchFriend, setSearchFriend] = useState("");
-  const [ageRange, setAgeRange] = useState([18, 35]);
-  const [currentAddress, setCurrentAddress] = useState("");
-  const [friends, setFriends] = useState<Array<{id: string, name: string, avatar: string, online: boolean}>>([]);
-  const [friendsLoading, setFriendsLoading] = useState(false);
-// Load friends
+  const [title, setTitle] =
+    useState("");
+
+  const [desc, setDesc] =
+    useState("");
+
+  const [category, setCategory] =
+    useState<Category>(
+      CATEGORIES[0]!
+    );
+
+  const [location, setLocation] =
+    useState("");
+
+  const [
+    locationDetail,
+    setLocationDetail,
+  ] = useState("");
+
+  const [time, setTime] =
+    useState("");
+
+  const [duration, setDuration] =
+    useState(2);
+
+  const [
+    maxPeople,
+    setMaxPeople,
+  ] = useState(4);
+
+  const [costType, setCostType] =
+    useState<CostType>(
+      "share"
+    );
+
+  const [
+    costAmount,
+    setCostAmount,
+  ] = useState(0);
+
+  const [privacy, setPrivacy] =
+    useState<Privacy>(
+      "public"
+    );
+
+const [cover, setCover] =
+  useState<string | null>(null);
+
+const [
+  coverFile,
+  setCoverFile,
+] = useState<File | null>(
+  null
+);
+
+  const [invites, setInvites] =
+    useState<string[]>([]);
+
+  const [
+    requirements,
+    setRequirements,
+  ] = useState<string[]>([]);
+
+  const [reqInput, setReqInput] =
+    useState("");
+
+  const [minAge, setMinAge] =
+    useState(0);
+
+  const [
+    needApproval,
+    setNeedApproval,
+  ] = useState(false);
+
+  const [
+    pollLocation,
+    setPollLocation,
+  ] = useState(false);
+
+  const [pollTime, setPollTime] =
+    useState(false);
+
+  const [
+    searchFriend,
+    setSearchFriend,
+  ] = useState("");
+
+const [ageRange, setAgeRange] =
+  useState<[number, number]>([
+    18,
+    35,
+  ]);
+
+  const [
+    currentAddress,
+    setCurrentAddress,
+  ] = useState("");
+
+  const [friends, setFriends] =
+    useState<
+      Array<{
+        id: string;
+        name: string;
+        avatar: string;
+        online: boolean;
+      }>
+    >([]);
+
+  const [
+    friendsLoading,
+    setFriendsLoading,
+  ] = useState(false);
+
+  // Load friends
   useEffect(() => {
     if (!user?.uid) return;
+
     setFriendsLoading(true);
+
     const db = getFirebaseDB();
-    const q = query(collection(db, 'friends'), where('userId', '==', user.uid), where('status', '==', 'accepted'), limit(50));
-    return onSnapshot(q, async (snap) => {
-      const data = await Promise.all(snap.docs.map(async d => {
-        const f = d.data();
-        const u = await getDoc(doc(db, 'users', f.friendId));
-        const ud = u.data();
-        return {
-          id: f.friendId,
-          name: ud?.displayName || 'Unknown',
-          avatar: ud?.photoURL || `https://i.pravatar.cc/80?u=${f.friendId}`,
-          online: ud?.lastSeen?.toDate() > new Date(Date.now() - 180000)
-        };
-      }));
-      setFriends(data);
-      setFriendsLoading(false);
-    });
+
+    const friendsQuery = query(
+      collection(db, "friends"),
+      where("userId", "==", user.uid),
+      where(
+        "status",
+        "==",
+        "accepted"
+      ),
+      limit(50)
+    );
+
+    const unsubscribe =
+      onSnapshot(
+        friendsQuery,
+        async (snapshot) => {
+          try {
+            const data =
+              await Promise.all(
+                snapshot.docs.map(
+                  async (
+                    document
+                  ) => {
+                    const friend =
+                      document.data();
+
+                    const userDoc =
+                      await getDoc(
+                        doc(
+                          db,
+                          "users",
+                          friend.friendId
+                        )
+                      );
+
+                    const userData =
+                      userDoc.data();
+
+                    return {
+                      id: friend.friendId,
+
+                      name:
+                        userData?.displayName ||
+                        "Unknown",
+
+                      avatar:
+                        userData?.photoURL ||
+                        `https://i.pravatar.cc/80?u=${friend.friendId}`,
+
+                      online:
+                        userData?.lastSeen?.toDate?.() >
+                        new Date(
+                          Date.now() -
+                            180000
+                        ),
+                    };
+                  }
+                )
+              );
+
+            setFriends(data);
+          } catch (error) {
+            console.error(error);
+          } finally {
+            setFriendsLoading(
+              false
+            );
+          }
+        }
+      );
+
+    return () => unsubscribe();
   }, [user?.uid]);
+
+  // Load draft
+  useEffect(() => {
+    try {
+      const saved =
+        localStorage.getItem(
+          "plan_draft_v2"
+        );
+
+      if (!saved) return;
+
+      const draft =
+        JSON.parse(saved);
+
+      setTitle(
+        draft.title || ""
+      );
+
+      setDesc(
+        draft.desc || ""
+      );
+
+      setCategory(
+        CATEGORIES.find(
+          (c) =>
+            c.id === draft.cat
+        ) ||
+          CATEGORIES[0]!
+      );
+
+      setLocation(
+        draft.location || ""
+      );
+
+      setTime(
+        draft.time || ""
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
 
   // Auto save draft
   useEffect(() => {
-    const saved = localStorage.getItem("plan_draft_v2");
-    if (saved) try {
-      const d = JSON.parse(saved);
-      setTitle(d.title || ""); setDesc(d.desc || "");
-      setCategory(CATEGORIES.find(c => c.id === d.cat) || CATEGORIES[0]!);
-      setLocation(d.location || ""); setTime(d.time || "");
-    } catch {}
-  }, []);
+    const timeout =
+      setTimeout(() => {
+        localStorage.setItem(
+          "plan_draft_v2",
+          JSON.stringify({
+            title,
+            desc,
+            cat: category.id,
+            location,
+            time,
+          })
+        );
+      }, 300);
 
-  useEffect(() => {
-    localStorage.setItem("plan_draft_v2", JSON.stringify({ title, desc, cat: category.id, location, time }));
-  }, [title, desc, category, location, time]);
+    return () =>
+      clearTimeout(timeout);
+  }, [
+    title,
+    desc,
+    category,
+    location,
+    time,
+  ]);
 
-  // Update presence
+  // Presence
   useEffect(() => {
     if (!user?.uid) return;
+
     const db = getFirebaseDB();
-    const ref = doc(db, 'users', user.uid);
-    const update = () => updateDoc(ref, { lastSeen: Timestamp.now() });
-    update(); const id = setInterval(update, 30000);
-    return () => clearInterval(id);
+
+    const userRef = doc(
+      db,
+      "users",
+      user.uid
+    );
+
+    const updatePresence =
+      () => {
+        updateDoc(userRef, {
+          lastSeen:
+            Timestamp.now(),
+        }).catch(
+          console.error
+        );
+      };
+
+    updatePresence();
+
+    const interval =
+      setInterval(
+        updatePresence,
+        30000
+      );
+
+    return () =>
+      clearInterval(interval);
   }, [user?.uid]);
 
-  const filteredFriends = useMemo(() =>
-    friends.filter(f => f.name.toLowerCase().includes(searchFriend.toLowerCase())),
-    [friends, searchFriend]
-  );
+  // Cleanup blob
+  useEffect(() => {
+    return () => {
+      if (
+        cover?.startsWith(
+          "blob:"
+        )
+      ) {
+        URL.revokeObjectURL(
+          cover
+        );
+      }
+    };
+  }, [cover]);
 
-  const handleImage = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    if (f.size > 5 * 1024 * 1024) return toast.error("Ảnh tối đa 5MB");
-    if (!f.type.startsWith("image/")) return toast.error("Chỉ chọn ảnh");
-    const r = new FileReader();
-    r.onload = ev => setCover(ev.target?.result as string);
-    r.readAsDataURL(f);
-    toast.success("Đã thêm ảnh");
-    navigator.vibrate?.(10);
-  }, []);
+  const filteredFriends =
+    useMemo(() => {
+      return friends.filter(
+        (friend) =>
+          friend.name
+            .toLowerCase()
+            .includes(
+              searchFriend.toLowerCase()
+            )
+      );
+    }, [
+      friends,
+      searchFriend,
+    ]);
 
-  const getCurrentLocation = async () => {
-    if (!navigator.geolocation) return toast.error("Trình duyệt không hỗ trợ");
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setUserLocation({ lat: latitude, lng: longitude });
-        try {
-          const geoRes = await fetch(`/api/places/geocode?lat=${latitude}&lng=${longitude}`);
-          const geoData = await geoRes.json();
-          const address = geoData.results?.[0]?.formatted_address || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-          setCurrentAddress(address);
-          setLocationDetail(address);
-          const res = await fetch(`/api/places/nearby?lat=${latitude}&lng=${longitude}`);
-          const data = await res.json();
-          setNearbyPlaces(data.results?.slice(0,8).map((p: any) => p.name) || []);
-        } catch {
-          setCurrentAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
-          setNearbyPlaces(["Highlands", "Starbucks", "Phúc Long"]);
+  const handleImage =
+    useCallback(
+      (
+        e: React.ChangeEvent<HTMLInputElement>
+      ) => {
+        const file =
+          e.target.files?.[0];
+
+        if (!file) return;
+
+        if (
+          file.size >
+          5 *
+            1024 *
+            1024
+        ) {
+          toast.error(
+            "Ảnh tối đa 5MB"
+          );
+
+          return;
         }
-        setLocating(false);
-        toast.success("Đã lấy vị trí");
-        navigator.vibrate?.(10);
-      },
-      () => { setLocating(false); toast.error("Không lấy được vị trí"); },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  };
 
-  const toggleInvite = (id: string) => {
-    setInvites(p => {
-      const n = p.includes(id)? p.filter(i => i!== id) : [...p, id];
-      if (n.length > 20) { toast.error("Tối đa 20 người"); return p; }
-      navigator.vibrate?.(5);
-      return n;
+        if (
+          !file.type.startsWith(
+            "image/"
+          )
+        ) {
+          toast.error(
+            "Chỉ chọn ảnh"
+          );
+
+          return;
+        }
+
+        if (
+          cover?.startsWith(
+            "blob:"
+          )
+        ) {
+          URL.revokeObjectURL(
+            cover
+          );
+        }
+
+        const previewUrl =
+          URL.createObjectURL(
+            file
+          );
+
+       setCover(previewUrl);
+
+setCoverFile(file);
+
+        toast.success(
+          "Đã thêm ảnh"
+        );
+
+        vibrate(10);
+      },
+      [cover]
+    );
+
+  const getCurrentLocation =
+    async () => {
+      if (
+        !navigator.geolocation
+      ) {
+        toast.error(
+          "Trình duyệt không hỗ trợ"
+        );
+
+        return;
+      }
+
+      setLocating(true);
+let mounted = true;
+      navigator.geolocation.getCurrentPosition(
+        async (
+          position
+        ) => {
+          const {
+            latitude,
+            longitude,
+          } = position.coords;
+
+          setUserLocation({
+            lat: latitude,
+            lng: longitude,
+          });
+
+          try {
+            const geoResponse =
+              await fetch(
+                `/api/places/geocode?lat=${latitude}&lng=${longitude}`
+              );
+
+            const geoData =
+              await geoResponse.json();
+
+            const address =
+              geoData
+                ?.results?.[0]
+                ?.formatted_address ||
+              `${latitude.toFixed(
+                4
+              )}, ${longitude.toFixed(
+                4
+              )}`;
+
+            setCurrentAddress(
+              address
+            );
+
+            setLocationDetail(
+              address
+            );
+
+            const nearbyResponse =
+              await fetch(
+                `/api/places/nearby?lat=${latitude}&lng=${longitude}`
+              );
+
+            const nearbyData =
+              await nearbyResponse.json();
+
+            setNearbyPlaces(
+              nearbyData?.results
+                ?.slice(0, 8)
+                ?.map(
+                  (
+                    place: {
+                      name: string;
+                    }
+                  ) =>
+                    place.name
+                ) || []
+            );
+          } catch {
+            setCurrentAddress(
+              `${latitude.toFixed(
+                4
+              )}, ${longitude.toFixed(
+                4
+              )}`
+            );
+
+            setNearbyPlaces([
+              "Highlands",
+              "Starbucks",
+              "Phúc Long",
+            ]);
+          }
+
+          setLocating(false);
+
+          toast.success(
+            "Đã lấy vị trí"
+          );
+
+          vibrate(10);
+        },
+        () => {
+          setLocating(false);
+
+          toast.error(
+            "Không lấy được vị trí"
+          );
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+        }
+      );
+    };
+
+  const toggleInvite = (
+    id: string
+  ) => {
+    setInvites((prev) => {
+      const next =
+        prev.includes(id)
+          ? prev.filter(
+              (item) =>
+                item !== id
+            )
+          : [...prev, id];
+
+      if (next.length > 20) {
+        toast.error(
+          "Tối đa 20 người"
+        );
+
+        return prev;
+      }
+
+      vibrate(5);
+
+      return next;
     });
   };
 
   const addReq = () => {
-    const t = reqInput.trim();
-    if (!t) return;
-    if (requirements.length >= 5) return toast.error("Tối đa 5 mục");
-    if (requirements.includes(t)) return toast.error("Đã có rồi");
-    setRequirements([...requirements, t]);
+    const value =
+      reqInput.trim();
+
+    if (!value) return;
+
+    if (
+      requirements.length >=
+      5
+    ) {
+      toast.error(
+        "Tối đa 5 mục"
+      );
+
+      return;
+    }
+
+    if (
+requirements.some(
+  (item) =>
+    item.toLowerCase() ===
+    value.toLowerCase()
+)
+    ) {
+      toast.error(
+        "Đã có rồi"
+      );
+
+      return;
+    }
+
+    setRequirements((prev) => [
+      ...prev,
+      value,
+    ]);
+
     setReqInput("");
-    navigator.vibrate?.(5);
+
+    vibrate(5);
   };
 
-  const handleDragEnd = (_: any, info: PanInfo) => {
-    if (Math.abs(info.offset.x) < 50) return setDragX(0);
-    if (info.offset.x < -50 && step < 3 && canNext) setStep(s => s + 1);
-    if (info.offset.x > 50 && step > 1) setStep(s => s - 1);
-    setDragX(0);
+  const handleDragEnd = (
+    _: MouseEvent | TouchEvent | PointerEvent,
+    info: PanInfo
+  ) => {
+    if (
+      Math.abs(
+        info.offset.x
+      ) < SWIPE_THRESHOLD
+    ) {
+      return;
+    }
+
+    if (
+      info.offset.x <
+        -SWIPE_THRESHOLD &&
+      step < 3 &&
+      canNext
+    ) {
+      setStep(
+        (prev) => prev + 1
+      );
+
+      vibrate(5);
+
+      return;
+    }
+
+    if (
+      info.offset.x >
+        SWIPE_THRESHOLD &&
+      step > 1
+    ) {
+      setStep(
+        (prev) => prev - 1
+      );
+
+      vibrate(5);
+    }
   };
 
-  const useTemplate = (t: typeof TEMPLATES[0]) => {
-    setTitle(t.title); setLocation(t.loc);
-    setCategory(CATEGORIES.find(c => c.id === t.cat) || CATEGORIES[0]!);
-    const d = new Date(); const [h, m] = t.time.split(":").map(Number);
-    d.setHours(h || 0, m || 0, 0); if (d < new Date()) d.setDate(d.getDate() + 1);
-    setTime(d.toISOString().slice(0, 16));
+  const useTemplate = (
+    template:
+      typeof TEMPLATES[0]
+  ) => {
+    setTitle(
+      template.title
+    );
+
+    setLocation(
+      template.loc
+    );
+
+    setCategory(
+      CATEGORIES.find(
+        (c) =>
+          c.id ===
+          template.cat
+      ) ||
+        CATEGORIES[0]!
+    );
+
+    const date =
+      new Date();
+
+    const [hours, minutes] =
+      template.time
+        .split(":")
+        .map(Number);
+
+    date.setHours(
+      hours || 0,
+      minutes || 0,
+      0
+    );
+
+    if (date < new Date()) {
+      date.setDate(
+        date.getDate() + 1
+      );
+    }
+
+    setTime(
+      formatLocalDate(date)
+    );
+
     setShowTemplates(false);
-    toast.success(`Đã dùng mẫu "${t.name}"`);
-    navigator.vibrate?.(10);
+
+    toast.success(
+      `Đã dùng mẫu "${template.name}"`
+    );
+
+    vibrate(10);
   };
 
-  const submit = async () => {
-    if (!title.trim() || title.trim().length < 3) return toast.error("Nhập tên (tối thiểu 3 ký tự)");
-    if (!location.trim()) return toast.error("Chọn địa điểm");
-    if (!time || new Date(time) < new Date()) return toast.error("Chọn thời gian hợp lệ");
+  const submit =
+    async () => {
+      if (
+        !title.trim() ||
+        title.trim().length < 3
+      ) {
+        toast.error(
+          "Nhập tên tối thiểu 3 ký tự"
+        );
 
-    setLoading(true);
-    try {
-      const db = getFirebaseDB();
-      await addDoc(collection(db, 'plans'), {
-        title: title.trim(), desc: desc.trim(), category: category.id,
-        location: location.trim(), locationDetail: locationDetail.trim(),
-        coordinates: userLocation? { lat: userLocation.lat, lng: userLocation.lng } : null,
-        time: Timestamp.fromDate(new Date(time)), duration, maxPeople,
-        costType, costAmount: costType === 'free' || costType === 'host'? 0 : costAmount,
-        privacy, minAge, needApproval, pollTime, pollLocation, invites, requirements, cover,
-        createdBy: user?.uid, createdAt: Timestamp.now(), status: 'active', participants: [user?.uid],
-      });
+        return;
+      }
 
-      localStorage.removeItem("plan_draft_v2");
-      toast.success("🎉 Tạo kế hoạch thành công!");
-navigator.vibrate?.([10, 50, 10]);
+      if (
+        !location.trim()
+      ) {
+        toast.error(
+          "Chọn địa điểm"
+        );
 
-setSuccess(true);
+        return;
+      }
 
-setTimeout(() => {
-  router.push("/");
-}, 1800);
-  
-    } catch (error) {
-      console.error(error);
-      toast.error("Tạo thất bại, thử lại");
-    } finally { setLoading(false); }
-  };
+      if (
+        !time ||
+        new Date(time) <
+          new Date()
+      ) {
+        toast.error(
+          "Chọn thời gian hợp lệ"
+        );
 
-  const progress = (step / 3) * 100;
-  const canNext = step === 1? title.trim().length >= 3 : step === 2?!!location.trim() &&!!time : true;
-  const splitCost = costAmount > 0 && costType === "share"? Math.ceil(costAmount / maxPeople) : 0;
-  const currentPresets = DESCRIPTION_PRESETS[category.id] || [];
+        return;
+      }
 
-  return (
-    <>
-      <Toaster richColors position="top-center" />
-      <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100">
-        {/* Header */}
-        <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b border-zinc-200/50 dark:border-zinc-800">
-          <div className="h-[3px] bg-zinc-200 dark:bg-zinc-800">
-            <motion.div className="h-full bg-[#0042B2]" animate={{ width: `${progress}%` }} transition={{ type: "spring", stiffness: 300, damping: 30 }} />
-          </div>
-          <div className="h-14 px-4 flex items-center gap-3 max-w-[680px] mx-auto">
-            <button onClick={() => step > 1? setStep(s => s - 1) : router.back()} className="w-9 h-9 -ml-1 grid place-items-center rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all">
-              <FiX size={20} className="text-zinc-600 dark:text-zinc-400" />
-            </button>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-[#0042B2] text-white tracking-wide">BƯỚC {step}</span>
-                <span className="text-[11px] text-zinc-500">/3 • Tự động lưu</span>
-              </div>
-              <h1 className="text-[17px] font-bold leading-tight mt-0.5">{["Bạn muốn làm gì?", "Khi nào & ở đâu?", "Mời bạn bè"][step - 1]}</h1>
-            </div>
-            <div className="flex items-center gap-1">
-              <button onClick={() => setShowTemplates(true)} className="w-9 h-9 grid place-items-center rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 active:scale-95 transition-all">
-                <FiCopy size={18} />
-              </button>
-              <button onClick={() => setShowPreview(true)} className="w-9 h-9 grid place-items-center rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 active:scale-95 transition-all">
-                <FiEye size={18} />
-              </button>
-            </div>
-          </div>
+      setLoading(true);
+
+      try {
+        const db =
+          getFirebaseDB();
+
+        await addDoc(
+          collection(
+            db,
+            "plans"
+          ),
+          {
+            title:
+              title.trim(),
+
+            desc:
+              desc.trim(),
+
+            category:
+              category.id,
+
+            location:
+              location.trim(),
+
+            locationDetail:
+              locationDetail.trim(),
+
+            coordinates:
+              userLocation
+                ? {
+                    lat: userLocation.lat,
+                    lng: userLocation.lng,
+                  }
+                : null,
+
+            time: Timestamp.fromDate(
+              new Date(time)
+            ),
+
+            duration,
+
+            maxPeople,
+
+            costType,
+
+            costAmount:
+              costType ===
+                "free" ||
+              costType ===
+                "host"
+                ? 0
+                : costAmount,
+
+            privacy,
+
+            minAge,
+
+            needApproval,
+
+            pollTime,
+
+            pollLocation,
+
+            invites,
+
+            requirements,
+
+           cover: uploadedCoverUrl || "",
+
+            createdBy:
+              user?.uid,
+
+            createdAt:
+              Timestamp.now(),
+
+            status:
+              "active",
+
+            participants: [
+              user?.uid,
+            ],
+          }
+        );
+
+        localStorage.removeItem(
+          "plan_draft_v2"
+        );
+
+        toast.success(
+          "🎉 Tạo kế hoạch thành công!"
+        );
+
+        vibrate([
+          10,
+          50,
+          10,
+        ]);
+
+        setSuccess(true);
+
+        setTimeout(() => {
+          router.push("/");
+        }, 1800);
+      } catch (error) {
+        console.error(error);
+
+        toast.error(
+          "Tạo thất bại, thử lại"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+  const progress =
+    (step / 3) * 100;
+
+  const canNext =
+    step === 1
+      ? title.trim()
+          .length >= 3
+      : step === 2
+        ? Boolean(
+            location.trim()
+          ) &&
+          Boolean(time)
+        : true;
+
+  const splitCost =
+    costAmount > 0 &&
+    costType === "share"
+      ? Math.ceil(
+          costAmount /
+            maxPeople
+        )
+      : 0;
+
+  const currentPresets =
+    DESCRIPTION_PRESETS[
+      category.id
+    ] || [];
+
+ return (
+  <>
+    <Toaster
+      richColors
+      position="top-center"
+    />
+
+    <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-black dark:text-zinc-100">
+      {/* Header */}
+      <div className="sticky top-0 z-40 border-b border-zinc-200/50 bg-white/80 backdrop-blur-2xl dark:border-zinc-800 dark:bg-zinc-950/80">
+        <div className="h-[3px] bg-zinc-200 dark:bg-zinc-800">
+          <motion.div
+            className="h-full bg-[#0042B2]"
+            animate={{
+              width: `${progress}%`,
+            }}
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 30,
+            }}
+          />
         </div>
 
-        <div className="max-w-[680px] mx-auto pb-28">
-          <motion.div drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.15} onDrag={(_, i) => setDragX(i.offset.x)} onDragEnd={handleDragEnd} style={{ x: dragX }}>
-            <AnimatePresence mode="wait">
-{step === 1 && (
-                <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 space-y-4">
-                  {/* Categories */}
-                  <div>
-                    <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-3 px-1 font-medium">Chọn loại hoạt động</p>
-                    <div className="grid grid-cols-4 gap-2.5">
-                      {CATEGORIES.map(c => {
-                        const active = category.id === c.id;
-                        return (
-                          <motion.button key={c.id} whileTap={{ scale: 0.92 }} onClick={() => { setCategory(c); navigator.vibrate?.(5); }} className={`relative aspect-square rounded-3xl border-2 transition-all ${active? "border-[#0042B2] bg-[#0042B2]/5 shadow-lg shadow-[#0042B2]/10" : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 hover:border-zinc-300"}`}>
-                            <div className="flex flex-col items-center justify-center gap-1.5 h-full">
-                              <span className="text- leading-none">{c.emoji}</span>
-                              <span className={`text- font-semibold ${active? "text-[#0042B2]" : "text-zinc-700 dark:text-zinc-300"}`}>{c.label}</span>
-                            </div>
-                            {active && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-[#0042B2] rounded-full grid place-items-center shadow-lg"><FiCheck size={14} className="text-white" strokeWidth={3} /></motion.div>}
-                          </motion.button>
-                        );
-                      })}
-                    </div>
-                  </div>
+        <div className="mx-auto flex h-14 max-w-[680px] items-center gap-3 px-4">
+<button
+  type="button"
+  aria-label="Đóng"
+  onClick={() => {
+              if (step > 1) {
+                setStep(
+                  (prev) =>
+                    prev - 1
+                );
+              } else {
+                router.back();
+              }
 
-                  {/* Title */}
-                  <div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 p-5 shadow-sm">
-                    <div className="flex items-start gap-3">
-                      <span className="text-3xl mt-1">{category.emoji}</span>
-                      <div className="flex-1">
-                        <input value={title} onChange={e => setTitle(e.target.value.slice(0, 50))} placeholder={category.suggestions[0]} className="w-full text-2xl font-black bg-transparent outline-none placeholder:text-zinc-300 dark:placeholder:text-zinc-700" autoFocus />
-                        <div className="flex items-center justify-between mt-3">
-                          <div className="flex flex-wrap gap-1.5 max-w-full">
-                            {category.suggestions.slice(0, 5).map(s => (
-                              <button key={s} onClick={() => setTitle(s)} className="px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 text- font-medium active:scale-95 transition-all">{s}</button>
-                            ))}
-                          </div>
-                          <span className={`text- font-medium tabular-nums ${title.length > 40? "text-amber-600" : "text-zinc-400"}`}>{title.length}/50</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-{/* Quick Activities */}
-<div>
-  <div className="flex items-center justify-between mb-3 px-1">
-    <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300">
-      Hoạt động nhanh
-    </p>
-
-    <span className="text-xs text-zinc-400">
-      Chạm để dùng ngay
-    </span>
-  </div>
-
-  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-    {QUICK_ACTIVITIES.map((item) => (
-      <button
-        key={item.name}
-        onClick={() => useTemplate(item)}
-        className="shrink-0 w-[220px] p-4 rounded-3xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-[#0042B2] text-left transition-all active:scale-95"
-      >
-        <div className="flex items-start gap-3">
-          <div className="text-3xl">
-            {CATEGORIES.find((c) => c.id === item.cat)?.emoji}
-          </div>
+              vibrate(5);
+            }}
+            className="grid h-9 w-9 place-items-center rounded-xl transition-all hover:bg-zinc-100 active:scale-90 dark:hover:bg-zinc-800"
+          >
+            <FiX
+              size={20}
+              className="text-zinc-600 dark:text-zinc-400"
+            />
+          </button>
 
           <div className="min-w-0 flex-1">
-            <p className="font-black truncate">
-              {item.name}
-            </p>
+            <div className="flex items-center gap-1.5">
+              <span className="rounded-lg bg-[#0042B2] px-2 py-0.5 text-[10px] font-bold tracking-wide text-white">
+                BƯỚC {step}
+              </span>
 
-            <p className="text-sm text-zinc-500 line-clamp-2 mt-1">
-              {item.title}
-            </p>
-
-            <div className="flex items-center gap-2 mt-3 text-xs text-zinc-400">
-              <span>{item.loc}</span>
-              <span>•</span>
-              <span>{item.time}</span>
+              <span className="text-[11px] text-zinc-500">
+                /3 • Tự động lưu
+              </span>
             </div>
+
+            <h1 className="mt-0.5 text-[17px] font-bold leading-tight">
+              {
+                [
+                  "Bạn muốn làm gì?",
+                  "Khi nào & ở đâu?",
+                  "Mời bạn bè",
+                ][step - 1]
+              }
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-1">
+<button
+  type="button"
+  aria-label="Mẫu có sẵn"
+  onClick={() => {
+    setShowTemplates(
+                  true
+                );
+
+                vibrate(5);
+              }}
+              className="grid h-9 w-9 place-items-center rounded-xl text-zinc-500 transition-all hover:bg-zinc-100 active:scale-95 dark:hover:bg-zinc-800"
+            >
+              <FiCopy size={18} />
+            </button>
+
+<button
+  type="button"
+  aria-label="Xem trước"
+  onClick={() => {
+    setShowPreview(
+                  true
+                );
+
+                vibrate(5);
+              }}
+              className="grid h-9 w-9 place-items-center rounded-xl text-zinc-500 transition-all hover:bg-zinc-100 active:scale-95 dark:hover:bg-zinc-800"
+            >
+              <FiEye size={18} />
+            </button>
           </div>
         </div>
-      </button>
-    ))}
-  </div>
-</div>
-                  {/* Description */}
-                  <div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 p-5 shadow-sm">
-                    <textarea value={desc} onChange={e => setDesc(e.target.value.slice(0, 300))} placeholder="Mô tả thêm về hoạt động, vibe, yêu cầu..." rows={3} className="w-full text- leading-relaxed bg-transparent outline-none resize-none placeholder:text-zinc-400" />
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-900">
-                      <div className="flex gap-1.5 flex-wrap">
-                        {currentPresets.slice(0, 3).map(t => (
-                          <button key={t} onClick={() => setDesc(d => d? `${d} ${t}` : t)} className="text- px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 text-zinc-600 dark:text-zinc-400 transition-colors">+ {t.slice(0, 15)}...</button>
-                        ))}
-                      </div>
-                      <span className="text- text-zinc-400 tabular-nums">{desc.length}/300</span>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {step === 2 && (
-                <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 space-y-4">
-                  {/* Time */}
-                  <div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 p-5 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 rounded-2xl bg-[#0042B2]/10 grid place-items-center"><FiClock className="text-[#0042B2]" size={18} /></div>
-                        <h3 className="font-bold">Thời gian</h3>
-                      </div>
-                      <label className="flex items-center gap-2 text- cursor-pointer">
-                        <input type="checkbox" checked={pollTime} onChange={e => setPollTime(e.target.checked)} className="w-4 h-4 accent-[#0042B2] rounded" />
-                        <span className="text-zinc-600">Bình chọn</span>
-                      </label>
-                    </div>
-                    <div className="grid grid-cols-4 gap-2 mb-3">
-                      {[{ l: "Tối nay", h: 19 }, { l: "Ngày mai", h: 9, d: 1 }, { l: "T7", h: 9, wd: 6 }, { l: "CN", h: 9, wd: 0 }].map(q => (
-                        <button key={q.l} onClick={() => { const d = new Date(); if (q.d) d.setDate(d.getDate() + q.d); if (q.wd!== undefined) { const diff = q.wd - d.getDay(); d.setDate(d.getDate() + (diff <= 0? diff + 7 : diff)); } d.setHours(q.h, 0, 0); setTime(d.toISOString().slice(0, 16)); }} className="h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 font-medium active:scale-95 transition-all">{q.l}</button>
-                      ))}
-                    </div>
-                    <input type="datetime-local" value={time} onChange={e => setTime(e.target.value)} min={new Date().toISOString().slice(0, 16)} className="w-full h-12 px-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-2 border-transparent focus:border-[#0042B2] outline-none font-medium" />
-                    <div className="flex items-center gap-3 mt-4">
-                      <span className="text- text-zinc-600">Thời lượng:</span>
-                      <div className="flex gap-1.5">{[1, 2, 3, 4, 6].map(h => <button key={h} onClick={() => setDuration(h)} className={`w-10 h-8 rounded-xl font-medium transition-all ${duration === h? "bg-[#0042B2] text-white" : "bg-zinc-100 dark:bg-zinc-900"}`}>{h}h</button>)}</div>
-                    </div>
-                  </div>
-
-                  {/* Location */}
-                  <div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 p-5 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 rounded-2xl bg-[#0042B2]/10 grid place-items-center"><FiMapPin className="text-[#0042B2]" size={18} /></div>
-                        <h3 className="font-bold">Địa điểm</h3>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={getCurrentLocation} disabled={locating} className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-900 grid place-items-center hover:bg-zinc-200 active:scale-95 disabled:opacity-50">
-                          {locating? <div className="w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" /> : <FiNavigation size={16} />}
-                        </button>
-                        <label className="flex items-center gap-2 text- cursor-pointer">
-                          <input type="checkbox" checked={pollLocation} onChange={e => setPollLocation(e.target.checked)} className="w-4 h-4 accent-[#0042B2] rounded" />
-                          <span className="text-zinc-600">Bình chọn</span>
-                        </label>
-                      </div>
-</div>
-                    <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Tìm địa điểm, quán, địa chỉ..." className="w-full h-12 px-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-2 border-transparent focus:border-[#0042B2] outline-none font-medium" />
-                    {currentAddress && <p className="text- mt-2 text-[#0042B2] truncate">📍 {currentAddress}</p>}
-                    <div className="flex gap-1.5 mt-3 overflow-x-auto scrollbar-hide">
-                      {(nearbyPlaces.length > 0? nearbyPlaces : POPULAR_PLACES.slice(0, 8)).map(p => (
-                        <button key={p} onClick={() => setLocation(p)} className={`shrink-0 px-3 h-8 rounded-full text- font-medium whitespace-nowrap transition-all ${location === p? "bg-[#0042B2] text-white" : "bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200"}`}>{p}</button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* People & Cost */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 p-5 shadow-sm">
-                      <p className="text- font-bold text-zinc-500 uppercase tracking-wide mb-2">Số người</p>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-4xl font-black">{maxPeople}</span>
-                        <span className="text-zinc-500">người</span>
-                      </div>
-                      <input type="range" min={2} max={20} value={maxPeople} onChange={e => setMaxPeople(Number(e.target.value))} className="w-full mt-3 accent-[#0042B2]" />
-                    </div>
-                    <div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 p-5 shadow-sm">
-                      <p className="text- font-bold text-zinc-500 uppercase tracking-wide mb-2">Chi phí</p>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        {[{ v: "free", l: "Free" }, { v: "share", l: "Share" }, { v: "host", l: "Bao" }, { v: "ticket", l: "Vé" }].map(o => (
-                          <button key={o.v} onClick={() => setCostType(o.v as CostType)} className={`h-8 rounded-xl text- font-bold transition-all ${costType === o.v? "bg-[#0042B2] text-white" : "bg-zinc-100 dark:bg-zinc-900"}`}>{o.l}</button>
-                        ))}
-                      </div>
-                      {costType !== "free" && costType !== "host" && (
-  <>
-    <input
-      type="number"
-      value={costAmount || ""}
-      onChange={(e) => setCostAmount(Number(e.target.value))}
-      placeholder="0"
-      className="w-full mt-2 h-9 px-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 outline-none font-bold text-center"
-    />
-
-    {costType === "share" && costAmount > 0 && (
-      <div className="mt-2 text-center">
-        <span className="text-xs text-zinc-500">
-          Mỗi người khoảng
-        </span>
-
-        <p className="text-sm font-bold text-[#0042B2]">
-          {splitCost.toLocaleString("vi-VN")}đ
-        </p>
       </div>
-    )}
-  </>
-)}
+
+      <div className="mx-auto max-w-[680px] pb-28">
+        <motion.div
+          drag="x"
+          dragConstraints={{
+            left: 0,
+            right: 0,
+          }}
+          dragElastic={0.15}
+          dragMomentum={false}
+          onDragEnd={
+            handleDragEnd
+          }
+        >
+          <AnimatePresence
+            mode="wait"
+          >
+            {step === 1 && (
+              <motion.div
+                key="s1"
+                initial={{
+                  opacity: 0,
+                  x: 20,
+                }}
+                animate={{
+                  opacity: 1,
+                  x: 0,
+                }}
+                exit={{
+                  opacity: 0,
+                  x: -20,
+                }}
+                className="space-y-4 p-4"
+              >
+                {/* Categories */}
+                <div>
+                  <p className="mb-3 px-1 text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                    Chọn loại hoạt
+                    động
+                  </p>
+
+                  <div className="grid grid-cols-4 gap-2.5">
+                    {CATEGORIES.map(
+                      (c) => {
+                        const active =
+                          category.id ===
+                          c.id;
+
+                        return (
+                          <motion.button
+                            key={
+                              c.id
+                            }
+                            type="button"
+                            whileTap={{
+                              scale: 0.92,
+                            }}
+                            onClick={() => {
+                              setCategory(
+                                c
+                              );
+
+                              vibrate(
+                                5
+                              );
+                            }}
+                            className={`relative aspect-square rounded-3xl border-2 transition-all ${
+                              active
+                                ? "border-[#0042B2] bg-[#0042B2]/5 shadow-lg shadow-[#0042B2]/10"
+                                : "border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950"
+                            }`}
+                          >
+                            <div className="flex h-full flex-col items-center justify-center gap-1.5">
+                              <span className="text-3xl leading-none">
+                                {
+                                  c.emoji
+                                }
+                              </span>
+
+                              <span
+                                className={`text-[11px] font-semibold leading-tight ${
+                                  active
+                                    ? "text-[#0042B2]"
+                                    : "text-zinc-700 dark:text-zinc-300"
+                                }`}
+                              >
+                                {
+                                  c.label
+                                }
+                              </span>
+                            </div>
+
+                            {active && (
+                              <motion.div
+                                initial={{
+                                  scale: 0,
+                                }}
+                                animate={{
+                                  scale: 1,
+                                }}
+                                className="absolute -right-1.5 -top-1.5 grid h-6 w-6 place-items-center rounded-full bg-[#0042B2] shadow-lg"
+                              >
+                                <FiCheck
+                                  size={
+                                    14
+                                  }
+                                  strokeWidth={
+                                    3
+                                  }
+                                  className="text-white"
+                                />
+                              </motion.div>
+                            )}
+                          </motion.button>
+                        );
+                      }
+                    )}
+                  </div>
+                </div>
+
+                {/* Title */}
+                <div className="rounded-3xl border border-zinc-200/60 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+                  <div className="flex items-start gap-3">
+                    <span className="mt-1 text-3xl">
+                      {
+                        category.emoji
+                      }
+                    </span>
+
+                    <div className="flex-1">
+                      <input
+                        autoFocus
+                        aria-label="Tên hoạt động"
+                        value={title}
+                        maxLength={
+                          50
+                        }
+                        onChange={(
+                          e
+                        ) =>
+                          setTitle(
+                            e.target.value.slice(
+                              0,
+                              50
+                            )
+                          )
+                        }
+                        placeholder={
+                          category
+                            .suggestions[0]
+                        }
+                        className="w-full bg-transparent text-2xl font-black outline-none placeholder:text-zinc-300 dark:placeholder:text-zinc-700"
+                      />
+
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <div className="flex max-w-full flex-wrap gap-1.5">
+                          {category.suggestions
+                            .slice(
+                              0,
+                              5
+                            )
+                            .map(
+                              (
+                                suggestion
+                              ) => (
+                                <button
+                                  key={
+                                    suggestion
+                                  }
+                                  type="button"
+                                  onClick={() => {
+                                    setTitle(
+                                      suggestion
+                                    );
+
+                                    vibrate(
+                                      5
+                                    );
+                                  }}
+                                  className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium transition-all hover:bg-zinc-200 active:scale-95 dark:bg-zinc-900"
+                                >
+                                  {
+                                    suggestion
+                                  }
+                                </button>
+                              )
+                            )}
+                        </div>
+
+                        <span
+                          className={`text-xs font-medium tabular-nums ${
+                            title.length >
+                            40
+                              ? "text-amber-600"
+                              : "text-zinc-400"
+                          }`}
+                        >
+                          {
+                            title.length
+                          }
+                          /50
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </motion.div>
-              )}
+                </div>
 
-              {step === 3 && (
-                <motion.div key="s3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 space-y-4">
-                  {/* Invite Friends */}
-<div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 p-5 shadow-sm">
-  <div className="flex items-center justify-between mb-4">
-    <h3 className="font-bold">Yêu cầu tham gia</h3>
+                {/* Quick Activities */}
+                <div>
+                  <div className="mb-3 flex items-center justify-between px-1">
+                    <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300">
+                      Hoạt động
+                      nhanh
+                    </p>
 
-    <span className="text-xs text-zinc-400">
-      {requirements.length}/5
+                    <span className="text-xs text-zinc-400">
+                      Chạm để dùng
+                      ngay
+                    </span>
+                  </div>
+
+                  <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-1">
+                    {QUICK_ACTIVITIES.map(
+                      (
+                        item
+                      ) => (
+                        <button
+                          key={
+                            item.name
+                          }
+                          type="button"
+                          onClick={() =>
+                            useTemplate(
+                              item
+                            )
+                          }
+                          className="w-[220px] shrink-0 rounded-3xl border border-zinc-200 bg-white p-4 text-left transition-all hover:border-[#0042B2] active:scale-95 dark:border-zinc-800 dark:bg-zinc-950"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="text-3xl">
+                              {
+                                CATEGORIES.find(
+                                  (
+                                    c
+                                  ) =>
+                                    c.id ===
+                                    item.cat
+                                )
+                                  ?.emoji
+                              }
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate font-black">
+                                {
+                                  item.name
+                                }
+                              </p>
+
+                              <p className="mt-1 line-clamp-2 text-sm text-zinc-500">
+                                {
+                                  item.title
+                                }
+                              </p>
+
+                              <div className="mt-3 flex items-center gap-2 text-xs text-zinc-400">
+                                <span>
+                                  {
+                                    item.loc
+                                  }
+                                </span>
+
+                                <span>
+                                  •
+                                </span>
+
+                                <span>
+                                  {
+                                    item.time
+                                  }
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      )
+                    )}
+                  </div>
+                </div>
+   {/* Description */}
+<div className="rounded-3xl border border-zinc-200/60 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+  <textarea
+    value={desc}
+    aria-label="Mô tả hoạt động"
+    onChange={(e) =>
+      setDesc(
+        e.target.value.slice(
+          0,
+          300
+        )
+      )
+    }
+    placeholder="Mô tả thêm về hoạt động, vibe, yêu cầu..."
+    rows={3}
+    className="w-full resize-none bg-transparent text-sm leading-relaxed outline-none placeholder:text-zinc-400"
+  />
+
+  <div className="mt-3 flex items-center justify-between border-t border-zinc-100 pt-3 dark:border-zinc-900">
+    <div className="flex flex-wrap gap-1.5">
+      {currentPresets
+        .slice(0, 3)
+        .map((text) => (
+          <button
+            key={text}
+            type="button"
+            onClick={() => {
+              setDesc(
+                (prev) =>
+                  prev
+                    ? `${prev} ${text}`
+                    : text
+              );
+
+              vibrate(5);
+            }}
+            className="rounded-lg bg-zinc-100 px-2.5 py-1 text-xs text-zinc-600 transition-colors hover:bg-zinc-200 dark:bg-zinc-900 dark:text-zinc-400"
+          >
+            +{" "}
+            {text.slice(
+              0,
+              15
+            )}
+            ...
+          </button>
+        ))}
+    </div>
+
+    <span className="text-xs tabular-nums text-zinc-400">
+      {desc.length}/300
     </span>
   </div>
+</div>
+</motion.div>
+)}
 
-  <div className="flex gap-2">
+{step === 2 && (
+<motion.div
+  key="s2"
+  initial={{
+    opacity: 0,
+    x: 20,
+  }}
+  animate={{
+    opacity: 1,
+    x: 0,
+  }}
+  exit={{
+    opacity: 0,
+    x: -20,
+  }}
+  className="space-y-4 p-4"
+>
+  {/* Time */}
+  <div className="rounded-3xl border border-zinc-200/60 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="mb-4 flex items-center justify-between">
+      <div className="flex items-center gap-2.5">
+        <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[#0042B2]/10">
+          <FiClock
+            className="text-[#0042B2]"
+            size={18}
+          />
+        </div>
+
+        <h3 className="font-bold">
+          Thời gian
+        </h3>
+      </div>
+
+      <label className="flex cursor-pointer items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={pollTime}
+          onChange={(e) =>
+            setPollTime(
+              e.target.checked
+            )
+          }
+          className="h-4 w-4 rounded accent-[#0042B2]"
+        />
+
+        <span className="text-zinc-600 dark:text-zinc-400">
+          Bình chọn
+        </span>
+      </label>
+    </div>
+
+    <div className="mb-3 grid grid-cols-4 gap-2">
+      {[
+        {
+          l: "Tối nay",
+          h: 19,
+        },
+        {
+          l: "Ngày mai",
+          h: 9,
+          d: 1,
+        },
+        {
+          l: "T7",
+          h: 9,
+          wd: 6,
+        },
+        {
+          l: "CN",
+          h: 9,
+          wd: 0,
+        },
+      ].map((quick) => (
+        <button
+          key={quick.l}
+          type="button"
+          onClick={() => {
+            const date =
+              new Date();
+
+            if (quick.d) {
+              date.setDate(
+                date.getDate() +
+                  quick.d
+              );
+            }
+
+            if (
+              quick.wd !==
+              undefined
+            ) {
+              const diff =
+                quick.wd -
+                date.getDay();
+
+              date.setDate(
+                date.getDate() +
+                  (diff <= 0
+                    ? diff + 7
+                    : diff)
+              );
+            }
+
+            date.setHours(
+              quick.h,
+              0,
+              0
+            );
+
+            setTime(
+              formatLocalDate(
+                date
+              )
+            );
+
+            vibrate(5);
+          }}
+          className="h-11 rounded-2xl bg-zinc-100 text-sm font-medium transition-all hover:bg-zinc-200 active:scale-95 dark:bg-zinc-900"
+        >
+          {quick.l}
+        </button>
+      ))}
+    </div>
+
     <input
-      value={reqInput}
-      onChange={(e) => setReqInput(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          addReq();
-        }
-      }}
-      placeholder="Ví dụ: Mang áo khoác"
-      className="flex-1 h-11 px-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 outline-none"
+      type="datetime-local"
+      aria-label="Thời gian"
+      value={time}
+      onChange={(e) =>
+        setTime(
+          e.target.value
+        )
+      }
+      min={formatLocalDate(
+        new Date()
+      )}
+      className="h-12 w-full rounded-2xl border-2 border-transparent bg-zinc-50 px-4 font-medium outline-none transition-all focus:border-[#0042B2] dark:bg-zinc-900"
     />
 
-    <button
-      onClick={addReq}
-      className="px-4 rounded-2xl bg-[#0042B2] text-white font-bold active:scale-95"
-    >
-      Thêm
-    </button>
+    <div className="mt-4 flex items-center gap-3">
+      <span className="text-sm text-zinc-600 dark:text-zinc-400">
+        Thời lượng:
+      </span>
+
+      <div className="flex gap-1.5">
+        {[1, 2, 3, 4, 6].map(
+          (hours) => (
+            <button
+              key={hours}
+              type="button"
+              onClick={() => {
+                setDuration(
+                  hours
+                );
+
+                vibrate(5);
+              }}
+              className={`h-8 w-10 rounded-xl text-sm font-medium transition-all ${
+                duration ===
+                hours
+                  ? "bg-[#0042B2] text-white"
+                  : "bg-zinc-100 dark:bg-zinc-900"
+              }`}
+            >
+              {hours}h
+            </button>
+          )
+        )}
+      </div>
+    </div>
   </div>
 
-  {requirements.length > 0 && (
-    <div className="flex flex-wrap gap-2 mt-4">
-      {requirements.map((r) => (
+  {/* Location */}
+  <div className="rounded-3xl border border-zinc-200/60 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="mb-4 flex items-center justify-between">
+      <div className="flex items-center gap-2.5">
+        <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[#0042B2]/10">
+          <FiMapPin
+            className="text-[#0042B2]"
+            size={18}
+          />
+        </div>
+
+        <h3 className="font-bold">
+          Địa điểm
+        </h3>
+      </div>
+
+      <div className="flex items-center gap-2">
+<button
+  type="button"
+  aria-label="Lấy vị trí hiện tại"
+  onClick={() => {
+    getCurrentLocation();
+
+            vibrate(5);
+          }}
+          disabled={locating}
+          className="grid h-8 w-8 place-items-center rounded-xl bg-zinc-100 transition-all hover:bg-zinc-200 active:scale-95 disabled:opacity-50 dark:bg-zinc-900"
+        >
+          {locating ? (
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-400 border-t-transparent" />
+          ) : (
+            <FiNavigation
+              size={16}
+            />
+          )}
+        </button>
+
+        <label className="flex cursor-pointer items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={
+              pollLocation
+            }
+            onChange={(e) =>
+              setPollLocation(
+                e.target.checked
+              )
+            }
+            className="h-4 w-4 rounded accent-[#0042B2]"
+          />
+
+          <span className="text-zinc-600 dark:text-zinc-400">
+            Bình chọn
+          </span>
+        </label>
+      </div>
+    </div>
+                  <input
+  value={location}
+  aria-label="Địa điểm"
+  onChange={(e) =>
+    setLocation(
+      e.target.value
+    )
+  }
+  placeholder="Tìm địa điểm, quán, địa chỉ..."
+  className="h-12 w-full rounded-2xl border-2 border-transparent bg-zinc-50 px-4 font-medium outline-none transition-all focus:border-[#0042B2] dark:bg-zinc-900"
+/>
+    <input
+  value={locationDetail}
+  aria-label="Địa chỉ chi tiết"
+  onChange={(e) =>
+    setLocationDetail(
+      e.target.value
+    )
+  }
+  placeholder="Địa chỉ chi tiết, tầng, bàn..."
+  className="mt-2 h-11 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm outline-none transition-all focus:border-[#0042B2] dark:border-zinc-800 dark:bg-zinc-900"
+/>
+
+{currentAddress && (
+  <p className="mt-2 truncate text-sm text-[#0042B2]">
+    📍 {currentAddress}
+  </p>
+)}
+
+<div className="scrollbar-hide mt-3 flex gap-1.5 overflow-x-auto">
+  {(nearbyPlaces.length >
+  0
+    ? nearbyPlaces
+    : POPULAR_PLACES.slice(
+        0,
+        8
+      )
+  ).map((place) => (
+    <button
+      key={place}
+      type="button"
+      onClick={() => {
+        setLocation(
+          place
+        );
+
+        vibrate(5);
+      }}
+      className={`h-8 shrink-0 whitespace-nowrap rounded-full px-3 text-xs font-medium transition-all ${
+        location ===
+        place
+          ? "bg-[#0042B2] text-white"
+          : "bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900"
+      }`}
+    >
+      {place}
+    </button>
+  ))}
+</div>
+</div>
+
+{/* People & Cost */}
+<div className="grid grid-cols-2 gap-3">
+  {/* People */}
+  <div className="rounded-3xl border border-zinc-200/60 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+    <p className="mb-2 text-xs font-bold uppercase tracking-wide text-zinc-500">
+      Số người
+    </p>
+
+    <div className="flex items-baseline gap-2">
+      <span className="text-4xl font-black">
+        {maxPeople}
+      </span>
+
+      <span className="text-zinc-500">
+        người
+      </span>
+    </div>
+
+    <input
+      type="range"
+      min={2}
+      max={20}
+      value={maxPeople}
+      onChange={(e) => {
+        setMaxPeople(
+          Number(
+            e.target.value
+          )
+        );
+
+        vibrate(5);
+      }}
+      className="mt-3 w-full accent-[#0042B2]"
+    />
+  </div>
+
+  {/* Cost */}
+  <div className="rounded-3xl border border-zinc-200/60 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+    <p className="mb-2 text-xs font-bold uppercase tracking-wide text-zinc-500">
+      Chi phí
+    </p>
+
+    <div className="grid grid-cols-2 gap-1.5">
+      {[
+        {
+          v: "free",
+          l: "Free",
+        },
+        {
+          v: "share",
+          l: "Share",
+        },
+        {
+          v: "host",
+          l: "Bao",
+        },
+        {
+          v: "ticket",
+          l: "Vé",
+        },
+      ].map((option) => (
+        <button
+          key={option.v}
+          type="button"
+          onClick={() => {
+            setCostType(
+              option.v as CostType
+            );
+
+            vibrate(5);
+          }}
+          className={`h-8 rounded-xl text-xs font-bold transition-all ${
+            costType ===
+            option.v
+              ? "bg-[#0042B2] text-white"
+              : "bg-zinc-100 dark:bg-zinc-900"
+          }`}
+        >
+          {option.l}
+        </button>
+      ))}
+    </div>
+
+    {costType !==
+      "free" &&
+      costType !==
+        "host" && (
+        <>
+          <input
+            type="number"
+            aria-label="Chi phí"
+            value={
+              costAmount || ""
+            }
+            onChange={(e) =>
+ setCostAmount(
+  Math.max(
+    0,
+    Number(
+      e.target.value
+    ) || 0
+  )
+)
+            }
+            placeholder="0"
+            className="mt-2 h-9 w-full rounded-xl bg-zinc-50 px-3 text-center font-bold outline-none dark:bg-zinc-900"
+          />
+
+          {costType ===
+            "share" &&
+            costAmount >
+              0 && (
+              <div className="mt-2 text-center">
+                <span className="text-xs text-zinc-500">
+                  Mỗi người khoảng
+                </span>
+
+                <p className="text-sm font-bold text-[#0042B2]">
+                  {splitCost.toLocaleString(
+                    "vi-VN"
+                  )}
+                  đ
+                </p>
+              </div>
+            )}
+        </>
+      )}
+  </div>
+</div>
+</motion.div>
+)}
+
+{step === 3 && (
+<motion.div
+  key="s3"
+  initial={{
+    opacity: 0,
+    x: 20,
+  }}
+  animate={{
+    opacity: 1,
+    x: 0,
+  }}
+  exit={{
+    opacity: 0,
+    x: -20,
+  }}
+  className="space-y-4 p-4"
+>
+  {/* Invite Friends */}
+  <div className="rounded-3xl border border-zinc-200/60 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="mb-4 flex items-center justify-between">
+      <h3 className="font-bold">
+        Yêu cầu tham gia
+      </h3>
+   <span className="text-xs text-zinc-400">
+  {requirements.length}/5
+</span>
+</div>
+
+<div className="flex gap-2">
+  <input
+    value={reqInput}
+    aria-label="Yêu cầu tham gia"
+    onChange={(e) =>
+      setReqInput(
+        e.target.value
+      )
+    }
+    onKeyDown={(e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+
+        addReq();
+      }
+    }}
+    placeholder="Ví dụ: Mang áo khoác"
+    className="h-11 flex-1 rounded-2xl bg-zinc-50 px-4 outline-none dark:bg-zinc-900"
+  />
+
+  <button
+    type="button"
+    onClick={addReq}
+    className="rounded-2xl bg-[#0042B2] px-4 font-bold text-white transition-transform active:scale-95"
+  >
+    Thêm
+  </button>
+</div>
+
+{requirements.length >
+  0 && (
+  <div className="mt-4 flex flex-wrap gap-2">
+    {requirements.map(
+      (requirement) => (
         <div
-          key={r}
-          className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-zinc-100 dark:bg-zinc-900"
+          key={requirement}
+          className="flex items-center gap-2 rounded-2xl bg-zinc-100 px-3 py-2 dark:bg-zinc-900"
         >
           <span className="text-sm font-medium">
-            {r}
+            {requirement}
           </span>
 
           <button
+            type="button"
             onClick={() =>
-              setRequirements((p) => p.filter((x) => x !== r))
+              setRequirements(
+                (
+                  prev
+                ) =>
+                  prev.filter(
+                    (
+                      item
+                    ) =>
+                      item !==
+                      requirement
+                  )
+              )
             }
-            className="text-zinc-500 hover:text-red-500"
+            className="text-zinc-500 transition-colors hover:text-red-500"
           >
-            <FiX size={14} />
+            <FiX
+              size={14}
+            />
           </button>
         </div>
-      ))}
-    </div>
-  )}
+      )
+    )}
+  </div>
+)}
 </div>
-                  <div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 p-5 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-bold flex items-center gap-2"><FiUsers size={18} className="text-[#0042B2]" />Mời bạn bè</h3>
-                      {invites.length > 0 && <span className="px-2.5 py-1 rounded-full bg-[#0042B2]/10 text-[#0042B2] text- font-bold">{invites.length}</span>}
-                    </div>
-                    <input value={searchFriend} onChange={e => setSearchFriend(e.target.value)} placeholder="Tìm bạn bè..." className="w-full h-10 px-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900 outline-none text- mb-3" />
-                    <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                      {friendsLoading? [...Array(5)].map((_, i) => <div key={i} className="w-16 h-20 shrink-0"><div className="w-16 h-16 rounded-2xl bg-zinc-200 dark:bg-zinc-800 animate-pulse" /></div>) :
-                        filteredFriends.map(f => (
-                          <button key={f.id} onClick={() => toggleInvite(f.id)} className="shrink-0 relative group">
-                            <div className={`w-16 h-16 rounded-2xl overflow-hidden transition-all ${invites.includes(f.id)? "ring-3 ring-[#0042B2] ring-offset-2" : "ring-1 ring-zinc-200"}`}>
-                              <img src={f.avatar} alt="" className="w-full h-full object-cover" />
-                              {f.online && <div className="absolute bottom-0.5 right-0.5 w-3 h-3 bg-green-500 rounded-full ring-2 ring-white" />}
-                            </div>
-                            <p className="text- mt-1.5 w-16 truncate text-center font-medium">{f.name.split(' ')[0]}</p>
-                            {invites.includes(f.id) && <div className="absolute -top-1 -right-1 w-5 h-5 bg-[#0042B2] rounded-full grid place-items-center"><FiCheck size={12} className="text-white" strokeWidth={3} /></div>}
-                          </button>
-                        ))}
-                    </div>
-                  </div>
 
-                  {/* Cover & Options */}
-<div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 p-5 shadow-sm">
-  <div className="flex items-center justify-between mb-3">
-    <h3 className="font-bold">Độ tuổi tối thiểu</h3>
+{/* Invite Friends */}
+<div className="rounded-3xl border border-zinc-200/60 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+  <div className="mb-4 flex items-center justify-between">
+    <h3 className="flex items-center gap-2 font-bold">
+      <FiUsers
+        size={18}
+        className="text-[#0042B2]"
+      />
+      Mời bạn bè
+    </h3>
+
+    {invites.length >
+      0 && (
+      <span className="rounded-full bg-[#0042B2]/10 px-2.5 py-1 text-xs font-bold text-[#0042B2]">
+        {invites.length}
+      </span>
+    )}
+  </div>
+
+  <input
+    value={searchFriend}
+    aria-label="Tìm bạn bè"
+    onChange={(e) =>
+      setSearchFriend(
+        e.target.value
+      )
+    }
+    placeholder="Tìm bạn bè..."
+    className="mb-3 h-10 w-full rounded-2xl bg-zinc-50 px-3.5 text-sm outline-none dark:bg-zinc-900"
+  />
+
+  <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-2">
+    {friendsLoading
+      ? [...Array(5)].map(
+          (_, i) => (
+            <div
+              key={i}
+              className="h-20 w-16 shrink-0"
+            >
+              <div className="h-16 w-16 animate-pulse rounded-2xl bg-zinc-200 dark:bg-zinc-800" />
+            </div>
+          )
+        )
+      : filteredFriends.map(
+          (
+            friend
+          ) => (
+            <button
+              key={
+                friend.id
+              }
+              type="button"
+              onClick={() =>
+                toggleInvite(
+                  friend.id
+                )
+              }
+              className="group relative shrink-0"
+            >
+              <div
+                className={`relative h-16 w-16 overflow-hidden rounded-2xl transition-all ${
+                  invites.includes(
+                    friend.id
+                  )
+                    ? "ring-2 ring-[#0042B2] ring-offset-2 dark:ring-offset-black"
+                    : "ring-1 ring-zinc-200 dark:ring-zinc-700"
+                }`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={
+                    friend.avatar
+                  }
+                  alt={
+                    friend.name
+                  }
+                  className="h-full w-full object-cover"
+                />
+
+                {friend.online && (
+                  <div className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full bg-green-500 ring-2 ring-white dark:ring-black" />
+                )}
+              </div>
+
+              <p className="mt-1.5 w-16 truncate text-center text-xs font-medium">
+                {friend.name.split(
+                  " "
+                )[0]}
+              </p>
+
+              {invites.includes(
+                friend.id
+              ) && (
+                <div className="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-[#0042B2]">
+                  <FiCheck
+                    size={
+                      12
+                    }
+                    strokeWidth={
+                      3
+                    }
+                    className="text-white"
+                  />
+                </div>
+              )}
+            </button>
+          )
+        )}
+  </div>
+</div>
+
+{/* Age */}
+<div className="rounded-3xl border border-zinc-200/60 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+  <div className="mb-3 flex items-center justify-between">
+    <h3 className="font-bold">
+      Độ tuổi tối thiểu
+    </h3>
 
     <span className="text-sm font-bold text-[#0042B2]">
-      {minAge === 0 ? "Mọi lứa tuổi" : `${minAge}+`}
+      {minAge === 0
+        ? "Mọi lứa tuổi"
+        : `${minAge}+`}
     </span>
   </div>
 
@@ -1001,176 +2538,593 @@ setTimeout(() => {
     min={0}
     max={21}
     value={minAge}
-    onChange={(e) => setMinAge(Number(e.target.value))}
+    onChange={(e) =>
+      setMinAge(
+        Number(
+          e.target.value
+        )
+      )
+    }
     className="w-full accent-[#0042B2]"
   />
 
-  <div className="flex justify-between text-xs text-zinc-400 mt-1">
+  <div className="mt-1 flex justify-between text-xs text-zinc-400">
     <span>0+</span>
     <span>18+</span>
     <span>21+</span>
   </div>
 </div>
-<div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 p-5 shadow-sm">
-  <div className="flex items-center justify-between mb-4">
-    <h3 className="font-bold">Độ tuổi phù hợp</h3>
+
+{/* Suitable Age */}
+<div className="rounded-3xl border border-zinc-200/60 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+  <div className="mb-4 flex items-center justify-between">
+    <h3 className="font-bold">
+      Độ tuổi phù hợp
+    </h3>
 
     <span className="text-sm font-bold text-[#0042B2]">
-      {ageRange[0]} - {ageRange[1]} tuổi
+      {ageRange[0]} -{" "}
+      {ageRange[1]} tuổi
     </span>
   </div>
 
   <div className="space-y-4">
     <div>
-      <div className="flex justify-between text-xs text-zinc-500 mb-1">
-        <span>Tối thiểu</span>
-        <span>{ageRange[0]}+</span>
+      <div className="mb-1 flex justify-between text-xs text-zinc-500">
+        <span>
+          Tối thiểu
+        </span>
+
+        <span>
+          {ageRange[0]}+
+        </span>
       </div>
 
-<input
-  type="range"
-  min={13}
-  max={40}
-  value={ageRange[0] ?? 18}
-  onChange={(e) =>
-    setAgeRange([
-      Number(e.target.value),
-      Math.max(
-        Number(e.target.value),
-        ageRange[1] ?? 18
-      ),
-    ])
-  }
-  className="w-full accent-[#0042B2]"
-/>
+      <input
+        type="range"
+        min={13}
+        max={40}
+        value={
+          ageRange[0] ??
+          18
+        }
+        onChange={(e) =>
+          setAgeRange([
+            Number(
+              e.target
+                .value
+            ),
+            Math.max(
+              Number(
+                e.target
+                  .value
+              ),
+              ageRange[1] ??
+                18
+            ),
+          ])
+        }
+        className="w-full accent-[#0042B2]"
+      />
     </div>
 
     <div>
-      <div className="flex justify-between text-xs text-zinc-500 mb-1">
-        <span>Tối đa</span>
-        <span>{ageRange[1]}</span>
+      <div className="mb-1 flex justify-between text-xs text-zinc-500">
+        <span>
+          Tối đa
+        </span>
+
+        <span>
+          {ageRange[1]}
+        </span>
       </div>
 
-   <input
-  type="range"
-  min={18}
-  max={60}
-  value={ageRange[1] ?? 35}
-  onChange={(e) =>
-    setAgeRange([
-      ageRange[0] ?? 18,
-      Math.max(
-        ageRange[0] ?? 18,
-        Number(e.target.value)
-      ),
-    ])
-  }
-  className="w-full accent-[#0042B2]"
-/>
+      <input
+        type="range"
+        min={18}
+        max={60}
+        value={
+          ageRange[1] ??
+          35
+        }
+        onChange={(e) =>
+          setAgeRange([
+            ageRange[0] ??
+              18,
+            Math.max(
+              ageRange[0] ??
+                18,
+              Number(
+                e.target
+                  .value
+              )
+            ),
+          ])
+        }
+        className="w-full accent-[#0042B2]"
+      />
     </div>
   </div>
 </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 p-4 shadow-sm">
-                      <h4 className="font-bold text- mb-3">Ảnh bìa</h4>
-                      {cover? (
-                        <div className="relative aspect-video rounded-2xl overflow-hidden">
-                          <img src={cover} alt="" className="w-full h-full object-cover" />
-                          <button onClick={() => setCover(null)} className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/70 grid place-items-center"><FiX size={12} className="text-white" /></button>
-                        </div>
-                      ) : (
-                        <button onClick={() => fileRef.current?.click()} className="w-full aspect-video rounded-2xl border-2 border-dashed border-zinc-300 hover:border-[#0042B2] grid place-items-center group">
-                          <FiUpload className="text-zinc-400 group-hover:text-[#0042B2]" />
-                        </button>
-                      )}
-                      <input ref={fileRef} type="file" accept="image/*" onChange={handleImage} className="hidden" />
-                    </div>
-                    <div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 p-4 shadow-sm space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text- font-medium">Công khai</span>
-                        <button onClick={() => setPrivacy(privacy === "public"? "friends" : "public")} className={`w-11 h-6 rounded-full transition-colors ${privacy === "public"? "bg-[#0042B2]" : "bg-zinc-300"}`}>
-                          <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform mt-0.5 ${privacy === "public"? "translate-x-5 ml-0.5" : "translate-x-0.5"}`} />
-                        </button>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text- font-medium">Duyệt TV</span>
-                        <button onClick={() => setNeedApproval(!needApproval)} className={`w-11 h-6 rounded-full transition-colors ${needApproval? "bg-[#0042B2]" : "bg-zinc-300"}`}>
-                          <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform mt-0.5 ${needApproval? "translate-x-5 ml-0.5" : "translate-x-0.5"}`} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        </div>
+                <div className="grid grid-cols-2 gap-3">
+  {/* Cover */}
+  <div className="rounded-3xl border border-zinc-200/60 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+    <h4 className="mb-3 text-sm font-bold">
+      Ảnh bìa
+    </h4>
 
-        {/* Footer */}
-        <div className="fixed bottom-0 inset-x-0 z-30 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-2xl border-t border-zinc-200 dark:border-zinc-800">
-          <div className="max-w-[680px] mx-auto px-4 py-3">
-            <div className="flex items-center gap-3">
-              {step > 1 && <button onClick={() => setStep(s => s - 1)} className="h-12 px-5 rounded-2xl bg-zinc-100 dark:bg-zinc-900 font-bold hover:bg-zinc-200 active:scale-95">Quay lại</button>}
-              <button onClick={() => step < 3? setStep(s => s + 1) : submit()} disabled={!canNext || loading} className="flex-1 h-12 rounded-2xl bg-[#0042B2] text-white font-bold disabled:opacity-40 flex items-center justify-center gap-2 shadow-lg shadow-[#0042B2]/20 active:scale-98">
-                {loading? <><LottiePlayer animationData={loadingPull} loop autoplay className="w-5 h-5" />Đang tạo...</> : step < 3? <>Tiếp tục<FiChevronRight /></> : <><FiZap />Tạo kế hoạch</>}
+    {cover ? (
+      <div className="relative aspect-video overflow-hidden rounded-2xl">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={cover}
+          alt="Cover"
+          className="h-full w-full object-cover"
+        />
+
+        <button
+          type="button"
+          onClick={() => {
+            if (
+              cover.startsWith(
+                "blob:"
+              )
+            ) {
+              URL.revokeObjectURL(
+                cover
+              );
+            }
+
+            setCover(null);
+
+            vibrate(5);
+          }}
+          className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-black/70 backdrop-blur-md transition-transform active:scale-90"
+        >
+          <FiX
+            size={13}
+            className="text-white"
+          />
+        </button>
+      </div>
+    ) : (
+<button
+  type="button"
+  aria-label="Tải ảnh lên"
+  onClick={() =>
+    fileRef.current?.click()
+        }
+        className="group grid aspect-video w-full place-items-center rounded-2xl border-2 border-dashed border-zinc-300 transition-all hover:border-[#0042B2] hover:bg-[#0042B2]/5 active:scale-[0.98] dark:border-zinc-700"
+      >
+        <FiUpload
+          size={22}
+          className="text-zinc-400 transition-colors group-hover:text-[#0042B2]"
+        />
+      </button>
+    )}
+
+    <input
+      ref={fileRef}
+      type="file"
+      accept="image/*"
+      onChange={handleImage}
+      className="hidden"
+    />
+  </div>
+
+  {/* Privacy */}
+  <div className="space-y-3 rounded-3xl border border-zinc-200/60 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+    {/* Public */}
+    <div className="flex items-center justify-between">
+      <span className="text-sm font-medium">
+        Công khai
+      </span>
+
+      <button
+        type="button"
+        onClick={() => {
+          setPrivacy(
+            privacy ===
+              "public"
+              ? "friends"
+              : "public"
+          );
+
+          vibrate(5);
+        }}
+        className={`relative h-6 w-11 rounded-full transition-colors ${
+          privacy ===
+          "public"
+            ? "bg-[#0042B2]"
+            : "bg-zinc-300 dark:bg-zinc-700"
+        }`}
+      >
+        <div
+          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-md transition-transform ${
+            privacy ===
+            "public"
+              ? "translate-x-5"
+              : "translate-x-0.5"
+          }`}
+        />
+      </button>
+    </div>
+
+    {/* Approval */}
+    <div className="flex items-center justify-between">
+      <span className="text-sm font-medium">
+        Duyệt TV
+      </span>
+
+      <button
+        type="button"
+        onClick={() => {
+          setNeedApproval(
+            !needApproval
+          );
+
+          vibrate(5);
+        }}
+        className={`relative h-6 w-11 rounded-full transition-colors ${
+          needApproval
+            ? "bg-[#0042B2]"
+            : "bg-zinc-300 dark:bg-zinc-700"
+        }`}
+      >
+        <div
+          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-md transition-transform ${
+            needApproval
+              ? "translate-x-5"
+              : "translate-x-0.5"
+          }`}
+        />
+      </button>
+    </div>
+  </div>
+</div>
+</motion.div>
+)}
+
+</AnimatePresence>
+</motion.div>
+</div>
+
+{/* Footer */}
+<div className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-200 bg-white/90 backdrop-blur-2xl dark:border-zinc-800 dark:bg-zinc-950/90">
+  <div className="mx-auto max-w-[680px] px-4 py-3">
+    <div className="flex items-center gap-3">
+      {step > 1 && (
+        <button
+          type="button"
+          onClick={() => {
+            setStep(
+              (prev) =>
+                prev - 1
+            );
+
+            vibrate(5);
+          }}
+          className="h-12 rounded-2xl bg-zinc-100 px-5 font-bold transition-all hover:bg-zinc-200 active:scale-95 dark:bg-zinc-900"
+        >
+          Quay lại
+        </button>
+      )}
+
+      <button
+        type="button"
+        onClick={() => {
+          if (step < 3) {
+            setStep(
+              (prev) =>
+                prev + 1
+            );
+
+            vibrate(5);
+
+            return;
+          }
+
+          submit();
+        }}
+        disabled={
+          !canNext ||
+          loading
+        }
+        className="flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-[#0042B2] font-bold text-white shadow-lg shadow-[#0042B2]/20 transition-all active:scale-[0.98] disabled:opacity-40"
+      >
+        {loading ? (
+          <>
+            <LottiePlayer
+              animationData={
+                L.loadingPull
+              }
+              loop
+              autoplay
+              className="h-5 w-5"
+            />
+
+            <span>
+              Đang tạo...
+            </span>
+          </>
+        ) : step < 3 ? (
+          <>
+            <span>
+              Tiếp tục
+            </span>
+
+            <FiChevronRight />
+          </>
+        ) : (
+          <>
+            <FiZap />
+
+            <span>
+              Tạo kế hoạch
+            </span>
+          </>
+        )}
+      </button>
+    </div>
+  </div>
+</div>
+
+{/* Templates Modal */}
+<AnimatePresence>
+  {showTemplates && (
+    <motion.div
+      initial={{
+        opacity: 0,
+      }}
+      animate={{
+        opacity: 1,
+      }}
+      exit={{
+        opacity: 0,
+      }}
+      onClick={() =>
+        setShowTemplates(
+          false
+        )
+      }
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 backdrop-blur-md sm:items-center"
+    >
+      <motion.div
+        initial={{
+          y: 100,
+        }}
+        animate={{
+          y: 0,
+        }}
+        exit={{
+          y: 100,
+        }}
+        onClick={(e) =>
+          e.stopPropagation()
+        }
+        className="max-h-[80vh] w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl dark:bg-zinc-950"
+      >
+        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-zinc-300" />
+
+        <h3 className="mb-4 text-xl font-black">
+          Mẫu có sẵn
+        </h3>
+
+        <div className="space-y-2 overflow-y-auto max-h-[60vh]">
+          {TEMPLATES.map(
+            (template) => (
+              <button
+                key={
+                  template.name
+                }
+                type="button"
+                onClick={() =>
+                  useTemplate(
+                    template
+                  )
+                }
+                className="flex w-full items-center gap-3 rounded-2xl bg-zinc-50 p-3.5 text-left transition-all hover:bg-zinc-100 active:scale-[0.98] dark:bg-zinc-900"
+              >
+                <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#0042B2]/10 text-xl">
+                  {CATEGORIES.find(
+                    (c) =>
+                      c.id ===
+                      template.cat
+                  )?.emoji}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold">
+                    {
+                      template.name
+                    }
+                  </p>
+
+                  <p className="truncate text-sm text-zinc-500">
+                    {
+                      template.title
+                    }
+                  </p>
+                </div>
               </button>
-            </div>
+            )
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
+
+      {/* Preview */}
+<AnimatePresence>
+  {showPreview && (
+    <motion.div
+      initial={{
+        opacity: 0,
+      }}
+      animate={{
+        opacity: 1,
+      }}
+      exit={{
+        opacity: 0,
+      }}
+      onClick={() =>
+        setShowPreview(
+          false
+        )
+      }
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
+    >
+      <motion.div
+        initial={{
+          scale: 0.9,
+          opacity: 0,
+        }}
+        animate={{
+          scale: 1,
+          opacity: 1,
+        }}
+        exit={{
+          scale: 0.9,
+          opacity: 0,
+        }}
+        transition={{
+          type: "spring",
+          damping: 25,
+        }}
+        onClick={(e) =>
+          e.stopPropagation()
+        }
+        className="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-zinc-950"
+      >
+        {cover ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={cover}
+            alt="Preview"
+            className="aspect-video w-full object-cover"
+          />
+        ) : (
+          <div className="grid aspect-video w-full place-items-center bg-gradient-to-br from-[#0042B2]/10 to-[#0042B2]/20">
+            <span className="text-6xl">
+              {
+                category.emoji
+              }
+            </span>
+          </div>
+        )}
+
+        <div className="p-5">
+          <h2 className="text-xl font-black leading-tight">
+            {title ||
+              "Tên kế hoạch"}
+          </h2>
+
+          <p className="mt-1 text-sm text-zinc-500">
+            {
+              category.label
+            }{" "}
+            • {maxPeople}{" "}
+            người
+          </p>
+
+          {desc && (
+            <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+              {desc}
+            </p>
+          )}
+
+          <div className="mt-5 flex gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                setShowPreview(
+                  false
+                )
+              }
+              className="flex-1 rounded-2xl bg-zinc-100 py-3 font-bold transition-all hover:bg-zinc-200 active:scale-95 dark:bg-zinc-900"
+            >
+              Đóng
+            </button>
+
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => {
+                setShowPreview(
+                  false
+                );
+
+                submit();
+              }}
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#0042B2] py-3 font-bold text-white transition-all active:scale-95 disabled:opacity-50"
+            >
+              {loading ? (
+                <LottiePlayer
+                  animationData={
+                    L.loadingPull
+                  }
+                  loop
+                  autoplay
+                  className="h-5 w-5"
+                />
+              ) : (
+                <>
+                  <FiZap
+                    size={16}
+                  />
+
+                  <span>
+                    Tạo ngay
+                  </span>
+                </>
+              )}
+            </button>
           </div>
         </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
-        {/* Templates Modal */}
-        <AnimatePresence>
-          {showTemplates && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-end sm:items-center justify-center p-4" onClick={() => setShowTemplates(false)}>
-              <motion.div initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }} onClick={e => e.stopPropagation()} className="w-full max-w-md bg-white dark:bg-zinc-950 rounded-3xl p-5 max-h- shadow-2xl">
-                <div className="w-10 h-1 bg-zinc-300 rounded-full mx-auto mb-4" />
-                <h3 className="text-xl font-black mb-4">Mẫu có sẵn</h3>
-             <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-                  {TEMPLATES.map(t => (
-                    <button key={t.name} onClick={() => useTemplate(t)} className="w-full p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 flex items-center gap-3 text-left">
-                      <div className="w-11 h-11 rounded-xl bg-[#0042B2]/10 grid place-items-center text-xl">{CATEGORIES.find(c => c.id === t.cat)?.emoji}</div>
-                      <div className="flex-1"><p className="font-bold">{t.name}</p><p className="text- text-zinc-500 truncate">{t.title}</p></div>
-                    </button>
-                  ))}
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Preview */}
-        <AnimatePresence>
-          {showPreview && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setShowPreview(false)}>
-              <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} onClick={e => e.stopPropagation()} className="w-full max-w-sm bg-white dark:bg-zinc-950 rounded-3xl overflow-hidden">
-                {cover && <img src={cover} alt="" className="w-full aspect-video object-cover" />}
-                <div className="p-5">
-                  <h2 className="text-xl font-black">{title || "Tên kế hoạch"}</h2>
-                  <p className="text-zinc-500 mt-1">{category.label} • {maxPeople} người</p>
-                  <div className="flex gap-2 mt-4">
-                    <button onClick={() => setShowPreview(false)} className="flex-1 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-900 font-bold">Đóng</button>
-                    <button onClick={submit} className="flex-1 h-11 rounded-2xl bg-[#0042B2] text-white font-bold">Tạo ngay</button>
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 {/* Success */}
 <AnimatePresence>
   {success && (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[99999] bg-white dark:bg-black grid place-items-center"
+      initial={{
+        opacity: 0,
+      }}
+      animate={{
+        opacity: 1,
+      }}
+      exit={{
+        opacity: 0,
+      }}
+      className="fixed inset-0 z-[99999] grid place-items-center bg-white dark:bg-black"
     >
-      <div className="text-center px-6">
+      <motion.div
+        initial={{
+          scale: 0.9,
+          opacity: 0,
+        }}
+        animate={{
+          scale: 1,
+          opacity: 1,
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 220,
+          damping: 20,
+        }}
+        className="px-6 text-center"
+      >
         <LottiePlayer
-          animationData={successCheck}
+          animationData={
+            L.successCheck
+          }
           loop={false}
           autoplay
-          className="w-36 h-36 mx-auto"
+          className="mx-auto h-36 w-36"
         />
 
         <h2 className="mt-4 text-2xl font-black text-zinc-900 dark:text-white">
@@ -1180,28 +3134,80 @@ setTimeout(() => {
         <p className="mt-2 text-zinc-500 dark:text-zinc-400">
           Kế hoạch của bạn đã được tạo
         </p>
-      </div>
+      </motion.div>
     </motion.div>
   )}
 </AnimatePresence>
-        {/* Loading */}
-        <AnimatePresence>
-          {loading && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[9999] bg-white dark:bg-black grid place-items-center">
-              <div className="text-center">
-                <LottiePlayer animationData={loadingPull} loop autoplay className="w-24 h-24 mx-auto" />
-                <p className="mt-4 font-bold text-lg">Đang tạo kế hoạch...</p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
 
-      <style jsx global>{`
-       .scrollbar-hide::-webkit-scrollbar { display: none; }
-       .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        * { -webkit-tap-highlight-color: transparent; }
-      `}</style>
-    </>
-  );
+{/* Loading */}
+<AnimatePresence>
+  {loading &&
+    !success && (
+      <motion.div
+        initial={{
+          opacity: 0,
+        }}
+        animate={{
+          opacity: 1,
+        }}
+        exit={{
+          opacity: 0,
+        }}
+        className="fixed inset-0 z-[9999] grid place-items-center bg-white dark:bg-black"
+      >
+        <div className="text-center">
+          <LottiePlayer
+            animationData={
+              L.loadingPull
+            }
+            loop
+            autoplay
+            className="mx-auto h-24 w-24"
+          />
+
+          <p className="mt-4 text-lg font-bold">
+            Đang tạo kế hoạch...
+          </p>
+
+          <p className="mt-1 text-sm text-zinc-500">
+            Vui lòng chờ
+            trong giây lát
+          </p>
+        </div>
+      </motion.div>
+    )}
+</AnimatePresence>
+</div>
+
+<style jsx global>{`
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  @media (max-width: 640px) {
+    input,
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
+  }
+`}</style>
+</>
+);
 }
