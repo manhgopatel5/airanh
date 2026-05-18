@@ -6,14 +6,18 @@ import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { incrementTaskView } from "@/lib/task";
-import { TaskListItem, PlanListItem } from "@/types/task";
+import type { BaseFeedItem, TaskListItem, PlanListItem } from "@/types/task";
 import { AppMode } from "@/types/app";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
 import * as L from '@/components/illustrations';
 
-type Props = { task: TaskListItem | PlanListItem; mode: AppMode; onDelete?: (id: string) => void };
+interface Props {
+  task: BaseFeedItem & Partial<TaskListItem & PlanListItem>;
+  mode: AppMode;
+  onDelete?: (id: string) => void;
+}
 
 const planCategoryEmoji: Record<string, string> = { food: "🍜", nightlife: "🎉", outdoor: "🥾", sightseeing: "🗺️", entertainment: "🎬", shopping: "🛍️", wellness: "🧘", social: "💬", other: "✨" };
 
