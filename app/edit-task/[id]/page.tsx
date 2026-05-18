@@ -22,7 +22,13 @@ import LottiePlayer from "@/components/ui/LottiePlayer";
 import * as L from "@/components/illustrations";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { Auth } from "firebase/auth";
-import { Firestore } from "firebase/firestore"; // ĐÚNG
+import { 
+  Firestore, 
+  doc, 
+  getDoc, 
+  getDocs, 
+  collection 
+} from "firebase/firestore";
 
 const vibrate = (pattern: number | number[]) => {
   if (typeof navigator!== "undefined" && "vibrate" in navigator) {
