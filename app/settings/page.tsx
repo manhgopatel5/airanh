@@ -16,8 +16,7 @@ import {
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import celebrate from "@/public/lotties/huha-celebrate.json";
-
+import * as L from "@/components/illustrations";
 
 type ThemeValue = "light" | "dark" | "system";
 type AccentTask = "blue" | "indigo" | "purple";
@@ -83,7 +82,7 @@ export default function SettingsPage() {
   const db = getFirebaseDB();
   const auth = getFirebaseAuth();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [sessions, setSessions] = useState<any[]>([]);
@@ -94,27 +93,32 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Apply theme ngay khi load
-  useEffect(() => {
-    const applyTheme = (theme: ThemeValue) => {
-      const root = document.documentElement;
-      if (theme === "system") {
-        const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        root.classList.toggle("dark", isDark);
-      } else {
-        root.classList.toggle("dark", theme === "dark");
-      }
-    };
-    applyTheme(settings.theme);
+  const applyTheme = useCallback((theme: ThemeValue) => {
+    const root = document.documentElement;
+    if (theme === "system") {
+      const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      root.classList.toggle("dark", isDark);
+    } else {
+      root.classList.toggle("dark", theme === "dark");
+    }
+  }, []);
 
+  useEffect(() => {
+    applyTheme(settings.theme);
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const handler = () => settings.theme === "system" && applyTheme("system");
     media.addEventListener("change", handler);
     return () => media.removeEventListener("change", handler);
-  }, [settings.theme]);
+  }, [settings.theme, applyTheme]);
 
   useEffect(() => {
-    if (!user?.uid) return;
+    if (authLoading) return;
+    if (!user) {
+      setSettings(DEFAULT_SETTINGS);
+      setLoading(false);
+      return;
+    }
+
     const unsub = onSnapshot(doc(db, "users", user.uid), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
@@ -128,13 +132,14 @@ export default function SettingsPage() {
       toast.error("Không tải được cài đặt");
       setLoading(false);
     });
+
     return () => unsub();
-  }, [user?.uid, db]);
+  }, [user, authLoading, db]);
 
   const updateSetting = useCallback(async <K extends keyof Settings>(key: K, value: Settings[K]) => {
     if (!user) return;
     const newSettings = {...settings, [key]: value };
-    setSettings(newSettings); // Optimistic
+    setSettings(newSettings);
 
     try {
       await setDoc(doc(db, "users", user.uid), {
@@ -145,7 +150,7 @@ export default function SettingsPage() {
       setTimeout(() => setShowSuccess(false), 1200);
       vibrate(5);
     } catch (err: any) {
-      setSettings(settings); // Rollback
+      setSettings(settings);
       vibrate([10, 30, 10]);
       if (err.code === "permission-denied") toast.error("Không có quyền");
       else toast.error("Cập nhật thất bại");
@@ -232,7 +237,7 @@ export default function SettingsPage() {
 
  if (loading) {
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black">
+    <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b border-zinc-200/50 dark:border-zinc-900">
         <div className="max-w-xl mx-auto px-4 h-14 flex items-center gap-3">
           <div className="w-6 h-6 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
@@ -266,15 +271,16 @@ export default function SettingsPage() {
   return (
     <>
       <Toaster richColors position="top-center" />
-      <div className="min-h-screen bg-zinc-50 dark:bg-black pb-28">
-        {/* Header */}
+      <div className="min-h-screen bg-background pb-28">
         <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b border-zinc-200/50 dark:border-zinc-900">
           <div className="max-w-xl mx-auto px-4 h-14 flex items-center gap-3">
             <motion.button
               whileTap={{ scale: 0.9 }}
+              onTouchStart={() => vibrate(5)}
               onClick={() => router.back()}
               className="p-2 -ml-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900"
               aria-label="Quay lại"
+              type="button"
             >
               <ChevronLeft className="w-6 h-6" />
             </motion.button>
@@ -288,7 +294,6 @@ export default function SettingsPage() {
         </div>
 
         <div className="max-w-xl mx-auto px-4 py-5 space-y-4">
-          {/* 1. GIAO DIỆN */}
           <Section title="GIAO DIỆN" delay={0}>
             <SelectItem<ThemeValue>
               label="Chế độ"
@@ -327,7 +332,6 @@ export default function SettingsPage() {
             <ToggleItem label="Giảm chuyển động" icon={Zap} checked={settings.reduceMotion} onChange={(v) => updateSetting("reduceMotion", v)} />
           </Section>
 
-          {/* 2. THÔNG BÁO */}
           <Section title="THÔNG BÁO" delay={0.05}>
             <ToggleItem label="Task được giao" icon={Bell} checked={settings.notiTaskAssigned} onChange={(v) => updateSetting("notiTaskAssigned", v)} />
             <ToggleItem label="Task sắp hết hạn" icon={Bell} checked={settings.notiTaskDue} onChange={(v) => updateSetting("notiTaskDue", v)} />
@@ -347,7 +351,6 @@ export default function SettingsPage() {
             <TimeRangeItem label="Giờ im lặng" icon={Clock} enabled={settings.quietHours.enabled} from={settings.quietHours.from} to={settings.quietHours.to} onChange={(v) => updateSetting("quietHours", v)} />
           </Section>
 
-          {/* 3. QUYỀN RIÊNG TƯ */}
           <Section title="QUYỀN RIÊNG TƯ" delay={0.1}>
             <ToggleItem label="Ẩn trạng thái online" icon={settings.hideOnline? EyeOff : Eye} checked={settings.hideOnline} onChange={(v) => updateSetting("hideOnline", v)} />
             <ToggleItem label="Ẩn lần cuối online" icon={settings.hideLastSeen? EyeOff : Eye} checked={settings.hideLastSeen} onChange={(v) => updateSetting("hideLastSeen", v)} />
@@ -366,7 +369,6 @@ export default function SettingsPage() {
             <SettingItem label={`Đã chặn ${settings.blockedUsers.length} người`} icon={UserX} onClick={() => router.push("/settings/blocked")} />
           </Section>
 
-          {/* 4. TÀI KHOẢN */}
           <Section title="TÀI KHOẢN" delay={0.15}>
             <SettingItem label="Đổi email" icon={Mail} value={user?.email || ""} onClick={() => router.push("/settings/change-email")} />
             <SettingItem label="Đổi số điện thoại" icon={Smartphone} onClick={() => router.push("/settings/change-phone")} />
@@ -377,7 +379,6 @@ export default function SettingsPage() {
             <SettingItem label="Xóa tài khoản" icon={Trash2} onClick={() => setShowDeleteModal(true)} danger />
           </Section>
 
-          {/* 5. DỮ LIỆU & LƯU TRỮ */}
           <Section title="DỮ LIỆU & LƯU TRỮ" delay={0.2}>
             <SelectItem<Language>
               label="Ngôn ngữ"
@@ -421,7 +422,6 @@ export default function SettingsPage() {
             <SettingItem label="Xóa bộ nhớ đệm" icon={Trash2} onClick={clearCache} danger />
           </Section>
 
-          {/* 6. NÂNG CAO */}
           <Section title="NÂNG CAO" delay={0.25}>
             <div className="px-5 py-4">
               <div className="flex items-center justify-between mb-2">
@@ -431,11 +431,21 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-zinc-500 font-mono">{showApiKey? settings.apiKey : "••••••••"}</span>
-                  <button onClick={() => setShowApiKey(!showApiKey)} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg" aria-label={showApiKey? "Ẩn" : "Hiện"}>
+                  <button
+                    type="button"
+                    onClick={() => setShowApiKey(!showApiKey)}
+                    className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"
+                    aria-label={showApiKey? "Ẩn" : "Hiện"}
+                  >
                     {showApiKey? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                   {settings.apiKey && (
-                    <button onClick={copyApiKey} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg" aria-label="Copy">
+                    <button
+                      type="button"
+                      onClick={copyApiKey}
+                      className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"
+                      aria-label="Copy"
+                    >
                       <Copy className="w-4 h-4" />
                     </button>
                   )}
@@ -445,7 +455,6 @@ export default function SettingsPage() {
             <SettingItem label="Webhook" icon={Zap} value={settings.webhookUrl? "Đã kết nối" : "Chưa kết nối"} onClick={() => router.push("/settings/api")} />
           </Section>
 
-          {/* 7. VỀ HUHA */}
           <Section title="VỀ HUHA" delay={0.3}>
             <SettingItem label="Phiên bản" icon={Info} value="1.0.0 (2026.04.28)" />
             <SettingItem label="Điều khoản dịch vụ" icon={Shield} onClick={() => window.open("https://huha.vn/terms", "_blank")} />
@@ -455,16 +464,14 @@ export default function SettingsPage() {
           </Section>
         </div>
 
-        {/* Success Lottie */}
         <AnimatePresence>
           {showSuccess && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
-              <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-32 h-32" />
+              <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-32 h-32" />
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Modals */}
         <AnimatePresence>
           {showLogoutModal && (
             <Modal title="Đăng xuất?" desc="Bạn sẽ cần đăng nhập lại để sử dụng" onClose={() => setShowLogoutModal(false)} onConfirm={handleLogout} confirmText="Đăng xuất" />
@@ -478,7 +485,6 @@ export default function SettingsPage() {
   );
 }
 
-// ===== COMPONENTS =====
 const Section = memo(({ title, delay = 0, children }: { title: string; delay?: number; children: React.ReactNode }) => (
   <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }} className="bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-200/60 dark:border-zinc-900 overflow-hidden">
     <div className="px-5 pt-4 pb-2">
@@ -498,10 +504,15 @@ interface SettingItemProps {
 }
 
 const SettingItem = memo(({ label, icon: Icon, value, onClick, danger }: SettingItemProps) => (
-  <button onClick={() => { vibrate(5); onClick?.(); }} className="w-full flex items-center justify-between px-5 py-4 active:bg-zinc-50 dark:active:bg-zinc-900 transition">
+  <button
+    type="button"
+    onTouchStart={() => vibrate(5)}
+    onClick={() => { vibrate(5); onClick?.(); }}
+    className="w-full flex items-center justify-between px-5 py-4 active:bg-zinc-50 dark:active:bg-zinc-900 transition"
+  >
     <div className="flex items-center gap-3">
       <Icon className={`w-5 h-5 ${danger? "text-red-500" : "text-zinc-700 dark:text-zinc-300"}`} />
-      <span className={`text- font-medium ${danger? "text-red-500" : "text-zinc-900 dark:text-white"}`}>{label}</span>
+      <span className={`text-base font-medium ${danger? "text-red-500" : "text-zinc-900 dark:text-white"}`}>{label}</span>
     </div>
     <div className="flex items-center gap-2">
       {value && <span className="text-sm text-zinc-500">{value}</span>}
@@ -524,13 +535,15 @@ function SelectItem<T extends string>({ label, icon: Icon, value, options, onCha
   return (
     <div>
       <button
+        type="button"
+        onTouchStart={() => vibrate(5)}
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between px-5 py-4 active:bg-zinc-50 dark:active:bg-zinc-900 transition"
         aria-expanded={open}
       >
         <div className="flex items-center gap-3">
           <Icon className="w-5 h-5 text-zinc-700 dark:text-zinc-300" />
-          <span className="text- font-medium text-zinc-900 dark:text-white">{label}</span>
+          <span className="text-base font-medium text-zinc-900 dark:text-white">{label}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-zinc-500">{value}</span>
@@ -542,7 +555,9 @@ function SelectItem<T extends string>({ label, icon: Icon, value, options, onCha
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden bg-zinc-50 dark:bg-zinc-900/50">
             {options.map((opt) => (
               <button
+                type="button"
                 key={opt.value}
+                onTouchStart={() => vibrate(5)}
                 onClick={() => { onChange(opt.value); setOpen(false); vibrate(5); }}
                 className="w-full text-left px-12 py-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm"
               >
@@ -568,9 +583,11 @@ const ToggleItem = memo(({ label, icon: Icon, checked, onChange }: ToggleItemPro
   <div className="flex items-center justify-between px-5 py-4">
     <div className="flex items-center gap-3">
       <Icon className="w-5 h-5 text-zinc-700 dark:text-zinc-300" />
-      <span className="text- font-medium text-zinc-900 dark:text-white">{label}</span>
+      <span className="text-base font-medium text-zinc-900 dark:text-white">{label}</span>
     </div>
     <button
+      type="button"
+      onTouchStart={() => vibrate(5)}
       onClick={() => { vibrate(5); onChange(!checked); }}
       className={`relative w-11 h-6 rounded-full transition ${checked? "bg-[#0042B2]" : "bg-zinc-300 dark:bg-zinc-700"}`}
       role="switch"
@@ -603,9 +620,11 @@ const TimeRangeItem = memo(({ label, icon: Icon, enabled, from, to, onChange }: 
     <div className="flex items-center justify-between mb-3">
       <div className="flex items-center gap-3">
         <Icon className="w-5 h-5 text-zinc-700 dark:text-zinc-300" />
-        <span className="text- font-medium text-zinc-900 dark:text-white">{label}</span>
+        <span className="text-base font-medium text-zinc-900 dark:text-white">{label}</span>
       </div>
       <button
+        type="button"
+        onTouchStart={() => vibrate(5)}
         onClick={() => onChange({ enabled:!enabled, from, to })}
         className={`relative w-11 h-6 rounded-full transition ${enabled? "bg-[#0042B2]" : "bg-zinc-300 dark:bg-zinc-700"}`}
         role="switch"
@@ -652,8 +671,22 @@ const Modal = memo(({ title, desc, onClose, onConfirm, confirmText, danger }: Mo
       <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mb-5" />
       <h3 className="text-xl font-bold mb-2">{title}</h3>
       <p className="text-sm text-zinc-500 mb-6">{desc}</p>
-      <button onClick={() => { vibrate(5); onConfirm(); }} className={`w-full h-12 rounded-2xl font-semibold mb-3 active:scale-95 transition ${danger? "bg-red-500 text-white" : "bg-[#0042B2] text-white"}`}>{confirmText}</button>
-      <button onClick={onClose} className="w-full h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-900 font-semibold active:scale-95 transition">Hủy</button>
+     <button
+        type="button"
+        onTouchStart={() => vibrate(5)}
+        onClick={() => { vibrate(5); onConfirm(); }}
+        className={`w-full h-12 rounded-2xl font-semibold mb-3 active:scale-95 transition ${danger? "bg-red-500 text-white" : "bg-[#0042B2] text-white"}`}
+      >
+        {confirmText}
+      </button>
+      <button
+        type="button"
+        onTouchStart={() => vibrate(5)}
+        onClick={onClose}
+        className="w-full h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-900 font-semibold active:scale-95 transition"
+      >
+        Hủy
+      </button>
     </motion.div>
   </motion.div>
 ));
