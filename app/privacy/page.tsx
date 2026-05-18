@@ -4,6 +4,11 @@ import { useRouter } from "next/navigation";
 import { FiArrowLeft, FiShield, FiPhone, FiMail, FiUser, FiChevronRight } from "react-icons/fi";
 import { motion } from "framer-motion";
 
+const vibrate = (pattern: number | number[]) => {
+  if (typeof navigator!== "undefined" && "vibrate" in navigator) {
+    try { navigator.vibrate(pattern); } catch {}
+  }
+};
 
 export default function PrivacyPage() {
   const router = useRouter();
@@ -25,7 +30,13 @@ export default function PrivacyPage() {
       {/* Header */}
       <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b border-zinc-200/50 dark:border-zinc-900">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
-          <motion.button whileTap={{ scale: 0.9 }} onClick={() => router.back()} className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onTouchStart={() => vibrate(5)}
+            onClick={() => router.back()}
+            type="button"
+            className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
+          >
             <FiArrowLeft className="w-5 h-5" />
           </motion.button>
           <h1 className="text-lg font-black tracking-tight">Chính sách bảo mật</h1>
@@ -45,7 +56,7 @@ export default function PrivacyPage() {
         {/* Content */}
         <div className="space-y-3">
           {sections.map((section, idx) => (
-            <motion.div key={idx} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 p-5 shadow-sm">
+            <motion.div key={idx} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} className="bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-200/60 dark:border-zinc-800 p-5 shadow-sm">
               <h3 className="font-bold text-base mb-2.5 flex items-center gap-2">
                 <span className="w-6 h-6 rounded-lg bg-[#E8F1FF] dark:bg-[#0042B2]/20 text-[#0042B2] flex items-center justify-center text-xs font-black">{idx + 1}</span>
                 {section.title.split('. ')[1]}
@@ -53,7 +64,7 @@ export default function PrivacyPage() {
 
               {section.title.includes("Dữ liệu")? (
                 <>
-                  <div className="overflow-hidden rounded-2xl border-zinc-200 dark:border-zinc-800">
+                  <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
                     <table className="w-full text-sm">
                       <thead className="bg-zinc-50 dark:bg-zinc-900">
                         <tr className="border-b border-zinc-200 dark:border-zinc-800">
@@ -96,7 +107,7 @@ export default function PrivacyPage() {
           ))}
 
           {/* Contact */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="bg-gradient-to-br from-[#E8F1FF] to-[#D6E8FF] dark:from-[#0042B2]/20 dark:to-[#1A5FFF]/20 rounded-3xl border-[#0042B2]/20 p-5 shadow-sm">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="bg-gradient-to-br from-[#E8F1FF] to-[#D6E8FF] dark:from-[#0042B2]/20 dark:to-[#1A5FFF]/20 rounded-3xl border border-[#0042B2]/20 p-5 shadow-sm">
             <h3 className="font-black text-base mb-3 flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-[#0042B2] flex items-center justify-center">
                 <FiUser className="w-4 h-4 text-white" />
@@ -109,7 +120,13 @@ export default function PrivacyPage() {
                 { icon: FiPhone, label: "Hotline", value: "0359872122", action: () => window.open("tel:0359872122") },
                 { icon: FiMail, label: "Email", value: "support@huha.vn", action: () => window.open("mailto:support@huha.vn") },
               ].map((item) => (
-                <button key={item.label} onClick={item.action} className="w-full flex items-center justify-between p-3 rounded-2xl bg-white/60 dark:bg-black/20 hover:bg-white dark:hover:bg-black/40 transition-colors group">
+                <button
+                  key={item.label}
+                  onTouchStart={() => vibrate(5)}
+                  onClick={item.action}
+                  type="button"
+                  className="w-full flex items-center justify-between p-3 rounded-2xl bg-white/60 dark:bg-black/20 hover:bg-white dark:hover:bg-black/40 transition-colors group"
+                >
                   <div className="flex items-center gap-3">
                     <item.icon className="w-4 h-4 text-[#0042B2]" />
                     <div className="text-left">
