@@ -1,11 +1,10 @@
 "use client";
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { FiShare, FiPlusSquare, FiX, FiDownload } from "react-icons/fi";
 import { HiDevicePhoneMobile } from "react-icons/hi2";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import celebrate from "@/public/lotties/huha-celebrate.json";
+import * as L from "@/components/illustrations";
 
 const DISMISS_KEY = "installPromptDismissed";
 const DISMISS_DAYS = 7;
@@ -86,6 +85,7 @@ export default function InstallPrompt() {
 
   const handleDismiss = useCallback(() => {
     setShow(false);
+    navigator.vibrate?.(5);
     localStorage.setItem(DISMISS_KEY, Date.now().toString());
   }, []);
 
@@ -96,7 +96,7 @@ export default function InstallPrompt() {
           <div className="bg-white/95 dark:bg-zinc-950/95 backdrop-blur-2xl border border-zinc-200/50 dark:border-zinc-800 rounded-3xl shadow-2xl p-4">
             <button
               onClick={handleDismiss}
-              className="absolute top-2.5 right-2.5 p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 transition-colors"
+              className="absolute top-2.5 right-2.5 p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 transition-colors active:scale-95"
             >
               <FiX size={18} />
             </button>
@@ -105,21 +105,17 @@ export default function InstallPrompt() {
               <div className="relative w-12 h-12 shrink-0">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] rounded-2xl blur-xl opacity-30" />
                 <div className="relative w-12 h-12 bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] rounded-2xl flex items-center justify-center shadow-lg">
-                  <LottiePlayer animationData={celebrate} autoplay loop className="w-7 h-7" />
+                  <LottiePlayer animationData={L.celebrate} autoplay loop className="w-7 h-7" />
                 </div>
               </div>
 
               <div className="flex-1 space-y-2.5">
-<div className="flex items-center gap-2">
-  <HiDevicePhoneMobile
-    size={18}
-    className="text-[#0042B2]"
-  />
-
-  <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">
-    Cài đặt ứng dụng
-  </h3>
-</div>
+                <div className="flex items-center gap-2">
+                  <HiDevicePhoneMobile size={18} className="text-[#0042B2]" />
+                  <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">
+                    Cài đặt ứng dụng
+                  </h3>
+                </div>
 
                 {isIOS? (
                   <div className="text-sm text-zinc-600 dark:text-zinc-400 space-y-2.5">
