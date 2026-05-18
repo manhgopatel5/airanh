@@ -1,18 +1,15 @@
-// components/BottomNav.tsx
 "use client";
-
 import { HiPlus } from "react-icons/hi2";
 import { useRouter, usePathname } from "next/navigation";
-
-import { useEffect, useState, useTransition, useCallback, useMemo } from "react";
+import { useEffect, useTransition, useCallback, useMemo } from "react";
 import { useAppStore } from "@/store/app";
-// XÓA dòng này: import { useAuthStore } from "@/store/auth";
 import LottiePlayer from "@/components/ui/LottiePlayer";
+import * as L from "@/components/illustrations";
 
 type NavItem = {
   path: string;
   label: string;
-  lottieFile: string;
+  lottieKey: keyof typeof L;
 };
 
 export default function BottomNav() {
@@ -21,23 +18,7 @@ export default function BottomNav() {
   const [, startTransition] = useTransition();
 
   const mode = useAppStore((s) => s.mode);
-  // XÓA: const user = useAuthStore((s) => s.user);
   const isPlan = mode === "plan";
-
-  // Lottie states
-  const [idleLottie, setIdleLottie] = useState<any>(null);
-  const [searchingLottie, setSearchingLottie] = useState<any>(null);
-  const [taskLottie, setTaskLottie] = useState<any>(null);
-  const [walletOpenLottie, setWalletOpenLottie] = useState<any>(null);
-  const [celebrateLottie, setCelebrateLottie] = useState<any>(null);
-
-  useEffect(() => {
-    fetch('/lotties/huha-idle.json').then(r => r.json()).then(setIdleLottie).catch(() => {});
-    fetch('/lotties/huha-searching.json').then(r => r.json()).then(setSearchingLottie).catch(() => {});
-    fetch('/lotties/huha-task.json').then(r => r.json()).then(setTaskLottie).catch(() => {});
-    fetch('/lotties/huha-wallet-open.json').then(r => r.json()).then(setWalletOpenLottie).catch(() => {});
-    fetch('/lotties/huha-celebrate.json').then(r => r.json()).then(setCelebrateLottie).catch(() => {});
-  }, []);
 
   useEffect(() => {
     ["/", "/messages", "/tasks", "/profile", "/create", "/create/plan", "/create/task"].forEach(
@@ -47,7 +28,7 @@ export default function BottomNav() {
 
   const handleNav = useCallback((path: string) => {
     if (pathname === path) return;
-    if ("vibrate" in navigator) navigator.vibrate(8);
+    navigator.vibrate?.(8);
     startTransition(() => router.push(path));
   }, [pathname, router]);
 
@@ -57,39 +38,29 @@ export default function BottomNav() {
   }, [pathname]);
 
   const items: NavItem[] = useMemo(() => [
-    { path: "/", label: "Trang chủ", lottieFile: "idle" },
-    { path: "/messages", label: "Tin nhắn", lottieFile: "searching" },
+    { path: "/", label: "Trang chủ", lottieKey: "idle" },
+    { path: "/messages", label: "Tin nhắn", lottieKey: "searching" },
   ], []);
 
   const rightItems: NavItem[] = useMemo(() => [
-    { path: "/tasks", label: "Nhiệm vụ", lottieFile: "task" },
-    { path: "/profile", label: "Hồ sơ", lottieFile: "wallet" },
+    { path: "/tasks", label: "Nhiệm vụ", lottieKey: "task" },
+    { path: "/profile", label: "Hồ sơ", lottieKey: "walletOpen" },
   ], []);
 
-  const getLottieData = (key: string) => {
-    switch(key) {
-      case "idle": return idleLottie;
-      case "searching": return searchingLottie;
-      case "task": return taskLottie;
-      case "wallet": return walletOpenLottie;
-      default: return null;
-    }
-  };
-
   const activeBg = isPlan
-  ? "bg-green-500/10 dark:bg-green-500/20"
+? "bg-green-500/10 dark:bg-green-500/20"
     : "bg-sky-500/10 dark:bg-sky-500/20";
   const activeText = isPlan
-  ? "text-green-600 dark:text-green-400"
+? "text-green-600 dark:text-green-400"
     : "text-sky-600 dark:text-sky-400";
   const fabGradient = isPlan
-  ? "from-green-500 to-emerald-500 shadow-green-500/25"
+? "from-green-500 to-emerald-500 shadow-green-500/25"
     : "from-sky-500 to-blue-600 shadow-sky-500/25";
   const fabHref = isPlan? "/create/plan" : "/create/task";
 
   const NavButton = ({ item }: { item: NavItem }) => {
     const active = isActive(item.path);
-    const lottieData = getLottieData(item.lottieFile);
+    const lottieData = L[item.lottieKey];
 
     return (
       <button
@@ -147,16 +118,14 @@ export default function BottomNav() {
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   <div className={`w-[56px] h-[56px] rounded-full bg-gradient-to-br ${fabGradient} flex items-center justify-center shadow-lg ring-4 ring-white dark:ring-zinc-900 transition-all group-hover:shadow-xl`}>
-                    {celebrateLottie && (
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                        <LottiePlayer
-                          animationData={celebrateLottie}
-                          autoplay
-                          loop
-                          className="w-14 h-14"
-                        />
-                      </div>
-                    )}
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      <LottiePlayer
+                        animationData={L.celebrate}
+                        autoplay
+                        loop
+                        className="w-14 h-14"
+                      />
+                    </div>
                     <HiPlus className="text-white relative z-10 transition-transform group-hover:rotate-90" size={26} strokeWidth={2.5} />
                   </div>
                 </button>
@@ -170,7 +139,7 @@ export default function BottomNav() {
 
       <style jsx global>{`
         @media (prefers-reduced-motion: reduce) {
-       .lottie-player { animation: none!important; }
+     .lottie-player { animation: none!important; }
         }
       `}</style>
     </div>
