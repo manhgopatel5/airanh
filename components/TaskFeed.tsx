@@ -1,5 +1,9 @@
 "use client";
-import { Task } from "@/types/task";
+import type {
+  BaseFeedItem,
+  TaskListItem,
+  PlanListItem,
+} from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import EmptyState from "@/components/EmptyState";
 import { AppMode } from "@/types/app";
@@ -9,15 +13,18 @@ import { FiGrid, FiList, FiSliders, FiTrendingUp, FiMapPin, FiUsers, FiClock } f
 import { toast } from "sonner";
 
 type TabId = "hot" | "near" | "friends" | "new";
-
+type FeedTask = BaseFeedItem & Partial<TaskListItem & PlanListItem>;
 type Props = {
-  tasks: Task[];
+  tasks: FeedTask[];
   mode: AppMode;
   activeTab: TabId;
-  onShare?: (task: Task) => void;
+  onShare?: (task: FeedTask) => void;
   onDelete?: (id: string) => void;
-  onTaskUpdate?: (taskId: string, updates: Partial<Task>) => void;
-};
+  onTaskUpdate?: (
+    taskId: string,
+    updates: Partial<FeedTask>
+  ) => void;
+};};
 
 const containerVariants = {
   hidden: { opacity: 0 },
