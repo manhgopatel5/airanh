@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, memo } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { doc, updateDoc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
-import { signOut, deleteUser } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import {
   ChevronLeft, Trash2, Image as ImageIcon, MessageSquare, FileText, HardDrive
 } from "lucide-react";
