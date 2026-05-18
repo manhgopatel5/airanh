@@ -97,6 +97,36 @@ ratingCount?: number; // optional luôn
   reactions?: Record<string, string[]>;
 };
 
+
+export type BaseFeedItem = Pick<
+  BaseItem,
+  | "id"
+  | "slug"
+  | "title"
+  | "status"
+  | "userName"
+  | "userAvatar"
+  | "userShortId"
+  | "userUsername"
+  | "userVerified"
+  | "createdAt"
+  | "category"
+  | "tags"
+  | "images"
+  | "viewCount"
+  | "likeCount"
+  | "commentCount"
+  | "rating"
+  | "ratingCount"
+  | "location"
+  | "likes"
+  | "userId"
+  | "description"
+  | "savedBy"
+  | "applicants"
+> & {
+  type: AppMode;
+};
 /* ================= TASK TYPE ================= */
 export type TaskItem = BaseItem & {
   type: "task";
