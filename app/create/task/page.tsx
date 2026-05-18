@@ -813,7 +813,7 @@ const submit = async () => {
         isRemote: form.isRemote,
 
 location: form.isRemote
-  ? null
+  ? undefined
   : {
       address: form.address.trim(),
       city: form.city,
