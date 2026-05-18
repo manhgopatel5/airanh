@@ -585,7 +585,7 @@ export default function CreatePlanPro() {
 
   const [loading, setLoading] =
     useState(false);
-
+  
   const [success, setSuccess] =
     useState(false);
 
@@ -647,6 +647,13 @@ export default function CreatePlanPro() {
 
 const [cover, setCover] =
   useState<string | null>(null);
+
+const [
+  coverFile,
+  setCoverFile,
+] = useState<File | null>(
+  null
+);
 
 
 
