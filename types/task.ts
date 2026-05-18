@@ -267,80 +267,32 @@ export type UpdatePlanInput = Partial<Omit<CreatePlanInput, "type">>;
 export type UpdateItemInput = Partial<CreateItemInput>;
 
 /* ================= LIST ITEM ================= */
-export type TaskListItem = Pick<
-  TaskItem,
-  | "id"
-  | "slug"
-  | "title"
-  | "price"
-  | "currency"
-  | "totalSlots"
-  | "joined"
-  | "status"
-  | "userName"
-  | "userAvatar"
-  | "userShortId"
-  | "userUsername"
-  | "userVerified"
-  | "createdAt"
-  | "category"
-  | "tags"
-  | "images"
-  | "viewCount"
-  | "likeCount"
-  | "commentCount"
-  | "rating"
-| "ratingCount"
-  | "location"
-  | "isRemote"
-  | "likes"
-  | "budgetType"
-  | "paymentMethod" // THÊM DÒNG NÀY
-  | "userId"
-  | "description"
-  | "type"
-  | "deadline"
-  | "startDate"
-  | "savedBy"     
-  | "applicants"  
->;
+export type TaskListItem = BaseFeedItem &
+  Pick<
+    TaskItem,
+    | "price"
+    | "currency"
+    | "totalSlots"
+    | "joined"
+    | "isRemote"
+    | "budgetType"
+    | "paymentMethod"
+    | "deadline"
+    | "startDate"
+  >;
 
-export type PlanListItem = Pick<
-  PlanItem,
-  | "id"
-  | "slug"
-  | "title"
-  | "type"
-  | "status"
-  | "userName"
-  | "userAvatar"
-  | "userShortId"
-  | "userUsername"
-  | "userVerified"
-  | "createdAt"
-  | "category"
-  | "tags"
-  | "images"
-  | "viewCount"
-  | "likeCount"
-  | "commentCount"
-| "rating"
-| "ratingCount"
-  | "location"
-  | "likes"
-  | "userId"
-  | "description"
-  | "eventDate"
-  | "endDate"
-  | "maxParticipants"
-  | "currentParticipants"
-  | "costType"
-  | "costAmount"
-  | "paymentMethod" // THÊM DÒNG NÀY
-  | "milestones"
-  | "savedBy"      
-  | "applicants"  
->;
+export type PlanListItem = BaseFeedItem &
+  Pick<
+    PlanItem,
+    | "eventDate"
+    | "endDate"
+    | "maxParticipants"
+    | "currentParticipants"
+    | "costType"
+    | "costAmount"
+    | "paymentMethod"
+    | "milestones"
+  >;
 
 export type ItemListItem = TaskListItem | PlanListItem;
 
