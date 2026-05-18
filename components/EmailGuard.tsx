@@ -1,15 +1,12 @@
 "use client";
-
 import { useAuth } from "@/lib/AuthContext";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { sendEmailVerification } from "firebase/auth";
-import { toast } from "sonner";
-
+import { toast, Toaster } from "sonner";
 import { motion } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
-import celebrate from "@/public/lotties/huha-celebrate.json";
+import * as L from "@/components/illustrations";
 
 export default function EmailGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -21,20 +18,20 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
   const publicRoutes = ["/login", "/register", "/forgot-password", "/terms", "/privacy", "/verify-email"];
 
   useEffect(() => {
-    if (!loading && !user && !publicRoutes.includes(pathname)) {
+    if (!loading &&!user &&!publicRoutes.includes(pathname)) {
       router.replace("/login");
     }
   }, [user, loading, pathname, router]);
 
   useEffect(() => {
-    if (!loading && user && !user.emailVerified && !publicRoutes.includes(pathname)) {
+    if (!loading && user &&!user.emailVerified &&!publicRoutes.includes(pathname)) {
       setShowModal(true);
     } else {
       setShowModal(false);
     }
   }, [user, loading, pathname]);
 
-  const resendEmail = async () => {
+  const resendEmail = useCallback(async () => {
     if (!user || sending) return;
     setSending(true);
     try {
@@ -43,23 +40,25 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
       navigator.vibrate?.([10,20,10]);
     } catch (e: any) {
       toast.error(e.message || "Gửi email thất bại");
+      navigator.vibrate?.(15);
     } finally {
       setSending(false);
     }
-  };
+  }, [user, sending]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
+    navigator.vibrate?.(5);
     const { getFirebaseAuth } = await import("@/lib/firebase");
     await getFirebaseAuth().signOut();
     router.push("/login");
-  };
+  }, [router]);
 
   // FIX 1: Đang loading thì hiện màn hình trắng có logo, không render children
   if (loading) {
     return (
       <div className="fixed inset-0 z-50 bg-white dark:bg-zinc-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <LottiePlayer animationData={loadingPull} autoplay loop className="w-20 h-20" />
+          <LottiePlayer animationData={L.loadingPull} autoplay loop className="w-20 h-20" />
           <img src="/logo.png" alt="AIR" className="w-12 h-12 opacity-60" />
         </div>
       </div>
@@ -75,22 +74,23 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
   if (!user) {
     return (
       <div className="fixed inset-0 z-50 bg-white dark:bg-zinc-950 flex items-center justify-center">
-        <LottiePlayer animationData={loadingPull} autoplay loop className="w-20 h-20" />
+        <LottiePlayer animationData={L.loadingPull} autoplay loop className="w-20 h-20" />
       </div>
     );
   }
 
   return (
     <>
+      <Toaster richColors position="top-center" />
       {children}
 
-      {showModal && user && !user.emailVerified && (
+      {showModal && user &&!user.emailVerified && (
         <div className="fixed inset-0 z-50 backdrop-blur-2xl bg-black/70 flex items-center justify-center p-6">
           <motion.div initial={{scale:0.9,opacity:0}} animate={{scale:1,opacity:1}} transition={{type:"spring",damping:24,stiffness:300}} className="w-full max-w-sm bg-white dark:bg-zinc-950 rounded-3xl p-8 shadow-2xl border border-zinc-100 dark:border-zinc-800">
             <div className="w-20 h-20 mx-auto mb-5 relative">
               <div className="absolute inset-0 bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] rounded-3xl blur-2xl opacity-30" />
               <div className="relative w-20 h-20 bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] rounded-3xl flex items-center justify-center shadow-xl">
-                <LottiePlayer animationData={celebrate} autoplay loop className="w-12 h-12" />
+                <LottiePlayer animationData={L.celebrate} autoplay loop className="w-12 h-12" />
               </div>
             </div>
 
@@ -110,9 +110,9 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
               className="w-full h-14 text-white font-bold text-base rounded-2xl active:scale-[0.97] transition-all disabled:opacity-60 flex items-center justify-center gap-2 mb-3 shadow-lg"
               style={{background:'linear-gradient(135deg,#0042B2,#0066FF)',boxShadow:'0 12px 28px -8px rgba(0,66,178,0.45)'}}
             >
-              {sending ? (
+              {sending? (
                 <>
-                  <div className="w-5 h-5"><LottiePlayer animationData={loadingPull} autoplay loop className="w-5 h-5" /></div>
+                  <div className="w-5 h-5"><LottiePlayer animationData={L.loadingPull} autoplay loop className="w-5 h-5" /></div>
                   Đang gửi...
                 </>
               ) : (
