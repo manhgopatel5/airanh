@@ -12,7 +12,13 @@ import { nanoid } from "nanoid";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import * as L from "@/components/illustrations";
+
+const vibrate = (pattern: number | number[]) => {
+  if (typeof navigator!== "undefined" && "vibrate" in navigator) {
+    try { navigator.vibrate(pattern); } catch {}
+  }
+};
 
 export default function Login() {
   const router = useRouter();
@@ -39,7 +45,7 @@ export default function Login() {
     authRef.current = getFirebaseAuth();
     dbRef.current = getFirebaseDB();
 
-    if (typeof window !== "undefined" && window.PublicKeyCredential) {
+    if (typeof window!== "undefined" && window.PublicKeyCredential) {
       PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable?.().then(setPasskeySupported);
     }
 
@@ -48,13 +54,13 @@ export default function Login() {
       let email = localStorage.getItem("emailForSignIn") || window.prompt("Nhập email để xác nhận");
       if (email) {
         signInWithEmailLink(authRef.current, email, window.location.href)
-         .then(async (result) => {
+        .then(async (result) => {
             localStorage.removeItem("emailForSignIn");
             await updateUserDoc(result.user, dbRef.current!);
             toast.success("Đăng nhập thành công");
             router.replace(redirectTo);
           })
-         .catch(() => setErrors({ submit: "Link không hợp lệ hoặc đã hết hạn" }));
+        .catch(() => setErrors({ submit: "Link không hợp lệ hoặc đã hết hạn" }));
       }
     }
 
@@ -84,10 +90,10 @@ export default function Login() {
       if (err) newErrors[key] = err;
     });
     setErrors(newErrors);
-   return Object.keys(newErrors).length === 0;
+    return Object.keys(newErrors).length === 0;
   };
 
-const updateUserDoc = async (user: User, db: Firestore) => {
+  const updateUserDoc = async (user: User, db: Firestore) => {
     const userRef = doc(db, "users", user.uid);
     const snap = await getDoc(userRef).catch(() => null);
     if (!snap?.exists()) {
@@ -115,19 +121,19 @@ const updateUserDoc = async (user: User, db: Firestore) => {
         tx.set(doc(db, "usernames", username), { uid: user.uid });
       });
     } else {
-     await updateDoc(userRef, {
-  isOnline: true,
-  lastSeen: serverTimestamp(),
-});
+      await updateDoc(userRef, {
+        isOnline: true,
+        lastSeen: serverTimestamp(),
+      });
     }
   };
 
   const handleLogin = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (form.honeypot || !validate()) return;
+    if (form.honeypot ||!validate()) return;
 
     const auth = authRef.current; const db = dbRef.current;
-    if (!auth || !db) return;
+    if (!auth ||!db) return;
 
     const lastFail = localStorage.getItem("login_fail_time");
     if (failedAttempts.current >= 3 && lastFail && Date.now() - parseInt(lastFail) < 30000) {
@@ -150,7 +156,7 @@ const updateUserDoc = async (user: User, db: Firestore) => {
       localStorage.setItem("last_email", form.email);
       failedAttempts.current = 0;
       toast.success("Đăng nhập thành công");
-      navigator.vibrate?.(8);
+      vibrate(8);
       router.replace(redirectTo);
     } catch (err: any) {
       failedAttempts.current++;
@@ -168,7 +174,7 @@ const updateUserDoc = async (user: User, db: Firestore) => {
 
   const handleGoogleLogin = async () => {
     const auth = authRef.current; const db = dbRef.current;
-    if (!auth || !db) return;
+    if (!auth ||!db) return;
     try {
       setGoogleLoading(true);
       await setPersistence(auth, remember? browserLocalPersistence : browserSessionPersistence);
@@ -178,7 +184,7 @@ const updateUserDoc = async (user: User, db: Firestore) => {
       await updateUserDoc(res.user, db);
       localStorage.setItem("last_email", res.user.email || "");
       toast.success("Đăng nhập thành công");
-      navigator.vibrate?.(8);
+      vibrate(8);
       router.replace(redirectTo);
     } catch (err: any) {
       if (err.code!== "auth/popup-closed-by-user") {
@@ -189,11 +195,7 @@ const updateUserDoc = async (user: User, db: Firestore) => {
 
   const handleMagicLink = async () => {
     const auth = authRef.current;
-    if (
-  !auth ||
-  !form.email ||
-  !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)
-) {
+    if (!auth ||!form.email ||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       return setErrors({ email: "Nhập email hợp lệ trước" });
     }
     try {
@@ -215,12 +217,12 @@ const updateUserDoc = async (user: User, db: Firestore) => {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center">
         <LottiePlayer
-  animationData={loadingPull}
-  loop
-  autoplay
-  aria-label="Loading"
-  className="w-20 h-20"
-/>
+          animationData={L.loadingPull}
+          loop
+          autoplay
+          aria-label="Loading"
+          className="w-20 h-20"
+        />
       </div>
     );
   }
@@ -230,7 +232,7 @@ const updateUserDoc = async (user: User, db: Firestore) => {
       <Toaster richColors position="top-center" />
       <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-sm">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-zinc-950 rounded-3xl shadow-xl p-6 border-zinc-200/60 dark:border-zinc-800">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-zinc-950 rounded-3xl shadow-xl p-6 border border-zinc-200/60 dark:border-zinc-800">
             {/* Header */}
             <div className="text-center mb-6">
               <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200 }} className="w-16 h-16 mx-auto mb-4 rounded-3xl bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] flex items-center justify-center shadow-lg shadow-[#0042B2]/25">
@@ -243,13 +245,13 @@ const updateUserDoc = async (user: User, db: Firestore) => {
             {/* Alerts */}
             <AnimatePresence>
               {errors.submit && (
-                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mb-4 p-3 rounded-2xl bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900 flex items-center gap-2.5">
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mb-4 p-3 rounded-2xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 flex items-center gap-2.5">
                   <FiAlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                   <p className="text-sm text-red-700 dark:text-red-400 font-medium">{errors.submit}</p>
                 </motion.div>
               )}
               {magicLinkSent && (
-                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4 p-3 rounded-2xl bg-[#E8F1FF] dark:bg-[#0042B2]/10 border-[#0042B2]/20 flex items-center gap-2.5">
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4 p-3 rounded-2xl bg-[#E8F1FF] dark:bg-[#0042B2]/10 border border-[#0042B2]/20 flex items-center gap-2.5">
                   <FiSend className="w-4 h-4 text-[#0042B2] flex-shrink-0" />
                   <p className="text-sm text-[#0042B2] font-medium">Đã gửi link! Kiểm tra email</p>
                 </motion.div>
@@ -263,7 +265,7 @@ const updateUserDoc = async (user: User, db: Firestore) => {
               <div>
                 <div className="relative group">
                   <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400 group-focus-within:text-[#0042B2] transition-colors" />
-                  <input ref={emailRef} type="email" value={form.email} onChange={(e) => { setForm(prev => ({ ...prev, email: e.target.value })); if (errors.email) setErrors(prev => ({ ...prev, email: "" })); }} placeholder="Email" className={`w-full h-12 pl-11 pr-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-2 ${errors.email? "border-red-500" : "border-transparent focus:border-[#0042B2]"} outline-none  font-medium transition-all`} />
+                  <input ref={emailRef} type="email" value={form.email} onChange={(e) => { setForm(prev => ({...prev, email: e.target.value })); if (errors.email) setErrors(prev => ({...prev, email: "" })); }} placeholder="Email" className={`w-full h-12 pl-11 pr-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-2 ${errors.email? "border-red-500" : "border-transparent focus:border-[#0042B2]"} outline-none font-medium transition-all`} />
                 </div>
                 {errors.email && <p className="text-xs text-red-500 mt-1.5 ml-1">{errors.email}</p>}
               </div>
@@ -272,10 +274,10 @@ const updateUserDoc = async (user: User, db: Firestore) => {
                 <div className="relative group">
                   <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400 group-focus-within:text-[#0042B2] transition-colors" />
                   <input type={show? "text" : "password"} value={form.password} onChange={(e) => { setForm(prev => ({
-  ...prev,
+ ...prev,
   password: e.target.value,
 })); if (errors.password) setErrors({...errors, password: ""}); }} placeholder="Mật khẩu" className={`w-full h-12 pl-11 pr-11 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-2 ${errors.password? "border-red-500" : "border-transparent focus:border-[#0042B2]"} outline-none font-medium transition-all`} />
-                  <button type="button" onClick={() => setShow(!show)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 p-1">
+                  <button type="button" onTouchStart={() => vibrate(5)} onClick={() => setShow(!show)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 p-1">
                     {show? <FiEyeOff size={18} /> : <FiEye size={18} />}
                   </button>
                 </div>
@@ -290,7 +292,7 @@ const updateUserDoc = async (user: User, db: Firestore) => {
                 <Link href="/forgot-password" className="text-sm font-semibold text-[#0042B2] hover:underline">Quên mật khẩu?</Link>
               </div>
 
-              <motion.button type="submit" whileTap={{ scale: 0.98 }} disabled={loading || googleLoading || magicLoading} className="w-full h-12 rounded-2xl bg-[#0042B2] text-white font-bold shadow-lg shadow-[#0042B2]/25 hover:shadow-xl hover:shadow-[#0042B2]/30 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+              <motion.button type="submit" whileTap={{ scale: 0.98 }} onTouchStart={() => vibrate(5)} disabled={loading || googleLoading || magicLoading} className="w-full h-12 rounded-2xl bg-[#0042B2] text-white font-bold shadow-lg shadow-[#0042B2]/25 hover:shadow-xl hover:shadow-[#0042B2]/30 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
                 {loading? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Đang đăng nhập...</> : "Đăng nhập"}
               </motion.button>
             </form>
@@ -303,18 +305,18 @@ const updateUserDoc = async (user: User, db: Firestore) => {
 
             {/* Social */}
             <div className="space-y-2.5">
-              <motion.button whileTap={{ scale: 0.98 }} onClick={handleGoogleLogin} disabled={loading || googleLoading || magicLoading} className="w-full h-11 rounded-2xl bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-800 font-semibold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-50 transition-all flex items-center justify-center gap-2.5 shadow-sm">
+              <motion.button whileTap={{ scale: 0.98 }} onTouchStart={() => vibrate(5)} onClick={handleGoogleLogin} disabled={loading || googleLoading || magicLoading} type="button" className="w-full h-11 rounded-2xl bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-800 font-semibold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-50 transition-all flex items-center justify-center gap-2.5 shadow-sm">
                 <FcGoogle size={20} />
                 <span>{googleLoading? "Đang kết nối..." : "Tiếp tục với Google"}</span>
               </motion.button>
 
-              <motion.button whileTap={{ scale: 0.98 }} onClick={handleMagicLink} disabled={loading || googleLoading || magicLoading} className="w-full h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 font-semibold text-sm disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+              <motion.button whileTap={{ scale: 0.98 }} onTouchStart={() => vibrate(5)} onClick={handleMagicLink} disabled={loading || googleLoading || magicLoading} type="button" className="w-full h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 font-semibold text-sm disabled:opacity-50 transition-all flex items-center justify-center gap-2">
                 <FiSend size={18} className="text-zinc-600" />
                 <span>{magicLoading? "Đang gửi..." : "Gửi link qua Email"}</span>
               </motion.button>
 
               {passkeySupported && (
-                <motion.button whileTap={{ scale: 0.98 }} onClick={() => toast.info("Passkey đang phát triển")} className="w-full h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 font-semibold text-sm transition-all flex items-center justify-center gap-2">
+                <motion.button whileTap={{ scale: 0.98 }} onTouchStart={() => vibrate(5)} onClick={() => toast.info("Passkey đang phát triển")} type="button" className="w-full h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 font-semibold text-sm transition-all flex items-center justify-center gap-2">
                   <FiSmartphone size={18} className="text-zinc-600" />
                   <span>Đăng nhập bằng Face ID</span>
                 </motion.button>
