@@ -9,8 +9,7 @@ import { toast, Toaster } from "sonner";
 import { motion } from "framer-motion";
 import { FiArrowLeft, FiSave, FiX, FiPlus } from "react-icons/fi";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
-import celebrate from "@/public/lotties/huha-celebrate.json";
+import * as L from "@/components/illustrations";
 import type { Task } from "@/types/task";
 
 const CATEGORIES = [
@@ -132,15 +131,27 @@ export default function EditTaskPage() {
   return (
     <>
       <Toaster richColors position="top-center" />
-      <div className="min-h-screen bg-zinc-50 dark:bg-black">
+      <div className="min-h-screen bg-background">
         <div className="sticky top-0 z-20 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b">
           <div className="flex items-center justify-between px-4 h-14 max-w-2xl mx-auto">
-            <motion.button whileTap={{scale:0.9}} onClick={() => router.back()} className="p-2 -ml-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900">
+            <motion.button
+              whileTap={{scale:0.9}}
+              onTouchStart={() => navigator.vibrate?.(5)}
+              onClick={() => router.back()}
+              className="p-2 -ml-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900"
+            >
               <FiArrowLeft size={22} />
             </motion.button>
             <h1 className="text-[17px] font-bold">Sửa công việc</h1>
-            <motion.button whileTap={{scale:0.95}} onClick={handleSave} disabled={saving} className="flex items-center gap-1.5 px-4 h-9 rounded-xl text-white text-[14px] font-semibold disabled:opacity-50" style={{background:'linear-gradient(135deg,#0042B2,#1A5FFF)'}}>
-              {saving? <LottiePlayer animationData={loadingPull} loop autoplay className="w-5 h-5"/> : <FiSave size={16}/>}
+            <motion.button
+              whileTap={{scale:0.95}}
+              onTouchStart={() => navigator.vibrate?.(5)}
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-1.5 px-4 h-9 rounded-xl text-white text-[14px] font-semibold disabled:opacity-50"
+              style={{background:'linear-gradient(135deg,#0042B2,#1A5FFF)'}}
+            >
+              {saving? <LottiePlayer animationData={L.loadingPull} loop autoplay className="w-5 h-5"/> : <FiSave size={16}/>}
               {saving? "Đang lưu" : "Lưu"}
             </motion.button>
           </div>
@@ -162,10 +173,34 @@ export default function EditTaskPage() {
           {task.type==="task" && (
             <>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="block text-[13px] font-semibold mb-2">Giá tiền</label><div className="relative"><input type="number" value={form.price} onChange={e=>setForm({...form,price:Number(e.target.value)})} className="w-full pl-4 pr-10 h-12 rounded-2xl bg-white dark:bg-zinc-950 border outline-none focus:ring-2 focus:ring-[#0042B2]/30"/><span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-[13px]">đ</span></div></div>
-                <div><label className="block text-[13px] font-semibold mb-2">Số lượng</label><input type="number" value={form.totalSlots} onChange={e=>setForm({...form,totalSlots:Number(e.target.value)})} min={1} className="w-full px-4 h-12 rounded-2xl bg-white dark:bg-zinc-950 border outline-none focus:ring-2 focus:ring-[#0042B2]/30"/></div>
+                <div>
+                  <label className="block text-[13px] font-semibold mb-2">Giá tiền</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={0}
+                      value={form.price}
+                      onChange={e=>setForm({...form,price:Math.max(0, parseInt(e.target.value) || 0)})}
+                      className="w-full pl-4 pr-10 h-12 rounded-2xl bg-white dark:bg-zinc-950 border outline-none focus:ring-2 focus:ring-[#0042B2]/30"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-[13px]">đ</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[13px] font-semibold mb-2">Số lượng</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={form.totalSlots}
+                    onChange={e=>setForm({...form,totalSlots:Math.max(1, parseInt(e.target.value) || 1)})}
+                    className="w-full px-4 h-12 rounded-2xl bg-white dark:bg-zinc-950 border outline-none focus:ring-2 focus:ring-[#0042B2]/30"
+                  />
+                </div>
               </div>
-              <div><label className="block text-[13px] font-semibold mb-2">Yêu cầu</label><textarea value={form.requirements} onChange={e=>setForm({...form,requirements:e.target.value})} rows={3} className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-zinc-950 border outline-none focus:ring-2 focus:ring-[#0042B2]/30 resize-none"/></div>
+              <div>
+                <label className="block text-[13px] font-semibold mb-2">Yêu cầu</label>
+                <textarea value={form.requirements} onChange={e=>setForm({...form,requirements:e.target.value})} rows={3} className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-zinc-950 border outline-none focus:ring-2 focus:ring-[#0042B2]/30 resize-none"/>
+              </div>
             </>
           )}
 
@@ -181,22 +216,50 @@ export default function EditTaskPage() {
             <label className="block text-[13px] font-semibold mb-2">Tags</label>
             <div className="flex gap-2 mb-2.5">
               <input value={tagInput} onChange={e=>setTagInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(e.preventDefault(),addTag())} placeholder="Nhập tag và Enter" className="flex-1 px-4 h-11 rounded-xl bg-white dark:bg-zinc-950 border outline-none focus:ring-2 focus:ring-[#0042B2]/30"/>
-              <motion.button whileTap={{scale:0.9}} onClick={addTag} className="w-11 h-11 rounded-xl text-white flex items-center justify-center" style={{background:'#0042B2'}}><FiPlus size={20}/></motion.button>
+              <motion.button
+                whileTap={{scale:0.9}}
+                onTouchStart={() => navigator.vibrate?.(5)}
+                type="button"
+                onClick={addTag}
+                className="w-11 h-11 rounded-xl text-white flex items-center justify-center"
+                style={{background:'#0042B2'}}
+              >
+                <FiPlus size={20}/>
+              </motion.button>
             </div>
-            <div className="flex flex-wrap gap-2">{form.tags.map(tag=><motion.div key={tag} initial={{scale:0.8,opacity:0}} animate={{scale:1,opacity:1}} className="flex items-center gap-1.5 pl-3 pr-2 h-7 rounded-full text-[13px] font-medium" style={{background:'rgba(0,66,178,0.1)',color:'#0042B2'}}>{tag}<button onClick={()=>removeTag(tag)} className="hover:bg-[#0042B2]/20 rounded-full p-0.5"><FiX size={14}/></button></motion.div>)}</div>
+            <div className="flex flex-wrap gap-2">
+              {form.tags.map(tag=>
+                <motion.div key={tag} initial={{scale:0.8,opacity:0}} animate={{scale:1,opacity:1}} className="flex items-center gap-1.5 pl-3 pr-2 h-7 rounded-full text-[13px] font-medium" style={{background:'rgba(0,66,178,0.1)',color:'#0042B2'}}>
+                  {tag}
+                  <button type="button" onClick={()=>removeTag(tag)} className="hover:bg-[#0042B2]/20 rounded-full p-0.5">
+                    <FiX size={14}/>
+                  </button>
+                </motion.div>
+              )}
+            </div>
           </div>
 
           {task.type==="task" && (
             <div className="flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-zinc-950 border">
-              <div><p className="text-[14px] font-semibold">Làm việc từ xa</p><p className="text-[12px] text-zinc-500 mt-0.5">Cho phép làm online</p></div>
-              <button onClick={()=>setForm({...form,isRemote:!form.isRemote})} className={`relative w-12 h-[28px] rounded-full transition-all ${form.isRemote?"":"bg-zinc-300 dark:bg-zinc-700"}`} style={{background:form.isRemote?'#0042B2':undefined}}><div className={`absolute top-[3px] w-[22px] h-[22px] bg-white rounded-full shadow-md transition-all ${form.isRemote?"left-[22px]":"left-[3px]"}`}/></button>
+              <div>
+                <p className="text-[14px] font-semibold">Làm việc từ xa</p>
+                <p className="text-[12px] text-zinc-500 mt-0.5">Cho phép làm online</p>
+              </div>
+              <button
+                type="button"
+                onClick={()=>setForm({...form,isRemote:!form.isRemote})}
+                className={`relative w-12 h-[28px] rounded-full transition-all ${form.isRemote?"":"bg-zinc-300 dark:bg-zinc-700"}`}
+                style={{background:form.isRemote?'#0042B2':undefined}}
+              >
+                <div className={`absolute top-[3px] w-[22px] h-[22px] bg-white rounded-full shadow-md transition-all ${form.isRemote?"left-[22px]":"left-[3px]"}`}/>
+              </button>
             </div>
           )}
         </motion.div>
       </div>
       {showSuccess && (
         <div className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center">
-          <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-64 h-64"/>
+       <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-64 h-64"/>
         </div>
       )}
     </>
@@ -205,14 +268,14 @@ export default function EditTaskPage() {
 
 function EditSkeleton() {
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black flex-col">
+    <div className="min-h-screen bg-background flex-col">
       <div className="sticky top-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b px-4 h-14 flex items-center justify-between">
         <div className="w-9 h-9 rounded-xl bg-zinc-200 dark:bg-zinc-800 animate-pulse"/>
         <div className="h-5 w-28 bg-zinc-200 dark:bg-zinc-800 rounded-lg animate-pulse"/>
         <div className="w-16 h-9 rounded-xl bg-zinc-200 dark:bg-zinc-800 animate-pulse"/>
       </div>
       <div className="flex-1 flex items-center justify-center">
-        <LottiePlayer animationData={loadingPull} loop autoplay className="w-20 h-20"/>
+       <LottiePlayer animationData={L.loadingPull} loop autoplay className="w-20 h-20"/>
       </div>
     </div>
   );
