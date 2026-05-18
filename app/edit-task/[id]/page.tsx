@@ -21,7 +21,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
 import * as L from "@/components/illustrations";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
-import { Auth, Firestore } from "firebase/auth";
+import { Auth } from "firebase/auth";
+import { Firestore } from "firebase/firestore"; // ĐÚNG
 
 const vibrate = (pattern: number | number[]) => {
   if (typeof navigator!== "undefined" && "vibrate" in navigator) {
