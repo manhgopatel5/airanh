@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FiArrowLeft, FiPhone, FiMail, FiUser, FiShield, FiLock, FiAlertTriangle } from "react-icons/fi";
+import { FiArrowLeft, FiPhone, FiMail, FiUser, FiShield, FiAlertTriangle } from "react-icons/fi";
 import { motion } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
 import * as L from "@/components/illustrations";
