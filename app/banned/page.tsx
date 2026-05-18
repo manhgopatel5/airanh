@@ -8,7 +8,7 @@ import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { doc, getDoc, addDoc, collection, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 import { toast, Toaster } from "sonner";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import * as L from "@/components/illustrations";
 
 type UserData = {
   banned: boolean;
@@ -51,6 +51,7 @@ export default function BannedPage() {
   const handleAppeal = async () => {
     if (!user ||!appealText.trim() || appealText.trim().length < 20) {
       toast.error("Nội dung kháng cáo phải ít nhất 20 ký tự");
+      navigator.vibrate?.(15);
       return;
     }
     setSubmitting(true);
@@ -72,6 +73,7 @@ export default function BannedPage() {
       navigator.vibrate?.([10, 20, 10]);
     } catch (err) {
       toast.error("Gửi kháng cáo thất bại");
+      navigator.vibrate?.(15);
     } finally {
       setSubmitting(false);
     }
@@ -81,7 +83,7 @@ export default function BannedPage() {
     return (
       <div className="min-h-screen grid place-items-center bg-[#F2F2F7] dark:bg-black">
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-          <LottiePlayer animationData={loadingPull} loop play className="w-20 h-20" />
+          <LottiePlayer animationData={L.loadingPull} loop autoplay className="w-20 h-20" />
         </motion.div>
       </div>
     );
@@ -104,12 +106,12 @@ export default function BannedPage() {
 
       <motion.div initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="relative w-full max-w-[420px]">
         {/* Card */}
-        <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl rounded-[32px] shadow-2xl border-black/5 dark:border-white/10 overflow-hidden">
+        <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl rounded-[32px] shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden">
           {/* Header */}
           <div className="relative h-48 bg-gradient-to-br from-red-500 via-orange-500 to-amber-500 overflow-hidden">
             <div className="absolute inset-0 bg-black/10" />
-            <motion.div animate={{ rotate: 360 }} transition={{ duration: 30, repeat: Infinity, ease: "linear" }} className="absolute -top-20 -right-20 w-40 h-40 border-white/20 rounded-full" />
-            <div className="relative h-full flex-col items-center justify-center text-white p-8">
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 30, repeat: Infinity, ease: "linear" }} className="absolute -top-20 -right-20 w-40 h-40 border border-white/20 rounded-full" />
+            <div className="relative h-full flex flex-col items-center justify-center text-white p-8">
               <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", delay: 0.2, stiffness: 200 }} className="w-20 h-20 bg-white/20 backdrop-blur-xl rounded-full grid place-items-center mb-4 ring-4 ring-white/20">
                 <Ban size={40} strokeWidth={2} />
               </motion.div>
@@ -198,7 +200,6 @@ export default function BannedPage() {
                     <div className="absolute bottom-3 right-3 flex items-center gap-2">
                       <span className={`text-xs font-medium px-2 py-1 rounded-full ${appealText.length < 20? "bg-amber-500/15 text-amber-600" : "bg-green-500/15 text-green-600"}`}>{appealText.length < 20? `${20 - appealText.length}` : "✓"}</span>
                     </div>
-                  </div>
                   <div className="flex gap-2">
                     <button onClick={() => setShowAppealForm(false)} className="flex-1 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-medium active:scale-98 transition-all">Hủy</button>
                     <motion.button whileTap={{ scale: 0.98 }} onClick={handleAppeal} disabled={submitting || appealText.length < 20} className="flex-1 h-11 rounded-2xl bg-[#0a84ff] text-white font-semibold disabled:opacity-40 flex items-center justify-center gap-1.5 shadow-lg shadow-[#0a84ff]/25">
