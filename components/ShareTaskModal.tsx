@@ -1,17 +1,14 @@
 "use client";
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiX, FiSearch, FiCheck } from "react-icons/fi";
 import { Task } from "@/types/task";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
 import { collection, query, where, getDocs, documentId, addDoc, serverTimestamp, doc, setDoc } from "firebase/firestore";
-import { toast } from "sonner";
+import { toast, Toaster } from "sonner";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
-import searching from "@/public/lotties/huha-searching.json";
-import celebrate from "@/public/lotties/huha-celebrate.json";
+import * as L from "@/components/illustrations";
 
 type Props = { task: Task; onClose: () => void; };
 type Friend = { id: string; name: string; username: string; avatar: string; online: boolean; };
@@ -61,17 +58,17 @@ export default function ShareTaskModal({ task, onClose }: Props) {
     return () => { mounted = false; };
   }, [user?.uid]);
 
-  const filtered = friends.filter(f =>
+  const filtered = useMemo(() => friends.filter(f =>
     f.name.toLowerCase().includes(search.toLowerCase()) ||
     f.username.toLowerCase().includes(search.toLowerCase())
-  );
+  ), [friends, search]);
 
-  const toggle = (id: string) => {
+  const toggle = useCallback((id: string) => {
     navigator.vibrate?.(5);
     setSelected(p => p.includes(id)? p.filter(i => i!== id) : [...p, id]);
-  };
+  }, []);
 
-  const handleSend = async () => {
+  const handleSend = useCallback(async () => {
     if (selected.length === 0 ||!user?.uid) return;
     setSending(true);
     try {
@@ -96,39 +93,42 @@ export default function ShareTaskModal({ task, onClose }: Props) {
       setShowSuccess(true);
       navigator.vibrate?.([10,20,10]);
       setTimeout(() => { onClose(); }, 1200);
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error("Gửi thất bại");
+      navigator.vibrate?.(15);
       setSending(false);
     }
-  };
+  }, [selected, user, task, onClose]);
 
   return (
     <AnimatePresence>
       <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
         className="fixed inset-0 z-[999] bg-black/60 backdrop-blur-md" onClick={onClose}>
+        <Toaster richColors position="top-center" />
 
         {/* Success overlay */}
         <AnimatePresence>
           {showSuccess && (
             <motion.div initial={{opacity:0,scale:0.8}} animate={{opacity:1,scale:1}} exit={{opacity:0}}
               className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-              <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-[280px] h-[280px]" />
+              <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w- h-" />
             </motion.div>
           )}
         </AnimatePresence>
 
         <motion.div initial={{y:"100%"}} animate={{y:0}} exit={{y:"100%"}}
           transition={{type:"spring",damping:28,stiffness:320}}
-          className="fixed inset-x-0 bottom-0 max-h-[88vh] bg-white dark:bg-zinc-950 rounded-t-[28px] flex flex-col shadow-2xl"
+          className="fixed inset-x-0 bottom-0 max-h- bg-white dark:bg-zinc-950 rounded-t- flex flex-col shadow-2xl"
           onClick={e => e.stopPropagation()}>
 
           {/* Header */}
           <div className="flex items-center justify-between px-5 pt-5 pb-3">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8">
-                <LottiePlayer animationData={celebrate} autoplay loop className="w-8 h-8" />
+                <LottiePlayer animationData={L.celebrate} autoplay loop className="w-8 h-8" />
               </div>
-              <h3 className="text-[22px] font-extrabold tracking-tight">Chia sẻ</h3>
+              <h3 className="text- font-extrabold tracking-tight">Chia sẻ</h3>
             </div>
             <button onClick={onClose} className="w-9 h-9 grid place-items-center rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-95">
               <FiX size={20} className="text-zinc-500" />
@@ -140,20 +140,20 @@ export default function ShareTaskModal({ task, onClose }: Props) {
             <div className="relative">
               <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
               <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Tìm bạn bè..."
-                className="w-full h-12 pl-10 pr-4 rounded-2xl bg-zinc-100 dark:bg-zinc-900 text-[15px] font-medium outline-none focus:ring-2 focus:ring-[#0042B2]/30 border-transparent focus:border-[#0042B2]/20" />
+                className="w-full h-12 pl-10 pr-4 rounded-2xl bg-zinc-100 dark:bg-zinc-900 text- font-medium outline-none focus:ring-2 focus:ring-[#0042B2]/30 border-transparent focus:border-[#0042B2]/20" />
             </div>
           </div>
 
           {/* Task preview - HUHA style */}
           <div className="mx-5 mb-3 p-3.5 rounded-2xl border" style={{background:'rgba(0,66,178,0.06)',borderColor:'rgba(0,66,178,0.15)'}}>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-lg text-white" style={{background:'#0042B2'}}>
+              <span className="text- font-bold px-2 py-0.5 rounded-lg text-white" style={{background:'#0042B2'}}>
                 {task.type === "task"? "TASK" : "PLAN"}
               </span>
-              <p className="font-bold text-[15px] line-clamp-1 flex-1">{task.title}</p>
+              <p className="font-bold text- line-clamp-1 flex-1">{task.title}</p>
             </div>
             {'price' in task && (task as any).price > 0 && (
-              <p className="text-[13px] font-extrabold mt-1" style={{color:'#00C853'}}>
+              <p className="text- font-extrabold mt-1" style={{color:'#00C853'}}>
                 {((task as any).price).toLocaleString("vi-VN")}đ
               </p>
             )}
@@ -163,13 +163,13 @@ export default function ShareTaskModal({ task, onClose }: Props) {
           <div className="flex-1 overflow-y-auto px-2 pb-2">
             {loading? (
               <div className="flex flex-col items-center justify-center py-16">
-                <LottiePlayer animationData={loadingPull} autoplay loop className="w-20 h-20" />
+                <LottiePlayer animationData={L.loadingPull} autoplay loop className="w-20 h-20" />
                 <p className="text-sm text-zinc-500 mt-2">Đang tải bạn bè...</p>
               </div>
             ) : filtered.length === 0? (
               <div className="flex flex-col items-center justify-center py-12">
-                <LottiePlayer animationData={searching} autoplay loop className="w-[140px] h-[140px]" />
-                <p className="text-[15px] font-medium text-zinc-500 mt-2">
+                <LottiePlayer animationData={L.searching} autoplay loop className="w- h-" />
+                <p className="text- font-medium text-zinc-500 mt-2">
                   {search? "Không tìm thấy" : "Chưa có bạn bè"}
                 </p>
               </div>
@@ -189,7 +189,7 @@ export default function ShareTaskModal({ task, onClose }: Props) {
                         {f.online && <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#00C853] rounded-full border-2 border-white dark:border-zinc-950" />}
                       </div>
                       <div className="flex-1 text-left min-w-0">
-                        <p className="font-semibold text-[15px] truncate">{f.name}</p>
+                        <p className="font-semibold text- truncate">{f.name}</p>
                         <p className="text-xs text-zinc-500">{f.online? "Đang hoạt động" : "Ngoại tuyến"}</p>
                       </div>
                       <div className={`w-6 h-6 rounded-full grid place-items-center border-2 transition-all ${sel? 'bg-[#0042B2] border-[#0042B2] scale-110' : 'border-zinc-300 dark:border-zinc-700'}`}>
@@ -208,10 +208,10 @@ export default function ShareTaskModal({ task, onClose }: Props) {
               <motion.div initial={{y:20,opacity:0}} animate={{y:0,opacity:1}} exit={{y:20,opacity:0}}
                 className="p-4 pt-3 border-t border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl">
                 <button onClick={handleSend} disabled={sending}
-                  className="w-full h-[52px] rounded-2xl font-extrabold text-[16px] text-white active:scale-[0.98] transition-all disabled:opacity-70 flex items-center justify-center gap-2"
+                  className="w-full h- rounded-2xl font-extrabold text- text-white active:scale-[0.98] transition-all disabled:opacity-70 flex items-center justify-center gap-2"
                   style={{background:'linear-gradient(135deg,#0042B2,#0066FF)', boxShadow:'0 10px 24px -8px rgba(0,66,178,0.4)'}}>
                   {sending? (
-                    <LottiePlayer animationData={loadingPull} autoplay loop className="w-7 h-7" />
+                    <LottiePlayer animationData={L.loadingPull} autoplay loop className="w-7 h-7" />
                   ) : (
                     <>Gửi cho {selected.length} người</>
                   )}
