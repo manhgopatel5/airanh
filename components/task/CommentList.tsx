@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useRef, useEffect } from "react";
 import { FiMoreHorizontal } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
@@ -9,7 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { cn } from "@/lib/utils";
 import type { TaskComment } from "@/types/task";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import celebrate from "@/public/lotties/huha-celebrate.json";
+import * as L from "@/components/illustrations";
 
 type Props = {
   comment: TaskComment;
@@ -51,6 +50,8 @@ export function CommentList({ comment: c, replies, currentUserId, taskOwnerId, o
     return `${Math.floor(seconds / 86400)} ngày`;
   };
 
+  const vibrate = (ms = 5) => { if ("vibrate" in navigator) navigator.vibrate(ms); };
+
   return (
     <motion.div layout initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,scale:0.95}} className="text- group">
       <div className="flex gap-2.5">
@@ -84,92 +85,92 @@ export function CommentList({ comment: c, replies, currentUserId, taskOwnerId, o
             )}
           </div>
 
-{!c.deleted &&!isEditing && (
-  <div className="flex items-center gap-4 mt-1.5 px-0 text- text-zinc-500">
-    <span>{timeAgo(c.createdAt)}</span>
+          {!c.deleted &&!isEditing && (
+            <div className="flex items-center gap-4 mt-1.5 px-0 text- text-zinc-500">
+              <span>{timeAgo(c.createdAt)}</span>
 
-    <motion.button
-      whileTap={{ scale: 0.82 }}
-      onClick={() => {
-        onLike(c.id);
-        navigator.vibrate?.(5);
-      }}
-      disabled={likingComments.has(c.id)}
-      className={cn(
-        "relative font-semibold hover:underline disabled:opacity-50 transition-all duration-200",
-        liked && "text-red-500"
-      )}
-    >
-      <AnimatePresence>
-        {liked && (
-          <motion.div
-            initial={{ scale: 0, opacity: 0, y: 6 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{
-              type: "spring",
-              stiffness: 500,
-              damping: 18,
-            }}
-            className="absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none z-10"
-          >
-            <LottiePlayer
-              animationData={celebrate}
-              autoplay
-              loop={false}
-              className="w-12 h-12"
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+              <motion.button
+                whileTap={{ scale: 0.82 }}
+                onClick={() => {
+                  onLike(c.id);
+                  vibrate();
+                }}
+                disabled={likingComments.has(c.id)}
+                className={cn(
+                  "relative font-semibold hover:underline disabled:opacity-50 transition-all duration-200",
+                  liked && "text-red-500"
+                )}
+              >
+                <AnimatePresence>
+                  {liked && (
+                    <motion.div
+                      initial={{ scale: 0, opacity: 0, y: 6 }}
+                      animate={{ scale: 1, opacity: 1, y: 0 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 18,
+                      }}
+                      className="absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none z-10"
+                    >
+                      <LottiePlayer
+                        animationData={L.celebrate}
+                        autoplay
+                        loop={false}
+                        className="w-12 h-12"
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-      <span className="relative z-">
-        {liked? "Đã thích" : "Thích"}
-      </span>
-    </motion.button>
+                <span className="relative z-">
+                  {liked? "Đã thích" : "Thích"}
+                </span>
+              </motion.button>
 
-    <button
-      onClick={() => onReply(c)}
-      className="font-semibold hover:underline transition-colors hover:text-[#0042B2]"
-    >
-      Trả lời
-    </button>
+              <button
+                onClick={() => { vibrate(); onReply(c); }}
+                className="font-semibold hover:underline transition-colors hover:text-[#0042B2]"
+              >
+                Trả lời
+              </button>
 
-    {isOwnComment && (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button className="p-1 -m-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-full transition-colors">
-            <FiMoreHorizontal
-              size={16}
-              className="text-zinc-500"
-            />
-          </button>
-        </DropdownMenuTrigger>
+              {isOwnComment && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="p-1 -m-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-full transition-colors">
+                      <FiMoreHorizontal
+                        size={16}
+                        className="text-zinc-500"
+                      />
+                    </button>
+                  </DropdownMenuTrigger>
 
-        <DropdownMenuContent
-          align="end"
-          side="top"
-          sideOffset={4}
-          className="rounded-2xl min-w-[140px] p-1.5 bg-white dark:bg-zinc-950 shadow-xl border border-zinc-200 dark:border-zinc-900"
-        >
-          <DropdownMenuItem
-            onClick={() => onEdit(c.id)}
-            className="px-3 py-2 text- font-medium rounded-xl cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900"
-          >
-            Chỉnh sửa
-          </DropdownMenuItem>
+                  <DropdownMenuContent
+                    align="end"
+                    side="top"
+                    sideOffset={4}
+                    className="rounded-2xl min-w- p-1.5 bg-white dark:bg-zinc-950 shadow-xl border border-zinc-200 dark:border-zinc-900"
+                  >
+                    <DropdownMenuItem
+                      onClick={() => { vibrate(); onEdit(c.id); }}
+                      className="px-3 py-2 text- font-medium rounded-xl cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                    >
+                      Chỉnh sửa
+                    </DropdownMenuItem>
 
-          <DropdownMenuItem
-            onClick={() => onDelete(c.id)}
-            className="px-3 py-2 text- font-medium rounded-xl cursor-pointer text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
-          >
-            Xoá
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    )}
-  </div>
-)}
+                    <DropdownMenuItem
+                      onClick={() => { vibrate(10); onDelete(c.id); }}
+                      className="px-3 py-2 text- font-medium rounded-xl cursor-pointer text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                    >
+                      Xoá
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          )}
 
           <AnimatePresence>
             {displayReplies.map((r) => (
@@ -189,7 +190,7 @@ export function CommentList({ comment: c, replies, currentUserId, taskOwnerId, o
           </AnimatePresence>
 
           {replies.length > 1 &&!showAllReplies && (
-            <button onClick={()=>setShowAllReplies(true)} className="mt-2 text- font-semibold text-zinc-500 hover:text-[#0042B2] transition-colors">
+            <button onClick={()=>{setShowAllReplies(true); vibrate();}} className="mt-2 text- font-semibold text-zinc-500 hover:text-[#0042B2] transition-colors">
               — Xem {replies.length - 1} trả lời
             </button>
           )}
