@@ -648,7 +648,10 @@ export default function CreatePlanPro() {
 const [cover, setCover] =
   useState<string | null>(null);
 
-const [ setCoverFile ] = useState<File | null>(
+const [
+  _coverFile,
+  setCoverFile,
+] = useState<File | null>(
   null
 );
 
