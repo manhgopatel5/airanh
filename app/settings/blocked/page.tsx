@@ -9,10 +9,16 @@ import { ChevronLeft, UserX, Search, ShieldOff } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import celebrate from "@/public/lotties/huha-celebrate.json";
+import * as L from "@/components/illustrations";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 
 type BlockedUser = { uid: string; name: string; avatar: string; blockedAt: any; };
+
+const vibrate = (pattern: number | number[]) => {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+    try { navigator.vibrate(pattern); } catch {}
+  }
+};
 
 export default function BlockedPage() {
   const db = getFirebaseDB();
@@ -46,7 +52,7 @@ export default function BlockedPage() {
       setBlocked(prev => prev.filter(u => u.uid !== uid));
       setUnblocking(null);
       toast.success("Đã bỏ chặn");
-      navigator.vibrate?.(10);
+      vibrate(10);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 1000);
     }, 400);
@@ -60,7 +66,7 @@ export default function BlockedPage() {
       <div className="min-h-screen bg-zinc-50 dark:bg-black pb-28">
         <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b border-zinc-200/50 dark:border-zinc-900">
           <div className="max-w-xl mx-auto px-4 h-14 flex items-center gap-3">
-            <motion.button whileTap={{ scale: 0.9 }} onClick={() => router.back()} className="p-2 -ml-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900">
+            <motion.button whileTap={{ scale: 0.9 }} onTouchStart={() => vibrate(5)} onClick={() => router.back()} type="button" className="p-2 -ml-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900">
               <ChevronLeft className="w-6 h-6" />
             </motion.button>
             <div className="flex items-center gap-2.5">
@@ -73,21 +79,21 @@ export default function BlockedPage() {
         </div>
 
         <div className="max-w-xl mx-auto px-4 py-5">
-          <div className="flex items-center gap-3 px-4 h-12 rounded-2xl bg-white dark:bg-zinc-950 border-zinc-200/60 dark:border-zinc-900 mb-4 shadow-sm">
+          <div className="flex items-center gap-3 px-4 h-12 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200/60 dark:border-zinc-900 mb-4 shadow-sm">
             <Search className="w-5 h-5 text-zinc-400" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm kiếm..." className="flex-1 bg-transparent outline-none placeholder:text-zinc-400" />
           </div>
 
           <AnimatePresence mode="popLayout">
-            {filtered.length === 0? (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-900 p-12 text-center">
+            {filtered.length === 0 ? (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-200/60 dark:border-zinc-900 p-12 text-center">
                 <UserX className="w-12 h-12 text-zinc-300 dark:text-zinc-700 mx-auto mb-3" />
-                <p className="text-zinc-500">{search? "Không tìm thấy" : "Chưa chặn ai"}</p>
+                <p className="text-zinc-500">{search ? "Không tìm thấy" : "Chưa chặn ai"}</p>
               </motion.div>
             ) : (
               <div className="space-y-3">
                 {filtered.map((u, idx) => (
-                  <motion.div key={u.uid} layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: unblocking === u.uid? 0.5 : 1, y: 0, scale: unblocking === u.uid? 0.98 : 1 }} exit={{ opacity: 0, x: -100 }} transition={{ delay: idx * 0.03 }} className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-900 p-4 shadow-sm">
+                  <motion.div key={u.uid} layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: unblocking === u.uid ? 0.5 : 1, y: 0, scale: unblocking === u.uid ? 0.98 : 1 }} exit={{ opacity: 0, x: -100 }} transition={{ delay: idx * 0.03 }} className="bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-200/60 dark:border-zinc-900 p-4 shadow-sm">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3.5 min-w-0 flex-1">
                         <UserAvatar src={u.avatar} name={u.name} size={48} />
@@ -95,8 +101,7 @@ export default function BlockedPage() {
                           <p className="font-bold truncate">{u.name}</p>
                           <p className="text-xs text-zinc-500 mt-0.5">Chặn từ {new Date(u.blockedAt).toLocaleDateString("vi-VN")}</p>
                         </div>
-                      </div>
-                      <motion.button whileTap={{ scale: 0.95 }} onClick={() => unblock(u.uid)} disabled={!!unblocking} className="px-4 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-900 font-semibold text-sm active:scale-95 disabled:opacity-50 shrink-0">
+                      <motion.button whileTap={{ scale: 0.95 }} onTouchStart={() => vibrate(5)} onClick={() => unblock(u.uid)} disabled={!!unblocking} type="button" className="px-4 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-900 font-semibold text-sm active:scale-95 disabled:opacity-50 shrink-0">
                         Bỏ chặn
                       </motion.button>
                     </div>
@@ -110,7 +115,7 @@ export default function BlockedPage() {
         <AnimatePresence>
           {showSuccess && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
-              <LottiePlayer animationData={celebrate} autoplay loop={false} className="w-24 h-24" />
+              <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-24 h-24" />
             </motion.div>
           )}
         </AnimatePresence>
