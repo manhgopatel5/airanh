@@ -195,12 +195,32 @@ export default function BannedPage() {
                       <XCircle size={16} className="text-zinc-500" />
                     </button>
                   </div>
-                  <div className="relative">
-                    <textarea value={appealText} onChange={(e) => setAppealText(e.target.value)} placeholder="Giải thích chi tiết lý do kháng cáo..." className="w-full h-28 px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 border-2 border-transparent focus:border-[#0a84ff]/50 rounded-3xl resize-none outline-none text-sm leading-relaxed placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 transition-all" maxLength={1000} autoFocus />
-                    <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                      <span className={`text-xs font-medium px-2 py-1 rounded-full ${appealText.length < 20? "bg-amber-500/15 text-amber-600" : "bg-green-500/15 text-green-600"}`}>{appealText.length < 20? `${20 - appealText.length}` : "✓"}</span>
-                    </div>
-                  <div className="flex gap-2">
+              <div className="relative">
+  <textarea
+    value={appealText}
+    onChange={(e) => setAppealText(e.target.value)}
+    placeholder="Giải thích chi tiết lý do kháng cáo..."
+    className="w-full h-28 px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 border-2 border-transparent focus:border-[#0a84ff]/50 rounded-3xl resize-none outline-none text-sm leading-relaxed placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 transition-all"
+    maxLength={1000}
+    autoFocus
+  />
+
+  <div className="absolute bottom-3 right-3 flex items-center gap-2">
+    <span
+      className={`text-xs font-medium px-2 py-1 rounded-full ${
+        appealText.length < 20
+          ? "bg-amber-500/15 text-amber-600"
+          : "bg-green-500/15 text-green-600"
+      }`}
+    >
+      {appealText.length < 20
+        ? `${20 - appealText.length}`
+        : "✓"}
+    </span>
+  </div>
+</div>
+
+<div className="flex gap-2">
                     <button onClick={() => setShowAppealForm(false)} className="flex-1 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-medium active:scale-98 transition-all">Hủy</button>
                     <motion.button whileTap={{ scale: 0.98 }} onClick={handleAppeal} disabled={submitting || appealText.length < 20} className="flex-1 h-11 rounded-2xl bg-[#0a84ff] text-white font-semibold disabled:opacity-40 flex items-center justify-center gap-1.5 shadow-lg shadow-[#0a84ff]/25">
                       {submitting? <Loader2 size={16} className="animate-spin" /> : <><Send size={16} />Gửi</>}
