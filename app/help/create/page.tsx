@@ -4,7 +4,13 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiBriefcase, FiCalendar, FiChevronDown, FiArrowLeft, FiZap, FiUsers, FiDollarSign, FiClock, FiMapPin, FiHelpCircle, FiTrendingUp } from "react-icons/fi";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import * as L from "@/components/illustrations";
+
+const vibrate = (pattern: number | number[]) => {
+  if (typeof navigator!== "undefined" && "vibrate" in navigator) {
+    try { navigator.vibrate(pattern); } catch {}
+  }
+};
 
 const CASES = [
   { type: "task", title: "Shipper giao hàng gấp", desc: "50k • Q1 → Q7 • 2h", icon: FiBriefcase, color: "#0042B2", bg: "from-[#0042B2]/10 to-[#1A5FFF]/10" },
@@ -35,7 +41,7 @@ export default function CreateHelpPage() {
       {/* Header */}
       <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b border-zinc-200/50 dark:border-zinc-900">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
-          <Link href="/create" className="w-9 h-9 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 flex items-center justify-center -ml-1 active:scale-95 transition-all">
+          <Link href="/create" onTouchStart={() => vibrate(5)} className="w-9 h-9 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 flex items-center justify-center -ml-1 active:scale-95 transition-all">
             <FiArrowLeft size={20} className="text-zinc-700 dark:text-zinc-300" />
           </Link>
           <div>
@@ -46,34 +52,35 @@ export default function CreateHelpPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 pb-24">
-<motion.div
-  initial={{ opacity: 0, scale: 0.9 }}
-  animate={{ opacity: 1, scale: 1 }}
-  className="flex flex-col items-center justify-center py-6"
->
-  <LottiePlayer
-    animationData={loadingPull}
-    loop
-    autoplay
-    className="w-28 h-28"
-  />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center justify-center py-6"
+        >
+          <LottiePlayer
+            animationData={L.loadingPull}
+            loop
+            autoplay
+            className="w-28 h-28"
+          />
 
-  <h2 className="text-xl font-black mt-2 text-zinc-900 dark:text-white">
-    Chưa biết chọn gì?
-  </h2>
+          <h2 className="text-xl font-black mt-2 text-zinc-900 dark:text-white">
+            Chưa biết chọn gì?
+          </h2>
 
-  <p className="text-sm text-zinc-500 text-center mt-1 max-w-sm">
-    So sánh nhanh giữa Công việc và Kế hoạch để đăng đúng loại bài phù hợp nhất.
-  </p>
-</motion.div>
+          <p className="text-sm text-zinc-500 text-center mt-1 max-w-sm">
+            So sánh nhanh giữa Công việc và Kế hoạch để đăng đúng loại bài phù hợp nhất.
+          </p>
+        </motion.div>
+
         {/* Tabs */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-          <div className="p-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl grid-cols-2 gap-1">
+          <div className="p-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl grid grid-cols-2 gap-1">
             {[
               { id: "compare", label: "So sánh", icon: FiHelpCircle },
               { id: "cases", label: "Ví dụ thực tế", icon: FiTrendingUp },
             ].map((tab) => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`h-10 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${activeTab === tab.id? "bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white shadow-sm" : "text-zinc-500 hover:text-zinc-700"}`}>
+              <button key={tab.id} onTouchStart={() => vibrate(5)} onClick={() => setActiveTab(tab.id as any)} type="button" className={`h-10 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${activeTab === tab.id? "bg-white dark:bg-zinc-950 text-zinc-900 dark:text-white shadow-sm" : "text-zinc-500 hover:text-zinc-700"}`}>
                 <tab.icon size={16} />
                 {tab.label}
               </button>
@@ -85,7 +92,7 @@ export default function CreateHelpPage() {
           {activeTab === "compare"? (
             <motion.div key="compare" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }} className="space-y-5">
               {/* Comparison Table */}
-              <div className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-200/60 dark:border-zinc-800 shadow-sm overflow-hidden">
                 <div className="grid grid-cols-3 gap-4 p-4 bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-900">
                   <div className="text-xs font-bold text-zinc-500 uppercase tracking-wider">So sánh</div>
                   <div className="flex items-center gap-1.5 text-sm font-black text-[#0042B2]"><FiBriefcase size={16} />Công việc</div>
@@ -106,8 +113,8 @@ export default function CreateHelpPage() {
               {/* Steps */}
               <div className="space-y-3">
                 {(["task", "plan"] as const).map((type) => (
-                  <motion.div key={type} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: type === "plan"? 0.1 : 0 }} className="bg-white dark:bg-zinc-950 rounded-3xl border-zinc-200/60 dark:border-zinc-800 shadow-sm overflow-hidden">
-                    <button onClick={() => setOpenStep(openStep === type? null : type)} className="w-full p-5 flex items-center justify-between hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors">
+                  <motion.div key={type} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: type === "plan"? 0.1 : 0 }} className="bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-200/60 dark:border-zinc-800 shadow-sm overflow-hidden">
+                    <button onTouchStart={() => vibrate(5)} onClick={() => setOpenStep(openStep === type? null : type)} type="button" className="w-full p-5 flex items-center justify-between hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors">
                       <div className="flex items-center gap-3.5">
                         <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${type === "task"? "bg-[#E8F1FF] dark:bg-[#0042B2]/20" : "bg-[#E8F5E9] dark:bg-[#00C853]/20"}`}>
                           {type === "task"? <FiBriefcase className="text-[#0042B2]" size={20} /> : <FiCalendar className="text-[#00C853]" size={20} />}
@@ -144,7 +151,7 @@ export default function CreateHelpPage() {
               </div>
               {CASES.map((item, idx) => (
                 <motion.div key={idx} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}>
-                  <Link href={`/create/${item.type}?template=${idx}`} className="block group">
+                  <Link href={`/create/${item.type}?template=${idx}`} onTouchStart={() => vibrate(5)} className="block group">
                     <div className="p-5 rounded-3xl bg-white dark:bg-zinc-950 border-2 border-zinc-200/60 dark:border-zinc-800 hover:border-transparent hover:shadow-xl hover:shadow-black/5 active:scale-[0.98] transition-all">
                       <div className="flex items-start gap-4">
                         <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${item.bg} flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0`}>
@@ -165,7 +172,7 @@ export default function CreateHelpPage() {
               ))}
 
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="pt-4">
-                <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900 flex gap-3">
+                <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 flex gap-3">
                   <FiZap className="text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" size={18} />
                   <div>
                     <p className="text-sm font-bold text-amber-900 dark:text-amber-200">Mẹo</p>
@@ -179,14 +186,14 @@ export default function CreateHelpPage() {
 
         {/* CTA */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="mt-8 grid grid-cols-2 gap-3">
-          <Link href="/create/task" className="group relative overflow-hidden">
+          <Link href="/create/task" onTouchStart={() => vibrate(5)} className="group relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] rounded-2xl" />
             <div className="relative h-14 rounded-2xl flex items-center justify-center gap-2 text-white font-bold shadow-lg shadow-[#0042B2]/25 group-active:scale-95 transition-transform">
               <FiBriefcase size={18} />
               <span>Tạo Công việc</span>
             </div>
           </Link>
-          <Link href="/create/plan" className="group relative overflow-hidden">
+          <Link href="/create/plan" onTouchStart={() => vibrate(5)} className="group relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-[#00C853] to-[#00E676] rounded-2xl" />
             <div className="relative h-14 rounded-2xl flex items-center justify-center gap-2 text-white font-bold shadow-lg shadow-[#00C853]/25 group-active:scale-95 transition-transform">
               <FiCalendar size={18} />
