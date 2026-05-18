@@ -152,7 +152,7 @@ export default function EmptyState({ tab, type = "task" }: Props) {
   const theme = THEME[type];
   const pool = CONTENT_POOL[type][tab];
 
-  const [content][setContent] = useState(() => ({
+ const [content, setContent] = useState(() => ({
     title: pool.titles[0],
     desc: pool.descs[0],
     suggests: pool.suggests.slice(0, 4),
