@@ -23,7 +23,16 @@ import LottiePlayer from "@/components/ui/LottiePlayer";
 import * as L from "@/components/illustrations";
 
 import { useAppStore } from "@/store/app";
-import { Task, TaskItem, PlanItem, isTask, isPlan } from "@/types/task";
+import type {
+  Task,
+  TaskItem,
+  PlanItem,
+  BaseFeedItem,
+  TaskListItem,
+  PlanListItem,
+} from "@/types/task";
+
+import { isTask, isPlan } from "@/types/task";
 
 import { FiMapPin, FiRefreshCw } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
@@ -34,7 +43,8 @@ import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 20;
 type TabId = "hot" | "near" | "friends" | "new";
-
+type FeedTask = BaseFeedItem &
+  Partial<TaskListItem & PlanListItem>;
 const pageVariants = {
   initial: { opacity: 0, y: 8 },
   animate: { opacity: 1, y: 0 },
@@ -53,14 +63,14 @@ export default function Home() {
   const isPlanMode = mode === "plan";
 
   const [activeTab, setActiveTab] = useState<TabId>("hot");
-  const [allItems, setAllItems] = useState<Task[]>([]);
+ const [allItems, setAllItems] = useState<FeedTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [shareTask, setShareTask] = useState<Task | null>(null);
+ const handleShare = useCallback((task: FeedTask) => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showCelebrate, setShowCelebrate] = useState(false);
 
@@ -71,13 +81,17 @@ export default function Home() {
   const activeColorClass = useMemo(() => (isPlanMode? "text-accent" : "text-primary"), [isPlanMode]);
   const activeBgClass = useMemo(() => (isPlanMode? "bg-accent" : "bg-primary"), [isPlanMode]);
 
-  const handleShare = useCallback((task: Task) => {
+const handleShare = useCallback((task: FeedTask) => {
     vibrate(5);
     setShareTask(task);
     setShowShareModal(true);
   }, []);
 
-  const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) => {
+  const handleTaskUpdate = useCallback(
+  (
+    taskId: string,
+    updates: Partial<FeedTask>
+  ) => {
     setAllItems((prev) => prev.map((t) => (t.id === taskId? ({...t,...updates } as Task) : t)));
     if (updates.completed === true) {
       setShowCelebrate(true);
@@ -129,7 +143,10 @@ export default function Home() {
       if (!q) return;
       try {
         const snap = await getDocs(q);
-        const data = snap.docs.map((doc) => ({ id: doc.id,...doc.data() })) as Task[];
+       const data = snap.docs.map((doc) => ({
+  id: doc.id,
+  ...doc.data(),
+})) as FeedTask[];
         setAllItems(data);
         setLastDoc(snap.docs[snap.docs.length - 1] || null);
         setHasMore(snap.docs.length === PAGE_SIZE);
@@ -162,7 +179,10 @@ export default function Home() {
       const q = buildQuery(lastDoc);
       if (!q) return;
       const snap = await getDocs(q);
-      const newItems = snap.docs.map((doc) => ({ id: doc.id,...doc.data() })) as Task[];
+      const newItems = snap.docs.map((doc) => ({
+  id: doc.id,
+  ...doc.data(),
+})) as FeedTask[];
       setAllItems((prev) => [...prev,...newItems]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
       setHasMore(snap.docs.length === PAGE_SIZE);
@@ -186,7 +206,7 @@ export default function Home() {
     let result = allItems.filter((t) =>!t.banned &&!t.hidden);
     result = mode === "task"? (result.filter(isTask) as TaskItem[]) : (result.filter(isPlan) as PlanItem[]);
     if (activeTab === "hot") result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-    return result as Task[];
+   return result as FeedTask[];
   }, [allItems, mode, activeTab]);
 
   const handleRefresh = useCallback(() => {
