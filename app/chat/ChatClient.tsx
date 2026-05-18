@@ -18,12 +18,12 @@ import {
 import {
   FiSearch, FiMessageSquare, FiUserPlus, FiUsers, FiCheck, FiX,
   FiUpload, FiUserX, FiBell, FiAtSign, FiInbox, FiMoreVertical,
-  FiPin, FiTrash2,
+  FiTrash2,
 } from "react-icons/fi";
 import { RiAddLine } from "react-icons/ri";
 import Link from "next/link";
 import { toast, Toaster } from "sonner";
-import { ScanLine } from "lucide-react";
+import { ScanLine, Pin } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { format, isToday, isYesterday, formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -1027,7 +1027,7 @@ export default function ChatClient() {
               {pinnedChats.length > 0 && (
                 <>
                   <div className="px-4 py-2 text-[13px] font-semibold text-gray-500 flex items-center gap-1.5">
-                    <FiPin size={14} /> Đã ghim
+                    <Pin size={14} /> Đã ghim
                   </div>
                   {pinnedChats.map((chat) => (
                     <ChatRow key={chat.chatId} chat={chat} isPinned={true} onTogglePin={togglePin} formatMessageTime={formatMessageTime} />
@@ -1239,7 +1239,7 @@ function ChatRow({
           )}
           {isPinned && (
             <div className="absolute -top-1 -right-1 w-5 h-5 bg-[#0a84ff] rounded-full flex items-center justify-center">
-              <FiPin className="text-white" size={10} />
+              <Pin className="text-white" size={10} />
             </div>
           )}
         </div>
@@ -1294,7 +1294,7 @@ function ChatRow({
               onClick={(e) => { e.preventDefault(); onTogglePin(chat.chatId); setShowMenu(false); }}
               className="w-full px-4 py-2.5 text-left text- hover:bg-gray-50 dark:hover:bg-zinc-700 flex items-center gap-3"
             >
-              <FiPin size={16} />
+              <Pin size={16} />
               {isPinned? "Bỏ ghim" : "Ghim hội thoại"}
             </button>
             <button
