@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import errorShake from "@/assets/lotties/huha-error-shake.json";
+import * as L from "@/components/illustrations";
 
 export default function Error({
   error,
@@ -19,7 +19,7 @@ export default function Error({
     <div className="fixed inset-0 z- bg-background grid place-items-center p-6">
       <div className="w-full max-w-sm text-center">
         <LottiePlayer
-          animationData={errorShake}
+          animationData={L.errorShake}
           loop={false}
           autoplay
           className="w-32 h-32 mx-auto mb-6"
@@ -35,7 +35,7 @@ export default function Error({
         </p>
 
         {process.env.NODE_ENV === "development" && error.message && (
-          <div className="mb-6 p-3 rounded-xl bg-destructive/10 text-left">
+          <div className="mb-6 p-3 rounded-xl bg-destructive/10 text-left border border-destructive/20">
             <p className="text-xs font-mono text-destructive break-all">
               {error.message}
             </p>
@@ -54,7 +54,7 @@ export default function Error({
             }
             reset();
           }}
-          className="w-full h-12 rounded-2xl bg-primary text-primary-foreground font-semibold active:scale-[0.98] transition-all hover:opacity-90"
+          className="w-full h-12 rounded-2xl bg-primary text-primary-foreground font-semibold active:scale-[0.98] transition-all hover:opacity-90 shadow-lg shadow-primary/25"
         >
           Thử lại
         </button>
