@@ -170,13 +170,13 @@ export default function EmptyState({ tab, type = "task" }: Props) {
     navigator.vibrate?.(5);
     const path = type === "task"? "/create/task" : "/create/plan";
     router.push(`${path}?title=${encodeURIComponent(suggest)}`);
-  }, [type][router]);
+ }, [type, router]);
 
   const handleCreateClick = useCallback(() => {
     navigator.vibrate?.(8);
     const path = type === "task"? "/create/task" : "/create/plan";
     router.push(path);
-  }, [type][router]);
+}, [type, router]);
 
   const lottieData = L[pool.lottieKey];
 
