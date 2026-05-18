@@ -7,7 +7,7 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { getAuth } from "firebase/auth";
 import { getApp } from "firebase/app";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import * as L from "@/components/illustrations";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { useAppStore } from "@/store/app";
 import {
@@ -800,7 +800,7 @@ export default function ChatClient() {
   if (authLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
       <div className="flex flex-col items-center gap-3">
-        <LottiePlayer animationData={loadingPull} loop autoplay className="w-12 h-12" />
+       <LottiePlayer animationData={L.loadingPull} loop autoplay className="w-12 h-12" />
         <p className="text-[14px] text-gray-500">Đang tải...</p>
       </div>
     </div>;
