@@ -24,7 +24,7 @@ type Props = {
     taskId: string,
     updates: Partial<FeedTask>
   ) => void;
-};};
+};
 
 const containerVariants = {
   hidden: { opacity: 0 },
