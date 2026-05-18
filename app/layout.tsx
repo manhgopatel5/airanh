@@ -32,11 +32,11 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
   icons: {
     icon: [
-      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon?size=32", sizes: "32x32", type: "image/png" },
+      { url: "/icon?size=192", sizes: "192x192", type: "image/png" },
     ],
-    apple: [{ url: "/apple-icon-180.png", sizes: "180x180", type: "image/png" }],
-    shortcut: "/favicon-32.png",
+    apple: [{ url: "/icon?size=180", sizes: "180x180", type: "image/png" }],
+    shortcut: "/icon?size=32",
   },
   manifest: "/manifest.json",
   openGraph: {
@@ -53,6 +53,11 @@ export const metadata: Metadata = {
     title: "HUHA - Việc vặt gần bạn",
     description: "Thuê người hoặc nhận việc 800K, gần bạn, xong ngay.",
     images: ["/og-image.png"],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "HUHA",
   },
 };
 
@@ -75,6 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://firestore.googleapis.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
       </head>
 
       <body className="font-sans bg-[#FAFAFB] dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 antialiased overscroll-none tracking-tight">
@@ -107,6 +113,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               url: "https://airanh.vercel.app",
               applicationCategory: "BusinessApplication",
               operatingSystem: "Web, iOS, Android",
+              offers: {
+                "@type": "Offer",
+                price: "0",
+                priceCurrency: "VND",
+              },
             }),
           }}
         />
