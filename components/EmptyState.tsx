@@ -164,7 +164,7 @@ export default function EmptyState({ tab, type = "task" }: Props) {
       desc: pool.descs[Math.floor(Math.random() * pool.descs.length)],
       suggests: getRandomItems(pool.suggests, 4),
     });
-  }, [type][tab][pool]);
+ }, [type, tab, pool]);
 
   const handleSuggestClick = useCallback((suggest: string) => {
     navigator.vibrate?.(5);
