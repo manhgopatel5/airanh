@@ -11,7 +11,7 @@ import { AppMode } from "@/types/app";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import celebrate from "@/public/lotties/huha-celebrate.json";
+import * as L from '@/components/illustrations';
 
 type Props = { task: TaskListItem | PlanListItem; mode: AppMode; onDelete?: (id: string) => void };
 
