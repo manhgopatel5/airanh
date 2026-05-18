@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { toast, Toaster } from "sonner";
 import { FiCheckCircle, FiRefreshCw, FiLogOut, FiSend } from "react-icons/fi";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import celebrate from "@/public/lotties/huha-celebrate.json";
+import celebrate from "@/assets/lotties/huha-celebrate.json";
 import { motion } from "framer-motion";
 
 const vibrate = (p: number | number[]) => {
@@ -62,7 +62,7 @@ export default function VerifyEmailPage() {
       await reload(auth.currentUser);
       if (auth.currentUser.emailVerified) {
         toast.success("Xác thực thành công!");
-        vibrate([10,20,10]);
+        vibrate([10, 20, 10]);
         router.replace("/");
       } else toast.error("Email chưa được xác thực");
     } catch { toast.error("Kiểm tra thất bại"); }
@@ -80,44 +80,44 @@ export default function VerifyEmailPage() {
   return (
     <>
       <Toaster richColors position="top-center" />
-      <div className="h-screen w-screen fixed inset-0 bg-gradient-to-br from-[#E8F1FF] via-[#F0F7FF] to-[#F8FBFF] dark:from-[#050508] dark:via-[#0A0A0F] dark:to-[#0F0F14]">
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#0042B2]/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-[#1A5FFF]/20 rounded-full blur-3xl animate-pulse" />
+      <div className="h-screen w-screen fixed inset-0 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5 dark:from-zinc-950 dark:via-zinc-950 dark:to-black">
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-pulse" />
       </div>
 
       <div className="h-screen w-screen flex items-center justify-center px-5 font-sans relative z-10">
-        <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{type:"spring",damping:22}} className="w-full max-w-">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", damping: 22 }} className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="relative w-24 h-24 mx-auto mb-6">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] rounded-3xl blur-2xl opacity-50 animate-pulse" />
-              <div className="relative w-full h-full bg-gradient-to-br from-[#0042B2] via-[#0055DD] to-[#1A5FFF] rounded-3xl flex items-center justify-center shadow-2xl shadow-[#0042B2]/40 ring-1 ring-white/20">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-3xl blur-2xl opacity-50 animate-pulse" />
+              <div className="relative w-full h-full bg-gradient-to-br from-primary to-accent rounded-3xl flex items-center justify-center shadow-2xl shadow-primary/40 ring-1 ring-white/20">
                 <LottiePlayer animationData={celebrate} loop autoplay className="w-14 h-14" aria-label="Email" />
               </div>
             </div>
-            <h1 className="text-3xl font-black text-zinc-900 dark:text-white mb-2 tracking-tight">Xác thực email</h1>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium px-4">Chúng tôi đã gửi link xác thực tới</p>
-            <p className="text-base font-bold mt-1.5 break-all px-4" style={{color:'#0042B2'}}>{user.email}</p>
+            <h1 className="text-3xl font-black text-foreground mb-2 tracking-tight">Xác thực email</h1>
+            <p className="text-sm text-muted-foreground font-medium px-4">Chúng tôi đã gửi link xác thực tới</p>
+            <p className="text-base font-bold mt-1.5 break-all px-4 text-primary">{user.email}</p>
           </div>
 
-          <div className="bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl rounded-3xl p-6 shadow-2xl border border-zinc-200/50 dark:border-zinc-800">
+          <div className="glass rounded-3xl p-6 shadow-2xl">
             <div className="space-y-3">
-              <motion.button whileTap={{scale:0.98}} onClick={handleCheck} disabled={checking} className="relative w-full h-14 rounded-2xl text-white text-base font-bold shadow-xl disabled:opacity-60 flex items-center justify-center gap-2.5" style={{background:'linear-gradient(135deg,#00C853,#00E676)'}}>
-                {checking? <FiRefreshCw className="animate-spin" size={20}/> : <FiCheckCircle size={20}/>}
+              <motion.button whileTap={{ scale: 0.98 }} onClick={handleCheck} disabled={checking} className="relative w-full h-14 rounded-2xl text-primary-foreground text-base font-bold shadow-xl disabled:opacity-60 flex items-center justify-center gap-2.5 bg-gradient-to-r from-accent to-accent/80">
+                {checking? <FiRefreshCw className="animate-spin" size={20} /> : <FiCheckCircle size={20} />}
                 {checking? "Đang kiểm tra..." : "Tôi đã xác thực"}
               </motion.button>
 
-              <motion.button whileTap={{scale:0.98}} onClick={handleResend} disabled={sending || cooldown>0} className="w-full h-14 rounded-2xl font-bold text-base bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-2 border-zinc-200 dark:border-zinc-800 hover:border-[#0042B2]/50 flex items-center justify-center gap-2.5 disabled:opacity-50">
-                {sending? <><div className="w-5 h-5 border- border-zinc-400/30 border-t-[#0042B2] rounded-full animate-spin"/>Đang gửi...</> : cooldown>0? <><FiSend size={18}/>Gửi lại sau {cooldown}s</> : <><FiSend size={18}/>Gửi lại email</>}
+              <motion.button whileTap={{ scale: 0.98 }} onClick={handleResend} disabled={sending || cooldown > 0} className="w-full h-14 rounded-2xl font-bold text-base bg-secondary text-secondary-foreground border-2 border-border hover:border-primary/50 flex items-center justify-center gap-2.5 disabled:opacity-50">
+                {sending? <><div className="w-5 h-5 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />Đang gửi...</> : cooldown > 0? <><FiSend size={18} />Gửi lại sau {cooldown}s</> : <><FiSend size={18} />Gửi lại email</>}
               </motion.button>
             </div>
 
-            <div className="relative my-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-zinc-200 dark:border-zinc-800"/></div><div className="relative flex justify-center text-xs"><span className="bg-white/80 dark:bg-zinc-950/80 px-3 text-zinc-400">hoặc</span></div></div>
+            <div className="relative my-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div><div className="relative flex justify-center text-xs"><span className="bg-card px-3 text-muted-foreground">hoặc</span></div></div>
 
-            <button onClick={handleLogout} disabled={loggingOut} className="w-full h-12 rounded-2xl font-semibold text-sm text-zinc-600 dark:text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center justify-center gap-2 disabled:opacity-50">
-              <FiLogOut size={16}/>{loggingOut? "Đang đăng xuất..." : "Dùng tài khoản khác"}
+            <button onClick={handleLogout} disabled={loggingOut} className="w-full h-12 rounded-2xl font-semibold text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex items-center justify-center gap-2 disabled:opacity-50 transition-all">
+              <FiLogOut size={16} />{loggingOut? "Đang đăng xuất..." : "Dùng tài khoản khác"}
             </button>
           </div>
-          <p className="text-center mt-6 text-xs text-zinc-400">Không nhận được? Kiểm tra thư mục Spam</p>
+          <p className="text-center mt-6 text-xs text-muted-foreground">Không nhận được? Kiểm tra thư mục Spam</p>
         </motion.div>
       </div>
     </>
