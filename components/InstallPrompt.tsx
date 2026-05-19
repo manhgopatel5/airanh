@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { FiShare, FiPlusSquare, FiX, FiDownload } from "react-icons/fi";
 import { HiDevicePhoneMobile } from "react-icons/hi2";
 import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 
 const DISMISS_KEY = "installPromptDismissed";
