@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/lib/AuthContext";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { sendEmailVerification } from "firebase/auth";
 import { toast } from "sonner";
 import { FiMail, FiLoader } from "react-icons/fi";
@@ -13,22 +13,33 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
   const router = useRouter();
   const [sending, setSending] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  
+  // Dùng ref để tránh việc loading chạy lại lung tung khi đổi tab bằng State
+  const isFirstLoadDone = useRef(false);
 
   const publicRoutes = ["/login", "/register", "/forgot-password", "/terms", "/privacy", "/verify-email"];
 
   useEffect(() => {
-    if (!loading && !user && !publicRoutes.includes(pathname)) {
+    if (loading) return;
+    if (!user && !publicRoutes.includes(pathname)) {
       router.replace("/login");
     }
   }, [user, loading, pathname, router]);
 
   useEffect(() => {
-    if (!loading && user && !user.emailVerified && !publicRoutes.includes(pathname)) {
+    if (loading) return;
+    
+    // CHỈ BẬT MODAL CHẶN: Nếu tài khoản tồn tại VÀ chưa verify email VÀ trang đó không phải trang công khai
+    if (user && user.emailVerified === false && !publicRoutes.includes(pathname)) {
       setShowModal(true);
     } else {
       setShowModal(false);
     }
   }, [user, loading, pathname]);
+
+  if (!loading && !isFirstLoadDone.current) {
+    isFirstLoadDone.current = true;
+  }
 
   const resendEmail = async () => {
     if (!user || sending) return;
@@ -49,8 +60,8 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
     router.push("/login");
   };
 
-  // FIX 1: Đang loading thì hiện màn hình trắng có logo, không render children
-  if (loading) {
+  // CHỈ hiện màn hình chờ logo ĐÚNG LẦN ĐẦU TIÊN lúc mở app
+  if (loading && !isFirstLoadDone.current) {
     return (
       <div className="fixed inset-0 z-50 bg-white dark:bg-zinc-950 flex items-center justify-center">
         <img src="/logo.png" alt="AIR" className="w-16 h-16 animate-pulse" />
@@ -58,13 +69,11 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
     );
   }
 
-  // FIX 2: Trang public thì cho qua luôn
   if (publicRoutes.includes(pathname)) {
     return <>{children}</>;
   }
 
-  // FIX 3: Chưa login mà vào trang private → hiện logo chờ redirect, không render children
-  if (!user) {
+  if (!user && isFirstLoadDone.current) {
     return (
       <div className="fixed inset-0 z-50 bg-white dark:bg-zinc-950 flex items-center justify-center">
         <img src="/logo.png" alt="AIR" className="w-16 h-16 animate-pulse" />
@@ -77,7 +86,7 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
       {children}
 
       {showModal && user && !user.emailVerified && (
-        <div className="fixed inset-0 z-50 backdrop-blur-2xl bg-black/60 flex items-center justify-center p-6">
+        <div className="fixed inset-0 z-50 backdrop-blur-2xl bg-black/60 flex items-center justify-center p-6 pointer-events-auto">
           <div className="w-full max-w-sm bg-white dark:bg-zinc-900 rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-500/30">
               <FiMail className="text-white" size={32} />
