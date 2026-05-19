@@ -31,7 +31,7 @@ import {
   Sparkles as SparklesIcon, 
   CalendarRange 
 } from "lucide-react";
-
+import { toast } from "sonner";
 
 const PAGE_SIZE = 20;
 type TabId = "hot" | "near" | "friends" | "new";
@@ -193,6 +193,14 @@ export default function AppContainer() {
       { threshold: 0.1 }
     );
     
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasMore && !loadingMore) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
     observerRef.current.observe(loadMoreRef.current);
     return () => observerRef.current?.disconnect();
   }, [hasMore, loadingMore, loadMore]);
@@ -233,22 +241,22 @@ export default function AppContainer() {
     switch (currentMainTab) {
       case "messages":
         return (
-          <div className="flex flex-col items-center justify-center py-40 text-zinc-400 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <MessageSquare size={48} className="mb-2 opacity-50" />
+          <div className="flex flex-col items-center justify-center pt-32 text-zinc-400 animate-in fade-in duration-300">
+            <MessageSquare size={48} className="mb-2 opacity-40" />
             <p className="font-medium text-sm">Trang Tin Nhắn (Đang phát triển)</p>
           </div>
         );
       case "tasks":
         return (
-          <div className="flex flex-col items-center justify-center py-40 text-zinc-400 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <ClipboardList size={48} className="mb-2 opacity-50" />
+          <div className="flex flex-col items-center justify-center pt-32 text-zinc-400 animate-in fade-in duration-300">
+            <ClipboardList size={48} className="mb-2 opacity-40" />
             <p className="font-medium text-sm">Trang Quản Lý Nhiệm Vụ</p>
           </div>
         );
       case "profile":
         return (
-          <div className="flex flex-col items-center justify-center py-40 text-zinc-400 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <User size={48} className="mb-2 opacity-50" />
+          <div className="flex flex-col items-center justify-center pt-32 text-zinc-400 animate-in fade-in duration-300">
+            <User size={48} className="mb-2 opacity-40" />
             <p className="font-medium text-sm">Trang Cá Nhân công khai</p>
           </div>
         );
