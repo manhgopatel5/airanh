@@ -12,7 +12,7 @@ import {
   FiClock,
   FiMapPin,
   FiCalendar,
-  FiStar,
+  
   FiCheckCircle,
 } from "react-icons/fi";
 
