@@ -34,6 +34,8 @@ import { Html5Qrcode } from "html5-qrcode";
 import { QRCodeSVG } from "qrcode.react";
 import { toast, Toaster } from "sonner";
 
+import ChatClient from "@/app/chat/ChatClient"; 
+
 // Icons
 import { FiMapPin } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
@@ -277,13 +279,8 @@ export default function AppContainer() {
 
   const renderTabContent = () => {
     switch (currentMainTab) {
-      case "messages":
-        return (
-          <div className="flex flex-col items-center justify-center pt-32 text-zinc-400 animate-in fade-in duration-300">
-            <MessageSquare size={48} className="mb-2 opacity-40" />
-            <p className="font-medium text-sm">Trang Tin Nhắn (Đang phát triển)</p>
-          </div>
-        );
+case "messages":
+  return <ChatClient />;
       case "tasks":
         return (
           <div className="flex flex-col items-center justify-center pt-32 text-zinc-400 animate-in fade-in duration-300">
