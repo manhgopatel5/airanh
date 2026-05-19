@@ -15,7 +15,7 @@ const Lottie = dynamic(
 );
 
 export type LottiePlayerProps = {
-animationData?: any;
+  animationData?: any;
   loop?: boolean;
   autoplay?: boolean;
   className?: string;
@@ -38,51 +38,85 @@ function LottiePlayer({
   pauseWhenHidden = true,
   reduceMotion = "auto",
   onComplete,
-  fallback = <div className="w-full h-full bg-slate-100 rounded-2xl" />,
+  fallback = (
+    <div className="w-full h-full rounded-2xl bg-slate-100" />
+  ),
   "aria-label": ariaLabel = "Animation",
 }: LottiePlayerProps) {
   const lottieRef = useRef<LottieRefCurrentProps>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [isInView, setIsInView] = useState(true);
-  const [prefersReduced, setPrefersReduced] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => setIsMounted(true), []);
+  const [isInView, setIsInView] = useState(true);
+  const [prefersReduced, setPrefersReduced] =
+    useState(false);
 
   useEffect(() => {
-    if (reduceMotion === "auto" && typeof window!== "undefined") {
-      const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (
+      reduceMotion === "auto" &&
+      typeof window !== "undefined"
+    ) {
+      const mq = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      );
+
       setPrefersReduced(mq.matches);
-      const onChange = (e: MediaQueryListEvent) => setPrefersReduced(e.matches);
+
+      const onChange = (e: MediaQueryListEvent) => {
+        setPrefersReduced(e.matches);
+      };
+
       mq.addEventListener("change", onChange);
-      return () => mq.removeEventListener("change", onChange);
+
+      return () => {
+        mq.removeEventListener("change", onChange);
+      };
     }
+
     setPrefersReduced(reduceMotion === true);
   }, [reduceMotion]);
 
   useEffect(() => {
-    if (!pauseWhenHidden ||!containerRef.current) return;
+    if (!pauseWhenHidden || !containerRef.current) {
+      return;
+    }
+
     const el = containerRef.current;
+
     const io = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
-        setIsInView(entry?.isIntersecting?? false);
+
+        setIsInView(entry?.isIntersecting ?? false);
       },
-      { threshold: 0.1, rootMargin: "50px" }
+      {
+        threshold: 0.1,
+        rootMargin: "50px",
+      }
     );
+
     io.observe(el);
-    return () => io.disconnect();
+
+    return () => {
+      io.disconnect();
+    };
   }, [pauseWhenHidden]);
 
- const shouldPlay =
-  !prefersReduced &&
-  (pauseWhenHidden ? isInView : true) &&
-  (playOnHover ? false : autoplay);
+  const shouldPlay =
+    !prefersReduced &&
+    (pauseWhenHidden ? isInView : true) &&
+    (playOnHover ? false : autoplay);
 
   useEffect(() => {
     const instance = lottieRef.current;
-    if (!instance ||!isMounted) return;
+
+    if (!instance || !isMounted) {
+      return;
+    }
 
     instance.setSpeed(speed);
 
@@ -96,13 +130,26 @@ function LottiePlayer({
     } else {
       instance.pause();
     }
-  }, [shouldPlay, speed, prefersReduced, isMounted]);
+  }, [
+    shouldPlay,
+    speed,
+    prefersReduced,
+    isMounted,
+  ]);
 
   const handleEnter = useCallback(() => {
-    if (playOnHover &&!prefersReduced && isInView) {
+    if (
+      playOnHover &&
+      !prefersReduced &&
+      isInView
+    ) {
       lottieRef.current?.play();
     }
-  }, [playOnHover, prefersReduced, isInView]);
+  }, [
+    playOnHover,
+    prefersReduced,
+    isInView,
+  ]);
 
   const handleLeave = useCallback(() => {
     if (playOnHover) {
@@ -110,14 +157,18 @@ function LottiePlayer({
     }
   }, [playOnHover]);
 
-  if (!isMounted ||!animationData) {
-    return <div className={className}>{fallback}</div>;
+  if (!isMounted || !animationData) {
+    return (
+      <div className={className}>
+        {fallback}
+      </div>
+    );
   }
 
   return (
     <div
       ref={containerRef}
-      className={className}
+      className={`${className} relative overflow-hidden`}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
       onFocus={handleEnter}
@@ -125,18 +176,25 @@ function LottiePlayer({
       role="img"
       aria-label={ariaLabel}
     >
-<Lottie
-  lottieRef={lottieRef}
-  animationData={animationData}
-  loop={loop && !prefersReduced}
-  autoplay={false}
-  {...(onComplete ? { onComplete } : {})}
-  rendererSettings={{
-    preserveAspectRatio: "xMidYMid meet",
-    progressiveLoad: true,
-    hideOnTransparent: true,
-  }}
-/>
+      <Lottie
+        lottieRef={lottieRef}
+        animationData={animationData}
+        loop={loop && !prefersReduced}
+        autoplay={false}
+        style={{
+          width: "100%",
+          height: "100%",
+        }}
+        {...(onComplete
+          ? { onComplete }
+          : {})}
+        rendererSettings={{
+          preserveAspectRatio:
+            "xMidYMid meet",
+          progressiveLoad: true,
+          hideOnTransparent: true,
+        }}
+      />
     </div>
   );
 }
