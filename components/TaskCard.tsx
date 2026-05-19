@@ -6,7 +6,7 @@ import {
 
 import {
   FiHeart,
-  FiShare2,
+
   FiMessageCircle,
   FiUsers,
   FiClock,
