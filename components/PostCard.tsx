@@ -11,7 +11,7 @@ import { Timestamp } from "firebase/firestore";
 import Linkify from "linkify-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast, Toaster } from "sonner";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 
 type Post = {
