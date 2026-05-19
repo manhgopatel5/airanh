@@ -67,17 +67,20 @@ export default function Home() {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
+  // Dùng ref này để khóa luồng, không cho phép xóa mảng cũ khi chưa có data mới
+  const isChangingModeRef = useRef(false);
+
   const handleShare = useCallback((task: Task) => {
     if ("vibrate" in navigator) navigator.vibrate(5);
     setShareTask(task);
     setShowShareModal(true);
   }, []);
 
-const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) => {
-  setAllItems(prev => prev.map(t =>
-    t.id === taskId? { ...t,...updates } as Task : t
-  ));
-}, []);
+  const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) => {
+    setAllItems(prev => prev.map(t =>
+      t.id === taskId? { ...t,...updates } as Task : t
+    ));
+  }, []);
 
   useEffect(() => {
     if (db) return;
@@ -112,15 +115,24 @@ const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) =>
     [db, mode]
   );
 
+  // ==========================================
+  // HÀM LOAD DATA ĐÃ ĐƯỢC FIX LỖI CHỚP TRẮNG TRANG
+  // ==========================================
   const loadData = useCallback(
     async (isRefresh = false) => {
       if (!db) return;
-      if (isRefresh) setRefreshing(true);
-      else setLoading(true);
+      
       setError(null);
-      setAllItems([]);
       setLastDoc(null);
       setHasMore(true);
+
+      // Nếu có mảng bài viết cũ rồi, chỉ bật trạng thái refreshing ngầm, TUYỆT ĐỐI không xóa mảng cũ gây chớp trắng
+      if (allItems.length > 0 || isChangingModeRef.current) {
+        setRefreshing(true);
+      } else {
+        if (isRefresh) setRefreshing(true);
+        else setLoading(true);
+      }
 
       const q = buildQuery();
       if (!q) {
@@ -135,6 +147,8 @@ const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) =>
           id: doc.id,
         ...doc.data(),
         })) as Task[];
+        
+        // Đổ toàn bộ data mới đè lên cùng 1 lúc, giao diện thay đổi mượt mà không có khoảng trống
         setAllItems(data);
         setLastDoc(snap.docs[snap.docs.length - 1] || null);
         setHasMore(snap.docs.length === PAGE_SIZE);
@@ -156,14 +170,17 @@ const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) =>
       } finally {
         setLoading(false);
         setRefreshing(false);
+        isChangingModeRef.current = false; // Mở khóa luồng thay đổi chế độ
       }
     },
-    [db, buildQuery]
+    [db, buildQuery, allItems.length]
   );
 
+  // Lắng nghe sự thay đổi của mode (Task <-> Plan) để kích hoạt cờ hiệu giữ nền
   useEffect(() => {
+    isChangingModeRef.current = true;
     loadData();
-  }, [loadData]);
+  }, [mode]);
 
   const loadMore = useCallback(async () => {
     if (!db ||!lastDoc || loadingMore ||!hasMore) return;
@@ -198,7 +215,14 @@ const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) =>
       },
       { threshold: 0.1 }
     );
-    observerRef.current.observe(loadMoreRef.current);
+    observerRef.current = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting && hasMore && !loadingMore) {
+        loadMore();
+      }
+    }, { threshold: 0.1 });
+    if (loadMoreRef.current) {
+      observerRef.current.observe(loadMoreRef.current);
+    }
     return () => observerRef.current?.disconnect();
   }, [hasMore, loadingMore, loadMore]);
 
@@ -213,7 +237,7 @@ const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) =>
     if (activeTab === "hot") {
       result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
     } else if (activeTab === "near" || activeTab === "friends") {
-      toast.info("Tính năng đang phát triển");
+      // Không cần hiện thông báo lặp lại liên tục khi re-render
     }
     return result as Task[];
   }, [allItems, mode, activeTab]);
@@ -272,16 +296,20 @@ const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) =>
           </div>
         )}
 
-        {loading || refreshing? (
+        {/* FIX TRẢI NGHIỆM: Khi tải ngầm dữ liệu mới (refreshing), ta vẫn giữ nguyên TaskFeed cũ mờ nhẹ 
+            thay vì bật đè cả bảng Skeleton gây giật giật màn hình */}
+        {loading ? (
           <SkeletonList />
         ) : (
-          <TaskFeed
-            tasks={filteredItems}
-            mode={mode}
-            activeTab={activeTab}
-            onShare={handleShare}
-            onTaskUpdate={handleTaskUpdate}
-          />
+          <div className={`transition-opacity duration-200 ${refreshing ? "opacity-60 pointer-events-none" : "opacity-100"}`}>
+            <TaskFeed
+              tasks={filteredItems}
+              mode={mode}
+              activeTab={activeTab}
+              onShare={handleShare}
+              onTaskUpdate={handleTaskUpdate}
+            />
+          </div>
         )}
 
         {!loading && hasMore && allItems.length > 0 && (
