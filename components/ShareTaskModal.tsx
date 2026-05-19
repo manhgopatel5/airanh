@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
 import { collection, query, where, getDocs, documentId, addDoc, serverTimestamp, doc, setDoc } from "firebase/firestore";
 import { toast, Toaster } from "sonner";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 
 type Props = { task: Task; onClose: () => void; };
