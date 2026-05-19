@@ -55,7 +55,7 @@ userUsername?: string;
 userVerified?: boolean;
 
   // Status
-  status: TaskStatus;
+  status: TaskStatus | PlanStatus;
   visibility: Visibility;
   banned?: boolean;
   hidden?: boolean;
@@ -222,7 +222,7 @@ export type CreateTaskInput = {
   tags?: string[];
   images?: string[];
   attachments?: string[];
-   milestones?: string[];
+milestones?: boolean;
   autoMatch?: boolean;
   allowBids?: boolean;
   
@@ -281,6 +281,7 @@ export type TaskListItem = BaseFeedItem &
     | "budgetType"
     | "paymentMethod"
     | "deadline"
+    | "applicationDeadline"
     | "startDate"
   >;
 
