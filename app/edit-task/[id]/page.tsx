@@ -18,7 +18,7 @@ import {
   FiAlertCircle,
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { Auth } from "firebase/auth";
