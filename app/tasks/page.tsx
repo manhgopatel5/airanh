@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiSearch, FiRefreshCw, FiX } from "react-icons/fi";
+import { FiSearch, FiRefreshCw, FiX, FiInbox } from "react-icons/fi";
 import { HiBolt, HiCalendarDays } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 import ShareTaskModal from "@/components/ShareTaskModal";
@@ -25,8 +25,6 @@ import type { Task } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
 import { useAppStore } from "@/store/app";
-import LottiePlayer from "@/components/LottiePlayer";
-import * as L from "@/components/illustrations";
 import { cn } from "@/lib/utils";
 
 type SubTab = "mine" | "saved" | "doing" | "applied" | "expired" | "completed" | "cancelled";
@@ -98,17 +96,16 @@ export default function TasksPage() {
 
      const snap = await getDocs(q);
       let data = snap.docs.map(d => {
-  const docData = d.data() as Omit<Task, 'id'>;
-  return { id: d.id,...docData } as Task;
-}).filter(t => t.id && t.title);
+        const docData = d.data() as Omit<Task, 'id'>;
+        return { id: d.id,...docData } as Task;
+      }).filter(t => t.id && t.title);
 
       if (searchQuery) data = data.filter(t => t.title.toLowerCase().includes(searchQuery.toLowerCase()));
       data.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
 
       setTasks(prev => isRefresh? data : [...prev,...data]);
-    const lastVisible = snap.docs.at(-1)?? null;
-
-setLastDoc(lastVisible);
+      const lastVisible = snap.docs.at(-1)?? null;
+      setLastDoc(lastVisible);
       setHasMore(snap.docs.length === PAGE_SIZE);
     } catch (err) { console.error(err); toast.error("Tải dữ liệu thất bại"); }
     finally { setLoading(false); setLoadingMore(false); setRefreshing(false); }
@@ -118,19 +115,18 @@ setLastDoc(lastVisible);
 
   useEffect(() => {
     if (!loadMoreRef.current) return;
- const obs = new IntersectionObserver((entries) => {
-  const entry = entries[0];
-
-  if (
-    entry &&
-    entry.isIntersecting &&
-    hasMore &&
-   !loading &&
-   !loadingMore
-  ) {
-    fetchTasks(false);
-  }
-}, { threshold: 0.1 });
+    const obs = new IntersectionObserver((entries) => {
+      const entry = entries[0];
+      if (
+        entry &&
+        entry.isIntersecting &&
+        hasMore &&
+      !loading &&
+      !loadingMore
+      ) {
+        fetchTasks(false);
+      }
+    }, { threshold: 0.1 });
     obs.observe(loadMoreRef.current);
     return () => obs.disconnect();
   }, [hasMore, loading, loadingMore, fetchTasks]);
@@ -151,7 +147,7 @@ setLastDoc(lastVisible);
       <div className="min-h-screen bg-background text-foreground select-none pb-28" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
         {pullDistance>0 && (
           <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-xl" style={{height:`${pullDistance}px`}}>
-            <LottiePlayer animationData={L.loadingPull} loop autoplay className="w-6 h-6" />
+            <FiRefreshCw className="w-6 h-6 animate-spin text-primary" />
           </div>
         )}
 
@@ -199,7 +195,7 @@ setLastDoc(lastVisible);
             <div className="space-y-3">{[...Array(3)].map((_,i)=><div key={i} className="bg-card rounded-3xl border border-border p-4 animate-pulse"><div className="flex gap-3"><div className="w-12 h-12 bg-muted rounded-2xl"/><div className="flex-1 space-y-2"><div className="h-4 w-3/4 bg-muted rounded-lg"/><div className="h-3 w-1/2 bg-muted rounded-lg"/></div></div></div>)}</div>
           ) : filteredTasks.length===0? (
             <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} className="bg-card rounded-3xl border border-border p-12 text-center">
-              <LottiePlayer animationData={L.task} loop className="w-24 h-24 mx-auto mb-4" aria-label="Trống"/>
+              <FiInbox className="w-20 h-20 mx-auto mb-4 text-muted-foreground opacity-50" />
               <p className="text-base font-bold mb-1 text-foreground">Chưa có {mode==="task"?"task":"plan"} nào</p>
               <p className="text-sm text-muted-foreground mb-6">{subTab==="mine"&&`Tạo ${mode} đầu tiên`}{subTab==="saved"&&"Lưu để xem sau"}</p>
               {subTab==="mine" && <button onClick={()=>{vibrate(10);router.push(mode==="task"?"/create/task":"/create/plan");}} className="px-6 h-12 rounded-2xl bg-gradient-to-r from-primary to-accent text-primary-foreground text-sm font-bold active:scale-95 shadow-lg shadow-primary/35">Tạo ngay</button>}
@@ -214,7 +210,7 @@ setLastDoc(lastVisible);
             </motion.div>
           )}
 
-          {loadingMore && <div className="flex justify-center py-6"><LottiePlayer animationData={L.loadingPull} loop className="w-8 h-8"/></div>}
+          {loadingMore && <div className="flex justify-center py-6"><FiRefreshCw className="w-8 h-8 animate-spin text-primary"/></div>}
           {shareTask && <ShareTaskModal task={shareTask} onClose={()=>setShareTask(null)}/>}
           <div ref={loadMoreRef} className="h-4"/>
         </div>
