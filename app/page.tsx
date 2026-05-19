@@ -62,6 +62,7 @@ function SkeletonList() {
 export default function AppContainer() {
   const [db, setDb] = useState<any>(null);
   const mode = useAppStore((s) => s.mode);
+  const setMode = useAppStore((s) => s.setMode); // Lấy hàm setMode ra để sử dụng cho nút bấm chuyển đổi
   
   const [currentMainTab, setCurrentMainTab] = useState<MainTab>("home");
   const [activeTab, setActiveTab] = useState<TabId>("hot");
@@ -73,7 +74,6 @@ export default function AppContainer() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [shareTask, setShareTask] = useState<Task | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -259,10 +259,39 @@ export default function AppContainer() {
             <p className="font-medium text-sm">Trang Cá Nhân công khai</p>
           </div>
         );
-      default:
+      default: // CHỈ CÓ TAB HOME MỚI HIỂN THỊ CỤM HEADER NÀY
         return (
           <>
-            <div className="sticky top-0 z-40 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800">
+            {/* 1. THANH CHỌN CHUYỂN ĐỔI TASK / PLAN LÊN ĐẦU TIÊN CỦA TRANG HOME */}
+            <div className="sticky top-0 z-50 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md pt-3 pb-2 px-4 border-b border-gray-100 dark:border-zinc-900">
+              <div className="max-w-md mx-auto bg-gray-100 dark:bg-zinc-900 rounded-2xl p-1 flex relative">
+                <button
+                  onClick={() => { setMode("task"); if ("vibrate" in navigator) navigator.vibrate(5); }}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold rounded-xl transition-all relative z-10 ${
+                    mode === "task" ? "text-white shadow" : "text-gray-500 dark:text-zinc-400"
+                  }`}
+                >
+                  <SparklesIcon size={16} /> Task
+                  {mode === "task" && (
+                    <motion.div layoutId="modeSwitchBg" className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl -z-10" />
+                  )}
+                </button>
+                <button
+                  onClick={() => { setMode("plan"); if ("vibrate" in navigator) navigator.vibrate(5); }}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold rounded-xl transition-all relative z-10 ${
+                    mode === "plan" ? "text-white shadow" : "text-gray-500 dark:text-zinc-400"
+                  }`}
+                >
+                  <CalendarRange size={16} /> Plan
+                  {mode === "plan" && (
+                    <motion.div layoutId="modeSwitchBg" className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl -z-10" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* 2. THANH SUB-TABS (HOT, GẦN BẠN...) NGAY DƯỚI THANH CHỌN MODE */}
+            <div className="sticky top-[64px] z-40 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800">
               <div className="max-w-2xl mx-auto px-4">
                 <div className="flex justify-around">
                   {subTabs.map((tab) => {
@@ -290,6 +319,7 @@ export default function AppContainer() {
               </div>
             </div>
 
+            {/* 3. NỘI DUNG FEED BÀI VIẾT */}
             <div className="pt-4">
               {loading ? (
                 <SkeletonList />
@@ -331,6 +361,7 @@ export default function AppContainer() {
           {renderTabContent()}
         </div>
 
+        {/* BOTTOM NAVIGATION CỐ ĐỊNH PHÍA DƯỚI */}
         <div className="fixed bottom-0 inset-x-0 z-50 pointer-events-none flex flex-col items-center justify-end">
           <div className="w-full max-w-[480px] px-4 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center gap-3">
             
@@ -413,13 +444,12 @@ export default function AppContainer() {
 
       </div>
 
-       {showShareModal && shareTask && (
+      {showShareModal && shareTask && (
         <ShareTaskModal task={shareTask} onClose={() => setShowShareModal(false)} />
       )}
 
-      {/* Dòng này giúp 'error' được tính là đã sử dụng, triệt tiêu lỗi build */}
+      {/* Dòng này giúp giữ biến error để tránh lỗi Strict Compile từ Vercel */}
       {error && <span className="hidden">{error}</span>}
     </LayoutGroup>
   );
 }
-
