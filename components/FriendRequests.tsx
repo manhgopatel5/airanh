@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   listenFriendRequests,
   acceptRequest,
@@ -11,10 +12,6 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { collection, query, where, getDocs, documentId } from "firebase/firestore";
 import { FiUserPlus, FiCheck, FiX, FiClock } from "react-icons/fi";
 import { HiSparkles } from "react-icons/hi";
-import { motion, AnimatePresence } from "framer-motion";
-import { toast, Toaster } from "sonner";
-import LottiePlayer from "@/components/LottiePlayer";
-import * as L from "@/components/illustrations";
 
 type UserData = {
   uid: string;
@@ -29,7 +26,6 @@ export default function FriendRequests() {
   const [userMap, setUserMap] = useState<Record<string, UserData>>({});
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
-  const [acceptedId, setAcceptedId] = useState<string | null>(null);
 
   const userMapRef = useRef<Record<string, UserData>>({});
 
@@ -69,7 +65,7 @@ export default function FriendRequests() {
           snap.forEach((doc) => {
             newUsers[doc.id] = {
               uid: doc.id,
-          ...(doc.data() as any),
+             ...(doc.data() as any),
             };
           });
         })
@@ -88,20 +84,13 @@ export default function FriendRequests() {
       if (processing) return;
 
       setProcessing(req.id);
-      navigator.vibrate?.([10,20,10]);
-      setAcceptedId(req.id);
-      setTimeout(() => setAcceptedId(null), 1200);
-
       setList((prev) => prev.filter((r) => r.id!== req.id));
 
       try {
         await acceptRequest(req);
-        toast.success("Đã chấp nhận lời mời");
       } catch (err) {
         console.error("❌ lỗi accept:", err);
         setList((prev) => [...prev, req]);
-        toast.error("Thao tác thất bại");
-        navigator.vibrate?.(15);
       } finally {
         setProcessing(null);
       }
@@ -115,19 +104,15 @@ export default function FriendRequests() {
       if (processing ||!user?.uid) return;
 
       setProcessing(id);
-      navigator.vibrate?.(5);
 
       const req = list.find((r) => r.id === id);
       setList((prev) => prev.filter((r) => r.id!== id));
 
       try {
         await rejectRequest(id, user.uid);
-        toast.success("Đã từ chối");
       } catch (err) {
         console.error("❌ lỗi reject:", err);
         if (req) setList((prev) => [...prev, req]);
-        toast.error("Thao tác thất bại");
-        navigator.vibrate?.(15);
       } finally {
         setProcessing(null);
       }
@@ -148,20 +133,14 @@ export default function FriendRequests() {
   if (!user) return null;
 
   return (
-    <div className="bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-100 dark:border-zinc-800 shadow-sm p-4 space-y-3">
-      <Toaster richColors position="top-center" />
+    <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm p-4 space-y-3">
       <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{background:'rgba(0,66,178,0.1)'}}>
-          <FiUserPlus className="text-[#0042B2]" size={18} />
-        </div>
-        <div className="flex items-center gap-1.5">
-          <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">
-            Lời mời kết bạn
-          </h3>
-          <HiSparkles size={16} className="text-[#00C853] animate-pulse" />
-        </div>
+        <FiUserPlus className="text-blue-600 dark:text-blue-400" size={20} />
+        <h3 className="font-bold text-base text-gray-900 dark:text-gray-100">
+          Lời mời kết bạn
+        </h3>
         {list.length > 0 && (
-          <span className="text-xs font-bold text-white px-2 py-0.5 rounded-lg" style={{background:'#0042B2'}}>
+          <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg">
             {list.length}
           </span>
         )}
@@ -171,10 +150,10 @@ export default function FriendRequests() {
         <div className="space-y-3">
           {Array.from({ length: 2 }).map((_, i) => (
             <div key={i} className="flex items-center gap-3 animate-pulse">
-              <div className="w-12 h-12 bg-zinc-200 dark:bg-zinc-800 rounded-full" />
+              <div className="w-12 h-12 bg-gray-200 rounded-full" />
               <div className="flex-1 space-y-2">
-                <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/2" />
-                <div className="h-3 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3" />
+                <div className="h-4 bg-gray-200 rounded w-1/2" />
+                <div className="h-3 bg-gray-200 rounded w-1/3" />
               </div>
             </div>
           ))}
@@ -182,80 +161,64 @@ export default function FriendRequests() {
       )}
 
       {!loading && list.length === 0 && (
-        <div className="flex flex-col items-center py-8 text-zinc-400">
-          <div className="w-16 h-16 opacity-60">
-            <LottiePlayer animationData={L.celebrate} autoplay loop className="w-16 h-16" />
-          </div>
-          <p className="font-semibold text-sm mt-2">Không có lời mời nào</p>
+        <div className="flex flex-col items-center py-8 text-gray-400">
+          <HiSparkles size={40} className="mb-2" />
+          <p className="font-semibold text-sm">Không có lời mời nào</p>
         </div>
       )}
 
       <div className="space-y-2">
-        <AnimatePresence>
         {list.map((req) => {
           const u = userMap[req.fromUserId];
           const isProcessing = processing === req.id;
-          const isAccepted = acceptedId === req.id;
 
           return (
-            <motion.div
+            <div
               key={req.id}
-              initial={{opacity:0,x:-20}}
-              animate={{opacity:1,x:0}}
-              exit={{opacity:0,x:20,scale:0.9}}
-              className="flex items-center justify-between gap-3 p-2.5 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition relative overflow-hidden"
+              className="flex items-center justify-between gap-3 p-2 rounded-2xl hover:bg-gray-50 transition"
             >
-              {isAccepted && (
-                <div className="absolute inset-0 pointer-events-none">
-                  <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-full h-full" />
-                </div>
-              )}
-              <div className="flex items-center gap-3 flex-1 min-w-0 relative z-10">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
                 <img
                   src={
                     u?.avatar ||
                     `https://ui-avatars.com/api/?name=${encodeURIComponent(
                       u?.name || "U"
-                    )}&background=0042B2&color=fff`
+                    )}`
                   }
-                  className="w-12 h-12 rounded-full object-cover ring-2 ring-zinc-100 dark:ring-zinc-800"
+                  className="w-12 h-12 rounded-full object-cover"
                   alt=""
                 />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm truncate">
                     {u?.name || "Đang tải..."}
                   </p>
-                  <div className="flex items-center gap-1 text-xs text-zinc-500">
+                  <div className="flex items-center gap-1 text-xs text-gray-500">
                     <FiClock size={12} />
                     {timeAgo(req.createdAt?.seconds)}
                   </div>
                 </div>
               </div>
 
-              <div className="flex gap-2 relative z-10">
-                <motion.button
-                  whileTap={{scale:0.9}}
+              <div className="flex gap-2">
+                <button
                   onClick={() => handleAccept(req)}
                   disabled={isProcessing}
-                  className="w-9 h-9 rounded-xl text-white flex items-center justify-center shadow-md disabled:opacity-50 active:scale-95"
-                  style={{background:'linear-gradient(135deg,#0042B2,#0066FF)'}}
+                  className="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-sm"
                 >
-                  <FiCheck size={16} />
-                </motion.button>
+                  {isProcessing? "..." : <FiCheck />}
+                </button>
 
-                <motion.button
-                  whileTap={{scale:0.9}}
+                <button
                   onClick={() => handleReject(req.id)}
                   disabled={isProcessing}
-                  className="w-9 h-9 rounded-xl bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 flex items-center justify-center hover:bg-zinc-300 dark:hover:bg-zinc-700 disabled:opacity-50 active:scale-95"
+                  className="bg-gray-200 px-3 py-1.5 rounded-xl text-sm"
                 >
-                  <FiX size={16} />
-                </motion.button>
+                  <FiX />
+                </button>
               </div>
-            </motion.div>
+            </div>
           );
         })}
-        </AnimatePresence>
       </div>
     </div>
   );
