@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { FiHeart, FiMessageCircle, FiShare2, FiMoreHorizontal, FiTrash2 } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
-import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { doc, onSnapshot, runTransaction, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
