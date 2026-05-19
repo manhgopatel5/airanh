@@ -36,7 +36,7 @@ import { CommentList } from "@/components/task/CommentList";
 import { ImageGallery } from "@/components/task/ImageGallery";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { createPortal } from "react-dom";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 
 type UserData = {
