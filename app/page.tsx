@@ -1,6 +1,5 @@
 "use client";
-export const dynamic = "force-dynamic";
-
+export const dynamic = 'force-dynamic';
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { getFirebaseDB } from "@/lib/firebase";
 import {
@@ -14,50 +13,47 @@ import {
   DocumentData,
   where,
   Timestamp,
-  Firestore,
 } from "firebase/firestore";
-
 import TaskFeed from "@/components/TaskFeed";
 import ModeToggle from "@/components/ModeToggle";
 import ShareTaskModal from "@/components/ShareTaskModal";
-import LottiePlayer from "@/components/LottiePlayer";
-
 import { useAppStore } from "@/store/app";
 import { Task, TaskItem, PlanItem, isTask, isPlan } from "@/types/task";
-
 import { FiMapPin, FiRefreshCw } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
-
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
-
-// import trực tiếp, không dùng illustrations
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
-import errorShake from "@/public/lotties/huha-error-shake.json";
-import celebrate from "@/public/lotties/huha-celebrate.json";
-import empty from "@/public/lotties/huha-empty.json";
-import walletOpen from "@/public/lotties/huha-wallet-open.json";
 
 const PAGE_SIZE = 20;
 type TabId = "hot" | "near" | "friends" | "new";
 
-const pageVariants = {
-  initial: { opacity: 0, y: 8 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -8 },
-};
-
-const vibrate = (p: number | number[]) => {
-  if (typeof navigator!== "undefined" && "vibrate" in navigator) {
-    navigator.vibrate(p);
-  }
-};
+function SkeletonList() {
+  return (
+    <div className="space-y-3 px-4 animate-in fade-in duration-300">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div
+          key={i}
+          className="bg-white dark:bg-zinc-900 rounded-3xl p-4 border border-gray-100 dark:border-zinc-800"
+        >
+          <div className="flex gap-3 mb-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded-full animate-pulse" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-1/3 animate-pulse" />
+              <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-1/4 animate-pulse" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-3/4 animate-pulse" />
+            <div className="h-20 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded-2xl animate-pulse" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function Home() {
-  const [db, setDb] = useState<Firestore | null>(null);
+  const [db, setDb] = useState<any>(null);
   const mode = useAppStore((s) => s.mode);
-  const isPlanMode = mode === "plan";
-
   const [activeTab, setActiveTab] = useState<TabId>("hot");
   const [allItems, setAllItems] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,35 +64,29 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [shareTask, setShareTask] = useState<Task | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [showCelebrate, setShowCelebrate] = useState(false);
-
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  const pullRef = useRef({ startY: 0, pulling: false });
-
-  const activeColor = useMemo(() => (isPlanMode? "#00C853" : "#0042B2"), [isPlanMode]);
 
   const handleShare = useCallback((task: Task) => {
-    vibrate(5);
+    if ("vibrate" in navigator) navigator.vibrate(5);
     setShareTask(task);
     setShowShareModal(true);
   }, []);
 
-  const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) => {
-    setAllItems((prev) => prev.map((t) => (t.id === taskId? ({...t,...updates } as Task) : t)));
-    if (updates.completed === true) {
-      setShowCelebrate(true);
-      vibrate([10, 20, 10]);
-      setTimeout(() => setShowCelebrate(false), 1800);
-    }
-  }, []);
+const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) => {
+  setAllItems(prev => prev.map(t =>
+    t.id === taskId? { ...t,...updates } as Task : t
+  ));
+}, []);
 
   useEffect(() => {
     if (db) return;
     try {
-      setDb(getFirebaseDB());
+      const _db = getFirebaseDB();
+      setDb(_db);
+      setError(null);
     } catch (err) {
-      console.error(err);
+      console.error("Firebase init error:", err);
       setError("Không thể kết nối database");
       setLoading(false);
     }
@@ -114,7 +104,9 @@ export default function Home() {
         orderBy("deadline", "asc"),
         limit(PAGE_SIZE),
       ];
-      if (startAfterDoc) constraints.push(startAfter(startAfterDoc));
+      if (startAfterDoc) {
+        constraints.push(startAfter(startAfterDoc));
+      }
       return query(collection(db, "tasks"),...constraints);
     },
     [db, mode]
@@ -123,27 +115,43 @@ export default function Home() {
   const loadData = useCallback(
     async (isRefresh = false) => {
       if (!db) return;
-      isRefresh? setRefreshing(true) : setLoading(true);
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
       setError(null);
-      if (isRefresh) {
-        setAllItems([]);
-        setLastDoc(null);
-        setHasMore(true);
-      }
+      setAllItems([]);
+      setLastDoc(null);
+      setHasMore(true);
+
       const q = buildQuery();
-      if (!q) return;
+      if (!q) {
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+
       try {
         const snap = await getDocs(q);
-        const data = snap.docs.map((doc) => ({ id: doc.id,...doc.data() })) as Task[];
+        const data = snap.docs.map((doc) => ({
+          id: doc.id,
+        ...doc.data(),
+        })) as Task[];
         setAllItems(data);
         setLastDoc(snap.docs[snap.docs.length - 1] || null);
         setHasMore(snap.docs.length === PAGE_SIZE);
+        setError(null);
       } catch (err: any) {
-        console.error(err);
-        if (err.code === "permission-denied") toast.info("Chưa có dữ liệu");
-        else {
+        console.error("Firestore error:", err.code, err.message);
+        if (err.code === "permission-denied") {
+          setAllItems([]);
+          setHasMore(false);
+          setError(null);
+          toast.info("Chưa có dữ liệu");
+        } else if (err.code === "failed-precondition") {
+          setError("Thiếu index database");
+          toast.error("Tạo index trong Firebase Console");
+        } else {
           setError("Lỗi tải dữ liệu");
-          toast.error("Không thể tải");
+          toast.error("Không thể tải dữ liệu");
         }
       } finally {
         setLoading(false);
@@ -153,7 +161,9 @@ export default function Home() {
     [db, buildQuery]
   );
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const loadMore = useCallback(async () => {
     if (!db ||!lastDoc || loadingMore ||!hasMore) return;
@@ -162,10 +172,16 @@ export default function Home() {
       const q = buildQuery(lastDoc);
       if (!q) return;
       const snap = await getDocs(q);
-      const newItems = snap.docs.map((doc) => ({ id: doc.id,...doc.data() })) as Task[];
+      const newItems = snap.docs.map((doc) => ({
+        id: doc.id,
+      ...doc.data(),
+      })) as Task[];
       setAllItems((prev) => [...prev,...newItems]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
       setHasMore(snap.docs.length === PAGE_SIZE);
+    } catch (err) {
+      console.error("Load more error:", err);
+      toast.error("Không thể tải thêm");
     } finally {
       setLoadingMore(false);
     }
@@ -173,73 +189,50 @@ export default function Home() {
 
   useEffect(() => {
     if (!loadMoreRef.current ||!hasMore) return;
-    observerRef.current?.disconnect();
+    if (observerRef.current) observerRef.current.disconnect();
     observerRef.current = new IntersectionObserver(
-      ([entry]) => entry?.isIntersecting && loadMore(),
-      { threshold: 0.1, rootMargin: "200px" }
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasMore &&!loadingMore) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
     );
     observerRef.current.observe(loadMoreRef.current);
     return () => observerRef.current?.disconnect();
-  }, [hasMore, loadMore]);
+  }, [hasMore, loadingMore, loadMore]);
 
   const filteredItems = useMemo(() => {
-    let result = allItems.filter((t) =>!t.banned &&!t.hidden);
-    result = mode === "task"? (result.filter(isTask) as TaskItem[]) : (result.filter(isPlan) as PlanItem[]);
-    if (activeTab === "hot") result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+    let result = [...allItems];
+    if (mode === "task") {
+      result = result.filter((t) => isTask(t)) as TaskItem[];
+    } else {
+      result = result.filter((t) => isPlan(t)) as PlanItem[];
+    }
+    result = result.filter((t) => t.banned!== true && t.hidden!== true);
+    if (activeTab === "hot") {
+      result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+    } else if (activeTab === "near" || activeTab === "friends") {
+      toast.info("Tính năng đang phát triển");
+    }
     return result as Task[];
   }, [allItems, mode, activeTab]);
 
-  const handleRefresh = useCallback(() => {
-    vibrate(10);
+  const handleRefresh = () => {
+    if ("vibrate" in navigator) navigator.vibrate(10);
     loadData(true);
-  }, [loadData]);
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    if (touch && window.scrollY === 0) pullRef.current = { startY: touch.clientY, pulling: true };
-  };
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (!pullRef.current.pulling) return;
-    const dy = (e.touches[0]?.clientY || 0) - pullRef.current.startY;
-    if (dy > 80 &&!refreshing) {
-      pullRef.current.pulling = false;
-      handleRefresh();
-    }
   };
 
-  const tabs = useMemo(() => [
-    { id: "hot" as TabId, label: "Hot", icon: HiFire },
-    { id: "near" as TabId, label: "Gần bạn", icon: FiMapPin },
-    { id: "friends" as TabId, label: "Bạn bè", icon: HiUsers },
-    { id: "new" as TabId, label: "Mới", icon: HiSparkles },
-  ], []);
+  const tabs: { id: TabId; label: string; icon: any; color: string }[] = [
+    { id: "hot", label: "Hot", icon: HiFire, color: "orange" },
+    { id: "near", label: "Gần bạn", icon: FiMapPin, color: "emerald" },
+    { id: "friends", label: "Bạn bè", icon: HiUsers, color: "blue" },
+    { id: "new", label: "Mới", icon: HiSparkles, color: "purple" },
+  ];
 
   return (
-    <motion.div
-      {...pageVariants}
-      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-      className="min-h-screen pb-24 font-sans bg-gray-50 dark:bg-black"
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-    >
+    <div className="min-h-screen pb-24 font-sans bg-gray-50 dark:bg-black">
       <ModeToggle />
-
-      <AnimatePresence>
-        {refreshing && (
-          <motion.div initial={{ y: -40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -40, opacity: 0 }} className="fixed top-14 left-1/2 -translate-x-1/2 z-50">
-            <LottiePlayer animationData={loadingPull} autoplay loop className="w-[60px] h-[60px]" aria-label="Đang làm mới" />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showCelebrate && (
-          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center">
-            <LottiePlayer animationData={celebrate} loop={false} autoplay className="w-[300px] h-[300px]" aria-label="Hoàn thành" />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <div className="sticky top-0 z-40 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800">
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex justify-around">
@@ -247,10 +240,19 @@ export default function Home() {
               const Icon = tab.icon;
               const active = activeTab === tab.id;
               return (
-                <button key={tab.id} onClick={() => { setActiveTab(tab.id); vibrate(5); }} className="flex flex-col items-center py-3 px-2 flex-1 relative transition-all active:scale-95">
-                  <Icon size={20} className={active? "" : "text-gray-400 dark:text-zinc-500"} style={{ color: active? activeColor : undefined }} />
-                  <span className="text-xs font-bold mt-1" style={{ color: active? activeColor : undefined }}>{tab.label}</span>
-                  {active && <motion.div layoutId="tab" className="absolute bottom-0 h-0.5 w-8 rounded-full" style={{ backgroundColor: activeColor }} transition={{ type: "spring", stiffness: 500, damping: 30 }} />}
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    if ("vibrate" in navigator) navigator.vibrate(5);
+                  }}
+                  className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
+                    active? `text-${tab.color}-600 dark:text-${tab.color}-400` : "text-gray-400 dark:text-zinc-500"
+                  }`}
+                >
+                  <Icon size={20} className={active? "scale-110" : ""} />
+                  <span className="text-xs font-bold mt-1">{tab.label}</span>
+                  <div className={`mt-1 h-0.5 rounded-full transition-all duration-300 ${active? `w-6 bg-${tab.color}-500` : "w-0"}`} />
                 </button>
               );
             })}
@@ -258,45 +260,42 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="pt-4 max-w-2xl mx-auto">
-        <AnimatePresence mode="wait">
-          {error? (
-            <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center px-6 py-20 text-center">
-              <LottiePlayer animationData={errorShake} loop={false} className="w-[180px] h-[180px]" aria-label="Lỗi" />
-              <h2 className="text-xl font-bold mt-2">{error}</h2>
-              <button onClick={handleRefresh} className="mt-4 px-6 py-2.5 rounded-xl text-white font-bold active:scale-95 flex items-center gap-2" style={{ backgroundColor: activeColor }}>
-                <FiRefreshCw /> Thử lại
-              </button>
-            </motion.div>
-          ) : loading &&!refreshing? (
-            <motion.div key="loading" className="flex flex-col items-center py-20">
-              <LottiePlayer animationData={loadingPull} loop className="w-[120px] h-[120px]" aria-label="Đang tải" />
-              <p className="text-sm text-zinc-500 mt-2">Đang tải...</p>
-            </motion.div>
-          ) : filteredItems.length === 0? (
-            <motion.div key="empty" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center px-6 py-16 text-center">
-              <LottiePlayer animationData={isPlanMode? walletOpen : empty} loop className="w-[220px] h-[220px]" pauseWhenHidden aria-label="Trống" />
-              <h3 className="text-lg font-bold mt-2">Chưa có {mode === "task"? "nhiệm vụ" : "kế hoạch"} nào</h3>
-              <p className="text-sm text-zinc-500 mb-6">Hãy là người đầu tiên tạo</p>
-              <button onClick={handleRefresh} className="px-6 py-2.5 rounded-xl text-white font-bold active:scale-95 flex items-center gap-2" style={{ backgroundColor: activeColor }}>
-                <FiRefreshCw /> Tải lại
-              </button>
-            </motion.div>
-          ) : (
-            <motion.div key="feed">
-              <TaskFeed tasks={filteredItems} mode={mode} activeTab={activeTab} onShare={handleShare} onTaskUpdate={handleTaskUpdate} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+      <div className="pt-4">
+        {error && (
+          <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
+            <div className="text-5xl mb-4">⚠️</div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">{error}</h2>
+            <button onClick={handleRefresh} className="mt-4 px-6 py-2.5 rounded-xl bg-blue-500 text-white font-bold active:scale-95 transition flex items-center gap-2">
+              <FiRefreshCw className={refreshing? "animate-spin" : ""} />
+              Thử lại
+            </button>
+          </div>
+        )}
+
+        {loading || refreshing? (
+          <SkeletonList />
+        ) : (
+          <TaskFeed
+            tasks={filteredItems}
+            mode={mode}
+            activeTab={activeTab}
+            onShare={handleShare}
+            onTaskUpdate={handleTaskUpdate}
+          />
+        )}
 
         {!loading && hasMore && allItems.length > 0 && (
-          <div ref={loadMoreRef} className="py-6 flex justify-center">
-            {loadingMore && <LottiePlayer animationData={loadingPull} autoplay loop className="w-[40px] h-[40px]" aria-label="Tải thêm" />}
+          <div ref={loadMoreRef} className="px-4 py-6 flex justify-center">
+            {loadingMore && (
+              <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+            )}
           </div>
         )}
       </div>
 
-      {showShareModal && shareTask && <ShareTaskModal task={shareTask} onClose={() => setShowShareModal(false)} />}
-    </motion.div>
+      {showShareModal && shareTask && (
+        <ShareTaskModal task={shareTask} onClose={() => setShowShareModal(false)} />
+      )}
+    </div>
   );
 }
