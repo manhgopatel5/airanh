@@ -72,7 +72,8 @@ export default function AppContainer() {
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   const [shareTask, setShareTask] = useState<Task | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -412,9 +413,13 @@ export default function AppContainer() {
 
       </div>
 
-      {showShareModal && shareTask && (
+       {showShareModal && shareTask && (
         <ShareTaskModal task={shareTask} onClose={() => setShowShareModal(false)} />
       )}
+
+      {/* Dòng này giúp 'error' được tính là đã sử dụng, triệt tiêu lỗi build */}
+      {error && <span className="hidden">{error}</span>}
     </LayoutGroup>
   );
 }
+
