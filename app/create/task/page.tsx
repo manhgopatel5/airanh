@@ -760,98 +760,39 @@ const submit = async () => {
       })
     );
 
-    await createTask(
-      {
-        type: "task",
-
-        title: form.title.trim(),
-
-        description:
-          form.description.trim(),
-
-        price:
-          form.budgetType ===
-          "negotiable"
-            ? 0
-            : basePrice,
-
-        currency: "VND",
-
-        budgetType: form.budgetType,
-
-        totalSlots: form.totalSlots,
-
-        visibility: form.visibility,
-
-        deadline: Timestamp.fromDate(
-          new Date(form.endDate)
-        ),
-
-        applicationDeadline:
-          Timestamp.fromDate(
-            new Date(form.endDate)
-          ),
-
-        startDate: Timestamp.fromDate(
-          new Date(form.startDate)
-        ),
-
-        category: form.category,
-
-        tags: [
-          ...form.tags,
-          form.urgency,
-        ],
-
-        images: urls,
-
-        attachments: [],
-
-        requirements:
-          form.requirements,
-
-        isRemote: form.isRemote,
-
-location: form.isRemote
-  ? undefined
-  : {
-      address:
-        form.address.trim(),
-
-      city:
-        form.city.trim(),
-
-      ...(form.lat !== null && {
-        lat: form.lat,
-      }),
-
-      ...(form.lng !== null && {
-        lng: form.lng,
-      }),
-    },
-
-       urgency: form.urgency as
-  | "once"
-  | "weekly"
-  | "ongoing",
-
-        milestones: form.milestones,
-
-        autoMatch: form.autoMatch,
-
-        allowBids: form.allowBids,
-
-        featured: form.featured,
-
-        nda: form.nda,
-
-        invites: form.invites,
-
-        needApproval:
-          form.needApproval,
-      },
-      user
-    );
+    await createTask({
+  type: "task",
+  title: form.title.trim(),
+  description: form.description.trim(),
+  price: form.budgetType === "negotiable" ? 0 : basePrice,
+  currency: "VND",
+  budgetType: form.budgetType,
+  totalSlots: form.totalSlots,
+  visibility: form.visibility,
+  deadline: Timestamp.fromDate(new Date(form.endDate)),
+  applicationDeadline: Timestamp.fromDate(new Date(form.endDate)),
+  startDate: Timestamp.fromDate(new Date(form.startDate)),
+  category: form.category,
+  tags: [...form.tags, form.urgency],
+  images: urls,
+  attachments: [],
+  requirements: form.requirements,
+  isRemote: form.isRemote,
+  location: form.isRemote ? undefined : {
+    address: form.address.trim(),
+    city: form.city.trim(),
+    ...(form.lat !== null && { lat: form.lat }),
+    ...(form.lng !== null && { lng: form.lng }),
+  },
+  urgency: form.urgency,
+  milestones: form.milestones,
+  autoMatch: form.autoMatch,
+  allowBids: form.allowBids,
+  featured: form.featured,
+  nda: form.nda,
+  invites: form.invites,
+  needApproval: form.needApproval,
+}, user);
 
     setSuccess(true);
 
