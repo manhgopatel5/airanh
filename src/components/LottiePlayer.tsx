@@ -4,7 +4,15 @@ import dynamic from "next/dynamic";
 import { memo, useEffect, useRef, useState, useCallback } from "react";
 import type { LottieRefCurrentProps } from "lottie-react";
 
-const Lottie = dynamic(() => import("lottie-react"), {
+const Lottie = dynamic(
+  () => import("lottie-react").then((mod) => mod.default),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="aspect-square w-full animate-pulse rounded-2xl bg-slate-100" />
+    ),
+  }
+);
   ssr: false,
   loading: () => (
     <div className="aspect-square w-full animate-pulse rounded-2xl bg-slate-100" />
@@ -72,7 +80,10 @@ function LottiePlayer({
   return () => io.disconnect();
 }, [pauseWhenHidden]);
 
-  const shouldPlay =!prefersReduced && isInView && (autoplay || playOnHover === false);
+ const shouldPlay =
+  !prefersReduced &&
+  isInView &&
+  (playOnHover ? false : autoplay);
 
   useEffect(() => {
     const instance = lottieRef.current;
@@ -116,7 +127,7 @@ function LottiePlayer({
       aria-label={ariaLabel}
     >
 <Lottie
-  lottieRef={lottieRef}
+  lottieRef={lottieRef as any}
   animationData={animationData}
   loop={loop && !prefersReduced}
   autoplay={false}
