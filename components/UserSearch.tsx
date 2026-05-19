@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { FiSearch, FiUserPlus, FiCheck, FiX, FiAlertCircle, FiUsers, FiClock } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast, Toaster } from "sonner";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 
 type UserResult = {
