@@ -14,13 +14,16 @@ import {
   where,
   Timestamp,
   Firestore,
+  Timestamp,
+Firestore,
+type QueryConstraint,
 } from "firebase/firestore";
 
 import TaskFeed from "@/components/TaskFeed";
 import ModeToggle from "@/components/ModeToggle";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import LottiePlayer from "@/components/LottiePlayer";
-import * as L from "@/components/illustrations";
+import illustrations from "@/components/illustrations";
 import type { Task } from "@/types/task";
 import { useAppStore } from "@/store/app";
 import type {
@@ -139,7 +142,7 @@ const handleTaskUpdate = useCallback(
     (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
       if (!db) return null;
       const now = Timestamp.now();
-      const constraints: any[] = [
+     const constraints: QueryConstraint[] = [
         where("type", "==", mode),
         where("visibility", "==", "public"),
         where("status", "in", ["open", "full", "doing"]),
@@ -207,7 +210,16 @@ const handleTaskUpdate = useCallback(
   id: doc.id,
   ...doc.data(),
 })) as FeedTask[];
-      setAllItems((prev) => [...prev,...newItems]);
+      setAllItems((prev) => {
+  const map = new Map(
+    [...prev, ...newItems].map((item) => [
+      item.id,
+      item,
+    ])
+  );
+
+  return Array.from(map.values());
+});
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
       setHasMore(snap.docs.length === PAGE_SIZE);
     } finally {
@@ -219,7 +231,11 @@ const handleTaskUpdate = useCallback(
     if (!loadMoreRef.current ||!hasMore) return;
     observerRef.current?.disconnect();
     observerRef.current = new IntersectionObserver(
-      ([entry]) => entry?.isIntersecting && loadMore(),
+      ([entry]) => {
+  if (entry?.isIntersecting) {
+    loadMore();
+  }
+},
       { threshold: 0.1, rootMargin: "200px" }
     );
     observerRef.current.observe(loadMoreRef.current);
@@ -299,13 +315,13 @@ const filteredItems = useMemo(() => {
             exit={{ y: -40, opacity: 0 }}
             className="fixed top-14 left-1/2 -translate-x-1/2 z-50"
           >
-            <LottiePlayer
-              animationData={L.loadingPull}
-              autoplay
-              loop
-              className="w- h-"
-              aria-label="Đang làm mới"
-            />
+          <LottiePlayer
+  animationData={illustrations.loadingPull}
+  autoplay
+  loop
+  className="w-16 h-16"
+  aria-label="Đang làm mới"
+/>
           </motion.div>
         )}
       </AnimatePresence>
@@ -318,13 +334,13 @@ const filteredItems = useMemo(() => {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center"
           >
-            <LottiePlayer
-              animationData={L.celebrate}
-              loop={false}
-              autoplay
-              className="w-[300px] h-[300px]"
-              aria-label="Hoàn thành"
-            />
+           <LottiePlayer
+  animationData={illustrations.celebrate}
+  loop={false}
+  autoplay
+  className="w-[300px] h-[300px]"
+  aria-label="Hoàn thành"
+/>
           </motion.div>
         )}
       </AnimatePresence>
@@ -369,7 +385,7 @@ const filteredItems = useMemo(() => {
         <AnimatePresence mode="wait">
           {error? (
             <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center px-6 py-20 text-center">
-              <LottiePlayer animationData={L.errorShake} loop={false} className="w-[180px] h-[180px]" aria-label="Lỗi" />
+             <LottiePlayer animationData={illustrations.errorShake} loop={false} className="w-[180px] h-[180px]" aria-label="Lỗi" />
               <h2 className="text-xl font-bold mt-2 text-foreground">{error}</h2>
               <button
                 onClick={handleRefresh}
@@ -380,7 +396,7 @@ const filteredItems = useMemo(() => {
             </motion.div>
           ) : loading &&!refreshing? (
             <motion.div key="loading" className="flex flex-col items-center py-20">
-              <LottiePlayer animationData={L.loadingPull} loop className="w-[120px] h-[120px]" aria-label="Đang tải" />
+             <LottiePlayer animationData={illustrations.loadingPull} loop className="w-[120px] h-[120px]" aria-label="Đang tải" />
               <p className="text-sm text-muted-foreground mt-2">Đang tải...</p>
             </motion.div>
           ) : filteredItems.length === 0? (
@@ -391,7 +407,11 @@ const filteredItems = useMemo(() => {
               className="flex flex-col items-center px-6 py-16 text-center"
             >
               <LottiePlayer
-                animationData={isPlanMode? L.walletOpen : L.empty}
+                animationData={
+  isPlanMode
+    ? illustrations.walletOpen
+    : illustrations.empty
+}
                 loop
                 className="w-[220px] h-[220px]"
                 aria-label="Trống"
@@ -415,7 +435,13 @@ const filteredItems = useMemo(() => {
 
         {!loading && hasMore && allItems.length > 0 && (
           <div ref={loadMoreRef} className="py-6 flex justify-center">
-            {loadingMore && <LottiePlayer animationData={L.loadingPull} autoplay loop className="w- h-" aria-label="Tải thêm" />}
+            {loadingMore && <LottiePlayer
+  animationData={illustrations.loadingPull}
+  autoplay
+  loop
+  className="w-16 h-16"
+  aria-label="Tải thêm"
+/>}
           </div>
         )}
       </div>
