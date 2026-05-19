@@ -14,12 +14,9 @@ import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import {
   doc,
   getDoc,
-  addDoc,
-  collection,
+  
   serverTimestamp,
-  query,
-  where,
-  getDocs,
+  
   updateDoc,
 } from "firebase/firestore";
 import { toast, Toaster } from "sonner";
@@ -62,13 +59,7 @@ export default function WarningModal({
 
   const [loading, setLoading] = useState(true);
 
-  const [appealText, setAppealText] = useState("");
 
-  const [submitting, setSubmitting] = useState(false);
-
-  const [hasAppealed, setHasAppealed] = useState(false);
-
-  const [showAppealForm, setShowAppealForm] = useState(false);
 
   const [checked, setChecked] = useState(false);
 
@@ -219,11 +210,7 @@ export default function WarningModal({
 
   if (!open) return null;
 
-  const warningDate = warningAt?.toDate?.()
-    ? warningAt.toDate()
-    : warningAt
-    ? new Date(warningAt)
-    : new Date();
+
 
   const violationCount =
     userData?.violationCount || 0;
@@ -317,3 +304,93 @@ export default function WarningModal({
                     />
                   </div>
                 </motion.div>
+                <div className="text-center mb-5">
+                  <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
+                    {title || "Cảnh cáo tài khoản"}
+                  </h2>
+
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2 leading-relaxed">
+                    {message ||
+                      "Tài khoản của bạn đã bị cảnh cáo do vi phạm quy định cộng đồng."}
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="rounded-2xl bg-amber-500/10 border border-amber-500/20 p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle
+                        size={18}
+                        className="text-amber-500 mt-0.5"
+                      />
+
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-1">
+                          Lý do cảnh cáo
+                        </p>
+
+                        <p className="text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed">
+                          {reason}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl bg-zinc-100 dark:bg-zinc-800/50 p-4">
+                    <div className="flex items-start gap-3">
+                      <Shield
+                        size={18}
+                        className="text-zinc-500 mt-0.5"
+                      />
+
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1">
+                          Số lần vi phạm
+                        </p>
+
+                        <p className="text-sm font-medium text-zinc-900 dark:text-white">
+                          {violationCount}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <label className="flex items-start gap-3 rounded-2xl border border-zinc-200 dark:border-zinc-700 p-4 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) =>
+                        setChecked(e.target.checked)
+                      }
+                      className="mt-1"
+                    />
+
+                    <span className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                      Tôi đã đọc và hiểu cảnh cáo này.
+                    </span>
+                  </label>
+
+                  <button
+                    onClick={handleConfirm}
+                    disabled={!canConfirm}
+                    className="w-full h-12 rounded-2xl bg-black dark:bg-white text-white dark:text-black font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-all"
+                  >
+                    {loading ? (
+                      "Đang xử lý..."
+                    ) : countdown > 0 ? (
+                      `Xác nhận (${countdown}s)`
+                    ) : (
+                      <>
+                        <Check size={18} />
+                        Đã hiểu
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
