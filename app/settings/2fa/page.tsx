@@ -9,7 +9,7 @@ import { ChevronLeft, Copy, RefreshCw, Zap, Eye, EyeOff, KeyRound, Webhook } fro
 import { toast, Toaster } from "sonner";
 import { nanoid } from "nanoid";
 import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 
 const vibrate = (pattern: number | number[]) => {
