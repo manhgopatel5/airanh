@@ -260,30 +260,13 @@ export default function EmptyState({
       ),
     }));
 
-  useEffect(() => {
-    setContent({
-      title:
-        pool.titles[
-          Math.floor(
-            Math.random() *
-              pool.titles.length
-          )
-        ],
-
-      desc:
-        pool.descs[
-          Math.floor(
-            Math.random() *
-              pool.descs.length
-          )
-        ],
-
-      suggests: getRandomItems(
-        pool.suggests,
-        4
-      ),
-    });
-  }, [tab, type]);
+useEffect(() => {
+  setContent({
+    title: pool.titles[Math.floor(Math.random() * pool.titles.length)]?? pool.titles[0],
+    desc: pool.descs[Math.floor(Math.random() * pool.descs.length)]?? pool.descs[0],
+    suggests: getRandomItems(pool.suggests, 4),
+  });
+}, [tab, type]);
 
   const handleSuggestClick =
     useCallback(
