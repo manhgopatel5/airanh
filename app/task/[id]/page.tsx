@@ -528,16 +528,20 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
  ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
   : "";
 
-  const statusMap: Record<TaskStatus, { label: string; color: string; dot: string }> = {
-    open: { label: "Đang tuyển", color: "bg-[#E8F1FF] text-[#0042B2] dark:bg-[#0042B2]/20 dark:text-[#8AB4F8]", dot: "bg-[#0042B2]" },
-    full: { label: "Đã đủ", color: "bg-[#FEE8E8] text-[#D93025] dark:bg-[#D93025]/20 dark:text-[#F28B82]", dot: "bg-[#D93025]" },
-    doing: { label: "Đang làm", color: "bg-[#E8F1FF] text-[#0042B2] dark:bg-[#0042B2]/20 dark:text-[#8AB4F8]", dot: "bg-[#0042B2]" },
-    completed: { label: "Hoàn thành", color: "bg-[#F1F3F4] text-[#5F6368] dark:bg-zinc-800 dark:text-zinc-400", dot: "bg-[#5F6368]" },
-    cancelled: { label: "Đã hủy", color: "bg-[#F1F3F4] text-[#5F6368] dark:bg-zinc-800 dark:text-zinc-400", dot: "bg-[#5F6368]" },
-    deleted: { label: "Đã xóa", color: "bg-[#F1F3F4] text-[#5F6368] dark:bg-zinc-800 dark:text-zinc-400", dot: "bg-[#5F6368]" },
-    expired: { label: "Hết hạn", color: "bg-[#FEF7E0] text-[#F9AB00] dark:bg-[#F9AB00]/20 dark:text-[#FDD663]", dot: "bg-[#F9AB00]" },
-    pending: { label: "Chờ duyệt", color: "bg-[#FEF7E0] text-[#F9AB00] dark:bg-[#F9AB00]/20 dark:text-[#FDD663]", dot: "bg-[#F9AB00]" },
-  };
+const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string; dot: string }> = {
+  // TaskStatus
+  open: { label: "Đang mở", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30", dot: "bg-emerald-500" },
+  full: { label: "Đã đầy", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30", dot: "bg-amber-500" },
+  doing: { label: "Đang làm", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30", dot: "bg-blue-500" },
+  completed: { label: "Hoàn thành", color: "bg-green-100 text-green-700 dark:bg-green-900/30", dot: "bg-green-500" },
+  cancelled: { label: "Đã hủy", color: "bg-red-100 text-red-700 dark:bg-red-900/30", dot: "bg-red-500" },
+  deleted: { label: "Đã xóa", color: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800/30", dot: "bg-zinc-500" },
+  expired: { label: "Hết hạn", color: "bg-red-100 text-red-700 dark:bg-red-900/30", dot: "bg-red-500" },
+  pending: { label: "Chờ duyệt", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30", dot: "bg-amber-500" },
+  // PlanStatus - THÊM 2 DÒNG NÀY
+  draft: { label: "Bản nháp", color: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800/30", dot: "bg-zinc-500" },
+  in_progress: { label: "Đang diễn ra", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30", dot: "bg-blue-500" },
+};
 
   const isExpired = isTask(task) && task.deadline && task.deadline.seconds * 1000 < Date.now();
   const status = isExpired
