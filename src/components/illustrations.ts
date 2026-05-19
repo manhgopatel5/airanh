@@ -12,23 +12,7 @@ import switchToggle from "@/assets/lotties/huha-switch.json";
 import task from "@/assets/lotties/huha-task.json";
 import plan from "@/assets/lotties/huha-plan.json";
 
-export const illustrations = {
-  empty,
-  idle,
-  loadingPull,
-  searching,
-  noWifi,
-  errorShake,
-  successCheck,
-  celebrate,
-  coinDrop,
-  walletOpen,
-  switchToggle,
-  task,
-  plan,
-};
-
-export {
+const illustrations = {
   empty,
   idle,
   loadingPull,
@@ -45,3 +29,20 @@ export {
 };
 
 export default illustrations;
+export { illustrations };
+
+export {
+  empty,
+  idle,
+  loadingPull,
+  searching,
+  noWifi,
+  errorShake,
+  successCheck,
+  celebrate,
+  coinDrop,
+  walletOpen,
+  switchToggle,
+  task,
+  plan,
+};
