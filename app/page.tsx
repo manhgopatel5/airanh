@@ -24,8 +24,6 @@ import * as L from "@/components/illustrations";
 
 import { useAppStore } from "@/store/app";
 import type {
-  TaskItem,
-  PlanItem,
   BaseFeedItem,
   TaskListItem,
   PlanListItem,
