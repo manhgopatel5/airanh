@@ -51,7 +51,11 @@ export default function PlanFeed({ plans }: Props) {
           transition={{delay:i*0.04,duration:0.3}}
           className="px-4"
         >
-        <TaskCard task={plan as Task} mode="plan" />
+        <TaskCard
+  task={plan as Task}
+  mode="plan"
+  theme="plan"
+/>
         </motion.div>
       ))}
     </div>
