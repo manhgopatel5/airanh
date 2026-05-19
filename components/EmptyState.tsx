@@ -3,9 +3,14 @@
 import { HiPlus } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { useEffect, useState, useCallback } from "react";
+import {
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 
 import LottiePlayer from "@/components/LottiePlayer";
+
 import illustrations, {
   type IllustrationKey,
 } from "@/components/illustrations";
@@ -24,7 +29,7 @@ const EmptyIcon = ({
   type: PostType;
 }) => (
   <svg
-    className={`w-14 h-14 ${
+    className={`h-14 w-14 ${
       type === "task"
         ? "text-[#0042B2]"
         : "text-[#00C853]"
@@ -80,10 +85,13 @@ const CONTENT_POOL = {
       titles: [
         "Không ai đăng hết luôn á? Ủa alo? 📢",
       ],
+
       descs: [
         "Người khác chưa đăng vì đang chờ bạn đó 👀",
       ],
+
       lottieKey: "empty" as IllustrationKey,
+
       suggests: [
         "Tuyển 5 người đi bắt chồng ngoại tình 😭",
         "Giả làm người yêu tui 1 buổi gặp họ hàng 🙃",
@@ -96,9 +104,14 @@ const CONTENT_POOL = {
       titles: [
         "Đăng cái gì đó cho khu này xôm lên đi 🔥",
       ],
-      descs: ["Im lặng đáng sợ luôn á 😱"],
+
+      descs: [
+        "Im lặng đáng sợ luôn á 😱",
+      ],
+
       lottieKey:
         "searching" as IllustrationKey,
+
       suggests: [
         "Ship giùm hộp cơm tui đói sắp xỉu 🍱",
         "Mua thuốc panadol giùm cái coi 😵",
@@ -111,10 +124,14 @@ const CONTENT_POOL = {
       titles: [
         "Nhanh tay còn kịp, chậm là mất 👀",
       ],
+
       descs: [
         "Đây là nơi săn job nhanh hơn crush rep tin nhắn 💬",
       ],
-      lottieKey: "task" as IllustrationKey,
+
+      lottieKey:
+        "task" as IllustrationKey,
+
       suggests: [
         "Cần người cứu gấp sắp toi rồi 🆘",
         "In tài liệu gấp, máy in tui phản chủ rồi 🖨️",
@@ -127,10 +144,14 @@ const CONTENT_POOL = {
       titles: [
         "Kèo người quen, tiền ít nhưng drama nhiều 🌚",
       ],
+
       descs: [
         "Giúp nhau hôm nay, mai cưới nhớ gửi thiệp 😌",
       ],
-      lottieKey: "plan" as IllustrationKey,
+
+      lottieKey:
+        "plan" as IllustrationKey,
+
       suggests: [
         "Qua phụ dọn nhà, tui bao ăn 🧹",
         "Việc cho người quen thôi, qua Cam kiếm tiền",
@@ -145,11 +166,14 @@ const CONTENT_POOL = {
       titles: [
         "Kèo này mà bỏ là phí thanh xuân đó 😭🔥",
       ],
+
       descs: [
         "Join lẹ kẻo full slot đó 👀",
       ],
+
       lottieKey:
         "celebrate" as IllustrationKey,
+
       suggests: [
         "Cafe sáng tám chuyện chill đê ☕",
         "Đi ăn chung cho tui đỡ ngại đi một mình 🍜",
@@ -162,10 +186,14 @@ const CONTENT_POOL = {
       titles: [
         "Ê khu này im ắng quá nghe 🤨",
       ],
+
       descs: [
         "Không cần đi xa, vui ngay gần nhà 😏",
       ],
-      lottieKey: "idle" as IllustrationKey,
+
+      lottieKey:
+        "idle" as IllustrationKey,
+
       suggests: [
         "Cafe gần nhà cho tiện ghé nào ☕",
         "Chạy bộ 5 phút nghỉ 30 phút 🏃",
@@ -178,11 +206,14 @@ const CONTENT_POOL = {
       titles: [
         "Chưa ai mở kèo mới hết bây 😗",
       ],
+
       descs: [
         "Plan mới đăng, còn nóng hổi 🆕",
       ],
+
       lottieKey:
         "loadingPull" as IllustrationKey,
+
       suggests: [
         "Kèo tối nay Q1 luôn không tụi bây 🍻",
         "Đi ăn không đặt bàn nhanh nào 😤",
@@ -195,11 +226,14 @@ const CONTENT_POOL = {
       titles: [
         "Mấy đứa đâu rồi vào nhanh 😏",
       ],
+
       descs: [
         "Kèo người quen, không đi là kỳ đó 😏",
       ],
+
       lottieKey:
         "walletOpen" as IllustrationKey,
+
       suggests: [
         "Mai sinh nhật tao làm lớn đê 🎂",
         "Nhà ai có cơm cho tui ăn ké với đói quá 😭",
@@ -214,24 +248,32 @@ const THEME = {
   task: {
     iconBg:
       "bg-[#0042B2]/10 dark:bg-[#0042B2]/15",
+
     tagBg:
       "bg-[#0042B2]/10 hover:bg-[#0042B2]/20 dark:bg-[#0042B2]/15 dark:hover:bg-[#0042B2]/25",
+
     tagText:
       "text-[#0042B2] dark:text-[#8FB3FF]",
+
     buttonBg:
       "bg-[#0042B2] hover:bg-[#003A9A] dark:bg-[#0042B2] dark:hover:bg-[#003A9A]",
+
     buttonText: "text-white",
   },
 
   plan: {
     iconBg:
       "bg-[#00C853]/10 dark:bg-[#00C853]/15",
+
     tagBg:
       "bg-[#00C853]/10 hover:bg-[#00C853]/20 dark:bg-[#00C853]/15 dark:hover:bg-[#00C853]/25",
+
     tagText:
       "text-[#00A843] dark:text-[#7CFFB2]",
+
     buttonBg:
       "bg-[#00C853] hover:bg-[#00A843] dark:bg-[#00C853] dark:hover:bg-[#00A843]",
+
     buttonText: "text-white",
   },
 };
@@ -259,6 +301,7 @@ export default function EmptyState({
   const router = useRouter();
 
   const theme = THEME[type];
+
   const pool = CONTENT_POOL[type][tab];
 
   const [content, setContent] =
@@ -294,7 +337,7 @@ export default function EmptyState({
         4
       ),
     });
-  }, [pool]);
+  }, [tab, type]);
 
   const handleSuggestClick =
     useCallback(
@@ -328,7 +371,8 @@ export default function EmptyState({
     }, [router, type]);
 
   const lottieData =
-    illustrations[pool.lottieKey];
+    illustrations[pool.lottieKey] ??
+    illustrations.empty;
 
   return (
     <div className="flex flex-col items-center justify-center px-6 py-16 text-center font-sans">
@@ -346,19 +390,15 @@ export default function EmptyState({
         }}
         className={`mb-5 flex h-20 w-20 items-center justify-center rounded-2xl ${theme.iconBg}`}
       >
-        <div className="relative h-14 w-14 overflow-hidden">
-          {lottieData ? (
-            <LottiePlayer
-              animationData={lottieData}
-              loop
-              autoplay
-              renderer="svg"
-              className="h-full w-full"
-              aria-label={`${type} illustration`}
-            />
-          ) : (
-            <EmptyIcon type={type} />
-          )}
+        <div className="relative h-14 w-14 shrink-0 overflow-hidden">
+          <LottiePlayer
+            animationData={lottieData}
+            loop
+            autoplay
+            renderer="canvas"
+            className="h-full w-full"
+            aria-label={`${type} illustration`}
+          />
         </div>
       </motion.div>
 
