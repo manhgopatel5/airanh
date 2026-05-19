@@ -44,7 +44,7 @@ import {
   type PanInfo,
 } from "framer-motion";
 
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 
 import * as L from "@/components/illustrations";
 
