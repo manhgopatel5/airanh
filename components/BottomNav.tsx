@@ -186,7 +186,8 @@ export default function BottomNav() {
       <button
         key={item.path}
         onClick={() => handleNavigation(item.path)}
-        className="flex-1 flex flex-col items-center justify-center relative h-full py-2 outline-none select-none touch-manipulation group will-change-transform"
+        // Thêm pb-3.5 để tạo khoảng trống cố định phía đáy button cho dấu chấm tọa lạc
+        className="flex-1 flex flex-col items-center justify-center relative h-full pt-1 pb-3.5 outline-none select-none touch-manipulation group will-change-transform"
       >
         <item.Icon 
           className={`w-[21px] h-[21px] transition-all duration-200 ease-out ${
@@ -199,7 +200,7 @@ export default function BottomNav() {
           {item.label}
         </span>
         
-        {/* Sửa lỗi nháy: Thêm thuộc tính layout="position" để ép cấu trúc chỉ tính toán lại tọa độ, bỏ qua bóp dãn box */}
+        {/* ĐÃ FIX: Ép cứng vị trí absolute nằm ngang giữa tâm nút, loại bỏ hiện tượng bị văng lệch ra ngoài gây chớp */}
         {active && (
           <motion.div 
             layoutId="activeIndicator"
@@ -210,7 +211,7 @@ export default function BottomNav() {
               damping: 28,
               mass: 0.5 
             }}
-            className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${activeBgClass}`}
+            className={`absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full ${activeBgClass}`}
           />
         )}
       </button>
