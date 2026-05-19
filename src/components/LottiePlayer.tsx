@@ -4,15 +4,7 @@ import dynamic from "next/dynamic";
 import { memo, useEffect, useRef, useState, useCallback } from "react";
 import type { LottieRefCurrentProps } from "lottie-react";
 
-const Lottie = dynamic(
-  () => import("lottie-react").then((mod) => mod.default),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="aspect-square w-full animate-pulse rounded-2xl bg-slate-100" />
-    ),
-  }
-);
+const Lottie = dynamic(() => import("lottie-react"), {
 
 
 export type LottiePlayerProps = {
@@ -122,7 +114,7 @@ function LottiePlayer({
       role="img"
       aria-label={ariaLabel}
     >
-<Lottie
+<Lottie.default
   lottieRef={lottieRef as any}
   animationData={animationData}
   loop={loop && !prefersReduced}
