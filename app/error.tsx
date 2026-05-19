@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 
 export default function Error({
