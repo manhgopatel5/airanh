@@ -6,9 +6,7 @@ import { sendEmailVerification, reload, signOut } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { toast, Toaster } from "sonner";
-import { FiCheckCircle, FiRefreshCw, FiLogOut, FiSend } from "react-icons/fi";
-import LottiePlayer from "@/components/LottiePlayer";
-import * as L from "@/components/illustrations";
+import { FiCheckCircle, FiRefreshCw, FiLogOut, FiSend, FiMail } from "react-icons/fi";
 import { motion } from "framer-motion";
 
 const vibrate = (p: number | number[]) => {
@@ -91,7 +89,7 @@ export default function VerifyEmailPage() {
             <div className="relative w-24 h-24 mx-auto mb-6">
               <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-3xl blur-2xl opacity-50 animate-pulse" />
               <div className="relative w-full h-full bg-gradient-to-br from-primary to-accent rounded-3xl flex items-center justify-center shadow-2xl shadow-primary/40 ring-1 ring-white/20">
-                <LottiePlayer animationData={L.celebrate} loop autoplay className="w-14 h-14" aria-label="Email" />
+                <FiMail className="w-12 h-12 text-primary-foreground" />
               </div>
             </div>
             <h1 className="text-3xl font-black text-foreground mb-2 tracking-tight">Xác thực email</h1>
@@ -101,10 +99,10 @@ export default function VerifyEmailPage() {
 
           <div className="glass rounded-3xl p-6 shadow-2xl border border-border">
             <div className="space-y-3">
-              <motion.button 
-                whileTap={{ scale: 0.98 }} 
-                onClick={handleCheck} 
-                disabled={checking} 
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={handleCheck}
+                disabled={checking}
                 aria-busy={checking}
                 className="relative w-full h-14 rounded-2xl text-primary-foreground text-base font-bold shadow-xl disabled:opacity-60 flex items-center justify-center gap-2.5 bg-gradient-to-r from-accent to-accent/80"
               >
@@ -112,10 +110,10 @@ export default function VerifyEmailPage() {
                 {checking? "Đang kiểm tra..." : "Tôi đã xác thực"}
               </motion.button>
 
-              <motion.button 
-                whileTap={{ scale: 0.98 }} 
-                onClick={handleResend} 
-                disabled={sending || cooldown > 0} 
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={handleResend}
+                disabled={sending || cooldown > 0}
                 aria-busy={sending}
                 className="w-full h-14 rounded-2xl font-bold text-base bg-secondary text-secondary-foreground border-2 border-border hover:border-primary/50 flex items-center justify-center gap-2.5 disabled:opacity-50 transition-colors"
               >
@@ -125,9 +123,9 @@ export default function VerifyEmailPage() {
 
             <div className="relative my-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div><div className="relative flex justify-center text-xs"><span className="bg-card px-3 text-muted-foreground">hoặc</span></div></div>
 
-            <button 
-              onClick={handleLogout} 
-              disabled={loggingOut} 
+            <button
+              onClick={handleLogout}
+              disabled={loggingOut}
               aria-busy={loggingOut}
               className="w-full h-12 rounded-2xl font-semibold text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
             >
