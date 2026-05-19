@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FiChevronLeft, FiX, FiZoomIn, FiZoomOut } from "react-icons/fi";
 import { motion, AnimatePresence, useMotionValue } from "framer-motion";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 import { cn } from "@/lib/utils";
 
