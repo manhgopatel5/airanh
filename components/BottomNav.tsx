@@ -21,7 +21,6 @@ interface NavItem {
   Icon: LucideIcon;
 }
 
-// 1. Cấu hình Animation độc lập, sử dụng easing mượt chuẩn Apple
 const menuVariants = {
   hidden: { opacity: 0, y: 15, scale: 0.97 },
   visible: { 
@@ -51,7 +50,7 @@ const itemVariants = {
 };
 
 /* ==========================================================================
-   COMPONENT 1: FLOATING MENU (Tách riêng để khi đóng/mở không ép Nav re-render)
+   COMPONENT 1: FLOATING MENU 
    ========================================================================== */
 const FloatingMenu = React.memo(({ 
   isOpen, 
@@ -134,13 +133,11 @@ export default function BottomNav() {
     { path: "/profile", label: "Profile", Icon: User },
   ], []);
 
-  // Khởi tạo prefetch mạnh mẽ hơn để tránh loading khi đổi tab
   useEffect(() => {
     const targets = ["/", "/messages", "/tasks", "/profile", "/create/task", "/create/plan"];
     targets.forEach((p) => router.prefetch(p));
   }, [router]);
 
-  // Đóng trên phím ESC
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") setIsOpen(false);
@@ -149,7 +146,6 @@ export default function BottomNav() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Khóa cuộn màn hình nền an toàn không giật khung hình
   useEffect(() => {
     if (isOpen) {
       const originalStyle = window.getComputedStyle(document.body).overflow;
@@ -158,7 +154,6 @@ export default function BottomNav() {
     }
   }, [isOpen]);
 
-  // SỬA LỖI LOADING: Bỏ useTransition cho router.push để Next.js điều hướng tức thì bằng cache có sẵn từ prefetch
   const handleNavigation = useCallback((path: string) => {
     if (pathname === path) return;
     navigator.vibrate?.(10);
@@ -199,19 +194,27 @@ export default function BottomNav() {
           {item.label}
         </span>
         
-        {/* SỬA LỖI CHỚP TỌA ĐỘ: Đưa dấu chấm về tâm tuyệt đối theo chiều ngang (left-1/2 -translate-x-1/2) */}
+        {/* GIẢI PHÁP ĐẶC TRỊ CHỚP CHUYỂN TRANG: 
+            Sử dụng 2 tầng chỉ báo. Một div tĩnh bằng CSS thuần (luôn xuất hiện ngay khi trang vừa tải mà không cần đợi JS)
+            kết hợp với motion.div tạo độ mượt nếu Component nằm trong Persistent Layout. */}
         {active && (
-          <motion.div 
-            layoutId="activeIndicator"
-            layout="position"
-            transition={{ 
-              type: "spring", 
-              stiffness: 450, 
-              damping: 28,
-              mass: 0.5 
-            }}
-            className={`absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full ${activeBgClass}`}
-          />
+          <>
+            {/* Tầng 1: Dấu chấm tĩnh (CSS thuần) - Triệt tiêu chớp mắt khi load trang */}
+            <div className={`absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full ${activeBgClass} opacity-100 block`} />
+            
+            {/* Tầng 2: Hiệu ứng trượt nếu thanh Nav không bị unmount */}
+            <motion.div 
+              layoutId="activeIndicator"
+              layout="position"
+              transition={{ 
+                type: "spring", 
+                stiffness: 500, 
+                damping: 30,
+                mass: 0.4
+              }}
+              className={`absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full ${activeBgClass} z-10 hidden md:block`}
+            />
+          </>
         )}
       </button>
     );
@@ -219,7 +222,6 @@ export default function BottomNav() {
 
   return (
     <LayoutGroup id="fixed-bottom-nav-scope">
-      {/* OVERLAY NỀN MỜ CÔ LẬP */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -232,23 +234,18 @@ export default function BottomNav() {
         )}
       </AnimatePresence>
 
-      {/* KHUNG CHỨA TOÀN CỤM CONTAINER */}
       <div className="fixed bottom-0 inset-x-0 z-50 pointer-events-none flex flex-col items-center justify-end">
         <div className="w-full max-w-[480px] px-4 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center gap-3">
           
-          {/* 1. ĐƯỢC CHUYỂN THÀNH COMPONENT CON ĐỂ TRÁNH LÀM NHÁY NAV BAR */}
           <FloatingMenu isOpen={isOpen} onSelect={handleSelectCreate} />
 
-          {/* 2. BASE NAVIGATION BAR BAN ĐẦU */}
           <div className="w-full pointer-events-auto relative rounded-[26px] border border-zinc-200/50 bg-white/80 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.04)] overflow-hidden">
             
             <div className="flex items-center justify-between h-[64px] px-2 relative">
-              {/* Bên trái */}
               <div className="flex-1 grid grid-cols-2 h-full">
                 {leftItems.map(renderNavItem)}
               </div>
 
-              {/* Nút trung tâm */}
               <div className="w-[64px] flex justify-center h-full items-center relative">
                 <button
                   onClick={() => {
@@ -274,7 +271,6 @@ export default function BottomNav() {
                 </button>
               </div>
 
-              {/* Bên phải */}
               <div className="flex-1 grid grid-cols-2 h-full">
                 {rightItems.map(renderNavItem)}
               </div>
