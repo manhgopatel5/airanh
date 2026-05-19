@@ -1,14 +1,11 @@
 "use client";
+
 import { useState, useCallback } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
 import { FiCheck, FiLoader } from "react-icons/fi";
-import { motion } from "framer-motion";
-import { toast, Toaster } from "sonner";
-import LottiePlayer from "@/components/LottiePlayer";
-import * as L from "@/components/illustrations";
 
 type Props = {
   currentName: string;
@@ -49,8 +46,6 @@ export default function EditProfile({ currentName, onClose }: Props) {
     if (err) {
       setError(err);
       setTouched(true);
-      navigator.vibrate?.(10);
-      toast.error(err);
       return;
     }
 
@@ -61,7 +56,6 @@ export default function EditProfile({ currentName, onClose }: Props) {
 
     if (!user ||!auth.currentUser) {
       setError("Bạn chưa đăng nhập");
-      toast.error("Bạn chưa đăng nhập");
       return;
     }
 
@@ -83,57 +77,45 @@ export default function EditProfile({ currentName, onClose }: Props) {
       ]);
 
       setSuccess(true);
-      navigator.vibrate?.([10,20,10]);
-      toast.success("Đã cập nhật tên");
       setTimeout(() => onClose?.(), 800);
     } catch (err) {
       setError("Có lỗi xảy ra, thử lại sau");
-      toast.error("Có lỗi xảy ra, thử lại sau");
-      navigator.vibrate?.(15);
       console.error(err);
     } finally {
       setLoading(false);
     }
   }, [name, currentName, user, validate, onClose, auth, db]);
 
-  const isValid =!validate(name.trim()) && name.trim()!== currentName;
+  const isValid = !validate(name.trim()) && name.trim()!== currentName;
 
   return (
-    <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className="space-y-4">
-      <Toaster richColors position="top-center" />
+    <div className="space-y-4">
       <div>
         <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
           Tên hiển thị
         </label>
 
-        <div className="relative">
-          <input
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              setSuccess(false);
-            }}
-            onBlur={() => setTouched(true)}
-            onKeyDown={(e) => e.key === "Enter" && save()}
-            placeholder="Nhập tên của bạn"
-            maxLength={30}
-            autoFocus
-            className={`w-full px-4 py-3 rounded-2xl border bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 transition-all ${
-              errorMsg
-            ? "border-red-500 focus:ring-red-500/20 focus:border-red-500"
-                : "border-gray-200 dark:border-zinc-700 focus:ring-[#0042B2]/20 focus:border-[#0042B2]"
-            }`}
-          />
-          {success && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-6 h-6" />
-            </div>
-          )}
-        </div>
+        <input
+          value={name}
+          onChange={(e) => {
+            setName(e.target.value);
+            setSuccess(false);
+          }}
+          onBlur={() => setTouched(true)}
+          onKeyDown={(e) => e.key === "Enter" && save()}
+          placeholder="Nhập tên của bạn"
+          maxLength={30}
+          autoFocus
+          className={`w-full px-4 py-3 rounded-2xl border bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 transition-all ${
+            errorMsg
+             ? "border-red-500 focus:ring-red-500/20 focus:border-red-500"
+              : "border-gray-200 dark:border-zinc-700 focus:ring-blue-500/20 focus:border-blue-500"
+          }`}
+        />
 
         <div className="flex items-center justify-between mt-1.5 px-1">
           <p className="text-xs text-red-500 h-4">{errorMsg || error}</p>
-          <p className={`text-xs ${name.length > 25? 'text-amber-500' : 'text-gray-400 dark:text-zinc-500'}`}>
+          <p className="text-xs text-gray-400 dark:text-zinc-500">
             {name.length}/30
           </p>
         </div>
@@ -144,12 +126,11 @@ export default function EditProfile({ currentName, onClose }: Props) {
         disabled={loading || success ||!isValid}
         className={`w-full py-3 rounded-2xl font-semibold text-sm transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 ${
           success
-        ? "bg-emerald-500 text-white"
+           ? "bg-emerald-500 text-white"
             : loading ||!isValid
-        ? "bg-gray-300 dark:bg-zinc-700 text-gray-500 dark:text-zinc-400 cursor-not-allowed"
-            : "text-white shadow-lg"
+           ? "bg-gray-300 dark:bg-zinc-700 text-gray-500 dark:text-zinc-400 cursor-not-allowed"
+            : "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
         }`}
-        style={!success &&!loading && isValid? {background:'linear-gradient(135deg,#0042B2,#0066FF)',boxShadow:'0 10px 24px -8px rgba(0,66,178,0.4)'} : {}}
       >
         {loading? (
           <>
@@ -165,6 +146,6 @@ export default function EditProfile({ currentName, onClose }: Props) {
           "Lưu thay đổi"
         )}
       </button>
-    </motion.div>
+    </div>
   );
 }
