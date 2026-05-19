@@ -15,7 +15,7 @@ const Lottie = dynamic(
 );
 
 export type LottiePlayerProps = {
-  animationData?: object | null; // Cho phép null để check
+  animationData?: object | null;
   loop?: boolean;
   autoplay?: boolean;
   className?: string;
@@ -24,7 +24,7 @@ export type LottiePlayerProps = {
   pauseWhenHidden?: boolean;
   reduceMotion?: "auto" | boolean;
   onComplete?: () => void;
-  fallback?: React.ReactNode; // Thêm fallback
+  fallback?: React.ReactNode;
   "aria-label"?: string;
 };
 
@@ -38,7 +38,7 @@ function LottiePlayer({
   pauseWhenHidden = true,
   reduceMotion = "auto",
   onComplete,
-  fallback = <div className="w-full h-full bg-slate-100 rounded-2xl" />, // Default fallback
+  fallback = <div className="w-full h-full bg-slate-100 rounded-2xl" />,
   "aria-label": ariaLabel = "Animation",
 }: LottiePlayerProps) {
   const lottieRef = useRef<LottieRefCurrentProps>(null);
@@ -50,7 +50,6 @@ function LottiePlayer({
 
   useEffect(() => setIsMounted(true), []);
 
-  // prefers-reduced-motion
   useEffect(() => {
     if (reduceMotion === "auto" && typeof window!== "undefined") {
       const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -62,7 +61,6 @@ function LottiePlayer({
     setPrefersReduced(reduceMotion === true);
   }, [reduceMotion]);
 
-  // pause when out viewport
   useEffect(() => {
     if (!pauseWhenHidden ||!containerRef.current) return;
     const el = containerRef.current;
@@ -80,7 +78,6 @@ function LottiePlayer({
   const shouldPlay =
    !prefersReduced && isInView && (playOnHover? false : autoplay);
 
-  // control animation
   useEffect(() => {
     const instance = lottieRef.current;
     if (!instance ||!isMounted) return;
@@ -111,7 +108,6 @@ function LottiePlayer({
     }
   }, [playOnHover]);
 
-  // FIX: Nếu chưa mount hoặc không có animationData thì render fallback
   if (!isMounted ||!animationData) {
     return <div className={className}>{fallback}</div>;
   }
@@ -132,7 +128,7 @@ function LottiePlayer({
         animationData={animationData}
         loop={loop &&!prefersReduced}
         autoplay={false}
-        onComplete={onComplete}
+        onComplete={onComplete?? null} // Fix ở đây
         rendererSettings={{
           preserveAspectRatio: "xMidYMid meet",
           progressiveLoad: true,
