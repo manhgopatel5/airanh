@@ -110,16 +110,18 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
 
   const taskDate = task.type === "task" && task.deadline?.seconds? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) : "";
 
-  const statusMap: Record<TaskStatus, { label: string; color: string; dot: string }> = {
-    open: { label: "Đang tuyển", color: "bg-[#E8F1FF] text-[#0042B2] dark:bg-[#0042B2]/20 dark:text-[#8AB4F8]", dot: "bg-[#0042B2]" },
-    full: { label: "Đã đủ", color: "bg-[#FEE8E8] text-[#D93025] dark:bg-[#D93025]/20", dot: "bg-[#D93025]" },
-    doing: { label: "Đang làm", color: "bg-[#E8F1FF] text-[#0042B2] dark:bg-[#0042B2]/20", dot: "bg-[#0042B2]" },
-    completed: { label: "Hoàn thành", color: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800", dot: "bg-zinc-500" },
-    cancelled: { label: "Đã hủy", color: "bg-zinc-100 text-zinc-600", dot: "bg-zinc-500" },
-    deleted: { label: "Đã xóa", color: "bg-zinc-100 text-zinc-600", dot: "bg-zinc-500" },
-    expired: { label: "Hết hạn", color: "bg-[#FEF7E0] text-[#F9AB00]", dot: "bg-[#F9AB00]" },
-    pending: { label: "Chờ duyệt", color: "bg-[#FEF7E0] text-[#F9AB00]", dot: "bg-[#F9AB00]" },
-  };
+const statusMap: Record<TaskStatus, { label: string; color: string; dot: string }> = {
+  open: { label: "Đang mở", color: "bg-[#E5F1FF] text-[#0A84FF]", dot: "bg-[#0A84FF]" },
+  full: { label: "Đã đủ", color: "bg-[#FFF4E5] text-[#FF9500]", dot: "bg-[#FF9500]" },
+  doing: { label: "Đang làm", color: "bg-[#F2E5FF] text-[#AF52DE]", dot: "bg-[#AF52DE]" },
+  completed: { label: "Hoàn thành", color: "bg-[#E5F9E5] text-[#30D158]", dot: "bg-[#30D158]" },
+  cancelled: { label: "Đã hủy", color: "bg-[#FFE5E5] text-[#FF3B30]", dot: "bg-[#FF3B30]" },
+  expired: { label: "Đã hết hạn", color: "bg-[#FFE5E5] text-[#FF3B30]", dot: "bg-[#FF3B30]" },
+  pending: { label: "Chờ duyệt", color: "bg-[#FFF4E5] text-[#FF9500]", dot: "bg-[#FF9500]" },
+  deleted: { label: "Đã xóa", color: "bg-zinc-100 text-zinc-500", dot: "bg-zinc-400" },
+  in_progress: { label: "Đang làm", color: "bg-[#F2E5FF] text-[#AF52DE]", dot: "bg-[#AF52DE]" },
+  draft: { label: "Nháp", color: "bg-zinc-100 text-zinc-500", dot: "bg-zinc-400" }, // THÊM DÒNG NÀY
+};
 
   const isExpired = isTask(task) && task.deadline && task.deadline.seconds * 1000 < Date.now();
   const status = isExpired? { label: "Đã hết hạn", color: "bg-[#FFE5E5] text-[#FF3B30]", dot: "bg-[#FF3B30]" } : statusMap[task.status] || statusMap.open;
