@@ -13,7 +13,10 @@ import { FiGrid, FiList, FiSliders, FiTrendingUp, FiMapPin, FiUsers, FiClock } f
 
 
 type TabId = "hot" | "near" | "friends" | "new";
-type FeedTask = BaseFeedItem & Partial<TaskListItem & PlanListItem>;
+type FeedTask = BaseFeedItem &
+  Partial<TaskListItem & PlanListItem> & {
+    distance?: number;
+  };
 type Props = {
   tasks: FeedTask[];
   mode: AppMode;
