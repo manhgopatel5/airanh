@@ -85,7 +85,7 @@ const planCategoryEmoji: Record<
   social: "💬",
   other: "✨",
 };
-
+const likeBurstKey: IllustrationKey = "celebrate";
 function TaskCard({
   task,
   mode,
@@ -626,8 +626,8 @@ function TaskCard({
                     }}
                     className="absolute inset-0 pointer-events-none"
                   >
-                 <LottiePlayer
-  animationData={illustrations.celebrate}
+  <LottiePlayer
+  animationData={illustrations[likeBurstKey]}
   autoplay
   loop={false}
   renderer="svg"
