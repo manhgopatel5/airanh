@@ -15,7 +15,7 @@ const Lottie = dynamic(
 );
 
 export type LottiePlayerProps = {
-  animationData?: object | null;
+animationData?: Record<string, unknown> | null;
   loop?: boolean;
   autoplay?: boolean;
   className?: string;
@@ -44,7 +44,7 @@ function LottiePlayer({
   const lottieRef = useRef<LottieRefCurrentProps>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [isInView, setIsInView] = useState(!pauseWhenHidden);
+  const [isInView, setIsInView] = useState(true);
   const [prefersReduced, setPrefersReduced] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -75,8 +75,10 @@ function LottiePlayer({
     return () => io.disconnect();
   }, [pauseWhenHidden]);
 
-  const shouldPlay =
-   !prefersReduced && isInView && (playOnHover? false : autoplay);
+ const shouldPlay =
+  !prefersReduced &&
+  (pauseWhenHidden ? isInView : true) &&
+  (playOnHover ? false : autoplay);
 
   useEffect(() => {
     const instance = lottieRef.current;
@@ -128,7 +130,7 @@ function LottiePlayer({
         animationData={animationData}
         loop={loop &&!prefersReduced}
         autoplay={false}
-        onComplete={onComplete?? null} // Fix ở đây
+        onComplete={onComplete}
         rendererSettings={{
           preserveAspectRatio: "xMidYMid meet",
           progressiveLoad: true,
