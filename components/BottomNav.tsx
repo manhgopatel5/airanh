@@ -98,7 +98,7 @@ export default function BottomNav() {
     };
 
     return (
-      <button onClick={() => choose(type)} className="group relative text-left w-full rounded-[28px] overflow-hidden active:scale-[0.99] transition-all duration-300 focus:outline-none focus-visible:ring-4 ${c.ring}">
+      <button onClick={() => choose(type)} className={`group relative text-left w-full rounded-[28px] overflow-hidden active:scale-[0.99] transition-all duration-300 focus:outline-none focus-visible:ring-4 ${c.ring}`}>
         <div className={`absolute inset-0 bg-gradient-to-br ${c.from} ${c.to}`} />
         {/* glass highlight */}
         <div className="absolute inset-0 opacity-20 mix-blend-overlay" style={{backgroundImage:`radial-gradient(600px circle at 0% 0%, white, transparent 40%)`}} />
@@ -170,20 +170,33 @@ export default function BottomNav() {
         <div onClick={() => setOpen(false)} className={`absolute inset-0 bg-black/60 backdrop-blur-xl transition-opacity duration-300 ${open? "opacity-100" : "opacity-0"}`} />
         <div className={`absolute inset-x-0 bottom-0 max-h-[92vh] transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${open? "translate-y-0" : "translate-y-full"}`}>
           <div className="mx-auto max-w-[480px] bg-zinc-50 dark:bg-zinc-950 rounded-t-[36px] shadow-2xl overflow-hidden">
-            <div className="sticky top-0 z-10 bg-zinc-50/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50">
-              <div className="w-10 h-1.5 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mt-3 mb-3" />
-              <div className="px-6 pb-4 flex items-center justify-between">
-                <div>
-                  <h2 className="text-[22px] font-bold tracking-tight">Tạo mới</h2>
-                  <p className="text-[13px] text-zinc-500 mt-0.5">Chọn đúng loại, AI sẽ gợi ý tốt hơn</p>
-                </div>
-                <button onClick={() => setOpen(false)} className="w-8 h-8 rounded-full bg-zinc-200/70 dark:bg-zinc-800 flex items-center justify-center">✕</button>
-              </div>
-            <div className="p-4 space-y-3 overflow-y-auto max-h-[calc(92vh-88px)]">
-              <Card type="task" />
-              <Card type="plan" />
-              <p className="text-[11px] text-center text-zinc-400 pb-2">Mẹo: Task màu xanh dương, Plan màu xanh lá — đồng bộ với tab trên cùng</p>
-            </div>
+           <div className="sticky top-0 z-10 bg-zinc-50/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50">
+  <div className="w-10 h-1.5 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mt-3 mb-3" />
+
+  <div className="px-6 pb-4 flex items-center justify-between">
+    <div>
+      <h2 className="text-[22px] font-bold tracking-tight">Tạo mới</h2>
+      <p className="text-[13px] text-zinc-500 mt-0.5">
+        Chọn đúng loại, AI sẽ gợi ý tốt hơn
+      </p>
+    </div>
+
+    <button
+      onClick={() => setOpen(false)}
+      className="w-8 h-8 rounded-full bg-zinc-200/70 dark:bg-zinc-800 flex items-center justify-center"
+    >
+      ✕
+    </button>
+  </div>
+</div>
+
+<div className="p-4 space-y-3 overflow-y-auto max-h-[calc(92vh-88px)]">
+  <Card type="task" />
+  <Card type="plan" />
+  <p className="text-[11px] text-center text-zinc-400 pb-2">
+    Mẹo: Task màu xanh dương, Plan màu xanh lá — đồng bộ với tab trên cùng
+  </p>
+</div>
           </div>
         </div>
       </div>
