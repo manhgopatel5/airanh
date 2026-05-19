@@ -21,7 +21,7 @@ import ModeToggle from "@/components/ModeToggle";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import LottiePlayer from "@/components/ui/LottiePlayer";
 import * as L from "@/components/illustrations";
-
+import type { Task } from "@/types/task";
 import { useAppStore } from "@/store/app";
 import type {
   BaseFeedItem,
@@ -420,9 +420,9 @@ const filteredItems = useMemo(() => {
         )}
       </div>
 
- {showShareModal && shareTask && (
+{showShareModal && shareTask && (
   <ShareTaskModal
-    task={shareTask as any}
+    task={shareTask as Task}
     onClose={() => setShowShareModal(false)}
   />
 )}
