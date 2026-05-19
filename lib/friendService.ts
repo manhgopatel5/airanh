@@ -147,7 +147,8 @@ export const acceptRequest = async (req: FriendRequest): Promise<void> => {
     const friend1Ref = doc(db, "friends", `${req.fromUserId}_${req.toUserId}`);
     const friend2Ref = doc(db, "friends", `${req.toUserId}_${req.fromUserId}`);
 
-    const [reqSnap, friendSnap] = await Promise.all([transaction.get(requestRef), transaction.get(friend1Ref)]);
+   const reqSnap = await transaction.get(requestRef);
+const friendSnap = await transaction.get(friend1Ref);
 
     if (!reqSnap.exists() || reqSnap.data().status !== "pending") throw new FriendError("Lời mời không tồn tại");
     if (friendSnap.exists()) { transaction.update(requestRef, { status: "accepted", updatedAt: serverTimestamp() }); return; }
@@ -179,7 +180,8 @@ export const rejectRequest = async (id: string, userId: string): Promise<void> =
   await runTransaction(db, async (transaction) => {
     const reqRef = doc(db, "friendRequests", id);
     const userRef = doc(db, "users", userId);
-    const [reqSnap, userSnap] = await Promise.all([transaction.get(reqRef), transaction.get(userRef)]);
+    const reqSnap = await transaction.get(reqRef);
+const userSnap = await transaction.get(userRef);
     if (!reqSnap.exists()) return;
     const currentUnread = userSnap.data()?.friendRequestsUnread || 0;
     transaction.update(reqRef, { status: "rejected", updatedAt: serverTimestamp() });
