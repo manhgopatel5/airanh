@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { AlertCircle, Shield, XCircle } from "lucide-react";
+import {
+  AlertCircle,
+  Shield,
+  XCircle,
+  Check,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
@@ -94,12 +99,13 @@ export default function WarningModal({ open, uid, reason, title, message, warnin
   }, [open]);
 
   const handleAppeal = async () => {
+setSubmitting(true);
     if (!user ||!appealText.trim() || appealText.trim().length < 20) {
       toast.error("Nội dung kháng cáo phải ít nhất 20 ký tự");
       navigator.vibrate?.(15);
       return;
     }
-    setSubmitting(true);
+ 
     try {
       await addDoc(collection(db, "appeals"), {
         userId: user.uid,
@@ -333,6 +339,47 @@ export default function WarningModal({ open, uid, reason, title, message, warnin
                 </motion.label>
 
                 {/* Button */}
+{/* Appeal */}
+<motion.div
+  initial={{ opacity: 0, y: 10 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.43 }}
+  className="mt-4"
+>
+  {!hasAppealed ? (
+    <>
+      {!showAppealForm ? (
+        <button
+          onClick={() => setShowAppealForm(true)}
+          className="w-full h-11 rounded-2xl border border-zinc-200 dark:border-zinc-700 text-sm font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+        >
+          Gửi kháng cáo
+        </button>
+      ) : (
+        <div className="space-y-3">
+          <textarea
+            value={appealText}
+            onChange={(e) => setAppealText(e.target.value)}
+            placeholder="Nhập nội dung kháng cáo..."
+            className="w-full min-h-[110px] rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-transparent px-4 py-3 text-sm outline-none focus:border-[#0a84ff]"
+          />
+
+          <button
+            onClick={handleAppeal}
+            disabled={submitting}
+            className="w-full h-11 rounded-2xl bg-[#0a84ff] text-white text-sm font-semibold disabled:opacity-50"
+          >
+            {submitting ? "Đang gửi..." : "Gửi kháng cáo"}
+          </button>
+        </div>
+      )}
+    </>
+  ) : (
+    <div className="w-full h-11 rounded-2xl bg-green-500/10 text-green-600 dark:text-green-400 text-sm font-semibold grid place-items-center">
+      Đã gửi kháng cáo
+    </div>
+  )}
+</motion.div>
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
