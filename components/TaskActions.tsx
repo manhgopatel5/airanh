@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { incrementTaskView } from "@/lib/taskService";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast, Toaster } from "sonner";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 
 type Props = { taskId: string; chatCount?: number; initialLikes?: string[]; isBookmarked?: boolean };
