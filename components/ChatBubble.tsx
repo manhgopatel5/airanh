@@ -1,6 +1,6 @@
 "use client";
 import { useState, useCallback } from "react";
-import { FiDownload, FiMapPin, FiFile, FiCheck, FiClipboard, FiBriefcase } from "react-icons/fi";
+import { FiDownload, FiMapPin, FiFile, FiCheck, FiBriefcase } from "react-icons/fi";
 import Linkify from "linkify-react";
 import EmojiPicker from "./EmojiPicker";
 import { motion, AnimatePresence } from "framer-motion";
