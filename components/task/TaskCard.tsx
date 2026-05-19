@@ -13,11 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
 import * as L from "@/components/illustrations";
 
-type Friend = {
-  id: string;
-  name: string;
-  avatar: string;
-};
+
 
 type Props = {
   task: Task;
