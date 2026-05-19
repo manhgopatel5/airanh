@@ -72,7 +72,7 @@ export default function AppContainer() {
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [setError] = useState<string | null>(null);
   const [shareTask, setShareTask] = useState<Task | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
