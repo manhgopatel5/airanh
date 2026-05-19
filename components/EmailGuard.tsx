@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { sendEmailVerification } from "firebase/auth";
 import { toast, Toaster } from "sonner";
 import { motion } from "framer-motion";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 
 export default function EmailGuard({ children }: { children: React.ReactNode }) {
