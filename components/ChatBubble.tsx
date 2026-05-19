@@ -1,9 +1,10 @@
 "use client";
+
 import { useState, useCallback } from "react";
-import { FiDownload, FiMapPin, FiFile, FiCheck, FiBriefcase } from "react-icons/fi";
+import { FiDownload, FiMapPin, FiFile } from "react-icons/fi";
 import Linkify from "linkify-react";
 import EmojiPicker from "./EmojiPicker";
-import { motion, AnimatePresence } from "framer-motion";
+
 import type { Message } from "@/types/message";
 
 type Friend = {
@@ -45,7 +46,7 @@ export default function ChatBubble({
     msg.createdAt &&
     typeof msg.createdAt === "object" &&
     "seconds" in msg.createdAt
-     ? new Date((msg.createdAt as any).seconds * 1000).toLocaleTimeString([], {
+    ? new Date(msg.createdAt.seconds * 1000).toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
         })
@@ -56,7 +57,6 @@ export default function ChatBubble({
       e.preventDefault();
       if (msg.text) {
         navigator.clipboard.writeText(msg.text);
-        navigator.vibrate?.(5);
         setShowCopied(true);
         setTimeout(() => setShowCopied(false), 1500);
       }
@@ -64,11 +64,11 @@ export default function ChatBubble({
     [msg.text]
   );
 
-  // FIX: handle cả object lẫn array
+  // ✅ FIX: handle cả object lẫn array
   const reactionList = msg.reactions
-   ? Object.entries(
+  ? Object.entries(
         Object.values(msg.reactions).reduce((acc, emoji) => {
-          if (typeof emoji === "string") {
+          if (typeof emoji === 'string') {
             acc[emoji] = (acc[emoji] || 0) + 1;
           }
           return acc;
@@ -86,13 +86,13 @@ export default function ChatBubble({
         />
       )}
 
-      <div className={`max-w- max-w- flex-col ${isMe? "items-end" : "items-start"}`}>
+      <div className={`max-w-[75%] sm:max-w-[65%] flex flex-col ${isMe? "items-end" : "items-start"}`}>
         {msg.replyTo && (
           <div
             className={`text-xs mb-1 px-3 py-1.5 rounded-2xl max-w-full truncate ${
               isMe
-               ? "bg-[#0042B2]/30 text-white/90"
-                : "bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
+              ? "bg-blue-400/30 text-white/80"
+                : "bg-gray-200 dark:bg-zinc-700 text-gray-600 dark:text-zinc-300"
             }`}
           >
             <span className="font-semibold">{msg.replyTo.userName}: </span>
@@ -100,95 +100,42 @@ export default function ChatBubble({
           </div>
         )}
 
-        {/* TASK SHARE - đã bỏ lottie */}
-        {msg.type === "task_share" && (
-          <motion.div
-            initial={{scale:0.9,opacity:0}}
-            animate={{scale:1,opacity:1}}
-            onDoubleClick={() => onReply?.(msg)}
-            className={`px-4 py-3 rounded-3xl shadow-sm w-64 ${
-              isMe
-               ? "bg-gradient-to-r from-[#0042B2] to-[#0066FF] text-white rounded-br-lg"
-                : "bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-bl-lg"
-            }`}
-          >
-           <div className="flex items-center gap-2.5">
-  <div
-    className={`w-8 h-8 shrink-0 rounded-2xl flex items-center justify-center ${
-      isMe ? "bg-white/20" : "bg-[#0042B2]/10"
-    }`}
-  >
-    <FiBriefcase
-      className={isMe ? "text-white" : "text-[#0042B2]"}
-      size={18}
-    />
-  </div>
-
-  <div className="flex-1 min-w-0">
-    <p
-      className={`text-xs font-bold uppercase tracking-wide ${
-        isMe ? "text-white/80" : "text-[#0042B2]"
-      }`}
-    >
-      {msg.taskType === "task" ? "TASK" : "PLAN"}
-    </p>
-
-    <p className="text-sm font-semibold truncate">
-      {msg.taskTitle}
-    </p>
-  </div>
-
-  {(msg.price ?? 0) > 0 && (
-    <p
-      className={`text-sm font-bold mt-1.5 ${
-        isMe ? "text-white" : "text-[#00C853]"
-      }`}
-    >
-      {msg.price?.toLocaleString("vi-VN")}đ
-    </p>
-  )}
-</div>
-</motion.div>
-)}
         {msg.type === "text" && msg.text && (
           <div
             onContextMenu={handleCopy}
             onDoubleClick={() => onReply?.(msg)}
             className={`px-4 py-2.5 rounded-3xl text-sm shadow-sm leading-relaxed break-words relative ${
               isMe
-               ? "bg-gradient-to-r from-[#0042B2] to-[#1A5FFF] text-white rounded-br-lg"
-                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-bl-lg"
+              ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-br-lg"
+                : "bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100 rounded-bl-lg"
             }`}
           >
             <Linkify
               options={{
                 target: "_blank",
-                className: isMe? "underline text-white" : "underline text-[#0042B2] dark:text-blue-400",
+                className: isMe? "underline text-white" : "underline text-blue-600 dark:text-blue-400",
               }}
             >
               {msg.text}
             </Linkify>
-            <AnimatePresence>
-              {showCopied && (
-                <motion.div initial={{opacity:0,y:5}} animate={{opacity:1,y:0}} exit={{opacity:0}} className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black/90 text-white text-xs px-2.5 py-1.5 rounded-xl whitespace-nowrap flex items-center gap-1.5">
-                  <FiCheck className="w-3.5 h-3.5 text-[#00C853]" />
-                  Đã copy
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {showCopied && (
+              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap">
+                Đã copy
+              </div>
+            )}
           </div>
         )}
 
         {msg.type === "image" && msg.image && (
-          <motion.div whileTap={{scale:0.98}} className="relative rounded-3xl overflow-hidden shadow-sm">
+          <div className="relative rounded-3xl overflow-hidden shadow-sm">
             <img
               src={imgError? "/img-error.png" : msg.image}
               onError={() => setImgError(true)}
               onClick={() =>!imgError && onImageClick?.(msg.image!)}
               alt={msg.fileName || "image"}
-              className="max-w-[260px] max-h-[340px] object-cover cursor-pointer hover:opacity-90 transition-opacity"
+              className="max-w-[220px] max-h-[300px] object-cover cursor-pointer hover:opacity-90 transition-opacity"
             />
-          </motion.div>
+          </div>
         )}
 
         {(msg.type as string) === "video" && (msg as any).video && (
@@ -196,7 +143,7 @@ export default function ChatBubble({
             src={(msg as any).video}
             controls
             playsInline
-            className="max-w-[260px] max-h-[340px] rounded-3xl shadow-sm bg-black"
+            className="max-w-[220px] max-h-[300px] rounded-3xl shadow-sm bg-black"
           />
         )}
 
@@ -208,16 +155,16 @@ export default function ChatBubble({
             rel="noopener noreferrer"
             className={`flex items-center gap-3 px-4 py-3 rounded-3xl shadow-sm transition active:scale-[0.98] ${
               isMe
-               ? "bg-gradient-to-r from-[#0042B2] to-[#1A5FFF] text-white"
-                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+              ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+                : "bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
             }`}
           >
-            <div className={`p-2 rounded-2xl ${isMe? "bg-white/20" : "bg-[#0042B2]/10 dark:bg-[#0042B2]/20"}`}>
+            <div className={`p-2 rounded-2xl ${isMe? "bg-white/20" : "bg-blue-500/10 dark:bg-blue-400/20"}`}>
               <FiFile size={20} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate">{msg.fileName || "Tệp đính kèm"}</p>
-              <p className={`text-xs ${isMe? "text-white/70" : "text-zinc-500 dark:text-zinc-400"}`}>
+              <p className={`text-xs ${isMe? "text-white/70" : "text-gray-500 dark:text-zinc-400"}`}>
                 Nhấn để tải xuống
               </p>
             </div>
@@ -232,16 +179,16 @@ export default function ChatBubble({
             rel="noopener noreferrer"
             className={`flex items-center gap-3 px-4 py-3 rounded-3xl shadow-sm transition active:scale-[0.98] ${
               isMe
-               ? "bg-gradient-to-r from-[#0042B2] to-[#1A5FFF] text-white"
-                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+              ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+                : "bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
             }`}
           >
-            <div className={`p-2 rounded-2xl ${isMe? "bg-white/20" : "bg-[#00C853]/10 dark:bg-[#00C853]/20"}`}>
+            <div className={`p-2 rounded-2xl ${isMe? "bg-white/20" : "bg-emerald-500/10 dark:bg-emerald-400/20"}`}>
               <FiMapPin size={20} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold">Vị trí</p>
-              <p className={`text-xs truncate ${isMe? "text-white/70" : "text-zinc-500 dark:text-zinc-400"}`}>
+              <p className={`text-xs truncate ${isMe? "text-white/70" : "text-gray-500 dark:text-zinc-400"}`}>
                 Mở trong Google Maps
               </p>
             </div>
@@ -249,28 +196,26 @@ export default function ChatBubble({
         )}
 
         {reactionList.length > 0 && (
-          <div className={`flex gap-1 mt-1.5 ${isMe? "justify-end" : "justify-start"}`}>
+          <div className={`flex gap-1 mt-1 ${isMe? "justify-end" : "justify-start"}`}>
             {reactionList.map(([emoji, count]) => (
-              <motion.div
+              <div
                 key={emoji}
-                initial={{scale:0}}
-                animate={{scale:1}}
-                className="bg-white dark:bg-zinc-800 text-xs px-2 py-1 rounded-full shadow-md border border-zinc-200 dark:border-zinc-700 backdrop-blur"
+                className="bg-white dark:bg-zinc-700 text-xs px-1.5 py-0.5 rounded-full shadow border border-gray-200 dark:border-zinc-600"
               >
-                {emoji} {count > 1 && <span className="font-bold ml-0.5">{count}</span>}
-              </motion.div>
+                {emoji} {count > 1 && count}
+              </div>
             ))}
           </div>
         )}
 
         {isLastOfGroup && (
           <div
-            className={`flex items-center gap-1 text-xs mt-1 px-1 text-zinc-400 dark:text-zinc-500 ${
+            className={`flex items-center gap-1 text-xs mt-1 px-1 text-gray-400 dark:text-zinc-500 ${
               isMe? "flex-row-reverse" : ""
             }`}
           >
             <span>{time}</span>
-            {isMe && msg.status === "read" && <span className="text-[#00C853]">✓✓</span>}
+            {isMe && msg.status === "read" && <span className="text-blue-500">✓✓</span>}
             {isMe && msg.status === "sent" && <span>✓</span>}
           </div>
         )}
