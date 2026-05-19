@@ -125,18 +125,18 @@ function LottiePlayer({
       role="img"
       aria-label={ariaLabel}
     >
-      <Lottie
-        lottieRef={lottieRef}
-        animationData={animationData}
-        loop={loop &&!prefersReduced}
-        autoplay={false}
-        onComplete={onComplete}
-        rendererSettings={{
-          preserveAspectRatio: "xMidYMid meet",
-          progressiveLoad: true,
-          hideOnTransparent: true,
-        }}
-      />
+<Lottie
+  lottieRef={lottieRef}
+  animationData={animationData}
+  loop={loop && !prefersReduced}
+  autoplay={false}
+  {...(onComplete ? { onComplete } : {})}
+  rendererSettings={{
+    preserveAspectRatio: "xMidYMid meet",
+    progressiveLoad: true,
+    hideOnTransparent: true,
+  }}
+/>
     </div>
   );
 }
