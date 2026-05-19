@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { FiDollarSign, FiUsers, FiClock, FiWifi } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { useAuth } from "@/lib/AuthContext";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 
 const CATEGORIES = [
