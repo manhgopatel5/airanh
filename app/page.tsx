@@ -16,7 +16,7 @@ import {
 } from "firebase/firestore";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import TaskFeed from "@/components/TaskFeed";
-import ModeToggle from "@/components/ModeToggle";
+
 import ShareTaskModal from "@/components/ShareTaskModal";
 import { useAppStore } from "@/store/app";
 import { Task, TaskItem, PlanItem, isTask, isPlan } from "@/types/task";
@@ -351,7 +351,7 @@ export default function AppContainer() {
   return (
     <LayoutGroup id="app-global-navigation-flow">
       <div className="min-h-screen pb-28 font-sans bg-white dark:bg-zinc-950 select-none relative">
-        <ModeToggle />
+   
 
         {refreshing && (
           <div className="fixed top-0 inset-x-0 h-[2px] bg-gradient-to-r from-blue-500 via-purple-500 to-emerald-500 animate-pulse z-50" />
