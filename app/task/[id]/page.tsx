@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link"; 
-import ReportModal from "@/components/ReportModal";
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
@@ -10,7 +9,8 @@ import {
 } from "firebase/firestore";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import {
-  FiSend, FiClock, FiUsers, FiX, FiCheckCircle, FiCalendar, FiMessageSquare, FiPhone, FiAlertTriangle,
+  FiSend, FiClock, FiUsers, FiX, FiCheckCircle, FiMessageCircle,
+  FiCalendar, FiMessageSquare, FiPhone, FiAlertTriangle,
   FiStar, FiBookmark, FiMoreHorizontal, FiShare2, FiCheck, FiTrash2, FiEdit2
 } from "react-icons/fi";
 import ShareTaskModal from "@/components/ShareTaskModal";
@@ -24,7 +24,7 @@ import {
 } from "@/lib/taskCommentService";
 
 import type { TaskComment } from "@/types/task";
-import { isTask, type Task, type TaskStatus, type PlanStatus } from "@/types/task";
+import { isTask, type Task, type TaskStatus } from "@/types/task";
 import { applyToTask, cancelToTask } from "@/app/actions/task";
 import DOMPurify from "isomorphic-dompurify";
 import { toast, Toaster } from "sonner";
@@ -36,8 +36,6 @@ import { CommentList } from "@/components/task/CommentList";
 import { ImageGallery } from "@/components/task/ImageGallery";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { createPortal } from "react-dom";
-import LottiePlayer from "@/components/LottiePlayer";
-import * as L from "@/components/illustrations";
 
 type UserData = {
   uid: string;
@@ -65,16 +63,10 @@ type Application = {
 const Portal = ({ children }: { children: React.ReactNode }) => {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  return mounted ? createPortal(children, document.body) : null;
+  return mounted? createPortal(children, document.body) : null;
 };
 
-const PRIMARY = "#0042B2";
-const SUCCESS = "#00C853";
-const vibrate = () => {
-  if (typeof navigator !== "undefined" && navigator.vibrate) {
-    navigator.vibrate(10);
-  }
-};
+const PRIMARY = "#0a84ff";
 
 export default function TaskDetailPage() {
   const { id } = useParams();
@@ -87,7 +79,7 @@ export default function TaskDetailPage() {
   }, []);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [showReportModal, setShowReportModal] = useState(false);
+
   const [task, setTask] = useState<Task | null>(null);
   const [owner, setOwner] = useState<UserData | null>(null);
   const [comments, setComments] = useState<TaskComment[]>([]);
@@ -95,7 +87,7 @@ export default function TaskDetailPage() {
   const isOwner = currentUser?.uid === task?.userId;
   const [applications, setApplications] = useState<Application[]>([]);
  
-  const isFull = task && isTask(task) ? (task.appliedCount || 0) >= task.totalSlots : false;
+  const isFull = task && isTask(task)? (task.appliedCount || 0) >= task.totalSlots : false;
   const [text, setText] = useState("");
   
   const [replyTo, setReplyTo] = useState<TaskComment | null>(null);
@@ -122,12 +114,9 @@ export default function TaskDetailPage() {
   const [saving, setSaving] = useState(false);
  
   const [showMenu, setShowMenu] = useState(false);
-  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const appsRef = useRef<HTMLDivElement>(null);
 
-  // ✅ LOTTIE HUHA
- 
 useEffect(() => {
   const handleClickOutside = (e: MouseEvent) => {
     if (showAllApps && appsRef.current &&!appsRef.current.contains(e.target as Node)) {
@@ -137,10 +126,8 @@ useEffect(() => {
   document.addEventListener('mousedown', handleClickOutside);
   return () => document.removeEventListener('mousedown', handleClickOutside);
 }, [showAllApps]);
-
   const [shareTask, setShareTask] = useState<Task | null>(null);
-
-  const loadTask = async () => {
+    const loadTask = async () => {
     if (!db ||!id || typeof id!== "string") return;
     try {
       const snap = await getDoc(doc(db, "tasks", id));
@@ -158,7 +145,7 @@ useEffect(() => {
       const taskData = { id: snap.id,...data } as Task;
       setTask(taskData);
       setIsSaved(!!currentUser?.uid &&!!taskData.savedBy?.includes(currentUser.uid));
-
+      
       incrementTaskView(taskData.id);
     } catch (err) {
       console.error("Load task error:", err);
@@ -299,7 +286,6 @@ useEffect(() => {
         savedBy: newSaved? arrayUnion(currentUser.uid) : arrayRemove(currentUser.uid),
       });
       toast.success(newSaved? "Đã lưu" : "Đã bỏ lưu");
-      navigator.vibrate?.(5);
     } catch {
       setIsSaved(!newSaved);
       toast.error("Lỗi");
@@ -395,7 +381,7 @@ useEffect(() => {
       id: tempId, taskId: task.id, userId: currentUser.uid,
       userName: currentUser.displayName || "Bạn", userAvatar: currentUser.photoURL || "",
       text: text.trim(), createdAt: Timestamp.now(), likeCount: 0, likedBy: [],
- ...(replyTo && { parentId: replyTo.parentId || replyTo.id, replyToUserId: replyTo.userId, replyToUserName: replyTo.userName }),
+  ...(replyTo && { parentId: replyTo.parentId || replyTo.id, replyToUserId: replyTo.userId, replyToUserName: replyTo.userName }),
     };
     setComments(prev => [...prev, tempComment]);
     setText(""); setReplyTo(null); setSending(true);
@@ -403,7 +389,7 @@ useEffect(() => {
     try {
       await createComment(task.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, {
         text: DOMPurify.sanitize(tempComment.text),
-   ...(replyTo && { parentId: replyTo.parentId || replyTo.id, replyToUserId: replyTo.userId, replyToUserName: replyTo.userName }),
+    ...(replyTo && { parentId: replyTo.parentId || replyTo.id, replyToUserId: replyTo.userId, replyToUserName: replyTo.userName }),
       });
       loadComments();
     } catch (err: any) {
@@ -475,6 +461,12 @@ useEffect(() => {
     inputRef.current?.focus();
   };
 
+  if (loading) return <div className="p-4 text-center">Đang tải...</div>;
+  if (!task) return <div className="p-4 text-center">Không tìm thấy task</div>;
+
+  const parentComments = comments.filter((c) =>!c.parentId);
+  const getReplies = (id: string) => comments.filter((c) => c.parentId === id);
+
   const handleAcceptApp = async (appId: string, applicantId: string) => {
     if (!task) return;
     try {
@@ -490,11 +482,6 @@ useEffect(() => {
         createdAt: serverTimestamp(),
       }, { merge: true });
       toast.success("Đã duyệt ứng viên");
-      setShowSuccessAnimation(true);
-
-setTimeout(() => {
-  setShowSuccessAnimation(false);
-}, 1800);
       navigator.vibrate?.(10);
       loadApplications();
     } catch {
@@ -514,51 +501,47 @@ setTimeout(() => {
       toast.error("Lỗi");
     }
   };
- if (loading) return <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-black"><LottiePlayer animationData={L.loadingPull} loop autoplay className="w-20 h-20" /></div>;
-  if (!task) return <div className="p-4 text-center">Không tìm thấy task</div>;
 
-  const parentComments = comments.filter((c) =>!c.parentId);
-  const getReplies = (id: string) => comments.filter((c) => c.parentId === id);
+
 
   const taskDate = isTask(task) && task.createdAt?.seconds
- ? new Date(task.createdAt.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  ? new Date(task.createdAt.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
   : "Chưa xác định";
 
 const taskDeadline = isTask(task) && task.deadline?.seconds
- ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
   : "";
 
-const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string; dot: string }> = {
-  // TaskStatus
-  open: { label: "Đang mở", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30", dot: "bg-emerald-500" },
-  full: { label: "Đã đầy", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30", dot: "bg-amber-500" },
-  doing: { label: "Đang làm", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30", dot: "bg-blue-500" },
-  completed: { label: "Hoàn thành", color: "bg-green-100 text-green-700 dark:bg-green-900/30", dot: "bg-green-500" },
-  cancelled: { label: "Đã hủy", color: "bg-red-100 text-red-700 dark:bg-red-900/30", dot: "bg-red-500" },
-  deleted: { label: "Đã xóa", color: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800/30", dot: "bg-zinc-500" },
-  expired: { label: "Hết hạn", color: "bg-red-100 text-red-700 dark:bg-red-900/30", dot: "bg-red-500" },
-  pending: { label: "Chờ duyệt", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30", dot: "bg-amber-500" },
-  // PlanStatus - THÊM 2 DÒNG NÀY
-  draft: { label: "Bản nháp", color: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800/30", dot: "bg-zinc-500" },
-  in_progress: { label: "Đang diễn ra", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30", dot: "bg-blue-500" },
-};
+  
 
+  const statusMap: Record<TaskStatus, { label: string; color: string; dot: string }> = {
+    open: { label: "Đang tuyển", color: "bg-[#E6F4EA] text-[#1E8E3E] dark:bg-[#1E8E3E]/20 dark:text-[#81C995]", dot: "bg-[#1E8E3E]" },
+    full: { label: "Đã đủ", color: "bg-[#FEE8E8] text-[#D93025] dark:bg-[#D93025]/20 dark:text-[#F28B82]", dot: "bg-[#D93025]" },
+    doing: { label: "Đang làm", color: "bg-[#E8F0FE] text-[#1A73E8] dark:bg-[#1A73E8]/20 dark:text-[#8AB4F8]", dot: "bg-[#1A73E8]" },
+    completed: { label: "Hoàn thành", color: "bg-[#F1F3F4] text-[#5F6368] dark:bg-zinc-800 dark:text-zinc-400", dot: "bg-[#5F6368]" },
+    cancelled: { label: "Đã hủy", color: "bg-[#F1F3F4] text-[#5F6368] dark:bg-zinc-800 dark:text-zinc-400", dot: "bg-[#5F6368]" },
+    deleted: { label: "Đã xóa", color: "bg-[#F1F3F4] text-[#5F6368] dark:bg-zinc-800 dark:text-zinc-400", dot: "bg-[#5F6368]" },
+    expired: { label: "Hết hạn", color: "bg-[#FEF7E0] text-[#F9AB00] dark:bg-[#F9AB00]/20 dark:text-[#FDD663]", dot: "bg-[#F9AB00]" },
+    pending: { label: "Chờ duyệt", color: "bg-[#FEF7E0] text-[#F9AB00] dark:bg-[#F9AB00]/20 dark:text-[#FDD663]", dot: "bg-[#F9AB00]" },
+  };
+
+  
   const isExpired = isTask(task) && task.deadline && task.deadline.seconds * 1000 < Date.now();
   const status = isExpired
-  ? { label: "Đã hết hạn", color: "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B]", dot: "bg-[#FF3B30]" }
+   ? { label: "Đã hết hạn", color: "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B]", dot: "bg-[#FF3B30]" }
     : statusMap[task.status] || statusMap.open;
 
   return (
     <>
       <Toaster richColors position="top-center" />
       <div className="max-w-xl mx-auto bg-[#F2F2F7] dark:bg-black min-h-screen pb-4 px-3 pt-2">
-        <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{type:"spring",damping:22}} className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-100 dark:border-zinc-800 shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden">
+        <div className="bg-white dark:bg-zinc-900 rounded-3xl border-zinc-100 dark:border-zinc-800 shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden">
           <div className="p-5">
            <div className="flex gap-3 items-start">
   <Link href={`/profile/${task.userId}`} className="relative shrink-0 active:opacity-70 transition-opacity">
     <UserAvatar src={owner?.avatar} name={owner?.name} size={56} />
     {owner?.rating && owner.rating >= 4.8 && (
-      <div className="absolute -bottom-1 -right-1 bg-[#00C853] rounded-full p-0.5">
+      <div className="absolute -bottom-1 -right-1 bg-[#00A86B] rounded-full p-0.5">
         <FiCheckCircle className="text-white" size={14} />
       </div>
     )}
@@ -566,29 +549,27 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
 
   <div className="flex-1 min-w-0">
     <div className="flex items-center justify-between gap-2 mb-1">
-      <Link href={`/profile/${task.userId}`} className="font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100 truncate active:opacity-70 transition-opacity">
+      <Link href={`/profile/${task.userId}`} className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100 truncate active:opacity-70 transition-opacity">
         {owner?.name || "Minh Tran"}
       </Link>
-
+      
                   <div className="flex items-center gap-2.5 shrink-0">
                     {!isOwner && (
                       <motion.button
-                       whileTap={{ scale: 0.94 }}
-  onTouchStart={() => vibrate()}
+                        whileTap={{ scale: 0.94 }}
                         onClick={handleSave}
                         disabled={saving}
                         className="w-10 h-10 rounded-2xl bg-transparent flex items-center justify-center hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60 active:scale-90 transition-all disabled:opacity-50"
                       >
-                        <FiBookmark
-                          size={20}
-                          className={isSaved? "fill-[#0042B2] text-[#0042B2]" : "text-zinc-600 dark:text-zinc-300"}
+                        <FiBookmark 
+                          size={20} 
+                          className={isSaved? "fill-[#0A84FF] text-[#0A84FF]" : "text-zinc-600 dark:text-zinc-300"} 
                         />
                       </motion.button>
                     )}
 
                     <motion.button
-                       whileTap={{ scale: 0.94 }}
-  onTouchStart={() => vibrate()}
+                      whileTap={{ scale: 0.94 }}
                       onClick={() => task && setShareTask(task)}
                       className="w-10 h-10 rounded-2xl bg-transparent flex items-center justify-center hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60 active:scale-90 transition-all"
                     >
@@ -597,8 +578,7 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
 
                     <div className="relative">
                       <motion.button
-                       whileTap={{ scale: 0.94 }}
-  onTouchStart={() => vibrate()}
+                        whileTap={{ scale: 0.94 }}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -637,39 +617,35 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
                                   handleSave();
                                   setShowMenu(false);
                                 }}
-                                className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-[#E8F1FF] dark:hover:bg-[#0042B2]/20 hover:text-[#0042B2] w-full transition-all active:scale-95"
+                                className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
                               >
                                 {isSaved? <FiCheck size={18} /> : <FiBookmark size={18} />}
                                 {isSaved? "Đã lưu" : "Lưu công việc"}
                               </button>
-                              {isOwner && (
-                                <>
-                                  <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setShowMenu(false);
-                                      router.push(`/task/${task.id}/edit`);
-                                    }}
-                                    className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-[#E8F1FF] dark:hover:bg-[#0042B2]/20 hover:text-[#0042B2] w-full transition-all active:scale-95"
-                                  >
-                                    <FiEdit2 size={18} />
-                                    Sửa công việc
-                                  </button>
-                                  <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setShowMenu(false);
-                                      handleDelete();
-                                    }}
-                                    className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 w-full transition-all active:scale-95"
-                                  >
-                                    <FiTrash2 size={18} />
-                                    Xóa
-                                  </button>
-                                </>
-                              )}
+                              <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowMenu(false);
+                                  router.push(`/task/${task.id}/edit`);
+                                }}
+                                className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
+                              >
+                                <FiEdit2 size={18} />
+                                Sửa công việc
+                              </button>
+                              <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowMenu(false);
+                                  handleDelete();
+                                }}
+                                className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 w-full transition-all active:scale-95"
+                              >
+                                <FiTrash2 size={18} />
+                                Xóa
+                              </button>
                             </motion.div>
                           </Portal>
                         )}
@@ -678,40 +654,40 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 text-[13px]">
+                <div className="flex items-center gap-1.5 text-sm">
                   <FiStar className="fill-[#FFB800] text-[#FFB800]" size={16} />
                   <span className="font-semibold text-[#1C1C1E]">{owner?.rating || "4.9"}</span>
                   <span className="text-[#8E8E93]">({owner?.reviewCount || 21} đánh giá)</span>
                   <span className="text-[#8E8E93]">•</span>
-                  <span className="text-[#00C853]">Mới tham gia</span>
+                  <span className="text-[#00A86B]">Mới tham gia</span>
                 </div>
               </div>
             </div>
 
             <div className="mt-3">
               <div className="flex items-center gap-1.5 mb-3 flex-nowrap overflow-hidden">
-                <span className={`flex-1 min-w-0 px-2 py-1.5 rounded-xl text-[12px] sm:text-[13px] font-semibold flex items-center justify-center gap-1 ${status.color}`}>
+                <span className={`flex-1 min-w-0 px-2 py-1.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-1 ${status.color}`}>
                   <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${status.dot}`} />
                   <span className="truncate">{status.label}</span>
                 </span>
 
                 {isTask(task) && (
-                  <span className="flex-1 min-w-0 px-2 py-1.5 rounded-xl text-[12px] sm:text-[13px] font-semibold bg-[#E8F1FF] text-[#0042B2] dark:bg-[#0042B2]/20 dark:text-[#8AB4F8] flex items-center justify-center gap-1">
+                  <span className="flex-1 min-w-0 px-2 py-1.5 rounded-xl text-xs sm:text-sm font-semibold bg-[#E8F0FE] text-[#1A73E8] dark:bg-[#1A73E8]/20 dark:text-[#8AB4F8] flex items-center justify-center gap-1">
                     <FiUsers size={12} className="shrink-0" />
                     <span className="truncate">{task.appliedCount || 0}/{task.totalSlots}</span>
                   </span>
                 )}
 
                 {isTask(task) && task.price > 0 && (
-                  <span className="flex-1 min-w-0 px-2 py-1.5 rounded-xl text-[12px] sm:text-[13px] font-semibold bg-[#E8F1FF] text-[#0042B2] dark:bg-[#0042B2]/20 flex items-center justify-center">
+                  <span className="flex-1 min-w-0 px-2 py-1.5 rounded-xl text-xs sm:text-sm font-semibold bg-[#E3F2FD] text-[#0A84FF] dark:bg-[#0A84FF]/20 dark:text-[#5AC8FA] flex items-center justify-center">
                     <span className="truncate">{task.price.toLocaleString("vi-VN")} đ</span>
                   </span>
                 )}
 
                 {isTask(task) && task.deadline?.seconds && task.status!== "completed" && (
-                  <span className={`flex-1 min-w-0 px-2 py-1.5 rounded-xl text-[12px] sm:text-[13px] font-semibold flex items-center justify-center ${
-                    isUrgent
-                    ? "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B] animate-pulse"
+                  <span className={`flex-1 min-w-0 px-2 py-1.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center ${
+                    isUrgent 
+                     ? "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B] animate-pulse" 
                       : "bg-[#FEF7E0] text-[#F9AB00] dark:bg-[#F9AB00]/20 dark:text-[#FDD663]"
                   }`}>
                     <span className="tabular-nums truncate">{timeLeft?.replace('Còn ', '') || "Hết hạn"}</span>
@@ -719,33 +695,36 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
                 )}
               </div>
 
-              <h2 className="font-semibold text-[17px] leading-snug mb-2 text-[#1C1C1E] dark:text-zinc-100">{task.title}</h2>
-
+              <h2 className="font-semibold text-base leading-snug mb-2 text-[#1C1C1E]">{task.title}</h2>
+              
               {task.description && (
                                <Linkify options={{ target: "_blank", className: `text-[${PRIMARY}] hover:underline` }}>
-                  <p className="text-[14px] text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed mb-3">{task.description}</p>
+                  <p className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed mb-3">{task.description}</p>
                 </Linkify>
               )}
-
+              
+              {/* 2 khung: Ngày đăng - Hạn chót */}
 <div className="flex items-center gap-2 mt-4">
+  {/* 1. Ngày đăng */}
   <div className="flex-1 px-1.5 py-2.5 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800/60 border border-[#E5E5E7] dark:border-zinc-700">
     <div className="flex items-center justify-center gap-1">
       <FiCalendar size={14} className="shrink-0 text-[#8E8E93]" />
       <div className="text-center">
-        <p className="text-[11px] text-[#8E8E93] leading-none">Ngày đăng</p>
-        <p className="text-[12px] font-semibold text-[#1C1C1E] dark:text-zinc-100 tabular-nums leading-none mt-0.5">
+        <p className="text- text-[#8E8E93] leading-none">Ngày đăng</p>
+        <p className="text-xs font-semibold text-[#1C1C1E] dark:text-zinc-100 tabular-nums leading-none mt-0.5">
           {taskDate}
         </p>
       </div>
     </div>
   </div>
 
+  {/* 2. Hạn chót */}
   <div className="flex-1 px-1.5 py-2.5 rounded-xl bg-[#FFE5E5] dark:bg-[#FF3B30]/10 border border-[#FECACA] dark:border-[#FF3B30]/30">
     <div className="flex items-center justify-center gap-1">
       <FiClock size={14} className="shrink-0 text-[#FF3B30]" />
       <div className="text-center">
-        <p className="text-[11px] text-[#FF3B30] leading-none">Hạn chót</p>
-        <p className="text-[12px] font-semibold text-[#FF3B30] tabular-nums leading-none mt-0.5">
+        <p className="text- text-[#FF3B30] leading-none">Hạn chót</p>
+        <p className="text-xs font-semibold text-[#FF3B30] tabular-nums leading-none mt-0.5">
           {taskDeadline || "Chưa có"}
         </p>
       </div>
@@ -757,15 +736,15 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
 
 <div className="pt-3 pb-2">
   {isOwner? (
-  <div ref={appsRef} className="rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-[0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] overflow-hidden">
+  <div ref={appsRef} className="rounded-3xl bg-white dark:bg-zinc-900 border border-white dark:border-zinc-800 shadow-[0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] overflow-hidden">
   <div className="px-5 py-4 flex items-center justify-between">
-    <h3 className="font-semibold text-[14px] text-[#1C1C1E] dark:text-zinc-100">
+    <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
       Ứng viên ({applications.length})
     </h3>
     {applications.length > 1 && (
       <button
         onClick={() => setShowAllApps(!showAllApps)}
-        className="text-[14px] font-semibold text-[#0042B2] active:opacity-60 transition-opacity"
+        className="text-sm font-semibold text-[#0a84ff] active:opacity-60 transition-opacity"
       >
         {showAllApps? 'Thu gọn' : 'Xem tất cả'} ›
       </button>
@@ -774,15 +753,15 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
 
   {applications.length === 0? (
     <div className="px-5 pb-12 text-center">
-      <p className="text-[14px] text-[#8E8E93] dark:text-zinc-500">
+      <p className="text-sm text-[#8E8E93] dark:text-zinc-500">
         Chưa có ai ứng tuyển
       </p>
     </div>
   ) : (
     <div className="divide-y divide-[#F2F2F7] dark:divide-zinc-800">
      {(showAllApps? applications : applications.slice(0, 1)).map(app => (
-  <motion.div
-    key={app.id}
+  <motion.div 
+    key={app.id} 
     layout
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
@@ -794,10 +773,10 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
     >
       <UserAvatar src={app.userAvatar} name={app.userName} size={40} />
       <div className="min-w-0">
-        <p className="font-semibold text-[14px] text-[#1C1C1E] dark:text-zinc-100 truncate">
+        <p className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100 truncate">
           {app.userName}
         </p>
-        <p className="text-[12px] text-[#8E8E93] dark:text-zinc-500">
+        <p className="text-xs text-[#8E8E93] dark:text-zinc-500">
           {app.createdAt?.toDate? app.createdAt.toDate().toLocaleDateString('vi-VN') : 'Vừa xong'} • Nộp {timeAgo(app.createdAt)}
         </p>
       </div>
@@ -811,22 +790,14 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
         navigator.vibrate?.(8);
         handleAcceptApp(app.id, app.userId);
       }}
-      className="h-8 px-3 rounded-full bg-[#E6F4EA] dark:bg-[#00C853]/20 flex items-center gap-1.5 active:bg-[#D4EDDA] dark:active:bg-[#00C853]/30 transition-all"
+      className="h-8 px-3 rounded-full bg-[#E6F4EA] dark:bg-[#1E8E3E]/20 flex items-center gap-1.5 active:bg-[#D4EDDA] dark:active:bg-[#1E8E3E]/30 transition-all"
     >
-      <div
-  className="w-4 h-4 rounded-full flex items-center justify-center"
-  style={{ background: SUCCESS }}
->
+      <div className="w-4 h-4 rounded-full bg-[#00A86B] flex items-center justify-center">
         <FiCheck size={10} strokeWidth={3} className="text-white" />
       </div>
-      <span
-  className="text-[12px] font-semibold"
-  style={{ color: SUCCESS }}
->
-  Đồng ý
-</span>
+      <span className="text-xs font-semibold text-[#00A86B]">Đồng ý</span>
     </motion.button>
-
+    
     <motion.button
       whileTap={{ scale: 0.95 }}
       onClick={(e) => {
@@ -834,12 +805,12 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
         navigator.vibrate?.(8);
         handleRejectApp(app.id);
       }}
-      className="h-8 px-3 rounded-full bg-[#FFE5E5] dark:bg-[#FF3B30]/20 flex items-center gap-1.5 active:bg-[#FFD6] dark:active:bg-[#FF3B30]/30 transition-all"
+      className="h-8 px-3 rounded-full bg-[#FFE5E5] dark:bg-[#FF3B30]/20 flex items-center gap-1.5 active:bg-[#FFD6D6] dark:active:bg-[#FF3B30]/30 transition-all"
     >
       <div className="w-4 h-4 rounded-full bg-[#FF3B30] flex items-center justify-center">
         <FiX size={10} strokeWidth={3} className="text-white" />
       </div>
-      <span className="text-[12px] font-semibold text-[#FF3B30]">Từ chối</span>
+      <span className="text-xs font-semibold text-[#FF3B30]">Từ chối</span>
     </motion.button>
   </div>
   </motion.div>
@@ -850,8 +821,7 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
   ) : (
     <div className="grid grid-cols-4 gap-2">
       <motion.button
-       whileTap={{ scale: 0.94 }}
-  onTouchStart={() => vibrate()}
+        whileTap={{ scale: 0.94 }}
         onClick={handleStartChat}
         disabled={isOwner}
         className="h-14 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 flex flex-col items-center justify-center gap-0.5 text-[#1C1C1E] dark:text-zinc-100 active:bg-[#E5E5EA] dark:active:bg-zinc-700 disabled:opacity-40 transition-all"
@@ -861,8 +831,7 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
       </motion.button>
 
       <motion.button
-       whileTap={{ scale: 0.94 }}
-  onTouchStart={() => vibrate()}
+        whileTap={{ scale: 0.94 }}
         onClick={() => owner?.phone && window.open(`tel:${owner.phone}`)}
         disabled={!owner?.phone || isOwner}
         className="h-14 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 flex flex-col items-center justify-center gap-0.5 text-[#1C1C1E] dark:text-zinc-100 active:bg-[#E5E5EA] dark:active:bg-zinc-700 disabled:opacity-40 transition-all"
@@ -872,14 +841,13 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
       </motion.button>
 
       <motion.button
-      whileTap={{ scale: 0.94 }}
-  onTouchStart={() => vibrate()}
+        whileTap={{ scale: 0.94 }}
         onClick={isApplied? handleCancelApply : handleJoinTask}
         disabled={(!isApplied && (isFull || task.status!== "open")) || joining || isOwner}
         className={`h-14 rounded-2xl flex flex-col items-center justify-center gap-0.5 font-semibold active:scale-95 disabled:opacity-40 transition-all ${
           isApplied
-     ? "bg-[#E8F5E9] dark:bg-green-950/40 text-[#00C853] active:bg-[#D4EDDA] dark:active:bg-green-900/60"
-            : "bg-[#0042B2] active:bg-[#003A9B] text-white shadow-[0_4px_12px_rgba(0,66,178,0.25)]"
+      ? "bg-[#E8F5E9] dark:bg-green-950/40 text-[#00A86B] active:bg-[#D4EDDA] dark:active:bg-green-900/60"
+            : "bg-[#00A86B] active:bg-[#009960] text-white shadow-[0_4px_12px_rgba(0,168,107,0.25)]"
         }`}
       >
         {joining? (
@@ -892,18 +860,14 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
         <span className="text-[11px]">{isApplied? "Đã ứng tuyển" : "Ứng tuyển"}</span>
       </motion.button>
 
-<motion.button
- whileTap={{ scale: 0.94 }}
-  onTouchStart={() => vibrate()}
-  onClick={() => {
-    if (!currentUser) return router.push("/login");
-    setShowReportModal(true);
-  }}
-  className="h-14 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 flex flex-col items-center justify-center gap-0.5 text-[#FF9500] active:bg-[#E5E5EA] dark:active:bg-zinc-700 transition-all"
->
-  <FiAlertTriangle size={22} strokeWidth={2} />
-  <span className="text-[11px] font-medium">Báo cáo</span>
-</motion.button>
+      <motion.button
+        whileTap={{ scale: 0.94 }}
+        onClick={() => toast.info("Đã gửi báo cáo")}
+        className="h-14 rounded-2xl bg-[#F2F2F7] dark:bg-zinc-800 flex flex-col items-center justify-center gap-0.5 text-[#FF9500] active:bg-[#E5E5EA] dark:active:bg-zinc-700 transition-all"
+      >
+        <FiAlertTriangle size={22} strokeWidth={2} />
+        <span className="text-[11px] font-medium">Báo cáo</span>
+      </motion.button>
     </div>
   )}
 </div>
@@ -918,11 +882,11 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
                       className="w-full h-full border-0"
                       loading="lazy"
                     />
-                    <div className="absolute top-2 left-2 bg-white dark:bg-zinc-900 px-2 py-1 rounded-lg text-[11px] font-medium shadow">
+                    <div className="absolute top-2 left-2 bg-white dark:bg-zinc-900 px-2 py-1 rounded-lg text- font-medium shadow">
                       Bản đồ
                     </div>
                   </div>
-                  <button className="w-full mt-2 text-[#0042B2] font-semibold text-[14px]">
+                  <button className="w-full mt-2 text-[#0a84ff] font-semibold text-">
                     Xem chi tiết
                   </button>
                 </div>
@@ -933,8 +897,7 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
               <div className="px-4 pt-3 pb-2">
                 {task.images.length === 1? (
                   <motion.button
-                   whileTap={{ scale: 0.94 }}
-  onTouchStart={() => vibrate()}
+                    whileTap={{ scale: 0.94 }}
                     onClick={() => setShowImageGallery(0)}
                     className="relative w-20 h-20 rounded-xl overflow-hidden"
                   >
@@ -952,8 +915,7 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
                     {task.images.slice(0, 2).map((img, i) => (
                       <motion.button
                         key={i}
-                       whileTap={{ scale: 0.94 }}
-  onTouchStart={() => vibrate()}
+                        whileTap={{ scale: 0.94 }}
                         onClick={() => setShowImageGallery(i)}
                         className="relative w-20 h-20 rounded-xl overflow-hidden"
                       >
@@ -973,8 +935,7 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
                     {task.images.slice(0, 3).map((img, i) => (
                       <motion.button
                         key={i}
-                       whileTap={{ scale: 0.94 }}
-  onTouchStart={() => vibrate()}
+                        whileTap={{ scale: 0.94 }}
                         onClick={() => setShowImageGallery(i)}
                         className="relative aspect-square rounded-xl overflow-hidden"
                       >
@@ -988,7 +949,7 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
                         />
                         {i === 2 && task.images!.length > 3 && (
                           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
-                            <span className="text-white font-bold text-[15px]">
+                            <span className="text-white font-bold text-">
                               +{task.images!.length - 3}
                             </span>
                           </div>
@@ -1000,29 +961,30 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
               </div>
             )}
 
-          <div className="mt-4">
-  <div className="rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-[0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] overflow-hidden">
+          {/* Bình luận */}
+<div className="mt-4">
+  <div className="rounded-3xl bg-white dark:bg-zinc-900 border border-white dark:border-zinc-800 shadow-[0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] overflow-hidden">
   <div className="px-5 py-4">
-  <h3 className="font-semibold text-[14px] text-[#1C1C1E] dark:text-zinc-100">
+  <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
     Bình luận ({comments.length})
   </h3>
 </div>
 
     <div className="px-5 py-4">
       {parentComments.length === 0? (
-        <div className="text-center py-12 text-zinc-400 text-[14px]">
-         <div className="w-12 h-12 mx-auto mb-3 opacity-40"><LottiePlayer animationData={L.celebrate} loop autoplay className="w-12 h-12" /></div>
+        <div className="text-center py-12 text-zinc-400 text-sm">
+          <FiMessageCircle size={48} className="mx-auto mb-3 opacity-30" />
           Chưa có bình luận nào<br />Hãy là người đầu tiên
         </div>
       ) : (
         <div className="space-y-4">
           <AnimatePresence>
             {parentComments.map((c) => (
-<CommentList
-  key={c.id}
-  comment={c}
-  replies={getReplies(c.id)}
-  currentUserId={currentUser?.uid || null}
+              <CommentList
+                key={c.id}
+                comment={c}
+                replies={getReplies(c.id)}
+                currentUserId={currentUser?.uid}
                 taskOwnerId={task.userId}
                 onLike={handleLikeComment}
                 onReply={handleReply}
@@ -1045,7 +1007,7 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
 
     <div className="sticky bottom-0 bg-white dark:bg-zinc-900 px-5 py-3 border-t border-[#F2F2F7] dark:border-zinc-800">
       {replyTo && (
-        <div className="text-[13px] dark:text-zinc-400 mb-2 flex items-center justify-between bg-zinc-50 dark:bg-zinc-800 border border-[#E5E5EA] dark:border-zinc-700 px-3.5 py-2 rounded-xl">
+        <div className="text-sm dark:text-zinc-400 mb-2 flex items-center justify-between bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 px-3.5 py-2 rounded-xl">
           <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
           <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg active:scale-90 transition-all"><FiX size={14} /></button>
         </div>
@@ -1058,7 +1020,7 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSendComment()}
             placeholder={currentUser? "Viết bình luận..." : "Đăng nhập để bình luận"}
-            className="w-full px-4 py-2.5 rounded-full bg-zinc-50 dark:bg-zinc-800 border border-[#E5E5EA] dark:border-zinc-700 outline-none text-[14px] focus:ring-2 focus:ring-[#0042B2]/20 focus:border-[#0042B2] transition-all"
+            className="w-full px-4 py-2.5 rounded-full bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 outline-none text-sm focus:ring-2 focus:ring-[#0a84ff]/20 focus:border-[#0a84ff] transition-all"
             disabled={sending ||!currentUser}
           />
           {showMention && mentionUsersList.length > 0 && (
@@ -1068,7 +1030,7 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
                   placeholder="Tìm người..."
                   value={mentionQuery}
                   onChange={(e) => setMentionQuery(e.target.value)}
-                  className="w-full px-3 py-1.5 text-[13px] bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg outline-none mb-2"
+                  className="w-full px-3 py-1.5 text-sm bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg outline-none mb-2"
                 />
                 {mentionUsersList.map((user) => (
                   <button
@@ -1077,7 +1039,7 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
                     className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#F2F2F7] dark:hover:bg-zinc-800 rounded-lg text-left"
                   >
                     <UserAvatar src={user.avatar} name={user.name} size={24} />
-                    <span className="text-[13px]">{user.name}</span>
+                    <span className="text-sm">{user.name}</span>
                   </button>
                 ))}
               </div>
@@ -1088,30 +1050,16 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
           whileTap={{ scale: 0.9 }}
           onClick={handleSendComment}
           disabled={!text.trim() || sending ||!currentUser}
-          className={`p-2.5 rounded-full bg-[#0042B2] hover:bg-[#003A9B] text-white disabled:bg-zinc-300 dark:disabled:bg-zinc-700 disabled:cursor-not-allowed active:scale-90 transition-all`}
+          className={`p-2.5 rounded-full bg-[#0a84ff] hover:bg-[#0071e3] text-white disabled:bg-zinc-300 dark:disabled:bg-zinc-700 disabled:cursor-not-allowed active:scale-90 transition-all`}
         >
           <FiSend size={18} />
         </motion.button>
       </div>
     </div>
   </div>
-
+</div>
         </div>
 </div>
-</motion.div>
-{task && currentUser && (
-  <ReportModal
-    isOpen={showReportModal}
-    onClose={() => setShowReportModal(false)}
-    targetType="task"
-    targetId={task.id}
-    targetName={task.title}
-    targetShortId={owner?.name}
-    targetAvatar={owner?.avatar}
-    fromUid={currentUser.uid}
-    fromName={currentUser.displayName || "User"}
-  />
-)}
         <ImageGallery open={showImageGallery!== null} images={task.images || []} initialIndex={showImageGallery || 0} onClose={() => setShowImageGallery(null)} />
         {shareTask && (
           <ShareTaskModal
@@ -1119,12 +1067,8 @@ const statusMap: Record<TaskStatus | PlanStatus, { label: string; color: string;
             onClose={() => setShareTask(null)}
           />
         )}
- {showSuccessAnimation && (
-  <div className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center">
-    <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-64 h-64" />
-  </div>
-)}
       </div>
     </>
   );
 }
+                  
