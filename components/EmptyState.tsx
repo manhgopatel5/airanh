@@ -1,21 +1,62 @@
 "use client";
+
 import { HiPlus } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useEffect, useState, useCallback } from "react";
 import LottiePlayer from "@/components/LottiePlayer";
-import * as L from "@/components/illustrations";
+import illustrations from "@/components/illustrations";
 
 type TabId = "hot" | "near" | "new" | "friends";
 type PostType = "task" | "plan";
 
+type LottieKey = keyof typeof illustrations;
+
 // Fallback SVG nếu Lottie lỗi
 const EmptyIcon = ({ type }: { type: PostType }) => (
-  <svg className={`w-14 h-14 ${type === 'task'? 'text-[#0042B2]' : 'text-[#00C853]'}`} viewBox="0 0 56 56" fill="none">
-    <rect x="8" y="12" width="40" height="32" rx="6" fill="currentColor" opacity="0.1"/>
-    <rect x="14" y="18" width="28" height="4" rx="2" fill="currentColor" opacity="0.3"/>
-    <rect x="14" y="26" width="20" height="4" rx="2" fill="currentColor" opacity="0.3"/>
-    <rect x="14" y="34" width="24" height="4" rx="2" fill="currentColor" opacity="0.3"/>
+  <svg
+    className={`w-14 h-14 ${
+      type === "task" ? "text-[#0042B2]" : "text-[#00C853]"
+    }`}
+    viewBox="0 0 56 56"
+    fill="none"
+  >
+    <rect
+      x="8"
+      y="12"
+      width="40"
+      height="32"
+      rx="6"
+      fill="currentColor"
+      opacity="0.1"
+    />
+    <rect
+      x="14"
+      y="18"
+      width="28"
+      height="4"
+      rx="2"
+      fill="currentColor"
+      opacity="0.3"
+    />
+    <rect
+      x="14"
+      y="26"
+      width="20"
+      height="4"
+      rx="2"
+      fill="currentColor"
+      opacity="0.3"
+    />
+    <rect
+      x="14"
+      y="34"
+      width="24"
+      height="4"
+      rx="2"
+      fill="currentColor"
+      opacity="0.3"
+    />
   </svg>
 );
 
@@ -24,92 +65,99 @@ const CONTENT_POOL = {
     hot: {
       titles: ["Không ai đăng hết luôn á? Ủa alo? 📢"],
       descs: ["Người khác chưa đăng vì đang chờ bạn đó 👀"],
-      lottieKey: "empty" as keyof typeof L,
+      lottieKey: "empty" as LottieKey,
       suggests: [
         "Tuyển 5 người đi bắt chồng ngoại tình 😭",
         "Giả làm người yêu tui 1 buổi gặp họ hàng 🙃",
         "Qua dọn giùm phòng gấp mẹ tui sắp về 😭",
-        "Chạy deadline giùm, tui hứa sẽ biết ơn (chắc vậy) 😰"
-      ]
+        "Chạy deadline giùm, tui hứa sẽ biết ơn 😰",
+      ],
     },
+
     near: {
       titles: ["Đăng cái gì đó cho khu này xôm lên đi 🔥"],
       descs: ["Im lặng đáng sợ luôn á 😱"],
-      lottieKey: "searching" as keyof typeof L,
+      lottieKey: "searching" as LottieKey,
       suggests: [
         "Ship giùm hộp cơm tui đói sắp xỉu 🍱",
         "Mua thuốc panadol giùm cái coi 😵",
         "Cho xin cục sạc, pin tui sắp về với tổ tiên 🔋",
-        "Ai rảnh qua bắt gián hộ tui với 🪳"
-      ]
+        "Ai rảnh qua bắt gián hộ tui với 🪳",
+      ],
     },
+
     new: {
       titles: ["Nhanh tay còn kịp, chậm là mất 👀"],
       descs: ["Đây là nơi săn job nhanh hơn crush rep tin nhắn 💬"],
-      lottieKey: "task" as keyof typeof L,
+      lottieKey: "task" as LottieKey,
       suggests: [
         "Cần người cứu gấp sắp toi rồi 🆘",
         "In tài liệu gấp, máy in tui phản chủ rồi 🖨️",
         "Làm nhanh về sớm, làm chậm về trễ 😎",
-        "Chụp hình sống ảo cho tui 100 tấm 📸"
-      ]
+        "Chụp hình sống ảo cho tui 100 tấm 📸",
+      ],
     },
+
     friends: {
       titles: ["Kèo người quen, tiền ít nhưng drama nhiều 🌚"],
       descs: ["Giúp nhau hôm nay, mai cưới nhớ gửi thiệp 😌"],
-      lottieKey: "plan" as keyof typeof L,
+      lottieKey: "plan" as LottieKey,
       suggests: [
         "Qua phụ dọn nhà, tui bao ăn 🧹",
         "Việc cho người quen thôi, qua Cam kiếm tiền",
         "Comment dạo giúp tui cho bài đỡ flop 💬 trả công 5 chục",
-        "Tìm người đốt nhà ngừoi yêu cũ 🤫"
-      ]
+        "Tìm người đốt nhà người yêu cũ 🤫",
+      ],
     },
   },
+
   plan: {
     hot: {
       titles: ["Kèo này mà bỏ là phí thanh xuân đó 😭🔥"],
       descs: ["Join lẹ kẻo full slot đó 👀"],
-      lottieKey: "celebrate" as keyof typeof L,
+      lottieKey: "celebrate" as LottieKey,
       suggests: [
         "Cafe sáng tám chuyện chill đê ☕",
         "Đi ăn chung cho tui đỡ ngại đi một mình 🍜",
         "Boardgame thua trả tiền nào 😏",
-        "Phượt Vũng tàu nhẹ cái cho đã 🏍️"
-      ]
+        "Phượt Vũng tàu nhẹ cái cho đã 🏍️",
+      ],
     },
+
     near: {
       titles: ["Ê khu này im ắng quá nghe 🤨"],
       descs: ["Không cần đi xa, vui ngay gần nhà 😏"],
-      lottieKey: "idle" as keyof typeof L,
+      lottieKey: "idle" as LottieKey,
       suggests: [
         "Cafe gần nhà cho tiện ghé nào ☕",
-        "Chạy bộ 5 phút nghỉ 30 phút🏃",
+        "Chạy bộ 5 phút nghỉ 30 phút 🏃",
         "Bi-a giao lưu nhẹ mấy fen 🎱",
-        "Workshop đi cho nó soang 🎨"
-      ]
+        "Workshop đi cho nó soang 🎨",
+      ],
     },
+
     new: {
       titles: ["Chưa ai mở kèo mới hết bây 😗"],
       descs: ["Plan mới đăng, còn nóng hổi 🆕"],
-      lottieKey: "loadingPull" as keyof typeof L,
+      lottieKey: "loadingPull" as LottieKey,
       suggests: [
         "Kèo tối nay Q1 luôn không tụi bây 🍻",
         "Đi ăn không đặt bàn nhanh nào 😤",
         "Tối xem C1 trận MU - Ars nào 🤡",
-        "Ê tự nhiên muốn đi đảo khỉ Cần Giờ 🐒"
-      ]
+        "Ê tự nhiên muốn đi đảo khỉ Cần Giờ 🐒",
+      ],
     },
+
     friends: {
       titles: ["Mấy đứa đâu rồi vào nhanh 😏"],
       descs: ["Kèo người quen, không đi là kỳ đó 😏"],
-      lottieKey: "walletOpen" as keyof typeof L,
+      lottieKey: "walletOpen" as LottieKey,
       suggests: [
         "Mai sinh nhật tao làm lớn đê 🎂",
         "Nhà ai có cơm cho tui ăn ké với đói quá 😭",
         "Đi Đà Lạt trốn việc sếp chửi thì giả điếc 🌲",
-        "Team building cho có hình tao đăng Fb 📸"
-      ]
+        "Team building cho có hình tao đăng Fb 📸",
+      ],
     },
   },
 };
@@ -118,22 +166,23 @@ const THEME = {
   task: {
     iconBg: "bg-[#0042B2]/10 dark:bg-[#0042B2]/15",
     iconColor: "text-[#0042B2] dark:text-[#5B8DEF]",
-    tagBg: "bg-[#0042B2]/10 hover:bg-[#0042B2]/20 dark:bg-[#0042B2]/15 dark:hover:bg-[#0042B2]/25",
+    tagBg:
+      "bg-[#0042B2]/10 hover:bg-[#0042B2]/20 dark:bg-[#0042B2]/15 dark:hover:bg-[#0042B2]/25",
     tagText: "text-[#0042B2] dark:text-[#8FB3FF]",
-    buttonBg: "bg-[#0042B2] hover:bg-[#003A9A] dark:bg-[#0042B2] dark:hover:bg-[#003A9A]",
+    buttonBg:
+      "bg-[#0042B2] hover:bg-[#003A9A] dark:bg-[#0042B2] dark:hover:bg-[#003A9A]",
     buttonText: "text-white",
-    tabActive: "text-[#0042B2]",
-    tabLine: "bg-[#0042B2]",
   },
+
   plan: {
     iconBg: "bg-[#00C853]/10 dark:bg-[#00C853]/15",
     iconColor: "text-[#00C853] dark:text-[#5CFF9A]",
-    tagBg: "bg-[#00C853]/10 hover:bg-[#00C853]/20 dark:bg-[#00C853]/15 dark:hover:bg-[#00C853]/25",
+    tagBg:
+      "bg-[#00C853]/10 hover:bg-[#00C853]/20 dark:bg-[#00C853]/15 dark:hover:bg-[#00C853]/25",
     tagText: "text-[#00A843] dark:text-[#7CFFB2]",
-    buttonBg: "bg-[#00C853] hover:bg-[#00A843] dark:bg-[#00C853] dark:hover:bg-[#00A843]",
+    buttonBg:
+      "bg-[#00C853] hover:bg-[#00A843] dark:bg-[#00C853] dark:hover:bg-[#00A843]",
     buttonText: "text-white",
-    tabActive: "text-[#00C853]",
-    tabLine: "bg-[#00C853]",
   },
 };
 
@@ -147,12 +196,16 @@ type Props = {
   type?: PostType;
 };
 
-export default function EmptyState({ tab, type = "task" }: Props) {
+export default function EmptyState({
+  tab,
+  type = "task",
+}: Props) {
   const router = useRouter();
+
   const theme = THEME[type];
   const pool = CONTENT_POOL[type][tab];
 
- const [content, setContent] = useState(() => ({
+  const [content, setContent] = useState(() => ({
     title: pool.titles[0],
     desc: pool.descs[0],
     suggests: pool.suggests.slice(0, 4),
@@ -164,21 +217,39 @@ export default function EmptyState({ tab, type = "task" }: Props) {
       desc: pool.descs[Math.floor(Math.random() * pool.descs.length)],
       suggests: getRandomItems(pool.suggests, 4),
     });
- }, [type, tab, pool]);
+  }, [pool]);
 
-  const handleSuggestClick = useCallback((suggest: string) => {
-    navigator.vibrate?.(5);
-    const path = type === "task"? "/create/task" : "/create/plan";
-    router.push(`${path}?title=${encodeURIComponent(suggest)}`);
- }, [type, router]);
+  const handleSuggestClick = useCallback(
+    (suggest: string) => {
+      navigator.vibrate?.(5);
+
+      const path =
+        type === "task"
+          ? "/create/task"
+          : "/create/plan";
+
+      router.push(
+        `${path}?title=${encodeURIComponent(suggest)}`
+      );
+    },
+    [type, router]
+  );
 
   const handleCreateClick = useCallback(() => {
     navigator.vibrate?.(8);
-    const path = type === "task"? "/create/task" : "/create/plan";
-    router.push(path);
-}, [type, router]);
 
-  const lottieData = L[pool.lottieKey];
+    const path =
+      type === "task"
+        ? "/create/task"
+        : "/create/plan";
+
+    router.push(path);
+  }, [type, router]);
+
+  const lottieData = illustrations[pool.lottieKey];
+
+  console.log("illustrations", illustrations);
+  console.log("lottieData", lottieData);
 
   return (
     <div className="flex flex-col items-center justify-center py-16 px-6 text-center font-sans">
@@ -189,11 +260,11 @@ export default function EmptyState({ tab, type = "task" }: Props) {
         className={`w-20 h-20 rounded-2xl ${theme.iconBg} flex items-center justify-center mb-5`}
       >
         <div className="w-14 h-14">
-          {lottieData? (
-            <LottiePlayer 
-              animationData={lottieData} 
-              loop 
-              autoplay 
+          {lottieData ? (
+            <LottiePlayer
+              animationData={lottieData}
+              loop
+              autoplay
               className="w-14 h-14"
               fallback={<EmptyIcon type={type} />}
             />
@@ -244,7 +315,9 @@ export default function EmptyState({ tab, type = "task" }: Props) {
           className={`px-5 py-2.5 rounded-xl ${theme.buttonBg} ${theme.buttonText} font-semibold text-sm flex items-center gap-2 active:scale-95 transition-all shadow-sm font-sans`}
         >
           <HiPlus size={20} strokeWidth={2.5} />
-          {type === "task"? "Đăng việc mới" : "Tạo kế hoạch"}
+          {type === "task"
+            ? "Đăng việc mới"
+            : "Tạo kế hoạch"}
         </button>
       </motion.div>
     </div>
