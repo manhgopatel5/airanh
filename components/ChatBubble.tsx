@@ -1,11 +1,9 @@
 "use client";
 import { useState, useCallback } from "react";
-import { FiDownload, FiMapPin, FiFile } from "react-icons/fi";
+import { FiDownload, FiMapPin, FiFile, FiCheck, FiClipboard, FiBriefcase } from "react-icons/fi";
 import Linkify from "linkify-react";
 import EmojiPicker from "./EmojiPicker";
 import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
-import * as L from "@/components/illustrations";
 import type { Message } from "@/types/message";
 
 type Friend = {
@@ -47,7 +45,7 @@ export default function ChatBubble({
     msg.createdAt &&
     typeof msg.createdAt === "object" &&
     "seconds" in msg.createdAt
-? new Date(msg.createdAt.seconds * 1000).toLocaleTimeString([], {
+     ? new Date((msg.createdAt as any).seconds * 1000).toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
         })
@@ -66,11 +64,11 @@ export default function ChatBubble({
     [msg.text]
   );
 
-  // ✅ FIX: handle cả object lẫn array
+  // FIX: handle cả object lẫn array
   const reactionList = msg.reactions
-? Object.entries(
+   ? Object.entries(
         Object.values(msg.reactions).reduce((acc, emoji) => {
-          if (typeof emoji === 'string') {
+          if (typeof emoji === "string") {
             acc[emoji] = (acc[emoji] || 0) + 1;
           }
           return acc;
@@ -88,12 +86,12 @@ export default function ChatBubble({
         />
       )}
 
-      <div className={`max-w-[75%] sm:max-w-[65%] flex flex-col ${isMe? "items-end" : "items-start"}`}>
+      <div className={`max-w- max-w- flex-col ${isMe? "items-end" : "items-start"}`}>
         {msg.replyTo && (
           <div
             className={`text-xs mb-1 px-3 py-1.5 rounded-2xl max-w-full truncate ${
               isMe
-          ? "bg-[#0042B2]/30 text-white/90"
+               ? "bg-[#0042B2]/30 text-white/90"
                 : "bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
             }`}
           >
@@ -102,7 +100,7 @@ export default function ChatBubble({
           </div>
         )}
 
-        {/* ✅ TASK SHARE - MỚI THÊM */}
+        {/* TASK SHARE - đã bỏ lottie */}
         {msg.type === "task_share" && (
           <motion.div
             initial={{scale:0.9,opacity:0}}
@@ -110,13 +108,13 @@ export default function ChatBubble({
             onDoubleClick={() => onReply?.(msg)}
             className={`px-4 py-3 rounded-3xl shadow-sm w-64 ${
               isMe
-          ? "bg-gradient-to-r from-[#0042B2] to-[#0066FF] text-white rounded-br-lg"
+               ? "bg-gradient-to-r from-[#0042B2] to-[#0066FF] text-white rounded-br-lg"
                 : "bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-bl-lg"
             }`}
           >
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 shrink-0">
-                <LottiePlayer animationData={L.task} autoplay loop className="w-8 h-8" />
+              <div className={`w-8 h-8 shrink-0 rounded-2xl flex items-center justify-center ${isMe? "bg-white/20" : "bg-[#0042B2]/10"}`}>
+                <FiBriefcase className={isMe? "text-white" : "text-[#0042B2]"} size={18} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className={`text-xs font-bold uppercase tracking-wide ${isMe? "text-white/80" : "text-[#0042B2]"}`}>
@@ -124,7 +122,6 @@ export default function ChatBubble({
                 </p>
                 <p className="text-sm font-semibold truncate">{msg.taskTitle}</p>
               </div>
-            </div>
             {(msg.price?? 0) > 0 && (
               <p className={`text-sm font-bold mt-1.5 ${isMe? "text-white" : "text-[#00C853]"}`}>
                 {msg.price?.toLocaleString("vi-VN")}đ
@@ -139,7 +136,7 @@ export default function ChatBubble({
             onDoubleClick={() => onReply?.(msg)}
             className={`px-4 py-2.5 rounded-3xl text-sm shadow-sm leading-relaxed break-words relative ${
               isMe
-          ? "bg-gradient-to-r from-[#0042B2] to-[#1A5FFF] text-white rounded-br-lg"
+               ? "bg-gradient-to-r from-[#0042B2] to-[#1A5FFF] text-white rounded-br-lg"
                 : "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-bl-lg"
             }`}
           >
@@ -154,7 +151,7 @@ export default function ChatBubble({
             <AnimatePresence>
               {showCopied && (
                 <motion.div initial={{opacity:0,y:5}} animate={{opacity:1,y:0}} exit={{opacity:0}} className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black/90 text-white text-xs px-2.5 py-1.5 rounded-xl whitespace-nowrap flex items-center gap-1.5">
-                  <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-4 h-4" />
+                  <FiCheck className="w-3.5 h-3.5 text-[#00C853]" />
                   Đã copy
                 </motion.div>
               )}
@@ -169,7 +166,7 @@ export default function ChatBubble({
               onError={() => setImgError(true)}
               onClick={() =>!imgError && onImageClick?.(msg.image!)}
               alt={msg.fileName || "image"}
-              className="max-w-[220px] max-h-[300px] object-cover cursor-pointer hover:opacity-90 transition-opacity"
+              className="max-w- max-h- object-cover cursor-pointer hover:opacity-90 transition-opacity"
             />
           </motion.div>
         )}
@@ -179,7 +176,7 @@ export default function ChatBubble({
             src={(msg as any).video}
             controls
             playsInline
-            className="max-w-[220px] max-h-[300px] rounded-3xl shadow-sm bg-black"
+            className="max-w- max-h- rounded-3xl shadow-sm bg-black"
           />
         )}
 
@@ -191,7 +188,7 @@ export default function ChatBubble({
             rel="noopener noreferrer"
             className={`flex items-center gap-3 px-4 py-3 rounded-3xl shadow-sm transition active:scale-[0.98] ${
               isMe
-          ? "bg-gradient-to-r from-[#0042B2] to-[#1A5FFF] text-white"
+               ? "bg-gradient-to-r from-[#0042B2] to-[#1A5FFF] text-white"
                 : "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
             }`}
           >
@@ -215,7 +212,7 @@ export default function ChatBubble({
             rel="noopener noreferrer"
             className={`flex items-center gap-3 px-4 py-3 rounded-3xl shadow-sm transition active:scale-[0.98] ${
               isMe
-          ? "bg-gradient-to-r from-[#0042B2] to-[#1A5FFF] text-white"
+               ? "bg-gradient-to-r from-[#0042B2] to-[#1A5FFF] text-white"
                 : "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
             }`}
           >
