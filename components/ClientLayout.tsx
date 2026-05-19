@@ -13,8 +13,6 @@ import { Toaster } from "sonner";
 import FCMProvider from "@/components/FCMProvider";
 import BottomNav from "@/components/BottomNav";
 import WarningModal from "@/components/WarningModal";
-import LottiePlayer from "@/components/LottiePlayer";
-import * as L from "@/components/illustrations";
 
 type Props = {
   children: React.ReactNode;
@@ -66,21 +64,6 @@ export default function ClientLayout({ children }: Props) {
 
   const isCreate =
     pathname.startsWith("/create");
-
-  /* ================= HUHA LOTTIE PREFETCH - Zomato style ================= */
-  useEffect(() => {
-    if (typeof window!== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      document.documentElement.classList.add("huha-reduce");
-    }
-    const idle = (window as any).requestIdleCallback || ((cb: any) => setTimeout(cb, 800));
-    idle(() => {
-      Object.values(L).forEach(data => {
-        if (typeof data === 'object') {
-          // Pre-warm Lottie data
-        }
-      });
-    });
-  }, []);
 
   /* ================= REDIRECT ================= */
   useEffect(() => {
@@ -142,9 +125,7 @@ export default function ClientLayout({ children }: Props) {
   if (loading) {
     return (
       <div className="fixed inset-0 bg-[#FAFAFB] dark:bg-zinc-950 flex items-center justify-center">
-        <div className="w-36 h-36">
-          <LottiePlayer animationData={L.loadingPull} loop autoplay className="w-36 h-36" />
-        </div>
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -154,16 +135,16 @@ export default function ClientLayout({ children }: Props) {
     const bannedUntil =
       banData.bannedUntil &&
       typeof (banData.bannedUntil as any)
-       ?.toDate === "function"
-       ? (banData.bannedUntil as any)
-           .toDate()
+      ?.toDate === "function"
+      ? (banData.bannedUntil as any)
+          .toDate()
         : null;
 
     const isPermanent =!bannedUntil;
 
     const remainMs =
       bannedUntil
-       ? bannedUntil.getTime() -
+      ? bannedUntil.getTime() -
           Date.now()
         : 0;
 
@@ -184,9 +165,11 @@ export default function ClientLayout({ children }: Props) {
         {/* CARD */}
         <div className="relative w-full max-w-md bg-white dark:bg-zinc-900 rounded-[36px] shadow-[0_10px_40px_rgba(0,0,0,0.08)] border border-[#E5E5EA] dark:border-zinc-800 overflow-hidden">
           <div className="p-7">
-            {/* ICON - HUHA LOTTIE */}
-            <div className="w-28 h-28 mx-auto mb-7">
-              <LottiePlayer animationData={L.errorShake} loop autoplay className="w-28 h-28" />
+            {/* ICON - thay lottie bằng ShieldX */}
+            <div className="w-28 h-28 mx-auto mb-7 flex items-center justify-center">
+              <div className="w-24 h-24 rounded-full bg-red-500/10 flex items-center justify-center">
+                <ShieldX className="w-14 h-14 text-red-500" />
+              </div>
             </div>
 
             {/* TITLE */}
@@ -217,7 +200,7 @@ export default function ClientLayout({ children }: Props) {
                   </p>
                   <p className="text-[#8E8E93] dark:text-zinc-500 text-[13px] mt-2">
                     {isPermanent
-                     ? "Khóa vĩnh viễn"
+                    ? "Khóa vĩnh viễn"
                       : `Còn ${remainDays} ngày`}
                   </p>
                 </div>
@@ -276,7 +259,7 @@ export default function ClientLayout({ children }: Props) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#FAFAFB] to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors font-sans">
       <Toaster richColors position="top-center" />
-      
+
       {/* FCM */}
       {user && (
         <FCMProvider userId={user.uid} />
@@ -285,8 +268,8 @@ export default function ClientLayout({ children }: Props) {
       {/* PAGE */}
       <div
         className={
-         !isChatDetail &&!isCreate
-           ? "pb-24"
+        !isChatDetail &&!isCreate
+          ? "pb-24"
             : ""
         }
       >
@@ -296,8 +279,8 @@ export default function ClientLayout({ children }: Props) {
       {/* BOTTOM NAV */}
       {!isPublic &&
         user &&
-       !isChatDetail &&
-       !isCreate && (
+      !isChatDetail &&
+      !isCreate && (
           <BottomNav />
         )}
 
