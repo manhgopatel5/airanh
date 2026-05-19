@@ -23,61 +23,7 @@ type TabId =
 
 type PostType = "task" | "plan";
 
-const EmptyIcon = ({
-  type,
-}: {
-  type: PostType;
-}) => (
-  <svg
-    className={`h-14 w-14 ${
-      type === "task"
-        ? "text-[#0042B2]"
-        : "text-[#00C853]"
-    }`}
-    viewBox="0 0 56 56"
-    fill="none"
-  >
-    <rect
-      x="8"
-      y="12"
-      width="40"
-      height="32"
-      rx="6"
-      fill="currentColor"
-      opacity="0.1"
-    />
 
-    <rect
-      x="14"
-      y="18"
-      width="28"
-      height="4"
-      rx="2"
-      fill="currentColor"
-      opacity="0.3"
-    />
-
-    <rect
-      x="14"
-      y="26"
-      width="20"
-      height="4"
-      rx="2"
-      fill="currentColor"
-      opacity="0.3"
-    />
-
-    <rect
-      x="14"
-      y="34"
-      width="24"
-      height="4"
-      rx="2"
-      fill="currentColor"
-      opacity="0.3"
-    />
-  </svg>
-);
 
 const CONTENT_POOL = {
   task: {
