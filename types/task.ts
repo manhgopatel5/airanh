@@ -130,6 +130,9 @@ export type BaseFeedItem = Pick<
 /* ================= TASK TYPE ================= */
 export type TaskItem = BaseItem & {
   type: "task";
+
+  urgency?: "once" | "weekly" | "ongoing";
+
   price: number;
   currency: string;
   budgetType: BudgetType;
