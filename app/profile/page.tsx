@@ -2,32 +2,44 @@
 
 import { useRouter } from "next/navigation";
 import { signOut, deleteUser } from "firebase/auth";
-import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { useAppStore } from "@/store/app";
-import { doc, onSnapshot, updateDoc, serverTimestamp, getDoc, setDoc, deleteDoc } from "firebase/firestore";
+import {
+  doc, onSnapshot, updateDoc, serverTimestamp, getDoc, setDoc, deleteDoc
+} from "firebase/firestore";
 import type { Timestamp } from "firebase/firestore";
-import { getFirebaseDB, getFirebaseAuth, getFirebaseStorage } from "@/lib/firebase";
-import { ref, uploadBytesResumable, getDownloadURL, UploadTask } from "firebase/storage";
-import { HelpCircle, LogOut, Trash2, User, Shield, Lock, Camera, Check, QrCode, Share2, ChevronRight, Settings, Zap, ClipboardList, Star, ScanLine, X } from "lucide-react";
+import {
+  getFirebaseDB,
+  getFirebaseAuth,
+  getFirebaseStorage
+} from "@/lib/firebase";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import {
+  HelpCircle, LogOut, Trash2, User, Shield, Lock,
+  Camera, Check, QrCode, Share2, ChevronRight, Settings,
+  Circle, Zap, ClipboardList, Star, ScanLine, X
+} from "lucide-react";
 import { toast, Toaster } from "sonner";
+import type { UploadTask } from "firebase/storage";
 import { nanoid } from "nanoid";
 import { Html5Qrcode } from "html5-qrcode";
 import { QRCodeSVG } from "qrcode.react";
-import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
-import * as L from "@/components/illustrations";
 
 type UserData = {
-  uid: string; name: string; email: string; phone?: string; userId: string; avatar: string; bio?: string;
-  online?: boolean; lastSeen?: Timestamp; createdAt?: Timestamp; emailVerified?: boolean; hidePhone?: boolean;
+  uid: string;
+  name: string;
+  email: string;
+  phone?: string;
+  userId: string;
+  avatar: string;
+  bio?: string;
+  online?: boolean;
+  lastSeen?: Timestamp;
+  createdAt?: Timestamp;
+  emailVerified?: boolean;
+  hidePhone?: boolean;
   stats?: { tasks: number; plans: number; completed: number; rating: number };
-};
-
-const vibrate = (pattern: number | number[]) => {
-  if (typeof navigator!== "undefined" && "vibrate" in navigator) {
-    try { navigator.vibrate(pattern); } catch {}
-  }
 };
 
 export default function Profile() {
@@ -37,6 +49,7 @@ export default function Profile() {
   const router = useRouter();
   const { user } = useAuth();
   const mode = useAppStore((s) => s.mode);
+  const isPlan = mode === "plan";
 
   const [userData, setUserData] = useState<UserData | null>(null);
   const [name, setName] = useState("");
@@ -47,20 +60,13 @@ export default function Profile() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [showScanQR, setShowScanQR] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-
   const hasCheckedId = useRef(false);
   const uploadTaskRef = useRef<UploadTask | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
-  const successTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { accent, accentGradient } = useMemo(() => {
-    const isPlan = mode === "plan";
-    return {
-      accent: isPlan? "#00C853" : "#0042B2",
-      accentGradient: isPlan? "from-[#00C853] to-[#00E676]" : "from-[#0042B2] to-[#1A5FFF]"
-    };
-  }, [mode]);
+  const accentGradient = isPlan
+   ? "from-green-500 to-emerald-500"
+    : "from-sky-500 to-blue-600";
 
   useEffect(() => {
     if (user === null) router.replace("/login");
@@ -72,121 +78,118 @@ export default function Profile() {
       if (snap.exists()) {
         const data = { uid: snap.id,...snap.data() } as UserData;
         setUserData(data);
-        if (!editingName) setName(data.name || "");
-        if (user &&!user.emailVerified &&!data.emailVerified) router.replace("/verify-email");
+        setName(data.name || "");
+        if (user &&!user.emailVerified &&!data.emailVerified) {
+          router.replace("/verify-email");
+        }
       }
     });
     return () => unsub();
-  }, [user?.uid, router, user, db, editingName]);
+  }, [user?.uid, router]);
 
   useEffect(() => {
     if (!user ||!userData || hasCheckedId.current) return;
-    if (userData.userId) { hasCheckedId.current = true; return; }
+    if (userData.userId) {
+      hasCheckedId.current = true;
+      return;
+    }
     const createId = async () => {
       hasCheckedId.current = true;
-      let newId = `HUHA${nanoid(6).toUpperCase()}`;
+      let newId = `AIR${nanoid(6).toUpperCase()}`;
       let attempts = 0;
       while (attempts < 3) {
         const snap = await getDoc(doc(db, "usernames", newId));
         if (!snap.exists()) break;
-        newId = `HUHA${nanoid(6).toUpperCase()}`;
+        newId = `AIR${nanoid(6).toUpperCase()}`;
         attempts++;
       }
       await Promise.all([
         updateDoc(doc(db, "users", user.uid), { userId: newId }),
-        setDoc(doc(db, "usernames", newId), { uid: user.uid })
+        setDoc(doc(db, "usernames", newId), { uid: user.uid }),
       ]);
     };
     createId().catch(() => {});
-  }, [user, userData, db]);
+  }, [user, userData]);
 
-  const triggerSuccess = useCallback(() => {
-    vibrate(8);
-    setShowSuccess(true);
-    if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current);
-    successTimeoutRef.current = setTimeout(() => setShowSuccess(false), 1000);
-  }, []);
-
-  const handleUpdateName = useCallback(async () => {
+  const handleUpdateName = async () => {
     if (!user ||!name.trim() || name.length < 2) {
-      vibrate(15);
-      return toast.error("Tên tối thiểu 2 ký tự");
+      toast.error("Tên tối thiểu 2 ký tự");
+      return;
     }
-    if (name === userData?.name) return setEditingName(false);
+    if (name === userData?.name) {
+      setEditingName(false);
+      return;
+    }
     const oldName = userData?.name;
-    const newName = name.trim();
     setEditingName(false);
-    // Optimistic update
-    setUserData((prev) => prev? {...prev, name: newName } : null);
+    setUserData((prev) => prev? {...prev, name: name.trim() } : null);
     try {
-      await updateDoc(doc(db, "users", user.uid), { name: newName });
+      await updateDoc(doc(db, "users", user.uid), { name: name.trim() });
       toast.success("Cập nhật tên thành công");
-      triggerSuccess();
+      if ("vibrate" in navigator) navigator.vibrate(8);
     } catch {
-      vibrate(15);
       toast.error("Cập nhật thất bại");
       setUserData((prev) => prev? {...prev, name: oldName || "" } : null);
       setName(oldName || "");
     }
-  }, [user, name, userData?.name, db, triggerSuccess]);
+  };
 
-  const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file ||!user) return;
-    if (!file.type.startsWith("image/")) {
-      vibrate(15);
-      return toast.error("Chỉ chấp nhận file ảnh");
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      vibrate(15);
-      return toast.error("Ảnh không được vượt quá 5MB");
-    }
+    if (!file.type.startsWith("image/")) return toast.error("Chỉ chấp nhận file ảnh");
+    if (file.size > 5 * 1024 * 1024) return toast.error("Ảnh không được vượt quá 5MB");
     setUploading(true);
     setUploadProgress(0);
     try {
       const storageRef = ref(storage, `avatars/${user.uid}`);
       uploadTaskRef.current = uploadBytesResumable(storageRef, file);
-      uploadTaskRef.current.on("state_changed",
-        (snapshot) => setUploadProgress(Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100)),
+      uploadTaskRef.current.on(
+        "state_changed",
+        (snapshot) => {
+          const prog = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(Math.round(prog));
+        },
         (err) => {
-          if (err.code!== "storage/canceled") {
-            vibrate(15);
-            toast.error("Upload thất bại");
-          }
-          setUploading(false);
+          if (err.code!== "storage/canceled") toast.error("Upload thất bại");
         },
         async () => {
-          const url = await getDownloadURL(uploadTaskRef.current!.snapshot.ref);
+          const task = uploadTaskRef.current;
+          if (!task) return;
+          const url = await getDownloadURL(task.snapshot.ref);
           await updateDoc(doc(db, "users", user.uid), { avatar: url });
           toast.success("Cập nhật avatar thành công");
+          if ("vibrate" in navigator) navigator.vibrate(8);
           setUploading(false);
-          triggerSuccess();
         }
       );
     } catch {
-      vibrate(15);
       toast.error("Upload lỗi");
       setUploading(false);
     } finally {
       e.target.value = "";
     }
-  }, [user, storage, db, triggerSuccess]);
+  };
 
-  const handleShare = useCallback(async () => {
+  useEffect(() => {
+    return () => {
+      if (uploadTaskRef.current) uploadTaskRef.current.cancel();
+    };
+  }, []);
+
+  const handleShare = async () => {
     if (!userData) return;
     const url = `https://airanh.vercel.app/u/${userData.userId}`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: userData.name, text: `Kết nối với tôi`, url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        toast.success("Đã copy link hồ sơ");
-      }
-      vibrate(5);
-    } catch {}
-  }, [userData]);
+    if (navigator.share) {
+      await navigator.share({ title: userData.name || "Người dùng AIR", text: `Kết nối với tôi`, url });
+    } else {
+      navigator.clipboard.writeText(url);
+      toast.success("Đã copy link hồ sơ");
+    }
+    if ("vibrate" in navigator) navigator.vibrate(8);
+  };
 
-  const handleLogout = useCallback(async () => {
+  const handleLogout = async () => {
     if (!user) return;
     setShowLogoutModal(false);
     updateDoc(doc(db, "users", user.uid), { online: false, lastSeen: serverTimestamp() }).catch(() => {});
@@ -194,33 +197,33 @@ export default function Profile() {
       await signOut(auth);
       window.location.href = "/login";
     } catch {
-      vibrate(15);
       toast.error("Đăng xuất thất bại");
     }
-  }, [user, db, auth]);
+  };
 
-  const handleDeleteAccount = useCallback(async () => {
+  const handleDeleteAccount = async () => {
     if (!user) return;
     setShowDeleteModal(false);
     try {
       await Promise.all([
         deleteDoc(doc(db, "users", user.uid)),
-        deleteDoc(doc(db, "usernames", userData?.userId || ""))
+        deleteDoc(doc(db, "usernames", userData?.userId || "")),
       ]);
       await deleteUser(user);
       toast.success("Đã xóa tài khoản");
       window.location.href = "/register";
-    } catch (err: any) {
-      vibrate(15);
-      if (err.code === "auth/requires-recent-login") {
-        toast.error("Vui lòng đăng nhập lại");
+    } catch (err: unknown) {
+      const error = err as { code?: string };
+      if (error.code === "auth/requires-recent-login") {
+        toast.error("Vui lòng đăng nhập lại để xóa tài khoản");
         await signOut(auth);
         router.push("/login");
-      } else toast.error("Xóa thất bại");
+      } else {
+        toast.error("Xóa thất bại");
+      }
     }
-  }, [user, userData?.userId, db, auth, router]);
+  };
 
-  // Online status
   useEffect(() => {
     if (!user?.uid) return;
     const updateOnline = () => updateDoc(doc(db, "users", user.uid), { online: true }).catch(() => {});
@@ -236,33 +239,29 @@ export default function Profile() {
     };
   }, [user?.uid, db]);
 
-  // Cleanup
   useEffect(() => {
-    return () => {
-      if (uploadTaskRef.current) uploadTaskRef.current.cancel();
-      if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current);
-      if (scannerRef.current?.isScanning) scannerRef.current.stop().catch(() => {});
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShowLogoutModal(false);
+        setShowDeleteModal(false);
+        setShowQR(false);
+        setShowScanQR(false);
+      }
     };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
   }, []);
 
-  // QR Scanner
-  const stopScan = useCallback(() => {
-    if (scannerRef.current?.isScanning) scannerRef.current.stop().catch(() => {});
+  const stopScan = () => {
+    if (scannerRef.current?.isScanning) {
+      scannerRef.current.stop().catch(() => {});
+    }
     setShowScanQR(false);
-  }, []);
+  };
 
   useEffect(() => {
     if (!showScanQR) return;
-    let mounted = true;
     const startScan = async () => {
-      try {
-        await navigator.mediaDevices.getUserMedia({ video: true });
-      } catch {
-        toast.error("Cần cấp quyền camera");
-        setShowScanQR(false);
-        return;
-      }
-      if (!mounted) return;
       const html5QrCode = new Html5Qrcode("qr-reader");
       scannerRef.current = html5QrCode;
       try {
@@ -270,7 +269,7 @@ export default function Profile() {
           { facingMode: "environment" },
           { fps: 10, qrbox: { width: 250, height: 250 } },
           (decodedText) => {
-            vibrate(10);
+            if ("vibrate" in navigator) navigator.vibrate(10);
             stopScan();
             if (decodedText.includes("/u/")) {
               const targetUserId = decodedText.split("/u/")[1];
@@ -280,281 +279,342 @@ export default function Profile() {
               }
               router.push(`/u/${targetUserId}`);
             } else {
-              vibrate(15);
               toast.error("Mã QR không hợp lệ");
             }
           },
           () => {}
         );
       } catch {
-        vibrate(15);
         toast.error("Không mở được camera");
         setShowScanQR(false);
       }
     };
     startScan();
-    return () => {
-      mounted = false;
-      stopScan();
-    };
-  }, [showScanQR, userData?.userId, router, stopScan]);
+    return () => stopScan();
+  }, [showScanQR, userData?.userId, router]);
 
-  const formatStat = (num: number) => {
-    return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(num);
-  };
+  if (!user ||!userData) return null;
 
-  if (!user || !userData) {
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black pb-28">
-      <div className="px-6 pt-12 pb-6">
-        <div className="flex items-center gap-4 animate-pulse">
-          <div className="w-20 h-20 rounded-3xl bg-zinc-200 dark:bg-zinc-800" />
+    <div className="min-h-screen bg-white dark:bg-black pb-24 font-sans">
+      <Toaster richColors position="top-center" />
 
-          <div className="flex-1">
-            <div className="h-7 w-40 bg-zinc-200 dark:bg-zinc-800 rounded-lg mb-2" />
-            <div className="h-4 w-32 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
+      {/* ── Header: avatar + name + status ── */}
+      <div className="px-6 pt-12 pb-6">
+        <div className="flex items-center gap-4">
+          {/* Avatar with upload + verified badge */}
+          <label className="relative cursor-pointer group flex-shrink-0">
+            <img
+              src={
+                userData.avatar ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&size=176&background=8B5E3C&color=fff`
+              }
+              className="w-16 h-16 rounded-full object-cover"
+              alt="Avatar"
+            />
+
+            {/* Verified badge */}
+            {userData.emailVerified && (
+              <div
+                className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-gradient-to-br ${accentGradient} flex items-center justify-center border-2 border-white dark:border-black`}
+              >
+                <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
+              </div>
+            )}
+
+            {/* Camera overlay on press */}
+            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-active:opacity-100 transition-opacity">
+              <Camera size={20} className="text-white" />
+            </div>
+
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleUpload}
+              disabled={uploading}
+            />
+
+            {/* Upload progress overlay */}
+            {uploading && (
+              <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center backdrop-blur-sm">
+                <span className="text-white text-xs font-bold">{uploadProgress}%</span>
+              </div>
+            )}
+          </label>
+
+          {/* Name (editable) + online status */}
+          <div className="flex-1 min-w-0">
+            {editingName? (
+              <div className="flex items-center gap-2">
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onBlur={handleUpdateName}
+                  onKeyDown={(e) => e.key === "Enter" && handleUpdateName()}
+                  autoFocus
+                  className="text-2xl font-extrabold border-b-2 border-gray-300 dark:border-zinc-700 outline-none bg-transparent text-gray-900 dark:text-white flex-1 tracking-tight"
+                />
+                <button
+                  onClick={handleUpdateName}
+                  className={`p-1.5 bg-gradient-to-br ${accentGradient} rounded-full`}
+                >
+                  <Check size={14} className="text-white" />
+                </button>
+              </div>
+            ) : (
+              <h1
+                onClick={() => setEditingName(true)}
+                className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight cursor-pointer leading-tight"
+              >
+                {userData.name}
+              </h1>
+            )}
+
+            <div className="flex items-center gap-1.5 mt-1">
+              <Circle
+                className={`w-2 h-2 fill-current ${
+                  userData.online? "text-green-500" : "text-gray-400"
+                }`}
+              />
+              <span className="text-sm text-gray-500 dark:text-zinc-400 font-medium">
+                {userData.online? "Đang hoạt động" : "Ngoại tuyến"}
+              </span>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2.5 mt-6">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-20 bg-zinc-200 dark:bg-zinc-800 rounded-2xl"
-            />
-          ))}
+        {/* ── Stats row: Task / Plan / Rating ── */}
+        <div className="flex items-center gap-2 mt-5">
+          <button
+            onClick={() => router.push("/tasks")}
+            className="flex-1 py-2.5 rounded-2xl bg-gray-50 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95 transition"
+          >
+            <ClipboardList className="w-4 h-4 text-gray-500 dark:text-zinc-400" />
+            <span className="text-sm font-bold text-gray-900 dark:text-white">
+              {userData.stats?.tasks?? 0}
+            </span>
+            <span className="text-xs text-gray-400 dark:text-zinc-500">Task</span>
+          </button>
+
+          <button
+            onClick={() => router.push("/plans")}
+            className="flex-1 py-2.5 rounded-2xl bg-gray-50 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95 transition"
+          >
+            <Zap className="w-4 h-4 text-gray-500 dark:text-zinc-400" />
+            <span className="text-sm font-bold text-gray-900 dark:text-white">
+              {userData.stats?.plans?? 0}
+            </span>
+            <span className="text-xs text-gray-400 dark:text-zinc-500">Plan</span>
+          </button>
+
+          <button className="flex-1 py-2.5 rounded-2xl bg-gray-50 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95 transition">
+            <Star className="w-4 h-4 text-gray-500 dark:text-zinc-400" />
+            <span className="text-sm font-bold text-gray-900 dark:text-white">
+              {userData.stats?.rating?? 0}
+            </span>
+          </button>
         </div>
       </div>
+
+      {/* ── Menu sections ── */}
+      <div className="px-6 mt-2 space-y-6">
+        {/* HỒ SƠ */}
+        <div>
+          <SectionLabel>HỒ SƠ</SectionLabel>
+          <Item label="Thông tin cá nhân" icon={User} onClick={() => router.push("/profile/edit")} />
+          <Item label="Mã QR của tôi" icon={QrCode} onClick={() => setShowQR(true)} />
+          <Item label="Quét mã QR" icon={ScanLine} onClick={() => setShowScanQR(true)} />
+          <Item label="Chia sẻ hồ sơ" icon={Share2} onClick={handleShare} />
+        </div>
+
+        {/* BẢO MẬT */}
+        <div>
+          <SectionLabel>BẢO MẬT</SectionLabel>
+          <Item label="Xác thực CCCD" icon={Shield} />
+          <Item label="Đổi mật khẩu" icon={Lock} onClick={() => router.push("/settings/change-password")} />
+        </div>
+
+        {/* HỖ TRỢ */}
+        <div>
+          <SectionLabel>HỖ TRỢ</SectionLabel>
+          <Item label="Trung tâm trợ giúp" icon={HelpCircle} />
+          <Item label="Cài đặt" icon={Settings} onClick={() => router.push("/settings")} />
+          <Item label="Đăng xuất" icon={LogOut} onClick={() => setShowLogoutModal(true)} danger />
+          <Item label="Xoá tài khoản" icon={Trash2} onClick={() => setShowDeleteModal(true)} danger />
+        </div>
+      </div>
+
+      {/* ── QR Modal ── */}
+      {showQR && userData.userId && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowQR(false)}
+        >
+          <div
+            className="bg-white dark:bg-zinc-900 rounded-3xl p-6 max-w-sm w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-black text-center mb-1 text-gray-900 dark:text-white">
+              @{userData.userId}
+            </h3>
+            <p className="text-sm text-center text-gray-500 mb-4">
+              Quét để kết nối với {userData.name}
+            </p>
+
+            <div className="bg-white p-4 rounded-2xl flex items-center justify-center">
+              <QRCodeSVG
+                value={`https://airanh.vercel.app/u/${userData.userId}`}
+                size={200}
+                level="H"
+                includeMargin
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <button
+                onClick={handleShare}
+                className="py-3 rounded-2xl font-bold bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white flex items-center justify-center gap-2 active:scale-95 transition"
+              >
+                <Share2 size={18} /> Chia sẻ
+              </button>
+              <button
+                onClick={() => { setShowQR(false); setShowScanQR(true); }}
+                className={`py-3 rounded-2xl font-bold bg-gradient-to-r ${accentGradient} text-white flex items-center justify-center gap-2 active:scale-95 transition`}
+              >
+                <ScanLine size={18} /> Quét mã
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Scan QR fullscreen ── */}
+      {showScanQR && (
+        <div className="fixed inset-0 bg-black z-50">
+          <div id="qr-reader" className="w-full h-full" />
+          <button
+            onClick={stopScan}
+            className="absolute top-6 right-6 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center"
+          >
+            <X className="w-5 h-5 text-white" />
+          </button>
+          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-white text-center">
+            <p className="font-bold">Đưa mã QR vào khung</p>
+            <p className="text-sm opacity-70 mt-1">Tự động quét khi phát hiện</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modals ── */}
+      {showLogoutModal && (
+        <Modal
+          title="Đăng xuất?"
+          desc="Bạn sẽ cần đăng nhập lại để sử dụng app"
+          onClose={() => setShowLogoutModal(false)}
+          onConfirm={handleLogout}
+          confirmText="Đăng xuất"
+          danger
+        />
+      )}
+      {showDeleteModal && (
+        <Modal
+          title="Xóa tài khoản?"
+          desc="Hành động này không thể hoàn tác. Toàn bộ dữ liệu sẽ bị xóa vĩnh viễn."
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={handleDeleteAccount}
+          confirmText="Xóa vĩnh viễn"
+          danger
+        />
+      )}
     </div>
   );
 }
 
+// ─── Sub-components ───────────────────────────────────────────────
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <>
-      <Toaster richColors position="top-center" />
-      <style jsx global>{`
-        :root { --accent: ${accent}; }
-      `}</style>
-      <div className="min-h-screen bg-zinc-50 dark:bg-black pb-28">
-        {/* Header */}
-        <div className="px-6 pt-12 pb-6">
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4">
-            <label className="relative cursor-pointer group flex-shrink-0" aria-label="Đổi avatar">
-              <div className="relative">
-                <img
-                  src={userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&size=176&background=${accent.slice(1)}&color=fff`}
-                  className="w-20 h-20 rounded-3xl object-cover shadow-lg"
-                  alt="Avatar"
-                  loading="lazy"
-                  decoding="async"
-                  onError={(e) => {
-                    e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&size=176&background=${accent.slice(1)}&color=fff`;
-                  }}
-                />
-                {userData.emailVerified && (
-                  <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br ${accentGradient} flex items-center justify-center border-3 border-white dark:border-black shadow-lg`}>
-                    <Check className="w-3 h-3 text-white stroke-[3]" />
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-black/40 rounded-3xl flex items-center justify-center opacity-0 group-active:opacity-100 transition-opacity backdrop-blur-sm">
-                  <Camera size={22} className="text-white" />
-                </div>
-                {uploading && (
-                  <div className="absolute inset-0 bg-black/70 rounded-3xl flex items-center justify-center backdrop-blur-md">
-                    <div className="text-center">
-                      <LottiePlayer animationData={L.loadingPull} loop autoplay className="w-8 h-8 mx-auto" />
-                      <span className="text-white text-xs font-bold mt-1 block">{uploadProgress}%</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <input type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
-            </label>
-
-            <div className="flex-1 min-w-0">
-              {editingName? (
-                <div className="flex items-center gap-2">
-                  <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    onBlur={handleUpdateName}
-                    onKeyDown={(e) => e.key === "Enter" && handleUpdateName()}
-                    autoFocus
-                    enterKeyHint="done"
-                    className="text-2xl font-black border-b-2 border-zinc-300 dark:border-zinc-700 outline-none bg-transparent flex-1 tracking-tight"
-                    maxLength={50}
-                  />
-                  <motion.button whileTap={{ scale: 0.9 }} onTouchStart={() => vibrate(5)} onClick={handleUpdateName} type="button" className={`p-2 bg-gradient-to-br ${accentGradient} rounded-xl shadow-lg`} aria-label="Lưu tên">
-                    <Check size={16} className="text-white" />
-                  </motion.button>
-                </div>
-              ) : (
-                <h1 onClick={() => setEditingName(true)} className="text-2xl font-black tracking-tight cursor-pointer leading-tight active:opacity-70">
-                  {userData.name}
-                </h1>
-              )}
-              <div className="flex items-center gap-2 mt-1.5">
-                <div className={`w-2 h-2 rounded-full ${userData.online? "bg-[#00C853] animate-pulse" : "bg-zinc-400"}`} />
-                <span className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">
-                  {userData.online? "Đang hoạt động" : "Ngoại tuyến"}
-                </span>
-                <span className="text-zinc-300">·</span>
-                <span className="text-sm font-mono text-zinc-500">@{userData.userId}</span>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-3 gap-2.5 mt-6">
-            {[
-              { icon: ClipboardList, label: "Task", value: formatStat(userData.stats?.tasks?? 0), onClick: () => router.push("/tasks") },
-              { icon: Zap, label: "Plan", value: formatStat(userData.stats?.plans?? 0), onClick: () => router.push("/plans") },
-              { icon: Star, label: "Rating", value: userData.stats?.rating?.toFixed(1)?? "0", onClick: undefined },
-            ].map((stat) => (
-              <motion.button
-                key={stat.label}
-                whileTap={{ scale: 0.96 }}
-                onTouchStart={() => vibrate(5)}
-                onClick={stat.onClick}
-                type="button"
-                className="py-3.5 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200/60 dark:border-zinc-900 shadow-sm hover:shadow-md transition-all disabled:opacity-50 active:scale-95"
-                disabled={!stat.onClick}
-              >
-                <stat.icon className="w-4.5 h-4.5 mx-auto mb-1.5 text-zinc-500" />
-                <div className="text-lg font-black">{stat.value}</div>
-                <div className="text-xs text-zinc-500 font-medium">{stat.label}</div>
-              </motion.button>
-            ))}
-          </motion.div>
-        </div>
-
-        <div className="px-6 space-y-5 max-w-xl mx-auto">
-          {[
-            { title: "HỒ SƠ", items: [
-              { label: "Thông tin cá nhân", icon: User, onClick: () => router.push("/profile/edit") },
-              { label: "Mã QR của tôi", icon: QrCode, onClick: () => setShowQR(true) },
-              { label: "Quét mã QR", icon: ScanLine, onClick: () => setShowScanQR(true) },
-              { label: "Chia sẻ hồ sơ", icon: Share2, onClick: handleShare },
-            ]},
-            { title: "BẢO MẬT", items: [
-              { label: "Xác thực CCCD", icon: Shield },
-              { label: "Đổi mật khẩu", icon: Lock, onClick: () => router.push("/settings/change-password") },
-            ]},
-            { title: "HỖ TRỢ", items: [
-              { label: "Trung tâm trợ giúp", icon: HelpCircle },
-              { label: "Cài đặt", icon: Settings, onClick: () => router.push("/settings") },
-              { label: "Đăng xuất", icon: LogOut, onClick: () => setShowLogoutModal(true), danger: true },
-              { label: "Xoá tài khoản", icon: Trash2, onClick: () => setShowDeleteModal(true), danger: true },
-            ]},
-          ].map((section) => (
-            <div key={section.title}>
-              <p className="text-xs font-bold text-zinc-500 tracking-wider mb-2.5 px-1">{section.title}</p>
-              <div className="bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-200/60 dark:border-zinc-900 shadow-sm overflow-hidden divide-y divide-zinc-100 dark:divide-zinc-900">
-                {section.items.map((item) => (
-                  <Item key={item.label} {...item} />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <AnimatePresence>
-          {showQR && userData.userId && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4" onClick={() => setShowQR(false)}>
-              <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white dark:bg-zinc-950 rounded-3xl p-6 max-w-sm w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
-                <h3 className="text-xl font-black text-center mb-1">@{userData.userId}</h3>
-                <p className="text-sm text-center text-zinc-500 mb-5">Quét để kết nối với {userData.name}</p>
-                <div className="bg-white p-5 rounded-2xl flex items-center justify-center shadow-inner">
-                  <QRCodeSVG value={`https://airanh.vercel.app/u/${userData.userId}`} size={200} level="H" includeMargin />
-                </div>
-                <div className="grid grid-cols-2 gap-3 mt-5">
-                  <motion.button whileTap={{ scale: 0.97 }} onTouchStart={() => vibrate(5)} onClick={handleShare} type="button" className="h-12 rounded-2xl font-bold bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95">
-                    <Share2 size={18} /> Chia sẻ
-                  </motion.button>
-                  <motion.button whileTap={{ scale: 0.97 }} onTouchStart={() => vibrate(5)} onClick={() => { setShowQR(false); setShowScanQR(true); }} type="button" className={`h-12 rounded-2xl font-bold bg-gradient-to-r ${accentGradient} text-white flex items-center justify-center gap-2 shadow-lg active:scale-95`}>
-                    <ScanLine size={18} /> Quét mã
-                  </motion.button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {showScanQR && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black z-50">
-              <div id="qr-reader" className="w-full h-full" />
-              <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 border-2 border-white/80 rounded-3xl shadow-[0_0_9999px_rgba(0,0,0,0.6)]" />
-              </div>
-              <motion.button whileTap={{ scale: 0.9 }} onTouchStart={() => vibrate(5)} onClick={stopScan} type="button" className="absolute top-6 right-6 w-11 h-11 rounded-2xl bg-black/60 backdrop-blur-xl flex items-center justify-center border border-white/20" aria-label="Đóng">
-                <X className="w-5 h-5 text-white" />
-              </motion.button>
-              <div className="absolute bottom-24 left-1/2 -translate-x-1/2 text-white text-center px-6">
-                <p className="font-bold text-lg">Đưa mã QR vào khung</p>
-                <p className="text-sm opacity-70 mt-1">Tự động quét khi phát hiện</p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {showLogoutModal && <Modal title="Đăng xuất?" desc="Bạn sẽ cần đăng nhập lại để sử dụng app" onClose={() => setShowLogoutModal(false)} onConfirm={handleLogout} confirmText="Đăng xuất" accent={accent} />}
-          {showDeleteModal && <Modal title="Xóa tài khoản?" desc="Hành động này không thể hoàn tác. Toàn bộ dữ liệu sẽ bị xóa vĩnh viễn." onClose={() => setShowDeleteModal(false)} onConfirm={handleDeleteAccount} confirmText="Xóa vĩnh viễn" danger />}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {showSuccess && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
-              <LottiePlayer animationData={L.celebrate} autoplay loop={false} className="w-28 h-28" />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </>
+    <p className="text-xs font-bold text-gray-400 dark:text-zinc-600 tracking-wider mb-1 uppercase">
+      {children}
+    </p>
   );
 }
 
-const Item = ({ label, icon: Icon, onClick, danger }: { label: string; icon: any; onClick?: () => void; danger?: boolean }) => {
+function Item({
+  label,
+  icon: Icon,
+  onClick,
+  danger,
+}: {
+  label: string;
+  icon: React.ElementType;
+  onClick?: () => void;
+  danger?: boolean;
+}) {
   return (
-    <motion.button
-      whileTap={{ scale: 0.99 }}
-      onTouchStart={() => vibrate(5)}
-      onClick={onClick}
-      type="button"
-      className="w-full flex items-center justify-between px-5 py-4 active:bg-zinc-50 dark:active:bg-zinc-900 transition-colors"
+    <button
+      onClick={() => {
+        if ("vibrate" in navigator) navigator.vibrate(5);
+        onClick?.();
+      }}
+      className="w-full flex items-center justify-between py-4 active:opacity-50 transition-opacity"
     >
-      <div className="flex items-center gap-3.5">
-        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${danger? "bg-red-50 dark:bg-red-950/30" : "bg-zinc-100 dark:bg-zinc-900"}`}>
-          <Icon className={`w-4.5 h-4.5 ${danger? "text-red-500" : "text-zinc-700 dark:text-zinc-300"}`} />
-        </div>
-        <span className={`text-[15px] font-semibold ${danger? "text-red-500" : "text-zinc-900 dark:text-white"}`}>{label}</span>
+      <div className="flex items-center gap-3">
+        <Icon
+          className={`w-5 h-5 ${ danger? "text-red-500" : "text-gray-900 dark:text-white" }`}
+        />
+        <span
+          className={`text-base font-semibold ${ danger? "text-red-500" : "text-gray-900 dark:text-white" }`}
+        >
+          {label}
+        </span>
       </div>
-      <ChevronRight className="w-4 h-4 text-zinc-400" />
-    </motion.button>
+      <ChevronRight className="w-4 h-4 text-gray-400" />
+    </button>
   );
-};
+}
 
-const Modal = ({ title, desc, onClose, onConfirm, confirmText, danger, accent }: any) => {
+function Modal({
+  title,
+  desc,
+  onClose,
+  onConfirm,
+  confirmText,
+  danger,
+}: {
+  title: string;
+  desc: string;
+  onClose: () => void;
+  onConfirm: () => void;
+  confirmText: string;
+  danger?: boolean;
+}) {
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-end justify-center z-50" onClick={onClose}>
-      <motion.div initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }} className="bg-white dark:bg-zinc-950 w-full max-w-xl rounded-t-3xl p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="w-12 h-1.5 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mb-5" />
-        <h3 className="text-xl font-black mb-2">{title}</h3>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6 leading-relaxed">{desc}</p>
-        <motion.button
-          whileTap={{ scale: 0.98 }}
-          onTouchStart={() => vibrate(5)}
+    <div
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end justify-center z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white dark:bg-zinc-900 w-full max-w-xl rounded-t-3xl p-6 animate-in slide-in-from-bottom"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="w-12 h-1 bg-gray-300 dark:bg-zinc-700 rounded-full mx-auto mb-4" />
+        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">{title}</h3>
+        <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">{desc}</p>
+        <button
           onClick={onConfirm}
-          type="button"
-          className={`w-full h-12 rounded-2xl font-bold mb-3 text-white shadow-lg active:scale-95 ${danger? "bg-red-500 shadow-red-500/25" : ""}`}
-          style={!danger? { background: accent, boxShadow: `0 8px 20px ${accent}40` } : {}}
+          className={`w-full py-3.5 rounded-2xl font-semibold mb-3 active:scale-[0.98] transition ${ danger? "bg-red-500 text-white" : "bg-blue-500 text-white" }`}
         >
           {confirmText}
-        </motion.button>
-        <motion.button whileTap={{ scale: 0.98 }} onTouchStart={() => vibrate(5)} onClick={onClose} type="button" className="w-full h-12 bg-zinc-100 dark:bg-zinc-900 rounded-2xl font-semibold active:scale-95">
+        </button>
+        <button
+          onClick={onClose}
+          className="w-full py-3.5 bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100 rounded-2xl font-semibold"
+        >
           Hủy
-        </motion.button>
-      </motion.div>
-    </motion.div>
+        </button>
+      </div>
+    </div>
   );
-};
+}
