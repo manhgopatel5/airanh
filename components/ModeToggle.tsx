@@ -1,7 +1,7 @@
 "use client";
 import { useAppStore } from "@/store/app";
 import { motion } from "framer-motion";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 
 export default function ModeToggle() {
