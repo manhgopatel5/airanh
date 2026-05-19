@@ -222,7 +222,7 @@ export type CreateTaskInput = {
     milestones?: boolean;
   autoMatch?: boolean;
   allowBids?: boolean;
-  featured?: boolean;
+  
   nda?: boolean;
   invites?: string[];
   needApproval?: boolean;
