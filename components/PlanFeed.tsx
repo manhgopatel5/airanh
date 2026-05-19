@@ -2,7 +2,7 @@
 import { TaskListItem } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { motion } from "framer-motion";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 import type { Task } from "@/types/task";
 type Props = {
