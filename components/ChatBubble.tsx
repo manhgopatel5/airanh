@@ -112,24 +112,44 @@ export default function ChatBubble({
                 : "bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-bl-lg"
             }`}
           >
-            <div className="flex items-center gap-2.5">
-              <div className={`w-8 h-8 shrink-0 rounded-2xl flex items-center justify-center ${isMe? "bg-white/20" : "bg-[#0042B2]/10"}`}>
-                <FiBriefcase className={isMe? "text-white" : "text-[#0042B2]"} size={18} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className={`text-xs font-bold uppercase tracking-wide ${isMe? "text-white/80" : "text-[#0042B2]"}`}>
-                  {msg.taskType === "task"? "TASK" : "PLAN"}
-                </p>
-                <p className="text-sm font-semibold truncate">{msg.taskTitle}</p>
-              </div>
-            {(msg.price?? 0) > 0 && (
-              <p className={`text-sm font-bold mt-1.5 ${isMe? "text-white" : "text-[#00C853]"}`}>
-                {msg.price?.toLocaleString("vi-VN")}đ
-              </p>
-            )}
-          </motion.div>
-        )}
+           <div className="flex items-center gap-2.5">
+  <div
+    className={`w-8 h-8 shrink-0 rounded-2xl flex items-center justify-center ${
+      isMe ? "bg-white/20" : "bg-[#0042B2]/10"
+    }`}
+  >
+    <FiBriefcase
+      className={isMe ? "text-white" : "text-[#0042B2]"}
+      size={18}
+    />
+  </div>
 
+  <div className="flex-1 min-w-0">
+    <p
+      className={`text-xs font-bold uppercase tracking-wide ${
+        isMe ? "text-white/80" : "text-[#0042B2]"
+      }`}
+    >
+      {msg.taskType === "task" ? "TASK" : "PLAN"}
+    </p>
+
+    <p className="text-sm font-semibold truncate">
+      {msg.taskTitle}
+    </p>
+  </div>
+
+  {(msg.price ?? 0) > 0 && (
+    <p
+      className={`text-sm font-bold mt-1.5 ${
+        isMe ? "text-white" : "text-[#00C853]"
+      }`}
+    >
+      {msg.price?.toLocaleString("vi-VN")}đ
+    </p>
+  )}
+</div>
+</motion.div>
+)}
         {msg.type === "text" && msg.text && (
           <div
             onContextMenu={handleCopy}
@@ -166,7 +186,7 @@ export default function ChatBubble({
               onError={() => setImgError(true)}
               onClick={() =>!imgError && onImageClick?.(msg.image!)}
               alt={msg.fileName || "image"}
-              className="max-w- max-h- object-cover cursor-pointer hover:opacity-90 transition-opacity"
+              className="max-w-[260px] max-h-[340px] object-cover cursor-pointer hover:opacity-90 transition-opacity"
             />
           </motion.div>
         )}
@@ -176,7 +196,7 @@ export default function ChatBubble({
             src={(msg as any).video}
             controls
             playsInline
-            className="max-w- max-h- rounded-3xl shadow-sm bg-black"
+            className="max-w-[260px] max-h-[340px] rounded-3xl shadow-sm bg-black"
           />
         )}
 
