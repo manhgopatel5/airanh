@@ -55,15 +55,22 @@ function LottiePlayer({
 
   // pause when out of viewport
   useEffect(() => {
-    if (!pauseWhenHidden ||!containerRef.current) return;
-    const el = containerRef.current;
-    const io = new IntersectionObserver(
-      ([entry]) => setIsInView(entry.isIntersecting),
-      { threshold: 0.1, rootMargin: "50px" }
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [pauseWhenHidden]);
+  if (!pauseWhenHidden || !containerRef.current) return;
+
+  const el = containerRef.current;
+
+  const io = new IntersectionObserver(
+    (entries) => {
+      const entry = entries[0];
+      setIsInView(entry?.isIntersecting ?? false);
+    },
+    { threshold: 0.1, rootMargin: "50px" }
+  );
+
+  io.observe(el);
+
+  return () => io.disconnect();
+}, [pauseWhenHidden]);
 
   const shouldPlay =!prefersReduced && isInView && (autoplay || playOnHover === false);
 
