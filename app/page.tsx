@@ -420,7 +420,12 @@ const filteredItems = useMemo(() => {
         )}
       </div>
 
-      {showShareModal && shareTask && <ShareTaskModal task={shareTask} onClose={() => setShowShareModal(false)} />}
+ {showShareModal && shareTask && (
+  <ShareTaskModal
+    task={shareTask as any}
+    onClose={() => setShowShareModal(false)}
+  />
+)}
     </motion.div>
   );
 }
