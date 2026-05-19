@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 import { memo, useEffect, useRef, useState, useCallback } from "react";
 import type { LottieRefCurrentProps } from "lottie-react";
 
-// FIX: import default component đúng kiểu
 const Lottie = dynamic(
   () => import("lottie-react").then((mod) => mod.default),
   {
@@ -16,7 +15,7 @@ const Lottie = dynamic(
 );
 
 export type LottiePlayerProps = {
-  animationData: object;
+  animationData?: object | null; // Cho phép null để check
   loop?: boolean;
   autoplay?: boolean;
   className?: string;
@@ -25,6 +24,7 @@ export type LottiePlayerProps = {
   pauseWhenHidden?: boolean;
   reduceMotion?: "auto" | boolean;
   onComplete?: () => void;
+  fallback?: React.ReactNode; // Thêm fallback
   "aria-label"?: string;
 };
 
@@ -38,6 +38,7 @@ function LottiePlayer({
   pauseWhenHidden = true,
   reduceMotion = "auto",
   onComplete,
+  fallback = <div className="w-full h-full bg-slate-100 rounded-2xl" />, // Default fallback
   "aria-label": ariaLabel = "Animation",
 }: LottiePlayerProps) {
   const lottieRef = useRef<LottieRefCurrentProps>(null);
@@ -45,60 +46,44 @@ function LottiePlayer({
 
   const [isInView, setIsInView] = useState(!pauseWhenHidden);
   const [prefersReduced, setPrefersReduced] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => setIsMounted(true), []);
 
   // prefers-reduced-motion
   useEffect(() => {
-    if (reduceMotion === "auto" && typeof window !== "undefined") {
+    if (reduceMotion === "auto" && typeof window!== "undefined") {
       const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-
       setPrefersReduced(mq.matches);
-
-      const onChange = (e: MediaQueryListEvent) => {
-        setPrefersReduced(e.matches);
-      };
-
+      const onChange = (e: MediaQueryListEvent) => setPrefersReduced(e.matches);
       mq.addEventListener("change", onChange);
-
-      return () => {
-        mq.removeEventListener("change", onChange);
-      };
+      return () => mq.removeEventListener("change", onChange);
     }
-
     setPrefersReduced(reduceMotion === true);
   }, [reduceMotion]);
 
   // pause when out viewport
   useEffect(() => {
-    if (!pauseWhenHidden || !containerRef.current) return;
-
+    if (!pauseWhenHidden ||!containerRef.current) return;
     const el = containerRef.current;
-
     const io = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
-        setIsInView(entry?.isIntersecting ?? false);
+        setIsInView(entry?.isIntersecting?? false);
       },
-      {
-        threshold: 0.1,
-        rootMargin: "50px",
-      }
+      { threshold: 0.1, rootMargin: "50px" }
     );
-
     io.observe(el);
-
     return () => io.disconnect();
   }, [pauseWhenHidden]);
 
   const shouldPlay =
-    !prefersReduced &&
-    isInView &&
-    (playOnHover ? false : autoplay);
+   !prefersReduced && isInView && (playOnHover? false : autoplay);
 
   // control animation
   useEffect(() => {
     const instance = lottieRef.current;
-
-    if (!instance) return;
+    if (!instance ||!isMounted) return;
 
     instance.setSpeed(speed);
 
@@ -112,10 +97,10 @@ function LottiePlayer({
     } else {
       instance.pause();
     }
-  }, [shouldPlay, speed, prefersReduced]);
+  }, [shouldPlay, speed, prefersReduced, isMounted]);
 
   const handleEnter = useCallback(() => {
-    if (playOnHover && !prefersReduced && isInView) {
+    if (playOnHover &&!prefersReduced && isInView) {
       lottieRef.current?.play();
     }
   }, [playOnHover, prefersReduced, isInView]);
@@ -125,6 +110,11 @@ function LottiePlayer({
       lottieRef.current?.pause();
     }
   }, [playOnHover]);
+
+  // FIX: Nếu chưa mount hoặc không có animationData thì render fallback
+  if (!isMounted ||!animationData) {
+    return <div className={className}>{fallback}</div>;
+  }
 
   return (
     <div
@@ -138,11 +128,11 @@ function LottiePlayer({
       aria-label={ariaLabel}
     >
       <Lottie
-        lottieRef={lottieRef as any}
+        lottieRef={lottieRef}
         animationData={animationData}
-        loop={loop && !prefersReduced}
+        loop={loop &&!prefersReduced}
         autoplay={false}
-        {...(onComplete ? { onComplete } : {})}
+        onComplete={onComplete}
         rendererSettings={{
           preserveAspectRatio: "xMidYMid meet",
           progressiveLoad: true,
