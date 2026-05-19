@@ -41,7 +41,11 @@ import { cn } from "@/lib/utils";
 const PAGE_SIZE = 20;
 type TabId = "hot" | "near" | "friends" | "new";
 type FeedTask = BaseFeedItem &
-  Partial<TaskListItem & PlanListItem>;
+  Partial<TaskListItem & PlanListItem> & {
+    banned?: boolean;
+    hidden?: boolean;
+    status?: string;
+  };
 const pageVariants = {
   initial: { opacity: 0, y: 8 },
   animate: { opacity: 1, y: 0 },
