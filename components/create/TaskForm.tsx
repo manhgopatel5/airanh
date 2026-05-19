@@ -8,7 +8,7 @@ import { FiDollarSign, FiUsers, FiClock, FiWifi } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { useAuth } from "@/lib/AuthContext";
 import LottiePlayer from "@/components/ui/LottiePlayer";
-import loadingPull from "@/public/lotties/huha-loading-pull.json";
+import * as L from "@/components/illustrations";
 
 const CATEGORIES = [
   { id: "delivery", label: "Giao hàng", icon: "🚚" },
@@ -180,7 +180,7 @@ export default function TaskForm() {
       </div>
 
       <motion.button whileTap={{scale:0.98}} onClick={handleSubmit} disabled={loading} className="w-full h- rounded-2xl text-white font-bold text-base shadow-lg disabled:opacity-50 flex items-center justify-center gap-2" style={{background:'linear-gradient(135deg,#0042B2,#1A5FFF)',boxShadow:'0 8px 20px rgba(0,66,178,0.3)'}}>
-        {loading? <><LottiePlayer animationData={loadingPull} autoplay loop className="w-5 h-5" /> Đang đăng...</> : "Đăng công việc HUHA"}
+        {loading? <><LottiePlayer animationData={L.loadingPull} autoplay loop className="w-5 h-5" /> Đang đăng...</> : "Đăng công việc HUHA"}
       </motion.button>
     </div>
   );
