@@ -1,5 +1,3 @@
-@import "tw-animate-css";
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -281,21 +279,6 @@
   .animate-in {
     will-change: transform, opacity;
     animation: slideIn 0.3s ease-out;
-  }
-
-  /* HUHA LOTTIE - Zomato style */
-  [data-lottie], .huha-lottie {
-    will-change: transform;
-    transform: translateZ(0);
-    contain: layout style paint;
-  }
-
-  .huha-reduce [data-lottie],
-  .huha-reduce .huha-lottie,
-  .huha-reduce * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
   }
 
   @media (prefers-reduced-motion: no-preference) {
