@@ -11,7 +11,7 @@ import { FiSearch, FiX, FiMapPin, FiRefreshCw } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 
 type TabId = "hot" | "near" | "friends" | "new";
