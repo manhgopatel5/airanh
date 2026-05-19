@@ -10,7 +10,7 @@ import { AppMode } from "@/types/app";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { useMemo, useState, useRef, useEffect } from "react";
 import { FiGrid, FiList, FiSliders, FiTrendingUp, FiMapPin, FiUsers, FiClock } from "react-icons/fi";
-import { toast } from "sonner";
+
 
 type TabId = "hot" | "near" | "friends" | "new";
 type FeedTask = BaseFeedItem & Partial<TaskListItem & PlanListItem>;
