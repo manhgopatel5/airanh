@@ -57,7 +57,7 @@ import {
 
 import LottiePlayer from "@/components/LottiePlayer";
 
-import * as L from "@/components/illustrations";
+import illustrations, { type IllustrationKey } from "@/components/illustrations";
 
 type CardTask =
   | TaskListItem
@@ -626,17 +626,13 @@ function TaskCard({
                     }}
                     className="absolute inset-0 pointer-events-none"
                   >
-                    <LottiePlayer
-                      animationData={
-                        L.celebrate
-                      }
-                      autoplay
-                      loop={
-                        false
-                      }
-                      renderer="svg"
-                      className="w-8 h-8"
-                    />
+                 <LottiePlayer
+  animationData={illustrations.celebrate}
+  autoplay
+  loop={false}
+  renderer="svg"
+  className="w-8 h-8"
+/>
                   </motion.div>
                 )}
               </AnimatePresence>
