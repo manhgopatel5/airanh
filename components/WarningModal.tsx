@@ -65,7 +65,8 @@ export default function WarningModal({
 
 
   const [checked, setChecked] = useState(false);
-
+  const [hasAppealed, setHasAppealed] =
+  useState(false);
   const [countdown, setCountdown] = useState(3);
 
   useEffect(() => {
