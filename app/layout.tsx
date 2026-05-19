@@ -117,9 +117,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="font-sans bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight">
         <AuthProvider>
-          <EmailGuard>
-            <ClientLayout>{children}</ClientLayout>
-          </EmailGuard>
+          <ClientLayout>
+            {/* Nếu 3 trang kia vẫn lỗi trắng xóa sau khi sửa page.tsx, 
+                bạn hãy thử tạm thời comment dòng <EmailGuard> này lại để test xem có phải do Guard chặn không nhé */}
+            <EmailGuard>
+              {children}
+            </EmailGuard>
+          </ClientLayout>
         </AuthProvider>
       </body>
     </html>
