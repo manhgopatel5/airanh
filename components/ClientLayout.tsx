@@ -13,7 +13,7 @@ import { Toaster } from "sonner";
 import FCMProvider from "@/components/FCMProvider";
 import BottomNav from "@/components/BottomNav";
 import WarningModal from "@/components/WarningModal";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 
 type Props = {
