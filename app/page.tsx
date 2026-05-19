@@ -31,7 +31,7 @@ import {
   Sparkles as SparklesIcon, 
   CalendarRange 
 } from "lucide-react";
-import { toast } from "sonner";
+
 
 const PAGE_SIZE = 20;
 type TabId = "hot" | "near" | "friends" | "new";
