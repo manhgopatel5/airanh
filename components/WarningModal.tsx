@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Ban, Clock, Send, CheckCircle2, Loader2, AlertCircle, MessageSquare, Shield, XCircle, Sparkles } from "lucide-react";
+import { Clock, Send, CheckCircle2, Loader2, AlertCircle, MessageSquare, Shield, XCircle, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
