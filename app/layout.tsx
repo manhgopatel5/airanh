@@ -1,63 +1,100 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Geist } from "next/font/google";
 import "./globals.css";
-
 import ClientLayout from "@/components/ClientLayout";
 import { AuthProvider } from "@/lib/AuthContext";
 import EmailGuard from "@/components/EmailGuard";
 import { cn } from "@/lib/utils";
-import { Toaster } from "sonner";
-import { LazyMotion, domAnimation } from "framer-motion";
 
-const inter = Inter({
-  subsets: ["latin", "vietnamese"],
-  variable: "--font-sans",
+const geist = Geist({
+  subsets: ['latin'],
+  variable: '--font-sans',
   display: "swap",
 });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://airanh.vercel.app"),
   title: {
-    default: "HUHA - Việc vặt gần bạn",
-    template: "%s | HUHA",
+    default: "AIR",
+    template: "%s | AIR",
   },
-  description: "Kết nối việc vặt 800K, gần bạn, xong ngay. Thuê người hoặc nhận việc trong 5 phút.",
-  keywords: ["huha", "việc vặt", "freelance", "giúp việc", "ship", "task", "vietnam"],
-  authors: [{ name: "HUHA Team", url: "https://airanh.vercel.app" }],
-  creator: "HUHA",
-  publisher: "HUHA",
-  applicationName: "HUHA",
+  description: "Kết nối người cần việc và người tìm việc nhanh chóng, an toàn",
+  keywords: ["social", "task", "freelance", "vietnam", "kết nối", "airanh", "việc làm tự do"],
+  authors: [{ name: "Airanh Team", url: "https://airanh.vercel.app" }],
+  creator: "Airanh",
+  publisher: "Airanh",
+  applicationName: "AIR",
   referrer: "origin-when-cross-origin",
   formatDetection: { telephone: false, email: false, address: false },
-  alternates: { canonical: "/" },
+
+  alternates: {
+    canonical: "/",
+  },
+
   icons: {
     icon: [
-      { url: "/icon?size=32", sizes: "32x32", type: "image/png" },
-      { url: "/icon?size=192", sizes: "192x192", type: "image/png" },
+      { url: "/favicon-16.PNG", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32.PNG", sizes: "32x32", type: "image/png" },
     ],
-    apple: [{ url: "/icon?size=180", sizes: "180x180", type: "image/png" }],
-    shortcut: "/icon?size=32",
+    apple: [{ url: "/apple-icon-180.PNG", sizes: "180x180", type: "image/png" }],
+    shortcut: "/favicon.ico",
   },
+
   manifest: "/manifest.json",
+
   openGraph: {
     type: "website",
     locale: "vi_VN",
     url: "https://airanh.vercel.app",
-    siteName: "HUHA",
-    title: "HUHA - Việc vặt gần bạn",
-    description: "Thuê người hoặc nhận việc 800K, gần bạn, xong ngay.",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "HUHA" }],
+    siteName: "AIR",
+    title: "AIR - Nền tảng việc làm tự do",
+    description: "Kết nối người cần việc và người tìm việc nhanh chóng, an toàn",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "AIR",
+      },
+    ],
   },
+
   twitter: {
     card: "summary_large_image",
-    title: "HUHA - Việc vặt gần bạn",
-    description: "Thuê người hoặc nhận việc 800K, gần bạn, xong ngay.",
+    title: "AIR - Nền tảng việc làm tự do",
+    description: "Kết nối người cần việc và người tìm việc nhanh chóng, an toàn",
     images: ["/og-image.png"],
+    creator: "@airanh",
   },
+
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "HUHA",
+    title: "AIR",
+    startupImage: [
+      { url: "/splash-1290x2796.PNG", media: "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" },
+      { url: "/splash-1179x2556.PNG", media: "(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" },
+      { url: "/splash-1170x2532.PNG", media: "(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" },
+      { url: "/splash-1125x2436.PNG", media: "(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" },
+      { url: "/splash-1242x2688.PNG", media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)" },
+      { url: "/splash-828x1792.PNG", media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" },
+      { url: "/splash-750x1334.PNG", media: "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" },
+      { url: "/splash-2048x2732.PNG", media: "(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" },
+      { url: "/splash-1668x2388.PNG", media: "(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" },
+      { url: "/splash-1536x2048.PNG", media: "(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)" },
+    ],
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 
@@ -66,61 +103,24 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#0042B2" },
-    { media: "(prefers-color-scheme: dark)", color: "#0A0A0A" },
-  ],
-  colorScheme: "light dark",
+  viewportFit: "contain",
+  themeColor: "#ffffff",
+  colorScheme: "light",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi" className={cn(inter.variable)} suppressHydrationWarning>
+    <html lang="vi" className={cn("font-sans", geist.variable)} suppressHydrationWarning>
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://firestore.googleapis.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
       </head>
-
-      <body className="font-sans bg-[#FAFAFB] dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 antialiased overscroll-none tracking-tight">
-        <LazyMotion features={domAnimation} strict>
-          <AuthProvider>
-            <EmailGuard>
-              <ClientLayout>{children}</ClientLayout>
-            </EmailGuard>
-            <Toaster
-              position="top-center"
-              richColors
-              closeButton
-              toastOptions={{
-                classNames: {
-                  toast: "rounded-2xl border-zinc-200 dark:border-zinc-800 font-sans backdrop-blur-xl",
-                  title: "font-semibold",
-                },
-              }}
-            />
-          </AuthProvider>
-        </LazyMotion>
-
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebApplication",
-              name: "HUHA",
-              url: "https://airanh.vercel.app",
-              applicationCategory: "BusinessApplication",
-              operatingSystem: "Web, iOS, Android",
-              offers: {
-                "@type": "Offer",
-                price: "0",
-                priceCurrency: "VND",
-              },
-            }),
-          }}
-        />
+      <body className="font-sans bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight">
+        <AuthProvider>
+          <EmailGuard>
+            <ClientLayout>{children}</ClientLayout>
+          </EmailGuard>
+        </AuthProvider>
       </body>
     </html>
   );
