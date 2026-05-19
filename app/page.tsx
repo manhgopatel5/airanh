@@ -19,7 +19,7 @@ import {
 import TaskFeed from "@/components/TaskFeed";
 import ModeToggle from "@/components/ModeToggle";
 import ShareTaskModal from "@/components/ShareTaskModal";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 import type { Task } from "@/types/task";
 import { useAppStore } from "@/store/app";
