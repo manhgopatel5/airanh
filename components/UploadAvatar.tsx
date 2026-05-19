@@ -132,7 +132,17 @@ export default function UploadAvatar() {
           const offsetX = (img.width - size) / 2;
           const offsetY = (img.height - size) / 2;
           ctx.imageSmoothingQuality = "high";
-          ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, size);
+        ctx.drawImage(
+  img,
+  offsetX,
+  offsetY,
+  size,
+  size,
+  0,
+  0,
+  size,
+  size
+);
           canvas.toBlob((blob) => (blob? resolve(blob) : reject(new Error("Compress failed"))), "image/webp", 0.88);
         };
         img.onerror = () => reject(new Error("Không đọc được ảnh"));
