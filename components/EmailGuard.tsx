@@ -1,12 +1,11 @@
 "use client";
+
 import { useAuth } from "@/lib/AuthContext";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { sendEmailVerification } from "firebase/auth";
-import { toast, Toaster } from "sonner";
-import { motion } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
-import * as L from "@/components/illustrations";
+import { toast } from "sonner";
+import { FiMail, FiLoader } from "react-icons/fi";
 
 export default function EmailGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -18,49 +17,43 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
   const publicRoutes = ["/login", "/register", "/forgot-password", "/terms", "/privacy", "/verify-email"];
 
   useEffect(() => {
-    if (!loading &&!user &&!publicRoutes.includes(pathname)) {
+    if (!loading && !user && !publicRoutes.includes(pathname)) {
       router.replace("/login");
     }
   }, [user, loading, pathname, router]);
 
   useEffect(() => {
-    if (!loading && user &&!user.emailVerified &&!publicRoutes.includes(pathname)) {
+    if (!loading && user && !user.emailVerified && !publicRoutes.includes(pathname)) {
       setShowModal(true);
     } else {
       setShowModal(false);
     }
   }, [user, loading, pathname]);
 
-  const resendEmail = useCallback(async () => {
+  const resendEmail = async () => {
     if (!user || sending) return;
     setSending(true);
     try {
       await sendEmailVerification(user);
       toast.success("Đã gửi lại email xác minh");
-      navigator.vibrate?.([10,20,10]);
     } catch (e: any) {
       toast.error(e.message || "Gửi email thất bại");
-      navigator.vibrate?.(15);
     } finally {
       setSending(false);
     }
-  }, [user, sending]);
+  };
 
-  const handleLogout = useCallback(async () => {
-    navigator.vibrate?.(5);
+  const handleLogout = async () => {
     const { getFirebaseAuth } = await import("@/lib/firebase");
     await getFirebaseAuth().signOut();
     router.push("/login");
-  }, [router]);
+  };
 
   // FIX 1: Đang loading thì hiện màn hình trắng có logo, không render children
   if (loading) {
     return (
       <div className="fixed inset-0 z-50 bg-white dark:bg-zinc-950 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <LottiePlayer animationData={L.loadingPull} autoplay loop className="w-20 h-20" />
-          <img src="/logo.png" alt="AIR" className="w-12 h-12 opacity-60" />
-        </div>
+        <img src="/logo.png" alt="AIR" className="w-16 h-16 animate-pulse" />
       </div>
     );
   }
@@ -74,45 +67,40 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
   if (!user) {
     return (
       <div className="fixed inset-0 z-50 bg-white dark:bg-zinc-950 flex items-center justify-center">
-        <LottiePlayer animationData={L.loadingPull} autoplay loop className="w-20 h-20" />
+        <img src="/logo.png" alt="AIR" className="w-16 h-16 animate-pulse" />
       </div>
     );
   }
 
   return (
     <>
-      <Toaster richColors position="top-center" />
       {children}
 
-      {showModal && user &&!user.emailVerified && (
-        <div className="fixed inset-0 z-50 backdrop-blur-2xl bg-black/70 flex items-center justify-center p-6">
-          <motion.div initial={{scale:0.9,opacity:0}} animate={{scale:1,opacity:1}} transition={{type:"spring",damping:24,stiffness:300}} className="w-full max-w-sm bg-white dark:bg-zinc-950 rounded-3xl p-8 shadow-2xl border border-zinc-100 dark:border-zinc-800">
-            <div className="w-20 h-20 mx-auto mb-5 relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] rounded-3xl blur-2xl opacity-30" />
-              <div className="relative w-20 h-20 bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] rounded-3xl flex items-center justify-center shadow-xl">
-                <LottiePlayer animationData={L.celebrate} autoplay loop className="w-12 h-12" />
-              </div>
+      {showModal && user && !user.emailVerified && (
+        <div className="fixed inset-0 z-50 backdrop-blur-2xl bg-black/60 flex items-center justify-center p-6">
+          <div className="w-full max-w-sm bg-white dark:bg-zinc-900 rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-500/30">
+              <FiMail className="text-white" size={32} />
             </div>
 
-            <h2 className="text-2xl font-black text-center text-zinc-900 dark:text-white mb-2 tracking-tight">
+            <h2 className="text-2xl font-black text-center text-gray-900 dark:text-white mb-2">
               Xác minh email
             </h2>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center mb-2">
-              Vui lòng xác minh để tiếp tục
+            <p className="text-sm text-gray-500 dark:text-zinc-400 text-center mb-2">
+              Vui lòng xác minh email để tiếp tục sử dụng
             </p>
-            <p className="text-sm font-bold text-[#0042B2] dark:text-[#5B8DEF] text-center mb-6 break-all">
+            <p className="text-sm font-bold text-blue-600 dark:text-blue-400 text-center mb-6">
               {user.email}
             </p>
 
             <button
               onClick={resendEmail}
               disabled={sending}
-              className="w-full h-14 text-white font-bold text-base rounded-2xl active:scale-[0.97] transition-all disabled:opacity-60 flex items-center justify-center gap-2 mb-3 shadow-lg"
-              style={{background:'linear-gradient(135deg,#0042B2,#0066FF)',boxShadow:'0 12px 28px -8px rgba(0,66,178,0.45)'}}
+              className="w-full h-14 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold text-base rounded-2xl shadow-xl shadow-blue-500/40 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2 mb-3"
             >
-              {sending? (
+              {sending ? (
                 <>
-                  <div className="w-5 h-5"><LottiePlayer animationData={L.loadingPull} autoplay loop className="w-5 h-5" /></div>
+                  <FiLoader className="animate-spin" size={20} />
                   Đang gửi...
                 </>
               ) : (
@@ -122,15 +110,15 @@ export default function EmailGuard({ children }: { children: React.ReactNode }) 
 
             <button
               onClick={handleLogout}
-              className="w-full h-12 bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 font-semibold rounded-2xl active:scale-[0.97] transition-all hover:bg-zinc-200 dark:hover:bg-zinc-800"
+              className="w-full h-12 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-bold rounded-2xl active:scale-95 transition-all"
             >
               Đăng xuất
             </button>
 
-            <p className="text-xs text-zinc-400 dark:text-zinc-500 text-center mt-6">
-              Kiểm tra cả thư mục Spam
+            <p className="text-xs text-gray-400 dark:text-zinc-500 text-center mt-6">
+              Kiểm tra cả thư mục Spam nếu không thấy email
             </p>
-          </motion.div>
+          </div>
         </div>
       )}
     </>
