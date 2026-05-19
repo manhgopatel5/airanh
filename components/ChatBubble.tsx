@@ -4,7 +4,7 @@ import { FiDownload, FiMapPin, FiFile } from "react-icons/fi";
 import Linkify from "linkify-react";
 import EmojiPicker from "./EmojiPicker";
 import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 import type { Message } from "@/types/message";
 
