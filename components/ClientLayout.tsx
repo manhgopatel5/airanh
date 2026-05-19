@@ -43,11 +43,14 @@ export default function ClientLayout({ children }: Props) {
   }
 
   /* ================= LOADING THÔNG MINH ================= */
-  // CHỈ chặn màn hình bằng `return null` ĐÚNG 1 LẦN DUY NHẤT lúc vừa mở app.
-  // Khi người dùng chuyển đổi tab, qua lại giữa các trang, tuyệt đối KHÔNG chặn null nữa để triệt tiêu chớp nháy.
   if (loading && !hasInitiallyLoaded.current) {
     return null;
   }
+
+  // Danh sách các URL vật lý thực sự nằm ngoài trang chủ cần dùng BottomNav cũ
+  // (Nếu sau này bạn không gom các trang khác về page.tsx thì khai báo thêm vào đây)
+  const exactBottomNavRoutes = ["/orders", "/notifications"]; 
+  const shouldShowOldBottomNav = exactBottomNavRoutes.includes(pathname);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors font-sans">
@@ -57,10 +60,9 @@ export default function ClientLayout({ children }: Props) {
         {children}
       </div>
 
-      {/* NÂNG CẤP: 
-          Nếu đang ở trang chủ "/", ta sử dụng thanh BottomNav tích hợp sẵn bằng State của file page.tsx để có hiệu ứng trượt.
-          Nếu đi vào các trang sâu hơn (như chat detail, create...), ta mới dùng BottomNav cũ này. */}
-      {pathname !== "/" && !isPublic && user && !isChatDetail && !isCreate && (
+      {/* CHỈ hiện BottomNav cũ ở các URL hệ thống chỉ định rõ ràng, 
+          tránh việc nó tự động nhận diện bừa bãi và render đè lên State điều hướng mới */}
+      {shouldShowOldBottomNav && !isPublic && user && !isChatDetail && !isCreate && (
         <BottomNav />
       )}
 
