@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiBriefcase, FiCalendar, FiChevronDown, FiArrowLeft, FiZap, FiUsers, FiDollarSign, FiClock, FiMapPin, FiHelpCircle, FiTrendingUp } from "react-icons/fi";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 
 const vibrate = (pattern: number | number[]) => {
