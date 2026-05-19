@@ -13,7 +13,7 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { ChevronLeft, Lock, EyeOff, Eye, Shield, CheckCircle2 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 
 // SỬA: Import từ illustrations.ts, không import từ /public
 import * as L from "@/components/illustrations";
