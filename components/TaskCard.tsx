@@ -304,39 +304,7 @@ function TaskCard({
       ]
     );
 
-  const handleShare =
-    useCallback(
-      async (
-        e: React.MouseEvent
-      ) => {
-        e.stopPropagation();
-
-        const url = `${window.location.origin}/${mode}/${task.slug}`;
-
-        navigator.vibrate?.(5);
-
-        if (navigator.share) {
-          try {
-            await navigator.share(
-              {
-                title:
-                  task.title,
-                url,
-              }
-            );
-          } catch {}
-        } else {
-          await navigator.clipboard.writeText(
-            url
-          );
-
-          toast.success(
-            "Đã sao chép link"
-          );
-        }
-      },
-      [task, mode]
-    );
+  
 
   const handleClick =
     useCallback(() => {
