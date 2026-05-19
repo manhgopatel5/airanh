@@ -9,6 +9,7 @@ export type LottiePlayerProps = {
   autoplay?: boolean;
   className?: string;
   speed?: number;
+  renderer?: "svg" | "canvas";
   onComplete?: () => void;
   "aria-label"?: string;
 };
@@ -19,6 +20,7 @@ function LottiePlayer({
   autoplay = true,
   className = "w-24 h-24",
   speed = 1,
+  renderer = "canvas",
   onComplete,
   "aria-label": ariaLabel = "Animation",
 }: LottiePlayerProps) {
@@ -37,7 +39,7 @@ function LottiePlayer({
 
     const instance = lottie.loadAnimation({
       container: containerRef.current,
-      renderer: "canvas",
+      renderer,
       loop,
       autoplay,
       animationData,
@@ -48,7 +50,11 @@ function LottiePlayer({
 
         progressiveLoad: true,
 
-        clearCanvas: true,
+        ...(renderer === "canvas"
+          ? {
+              clearCanvas: true,
+            }
+          : {}),
 
         hideOnTransparent: true,
       },
@@ -84,6 +90,7 @@ function LottiePlayer({
     autoplay,
     loop,
     speed,
+    renderer,
     onComplete,
   ]);
 
