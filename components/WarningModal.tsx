@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { AlertCircle, Shield, XCircle, Sparkles } from "lucide-react";
+import { AlertCircle, Shield, XCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
