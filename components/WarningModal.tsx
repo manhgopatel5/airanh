@@ -324,6 +324,13 @@ const [showAppealForm, setShowAppealForm] =
                 </div>
 
                 <div className="space-y-3">
+{hasAppealed && (
+  <div className="rounded-2xl bg-green-500/10 border border-green-500/20 p-4">
+    <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+      Bạn đã gửi kháng cáo trước đó.
+    </p>
+  </div>
+)}
                   <div className="rounded-2xl bg-amber-500/10 border border-amber-500/20 p-4">
                     <div className="flex items-start gap-3">
                       <AlertCircle
