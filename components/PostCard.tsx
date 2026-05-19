@@ -6,7 +6,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { doc, onSnapshot, runTransaction, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
-import { incrementTaskView } from "@/lib/taskService";
+
 import { Timestamp } from "firebase/firestore";
 import Linkify from "linkify-react";
 import { motion, AnimatePresence } from "framer-motion";
