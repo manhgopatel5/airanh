@@ -7,7 +7,7 @@ import { useRef, useState, useEffect, useMemo } from "react";
 import { FiCamera, FiLoader, FiCheck, FiX, FiImage, FiTrash2 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast, Toaster } from "sonner";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 
 export default function UploadAvatar() {
