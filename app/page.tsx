@@ -106,7 +106,7 @@ function SkeletonList() {
 }
 
 export default function AppContainer() {
-  const { user } = useAuth();
+  
   const [db, setDb] = useState<any>(null);
   const mode = useAppStore((s) => s.mode);
   const setMode = useAppStore((s) => s.setMode);
