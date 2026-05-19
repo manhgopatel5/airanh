@@ -152,7 +152,6 @@ export async function createTask(
     price: Math.floor(data.price),
     currency: data.currency || "VND",
     budgetType: data.budgetType || "fixed",
-urgency: data.urgency || "once",
     totalSlots: Math.floor(data.totalSlots),
     joined: 0,
     requirements: data.requirements || "",
