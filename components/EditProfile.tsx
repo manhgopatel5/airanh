@@ -7,7 +7,7 @@ import { updateProfile } from "firebase/auth";
 import { FiCheck, FiLoader } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { toast, Toaster } from "sonner";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 
 type Props = {
