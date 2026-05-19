@@ -13,27 +13,26 @@ import task from "@/assets/lotties/huha-task.json";
 import plan from "@/assets/lotties/huha-plan.json";
 
 const illustrations = {
-  empty: empty as any,
-  idle: idle as any,
-  loadingPull: loadingPull as any,
-  searching: searching as any,
-  noWifi: noWifi as any,
-  errorShake: errorShake as any,
-  successCheck: successCheck as any,
-  celebrate: celebrate as any,
-  coinDrop: coinDrop as any,
-  walletOpen: walletOpen as any,
-  switchToggle: switchToggle as any,
-  task: task as any,
-  plan: plan as any,
-};
+  empty,
+  idle,
+  loadingPull,
+  searching,
+  noWifi,
+  errorShake,
+  successCheck,
+  celebrate,
+  coinDrop,
+  walletOpen,
+  switchToggle,
+  task,
+  plan,
+} as const;
 
-console.log("illustrations loaded", illustrations);
+export type IllustrationKey = keyof typeof illustrations;
 
 export default illustrations;
 
 export {
-  illustrations,
   empty,
   idle,
   loadingPull,
