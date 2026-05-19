@@ -1,146 +1,161 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FiArrowLeft, FiShield, FiPhone, FiMail, FiUser, FiChevronRight } from "react-icons/fi";
+import { FiArrowLeft, FiShield, FiPhone, FiMail, FiUser } from "react-icons/fi";
 import { motion } from "framer-motion";
-
-const vibrate = (pattern: number | number[]) => {
-  if (typeof navigator!== "undefined" && "vibrate" in navigator) {
-    try { navigator.vibrate(pattern); } catch {}
-  }
-};
 
 export default function PrivacyPage() {
   const router = useRouter();
-  const lastUpdated = "13/05/2026";
-  const version = "3.0";
-
-  const sections = [
-    { title: "1. Phạm vi áp dụng", content: "Chính sách này mô tả cách HUHA thu thập, sử dụng, lưu trữ dữ liệu cá nhân khi dùng app. Tuân thủ Luật An ninh mạng 2018, Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân Việt Nam." },
-    { title: "2. Dữ liệu thu thập", content: null },
-    { title: "3. Cơ sở pháp lý", list: ["Thực hiện hợp đồng: Cung cấp tính năng bạn đăng ký", "Đồng ý: Gửi email xác thực", "Lợi ích hợp pháp: Chống gian lận, bảo mật", "Tuân thủ pháp luật: Lưu log 2 năm"] },
-    { title: "4. Chia sẻ bên thứ ba", list: ["Google Firebase: Lưu trữ, xác thực. Server Singapore", "Vercel: Hosting", "Cơ quan nhà nước: Khi có yêu cầu hợp pháp", "KHÔNG bán dữ liệu"] },
-    { title: "5. Bảo mật", list: ["Mã hóa TLS 1.3, AES-256", "Mật khẩu hash scrypt", "Rate limit 60s/lần", "Backup hàng ngày"] },
-    { title: "6. Thời gian lưu trữ", list: ["Hoạt động: Đến khi xóa", "Sau xóa: Ẩn ngay, xóa backup sau 30 ngày", "Log: 2 năm"] },
-    { title: "7. Quyền của bạn", list: ["Truy cập: Cài đặt > Hồ sơ", "Chỉnh sửa: Sửa trực tiếp", "Xóa: Cài đặt > Xóa tài khoản", "Khiếu nại: Cục ATTT - Bộ TTTT"] },
-  ];
+  const lastUpdated = "27/04/2026";
+  const version = "2.1";
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl border-b border-zinc-200/50 dark:border-zinc-900">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onTouchStart={() => vibrate(5)}
+    <div className="h-dvh bg-gradient-to-br from-sky-400 to-sky-500 flex items-center justify-center px-4 py-8 overflow-y-auto">
+      <div className="w-full max-w-2xl my-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6"
+        >
+          <button
             onClick={() => router.back()}
-            type="button"
-            className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
+            className="mb-4 w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-gray-300 hover:bg-gray-50 active:scale-95 transition-all"
           >
-            <FiArrowLeft className="w-5 h-5" />
-          </motion.button>
-          <h1 className="text-lg font-black tracking-tight">Chính sách bảo mật</h1>
-        </div>
-      </div>
+            <FiArrowLeft className="text-gray-700" size={20} />
+          </button>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 pb-24">
-        {/* Hero */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-6">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-3xl bg-gradient-to-br from-[#0042B2] to-[#1A5FFF] flex items-center justify-center shadow-xl shadow-[#0042B2]/25">
-            <FiShield className="text-white" size={32} />
-          </div>
-          <h2 className="text-2xl font-black tracking-tight mb-1">HUHA Privacy</h2>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">Phiên bản {version} • Cập nhật {lastUpdated}</p>
-        </motion.div>
-
-        {/* Content */}
-        <div className="space-y-3">
-          {sections.map((section, idx) => (
-            <motion.div key={idx} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} className="bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-200/60 dark:border-zinc-800 p-5 shadow-sm">
-              <h3 className="font-bold text-base mb-2.5 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-lg bg-[#E8F1FF] dark:bg-[#0042B2]/20 text-[#0042B2] flex items-center justify-center text-xs font-black">{idx + 1}</span>
-                {section.title.split('. ')[1]}
-              </h3>
-
-              {section.title.includes("Dữ liệu")? (
-                <>
-                  <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
-                    <table className="w-full text-sm">
-                      <thead className="bg-zinc-50 dark:bg-zinc-900">
-                        <tr className="border-b border-zinc-200 dark:border-zinc-800">
-                          <th className="text-left p-3 font-semibold">Loại</th>
-                          <th className="text-left p-3 font-semibold">Ví dụ</th>
-                          <th className="text-left p-3 font-semibold">Mục đích</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-900">
-                        {[
-                          ["Định danh", "Tên, email, userId", "Tạo tài khoản"],
-                          ["Xác thực", "Mật khẩu hash", "Đăng nhập"],
-                          ["Hoạt động", "Thời gian online", "Trạng thái"],
-                          ["Kỹ thuật", "IP, trình duyệt", "Bảo mật"],
-                        ].map((row) => (
-                          <tr key={row[0]} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/50">
-                            <td className="p-3 font-medium">{row[0]}</td>
-                            <td className="p-3 text-zinc-600 dark:text-zinc-400">{row[1]}</td>
-                            <td className="p-3 text-zinc-600 dark:text-zinc-400">{row[2]}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <p className="mt-3 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-3 py-2 rounded-xl">KHÔNG thu thập: SĐT, CCCD, GPS, danh bạ</p>
-                </>
-              ) : section.content? (
-                <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">{section.content}</p>
-              ) : (
-                <ul className="space-y-2">
-                  {section.list?.map((item) => (
-                    <li key={item} className="flex gap-2.5 text-sm">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#0042B2] mt-1.5 flex-shrink-0" />
-                      <span className="text-zinc-700 dark:text-zinc-300 leading-relaxed">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </motion.div>
-          ))}
-
-          {/* Contact */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="bg-gradient-to-br from-[#E8F1FF] to-[#D6E8FF] dark:from-[#0042B2]/20 dark:to-[#1A5FFF]/20 rounded-3xl border border-[#0042B2]/20 p-5 shadow-sm">
-            <h3 className="font-black text-base mb-3 flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-[#0042B2] flex items-center justify-center">
-                <FiUser className="w-4 h-4 text-white" />
-              </div>
-              Liên hệ
-            </h3>
-            <div className="space-y-2.5">
-              {[
-                { icon: FiShield, label: "Đơn vị", value: "HUHA Team" },
-                { icon: FiPhone, label: "Hotline", value: "0359872122", action: () => window.open("tel:0359872122") },
-                { icon: FiMail, label: "Email", value: "support@huha.vn", action: () => window.open("mailto:support@huha.vn") },
-              ].map((item) => (
-                <button
-                  key={item.label}
-                  onTouchStart={() => vibrate(5)}
-                  onClick={item.action}
-                  type="button"
-                  className="w-full flex items-center justify-between p-3 rounded-2xl bg-white/60 dark:bg-black/20 hover:bg-white dark:hover:bg-black/40 transition-colors group"
-                >
-                  <div className="flex items-center gap-3">
-                    <item.icon className="w-4 h-4 text-[#0042B2]" />
-                    <div className="text-left">
-                      <p className="text-xs text-zinc-500">{item.label}</p>
-                      <p className="text-sm font-semibold">{item.value}</p>
-                    </div>
-                  </div>
-                  {item.action && <FiChevronRight className="w-4 h-4 text-zinc-400 group-hover:translate-x-0.5 transition-transform" />}
-                </button>
-              ))}
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-sky-500 to-sky-600 rounded-2xl flex items-center justify-center shadow-lg shadow-sky-500/30">
+              <FiShield className="text-white" size={32} />
             </div>
-            <p className="text-xs text-center text-zinc-600 dark:text-zinc-400 mt-3">Phản hồi trong 72h • TP. Hồ Chí Minh</p>
-          </motion.div>
-        </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1.5">Chính sách bảo mật Airanh</h1>
+            <p className="text-sm text-gray-600">Phiên bản {version} | Cập nhật: {lastUpdated}</p>
+          </div>
+
+          <div className="space-y-5 text-sm text-gray-700 max-h-[60vh] overflow-y-auto pr-2">
+            <section>
+              <h2 className="font-bold text-gray-900 mb-2">1. Phạm vi áp dụng</h2>
+              <p>Chính sách này mô tả cách Airanh thu thập, sử dụng, lưu trữ dữ liệu cá nhân của bạn khi dùng app và website airanh.vercel.app. Chúng tôi tuân thủ Luật An ninh mạng 2018, Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân của Việt Nam.</p>
+            </section>
+
+            <section>
+              <h2 className="font-bold text-gray-900 mb-2">2. Dữ liệu chúng tôi thu thập</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border border-gray-200 rounded-lg">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="p-2 border-b">Loại dữ liệu</th>
+                      <th className="p-2 border-b">Ví dụ</th>
+                      <th className="p-2 border-b">Mục đích</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b">
+                      <td className="p-2">Định danh</td>
+                      <td className="p-2">Tên, email, userId AIRxxxxxx, avatar</td>
+                      <td className="p-2">Tạo tài khoản, hiển thị hồ sơ</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="p-2">Xác thực</td>
+                      <td className="p-2">Mật khẩu đã hash, token Google</td>
+                      <td className="p-2">Đăng nhập an toàn</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="p-2">Hoạt động</td>
+                      <td className="p-2">Thời gian online, lần cuối truy cập</td>
+                      <td className="p-2">Hiển thị trạng thái, chống spam</td>
+                    </tr>
+                    <tr>
+                      <td className="p-2">Kỹ thuật</td>
+                      <td className="p-2">IP, loại trình duyệt, OS</td>
+                      <td className="p-2">Bảo mật, phân tích lỗi</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-2"><b>KHÔNG thu thập:</b> Số điện thoại, CMND/CCCD, vị trí GPS, danh bạ, tin nhắn SMS, ảnh trong máy.</p>
+            </section>
+
+            <section>
+              <h2 className="font-bold text-gray-900 mb-2">3. Cơ sở pháp lý & Mục đích sử dụng</h2>
+              <ul className="list-disc pl-5 space-y-1">
+                <li><b>Thực hiện hợp đồng:</b> Cung cấp tính năng đăng nhập, mạng xã hội bạn đã đăng ký.</li>
+                <li><b>Đồng ý:</b> Gửi email xác thực, marketing nếu bạn tick chọn.</li>
+                <li><b>Lợi ích hợp pháp:</b> Chống gian lận, bảo mật hệ thống, phân tích ẩn danh để cải thiện app.</li>
+                <li><b>Tuân thủ pháp luật:</b> Lưu log 2 năm theo Nghị định 72/2013/NĐ-CP.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="font-bold text-gray-900 mb-2">4. Chia sẻ với bên thứ ba</h2>
+              <p>Chúng tôi chỉ chia sẻ với:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li><b>Google Firebase:</b> Lưu trữ dữ liệu, xác thực. Server tại Singapore. Tuân thủ GDPR, ISO 27001.</li>
+                <li><b>Vercel:</b> Hosting website. Server tại Mỹ.</li>
+                <li><b>Cơ quan nhà nước:</b> Khi có văn bản yêu cầu hợp pháp.</li>
+                <li><b>KHÔNG bán dữ liệu.</b> KHÔNG chia sẻ cho công ty quảng cáo.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="font-bold text-gray-900 mb-2">5. Lưu trữ & Bảo mật</h2>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Mã hóa TLS 1.3 khi truyền. AES-256 khi lưu trữ.</li>
+                <li>Mật khẩu hash bằng scrypt của Firebase, chúng tôi không đọc được.</li>
+                <li>Rate limit: 60s/lần gửi email, 30s/lần đăng nhập sai.</li>
+                <li>Backup hàng ngày, có khả năng khôi phục khi sự cố.</li>
+                <li>Dữ liệu người dùng VN được lưu tại Singapore theo yêu cầu Nghị định 53/2022/NĐ-CP.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="font-bold text-gray-900 mb-2">6. Thời gian lưu trữ</h2>
+              <ul className="list-disc pl-5 space-y-1">
+                <li><b>Tài khoản hoạt động:</b> Lưu đến khi bạn xóa.</li>
+                <li><b>Sau khi xóa:</b> Ẩn ngay lập tức, xóa khỏi backup sau 30 ngày.</li>
+                <li><b>Log bảo mật:</b> Lưu 2 năm theo luật.</li>
+                <li><b>Tài khoản không hoạt động 2 năm:</b> Gửi mail nhắc, sau 30 ngày sẽ xóa.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="font-bold text-gray-900 mb-2">7. Quyền của chủ thể dữ liệu</h2>
+              <p>Theo Nghị định 13/2023, bạn có quyền:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li><b>Truy cập:</b> Vào Cài đặt &gt; Hồ sơ để xem dữ liệu.</li>
+                <li><b>Chỉnh sửa:</b> Sửa tên, avatar trực tiếp.</li>
+                <li><b>Xóa:</b> Cài đặt &gt; Xóa tài khoản hoặc mail cho chúng tôi.</li>
+                <li><b>Rút lại đồng ý:</b> Xóa tài khoản để dừng xử lý.</li>
+                <li><b>Khiếu nại:</b> Gửi về Cục An toàn thông tin - Bộ TTTT nếu chúng tôi vi phạm.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="font-bold text-gray-900 mb-2">8. Cookie</h2>
+              <p>Airanh chỉ dùng cookie kỹ thuật bắt buộc để duy trì đăng nhập. Không dùng cookie quảng cáo, không dùng Google Analytics, Facebook Pixel.</p>
+            </section>
+
+            <section>
+              <h2 className="font-bold text-gray-900 mb-2">9. Trẻ em</h2>
+              <p>Airanh dành cho người từ 13 tuổi. Chúng tôi không cố ý thu thập dữ liệu trẻ dưới 13. Nếu phụ huynh phát hiện, liên hệ để xóa ngay.</p>
+            </section>
+
+            <section className="bg-sky-50 border border-sky-200 rounded-2xl p-4">
+              <h2 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <FiUser size={18} className="text-sky-600" />
+                10. Liên hệ Kiểm soát viên dữ liệu
+              </h2>
+              <div className="space-y-2">
+                <p><b>Đơn vị kiểm soát:</b> Nguyễn Quốc Mạnh</p>
+                <p className="flex items-center gap-2"><FiPhone className="text-sky-600" size={16} /><b>Hotline:</b> 0359872122</p>
+                <p className="flex items-center gap-2"><FiMail className="text-sky-600" size={16} /><b>Email DPO:</b> Manhgopatel5@gmail.com</p>
+                <p><b>Địa chỉ:</b> TP. Hồ Chí Minh, Việt Nam</p>
+                <p className="text-xs text-gray-600 mt-2">Thời gian phản hồi: 72h làm việc</p>
+              </div>
+            </section>
+          </div>
+        </motion.div>
       </div>
     </div>
   );
