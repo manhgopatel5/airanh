@@ -21,7 +21,7 @@ function LottiePlayer({
   autoplay = true,
   className = "w-24 h-24",
   speed = 1,
-  renderer = "canvas",
+  renderer = "svg",
   onComplete,
   "aria-label": ariaLabel = "Animation",
 }: LottiePlayerProps) {
@@ -33,18 +33,33 @@ function LottiePlayer({
     }
 
     const instance = lottie.loadAnimation({
-      container: containerRef.current,
-      renderer,
-      loop,
-      autoplay,
-      animationData,
-      rendererSettings: {
-        preserveAspectRatio: "xMidYMid meet",
-        progressiveLoad: true,
-        hideOnTransparent: true,
-        clearCanvas: true,
-      },
-    });
+  container: containerRef.current,
+  renderer: "svg",
+  loop,
+  autoplay,
+  animationData,
+  rendererSettings: {
+    preserveAspectRatio: "xMidYMid meet",
+
+    progressiveLoad: true,
+
+    hideOnTransparent: true,
+
+    clearCanvas: false,
+
+    filterSize: {
+      width: "300%",
+      height: "300%",
+      x: "-100%",
+      y: "-100%",
+    },
+
+    className: "w-full h-full",
+
+    imagePreserveAspectRatio:
+      "xMidYMid meet",
+  },
+});
 
     instance.setSpeed(speed);
 
@@ -65,13 +80,25 @@ function LottiePlayer({
   ]);
 
   return (
+  <div
+    className={className}
+    role="img"
+    aria-label={ariaLabel}
+  >
     <div
       ref={containerRef}
-      role="img"
-      aria-label={ariaLabel}
-      className={className}
+      className="w-full h-full"
+      style={{
+        transform: "translateZ(0)",
+        WebkitTransform: "translateZ(0)",
+        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden",
+        willChange: "transform",
+        overflow: "hidden",
+      }}
     />
-  );
+  </div>
+);
 }
 
 export default memo(LottiePlayer);
