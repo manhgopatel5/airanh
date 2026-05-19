@@ -146,8 +146,7 @@ function TaskCard({
       currentUser.uid
     );
 
-  const likeCount =
-    localLikes.length;
+ 
 
   const statusConfig = {
     open: {
