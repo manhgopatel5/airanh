@@ -3,6 +3,7 @@ import type {
   BaseFeedItem,
   TaskListItem,
   PlanListItem,
+  Task,
 } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import EmptyState from "@/components/EmptyState";
@@ -155,7 +156,18 @@ export default function TaskFeed({ tasks, mode, activeTab, onShare, onDelete, on
               <motion.div key={task.id} variants={itemVariants} layout layoutId={task.id} initial="hidden" animate="show" exit="exit" className={viewMode === "list"? "px-0" : ""} style={{ zIndex: sortedTasks.length - index }} whileHover={{ y: viewMode === "list"? 0 : -2 }} transition={{ type: "spring", stiffness: 500, damping: 30 }}>
                 <div className={viewMode === "list"? "border-b border-black/5 dark:border-white/5 last:border-0" : ""}>
                   <div className={viewMode === "list"? "px-4 py-0" : ""}>
-                    <TaskCard task={task} mode={mode} theme={mode} {...(onDelete && { onDelete })} {...(onShare && { onShare: () => onShare(task) })} {...(onTaskUpdate && { onTaskUpdate })} />
+                    <TaskCard
+  task={task as Task}
+  mode={mode}
+  theme={mode}
+  {...(onDelete && { onDelete })}
+  {...(onShare && {
+    onShare: () => onShare(task),
+  })}
+  {...(onTaskUpdate && {
+    onTaskUpdate,
+  })}
+/>
                   </div>
                 </div>
 
