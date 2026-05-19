@@ -3,9 +3,6 @@
 import { useRouter } from "next/navigation";
 import { FiArrowLeft, FiPhone, FiMail, FiUser, FiShield, FiAlertTriangle } from "react-icons/fi";
 import { motion } from "framer-motion";
-import LottiePlayer from "@/components/LottiePlayer";
-import * as L from "@/components/illustrations";
-
 
 export default function TermsPage() {
   const router = useRouter();
@@ -39,13 +36,7 @@ export default function TermsPage() {
             <div className="relative w-20 h-20 mx-auto mb-4">
               <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-3xl blur-xl opacity-40" />
               <div className="relative w-full h-full bg-gradient-to-br from-primary to-accent rounded-3xl flex items-center justify-center shadow-xl">
-                <LottiePlayer
-                  animationData={L.task}
-                  loop
-                  autoplay
-                  className="w-11 h-11"
-                  aria-label="Điều khoản"
-                />
+                <FiShield className="w-11 h-11 text-primary-foreground" />
               </div>
             </div>
             <h1 className="text-2xl font-black text-foreground mb-1.5 tracking-tight">
@@ -56,7 +47,7 @@ export default function TermsPage() {
             </p>
           </div>
 
-          <div className="space-y-5 text-sm text-foreground max-h- overflow-y-auto pr-2 custom-scrollbar">
+          <div className="space-y-5 text-sm text-foreground max-h-96 overflow-y-auto pr-2 custom-scrollbar">
             <section>
               <h2 className="font-bold text-foreground mb-2 text-base">1. Giới thiệu & Chấp thuận</h2>
               <p className="leading-relaxed text-muted-foreground">
