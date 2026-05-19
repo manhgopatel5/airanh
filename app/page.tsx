@@ -400,12 +400,19 @@ const filteredItems = useMemo(() => {
               <p className="text-sm text-muted-foreground mt-2">Đang tải...</p>
             </motion.div>
           ) : filteredItems.length === 0? (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="flex flex-col items-center px-6 py-16 text-center"
-            >
+        <motion.div
+  key="empty"
+  initial={{ opacity: 0, scale: 0.9 }}
+  animate={{ opacity: 1, scale: 1 }}
+  style={{
+    transform: "translateZ(0)",
+    WebkitTransform: "translateZ(0)",
+    backfaceVisibility: "hidden",
+    WebkitBackfaceVisibility: "hidden",
+    willChange: "transform",
+  }}
+  className="flex flex-col items-center px-6 py-16 text-center"
+>
               <LottiePlayer
                 animationData={
   isPlanMode
