@@ -67,6 +67,10 @@ export default function WarningModal({
   const [checked, setChecked] = useState(false);
   const [hasAppealed, setHasAppealed] =
   useState(false);
+  const [appealText, setAppealText] = useState("");
+const [submitting, setSubmitting] = useState(false);
+const [showAppealForm, setShowAppealForm] =
+  useState(false);
   const [countdown, setCountdown] = useState(3);
 
   useEffect(() => {
