@@ -20,7 +20,7 @@ import ModeToggle from "@/components/ModeToggle";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import { useAppStore } from "@/store/app";
 import { Task, TaskItem, PlanItem, isTask, isPlan } from "@/types/task";
-import { FiMapPin, FiRefreshCw } from "react-icons/fi";
+import { FiMapPin } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 import { 
   Home as HomeIcon, 
@@ -63,7 +63,6 @@ export default function AppContainer() {
   const [db, setDb] = useState<any>(null);
   const mode = useAppStore((s) => s.mode);
   
-  // NÂNG CẤP LỚN: Quản lý Tab bằng State nội bộ (Giống 100% cơ chế Native App)
   const [currentMainTab, setCurrentMainTab] = useState<MainTab>("home");
   const [activeTab, setActiveTab] = useState<TabId>("hot");
   
@@ -81,7 +80,6 @@ export default function AppContainer() {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  // Khởi tạo Firebase
   useEffect(() => {
     if (db) return;
     try {
@@ -159,12 +157,51 @@ export default function AppContainer() {
         setRefreshing(false);
       }
     },
-    [db, buildQuery]
+    [db, buildQuery, allItems.length]
   );
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const loadMore = useCallback(async () => {
+    if (!db || !lastDoc || loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const q = buildQuery(lastDoc);
+      if (!q) return;
+      const snap = await getDocs(q);
+      const newItems = snap.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Task[];
+      setAllItems((prev) => [...prev, ...newItems]);
+      setLastDoc(snap.docs[snap.docs.length - 1] || null);
+      setHasMore(snap.docs.length === PAGE_SIZE);
+    } catch (err) {
+      console.error("Load more error:", err);
+      toast.error("Không thể tải thêm");
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [db, lastDoc, loadingMore, hasMore, buildQuery]);
+
+  useEffect(() => {
+    if (!loadMoreRef.current || !hasMore) return;
+    if (observerRef.current) observerRef.current.disconnect();
+    
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasMore && !loadingMore) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    
+    observerRef.current.observe(loadMoreRef.current);
+    return () => observerRef.current?.disconnect();
+  }, [hasMore, loadingMore, loadMore]);
 
   const filteredItems = useMemo(() => {
     let result = [...allItems];
@@ -180,7 +217,6 @@ export default function AppContainer() {
     return result as Task[];
   }, [allItems, mode, activeTab]);
 
-  // Các Tab điều hướng chính phía bên dưới
   const mainNavItems = [
     { id: "home" as MainTab, label: "Home", Icon: HomeIcon },
     { id: "messages" as MainTab, label: "Messages", Icon: MessageSquare },
@@ -199,7 +235,6 @@ export default function AppContainer() {
   const activeBgClass = mode === "plan" ? "bg-emerald-500" : "bg-blue-600";
   const dynamicGlow = mode === "plan" ? "shadow-emerald-500/20" : "shadow-blue-600/20";
 
-  // Hàm render nội dung tương ứng cho từng Tab (Không swap URL, không chớp)
   const renderTabContent = () => {
     switch (currentMainTab) {
       case "messages":
@@ -223,10 +258,9 @@ export default function AppContainer() {
             <p className="font-medium text-sm">Trang Cá Nhân công khai</p>
           </div>
         );
-      default: // Tab "home" mặc định
+      default:
         return (
           <>
-            {/* Header Sub-tabs của Home */}
             <div className="sticky top-0 z-40 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800">
               <div className="max-w-2xl mx-auto px-4">
                 <div className="flex justify-around">
@@ -239,6 +273,7 @@ export default function AppContainer() {
                         onClick={() => {
                           setActiveTab(tab.id);
                           if ("vibrate" in navigator) navigator.vibrate(5);
+                          if (tab.id !== "hot") toast.info("Tính năng đang phát triển");
                         }}
                         className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
                           active ? `text-${tab.color}-600 dark:text-${tab.color}-400` : "text-gray-400 dark:text-zinc-500"
@@ -254,7 +289,6 @@ export default function AppContainer() {
               </div>
             </div>
 
-            {/* Khung chứa Feed dữ liệu */}
             <div className="pt-4">
               {loading ? (
                 <SkeletonList />
@@ -269,6 +303,14 @@ export default function AppContainer() {
                   />
                 </div>
               )}
+              
+              {!loading && hasMore && allItems.length > 0 && (
+                <div ref={loadMoreRef} className="px-4 py-6 flex justify-center">
+                  {loadingMore && (
+                    <div className="w-6 h-6 border-2 border-zinc-500 border-t-transparent rounded-full animate-spin" />
+                  )}
+                </div>
+              )}
             </div>
           </>
         );
@@ -280,23 +322,17 @@ export default function AppContainer() {
       <div className="min-h-screen pb-28 font-sans bg-gray-50 dark:bg-black select-none relative">
         <ModeToggle />
 
-        {/* Thanh bar loading ngầm siêu mỏng */}
         {refreshing && (
           <div className="fixed top-0 inset-x-0 h-[2px] bg-gradient-to-r from-blue-500 via-purple-500 to-emerald-500 animate-pulse z-50" />
         )}
 
-        {/* NỘI DUNG CHÍNH: Thay đổi tức thì không qua cơ chế load file vật lý của Next.js */}
         <div className="w-full max-w-2xl mx-auto">
           {renderTabContent()}
         </div>
 
-        {/* ==========================================================================
-           CỤM BOTTOM NAVIGATION KHÔNG BAO GIỜ BỊ RE-RENDER HOẶC CHỚP NHÁY
-           ========================================================================== */}
         <div className="fixed bottom-0 inset-x-0 z-50 pointer-events-none flex flex-col items-center justify-end">
           <div className="w-full max-w-[480px] px-4 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center gap-3">
             
-            {/* Menu nổi khi bấm nút cộng */}
             <AnimatePresence>
               {isMenuOpen && (
                 <motion.div
@@ -317,11 +353,9 @@ export default function AppContainer() {
               )}
             </AnimatePresence>
 
-            {/* Khung Navigation chính */}
             <div className="w-full pointer-events-auto relative rounded-[26px] border border-zinc-200/50 bg-white/80 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.04)] overflow-hidden">
               <div className="flex items-center justify-between h-[64px] px-2 relative">
                 
-                {/* Render 2 nút bên trái (Home, Messages) */}
                 <div className="flex-1 grid grid-cols-2 h-full">
                   {mainNavItems.slice(0, 2).map((item) => {
                     const active = currentMainTab === item.id;
@@ -341,7 +375,6 @@ export default function AppContainer() {
                   })}
                 </div>
 
-                {/* Nút Cộng Trung Tâm */}
                 <div className="w-[64px] flex justify-center h-full items-center relative">
                   <button onClick={() => { setIsMenuOpen(!isMenuOpen); if ("vibrate" in navigator) navigator.vibrate(8); }} className="outline-none z-10 p-2">
                     <motion.div
@@ -353,7 +386,6 @@ export default function AppContainer() {
                   </button>
                 </div>
 
-                {/* Render 2 nút bên phải (Tasks, Profile) */}
                 <div className="flex-1 grid grid-cols-2 h-full">
                   {mainNavItems.slice(2, 4).map((item) => {
                     const active = currentMainTab === item.id;
