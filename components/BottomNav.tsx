@@ -16,10 +16,12 @@ import {
   CalendarRange 
 } from "lucide-react";
 
+import type { LucideIcon } from "lucide-react";
+
 interface NavItem {
   path: string;
   label: string;
-  Icon: React.ComponentType<{ className?: string }>;
+  Icon: LucideIcon;
 }
 
 export default function BottomNav() {
