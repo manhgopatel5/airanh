@@ -10,19 +10,7 @@ export type Message = {
   fileName?: string;
   location?: { lat: number; lng: number };
 
-  type:
-    | "text"
-    | "image"
-    | "file"
-    | "location"
-    | "video"
-    | "task_share";
-
-  // task share
-  taskId?: string;
-  taskTitle?: string;
-  taskType?: "task" | "plan";
-  price?: number;
+  type: "text" | "image" | "file" | "location" | "video";
 
   // time
   createdAt: any;
@@ -30,6 +18,7 @@ export type Message = {
   // read / seen
   seenBy: string[];
 
+  // 👇 THÊM (fix lỗi của mày)
   status?: "sending" | "sent" | "read";
 
   // reply
