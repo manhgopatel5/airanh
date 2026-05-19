@@ -10,7 +10,7 @@ import TaskCard from "@/components/TaskCard";
 import { FiBookmark, FiArrowLeft, FiSearch, FiGrid, FiList } from "react-icons/fi";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 import { toast, Toaster } from "sonner";
 
