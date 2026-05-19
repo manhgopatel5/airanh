@@ -22,10 +22,14 @@ function LottiePlayer({
   onComplete,
   "aria-label": ariaLabel = "Animation",
 }: LottiePlayerProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef =
+    useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!containerRef.current || !animationData) {
+    if (
+      !containerRef.current ||
+      !animationData
+    ) {
       return;
     }
 
@@ -37,10 +41,16 @@ function LottiePlayer({
       loop,
       autoplay,
       animationData,
+
       rendererSettings: {
-        preserveAspectRatio: "xMidYMid meet",
+        preserveAspectRatio:
+          "xMidYMid meet",
+
         progressiveLoad: true,
+
         clearCanvas: true,
+
+        hideOnTransparent: true,
       },
     });
 
@@ -54,11 +64,19 @@ function LottiePlayer({
     }
 
     return () => {
+      if (onComplete) {
+        instance.removeEventListener(
+          "complete",
+          onComplete
+        );
+      }
+
       instance.stop();
       instance.destroy();
 
       if (containerRef.current) {
-        containerRef.current.innerHTML = "";
+        containerRef.current.innerHTML =
+          "";
       }
     };
   }, [
