@@ -11,7 +11,7 @@ import {
   AlertCircle,
   MessageSquare,
   Shield,
-  XCircle,
+  
   Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -289,3 +289,164 @@ export default function BannedPage() {
                 </div>
               </div>
             </motion.div>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.15 }}
+              className="relative overflow-hidden rounded-3xl"
+            >
+              <div className="absolute inset-0 bg-orange-500/5 dark:bg-orange-500/10" />
+
+              <div className="relative p-4 flex gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-orange-500/10 grid place-items-center flex-shrink-0">
+                  <Clock
+                    size={20}
+                    className="text-orange-600 dark:text-orange-400"
+                  />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-orange-600 dark:text-orange-400 uppercase tracking-wider mb-1">
+                    Thời gian
+                  </p>
+
+                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                    {isPermanent
+                      ? "Khóa vĩnh viễn"
+                      : `${daysLeft} ngày còn lại`}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            {hasAppealed ? (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="relative overflow-hidden rounded-3xl"
+              >
+                <div className="absolute inset-0 bg-emerald-500/5 dark:bg-emerald-500/10" />
+
+                <div className="relative p-5 flex gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 grid place-items-center flex-shrink-0">
+                    <CheckCircle2
+                      size={24}
+                      className="text-emerald-600 dark:text-emerald-400"
+                    />
+                  </div>
+
+                  <div>
+                    <p className="font-semibold text-zinc-900 dark:text-white">
+                      Đã gửi kháng cáo
+                    </p>
+
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
+                      Admin sẽ xem xét yêu cầu của bạn trong vòng
+                      24-48 giờ.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className="space-y-3"
+              >
+                <button
+                  onClick={() =>
+                    setShowAppealForm(!showAppealForm)
+                  }
+                  className="w-full h-14 rounded-2xl bg-black dark:bg-white text-white dark:text-black font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+                >
+                  <MessageSquare size={18} />
+
+                  {showAppealForm
+                    ? "Đóng kháng cáo"
+                    : "Gửi kháng cáo"}
+                </button>
+
+                <AnimatePresence>
+                  {showAppealForm && (
+                    <motion.div
+                      initial={{
+                        opacity: 0,
+                        height: 0,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        height: "auto",
+                      }}
+                      exit={{
+                        opacity: 0,
+                        height: 0,
+                      }}
+                      className="overflow-hidden"
+                    >
+                      <div className="space-y-3 pt-2">
+                       <textarea
+  aria-label="Nội dung kháng cáo"
+                          value={appealText}
+                          onChange={(e) =>
+                            setAppealText(e.target.value)
+                          }
+                          placeholder="Giải thích lý do bạn muốn được mở khóa..."
+                          className="w-full h-32 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 py-3 text-sm resize-none outline-none focus:ring-2 focus:ring-[#0a84ff]"
+                        />
+
+                        <button
+                          onClick={handleAppeal}
+                          disabled={submitting}
+                          className="w-full h-12 rounded-2xl bg-[#0a84ff] text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] transition-all"
+                        >
+                          {submitting ? (
+                            <>
+                              <Loader2
+                                size={18}
+                                className="animate-spin"
+                              />
+                              Đang gửi...
+                            </>
+                          ) : (
+                            <>
+                              <Send size={18} />
+                              Gửi kháng cáo
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )}
+
+            <div className="pt-2 flex items-start gap-3">
+              <Shield
+                size={18}
+                className="text-zinc-400 mt-0.5 flex-shrink-0"
+              />
+
+              <p className="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Nếu bạn cho rằng đây là nhầm lẫn, hãy gửi
+                kháng cáo với đầy đủ thông tin để được xem xét.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="mt-4 flex items-center justify-center gap-2 text-xs text-zinc-400"
+        >
+          <Sparkles size={14} />
+          AIRANH Moderation System
+        </motion.div>
+      </motion.div>
+    </div>
+  );
+}
