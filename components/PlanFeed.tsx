@@ -4,7 +4,7 @@ import TaskCard from "@/components/task/TaskCard";
 import { motion } from "framer-motion";
 import LottiePlayer from "@/components/ui/LottiePlayer";
 import * as L from "@/components/illustrations";
-
+import type { Task } from "@/types/task";
 type Props = {
   plans: TaskListItem[];
 };
@@ -51,7 +51,7 @@ export default function PlanFeed({ plans }: Props) {
           transition={{delay:i*0.04,duration:0.3}}
           className="px-4"
         >
-          <TaskCard task={plan} mode="plan" />
+        <TaskCard task={plan as Task} mode="plan" />
         </motion.div>
       ))}
     </div>
