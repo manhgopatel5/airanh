@@ -8,7 +8,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { toast, Toaster } from "sonner";
 import { motion } from "framer-motion";
 import { FiArrowLeft, FiSave, FiX, FiPlus } from "react-icons/fi";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 import type { Task } from "@/types/task";
 
