@@ -13,11 +13,7 @@ const Lottie = dynamic(
     ),
   }
 );
-  ssr: false,
-  loading: () => (
-    <div className="aspect-square w-full animate-pulse rounded-2xl bg-slate-100" />
-  ),
-});
+
 
 export type LottiePlayerProps = {
   animationData: object;
