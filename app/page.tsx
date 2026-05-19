@@ -13,28 +13,18 @@ import {
   DocumentData,
   where,
   Timestamp,
-  
-  
-Firestore,
-type QueryConstraint,
+  Firestore,
+  type QueryConstraint,
 } from "firebase/firestore";
 
 import TaskFeed from "@/components/TaskFeed";
 import ModeToggle from "@/components/ModeToggle";
 import ShareTaskModal from "@/components/ShareTaskModal";
-import LottiePlayer from "@/components/LottiePlayer";
-import illustrations from "@/components/illustrations";
 import type { Task } from "@/types/task";
 import { useAppStore } from "@/store/app";
-import type {
-  BaseFeedItem,
-  TaskListItem,
-  PlanListItem,
-} from "@/types/task";
+import type { BaseFeedItem, TaskListItem, PlanListItem } from "@/types/task";
 
-
-
-import { FiMapPin, FiRefreshCw } from "react-icons/fi";
+import { FiMapPin, FiRefreshCw, FiAlertCircle, FiInbox } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 
 import { toast } from "sonner";
@@ -49,6 +39,7 @@ type FeedTask = BaseFeedItem &
     hidden?: boolean;
     status?: string;
   };
+
 const pageVariants = {
   initial: { opacity: 0, y: 8 },
   animate: { opacity: 1, y: 0 },
@@ -56,7 +47,7 @@ const pageVariants = {
 };
 
 const vibrate = (p: number | number[]) => {
-  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+  if (typeof navigator!== "undefined" && "vibrate" in navigator) {
     navigator.vibrate(p);
   }
 };
@@ -67,7 +58,7 @@ export default function Home() {
   const isPlanMode = mode === "plan";
 
   const [activeTab, setActiveTab] = useState<TabId>("hot");
- const [allItems, setAllItems] = useState<FeedTask[]>([]);
+  const [allItems, setAllItems] = useState<FeedTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
@@ -75,57 +66,41 @@ export default function Home() {
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-const [shareTask, setShareTask] =
-  useState<FeedTask | null>(null);
+  const [shareTask, setShareTask] = useState<FeedTask | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
 
-const [showShareModal, setShowShareModal] =
-  useState(false);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const pullRef = useRef({ startY: 0, pulling: false });
 
-const [showCelebrate, setShowCelebrate] =
-  useState(false);
+  const activeColorClass = useMemo(
+    () => (isPlanMode? "text-accent" : "text-primary"),
+    [isPlanMode]
+  );
 
-const observerRef =
-  useRef<IntersectionObserver | null>(null);
+  const activeBgClass = useMemo(
+    () => (isPlanMode? "bg-accent" : "bg-primary"),
+    [isPlanMode]
+  );
 
-const loadMoreRef =
-  useRef<HTMLDivElement>(null);
-
-const pullRef = useRef({
-  startY: 0,
-  pulling: false,
-});
-
-const activeColorClass = useMemo(
-  () => (isPlanMode ? "text-accent" : "text-primary"),
-  [isPlanMode]
-);
-
-const activeBgClass = useMemo(
-  () => (isPlanMode ? "bg-accent" : "bg-primary"),
-  [isPlanMode]
-);
-
-const handleShare = useCallback(
-  (task: FeedTask) => {
+  const handleShare = useCallback((task: FeedTask) => {
     vibrate(5);
     setShareTask(task);
     setShowShareModal(true);
-  },
-  []
-);
-
-const handleTaskUpdate = useCallback(
-  (
-    taskId: string,
-    updates: Partial<FeedTask>
-  ) => {
-    setAllItems((prev) => prev.map((t) => (t.id === taskId? ({...t,...updates } as FeedTask) : t)));
-  if (updates.status === "completed") {
-      setShowCelebrate(true);
-      vibrate([10, 20, 10]);
-      setTimeout(() => setShowCelebrate(false), 1800);
-    }
   }, []);
+
+  const handleTaskUpdate = useCallback(
+    (taskId: string, updates: Partial<FeedTask>) => {
+      setAllItems((prev) =>
+        prev.map((t) => (t.id === taskId? ({...t,...updates } as FeedTask) : t))
+      );
+      if (updates.status === "completed") {
+        vibrate([10, 20, 10]);
+        toast.success("Đã hoàn thành!");
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     if (db) return;
@@ -142,7 +117,7 @@ const handleTaskUpdate = useCallback(
     (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
       if (!db) return null;
       const now = Timestamp.now();
-     const constraints: QueryConstraint[] = [
+      const constraints: QueryConstraint[] = [
         where("type", "==", mode),
         where("visibility", "==", "public"),
         where("status", "in", ["open", "full", "doing"]),
@@ -170,10 +145,10 @@ const handleTaskUpdate = useCallback(
       if (!q) return;
       try {
         const snap = await getDocs(q);
-       const data = snap.docs.map((doc) => ({
-  id: doc.id,
-  ...doc.data(),
-})) as FeedTask[];
+        const data = snap.docs.map((doc) => ({
+          id: doc.id,
+         ...doc.data(),
+        })) as FeedTask[];
         setAllItems(data);
         setLastDoc(snap.docs[snap.docs.length - 1] || null);
         setHasMore(snap.docs.length === PAGE_SIZE);
@@ -200,26 +175,20 @@ const handleTaskUpdate = useCallback(
   }, [loadData]);
 
   const loadMore = useCallback(async () => {
-   if (!db || !lastDoc || loadingMore || !hasMore) return;
+    if (!db ||!lastDoc || loadingMore ||!hasMore) return;
     setLoadingMore(true);
     try {
       const q = buildQuery(lastDoc);
       if (!q) return;
       const snap = await getDocs(q);
       const newItems = snap.docs.map((doc) => ({
-  id: doc.id,
-  ...doc.data(),
-})) as FeedTask[];
+        id: doc.id,
+       ...doc.data(),
+      })) as FeedTask[];
       setAllItems((prev) => {
-  const map = new Map(
-    [...prev, ...newItems].map((item) => [
-      item.id,
-      item,
-    ])
-  );
-
-  return Array.from(map.values());
-});
+        const map = new Map([...prev,...newItems].map((item) => [item.id, item]));
+        return Array.from(map.values());
+      });
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
       setHasMore(snap.docs.length === PAGE_SIZE);
     } finally {
@@ -232,41 +201,31 @@ const handleTaskUpdate = useCallback(
     observerRef.current?.disconnect();
     observerRef.current = new IntersectionObserver(
       ([entry]) => {
-  if (entry?.isIntersecting) {
-    loadMore();
-  }
-},
+        if (entry?.isIntersecting) {
+          loadMore();
+        }
+      },
       { threshold: 0.1, rootMargin: "200px" }
     );
     observerRef.current.observe(loadMoreRef.current);
     return () => observerRef.current?.disconnect();
   }, [hasMore, loadMore]);
 
-const filteredItems = useMemo(() => {
-  let result = allItems.filter(
-    (t) => !t.banned && !t.hidden
-  );
+  const filteredItems = useMemo(() => {
+    let result = allItems.filter((t) =>!t.banned &&!t.hidden);
 
-  if (mode === "task") {
-    result = result.filter(
-      (t) => t.type === "task"
-    );
-  } else {
-    result = result.filter(
-      (t) => t.type === "plan"
-    );
-  }
+    if (mode === "task") {
+      result = result.filter((t) => t.type === "task");
+    } else {
+      result = result.filter((t) => t.type === "plan");
+    }
 
-  if (activeTab === "hot") {
-    result.sort(
-      (a, b) =>
-        (b.likeCount || 0) -
-        (a.likeCount || 0)
-    );
-  }
+    if (activeTab === "hot") {
+      result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+    }
 
-  return result;
-}, [allItems, mode, activeTab]);
+    return result;
+  }, [allItems, mode, activeTab]);
 
   const handleRefresh = useCallback(() => {
     vibrate(10);
@@ -275,9 +234,10 @@ const filteredItems = useMemo(() => {
 
   const onTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
-    if (touch && window.scrollY === 0) pullRef.current = { startY: touch.clientY, pulling: true };
+    if (touch && window.scrollY === 0)
+      pullRef.current = { startY: touch.clientY, pulling: true };
   };
-  
+
   const onTouchMove = (e: React.TouchEvent) => {
     if (!pullRef.current.pulling) return;
     const dy = (e.touches[0]?.clientY || 0) - pullRef.current.startY;
@@ -313,34 +273,10 @@ const filteredItems = useMemo(() => {
             initial={{ y: -40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -40, opacity: 0 }}
-            className="fixed top-14 left-1/2 -translate-x-1/2 z-50"
+            className="fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-background/90 backdrop-blur px-4 py-2 rounded-full shadow-lg border border-border flex items-center gap-2"
           >
-          <LottiePlayer
-  animationData={illustrations.loadingPull}
-  autoplay
-  loop
-  className="w-16 h-16"
-  aria-label="Đang làm mới"
-/>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showCelebrate && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center"
-          >
-           <LottiePlayer
-  animationData={illustrations.celebrate}
-  loop={false}
-  autoplay
-  className="w-[300px] h-[300px]"
-  aria-label="Hoàn thành"
-/>
+            <FiRefreshCw className="animate-spin" />
+            <span className="text-sm font-medium">Đang làm mới</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -364,7 +300,12 @@ const filteredItems = useMemo(() => {
                     size={20}
                     className={cn(active? activeColorClass : "text-muted-foreground")}
                   />
-                  <span className={cn("text-xs font-bold mt-1", active? activeColorClass : "text-muted-foreground")}>
+                  <span
+                    className={cn(
+                      "text-xs font-bold mt-1",
+                      active? activeColorClass : "text-muted-foreground"
+                    )}
+                  >
                     {tab.label}
                   </span>
                   {active && (
@@ -384,81 +325,76 @@ const filteredItems = useMemo(() => {
       <div className="pt-4 max-w-2xl mx-auto">
         <AnimatePresence mode="wait">
           {error? (
-            <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center px-6 py-20 text-center">
-             <LottiePlayer animationData={illustrations.errorShake} loop={false} className="w-[180px] h-[180px]" aria-label="Lỗi" />
+            <motion.div
+              key="error"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center px-6 py-20 text-center"
+            >
+              <FiAlertCircle className="w-16 h-16 text-destructive mb-4" />
               <h2 className="text-xl font-bold mt-2 text-foreground">{error}</h2>
               <button
                 onClick={handleRefresh}
-                className={cn("mt-4 px-6 py-2.5 rounded-xl text-primary-foreground font-bold active:scale-95 flex items-center gap-2", activeBgClass)}
+                className={cn(
+                  "mt-4 px-6 py-2.5 rounded-xl text-primary-foreground font-bold active:scale-95 flex items-center gap-2",
+                  activeBgClass
+                )}
               >
                 <FiRefreshCw /> Thử lại
               </button>
             </motion.div>
           ) : loading &&!refreshing? (
             <motion.div key="loading" className="flex flex-col items-center py-20">
-             <LottiePlayer animationData={illustrations.loadingPull} loop className="w-[120px] h-[120px]" aria-label="Đang tải" />
-              <p className="text-sm text-muted-foreground mt-2">Đang tải...</p>
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-muted-foreground mt-4">Đang tải...</p>
             </motion.div>
           ) : filteredItems.length === 0? (
-        <motion.div
-  key="empty"
-  initial={{ opacity: 0, scale: 0.9 }}
-  animate={{ opacity: 1, scale: 1 }}
-  style={{
-    transform: "translateZ(0)",
-    WebkitTransform: "translateZ(0)",
-    backfaceVisibility: "hidden",
-    WebkitBackfaceVisibility: "hidden",
-    willChange: "transform",
-  }}
-  className="flex flex-col items-center px-6 py-16 text-center"
->
-              <LottiePlayer
-                animationData={
-  isPlanMode
-    ? illustrations.walletOpen
-    : illustrations.empty
-}
-                loop
-                className="w-[220px] h-[220px]"
-                aria-label="Trống"
-                fallback={<div className="w-[220px] h-[220px] bg-muted rounded-2xl" />}
-              />
-              <h3 className="text-lg font-bold mt-2 text-foreground">Chưa có {mode === "task"? "nhiệm vụ" : "kế hoạch"} nào</h3>
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center px-6 py-16 text-center"
+            >
+              <FiInbox className="w-20 h-20 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-bold mt-2 text-foreground">
+                Chưa có {mode === "task"? "nhiệm vụ" : "kế hoạch"} nào
+              </h3>
               <p className="text-sm text-muted-foreground mb-6">Hãy là người đầu tiên tạo</p>
               <button
                 onClick={handleRefresh}
-                className={cn("px-6 py-2.5 rounded-xl text-primary-foreground font-bold active:scale-95 flex items-center gap-2", activeBgClass)}
+                className={cn(
+                  "px-6 py-2.5 rounded-xl text-primary-foreground font-bold active:scale-95 flex items-center gap-2",
+                  activeBgClass
+                )}
               >
                 <FiRefreshCw /> Tải lại
               </button>
             </motion.div>
           ) : (
             <motion.div key="feed">
-              <TaskFeed tasks={filteredItems} mode={mode} activeTab={activeTab} onShare={handleShare} onTaskUpdate={handleTaskUpdate} />
+              <TaskFeed
+                tasks={filteredItems}
+                mode={mode}
+                activeTab={activeTab}
+                onShare={handleShare}
+                onTaskUpdate={handleTaskUpdate}
+              />
             </motion.div>
           )}
         </AnimatePresence>
 
         {!loading && hasMore && allItems.length > 0 && (
           <div ref={loadMoreRef} className="py-6 flex justify-center">
-            {loadingMore && <LottiePlayer
-  animationData={illustrations.loadingPull}
-  autoplay
-  loop
-  className="w-16 h-16"
-  aria-label="Tải thêm"
-/>}
+            {loadingMore && (
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            )}
           </div>
         )}
       </div>
 
-{showShareModal && shareTask && (
-  <ShareTaskModal
-    task={shareTask as Task}
-    onClose={() => setShowShareModal(false)}
-  />
-)}
+      {showShareModal && shareTask && (
+        <ShareTaskModal task={shareTask as Task} onClose={() => setShowShareModal(false)} />
+      )}
     </motion.div>
   );
 }
