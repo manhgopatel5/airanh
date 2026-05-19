@@ -8,6 +8,7 @@ export type LottiePlayerProps = {
   loop?: boolean;
   autoplay?: boolean;
   className?: string;
+  fallback?: React.ReactNode;
   speed?: number;
   renderer?: "svg" | "canvas";
   onComplete?: () => void;
