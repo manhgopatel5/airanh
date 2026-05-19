@@ -15,7 +15,7 @@ const Lottie = dynamic(
 );
 
 export type LottiePlayerProps = {
-animationData?: Record<string, unknown> | null;
+animationData?: any;
   loop?: boolean;
   autoplay?: boolean;
   className?: string;
