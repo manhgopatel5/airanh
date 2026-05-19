@@ -21,7 +21,7 @@ function LottiePlayer({
   autoplay = true,
   className = "w-24 h-24",
   speed = 1,
-  renderer = "svg",
+  renderer = "canvas",
   onComplete,
   "aria-label": ariaLabel = "Animation",
 }: LottiePlayerProps) {
@@ -42,6 +42,7 @@ function LottiePlayer({
         preserveAspectRatio: "xMidYMid meet",
         progressiveLoad: true,
         hideOnTransparent: true,
+        clearCanvas: true,
       },
     });
 
@@ -69,10 +70,6 @@ function LottiePlayer({
       role="img"
       aria-label={ariaLabel}
       className={className}
-      style={{
-        width: "100%",
-        height: "100%",
-      }}
     />
   );
 }
