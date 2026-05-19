@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
-import { type TaskStatus, type Task, isTask } from "@/types/task";
+import type { TaskItem, PlanItem, TaskStatus, PlanStatus } from "@/types/task";
 import { AppMode } from "@/types/app";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
