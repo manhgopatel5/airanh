@@ -46,16 +46,15 @@ export type BaseItem = {
   images: string[];
   attachments?: string[];
   
-// Owner
-userId: string;
-userName: string;
-userAvatar: string;
-userShortId?: string;
-userUsername?: string;
-userVerified?: boolean;
+  // Owner
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  userShortId?: string;
+  userUsername?: string;
 
   // Status
-  status: TaskStatus | PlanStatus;
+  status: TaskStatus;
   visibility: Visibility;
   banned?: boolean;
   hidden?: boolean;
@@ -81,15 +80,12 @@ userVerified?: boolean;
   // Search
   searchKeywords: string[];
 
-// Stats
-viewCount: number;
-likeCount: number;
-commentCount: number;
-shareCount: number;
-bookmarkCount: number;
-distance?: number;
-rating?: number; // THÊM
-ratingCount?: number; // optional luôn
+  // Stats
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  shareCount: number;
+  bookmarkCount: number;
 
   // Relations
   applicants?: string[];
@@ -97,53 +93,18 @@ ratingCount?: number; // optional luôn
   reactions?: Record<string, string[]>;
 };
 
-
-export type BaseFeedItem = Pick<
-  BaseItem,
-  | "id"
-  | "slug"
-  | "title"
-  | "status"
-  | "userName"
-  | "userAvatar"
-  | "userShortId"
-  | "userUsername"
-  | "userVerified"
-  | "createdAt"
-  | "category"
-  | "tags"
-  | "images"
-  | "viewCount"
-  | "likeCount"
-  | "commentCount"
-  | "rating"
-  | "ratingCount"
-  | "location"
-  | "likes"
-  | "userId"
-  | "description"
-  | "savedBy"
-  | "applicants"
-> & {
-  type: AppMode;
-};
 /* ================= TASK TYPE ================= */
 export type TaskItem = BaseItem & {
   type: "task";
-
-  urgency?: "once" | "weekly" | "ongoing";
-
   price: number;
   currency: string;
   budgetType: BudgetType;
   paymentMethod?: PaymentMethod;
   totalSlots: number;
   joined: number;
-  completed?: boolean;
   appliedCount?: number;  // ← THÊM DÒNG NÀY
   requirements?: string;
   isRemote: boolean;
-  
   applicationDeadline?: Timestamp | null;
   deadline?: Timestamp | null;
   startDate?: Timestamp | null;
@@ -179,7 +140,7 @@ export type PlanParticipant = {
 
 export type PlanItem = BaseItem & {
   type: "plan";
-  completed?: boolean;
+  
   // Timeline
   eventDate: Timestamp; // Ngày giờ chính diễn ra
   endDate?: Timestamp; // Kết thúc
@@ -218,17 +179,9 @@ export type CreateTaskInput = {
   totalSlots: number;
   visibility?: Visibility;
   category?: string;
-  urgency?: "once" | "weekly" | "ongoing";
   tags?: string[];
   images?: string[];
   attachments?: string[];
-milestones?: boolean;
-  autoMatch?: boolean;
-  allowBids?: boolean;
-  
-  nda?: boolean;
-  invites?: string[];
-  needApproval?: boolean;
   requirements?: string;
   location?: BaseItem["location"];
   isRemote?: boolean;
@@ -270,33 +223,74 @@ export type UpdatePlanInput = Partial<Omit<CreatePlanInput, "type">>;
 export type UpdateItemInput = Partial<CreateItemInput>;
 
 /* ================= LIST ITEM ================= */
-export type TaskListItem = BaseFeedItem &
-  Pick<
-    TaskItem,
-    | "price"
-    | "currency"
-    | "totalSlots"
-    | "joined"
-    | "isRemote"
-    | "budgetType"
-    | "paymentMethod"
-    | "deadline"
-    | "applicationDeadline"
-    | "startDate"
-  >;
+export type TaskListItem = Pick<
+  TaskItem,
+  | "id"
+  | "slug"
+  | "title"
+  | "price"
+  | "currency"
+  | "totalSlots"
+  | "joined"
+  | "status"
+  | "userName"
+  | "userAvatar"
+  | "userShortId"
+  | "userUsername"
+  | "createdAt"
+  | "category"
+  | "tags"
+  | "images"
+  | "viewCount"
+  | "likeCount"
+  | "commentCount"
+  | "location"
+  | "isRemote"
+  | "likes"
+  | "budgetType"
+  | "paymentMethod" // THÊM DÒNG NÀY
+  | "userId"
+  | "description"
+  | "type"
+  | "deadline"
+  | "startDate"
+  | "savedBy"     
+  | "applicants"  
+>;
 
-export type PlanListItem = BaseFeedItem &
-  Pick<
-    PlanItem,
-    | "eventDate"
-    | "endDate"
-    | "maxParticipants"
-    | "currentParticipants"
-    | "costType"
-    | "costAmount"
-    | "paymentMethod"
-    | "milestones"
-  >;
+export type PlanListItem = Pick<
+  PlanItem,
+  | "id"
+  | "slug"
+  | "title"
+  | "type"
+  | "status"
+  | "userName"
+  | "userAvatar"
+  | "userShortId"
+  | "userUsername"
+  | "createdAt"
+  | "category"
+  | "tags"
+  | "images"
+  | "viewCount"
+  | "likeCount"
+  | "commentCount"
+  | "location"
+  | "likes"
+  | "userId"
+  | "description"
+  | "eventDate"
+  | "endDate"
+  | "maxParticipants"
+  | "currentParticipants"
+  | "costType"
+  | "costAmount"
+  | "paymentMethod" // THÊM DÒNG NÀY
+  | "milestones"
+  | "savedBy"      
+  | "applicants"  
+>;
 
 export type ItemListItem = TaskListItem | PlanListItem;
 
