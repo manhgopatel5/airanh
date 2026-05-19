@@ -219,7 +219,7 @@ export type CreateTaskInput = {
   tags?: string[];
   images?: string[];
   attachments?: string[];
-    milestones?: boolean;
+   milestones?: string[];
   autoMatch?: boolean;
   allowBids?: boolean;
   
