@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { FiArrowLeft, FiPhone, FiMail, FiUser, FiShield, FiAlertTriangle } from "react-icons/fi";
 import { motion } from "framer-motion";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 
 
