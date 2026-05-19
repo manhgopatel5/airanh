@@ -77,7 +77,7 @@ export default function TasksPage() {
       if (!user) router.push("/login");
     });
     return () => unsub();
-  }, []);
+  }, [auth, router]);
 
   const fetchTasks = useCallback(async (isRefresh = false) => {
     if (!currentUser) {
@@ -85,9 +85,9 @@ export default function TasksPage() {
       setTasks([]);
       return;
     }
+    
     if (isRefresh) {
       setRefreshing(true);
-      setTasks([]);
       setLastDoc(null);
       setHasMore(true);
     } else {
@@ -96,142 +96,115 @@ export default function TasksPage() {
 
     try {
       const baseCollection = collection(db, "tasks");
-      let q = query(
-        baseCollection,
-        where("type", "==", mode),
-        limit(PAGE_SIZE)
-      );
+      let constraints: any[] = [where("type", "==", mode)];
 
+      // Đẩy bộ lọc STATUS trực tiếp vào Firestore để không làm lỗi phân trang
       switch (subTab) {
         case "mine":
-          q = query(baseCollection, where("userId", "==", currentUser.uid), where("type", "==", mode), limit(PAGE_SIZE));
+          constraints.push(where("userId", "==", currentUser.uid));
+          // Tránh lấy các bài đã bị xóa/hủy ở tab "Của tôi"
+          constraints.push(where("status", "not-in", ["deleted", "cancelled"]));
           break;
-  case "expired":
-  const now = Timestamp.now();
-  const sevenDaysAgo = Timestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
-  q = query(
-    baseCollection, 
-    where("userId", "==", currentUser.uid), 
-    where("type", "==", "task"), // ép chỉ lấy task
-    where("deadline", "<", now),
-    where("deadline", ">", sevenDaysAgo),
-    orderBy("deadline", "desc"),
-    limit(PAGE_SIZE)
-  );
-  
-    break;
+        case "expired":
+          const now = Timestamp.now();
+          const sevenDaysAgo = Timestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+          constraints = [
+            where("userId", "==", currentUser.uid),
+            where("type", "==", "task"),
+            where("deadline", "<", now),
+            where("deadline", ">", sevenDaysAgo)
+          ];
+          break;
         case "saved":
-          q = query(baseCollection, where("savedBy", "array-contains", currentUser.uid), where("type", "==", mode), limit(PAGE_SIZE));
+          constraints.push(where("savedBy", "array-contains", currentUser.uid));
+          constraints.push(where("status", "not-in", ["deleted", "cancelled"]));
           break;
         case "doing":
-          q = query(baseCollection, where("assignees", "array-contains", currentUser.uid), where("type", "==", mode), limit(PAGE_SIZE));
+          constraints.push(where("assignees", "array-contains", currentUser.uid));
+          constraints.push(where("status", "==", "doing"));
           break;
         case "applied":
-          q = query(baseCollection, where("applicants", "array-contains", currentUser.uid), where("type", "==", mode), limit(PAGE_SIZE));
+          constraints.push(where("applicants", "array-contains", currentUser.uid));
+          constraints.push(where("status", "in", ["open", "pending"]));
           break;
         case "completed":
-          q = query(baseCollection, where("assignees", "array-contains", currentUser.uid), where("type", "==", mode), limit(PAGE_SIZE));
+          constraints.push(where("assignees", "array-contains", currentUser.uid));
+          constraints.push(where("status", "==", "completed"));
           break;
         case "cancelled":
-          q = query(baseCollection, where("userId", "==", currentUser.uid), where("type", "==", mode), limit(PAGE_SIZE));
+          constraints.push(where("userId", "==", currentUser.uid));
+          constraints.push(where("status", "==", "cancelled"));
           break;
       }
 
-      if (lastDoc &&!isRefresh) {
-        q = query(q, startAfter(lastDoc));
+      // Sắp xếp theo thời gian tạo mới nhất
+      if (subTab === "expired") {
+        constraints.push(orderBy("deadline", "desc"));
+      } else {
+        constraints.push(orderBy("createdAt", "desc"));
       }
 
-      const snap = await getDocs(q);
-      console.log("Firestore docs:", snap.docs.length);
+      // Phân trang
+      constraints.push(limit(PAGE_SIZE));
+      if (lastDoc && !isRefresh) {
+        constraints.push(startAfter(lastDoc));
+      }
 
-      let data = snap.docs.map(doc => {
+      const q = query(baseCollection, ...constraints);
+      const snap = await getDocs(q);
+
+      const data = snap.docs.map(doc => {
         const d = doc.data();
         return {
           id: doc.id,
           title: d.title || "Không có tiêu đề",
           type: d.type || mode,
           status: d.status || "open",
-        ...d
+          ...d
         } as Task;
-      })
-    .filter(t => t.id && t.title);
-
-      console.log("After filter:", data.length);
-
-      switch (subTab) {
-        case "mine":
-          data = data.filter(t =>!["deleted", "cancelled"].includes(t.status));
-          break;
-case "expired":
-data = data.filter(t => t.type === "task" && t.deadline && t.deadline.seconds * 1000 < Date.now());
-  break;
-  case "saved":
-    data = data.filter(t =>!["deleted", "cancelled"].includes(t.status));
-    break;
-  
-        case "doing":
-          data = data.filter(t => t.status === "doing");
-          break;
-        case "applied":
-          data = data.filter(t => ["open", "pending"].includes(t.status));
-          break;
-        case "completed":
-          data = data.filter(t => t.status === "completed");
-          break;
-        case "cancelled":
-          data = data.filter(t => t.status === "cancelled");
-          break;
-      }
-
-      if (searchQuery) {
-        data = data.filter(t => t.title.toLowerCase().includes(searchQuery.toLowerCase()));
-      }
-
-      data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      });
 
       if (isRefresh) {
         setTasks(data);
       } else {
-        setTasks(prev => [...prev,...data]);
+        setTasks(prev => [...prev, ...data]);
       }
 
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
       setHasMore(snap.docs.length === PAGE_SIZE);
     } catch (err: any) {
-      console.error(err);
-      toast.error("Tải dữ liệu thất bại");
+      console.error("Firestore Fetch Error: ", err);
+      toast.error("Tải dữ liệu thất bại. Kiểm tra Index Firestore nếu có lỗi.");
     } finally {
       setLoading(false);
       setLoadingMore(false);
       setRefreshing(false);
     }
-  }, [currentUser, mode, subTab, searchQuery, db]); // ← Đã bỏ lastDoc
+  }, [currentUser, mode, subTab, db, lastDoc]);
 
-const fetchTasksRef2 = useRef(fetchTasks);
-fetchTasksRef2.current = fetchTasks;
+  // Đồng bộ trigger fetch bài khi tab đổi
+  useEffect(() => {
+    if (currentUser) {
+      fetchTasks(true);
+    }
+  }, [mode, subTab, currentUser]);
 
-useEffect(() => {
-  if (currentUser) fetchTasksRef2.current(true);
-}, [currentUser, mode, subTab]);
+  // Infinite scroll
+  useEffect(() => {
+    if (!loadMoreRef.current) return;
 
-  const fetchTasksRef = useRef(fetchTasks);
-fetchTasksRef.current = fetchTasks;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasMore && !loading && !loadingMore && !refreshing) {
+          fetchTasks(false);
+        }
+      },
+      { threshold: 0.1 }
+    );
 
-useEffect(() => {
-  if (!loadMoreRef.current) return;
-
-  const observer = new IntersectionObserver(
-    (entries) => {
-      if (entries[0]?.isIntersecting && hasMore &&!loading &&!loadingMore) {
-        fetchTasksRef.current(false);
-      }
-    },
-    { threshold: 0.1 }
-  );
-
-  observer.observe(loadMoreRef.current);
-  return () => observer.disconnect();
-}, [hasMore, loading, loadingMore]);
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, loading, loadingMore, refreshing, fetchTasks]);
 
   const handleRefresh = async () => {
     vibrate(10);
@@ -250,7 +223,7 @@ useEffect(() => {
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (window.scrollY === 0) {
-      pullStartY.current = e.touches[0]?.clientY?? 0;
+      pullStartY.current = e.touches[0]?.clientY ?? 0;
     }
   };
 
@@ -273,8 +246,9 @@ useEffect(() => {
     setPullDistance(0);
   };
 
+  // Bộ lọc tìm kiếm local theo Title (mượt mà, không tốn query)
   const filteredTasks = tasks.filter(t =>
-   !searchQuery || t.title.toLowerCase().includes(searchQuery.toLowerCase())
+    !searchQuery || t.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const currentTheme = theme[mode] || theme.task;
@@ -291,24 +265,23 @@ useEffect(() => {
         {pullDistance > 0 && (
           <div
             className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl"
-            style={{ height: `${pullDistance}px`, transition: pullDistance === 0? 'height 0.3s' : 'none' }}
+            style={{ height: `${pullDistance}px`, transition: pullDistance === 0 ? 'height 0.3s' : 'none' }}
           >
             <FiRefreshCw
-              className={`${pullDistance > 60? 'animate-spin' : ''} text-[#0A84FF]`}
+              className={`${pullDistance > 60 ? 'animate-spin' : ''} text-[#0A84FF]`}
               size={20}
             />
           </div>
         )}
 
         <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50">
-
           <div className="px-4 pt-3 pb-2">
             <div className="flex items-center p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800">
               <button
                 onClick={() => handleModeChange("task")}
                 className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
                   mode === "task"
-                ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
+                    ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
                     : "text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -321,7 +294,7 @@ useEffect(() => {
                 onClick={() => handleModeChange("plan")}
                 className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
                   mode === "plan"
-                ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
+                    ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
                     : "text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -342,7 +315,7 @@ useEffect(() => {
                     onClick={() => handleTabChange(tab.key)}
                     className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
                       subTab === tab.key
-                    ? `bg-gradient-to-r ${currentTheme.gradient} text-white ${currentTheme.shadow}`
+                        ? `bg-gradient-to-r ${currentTheme.gradient} text-white ${currentTheme.shadow}`
                         : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                     }`}
                   >
@@ -393,7 +366,7 @@ useEffect(() => {
         </div>
 
         <div className="max-w-[600px] mx-auto p-4">
-          {loading? (
+          {loading ? (
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 p-4">
@@ -407,7 +380,7 @@ useEffect(() => {
                 </div>
               ))}
             </div>
-          ) : filteredTasks.length === 0? (
+          ) : filteredTasks.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -417,7 +390,7 @@ useEffect(() => {
                 <FiInbox size={32} className="text-zinc-400" />
               </div>
               <p className="text-base font-bold text-zinc-900 dark:text-zinc-100 mb-1">
-                Chưa có {mode === "task"? "task" : "plan"} nào
+                Chưa có {mode === "task" ? "task" : "plan"} nào
               </p>
               <p className="text-sm text-zinc-500 mb-6">
                 {subTab === "mine" && `Tạo ${mode} đầu tiên của bạn`}
@@ -431,7 +404,7 @@ useEffect(() => {
                 <button
                   onClick={() => {
                     vibrate(10);
-                    router.push(mode === "task"? "/create/task" : "/create/plan");
+                    router.push(mode === "task" ? "/create/task" : "/create/plan");
                   }}
                   className={`px-6 h-11 rounded-xl bg-gradient-to-r ${currentTheme.gradient} text-white text-sm font-semibold active:scale-95 transition-all ${currentTheme.shadow}`}
                 >
@@ -458,7 +431,7 @@ useEffect(() => {
                     <TaskCard
                       task={task}
                       theme={mode}
-                      onDelete={(id) => setTasks(prev => prev.filter(t => t.id!== id))}
+                      onDelete={(id) => setTasks(prev => prev.filter(t => t.id !== id))}
                       onShare={(t) => setShareTask(t)}
                     />
                   </motion.div>
@@ -467,13 +440,7 @@ useEffect(() => {
             </AnimatePresence>
           )}
 
-          {loadingMore && (
-            <div className="flex justify-center py-6">
-              <FiRefreshCw className="animate-spin text-zinc-400" size={24} />
-            </div>
-          )}
-
-          {refreshing && (
+          {(loadingMore || refreshing) && (
             <div className="flex justify-center py-6">
               <FiRefreshCw className="animate-spin text-[#0A84FF]" size={24} />
             </div>
