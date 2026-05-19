@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useTransition, useCallback, useState, useMemo } from "react";
+import React, { useEffect, useCallback, useState, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { useAppStore } from "@/store/app";
@@ -119,7 +119,6 @@ FloatingMenu.displayName = "FloatingMenu";
 export default function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
-  const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
 
   const mode = useAppStore((s) => s.mode);
@@ -135,7 +134,7 @@ export default function BottomNav() {
     { path: "/profile", label: "Profile", Icon: User },
   ], []);
 
-  // Khởi tạo prefetch
+  // Khởi tạo prefetch mạnh mẽ hơn để tránh loading khi đổi tab
   useEffect(() => {
     const targets = ["/", "/messages", "/tasks", "/profile", "/create/task", "/create/plan"];
     targets.forEach((p) => router.prefetch(p));
@@ -159,10 +158,11 @@ export default function BottomNav() {
     }
   }, [isOpen]);
 
+  // SỬA LỖI LOADING: Bỏ useTransition cho router.push để Next.js điều hướng tức thì bằng cache có sẵn từ prefetch
   const handleNavigation = useCallback((path: string) => {
     if (pathname === path) return;
     navigator.vibrate?.(10);
-    startTransition(() => router.push(path));
+    router.push(path);
   }, [pathname, router]);
 
   const handleSelectCreate = useCallback((type: "task" | "plan") => {
@@ -186,8 +186,7 @@ export default function BottomNav() {
       <button
         key={item.path}
         onClick={() => handleNavigation(item.path)}
-        // Thêm pb-3.5 để tạo khoảng trống cố định phía đáy button cho dấu chấm tọa lạc
-        className="flex-1 flex flex-col items-center justify-center relative h-full pt-1 pb-3.5 outline-none select-none touch-manipulation group will-change-transform"
+        className="flex-1 flex flex-col items-center justify-center relative h-full pt-1 pb-3.5 outline-none select-none touch-manipulation group"
       >
         <item.Icon 
           className={`w-[21px] h-[21px] transition-all duration-200 ease-out ${
@@ -200,7 +199,7 @@ export default function BottomNav() {
           {item.label}
         </span>
         
-        {/* ĐÃ FIX: Ép cứng vị trí absolute nằm ngang giữa tâm nút, loại bỏ hiện tượng bị văng lệch ra ngoài gây chớp */}
+        {/* SỬA LỖI CHỚP TỌA ĐỘ: Đưa dấu chấm về tâm tuyệt đối theo chiều ngang (left-1/2 -translate-x-1/2) */}
         {active && (
           <motion.div 
             layoutId="activeIndicator"
@@ -241,13 +240,8 @@ export default function BottomNav() {
           <FloatingMenu isOpen={isOpen} onSelect={handleSelectCreate} />
 
           {/* 2. BASE NAVIGATION BAR BAN ĐẦU */}
-          <div className="w-full pointer-events-auto relative rounded-[26px] border border-zinc-200/50 bg-white/80 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.04)]">
+          <div className="w-full pointer-events-auto relative rounded-[26px] border border-zinc-200/50 bg-white/80 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.04)] overflow-hidden">
             
-            {/* Thanh tiến trình tải mỏng tinh tế */}
-            {isPending && (
-              <div className="absolute top-0 inset-x-6 h-[1.5px] bg-gradient-to-r from-transparent via-zinc-400 to-transparent animate-pulse" />
-            )}
-
             <div className="flex items-center justify-between h-[64px] px-2 relative">
               {/* Bên trái */}
               <div className="flex-1 grid grid-cols-2 h-full">
