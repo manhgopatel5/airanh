@@ -387,3 +387,119 @@ export default function ReportModal({
               ) : (
                 <>
                   <div className="flex-1 overflow-y-auto px-5 py-4">
+                    <div className="space-y-3">
+                      {REPORT_REASONS.map((item) => {
+                        const Icon = item.icon;
+
+                        const active =
+                          reason === item.id;
+
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() =>
+                              setReason(item.id)
+                            }
+                            className={`w-full flex items-center gap-4 rounded-2xl border px-4 py-4 text-left transition-all active:scale-[0.98] ${
+                              active
+                                ? "border-red-500 bg-red-50 dark:bg-red-500/10"
+                                : "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                            }`}
+                          >
+                            <div
+                              className={`w-11 h-11 rounded-2xl flex items-center justify-center ${
+                                active
+                                  ? "bg-red-500 text-white"
+                                  : "bg-zinc-100 dark:bg-zinc-800"
+                              }`}
+                            >
+                              <Icon
+                                className={`w-5 h-5 ${
+                                  !active
+                                    ? item.color
+                                    : ""
+                                }`}
+                              />
+                            </div>
+
+                            <div className="flex-1">
+                              <p className="font-medium">
+                                {item.label}
+                              </p>
+                            </div>
+
+                            {active && (
+                              <Check
+                                className="w-5 h-5 text-red-500"
+                                strokeWidth={3}
+                              />
+                            )}
+                          </button>
+                        );
+                      })}
+
+                      {reason === "other" && (
+                        <motion.textarea
+                          initial={{
+                            opacity: 0,
+                            height: 0,
+                          }}
+                          animate={{
+                            opacity: 1,
+                            height: 120,
+                          }}
+                          exit={{
+                            opacity: 0,
+                            height: 0,
+                          }}
+                          value={note}
+                          onChange={(e) =>
+                            setNote(
+                              e.target.value
+                            )
+                          }
+                          placeholder="Mô tả chi tiết..."
+                          aria-label="Mô tả chi tiết báo cáo"
+                          className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-transparent px-4 py-3 text-sm outline-none resize-none focus:ring-2 focus:ring-red-500"
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-5 border-t border-zinc-100 dark:border-zinc-800 flex gap-3 shrink-0">
+                    <button
+                      onClick={onClose}
+                      disabled={loading}
+                      className="flex-1 h-12 rounded-2xl border border-zinc-200 dark:border-zinc-700 font-medium active:scale-[0.98] transition"
+                    >
+                      Hủy
+                    </button>
+
+                    <button
+                      onClick={handleSubmit}
+                      disabled={loading}
+                      className="flex-1 h-12 rounded-2xl bg-red-500 text-white font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition disabled:opacity-60"
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Đang gửi
+                        </>
+                      ) : (
+                        <>
+                          <Shield className="w-4 h-4" />
+                          Gửi báo cáo
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
