@@ -3,7 +3,7 @@ import { HiPlus } from "react-icons/hi2";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useTransition, useCallback, useMemo } from "react";
 import { useAppStore } from "@/store/app";
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 import * as L from "@/components/illustrations";
 
 type NavItem = {
