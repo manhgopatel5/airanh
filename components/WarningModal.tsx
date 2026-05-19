@@ -383,7 +383,40 @@ const [showAppealForm, setShowAppealForm] =
                       Tôi đã đọc và hiểu cảnh cáo này.
                     </span>
                   </label>
+<button
+  onClick={() =>
+    setShowAppealForm(!showAppealForm)
+  }
+  className="w-full h-12 rounded-2xl border border-zinc-200 dark:border-zinc-700 font-medium active:scale-[0.98] transition"
+>
+  Gửi kháng cáo
+</button>
 
+{showAppealForm && (
+  <div className="space-y-3">
+    <textarea
+      value={appealText}
+      onChange={(e) =>
+        setAppealText(e.target.value)
+      }
+      placeholder="Nhập nội dung kháng cáo..."
+      aria-label="Nội dung kháng cáo"
+      className="w-full h-28 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-transparent px-4 py-3 text-sm outline-none resize-none"
+    />
+
+    <button
+      onClick={handleAppeal}
+      disabled={submitting}
+      className="w-full h-12 rounded-2xl bg-blue-500 text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+    >
+      {submitting ? (
+        "Đang gửi..."
+      ) : (
+        "Gửi kháng cáo"
+      )}
+    </button>
+  </div>
+)}
                   <button
                     onClick={handleConfirm}
                     disabled={!canConfirm}
