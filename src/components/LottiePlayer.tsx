@@ -45,7 +45,7 @@ function LottiePlayer({
 
     hideOnTransparent: true,
 
-    clearCanvas: false,
+   
 
     filterSize: {
       width: "300%",
