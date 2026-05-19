@@ -62,7 +62,7 @@ function SkeletonList() {
 export default function AppContainer() {
   const [db, setDb] = useState<any>(null);
   const mode = useAppStore((s) => s.mode);
-  const setMode = useAppStore((s) => s.setMode); // Lấy hàm setMode ra để sử dụng cho nút bấm chuyển đổi
+  const setMode = useAppStore((s) => s.setMode);
   
   const [currentMainTab, setCurrentMainTab] = useState<MainTab>("home");
   const [activeTab, setActiveTab] = useState<TabId>("hot");
@@ -86,7 +86,6 @@ export default function AppContainer() {
     try {
       const _db = getFirebaseDB();
       setDb(_db);
-      setError(null);
     } catch (err) {
       console.error("Firebase init error:", err);
       setError("Không thể kết nối database");
@@ -117,7 +116,6 @@ export default function AppContainer() {
   const loadData = useCallback(
     async (isRefresh = false) => {
       if (!db) return;
-      setError(null);
       
       if (allItems.length > 0) {
         setRefreshing(true);
@@ -143,15 +141,11 @@ export default function AppContainer() {
         setAllItems(data);
         setLastDoc(snap.docs[snap.docs.length - 1] || null);
         setHasMore(snap.docs.length === PAGE_SIZE);
-        setError(null);
       } catch (err: any) {
         console.error("Firestore error:", err.code, err.message);
         if (err.code === "permission-denied") {
           setAllItems([]);
           setHasMore(false);
-          setError(null);
-        } else {
-          setError("Lỗi tải dữ liệu");
         }
       } finally {
         setLoading(false);
@@ -181,7 +175,6 @@ export default function AppContainer() {
       setHasMore(snap.docs.length === PAGE_SIZE);
     } catch (err) {
       console.error("Load more error:", err);
-      toast.error("Không thể tải thêm");
     } finally {
       setLoadingMore(false);
     }
@@ -240,29 +233,29 @@ export default function AppContainer() {
     switch (currentMainTab) {
       case "messages":
         return (
-          <div className="flex flex-col items-center justify-center py-32 text-zinc-400 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="flex flex-col items-center justify-center py-40 text-zinc-400 animate-in fade-in slide-in-from-bottom-4 duration-300">
             <MessageSquare size={48} className="mb-2 opacity-50" />
             <p className="font-medium text-sm">Trang Tin Nhắn (Đang phát triển)</p>
           </div>
         );
       case "tasks":
         return (
-          <div className="flex flex-col items-center justify-center py-32 text-zinc-400 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="flex flex-col items-center justify-center py-40 text-zinc-400 animate-in fade-in slide-in-from-bottom-4 duration-300">
             <ClipboardList size={48} className="mb-2 opacity-50" />
             <p className="font-medium text-sm">Trang Quản Lý Nhiệm Vụ</p>
           </div>
         );
       case "profile":
         return (
-          <div className="flex flex-col items-center justify-center py-32 text-zinc-400 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="flex flex-col items-center justify-center py-40 text-zinc-400 animate-in fade-in slide-in-from-bottom-4 duration-300">
             <User size={48} className="mb-2 opacity-50" />
             <p className="font-medium text-sm">Trang Cá Nhân công khai</p>
           </div>
         );
-      default: // CHỈ CÓ TAB HOME MỚI HIỂN THỊ CỤM HEADER NÀY
+      default:
         return (
           <>
-            {/* 1. THANH CHỌN CHUYỂN ĐỔI TASK / PLAN LÊN ĐẦU TIÊN CỦA TRANG HOME */}
+            {/* THANH CHỌN MODE CHỈ HIỆN TRÊN TRANG CHỦ */}
             <div className="sticky top-0 z-50 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md pt-3 pb-2 px-4 border-b border-gray-100 dark:border-zinc-900">
               <div className="max-w-md mx-auto bg-gray-100 dark:bg-zinc-900 rounded-2xl p-1 flex relative">
                 <button
@@ -290,7 +283,7 @@ export default function AppContainer() {
               </div>
             </div>
 
-            {/* 2. THANH SUB-TABS (HOT, GẦN BẠN...) NGAY DƯỚI THANH CHỌN MODE */}
+            {/* THANH SUB-TABS (HOT, GẦN BẠN...) CHỈ HIỆN TRÊN TRANG CHỦ */}
             <div className="sticky top-[64px] z-40 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800">
               <div className="max-w-2xl mx-auto px-4">
                 <div className="flex justify-around">
@@ -303,7 +296,6 @@ export default function AppContainer() {
                         onClick={() => {
                           setActiveTab(tab.id);
                           if ("vibrate" in navigator) navigator.vibrate(5);
-                          if (tab.id !== "hot") toast.info("Tính năng đang phát triển");
                         }}
                         className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
                           active ? `text-${tab.color}-600 dark:text-${tab.color}-400` : "text-gray-400 dark:text-zinc-500"
@@ -319,7 +311,7 @@ export default function AppContainer() {
               </div>
             </div>
 
-            {/* 3. NỘI DUNG FEED BÀI VIẾT */}
+            {/* FEED CHÍNH */}
             <div className="pt-4">
               {loading ? (
                 <SkeletonList />
@@ -350,7 +342,7 @@ export default function AppContainer() {
 
   return (
     <LayoutGroup id="app-global-navigation-flow">
-      <div className="min-h-screen pb-28 font-sans bg-gray-50 dark:bg-black select-none relative">
+      <div className="min-h-screen pb-28 font-sans bg-white dark:bg-zinc-950 select-none relative">
         <ModeToggle />
 
         {refreshing && (
@@ -361,7 +353,7 @@ export default function AppContainer() {
           {renderTabContent()}
         </div>
 
-        {/* BOTTOM NAVIGATION CỐ ĐỊNH PHÍA DƯỚI */}
+        {/* BOTTOM NAVIGATION CHẠY BẰNG STATE */}
         <div className="fixed bottom-0 inset-x-0 z-50 pointer-events-none flex flex-col items-center justify-end">
           <div className="w-full max-w-[480px] px-4 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center gap-3">
             
@@ -448,7 +440,6 @@ export default function AppContainer() {
         <ShareTaskModal task={shareTask} onClose={() => setShowShareModal(false)} />
       )}
 
-      {/* Dòng này giúp giữ biến error để tránh lỗi Strict Compile từ Vercel */}
       {error && <span className="hidden">{error}</span>}
     </LayoutGroup>
   );
