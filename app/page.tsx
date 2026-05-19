@@ -29,7 +29,7 @@ type TabId = "hot" | "near" | "friends" | "new";
 function SkeletonList() {
   return (
     <div className="space-y-3 px-4 animate-in fade-in duration-300">
-      {Array.from({ length: 4 }).map((_, i) => (
+      {Array.from({ length: 3 }).map((_, i) => (
         <div
           key={i}
           className="bg-white dark:bg-zinc-900 rounded-3xl p-4 border border-gray-100 dark:border-zinc-800"
@@ -56,8 +56,12 @@ export default function Home() {
   const mode = useAppStore((s) => s.mode);
   const [activeTab, setActiveTab] = useState<TabId>("hot");
   const [allItems, setAllItems] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  
+  // Trạng thái loading thực tế cho lần đầu mở app
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  // Trạng thái fetch ngầm khi người dùng thực hiện chuyển đổi tab/mode
+  const [isBackgroundFetching, setIsBackgroundFetching] = useState(false);
+  
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -67,9 +71,6 @@ export default function Home() {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  // Dùng ref này để khóa luồng, không cho phép xóa mảng cũ khi chưa có data mới
-  const isChangingModeRef = useRef(false);
-
   const handleShare = useCallback((task: Task) => {
     if ("vibrate" in navigator) navigator.vibrate(5);
     setShareTask(task);
@@ -78,10 +79,11 @@ export default function Home() {
 
   const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) => {
     setAllItems(prev => prev.map(t =>
-      t.id === taskId? { ...t,...updates } as Task : t
+      t.id === taskId ? ({ ...t, ...updates } as Task) : t
     ));
   }, []);
 
+  // Khởi tạo Database ổn định
   useEffect(() => {
     if (db) return;
     try {
@@ -91,7 +93,7 @@ export default function Home() {
     } catch (err) {
       console.error("Firebase init error:", err);
       setError("Không thể kết nối database");
-      setLoading(false);
+      setIsInitialLoading(false);
     }
   }, [db]);
 
@@ -110,34 +112,32 @@ export default function Home() {
       if (startAfterDoc) {
         constraints.push(startAfter(startAfterDoc));
       }
-      return query(collection(db, "tasks"),...constraints);
+      return query(collection(db, "tasks"), ...constraints);
     },
     [db, mode]
   );
 
-  // ==========================================
-  // HÀM LOAD DATA ĐÃ ĐƯỢC FIX LỖI CHỚP TRẮNG TRANG
-  // ==========================================
+  // ==========================================================================
+  // HÀM TẢI DỮ LIỆU ĐƯỢC TỐI ƯU HOÀN HẢO - TRIỆT TIÊU TOÀN BỘ CHỚP & TREO SKELETON
+  // ==========================================================================
   const loadData = useCallback(
-    async (isRefresh = false) => {
+    async (isManualRefresh = false) => {
       if (!db) return;
-      
-      setError(null);
-      setLastDoc(null);
-      setHasMore(true);
 
-      // Nếu có mảng bài viết cũ rồi, chỉ bật trạng thái refreshing ngầm, TUYỆT ĐỐI không xóa mảng cũ gây chớp trắng
-      if (allItems.length > 0 || isChangingModeRef.current) {
-        setRefreshing(true);
+      setError(null);
+
+      // Nếu là lần đầu tiên mở app và chưa hề có data, hiển thị Skeleton cứng
+      if (allItems.length === 0 && !isManualRefresh) {
+        setIsInitialLoading(true);
       } else {
-        if (isRefresh) setRefreshing(true);
-        else setLoading(true);
+        // Nếu đã có dữ liệu nền, kích hoạt luồng tải ngầm êm ái
+        setIsBackgroundFetching(true);
       }
 
       const q = buildQuery();
       if (!q) {
-        setLoading(false);
-        setRefreshing(false);
+        setIsInitialLoading(false);
+        setIsBackgroundFetching(false);
         return;
       }
 
@@ -145,10 +145,9 @@ export default function Home() {
         const snap = await getDocs(q);
         const data = snap.docs.map((doc) => ({
           id: doc.id,
-        ...doc.data(),
+          ...doc.data(),
         })) as Task[];
-        
-        // Đổ toàn bộ data mới đè lên cùng 1 lúc, giao diện thay đổi mượt mà không có khoảng trống
+
         setAllItems(data);
         setLastDoc(snap.docs[snap.docs.length - 1] || null);
         setHasMore(snap.docs.length === PAGE_SIZE);
@@ -159,31 +158,29 @@ export default function Home() {
           setAllItems([]);
           setHasMore(false);
           setError(null);
-          toast.info("Chưa có dữ liệu");
+          toast.info("Chưa có dữ liệu công khai");
         } else if (err.code === "failed-precondition") {
-          setError("Thiếu index database");
-          toast.error("Tạo index trong Firebase Console");
+          setError("Yêu cầu thiết lập cấu hình Index");
+          toast.error("Vui lòng tạo index trong Firebase Console");
         } else {
-          setError("Lỗi tải dữ liệu");
-          toast.error("Không thể tải dữ liệu");
+          setError("Lỗi đường truyền kết nối");
+          toast.error("Không thể cập nhật dữ liệu");
         }
       } finally {
-        setLoading(false);
-        setRefreshing(false);
-        isChangingModeRef.current = false; // Mở khóa luồng thay đổi chế độ
+        setIsInitialLoading(false);
+        setIsBackgroundFetching(false);
       }
     },
     [db, buildQuery, allItems.length]
   );
 
-  // Lắng nghe sự thay đổi của mode (Task <-> Plan) để kích hoạt cờ hiệu giữ nền
+  // Lắng nghe thay đổi Mode để đổi dữ liệu mượt mà, không dọn dẹp mảng cũ trước
   useEffect(() => {
-    isChangingModeRef.current = true;
     loadData();
   }, [mode]);
 
   const loadMore = useCallback(async () => {
-    if (!db ||!lastDoc || loadingMore ||!hasMore) return;
+    if (!db || !lastDoc || loadingMore || !hasMore) return;
     setLoadingMore(true);
     try {
       const q = buildQuery(lastDoc);
@@ -191,38 +188,33 @@ export default function Home() {
       const snap = await getDocs(q);
       const newItems = snap.docs.map((doc) => ({
         id: doc.id,
-      ...doc.data(),
+        ...doc.data(),
       })) as Task[];
-      setAllItems((prev) => [...prev,...newItems]);
+      setAllItems((prev) => [...prev, ...newItems]);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
       setHasMore(snap.docs.length === PAGE_SIZE);
     } catch (err) {
       console.error("Load more error:", err);
-      toast.error("Không thể tải thêm");
+      toast.error("Không thể tải thêm bài viết");
     } finally {
       setLoadingMore(false);
     }
   }, [db, lastDoc, loadingMore, hasMore, buildQuery]);
 
   useEffect(() => {
-    if (!loadMoreRef.current ||!hasMore) return;
+    if (!loadMoreRef.current || !hasMore) return;
     if (observerRef.current) observerRef.current.disconnect();
+    
     observerRef.current = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting && hasMore &&!loadingMore) {
+        if (entries[0]?.isIntersecting && hasMore && !loadingMore) {
           loadMore();
         }
       },
       { threshold: 0.1 }
     );
-    observerRef.current = new IntersectionObserver((entries) => {
-      if (entries[0]?.isIntersecting && hasMore && !loadingMore) {
-        loadMore();
-      }
-    }, { threshold: 0.1 });
-    if (loadMoreRef.current) {
-      observerRef.current.observe(loadMoreRef.current);
-    }
+    
+    observerRef.current.observe(loadMoreRef.current);
     return () => observerRef.current?.disconnect();
   }, [hasMore, loadingMore, loadMore]);
 
@@ -233,11 +225,9 @@ export default function Home() {
     } else {
       result = result.filter((t) => isPlan(t)) as PlanItem[];
     }
-    result = result.filter((t) => t.banned!== true && t.hidden!== true);
+    result = result.filter((t) => t.banned !== true && t.hidden !== true);
     if (activeTab === "hot") {
       result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-    } else if (activeTab === "near" || activeTab === "friends") {
-      // Không cần hiện thông báo lặp lại liên tục khi re-render
     }
     return result as Task[];
   }, [allItems, mode, activeTab]);
@@ -255,8 +245,14 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen pb-24 font-sans bg-gray-50 dark:bg-black">
+    <div className="min-h-screen pb-24 font-sans bg-gray-50 dark:bg-black select-none">
       <ModeToggle />
+      
+      {/* Vạch tiến trình tải dữ liệu ngầm tinh tế ở đỉnh màn hình */}
+      {isBackgroundFetching && (
+        <div className="fixed top-0 inset-x-0 h-[2.5px] bg-gradient-to-r from-blue-500 via-purple-500 to-emerald-500 animate-pulse z-50" />
+      )}
+
       <div className="sticky top-0 z-40 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800">
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex justify-around">
@@ -269,14 +265,15 @@ export default function Home() {
                   onClick={() => {
                     setActiveTab(tab.id);
                     if ("vibrate" in navigator) navigator.vibrate(5);
+                    if (tab.id !== "hot") toast.info("Tính năng đang phát triển");
                   }}
                   className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
-                    active? `text-${tab.color}-600 dark:text-${tab.color}-400` : "text-gray-400 dark:text-zinc-500"
+                    active ? `text-${tab.color}-600 dark:text-${tab.color}-400` : "text-gray-400 dark:text-zinc-500"
                   }`}
                 >
-                  <Icon size={20} className={active? "scale-110" : ""} />
+                  <Icon size={20} className={active ? "scale-110 duration-200" : ""} />
                   <span className="text-xs font-bold mt-1">{tab.label}</span>
-                  <div className={`mt-1 h-0.5 rounded-full transition-all duration-300 ${active? `w-6 bg-${tab.color}-500` : "w-0"}`} />
+                  <div className={`mt-1 h-0.5 rounded-full transition-all duration-300 ${active ? `w-6 bg-${tab.color}-500` : "w-0"}`} />
                 </button>
               );
             })}
@@ -289,19 +286,19 @@ export default function Home() {
           <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
             <div className="text-5xl mb-4">⚠️</div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">{error}</h2>
-            <button onClick={handleRefresh} className="mt-4 px-6 py-2.5 rounded-xl bg-blue-500 text-white font-bold active:scale-95 transition flex items-center gap-2">
-              <FiRefreshCw className={refreshing? "animate-spin" : ""} />
-              Thử lại
+            <button onClick={handleRefresh} className="mt-4 px-6 py-2.5 rounded-xl bg-blue-500 text-white font-bold active:scale-95 transition flex items-center gap-2 shadow-md">
+              <FiRefreshCw className={isBackgroundFetching ? "animate-spin" : ""} />
+              Thử lại ngay
             </button>
           </div>
         )}
 
-        {/* FIX TRẢI NGHIỆM: Khi tải ngầm dữ liệu mới (refreshing), ta vẫn giữ nguyên TaskFeed cũ mờ nhẹ 
-            thay vì bật đè cả bảng Skeleton gây giật giật màn hình */}
-        {loading ? (
+        {/* NÂNG CẤP HOÀN HẢO: Chỉ hiển thị Skeleton đúng lần đầu chạy app. 
+            Khi đổi mode, giữ nguyên danh sách cũ mờ nhẹ 40% để chờ data mới đè lên, chặn hoàn toàn hiện tượng nhấp nháy giật cụm */}
+        {isInitialLoading ? (
           <SkeletonList />
         ) : (
-          <div className={`transition-opacity duration-200 ${refreshing ? "opacity-60 pointer-events-none" : "opacity-100"}`}>
+          <div className={`transition-all duration-300 transform-gpu ${isBackgroundFetching ? "opacity-40 scale-[0.99] pointer-events-none" : "opacity-100 scale-100"}`}>
             <TaskFeed
               tasks={filteredItems}
               mode={mode}
@@ -312,10 +309,10 @@ export default function Home() {
           </div>
         )}
 
-        {!loading && hasMore && allItems.length > 0 && (
+        {!isInitialLoading && hasMore && allItems.length > 0 && (
           <div ref={loadMoreRef} className="px-4 py-6 flex justify-center">
             {loadingMore && (
-              <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-zinc-500 border-t-transparent rounded-full animate-spin" />
             )}
           </div>
         )}
