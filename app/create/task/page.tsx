@@ -830,7 +830,10 @@ location: form.isRemote
       }),
     },
 
-        urgency: form.urgency,
+       urgency: form.urgency as
+  | "once"
+  | "weekly"
+  | "ongoing",
 
         milestones: form.milestones,
 
