@@ -17,7 +17,7 @@
     "checkJs": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*", "./src/*"]
+      "@/*": ["./src/*"]
     },
     "allowJs": true,
     "skipLibCheck": true,
