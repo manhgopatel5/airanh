@@ -1,140 +1,205 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { sendEmailVerification, reload, signOut } from "firebase/auth";
-import { getFirebaseAuth } from "@/lib/firebase";
-import { useAuth } from "@/lib/AuthContext";
-import { toast, Toaster } from "sonner";
-import { FiCheckCircle, FiRefreshCw, FiLogOut, FiSend, FiMail } from "react-icons/fi";
-import { motion } from "framer-motion";
+import { useParams, useRouter } from "next/navigation";
+import { doc, getDoc, collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
+import { getFirebaseDB } from "@/lib/firebase";
+import { TaskListItem } from "@/types/task";
+import { FiChevronLeft, FiMapPin, FiCalendar, FiBriefcase } from "react-icons/fi";
+import { formatTaskPrice } from "@/types/task";
+import Link from "next/link";
+import Image from "next/image";
 
-const vibrate = (p: number | number[]) => {
-  if (typeof navigator!== "undefined" && "vibrate" in navigator) navigator.vibrate(p);
+type UserProfile = {
+  uid: string;
+  displayName?: string | null;
+  photoURL?: string | null;
+  bio?: string;
+  location?: string;
+  joinedAt?: any;
+  tasksCount?: number;
+  completedCount?: number;
+  rating?: number;
 };
 
-export default function VerifyEmailPage() {
-  const auth = getFirebaseAuth();
+export default function UserProfilePage() {
+  const { uid } = useParams();
   const router = useRouter();
-  const { user } = useAuth();
-  const [sending, setSending] = useState(false);
-  const [checking, setChecking] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
-  const [loggingOut, setLoggingOut] = useState(false);
-
-  // lock scroll
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
-  }, []);
+  const db = getFirebaseDB();
+  
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [tasks, setTasks] = useState<TaskListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<"open" | "completed">("open");
 
   useEffect(() => {
-    if (!user) { router.replace("/login"); return; }
-    if (user?.emailVerified) router.replace("/");
-  }, [user, router]);
+    if (!uid || typeof uid!== "string") return;
 
-  useEffect(() => {
-    if (cooldown > 0) {
-      const t = setTimeout(() => setCooldown(c => c - 1), 1000);
-      return () => clearTimeout(t);
-    }
-  }, [cooldown]);
+    const loadData = async () => {
+      try {
+        const userSnap = await getDoc(doc(db, "users", uid));
+        if (!userSnap.exists()) {
+          router.replace("/404");
+          return;
+        }
+        setUser({ uid,...userSnap.data() } as UserProfile);
 
-  const handleResend = async () => {
-    if (!auth.currentUser || sending || cooldown > 0) return;
-    try {
-      setSending(true); vibrate(5);
-      await sendEmailVerification(auth.currentUser);
-      toast.success("Đã gửi email xác thực");
-      setCooldown(60);
-    } catch (err: any) {
-      toast.error(err.code === "auth/too-many-requests"? "Gửi quá nhiều lần. Thử lại sau" : "Gửi email thất bại");
-    } finally { setSending(false); }
-  };
+        const q = query(
+          collection(db, "tasks"),
+          where("userId", "==", uid),
+          where("visibility", "==", "public"),
+          where("banned", "==", false),
+          where("status", "in", ["open", "full", "completed"]),
+          orderBy("createdAt", "desc"),
+          limit(20)
+        );
+        const taskSnap = await getDocs(q);
+        setTasks(taskSnap.docs.map((d) => ({ id: d.id,...d.data() } as TaskListItem)));
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleCheck = async () => {
-    if (!auth.currentUser || checking) return;
-    try {
-      setChecking(true); vibrate(5);
-      await reload(auth.currentUser);
-      if (auth.currentUser.emailVerified) {
-        toast.success("Xác thực thành công!");
-        vibrate([10, 20, 10]);
-        router.replace("/");
-      } else toast.error("Email chưa được xác thực");
-    } catch { toast.error("Kiểm tra thất bại"); }
-    finally { setChecking(false); }
-  };
+    loadData();
+  }, [uid, router, db]);
 
-  const handleLogout = async () => {
-    try { setLoggingOut(true); await signOut(auth); toast.success("Đã đăng xuất"); router.replace("/login"); }
-    catch { toast.error("Đăng xuất thất bại"); }
-    finally { setLoggingOut(false); }
-  };
+  const filteredTasks = tasks.filter((t) =>
+    tab === "open"? ["open", "full"].includes(t.status) : t.status === "completed"
+  );
 
-  if (!user) return null;
+  if (loading) return <div className="max-w-xl mx-auto p-4 space-y-4 animate-pulse"><div className="h-32 bg-gray-200 dark:bg-zinc-800 rounded-3xl" /></div>;
+  if (!user) return <div className="flex flex-col items-center justify-center min-h-screen text-gray-400"><div className="text-6xl mb-4">😢</div><p>Không tìm thấy người dùng</p></div>;
 
   return (
-    <>
-      <Toaster richColors position="top-center" />
-      <div className="h-screen w-screen fixed inset-0 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5 dark:from-zinc-950 dark:via-zinc-950 dark:to-black">
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-pulse" />
+    <div className="max-w-xl mx-auto bg-gray-50 dark:bg-zinc-950 min-h-screen pb-20">
+      {/* HEADER */}
+      <div className="sticky top-0 z-30 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800 px-4 py-3 flex items-center gap-3">
+        <button onClick={() => router.back()} className="p-2 -ml-2 active:scale-90"><FiChevronLeft size={24} /></button>
+        <h1 className="font-bold text-lg truncate">{user.displayName || "User"}</h1>
       </div>
 
-      <div className="h-screen w-screen flex items-center justify-center px-5 font-sans relative z-10">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", damping: 22 }} className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="relative w-24 h-24 mx-auto mb-6">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-3xl blur-2xl opacity-50 animate-pulse" />
-              <div className="relative w-full h-full bg-gradient-to-br from-primary to-accent rounded-3xl flex items-center justify-center shadow-2xl shadow-primary/40 ring-1 ring-white/20">
-                <FiMail className="w-12 h-12 text-primary-foreground" />
+      {/* PROFILE CARD */}
+      <div className="bg-white dark:bg-zinc-900 p-6 border-b border-gray-100 dark:border-zinc-800">
+        <div className="flex items-start gap-4">
+          <Image
+            src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || "U")}&size=128`}
+            alt={user.displayName || "User avatar"}
+            width={80}
+            height={80}
+            className="w-20 h-20 rounded-full object-cover ring-4 ring-gray-50 dark:ring-zinc-800"
+          />
+          <div className="flex-1">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{user.displayName || "Ẩn danh"}</h2>
+            {user.bio && <p className="text-sm text-gray-600 dark:text-zinc-400 mt-1 line-clamp-2">{user.bio}</p>}
+            <div className="flex items-center gap-4 mt-3 text-xs text-gray-500 dark:text-zinc-400">
+              {user.location && (
+                <div className="flex items-center gap-1">
+                  <FiMapPin size={14} />
+                  <span>{user.location}</span>
+                </div>
+              )}
+              {user.joinedAt && (
+                <div className="flex items-center gap-1">
+                  <FiCalendar size={14} />
+                  <span>Tham gia {new Date(user.joinedAt.seconds * 1000).getFullYear()}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* STATS */}
+        <div className="grid grid-cols-3 gap-4 mt-6 text-center">
+          <div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{tasks.length}</div>
+            <div className="text-xs text-gray-500 dark:text-zinc-400">Công việc</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              {tasks.filter((t) => t.status === "completed").length}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-zinc-400">Hoàn thành</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              {user.rating?.toFixed(1) || "—"}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-zinc-400">Đánh giá</div>
+          </div>
+        </div>
+      </div>
+
+      {/* TABS */}
+      <div className="bg-white dark:bg-zinc-900 px-4 border-b border-gray-100 dark:border-zinc-800 flex gap-6">
+        {[
+          { key: "open", label: "Đang mở" },
+          { key: "completed", label: "Đã xong" },
+        ].map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key as any)}
+            className={`py-3 text-sm font-semibold border-b-2 transition ${
+              tab === t.key
+            ? "border-blue-500 text-blue-500"
+                : "border-transparent text-gray-500 dark:text-zinc-400"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* TASK LIST */}
+      <div className="p-4 space-y-3">
+        {filteredTasks.length === 0 && (
+          <div className="text-center text-gray-400 dark:text-zinc-500 text-sm py-12">
+            <FiBriefcase size={40} className="mx-auto mb-3 opacity-50" />
+            Chưa có công việc nào
+          </div>
+        )}
+        {filteredTasks.map((task) => (
+          <Link
+            key={task.id}
+            href={`/task/${task.slug}`}
+            className="block bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-gray-100 dark:border-zinc-800 active:scale-[0.98] transition"
+          >
+            <div className="flex gap-3">
+              {task.images?.[0] && (
+                <Image 
+                  src={task.images[0]} 
+                  alt={task.title || "Task image"}
+                  width={64}
+                  height={64}
+                  className="w-16 h-16 rounded-xl object-cover flex-shrink-0" 
+                />
+              )}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100 line-clamp-1">{task.title}</h3>
+                <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-zinc-400">
+                  <span className="font-bold text-emerald-600">
+                    {task.type === "task" ? formatTaskPrice((task as any).price) : "Miễn phí"}
+                  </span>
+                  <span>•</span>
+                  <span>
+                    {task.type === "task" ? `${(task as any).joined}/${(task as any).totalSlots}` : "Kế hoạch"} người
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 mt-2 text-xs">
+                  <span className={`px-2 py-0.5 rounded-full font-semibold ${
+                    task.status === "open"? "bg-green-100 text-green-700" :
+                    task.status === "full"? "bg-orange-100 text-orange-700" :
+                    "bg-blue-100 text-blue-700"
+                  }`}>
+                    {task.status === "open"? "Đang mở" : task.status === "full"? "Đã đủ" : "Hoàn thành"}
+                  </span>
+                </div>
               </div>
             </div>
-            <h1 className="text-3xl font-black text-foreground mb-2 tracking-tight">Xác thực email</h1>
-            <p className="text-sm text-muted-foreground font-medium px-4">Chúng tôi đã gửi link xác thực tới</p>
-            <p className="text-base font-bold mt-1.5 break-all px-4 text-primary">{user.email}</p>
-          </div>
-
-          <div className="glass rounded-3xl p-6 shadow-2xl border border-border">
-            <div className="space-y-3">
-              <motion.button
-                whileTap={{ scale: 0.98 }}
-                onClick={handleCheck}
-                disabled={checking}
-                aria-busy={checking}
-                className="relative w-full h-14 rounded-2xl text-primary-foreground text-base font-bold shadow-xl disabled:opacity-60 flex items-center justify-center gap-2.5 bg-gradient-to-r from-accent to-accent/80"
-              >
-                {checking? <FiRefreshCw className="animate-spin" size={20} /> : <FiCheckCircle size={20} />}
-                {checking? "Đang kiểm tra..." : "Tôi đã xác thực"}
-              </motion.button>
-
-              <motion.button
-                whileTap={{ scale: 0.98 }}
-                onClick={handleResend}
-                disabled={sending || cooldown > 0}
-                aria-busy={sending}
-                className="w-full h-14 rounded-2xl font-bold text-base bg-secondary text-secondary-foreground border-2 border-border hover:border-primary/50 flex items-center justify-center gap-2.5 disabled:opacity-50 transition-colors"
-              >
-                {sending? <><div className="w-5 h-5 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />Đang gửi...</> : cooldown > 0? <><FiSend size={18} />Gửi lại sau {cooldown}s</> : <><FiSend size={18} />Gửi lại email</>}
-              </motion.button>
-            </div>
-
-            <div className="relative my-6"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div><div className="relative flex justify-center text-xs"><span className="bg-card px-3 text-muted-foreground">hoặc</span></div></div>
-
-            <button
-              onClick={handleLogout}
-              disabled={loggingOut}
-              aria-busy={loggingOut}
-              className="w-full h-12 rounded-2xl font-semibold text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
-            >
-              <FiLogOut size={16} />{loggingOut? "Đang đăng xuất..." : "Dùng tài khoản khác"}
-            </button>
-          </div>
-          <p className="text-center mt-6 text-xs text-muted-foreground">Không nhận được? Kiểm tra thư mục Spam</p>
-        </motion.div>
+          </Link>
+        ))}
       </div>
-    </>
+    </div>
   );
 }
