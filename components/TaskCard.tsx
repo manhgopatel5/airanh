@@ -7,7 +7,7 @@ import {
 import {
   FiHeart,
 
-  FiMessageCircle,
+  
   FiUsers,
   FiClock,
   FiMapPin,
