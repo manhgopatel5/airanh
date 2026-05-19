@@ -4,12 +4,16 @@ import dynamic from "next/dynamic";
 import { memo, useEffect, useRef, useState, useCallback } from "react";
 import type { LottieRefCurrentProps } from "lottie-react";
 
-const Lottie = dynamic(() => import("lottie-react"), {
-  ssr: false,
-  loading: () => (
-    <div className="aspect-square w-full animate-pulse rounded-2xl bg-slate-100" />
-  ),
-});
+// FIX: import default component đúng kiểu
+const Lottie = dynamic(
+  () => import("lottie-react").then((mod) => mod.default),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="aspect-square w-full animate-pulse rounded-2xl bg-slate-100" />
+    ),
+  }
+);
 
 export type LottiePlayerProps = {
   animationData: object;
@@ -38,47 +42,62 @@ function LottiePlayer({
 }: LottiePlayerProps) {
   const lottieRef = useRef<LottieRefCurrentProps>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
   const [isInView, setIsInView] = useState(!pauseWhenHidden);
   const [prefersReduced, setPrefersReduced] = useState(false);
 
-  // respect prefers-reduced-motion
+  // prefers-reduced-motion
   useEffect(() => {
-    if (reduceMotion === "auto" && typeof window!== "undefined") {
+    if (reduceMotion === "auto" && typeof window !== "undefined") {
       const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+
       setPrefersReduced(mq.matches);
-      const onChange = (e: MediaQueryListEvent) => setPrefersReduced(e.matches);
+
+      const onChange = (e: MediaQueryListEvent) => {
+        setPrefersReduced(e.matches);
+      };
+
       mq.addEventListener("change", onChange);
-      return () => mq.removeEventListener("change", onChange);
+
+      return () => {
+        mq.removeEventListener("change", onChange);
+      };
     }
+
     setPrefersReduced(reduceMotion === true);
   }, [reduceMotion]);
 
-  // pause when out of viewport
+  // pause when out viewport
   useEffect(() => {
-  if (!pauseWhenHidden || !containerRef.current) return;
+    if (!pauseWhenHidden || !containerRef.current) return;
 
-  const el = containerRef.current;
+    const el = containerRef.current;
 
-  const io = new IntersectionObserver(
-    (entries) => {
-      const entry = entries[0];
-      setIsInView(entry?.isIntersecting ?? false);
-    },
-    { threshold: 0.1, rootMargin: "50px" }
-  );
+    const io = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        setIsInView(entry?.isIntersecting ?? false);
+      },
+      {
+        threshold: 0.1,
+        rootMargin: "50px",
+      }
+    );
 
-  io.observe(el);
+    io.observe(el);
 
-  return () => io.disconnect();
-}, [pauseWhenHidden]);
+    return () => io.disconnect();
+  }, [pauseWhenHidden]);
 
- const shouldPlay =
-  !prefersReduced &&
-  isInView &&
-  (playOnHover ? false : autoplay);
+  const shouldPlay =
+    !prefersReduced &&
+    isInView &&
+    (playOnHover ? false : autoplay);
 
+  // control animation
   useEffect(() => {
     const instance = lottieRef.current;
+
     if (!instance) return;
 
     instance.setSpeed(speed);
@@ -93,10 +112,10 @@ function LottiePlayer({
     } else {
       instance.pause();
     }
-  }, [shouldPlay, speed, prefersReduced, animationData]);
+  }, [shouldPlay, speed, prefersReduced]);
 
   const handleEnter = useCallback(() => {
-    if (playOnHover &&!prefersReduced && isInView) {
+    if (playOnHover && !prefersReduced && isInView) {
       lottieRef.current?.play();
     }
   }, [playOnHover, prefersReduced, isInView]);
@@ -118,18 +137,18 @@ function LottiePlayer({
       role="img"
       aria-label={ariaLabel}
     >
-<Lottie.default
-  lottieRef={lottieRef as any}
-  animationData={animationData}
-  loop={loop && !prefersReduced}
-  autoplay={false}
-  {...(onComplete ? { onComplete } : {})}
-  rendererSettings={{
-    preserveAspectRatio: "xMidYMid meet",
-    progressiveLoad: true,
-    hideOnTransparent: true,
-  }}
-/>
+      <Lottie
+        lottieRef={lottieRef as any}
+        animationData={animationData}
+        loop={loop && !prefersReduced}
+        autoplay={false}
+        {...(onComplete ? { onComplete } : {})}
+        rendererSettings={{
+          preserveAspectRatio: "xMidYMid meet",
+          progressiveLoad: true,
+          hideOnTransparent: true,
+        }}
+      />
     </div>
   );
 }
