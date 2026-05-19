@@ -113,7 +113,7 @@ const handleTaskUpdate = useCallback(
     updates: Partial<FeedTask>
   ) => {
     setAllItems((prev) => prev.map((t) => (t.id === taskId? ({...t,...updates } as FeedTask) : t)));
-    if (updates.completed === true) {
+  if (updates.status === "completed") {
       setShowCelebrate(true);
       vibrate([10, 20, 10]);
       setTimeout(() => setShowCelebrate(false), 1800);
