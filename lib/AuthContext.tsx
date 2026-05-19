@@ -9,23 +9,25 @@ import {
   ReactNode,
   useContext,
 } from "react";
-
 import { onAuthStateChanged, User } from "firebase/auth";
-import { toast } from "sonner";
 import {
   doc,
   getDoc,
-  setDoc,
+  setDoc, 
   updateDoc,
   serverTimestamp,
   onSnapshot,
   Timestamp,
   runTransaction,
 } from "firebase/firestore";
-
+import {
+  ref,
+  onValue,
+  set,
+  onDisconnect,
+  serverTimestamp as rtdbTimestamp,
+} from "firebase/database";
 import { nanoid } from "nanoid";
-import { useRouter, usePathname } from "next/navigation";
-import WarningModal from "@/components/WarningModal";
 
 export type AppUser = {
   uid: string;
@@ -33,38 +35,17 @@ export type AppUser = {
   username: string;
   userId: string;
   email: string;
-  warningSeen?: boolean;
   emailVerified: boolean;
   avatar: string;
   isOnline: boolean;
   lastSeen: Timestamp;
   fcmTokens?: string[];
-
   status: "active" | "banned" | "deleted" | "deactivated";
-
   searchKeywords: string[];
   nameLower: string;
-
   bio?: string;
   hidden?: boolean;
   deletedAt?: any;
-
-  banned?: boolean;
-  bannedUntil?: Timestamp | null;
-  bannedReason?: string;
-  bannedAt?: Timestamp;
-  bannedBy?: string;
-
-  violationCount?: number;
-
-  warning?: boolean;
-  warningReason?: string;
-  warningAt?: Timestamp;
-  lastViolationAt?: Timestamp;
-  warningTitle?: string;
-  warningMessage?: string;
-
-  unbannedAt?: Timestamp;
 };
 
 type AuthContextType = {
@@ -92,9 +73,9 @@ const generateSearchKeywords = (
   if (nameLower) {
     keywords.add(nameLower);
     keywords.add(nameLower.replace(/\s+/g, ""));
-    const noAccent = nameLower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    keywords.add(noAccent);
-    keywords.add(noAccent.replace(/\s+/g, ""));
+    const no = nameLower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    keywords.add(no);
+    keywords.add(no.replace(/\s+/g, ""));
     nameLower.split(" ").forEach((w) => {
       if (w.length >= 2) keywords.add(w);
     });
@@ -114,15 +95,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userData, setUserData] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showWarningModal, setShowWarningModal] = useState(false);
-
-  const router = useRouter();
-  const pathname = usePathname();
 
   const userDataUnsub = useRef<(() => void) | null>(null);
   const presenceUnsub = useRef<(() => void) | null>(null);
-  const visibilityHandlerRef = useRef<any>(null);
-  const beforeUnloadHandlerRef = useRef<any>(null);
+  const visibilityHandlerRef = useRef<(() => void) | null>(null);
+  const beforeUnloadHandlerRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -157,7 +134,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (!firebaseUser) {
           setUserData(null);
           setLoading(false);
-          setShowWarningModal(false);
           return;
         }
 
@@ -166,22 +142,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const snap = await getDoc(userRef);
 
           if (!snap.exists()) {
+            // TẠO USER MỚI
+            console.log("Tạo user mới cho:", firebaseUser.uid);
             await runTransaction(db, async (tx) => {
               let userId = "";
-              for (let i = 0; i < 10; i++) {
+              for (let i = 0; i < 5; i++) {
                 userId = `AIR${nanoid(6).toUpperCase()}`;
-                const existingId = await getDoc(doc(db, "userIds", userId));
-                if (!existingId.exists()) break;
+                // BỎ: check userIds
+                const q = await tx.get(doc(db, "users", firebaseUser.uid));
+                if (!q.exists()) break;
               }
-              if (!userId) throw new Error("Cannot generate userId");
 
               const email = firebaseUser.email || "";
               const name = firebaseUser.displayName || email.split("@")[0] || "User";
+
               let baseUsername = name.toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9]/g, "");
               if (!baseUsername) baseUsername = "user";
-
               let username = baseUsername;
               let counter = 1;
+
               while (true) {
                 const usernameDoc = await tx.get(doc(db, "usernames", username));
                 if (!usernameDoc.exists()) break;
@@ -194,41 +173,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
               const newUser: AppUser = {
                 uid: firebaseUser.uid,
-                name,
+                name: name,
+                nameLower: name.toLowerCase(),
                 username,
                 userId,
                 email: firebaseUser.email || "",
                 emailVerified: firebaseUser.emailVerified,
-                avatar:
-                  firebaseUser.photoURL ||
-                  `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
+                avatar: firebaseUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
                 bio: "",
                 isOnline: true,
                 lastSeen: serverTimestamp() as Timestamp,
                 fcmTokens: [],
                 status: "active",
                 searchKeywords,
-                nameLower: name.toLowerCase(),
                 hidden: false,
                 deletedAt: null,
-                banned: false,
-                violationCount: 0,
               };
 
               tx.set(userRef, newUser);
+              // BỎ: tx.set(doc(db, "userIds", userId), { uid: firebaseUser.uid });
               tx.set(doc(db, "usernames", username), { uid: firebaseUser.uid });
-              tx.set(doc(db, "userIds", userId), { uid: firebaseUser.uid });
+              console.log("Tạo user xong:", userId, username);
             });
           } else {
+            // USER CŨ
             const data = snap.data() as AppUser;
+            console.log("User đã có:", data.userId);
+
+            // BỎ: check userIds
+
             const usernameDoc = await getDoc(doc(db, "usernames", data.username));
             if (!usernameDoc.exists()) {
+              console.log("Thiếu usernames, tạo lại:", data.username);
               await setDoc(doc(db, "usernames", data.username), { uid: firebaseUser.uid });
             }
-            const userIdDoc = await getDoc(doc(db, "userIds", data.userId));
-            if (!userIdDoc.exists()) {
-              await setDoc(doc(db, "userIds", data.userId), { uid: firebaseUser.uid });
-            }
+
             await updateDoc(userRef, {
               isOnline: true,
               lastSeen: serverTimestamp(),
@@ -237,9 +216,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
 
           const handleVisibility = () => {
-            if (!db) return;
             if (document.visibilityState === "hidden") {
-              updateDoc(userRef, { isOnline: false, lastSeen: serverTimestamp() }).catch(() => {});
+              updateDoc(userRef, { 
+                isOnline: false, 
+                lastSeen: serverTimestamp() 
+              }).catch(() => {});
             } else {
               updateDoc(userRef, { isOnline: true }).catch(() => {});
             }
@@ -248,86 +229,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           visibilityHandlerRef.current = handleVisibility;
 
           const handleBeforeUnload = () => {
-            updateDoc(userRef, { isOnline: false, lastSeen: serverTimestamp() }).catch(() => {});
+            updateDoc(userRef, { 
+              isOnline: false, 
+              lastSeen: serverTimestamp() 
+            }).catch(() => {});
           };
           window.addEventListener("beforeunload", handleBeforeUnload);
           beforeUnloadHandlerRef.current = handleBeforeUnload;
 
           userDataUnsub.current = onSnapshot(
             userRef,
-            async (docSnap) => {
-              if (!docSnap.exists()) {
-                setUserData(null);
-                setLoading(false);
-                return;
+            (docSnap) => {
+              if (docSnap.exists()) {
+                setUserData(docSnap.data() as AppUser);
+                console.log("userData loaded:", docSnap.data().userId);
               }
-
-              const data = docSnap.data() as AppUser;
-              const isBanned = data.banned || data.status === "banned";
-
-              if (isBanned && data.bannedUntil && typeof data.bannedUntil.toDate === "function") {
-                const banEndDate = data.bannedUntil.toDate();
-                if (banEndDate < new Date()) {
-                  try {
-                    await updateDoc(userRef, {
-                      banned: false,
-                      bannedUntil: null,
-                      status: "active",
-                      unbannedAt: serverTimestamp(),
-                      warning: false,
-                      warningReason: null,
-                      warningSeen: false,
-                    });
-                    data.banned = false;
-                    data.status = "active";
-                  } catch (e) {
-                    console.error("Auto unban failed:", e);
-                  }
-                }
-              }
-
-              const stillBanned = data.banned || data.status === "banned";
-
-              if (stillBanned) {
-                setUserData(data);
-                setLoading(false);
-                const bannedKey = `banned_${data.uid}_${data.bannedAt?.seconds || 0}`;
-                if (sessionStorage.getItem(bannedKey) !== "shown") {
-                  sessionStorage.setItem(bannedKey, "shown");
-                  setTimeout(() => {
-                    if (!data.bannedUntil) {
-                      toast.error("⛔ TÀI KHOẢN ĐÃ BỊ KHÓA VĨNH VIỄN", {
-                        description: `Lý do: ${data.bannedReason || "Vi phạm cộng đồng"}`,
-                        duration: 10000,
-                      });
-                    } else {
-                      const until = data.bannedUntil.toDate();
-                      toast.error("⛔ TÀI KHOẢN ĐÃ BỊ KHÓA", {
-                        description: `Lý do: ${data.bannedReason || "Vi phạm cộng đồng"}\nMở khóa lúc: ${until.toLocaleString("vi-VN")}`,
-                        duration: 10000,
-                      });
-                    }
-                  }, 300);
-                }
-
-                if (!data.bannedUntil) {
-                  router.replace("/banned");
-                } else {
-                  const banEndDate = data.bannedUntil.toDate();
-                  router.replace(`/banned?until=${banEndDate.getTime()}`);
-                }
-
-                setTimeout(async () => {
-                  try {
-                    await auth.signOut();
-                  } catch {}
-                }, 1500);
-                return;
-              }
-
-              if (pathname === "/banned") router.replace("/");
-
-              setUserData(data);
               setLoading(false);
             },
             (err) => {
@@ -336,6 +252,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               setLoading(false);
             }
           );
+
+          const statusRef = ref(rtdb, `/status/${firebaseUser.uid}`);
+          const connectedRef = ref(rtdb, ".info/connected");
+
+          presenceUnsub.current = onValue(connectedRef, (snap) => {
+            if (!snap.val()) return;
+            onDisconnect(statusRef).set({
+              isOnline: false,
+              lastSeen: rtdbTimestamp(),
+            });
+            set(statusRef, {
+              isOnline: true,
+              lastSeen: rtdbTimestamp(),
+            });
+          });
         } catch (e: any) {
           console.error("Auth error:", e);
           setError(e.message);
@@ -359,56 +290,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (beforeUnloadHandlerRef.current) {
         window.removeEventListener("beforeunload", beforeUnloadHandlerRef.current);
       }
-      if (db && auth?.currentUser) {
+      if (auth?.currentUser) {
         updateDoc(doc(db, "users", auth.currentUser.uid), {
           isOnline: false,
-          lastSeen: serverTimestamp(),
+          lastSeen: serverTimestamp()
         }).catch(() => {});
       }
     };
-  }, [auth, db, rtdb, pathname, router]);
-
-  // WARNING MODAL LOGIC - THAY THẾ TOAST
-  useEffect(() => {
-    if (!userData || loading) return;
-    if (userData.banned || userData.status === "banned") {
-      setShowWarningModal(false);
-      return;
-    }
-    
-    if (userData.warning === true && userData.warningSeen === false) {
-      setShowWarningModal(true);
-    } else {
-      setShowWarningModal(false);
-    }
-  }, [userData?.warning, userData?.warningSeen, userData?.banned, userData?.status, loading]);
+  }, [auth, db, rtdb]);
 
   const value = useMemo(
     () => ({ user, userData, loading, error }),
     [user, userData, loading, error]
   );
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-{userData && (
-  <WarningModal
-    open={showWarningModal}
-    reason={userData.warningReason || "Vi phạm cộng đồng"}
-    uid={userData.uid}
-    {...(userData.warningTitle
-      ? { title: userData.warningTitle }
-      : {})}
-    {...(userData.warningMessage
-      ? { message: userData.warningMessage }
-      : {})}
-    {...(userData.warningAt
-      ? { warningAt: userData.warningAt }
-      : {})}
-  />
-)}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
