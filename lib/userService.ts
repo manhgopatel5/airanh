@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   collection,
   query,
@@ -12,7 +13,6 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { getFirebaseDB } from "./firebase";
-import { useState, useEffect } from "react"; // Chỉ cần nếu dùng useDebounce bên dưới
 
 /* ================= TYPES ================= */
 export type SearchUser = {
@@ -138,6 +138,7 @@ export const searchUsers = async (
       }
     } catch (e) {
       console.error("Search by userId error:", e);
+      // Fall through to next search
     }
   }
 
@@ -174,7 +175,7 @@ export const searchUsers = async (
     console.error("Search by username error:", e);
   }
 
-  // 🔥 3. FALLBACK SEARCH
+  // 🔥 3. FALLBACK SEARCH - ĐÃ BỎ orderBy ĐỂ KHỎI CẦN INDEX
   try {
     const constraints: QueryConstraint[] = [
       where("searchKeywords", "array-contains-any", [
@@ -183,6 +184,7 @@ export const searchUsers = async (
         trimmed.toLowerCase().split(" ")[0],
       ]),
       where("status", "==", "active"),
+      // orderBy("nameLower"), // BỎ DÒNG NÀY ĐỂ KHÔNG CẦN COMPOSITE INDEX
      ...(cursor? [startAfter(cursor)] : []),
       limit(maxResults + 1),
     ];
