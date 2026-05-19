@@ -46,7 +46,7 @@ export default function WarningModal({
   reason,
   title,
   message,
-  warningAt,
+  
   onClose,
 }: Props) {
   const auth = getFirebaseAuth();
