@@ -5,7 +5,11 @@ import { memo, useEffect, useRef, useState, useCallback } from "react";
 import type { LottieRefCurrentProps } from "lottie-react";
 
 const Lottie = dynamic(() => import("lottie-react"), {
-
+  ssr: false,
+  loading: () => (
+    <div className="aspect-square w-full animate-pulse rounded-2xl bg-slate-100" />
+  ),
+});
 
 export type LottiePlayerProps = {
   animationData: object;
