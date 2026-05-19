@@ -52,7 +52,7 @@ import {
 
 import { useAuth } from "@/lib/useAuth";
 
-import LottiePlayer from "@/components/ui/LottiePlayer";
+import LottiePlayer from "@/components/LottiePlayer";
 
 import * as L from "@/components/illustrations";
 
