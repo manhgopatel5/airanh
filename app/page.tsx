@@ -504,7 +504,8 @@ function ProfileTabContent({ onNavigateTab }: { onNavigateTab: (tab: MainTab) =>
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [showScanQR, setShowScanQR] = useState(false);
-  const拦截 verifiedRef = useRef(false);
+  const verifiedRef = useRef(false);
+
   const hasCheckedId = useRef(false);
   const uploadTaskRef = useRef<UploadTask | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
