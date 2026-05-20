@@ -1,3 +1,5 @@
+"use client";
+
 export default function SkeletonList() {
   return (
     <div className="space-y-3 px-4 animate-in fade-in duration-300">
@@ -9,6 +11,7 @@ export default function SkeletonList() {
               <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-1/3 animate-pulse" />
               <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-1/4 animate-pulse" />
             </div>
+          </div>
           <div className="space-y-2">
             <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded w-3/4 animate-pulse" />
             <div className="h-20 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-zinc-800 dark:to-zinc-700 rounded-2xl animate-pulse" />
