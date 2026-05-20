@@ -205,22 +205,44 @@ const MagneticNavItem = React.memo(({
   activeBgClass: string;
 }) => {
   const ref = useRef<HTMLButtonElement>(null);
+
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  
-  const springX = useSpring(x, SPRING);
-  const springY = useSpring(y, SPRING);
-  
-  const rotateX = useTransform(springY, [-20, 20], [10, -10]);
-  const rotateY = useTransform(springX, [-20, 20], [-10, 10]);
+
+  const springX = useSpring(x, {
+    stiffness: 350,
+    damping: 18,
+    mass: 0.5
+  });
+
+  const springY = useSpring(y, {
+    stiffness: 350,
+    damping: 18,
+    mass: 0.5
+  });
+
+  const rotateX = useTransform(springY, [-20, 20], [12, -12]);
+  const rotateY = useTransform(springX, [-20, 20], [-12, 12]);
+
+  const glowOpacity = useTransform(
+    springX,
+    [-20, 0, 20],
+    [0.4, 0.8, 0.4]
+  );
 
   const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!ref.current) return;
+
     const rect = ref.current.getBoundingClientRect();
+
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-    x.set((e.clientX - centerX) * 0.3);
-    y.set((e.clientY - centerY) * 0.3);
+
+    const moveX = (e.clientX - centerX) * 0.28;
+    const moveY = (e.clientY - centerY) * 0.28;
+
+    x.set(moveX);
+    y.set(moveY);
   };
 
   const handleMouseLeave = () => {
@@ -231,60 +253,120 @@ const MagneticNavItem = React.memo(({
   return (
     <motion.button
       ref={ref}
+      onClick={onClick}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      onClick={onClick}
-      style={{ x: springX, y: springY, rotateX, rotateY }}
-      whileTap={{ scale: 0.92 }}
-      className="flex-1 flex flex-col items-center justify-center relative h-full pt-1 pb-3.5 outline-none select-none touch-manipulation group perspective-1000"
+      style={{
+        x: springX,
+        y: springY,
+        rotateX,
+        rotateY,
+        transformStyle: "preserve-3d"
+      }}
+      whileTap={{
+        scale: 0.88
+      }}
+      className="relative flex-1 flex flex-col items-center justify-center h-full pt-1 pb-3.5 outline-none select-none touch-manipulation"
     >
+      {/* glass bg */}
+      {active && (
+        <motion.div
+          layoutId="nav-active-bg"
+          transition={SPRING}
+          className="absolute inset-x-2 top-1 bottom-1 rounded-2xl bg-white/70 dark:bg-zinc-800/60 backdrop-blur-2xl border border-white/40 dark:border-zinc-700/40"
+        />
+      )}
+
+      {/* glow */}
+      {active && (
+        <motion.div
+          layoutId="nav-glow"
+          style={{ opacity: glowOpacity }}
+          className={`absolute inset-x-3 top-2 bottom-2 rounded-2xl blur-2xl ${activeBgClass}`}
+        />
+      )}
+
+      {/* icon */}
       <motion.div
-        animate={{ 
-          scale: active? 1.08 : 1,
-          y: active? -2 : 0
+        animate={{
+          y: active ? -2 : 0,
+          scale: active ? 1.12 : 1
         }}
         transition={SPRING}
-        className="relative"
+        className="relative z-10"
       >
-        <item.Icon
-          className={`w-6 h-6 transition-colors duration-300 ${
-            active? activeColorClass : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
-          }`}
-          strokeWidth={active? 2.5 : 2}
-        />
+        <motion.div
+          animate={
+            active
+              ? {
+                  rotate: [0, -6, 6, 0]
+                }
+              : {}
+          }
+          transition={{
+            duration: 0.5
+          }}
+        >
+          <item.Icon
+            className={`w-[23px] h-[23px] transition-colors duration-300 ${
+              active
+                ? activeColorClass
+                : "text-zinc-400 dark:text-zinc-500"
+            }`}
+            strokeWidth={active ? 2.7 : 2.2}
+          />
+        </motion.div>
+
         {active && (
           <motion.div
-            layoutId="iconGlow"
-            className={`absolute inset-0 ${activeColorClass} blur-xl opacity-40`}
-            transition={SPRING}
+            className={`absolute inset-0 ${activeColorClass} blur-xl`}
+            animate={{
+              opacity: [0.3, 0.7, 0.3],
+              scale: [1, 1.4, 1]
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity
+            }}
           />
         )}
       </motion.div>
-      
-      <motion.span 
-        animate={{ 
-          scale: active? 1.05 : 1,
-          fontWeight: active? 700 : 600
+
+      {/* text */}
+      <motion.span
+        animate={{
+          y: active ? -1 : 0,
+          scale: active ? 1.04 : 1
         }}
-        className={`text-xs mt-1.5 tracking-tight transition-colors duration-300 ${
-          active? activeColorClass : "text-zinc-400"
+        transition={SPRING}
+        className={`relative z-10 text-[11px] mt-1.5 tracking-tight transition-all duration-300 ${
+          active
+            ? `${activeColorClass} font-bold`
+            : "text-zinc-400 dark:text-zinc-500 font-semibold"
         }`}
       >
         {item.label}
       </motion.span>
 
+      {/* bottom dot */}
       {active && (
         <>
           <motion.div
-            layoutId="activeIndicator"
-            className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${activeBgClass}`}
+            layoutId="bottom-dot"
             transition={SPRING}
-          />
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: [1, 1.5, 1], opacity: [0.6, 0, 0.6] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
             className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${activeBgClass}`}
+          />
+
+          <motion.div
+            className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${activeBgClass}`}
+            animate={{
+              scale: [1, 2.2, 1],
+              opacity: [0.5, 0, 0.5]
+            }}
+            transition={{
+              duration: 1.8,
+              repeat: Infinity
+            }}
           />
         </>
       )}
@@ -410,10 +492,17 @@ export default function BottomNav() {
 
             <FloatingMenu isOpen={isOpen} onSelect={handleSelectCreate} onClose={() => setIsOpen(false)} />
 
-            <motion.div 
-              layout
-              className="w-full pointer-events-auto relative rounded-3xl border border-zinc-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_16px_48px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.4)] overflow-hidden"
-            >
+        <motion.div 
+  layout
+  animate={{
+    y: [0, -2, 0]
+  }}
+  transition={{
+    duration: 4,
+    repeat: Infinity,
+    ease: "easeInOut"
+  }}
+              className="w-full pointer-events-auto relative rounded-[32px] border border-white/40 dark:border-zinc-800/50 bg-white/55 dark:bg-zinc-900/55 backdrop-blur-[40px] backdrop-saturate-200 shadow-[0_20px_80px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.55)] overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/40 before:to-white/5 dark:before:from-white/5 dark:before:to-transparent before:pointer-events-none"
               <motion.div
                 className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
                 animate={{ x: ["-100%", "100%"] }}
@@ -498,12 +587,23 @@ export default function BottomNav() {
                       whileHover={{ scale: isOpen? 0.88 : 1.08 }}
                       whileTap={{ scale: 0.85 }}
                       transition={SPRING_BOUNCY}
-                      className={`w-12 h-12 rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-300 ${dynamicGlow} relative ${
-                        isOpen 
+                      className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-2xl transition-all duration-500 ${dynamicGlow} relative overflow-hidden ${
+   isOpen 
                       ? "bg-zinc-900 dark:bg-zinc-800 shadow-zinc-950/20" 
                           : `${activeBgClass} shadow-lg`
                       }`}
                     >
+<motion.div
+  className="absolute inset-0 bg-gradient-to-tr from-white/40 via-white/10 to-transparent"
+  animate={{
+    rotate: [0, 360]
+  }}
+  transition={{
+    duration: 8,
+    repeat: Infinity,
+    ease: "linear"
+  }}
+/>
                       <Plus className="w-6 h-6" strokeWidth={3.5} />
                       <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-white/20 to-transparent" />
                     </motion.div>
