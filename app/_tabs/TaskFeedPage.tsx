@@ -43,7 +43,7 @@ const SUB_TABS: { key: TabId; label: string; icon: any }[] = [
 
 const PAGE_SIZE = 20;
 
-const vibrate = (p: number | number[]) => {
+const vibrate = (p: number | number[] = 5) => {
   if (typeof navigator!== "undefined" && "vibrate" in navigator) {
     navigator.vibrate(p);
   }
