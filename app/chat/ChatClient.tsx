@@ -953,7 +953,7 @@ const filteredChats = useMemo(() => {
                 <RiAddLine className="text-white" size={22} strokeWidth={2.5} />
               </button>
             </div>
-            <div className="flex items-center gap-6 mt-3.5 overflow-x-auto scrollbar-hide px-1">
+           <div className="flex items-center gap-6 mt-3.5 overflow-x-auto scrollbar-hide px-1">
   {[
     { key: "all", label: "Tất cả" },
     { key: "friends", label: "Bạn bè" },
@@ -964,10 +964,10 @@ const filteredChats = useMemo(() => {
     <button 
       key={tab.key} 
       onClick={() => setActiveTab(tab.key as any)} 
-      className={`relative py-2 text-[15px] whitespace-nowrap transition-colors duration-200 flex items-center gap-1.5 ${
+      className={`relative py-2 text-[15px] whitespace-nowrap transition-colors duration-200 flex items-center gap-1.5 flex-shrink-0 ${
         activeTab === tab.key 
-        ? "text-black dark:text-white font-semibold" 
-          : "text-[#8e8e93] dark:text-zinc-500 font-normal hover:text-gray-700 dark:hover:text-zinc-400"
+       ? "text-black dark:text-white font-semibold" 
+        : "text-[#8e8e93] dark:text-zinc-500 font-normal hover:text-gray-700 dark:hover:text-zinc-400"
       }`}
     >
       {tab.label}
@@ -987,7 +987,7 @@ const filteredChats = useMemo(() => {
       )}
     </button>
   ))}
-   {!isOnline && (
+  {!isOnline && (
     <span className="ml-auto text-[12px] text-orange-500 font-medium flex items-center gap-1 flex-shrink-0">
       <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse" />
       Offline
@@ -998,20 +998,20 @@ const filteredChats = useMemo(() => {
 </div>
 
 <div className="pb-24">
-          {activeTab === "notifications" ? (
-            notifLoading ? (
-              <div className="px-4 pt-4 space-y-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-3 py-3 animate-pulse">
-                    <div className="w-12 h-12 bg-gray-200 dark:bg-zinc-800 rounded-full" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4" />
-                      <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : notifications.length === 0 ? (
+  {activeTab === "notifications"? (
+    notifLoading? (
+      <div className="px-4 pt-4 space-y-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-3 py-3 animate-pulse">
+            <div className="w-12 h-12 bg-gray-200 dark:bg-zinc-800 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4" />
+              <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
+            </div>
+          </div>
+        ))}
+      </div>
+    ) : notifications.length === 0? (
               <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
                 <div className="w-[72px] h-[72px] bg-[#f2f2f7] dark:bg-zinc-900 rounded-[20px] flex items-center justify-center mb-4">
                   <FiBell className="text-gray-400" size={30} strokeWidth={1.5} />
