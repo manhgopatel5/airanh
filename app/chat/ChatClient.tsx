@@ -940,105 +940,167 @@ const filteredChats = useMemo(() => {
 
   return (
     <>
-      <Toaster richColors position="top-center" toastOptions={{ duration: 2000, style: { fontSize: "14px" } }} />
-      <div className="min-h-screen bg-white dark:bg-black select-none">
-        <div className="sticky top-0 z-20 bg-white/95 dark:bg-black/95 backdrop-blur-2xl border-b border-gray-100 dark:border-zinc-900">
-          <div className="px-4 pt-3 pb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="relative flex-1">
-                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
-                <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={activeTab === "friends" ? "Tìm bạn bè" : activeTab === "notifications" ? "Tìm thông báo" : "Tìm kiếm"} className={`w-full h-[38px] pl-[34px] pr-3.5 bg-[#f2f2f7] dark:bg-zinc-900 rounded-[10px] text-[15px] font-normal outline-none border-0 focus:bg-white dark:focus:bg-zinc-900 focus:ring-2 ${primaryRing} transition-all placeholder:text-gray-400`} autoComplete="off" autoCorrect="off" />
-              </div>
-              <button onClick={() => setShowAdd(true)} className={`w-[38px] h-[38px] ${primaryBg} ${primaryHover} ${primaryActive} rounded-[10px] flex items-center justify-center shadow-sm active:scale-95 transition-all duration-150`} aria-label="Tạo mới">
-                <RiAddLine className="text-white" size={22} strokeWidth={2.5} />
-              </button>
-            </div>
-           <div className="flex items-center gap-2 mt-3 overflow-x-auto scrollbar-hide pb-1">
-  {[
-    { key: "all", label: "Tất cả" },
-    { key: "friends", label: "Bạn bè" },
-    { key: "notifications", label: "Thông báo", badge: unreadNotifications },
-    { key: "unread", label: "Chưa đọc" },
-    { key: "group", label: "Nhóm" }
-  ].map((tab) => {
-    const active = activeTab === tab.key;
+   <Toaster
+  richColors
+  position="top-center"
+  toastOptions={{
+    duration: 2000,
+    style: { fontSize: "14px" }
+  }}
+/>
 
-    return (
-      <button
-        key={tab.key}
-        onClick={() => setActiveTab(tab.key as any)}
-        className={`
-          h-[42px]
-          px-5
-          rounded-full
-          flex
-          items-center
-          gap-1.5
-          whitespace-nowrap
-          flex-shrink-0
-          transition-all
-          duration-200
-          active:scale-[0.97]
-          ${
-            active
-              ? `${primaryBg} text-white shadow-lg shadow-blue-500/20`
-              : "bg-[#f2f2f7] dark:bg-zinc-900 text-[#3a3a3c] dark:text-zinc-300"
-          }
-        `}
-      >
-        <span
-          className={`
-            text-[15px]
-            ${
-              active
-                ? "font-semibold"
-                : "font-medium"
+<div className="min-h-screen bg-[#F2F2F7] dark:bg-black select-none">
+  <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50">
+
+    <div className="px-4 pt-3 pb-3">
+
+      {/* Search */}
+      <div className="flex items-center gap-2 mb-3">
+
+        <div className="relative flex-1">
+          <FiSearch
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none"
+            size={18}
+          />
+
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={
+              activeTab === "friends"
+                ? "Tìm bạn bè"
+                : activeTab === "notifications"
+                ? "Tìm thông báo"
+                : "Tìm kiếm"
             }
-          `}
-        >
-          {tab.label}
-        </span>
-
-        {tab.badge ? (
-          <span
             className={`
-              min-w-[18px]
-              h-[18px]
-              px-1
-              rounded-full
-              flex
-              items-center
-              justify-center
-              text-[11px]
-              leading-none
-              font-bold
-              ${
-                active
-                  ? "bg-white/20 text-white"
-                  : "bg-[#ff3b30] text-white"
-              }
+              w-full
+              h-9
+              pl-10
+              pr-3
+              rounded-xl
+              bg-zinc-100
+              dark:bg-zinc-800
+              outline-none
+              text-sm
+              border-0
+              transition-all
+              focus:ring-2
+              ${primaryRing}
+              placeholder:text-zinc-400
             `}
-          >
-            {tab.badge > 99 ? "99+" : tab.badge}
-          </span>
-        ) : null}
-      </button>
-    );
-  })}
+            autoComplete="off"
+            autoCorrect="off"
+          />
+        </div>
 
-  {!isOnline && (
-    <div className="ml-1 flex items-center gap-1 px-3 h-[42px] rounded-full bg-orange-500/10 flex-shrink-0">
-      <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
-      <span className="text-[13px] font-medium text-orange-500">
-        Offline
-      </span>
+        <button
+          onClick={() => setShowAdd(true)}
+          className={`
+            w-9
+            h-9
+            rounded-xl
+            flex
+            items-center
+            justify-center
+            text-white
+            active:scale-95
+            transition-all
+            shadow-[0_8px_30px_rgba(10,132,255,0.25)]
+            ${primaryBg}
+            ${primaryHover}
+            ${primaryActive}
+          `}
+          aria-label="Tạo mới"
+        >
+          <RiAddLine size={20} />
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide flex-1">
+
+        {[
+          { key: "all", label: "Tất cả" },
+          { key: "friends", label: "Bạn bè" },
+          {
+            key: "notifications",
+            label: "Thông báo",
+            badge: unreadNotifications
+          },
+          { key: "unread", label: "Chưa đọc" },
+          { key: "group", label: "Nhóm" }
+        ].map((tab) => {
+          const active = activeTab === tab.key;
+
+          return (
+            <motion.button
+              key={tab.key}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setActiveTab(tab.key as any)}
+              className={`
+                px-4
+                h-9
+                rounded-full
+                text-sm
+                font-semibold
+                whitespace-nowrap
+                transition-all
+                flex
+                items-center
+                gap-1.5
+                flex-shrink-0
+                ${
+                  active
+                    ? `${primaryBg} text-white shadow-[0_8px_30px_rgba(10,132,255,0.25)]`
+                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+                }
+              `}
+            >
+              {tab.label}
+
+              {tab.badge ? (
+                <span
+                  className={`
+                    min-w-[18px]
+                    h-[18px]
+                    px-1
+                    rounded-full
+                    flex
+                    items-center
+                    justify-center
+                    text-[11px]
+                    leading-none
+                    font-bold
+                    ${
+                      active
+                        ? "bg-white/20 text-white"
+                        : "bg-[#ff3b30] text-white"
+                    }
+                  `}
+                >
+                  {tab.badge > 99 ? "99+" : tab.badge}
+                </span>
+              ) : null}
+            </motion.button>
+          );
+        })}
+
+        {!isOnline && (
+          <div className="px-3 h-9 rounded-full bg-orange-100 dark:bg-orange-500/10 flex items-center gap-1.5 flex-shrink-0">
+            <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+
+            <span className="text-xs font-semibold text-orange-500">
+              Offline
+            </span>
+          </div>
+        )}
+      </div>
     </div>
-  )}
-</div>
-</div>
-</div>
+  </div>
 
-<div className="pb-24">
+  <div className="pb-24">
   {activeTab === "notifications"? (
     notifLoading? (
       <div className="px-4 pt-4 space-y-3">
