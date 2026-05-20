@@ -349,7 +349,7 @@ export default function AppContainer() {
             </AnimatePresence>
 
             <div className="fixed bottom-0 inset-x-0 z-[70] pointer-events-none flex flex-col items-center justify-end">
-              <div ref={menuRef} className="w-full max-w-[480px] px-4 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center gap-3">
+           <div ref={menuRef} className="w-full flex flex-col items-center gap-3">
                 <FloatingMenu
                   isOpen={isMenuOpen}
                   onSelect={handleSelectCreate}
@@ -358,7 +358,7 @@ export default function AppContainer() {
 
            <motion.div
   layout
-  className="w-full pointer-events-auto relative border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950"
+  className="w-full pointer-events-auto relative border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 pb-[env(safe-area-inset-bottom)]"
 >
 
               
