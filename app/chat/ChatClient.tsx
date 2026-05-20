@@ -953,45 +953,86 @@ const filteredChats = useMemo(() => {
                 <RiAddLine className="text-white" size={22} strokeWidth={2.5} />
               </button>
             </div>
-           <div className="flex items-center gap-6 mt-3.5 overflow-x-auto scrollbar-hide px-1">
+           <div className="flex items-center gap-2 mt-3 overflow-x-auto scrollbar-hide pb-1">
   {[
     { key: "all", label: "Tất cả" },
     { key: "friends", label: "Bạn bè" },
     { key: "notifications", label: "Thông báo", badge: unreadNotifications },
     { key: "unread", label: "Chưa đọc" },
     { key: "group", label: "Nhóm" }
-  ].map((tab) => (
-    <button 
-      key={tab.key} 
-      onClick={() => setActiveTab(tab.key as any)} 
-      className={`relative py-2 text-[15px] whitespace-nowrap transition-colors duration-200 flex items-center gap-1.5 flex-shrink-0 ${
-        activeTab === tab.key 
-       ? "text-black dark:text-white font-semibold" 
-        : "text-[#8e8e93] dark:text-zinc-500 font-normal hover:text-gray-700 dark:hover:text-zinc-400"
-      }`}
-    >
-      {tab.label}
-      {tab.badge? (
-        <span className="min-w-[18px] h-[18px] px-1 bg-[#ff3b30] rounded-full flex items-center justify-center">
-          <span className="text-[11px] leading-none font-medium text-white">
-            {tab.badge > 99? "99+" : tab.badge}
-          </span>
+  ].map((tab) => {
+    const active = activeTab === tab.key;
+
+    return (
+      <button
+        key={tab.key}
+        onClick={() => setActiveTab(tab.key as any)}
+        className={`
+          h-[42px]
+          px-5
+          rounded-full
+          flex
+          items-center
+          gap-1.5
+          whitespace-nowrap
+          flex-shrink-0
+          transition-all
+          duration-200
+          active:scale-[0.97]
+          ${
+            active
+              ? `${primaryBg} text-white shadow-lg shadow-blue-500/20`
+              : "bg-[#f2f2f7] dark:bg-zinc-900 text-[#3a3a3c] dark:text-zinc-300"
+          }
+        `}
+      >
+        <span
+          className={`
+            text-[15px]
+            ${
+              active
+                ? "font-semibold"
+                : "font-medium"
+            }
+          `}
+        >
+          {tab.label}
         </span>
-      ) : null}
-      {activeTab === tab.key && (
-        <motion.div 
-          layoutId="activeTabChat"
-          className="absolute -bottom-[1px] left-0 right-0 h-[2.5px] bg-black dark:bg-white rounded-full" 
-          transition={{ type: "spring", stiffness: 500, damping: 30, mass: 0.8 }}
-        />
-      )}
-    </button>
-  ))}
+
+        {tab.badge ? (
+          <span
+            className={`
+              min-w-[18px]
+              h-[18px]
+              px-1
+              rounded-full
+              flex
+              items-center
+              justify-center
+              text-[11px]
+              leading-none
+              font-bold
+              ${
+                active
+                  ? "bg-white/20 text-white"
+                  : "bg-[#ff3b30] text-white"
+              }
+            `}
+          >
+            {tab.badge > 99 ? "99+" : tab.badge}
+          </span>
+        ) : null}
+      </button>
+    );
+  })}
+
   {!isOnline && (
-    <span className="ml-auto text-[12px] text-orange-500 font-medium flex items-center gap-1 flex-shrink-0">
-      <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse" />
-      Offline
-    </span>
+    <div className="ml-1 flex items-center gap-1 px-3 h-[42px] rounded-full bg-orange-500/10 flex-shrink-0">
+      <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+      <span className="text-[13px] font-medium text-orange-500">
+        Offline
+      </span>
+    </div>
   )}
 </div>
 </div>
