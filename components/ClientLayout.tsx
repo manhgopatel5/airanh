@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import FCMProvider from "@/components/FCMProvider";
 import { useEffect, useMemo, useRef } from "react";
-import BottomNav from "@/components/BottomNav"; // Thêm dòng này
+import BottomNav from "@/components/BottomNav";
 import { Toaster } from "react-hot-toast";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -45,8 +45,8 @@ export default function ClientLayout({ children }: Props) {
     return null;
   }
 
-  // Ẩn BottomNav ở: trang public, chat detail, create, login
-  const shouldShowBottomNav =!isPublic && user &&!isChatDetail &&!isCreate;
+  // Fix: Bỏ user ra khỏi điều kiện, chỉ check loading
+  const shouldShowBottomNav =!isPublic &&!isChatDetail &&!isCreate &&!loading;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors font-sans">
@@ -56,7 +56,6 @@ export default function ClientLayout({ children }: Props) {
         {children}
       </div>
 
-      {/* BottomNav mới: dùng cho tất cả trang chính */}
       {shouldShowBottomNav && <BottomNav />}
 
       <Toaster
