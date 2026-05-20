@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useCallback, useState, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter, usePathname } from "next/navigation";
 import {
   motion,
@@ -30,9 +31,6 @@ interface NavItem {
   Icon: LucideIcon;
 }
 
-/* ==========================================================================
-   PHYSICS CONSTANTS - iOS Spring Standard
-   ========================================================================== */
 const SPRING = {
   type: "spring" as const,
   stiffness: 550,
@@ -47,15 +45,8 @@ const SPRING_BOUNCY = {
   mass: 0.6
 };
 
-const SPRING_GENTLE = {
-  type: "spring" as const,
-  stiffness: 300,
-  damping: 30,
-  mass: 1
-};
-
 /* ==========================================================================
-   COMPONENT 1: FLOATING MENU - Glass Morphing Pro
+   FLOATING MENU 
    ========================================================================== */
 const FloatingMenu = React.memo(({
   isOpen,
@@ -80,7 +71,7 @@ const FloatingMenu = React.memo(({
           dragElastic={0.2}
           onDragEnd={(_, info) => {
             if (info.offset.y > 80 || info.velocity.y > 500) {
-              onSelect("task"); // Fake select để trigger close
+              onSelect("close");
             }
           }}
           style={{ y, opacity, scale }}
@@ -99,9 +90,8 @@ const FloatingMenu = React.memo(({
             filter: "blur(4px)",
             transition: { duration: 0.15, ease: [0.4, 0, 1, 1] }
           }}
-          className="w-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-3xl rounded-[28px] p-3 border border-zinc-200/40 dark:border-zinc-800/40 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] pointer-events-auto flex flex-col gap-1.5 select-none will-change-[transform,opacity,filter]"
+          className="w-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-3xl rounded- p-3 border border-zinc-200/40 dark:border-zinc-800/40 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] pointer-events-auto flex flex-col gap-1.5 select-none"
         >
-          {/* Drag Handle */}
           <div 
             onPointerDown={(e) => dragControls.start(e)}
             className="w-full flex justify-center pt-1 pb-2 cursor-grab active:cursor-grabbing touch-none"
@@ -109,7 +99,7 @@ const FloatingMenu = React.memo(({
             <div className="w-10 h-1 rounded-full bg-zinc-300/60 dark:bg-zinc-700/60" />
           </div>
 
-          <div className="text-[10px] font-black text-zinc-400/80 px-3.5 pb-1.5 tracking-[0.2em] uppercase">
+          <div className="text- font-black text-zinc-400/80 px-3.5 pb-1.5 tracking-[0.2em] uppercase">
             Tạo mới nhanh
           </div>
 
@@ -123,20 +113,18 @@ const FloatingMenu = React.memo(({
               animate={{ 
                 opacity: 1, 
                 x: 0,
-                transition: {...SPRING_GENTLE, delay: 0.05 + i * 0.05 }
+                transition: {...SPRING, delay: 0.05 + i * 0.05 }
               }}
               exit={{ opacity: 0, x: -5, transition: { duration: 0.1 } }}
               whileHover={{ 
                 scale: 1.02, 
                 x: 4,
                 backgroundColor: "rgba(0,0,0,0.03)",
-                transition: SPRING
               }}
               whileTap={{ scale: 0.98 }}
               onClick={() => onSelect(item.type)}
               className="w-full flex items-center gap-4 p-3 rounded-2xl transition-colors duration-200 text-left group relative overflow-hidden"
             >
-              {/* Hover glow effect */}
               <motion.div
                 className={`absolute inset-0 bg-gradient-to-r from-${item.color}-500/0 via-${item.color}-500/5 to-${item.color}-500/0`}
                 initial={{ x: "-100%" }}
@@ -145,7 +133,7 @@ const FloatingMenu = React.memo(({
               />
               
               <div className={`w-11 h-11 rounded-2xl bg-${item.color}-50 dark:bg-${item.color}-950/30 text-${item.color}-600 dark:text-${item.color}-400 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 relative`}>
-                <item.Icon className="w-[20px] h-[20px]" strokeWidth={2.5} />
+                <item.Icon className="w- h-" strokeWidth={2.5} />
                 <motion.div
                   className={`absolute inset-0 rounded-2xl bg-${item.color}-500/20 blur-xl`}
                   animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
@@ -153,8 +141,8 @@ const FloatingMenu = React.memo(({
                 />
               </div>
               <div className="flex-1 relative">
-                <h4 className="font-black text-zinc-900 dark:text-zinc-100 text-[15px] tracking-tight">{item.title}</h4>
-                <p className="text-[13px] text-zinc-500 dark:text-zinc-400 font-medium">{item.desc}</p>
+                <h4 className="font-black text-zinc-900 dark:text-zinc-100 text- tracking-tight">{item.title}</h4>
+                <p className="text- text-zinc-500 dark:text-zinc-400 font-medium">{item.desc}</p>
               </div>
             </motion.button>
           ))}
@@ -167,7 +155,7 @@ FloatingMenu.displayName = "FloatingMenu";
 
 
 /* ==========================================================================
-   COMPONENT 2: MAGNETIC NAV ITEM - Pro Hover Effect
+   MAGNETIC NAV ITEM
    ========================================================================== */
 const MagneticNavItem = React.memo(({
   item,
@@ -225,7 +213,7 @@ const MagneticNavItem = React.memo(({
         className="relative"
       >
         <item.Icon
-          className={`w-[22px] h-[22px] transition-colors duration-300 ${
+          className={`w- h- transition-colors duration-300 ${
             active? activeColorClass : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
           }`}
           strokeWidth={active? 2.5 : 2}
@@ -244,7 +232,7 @@ const MagneticNavItem = React.memo(({
           scale: active? 1.05 : 1,
           fontWeight: active? 700 : 600
         }}
-        className={`text-[10px] mt-1.5 tracking-tight transition-colors duration-300 ${
+        className={`text- mt-1.5 tracking-tight transition-colors duration-300 ${
           active? activeColorClass : "text-zinc-400"
         }`}
       >
@@ -273,18 +261,18 @@ MagneticNavItem.displayName = "MagneticNavItem";
 
 
 /* ==========================================================================
-   COMPONENT MAIN: BOTTOM NAV - Pro Max
+   MAIN: BOTTOM NAV - Portal Fix
    ========================================================================== */
 export default function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const mode = useAppStore((s) => s.mode);
   const isPlanMode = mode === "plan";
 
-  // Magnetic effect cho nút +
   const plusX = useMotionValue(0);
   const plusY = useMotionValue(0);
   const plusSpringX = useSpring(plusX, SPRING);
@@ -300,6 +288,8 @@ export default function BottomNav() {
     { path: "/profile", label: "Profile", Icon: User },
   ], []);
 
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     const targets = ["/", "/messages", "/tasks", "/profile", "/create/task", "/create/plan"];
     targets.forEach((p) => router.prefetch(p));
@@ -313,11 +303,10 @@ export default function BottomNav() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // FIX CHÍNH: Click outside với check button
+  // FIX CỨNG: Click outside với check button
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent | TouchEvent) => {
       const target = e.target as HTMLElement;
-      // Không đóng nếu click vào nút + hoặc menu
       if (menuRef.current?.contains(target) || target.closest('[data-plus-button]')) {
         return;
       }
@@ -351,7 +340,11 @@ export default function BottomNav() {
     router.push(path);
   }, [pathname, router]);
 
-  const handleSelectCreate = useCallback((type: "task" | "plan") => {
+  const handleSelectCreate = useCallback((type: "task" | "plan" | "close") => {
+    if (type === "close") {
+      setIsOpen(false);
+      return;
+    }
     navigator.vibrate?.([15, 30, 15]);
     setIsOpen(false);
     handleNavigation(`/create/${type}`);
@@ -366,10 +359,12 @@ export default function BottomNav() {
   const activeBgClass = isPlanMode? "bg-emerald-500" : "bg-blue-600";
   const dynamicGlow = isPlanMode? "shadow-emerald-500/30" : "shadow-blue-600/30";
 
-  return (
+  // Dùng Portal để thoát stacking context
+  if (!mounted) return null;
+
+  return createPortal(
     <MotionConfig transition={SPRING}>
       <LayoutGroup id="fixed-bottom-nav-scope">
-        {/* Backdrop với morphing effect */}
         <AnimatePresence>
           {isOpen && (
             <motion.div
@@ -377,28 +372,27 @@ export default function BottomNav() {
               animate={{ opacity: 1, backdropFilter: "blur(8px)" }}
               exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
               transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-              className="fixed inset-0 z-[60] bg-zinc-950/20 dark:bg-zinc-950/40 pointer-events-none will-change-[backdrop-filter,opacity]"
+              className="fixed inset-0 z-[9998] bg-zinc-950/20 dark:bg-zinc-950/40 pointer-events-none will-change-[backdrop-filter,opacity]"
             />
           )}
         </AnimatePresence>
 
-        <div className="fixed bottom-0 inset-x-0 z-[70] pointer-events-none flex flex-col items-center justify-end">
+        <div className="fixed bottom-0 inset-x-0 z-[9999] pointer-events-none flex flex-col items-center justify-end">
           <div ref={menuRef} className="w-full max-w-[480px] px-4 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center gap-3">
 
             <FloatingMenu isOpen={isOpen} onSelect={handleSelectCreate} />
 
             <motion.div 
               layout
-              className="w-full pointer-events-auto relative rounded-[26px] border border-zinc-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_16px_48px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.4)] overflow-hidden"
+              className="w-full pointer-events-auto relative rounded- border border-zinc-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_16px_48px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.4)] overflow-hidden"
             >
-              {/* Glass refraction line */}
               <motion.div
                 className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
                 animate={{ x: ["-100%", "100%"] }}
                 transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
               />
 
-              <div className="flex items-center justify-between h-[66px] px-2 relative">
+              <div className="flex items-center justify-between h- px-2 relative">
                 <div className="flex-1 grid-cols-2 h-full">
                   {leftItems.map((item) => (
                     <MagneticNavItem
@@ -412,7 +406,7 @@ export default function BottomNav() {
                   ))}
                 </div>
 
-                <div className="w-[68px] flex justify-center h-full items-center relative">
+                <div className="w- flex justify-center h-full items-center relative">
                   <motion.button
                     data-plus-button
                     onClick={() => {
@@ -431,7 +425,6 @@ export default function BottomNav() {
                     style={{ x: plusSpringX, y: plusSpringY }}
                     className="outline-none select-none touch-manipulation z-10 p-2 relative group"
                   >
-                    {/* Pulse rings khi đóng */}
                     <AnimatePresence>
                       {!isOpen && (
                         <>
@@ -457,7 +450,6 @@ export default function BottomNav() {
                       )}
                     </AnimatePresence>
 
-                    {/* Outer glow */}
                     <motion.div
                       className={`absolute inset-0 rounded-full ${activeBgClass} blur-2xl opacity-60`}
                       animate={{
@@ -480,19 +472,17 @@ export default function BottomNav() {
                       transition={SPRING_BOUNCY}
                       className={`w-12 h-12 rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-300 ${dynamicGlow} relative ${
                         isOpen 
-                         ? "bg-zinc-900 dark:bg-zinc-800 shadow-zinc-950/20" 
+                        ? "bg-zinc-900 dark:bg-zinc-800 shadow-zinc-950/20" 
                           : `${activeBgClass} shadow-lg`
                       }`}
                     >
-                      <Plus className="w-[18px] h-[18px]" strokeWidth={3.5} />
-                      
-                      {/* Inner highlight */}
+                      <Plus className="w- h-" strokeWidth={3.5} />
                       <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-white/20 to-transparent" />
                     </motion.div>
                   </motion.button>
                 </div>
 
-                <div className="flex-1 grid grid-cols-2 h-full">
+                <div className="flex-1 grid-cols-2 h-full">
                   {rightItems.map((item) => (
                     <MagneticNavItem
                       key={item.path}
@@ -509,6 +499,7 @@ export default function BottomNav() {
           </div>
         </div>
       </LayoutGroup>
-    </MotionConfig>
+    </MotionConfig>,
+    document.body
   );
 }
