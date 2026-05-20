@@ -37,7 +37,7 @@ export default function TasksPage() {
   const { mode = "task", setMode } = useAppStore();
   const [subTab, setSubTab] = useState<SubTab>("mine");
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [prevMode, setPrevMode] = useState<"task" | "plan">(mode);
+  
 const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 });
   const [loading, setLoading] = useState(true);
@@ -259,10 +259,7 @@ const handleModeChange = (newMode: "task" | "plan") => {
   if (newMode === mode) return;
   vibrate();
   setIsModeChanging(true);
-  setPrevMode(mode);
   setMode(newMode);
-
-  // Tắt flag sau khi animation xong
   setTimeout(() => setIsModeChanging(false), 400);
 };
 
@@ -359,7 +356,7 @@ useLayoutEffect(() => {
           <div className="px-4 pb-3">
            <div className="flex items-center gap-2 mb-3">
   <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1 relative">
- <motion.div
+<motion.div
   className={`absolute h-9 rounded-full ${
     mode === "task"? "bg-[#0A84FF]" : "bg-[#30D158]"
   }`}
@@ -367,7 +364,7 @@ useLayoutEffect(() => {
   animate={pillStyle}
   transition={
     isModeChanging
-   ? { type: "spring", stiffness: 400, damping: 35 }
+    ? { type: "spring", stiffness: 400, damping: 35 }
       : { duration: 0 }
   }
 />
