@@ -994,7 +994,7 @@ const filteredChats = useMemo(() => {
     </span>
   )}
 </div>
-
+</div>
 </div>
 
 <div className="pb-24">
