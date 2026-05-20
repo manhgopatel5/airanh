@@ -73,7 +73,7 @@ const FloatingMenu = React.memo(({
           dragElastic={0.2}
           onDragEnd={(_, info) => {
             if (info.offset.y > 80 || info.velocity.y > 500) {
-              onClose(); // FIX: Dùng onClose thay vì onSelect("close")
+              onClose();
             }
           }}
           style={{ y, opacity, scale }}
@@ -92,7 +92,7 @@ const FloatingMenu = React.memo(({
             filter: "blur(4px)",
             transition: { duration: 0.15, ease: [0.4, 0, 1, 1] }
           }}
-          className="w-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-3xl rounded- p-3 border border-zinc-200/40 dark:border-zinc-800/40 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] pointer-events-auto flex flex-col gap-1.5 select-none"
+          className="w-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-3xl rounded-3xl p-3 border border-zinc-200/40 dark:border-zinc-800/40 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] pointer-events-auto flex flex-col gap-1.5 select-none"
         >
           <div 
             onPointerDown={(e) => dragControls.start(e)}
@@ -101,53 +101,85 @@ const FloatingMenu = React.memo(({
             <div className="w-10 h-1 rounded-full bg-zinc-300/60 dark:bg-zinc-700/60" />
           </div>
 
-          <div className="text- font-black text-zinc-400/80 px-3.5 pb-1.5 tracking-[0.2em] uppercase">
+          <div className="text-xs font-black text-zinc-400/80 px-3.5 pb-1.5 tracking-[0.2em] uppercase">
             Tạo mới nhanh
           </div>
 
-          {[
-            { type: "task" as const, Icon: Sparkles, title: "Nhiệm vụ mới", desc: "Đầu việc nhỏ cần xử lý ngay", color: "blue" },
-            { type: "plan" as const, Icon: CalendarRange, title: "Kế hoạch dài hạn", desc: "Lên lộ trình tuần, tháng chỉn chu", color: "emerald" }
-          ].map((item, i) => (
-            <motion.button
-              key={item.type}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ 
-                opacity: 1, 
-                x: 0,
-                transition: {...SPRING, delay: 0.05 + i * 0.05 }
-              }}
-              exit={{ opacity: 0, x: -5, transition: { duration: 0.1 } }}
-              whileHover={{ 
-                scale: 1.02, 
-                x: 4,
-                backgroundColor: "rgba(0,0,0,0.03)",
-              }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => onSelect(item.type)}
-              className="w-full flex items-center gap-4 p-3 rounded-2xl transition-colors duration-200 text-left group relative overflow-hidden"
-            >
+          <motion.button
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ 
+              opacity: 1, 
+              x: 0,
+              transition: {...SPRING, delay: 0.05 }
+            }}
+            exit={{ opacity: 0, x: -5, transition: { duration: 0.1 } }}
+            whileHover={{ 
+              scale: 1.02, 
+              x: 4,
+              backgroundColor: "rgba(0,0,0,0.03)",
+            }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => onSelect("task")}
+            className="w-full flex items-center gap-4 p-3 rounded-2xl transition-colors duration-200 text-left group relative overflow-hidden"
+          >
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-blue-500/0"
+              initial={{ x: "-100%" }}
+              whileHover={{ x: "100%" }}
+              transition={{ duration: 0.6, ease: "easeInOut" }}
+            />
+            
+            <div className="w-11 h-11 rounded-2xl bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 relative">
+              <Sparkles className="w-5 h-5" strokeWidth={2.5} />
               <motion.div
-                className={`absolute inset-0 bg-gradient-to-r from-${item.color}-500/0 via-${item.color}-500/5 to-${item.color}-500/0`}
-                initial={{ x: "-100%" }}
-                whileHover={{ x: "100%" }}
-                transition={{ duration: 0.6, ease: "easeInOut" }}
+                className="absolute inset-0 rounded-2xl bg-blue-500/20 blur-xl"
+                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity }}
               />
-              
-              <div className={`w-11 h-11 rounded-2xl bg-${item.color}-50 dark:bg-${item.color}-950/30 text-${item.color}-600 dark:text-${item.color}-400 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 relative`}>
-                <item.Icon className="w- h-" strokeWidth={2.5} />
-                <motion.div
-                  className={`absolute inset-0 rounded-2xl bg-${item.color}-500/20 blur-xl`}
-                  animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
-                />
-              </div>
-              <div className="flex-1 relative">
-                <h4 className="font-black text-zinc-900 dark:text-zinc-100 text- tracking-tight">{item.title}</h4>
-                <p className="text- text-zinc-500 dark:text-zinc-400 font-medium">{item.desc}</p>
-              </div>
-            </motion.button>
-          ))}
+            </div>
+            <div className="flex-1 relative">
+              <h4 className="font-black text-zinc-900 dark:text-zinc-100 text-sm tracking-tight">Nhiệm vụ mới</h4>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Đầu việc nhỏ cần xử lý ngay</p>
+            </div>
+          </motion.button>
+
+          <motion.button
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ 
+              opacity: 1, 
+              x: 0,
+              transition: {...SPRING, delay: 0.1 }
+            }}
+            exit={{ opacity: 0, x: -5, transition: { duration: 0.1 } }}
+            whileHover={{ 
+              scale: 1.02, 
+              x: 4,
+              backgroundColor: "rgba(0,0,0,0.03)",
+            }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => onSelect("plan")}
+            className="w-full flex items-center gap-4 p-3 rounded-2xl transition-colors duration-200 text-left group relative overflow-hidden"
+          >
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/5 to-emerald-500/0"
+              initial={{ x: "-100%" }}
+              whileHover={{ x: "100%" }}
+              transition={{ duration: 0.6, ease: "easeInOut" }}
+            />
+            
+            <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 relative">
+              <CalendarRange className="w-5 h-5" strokeWidth={2.5} />
+              <motion.div
+                className="absolute inset-0 rounded-2xl bg-emerald-500/20 blur-xl"
+                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
+              />
+            </div>
+            <div className="flex-1 relative">
+              <h4 className="font-black text-zinc-900 dark:text-zinc-100 text-sm tracking-tight">Kế hoạch dài hạn</h4>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Lên lộ trình tuần, tháng chỉn chu</p>
+            </div>
+          </motion.button>
         </motion.div>
       )}
     </AnimatePresence>
@@ -215,7 +247,7 @@ const MagneticNavItem = React.memo(({
         className="relative"
       >
         <item.Icon
-          className={`w- h- transition-colors duration-300 ${
+          className={`w-6 h-6 transition-colors duration-300 ${
             active? activeColorClass : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
           }`}
           strokeWidth={active? 2.5 : 2}
@@ -234,7 +266,7 @@ const MagneticNavItem = React.memo(({
           scale: active? 1.05 : 1,
           fontWeight: active? 700 : 600
         }}
-        className={`text- mt-1.5 tracking-tight transition-colors duration-300 ${
+        className={`text-xs mt-1.5 tracking-tight transition-colors duration-300 ${
           active? activeColorClass : "text-zinc-400"
         }`}
       >
@@ -268,8 +300,8 @@ MagneticNavItem.displayName = "MagneticNavItem";
 export default function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [isOpen][setIsOpen] = useState(false);
+  const [mounted][setMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const mode = useAppStore((s) => s.mode);
@@ -339,10 +371,10 @@ export default function BottomNav() {
     navigator.vibrate?.(10);
     setIsOpen(false);
     router.push(path);
-  }, [pathname, router]);
+  }, [pathname][router]);
 
   const handleSelectCreate = useCallback((type: "task" | "plan") => {
-    navigator.vibrate?.([15, 30, 15]);
+    navigator.vibrate?.([15][30][15]);
     setIsOpen(false);
     handleNavigation(`/create/${type}`);
   }, [handleNavigation]);
@@ -368,19 +400,19 @@ export default function BottomNav() {
               animate={{ opacity: 1, backdropFilter: "blur(8px)" }}
               exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
               transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-              className="fixed inset-0 z- bg-zinc-950/20 dark:bg-zinc-950/40 pointer-events-none will-change-[backdrop-filter,opacity]"
+              className="fixed inset-0 z-[60] bg-zinc-950/20 dark:bg-zinc-950/40 pointer-events-none will-change-[backdrop-filter,opacity]"
             />
           )}
         </AnimatePresence>
 
-        <div className="fixed bottom-0 inset-x-0 z- pointer-events-none flex flex-col items-center justify-end">
+        <div className="fixed bottom-0 inset-x-0 z-[70] pointer-events-none flex flex-col items-center justify-end">
           <div ref={menuRef} className="w-full max-w-[480px] px-4 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center gap-3">
 
             <FloatingMenu isOpen={isOpen} onSelect={handleSelectCreate} onClose={() => setIsOpen(false)} />
 
             <motion.div 
               layout
-              className="w-full pointer-events-auto relative rounded- border border-zinc-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_16px_48px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.4)] overflow-hidden"
+              className="w-full pointer-events-auto relative rounded-3xl border border-zinc-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_16px_48px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.4)] overflow-hidden"
             >
               <motion.div
                 className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
@@ -388,8 +420,8 @@ export default function BottomNav() {
                 transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
               />
 
-              <div className="flex items-center justify-between h- px-2 relative">
-                <div className="flex-1 grid-cols-2 h-full">
+              <div className="flex items-center justify-between h-16 px-2 relative">
+                <div className="flex-1 grid grid-cols-2 h-full">
                   {leftItems.map((item) => (
                     <MagneticNavItem
                       key={item.path}
@@ -402,7 +434,7 @@ export default function BottomNav() {
                   ))}
                 </div>
 
-                <div className="w- flex justify-center h-full items-center relative">
+                <div className="w-20 flex justify-center h-full items-center relative">
                   <motion.button
                     data-plus-button
                     onClick={() => {
@@ -468,17 +500,17 @@ export default function BottomNav() {
                       transition={SPRING_BOUNCY}
                       className={`w-12 h-12 rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-300 ${dynamicGlow} relative ${
                         isOpen 
-                       ? "bg-zinc-900 dark:bg-zinc-800 shadow-zinc-950/20" 
+                      ? "bg-zinc-900 dark:bg-zinc-800 shadow-zinc-950/20" 
                           : `${activeBgClass} shadow-lg`
                       }`}
                     >
-                      <Plus className="w- h-" strokeWidth={3.5} />
+                      <Plus className="w-6 h-6" strokeWidth={3.5} />
                       <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-white/20 to-transparent" />
                     </motion.div>
                   </motion.button>
                 </div>
 
-                <div className="flex-1 grid-cols-2 h-full">
+                <div className="flex-1 grid grid-cols-2 h-full">
                   {rightItems.map((item) => (
                     <MagneticNavItem
                       key={item.path}
