@@ -25,8 +25,7 @@ import type { Task } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
 import { useAppStore } from "@/store/app";
-import LottiePlayer from "@/components/LottiePlayer";
-import * as L from "@/components/illustrations";
+
 import { cn } from "@/lib/utils";
 
 type SubTab = "mine" | "saved" | "doing" | "applied" | "expired" | "completed" | "cancelled";
