@@ -38,6 +38,8 @@ export default function TasksPage() {
   const [subTab, setSubTab] = useState<SubTab>("mine");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [prevMode, setPrevMode] = useState<"task" | "plan">(mode);
+const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 });
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -216,6 +218,14 @@ useEffect(() => {
 fetchTasksRef.current = fetchTasks;
 
 useEffect(() => {
+  const idx = SUB_TABS.findIndex(t => t.key === subTab);
+  const el = tabRefs.current[idx];
+  if (el) {
+    setPillStyle({ left: el.offsetLeft, width: el.offsetWidth });
+  }
+}, [subTab]);
+
+useEffect(() => {
   if (!loadMoreRef.current) return;
 
   const observer = new IntersectionObserver(
@@ -330,36 +340,37 @@ const handleModeChange = (newMode: "task" | "plan") => {
           </div>
 
           <div className="px-4 pb-3">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1">
-  {SUB_TABS.map((tab) => (
-    <motion.button
-      key={tab.key}
-      whileTap={{ scale: 0.95 }}
-      onClick={() => handleTabChange(tab.key)}
-      className={`relative px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap ${
-        subTab === tab.key
-          ? "text-white"
-          : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+           <div className="flex items-center gap-2 mb-3">
+  <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1 relative">
+    <motion.div
+      className={`absolute h-9 rounded-full ${
+        mode === "task"? "bg-[#0A84FF]" : "bg-[#30D158]"
       }`}
-    >
-   {subTab === tab.key && (
-  <motion.div
-    {...(prevMode !== mode ? { layoutId: "activeSubTab" } : {})}
-    className={`absolute inset-0 rounded-full ${
-      mode === "task" ? "bg-[#0A84FF]" : "bg-[#30D158]"
-    }`}
-    transition={
-      prevMode !== mode 
-        ? { type: "spring", stiffness: 400, damping: 35 } 
-        : { duration: 0 }
-    }
-  />
-)}
-      <span className="relative z-10">{tab.label}</span>
-    </motion.button>
-  ))}
-</div>
+      animate={pillStyle}
+      transition={
+        prevMode!== mode
+         ? { type: "spring", stiffness: 400, damping: 35 }
+          : { duration: 0 }
+      }
+    />
+
+    {SUB_TABS.map((tab, i) => (
+      <motion.button
+        key={tab.key}
+        ref={el => tabRefs.current[i] = el}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => handleTabChange(tab.key)}
+        className={`relative px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap z-10 transition-colors ${
+          subTab === tab.key
+           ? "text-white"
+            : "text-zinc-600 dark:text-zinc-400"
+        }`}
+      >
+        {tab.label}
+      </motion.button>
+    ))}
+  </div>
+
         
             </div>
 
