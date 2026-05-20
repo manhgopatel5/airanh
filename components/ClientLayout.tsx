@@ -1,3 +1,29 @@
+"use client";
+
+import { usePathname, useRouter } from "next/navigation";
+import FCMProvider from "@/components/FCMProvider";
+import { useEffect, useMemo, useRef } from "react";
+import BottomNav from "@/components/BottomNav";
+import { Toaster } from "react-hot-toast";
+import { useAuth } from "@/lib/AuthContext";
+
+type Props = {
+  children: React.ReactNode;
+};
+
+export default function ClientLayout({ children }: Props) {
+  const pathname = usePathname() || "";
+  const router = useRouter();
+  const { user, loading } = useAuth();
+  
+  // Dùng ref để ghi nhớ xem app đã từng load thành công lần đầu chưa
+  const hasInitiallyLoaded = useRef(false);
+
+  const publicRoutes = ["/login", "/register", "/forgot-password", "/verify-email", "/terms", "/privacy"];
+
+  const isPublic = useMemo(
+    () => publicRoutes.some((r) => pathname.startsWith(r)),
+    [pathname]
   );
 
   const isChatDetail = /^\/chat\/[^/]+$/.test(pathname);
