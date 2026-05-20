@@ -1,17 +1,13 @@
 import { create } from 'zustand'
 
-type MainTab = "home" | "messages" | "tasks" | "profile"
+type AppMode = 'task' | 'plan'
 
 interface AppStore {
-  mode: "task" | "plan"
-  setMode: (mode: "task" | "plan") => void
-  currentMainTab: MainTab  // Thêm dòng này
-  setCurrentMainTab: (tab: MainTab) => void // Thêm dòng này
+  mode: AppMode
+  setMode: (mode: AppMode) => void
 }
 
 export const useAppStore = create<AppStore>((set) => ({
-  mode: "task",
+  mode: 'task',
   setMode: (mode) => set({ mode }),
-  currentMainTab: "home", // Thêm dòng này
-  setCurrentMainTab: (tab) => set({ currentMainTab: tab }), // Thêm dòng này
 }))
