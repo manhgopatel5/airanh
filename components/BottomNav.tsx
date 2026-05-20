@@ -157,6 +157,7 @@ export default function BottomNav() {
   const handleNavigation = useCallback((path: string) => {
     if (pathname === path) return;
     navigator.vibrate?.(10);
+    setIsOpen(false); // Tự tắt menu khi chuyển tab
     router.push(path);
   }, [pathname, router]);
 
@@ -216,6 +217,7 @@ export default function BottomNav() {
 
   return (
     <LayoutGroup id="fixed-bottom-nav-scope">
+      {/* Overlay bấm ra ngoài là tắt */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -248,7 +250,7 @@ export default function BottomNav() {
                   }}
                   className="outline-none select-none touch-manipulation z-10 p-2 relative"
                 >
-                  {/* Hiệu ứng pulse thu hút bấm khi menu đóng */}
+                  {/* Hiệu ứng pulse thu hút khi đóng */}
                   <AnimatePresence>
                     {!isOpen && (
                       <motion.span
