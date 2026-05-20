@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiInbox, FiRefreshCw } from "react-icons/fi";
 import { HiBolt, HiCalendarDays } from "react-icons/hi2";
@@ -257,7 +257,20 @@ const handleModeChange = (newMode: "task" | "plan") => {
   setMode(newMode);
   
   // Reset prevMode sau 400ms để lần đổi mode tiếp theo vẫn có animation
-  setTimeout(() => setPrevMode(newMode), 400);
+ 
+};
+
+const [isModeChanging, setIsModeChanging] = useState(false);
+
+const handleModeChange = (newMode: "task" | "plan") => {
+  if (newMode === mode) return;
+  vibrate();
+  setIsModeChanging(true);
+  setPrevMode(mode);
+  setMode(newMode);
+
+  // Tắt flag sau khi animation xong
+  setTimeout(() => setIsModeChanging(false), 400);
 };
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -288,6 +301,14 @@ const handleModeChange = (newMode: "task" | "plan") => {
  const filteredTasks = tasks;
 
   const currentTheme = theme[mode] || theme.task;
+
+useLayoutEffect(() => {
+  const idx = SUB_TABS.findIndex(t => t.key === subTab);
+  const el = tabRefs.current[idx];
+  if (el) {
+    setPillStyle({ left: el.offsetLeft, width: el.offsetWidth });
+  }
+}, [subTab, mode]);
 
   return (
     <>
@@ -345,18 +366,18 @@ const handleModeChange = (newMode: "task" | "plan") => {
           <div className="px-4 pb-3">
            <div className="flex items-center gap-2 mb-3">
   <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1 relative">
-    <motion.div
-      className={`absolute h-9 rounded-full ${
-        mode === "task"? "bg-[#0A84FF]" : "bg-[#30D158]"
-      }`}
-      initial={false}
-      animate={pillStyle}
-      transition={
-        prevMode!== mode
-         ? { type: "spring", stiffness: 400, damping: 35 }
-          : { duration: 0 }
-      }
-    />
+ <motion.div
+  className={`absolute h-9 rounded-full ${
+    mode === "task"? "bg-[#0A84FF]" : "bg-[#30D158]"
+  }`}
+  initial={false}
+  animate={pillStyle}
+  transition={
+    isModeChanging
+   ? { type: "spring", stiffness: 400, damping: 35 }
+      : { duration: 0 }
+  }
+/>
 
     {SUB_TABS.map((tab, i) => (
       <motion.button
