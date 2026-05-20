@@ -994,6 +994,8 @@ const filteredChats = useMemo(() => {
   )}
 </div>
 
+</div>
+
 <div className="pb-24">
           {activeTab === "notifications" ? (
             notifLoading ? (
