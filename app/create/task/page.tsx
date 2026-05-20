@@ -300,6 +300,7 @@ export default function CreateTaskProMax() {
   const [step, setStep] = useState(1);
   const [dragX, setDragX] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [friends, setFriends] = useState<any[]>([]);
@@ -397,6 +398,8 @@ const [form, setForm] = useState({
       toast.error("Vui lòng điền đủ thông tin");
       return;
     }
+  if (isSubmittingRef.current) return;
+  isSubmittingRef.current = true;
     setSubmitting(true);
     try {
       const urls = await Promise.all(imageFiles.map(async file => {
@@ -443,6 +446,7 @@ const [form, setForm] = useState({
       toast.error(e.message || "Có lỗi xảy ra");
     } finally {
       setSubmitting(false);
+      isSubmittingRef.current = false; 
     }
   };
 
