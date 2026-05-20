@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useCallback, useState, useMemo } from "react";
+import React, { useEffect, useCallback, useState, useMemo, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { useAppStore } from "@/store/app";
@@ -67,9 +67,10 @@ const FloatingMenu = React.memo(({
           initial="hidden"
           animate="visible"
           exit="exit"
-          className="w-full bg-white/85 backdrop-blur-2xl rounded-[28px] p-2.5 border border-zinc-200/40 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.15)] pointer-events-auto flex flex-col gap-1 select-none will-change-[transform,opacity]"
+          onClick={(e) => e.stopPropagation()} // Chặn click lan ra overlay
+          className="w-full bg-white/95 backdrop-blur-2xl rounded- p-2.5 border border-zinc-200/40 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.15)] pointer-events-auto flex flex-col gap-1 select-none will-change-[transform,opacity] z-[70]"
         >
-          <div className="text-[10px] font-bold text-zinc-400/90 px-3.5 pt-2 pb-1 tracking-widest uppercase">
+          <div className="text- font-bold text-zinc-400/90 px-3.5 pt-2 pb-1 tracking-widest uppercase">
             Tạo mới nhanh
           </div>
 
@@ -81,7 +82,7 @@ const FloatingMenu = React.memo(({
             className="w-full flex items-center gap-4 p-2.5 rounded-2xl hover:bg-zinc-50/80 active:bg-zinc-100/50 transition-colors duration-150 text-left group"
           >
             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-              <Sparkles className="w-[18px] h-[18px]" strokeWidth={2.2} />
+              <Sparkles className="w- h-" strokeWidth={2.2} />
             </div>
             <div className="flex-1">
               <h4 className="font-bold text-zinc-900 text-sm tracking-tight">Nhiệm vụ mới</h4>
@@ -97,7 +98,7 @@ const FloatingMenu = React.memo(({
             className="w-full flex items-center gap-4 p-2.5 rounded-2xl hover:bg-zinc-50/80 active:bg-zinc-100/50 transition-colors duration-150 text-left group"
           >
             <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-              <CalendarRange className="w-[18px] h-[18px]" strokeWidth={2.2} />
+              <CalendarRange className="w- h-" strokeWidth={2.2} />
             </div>
             <div className="flex-1">
               <h4 className="font-bold text-zinc-900 text-sm tracking-tight">Kế hoạch dài hạn</h4>
@@ -146,6 +147,11 @@ export default function BottomNav() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  // Tự tắt menu khi chuyển route
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname]);
+
   useEffect(() => {
     if (isOpen) {
       const originalStyle = window.getComputedStyle(document.body).overflow;
@@ -157,7 +163,7 @@ export default function BottomNav() {
   const handleNavigation = useCallback((path: string) => {
     if (pathname === path) return;
     navigator.vibrate?.(10);
-    setIsOpen(false); // Tự tắt menu khi chuyển tab
+    setIsOpen(false);
     router.push(path);
   }, [pathname, router]);
 
@@ -185,11 +191,11 @@ export default function BottomNav() {
         className="flex-1 flex flex-col items-center justify-center relative h-full pt-1 pb-3.5 outline-none select-none touch-manipulation group"
       >
         <item.Icon
-          className={`w-[21px] h-[21px] transition-all duration-200 ease-out ${
+          className={`w- h- transition-all duration-200 ease-out ${
             active? `${activeColorClass} scale-105` : "text-zinc-400 group-hover:text-zinc-600"
           }`}
         />
-        <span className={`text-[10px] font-semibold mt-1 tracking-tight transition-colors duration-200 ${
+        <span className={`text- font-semibold mt-1 tracking-tight transition-colors duration-200 ${
           active? activeColorClass : "text-zinc-400"
         }`}>
           {item.label}
@@ -217,7 +223,7 @@ export default function BottomNav() {
 
   return (
     <LayoutGroup id="fixed-bottom-nav-scope">
-      {/* Overlay bấm ra ngoài là tắt */}
+      {/* Overlay bấm ra ngoài là tắt - z-[60] */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -225,24 +231,24 @@ export default function BottomNav() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsOpen(false)}
-            className="fixed inset-0 z-40 bg-zinc-950/15 backdrop-blur-[6px] pointer-events-auto will-change-opacity"
+            className="fixed inset-0 z-[60] bg-zinc-950/15 backdrop-blur-[6px] pointer-events-auto will-change-opacity"
           />
         )}
       </AnimatePresence>
 
-      <div className="fixed bottom-0 inset-x-0 z-50 pointer-events-none flex flex-col items-center justify-end">
+      <div className="fixed bottom-0 inset-x-0 z-[70] pointer-events-none flex flex-col items-center justify-end">
         <div className="w-full max-w-[480px] px-4 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center gap-3">
 
           <FloatingMenu isOpen={isOpen} onSelect={handleSelectCreate} />
 
-          <div className="w-full pointer-events-auto relative rounded-[26px] border border-zinc-200/50 bg-white/80 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.04)] overflow-hidden">
+          <div className="w-full pointer-events-auto relative rounded- border border-zinc-200/50 bg-white/80 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.04)] overflow-hidden z-[70]">
 
-            <div className="flex items-center justify-between h-[64px] px-2 relative">
+            <div className="flex items-center justify-between h- px-2 relative">
               <div className="flex-1 grid grid-cols-2 h-full">
                 {leftItems.map(renderNavItem)}
               </div>
 
-              <div className="w-[64px] flex justify-center h-full items-center relative">
+              <div className="w- flex justify-center h-full items-center relative">
                 <button
                   onClick={() => {
                     navigator.vibrate?.(8);
@@ -250,7 +256,7 @@ export default function BottomNav() {
                   }}
                   className="outline-none select-none touch-manipulation z-10 p-2 relative"
                 >
-                  {/* Hiệu ứng pulse thu hút khi đóng */}
+                  {/* Hiệu ứng pulse thu hút bấm khi đóng */}
                   <AnimatePresence>
                     {!isOpen && (
                       <motion.span
