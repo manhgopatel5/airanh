@@ -50,14 +50,8 @@ export default function AppContainer() {
     switch (currentMainTab) {
       case "messages":
         return <ChatClient />;
-      case "tasks":
-        return (
-          <div className="flex flex-col items-center justify-center pt-32 text-zinc-400 animate-in fade-in duration-300">
-            <ClipboardList size={48} className="mb-2 opacity-40" />
-            <p className="font-medium text-sm">Trang Quản Lý Nhiệm Vụ</p>
-            <p className="text-xs mt-1">Coming soon</p>
-          </div>
-        );
+case "tasks":
+  return <TaskFeedPage />;
       case "profile":
         return <ProfileTabContent onNavigateTab={(tab) => setCurrentMainTab(tab)} />;
       default:
