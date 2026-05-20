@@ -20,7 +20,7 @@ import {
   User,
   Plus,
   
-  CalendarRange,
+  
   Briefcase,
   PartyPopper,
   X
