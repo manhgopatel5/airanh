@@ -19,8 +19,6 @@ import {
   ClipboardList,
   User,
   Plus,
-  
-  
   Briefcase,
   PartyPopper,
   X
@@ -63,7 +61,6 @@ const CenterActionModal = React.memo(({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop blur mờ xung quanh */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -72,8 +69,6 @@ const CenterActionModal = React.memo(({
             onClick={onClose}
             className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-md"
           />
-
-          {/* Modal ở giữa */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -82,8 +77,6 @@ const CenterActionModal = React.memo(({
             className="fixed inset-0 z-[90] flex items-center justify-center p-4 pointer-events-none"
           >
             <div className="w-full max-w-[380px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-3xl rounded-[32px] p-6 border border-zinc-200/50 dark:border-zinc-800/50 shadow-[0_32px_80px_rgba(0,0,0,0.3)] pointer-events-auto">
-
-              {/* Nút X đóng */}
               <div className="flex justify-end mb-2">
                 <button
                   onClick={onClose}
@@ -92,8 +85,6 @@ const CenterActionModal = React.memo(({
                   <X size={18} className="text-zinc-500" />
                 </button>
               </div>
-
-              {/* Tiêu đề */}
               <div className="text-center mb-6">
                 <h2 className="text-[22px] font-black text-zinc-900 dark:text-zinc-100 mb-1">
                   Bạn muốn làm gì?
@@ -102,8 +93,6 @@ const CenterActionModal = React.memo(({
                   Chọn loại hoạt động bạn muốn tạo
                 </p>
               </div>
-
-              {/* 2 nút chọn */}
               <div className="space-y-3">
                 <motion.button
                   whileHover={{ scale: 1.02, y: -2 }}
@@ -129,7 +118,6 @@ const CenterActionModal = React.memo(({
                     </div>
                   </div>
                 </motion.button>
-
                 <motion.button
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
@@ -267,6 +255,8 @@ export default function BottomNav() {
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const mode = useAppStore((s) => s.mode);
+  const setCurrentMainTab = useAppStore((s) => s.setCurrentMainTab);
+  const currentMainTab = useAppStore((s) => s.currentMainTab);
   const isPlanMode = mode === "plan";
 
   const plusX = useMotionValue(0);
@@ -304,13 +294,24 @@ export default function BottomNav() {
   }, [pathname]);
 
   const handleNavigation = useCallback((path: string) => {
+    navigator.vibrate?.(10);
+
+    // Fix: Tasks và Profile dùng state, không push route
+    if (path === "/tasks") {
+      setCurrentMainTab("tasks");
+      return;
+    }
+    if (path === "/profile") {
+      setCurrentMainTab("profile");
+      return;
+    }
+
     if (pathname === path) {
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
-    navigator.vibrate?.(10);
     router.push(path);
-  }, [pathname, router]);
+  }, [pathname, router, setCurrentMainTab]);
 
   const handleSelectCreate = useCallback((type: "task" | "plan") => {
     navigator.vibrate?.([15, 30, 15]);
@@ -318,10 +319,14 @@ export default function BottomNav() {
     router.push(`/create/${type}`);
   }, [router]);
 
-  const checkActive = useCallback((path: string) =>
-    path === "/"? pathname === "/" : pathname.startsWith(path),
-    [pathname]
-  );
+  const checkActive = useCallback((path: string) => {
+    // Fix: Check active theo store cho 2 tab này
+    if (path === "/tasks") return currentMainTab === "tasks";
+    if (path === "/profile") return currentMainTab === "profile";
+    if (path === "/") return pathname === "/" && currentMainTab === "home";
+    if (path === "/messages") return pathname.startsWith(path);
+    return pathname.startsWith(path);
+  }, [pathname, currentMainTab]);
 
   const activeColorClass = isPlanMode? "text-emerald-500" : "text-blue-600";
   const activeBgClass = isPlanMode? "bg-emerald-500" : "bg-blue-600";
@@ -337,7 +342,6 @@ export default function BottomNav() {
           onSelect={handleSelectCreate}
           onClose={() => setIsOpen(false)}
         />
-
         <div className="fixed bottom-0 inset-x-0 z-[70] pointer-events-none flex flex-col items-center justify-end">
           <div className="w-full max-w-[480px] px-4 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center gap-3">
             <motion.div
@@ -351,7 +355,6 @@ export default function BottomNav() {
                 animate={{ x: ["-100%", "100%"] }}
                 transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
               />
-
               <div className="flex items-center justify-between h-16 px-2 relative">
                 <div className="flex-1 grid grid-cols-2 h-full">
                   {leftItems.map((item) => (
@@ -365,7 +368,6 @@ export default function BottomNav() {
                     />
                   ))}
                 </div>
-
                 <div className="w-20 flex justify-center h-full items-center relative">
                   <motion.button
                     data-plus-button
@@ -397,7 +399,6 @@ export default function BottomNav() {
                         />
                       ))}
                     </AnimatePresence>
-
                     <motion.div
                       className={`absolute inset-0 rounded-full ${activeBgClass} blur-2xl opacity-60`}
                       animate={{
@@ -409,7 +410,6 @@ export default function BottomNav() {
                         opacity: { duration: 2, repeat: Infinity }
                       }}
                     />
-
                     <motion.div
                       animate={{ rotate: isOpen? 135 : 0, scale: isOpen? 0.88 : 1 }}
                       whileHover={{ scale: isOpen? 0.88 : 1.08 }}
@@ -428,7 +428,6 @@ export default function BottomNav() {
                     </motion.div>
                   </motion.button>
                 </div>
-
                 <div className="flex-1 grid grid-cols-2 h-full">
                   {rightItems.map((item) => (
                     <MagneticNavItem
