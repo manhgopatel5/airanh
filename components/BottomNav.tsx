@@ -19,7 +19,7 @@ import {
   ClipboardList,
   User,
   Plus,
-  Sparkles,
+  
   CalendarRange,
   Briefcase,
   PartyPopper,
