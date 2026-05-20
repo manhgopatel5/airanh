@@ -246,9 +246,9 @@ const currentTheme = theme[mode];
   return (
     <>
       <Toaster richColors position="top-center" />
-      <div
-        className="min-h-screen bg-[#F2F7] dark:bg-black text-zinc-900 dark:text-zinc-100 select-none"
-        onTouchStart={handleTouchStart}
+    <div
+  className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 select-none"
+  onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
