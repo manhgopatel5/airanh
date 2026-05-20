@@ -1,7 +1,7 @@
 "use client";
 export const dynamic = 'force-dynamic';
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation"; // đã bỏ usePathname
 import { createPortal } from "react-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { useAppStore } from "@/store/app";
@@ -43,9 +43,6 @@ const SPRING_BOUNCY = {
   mass: 0.6
 };
 
-/* ==========================================================================
-   FLOATING MENU
-   ========================================================================== */
 const FloatingMenu = ({
   isOpen,
   onSelect,
@@ -162,9 +159,6 @@ const FloatingMenu = ({
   );
 };
 
-/* ==========================================================================
-   MAGNETIC NAV ITEM
-   ========================================================================== */
 const MagneticNavItem = ({
   item,
   active,
@@ -226,7 +220,7 @@ const MagneticNavItem = ({
       >
         <motion.div animate={active? { rotate: [0, -6, 6, 0] } : {}} transition={{ duration: 0.5 }}>
           <item.Icon
-            className={`w-[23px] h-[23px] transition-colors duration-300 ${
+            className={`w-[21px] h-[21px] transition-colors duration-300 ${
               active? activeColorClass : "text-zinc-400 dark:text-zinc-500"
             }`}
             strokeWidth={active? 2.7 : 2.2}
@@ -244,7 +238,7 @@ const MagneticNavItem = ({
       <motion.span
         animate={{ y: active? -1 : 0, scale: active? 1.04 : 1 }}
         transition={SPRING}
-        className={`relative z-10 text-[11px] mt-1.5 tracking-tight transition-all duration-300 ${
+        className={`relative z-10 text-[10px] mt-1.5 tracking-tight transition-all duration-300 ${
           active? `${activeColorClass} font-bold` : "text-zinc-400 dark:text-zinc-500 font-semibold"
         }`}
       >
@@ -269,9 +263,6 @@ const MagneticNavItem = ({
   );
 };
 
-/* ==========================================================================
-   MAIN: AppContainer - giữ nguyên tab logic + nav mới
-   ========================================================================== */
 export default function AppContainer() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -373,7 +364,6 @@ export default function AppContainer() {
         </div>
       </div>
 
-      {/* BOTTOM NAV - Portal */}
       {mounted && createPortal(
         <MotionConfig transition={SPRING}>
           <LayoutGroup id="app-global-navigation-flow">
@@ -401,7 +391,7 @@ export default function AppContainer() {
                   layout
                   animate={{ y: [0, -2, 0] }}
                   transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                  className="w-full pointer-events-auto relative rounded-[32px] border border-white/40 dark:border-zinc-800/50 bg-white/55 dark:bg-zinc-900/55 backdrop-blur-[40px] backdrop-saturate-200 shadow-[0_20px_80px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.55)] overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/40 before:to-white/5 dark:before:from-white/5 dark:before:to-transparent before:pointer-events-none"
+                  className="w-full pointer-events-auto relative rounded-[26px] border border-white/40 dark:border-zinc-800/50 bg-white/55 dark:bg-zinc-900/55 backdrop-blur-[40px] backdrop-saturate-200 shadow-[0_20px_80px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.55)] overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/40 before:to-white/5 dark:before:from-white/5 dark:before:to-transparent before:pointer-events-none"
                 >
                   <motion.div
                     className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
@@ -409,7 +399,7 @@ export default function AppContainer() {
                     transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                   />
 
-                  <div className="flex items-center justify-between h-16 px-2 relative">
+                  <div className="flex items-center justify-between h-[64px] px-2 relative">
                     <div className="flex-1 grid grid-cols-2 h-full">
                       {mainNavItems.slice(0, 2).map((item) => (
                         <MagneticNavItem
@@ -426,7 +416,7 @@ export default function AppContainer() {
                       ))}
                     </div>
 
-                    <div className="w-20 flex justify-center h-full items-center relative">
+                    <div className="w-[64px] flex justify-center h-full items-center relative">
                       <motion.button
                         data-plus-button
                         onClick={() => {
@@ -479,9 +469,9 @@ export default function AppContainer() {
                           whileHover={{ scale: isMenuOpen? 0.88 : 1.08 }}
                           whileTap={{ scale: 0.85 }}
                           transition={SPRING_BOUNCY}
-                          className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-2xl transition-all duration-500 ${dynamicGlow} relative overflow-hidden ${
+                          className={`w-11 h-11 rounded-full flex items-center justify-center text-white shadow-2xl transition-all duration-500 ${dynamicGlow} relative overflow-hidden ${
                             isMenuOpen
-                            ? "bg-zinc-900 dark:bg-zinc-800 shadow-zinc-950/20"
+                           ? "bg-zinc-900 dark:bg-zinc-800 shadow-zinc-950/20"
                               : `${activeBgClass} shadow-lg`
                           }`}
                         >
@@ -490,7 +480,7 @@ export default function AppContainer() {
                             animate={{ rotate: [0, 360] }}
                             transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
                           />
-                          <Plus className="w-6 h-6" strokeWidth={3.5} />
+                          <Plus className="w-4 h-4" strokeWidth={3} />
                           <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-white/20 to-transparent" />
                         </motion.div>
                       </motion.button>
@@ -521,8 +511,8 @@ export default function AppContainer() {
       )}
 
       <style jsx global>{`
-      .scrollbar-hide::-webkit-scrollbar{display:none}
-      .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
+     .scrollbar-hide::-webkit-scrollbar{display:none}
+     .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
         html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
         body{overscroll-behavior-y:contain}
       `}</style>
