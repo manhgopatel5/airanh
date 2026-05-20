@@ -1,505 +1,58 @@
-"use client";
-
-import React, { useEffect, useCallback, useState, useMemo, useRef } from "react";
-import { createPortal } from "react-dom";
-import { useRouter, usePathname } from "next/navigation";
-import {
-  motion,
-  AnimatePresence,
-  LayoutGroup,
-  useMotionValue,
-  useSpring,
-  useTransform,
-  useDragControls,
-  MotionConfig
-} from "framer-motion";
-import { useAppStore } from "@/store/app";
-import {
-  Home,
-  MessageSquare,
-  ClipboardList,
-  User,
-  Plus,
-  Sparkles,
-  CalendarRange
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-
-interface NavItem {
-  path: string;
-  label: string;
-  Icon: LucideIcon;
-}
-
-const SPRING = {
-  type: "spring" as const,
-  stiffness: 550,
-  damping: 32,
-  mass: 0.8
-};
-
-const SPRING_BOUNCY = {
-  type: "spring" as const,
-  stiffness: 400,
-  damping: 25,
-  mass: 0.6
-};
-
-/* ==========================================================================
-   FLOATING MENU 
-   ========================================================================== */
-const FloatingMenu = React.memo(({
-  isOpen,
-  onSelect
-}: {
-  isOpen: boolean;
-  onSelect: (type: "task" | "plan") => void;
-}) => {
-  const dragControls = useDragControls();
-  const y = useMotionValue(0);
-  const opacity = useTransform(y, [0, 100], [1, 0]);
-  const scale = useTransform(y, [0, 100], [1, 0.95]);
-
-  return (
-    <AnimatePresence mode="wait">
-      {isOpen && (
-        <motion.div
-          drag="y"
-          dragControls={dragControls}
-          dragListener={false}
-          dragConstraints={{ top: 0, bottom: 0 }}
-          dragElastic={0.2}
-          onDragEnd={(_, info) => {
-            if (info.offset.y > 80 || info.velocity.y > 500) {
-              onSelect("close");
-            }
-          }}
-          style={{ y, opacity, scale }}
-          initial={{ opacity: 0, y: 20, scale: 0.96, filter: "blur(8px)" }}
-          animate={{
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            filter: "blur(0px)",
-            transition: SPRING_BOUNCY
-          }}
-          exit={{
-            opacity: 0,
-            y: 15,
-            scale: 0.97,
-            filter: "blur(4px)",
-            transition: { duration: 0.15, ease: [0.4, 0, 1, 1] }
-          }}
-          className="w-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-3xl rounded- p-3 border border-zinc-200/40 dark:border-zinc-800/40 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] pointer-events-auto flex flex-col gap-1.5 select-none"
-        >
-          <div 
-            onPointerDown={(e) => dragControls.start(e)}
-            className="w-full flex justify-center pt-1 pb-2 cursor-grab active:cursor-grabbing touch-none"
-          >
-            <div className="w-10 h-1 rounded-full bg-zinc-300/60 dark:bg-zinc-700/60" />
-          </div>
-
-          <div className="text- font-black text-zinc-400/80 px-3.5 pb-1.5 tracking-[0.2em] uppercase">
-            Tạo mới nhanh
-          </div>
-
-          {[
-            { type: "task" as const, Icon: Sparkles, title: "Nhiệm vụ mới", desc: "Đầu việc nhỏ cần xử lý ngay", color: "blue" },
-            { type: "plan" as const, Icon: CalendarRange, title: "Kế hoạch dài hạn", desc: "Lên lộ trình tuần, tháng chỉn chu", color: "emerald" }
-          ].map((item, i) => (
-            <motion.button
-              key={item.type}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ 
-                opacity: 1, 
-                x: 0,
-                transition: {...SPRING, delay: 0.05 + i * 0.05 }
-              }}
-              exit={{ opacity: 0, x: -5, transition: { duration: 0.1 } }}
-              whileHover={{ 
-                scale: 1.02, 
-                x: 4,
-                backgroundColor: "rgba(0,0,0,0.03)",
-              }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => onSelect(item.type)}
-              className="w-full flex items-center gap-4 p-3 rounded-2xl transition-colors duration-200 text-left group relative overflow-hidden"
-            >
-              <motion.div
-                className={`absolute inset-0 bg-gradient-to-r from-${item.color}-500/0 via-${item.color}-500/5 to-${item.color}-500/0`}
-                initial={{ x: "-100%" }}
-                whileHover={{ x: "100%" }}
-                transition={{ duration: 0.6, ease: "easeInOut" }}
-              />
-              
-              <div className={`w-11 h-11 rounded-2xl bg-${item.color}-50 dark:bg-${item.color}-950/30 text-${item.color}-600 dark:text-${item.color}-400 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 relative`}>
-                <item.Icon className="w- h-" strokeWidth={2.5} />
-                <motion.div
-                  className={`absolute inset-0 rounded-2xl bg-${item.color}-500/20 blur-xl`}
-                  animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
-                />
-              </div>
-              <div className="flex-1 relative">
-                <h4 className="font-black text-zinc-900 dark:text-zinc-100 text- tracking-tight">{item.title}</h4>
-                <p className="text- text-zinc-500 dark:text-zinc-400 font-medium">{item.desc}</p>
-              </div>
-            </motion.button>
-          ))}
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-});
-FloatingMenu.displayName = "FloatingMenu";
-
-
-/* ==========================================================================
-   MAGNETIC NAV ITEM
-   ========================================================================== */
-const MagneticNavItem = React.memo(({
-  item,
-  active,
-  onClick,
-  activeColorClass,
-  activeBgClass
-}: {
-  item: NavItem;
-  active: boolean;
-  onClick: () => void;
-  activeColorClass: string;
-  activeBgClass: string;
-}) => {
-  const ref = useRef<HTMLButtonElement>(null);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  
-  const springX = useSpring(x, SPRING);
-  const springY = useSpring(y, SPRING);
-  
-  const rotateX = useTransform(springY, [-20, 20], [10, -10]);
-  const rotateY = useTransform(springX, [-20, 20], [-10, 10]);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (!ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    x.set((e.clientX - centerX) * 0.3);
-    y.set((e.clientY - centerY) * 0.3);
-  };
-
-  const handleMouseLeave = () => {
-    x.set(0);
-    y.set(0);
-  };
-
-  return (
-    <motion.button
-      ref={ref}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      onClick={onClick}
-      style={{ x: springX, y: springY, rotateX, rotateY }}
-      whileTap={{ scale: 0.92 }}
-      className="flex-1 flex flex-col items-center justify-center relative h-full pt-1 pb-3.5 outline-none select-none touch-manipulation group perspective-1000"
-    >
-      <motion.div
-        animate={{ 
-          scale: active? 1.08 : 1,
-          y: active? -2 : 0
-        }}
-        transition={SPRING}
-        className="relative"
-      >
-        <item.Icon
-          className={`w- h- transition-colors duration-300 ${
-            active? activeColorClass : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
-          }`}
-          strokeWidth={active? 2.5 : 2}
-        />
-        {active && (
-          <motion.div
-            layoutId="iconGlow"
-            className={`absolute inset-0 ${activeColorClass} blur-xl opacity-40`}
-            transition={SPRING}
-          />
-        )}
-      </motion.div>
-      
-      <motion.span 
-        animate={{ 
-          scale: active? 1.05 : 1,
-          fontWeight: active? 700 : 600
-        }}
-        className={`text- mt-1.5 tracking-tight transition-colors duration-300 ${
-          active? activeColorClass : "text-zinc-400"
-        }`}
-      >
-        {item.label}
-      </motion.span>
-
-      {active && (
-        <>
-          <motion.div
-            layoutId="activeIndicator"
-            className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${activeBgClass}`}
-            transition={SPRING}
-          />
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: [1, 1.5, 1], opacity: [0.6, 0, 0.6] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-            className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${activeBgClass}`}
-          />
-        </>
-      )}
-    </motion.button>
-  );
-});
-MagneticNavItem.displayName = "MagneticNavItem";
-
-
-/* ==========================================================================
-   MAIN: BOTTOM NAV - Portal Fix
-   ========================================================================== */
-export default function BottomNav() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  const mode = useAppStore((s) => s.mode);
-  const isPlanMode = mode === "plan";
-
-  const plusX = useMotionValue(0);
-  const plusY = useMotionValue(0);
-  const plusSpringX = useSpring(plusX, SPRING);
-  const plusSpringY = useSpring(plusY, SPRING);
-
-  const leftItems: NavItem[] = useMemo(() => [
-    { path: "/", label: "Home", Icon: Home },
-    { path: "/messages", label: "Messages", Icon: MessageSquare },
-  ], []);
-
-  const rightItems: NavItem[] = useMemo(() => [
-    { path: "/tasks", label: "Tasks", Icon: ClipboardList },
-    { path: "/profile", label: "Profile", Icon: User },
-  ], []);
-
-  useEffect(() => setMounted(true), []);
-
-  useEffect(() => {
-    const targets = ["/", "/messages", "/tasks", "/profile", "/create/task", "/create/plan"];
-    targets.forEach((p) => router.prefetch(p));
-  }, [router]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsOpen(false);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  // FIX CỨNG: Click outside với check button
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
-      const target = e.target as HTMLElement;
-      if (menuRef.current?.contains(target) || target.closest('[data-plus-button]')) {
-        return;
-      }
-      setIsOpen(false);
-    };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      document.addEventListener("touchstart", handleClickOutside);
-      const originalStyle = window.getComputedStyle(document.body).overflow;
-      document.body.style.overflow = "hidden";
-      return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-        document.removeEventListener("touchstart", handleClickOutside);
-        document.body.style.overflow = originalStyle;
-      };
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    setIsOpen(false);
-  }, [pathname]);
-
-  const handleNavigation = useCallback((path: string) => {
-    if (pathname === path) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
-    navigator.vibrate?.(10);
-    setIsOpen(false);
-    router.push(path);
-  }, [pathname, router]);
-
-  const handleSelectCreate = useCallback((type: "task" | "plan" | "close") => {
-    if (type === "close") {
-      setIsOpen(false);
-      return;
-    }
-    navigator.vibrate?.([15, 30, 15]);
-    setIsOpen(false);
-    handleNavigation(`/create/${type}`);
-  }, [handleNavigation]);
-
-  const checkActive = useCallback((path: string) =>
-    path === "/"? pathname === "/" : pathname.startsWith(path),
-    [pathname]
-  );
-
-  const activeColorClass = isPlanMode? "text-emerald-500" : "text-blue-600";
-  const activeBgClass = isPlanMode? "bg-emerald-500" : "bg-blue-600";
-  const dynamicGlow = isPlanMode? "shadow-emerald-500/30" : "shadow-blue-600/30";
-
-  // Dùng Portal để thoát stacking context
-  if (!mounted) return null;
-
-  return createPortal(
-    <MotionConfig transition={SPRING}>
-      <LayoutGroup id="fixed-bottom-nav-scope">
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-              animate={{ opacity: 1, backdropFilter: "blur(8px)" }}
-              exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-              className="fixed inset-0 z-[9998] bg-zinc-950/20 dark:bg-zinc-950/40 pointer-events-none will-change-[backdrop-filter,opacity]"
-            />
-          )}
-        </AnimatePresence>
-
-        <div className="fixed bottom-0 inset-x-0 z-[9999] pointer-events-none flex flex-col items-center justify-end">
-          <div ref={menuRef} className="w-full max-w-[480px] px-4 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center gap-3">
-
-            <FloatingMenu isOpen={isOpen} onSelect={handleSelectCreate} />
-
-            <motion.div 
-              layout
-              className="w-full pointer-events-auto relative rounded- border border-zinc-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_16px_48px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.4)] overflow-hidden"
-            >
-              <motion.div
-                className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
-                animate={{ x: ["-100%", "100%"] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              />
-
-              <div className="flex items-center justify-between h- px-2 relative">
-                <div className="flex-1 grid-cols-2 h-full">
-                  {leftItems.map((item) => (
-                    <MagneticNavItem
-                      key={item.path}
-                      item={item}
-                      active={checkActive(item.path)}
-                      onClick={() => handleNavigation(item.path)}
-                      activeColorClass={activeColorClass}
-                      activeBgClass={activeBgClass}
-                    />
-                  ))}
-                </div>
-
-                <div className="w- flex justify-center h-full items-center relative">
-                  <motion.button
-                    data-plus-button
-                    onClick={() => {
-                      navigator.vibrate?.(12);
-                      setIsOpen(!isOpen);
-                    }}
-                    onMouseMove={(e) => {
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      plusX.set((e.clientX - rect.left - rect.width / 2) * 0.2);
-                      plusY.set((e.clientY - rect.top - rect.height / 2) * 0.2);
-                    }}
-                    onMouseLeave={() => {
-                      plusX.set(0);
-                      plusY.set(0);
-                    }}
-                    style={{ x: plusSpringX, y: plusSpringY }}
-                    className="outline-none select-none touch-manipulation z-10 p-2 relative group"
-                  >
-                    <AnimatePresence>
-                      {!isOpen && (
-                        <>
-                          {[0, 0.4, 0.8].map((delay) => (
-                            <motion.span
-                              key={delay}
-                              initial={{ scale: 0.8, opacity: 0 }}
-                              animate={{ 
-                                scale: [1, 1.6, 1.6], 
-                                opacity: [0.7, 0, 0] 
-                              }}
-                              exit={{ opacity: 0 }}
-                              transition={{ 
-                                repeat: Infinity, 
-                                duration: 2, 
-                                delay,
-                                ease: "easeOut" 
-                              }}
-                              className={`absolute inset-0 rounded-full ${activeBgClass}`}
-                            />
-                          ))}
-                        </>
-                      )}
-                    </AnimatePresence>
-
-                    <motion.div
-                      className={`absolute inset-0 rounded-full ${activeBgClass} blur-2xl opacity-60`}
-                      animate={{
-                        scale: isOpen? 0.8 : [1, 1.2, 1],
-                        opacity: isOpen? 0.3 : [0.6, 0.8, 0.6]
-                      }}
-                      transition={{
-                        scale: { duration: 2, repeat: Infinity },
-                        opacity: { duration: 2, repeat: Infinity }
-                      }}
-                    />
-
-                    <motion.div
-                      animate={{
-                        rotate: isOpen? 135 : 0,
-                        scale: isOpen? 0.88 : 1
-                      }}
-                      whileHover={{ scale: isOpen? 0.88 : 1.08 }}
-                      whileTap={{ scale: 0.85 }}
-                      transition={SPRING_BOUNCY}
-                      className={`w-12 h-12 rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-300 ${dynamicGlow} relative ${
-                        isOpen 
-                        ? "bg-zinc-900 dark:bg-zinc-800 shadow-zinc-950/20" 
-                          : `${activeBgClass} shadow-lg`
-                      }`}
-                    >
-                      <Plus className="w- h-" strokeWidth={3.5} />
-                      <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-white/20 to-transparent" />
-                    </motion.div>
-                  </motion.button>
-                </div>
-
-                <div className="flex-1 grid-cols-2 h-full">
-                  {rightItems.map((item) => (
-                    <MagneticNavItem
-                      key={item.path}
-                      item={item}
-                      active={checkActive(item.path)}
-                      onClick={() => handleNavigation(item.path)}
-                      activeColorClass={activeColorClass}
-                      activeBgClass={activeBgClass}
-                    />
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </LayoutGroup>
-    </MotionConfig>,
-    document.body
-  );
-}
+14:55:28.715 Running build in Washington, D.C., USA (East) – iad1
+14:55:28.716 Build machine configuration: 4 cores, 8 GB
+14:55:28.811 Cloning github.com/manhgopatel5/airanh (Branch: main, Commit: bf44abb)
+14:55:29.248 Cloning completed: 437.000ms
+14:55:31.075 Restored build cache from previous deployment (52KWRUXjz76n6V5rtrFJBMA8xPer)
+14:55:31.308 Running "vercel build"
+14:55:31.322 Vercel CLI 54.2.0
+14:55:31.523 Warning: Due to "engines": { "node": "20.x" } in your `package.json` file, the Node.js Version defined in your Project Settings ("24.x") will not apply, Node.js Version "20.x" will be used instead. Learn More: https://vercel.link/node-version
+14:55:31.545 Installing dependencies...
+14:55:34.317 
+14:55:34.317 > airanh-app@1.0.0 prepare
+14:55:34.317 > husky
+14:55:34.318 
+14:55:34.385 
+14:55:34.385 up to date in 3s
+14:55:34.385 
+14:55:34.385 319 packages are looking for funding
+14:55:34.385   run `npm fund` for details
+14:55:34.393 Detected Next.js version: 15.5.15
+14:55:34.400 Running "npm run build"
+14:55:34.516 
+14:55:34.516 > airanh-app@1.0.0 build
+14:55:34.517 > next build
+14:55:34.517 
+14:55:35.183    ▲ Next.js 15.5.15
+14:55:35.184    - Environments: .env.local
+14:55:35.184    - Experiments (use with caution):
+14:55:35.184      · serverActions
+14:55:35.184      · optimizePackageImports
+14:55:35.184 
+14:55:35.364    Creating an optimized production build ...
+14:55:48.995 
+14:55:48.996 app/globals.css
+14:55:48.996 1:1	⚠  Complex selectors in '.group:hover .dark\:group-hover\:text-gray-50:is(.dark *)' can not be transformed to an equivalent selector without ':is()'. [postcss-is-pseudo-class]
+14:55:48.996 1:1	⚠  Complex selectors in '.group:hover .dark\:group-hover\:text-zinc-300:is(.dark *)' can not be transformed to an equivalent selector without ':is()'. [postcss-is-pseudo-class]
+14:55:48.996 1:1	⚠  Complex selectors in '.group:hover .dark\:group-hover\:text-gray-50:is(.dark *)' can not be transformed to an equivalent selector without ':is()'. [postcss-is-pseudo-class]
+14:55:48.996 1:1	⚠  Complex selectors in '.group:hover .dark\:group-hover\:text-zinc-300:is(.dark *)' can not be transformed to an equivalent selector without ':is()'. [postcss-is-pseudo-class]
+14:55:48.996 1:1	⚠  Complex selectors in '.group:hover .dark\:group-hover\:text-gray-50:is(.dark *)' can not be transformed to an equivalent selector without ':is()'. [postcss-is-pseudo-class]
+14:55:48.997 1:1	⚠  Complex selectors in '.group:hover .dark\:group-hover\:text-zinc-300:is(.dark *)' can not be transformed to an equivalent selector without ':is()'. [postcss-is-pseudo-class]
+14:55:48.997 
+14:55:48.997  ⚠ 6 problems (0 errors, 6 warnings)
+14:55:48.997 
+14:55:53.501  ✓ Compiled successfully in 17.8s
+14:55:53.506    Linting and checking validity of types ...
+14:56:05.836 Failed to compile.
+14:56:05.836 
+14:56:05.836 ./components/BottomNav.tsx:74:24
+14:56:05.837 Type error: Argument of type '"close"' is not assignable to parameter of type '"task" | "plan"'.
+14:56:05.837 
+14:56:05.837   72 |           onDragEnd={(_, info) => {
+14:56:05.837   73 |             if (info.offset.y > 80 || info.velocity.y > 500) {
+14:56:05.837 > 74 |               onSelect("close");
+14:56:05.837      |                        ^
+14:56:05.837   75 |             }
+14:56:05.837   76 |           }}
+14:56:05.837   77 |           style={{ y, opacity, scale }}
+14:56:05.877 Next.js build worker exited with code: 1 and signal: null
+14:56:05.958 Error: Command "npm run build" exited with 1
