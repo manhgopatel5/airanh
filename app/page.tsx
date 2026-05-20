@@ -89,12 +89,7 @@ const FloatingMenu = ({
         >
  
 
-     <div className="px-1 flex items-center">
-  <span className="text-2xl font-black tracking-tight">
-    <span className="text-blue-600 dark:text-blue-500">hu</span>
-    <span className="text-emerald-500 dark:text-emerald-400">ha</span>
-  </span>
-</div>
+
 
           <div className="grid grid-cols-2 gap-3">
             <motion.button
