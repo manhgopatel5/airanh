@@ -164,7 +164,7 @@ const MagneticNavItem = ({
   active,
   onClick,
   activeColorClass,
-  activeBgClass
+  
 }: {
   item: { id: MainTab; label: string; Icon: any };
   active: boolean;
