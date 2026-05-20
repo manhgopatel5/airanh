@@ -68,7 +68,7 @@ export default function TaskFeedPage() {
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
   const [tabChanged, setTabChanged] = useState(false);
 const [prevTab, setPrevTab] = useState<TabId>("hot");
-const highlightTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const pullStartY = useRef(0);
   const [pullDistance, setPullDistance] = useState(0);
