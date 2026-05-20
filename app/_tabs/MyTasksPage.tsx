@@ -32,11 +32,12 @@ export default function TasksPage() {
   const auth = getFirebaseAuth();
   const db = getFirebaseDB();
   const router = useRouter();
-  const [prevMode, setPrevMode] = useState<"task" | "plan">(mode);
+  
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const { mode = "task", setMode } = useAppStore();
   const [subTab, setSubTab] = useState<SubTab>("mine");
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [prevMode, setPrevMode] = useState<"task" | "plan">(mode);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
