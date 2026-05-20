@@ -17,7 +17,7 @@ import {
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
   HelpCircle, LogOut, Trash2, User, Shield, Lock,
-  Camera, Check, QrCode, Share2, ChevronRight, Settings,
+  Camera, Check, QrCode, Share2, Settings,
   Circle, Zap, ClipboardList, Star, ScanLine, X
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
