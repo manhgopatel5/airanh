@@ -375,17 +375,11 @@ export default function AppContainer() {
                   onClose={() => setIsMenuOpen(false)}
                 />
 
-                <motion.div
-                  layout
-                  animate={{ y: [0, -2, 0] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                  className="w-full pointer-events-auto relative rounded-[32px] border border-white/40 dark:border-zinc-800/50 bg-white/55 dark:bg-zinc-900/55 backdrop-blur-[40px] backdrop-saturate-200 shadow-[0_20px_80px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.55)] overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/40 before:to-white/5 dark:before:from-white/5 dark:before:to-transparent before:pointer-events-none"
-                >
-                  <motion.div
-                    className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
-                    animate={{ x: ["-100%", "100%"] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                  />
+           <motion.div
+  layout
+  className="w-full pointer-events-auto relative border-t border-zinc-200/60 dark:border-zinc-800/60 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl"
+>
+              
 
                   <div className="flex items-center justify-between h-16 px-2 relative">
                     <div className="flex-1 grid grid-cols-2 h-full">
