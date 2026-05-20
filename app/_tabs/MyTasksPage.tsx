@@ -337,17 +337,19 @@ useEffect(() => {
               <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1">
                 {SUB_TABS.map((tab) => (
                   <motion.button
-                    key={tab.key}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => handleTabChange(tab.key)}
-                    className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
-                      subTab === tab.key
-                    ? `bg-gradient-to-r ${currentTheme.gradient} text-white ${currentTheme.shadow}`
-                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
-                    }`}
-                  >
-                    {tab.label}
-                  </motion.button>
+  key={tab.key}
+  whileTap={{ scale: 0.95 }}
+  onClick={() => handleTabChange(tab.key)}
+  className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
+    subTab === tab.key
+      ? mode === "task" 
+        ? "bg-[#0A84FF] text-white"  // Task = xanh dương trơn
+        : "bg-[#30D158] text-white"  // Plan = xanh lá trơn
+      : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+  }`}
+>
+  {tab.label}
+</motion.button>
                 ))}
               </div>
               <button
