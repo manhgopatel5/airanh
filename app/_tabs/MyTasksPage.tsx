@@ -32,7 +32,7 @@ export default function TasksPage() {
   const auth = getFirebaseAuth();
   const db = getFirebaseDB();
   const router = useRouter();
-  
+  const containerRef = useRef<HTMLDivElement>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const { mode = "task", setMode } = useAppStore();
   const [subTab, setSubTab] = useState<SubTab>("mine");
@@ -290,13 +290,17 @@ useLayoutEffect(() => {
   const updatePill = () => {
     const idx = SUB_TABS.findIndex(t => t.key === subTab);
     const el = tabRefs.current[idx];
-    if (el) {
-      setPillStyle({ left: el.offsetLeft, width: el.offsetWidth });
+    const container = containerRef.current;
+    if (el && container) {
+      // Tính left theo container, không bị lệch do scroll
+      const left = el.offsetLeft - container.scrollLeft;
+      setPillStyle({ left, width: el.offsetWidth });
     }
   };
 
-  // Dùng rAF để đợi DOM paint xong
-  requestAnimationFrame(updatePill);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(updatePill); // 2 lần rAF cho chắc
+  });
 }, [subTab, mode]);
 
   return (
@@ -354,36 +358,39 @@ useLayoutEffect(() => {
 
           <div className="px-4 pb-3">
            <div className="flex items-center gap-2 mb-3">
-<div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1 relative" key={mode}>
+<div
+  ref={containerRef}
+  className="flex gap-2 overflow-x-auto scrollbar-hide flex-1 relative"
+  key={mode}
+>
   <motion.div
-    className={`absolute h-9 rounded-full ${
+    className={`absolute h-9 rounded-full top-0 ${
       mode === "task"? "bg-[#0A84FF]" : "bg-[#30D158]"
     }`}
     initial={false}
     animate={pillStyle}
     transition={
       isModeChanging
-     ? { type: "spring", stiffness: 400, damping: 35 }
+    ? { type: "spring", stiffness: 400, damping: 35 }
         : { duration: 0 }
     }
   />
-
-    {SUB_TABS.map((tab, i) => (
-      <motion.button
-        key={tab.key}
-        ref={el => { tabRefs.current[i] = el }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => handleTabChange(tab.key)}
-        className={`relative px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap z-10 transition-colors ${
-          subTab === tab.key
-           ? "text-white"
-            : "text-zinc-600 dark:text-zinc-400"
-        }`}
-      >
-        {tab.label}
-      </motion.button>
-    ))}
-  </div>
+  {SUB_TABS.map((tab, i) => (
+    <motion.button
+      key={tab.key}
+      ref={el => { tabRefs.current[i] = el }}
+      whileTap={{ scale: 0.95 }}
+      onClick={() => handleTabChange(tab.key)}
+      className={`relative px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap z-10 transition-colors ${
+        subTab === tab.key
+        ? "text-white"
+          : "text-zinc-600 dark:text-zinc-400"
+      }`}
+    >
+      {tab.label}
+    </motion.button>
+  ))}
+</div>
 
         
             </div>
