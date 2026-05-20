@@ -42,8 +42,7 @@ export default function TasksPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showSearch, setShowSearch] = useState(false);
+
   const [shareTask, setShareTask] = useState<Task | null>(null);
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -205,7 +204,7 @@ data = data.filter(t => t.type === "task" && t.deadline && t.deadline.seconds * 
       setLoadingMore(false);
       setRefreshing(false);
     }
-  }, [currentUser, mode, subTab, searchQuery, db]); // ← Đã bỏ lastDoc
+  }, [currentUser, mode, subTab, db]); // ← Đã bỏ lastDoc
 
 const fetchTasksRef2 = useRef(fetchTasks);
 fetchTasksRef2.current = fetchTasks;
@@ -273,9 +272,7 @@ useEffect(() => {
     setPullDistance(0);
   };
 
-  const filteredTasks = tasks.filter(t =>
-   !searchQuery || t.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+ const filteredTasks = tasks;
 
   const currentTheme = theme[mode] || theme.task;
 
@@ -352,45 +349,10 @@ useEffect(() => {
 </motion.button>
                 ))}
               </div>
-              <button
-                onClick={() => {
-                  vibrate();
-                  setShowSearch(!showSearch);
-                }}
-                className="p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 active:scale-90 transition-all"
-              >
-                <FiSearch size={18} className="text-zinc-600 dark:text-zinc-400" />
-              </button>
+        
             </div>
 
-            <AnimatePresence>
-              {showSearch && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="relative">
-                    <input
-                      autoFocus
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder={`Tìm ${mode}...`}
-                      className="w-full px-4 py-2.5 pr-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 outline-none text-sm focus:ring-2 focus:ring-[#0A84FF]/20"
-                    />
-                    {searchQuery && (
-                      <button
-                        onClick={() => setSearchQuery("")}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700"
-                      >
-                        <FiX size={16} className="text-zinc-500" />
-                      </button>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+           
           </div>
         </div>
 
