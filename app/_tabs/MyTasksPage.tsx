@@ -37,7 +37,6 @@ export default function TasksPage() {
   const { mode = "task", setMode } = useAppStore();
   const [subTab, setSubTab] = useState<SubTab>("mine");
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [isModeChanging, setIsModeChanging] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -237,9 +236,7 @@ export default function TasksPage() {
   const handleModeChange = (newMode: "task" | "plan") => {
     if (newMode === mode) return;
     vibrate();
-    setIsModeChanging(true);
     setMode(newMode);
-    setTimeout(() => setIsModeChanging(false), 400);
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -326,32 +323,19 @@ export default function TasksPage() {
             <div className="flex items-center gap-2 mb-3">
               <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1">
                 {SUB_TABS.map((tab) => (
-                  <motion.button
+                  <button
                     key={tab.key}
-                    layout
-                    whileTap={{ scale: 0.95 }}
                     onClick={() => handleTabChange(tab.key)}
-                    className={`relative px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap ${
+                    className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
                       subTab === tab.key
-                       ? "text-white"
-                        : "text-zinc-600 dark:text-zinc-400"
+                       ? mode === "task"
+                         ? "bg-[#0A84FF] text-white"
+                          : "bg-[#30D158] text-white"
+                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                     }`}
                   >
-                    {subTab === tab.key && (
-                      <motion.div
-                        layoutId="activeSubTabPill"
-                        className={`absolute inset-0 rounded-full ${
-                          mode === "task"? "bg-[#0A84FF]" : "bg-[#30D158]"
-                        }`}
-                        transition={
-                          isModeChanging
-                           ? { type: "spring", stiffness: 400, damping: 35 }
-                            : { duration: 0 }
-                        }
-                      />
-                    )}
-                    <span className="relative z-10">{tab.label}</span>
-                  </motion.button>
+                    {tab.label}
+                  </button>
                 ))}
               </div>
             </div>
@@ -457,8 +441,8 @@ export default function TasksPage() {
       </div>
 
       <style jsx global>{`
-       .scrollbar-hide::-webkit-scrollbar { display: none; }
-       .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </>
   );
