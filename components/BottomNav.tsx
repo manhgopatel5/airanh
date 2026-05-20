@@ -2,7 +2,16 @@
 
 import React, { useEffect, useCallback, useState, useMemo, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+import {
+  motion,
+  AnimatePresence,
+  LayoutGroup,
+  useMotionValue,
+  useSpring,
+  useTransform,
+  useDragControls,
+  MotionConfig
+} from "framer-motion";
 import { useAppStore } from "@/store/app";
 import {
   Home,
@@ -21,36 +30,32 @@ interface NavItem {
   Icon: LucideIcon;
 }
 
-const menuVariants = {
-  hidden: { opacity: 0, y: 15, scale: 0.97 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      type: "spring",
-      damping: 25,
-      stiffness: 400,
-      staggerChildren: 0.05,
-      delayChildren: 0.01
-    }
-  },
-  exit: {
-    opacity: 0,
-    y: 10,
-    scale: 0.98,
-    transition: { duration: 0.12, ease: "easeInOut" }
-  }
+/* ==========================================================================
+   PHYSICS CONSTANTS - iOS Spring Standard
+   ========================================================================== */
+const SPRING = {
+  type: "spring" as const,
+  stiffness: 550,
+  damping: 32,
+  mass: 0.8
 };
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 8 },
-  visible: { opacity: 1, y: 0, transition: { type: "spring", damping: 20, stiffness: 350 } },
-  exit: { opacity: 0, transition: { duration: 0.08 } }
+const SPRING_BOUNCY = {
+  type: "spring" as const,
+  stiffness: 400,
+  damping: 25,
+  mass: 0.6
+};
+
+const SPRING_GENTLE = {
+  type: "spring" as const,
+  stiffness: 300,
+  damping: 30,
+  mass: 1
 };
 
 /* ==========================================================================
-   COMPONENT 1: FLOATING MENU 
+   COMPONENT 1: FLOATING MENU - Glass Morphing Pro
    ========================================================================== */
 const FloatingMenu = React.memo(({
   isOpen,
@@ -59,51 +64,100 @@ const FloatingMenu = React.memo(({
   isOpen: boolean;
   onSelect: (type: "task" | "plan") => void;
 }) => {
+  const dragControls = useDragControls();
+  const y = useMotionValue(0);
+  const opacity = useTransform(y, [0, 100], [1, 0]);
+  const scale = useTransform(y, [0, 100], [1, 0.95]);
+
   return (
     <AnimatePresence mode="wait">
       {isOpen && (
         <motion.div
-          variants={menuVariants}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          className="w-full bg-white/95 backdrop-blur-2xl rounded- p-2.5 border border-zinc-200/40 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.15)] pointer-events-auto flex flex-col gap-1 select-none will-change-[transform,opacity]"
+          drag="y"
+          dragControls={dragControls}
+          dragListener={false}
+          dragConstraints={{ top: 0, bottom: 0 }}
+          dragElastic={0.2}
+          onDragEnd={(_, info) => {
+            if (info.offset.y > 80 || info.velocity.y > 500) {
+              onSelect("task"); // Fake select để trigger close
+            }
+          }}
+          style={{ y, opacity, scale }}
+          initial={{ opacity: 0, y: 20, scale: 0.96, filter: "blur(8px)" }}
+          animate={{
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            filter: "blur(0px)",
+            transition: SPRING_BOUNCY
+          }}
+          exit={{
+            opacity: 0,
+            y: 15,
+            scale: 0.97,
+            filter: "blur(4px)",
+            transition: { duration: 0.15, ease: [0.4, 0, 1, 1] }
+          }}
+          className="w-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-3xl rounded-[28px] p-3 border border-zinc-200/40 dark:border-zinc-800/40 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] pointer-events-auto flex flex-col gap-1.5 select-none will-change-[transform,opacity,filter]"
         >
-          <div className="text- font-bold text-zinc-400/90 px-3.5 pt-2 pb-1 tracking-widest uppercase">
+          {/* Drag Handle */}
+          <div 
+            onPointerDown={(e) => dragControls.start(e)}
+            className="w-full flex justify-center pt-1 pb-2 cursor-grab active:cursor-grabbing touch-none"
+          >
+            <div className="w-10 h-1 rounded-full bg-zinc-300/60 dark:bg-zinc-700/60" />
+          </div>
+
+          <div className="text-[10px] font-black text-zinc-400/80 px-3.5 pb-1.5 tracking-[0.2em] uppercase">
             Tạo mới nhanh
           </div>
 
-          <motion.button
-            variants={itemVariants}
-            whileHover={{ scale: 1.01, x: 2 }}
-            whileTap={{ scale: 0.99 }}
-            onClick={() => onSelect("task")}
-            className="w-full flex items-center gap-4 p-2.5 rounded-2xl hover:bg-zinc-50/80 active:bg-zinc-100/50 transition-colors duration-150 text-left group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-              <Sparkles className="w- h-" strokeWidth={2.2} />
-            </div>
-            <div className="flex-1">
-              <h4 className="font-bold text-zinc-900 text-sm tracking-tight">Nhiệm vụ mới</h4>
-              <p className="text-xs text-zinc-400 font-medium">Đầu việc nhỏ cần xử lý ngay</p>
-            </div>
-          </motion.button>
-
-          <motion.button
-            variants={itemVariants}
-            whileHover={{ scale: 1.01, x: 2 }}
-            whileTap={{ scale: 0.99 }}
-            onClick={() => onSelect("plan")}
-            className="w-full flex items-center gap-4 p-2.5 rounded-2xl hover:bg-zinc-50/80 active:bg-zinc-100/50 transition-colors duration-150 text-left group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-              <CalendarRange className="w- h-" strokeWidth={2.2} />
-            </div>
-            <div className="flex-1">
-              <h4 className="font-bold text-zinc-900 text-sm tracking-tight">Kế hoạch dài hạn</h4>
-              <p className="text-xs text-zinc-400 font-medium">Lên lộ trình tuần, tháng chỉn chu</p>
-            </div>
-          </motion.button>
+          {[
+            { type: "task" as const, Icon: Sparkles, title: "Nhiệm vụ mới", desc: "Đầu việc nhỏ cần xử lý ngay", color: "blue" },
+            { type: "plan" as const, Icon: CalendarRange, title: "Kế hoạch dài hạn", desc: "Lên lộ trình tuần, tháng chỉn chu", color: "emerald" }
+          ].map((item, i) => (
+            <motion.button
+              key={item.type}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ 
+                opacity: 1, 
+                x: 0,
+                transition: {...SPRING_GENTLE, delay: 0.05 + i * 0.05 }
+              }}
+              exit={{ opacity: 0, x: -5, transition: { duration: 0.1 } }}
+              whileHover={{ 
+                scale: 1.02, 
+                x: 4,
+                backgroundColor: "rgba(0,0,0,0.03)",
+                transition: SPRING
+              }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onSelect(item.type)}
+              className="w-full flex items-center gap-4 p-3 rounded-2xl transition-colors duration-200 text-left group relative overflow-hidden"
+            >
+              {/* Hover glow effect */}
+              <motion.div
+                className={`absolute inset-0 bg-gradient-to-r from-${item.color}-500/0 via-${item.color}-500/5 to-${item.color}-500/0`}
+                initial={{ x: "-100%" }}
+                whileHover={{ x: "100%" }}
+                transition={{ duration: 0.6, ease: "easeInOut" }}
+              />
+              
+              <div className={`w-11 h-11 rounded-2xl bg-${item.color}-50 dark:bg-${item.color}-950/30 text-${item.color}-600 dark:text-${item.color}-400 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 relative`}>
+                <item.Icon className="w-[20px] h-[20px]" strokeWidth={2.5} />
+                <motion.div
+                  className={`absolute inset-0 rounded-2xl bg-${item.color}-500/20 blur-xl`}
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
+                />
+              </div>
+              <div className="flex-1 relative">
+                <h4 className="font-black text-zinc-900 dark:text-zinc-100 text-[15px] tracking-tight">{item.title}</h4>
+                <p className="text-[13px] text-zinc-500 dark:text-zinc-400 font-medium">{item.desc}</p>
+              </div>
+            </motion.button>
+          ))}
         </motion.div>
       )}
     </AnimatePresence>
@@ -113,7 +167,113 @@ FloatingMenu.displayName = "FloatingMenu";
 
 
 /* ==========================================================================
-   COMPONENT MAIN: BOTTOM NAV
+   COMPONENT 2: MAGNETIC NAV ITEM - Pro Hover Effect
+   ========================================================================== */
+const MagneticNavItem = React.memo(({
+  item,
+  active,
+  onClick,
+  activeColorClass,
+  activeBgClass
+}: {
+  item: NavItem;
+  active: boolean;
+  onClick: () => void;
+  activeColorClass: string;
+  activeBgClass: string;
+}) => {
+  const ref = useRef<HTMLButtonElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  
+  const springX = useSpring(x, SPRING);
+  const springY = useSpring(y, SPRING);
+  
+  const rotateX = useTransform(springY, [-20, 20], [10, -10]);
+  const rotateY = useTransform(springX, [-20, 20], [-10, 10]);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    x.set((e.clientX - centerX) * 0.3);
+    y.set((e.clientY - centerY) * 0.3);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.button
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      onClick={onClick}
+      style={{ x: springX, y: springY, rotateX, rotateY }}
+      whileTap={{ scale: 0.92 }}
+      className="flex-1 flex flex-col items-center justify-center relative h-full pt-1 pb-3.5 outline-none select-none touch-manipulation group perspective-1000"
+    >
+      <motion.div
+        animate={{ 
+          scale: active? 1.08 : 1,
+          y: active? -2 : 0
+        }}
+        transition={SPRING}
+        className="relative"
+      >
+        <item.Icon
+          className={`w-[22px] h-[22px] transition-colors duration-300 ${
+            active? activeColorClass : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
+          }`}
+          strokeWidth={active? 2.5 : 2}
+        />
+        {active && (
+          <motion.div
+            layoutId="iconGlow"
+            className={`absolute inset-0 ${activeColorClass} blur-xl opacity-40`}
+            transition={SPRING}
+          />
+        )}
+      </motion.div>
+      
+      <motion.span 
+        animate={{ 
+          scale: active? 1.05 : 1,
+          fontWeight: active? 700 : 600
+        }}
+        className={`text-[10px] mt-1.5 tracking-tight transition-colors duration-300 ${
+          active? activeColorClass : "text-zinc-400"
+        }`}
+      >
+        {item.label}
+      </motion.span>
+
+      {active && (
+        <>
+          <motion.div
+            layoutId="activeIndicator"
+            className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${activeBgClass}`}
+            transition={SPRING}
+          />
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: [1, 1.5, 1], opacity: [0.6, 0, 0.6] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+            className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${activeBgClass}`}
+          />
+        </>
+      )}
+    </motion.button>
+  );
+});
+MagneticNavItem.displayName = "MagneticNavItem";
+
+
+/* ==========================================================================
+   COMPONENT MAIN: BOTTOM NAV - Pro Max
    ========================================================================== */
 export default function BottomNav() {
   const router = useRouter();
@@ -123,6 +283,12 @@ export default function BottomNav() {
 
   const mode = useAppStore((s) => s.mode);
   const isPlanMode = mode === "plan";
+
+  // Magnetic effect cho nút +
+  const plusX = useMotionValue(0);
+  const plusY = useMotionValue(0);
+  const plusSpringX = useSpring(plusX, SPRING);
+  const plusSpringY = useSpring(plusY, SPRING);
 
   const leftItems: NavItem[] = useMemo(() => [
     { path: "/", label: "Home", Icon: Home },
@@ -147,12 +313,15 @@ export default function BottomNav() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // FIX CHÍNH: Bắt click ngoài bằng document listener
+  // FIX CHÍNH: Click outside với check button
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent | TouchEvent) => {
-      if (menuRef.current &&!menuRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
+      const target = e.target as HTMLElement;
+      // Không đóng nếu click vào nút + hoặc menu
+      if (menuRef.current?.contains(target) || target.closest('[data-plus-button]')) {
+        return;
       }
+      setIsOpen(false);
     };
 
     if (isOpen) {
@@ -168,20 +337,22 @@ export default function BottomNav() {
     }
   }, [isOpen]);
 
-  // Tự tắt menu khi chuyển route
   useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
 
   const handleNavigation = useCallback((path: string) => {
-    if (pathname === path) return;
+    if (pathname === path) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     navigator.vibrate?.(10);
     setIsOpen(false);
     router.push(path);
   }, [pathname, router]);
 
   const handleSelectCreate = useCallback((type: "task" | "plan") => {
-    navigator.vibrate?.([10, 20]);
+    navigator.vibrate?.([15, 30, 15]);
     setIsOpen(false);
     handleNavigation(`/create/${type}`);
   }, [handleNavigation]);
@@ -193,119 +364,151 @@ export default function BottomNav() {
 
   const activeColorClass = isPlanMode? "text-emerald-500" : "text-blue-600";
   const activeBgClass = isPlanMode? "bg-emerald-500" : "bg-blue-600";
-  const dynamicGlow = isPlanMode? "shadow-emerald-500/20" : "shadow-blue-600/20";
-
-  const renderNavItem = (item: NavItem) => {
-    const active = checkActive(item.path);
-    return (
-      <button
-        key={item.path}
-        onClick={() => handleNavigation(item.path)}
-        className="flex-1 flex flex-col items-center justify-center relative h-full pt-1 pb-3.5 outline-none select-none touch-manipulation group"
-      >
-        <item.Icon
-          className={`w- h- transition-all duration-200 ease-out ${
-            active? `${activeColorClass} scale-105` : "text-zinc-400 group-hover:text-zinc-600"
-          }`}
-        />
-        <span className={`text- font-semibold mt-1 tracking-tight transition-colors duration-200 ${
-          active? activeColorClass : "text-zinc-400"
-        }`}>
-          {item.label}
-        </span>
-
-        {active && (
-          <>
-            <div className={`absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full ${activeBgClass} opacity-100 block`} />
-            <motion.div
-              layoutId="activeIndicator"
-              layout="position"
-              transition={{
-                type: "spring",
-                stiffness: 500,
-                damping: 30,
-                mass: 0.4
-              }}
-              className={`absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full ${activeBgClass} z-10 hidden md:block`}
-            />
-          </>
-        )}
-      </button>
-    );
-  };
+  const dynamicGlow = isPlanMode? "shadow-emerald-500/30" : "shadow-blue-600/30";
 
   return (
-    <LayoutGroup id="fixed-bottom-nav-scope">
-      {/* Overlay blur khi mở menu */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] bg-zinc-950/15 backdrop-blur-[6px] pointer-events-none will-change-opacity"
-          />
-        )}
-      </AnimatePresence>
+    <MotionConfig transition={SPRING}>
+      <LayoutGroup id="fixed-bottom-nav-scope">
+        {/* Backdrop với morphing effect */}
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+              animate={{ opacity: 1, backdropFilter: "blur(8px)" }}
+              exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+              className="fixed inset-0 z-[60] bg-zinc-950/20 dark:bg-zinc-950/40 pointer-events-none will-change-[backdrop-filter,opacity]"
+            />
+          )}
+        </AnimatePresence>
 
-      <div className="fixed bottom-0 inset-x-0 z-[70] pointer-events-none flex flex-col items-center justify-end">
-        <div ref={menuRef} className="w-full max-w-[480px] px-4 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center gap-3">
+        <div className="fixed bottom-0 inset-x-0 z-[70] pointer-events-none flex flex-col items-center justify-end">
+          <div ref={menuRef} className="w-full max-w-[480px] px-4 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center gap-3">
 
-          <FloatingMenu isOpen={isOpen} onSelect={handleSelectCreate} />
+            <FloatingMenu isOpen={isOpen} onSelect={handleSelectCreate} />
 
-          <div className="w-full pointer-events-auto relative rounded- border border-zinc-200/50 bg-white/80 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.04)] overflow-hidden">
+            <motion.div 
+              layout
+              className="w-full pointer-events-auto relative rounded-[26px] border border-zinc-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_16px_48px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.4)] overflow-hidden"
+            >
+              {/* Glass refraction line */}
+              <motion.div
+                className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                animate={{ x: ["-100%", "100%"] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              />
 
-            <div className="flex items-center justify-between h- px-2 relative">
-              <div className="flex-1 grid grid-cols-2 h-full">
-                {leftItems.map(renderNavItem)}
-              </div>
+              <div className="flex items-center justify-between h-[66px] px-2 relative">
+                <div className="flex-1 grid-cols-2 h-full">
+                  {leftItems.map((item) => (
+                    <MagneticNavItem
+                      key={item.path}
+                      item={item}
+                      active={checkActive(item.path)}
+                      onClick={() => handleNavigation(item.path)}
+                      activeColorClass={activeColorClass}
+                      activeBgClass={activeBgClass}
+                    />
+                  ))}
+                </div>
 
-              <div className="w- flex justify-center h-full items-center relative">
-                <button
-                  onClick={() => {
-                    navigator.vibrate?.(8);
-                    setIsOpen(!isOpen);
-                  }}
-                  className="outline-none select-none touch-manipulation z-10 p-2 relative"
-                >
-                  {/* Hiệu ứng pulse thu hút bấm khi đóng */}
-                  <AnimatePresence>
-                    {!isOpen && (
-                      <motion.span
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0, 0.6] }}
-                        exit={{ opacity: 0 }}
-                        transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
-                        className={`absolute inset-0 rounded-full ${activeBgClass} blur-md`}
-                      />
-                    )}
-                  </AnimatePresence>
-
-                  <motion.div
-                    animate={{
-                      rotate: isOpen? 135 : 0,
-                      scale: isOpen? 0.90 : 1
+                <div className="w-[68px] flex justify-center h-full items-center relative">
+                  <motion.button
+                    data-plus-button
+                    onClick={() => {
+                      navigator.vibrate?.(12);
+                      setIsOpen(!isOpen);
                     }}
-                    whileHover={{ scale: isOpen? 0.90 : 1.05 }}
-                    whileTap={{ scale: 0.88 }}
-                    transition={{ type: "spring", damping: 15, stiffness: 400 }}
-                    className={`w-11 h-11 rounded-full flex items-center justify-center text-white shadow-md transition-all duration-200 ${dynamicGlow} ${
-                      isOpen? "bg-zinc-900 shadow-zinc-950/10" : activeBgClass
-                    }`}
+                    onMouseMove={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      plusX.set((e.clientX - rect.left - rect.width / 2) * 0.2);
+                      plusY.set((e.clientY - rect.top - rect.height / 2) * 0.2);
+                    }}
+                    onMouseLeave={() => {
+                      plusX.set(0);
+                      plusY.set(0);
+                    }}
+                    style={{ x: plusSpringX, y: plusSpringY }}
+                    className="outline-none select-none touch-manipulation z-10 p-2 relative group"
                   >
-                    <Plus className="w-4 h-4" strokeWidth={3} />
-                  </motion.div>
-                </button>
-              </div>
+                    {/* Pulse rings khi đóng */}
+                    <AnimatePresence>
+                      {!isOpen && (
+                        <>
+                          {[0, 0.4, 0.8].map((delay) => (
+                            <motion.span
+                              key={delay}
+                              initial={{ scale: 0.8, opacity: 0 }}
+                              animate={{ 
+                                scale: [1, 1.6, 1.6], 
+                                opacity: [0.7, 0, 0] 
+                              }}
+                              exit={{ opacity: 0 }}
+                              transition={{ 
+                                repeat: Infinity, 
+                                duration: 2, 
+                                delay,
+                                ease: "easeOut" 
+                              }}
+                              className={`absolute inset-0 rounded-full ${activeBgClass}`}
+                            />
+                          ))}
+                        </>
+                      )}
+                    </AnimatePresence>
 
-              <div className="flex-1 grid grid-cols-2 h-full">
-                {rightItems.map(renderNavItem)}
-              </div>
-            </div>
+                    {/* Outer glow */}
+                    <motion.div
+                      className={`absolute inset-0 rounded-full ${activeBgClass} blur-2xl opacity-60`}
+                      animate={{
+                        scale: isOpen? 0.8 : [1, 1.2, 1],
+                        opacity: isOpen? 0.3 : [0.6, 0.8, 0.6]
+                      }}
+                      transition={{
+                        scale: { duration: 2, repeat: Infinity },
+                        opacity: { duration: 2, repeat: Infinity }
+                      }}
+                    />
 
+                    <motion.div
+                      animate={{
+                        rotate: isOpen? 135 : 0,
+                        scale: isOpen? 0.88 : 1
+                      }}
+                      whileHover={{ scale: isOpen? 0.88 : 1.08 }}
+                      whileTap={{ scale: 0.85 }}
+                      transition={SPRING_BOUNCY}
+                      className={`w-12 h-12 rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-300 ${dynamicGlow} relative ${
+                        isOpen 
+                         ? "bg-zinc-900 dark:bg-zinc-800 shadow-zinc-950/20" 
+                          : `${activeBgClass} shadow-lg`
+                      }`}
+                    >
+                      <Plus className="w-[18px] h-[18px]" strokeWidth={3.5} />
+                      
+                      {/* Inner highlight */}
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-white/20 to-transparent" />
+                    </motion.div>
+                  </motion.button>
+                </div>
+
+                <div className="flex-1 grid grid-cols-2 h-full">
+                  {rightItems.map((item) => (
+                    <MagneticNavItem
+                      key={item.path}
+                      item={item}
+                      active={checkActive(item.path)}
+                      onClick={() => handleNavigation(item.path)}
+                      activeColorClass={activeColorClass}
+                      activeBgClass={activeBgClass}
+                    />
+                  ))}
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
-      </div>
-    </LayoutGroup>
+      </LayoutGroup>
+    </MotionConfig>
   );
 }
