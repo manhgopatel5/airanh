@@ -217,13 +217,7 @@ useEffect(() => {
   const fetchTasksRef = useRef(fetchTasks);
 fetchTasksRef.current = fetchTasks;
 
-useEffect(() => {
-  const idx = SUB_TABS.findIndex(t => t.key === subTab);
-  const el = tabRefs.current[idx];
-  if (el) {
-    setPillStyle({ left: el.offsetLeft, width: el.offsetWidth });
-  }
-}, [subTab, mode]); // Thêm mode vào đây
+
 
 useEffect(() => {
   if (!loadMoreRef.current) return;
@@ -293,11 +287,16 @@ const handleModeChange = (newMode: "task" | "plan") => {
   const currentTheme = theme[mode] || theme.task;
 
 useLayoutEffect(() => {
-  const idx = SUB_TABS.findIndex(t => t.key === subTab);
-  const el = tabRefs.current[idx];
-  if (el) {
-    setPillStyle({ left: el.offsetLeft, width: el.offsetWidth });
-  }
+  const updatePill = () => {
+    const idx = SUB_TABS.findIndex(t => t.key === subTab);
+    const el = tabRefs.current[idx];
+    if (el) {
+      setPillStyle({ left: el.offsetLeft, width: el.offsetWidth });
+    }
+  };
+
+  // Dùng rAF để đợi DOM paint xong
+  requestAnimationFrame(updatePill);
 }, [subTab, mode]);
 
   return (
@@ -355,19 +354,19 @@ useLayoutEffect(() => {
 
           <div className="px-4 pb-3">
            <div className="flex items-center gap-2 mb-3">
-  <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1 relative">
-<motion.div
-  className={`absolute h-9 rounded-full ${
-    mode === "task"? "bg-[#0A84FF]" : "bg-[#30D158]"
-  }`}
-  initial={false}
-  animate={pillStyle}
-  transition={
-    isModeChanging
-    ? { type: "spring", stiffness: 400, damping: 35 }
-      : { duration: 0 }
-  }
-/>
+<div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1 relative" key={mode}>
+  <motion.div
+    className={`absolute h-9 rounded-full ${
+      mode === "task"? "bg-[#0A84FF]" : "bg-[#30D158]"
+    }`}
+    initial={false}
+    animate={pillStyle}
+    transition={
+      isModeChanging
+     ? { type: "spring", stiffness: 400, damping: 35 }
+        : { duration: 0 }
+    }
+  />
 
     {SUB_TABS.map((tab, i) => (
       <motion.button
