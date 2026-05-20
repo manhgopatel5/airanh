@@ -11,7 +11,7 @@ import { getFunctions, httpsCallable } from "firebase/functions";
 import { useAppStore } from "@/store/app";
 import {
   collection, query, where, onSnapshot, doc, getDoc, arrayUnion, setDoc, limit,
-  updateDoc, arrayRemove, Timestamp, Unsubscribe, QuerySnapshot, DocumentData,
+  updateDoc, arrayRemove, QueryDocumentSnapshot, deleteDoc, Timestamp, Unsubscribe, QuerySnapshot, DocumentData,
   orderBy, writeBatch, serverTimestamp, getDocs, startAfter
 } from "firebase/firestore";
 import { signOut, deleteUser } from "firebase/auth";
