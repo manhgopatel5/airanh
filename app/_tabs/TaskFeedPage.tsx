@@ -169,29 +169,10 @@ const currentTheme = theme[mode];
 
 useEffect(() => {
   if (prevTab !== activeTab) {
-    // Clear timer cũ nếu có
-    if (highlightTimerRef.current) {
-      clearTimeout(highlightTimerRef.current);
-    }
-    
     setTabChanged(true);
     vibrate([10, 30, 10]);
-    
-    // Set timer mới
-    highlightTimerRef.current = setTimeout(() => {
-      setTabChanged(false);
-      highlightTimerRef.current = null;
-    }, 3000);
-    
     setPrevTab(activeTab);
   }
-  
-  // Cleanup khi unmount
-  return () => {
-    if (highlightTimerRef.current) {
-      clearTimeout(highlightTimerRef.current);
-    }
-  };
 }, [activeTab, prevTab]);
   useEffect(() => {
     if (!loadMoreRef.current) return;
@@ -344,10 +325,6 @@ useEffect(() => {
     vibrate();
     setShowSearch(!showSearch);
     setTabChanged(false);
-    if (highlightTimerRef.current) {
-      clearTimeout(highlightTimerRef.current);
-      highlightTimerRef.current = null;
-    }
   }}
   className={`p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 active:scale-90 transition-all relative ${
     tabChanged 
@@ -359,8 +336,9 @@ useEffect(() => {
 >
   <FiSearch 
     size={18} 
+    onAnimationEnd={() => setTabChanged(false)} // Tắt khi scale xong 5 lần
     style={{
-      animation: tabChanged ? 'scale 1s ease-in-out 3' : 'none'
+      animation: tabChanged ? 'scale 0.6s ease-in-out 5' : 'none' // 0.6s x 5 = 3s, nhấp 5 lần
     }}
     className={`${
       tabChanged 
@@ -491,7 +469,7 @@ useEffect(() => {
   
   @keyframes scale {
     0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.3); }
+    50% { transform: scale(1.25); }
   }
 `}</style>
     </>
