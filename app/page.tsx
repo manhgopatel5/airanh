@@ -85,74 +85,52 @@ const FloatingMenu = ({
             filter: "blur(4px)",
             transition: { duration: 0.15, ease: [0.4, 0, 1, 1] }
           }}
-          className="w-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-3xl rounded-3xl p-3 border border-zinc-200/40 dark:border-zinc-800/40 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] pointer-events-auto flex flex-col gap-1.5 select-none"
+          className="w-full bg-white dark:bg-zinc-900 rounded-3xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] pointer-events-auto flex flex-col gap-3 select-none"
         >
           <div
             onPointerDown={(e) => dragControls.start(e)}
-            className="w-full flex justify-center pt-1 pb-2 cursor-grab active:cursor-grabbing touch-none"
+            className="w-full flex justify-center cursor-grab active:cursor-grabbing touch-none"
           >
-            <div className="w-10 h-1 rounded-full bg-zinc-300/60 dark:bg-zinc-700/60" />
+            <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700" />
           </div>
 
-          <div className="text-xs font-black text-zinc-400/80 px-3.5 pb-1.5 tracking-[0.2em] uppercase">
-            Tạo mới nhanh
+          <div className="text-xs font-black text-zinc-400 px-1 tracking-[0.2em] uppercase">
+            TẠO MỚI NHANH
           </div>
 
-          <motion.button
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0, transition: {...SPRING, delay: 0.05 } }}
-            whileHover={{ scale: 1.02, x: 4, backgroundColor: "rgba(0,0,0,0.03)" }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => onSelect("task")}
-            className="w-full flex items-center gap-4 p-3 rounded-2xl transition-colors duration-200 text-left group relative overflow-hidden"
-          >
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-blue-500/0"
-              initial={{ x: "-100%" }}
-              whileHover={{ x: "100%" }}
-              transition={{ duration: 0.6, ease: "easeInOut" }}
-            />
-            <div className="w-11 h-11 rounded-2xl bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 relative">
-              <Sparkles className="w-5 h-5" strokeWidth={2.5} />
-              <motion.div
-                className="absolute inset-0 rounded-2xl bg-blue-500/20 blur-xl"
-                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-            </div>
-            <div className="flex-1 relative">
-              <h4 className="font-black text-zinc-900 dark:text-zinc-100 text-sm tracking-tight">Nhiệm vụ mới</h4>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Đầu việc nhỏ cần xử lý ngay</p>
-            </div>
-          </motion.button>
+          <div className="grid grid-cols-2 gap-3">
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0, transition: {...SPRING, delay: 0.05 } }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => onSelect("task")}
+              className="flex flex-col items-center gap-3 p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/30 text-left"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                <Sparkles className="w-6 h-6" strokeWidth={2.5} />
+              </div>
+              <div className="text-center">
+                <h4 className="font-black text-zinc-900 dark:text-zinc-100 text-sm tracking-tight">Nhiệm vụ mới</h4>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-0.5 leading-tight">Đầu việc nhỏ cần xử lý ngay</p>
+              </div>
+            </motion.button>
 
-          <motion.button
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0, transition: {...SPRING, delay: 0.1 } }}
-            whileHover={{ scale: 1.02, x: 4, backgroundColor: "rgba(0,0,0,0.03)" }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => onSelect("plan")}
-            className="w-full flex items-center gap-4 p-3 rounded-2xl transition-colors duration-200 text-left group relative overflow-hidden"
-          >
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/5 to-emerald-500/0"
-              initial={{ x: "-100%" }}
-              whileHover={{ x: "100%" }}
-              transition={{ duration: 0.6, ease: "easeInOut" }}
-            />
-            <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 relative">
-              <CalendarRange className="w-5 h-5" strokeWidth={2.5} />
-              <motion.div
-                className="absolute inset-0 rounded-2xl bg-emerald-500/20 blur-xl"
-                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
-              />
-            </div>
-            <div className="flex-1 relative">
-              <h4 className="font-black text-zinc-900 dark:text-zinc-100 text-sm tracking-tight">Kế hoạch dài hạn</h4>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Lên lộ trình tuần, tháng chỉn chu</p>
-            </div>
-          </motion.button>
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0, transition: {...SPRING, delay: 0.1 } }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => onSelect("plan")}
+              className="flex flex-col items-center gap-3 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 text-left"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <CalendarRange className="w-6 h-6" strokeWidth={2.5} />
+              </div>
+              <div className="text-center">
+                <h4 className="font-black text-zinc-900 dark:text-zinc-100 text-sm tracking-tight">Kế hoạch dài hạn</h4>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-0.5 leading-tight">Lên lộ trình tuần, tháng chỉn chu</p>
+              </div>
+            </motion.button>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
