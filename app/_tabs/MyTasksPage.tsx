@@ -206,7 +206,7 @@ export default function MyTasksPage() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
               {filteredTasks.map((task, idx) => (
                 <motion.div key={task.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.04 }}>
-                  <TaskCard task={task} theme={mode} mode={mode} onDelete={id => setTasks(p => p.filter(t => t.id!== id))} onShare={t => setShareTask(t)} />
+                <TaskCard task={task} theme={mode} onDelete={id => setTasks(p => p.filter(t => t.id!== id))} onShare={t => setShareTask(t)} />
                 </motion.div>
               ))}
             </motion.div>
