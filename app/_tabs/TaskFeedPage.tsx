@@ -404,7 +404,7 @@ export default function TaskFeedPage() {
                       theme={mode}
                       onDelete={(id) => setTasks(prev => prev.filter(t => t.id!== id))}
                       onShare={handleShare}
-                      onUpdate={handleTaskUpdate}
+                     
                     />
                   </motion.div>
                 ))}
