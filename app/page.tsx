@@ -1,6 +1,6 @@
 "use client";
 export const dynamic = 'force-dynamic';
-
+import MyTasksPage from "./_tabs/MyTasksPage"; 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
@@ -51,7 +51,7 @@ export default function AppContainer() {
       case "messages":
         return <ChatClient />;
 case "tasks":
-  return <TaskFeedPage />;
+  return <MyTasksPage />;
       case "profile":
         return <ProfileTabContent onNavigateTab={(tab) => setCurrentMainTab(tab)} />;
       default:
