@@ -371,7 +371,7 @@ export default function BottomNav() {
     navigator.vibrate?.(10);
     setIsOpen(false);
     router.push(path);
-  }, [pathname][router]);
+  }, [pathname, router]);
 
   const handleSelectCreate = useCallback((type: "task" | "plan") => {
     navigator.vibrate?.([15][30][15]);
