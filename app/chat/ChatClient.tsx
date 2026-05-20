@@ -1036,54 +1036,56 @@ const filteredChats = useMemo(() => {
 
           return (
             <motion.button
-              key={tab.key}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setActiveTab(tab.key as any)}
-              className={`
-                px-4
-                h-9
-                rounded-full
-                text-sm
-                font-semibold
-                whitespace-nowrap
-                transition-all
-                flex
-                items-center
-                gap-1.5
-                flex-shrink-0
-                ${
-                  active
-                    ? `${primaryBg} text-white shadow-[0_8px_30px_rgba(10,132,255,0.25)]`
-                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
-                }
-              `}
-            >
-              {tab.label}
+  key={tab.key}
+  whileTap={{ scale: 0.95 }}
+  onClick={() => setActiveTab(tab.key as any)}
+  className={`
+    px-4
+    h-9
+    rounded-full
+    text-sm
+    font-semibold
+    whitespace-nowrap
+    transition-all
+    flex
+    items-center
+    gap-1.5
+    flex-shrink-0
+    ${
+      active
+        ? mode === "plan"
+          ? "bg-[#30D158] text-white"
+          : "bg-[#0A84FF] text-white"
+        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+    }
+  `}
+>
+  {tab.label}
 
-              {tab.badge ? (
-                <span
-                  className={`
-                    min-w-[18px]
-                    h-[18px]
-                    px-1
-                    rounded-full
-                    flex
-                    items-center
-                    justify-center
-                    text-[11px]
-                    leading-none
-                    font-bold
-                    ${
-                      active
-                        ? "bg-white/20 text-white"
-                        : "bg-[#ff3b30] text-white"
-                    }
-                  `}
-                >
-                  {tab.badge > 99 ? "99+" : tab.badge}
-                </span>
-              ) : null}
-            </motion.button>
+  {tab.badge ? (
+    <span
+      className={`
+        min-w-[18px]
+        h-[18px]
+        px-1
+        rounded-full
+        flex
+        items-center
+        justify-center
+        text-[11px]
+        leading-none
+        font-bold
+        ${
+          active
+            ? "bg-white/20 text-white"
+            : "bg-[#ff3b30] text-white"
+        }
+      `}
+    >
+      {tab.badge > 99 ? "99+" : tab.badge}
+    </span>
+  ) : null}
+</motion.button>
           );
         })}
 
