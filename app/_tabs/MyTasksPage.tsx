@@ -32,7 +32,7 @@ export default function TasksPage() {
   const auth = getFirebaseAuth();
   const db = getFirebaseDB();
   const router = useRouter();
-
+  const [prevMode, setPrevMode] = useState<"task" | "plan">(mode);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const { mode = "task", setMode } = useAppStore();
   const [subTab, setSubTab] = useState<SubTab>("mine");
@@ -240,10 +240,11 @@ useEffect(() => {
     setSubTab(newTab);
   };
 
-  const handleModeChange = (newMode: "task" | "plan") => {
-    vibrate();
-    setMode(newMode);
-  };
+const handleModeChange = (newMode: "task" | "plan") => {
+  vibrate();
+  setPrevMode(mode);
+  setMode(newMode);
+};
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (window.scrollY === 0) {
@@ -330,23 +331,34 @@ useEffect(() => {
           <div className="px-4 pb-3">
             <div className="flex items-center gap-2 mb-3">
               <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1">
-                {SUB_TABS.map((tab) => (
-                  <motion.button
-  key={tab.key}
-  whileTap={{ scale: 0.95 }}
-  onClick={() => handleTabChange(tab.key)}
-  className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
-    subTab === tab.key
-      ? mode === "task" 
-        ? "bg-[#0A84FF] text-white"  // Task = xanh dương trơn
-        : "bg-[#30D158] text-white"  // Plan = xanh lá trơn
-      : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
-  }`}
->
-  {tab.label}
-</motion.button>
-                ))}
-              </div>
+  {SUB_TABS.map((tab) => (
+    <motion.button
+      key={tab.key}
+      whileTap={{ scale: 0.95 }}
+      onClick={() => handleTabChange(tab.key)}
+      className={`relative px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap ${
+        subTab === tab.key
+          ? "text-white"
+          : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+      }`}
+    >
+      {subTab === tab.key && (
+        <motion.div
+          layoutId={prevMode !== mode ? "activeSubTab" : undefined}
+          className={`absolute inset-0 rounded-full ${
+            mode === "task" ? "bg-[#0A84FF]" : "bg-[#30D158]"
+          }`}
+          transition={
+            prevMode !== mode 
+              ? { type: "spring", stiffness: 400, damping: 35 } 
+              : { duration: 0 }
+          }
+        />
+      )}
+      <span className="relative z-10">{tab.label}</span>
+    </motion.button>
+  ))}
+</div>
         
             </div>
 
