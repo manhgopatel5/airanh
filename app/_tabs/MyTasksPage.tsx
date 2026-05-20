@@ -182,9 +182,7 @@ data = data.filter(t => t.type === "task" && t.deadline && t.deadline.seconds * 
           break;
       }
 
-      if (searchQuery) {
-        data = data.filter(t => t.title.toLowerCase().includes(searchQuery.toLowerCase()));
-      }
+   
 
       data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
