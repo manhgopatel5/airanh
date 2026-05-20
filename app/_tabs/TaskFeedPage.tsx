@@ -66,7 +66,8 @@ export default function TaskFeedPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
-
+  const [tabChanged, setTabChanged] = useState(false);
+const [prevTab, setPrevTab] = useState<TabId>("hot");
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const pullStartY = useRef(0);
   const [pullDistance, setPullDistance] = useState(0);
@@ -164,6 +165,16 @@ const currentTheme = theme[mode];
       fetchTasks(true);
     }
   }, [mode, currentUser]);
+
+useEffect(() => {
+  if (prevTab !== activeTab) {
+    setTabChanged(true);
+    vibrate([10, 30, 10]);
+    const timer = setTimeout(() => setTabChanged(false), 5000);
+    setPrevTab(activeTab);
+    return () => clearTimeout(timer);
+  }
+}, [activeTab, prevTab]);
 
   useEffect(() => {
     if (!loadMoreRef.current) return;
@@ -300,7 +311,9 @@ const currentTheme = theme[mode];
       ? mode === "task" 
         ? "bg-[#0A84FF] text-white" 
         : "bg-[#30D158] text-white"
-      : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+      : tabChanged
+        ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600 opacity-40" // mờ 5s khi đổi tab
+        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
   }`}
 >
   <Icon size={16} />
@@ -309,12 +322,22 @@ const currentTheme = theme[mode];
                   );
                 })}
               </div>
-              <button
-                onClick={() => { vibrate(); setShowSearch(!showSearch); }}
-                className="p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 active:scale-90 transition-all"
-              >
-                <FiSearch size={18} className="text-zinc-600 dark:text-zinc-400" />
-              </button>
+            <button
+  onClick={() => {
+    vibrate();
+    setShowSearch(!showSearch);
+  }}
+  className={`p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 active:scale-90 transition-all ${
+    tabChanged 
+      ? "animate-pulse ring-2 ring-[#0A84FF] shadow-[0_0_20px_rgba(10,132,255,0.6)]" 
+      : ""
+  }`}
+>
+  <FiSearch 
+    size={18} 
+    className={tabChanged ? "text-[#0A84FF]" : "text-zinc-600 dark:text-zinc-400"} 
+  />
+</button>
             </div>
 
             <AnimatePresence>
