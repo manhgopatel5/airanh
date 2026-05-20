@@ -301,7 +301,7 @@ export default function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [mounted][setMounted] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const mode = useAppStore((s) => s.mode);
