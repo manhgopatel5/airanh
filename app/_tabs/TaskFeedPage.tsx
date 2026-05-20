@@ -170,7 +170,7 @@ useEffect(() => {
   if (prevTab !== activeTab) {
     setTabChanged(true);
     vibrate([10, 30, 10]);
-    const timer = setTimeout(() => setTabChanged(false), 5000);
+    const timer = setTimeout(() => setTabChanged(false), 3000);
     setPrevTab(activeTab);
     return () => clearTimeout(timer);
   }
@@ -322,20 +322,26 @@ useEffect(() => {
                   );
                 })}
               </div>
-            <button
+  <button
   onClick={() => {
     vibrate();
     setShowSearch(!showSearch);
   }}
-  className={`p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 active:scale-90 transition-all ${
+  className={`p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 active:scale-90 transition-all relative ${
     tabChanged 
-      ? "animate-pulse ring-2 ring-[#0A84FF] shadow-[0_0_20px_rgba(10,132,255,0.6)]" 
+      ? mode === "task"
+        ? "ring-2 ring-[#0A84FF] shadow-[0_0_20px_rgba(10,132,255,0.6)]"
+        : "ring-2 ring-[#30D158] shadow-[0_0_20px_rgba(48,209,88,0.6)]"
       : ""
   }`}
 >
   <FiSearch 
     size={18} 
-    className={tabChanged ? "text-[#0A84FF]" : "text-zinc-600 dark:text-zinc-400"} 
+    className={`${
+      tabChanged 
+        ? mode === "task" ? "text-[#0A84FF] animate-[scale_1s_ease-in-out_3]" : "text-[#30D158] animate-[scale_1s_ease-in-out_3]"
+        : "text-zinc-600 dark:text-zinc-400"
+    }`} 
   />
 </button>
             </div>
@@ -452,10 +458,17 @@ useEffect(() => {
         </div>
       </div>
 
-      <style jsx global>{`
-      .scrollbar-hide::-webkit-scrollbar { display: none; }
-      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-      `}</style>
+<style jsx global>{`
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale }
+  body { overscroll-behavior-y: contain }
+  
+  @keyframes scale {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+  }
+`}</style>
     </>
   );
 }
