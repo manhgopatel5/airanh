@@ -332,7 +332,7 @@ export default function AppContainer() {
 
   const activeColorClass = mode === "plan"? "text-emerald-500" : "text-blue-600";
   const activeBgClass = mode === "plan"? "bg-emerald-500" : "bg-blue-600";
-  const dynamicGlow = mode === "plan"? "shadow-emerald-500/30" : "shadow-blue-600/30";
+  
 
   if (authLoading) {
     return (
