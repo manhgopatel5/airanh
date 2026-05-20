@@ -86,7 +86,7 @@ export default function TaskFeedPage() {
     }
   };
 
-  const currentTheme = theme[mode] || theme.task;
+  const currentTheme = theme || theme.task;
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -96,7 +96,6 @@ export default function TaskFeedPage() {
     return () => unsub();
   }, [auth, router]);
 
-  // Giữ query y hệt file cũ để dùng index đã có
   const buildQuery = useCallback(
     (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
       if (!db) return null;
@@ -123,7 +122,7 @@ export default function TaskFeedPage() {
       setLastDoc(null);
       setHasMore(true);
     } else {
-      if (!isRefresh) setLoadingMore(true);
+      setLoadingMore(true);
     }
 
     try {
@@ -133,7 +132,7 @@ export default function TaskFeedPage() {
       const snap = await getDocs(q);
       const data = snap.docs.map((doc) => ({
         id: doc.id,
-       ...doc.data(),
+      ...doc.data(),
       })) as FeedTask[];
 
       if (isRefresh) {
@@ -228,7 +227,6 @@ export default function TaskFeedPage() {
         return bTime - aTime;
       });
     }
-    // Tab "near" và "friends" cần logic riêng, tạm thời để trống
 
     return result;
   }, [tasks, searchQuery, activeTab]);
@@ -299,7 +297,7 @@ export default function TaskFeedPage() {
                       onClick={() => { setActiveTab(tab.key); vibrate(5); }}
                       className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
                         activeTab === tab.key
-                         ? `bg-gradient-to-r ${currentTheme.gradient} text-white ${currentTheme.shadow}`
+                        ? `bg-gradient-to-r ${currentTheme.gradient} text-white ${currentTheme.shadow}`
                           : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                       }`}
                     >
@@ -404,7 +402,7 @@ export default function TaskFeedPage() {
                       theme={mode}
                       onDelete={(id) => setTasks(prev => prev.filter(t => t.id!== id))}
                       onShare={handleShare}
-                     
+                      onTaskUpdate={handleTaskUpdate}
                     />
                   </motion.div>
                 ))}
@@ -430,8 +428,8 @@ export default function TaskFeedPage() {
       </div>
 
       <style jsx global>{`
-       .scrollbar-hide::-webkit-scrollbar { display: none; }
-       .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </>
   );
