@@ -416,75 +416,110 @@ export default function AppContainer() {
                       ))}
                     </div>
 
-                    <div className="w-[64px] flex justify-center h-full items-center relative">
-                      <motion.button
-                        data-plus-button
-                        onClick={() => {
-                          navigator.vibrate?.(12);
-                          setIsMenuOpen(!isMenuOpen);
-                        }}
-                        onMouseMove={(e) => {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          plusX.set((e.clientX - rect.left - rect.width / 2) * 0.2);
-                          plusY.set((e.clientY - rect.top - rect.height / 2) * 0.2);
-                        }}
-                        onMouseLeave={() => {
-                          plusX.set(0);
-                          plusY.set(0);
-                        }}
-                        style={{ x: plusSpringX, y: plusSpringY }}
-                        className="outline-none select-none touch-manipulation z-10 p-2 relative group"
-                      >
-                        <AnimatePresence>
-                          {!isMenuOpen && (
-                            <>
-                              {[0, 0.4, 0.8].map((delay) => (
-                                <motion.span
-                                  key={delay}
-                                  initial={{ scale: 0.8, opacity: 0 }}
-                                  animate={{ scale: [1, 1.6, 1.6], opacity: [0.7, 0, 0] }}
-                                  exit={{ opacity: 0 }}
-                                  transition={{ repeat: Infinity, duration: 2, delay, ease: "easeOut" }}
-                                  className={`absolute inset-0 rounded-full ${activeBgClass}`}
-                                />
-                              ))}
-                            </>
-                          )}
-                        </AnimatePresence>
+                    <div className="w-20 flex justify-center h-full items-center relative">
+  <motion.button
+    data-plus-button
+    onClick={() => {
+      navigator.vibrate?.(12);
+      setIsMenuOpen(!isMenuOpen);
+    }}
+    onMouseMove={(e) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      plusX.set((e.clientX - rect.left - rect.width / 2) * 0.2);
+      plusY.set((e.clientY - rect.top - rect.height / 2) * 0.2);
+    }}
+    onMouseLeave={() => {
+      plusX.set(0);
+      plusY.set(0);
+    }}
+    style={{ x: plusSpringX, y: plusSpringY }}
+    className="outline-none select-none touch-manipulation z-10 p-2 relative group"
+  >
+    {/* 1. Aurora ring - vòng sáng xoay chậm */}
+    <AnimatePresence>
+      {!isMenuOpen && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          className="absolute inset-0 -m-1"
+        >
+          <motion.div
+            className={`absolute inset-0 rounded-full opacity-60`}
+            style={{
+              background: `conic-gradient(from 0deg, ${isPlanMode ? '#10b981' : '#3b82f6'}00, ${isPlanMode ? '#10b981' : '#3b82f6'}80, ${isPlanMode ? '#10b981' : '#3b82f6'}00)`,
+              filter: 'blur(8px)',
+            }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
 
-                        <motion.div
-                          className={`absolute inset-0 rounded-full ${activeBgClass} blur-2xl opacity-60`}
-                          animate={{
-                            scale: isMenuOpen? 0.8 : [1, 1.2, 1],
-                            opacity: isMenuOpen? 0.3 : [0.6, 0.8, 0.6]
-                          }}
-                          transition={{
-                            scale: { duration: 2, repeat: Infinity },
-                            opacity: { duration: 2, repeat: Infinity }
-                          }}
-                        />
+    {/* 2. Breathing pulse - thay cho ripple cũ */}
+    <AnimatePresence>
+      {!isMenuOpen && (
+        <motion.div
+          initial={{ scale: 1, opacity: 0 }}
+          animate={{ 
+            scale: [1, 1.15, 1],
+            opacity: [0.5, 0.2, 0.5]
+          }}
+          exit={{ opacity: 0 }}
+          transition={{ 
+            duration: 2.5, 
+            repeat: Infinity,
+            ease: "easeInOut" 
+          }}
+          className={`absolute inset-0 rounded-full ${activeBgClass}`}
+        />
+      )}
+    </AnimatePresence>
 
-                        <motion.div
-                          animate={{ rotate: isMenuOpen? 135 : 0, scale: isMenuOpen? 0.88 : 1 }}
-                          whileHover={{ scale: isMenuOpen? 0.88 : 1.08 }}
-                          whileTap={{ scale: 0.85 }}
-                          transition={SPRING_BOUNCY}
-                          className={`w-11 h-11 rounded-full flex items-center justify-center text-white shadow-2xl transition-all duration-500 ${dynamicGlow} relative overflow-hidden ${
-                            isMenuOpen
-                           ? "bg-zinc-900 dark:bg-zinc-800 shadow-zinc-950/20"
-                              : `${activeBgClass} shadow-lg`
-                          }`}
-                        >
-                          <motion.div
-                            className="absolute inset-0 bg-gradient-to-tr from-white/40 via-white/10 to-transparent"
-                            animate={{ rotate: [0, 360] }}
-                            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                          />
-                          <Plus className="w-4 h-4" strokeWidth={3} />
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-white/20 to-transparent" />
-                        </motion.div>
-                      </motion.button>
-                    </div>
+    {/* 3. Core button - liquid morph khi mở */}
+    <motion.div
+      animate={{
+        rotate: isMenuOpen ? 135 : 0,
+        borderRadius: isMenuOpen ? "16px" : "50%",
+        scale: isMenuOpen ? 0.9 : 1
+      }}
+      whileHover={{ scale: isMenuOpen ? 0.9 : 1.08 }}
+      whileTap={{ scale: 0.82 }}
+      transition={SPRING_BOUNCY}
+      className={`w-14 h-14 flex items-center justify-center text-white relative overflow-hidden transition-colors duration-500 ${
+        isMenuOpen
+          ? "bg-zinc-900 dark:bg-zinc-800"
+          : activeBgClass
+      }`}
+    >
+      {/* Liquid gradient chạy bên trong */}
+      {!isMenuOpen && (
+        <motion.div
+          className="absolute inset-0 opacity-60"
+          style={{
+            background: `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4), transparent 60%)`,
+          }}
+          animate={{
+            x: ["-30%", "30%", "-30%"],
+            y: ["-30%", "30%", "-30%"],
+          }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        />
+      )}
+      
+      {/* Grain texture */}
+      <div 
+        className="absolute inset-0 opacity-[0.08] mix-blend-overlay"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' /%3E%3C/svg%3E")`
+        }}
+      />
+      
+      <Plus className="w-6 h-6 relative z-10" strokeWidth={3.5} />
+    </motion.div>
+  </motion.button>
+</div>
 
                     <div className="flex-1 grid grid-cols-2 h-full">
                       {mainNavItems.slice(2, 4).map((item) => (
