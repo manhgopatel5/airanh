@@ -357,7 +357,7 @@ const handleModeChange = (newMode: "task" | "plan") => {
     {SUB_TABS.map((tab, i) => (
       <motion.button
         key={tab.key}
-        ref={el => tabRefs.current[i] = el}
+        ref={el => { tabRefs.current[i] = el }}
         whileTap={{ scale: 0.95 }}
         onClick={() => handleTabChange(tab.key)}
         className={`relative px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap z-10 transition-colors ${
