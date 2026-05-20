@@ -245,20 +245,7 @@ const MagneticNavItem = ({
         {item.label}
       </motion.span>
 
-      {active && (
-        <>
-          <motion.div
-            layoutId="bottom-dot"
-            transition={SPRING}
-            className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${activeBgClass}`}
-          />
-          <motion.div
-            className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${activeBgClass}`}
-            animate={{ scale: [1, 2.2, 1], opacity: [0.5, 0, 0.5] }}
-            transition={{ duration: 1.8, repeat: Infinity }}
-          />
-        </>
-      )}
+      
     </motion.button>
   );
 };
