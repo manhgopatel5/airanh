@@ -68,6 +68,7 @@ export default function TaskFeedPage() {
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
   const [tabChanged, setTabChanged] = useState(false);
 const [prevTab, setPrevTab] = useState<TabId>("hot");
+const highlightTimerRef = useRef<NodeJS.Timeout | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const pullStartY = useRef(0);
   const [pullDistance, setPullDistance] = useState(0);
@@ -168,14 +169,30 @@ const currentTheme = theme[mode];
 
 useEffect(() => {
   if (prevTab !== activeTab) {
+    // Clear timer cũ nếu có
+    if (highlightTimerRef.current) {
+      clearTimeout(highlightTimerRef.current);
+    }
+    
     setTabChanged(true);
     vibrate([10, 30, 10]);
-    const timer = setTimeout(() => setTabChanged(false), 3000);
+    
+    // Set timer mới
+    highlightTimerRef.current = setTimeout(() => {
+      setTabChanged(false);
+      highlightTimerRef.current = null;
+    }, 3000);
+    
     setPrevTab(activeTab);
-    return () => clearTimeout(timer); // clear khi unmount
   }
+  
+  // Cleanup khi unmount
+  return () => {
+    if (highlightTimerRef.current) {
+      clearTimeout(highlightTimerRef.current);
+    }
+  };
 }, [activeTab, prevTab]);
-
   useEffect(() => {
     if (!loadMoreRef.current) return;
     const observer = new IntersectionObserver(
@@ -322,10 +339,15 @@ useEffect(() => {
                   );
                 })}
               </div>
-  <button
+<button
   onClick={() => {
     vibrate();
     setShowSearch(!showSearch);
+    setTabChanged(false);
+    if (highlightTimerRef.current) {
+      clearTimeout(highlightTimerRef.current);
+      highlightTimerRef.current = null;
+    }
   }}
   className={`p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 active:scale-90 transition-all relative ${
     tabChanged 
@@ -336,11 +358,13 @@ useEffect(() => {
   }`}
 >
   <FiSearch 
-    key={tabChanged ? 'active' : 'inactive'} // force reset animation
     size={18} 
+    style={{
+      animation: tabChanged ? 'scale 1s ease-in-out 3' : 'none'
+    }}
     className={`${
       tabChanged 
-        ? mode === "task" ? "text-[#0A84FF] animate-[scale_1s_ease-in-out_3]" : "text-[#30D158] animate-[scale_1s_ease-in-out_3]"
+        ? mode === "task" ? "text-[#0A84FF]" : "text-[#30D158]"
         : "text-zinc-600 dark:text-zinc-400"
     }`} 
   />
