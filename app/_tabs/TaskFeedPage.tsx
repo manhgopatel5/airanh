@@ -86,7 +86,7 @@ export default function TaskFeedPage() {
     }
   };
 
-  const currentTheme = theme || theme.task;
+const currentTheme = theme[mode];
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
