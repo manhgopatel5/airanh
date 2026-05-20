@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useCallback, useState, useMemo } from "react";
+import React, { useEffect, useCallback, useState, useMemo, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { useAppStore } from "@/store/app";
@@ -67,8 +67,7 @@ const FloatingMenu = React.memo(({
           initial="hidden"
           animate="visible"
           exit="exit"
-          onClick={(e) => e.stopPropagation()} // Chặn click lan ra overlay
-          className="w-full bg-white/95 backdrop-blur-2xl rounded- p-2.5 border border-zinc-200/40 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.15)] pointer-events-auto flex flex-col gap-1 select-none will-change-[transform,opacity] z-[70]"
+          className="w-full bg-white/95 backdrop-blur-2xl rounded- p-2.5 border border-zinc-200/40 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.15)] pointer-events-auto flex flex-col gap-1 select-none will-change-[transform,opacity]"
         >
           <div className="text- font-bold text-zinc-400/90 px-3.5 pt-2 pb-1 tracking-widest uppercase">
             Tạo mới nhanh
@@ -120,6 +119,7 @@ export default function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const mode = useAppStore((s) => s.mode);
   const isPlanMode = mode === "plan";
@@ -147,18 +147,31 @@ export default function BottomNav() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  // FIX CHÍNH: Bắt click ngoài bằng document listener
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (menuRef.current &&!menuRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("touchstart", handleClickOutside);
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [isOpen]);
+
   // Tự tắt menu khi chuyển route
   useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
-
-  useEffect(() => {
-    if (isOpen) {
-      const originalStyle = window.getComputedStyle(document.body).overflow;
-      document.body.style.overflow = "hidden";
-      return () => { document.body.style.overflow = originalStyle; };
-    }
-  }, [isOpen]);
 
   const handleNavigation = useCallback((path: string) => {
     if (pathname === path) return;
@@ -223,25 +236,24 @@ export default function BottomNav() {
 
   return (
     <LayoutGroup id="fixed-bottom-nav-scope">
-      {/* Overlay bấm ra ngoài là tắt - z-[60] */}
+      {/* Overlay blur khi mở menu */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setIsOpen(false)}
-            className="fixed inset-0 z-[60] bg-zinc-950/15 backdrop-blur-[6px] pointer-events-auto will-change-opacity"
+            className="fixed inset-0 z-[60] bg-zinc-950/15 backdrop-blur-[6px] pointer-events-none will-change-opacity"
           />
         )}
       </AnimatePresence>
 
       <div className="fixed bottom-0 inset-x-0 z-[70] pointer-events-none flex flex-col items-center justify-end">
-        <div className="w-full max-w-[480px] px-4 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center gap-3">
+        <div ref={menuRef} className="w-full max-w-[480px] px-4 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center gap-3">
 
           <FloatingMenu isOpen={isOpen} onSelect={handleSelectCreate} />
 
-          <div className="w-full pointer-events-auto relative rounded- border border-zinc-200/50 bg-white/80 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.04)] overflow-hidden z-[70]">
+          <div className="w-full pointer-events-auto relative rounded- border border-zinc-200/50 bg-white/80 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.04)] overflow-hidden">
 
             <div className="flex items-center justify-between h- px-2 relative">
               <div className="flex-1 grid grid-cols-2 h-full">
