@@ -179,7 +179,7 @@ const MagneticNavItem = ({
   const springY = useSpring(y, { stiffness: 350, damping: 18, mass: 0.5 });
   const rotateX = useTransform(springY, [-20, 20], [12, -12]);
   const rotateY = useTransform(springX, [-20, 20], [-12, 12]);
-  const glowOpacity = useTransform(springX, [-20, 0, 20], [0.4, 0.8, 0.4]);
+ 
 
   const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!ref.current) return;
@@ -198,23 +198,10 @@ const MagneticNavItem = ({
       whileTap={{ scale: 0.88 }}
       className="relative flex-1 flex flex-col items-center justify-center h-full pt-1 pb-3.5 outline-none select-none touch-manipulation"
     >
-      {active && (
-        <>
-          <motion.div
-            layoutId="nav-active-bg"
-            transition={SPRING}
-            className="absolute inset-x-2 top-1 bottom-1 rounded-2xl bg-white/70 dark:bg-zinc-800/60 backdrop-blur-2xl border border-white/40 dark:border-zinc-700/40"
-          />
-          <motion.div
-            layoutId="nav-glow"
-            style={{ opacity: glowOpacity }}
-            className={`absolute inset-x-3 top-2 bottom-2 rounded-2xl blur-2xl ${activeBgClass}`}
-          />
-        </>
-      )}
+
 
       <motion.div
-        animate={{ y: active? -2 : 0, scale: active? 1.12 : 1 }}
+       animate={{ y: 0, scale: 1 }}
         transition={SPRING}
         className="relative z-10"
       >
@@ -226,17 +213,11 @@ const MagneticNavItem = ({
             strokeWidth={active? 2.7 : 2.2}
           />
         </motion.div>
-        {active && (
-          <motion.div
-            className={`absolute inset-0 ${activeColorClass} blur-xl`}
-            animate={{ opacity: [0.3, 0.7, 0.3], scale: [1, 1.4, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
-        )}
+  
       </motion.div>
 
       <motion.span
-        animate={{ y: active? -1 : 0, scale: active? 1.04 : 1 }}
+     animate={{ y: 0, scale: 1 }}
         transition={SPRING}
         className={`relative z-10 text-[11px] mt-1.5 tracking-tight transition-all duration-300 ${
           active? `${activeColorClass} font-bold` : "text-zinc-400 dark:text-zinc-500 font-semibold"
@@ -377,8 +358,9 @@ export default function AppContainer() {
 
            <motion.div
   layout
-  className="w-full pointer-events-auto relative border-t border-zinc-200/60 dark:border-zinc-800/60 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl"
+  className="w-full pointer-events-auto relative border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950"
 >
+
               
 
                   <div className="flex items-center justify-between h-16 px-2 relative">
