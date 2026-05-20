@@ -87,16 +87,14 @@ const FloatingMenu = ({
           }}
           className="w-full bg-white dark:bg-zinc-900 rounded-3xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] pointer-events-auto flex flex-col gap-3 select-none"
         >
-          <div
-            onPointerDown={(e) => dragControls.start(e)}
-            className="w-full flex justify-center cursor-grab active:cursor-grabbing touch-none"
-          >
-            <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700" />
-          </div>
+ 
 
-          <div className="text-xs font-black text-zinc-400 px-1 tracking-[0.2em] uppercase">
-            TẠO MỚI NHANH
-          </div>
+     <div className="px-1 flex items-center">
+  <span className="text-2xl font-black tracking-tight">
+    <span className="text-blue-600 dark:text-blue-500">hu</span>
+    <span className="text-emerald-500 dark:text-emerald-400">ha</span>
+  </span>
+</div>
 
           <div className="grid grid-cols-2 gap-3">
             <motion.button
@@ -110,8 +108,8 @@ const FloatingMenu = ({
                 <Sparkles className="w-6 h-6" strokeWidth={2.5} />
               </div>
               <div className="text-center">
-                <h4 className="font-black text-zinc-900 dark:text-zinc-100 text-sm tracking-tight">Nhiệm vụ mới</h4>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-0.5 leading-tight">Đầu việc nhỏ cần xử lý ngay</p>
+                <h4 className="font-black text-zinc-900 dark:text-zinc-100 text-sm tracking-tight">Hỗ trợ tức thì</h4>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-0.5 leading-tight">Đăng việc nhanh, có người nhận ngay</p>
               </div>
             </motion.button>
 
@@ -126,8 +124,8 @@ const FloatingMenu = ({
                 <CalendarRange className="w-6 h-6" strokeWidth={2.5} />
               </div>
               <div className="text-center">
-                <h4 className="font-black text-zinc-900 dark:text-zinc-100 text-sm tracking-tight">Kế hoạch dài hạn</h4>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-0.5 leading-tight">Lên lộ trình tuần, tháng chỉn chu</p>
+                <h4 className="font-black text-zinc-900 dark:text-zinc-100 text-sm tracking-tight">Cùng chung sở thích</h4>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-0.5 leading-tight">Gặp gỡ những người cùng đam mê</p>
               </div>
             </motion.button>
           </div>
