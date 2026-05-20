@@ -1,252 +1,459 @@
 "use client";
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useAppStore } from "@/store/app";
-import { getFirebaseDB } from "@/lib/firebase";
-import { collection, query, where, orderBy, limit, startAfter, getDocs, Timestamp, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
-import { motion } from "framer-motion";
-import TaskFeed from "@/components/TaskFeed";
-import ShareTaskModal from "@/components/ShareTaskModal";
-import { Task, TaskItem, PlanItem, isTask, isPlan } from "@/types/task";
-import { Sparkles as SparklesIcon, CalendarRange } from "lucide-react";
-import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
-import { FiMapPin } from "react-icons/fi";
-import SkeletonList from "@/components/common/SkeletonList";
 
-const PAGE_SIZE = 20;
-type TabId = "hot" | "near" | "friends" | "new";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { FiInbox, FiSearch, FiRefreshCw, FiX } from "react-icons/fi";
+import { HiBolt, HiCalendarDays } from "react-icons/hi2";
+import { useRouter } from "next/navigation";
+import ShareTaskModal from "@/components/ShareTaskModal";
+import { onAuthStateChanged, User } from "firebase/auth";
+import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
+import { collection, query, where, getDocs, orderBy, limit, startAfter, QueryDocumentSnapshot, DocumentData, Timestamp } from "firebase/firestore";
+import type { Task } from "@/types/task";
+import TaskCard from "@/components/task/TaskCard";
+import { toast, Toaster } from "sonner";
+import { useAppStore } from "@/store/app";
+
+type SubTab = "mine" | "saved" | "doing" | "applied" | "expired" | "completed" | "cancelled";
+
+const SUB_TABS: { key: SubTab; label: string }[] = [
+  { key: "mine", label: "Của tôi" },
+  { key: "saved", label: "Đã lưu" },
+  { key: "doing", label: "Đang nhận" },
+  { key: "applied", label: "Đã ứng tuyển" },
+  { key: "completed", label: "Hoàn thành" },
+  { key: "expired", label: "Đã hết hạn" },
+  { key: "cancelled", label: "Đã hủy" },
+];
+
+const PAGE_SIZE = 10;
 
 export default function TaskFeedPage() {
-  const [db, setDb] = useState<any>(null);
-  const mode = useAppStore((s) => s.mode);
-  const setMode = useAppStore((s) => s.setMode);
-  const [activeTab, setActiveTab] = useState<TabId>("hot");
-  const [allItems, setAllItems] = useState<Task[]>([]);
+  const auth = getFirebaseAuth();
+  const db = getFirebaseDB();
+  const router = useRouter();
+
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { mode = "task", setMode } = useAppStore();
+  const [subTab, setSubTab] = useState<SubTab>("mine");
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
   const [shareTask, setShareTask] = useState<Task | null>(null);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const observerRef = useRef<IntersectionObserver | null>(null);
+
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const pullStartY = useRef(0);
+  const [pullDistance, setPullDistance] = useState(0);
 
-  useEffect(() => {
-    if (db) return;
-    try {
-      const _db = getFirebaseDB();
-      setDb(_db);
-    } catch (err) {
-      console.error("Firebase init error:", err);
-      setLoading(false);
+  const theme = {
+    task: {
+      primary: "#0A84FF",
+      gradient: "from-[#0A84FF] to-[#0066CC]",
+      light: "bg-[#E8F0FE]",
+      text: "text-[#0A84FF]",
+      shadow: "shadow-[0_8px_30px_rgba(10,132,255,0.3)]",
+    },
+    plan: {
+      primary: "#30D158",
+      gradient: "from-[#30D158] to-[#28B44C]",
+      light: "bg-[#E8F5E9]",
+      text: "text-[#30D158]",
+      shadow: "shadow-[0_8px_30px_rgba(48,209,88,0.3)]",
     }
-  }, [db]);
+  };
 
-  const buildQuery = useCallback(
-    (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
-      if (!db) return null;
-      const now = Timestamp.now();
-      const constraints: any[] = [
-        where("type", "==", mode),
-        where("visibility", "==", "public"),
-        where("status", "in", ["open", "full", "doing"]),
-        where("deadline", ">", now),
-        orderBy("deadline", "asc"),
-        limit(PAGE_SIZE),
-      ];
-      if (startAfterDoc) {
-        constraints.push(startAfter(startAfterDoc));
-      }
-      return query(collection(db, "tasks"),...constraints);
-    },
-    [db, mode]
-  );
-
-  const loadData = useCallback(
-    async (isRefresh = false) => {
-      if (!db) return;
-
-      if (allItems.length > 0) {
-        setRefreshing(true);
-      } else {
-        if (isRefresh) setRefreshing(true);
-        else setLoading(true);
-      }
-
-      const q = buildQuery();
-      if (!q) {
-        setLoading(false);
-        setRefreshing(false);
-        return;
-      }
-
-      try {
-        const snap = await getDocs(q);
-        const data = snap.docs.map((doc) => ({
-          id: doc.id,
-         ...doc.data(),
-        })) as Task[];
-
-        setAllItems(data);
-        setLastDoc(snap.docs[snap.docs.length - 1] || null);
-        setHasMore(snap.docs.length === PAGE_SIZE);
-      } catch (err: any) {
-        console.error("Firestore error:", err.code, err.message);
-        if (err.code === "permission-denied") {
-          setAllItems([]);
-          setHasMore(false);
-        }
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    },
-    [db, buildQuery, allItems.length]
-  );
+  const vibrate = (ms = 8) => {
+    if ("vibrate" in navigator) navigator.vibrate(ms);
+  };
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      if (!user) router.push("/login");
+    });
+    return () => unsub();
+  }, [auth, router]);
 
-  const loadMore = useCallback(async () => {
-    if (!db ||!lastDoc || loadingMore ||!hasMore) return;
-    setLoadingMore(true);
+  const fetchTasks = useCallback(async (isRefresh = false) => {
+    if (!currentUser) {
+      setLoading(false);
+      setTasks([]);
+      return;
+    }
+
+    if (isRefresh) {
+      setRefreshing(true);
+      setLastDoc(null);
+      setHasMore(true);
+    } else {
+      setLoadingMore(true);
+    }
+
     try {
-      const q = buildQuery(lastDoc);
-      if (!q) return;
+      const baseCollection = collection(db, "tasks");
+      let constraints: any[] = [where("type", "==", mode)];
+
+      switch (subTab) {
+        case "mine":
+          constraints.push(where("userId", "==", currentUser.uid));
+          constraints.push(where("status", "not-in", ["deleted", "cancelled"]));
+          break;
+        case "expired":
+          const now = Timestamp.now();
+          const sevenDaysAgo = Timestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+          constraints = [
+            where("userId", "==", currentUser.uid),
+            where("type", "==", "task"),
+            where("deadline", "<", now),
+            where("deadline", ">", sevenDaysAgo)
+          ];
+          break;
+        case "saved":
+          constraints.push(where("savedBy", "array-contains", currentUser.uid));
+          constraints.push(where("status", "not-in", ["deleted", "cancelled"]));
+          break;
+        case "doing":
+          constraints.push(where("assignees", "array-contains", currentUser.uid));
+          constraints.push(where("status", "==", "doing"));
+          break;
+        case "applied":
+          constraints.push(where("applicants", "array-contains", currentUser.uid));
+          constraints.push(where("status", "in", ["open", "pending"]));
+          break;
+        case "completed":
+          constraints.push(where("assignees", "array-contains", currentUser.uid));
+          constraints.push(where("status", "==", "completed"));
+          break;
+        case "cancelled":
+          constraints.push(where("userId", "==", currentUser.uid));
+          constraints.push(where("status", "==", "cancelled"));
+          break;
+      }
+
+      if (subTab === "expired") {
+        constraints.push(orderBy("deadline", "desc"));
+      } else {
+        constraints.push(orderBy("createdAt", "desc"));
+      }
+
+      constraints.push(limit(PAGE_SIZE));
+      if (lastDoc &&!isRefresh) {
+        constraints.push(startAfter(lastDoc));
+      }
+
+      const q = query(baseCollection,...constraints);
       const snap = await getDocs(q);
-      const newItems = snap.docs.map((doc) => ({
-        id: doc.id,
-       ...doc.data(),
-      })) as Task[];
-      setAllItems((prev) => [...prev,...newItems]);
+
+      const data = snap.docs.map(doc => {
+        const d = doc.data();
+        return {
+          id: doc.id,
+          title: d.title || "Không có tiêu đề",
+          type: d.type || mode,
+          status: d.status || "open",
+         ...d
+        } as Task;
+      });
+
+      if (isRefresh) {
+        setTasks(data);
+      } else {
+        setTasks(prev => [...prev,...data]);
+      }
+
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
       setHasMore(snap.docs.length === PAGE_SIZE);
-    } catch (err) {
-      console.error("Load more error:", err);
+    } catch (err: any) {
+      console.error("Firestore Fetch Error: ", err);
+      toast.error("Tải dữ liệu thất bại. Kiểm tra Index Firestore nếu có lỗi.");
     } finally {
+      setLoading(false);
       setLoadingMore(false);
+      setRefreshing(false);
     }
-  }, [db, lastDoc, loadingMore, hasMore, buildQuery]);
+  }, [currentUser, mode, subTab, db, lastDoc]);
 
   useEffect(() => {
-    if (!loadMoreRef.current ||!hasMore) return;
-    if (observerRef.current) observerRef.current.disconnect();
+    if (currentUser) {
+      fetchTasks(true);
+    }
+  }, [mode, subTab, currentUser]);
 
-    observerRef.current = new IntersectionObserver(
+  useEffect(() => {
+    if (!loadMoreRef.current) return;
+
+    const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting && hasMore &&!loadingMore) {
-          loadMore();
+        if (entries[0]?.isIntersecting && hasMore &&!loading &&!loadingMore &&!refreshing) {
+          fetchTasks(false);
         }
       },
       { threshold: 0.1 }
     );
-    observerRef.current.observe(loadMoreRef.current);
-    return () => observerRef.current?.disconnect();
-  }, [hasMore, loadingMore, loadMore]);
 
-  const filteredItems = useMemo(() => {
-    let result = [...allItems];
-    if (mode === "task") {
-      result = result.filter((t) => isTask(t)) as TaskItem[];
-    } else {
-      result = result.filter((t) => isPlan(t)) as PlanItem[];
-    }
-    result = result.filter((t) => t.banned!== true && t.hidden!== true);
-    if (activeTab === "hot") {
-      result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-    }
-    return result as Task[];
-  }, [allItems, mode, activeTab]);
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, loading, loadingMore, refreshing, fetchTasks]);
 
-  const subTabs = [
-    { id: "hot" as TabId, label: "Hot", icon: HiFire, color: "orange" },
-    { id: "near" as TabId, label: "Gần bạn", icon: FiMapPin, color: "emerald" },
-    { id: "friends" as TabId, label: "Bạn bè", icon: HiUsers, color: "blue" },
-    { id: "new" as TabId, label: "Mới", icon: HiSparkles, color: "purple" },
-  ];
+  const handleRefresh = async () => {
+    vibrate(10);
+    await fetchTasks(true);
+  };
+
+  const handleTabChange = (newTab: SubTab) => {
+    vibrate();
+    setSubTab(newTab);
+  };
+
+  const handleModeChange = (newMode: "task" | "plan") => {
+    vibrate();
+    setMode(newMode);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (window.scrollY === 0) {
+      pullStartY.current = e.touches[0]?.clientY?? 0;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (pullStartY.current > 0 && window.scrollY === 0) {
+      const touchY = e.touches[0]?.clientY;
+      if (!touchY) return;
+      const distance = touchY - pullStartY.current;
+      if (distance > 0) {
+        setPullDistance(Math.min(distance, 80));
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (pullDistance > 60) {
+      handleRefresh();
+    }
+    pullStartY.current = 0;
+    setPullDistance(0);
+  };
+
+  const filteredTasks = tasks.filter(t =>
+   !searchQuery || t.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const currentTheme = theme[mode] || theme.task;
 
   return (
     <>
-      <div className="sticky top-0 z-50 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md pt-3 pb-2 px-4 border-b border-gray-100 dark:border-zinc-900">
-        <div className="max-w-md mx-auto bg-gray-100 dark:bg-zinc-900 rounded-2xl p-1 flex relative">
-          <button
-            onClick={() => { setMode("task"); if ("vibrate" in navigator) navigator.vibrate(5); }}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold rounded-xl transition-all relative z-10 ${
-              mode === "task"? "text-white shadow" : "text-gray-500 dark:text-zinc-400"
-            }`}
+      <Toaster richColors position="top-center" />
+      <div
+        className="min-h-screen bg-[#F2F2F7] dark:bg-black text-zinc-900 dark:text-zinc-100 select-none pb-28"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {pullDistance > 0 && (
+          <div
+            className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl"
+            style={{ height: `${pullDistance}px`, transition: pullDistance === 0? 'height 0.3s' : 'none' }}
           >
-            <SparklesIcon size={16} /> Task
-            {mode === "task" && (
-              <motion.div layoutId="modeSwitchBg" className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl -z-10" />
-            )}
-          </button>
-          <button
-            onClick={() => { setMode("plan"); if ("vibrate" in navigator) navigator.vibrate(5); }}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold rounded-xl transition-all relative z-10 ${
-              mode === "plan"? "text-white shadow" : "text-gray-500 dark:text-zinc-400"
-            }`}
-          >
-            <CalendarRange size={16} /> Plan
-            {mode === "plan" && (
-              <motion.div layoutId="modeSwitchBg" className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl -z-10" />
-            )}
-          </button>
-        </div>
-      </div>
-
-      <div className="sticky top-[64px] z-40 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800">
-        <div className="max-w-2xl mx-auto px-4">
-          <div className="flex justify-around">
-            {subTabs.map((tab) => {
-              const Icon = tab.icon;
-              const active = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                    if ("vibrate" in navigator) navigator.vibrate(5);
-                  }}
-                  className={`flex flex-col items-center py-3 px-2 flex-1 transition-all active:scale-95 ${
-                    active? `text-${tab.color}-600 dark:text-${tab.color}-400` : "text-gray-400 dark:text-zinc-500"
-                  }`}
-                >
-                  <Icon size={20} className={active? "scale-110" : ""} />
-                  <span className="text-xs font-bold mt-1">{tab.label}</span>
-                  <div className={`mt-1 h-0.5 rounded-full transition-all duration-300 ${active? `w-6 bg-${tab.color}-500` : "w-0"}`} />
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      <div className="pt-4">
-        {loading? (
-          <SkeletonList />
-        ) : (
-          <div className={`transition-all duration-200 ${refreshing? "opacity-50 scale-[0.99]" : "opacity-100"}`}>
-            <TaskFeed
-              tasks={filteredItems}
-              mode={mode}
-              activeTab={activeTab}
-              onShare={(t) => { setShareTask(t); setShowShareModal(true); }}
-              onTaskUpdate={(id, up) => setAllItems(prev => prev.map(t => t.id === id? {...t,...up } as Task : t))}
+            <FiRefreshCw
+              className={`${pullDistance > 60? 'animate-spin' : ''} text-[#0A84FF]`}
+              size={20}
             />
           </div>
         )}
 
-        {!loading && hasMore && allItems.length > 0 && (
-          <div ref={loadMoreRef} className="px-4 py-6 flex justify-center">
-            {loadingMore && (
-              <div className="w-6 h-6 border-2 border-zinc-500 border-t-transparent rounded-full animate-spin" />
-            )}
+        <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50">
+          <div className="px-4 pt-3 pb-2">
+            <div className="flex items-center p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800">
+              <button
+                onClick={() => handleModeChange("task")}
+                className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
+                  mode === "task"
+                   ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
+                    : "text-zinc-500 dark:text-zinc-400"
+                }`}
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+              >
+                <HiBolt className="w-4 h-4" />
+                Task
+              </button>
+
+              <button
+                onClick={() => handleModeChange("plan")}
+                className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
+                  mode === "plan"
+                   ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
+                    : "text-zinc-500 dark:text-zinc-400"
+                }`}
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+              >
+                <HiCalendarDays className="w-4 h-4" />
+                Plan
+              </button>
+            </div>
           </div>
-        )}
+
+          <div className="px-4 pb-3">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1">
+                {SUB_TABS.map((tab) => (
+                  <motion.button
+                    key={tab.key}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleTabChange(tab.key)}
+                    className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
+                      subTab === tab.key
+                       ? `bg-gradient-to-r ${currentTheme.gradient} text-white ${currentTheme.shadow}`
+                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+                    }`}
+                  >
+                    {tab.label}
+                  </motion.button>
+                ))}
+              </div>
+              <button
+                onClick={() => {
+                  vibrate();
+                  setShowSearch(!showSearch);
+                }}
+                className="p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 active:scale-90 transition-all"
+              >
+                <FiSearch size={18} className="text-zinc-600 dark:text-zinc-400" />
+              </button>
+            </div>
+
+            <AnimatePresence>
+              {showSearch && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="relative">
+                    <input
+                      autoFocus
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder={`Tìm ${mode}...`}
+                      className="w-full px-4 py-2.5 pr-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 outline-none text-sm focus:ring-2 focus:ring-[#0A84FF]/20"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                      >
+                        <FiX size={16} className="text-zinc-500" />
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        <div className="max-w-[600px] mx-auto p-4">
+          {loading? (
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 p-4">
+                  <div className="flex gap-3 animate-pulse">
+                    <div className="w-12 h-12 bg-zinc-200 dark:bg-zinc-800 rounded-xl" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 w-3/4 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
+                      <div className="h-3 w-1/2 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredTasks.length === 0? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 p-12 text-center"
+            >
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+                <FiInbox size={32} className="text-zinc-400" />
+              </div>
+              <p className="text-base font-bold text-zinc-900 dark:text-zinc-100 mb-1">
+                Chưa có {mode === "task"? "task" : "plan"} nào
+              </p>
+              <p className="text-sm text-zinc-500 mb-6">
+                {subTab === "mine" && `Tạo ${mode} đầu tiên của bạn`}
+                {subTab === "saved" && `Lưu ${mode} để xem sau`}
+                {subTab === "doing" && `Nhận ${mode} để bắt đầu làm`}
+                {subTab === "applied" && `Ứng tuyển ${mode} phù hợp`}
+                {subTab === "completed" && `Hoàn thành ${mode} đầu tiên`}
+                {subTab === "cancelled" && `Không có ${mode} nào bị hủy`}
+              </p>
+              {subTab === "mine" && (
+                <button
+                  onClick={() => {
+                    vibrate(10);
+                    router.push(mode === "task"? "/create/task" : "/create/plan");
+                  }}
+                  className={`px-6 h-11 rounded-xl bg-gradient-to-r ${currentTheme.gradient} text-white text-sm font-semibold active:scale-95 transition-all ${currentTheme.shadow}`}
+                >
+                  Tạo ngay
+                </button>
+              )}
+            </motion.div>
+          ) : (
+            <AnimatePresence mode="popLayout">
+              <motion.div
+                key={`${mode}-${subTab}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-3"
+              >
+                {filteredTasks.map((task, idx) => (
+                  <motion.div
+                    key={task.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                  >
+                    <TaskCard
+                      task={task}
+                      theme={mode}
+                      onDelete={(id) => setTasks(prev => prev.filter(t => t.id!== id))}
+                      onShare={(t) => setShareTask(t)}
+                    />
+                  </motion.div>
+                ))}
+              </motion.div>
+            </AnimatePresence>
+          )}
+
+          {(loadingMore || refreshing) && (
+            <div className="flex justify-center py-6">
+              <FiRefreshCw className="animate-spin text-[#0A84FF]" size={24} />
+            </div>
+          )}
+
+          {shareTask && (
+            <ShareTaskModal
+              task={shareTask}
+              onClose={() => setShareTask(null)}
+            />
+          )}
+
+          <div ref={loadMoreRef} className="h-4" />
+        </div>
       </div>
 
-      {showShareModal && shareTask && <ShareTaskModal task={shareTask} onClose={() => setShowShareModal(false)} />}
+      <style jsx global>{`
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
     </>
   );
 }
