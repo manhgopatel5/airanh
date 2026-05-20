@@ -251,14 +251,7 @@ useEffect(() => {
     setSubTab(newTab);
   };
 
-const handleModeChange = (newMode: "task" | "plan") => {
-  vibrate();
-  setPrevMode(mode);
-  setMode(newMode);
-  
-  // Reset prevMode sau 400ms để lần đổi mode tiếp theo vẫn có animation
- 
-};
+
 
 const [isModeChanging, setIsModeChanging] = useState(false);
 
