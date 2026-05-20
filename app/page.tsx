@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { useAppStore } from "@/store/app";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
-import { Toaster, toast } from "sonner";
+import { Toaster } from "sonner";
 import {
   Home as HomeIcon, MessageSquare, ClipboardList, User, Plus
 } from "lucide-react";
