@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiInbox, FiRefreshCw } from "react-icons/fi";
 import { HiBolt, HiCalendarDays } from "react-icons/hi2";
@@ -32,14 +32,12 @@ export default function TasksPage() {
   const auth = getFirebaseAuth();
   const db = getFirebaseDB();
   const router = useRouter();
-  const containerRef = useRef<HTMLDivElement>(null);
+
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const { mode = "task", setMode } = useAppStore();
   const [subTab, setSubTab] = useState<SubTab>("mine");
   const [tasks, setTasks] = useState<Task[]>([]);
-  
-const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 });
+  const [isModeChanging, setIsModeChanging] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -108,20 +106,19 @@ const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 });
         case "mine":
           q = query(baseCollection, where("userId", "==", currentUser.uid), where("type", "==", mode), limit(PAGE_SIZE));
           break;
-  case "expired":
-  const now = Timestamp.now();
-  const sevenDaysAgo = Timestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
-  q = query(
-    baseCollection, 
-    where("userId", "==", currentUser.uid), 
-    where("type", "==", "task"), // ép chỉ lấy task
-    where("deadline", "<", now),
-    where("deadline", ">", sevenDaysAgo),
-    orderBy("deadline", "desc"),
-    limit(PAGE_SIZE)
-  );
-  
-    break;
+        case "expired":
+          const now = Timestamp.now();
+          const sevenDaysAgo = Timestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+          q = query(
+            baseCollection,
+            where("userId", "==", currentUser.uid),
+            where("type", "==", "task"),
+            where("deadline", "<", now),
+            where("deadline", ">", sevenDaysAgo),
+            orderBy("deadline", "desc"),
+            limit(PAGE_SIZE)
+          );
+          break;
         case "saved":
           q = query(baseCollection, where("savedBy", "array-contains", currentUser.uid), where("type", "==", mode), limit(PAGE_SIZE));
           break;
@@ -144,7 +141,6 @@ const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 });
       }
 
       const snap = await getDocs(q);
-      console.log("Firestore docs:", snap.docs.length);
 
       let data = snap.docs.map(doc => {
         const d = doc.data();
@@ -153,24 +149,21 @@ const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 });
           title: d.title || "Không có tiêu đề",
           type: d.type || mode,
           status: d.status || "open",
-        ...d
+         ...d
         } as Task;
       })
-    .filter(t => t.id && t.title);
-
-      console.log("After filter:", data.length);
+     .filter(t => t.id && t.title);
 
       switch (subTab) {
         case "mine":
           data = data.filter(t =>!["deleted", "cancelled"].includes(t.status));
           break;
-case "expired":
-data = data.filter(t => t.type === "task" && t.deadline && t.deadline.seconds * 1000 < Date.now());
-  break;
-  case "saved":
-    data = data.filter(t =>!["deleted", "cancelled"].includes(t.status));
-    break;
-  
+        case "expired":
+          data = data.filter(t => t.type === "task" && t.deadline && t.deadline.seconds * 1000 < Date.now());
+          break;
+        case "saved":
+          data = data.filter(t =>!["deleted", "cancelled"].includes(t.status));
+          break;
         case "doing":
           data = data.filter(t => t.status === "doing");
           break;
@@ -184,8 +177,6 @@ data = data.filter(t => t.type === "task" && t.deadline && t.deadline.seconds * 
           data = data.filter(t => t.status === "cancelled");
           break;
       }
-
-   
 
       data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
@@ -205,35 +196,33 @@ data = data.filter(t => t.type === "task" && t.deadline && t.deadline.seconds * 
       setLoadingMore(false);
       setRefreshing(false);
     }
-  }, [currentUser, mode, subTab, db]); // ← Đã bỏ lastDoc
+  }, [currentUser, mode, subTab, db]);
 
-const fetchTasksRef2 = useRef(fetchTasks);
-fetchTasksRef2.current = fetchTasks;
+  const fetchTasksRef2 = useRef(fetchTasks);
+  fetchTasksRef2.current = fetchTasks;
 
-useEffect(() => {
-  if (currentUser) fetchTasksRef2.current(true);
-}, [currentUser, mode, subTab]);
+  useEffect(() => {
+    if (currentUser) fetchTasksRef2.current(true);
+  }, [currentUser, mode, subTab]);
 
   const fetchTasksRef = useRef(fetchTasks);
-fetchTasksRef.current = fetchTasks;
+  fetchTasksRef.current = fetchTasks;
 
+  useEffect(() => {
+    if (!loadMoreRef.current) return;
 
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasMore &&!loading &&!loadingMore) {
+          fetchTasksRef.current(false);
+        }
+      },
+      { threshold: 0.1 }
+    );
 
-useEffect(() => {
-  if (!loadMoreRef.current) return;
-
-  const observer = new IntersectionObserver(
-    (entries) => {
-      if (entries[0]?.isIntersecting && hasMore &&!loading &&!loadingMore) {
-        fetchTasksRef.current(false);
-      }
-    },
-    { threshold: 0.1 }
-  );
-
-  observer.observe(loadMoreRef.current);
-  return () => observer.disconnect();
-}, [hasMore, loading, loadingMore]);
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, loading, loadingMore]);
 
   const handleRefresh = async () => {
     vibrate(10);
@@ -245,17 +234,13 @@ useEffect(() => {
     setSubTab(newTab);
   };
 
-
-
-const [isModeChanging, setIsModeChanging] = useState(false);
-
-const handleModeChange = (newMode: "task" | "plan") => {
-  if (newMode === mode) return;
-  vibrate();
-  setIsModeChanging(true);
-  setMode(newMode);
-  setTimeout(() => setIsModeChanging(false), 400);
-};
+  const handleModeChange = (newMode: "task" | "plan") => {
+    if (newMode === mode) return;
+    vibrate();
+    setIsModeChanging(true);
+    setMode(newMode);
+    setTimeout(() => setIsModeChanging(false), 400);
+  };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (window.scrollY === 0) {
@@ -282,36 +267,18 @@ const handleModeChange = (newMode: "task" | "plan") => {
     setPullDistance(0);
   };
 
- const filteredTasks = tasks;
-
+  const filteredTasks = tasks;
   const currentTheme = theme[mode] || theme.task;
-
-useLayoutEffect(() => {
-  const updatePill = () => {
-    const idx = SUB_TABS.findIndex(t => t.key === subTab);
-    const el = tabRefs.current[idx];
-    const container = containerRef.current;
-    if (el && container) {
-      // Tính left theo container, không bị lệch do scroll
-      const left = el.offsetLeft - container.scrollLeft;
-      setPillStyle({ left, width: el.offsetWidth });
-    }
-  };
-
-  requestAnimationFrame(() => {
-    requestAnimationFrame(updatePill); // 2 lần rAF cho chắc
-  });
-}, [subTab, mode]);
 
   return (
     <>
       <Toaster richColors position="top-center" />
- <div
-  className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 select-none pb-28"
-  onTouchStart={handleTouchStart}
-  onTouchMove={handleTouchMove}
-  onTouchEnd={handleTouchEnd}
->
+      <div
+        className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 select-none pb-28"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         {pullDistance > 0 && (
           <div
             className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl"
@@ -324,15 +291,14 @@ useLayoutEffect(() => {
           </div>
         )}
 
-      <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl">
-
+        <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl">
           <div className="px-4 pt-3 pb-2">
             <div className="flex items-center p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800">
               <button
                 onClick={() => handleModeChange("task")}
                 className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
                   mode === "task"
-                ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
+                   ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
                     : "text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -345,7 +311,7 @@ useLayoutEffect(() => {
                 onClick={() => handleModeChange("plan")}
                 className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
                   mode === "plan"
-                ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
+                   ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
                     : "text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -357,45 +323,38 @@ useLayoutEffect(() => {
           </div>
 
           <div className="px-4 pb-3">
-           <div className="flex items-center gap-2 mb-3">
-<div
-  ref={containerRef}
-  className="flex gap-2 overflow-x-auto scrollbar-hide flex-1 relative"
-  key={mode}
->
-  <motion.div
-    className={`absolute h-9 rounded-full top-0 ${
-      mode === "task"? "bg-[#0A84FF]" : "bg-[#30D158]"
-    }`}
-    initial={false}
-    animate={pillStyle}
-    transition={
-      isModeChanging
-    ? { type: "spring", stiffness: 400, damping: 35 }
-        : { duration: 0 }
-    }
-  />
-  {SUB_TABS.map((tab, i) => (
-    <motion.button
-      key={tab.key}
-      ref={el => { tabRefs.current[i] = el }}
-      whileTap={{ scale: 0.95 }}
-      onClick={() => handleTabChange(tab.key)}
-      className={`relative px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap z-10 transition-colors ${
-        subTab === tab.key
-        ? "text-white"
-          : "text-zinc-600 dark:text-zinc-400"
-      }`}
-    >
-      {tab.label}
-    </motion.button>
-  ))}
-</div>
-
-        
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1">
+                {SUB_TABS.map((tab) => (
+                  <motion.button
+                    key={tab.key}
+                    layout
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleTabChange(tab.key)}
+                    className={`relative px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap ${
+                      subTab === tab.key
+                       ? "text-white"
+                        : "text-zinc-600 dark:text-zinc-400"
+                    }`}
+                  >
+                    {subTab === tab.key && (
+                      <motion.div
+                        layoutId="activeSubTabPill"
+                        className={`absolute inset-0 rounded-full ${
+                          mode === "task"? "bg-[#0A84FF]" : "bg-[#30D158]"
+                        }`}
+                        transition={
+                          isModeChanging
+                           ? { type: "spring", stiffness: 400, damping: 35 }
+                            : { duration: 0 }
+                        }
+                      />
+                    )}
+                    <span className="relative z-10">{tab.label}</span>
+                  </motion.button>
+                ))}
+              </div>
             </div>
-
-           
           </div>
         </div>
 
