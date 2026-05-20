@@ -4,14 +4,14 @@ import React, { useEffect, useCallback, useState, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { useAppStore } from "@/store/app";
-import { 
-  Home, 
-  MessageSquare, 
-  ClipboardList, 
-  User, 
-  Plus, 
-  Sparkles, 
-  CalendarRange 
+import {
+  Home,
+  MessageSquare,
+  ClipboardList,
+  User,
+  Plus,
+  Sparkles,
+  CalendarRange
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -23,9 +23,9 @@ interface NavItem {
 
 const menuVariants = {
   hidden: { opacity: 0, y: 15, scale: 0.97 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
+  visible: {
+    opacity: 1,
+    y: 0,
     scale: 1,
     transition: {
       type: "spring",
@@ -35,9 +35,9 @@ const menuVariants = {
       delayChildren: 0.01
     }
   },
-  exit: { 
-    opacity: 0, 
-    y: 10, 
+  exit: {
+    opacity: 0,
+    y: 10,
     scale: 0.98,
     transition: { duration: 0.12, ease: "easeInOut" }
   }
@@ -52,12 +52,12 @@ const itemVariants = {
 /* ==========================================================================
    COMPONENT 1: FLOATING MENU 
    ========================================================================== */
-const FloatingMenu = React.memo(({ 
-  isOpen, 
-  onSelect 
-}: { 
-  isOpen: boolean; 
-  onSelect: (type: "task" | "plan") => void; 
+const FloatingMenu = React.memo(({
+  isOpen,
+  onSelect
+}: {
+  isOpen: boolean;
+  onSelect: (type: "task" | "plan") => void;
 }) => {
   return (
     <AnimatePresence mode="wait">
@@ -72,7 +72,7 @@ const FloatingMenu = React.memo(({
           <div className="text-[10px] font-bold text-zinc-400/90 px-3.5 pt-2 pb-1 tracking-widest uppercase">
             Tạo mới nhanh
           </div>
-          
+
           <motion.button
             variants={itemVariants}
             whileHover={{ scale: 1.01, x: 2 }}
@@ -166,14 +166,14 @@ export default function BottomNav() {
     handleNavigation(`/create/${type}`);
   }, [handleNavigation]);
 
-  const checkActive = useCallback((path: string) => 
-    path === "/" ? pathname === "/" : pathname.startsWith(path), 
+  const checkActive = useCallback((path: string) =>
+    path === "/"? pathname === "/" : pathname.startsWith(path),
     [pathname]
   );
 
-  const activeColorClass = isPlanMode ? "text-emerald-500" : "text-blue-600";
-  const activeBgClass = isPlanMode ? "bg-emerald-500" : "bg-blue-600";
-  const dynamicGlow = isPlanMode ? "shadow-emerald-500/20" : "shadow-blue-600/20";
+  const activeColorClass = isPlanMode? "text-emerald-500" : "text-blue-600";
+  const activeBgClass = isPlanMode? "bg-emerald-500" : "bg-blue-600";
+  const dynamicGlow = isPlanMode? "shadow-emerald-500/20" : "shadow-blue-600/20";
 
   const renderNavItem = (item: NavItem) => {
     const active = checkActive(item.path);
@@ -183,32 +183,26 @@ export default function BottomNav() {
         onClick={() => handleNavigation(item.path)}
         className="flex-1 flex flex-col items-center justify-center relative h-full pt-1 pb-3.5 outline-none select-none touch-manipulation group"
       >
-        <item.Icon 
+        <item.Icon
           className={`w-[21px] h-[21px] transition-all duration-200 ease-out ${
-            active ? `${activeColorClass} scale-105` : "text-zinc-400 group-hover:text-zinc-600"
-          }`} 
+            active? `${activeColorClass} scale-105` : "text-zinc-400 group-hover:text-zinc-600"
+          }`}
         />
         <span className={`text-[10px] font-semibold mt-1 tracking-tight transition-colors duration-200 ${
-          active ? activeColorClass : "text-zinc-400"
+          active? activeColorClass : "text-zinc-400"
         }`}>
           {item.label}
         </span>
-        
-        {/* GIẢI PHÁP ĐẶC TRỊ CHỚP CHUYỂN TRANG: 
-            Sử dụng 2 tầng chỉ báo. Một div tĩnh bằng CSS thuần (luôn xuất hiện ngay khi trang vừa tải mà không cần đợi JS)
-            kết hợp với motion.div tạo độ mượt nếu Component nằm trong Persistent Layout. */}
+
         {active && (
           <>
-            {/* Tầng 1: Dấu chấm tĩnh (CSS thuần) - Triệt tiêu chớp mắt khi load trang */}
             <div className={`absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full ${activeBgClass} opacity-100 block`} />
-            
-            {/* Tầng 2: Hiệu ứng trượt nếu thanh Nav không bị unmount */}
-            <motion.div 
+            <motion.div
               layoutId="activeIndicator"
               layout="position"
-              transition={{ 
-                type: "spring", 
-                stiffness: 500, 
+              transition={{
+                type: "spring",
+                stiffness: 500,
                 damping: 30,
                 mass: 0.4
               }}
@@ -236,11 +230,11 @@ export default function BottomNav() {
 
       <div className="fixed bottom-0 inset-x-0 z-50 pointer-events-none flex flex-col items-center justify-end">
         <div className="w-full max-w-[480px] px-4 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center gap-3">
-          
+
           <FloatingMenu isOpen={isOpen} onSelect={handleSelectCreate} />
 
           <div className="w-full pointer-events-auto relative rounded-[26px] border border-zinc-200/50 bg-white/80 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.04)] overflow-hidden">
-            
+
             <div className="flex items-center justify-between h-[64px] px-2 relative">
               <div className="flex-1 grid grid-cols-2 h-full">
                 {leftItems.map(renderNavItem)}
@@ -252,18 +246,31 @@ export default function BottomNav() {
                     navigator.vibrate?.(8);
                     setIsOpen(!isOpen);
                   }}
-                  className="outline-none select-none touch-manipulation z-10 p-2"
+                  className="outline-none select-none touch-manipulation z-10 p-2 relative"
                 >
+                  {/* Hiệu ứng pulse thu hút bấm khi menu đóng */}
+                  <AnimatePresence>
+                    {!isOpen && (
+                      <motion.span
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0, 0.6] }}
+                        exit={{ opacity: 0 }}
+                        transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+                        className={`absolute inset-0 rounded-full ${activeBgClass} blur-md`}
+                      />
+                    )}
+                  </AnimatePresence>
+
                   <motion.div
-                    animate={{ 
-                      rotate: isOpen ? 135 : 0,
-                      scale: isOpen ? 0.90 : 1
+                    animate={{
+                      rotate: isOpen? 135 : 0,
+                      scale: isOpen? 0.90 : 1
                     }}
-                    whileHover={{ scale: isOpen ? 0.90 : 1.05 }}
+                    whileHover={{ scale: isOpen? 0.90 : 1.05 }}
                     whileTap={{ scale: 0.88 }}
                     transition={{ type: "spring", damping: 15, stiffness: 400 }}
                     className={`w-11 h-11 rounded-full flex items-center justify-center text-white shadow-md transition-all duration-200 ${dynamicGlow} ${
-                      isOpen ? "bg-zinc-900 shadow-zinc-950/10" : activeBgClass
+                      isOpen? "bg-zinc-900 shadow-zinc-950/10" : activeBgClass
                     }`}
                   >
                     <Plus className="w-4 h-4" strokeWidth={3} />
