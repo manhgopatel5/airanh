@@ -986,7 +986,7 @@ const filteredChats = useMemo(() => {
       )}
     </button>
   ))}
-  {!isOnline && (
+   {!isOnline && (
     <span className="ml-auto text-[12px] text-orange-500 font-medium flex items-center gap-1 flex-shrink-0">
       <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse" />
       Offline
@@ -994,7 +994,7 @@ const filteredChats = useMemo(() => {
   )}
 </div>
 
-        <div className="pb-24">
+<div className="pb-24">
           {activeTab === "notifications" ? (
             notifLoading ? (
               <div className="px-4 pt-4 space-y-3">
