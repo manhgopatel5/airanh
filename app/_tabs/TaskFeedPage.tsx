@@ -172,7 +172,7 @@ useEffect(() => {
     vibrate([10, 30, 10]);
     const timer = setTimeout(() => setTabChanged(false), 3000);
     setPrevTab(activeTab);
-    return () => clearTimeout(timer);
+    return () => clearTimeout(timer); // clear khi unmount
   }
 }, [activeTab, prevTab]);
 
@@ -336,6 +336,7 @@ useEffect(() => {
   }`}
 >
   <FiSearch 
+    key={tabChanged ? 'active' : 'inactive'} // force reset animation
     size={18} 
     className={`${
       tabChanged 
