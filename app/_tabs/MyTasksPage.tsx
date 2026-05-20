@@ -319,27 +319,31 @@ export default function TasksPage() {
             </div>
           </div>
 
-          <div className="px-4 pb-3">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1">
-                {SUB_TABS.map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => handleTabChange(tab.key)}
-                    className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
-                      subTab === tab.key
-                       ? mode === "task"
-                         ? "bg-[#0A84FF] text-white"
-                          : "bg-[#30D158] text-white"
-                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+       <div className="px-4 pb-3">
+  <div className="flex items-center gap-2 mb-3">
+    <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1">
+      {SUB_TABS.map((tab) => (
+        <button
+          key={tab.key}
+          onClick={() => handleTabChange(tab.key)}
+          className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap ${
+            subTab === tab.key
+             ? mode === "task"
+               ? "bg-[#0A84FF] text-white"
+                : "bg-[#30D158] text-white"
+              : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 active:bg-zinc-200 dark:active:bg-zinc-700"
+          }`}
+          style={{ 
+            WebkitTapHighlightColor: 'transparent',
+            touchAction: 'manipulation' // Fix double tap iOS
+          }}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  </div>
+</div>
         </div>
 
         <div className="max-w-[600px] mx-auto p-4">
