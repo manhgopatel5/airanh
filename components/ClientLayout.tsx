@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import FCMProvider from "@/components/FCMProvider";
 import { useEffect, useMemo, useRef } from "react";
-import BottomNav from "@/components/BottomNav";
+import BottomNav from "@/components/BottomNav"; // Thêm dòng này
 import { Toaster } from "react-hot-toast";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -15,8 +15,7 @@ export default function ClientLayout({ children }: Props) {
   const pathname = usePathname() || "";
   const router = useRouter();
   const { user, loading } = useAuth();
-  
-  // Dùng ref để ghi nhớ xem app đã từng load thành công lần đầu chưa
+
   const hasInitiallyLoaded = useRef(false);
 
   const publicRoutes = ["/login", "/register", "/forgot-password", "/verify-email", "/terms", "/privacy"];
@@ -32,39 +31,33 @@ export default function ClientLayout({ children }: Props) {
   /* ================= REDIRECT ================= */
   useEffect(() => {
     if (loading) return;
-    if (!user && !isPublic) {
+    if (!user &&!isPublic) {
       router.replace("/login");
     }
   }, [user, loading, isPublic, router]);
 
-  // Đánh dấu đã qua được bước tải đầu tiên khi mở ứng dụng
-  if (!loading && !hasInitiallyLoaded.current) {
+  if (!loading &&!hasInitiallyLoaded.current) {
     hasInitiallyLoaded.current = true;
   }
 
   /* ================= LOADING THÔNG MINH ================= */
-  if (loading && !hasInitiallyLoaded.current) {
+  if (loading &&!hasInitiallyLoaded.current) {
     return null;
   }
 
-  // Danh sách các URL vật lý thực sự nằm ngoài trang chủ cần dùng BottomNav cũ
-  // (Nếu sau này bạn không gom các trang khác về page.tsx thì khai báo thêm vào đây)
-  const exactBottomNavRoutes = ["/orders", "/notifications"]; 
-  const shouldShowOldBottomNav = exactBottomNavRoutes.includes(pathname);
+  // Ẩn BottomNav ở: trang public, chat detail, create, login
+  const shouldShowBottomNav =!isPublic && user &&!isChatDetail &&!isCreate;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors font-sans">
       {user && <FCMProvider userId={user.uid} />}
 
-      <div className={!isChatDetail && !isCreate ? "pb-24" : ""}>
+      <div className={shouldShowBottomNav? "pb-24" : ""}>
         {children}
       </div>
 
-      {/* CHỈ hiện BottomNav cũ ở các URL hệ thống chỉ định rõ ràng, 
-          tránh việc nó tự động nhận diện bừa bãi và render đè lên State điều hướng mới */}
-      {shouldShowOldBottomNav && !isPublic && user && !isChatDetail && !isCreate && (
-        <BottomNav />
-      )}
+      {/* BottomNav mới: dùng cho tất cả trang chính */}
+      {shouldShowBottomNav && <BottomNav />}
 
       <Toaster
         position="top-center"
