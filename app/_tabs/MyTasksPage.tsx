@@ -343,19 +343,19 @@ const handleModeChange = (newMode: "task" | "plan") => {
           : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
       }`}
     >
-      {subTab === tab.key && (
-        <motion.div
-          layoutId={prevMode !== mode ? "activeSubTab" : undefined}
-          className={`absolute inset-0 rounded-full ${
-            mode === "task" ? "bg-[#0A84FF]" : "bg-[#30D158]"
-          }`}
-          transition={
-            prevMode !== mode 
-              ? { type: "spring", stiffness: 400, damping: 35 } 
-              : { duration: 0 }
-          }
-        />
-      )}
+   {subTab === tab.key && (
+  <motion.div
+    {...(prevMode !== mode ? { layoutId: "activeSubTab" } : {})}
+    className={`absolute inset-0 rounded-full ${
+      mode === "task" ? "bg-[#0A84FF]" : "bg-[#30D158]"
+    }`}
+    transition={
+      prevMode !== mode 
+        ? { type: "spring", stiffness: 400, damping: 35 } 
+        : { duration: 0 }
+    }
+  />
+)}
       <span className="relative z-10">{tab.label}</span>
     </motion.button>
   ))}
