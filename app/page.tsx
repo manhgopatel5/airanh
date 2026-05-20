@@ -329,7 +329,7 @@ export default function AppContainer() {
 
            <motion.div
   layout
-  className="w-full pointer-events-auto relative border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 pb-[env(safe-area-inset-bottom)]"
+ className="w-full pointer-events-auto relative bg-white dark:bg-zinc-950 pb-[env(safe-area-inset-bottom)]"
 >
 
               
