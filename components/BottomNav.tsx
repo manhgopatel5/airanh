@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useCallback, useState, useMemo, useRef } from "react";
+import React, { useEffect, useCallback, useState, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { useAppStore } from "@/store/app";
