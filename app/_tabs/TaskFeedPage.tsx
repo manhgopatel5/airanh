@@ -261,7 +261,7 @@ const currentTheme = theme[mode];
           </div>
         )}
 
-        <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50">
+      <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl">
           <div className="px-4 pt-3 pb-2">
             <div className="flex items-center p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800">
               <button
@@ -291,19 +291,21 @@ const currentTheme = theme[mode];
                 {SUB_TABS.map((tab) => {
                   const Icon = tab.icon;
                   return (
-                    <motion.button
-                      key={tab.key}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => { setActiveTab(tab.key); vibrate(5); }}
-                      className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                        activeTab === tab.key
-                        ? `bg-gradient-to-r ${currentTheme.gradient} text-white ${currentTheme.shadow}`
-                          : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
-                      }`}
-                    >
-                      <Icon size={16} />
-                      {tab.label}
-                    </motion.button>
+         <motion.button
+  key={tab.key}
+  whileTap={{ scale: 0.95 }}
+  onClick={() => { setActiveTab(tab.key); vibrate(5); }}
+  className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+    activeTab === tab.key
+      ? mode === "task" 
+        ? "bg-[#0A84FF] text-white" 
+        : "bg-[#30D158] text-white"
+      : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+  }`}
+>
+  <Icon size={16} />
+  {tab.label}
+</motion.button>
                   );
                 })}
               </div>
