@@ -33,7 +33,7 @@ export default function CustomTabBar() {
     setMounted(true);
   }, []);
 
-  const theme = {
+  const themes = {
     task: {
       gradient: "from-[#0A84FF] to-[#0066CC]",
       glow: "shadow-[0_0_50px_rgba(10,132,255,0.8)]",
@@ -50,7 +50,7 @@ export default function CustomTabBar() {
     },
   };
 
-  const currentTheme = themes[mode];
+ const currentTheme = themes[mode] || themes.task;
 
   const handleTabClick = (path: string, isCreate: boolean) => {
     if (isCreate) {
