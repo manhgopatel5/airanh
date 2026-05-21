@@ -50,7 +50,7 @@ export default function CustomTabBar() {
     },
   };
 
-  const currentTheme = theme;
+  const currentTheme = themes[mode];
 
   const handleTabClick = (path: string, isCreate: boolean) => {
     if (isCreate) {
