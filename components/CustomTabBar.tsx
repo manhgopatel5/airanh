@@ -139,7 +139,7 @@ export default function CustomTabBar() {
             />
 
             <div className="flex items-center justify-around h- px-1">
-              {tabs.map((tab, idx) => {
+          {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = pathname === tab.path;
                 const isCreate = tab.key === "create";
