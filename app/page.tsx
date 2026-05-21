@@ -41,7 +41,7 @@ const SUB_TABS: { key: TabId; label: string; icon: any }[] = [
   { key: "new", label: "Mới", icon: HiSparkles },
 ];
 
-const PAGE_SIZE = 50; // Lấy nhiều hơn để filter client
+const PAGE_SIZE = 50;
 const RADIUS_OPTIONS = [1, 2, 5, 10, 20, 50];
 
 const vibrate = (p: number | number[] = 5) => {
@@ -70,7 +70,6 @@ export default function TaskFeedPage() {
   const [tabChanged, setTabChanged] = useState(false);
   const [prevTab, setPrevTab] = useState<TabId>("hot");
 
-  // Location states
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [locationDenied, setLocationDenied] = useState(false);
   const [radiusKm, setRadiusKm] = useState(5);
@@ -141,7 +140,6 @@ export default function TaskFeedPage() {
     }
   };
 
-  // Chuẩn: KHÔNG query geohash, chỉ query theo deadline/status
   const buildQuery = useCallback(
     (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
       if (!db) return null;
@@ -178,10 +176,9 @@ export default function TaskFeedPage() {
       const snap = await getDocs(q);
       let data = snap.docs.map((doc) => ({
         id: doc.id,
-      ...doc.data(),
+     ...doc.data(),
       })) as FeedTask[];
 
-      // Filter khoảng cách ở client cho tab "near"
       if (activeTab === "near" && userLocation) {
         data = data.filter(task => {
           if (!task.location?.lat ||!task.location?.lng) return false;
@@ -376,11 +373,11 @@ export default function TaskFeedPage() {
                       onClick={() => handleTabClick(tab.key)}
                       className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
                         activeTab === tab.key
-                        ? mode === "task"
-                          ? "bg-[#0A84FF] text-white"
+                       ? mode === "task"
+                         ? "bg-[#0A84FF] text-white"
                             : "bg-[#30D158] text-white"
                           : tabChanged
-                          ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600 opacity-40"
+                         ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600 opacity-40"
                             : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                       }`}
                     >
@@ -401,8 +398,8 @@ export default function TaskFeedPage() {
                 }}
                 className={`p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 active:scale-90 transition-all relative ${
                   tabChanged
-                  ? mode === "task"
-                    ? "ring-2 ring-[#0A84FF] shadow-[0_0_20px_rgba(10,132,255,0.6)]"
+                 ? mode === "task"
+                   ? "ring-2 ring-[#0A84FF] shadow-[0_0_20px_rgba(10,132,255,0.6)]"
                       : "ring-2 ring-[#30D158] shadow-[0_0_20px_rgba(48,209,88,0.6)]"
                     : ""
                 }`}
@@ -415,7 +412,7 @@ export default function TaskFeedPage() {
                   }}
                   className={`${
                     tabChanged
-                    ? mode === "task"? "text-[#0A84FF]" : "text-[#30D158]"
+                   ? mode === "task"? "text-[#0A84FF]" : "text-[#30D158]"
                       : "text-zinc-600 dark:text-zinc-400"
                   }`}
                 />
@@ -567,7 +564,6 @@ export default function TaskFeedPage() {
         </div>
       </div>
 
-      {/* Modal xin quyền location */}
       <AnimatePresence>
         {showLocationModal && (
           <motion.div
@@ -608,7 +604,6 @@ export default function TaskFeedPage() {
         )}
       </AnimatePresence>
 
-      {/* Modal chọn bán kính */}
       <AnimatePresence>
         {showRadiusPicker && (
           <motion.div
@@ -638,7 +633,7 @@ export default function TaskFeedPage() {
                     }}
                     className={`h-11 rounded-xl font-semibold text-sm transition-all active:scale-95 ${
                       radiusKm === km
-                      ? `bg-gradient-to-r ${currentTheme.gradient} text-white ${currentTheme.shadow}`
+                     ? `bg-gradient-to-r ${currentTheme.gradient} text-white ${currentTheme.shadow}`
                         : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
                     }`}
                   >
@@ -652,8 +647,8 @@ export default function TaskFeedPage() {
       </AnimatePresence>
 
       <style jsx global>{`
-      .scrollbar-hide::-webkit-scrollbar { display: none; }
-      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+     .scrollbar-hide::-webkit-scrollbar { display: none; }
+     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale }
         body { overscroll-behavior-y: contain }
 
