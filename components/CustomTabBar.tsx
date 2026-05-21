@@ -255,7 +255,7 @@ export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }:
                       <motion.div
                         animate={
                           isActive
-                   ? {
+                  ? {
                                 y: [0, -4, 0],
                                 rotate: [0, -10, 10, -10, 0],
                               }
@@ -270,7 +270,7 @@ export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }:
                           size={26}
                           className={`relative transition-all duration-300 ${
                             isActive
-                     ? `${currentTheme.iconActive} drop-shadow-[0_0_12px_rgba(10,132,255,0.8)]`
+                    ? `${currentTheme.iconActive} drop-shadow-[0_0_12px_rgba(10,132,255,0.8)]`
                               : "text-zinc-400 dark:text-zinc-600"
                           }`}
                         />
@@ -305,7 +305,7 @@ export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }:
                       }}
                       className={`text- font-bold transition-all duration-300 ${
                         isActive
-                 ? currentTheme.iconActive
+                ? currentTheme.iconActive
                           : "text-zinc-400 dark:text-zinc-600"
                       }`}
                     >
