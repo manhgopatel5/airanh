@@ -234,24 +234,21 @@ export default function AppContainer() {
             </div>
           </div>
 
-          <CustomTabBar />
-
-          <button
-            data-plus-button
-            onClick={() => {
+          <CustomTabBar
+            currentTab={currentMainTab}
+            onChangeTab={setCurrentMainTab}
+            onCreateClick={() => {
               navigator.vibrate?.([15, 35, 15]);
-              setIsMenuOpen(!isMenuOpen);
+              setIsMenuOpen(true);
             }}
-            className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[80] w-16 h-16 -mt-7 opacity-0"
-            aria-label="Tạo mới"
           />
         </>,
         document.body
       )}
 
       <style jsx global>{`
-   .scrollbar-hide::-webkit-scrollbar{display:none}
-   .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
+  .scrollbar-hide::-webkit-scrollbar{display:none}
+  .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
         html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
         body{overscroll-behavior-y:contain}
       `}</style>
