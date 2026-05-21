@@ -1,5 +1,5 @@
 "use client";
-import { motion, AnimatePresence, useAnimation } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/store/app";
 import { useState, useEffect } from "react";
 
