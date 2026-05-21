@@ -39,6 +39,7 @@
     "date-fns": "^4.1.0",
     "firebase": "^12.12.1",
     "framer-motion": "^11.18.2",
+    "geofire-common": "^6.0.0",
     "html5-qrcode": "^2.3.8",
     "isomorphic-dompurify": "^3.9.0",
     "linkify-react": "^4.3.2",
