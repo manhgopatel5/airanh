@@ -12,8 +12,7 @@ import {
   useMotionValue,
   
   useTransform,
-  useDragControls,
-  MotionConfig
+  useDragControls
 } from "framer-motion";
 import { Toaster } from "sonner";
 import {
