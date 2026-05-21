@@ -10,7 +10,7 @@ import {
   AnimatePresence,
   
   useMotionValue,
-  useSpring,
+  
   useTransform,
   useDragControls,
   MotionConfig
