@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence, useAnimation } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { HiHome, HiChat, HiClipboardList, HiUser } from "react-icons/hi";
 import { FiPlus } from "react-icons/fi";
