@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiInbox, FiSearch, FiRefreshCw, FiX, FiMapPin, FiNavigation, FiTarget } from "react-icons/fi";
+import { FiInbox, FiSearch, FiRefreshCw, FiX, FiNavigation, FiTarget } from "react-icons/fi";
 import { HiBolt, HiCalendarDays } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 import ShareTaskModal from "@/components/ShareTaskModal";
@@ -24,6 +24,7 @@ import type { Task } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
 import { useAppStore } from "@/store/app";
+import { FiMapPin } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 import * as geofire from 'geofire-common';
 
@@ -40,7 +41,7 @@ const SUB_TABS: { key: TabId; label: string; icon: any }[] = [
   { key: "new", label: "Mới", icon: HiSparkles },
 ];
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 50;
 const RADIUS_OPTIONS = [1, 2, 5, 10, 20, 50];
 
 const vibrate = (p: number | number[] = 5) => {
@@ -69,7 +70,6 @@ export default function TaskFeedPage() {
   const [tabChanged, setTabChanged] = useState(false);
   const [prevTab, setPrevTab] = useState<TabId>("hot");
 
-  // Location states
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [locationDenied, setLocationDenied] = useState(false);
   const [radiusKm, setRadiusKm] = useState(5);
@@ -95,7 +95,7 @@ export default function TaskFeedPage() {
     }
   };
 
-  const currentTheme = theme[mode];
+  const currentTheme = theme;
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -120,7 +120,6 @@ export default function TaskFeedPage() {
         setShowLocationModal(false);
         vibrate([10, 20, 10]);
         toast.success("Đã lấy vị trí của bạn");
-        setLoading(false);
       },
       (err) => {
         setLocationDenied(true);
@@ -150,27 +149,13 @@ export default function TaskFeedPage() {
         where("visibility", "==", "public"),
         where("status", "in", ["open", "full", "doing"]),
         where("deadline", ">", now),
+        orderBy("deadline", "asc"),
+        limit(PAGE_SIZE),
       ];
-
-      if (activeTab === "near" && userLocation) {
-        const center: [number, number] = [userLocation.lat, userLocation.lng];
-        const radiusInM = radiusKm * 1000;
-        const bounds = geofire.geohashQueryBounds(center, radiusInM);
-        const [start, end] = bounds[0];
-        constraints.push(
-          where("geohash", ">=", start),
-          where("geohash", "<=", end),
-          orderBy("geohash")
-        );
-      } else {
-        constraints.push(orderBy("deadline", "asc"));
-      }
-
-      constraints.push(limit(PAGE_SIZE));
       if (startAfterDoc) constraints.push(startAfter(startAfterDoc));
       return query(collection(db, "tasks"),...constraints);
     },
-    [db, mode, activeTab, userLocation, radiusKm]
+    [db, mode]
   );
 
   const fetchTasks = useCallback(async (isRefresh = false) => {
@@ -191,10 +176,9 @@ export default function TaskFeedPage() {
       const snap = await getDocs(q);
       let data = snap.docs.map((doc) => ({
         id: doc.id,
-       ...doc.data(),
+     ...doc.data(),
       })) as FeedTask[];
 
-      // Filter theo khoảng cách chính xác nếu là tab near
       if (activeTab === "near" && userLocation) {
         data = data.filter(task => {
           if (!task.location?.lat ||!task.location?.lng) return false;
@@ -307,13 +291,14 @@ export default function TaskFeedPage() {
       });
     } else if (activeTab === "near" && userLocation) {
       result.sort((a, b) => {
+        if (!a.location?.lat ||!b.location?.lat) return 0;
         const distA = geofire.distanceBetween(
           [userLocation.lat, userLocation.lng],
-          [a.location?.lat || 0, a.location?.lng || 0]
+          [a.location.lat, a.location.lng]
         );
         const distB = geofire.distanceBetween(
           [userLocation.lat, userLocation.lng],
-          [b.location?.lat || 0, b.location?.lng || 0]
+          [b.location.lat, b.location.lng]
         );
         return distA - distB;
       });
@@ -388,11 +373,11 @@ export default function TaskFeedPage() {
                       onClick={() => handleTabClick(tab.key)}
                       className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
                         activeTab === tab.key
-                         ? mode === "task"
-                           ? "bg-[#0A84FF] text-white"
+                       ? mode === "task"
+                         ? "bg-[#0A84FF] text-white"
                             : "bg-[#30D158] text-white"
                           : tabChanged
-                           ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600 opacity-40"
+                         ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600 opacity-40"
                             : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                       }`}
                     >
@@ -413,8 +398,8 @@ export default function TaskFeedPage() {
                 }}
                 className={`p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 active:scale-90 transition-all relative ${
                   tabChanged
-                   ? mode === "task"
-                     ? "ring-2 ring-[#0A84FF] shadow-[0_0_20px_rgba(10,132,255,0.6)]"
+                 ? mode === "task"
+                   ? "ring-2 ring-[#0A84FF] shadow-[0_0_20px_rgba(10,132,255,0.6)]"
                       : "ring-2 ring-[#30D158] shadow-[0_0_20px_rgba(48,209,88,0.6)]"
                     : ""
                 }`}
@@ -427,7 +412,7 @@ export default function TaskFeedPage() {
                   }}
                   className={`${
                     tabChanged
-                     ? mode === "task"? "text-[#0A84FF]" : "text-[#30D158]"
+                   ? mode === "task"? "text-[#0A84FF]" : "text-[#30D158]"
                       : "text-zinc-600 dark:text-zinc-400"
                   }`}
                 />
@@ -579,7 +564,6 @@ export default function TaskFeedPage() {
         </div>
       </div>
 
-      {/* Modal xin quyền location */}
       <AnimatePresence>
         {showLocationModal && (
           <motion.div
@@ -620,7 +604,6 @@ export default function TaskFeedPage() {
         )}
       </AnimatePresence>
 
-      {/* Modal chọn bán kính */}
       <AnimatePresence>
         {showRadiusPicker && (
           <motion.div
@@ -650,7 +633,7 @@ export default function TaskFeedPage() {
                     }}
                     className={`h-11 rounded-xl font-semibold text-sm transition-all active:scale-95 ${
                       radiusKm === km
-                       ? `bg-gradient-to-r ${currentTheme.gradient} text-white ${currentTheme.shadow}`
+                     ? `bg-gradient-to-r ${currentTheme.gradient} text-white ${currentTheme.shadow}`
                         : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
                     }`}
                   >
@@ -664,8 +647,8 @@ export default function TaskFeedPage() {
       </AnimatePresence>
 
       <style jsx global>{`
-       .scrollbar-hide::-webkit-scrollbar { display: none; }
-       .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+     .scrollbar-hide::-webkit-scrollbar { display: none; }
+     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale }
         body { overscroll-behavior-y: contain }
 
