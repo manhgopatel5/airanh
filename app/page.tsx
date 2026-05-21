@@ -1,5 +1,4 @@
 "use client";
-export const dynamic = 'force-dynamic';
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
@@ -8,9 +7,7 @@ import { useAppStore } from "@/store/app";
 import {
   motion,
   AnimatePresence,
-  
   useMotionValue,
-  
   useTransform,
   useDragControls
 } from "framer-motion";
@@ -21,8 +18,8 @@ import { FiLoader } from "react-icons/fi";
 import ChatClient from "./chat/ChatClient";
 import ProfileTabContent from "./profile/ProfileTabContent";
 import TaskFeedPage from "./_tabs/TaskFeedPage";
-import MyTasksPage from "./_tabs/MyTasksPage";
-import CustomTabBar from "@/components/CustomTabBar"; // ✅ THÊM DÒNG NÀY
+import TasksPage from "./_tabs/MyTasksPage";
+import CustomTabBar from "@/components/CustomTabBar";
 
 type MainTab = "home" | "messages" | "tasks" | "profile";
 
@@ -51,8 +48,8 @@ const FloatingMenu = ({
 }) => {
   const dragControls = useDragControls();
   const y = useMotionValue(0);
-  const opacity = useTransform(y, [0, 100], [1, 0]);
-  const scale = useTransform(y, [0, 100], [1, 0.95]);
+  const opacity = useTransform(y,, [1, 0]);
+  const scale = useTransform(y,, [1, 0.95]);
 
   return (
     <AnimatePresence mode="wait">
@@ -80,7 +77,7 @@ const FloatingMenu = ({
             y: 15,
             scale: 0.97,
             filter: "blur(4px)",
-            transition: { duration: 0.15, ease: [0.4, 0, 1, 1] }
+            transition: { duration: 0.15, ease: }
           }}
           className="w-full max-w-[500px] mx-auto bg-white dark:bg-zinc-900 rounded-3xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] pointer-events-auto flex flex-col gap-3 select-none mb-3"
         >
@@ -127,10 +124,10 @@ export default function AppContainer() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const mode = useAppStore((s) => s.mode);
-  const [mounted, setMounted] = useState(false);
+  const = useState(false);
   const [currentMainTab, setCurrentMainTab] = useState<MainTab>("home");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [loadedTabs, setLoadedTabs] = useState<Set<MainTab>>(new Set(["home"]));
+  const [loadedTabs, setLoadedTabs] = useState<Set<MainTab>>(new Set());
   const menuRef = useRef<HTMLDivElement>(null);
 
   const isPlanMode = mode === "plan";
@@ -175,7 +172,7 @@ export default function AppContainer() {
   }, [isMenuOpen]);
 
   const handleSelectCreate = useCallback((type: "task" | "plan") => {
-    navigator.vibrate?.([15, 30, 15]);
+    navigator.vibrate?.(, 30, 15]);
     setIsMenuOpen(false);
     router.push(`/create/${type}`);
   }, [router]);
@@ -205,7 +202,7 @@ export default function AppContainer() {
           {loadedTabs.has("messages") && <ChatClient />}
         </div>
         <div className={currentMainTab!== "tasks"? "hidden" : ""}>
-          {loadedTabs.has("tasks") && <MyTasksPage />}
+          {loadedTabs.has("tasks") && <TasksPage />}
         </div>
         <div className={currentMainTab!== "profile"? "hidden" : ""}>
           {loadedTabs.has("profile") && <ProfileTabContent onNavigateTab={(tab) => setCurrentMainTab(tab)} />}
@@ -220,14 +217,14 @@ export default function AppContainer() {
                 initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
                 animate={{ opacity: 1, backdropFilter: "blur(8px)" }}
                 exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                className="fixed inset-0 z-[60] bg-zinc-950/20 dark:bg-zinc-950/40"
+                transition={{ duration: 0.3, ease: }}
+                className="fixed inset-0 z- bg-zinc-950/20 dark:bg-zinc-950/40"
                 onClick={() => setIsMenuOpen(false)}
               />
             )}
           </AnimatePresence>
 
-          <div className="fixed bottom-0 inset-x-0 z-[70] pointer-events-none">
+          <div className="fixed bottom-0 inset-x-0 z- pointer-events-none">
             <div ref={menuRef} className="w-full flex-col items-center">
               <FloatingMenu
                 isOpen={isMenuOpen}
@@ -237,17 +234,15 @@ export default function AppContainer() {
             </div>
           </div>
 
-          {/* ✅ Dùng CustomTabBar mới */}
           <CustomTabBar />
 
-          {/* ✅ Override nút + để mở menu thay vì navigate */}
           <button
             data-plus-button
             onClick={() => {
-              navigator.vibrate?.([15, 35, 15]);
+              navigator.vibrate?., 35, 15]);
               setIsMenuOpen(!isMenuOpen);
             }}
-            className="fixed bottom- left-1/2 -translate-x-1/2 z-[80] w-16 h-16 -mt-7 opacity-0"
+            className="fixed bottom- left-1/2 -translate-x-1/2 z- w-16 h-16 -mt-7 opacity-0"
             aria-label="Tạo mới"
           />
         </>,
@@ -255,8 +250,8 @@ export default function AppContainer() {
       )}
 
       <style jsx global>{`
-     .scrollbar-hide::-webkit-scrollbar{display:none}
-     .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
+    .scrollbar-hide::-webkit-scrollbar{display:none}
+    .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
         html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
         body{overscroll-behavior-y:contain}
       `}</style>
