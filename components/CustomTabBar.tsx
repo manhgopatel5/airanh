@@ -280,17 +280,17 @@ export default function CustomTabBar({
       className="fixed bottom-0 left-0 right-0 z-50 pb-safe"
     >
       <div className="relative mx-auto max-w-[500px]">
-        <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-white via-white/98 to-transparent dark:from-zinc-950 dark:via-zinc-950/98 pointer-events-none" />
+
 
         <div className="relative px-5 pb-4">
-          <motion.div
-            className="relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur-3xl rounded-[28px] border border-zinc-200/50 dark:border-zinc-800/50 shadow-[0_12px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.6)]"
-            whileHover={{ y: -3 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/90 dark:via-zinc-500/30 to-transparent rounded-t-[28px]" />
+        <motion.div
+  className="relative bg-transparent"
+  whileHover={{ y: -3 }}
+  transition={{ duration: 0.3 }}
+>
 
-            <div className="absolute inset-0 rounded-[28px] opacity-[0.015] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsdGVyPSJ1cmwoI2EpIiBvcGFjaXR5PSIwLjA1Ii8+PC9zdmc+')]" />
+
+
 
             <div className="relative flex items-center justify-between h-20 px-2">
               {tabs.map((tab) => {
