@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiInbox, FiSearch, FiRefreshCw, FiX, FiNavigation, FiTarget } from "react-icons/fi";
-import { HiBolt, HiCalendarDays } from "react-icons/hi2";
+import { FiInbox, FiSearch, FiRefreshCw, FiX, FiNavigation, FiTarget, FiMapPin, FiShield } from "react-icons/fi";
+import { HiBolt, HiCalendarDays, HiFire, HiSparkles, HiUsers, HiLocationMarker } from "react-icons/hi";
 import { useRouter } from "next/navigation";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import { onAuthStateChanged, User } from "firebase/auth";
@@ -24,8 +24,6 @@ import type { Task } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
 import { useAppStore } from "@/store/app";
-import { FiMapPin } from "react-icons/fi";
-import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 import * as geofire from 'geofire-common';
 
 type TabId = "hot" | "near" | "friends" | "new";
@@ -36,7 +34,7 @@ type FeedTask = Task & {
 
 const SUB_TABS: { key: TabId; label: string; icon: any }[] = [
   { key: "hot", label: "Hot", icon: HiFire },
-  { key: "near", label: "Gần bạn", icon: FiMapPin },
+  { key: "near", label: "Gần bạn", icon: HiLocationMarker },
   { key: "friends", label: "Bạn bè", icon: HiUsers },
   { key: "new", label: "Mới", icon: HiSparkles },
 ];
@@ -95,7 +93,7 @@ export default function TaskFeedPage() {
     }
   };
 
-const currentTheme = theme[mode];
+  const currentTheme = theme[mode];
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -107,7 +105,7 @@ const currentTheme = theme[mode];
 
   const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
-      toast.error("Trình duyệt không hỗ trợ định vị");
+      toast.error("Thiết bị không hỗ trợ định vị GPS");
       return;
     }
 
@@ -119,16 +117,16 @@ const currentTheme = theme[mode];
         setLocationDenied(false);
         setShowLocationModal(false);
         vibrate([10, 20, 10]);
-        toast.success("Đã lấy vị trí của bạn");
+        toast.success("Đã xác định vị trí thành công");
       },
       (err) => {
         setLocationDenied(true);
-        setShowLocationModal(true);
-        if (err.code === 1) toast.error("Bạn đã từ chối quyền định vị");
-        else toast.error("Không lấy được vị trí");
+        setShowLocationModal(false);
+        if (err.code === 1) toast.error("Bạn đã chặn quyền truy cập vị trí");
+        else toast.error("Không thể lấy vị trí. Thử lại sau");
         setLoading(false);
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   }, []);
 
@@ -176,7 +174,7 @@ const currentTheme = theme[mode];
       const snap = await getDocs(q);
       let data = snap.docs.map((doc) => ({
         id: doc.id,
-     ...doc.data(),
+       ...doc.data(),
       })) as FeedTask[];
 
       if (activeTab === "near" && userLocation) {
@@ -225,6 +223,7 @@ const currentTheme = theme[mode];
       setTabChanged(true);
       vibrate([10, 30, 10]);
       setPrevTab(activeTab);
+      setTimeout(() => setTabChanged(false), 3000);
     }
   }, [activeTab, prevTab]);
 
@@ -273,46 +272,46 @@ const currentTheme = theme[mode];
   };
 
   const filteredTasks = useMemo(() => {
-  let result = tasks.filter(t =>!t.banned &&!t.hidden);
+    let result = tasks.filter(t =>!t.banned &&!t.hidden);
 
-  if (searchQuery) {
-    result = result.filter(t =>
-      t.title.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }
-
-  if (activeTab === "hot") {
-    result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-  } else if (activeTab === "new") {
-    result.sort((a, b) => {
-      const aTime = a.createdAt?.toMillis() || 0;
-      const bTime = b.createdAt?.toMillis() || 0;
-      return bTime - aTime;
-    });
-  } else if (activeTab === "near" && userLocation) {
-    result.sort((a, b) => {
-      const aLat = a.location?.lat;
-      const aLng = a.location?.lng;
-      const bLat = b.location?.lat;
-      const bLng = b.location?.lng;
-      
-      if (aLat == null || aLng == null) return 1;
-      if (bLat == null || bLng == null) return -1;
-      
-      const distA = geofire.distanceBetween(
-        [userLocation.lat, userLocation.lng],
-        [aLat, aLng]
+    if (searchQuery) {
+      result = result.filter(t =>
+        t.title.toLowerCase().includes(searchQuery.toLowerCase())
       );
-      const distB = geofire.distanceBetween(
-        [userLocation.lat, userLocation.lng],
-        [bLat, bLng]
-      );
-      return distA - distB;
-    });
-  }
+    }
 
-  return result;
-}, [tasks, searchQuery, activeTab, userLocation]);
+    if (activeTab === "hot") {
+      result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+    } else if (activeTab === "new") {
+      result.sort((a, b) => {
+        const aTime = a.createdAt?.toMillis() || 0;
+        const bTime = b.createdAt?.toMillis() || 0;
+        return bTime - aTime;
+      });
+    } else if (activeTab === "near" && userLocation) {
+      result.sort((a, b) => {
+        const aLat = a.location?.lat;
+        const aLng = a.location?.lng;
+        const bLat = b.location?.lat;
+        const bLng = b.location?.lng;
+
+        if (aLat == null || aLng == null) return 1;
+        if (bLat == null || bLng == null) return -1;
+
+        const distA = geofire.distanceBetween(
+          [userLocation.lat, userLocation.lng],
+          [aLat, aLng]
+        );
+        const distB = geofire.distanceBetween(
+          [userLocation.lat, userLocation.lng],
+          [bLat, bLng]
+        );
+        return distA - distB;
+      });
+    }
+
+    return result;
+  }, [tasks, searchQuery, activeTab, userLocation]);
 
   const handleShare = useCallback((task: FeedTask) => {
     vibrate(5);
@@ -340,7 +339,7 @@ const currentTheme = theme[mode];
             className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl"
             style={{ height: `${pullDistance}px`, transition: pullDistance === 0? 'height 0.3s' : 'none' }}
           >
-            <FiRefreshCw className={`${pullDistance > 60? 'animate-spin' : ''} text-[#0A84FF]`} size={20} />
+            <FiRefreshCw className={`${pullDistance > 60? 'animate-spin' : ''} ${currentTheme.text}`} size={20} />
           </div>
         )}
 
@@ -380,11 +379,11 @@ const currentTheme = theme[mode];
                       onClick={() => handleTabClick(tab.key)}
                       className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
                         activeTab === tab.key
-                       ? mode === "task"
-                         ? "bg-[#0A84FF] text-white"
+                         ? mode === "task"
+                           ? "bg-[#0A84FF] text-white"
                             : "bg-[#30D158] text-white"
                           : tabChanged
-                         ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600 opacity-40"
+                           ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600 opacity-40"
                             : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                       }`}
                     >
@@ -405,8 +404,8 @@ const currentTheme = theme[mode];
                 }}
                 className={`p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 active:scale-90 transition-all relative ${
                   tabChanged
-                 ? mode === "task"
-                   ? "ring-2 ring-[#0A84FF] shadow-[0_0_20px_rgba(10,132,255,0.6)]"
+                   ? mode === "task"
+                     ? "ring-2 ring-[#0A84FF] shadow-[0_0_20px_rgba(10,132,255,0.6)]"
                       : "ring-2 ring-[#30D158] shadow-[0_0_20px_rgba(48,209,88,0.6)]"
                     : ""
                 }`}
@@ -419,7 +418,7 @@ const currentTheme = theme[mode];
                   }}
                   className={`${
                     tabChanged
-                   ? mode === "task"? "text-[#0A84FF]" : "text-[#30D158]"
+                     ? mode === "task"? "text-[#0A84FF]" : "text-[#30D158]"
                       : "text-zinc-600 dark:text-zinc-400"
                   }`}
                 />
@@ -442,7 +441,7 @@ const currentTheme = theme[mode];
                       <FiTarget size={16} />
                       Bán kính tìm kiếm
                     </div>
-<div className={`font-bold ${currentTheme.text}`}>{radiusKm} km</div>
+                    <div className={`font-bold ${currentTheme.text}`}>{radiusKm} km</div>
                   </button>
                 </motion.div>
               )}
@@ -504,17 +503,17 @@ const currentTheme = theme[mode];
                 <FiInbox size={32} className="text-zinc-400" />
               </div>
               <p className="text-base font-bold text-zinc-900 dark:text-zinc-100 mb-1">
-                {activeTab === "near" &&!userLocation? "Cần bật định vị" : `Chưa có ${mode === "task"? "task" : "plan"} nào`}
+                {activeTab === "near" &&!userLocation? "Chưa bật định vị" : `Chưa có ${mode === "task"? "task" : "plan"} nào`}
               </p>
               <p className="text-sm text-zinc-500 mb-6">
-                {activeTab === "near" &&!userLocation? "Cho phép truy cập vị trí để tìm task gần bạn" : "Kéo xuống để tải lại"}
+                {activeTab === "near" &&!userLocation? "Bật định vị để khám phá task xung quanh bạn" : "Kéo xuống để làm mới danh sách"}
               </p>
               {activeTab === "near" &&!userLocation? (
                 <button
                   onClick={() => setShowLocationModal(true)}
                   className={`px-6 h-11 rounded-xl bg-gradient-to-r ${currentTheme.gradient} text-white text-sm font-semibold active:scale-95 transition-all ${currentTheme.shadow} flex items-center gap-2 mx-auto`}
                 >
-                  <FiNavigation /> Bật định vị
+                  <FiNavigation /> Bật định vị ngay
                 </button>
               ) : (
                 <button
@@ -556,7 +555,7 @@ const currentTheme = theme[mode];
 
           {(loadingMore || refreshing) && (
             <div className="flex justify-center py-6">
-              <FiRefreshCw className="animate-spin text-[#0A84FF]" size={24} />
+              <FiRefreshCw className={`animate-spin ${currentTheme.text}`} size={24} />
             </div>
           )}
 
@@ -577,32 +576,36 @@ const currentTheme = theme[mode];
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={() => setShowLocationModal(false)}
           >
             <motion.div
-              initial={{ y: 100 }}
-              animate={{ y: 0 }}
-              exit={{ y: 100 }}
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-[400px] bg-white dark:bg-zinc-900 rounded-3xl p-6"
+              className="w-full max-w-[400px] bg-white dark:bg-zinc-900 rounded-3xl p-6 shadow-2xl"
             >
-              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#0A84FF] to-[#0066CC] flex items-center justify-center">
-                <FiNavigation size={28} className="text-white" />
+              <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center ${currentTheme.shadow}`}>
+                <HiLocationMarker size={32} className="text-white" />
               </div>
-              <h3 className="text-xl font-bold text-center mb-2">Bật định vị</h3>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center mb-6">
-                Cho phép truy cập vị trí để tìm task gần bạn nhất
+              <h3 className="text-xl font-bold text-center mb-2">Khám phá quanh bạn</h3>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center mb-2">
+                Cho phép truy cập vị trí để tìm các task gần bạn nhất
               </p>
+              <div className="flex items-center gap-2 justify-center mb-6 text-xs text-zinc-400">
+                <FiShield size={14} />
+                <span>Vị trí chỉ dùng để lọc, không lưu trữ</span>
+              </div>
               <button
                 onClick={requestLocation}
-className={`w-full h-12 rounded-xl bg-gradient-to-r ${currentTheme.gradient} text-white font-semibold active:scale-95 transition-all ${currentTheme.shadow}`}
+                className={`w-full h-12 rounded-xl bg-gradient-to-r ${currentTheme.gradient} text-white font-semibold active:scale-95 transition-all ${currentTheme.shadow}`}
               >
-                Cho phép định vị
+                Cho phép truy cập
               </button>
               <button
                 onClick={() => setShowLocationModal(false)}
-                className="w-full h-12 mt-2 rounded-xl text-zinc-500 font-semibold active:scale-95"
+                className="w-full h-12 mt-2 rounded-xl text-zinc-500 font-semibold active:scale-95 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
               >
                 Để sau
               </button>
@@ -617,18 +620,19 @@ className={`w-full h-12 rounded-xl bg-gradient-to-r ${currentTheme.gradient} tex
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={() => setShowRadiusPicker(false)}
           >
             <motion.div
-              initial={{ y: 100 }}
-              animate={{ y: 0 }}
-              exit={{ y: 100 }}
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-[400px] bg-white dark:bg-zinc-900 rounded-3xl p-6"
+              className="w-full max-w-[400px] bg-white dark:bg-zinc-900 rounded-3xl p-6 shadow-2xl"
             >
-              <h3 className="text-lg font-bold mb-4">Chọn bán kính</h3>
-              <div className="grid grid-cols-3 gap-2 mb-4">
+              <h3 className="text-lg font-bold mb-1">Phạm vi tìm kiếm</h3>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">Chọn bán kính để tìm task phù hợp</p>
+              <div className="grid grid-cols-3 gap-2 mb-2">
                 {RADIUS_OPTIONS.map((km) => (
                   <button
                     key={km}
@@ -638,24 +642,30 @@ className={`w-full h-12 rounded-xl bg-gradient-to-r ${currentTheme.gradient} tex
                       vibrate(5);
                       fetchTasks(true);
                     }}
-           className={`h-11 rounded-xl font-semibold text-sm transition-all active:scale-95 ${
-  radiusKm === km
-? `bg-gradient-to-r ${currentTheme.gradient} text-white ${currentTheme.shadow}`
-    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
-}`}
+                    className={`h-12 rounded-xl font-semibold text-sm transition-all active:scale-95 ${
+                      radiusKm === km
+                       ? `bg-gradient-to-r ${currentTheme.gradient} text-white ${currentTheme.shadow}`
+                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                    }`}
                   >
                     {km} km
                   </button>
                 ))}
               </div>
+              <button
+                onClick={() => setShowRadiusPicker(false)}
+                className="w-full h-11 mt-2 rounded-xl text-zinc-500 font-semibold active:scale-95 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+              >
+                Đóng
+              </button>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
       <style jsx global>{`
-     .scrollbar-hide::-webkit-scrollbar { display: none; }
-     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+       .scrollbar-hide::-webkit-scrollbar { display: none; }
+       .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale }
         body { overscroll-behavior-y: contain }
 
