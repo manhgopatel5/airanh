@@ -53,7 +53,7 @@ export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }:
     },
   };
 
-  const currentTheme = themes[mode] || themes.task;
+  const currentTheme = themes || themes.task;
 
   const handleTabClick = (key: string) => {
     if (key === "create") {
@@ -129,7 +129,7 @@ export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }:
 
         <div className="relative px-4 pb-2">
           <motion.div
-            className="relative bg-white/75 dark:bg-zinc-900/75 backdrop-blur-3xl rounded-[28px] border border-zinc-200/60 dark:border-zinc-800/60 shadow-[0_-10px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_-10px_50px_rgba(0,0,0,0.5)]"
+            className="relative bg-white/75 dark:bg-zinc-900/75 backdrop-blur-3xl rounded- border border-zinc-200/60 dark:border-zinc-800/60 shadow-[0_-10px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_-10px_50px_rgba(0,0,0,0.5)]"
             whileHover={{ scale: 1.01 }}
             transition={{ duration: 0.2 }}
           >
@@ -139,7 +139,7 @@ export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }:
               transition={{ repeat: Infinity, duration: 3 }}
             />
 
-            <div className="flex items-center justify-around h-[72px] px-1">
+            <div className="flex items-center justify-around h- px-1">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = currentTab === tab.key;
@@ -153,8 +153,9 @@ export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }:
                       whileTap="tap"
                       whileHover="hover"
                       onTouchStart={() => haptics.light()}
-                      onClick={() => handleTabClick(tab.key, true)}
+                      onClick={() => handleTabClick(tab.key)}
                       className="relative -mt-7"
+                      data-plus-button
                     >
                       <motion.div
                         animate={{
@@ -216,8 +217,8 @@ export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }:
                     variants={itemVariants}
                     whileTap={{ scale: 0.88 }}
                     onTouchStart={() => haptics.light()}
-                    onClick={() => handleTabClick(tab.key, false)}
-                    className="relative flex flex-col items-center justify-center w-[68px] h-[60px] gap-1"
+                    onClick={() => handleTabClick(tab.key)}
+                    className="relative flex flex-col items-center justify-center w- h- gap-1"
                   >
                     <AnimatePresence mode="wait">
                       {isActive && (
@@ -254,7 +255,7 @@ export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }:
                       <motion.div
                         animate={
                           isActive
-                           ? {
+                      ? {
                                 y: [0, -4, 0],
                                 rotate: [0, -10, 10, -10, 0],
                               }
@@ -269,7 +270,7 @@ export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }:
                           size={26}
                           className={`relative transition-all duration-300 ${
                             isActive
-                             ? `${currentTheme.iconActive} drop-shadow-[0_0_12px_rgba(10,132,255,0.8)]`
+                        ? `${currentTheme.iconActive} drop-shadow-[0_0_12px_rgba(10,132,255,0.8)]`
                               : "text-zinc-400 dark:text-zinc-600"
                           }`}
                         />
@@ -279,7 +280,7 @@ export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }:
                         <motion.div
                           initial={{ scale: 0, y: -10 }}
                           animate={{ scale: 1, y: 0 }}
-                          className="absolute -top-1.5 -right-1.5 min-w-[20px] bg-gradient-to-br from-red-500 to-red-600 rounded-full px-1.5 h-5 flex items-center justify-center shadow-lg shadow-red-500/50 border-2 border-white dark:border-zinc-900"
+                          className="absolute -top-1.5 -right-1.5 min-w- bg-gradient-to-br from-red-500 to-red-600 rounded-full px-1.5 h-5 flex items-center justify-center shadow-lg shadow-red-500/50 border-2 border-white dark:border-zinc-900"
                         >
                           <motion.span
                             animate={{
@@ -289,7 +290,7 @@ export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }:
                               repeat: Infinity,
                               duration: 1.2,
                             }}
-                            className="text-[11px] font-black text-white"
+                            className="text- font-black text-white"
                           >
                             {unreadCount > 9? "9+" : unreadCount}
                           </motion.span>
@@ -302,9 +303,9 @@ export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }:
                         opacity: isActive? 1 : 0.5,
                         y: isActive? 0 : 2,
                       }}
-                      className={`text-[11px] font-bold transition-all duration-300 ${
+                      className={`text- font-bold transition-all duration-300 ${
                         isActive
-                         ? currentTheme.iconActive
+                    ? currentTheme.iconActive
                           : "text-zinc-400 dark:text-zinc-600"
                       }`}
                     >
