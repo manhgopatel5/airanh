@@ -26,6 +26,7 @@ import ChatClient from "./chat/ChatClient";
 import ProfileTabContent from "./profile/ProfileTabContent";
 import TaskFeedPage from "./_tabs/TaskFeedPage";
 import MyTasksPage from "./_tabs/MyTasksPage";
+import CustomTabBar from "@/components/CustomTabBar"; // ✅ THÊM DÒNG NÀY
 
 type MainTab = "home" | "messages" | "tasks" | "profile";
 
@@ -85,12 +86,8 @@ const FloatingMenu = ({
             filter: "blur(4px)",
             transition: { duration: 0.15, ease: [0.4, 0, 1, 1] }
           }}
-          className="w-full bg-white dark:bg-zinc-900 rounded-3xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] pointer-events-auto flex flex-col gap-3 select-none"
+          className="w-full max-w-[500px] mx-auto bg-white dark:bg-zinc-900 rounded-3xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] pointer-events-auto flex flex-col gap-3 select-none mb-3"
         >
- 
-
-
-
           <div className="grid grid-cols-2 gap-3">
             <motion.button
               initial={{ opacity: 0, y: 10 }}
@@ -130,78 +127,6 @@ const FloatingMenu = ({
   );
 };
 
-const MagneticNavItem = ({
-  item,
-  active,
-  onClick,
-  activeColorClass,
-  
-}: {
-  item: { id: MainTab; label: string; Icon: any };
-  active: boolean;
-  onClick: () => void;
-  activeColorClass: string;
-  activeBgClass: string;
-}) => {
-  const ref = useRef<HTMLButtonElement>(null);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const springX = useSpring(x, { stiffness: 350, damping: 18, mass: 0.5 });
-  const springY = useSpring(y, { stiffness: 350, damping: 18, mass: 0.5 });
-  const rotateX = useTransform(springY, [-20, 20], [12, -12]);
-  const rotateY = useTransform(springX, [-20, 20], [-12, 12]);
- 
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (!ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
-    x.set((e.clientX - rect.left - rect.width / 2) * 0.28);
-    y.set((e.clientY - rect.top - rect.height / 2) * 0.28);
-  };
-
-  return (
-    <motion.button
-      ref={ref}
-      onClick={onClick}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={() => { x.set(0); y.set(0); }}
-      style={{ x: springX, y: springY, rotateX, rotateY, transformStyle: "preserve-3d" }}
-      whileTap={{ scale: 0.88 }}
-      className="relative flex-1 flex flex-col items-center justify-center h-full pt-1 pb-3.5 outline-none select-none touch-manipulation"
-    >
-
-
-      <motion.div
-       animate={{ y: 0, scale: 1 }}
-        transition={SPRING}
-        className="relative z-10"
-      >
-        <motion.div animate={active? { rotate: [0, -6, 6, 0] } : {}} transition={{ duration: 0.5 }}>
-          <item.Icon
-            className={`w-[23px] h-[23px] transition-colors duration-300 ${
-              active? activeColorClass : "text-zinc-400 dark:text-zinc-500"
-            }`}
-            strokeWidth={active? 2.7 : 2.2}
-          />
-        </motion.div>
-  
-      </motion.div>
-
-      <motion.span
-     animate={{ y: 0, scale: 1 }}
-        transition={SPRING}
-        className={`relative z-10 text-[11px] mt-1.5 tracking-tight transition-all duration-300 ${
-          active? `${activeColorClass} font-bold` : "text-zinc-400 dark:text-zinc-500 font-semibold"
-        }`}
-      >
-        {item.label}
-      </motion.span>
-
-      
-    </motion.button>
-  );
-};
-
 export default function AppContainer() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -212,19 +137,7 @@ export default function AppContainer() {
   const [loadedTabs, setLoadedTabs] = useState<Set<MainTab>>(new Set(["home"]));
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const plusX = useMotionValue(0);
-  const plusY = useMotionValue(0);
-  const plusSpringX = useSpring(plusX, SPRING);
-  const plusSpringY = useSpring(plusY, SPRING);
-
   const isPlanMode = mode === "plan";
-
-  const mainNavItems = useMemo(() => [
-    { id: "home" as MainTab, label: "Home", Icon: HomeIcon },
-    { id: "messages" as MainTab, label: "Messages", Icon: MessageSquare },
-    { id: "tasks" as MainTab, label: "Tasks", Icon: ClipboardList },
-    { id: "profile" as MainTab, label: "Profile", Icon: User },
-  ], []);
 
   useEffect(() => setMounted(true), []);
 
@@ -272,14 +185,13 @@ export default function AppContainer() {
   }, [router]);
 
   const activeColorClass = isPlanMode? "text-emerald-500" : "text-blue-600";
-  const activeBgClass = isPlanMode? "bg-emerald-500" : "bg-blue-600";
 
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
         <div className="flex flex-col items-center gap-3">
           <FiLoader className={`animate-spin ${activeColorClass}`} size={32} />
-          <p className="text-[14px] text-gray-500">Đang tải...</p>
+          <p className="text- text-gray-500">Đang tải...</p>
         </div>
       </div>
     );
@@ -305,160 +217,50 @@ export default function AppContainer() {
       </div>
 
       {mounted && createPortal(
-        <MotionConfig transition={SPRING}>
-          <LayoutGroup id="app-global-navigation-flow">
-            <AnimatePresence>
-              {isMenuOpen && (
-                <motion.div
-                  initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-                  animate={{ opacity: 1, backdropFilter: "blur(8px)" }}
-                  exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-                  transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                  className="fixed inset-0 z-[60] bg-zinc-950/20 dark:bg-zinc-950/40 pointer-events-none"
-                />
-              )}
-            </AnimatePresence>
+        <>
+          <AnimatePresence>
+            {isMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+                animate={{ opacity: 1, backdropFilter: "blur(8px)" }}
+                exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                className="fixed inset-0 z-[60] bg-zinc-950/20 dark:bg-zinc-950/40"
+                onClick={() => setIsMenuOpen(false)}
+              />
+            )}
+          </AnimatePresence>
 
-            <div className="fixed bottom-0 inset-x-0 z-[70] pointer-events-none flex flex-col items-center justify-end">
-           <div ref={menuRef} className="w-full flex flex-col items-center gap-3">
-                <FloatingMenu
-                  isOpen={isMenuOpen}
-                  onSelect={handleSelectCreate}
-                  onClose={() => setIsMenuOpen(false)}
-                />
-
-           <motion.div
-  layout
- className="w-full pointer-events-auto relative bg-white dark:bg-zinc-950 pb-[env(safe-area-inset-bottom)]"
->
-
-              
-
-                  <div className="flex items-center justify-between h-16 px-2 relative">
-                    <div className="flex-1 grid grid-cols-2 h-full">
-                      {mainNavItems.slice(0, 2).map((item) => (
-                        <MagneticNavItem
-                          key={item.id}
-                          item={item}
-                          active={currentMainTab === item.id}
-                          onClick={() => {
-                            setCurrentMainTab(item.id);
-                            navigator.vibrate?.(10);
-                          }}
-                          activeColorClass={activeColorClass}
-                          activeBgClass={activeBgClass}
-                        />
-                      ))}
-                    </div>
-
-                    <div className="w-20 flex justify-center h-full items-center relative">
-                      <motion.button
-                        data-plus-button
-                        onClick={() => {
-                          navigator.vibrate?.(12);
-                          setIsMenuOpen(!isMenuOpen);
-                        }}
-                        onMouseMove={(e) => {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          plusX.set((e.clientX - rect.left - rect.width / 2) * 0.2);
-                          plusY.set((e.clientY - rect.top - rect.height / 2) * 0.2);
-                        }}
-                        onMouseLeave={() => {
-                          plusX.set(0);
-                          plusY.set(0);
-                        }}
-                        style={{ x: plusSpringX, y: plusSpringY }}
-                        className="outline-none select-none touch-manipulation z-10 p-2 relative group"
-                      >
-                        <AnimatePresence>
-                          {!isMenuOpen && (
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.8 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.8 }}
-                              className="absolute inset-0 -m-1"
-                            >
-                              <motion.div
-                                className={`absolute inset-0 rounded-full opacity-60`}
-                                style={{
-                                  background: `conic-gradient(from 0deg, ${isPlanMode? '#10b981' : '#3b82f6'}00, ${isPlanMode? '#10b981' : '#3b82f6'}80, ${isPlanMode? '#10b981' : '#3b82f6'}00)`,
-                                  filter: 'blur(8px)',
-                                }}
-                                animate={{ rotate: 360 }}
-                                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                              />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-
-                        <AnimatePresence>
-                          {!isMenuOpen && (
-                            <motion.div
-                              initial={{ scale: 1, opacity: 0 }}
-                              animate={{ 
-                                scale: [1, 1.10, 1],
-                                opacity: [0.5, 0.2, 0.5]
-                              }}
-                              exit={{ opacity: 0 }}
-                              transition={{ 
-                                duration: 2.5, 
-                                repeat: Infinity,
-                                ease: "easeInOut" 
-                              }}
-                              className={`absolute inset-0 rounded-full ${activeBgClass}`}
-                            />
-                          )}
-                        </AnimatePresence>
-
-                        <motion.div
-                          animate={{
-                            rotate: isMenuOpen? 135 : 0,
-                            borderRadius: isMenuOpen? "16px" : "50%",
-                            scale: isMenuOpen? 0.9 : 1
-                          }}
-                          whileHover={{ scale: isMenuOpen? 0.9 : 1.08 }}
-                          whileTap={{ scale: 0.82 }}
-                          transition={SPRING_BOUNCY}
-                          className={`w-14 h-14 flex items-center justify-center text-white relative overflow-hidden transition-colors duration-500 ${
-                            isMenuOpen
-                            ? "bg-zinc-900 dark:bg-zinc-800"
-                              : activeBgClass
-                          }`}
-                        >
-                     
-                          
-                          <Plus className="w-6 h-6 relative z-10" strokeWidth={3.5} />
-                        </motion.div>
-                      </motion.button>
-                    </div>
-
-                    <div className="flex-1 grid grid-cols-2 h-full">
-                      {mainNavItems.slice(2, 4).map((item) => (
-                        <MagneticNavItem
-                          key={item.id}
-                          item={item}
-                          active={currentMainTab === item.id}
-                          onClick={() => {
-                            setCurrentMainTab(item.id);
-                            navigator.vibrate?.(10);
-                          }}
-                          activeColorClass={activeColorClass}
-                          activeBgClass={activeBgClass}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
+          <div className="fixed bottom-0 inset-x-0 z-[70] pointer-events-none">
+            <div ref={menuRef} className="w-full flex-col items-center">
+              <FloatingMenu
+                isOpen={isMenuOpen}
+                onSelect={handleSelectCreate}
+                onClose={() => setIsMenuOpen(false)}
+              />
             </div>
-          </LayoutGroup>
-        </MotionConfig>,
+          </div>
+
+          {/* ✅ Dùng CustomTabBar mới */}
+          <CustomTabBar />
+
+          {/* ✅ Override nút + để mở menu thay vì navigate */}
+          <button
+            data-plus-button
+            onClick={() => {
+              navigator.vibrate?.([15, 35, 15]);
+              setIsMenuOpen(!isMenuOpen);
+            }}
+            className="fixed bottom- left-1/2 -translate-x-1/2 z-[80] w-16 h-16 -mt-7 opacity-0"
+            aria-label="Tạo mới"
+          />
+        </>,
         document.body
       )}
 
       <style jsx global>{`
-       .scrollbar-hide::-webkit-scrollbar{display:none}
-       .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
+     .scrollbar-hide::-webkit-scrollbar{display:none}
+     .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
         html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
         body{overscroll-behavior-y:contain}
       `}</style>
