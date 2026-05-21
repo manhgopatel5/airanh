@@ -15,7 +15,7 @@ import {
   useDragControls
 } from "framer-motion";
 import { Toaster } from "sonner";
-
+import { Sparkles, CalendarRange } from "lucide-react";
 import { FiLoader } from "react-icons/fi";
 
 import ChatClient from "./chat/ChatClient";
