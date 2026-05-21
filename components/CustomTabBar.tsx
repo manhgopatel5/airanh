@@ -25,7 +25,7 @@ const tabs = [
 export default function CustomTabBar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { mode = "task" } = useAppStore();
+ const mode = useAppStore((s) => s.mode) || "task";
   const [unreadCount] = useState(3);
   const [mounted, setMounted] = useState(false);
 
