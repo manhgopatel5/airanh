@@ -291,18 +291,21 @@ export default function TasksPage() {
         <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl">
           <div className="px-4 pt-3 pb-2">
             <div className="flex items-center p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800">
-              <button
-                onClick={() => handleModeChange("task")}
-                className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
-                  mode === "task"
-                   ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
-                    : "text-zinc-500 dark:text-zinc-400"
-                }`}
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                <HiBolt className="w-4 h-4" />
-                Task
-              </button>
+            <button
+  onClick={() => handleModeChange("task")}
+  className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm ${
+    mode === "task"
+     ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
+      : "text-zinc-500 dark:text-zinc-400"
+  }`}
+  style={{ 
+    WebkitTapHighlightColor: 'transparent',
+    touchAction: 'manipulation'
+  }}
+>
+  <HiBolt className="w-4 h-4" />
+  Task
+</button>
 
               <button
                 onClick={() => handleModeChange("plan")}
