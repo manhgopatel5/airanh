@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiInbox, FiSearch, FiRefreshCw, FiX, FiNavigation, FiTarget, FiShield } from "react-icons/fi";
-import { HiBolt, HiCalendarDays, HiFire, HiSparkles, HiUsers, HiLocationMarker } from "react-icons/hi";
+import { HiFire, HiSparkles, HiUsers, HiLocationMarker } from "react-icons/hi";
 import { useRouter } from "next/navigation";
+import { HiBolt, HiCalendarDays } from "react-icons/hi2";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
