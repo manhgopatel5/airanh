@@ -20,11 +20,11 @@ interface CustomTabBarProps {
 }
 
 const tabs = [
-  { key: "home", label: "Home", icon: HiHome },
-  { key: "messages", label: "Messages", icon: HiChat },
-  { key: "create", label: "Create", icon: FiPlus },
-  { key: "tasks", label: "Tasks", icon: HiClipboardList },
-  { key: "profile", label: "Profile", icon: HiUser },
+  { key: "home", icon: HiHome },
+  { key: "messages", icon: HiChat },
+  { key: "create", icon: FiPlus },
+  { key: "tasks", icon: HiClipboardList },
+  { key: "profile", icon: HiUser },
 ];
 
 export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }: CustomTabBarProps) {
@@ -38,22 +38,20 @@ export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }:
 
   const themes = {
     task: {
-      gradient: "from-[#0A84FF] to-[#0066CC]",
-      glow: "shadow-[0_0_50px_rgba(10,132,255,0.8)]",
-      bgActive: "bg-[#0A84FF]/15",
+      gradient: "from-[#0A84FF] via-[#0A84FF] to-[#0051D5]",
+      glow: "shadow-[0_12px_40px_rgba(10,132,255,0.45)]",
       iconActive: "text-[#0A84FF]",
-      borderActive: "border-[#0A84FF]/30",
+      dot: "bg-[#0A84FF]",
     },
     plan: {
-      gradient: "from-[#30D158] to-[#28B44C]",
-      glow: "shadow-[0_0_50px_rgba(48,209,88,0.8)]",
-      bgActive: "bg-[#30D158]/15",
+      gradient: "from-[#30D158] via-[#30D158] to-[#248A3D]",
+      glow: "shadow-[0_12px_40px_rgba(48,209,88,0.45)]",
       iconActive: "text-[#30D158]",
-      borderActive: "border-[#30D158]/30",
+      dot: "bg-[#30D158]",
     },
   };
 
-const currentTheme = themes[mode];
+  const currentTheme = themes[mode];
 
   const handleTabClick = (key: string) => {
     if (key === "create") {
@@ -72,48 +70,37 @@ const currentTheme = themes[mode];
       opacity: 1,
       transition: {
         type: "spring",
-        stiffness: 300,
-        damping: 30,
-        staggerChildren: 0.08,
-        delayChildren: 0.1,
+        stiffness: 400,
+        damping: 40,
+        staggerChildren: 0.06,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { y: 20, opacity: 0, scale: 0.8 },
+    hidden: { scale: 0.8, opacity: 0 },
     visible: {
-      y: 0,
-      opacity: 1,
       scale: 1,
+      opacity: 1,
       transition: {
         type: "spring",
-        stiffness: 400,
-        damping: 25,
+        stiffness: 500,
+        damping: 30,
       },
     },
   };
 
   const createButtonVariants = {
-    hidden: { y: 30, opacity: 0, scale: 0.5 },
+    hidden: { scale: 0.5, opacity: 0 },
     visible: {
-      y: 0,
-      opacity: 1,
       scale: 1,
+      opacity: 1,
       transition: {
         type: "spring",
-        stiffness: 300,
-        damping: 20,
-        delay: 0.3,
+        stiffness: 400,
+        damping: 25,
+        delay: 0.2,
       },
-    },
-    tap: {
-      scale: 0.85,
-      transition: { duration: 0.1 },
-    },
-    hover: {
-      scale: 1.08,
-      transition: { duration: 0.2 },
     },
   };
 
@@ -125,19 +112,15 @@ const currentTheme = themes[mode];
       className="fixed bottom-0 left-0 right-0 z-50 pb-safe"
     >
       <div className="relative mx-auto max-w-[500px]">
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white via-white/98 to-transparent dark:from-zinc-950 dark:via-zinc-950/98 pointer-events-none" />
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white via-white/95 to-transparent dark:from-zinc-950 dark:via-zinc-950/95 pointer-events-none" />
 
-        <div className="relative px-4 pb-2">
+        <div className="relative px-4 pb-3">
           <motion.div
-            className="relative bg-white/75 dark:bg-zinc-900/75 backdrop-blur-3xl rounded- border border-zinc-200/60 dark:border-zinc-800/60 shadow-[0_-10px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_-10px_50px_rgba(0,0,0,0.5)]"
-            whileHover={{ scale: 1.01 }}
+            className="relative bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl rounded- border border-zinc-200/60 dark:border-zinc-800/60 shadow-[0_8px_32px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+            whileHover={{ y: -2 }}
             transition={{ duration: 0.2 }}
           >
-            <motion.div
-              className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-zinc-300/60 to-transparent dark:via-zinc-700/60"
-              animate={{ opacity: [0.3, 0.8, 0.3] }}
-              transition={{ repeat: Infinity, duration: 3 }}
-            />
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 dark:via-zinc-600/40 to-transparent rounded-t-" />
 
             <div className="flex items-center justify-around h-14 px-1">
               {tabs.map((tab) => {
@@ -150,63 +133,49 @@ const currentTheme = themes[mode];
                     <motion.button
                       key={tab.key}
                       variants={createButtonVariants}
-                      whileTap="tap"
-                      whileHover="hover"
+                      whileTap={{ scale: 0.9 }}
+                      whileHover={{ scale: 1.05 }}
                       onTouchStart={() => haptics.light()}
                       onClick={() => handleTabClick(tab.key)}
-                      className="relative -mt-7"
+                      className="relative"
                       data-plus-button
                     >
                       <motion.div
                         animate={{
                           scale: [1, 1.4, 1],
-                          opacity: [0.6, 0, 0.6],
+                          opacity: [0.5, 0, 0.5],
                         }}
                         transition={{
                           repeat: Infinity,
-                          duration: 2,
+                          duration: 2.5,
                           ease: "easeOut",
                         }}
-                        className={`absolute inset-0 rounded-full bg-gradient-to-r ${currentTheme.gradient}`}
+                        className={`absolute inset-0 rounded- bg-gradient-to-br ${currentTheme.gradient}`}
                       />
                       <motion.div
                         animate={{
-                          scale: [1, 1.6, 1],
-                          opacity: [0.4, 0, 0.4],
+                          scale: [1, 1.7, 1],
+                          opacity: [0.3, 0, 0.3],
                         }}
                         transition={{
                           repeat: Infinity,
-                          duration: 2,
-                          delay: 0.5,
+                          duration: 2.5,
+                          delay: 0.8,
                           ease: "easeOut",
                         }}
-                        className={`absolute inset-0 rounded-full bg-gradient-to-r ${currentTheme.gradient}`}
+                        className={`absolute inset-0 rounded- bg-gradient-to-br ${currentTheme.gradient}`}
                       />
 
-                      <motion.div
-                        className={`relative w-16 h-16 rounded-full bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center ${currentTheme.glow} border-4 border-white dark:border-zinc-900`}
-                        animate={{
-                          rotate: [0, 90, 180, 270, 360],
-                        }}
-                        transition={{
-                          repeat: Infinity,
-                          duration: 20,
-                          ease: "linear",
-                        }}
+                      <div
+                        className={`relative w-16 h-16 rounded- bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center ${currentTheme.glow} ring-2 ring-white/60 dark:ring-zinc-900/60`}
                       >
                         <motion.div
-                          animate={{
-                            rotate: [0, -90, -180, -270, -360],
-                          }}
-                          transition={{
-                            repeat: Infinity,
-                            duration: 20,
-                            ease: "linear",
-                          }}
+                          animate={{ rotate: [0, 90, 180, 270, 360] }}
+                          transition={{ repeat: Infinity, duration: 30, ease: "linear" }}
                         >
-                          <FiPlus size={28} className="text-white" strokeWidth={3.5} />
+                          <FiPlus size={30} className="text-white" strokeWidth={2.5} />
                         </motion.div>
-                      </motion.div>
+                      </div>
                     </motion.button>
                   );
                 }
@@ -215,27 +184,20 @@ const currentTheme = themes[mode];
                   <motion.button
                     key={tab.key}
                     variants={itemVariants}
-                    whileTap={{ scale: 0.88 }}
+                    whileTap={{ scale: 0.9 }}
                     onTouchStart={() => haptics.light()}
                     onClick={() => handleTabClick(tab.key)}
-                    className="relative flex flex-col items-center justify-center w- h- gap-1"
+                    className="relative flex items-center justify-center w-16 h-14"
                   >
-                    <AnimatePresence mode="wait">
+                    <AnimatePresence>
                       {isActive && (
                         <motion.div
-                          layoutId="tab-bg"
-                          className={`absolute inset-0 rounded-2xl ${currentTheme.bgActive} border-2 ${currentTheme.borderActive}`}
-                          initial={{ scale: 0.6, opacity: 0, rotate: -5 }}
-                          animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                          exit={{ scale: 0.6, opacity: 0, rotate: 5 }}
-                          transition={{
-                            type: "spring",
-                            bounce: 0.4,
-                            duration: 0.6,
-                          }}
-                          onAnimationComplete={() => {
-                            if (isActive) haptics.light();
-                          }}
+                          layoutId="active-dot"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          exit={{ scale: 0 }}
+                          className={`absolute -bottom-0.5 w-1.5 h-1.5 rounded-full ${currentTheme.dot}`}
+                          transition={{ type: "spring", bounce: 0.5 }}
                         />
                       )}
                     </AnimatePresence>
@@ -245,9 +207,9 @@ const currentTheme = themes[mode];
                         {isActive && (
                           <motion.div
                             initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1.5, opacity: 0.6 }}
+                            animate={{ scale: 2, opacity: 0.35 }}
                             exit={{ scale: 0, opacity: 0 }}
-                            className={`absolute inset-0 rounded-full bg-gradient-to-r ${currentTheme.gradient} blur-xl`}
+                            className={`absolute inset-0 rounded-full bg-gradient-to-br ${currentTheme.gradient} blur-2xl`}
                           />
                         )}
                       </AnimatePresence>
@@ -255,22 +217,19 @@ const currentTheme = themes[mode];
                       <motion.div
                         animate={
                           isActive
-                  ? {
-                                y: [0, -4, 0],
-                                rotate: [0, -10, 10, -10, 0],
+                         ? {
+                                scale: [1, 1.15, 1],
+                                y: [0, -3, 0],
                               }
                             : {}
                         }
-                        transition={{
-                          y: { duration: 0.4 },
-                          rotate: { duration: 0.5 },
-                        }}
+                        transition={{ duration: 0.4, type: "spring", bounce: 0.4 }}
                       >
                         <Icon
-                     size={28}
-                          className={`relative transition-all duration-300 ${
+                          size={28}
+                          className={`relative transition-colors duration-300 ${
                             isActive
-                    ? `${currentTheme.iconActive} drop-shadow-[0_0_12px_rgba(10,132,255,0.8)]`
+                           ? `${currentTheme.iconActive} drop-shadow-[0_0_16px_rgba(10,132,255,0.6)]`
                               : "text-zinc-400 dark:text-zinc-600"
                           }`}
                         />
@@ -278,27 +237,20 @@ const currentTheme = themes[mode];
 
                       {tab.key === "messages" && unreadCount > 0 && (
                         <motion.div
-                          initial={{ scale: 0, y: -10 }}
-                          animate={{ scale: 1, y: 0 }}
-                          className="absolute -top-1.5 -right-1.5 min-w- bg-gradient-to-br from-red-500 to-red-600 rounded-full px-1.5 h-5 flex items-center justify-center shadow-lg shadow-red-500/50 border-2 border-white dark:border-zinc-900"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="absolute -top-2 -right-2 min-w-5 h-5 bg-gradient-to-br from-red-500 to-red-600 rounded-full px-1.5 flex items-center justify-center shadow-lg shadow-red-500/60 ring-2 ring-white dark:ring-zinc-900"
                         >
                           <motion.span
-                            animate={{
-                              scale: [1, 1.3, 1],
-                            }}
-                            transition={{
-                              repeat: Infinity,
-                              duration: 1.2,
-                            }}
-                            className="text- font-black text-white"
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{ repeat: Infinity, duration: 1.5 }}
+                            className="text-xs font-bold text-white leading-none"
                           >
                             {unreadCount > 9? "9+" : unreadCount}
                           </motion.span>
                         </motion.div>
                       )}
                     </div>
-
-               
                   </motion.button>
                 );
               })}
