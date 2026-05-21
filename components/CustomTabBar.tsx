@@ -259,122 +259,118 @@ export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }:
             <div className="absolute inset-0 rounded-[28px] opacity-[0.015] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsdGVyPSJ1cmwoI2EpIiBvcGFjaXR5PSIwLjA1Ii8+PC9zdmc+')]" />
 
             <div className="relative flex items-center justify-between h-[68px] px-2">
-            {tabs.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = currentTab === tab.key;
-                const isCreate = tab.key === "create";
+          {tabs.map((tab) => {
+  const Icon = tab.icon;
+  const isActive = currentTab === tab.key;
+  const isCreate = tab.key === "create";
 
-                if (isCreate) {
-                  return (
-                    <div key={tab.key} className="relative">
-                      {/* Particle burst */}
-                      <AnimatePresence>
-                        {particles.map((p) => (
-                          <motion.div
-                            key={p.id}
-                            initial={{ x: 0, y: 0, opacity: 1, scale: 0 }}
-                            animate={{ x: p.x, y: p.y, opacity: 0, scale: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.6, ease: "easeOut" }}
-                            className={`absolute top-1/2 left-1/2 w-2 h-2 rounded-full bg-gradient-to-br ${currentTheme.gradient}`}
-                          />
-                        ))}
-                      </AnimatePresence>
+  if (isCreate) {
+    return (
+      <div key={tab.key} className="relative">
+        {/* Particle burst */}
+        <AnimatePresence>
+          {particles.map((p) => (
+            <motion.div
+              key={p.id}
+              initial={{ x: 0, y: 0, opacity: 1, scale: 0 }}
+              animate={{ x: p.x, y: p.y, opacity: 0, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className={`absolute top-1/2 left-1/2 w-2 h-2 rounded-full bg-gradient-to-br ${currentTheme.gradient}`}
+            />
+          ))}
+        </AnimatePresence>
 
-                      <motion.button
-                        whileTap={{ scale: 0.85 }}
-                        whileHover={{ scale: 1.08 }}
-                        onTouchStart={() => haptics.light()}
-                        onClick={() => handleTabClick(tab.key)}
-                        className="relative"
-                      >
-                        {/* Liquid glow rings */}
-                        <motion.div
-                          animate={{
-                            scale: [1, 1.6, 1],
-                            opacity: [0.6, 0, 0.6],
-                          }}
-                          transition={{
-                            repeat: Infinity,
-                            duration: 3,
-                            ease: "easeOut",
-                          }}
-                          className={`absolute inset-0 rounded-[22px] bg-gradient-to-br ${currentTheme.gradient} blur-xl`}
-                        />
-                        
-                        <motion.div
-                          className={`relative w-[64px] h-[64px] rounded-[22px] bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center ${currentTheme.glow} ring-[3px] ring-white/70 dark:ring-zinc-900/70`}
-                          animate={{
-                            rotate: isCreateOpen? [0, 5, -5, 0] : 0,
-                          }}
-                          transition={{ duration: 0.5 }}
-                        >
-                          <IconCreate isOpen={isCreateOpen} />
-                        </motion.div>
-                      </motion.button>
-                    </div>
-                  );
-                }
+        <motion.button
+          whileTap={{ scale: 0.85 }}
+          whileHover={{ scale: 1.08 }}
+          onTouchStart={() => haptics.light()}
+          onClick={() => handleTabClick(tab.key)}
+          className="relative"
+        >
+          <motion.div
+            animate={{
+              scale: [1, 1.6, 1],
+              opacity: [0.6, 0, 0.6],
+            }}
+            transition={{
+              repeat: Infinity,
+              duration: 3,
+              ease: "easeOut",
+            }}
+            className={`absolute inset-0 rounded- bg-gradient-to-br ${currentTheme.gradient} blur-xl`}
+          />
+          
+          <motion.div
+            className={`relative w- h- rounded- bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center ${currentTheme.glow} ring-[3px] ring-white/70 dark:ring-zinc-900/70`}
+            animate={{
+              rotate: isCreateOpen? [0, 5, -5, 0] : 0,
+            }}
+            transition={{ duration: 0.5 }}
+          >
+            <IconCreate isOpen={isCreateOpen} />
+          </motion.div>
+        </motion.button>
+      </div>
+    );
+  }
 
-                return (
-                  <motion.button
-                    key={tab.key}
-                    whileTap={{ scale: 0.88 }}
-                    onTouchStart={() => haptics.light()}
-                    onClick={() => handleTabClick(tab.key)}
-                    className="relative flex items-center justify-center w-[68px] h-[68px]"
-                  >
-                    {/* Liquid pill indicator */}
-                    {isActive && (
-                      <motion.div
-                        layoutId="active-pill"
-                        className={`absolute inset-0 rounded-[20px] ${currentTheme.pillBg}`}
-                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                      />
-                    )}
+  return (
+    <motion.button
+      key={tab.key}
+      whileTap={{ scale: 0.88 }}
+      onTouchStart={() => haptics.light()}
+      onClick={() => handleTabClick(tab.key)}
+      className="relative flex items-center justify-center w- h-"
+    >
+      {isActive && (
+        <motion.div
+          layoutId="active-pill"
+          className={`absolute inset-0 rounded- ${currentTheme.pillBg}`}
+          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+        />
+      )}
 
-                    <div className="relative z-10">
-                      {/* Ripple effect on active */}
-                      <AnimatePresence>
-                        {isActive && (
-                          <motion.div
-                            initial={{ scale: 0, opacity: 0.5 }}
-                            animate={{ scale: 2.5, opacity: 0 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.8 }}
-                            className={`absolute inset-0 rounded-full ${currentTheme.ripple}`}
-                          />
-                        )}
-                      </AnimatePresence>
+      <div className="relative z-10">
+        <AnimatePresence>
+          {isActive && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0.5 }}
+              animate={{ scale: 2.5, opacity: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.8 }}
+              className={`absolute inset-0 rounded-full ${currentTheme.ripple}`}
+            />
+          )}
+        </AnimatePresence>
 
-                      <motion.div
-                        animate={isActive? { y: [0, -4, 0] } : { y: 0 }}
-                        transition={{ duration: 0.5, type: "spring", bounce: 0.5 }}
-                        className={isActive? currentTheme.iconActive : "text-zinc-400 dark:text-zinc-600"}
-                      >
-                        <Icon active={isActive} />
-                      </motion.div>
+        <motion.div
+          animate={isActive? { y: [0, -4, 0] } : { y: 0 }}
+          transition={{ duration: 0.5, type: "spring", bounce: 0.5 }}
+          className={isActive? currentTheme.iconActive : "text-zinc-400 dark:text-zinc-600"}
+        >
+          <Icon active={isActive} />
+        </motion.div>
 
-                      {/* Badge */}
-                      {tab.key === "messages" && unreadCount > 0 && (
-                        <motion.div
-                          initial={{ scale: 0, rotate: -180 }}
-                          animate={{ scale: 1, rotate: 0 }}
-                          className="absolute -top-1 -right-1 min-w-[20px] h-[20px] bg-gradient-to-br from-red-500 to-red-600 rounded-full px-[6px] flex items-center justify-center shadow-lg shadow-red-500/50 ring-2 ring-white dark:ring-zinc-900"
-                        >
-                          <motion.span
-                            animate={{ scale: [1, 1.15, 1] }}
-                            transition={{ repeat: Infinity, duration: 2 }}
-                            className="text-[11px] font-black text-white leading-none"
-                          >
-                            {unreadCount > 9? "9+" : unreadCount}
-                          </motion.span>
-                        </motion.div>
-                      )}
-                    </div>
-                  </motion.button>
-                );
-              })}
+        {tab.key === "messages" && unreadCount > 0 && (
+          <motion.div
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            className="absolute -top-1 -right-1 min-w- h- bg-gradient-to-br from-red-500 to-red-600 rounded-full px-[6px] flex items-center justify-center shadow-lg shadow-red-500/50 ring-2 ring-white dark:ring-zinc-900"
+          >
+            <motion.span
+              animate={{ scale: [1, 1.15, 1] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className="text- font-black text-white leading-none"
+            >
+              {unreadCount > 9? "9+" : unreadCount}
+            </motion.span>
+          </motion.div>
+        )}
+      </div>
+    </motion.button>
+  );
+})}
             </div>
           </motion.div>
         </div>
