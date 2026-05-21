@@ -95,7 +95,7 @@ export default function TaskFeedPage() {
     }
   };
 
-  const currentTheme = theme;
+const currentTheme = theme;
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -442,7 +442,7 @@ export default function TaskFeedPage() {
                       <FiTarget size={16} />
                       Bán kính tìm kiếm
                     </div>
-                    <div className={`font-bold ${currentTheme.text}`}>{radiusKm} km</div>
+<div className={`font-bold ${currentTheme.text}`}>{radiusKm} km</div>
                   </button>
                 </motion.div>
               )}
@@ -596,7 +596,7 @@ export default function TaskFeedPage() {
               </p>
               <button
                 onClick={requestLocation}
-                className={`w-full h-12 rounded-xl bg-gradient-to-r ${currentTheme.gradient} text-white font-semibold active:scale-95 transition-all ${currentTheme.shadow}`}
+className={`w-full h-12 rounded-xl bg-gradient-to-r ${currentTheme.gradient} text-white font-semibold active:scale-95 transition-all ${currentTheme.shadow}`}
               >
                 Cho phép định vị
               </button>
@@ -638,11 +638,11 @@ export default function TaskFeedPage() {
                       vibrate(5);
                       fetchTasks(true);
                     }}
-                    className={`h-11 rounded-xl font-semibold text-sm transition-all active:scale-95 ${
-                      radiusKm === km
-                     ? `bg-gradient-to-r ${currentTheme.gradient} text-white ${currentTheme.shadow}`
-                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
-                    }`}
+           className={`h-11 rounded-xl font-semibold text-sm transition-all active:scale-95 ${
+  radiusKm === km
+? `bg-gradient-to-r ${currentTheme.gradient} text-white ${currentTheme.shadow}`
+    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+}`}
                   >
                     {km} km
                   </button>
