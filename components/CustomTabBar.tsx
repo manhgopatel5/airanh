@@ -1,7 +1,5 @@
 "use client";
-import { motion, AnimatePresence } from "framer-motion";
-import { HiHome, HiChat, HiClipboardList, HiUser } from "react-icons/hi";
-import { FiPlus } from "react-icons/fi";
+import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { useAppStore } from "@/store/app";
 import { useState, useEffect } from "react";
 
@@ -19,18 +17,181 @@ interface CustomTabBarProps {
   onCreateClick: () => void;
 }
 
+// Bộ icon custom SVG độc quyền - mỗi icon có 3 state: idle/active/press
+const IconHome = ({ active }: { active: boolean }) => (
+  <motion.svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+    <motion.path
+      d="M4 12L14 4L24 12V23C24 23.5523 23.5523 24 23 24H5C4.44772 24 4 23.5523 4 23V12Z"
+      stroke="currentColor"
+      strokeWidth={active? 2.5 : 2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      initial={false}
+      animate={{ 
+        pathLength: active? 1 : 0.85,
+        opacity: active? 1 : 0.6,
+        scale: active? 1 : 0.95
+      }}
+      transition={{ duration: 0.3, ease: [0.34, 1.56, 0.64, 1] }}
+    />
+    <motion.rect
+      x="11" y="16" width="6" height="8" rx="1"
+      fill="currentColor"
+      initial={false}
+      animate={{ 
+        scaleY: active? 1 : 0,
+        opacity: active? 1 : 0 
+      }}
+      transition={{ delay: 0.1, duration: 0.25 }}
+    />
+    <motion.circle
+      cx="14" cy="12" r="1.5"
+      fill="currentColor"
+      initial={false}
+      animate={{ scale: active? [0, 1.3, 1] : 0 }}
+      transition={{ delay: 0.15, duration: 0.4 }}
+    />
+  </motion.svg>
+);
+
+const IconMessages = ({ active }: { active: boolean }) => (
+  <motion.svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+    <motion.path
+      d="M4 6C4 4.89543 4.89543 4 6 4H22C23.1046 4 24 4.89543 24 6V16C24 17.1046 23.1046 18 22 18H9L4 22V6Z"
+      stroke="currentColor"
+      strokeWidth={active? 2.5 : 2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      initial={false}
+      animate={{ 
+        pathLength: 1,
+        opacity: active? 1 : 0.6 
+      }}
+    />
+    <motion.g initial={false} animate={{ opacity: active? 1 : 0 }}>
+      {[0, 1, 2].map((i) => (
+        <motion.circle
+          key={i}
+          cx={10 + i * 4}
+          cy="11"
+          r="1.5"
+          fill="currentColor"
+          animate={{ y: active? [0, -2, 0] : 0 }}
+          transition={{ 
+            delay: i * 0.1, 
+            repeat: active? Infinity : 0, 
+            duration: 0.6,
+            repeatDelay: 0.8
+          }}
+        />
+      ))}
+    </motion.g>
+  </motion.svg>
+);
+
+const IconTasks = ({ active }: { active: boolean }) => (
+  <motion.svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+    <motion.rect
+      x="5" y="4" width="18" height="20" rx="3"
+      stroke="currentColor"
+      strokeWidth={active? 2.5 : 2}
+      initial={false}
+      animate={{ opacity: active? 1 : 0.6 }}
+    />
+    {[8, 14, 20].map((y, i) => (
+      <motion.g key={y}>
+        <motion.path
+          d="M9 8L11 10L15 6"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          initial={false}
+          animate={{ 
+            pathLength: active? 1 : 0,
+            opacity: active? 1 : 0 
+          }}
+          transition={{ delay: i * 0.08, duration: 0.3 }}
+        />
+        <motion.line
+          x1="17" y1={y} x2="21" y2={y}
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          initial={false}
+          animate={{ 
+            scaleX: active? 1 : 0.3,
+            opacity: active? 0.8 : 0.4 
+          }}
+          transition={{ delay: i * 0.08 + 0.1 }}
+        />
+      </motion.g>
+    ))}
+  </motion.svg>
+);
+
+const IconProfile = ({ active }: { active: boolean }) => (
+  <motion.svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+    <motion.circle
+      cx="14" cy="10" r="4"
+      stroke="currentColor"
+      strokeWidth={active? 2.5 : 2}
+      initial={false}
+      animate={{ 
+        scale: active? [1, 1.15, 1] : 1,
+        opacity: active? 1 : 0.6 
+      }}
+      transition={{ duration: 0.4 }}
+    />
+    <motion.path
+      d="M6 22C6 18.6863 9.58172 16 14 16C18.4183 16 22 18.6863 22 22"
+      stroke="currentColor"
+      strokeWidth={active? 2.5 : 2}
+      strokeLinecap="round"
+      initial={false}
+      animate={{ 
+        pathLength: active? 1 : 0.7,
+        opacity: active? 1 : 0.6 
+      }}
+    />
+    <motion.circle
+      cx="14" cy="10" r="2"
+      fill="currentColor"
+      initial={false}
+      animate={{ scale: active? 1 : 0 }}
+      transition={{ delay: 0.1 }}
+    />
+  </motion.svg>
+);
+
+const IconCreate = ({ isOpen }: { isOpen: boolean }) => (
+  <motion.svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <motion.path
+      d="M16 8V24M8 16H24"
+      stroke="white"
+      strokeWidth="3"
+      strokeLinecap="round"
+      initial={false}
+      animate={{ rotate: isOpen? 45 : 0 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+    />
+  </motion.svg>
+);
+
 const tabs = [
-  { key: "home", icon: HiHome },
-  { key: "messages", icon: HiChat },
-  { key: "create", icon: FiPlus },
-  { key: "tasks", icon: HiClipboardList },
-  { key: "profile", icon: HiUser },
+  { key: "home", icon: IconHome },
+  { key: "messages", icon: IconMessages },
+  { key: "create", icon: IconCreate },
+  { key: "tasks", icon: IconTasks },
+  { key: "profile", icon: IconProfile },
 ];
 
 export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }: CustomTabBarProps) {
   const mode = useAppStore((s) => s.mode) || "task";
   const [unreadCount] = useState(3);
   const [mounted, setMounted] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [particles, setParticles] = useState<{ id: number; x: number; y: number }[]>([]);
 
   useEffect(() => {
     setMounted(true);
@@ -39,15 +200,17 @@ export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }:
   const themes = {
     task: {
       gradient: "from-[#0A84FF] via-[#0A84FF] to-[#0051D5]",
-      glow: "shadow-[0_12px_40px_rgba(10,132,255,0.45)]",
+      glow: "shadow-[0_16px_48px_rgba(10,132,255,0.55)]",
       iconActive: "text-[#0A84FF]",
-      dot: "bg-[#0A84FF]",
+      pillBg: "bg-[#0A84FF]/15",
+      ripple: "bg-[#0A84FF]/20",
     },
     plan: {
       gradient: "from-[#30D158] via-[#30D158] to-[#248A3D]",
-      glow: "shadow-[0_12px_40px_rgba(48,209,88,0.45)]",
+      glow: "shadow-[0_16px_48px_rgba(48,209,88,0.55)]",
       iconActive: "text-[#30D158]",
-      dot: "bg-[#30D158]",
+      pillBg: "bg-[#30D158]/15",
+      ripple: "bg-[#30D158]/20",
     },
   };
 
@@ -56,6 +219,15 @@ export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }:
   const handleTabClick = (key: string) => {
     if (key === "create") {
       haptics.heavy();
+      setIsCreateOpen(!isCreateOpen);
+      // Particle burst
+      const newParticles = Array.from({ length: 8 }, (_, i) => ({
+        id: Date.now() + i,
+        x: Math.cos((i / 8) * Math.PI * 2) * 40,
+        y: Math.sin((i / 8) * Math.PI * 2) * 40,
+      }));
+      setParticles(newParticles);
+      setTimeout(() => setParticles([]), 600);
       onCreateClick();
     } else {
       haptics.medium();
@@ -63,188 +235,137 @@ export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }:
     }
   };
 
-  const containerVariants = {
-    hidden: { y: 100, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 400,
-        damping: 40,
-        staggerChildren: 0.06,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { scale: 0.8, opacity: 0 },
-    visible: {
-      scale: 1,
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 500,
-        damping: 30,
-      },
-    },
-  };
-
-  const createButtonVariants = {
-    hidden: { scale: 0.5, opacity: 0 },
-    visible: {
-      scale: 1,
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 400,
-        damping: 25,
-        delay: 0.2,
-      },
-    },
-  };
-
   return (
     <motion.div
-      initial="hidden"
-      animate={mounted? "visible" : "hidden"}
-      variants={containerVariants}
+      initial={{ y: 120, opacity: 0 }}
+      animate={mounted? { y: 0, opacity: 1 } : { y: 120, opacity: 0 }}
+      transition={{ type: "spring", stiffness: 400, damping: 40 }}
       className="fixed bottom-0 left-0 right-0 z-50 pb-safe"
     >
       <div className="relative mx-auto max-w-[500px]">
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white via-white/95 to-transparent dark:from-zinc-950 dark:via-zinc-950/95 pointer-events-none" />
+        {/* Backdrop blur layer */}
+        <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-white via-white/98 to-transparent dark:from-zinc-950 dark:via-zinc-950/98 pointer-events-none" />
 
-        <div className="relative px-4 pb-3">
+        <div className="relative px-5 pb-4">
           <motion.div
-            className="relative bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl rounded- border border-zinc-200/60 dark:border-zinc-800/60 shadow-[0_8px_32px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
-            whileHover={{ y: -2 }}
-            transition={{ duration: 0.2 }}
+            className="relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur-3xl rounded-[28px] border border-zinc-200/50 dark:border-zinc-800/50 shadow-[0_12px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.6)]"
+            whileHover={{ y: -3 }}
+            transition={{ duration: 0.3 }}
           >
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/80 dark:via-zinc-600/40 to-transparent rounded-t-" />
+            {/* Top highlight */}
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/90 dark:via-zinc-500/30 to-transparent rounded-t-[28px]" />
+            
+            {/* Noise texture */}
+            <div className="absolute inset-0 rounded-[28px] opacity-[0.015] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsdGVyPSJ1cmwoI2EpIiBvcGFjaXR5PSIwLjA1Ii8+PC9zdmc+')]" />
 
-            <div className="flex items-center justify-around h-14 px-1">
-              {tabs.map((tab) => {
+            <div className="relative flex items-center justify-between h-[68px] px-2">
+              {tabs.map((tab, idx) => {
                 const Icon = tab.icon;
                 const isActive = currentTab === tab.key;
                 const isCreate = tab.key === "create";
 
                 if (isCreate) {
                   return (
-                    <motion.button
-                      key={tab.key}
-                      variants={createButtonVariants}
-                      whileTap={{ scale: 0.9 }}
-                      whileHover={{ scale: 1.05 }}
-                      onTouchStart={() => haptics.light()}
-                      onClick={() => handleTabClick(tab.key)}
-                      className="relative"
-                      data-plus-button
-                    >
-                      <motion.div
-                        animate={{
-                          scale: [1, 1.4, 1],
-                          opacity: [0.5, 0, 0.5],
-                        }}
-                        transition={{
-                          repeat: Infinity,
-                          duration: 2.5,
-                          ease: "easeOut",
-                        }}
-                        className={`absolute inset-0 rounded- bg-gradient-to-br ${currentTheme.gradient}`}
-                      />
-                      <motion.div
-                        animate={{
-                          scale: [1, 1.7, 1],
-                          opacity: [0.3, 0, 0.3],
-                        }}
-                        transition={{
-                          repeat: Infinity,
-                          duration: 2.5,
-                          delay: 0.8,
-                          ease: "easeOut",
-                        }}
-                        className={`absolute inset-0 rounded- bg-gradient-to-br ${currentTheme.gradient}`}
-                      />
+                    <div key={tab.key} className="relative">
+                      {/* Particle burst */}
+                      <AnimatePresence>
+                        {particles.map((p) => (
+                          <motion.div
+                            key={p.id}
+                            initial={{ x: 0, y: 0, opacity: 1, scale: 0 }}
+                            animate={{ x: p.x, y: p.y, opacity: 0, scale: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.6, ease: "easeOut" }}
+                            className={`absolute top-1/2 left-1/2 w-2 h-2 rounded-full bg-gradient-to-br ${currentTheme.gradient}`}
+                          />
+                        ))}
+                      </AnimatePresence>
 
-                      <div
-                        className={`relative w-16 h-16 rounded- bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center ${currentTheme.glow} ring-2 ring-white/60 dark:ring-zinc-900/60`}
+                      <motion.button
+                        whileTap={{ scale: 0.85 }}
+                        whileHover={{ scale: 1.08 }}
+                        onTouchStart={() => haptics.light()}
+                        onClick={() => handleTabClick(tab.key)}
+                        className="relative"
                       >
+                        {/* Liquid glow rings */}
                         <motion.div
-                          animate={{ rotate: [0, 90, 180, 270, 360] }}
-                          transition={{ repeat: Infinity, duration: 30, ease: "linear" }}
+                          animate={{
+                            scale: [1, 1.6, 1],
+                            opacity: [0.6, 0, 0.6],
+                          }}
+                          transition={{
+                            repeat: Infinity,
+                            duration: 3,
+                            ease: "easeOut",
+                          }}
+                          className={`absolute inset-0 rounded-[22px] bg-gradient-to-br ${currentTheme.gradient} blur-xl`}
+                        />
+                        
+                        <motion.div
+                          className={`relative w-[64px] h-[64px] rounded-[22px] bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center ${currentTheme.glow} ring-[3px] ring-white/70 dark:ring-zinc-900/70`}
+                          animate={{
+                            rotate: isCreateOpen? [0, 5, -5, 0] : 0,
+                          }}
+                          transition={{ duration: 0.5 }}
                         >
-                          <FiPlus size={30} className="text-white" strokeWidth={2.5} />
+                          <IconCreate isOpen={isCreateOpen} />
                         </motion.div>
-                      </div>
-                    </motion.button>
+                      </motion.button>
+                    </div>
                   );
                 }
 
                 return (
                   <motion.button
                     key={tab.key}
-                    variants={itemVariants}
-                    whileTap={{ scale: 0.9 }}
+                    whileTap={{ scale: 0.88 }}
                     onTouchStart={() => haptics.light()}
                     onClick={() => handleTabClick(tab.key)}
-                    className="relative flex items-center justify-center w-16 h-14"
+                    className="relative flex items-center justify-center w-[68px] h-[68px]"
                   >
-                    <AnimatePresence>
-                      {isActive && (
-                        <motion.div
-                          layoutId="active-dot"
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          exit={{ scale: 0 }}
-                          className={`absolute -bottom-0.5 w-1.5 h-1.5 rounded-full ${currentTheme.dot}`}
-                          transition={{ type: "spring", bounce: 0.5 }}
-                        />
-                      )}
-                    </AnimatePresence>
+                    {/* Liquid pill indicator */}
+                    {isActive && (
+                      <motion.div
+                        layoutId="active-pill"
+                        className={`absolute inset-0 rounded-[20px] ${currentTheme.pillBg}`}
+                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
 
-                    <div className="relative">
+                    <div className="relative z-10">
+                      {/* Ripple effect on active */}
                       <AnimatePresence>
                         {isActive && (
                           <motion.div
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 2, opacity: 0.35 }}
-                            exit={{ scale: 0, opacity: 0 }}
-                            className={`absolute inset-0 rounded-full bg-gradient-to-br ${currentTheme.gradient} blur-2xl`}
+                            initial={{ scale: 0, opacity: 0.5 }}
+                            animate={{ scale: 2.5, opacity: 0 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.8 }}
+                            className={`absolute inset-0 rounded-full ${currentTheme.ripple}`}
                           />
                         )}
                       </AnimatePresence>
 
                       <motion.div
-                        animate={
-                          isActive
-                         ? {
-                                scale: [1, 1.15, 1],
-                                y: [0, -3, 0],
-                              }
-                            : {}
-                        }
-                        transition={{ duration: 0.4, type: "spring", bounce: 0.4 }}
+                        animate={isActive? { y: [0, -4, 0] } : { y: 0 }}
+                        transition={{ duration: 0.5, type: "spring", bounce: 0.5 }}
+                        className={isActive? currentTheme.iconActive : "text-zinc-400 dark:text-zinc-600"}
                       >
-                        <Icon
-                          size={28}
-                          className={`relative transition-colors duration-300 ${
-                            isActive
-                           ? `${currentTheme.iconActive} drop-shadow-[0_0_16px_rgba(10,132,255,0.6)]`
-                              : "text-zinc-400 dark:text-zinc-600"
-                          }`}
-                        />
+                        <Icon active={isActive} />
                       </motion.div>
 
+                      {/* Badge */}
                       {tab.key === "messages" && unreadCount > 0 && (
                         <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="absolute -top-2 -right-2 min-w-5 h-5 bg-gradient-to-br from-red-500 to-red-600 rounded-full px-1.5 flex items-center justify-center shadow-lg shadow-red-500/60 ring-2 ring-white dark:ring-zinc-900"
+                          initial={{ scale: 0, rotate: -180 }}
+                          animate={{ scale: 1, rotate: 0 }}
+                          className="absolute -top-1 -right-1 min-w-[20px] h-[20px] bg-gradient-to-br from-red-500 to-red-600 rounded-full px-[6px] flex items-center justify-center shadow-lg shadow-red-500/50 ring-2 ring-white dark:ring-zinc-900"
                         >
                           <motion.span
-                            animate={{ scale: [1, 1.2, 1] }}
-                            transition={{ repeat: Infinity, duration: 1.5 }}
-                            className="text-xs font-bold text-white leading-none"
+                            animate={{ scale: [1, 1.15, 1] }}
+                            transition={{ repeat: Infinity, duration: 2 }}
+                            className="text-[11px] font-black text-white leading-none"
                           >
                             {unreadCount > 9? "9+" : unreadCount}
                           </motion.span>
