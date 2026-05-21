@@ -29,7 +29,6 @@ const tabs = [
 
 export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }: CustomTabBarProps) {
   const mode = useAppStore((s) => s.mode) || "task";
-const currentTheme = themes[mode];
   const [unreadCount] = useState(3);
   const [mounted, setMounted] = useState(false);
 
@@ -54,7 +53,7 @@ const currentTheme = themes[mode];
     },
   };
 
-  const currentTheme = themes || themes.task;
+  const currentTheme = themes;
 
   const handleTabClick = (key: string) => {
     if (key === "create") {
@@ -256,7 +255,7 @@ const currentTheme = themes[mode];
                       <motion.div
                         animate={
                           isActive
-                     ? {
+                   ? {
                                 y: [0, -4, 0],
                                 rotate: [0, -10, 10, -10, 0],
                               }
@@ -271,7 +270,7 @@ const currentTheme = themes[mode];
                           size={26}
                           className={`relative transition-all duration-300 ${
                             isActive
-                       ? `${currentTheme.iconActive} drop-shadow-[0_0_12px_rgba(10,132,255,0.8)]`
+                     ? `${currentTheme.iconActive} drop-shadow-[0_0_12px_rgba(10,132,255,0.8)]`
                               : "text-zinc-400 dark:text-zinc-600"
                           }`}
                         />
@@ -306,7 +305,7 @@ const currentTheme = themes[mode];
                       }}
                       className={`text- font-bold transition-all duration-300 ${
                         isActive
-                   ? currentTheme.iconActive
+                 ? currentTheme.iconActive
                           : "text-zinc-400 dark:text-zinc-600"
                       }`}
                     >
