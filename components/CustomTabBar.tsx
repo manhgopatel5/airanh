@@ -259,7 +259,7 @@ export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }:
             <div className="absolute inset-0 rounded-[28px] opacity-[0.015] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsdGVyPSJ1cmwoI2EpIiBvcGFjaXR5PSIwLjA1Ii8+PC9zdmc+')]" />
 
             <div className="relative flex items-center justify-between h-[68px] px-2">
-              {tabs.map((tab, idx) => {
+            {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = currentTab === tab.key;
                 const isCreate = tab.key === "create";
