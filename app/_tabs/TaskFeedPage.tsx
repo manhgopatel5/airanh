@@ -273,39 +273,46 @@ export default function TaskFeedPage() {
   };
 
   const filteredTasks = useMemo(() => {
-    let result = tasks.filter(t =>!t.banned &&!t.hidden);
+  let result = tasks.filter(t =>!t.banned &&!t.hidden);
 
-    if (searchQuery) {
-      result = result.filter(t =>
-        t.title.toLowerCase().includes(searchQuery.toLowerCase())
+  if (searchQuery) {
+    result = result.filter(t =>
+      t.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }
+
+  if (activeTab === "hot") {
+    result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+  } else if (activeTab === "new") {
+    result.sort((a, b) => {
+      const aTime = a.createdAt?.toMillis() || 0;
+      const bTime = b.createdAt?.toMillis() || 0;
+      return bTime - aTime;
+    });
+  } else if (activeTab === "near" && userLocation) {
+    result.sort((a, b) => {
+      const aLat = a.location?.lat;
+      const aLng = a.location?.lng;
+      const bLat = b.location?.lat;
+      const bLng = b.location?.lng;
+      
+      if (aLat == null || aLng == null) return 1;
+      if (bLat == null || bLng == null) return -1;
+      
+      const distA = geofire.distanceBetween(
+        [userLocation.lat, userLocation.lng],
+        [aLat, aLng]
       );
-    }
+      const distB = geofire.distanceBetween(
+        [userLocation.lat, userLocation.lng],
+        [bLat, bLng]
+      );
+      return distA - distB;
+    });
+  }
 
-    if (activeTab === "hot") {
-      result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-    } else if (activeTab === "new") {
-      result.sort((a, b) => {
-        const aTime = a.createdAt?.toMillis() || 0;
-        const bTime = b.createdAt?.toMillis() || 0;
-        return bTime - aTime;
-      });
-    } else if (activeTab === "near" && userLocation) {
-      result.sort((a, b) => {
-        if (!a.location?.lat ||!b.location?.lat) return 0;
-        const distA = geofire.distanceBetween(
-          [userLocation.lat, userLocation.lng],
-          [a.location.lat, a.location.lng]
-        );
-        const distB = geofire.distanceBetween(
-          [userLocation.lat, userLocation.lng],
-          [b.location.lat, b.location.lng]
-        );
-        return distA - distB;
-      });
-    }
-
-    return result;
-  }, [tasks, searchQuery, activeTab, userLocation]);
+  return result;
+}, [tasks, searchQuery, activeTab, userLocation]);
 
   const handleShare = useCallback((task: FeedTask) => {
     vibrate(5);
