@@ -139,7 +139,7 @@ const currentTheme = themes[mode];
               transition={{ repeat: Infinity, duration: 3 }}
             />
 
-            <div className="flex items-center justify-around h- px-1">
+            <div className="flex items-center justify-around h-14 px-1">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = currentTab === tab.key;
@@ -267,7 +267,7 @@ const currentTheme = themes[mode];
                         }}
                       >
                         <Icon
-                          size={26}
+                     size={28}
                           className={`relative transition-all duration-300 ${
                             isActive
                     ? `${currentTheme.iconActive} drop-shadow-[0_0_12px_rgba(10,132,255,0.8)]`
@@ -298,19 +298,7 @@ const currentTheme = themes[mode];
                       )}
                     </div>
 
-                    <motion.span
-                      animate={{
-                        opacity: isActive? 1 : 0.5,
-                        y: isActive? 0 : 2,
-                      }}
-                      className={`text- font-bold transition-all duration-300 ${
-                        isActive
-                ? currentTheme.iconActive
-                          : "text-zinc-400 dark:text-zinc-600"
-                      }`}
-                    >
-                      {tab.label}
-                    </motion.span>
+               
                   </motion.button>
                 );
               })}
