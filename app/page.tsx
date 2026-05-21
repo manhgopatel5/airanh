@@ -1,662 +1,467 @@
 "use client";
-
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { FiInbox, FiSearch, FiRefreshCw, FiX, FiNavigation, FiTarget } from "react-icons/fi";
-import { HiBolt, HiCalendarDays } from "react-icons/hi2";
+export const dynamic = 'force-dynamic';
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import ShareTaskModal from "@/components/ShareTaskModal";
-import { onAuthStateChanged, User } from "firebase/auth";
-import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  orderBy,
-  limit,
-  startAfter,
-  QueryDocumentSnapshot,
-  DocumentData,
-  Timestamp,
-} from "firebase/firestore";
-import type { Task } from "@/types/task";
-import TaskCard from "@/components/task/TaskCard";
-import { toast, Toaster } from "sonner";
+import { createPortal } from "react-dom";
+import { useAuth } from "@/lib/AuthContext";
 import { useAppStore } from "@/store/app";
-import { FiMapPin } from "react-icons/fi";
-import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
-import * as geofire from 'geofire-common';
+import {
+  motion,
+  AnimatePresence,
+  LayoutGroup,
+  useMotionValue,
+  useSpring,
+  useTransform,
+  useDragControls,
+  MotionConfig
+} from "framer-motion";
+import { Toaster } from "sonner";
+import {
+  Home as HomeIcon, MessageSquare, ClipboardList, User, Plus,
+  Sparkles, CalendarRange
+} from "lucide-react";
+import { FiLoader } from "react-icons/fi";
 
-type TabId = "hot" | "near" | "friends" | "new";
-type FeedTask = Task & {
-  banned?: boolean;
-  hidden?: boolean;
+import ChatClient from "./chat/ChatClient";
+import ProfileTabContent from "./profile/ProfileTabContent";
+import TaskFeedPage from "./_tabs/TaskFeedPage";
+import MyTasksPage from "./_tabs/MyTasksPage";
+
+type MainTab = "home" | "messages" | "tasks" | "profile";
+
+const SPRING = {
+  type: "spring" as const,
+  stiffness: 550,
+  damping: 32,
+  mass: 0.8
 };
 
-const SUB_TABS: { key: TabId; label: string; icon: any }[] = [
-  { key: "hot", label: "Hot", icon: HiFire },
-  { key: "near", label: "Gần bạn", icon: FiMapPin },
-  { key: "friends", label: "Bạn bè", icon: HiUsers },
-  { key: "new", label: "Mới", icon: HiSparkles },
-];
-
-const PAGE_SIZE = 50;
-const RADIUS_OPTIONS = [1, 2, 5, 10, 20, 50];
-
-const vibrate = (p: number | number[] = 5) => {
-  if (typeof navigator!== "undefined" && "vibrate" in navigator) {
-    navigator.vibrate(p);
-  }
+const SPRING_BOUNCY = {
+  type: "spring" as const,
+  stiffness: 400,
+  damping: 25,
+  mass: 0.6
 };
 
-export default function TaskFeedPage() {
-  const auth = getFirebaseAuth();
-  const db = getFirebaseDB();
-  const router = useRouter();
-
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const { mode = "task", setMode } = useAppStore();
-  const [activeTab, setActiveTab] = useState<TabId>("hot");
-  const [tasks, setTasks] = useState<FeedTask[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showSearch, setShowSearch] = useState(false);
-  const [shareTask, setShareTask] = useState<FeedTask | null>(null);
-  const [tabChanged, setTabChanged] = useState(false);
-  const [prevTab, setPrevTab] = useState<TabId>("hot");
-
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [locationDenied, setLocationDenied] = useState(false);
-  const [radiusKm, setRadiusKm] = useState(5);
-  const [showLocationModal, setShowLocationModal] = useState(false);
-  const [showRadiusPicker, setShowRadiusPicker] = useState(false);
-
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-  const pullStartY = useRef(0);
-  const [pullDistance, setPullDistance] = useState(0);
-
-  const theme = {
-    task: {
-      primary: "#0A84FF",
-      gradient: "from-[#0A84FF] to-[#0066CC]",
-      text: "text-[#0A84FF]",
-      shadow: "shadow-[0_8px_30px_rgba(10,132,255,0.3)]",
-    },
-    plan: {
-      primary: "#30D158",
-      gradient: "from-[#30D158] to-[#28B44C]",
-      text: "text-[#30D158]",
-      shadow: "shadow-[0_8px_30px_rgba(48,209,88,0.3)]",
-    }
-  };
-
-  const currentTheme = theme;
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      if (!user) router.push("/login");
-    });
-    return () => unsub();
-  }, [auth, router]);
-
-  const requestLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      toast.error("Trình duyệt không hỗ trợ định vị");
-      return;
-    }
-
-    setLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setUserLocation({ lat: latitude, lng: longitude });
-        setLocationDenied(false);
-        setShowLocationModal(false);
-        vibrate([10, 20, 10]);
-        toast.success("Đã lấy vị trí của bạn");
-      },
-      (err) => {
-        setLocationDenied(true);
-        setShowLocationModal(true);
-        if (err.code === 1) toast.error("Bạn đã từ chối quyền định vị");
-        else toast.error("Không lấy được vị trí");
-        setLoading(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  }, []);
-
-  const handleTabClick = (tab: TabId) => {
-    vibrate(5);
-    setActiveTab(tab);
-    if (tab === "near" &&!userLocation &&!locationDenied) {
-      setShowLocationModal(true);
-    }
-  };
-
-  const buildQuery = useCallback(
-    (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
-      if (!db) return null;
-      const now = Timestamp.now();
-      const constraints: any[] = [
-        where("type", "==", mode),
-        where("visibility", "==", "public"),
-        where("status", "in", ["open", "full", "doing"]),
-        where("deadline", ">", now),
-        orderBy("deadline", "asc"),
-        limit(PAGE_SIZE),
-      ];
-      if (startAfterDoc) constraints.push(startAfter(startAfterDoc));
-      return query(collection(db, "tasks"),...constraints);
-    },
-    [db, mode]
-  );
-
-  const fetchTasks = useCallback(async (isRefresh = false) => {
-    if (!db) return;
-
-    if (isRefresh) {
-      setRefreshing(true);
-      setLastDoc(null);
-      setHasMore(true);
-    } else {
-      setLoadingMore(true);
-    }
-
-    try {
-      const q = buildQuery(isRefresh? undefined : lastDoc || undefined);
-      if (!q) return;
-
-      const snap = await getDocs(q);
-      let data = snap.docs.map((doc) => ({
-        id: doc.id,
-     ...doc.data(),
-      })) as FeedTask[];
-
-      if (activeTab === "near" && userLocation) {
-        data = data.filter(task => {
-          if (!task.location?.lat ||!task.location?.lng) return false;
-          const distanceInKm = geofire.distanceBetween(
-            [userLocation.lat, userLocation.lng],
-            [task.location.lat, task.location.lng]
-          );
-          return distanceInKm <= radiusKm;
-        });
-      }
-
-      if (isRefresh) {
-        setTasks(data);
-      } else {
-        setTasks(prev => [...prev,...data]);
-      }
-
-      setLastDoc(snap.docs[snap.docs.length - 1] || null);
-      setHasMore(snap.docs.length === PAGE_SIZE);
-    } catch (err: any) {
-      console.error("Firestore Fetch Error: ", err);
-      if (err.code === "failed-precondition") {
-        toast.error("Thiếu index Firestore. Kiểm tra console để tạo.");
-      } else if (err.code === "permission-denied") {
-        toast.info("Chưa có dữ liệu");
-      } else {
-        toast.error("Tải dữ liệu thất bại");
-      }
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-      setRefreshing(false);
-    }
-  }, [db, buildQuery, lastDoc, activeTab, userLocation, radiusKm]);
-
-  useEffect(() => {
-    if (currentUser) {
-      fetchTasks(true);
-    }
-  }, [mode, activeTab, userLocation, radiusKm, currentUser]);
-
-  useEffect(() => {
-    if (prevTab!== activeTab) {
-      setTabChanged(true);
-      vibrate([10, 30, 10]);
-      setPrevTab(activeTab);
-    }
-  }, [activeTab, prevTab]);
-
-  useEffect(() => {
-    if (!loadMoreRef.current) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && hasMore &&!loading &&!loadingMore &&!refreshing) {
-          fetchTasks(false);
-        }
-      },
-      { threshold: 0.1, rootMargin: "200px" }
-    );
-    observer.observe(loadMoreRef.current);
-    return () => observer.disconnect();
-  }, [hasMore, loading, loadingMore, refreshing, fetchTasks]);
-
-  const handleRefresh = async () => {
-    vibrate(10);
-    await fetchTasks(true);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (window.scrollY === 0) {
-      pullStartY.current = e.touches[0]?.clientY?? 0;
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (pullStartY.current > 0 && window.scrollY === 0) {
-      const touchY = e.touches[0]?.clientY;
-      if (!touchY) return;
-      const distance = touchY - pullStartY.current;
-      if (distance > 0) {
-        setPullDistance(Math.min(distance, 80));
-      }
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (pullDistance > 60) {
-      handleRefresh();
-    }
-    pullStartY.current = 0;
-    setPullDistance(0);
-  };
-
-  const filteredTasks = useMemo(() => {
-    let result = tasks.filter(t =>!t.banned &&!t.hidden);
-
-    if (searchQuery) {
-      result = result.filter(t =>
-        t.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (activeTab === "hot") {
-      result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-    } else if (activeTab === "new") {
-      result.sort((a, b) => {
-        const aTime = a.createdAt?.toMillis() || 0;
-        const bTime = b.createdAt?.toMillis() || 0;
-        return bTime - aTime;
-      });
-    } else if (activeTab === "near" && userLocation) {
-      result.sort((a, b) => {
-        if (!a.location?.lat ||!b.location?.lat) return 0;
-        const distA = geofire.distanceBetween(
-          [userLocation.lat, userLocation.lng],
-          [a.location.lat, a.location.lng]
-        );
-        const distB = geofire.distanceBetween(
-          [userLocation.lat, userLocation.lng],
-          [b.location.lat, b.location.lng]
-        );
-        return distA - distB;
-      });
-    }
-
-    return result;
-  }, [tasks, searchQuery, activeTab, userLocation]);
-
-  const handleShare = useCallback((task: FeedTask) => {
-    vibrate(5);
-    setShareTask(task);
-  }, []);
-
-  const handleTaskUpdate = useCallback((taskId: string, updates: Partial<FeedTask>) => {
-    setTasks(prev => prev.map(t => t.id === taskId? ({...t,...updates } as FeedTask) : t));
-    if (updates.status === "completed") {
-      vibrate([10, 20, 10]);
-    }
-  }, []);
+const FloatingMenu = ({
+  isOpen,
+  onSelect,
+  onClose
+}: {
+  isOpen: boolean;
+  onSelect: (type: "task" | "plan") => void;
+  onClose: () => void;
+}) => {
+  const dragControls = useDragControls();
+  const y = useMotionValue(0);
+  const opacity = useTransform(y, [0, 100], [1, 0]);
+  const scale = useTransform(y, [0, 100], [1, 0.95]);
 
   return (
-    <>
-      <Toaster richColors position="top-center" />
-      <div
-        className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 select-none"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        {pullDistance > 0 && (
-          <div
-            className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl"
-            style={{ height: `${pullDistance}px`, transition: pullDistance === 0? 'height 0.3s' : 'none' }}
-          >
-            <FiRefreshCw className={`${pullDistance > 60? 'animate-spin' : ''} text-[#0A84FF]`} size={20} />
-          </div>
-        )}
+    <AnimatePresence mode="wait">
+      {isOpen && (
+        <motion.div
+          drag="y"
+          dragControls={dragControls}
+          dragListener={false}
+          dragConstraints={{ top: 0, bottom: 0 }}
+          dragElastic={0.2}
+          onDragEnd={(_, info) => {
+            if (info.offset.y > 80 || info.velocity.y > 500) onClose();
+          }}
+          style={{ y, opacity, scale }}
+          initial={{ opacity: 0, y: 20, scale: 0.96, filter: "blur(8px)" }}
+          animate={{
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            filter: "blur(0px)",
+            transition: SPRING_BOUNCY
+          }}
+          exit={{
+            opacity: 0,
+            y: 15,
+            scale: 0.97,
+            filter: "blur(4px)",
+            transition: { duration: 0.15, ease: [0.4, 0, 1, 1] }
+          }}
+          className="w-full bg-white dark:bg-zinc-900 rounded-3xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] pointer-events-auto flex flex-col gap-3 select-none"
+        >
+ 
 
-        <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl">
-          <div className="px-4 pt-3 pb-2">
-            <div className="flex items-center p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800">
-              <button
-                onClick={() => { setMode("task"); vibrate(); }}
-                className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
-                  mode === "task"? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm` : "text-zinc-500 dark:text-zinc-400"
-                }`}
-              >
-                <HiBolt className="w-4 h-4" />
-                Task
-              </button>
-              <button
-                onClick={() => { setMode("plan"); vibrate(); }}
-                className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
-                  mode === "plan"? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm` : "text-zinc-500 dark:text-zinc-400"
-                }`}
-              >
-                <HiCalendarDays className="w-4 h-4" />
-                Plan
-              </button>
-            </div>
-          </div>
 
-          <div className="px-4 pb-3">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1">
-                {SUB_TABS.map((tab) => {
-                  const Icon = tab.icon;
-                  return (
-                    <motion.button
-                      key={tab.key}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleTabClick(tab.key)}
-                      className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                        activeTab === tab.key
-                       ? mode === "task"
-                         ? "bg-[#0A84FF] text-white"
-                            : "bg-[#30D158] text-white"
-                          : tabChanged
-                         ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600 opacity-40"
-                            : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
-                      }`}
-                    >
-                      <Icon size={16} />
-                      {tab.label}
-                      {tab.key === "near" && activeTab === "near" && userLocation && (
-                        <span className="text-xs opacity-80">{radiusKm}km</span>
-                      )}
-                    </motion.button>
-                  );
-                })}
-              </div>
-              <button
-                onClick={() => {
-                  vibrate();
-                  setShowSearch(!showSearch);
-                  setTabChanged(false);
-                }}
-                className={`p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 active:scale-90 transition-all relative ${
-                  tabChanged
-                 ? mode === "task"
-                   ? "ring-2 ring-[#0A84FF] shadow-[0_0_20px_rgba(10,132,255,0.6)]"
-                      : "ring-2 ring-[#30D158] shadow-[0_0_20px_rgba(48,209,88,0.6)]"
-                    : ""
-                }`}
-              >
-                <FiSearch
-                  size={18}
-                  onAnimationEnd={() => setTabChanged(false)}
-                  style={{
-                    animation: tabChanged? 'scale 0.6s ease-in-out 5' : 'none'
-                  }}
-                  className={`${
-                    tabChanged
-                   ? mode === "task"? "text-[#0A84FF]" : "text-[#30D158]"
-                      : "text-zinc-600 dark:text-zinc-400"
-                  }`}
-                />
-              </button>
-            </div>
 
-            <AnimatePresence>
-              {activeTab === "near" && userLocation && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="mb-3"
-                >
-                  <button
-                    onClick={() => setShowRadiusPicker(true)}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-sm font-medium active:scale-98 transition-all"
-                  >
-                    <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300">
-                      <FiTarget size={16} />
-                      Bán kính tìm kiếm
-                    </div>
-                    <div className={`font-bold ${currentTheme.text}`}>{radiusKm} km</div>
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <AnimatePresence>
-              {showSearch && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="relative">
-                    <input
-                      autoFocus
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder={`Tìm ${mode}...`}
-                      className="w-full px-4 py-2.5 pr-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 outline-none text-sm focus:ring-2 focus:ring-[#0A84FF]/20"
-                    />
-                    {searchQuery && (
-                      <button
-                        onClick={() => setSearchQuery("")}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700"
-                      >
-                        <FiX size={16} className="text-zinc-500" />
-                      </button>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-
-        <div className="max-w-[600px] mx-auto p-4">
-          {loading? (
-            <div className="space-y-3">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 p-4">
-                  <div className="flex gap-3 animate-pulse">
-                    <div className="w-12 h-12 bg-zinc-200 dark:bg-zinc-800 rounded-xl" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 w-3/4 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
-                      <div className="h-3 w-1/2 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : filteredTasks.length === 0? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 p-12 text-center"
+          <div className="grid grid-cols-2 gap-3">
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0, transition: {...SPRING, delay: 0.05 } }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => onSelect("task")}
+              className="flex flex-col items-center gap-3 p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/30 text-left"
             >
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-                <FiInbox size={32} className="text-zinc-400" />
+              <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                <Sparkles className="w-6 h-6" strokeWidth={2.5} />
               </div>
-              <p className="text-base font-bold text-zinc-900 dark:text-zinc-100 mb-1">
-                {activeTab === "near" &&!userLocation? "Cần bật định vị" : `Chưa có ${mode === "task"? "task" : "plan"} nào`}
-              </p>
-              <p className="text-sm text-zinc-500 mb-6">
-                {activeTab === "near" &&!userLocation? "Cho phép truy cập vị trí để tìm task gần bạn" : "Kéo xuống để tải lại"}
-              </p>
-              {activeTab === "near" &&!userLocation? (
-                <button
-                  onClick={() => setShowLocationModal(true)}
-                  className={`px-6 h-11 rounded-xl bg-gradient-to-r ${currentTheme.gradient} text-white text-sm font-semibold active:scale-95 transition-all ${currentTheme.shadow} flex items-center gap-2 mx-auto`}
-                >
-                  <FiNavigation /> Bật định vị
-                </button>
-              ) : (
-                <button
-                  onClick={handleRefresh}
-                  className={`px-6 h-11 rounded-xl bg-gradient-to-r ${currentTheme.gradient} text-white text-sm font-semibold active:scale-95 transition-all ${currentTheme.shadow} flex items-center gap-2 mx-auto`}
-                >
-                  <FiRefreshCw /> Tải lại
-                </button>
-              )}
-            </motion.div>
-          ) : (
-            <AnimatePresence mode="popLayout">
-              <motion.div
-                key={`${mode}-${activeTab}`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="space-y-3"
-              >
-                {filteredTasks.map((task, idx) => (
-                  <motion.div
-                    key={task.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                  >
-                    <TaskCard
-                      task={task}
-                      theme={mode}
-                      onDelete={(id) => setTasks(prev => prev.filter(t => t.id!== id))}
-                      onShare={handleShare}
-                      onTaskUpdate={handleTaskUpdate}
-                    />
-                  </motion.div>
-                ))}
-              </motion.div>
-            </AnimatePresence>
-          )}
+              <div className="text-center">
+                <h4 className="font-black text-zinc-900 dark:text-zinc-100 text-sm tracking-tight">Hỗ trợ tức thì</h4>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-0.5 leading-tight">Đăng việc nhanh, có người nhận ngay</p>
+              </div>
+            </motion.button>
 
-          {(loadingMore || refreshing) && (
-            <div className="flex justify-center py-6">
-              <FiRefreshCw className="animate-spin text-[#0A84FF]" size={24} />
-            </div>
-          )}
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0, transition: {...SPRING, delay: 0.1 } }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => onSelect("plan")}
+              className="flex flex-col items-center gap-3 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 text-left"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <CalendarRange className="w-6 h-6" strokeWidth={2.5} />
+              </div>
+              <div className="text-center">
+                <h4 className="font-black text-zinc-900 dark:text-zinc-100 text-sm tracking-tight">Cùng chung sở thích</h4>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-0.5 leading-tight">Gặp gỡ những người cùng đam mê</p>
+              </div>
+            </motion.button>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
 
-          {shareTask && (
-            <ShareTaskModal
-              task={shareTask as Task}
-              onClose={() => setShareTask(null)}
-            />
-          )}
+const MagneticNavItem = ({
+  item,
+  active,
+  onClick,
+  activeColorClass,
+  
+}: {
+  item: { id: MainTab; label: string; Icon: any };
+  active: boolean;
+  onClick: () => void;
+  activeColorClass: string;
+  activeBgClass: string;
+}) => {
+  const ref = useRef<HTMLButtonElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const springX = useSpring(x, { stiffness: 350, damping: 18, mass: 0.5 });
+  const springY = useSpring(y, { stiffness: 350, damping: 18, mass: 0.5 });
+  const rotateX = useTransform(springY, [-20, 20], [12, -12]);
+  const rotateY = useTransform(springX, [-20, 20], [-12, 12]);
+ 
 
-          <div ref={loadMoreRef} className="h-4" />
+  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    x.set((e.clientX - rect.left - rect.width / 2) * 0.28);
+    y.set((e.clientY - rect.top - rect.height / 2) * 0.28);
+  };
+
+  return (
+    <motion.button
+      ref={ref}
+      onClick={onClick}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => { x.set(0); y.set(0); }}
+      style={{ x: springX, y: springY, rotateX, rotateY, transformStyle: "preserve-3d" }}
+      whileTap={{ scale: 0.88 }}
+      className="relative flex-1 flex flex-col items-center justify-center h-full pt-1 pb-3.5 outline-none select-none touch-manipulation"
+    >
+
+
+      <motion.div
+       animate={{ y: 0, scale: 1 }}
+        transition={SPRING}
+        className="relative z-10"
+      >
+        <motion.div animate={active? { rotate: [0, -6, 6, 0] } : {}} transition={{ duration: 0.5 }}>
+          <item.Icon
+            className={`w-[23px] h-[23px] transition-colors duration-300 ${
+              active? activeColorClass : "text-zinc-400 dark:text-zinc-500"
+            }`}
+            strokeWidth={active? 2.7 : 2.2}
+          />
+        </motion.div>
+  
+      </motion.div>
+
+      <motion.span
+     animate={{ y: 0, scale: 1 }}
+        transition={SPRING}
+        className={`relative z-10 text-[11px] mt-1.5 tracking-tight transition-all duration-300 ${
+          active? `${activeColorClass} font-bold` : "text-zinc-400 dark:text-zinc-500 font-semibold"
+        }`}
+      >
+        {item.label}
+      </motion.span>
+
+      
+    </motion.button>
+  );
+};
+
+export default function AppContainer() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const mode = useAppStore((s) => s.mode);
+  const [mounted, setMounted] = useState(false);
+  const [currentMainTab, setCurrentMainTab] = useState<MainTab>("home");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [loadedTabs, setLoadedTabs] = useState<Set<MainTab>>(new Set(["home"]));
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const plusX = useMotionValue(0);
+  const plusY = useMotionValue(0);
+  const plusSpringX = useSpring(plusX, SPRING);
+  const plusSpringY = useSpring(plusY, SPRING);
+
+  const isPlanMode = mode === "plan";
+
+  const mainNavItems = useMemo(() => [
+    { id: "home" as MainTab, label: "Home", Icon: HomeIcon },
+    { id: "messages" as MainTab, label: "Messages", Icon: MessageSquare },
+    { id: "tasks" as MainTab, label: "Tasks", Icon: ClipboardList },
+    { id: "profile" as MainTab, label: "Profile", Icon: User },
+  ], []);
+
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) router.replace("/login");
+  }, [user, authLoading, router]);
+
+  useEffect(() => {
+    setLoadedTabs(prev => new Set(prev).add(currentMainTab));
+  }, [currentMainTab]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsMenuOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as HTMLElement;
+      if (menuRef.current?.contains(target) || target.closest('[data-plus-button]')) return;
+      setIsMenuOpen(false);
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("touchstart", handleClickOutside);
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [isMenuOpen]);
+
+  const handleSelectCreate = useCallback((type: "task" | "plan") => {
+    navigator.vibrate?.([15, 30, 15]);
+    setIsMenuOpen(false);
+    router.push(`/create/${type}`);
+  }, [router]);
+
+  const activeColorClass = isPlanMode? "text-emerald-500" : "text-blue-600";
+  const activeBgClass = isPlanMode? "bg-emerald-500" : "bg-blue-600";
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
+        <div className="flex flex-col items-center gap-3">
+          <FiLoader className={`animate-spin ${activeColorClass}`} size={32} />
+          <p className="text-[14px] text-gray-500">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen pb-28 font-sans bg-white dark:bg-zinc-950 select-none relative">
+      <Toaster richColors position="top-center" toastOptions={{ duration: 2000, style: { fontSize: "14px" } }} />
+
+      <div className="w-full max-w-2xl mx-auto">
+        <div className={currentMainTab!== "home"? "hidden" : ""}>
+          {loadedTabs.has("home") && <TaskFeedPage />}
+        </div>
+        <div className={currentMainTab!== "messages"? "hidden" : ""}>
+          {loadedTabs.has("messages") && <ChatClient />}
+        </div>
+        <div className={currentMainTab!== "tasks"? "hidden" : ""}>
+          {loadedTabs.has("tasks") && <MyTasksPage />}
+        </div>
+        <div className={currentMainTab!== "profile"? "hidden" : ""}>
+          {loadedTabs.has("profile") && <ProfileTabContent onNavigateTab={(tab) => setCurrentMainTab(tab)} />}
         </div>
       </div>
 
-      <AnimatePresence>
-        {showLocationModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end justify-center p-4"
-            onClick={() => setShowLocationModal(false)}
-          >
-            <motion.div
-              initial={{ y: 100 }}
-              animate={{ y: 0 }}
-              exit={{ y: 100 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-[400px] bg-white dark:bg-zinc-900 rounded-3xl p-6"
-            >
-              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#0A84FF] to-[#0066CC] flex items-center justify-center">
-                <FiNavigation size={28} className="text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-center mb-2">Bật định vị</h3>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center mb-6">
-                Cho phép truy cập vị trí để tìm task gần bạn nhất
-              </p>
-              <button
-                onClick={requestLocation}
-                className={`w-full h-12 rounded-xl bg-gradient-to-r ${currentTheme.gradient} text-white font-semibold active:scale-95 transition-all ${currentTheme.shadow}`}
-              >
-                Cho phép định vị
-              </button>
-              <button
-                onClick={() => setShowLocationModal(false)}
-                className="w-full h-12 mt-2 rounded-xl text-zinc-500 font-semibold active:scale-95"
-              >
-                Để sau
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {mounted && createPortal(
+        <MotionConfig transition={SPRING}>
+          <LayoutGroup id="app-global-navigation-flow">
+            <AnimatePresence>
+              {isMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+                  animate={{ opacity: 1, backdropFilter: "blur(8px)" }}
+                  exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+                  transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                  className="fixed inset-0 z-[60] bg-zinc-950/20 dark:bg-zinc-950/40 pointer-events-none"
+                />
+              )}
+            </AnimatePresence>
 
-      <AnimatePresence>
-        {showRadiusPicker && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end justify-center p-4"
-            onClick={() => setShowRadiusPicker(false)}
-          >
-            <motion.div
-              initial={{ y: 100 }}
-              animate={{ y: 0 }}
-              exit={{ y: 100 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-[400px] bg-white dark:bg-zinc-900 rounded-3xl p-6"
-            >
-              <h3 className="text-lg font-bold mb-4">Chọn bán kính</h3>
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                {RADIUS_OPTIONS.map((km) => (
-                  <button
-                    key={km}
-                    onClick={() => {
-                      setRadiusKm(km);
-                      setShowRadiusPicker(false);
-                      vibrate(5);
-                      fetchTasks(true);
-                    }}
-                    className={`h-11 rounded-xl font-semibold text-sm transition-all active:scale-95 ${
-                      radiusKm === km
-                     ? `bg-gradient-to-r ${currentTheme.gradient} text-white ${currentTheme.shadow}`
-                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
-                    }`}
-                  >
-                    {km} km
-                  </button>
-                ))}
+            <div className="fixed bottom-0 inset-x-0 z-[70] pointer-events-none flex flex-col items-center justify-end">
+           <div ref={menuRef} className="w-full flex flex-col items-center gap-3">
+                <FloatingMenu
+                  isOpen={isMenuOpen}
+                  onSelect={handleSelectCreate}
+                  onClose={() => setIsMenuOpen(false)}
+                />
+
+           <motion.div
+  layout
+ className="w-full pointer-events-auto relative bg-white dark:bg-zinc-950 pb-[env(safe-area-inset-bottom)]"
+>
+
+              
+
+                  <div className="flex items-center justify-between h-16 px-2 relative">
+                    <div className="flex-1 grid grid-cols-2 h-full">
+                      {mainNavItems.slice(0, 2).map((item) => (
+                        <MagneticNavItem
+                          key={item.id}
+                          item={item}
+                          active={currentMainTab === item.id}
+                          onClick={() => {
+                            setCurrentMainTab(item.id);
+                            navigator.vibrate?.(10);
+                          }}
+                          activeColorClass={activeColorClass}
+                          activeBgClass={activeBgClass}
+                        />
+                      ))}
+                    </div>
+
+                    <div className="w-20 flex justify-center h-full items-center relative">
+                      <motion.button
+                        data-plus-button
+                        onClick={() => {
+                          navigator.vibrate?.(12);
+                          setIsMenuOpen(!isMenuOpen);
+                        }}
+                        onMouseMove={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          plusX.set((e.clientX - rect.left - rect.width / 2) * 0.2);
+                          plusY.set((e.clientY - rect.top - rect.height / 2) * 0.2);
+                        }}
+                        onMouseLeave={() => {
+                          plusX.set(0);
+                          plusY.set(0);
+                        }}
+                        style={{ x: plusSpringX, y: plusSpringY }}
+                        className="outline-none select-none touch-manipulation z-10 p-2 relative group"
+                      >
+                        <AnimatePresence>
+                          {!isMenuOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.8 }}
+                              className="absolute inset-0 -m-1"
+                            >
+                              <motion.div
+                                className={`absolute inset-0 rounded-full opacity-60`}
+                                style={{
+                                  background: `conic-gradient(from 0deg, ${isPlanMode? '#10b981' : '#3b82f6'}00, ${isPlanMode? '#10b981' : '#3b82f6'}80, ${isPlanMode? '#10b981' : '#3b82f6'}00)`,
+                                  filter: 'blur(8px)',
+                                }}
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                              />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        <AnimatePresence>
+                          {!isMenuOpen && (
+                            <motion.div
+                              initial={{ scale: 1, opacity: 0 }}
+                              animate={{ 
+                                scale: [1, 1.10, 1],
+                                opacity: [0.5, 0.2, 0.5]
+                              }}
+                              exit={{ opacity: 0 }}
+                              transition={{ 
+                                duration: 2.5, 
+                                repeat: Infinity,
+                                ease: "easeInOut" 
+                              }}
+                              className={`absolute inset-0 rounded-full ${activeBgClass}`}
+                            />
+                          )}
+                        </AnimatePresence>
+
+                        <motion.div
+                          animate={{
+                            rotate: isMenuOpen? 135 : 0,
+                            borderRadius: isMenuOpen? "16px" : "50%",
+                            scale: isMenuOpen? 0.9 : 1
+                          }}
+                          whileHover={{ scale: isMenuOpen? 0.9 : 1.08 }}
+                          whileTap={{ scale: 0.82 }}
+                          transition={SPRING_BOUNCY}
+                          className={`w-14 h-14 flex items-center justify-center text-white relative overflow-hidden transition-colors duration-500 ${
+                            isMenuOpen
+                            ? "bg-zinc-900 dark:bg-zinc-800"
+                              : activeBgClass
+                          }`}
+                        >
+                     
+                          
+                          <Plus className="w-6 h-6 relative z-10" strokeWidth={3.5} />
+                        </motion.div>
+                      </motion.button>
+                    </div>
+
+                    <div className="flex-1 grid grid-cols-2 h-full">
+                      {mainNavItems.slice(2, 4).map((item) => (
+                        <MagneticNavItem
+                          key={item.id}
+                          item={item}
+                          active={currentMainTab === item.id}
+                          onClick={() => {
+                            setCurrentMainTab(item.id);
+                            navigator.vibrate?.(10);
+                          }}
+                          activeColorClass={activeColorClass}
+                          activeBgClass={activeBgClass}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </div>
+          </LayoutGroup>
+        </MotionConfig>,
+        document.body
+      )}
 
       <style jsx global>{`
-     .scrollbar-hide::-webkit-scrollbar { display: none; }
-     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale }
-        body { overscroll-behavior-y: contain }
-
-        @keyframes scale {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.25); }
-        }
+       .scrollbar-hide::-webkit-scrollbar{display:none}
+       .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
+        html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+        body{overscroll-behavior-y:contain}
       `}</style>
-    </>
+    </div>
   );
 }
