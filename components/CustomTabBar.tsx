@@ -29,6 +29,7 @@ const tabs = [
 
 export default function CustomTabBar({ currentTab, onChangeTab, onCreateClick }: CustomTabBarProps) {
   const mode = useAppStore((s) => s.mode) || "task";
+const currentTheme = themes[mode];
   const [unreadCount] = useState(3);
   const [mounted, setMounted] = useState(false);
 
