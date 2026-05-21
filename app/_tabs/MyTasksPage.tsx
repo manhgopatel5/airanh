@@ -307,18 +307,21 @@ export default function TasksPage() {
   Task
 </button>
 
-              <button
-                onClick={() => handleModeChange("plan")}
-                className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
-                  mode === "plan"
-                   ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
-                    : "text-zinc-500 dark:text-zinc-400"
-                }`}
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                <HiCalendarDays className="w-4 h-4" />
-                Plan
-              </button>
+           <button
+  onPointerDown={() => handleModeChange("plan")}
+  className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm ${
+    mode === "plan"
+     ? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm`
+      : "text-zinc-500 dark:text-zinc-400"
+  }`}
+  style={{ 
+    WebkitTapHighlightColor: 'transparent',
+    touchAction: 'manipulation'
+  }}
+>
+  <HiCalendarDays className="w-4 h-4" />
+  Plan
+</button>
             </div>
           </div>
 
