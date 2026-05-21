@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiInbox, FiSearch, FiRefreshCw, FiX, FiNavigation, FiTarget, FiMapPin, FiShield } from "react-icons/fi";
+import { FiInbox, FiSearch, FiRefreshCw, FiX, FiNavigation, FiTarget, FiShield } from "react-icons/fi";
 import { HiBolt, HiCalendarDays, HiFire, HiSparkles, HiUsers, HiLocationMarker } from "react-icons/hi";
 import { useRouter } from "next/navigation";
 import ShareTaskModal from "@/components/ShareTaskModal";
