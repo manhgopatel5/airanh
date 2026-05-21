@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
 import { useAppStore } from "@/store/app";
 import { useState, useEffect } from "react";
 
@@ -220,7 +220,12 @@ export default function CustomTabBar({
   const [unreadCount] = useState(3);
   const [mounted, setMounted] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+const { scrollY } = useScroll();
 
+useMotionValueEvent(scrollY, "change", (latest) => {
+  setScrolled(latest > 10);
+});
   const [particles, setParticles] = useState<
     { id: number; x: number; y: number }[]
   >([]);
@@ -283,8 +288,12 @@ export default function CustomTabBar({
 
 
         <div className="relative px-5 pb-4">
-        <motion.div
-  className="relative bg-transparent"
+<motion.div
+  className="relative transition-colors duration-300"
+  animate={{
+    backgroundColor: scrolled? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0)",
+    backdropFilter: scrolled? "blur(20px)" : "blur(0px)",
+  }}
   whileHover={{ y: -3 }}
   transition={{ duration: 0.3 }}
 >
@@ -347,7 +356,7 @@ export default function CustomTabBar({
                         />
 
                         <motion.div
-                          className={`relative w-16 h-16 rounded-2xl bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center ${currentTheme.glow} ring-[3px] ring-white/70 dark:ring-zinc-900/70`}
+className={`relative w-16 h-16 rounded-2xl bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center ${currentTheme.glow}`}
                           animate={{
                             rotate: isCreateOpen
                               ? [0, 5, -5, 0]
@@ -435,7 +444,7 @@ export default function CustomTabBar({
                               scale: 1,
                               rotate: 0,
                             }}
-                            className="absolute -top-1 -right-1 min-w-[22px] h-[22px] bg-gradient-to-br from-red-500 to-red-600 rounded-full px-[6px] flex items-center justify-center shadow-lg shadow-red-500/50 ring-2 ring-white dark:ring-zinc-900"
+                            className="absolute -top-1 -right-1 min-w-[22px] h-[22px] bg-gradient-to-br from-red-500 to-red-600 rounded-full px-[6px] flex items-center justify-center shadow-lg shadow-red-500/50"
                           >
                             <motion.span
                               animate={{
