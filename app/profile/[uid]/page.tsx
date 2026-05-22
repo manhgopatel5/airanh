@@ -1,5 +1,6 @@
 "use client";
-
+import { doc, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
+import { Flag, Ban } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
@@ -801,6 +802,35 @@ if (!friendSnap.exists()) {
       setActionLoading(false);
     }
   };
+const handleBlock = async () => {
+  if (!user || !targetUser || actionLoading) return;
+  if (user.uid === targetUser.uid) {
+    toast.error("Không thể tự chặn mình");
+    return;
+  }
+
+  if (!confirm(`Chặn ${targetUser.name}? Họ sẽ không thể nhắn tin hoặc xem hồ sơ của bạn.`)) return;
+
+  setActionLoading(true);
+  try {
+    // ĐÂY LÀ CHỖ BẠN HỎI
+    await updateDoc(doc(db, "users", user.uid), {
+      "settings.blockedUsers": arrayUnion({
+        uid: targetUser.uid,
+        blockedAt: serverTimestamp() // Lưu cả thời gian chặn
+      })
+    });
+    
+    toast.success(`Đã chặn ${targetUser.name}`);
+    if ("vibrate" in navigator) navigator.vibrate(8);
+    router.back(); // Quay về sau khi chặn
+  } catch (err) {
+    console.error("Block error:", err);
+    toast.error("Chặn thất bại");
+  } finally {
+    setActionLoading(false);
+  }
+};
 const handleMessage = async () => {
   if (!user || !targetUser || actionLoading) return;
   if (user.uid === targetUser.uid) return toast.error("Không thể tự nhắn cho mình");
@@ -1139,12 +1169,13 @@ return (
       <Share2 className="w-5 h-5 text-sky-600" />
     </button>
 
-    <button
-      onClick={() => setShowMore(!showMore)}
-      className="w-11 h-11 rounded-full bg-orange-50 flex items-center justify-center active:scale-90 transition-all"
-    >
-      <Flag className="w-5 h-5 text-orange-600" />
-    </button>
+<button
+  onClick={handleBlock} // THÊM DÒNG NÀY
+  disabled={actionLoading}
+  className="w-11 h-11 rounded-full bg-orange-50 flex items-center justify-center active:scale-90 transition-all disabled:opacity-50"
+>
+  <Flag className="w-5 h-5 text-orange-600" />
+</button>
   </div>
 )}
   </div>
