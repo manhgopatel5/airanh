@@ -310,16 +310,16 @@ export default function SettingsPage() {
             icon={Info}
             value="1.0.0 (Build 2026.04.28)"
           />
-          <SettingItem
-            label="Điều khoản dịch vụ"
-            icon={Shield}
-            onClick={() => window.open("https://air.vn/terms", "_blank")}
-          />
-          <SettingItem
-            label="Chính sách bảo mật"
-            icon={Lock}
-            onClick={() => window.open("https://air.vn/privacy", "_blank")}
-          />
+        <SettingItem
+    label="Điều khoản dịch vụ"
+    icon={Shield}
+    onClick={() => router.push("/terms")} // Sửa dòng này
+  />
+  <SettingItem
+    label="Chính sách bảo mật"
+    icon={Lock}
+    onClick={() => router.push("/privacy")} // Sửa dòng này
+  />
           <SettingItem
             label="Liên hệ: manhgopatel5@gmail.com"
             icon={Mail}
