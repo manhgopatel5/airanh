@@ -16,7 +16,8 @@ interface CustomTabBarProps {
   currentTab: MainTab;
   onChangeTab: (tab: MainTab) => void;
   onCreateClick: () => void;
-  unreadCount?: number; // thêm dòng này
+  unreadCount?: number;
+  isMenuOpen: boolean; // thêm
 }
 
 const IconHome = ({ active }: { active: boolean }) => (
@@ -216,12 +217,13 @@ export default function CustomTabBar({
   onChangeTab,
   onCreateClick,
   unreadCount = 0,
+  isMenuOpen, // thêm
 }: CustomTabBarProps) {
   const mode = useAppStore((s) => s.mode) || "task";
 
   
   const [mounted, setMounted] = useState(false);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+
 
   const [particles, setParticles] = useState<
     { id: number; x: number; y: number }[]
@@ -249,27 +251,15 @@ export default function CustomTabBar({
   const currentTheme = themes[mode];
 
   const handleTabClick = (key: string) => {
-    if (key === "create") {
-      haptics.heavy();
-
-      setIsCreateOpen(!isCreateOpen);
-
-      const newParticles = Array.from({ length: 8 }, (_, i) => ({
-        id: Date.now() + i,
-        x: Math.cos((i / 8) * Math.PI * 2) * 40,
-        y: Math.sin((i / 8) * Math.PI * 2) * 40,
-      }));
-
-      setParticles(newParticles);
-
-      setTimeout(() => setParticles([]), 600);
-
-      onCreateClick();
-    } else {
-      haptics.medium();
-      onChangeTab(key as MainTab);
-    }
-  };
+  if (key === "create") {
+    haptics.heavy();
+    // Xóa setIsCreateOpen và particles cũ, để parent control
+    onCreateClick();
+  } else {
+    haptics.medium();
+    onChangeTab(key as MainTab);
+  }
+};
 
   return (
     <motion.div
@@ -289,7 +279,7 @@ export default function CustomTabBar({
 
 
 
-<div className="relative flex items-center justify-between h-20 px-5 pb-safe">
+<div className="relative flex items-center justify-between h-14 px-5 pb-safe">
               {tabs.map((tab) => {
                 const isActive = currentTab === tab.key;
                 const isCreate = tab.key === "create";
@@ -332,17 +322,15 @@ export default function CustomTabBar({
                       >
                     
 
-                        <motion.div
-className={`relative w-16 h-16 rounded-2xl bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center`}
-                          animate={{
-                            rotate: isCreateOpen
-                              ? [0, 5, -5, 0]
-                              : 0,
-                          }}
-                          transition={{ duration: 0.5 }}
-                        >
-                          <IconCreate isOpen={isCreateOpen} />
-                        </motion.div>
+              <motion.div
+  className={`relative w-16 h-16 rounded-2xl bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center`}
+  animate={{
+    rotate: isMenuOpen ? 45 : 0, // dùng isMenuOpen
+  }}
+  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+>
+  <IconCreate isOpen={isMenuOpen} />
+</motion.div>
                       </motion.button>
                     </div>
                   );
