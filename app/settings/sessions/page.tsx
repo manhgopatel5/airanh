@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { doc, onSnapshot, arrayRemove, updateDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { FiLoader, FiArrowLeft } from "react-icons/fi";
 import { Smartphone, Monitor, Laptop, Trash2, MapPin, Shield, LogOut } from "lucide-react";
