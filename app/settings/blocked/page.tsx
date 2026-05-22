@@ -15,7 +15,7 @@ import {
 import { getFirebaseDB } from "@/lib/firebase";
 import {
   ChevronLeft,
-  UserX,
+  
   Search,
   Loader2,
   Shield,
