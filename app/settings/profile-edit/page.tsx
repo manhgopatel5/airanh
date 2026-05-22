@@ -92,9 +92,9 @@ export default function ProfileEditPage() {
   useEffect(() => {
     if (showAddressSheet && provinces.length === 0) {
       fetch("/api/location/province")
-       .then((res) => res.json())
-       .then(setProvinces)
-       .catch(() => toast.error("Không tải được tỉnh/thành"));
+      .then((res) => res.json())
+      .then(setProvinces)
+      .catch(() => toast.error("Không tải được tỉnh/thành"));
     }
   }, [showAddressSheet, provinces.length]);
 
@@ -107,15 +107,15 @@ export default function ProfileEditPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ provinceId: selectedProvince }),
       })
-       .then((res) => res.json())
-       .then((data) => {
+      .then((res) => res.json())
+      .then((data) => {
           setDistricts(data);
           setSelectedDistrict(0);
           setWards([]);
           setSelectedWard("");
         })
-       .catch(() => toast.error("Không tải được quận/huyện"))
-       .finally(() => setLoadingAddress(false));
+      .catch(() => toast.error("Không tải được quận/huyện"))
+      .finally(() => setLoadingAddress(false));
     }
   }, [selectedProvince]);
 
@@ -128,13 +128,13 @@ export default function ProfileEditPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ districtId: selectedDistrict }),
       })
-       .then((res) => res.json())
-       .then((data) => {
+      .then((res) => res.json())
+      .then((data) => {
           setWards(data);
           setSelectedWard("");
         })
-       .catch(() => toast.error("Không tải được phường/xã"))
-       .finally(() => setLoadingAddress(false));
+      .catch(() => toast.error("Không tải được phường/xã"))
+      .finally(() => setLoadingAddress(false));
     }
   }, [selectedDistrict]);
 
@@ -233,89 +233,6 @@ export default function ProfileEditPage() {
 
   if (!user) return null;
 
-  const renderField = (
-    field: EditField,
-    label: string,
-    value: string,
-    icon: any,
-    iconColor: string,
-    type: "text" | "date" | "select" | "address" = "text",
-    placeholder?: string,
-    options?: { value: string; label: string }[]
-  ) => {
-    const isEditing = editingField === field;
-    const Icon = icon;
-
-    return (
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
-        <button
-          onClick={() => {
-            if (!isEditing) {
-              if (field === "address") {
-                setShowAddressSheet(true);
-              } else {
-                setEditingField(field);
-              }
-            }
-          }}
-          disabled={isEditing}
-          className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 dark:active:bg-zinc-800 transition text-left disabled:active:bg-transparent"
-        >
-          <Icon className={`w-5 h-5 ${iconColor} flex-shrink-0`} />
-          <div className="flex-1 min-w-0">
-            <div className="text-xs text-gray-500 dark:text-zinc-500 uppercase">{label}</div>
-            {isEditing? (
-              type === "select"? (
-                <select
-                  value={field === "gender"? gender : ""}
-                  onChange={(e) => setGender(e.target.value)}
-                  autoFocus
-                  className="w-full text-base font-medium bg-transparent border-0 p-0 text-gray-900 dark:text-white focus:outline-none focus:ring-0"
-                >
-                  <option value="">Chọn giới tính</option>
-                  {options?.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              ) : type === "date"? (
-                <input
-                  type="date"
-                  value={field === "dob"? dob : ""}
-                  onChange={(e) => setDob(e.target.value)}
-                  autoFocus
-                  className="w-full text-base font-medium bg-transparent border-0 p-0 text-gray-900 dark:text-white focus:outline-none focus:ring-0"
-                />
-              ) : (
-                <input
-                  value={field === "name"? name : ""}
-                  onChange={(e) => setName(e.target.value)}
-                  onBlur={() => setTouched(true)}
-                  placeholder={placeholder}
-                  maxLength={30}
-                  autoFocus
-                  className="w-full text-base font-medium bg-transparent border-0 p-0 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-0"
-                />
-              )
-            ) : (
-              <div className="text-base font-medium text-gray-900 dark:text-white truncate">
-                {value || "Chưa cập nhật"}
-              </div>
-            )}
-          </div>
-          {!isEditing && <ChevronRight className="w-4 h-4 text-gray-300 dark:text-zinc-600 flex-shrink-0" />}
-        </button>
-        {isEditing && field === "name" && (
-          <div className="px-4 flex items-center justify-between pb-2">
-            <p className="text-xs text-red-500 h-4">{nameError}</p>
-            <p className="text-xs text-gray-400 dark:text-zinc-600">{name.length}/30</p>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-white dark:bg-black font-sans flex flex-col">
       <Toaster richColors position="top-center" />
@@ -332,10 +249,42 @@ export default function ProfileEditPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 px-4 mt-6 space-y-3 pb-6">
-        {renderField("name", "TÊN HIỂN THỊ", currentData.name, User2, "text-blue-500", "text", "Nhập tên của bạn")}
+      <div className="flex-1 px-4 mt-6 pb-6">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-zinc-800">
+          {/* TÊN HIỂN THỊ */}
+          <button
+            onClick={() => setEditingField("name")}
+            className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 dark:active:bg-zinc-800 transition text-left"
+          >
+            <User2 className="w-5 h-5 text-blue-500 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-gray-500 dark:text-zinc-500 uppercase">TÊN HIỂN THỊ</div>
+              {editingField === "name"? (
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onBlur={() => setTouched(true)}
+                  placeholder="Nhập tên của bạn"
+                  maxLength={30}
+                  autoFocus
+                  className="w-full text-base font-medium bg-transparent border-0 p-0 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-0"
+                />
+              ) : (
+                <div className="text-base font-medium text-gray-900 dark:text-white truncate">
+                  {currentData.name || "Chưa cập nhật"}
+                </div>
+              )}
+            </div>
+            {editingField!== "name" && <ChevronRight className="w-4 h-4 text-gray-300 dark:text-zinc-600 flex-shrink-0" />}
+          </button>
+          {editingField === "name" && nameError && (
+            <div className="px-4 pb-2 -mt-1 flex items-center justify-between">
+              <p className="text-xs text-red-500">{nameError}</p>
+              <p className="text-xs text-gray-400 dark:text-zinc-600">{name.length}/30</p>
+            </div>
+          )}
 
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
+          {/* EMAIL */}
           <div className="flex items-center gap-3 px-4 py-3.5">
             <Mail className="w-5 h-5 text-sky-500 flex-shrink-0" />
             <div className="flex-1 min-w-0">
@@ -345,9 +294,8 @@ export default function ProfileEditPage() {
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
+          {/* SĐT */}
           <div className="flex items-center gap-3 px-4 py-3.5">
             <Phone className="w-5 h-5 text-emerald-500 flex-shrink-0" />
             <div className="flex-1 min-w-0">
@@ -357,9 +305,8 @@ export default function ProfileEditPage() {
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
+          {/* ID */}
           <div className="flex items-center gap-3 px-4 py-3.5">
             <AtSign className="w-5 h-5 text-purple-500 flex-shrink-0" />
             <div className="flex-1 min-w-0">
@@ -369,30 +316,76 @@ export default function ProfileEditPage() {
               </div>
             </div>
           </div>
-        </div>
 
-        {renderField("dob", "Ngày sinh", currentData.dob? new Date(currentData.dob).toLocaleDateString("vi-VN") : "", Calendar, "text-orange-500", "date")}
-
-        {renderField("gender", "Giới tính", currentData.gender === "male"? "Nam" : currentData.gender === "female"? "Nữ" : currentData.gender === "other"? "Khác" : "", User2, "text-pink-500", "select", undefined, [
-          { value: "male", label: "Nam" },
-          { value: "female", label: "Nữ" },
-          { value: "other", label: "Khác" }
-        ])}
-
-        {/* ĐỊA CHỈ - Mở bottom sheet */}
-        <button
-          onClick={() => setShowAddressSheet(true)}
-          className="w-full bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 dark:active:bg-zinc-800 transition text-left"
-        >
-          <MapPin className="w-5 h-5 text-red-500 flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <div className="text-xs text-gray-500 dark:text-zinc-500 uppercase">Địa chỉ</div>
-            <div className="text-base font-medium text-gray-900 dark:text-white truncate">
-              {currentData.address || "Chưa cập nhật"}
+          {/* NGÀY SINH */}
+          <button
+            onClick={() => setEditingField("dob")}
+            className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 dark:active:bg-zinc-800 transition text-left"
+          >
+            <Calendar className="w-5 h-5 text-orange-500 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-gray-500 dark:text-zinc-500 uppercase">NGÀY SINH</div>
+              {editingField === "dob"? (
+                <input
+                  type="date"
+                  value={dob}
+                  onChange={(e) => setDob(e.target.value)}
+                  autoFocus
+                  className="w-full text-base font-medium bg-transparent border-0 p-0 text-gray-900 dark:text-white focus:outline-none focus:ring-0"
+                />
+              ) : (
+                <div className="text-base font-medium text-gray-900 dark:text-white">
+                  {currentData.dob? new Date(currentData.dob).toLocaleDateString("vi-VN") : "Chưa cập nhật"}
+                </div>
+              )}
             </div>
-          </div>
-          <ChevronRight className="w-4 h-4 text-gray-300 dark:text-zinc-600 flex-shrink-0" />
-        </button>
+            {editingField!== "dob" && <ChevronRight className="w-4 h-4 text-gray-300 dark:text-zinc-600 flex-shrink-0" />}
+          </button>
+
+          {/* GIỚI TÍNH */}
+          <button
+            onClick={() => setEditingField("gender")}
+            className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 dark:active:bg-zinc-800 transition text-left"
+          >
+            <User2 className="w-5 h-5 text-pink-500 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-gray-500 dark:text-zinc-500 uppercase">GIỚI TÍNH</div>
+              {editingField === "gender"? (
+                <select
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value)}
+                  autoFocus
+                  className="w-full text-base font-medium bg-transparent border-0 p-0 text-gray-900 dark:text-white focus:outline-none focus:ring-0"
+                >
+                  <option value="">Chọn giới tính</option>
+                  <option value="male">Nam</option>
+                  <option value="female">Nữ</option>
+                  <option value="other">Khác</option>
+                </select>
+              ) : (
+                <div className="text-base font-medium text-gray-900 dark:text-white">
+                  {currentData.gender === "male"? "Nam" : currentData.gender === "female"? "Nữ" : currentData.gender === "other"? "Khác" : "Chưa cập nhật"}
+                </div>
+              )}
+            </div>
+            {editingField!== "gender" && <ChevronRight className="w-4 h-4 text-gray-300 dark:text-zinc-600 flex-shrink-0" />}
+          </button>
+
+          {/* ĐỊA CHỈ */}
+          <button
+            onClick={() => setShowAddressSheet(true)}
+            className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 dark:active:bg-zinc-800 transition text-left"
+          >
+            <MapPin className="w-5 h-5 text-red-500 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-gray-500 dark:text-zinc-500 uppercase">ĐỊA CHỈ</div>
+              <div className="text-base font-medium text-gray-900 dark:text-white truncate">
+                {currentData.address || "Chưa cập nhật"}
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-gray-300 dark:text-zinc-600 flex-shrink-0" />
+          </button>
+        </div>
       </div>
 
       {/* Nút Lưu thay đổi */}
@@ -434,7 +427,6 @@ export default function ProfileEditPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {/* Tỉnh/Thành */}
               <div>
                 <label className="block text-xs font-semibold text-gray-500 dark:text-zinc-500 mb-2 uppercase">
                   Tỉnh/Thành phố
@@ -453,7 +445,6 @@ export default function ProfileEditPage() {
                 </select>
               </div>
 
-              {/* Quận/Huyện */}
               {selectedProvince > 0 && (
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-zinc-500 mb-2 uppercase">
@@ -475,7 +466,6 @@ export default function ProfileEditPage() {
                 </div>
               )}
 
-              {/* Phường/Xã */}
               {selectedDistrict > 0 && (
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-zinc-500 mb-2 uppercase">
@@ -497,7 +487,6 @@ export default function ProfileEditPage() {
                 </div>
               )}
 
-              {/* Số nhà, tên đường */}
               {selectedWard && (
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-zinc-500 mb-2 uppercase">
