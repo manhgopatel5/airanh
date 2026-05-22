@@ -49,7 +49,7 @@ export default function BlockedPage() {
   const [unblocking, setUnblocking] = useState<string | null>(null);
   const [confirmUser, setConfirmUser] = useState<BlockedUser | null>(null);
 
-  // Load blocked users
+  // Load blocked users - giữ nguyên logic
   useEffect(() => {
     if (!user?.uid) {
       setLoading(false);
@@ -173,36 +173,38 @@ export default function BlockedPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black pb-24 font-sans">
+    <div className="min-h-screen bg-white">
       <Toaster richColors position="top-center" />
 
-      {/* Header */}
-      <div className="px-6 pt-12 pb-6 flex items-center gap-3 sticky top-0 bg-white/80 dark:bg-black/80 backdrop-blur-xl z-10 border-b border-gray-100 dark:border-zinc-900">
-        <button
-          onClick={() => router.back()}
-          className="p-2 -ml-2 active:scale-90 transition rounded-full hover:bg-gray-100 dark:hover:bg-zinc-900"
-        >
-          <ChevronLeft className="w-6 h-6 text-gray-900 dark:text-white" />
-        </button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+      {/* Header giống trang Thông tin cá nhân */}
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-100">
+        <div className="relative flex items-center justify-center h-14 px-4">
+          <button
+            onClick={() => router.back()}
+            className="absolute left-4 p-1 active:opacity-60 transition"
+          >
+            <ChevronLeft className="w-6 h-6 text-[#0F172A]" />
+          </button>
+          <h1 className="text-[17px] font-bold text-[#0F172A]">
             Đã chặn
           </h1>
-          <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
+        </div>
+        <div className="text-center pb-3">
+          <p className="text-[13px] text-[#64748B]">
             {blocked.length} người dùng
           </p>
         </div>
       </div>
 
-      <div className="px-6 mt-4">
-        {/* Search */}
-        <div className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-100 dark:bg-zinc-900 mb-4">
-          <Search className="w-5 h-5 text-gray-400 flex-shrink-0" />
+      <div className="px-4 pt-4">
+        {/* Search bar giống ảnh 1 */}
+        <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-[#F8FAFC] mb-4">
+          <Search className="w-5 h-5 text-[#94A3B8] flex-shrink-0" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Tìm theo tên, ID..."
-            className="flex-1 bg-transparent outline-none text-gray-900 dark:text-white placeholder:text-gray-400 text-[15px]"
+            className="flex-1 bg-transparent outline-none text-[#0F172A] placeholder:text-[#94A3B8] text-[15px]"
           />
           <AnimatePresence>
             {search && (
@@ -211,9 +213,9 @@ export default function BlockedPage() {
                 animate={{ scale: 1 }}
                 exit={{ scale: 0 }}
                 onClick={() => setSearch("")}
-                className="p-1"
+                className="p-0.5"
               >
-                <X className="w-4 h-4 text-gray-400" />
+                <X className="w-4 h-4 text-[#94A3B8]" />
               </motion.button>
             )}
           </AnimatePresence>
@@ -221,15 +223,17 @@ export default function BlockedPage() {
 
         {/* Loading */}
         {loading? (
-          <div className="space-y-3">
+          <div className="bg-[#F8FAFC] rounded-2xl overflow-hidden">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 p-4 rounded-2xl bg-gray-50 dark:bg-zinc-900 animate-pulse">
-                <div className="w-12 h-12 bg-gray-200 dark:bg-zinc-800 rounded-full" />
+              <div
+                key={i}
+                className="flex items-center gap-3 p-4 animate-pulse border-b border-gray-100 last:border-0"
+              >
+                <div className="w-12 h-12 bg-gray-200 rounded-full" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/3" />
-                  <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/4" />
+                  <div className="h-4 bg-gray-200 rounded w-1/3" />
+                  <div className="h-3 bg-gray-200 rounded w-1/4" />
                 </div>
-                <div className="w-20 h-9 bg-gray-200 dark:bg-zinc-800 rounded-xl" />
               </div>
             ))}
           </div>
@@ -239,49 +243,51 @@ export default function BlockedPage() {
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="w-16 h-16 bg-gray-100 dark:bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4"
+              className="w-16 h-16 bg-[#F8FAFC] rounded-full flex items-center justify-center mx-auto mb-4"
             >
               {search? (
-                <Search className="w-8 h-8 text-gray-300 dark:text-zinc-700" />
+                <Search className="w-8 h-8 text-[#CBD5E1]" />
               ) : (
-                <Shield className="w-8 h-8 text-gray-300 dark:text-zinc-700" />
+                <Shield className="w-8 h-8 text-[#CBD5E1]" />
               )}
             </motion.div>
-            <p className="text-gray-500 dark:text-zinc-400 font-medium">
+            <p className="text-[#64748B] font-medium text-[15px]">
               {search? "Không tìm thấy" : "Chưa chặn ai"}
             </p>
-            <p className="text-sm text-gray-400 dark:text-zinc-500 mt-1">
+            <p className="text-[13px] text-[#94A3B8] mt-1">
               {search? "Thử từ khóa khác" : "Người bị chặn sẽ hiện ở đây"}
             </p>
           </div>
         ) : (
-          /* List */
-          <div className="space-y-3">
+          /* List dạng card phẳng giống ảnh 1 */
+          <div className="bg-[#F8FAFC] rounded-2xl overflow-hidden">
             <AnimatePresence mode="popLayout">
-              {filtered.map((u) => (
+              {filtered.map((u, idx) => (
                 <motion.div
                   key={u.uid}
                   layout
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className={`flex items-center justify-between p-4 ${
+                    idx!== filtered.length - 1? "border-b border-gray-100" : ""
+                  }`}
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <img
                       src={u.avatar}
-                      className="w-12 h-12 rounded-full object-cover bg-gray-200 dark:bg-zinc-800 flex-shrink-0"
+                      className="w-11 h-11 rounded-full object-cover bg-[#E2E8F0] flex-shrink-0"
                       alt={u.name}
                       loading="lazy"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-gray-900 dark:text-white truncate">
+                      <p className="font-bold text-[15px] text-[#0F172A] truncate">
                         {u.name}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-zinc-400 truncate">
+                      <p className="text-[13px] text-[#64748B] truncate">
                         @{u.username || u.userId}
                       </p>
-                      <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">
+                      <p className="text-[12px] text-[#94A3B8] mt-0.5">
                         Chặn {formatDate(u.blockedAt)}
                       </p>
                     </div>
@@ -289,10 +295,10 @@ export default function BlockedPage() {
                   <button
                     onClick={() => setConfirmUser(u)}
                     disabled={unblocking === u.uid}
-                    className="px-4 py-2 rounded-xl bg-gray-200 dark:bg-zinc-800 text-sm font-semibold text-gray-900 dark:text-white active:scale-95 transition disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0 hover:bg-gray-300 dark:hover:bg-zinc-700"
+                    className="px-4 py-1.5 rounded-full bg-[#E2E8F0] text-[13px] font-semibold text-[#0F172A] active:scale-95 transition disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
                   >
                     {unblocking === u.uid? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     ) : (
                       "Bỏ chặn"
                     )}
@@ -304,29 +310,29 @@ export default function BlockedPage() {
         )}
       </div>
 
-      {/* Confirm Dialog */}
+      {/* Confirm Dialog - giữ nguyên logic, chỉnh style nhẹ */}
       <Dialog.Root open={!!confirmUser} onOpenChange={(open) =>!open && setConfirmUser(null)}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm bg-white dark:bg-zinc-900 rounded-3xl p-6 z-50 shadow-2xl">
+          <Dialog.Overlay className="fixed inset-0 bg-black/30 z-50 backdrop-blur-sm" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm bg-white rounded-3xl p-6 z-50 shadow-2xl">
             <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
                 <UserX className="w-8 h-8 text-red-500" />
               </div>
-              <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              <Dialog.Title className="text-[18px] font-bold text-[#0F172A] mb-2">
                 Bỏ chặn {confirmUser?.name}?
               </Dialog.Title>
-              <Dialog.Description className="text-sm text-gray-500 dark:text-zinc-400 mb-6">
+              <Dialog.Description className="text-[14px] text-[#64748B] mb-6 leading-relaxed">
                 Họ sẽ có thể xem hồ sơ và nhắn tin cho bạn lại.
               </Dialog.Description>
             </div>
             <div className="flex gap-3">
-              <Dialog.Close className="flex-1 h-12 rounded-2xl bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white font-semibold active:scale-95 transition-all">
+              <Dialog.Close className="flex-1 h-12 rounded-2xl bg-[#F1F5F9] text-[#0F172A] font-semibold active:scale-95 transition">
                 Hủy
               </Dialog.Close>
               <button
                 onClick={handleUnblock}
-                className="flex-1 h-12 rounded-2xl bg-red-500 text-white font-semibold active:scale-95 transition-all"
+                className="flex-1 h-12 rounded-2xl bg-red-500 text-white font-semibold active:scale-95 transition"
               >
                 Bỏ chặn
               </button>
