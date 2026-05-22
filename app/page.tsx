@@ -124,6 +124,7 @@ export default function AppContainer() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const mode = useAppStore((s) => s.mode);
+const unreadCount = useAppStore((s) => s.unreadCount); // thêm dòng này
   const [mounted, setMounted] = useState(false);
   const [currentMainTab, setCurrentMainTab] = useState<MainTab>("home");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -237,7 +238,7 @@ export default function AppContainer() {
           <CustomTabBar
             currentTab={currentMainTab}
             onChangeTab={setCurrentMainTab}
-            unreadCount={unreadMessages.length} 
+unreadCount={unreadCount}
             onCreateClick={() => {
               navigator.vibrate?.([15, 35, 15]);
               setIsMenuOpen(true);
