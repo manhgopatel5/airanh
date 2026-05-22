@@ -14,8 +14,8 @@ const QR_COLORS = [
   { name: "Xanh lá", fg: "#059669", bg: "#FFFFFF" },
   { name: "Tím", fg: "#7C3AED", bg: "#FFFFFF" },
   { name: "Hồng", fg: "#DB2777", bg: "#FFFFFF" },
-  { name: "Trắng", fg: "#FFFFFF", bg: "#0F172A" }, // QR trắng nền tối
-];
+  { name: "Trắng", fg: "#FFFFFF", bg: "#0F172A" },
+] as const;
 
 export default function QRPage() {
   const router = useRouter();
@@ -29,7 +29,7 @@ export default function QRPage() {
   const qrValue = `https://air.vn/u/${user.uid}`;
   const displayName = user.displayName || "Người dùng";
   const username = user.email?.split("@")[0] || user.uid.slice(0, 8);
-  const currentColor = QR_COLORS[colorIndex];
+  const currentColor = QR_COLORS[colorIndex]?? QR_COLORS[0]; // fix ở đây
 
   const handleCopyLink = async () => {
     try {
@@ -55,10 +55,10 @@ export default function QRPage() {
     img.onload = () => {
       canvas.width = 1024;
       canvas.height = 1024;
-      ctx!.fillStyle = currentColor.bg;
+      ctx!.fillStyle = currentColor.bg; // giờ TS biết chắc có giá trị
       ctx!.fillRect(0, 0, 1024, 1024);
-      ctx!.drawImage(img, 0, 0, 1024, 1024);
-      
+      ctx!.drawImage(img, 0, 0, 1024);
+
       const url = canvas.toDataURL("image/png");
       const a = document.createElement("a");
       a.href = url;
@@ -87,7 +87,6 @@ export default function QRPage() {
     <div className="min-h-screen bg-white">
       <Toaster richColors position="top-center" />
 
-      {/* Header */}
       <div className="sticky top-0 z-10 bg-white border-b border-gray-100">
         <div className="relative flex items-center justify-center h-14 px-4">
           <button
@@ -109,7 +108,6 @@ export default function QRPage() {
       </div>
 
       <div className="px-6 pt-8 pb-24">
-        {/* Card QR */}
         <div className="bg-[#F8FAFC] rounded-3xl p-8">
           <div className="flex flex-col items-center mb-8">
             <img
@@ -125,7 +123,7 @@ export default function QRPage() {
             </p>
           </div>
 
-          <div 
+          <div
             className="rounded-2xl p-6 mb-6 shadow-sm transition-colors"
             style={{ backgroundColor: currentColor.bg }}
           >
@@ -145,7 +143,6 @@ export default function QRPage() {
           </p>
         </div>
 
-        {/* Actions */}
         <div className="mt-6 space-y-3">
           <button
             onClick={handleShare}
@@ -167,7 +164,7 @@ export default function QRPage() {
             onClick={handleCopyLink}
             className="w-full h-12 rounded-2xl bg-[#F1F5F9] text-[#0F172A] font-semibold active:scale-95 transition flex items-center justify-center gap-2"
           >
-            {copied ? (
+            {copied? (
               <>
                 <Check className="w-5 h-5 text-green-500" />
                 Đã sao chép
@@ -182,7 +179,6 @@ export default function QRPage() {
         </div>
       </div>
 
-      {/* Color Picker Dialog */}
       <Dialog.Root open={showColorPicker} onOpenChange={setShowColorPicker}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/30 z-50 backdrop-blur-sm" />
@@ -202,7 +198,7 @@ export default function QRPage() {
                   }}
                   className={`p-4 rounded-2xl border-2 transition ${
                     idx === colorIndex
-                      ? "border-[#0F172A]"
+                     ? "border-[#0F172A]"
                       : "border-gray-200"
                   }`}
                 >
