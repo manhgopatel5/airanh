@@ -129,7 +129,7 @@ const [_requestId, setRequestId] = useState<string | null>(null);
 const [friendCount, setFriendCount] = useState(0); // CHUYỂN LÊN ĐÂY
   const [showTrustInfo, setShowTrustInfo] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [showMore, setShowMore] = useState(false);
+
   const touchStartX = useRef(0);
 const touchEndX = useRef(0);
   const [showAchievementInfo, setShowAchievementInfo] = useState(false);
