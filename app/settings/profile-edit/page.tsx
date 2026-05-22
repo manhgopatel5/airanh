@@ -6,13 +6,17 @@ import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
-import { FiLoader, FiArrowLeft } from "react-icons/fi";
+import { FiLoader, FiArrowLeft, FiX } from "react-icons/fi";
 import { Mail, Phone, AtSign, Calendar, User2, MapPin, ChevronRight } from "lucide-react";
 import { toast, Toaster } from "sonner";
 
 const BAD_WORDS = ["admin", "mod", "support", "đm", "vcl", "dm"];
 
 type EditField = "name" | "dob" | "gender" | "address" | null;
+
+type Province = { id: number; name: string; code: string };
+type District = { id: number; name: string; code: string };
+type Ward = { id: string; name: string };
 
 export default function ProfileEditPage() {
   const { user } = useAuth();
@@ -27,15 +31,29 @@ export default function ProfileEditPage() {
     userId: "",
     dob: "",
     gender: "",
-    address: ""
+    address: "",
+    provinceId: 0,
+    districtId: 0,
+    wardCode: "",
+    detailAddress: "",
   });
-  
+
   const [editingField, setEditingField] = useState<EditField>(null);
   const [name, setName] = useState("");
   const [dob, setDob] = useState("");
   const [gender, setGender] = useState("");
-  const [address, setAddress] = useState("");
-  
+
+  // Address
+  const [showAddressSheet, setShowAddressSheet] = useState(false);
+  const [provinces, setProvinces] = useState<Province[]>([]);
+  const [districts, setDistricts] = useState<District[]>([]);
+  const [wards, setWards] = useState<Ward[]>([]);
+  const [selectedProvince, setSelectedProvince] = useState(0);
+  const [selectedDistrict, setSelectedDistrict] = useState(0);
+  const [selectedWard, setSelectedWard] = useState("");
+  const [detailAddress, setDetailAddress] = useState("");
+  const [loadingAddress, setLoadingAddress] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState(false);
 
@@ -51,17 +69,74 @@ export default function ProfileEditPage() {
           userId: data.userId || "",
           dob: data.dob || "",
           gender: data.gender || "",
-          address: data.address || ""
+          address: data.address || "",
+          provinceId: data.provinceId || 0,
+          districtId: data.districtId || 0,
+          wardCode: data.wardCode || "",
+          detailAddress: data.detailAddress || "",
         };
         setCurrentData(newData);
         setName(newData.name);
         setDob(newData.dob);
         setGender(newData.gender);
-        setAddress(newData.address);
+        setSelectedProvince(newData.provinceId);
+        setSelectedDistrict(newData.districtId);
+        setSelectedWard(newData.wardCode);
+        setDetailAddress(newData.detailAddress);
       }
     });
     return () => unsub();
   }, [user?.uid, db, user?.email]);
+
+  // Load provinces khi mở sheet
+  useEffect(() => {
+    if (showAddressSheet && provinces.length === 0) {
+      fetch("/api/location/province")
+       .then((res) => res.json())
+       .then(setProvinces)
+       .catch(() => toast.error("Không tải được tỉnh/thành"));
+    }
+  }, [showAddressSheet, provinces.length]);
+
+  // Load districts khi chọn province
+  useEffect(() => {
+    if (selectedProvince) {
+      setLoadingAddress(true);
+      fetch("/api/location/district", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provinceId: selectedProvince }),
+      })
+       .then((res) => res.json())
+       .then((data) => {
+          setDistricts(data);
+          setSelectedDistrict(0);
+          setWards([]);
+          setSelectedWard("");
+        })
+       .catch(() => toast.error("Không tải được quận/huyện"))
+       .finally(() => setLoadingAddress(false));
+    }
+  }, [selectedProvince]);
+
+  // Load wards khi chọn district
+  useEffect(() => {
+    if (selectedDistrict) {
+      setLoadingAddress(true);
+      fetch("/api/location/ward", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ districtId: selectedDistrict }),
+      })
+       .then((res) => res.json())
+       .then((data) => {
+          setWards(data);
+          setSelectedWard("");
+        })
+       .catch(() => toast.error("Không tải được phường/xã"))
+       .finally(() => setLoadingAddress(false));
+    }
+  }, [selectedDistrict]);
 
   const validateName = useCallback((val: string): string => {
     const trimmed = val.trim();
@@ -74,17 +149,27 @@ export default function ProfileEditPage() {
     return "";
   }, []);
 
+  const getFullAddress = () => {
+    const p = provinces.find((x) => x.id === selectedProvince)?.name || "";
+    const d = districts.find((x) => x.id === selectedDistrict)?.name || "";
+    const w = wards.find((x) => x.id === selectedWard)?.name || "";
+    return [detailAddress, w, d, p].filter(Boolean).join(", ");
+  };
+
   const hasChanges = () => {
     return (
-      name.trim() !== currentData.name ||
-      dob !== currentData.dob ||
-      gender !== currentData.gender ||
-      address.trim() !== currentData.address
+      name.trim()!== currentData.name ||
+      dob!== currentData.dob ||
+      gender!== currentData.gender ||
+      getFullAddress()!== currentData.address ||
+      selectedProvince!== currentData.provinceId ||
+      selectedDistrict!== currentData.districtId ||
+      selectedWard!== currentData.wardCode ||
+      detailAddress!== currentData.detailAddress
     );
   };
 
   const save = useCallback(async () => {
-    // Chỉ validate tên khi đang edit tên
     if (editingField === "name") {
       const err = validateName(name.trim());
       if (err) {
@@ -99,7 +184,7 @@ export default function ProfileEditPage() {
       return;
     }
 
-    if (!user || !auth.currentUser) {
+    if (!user ||!auth.currentUser) {
       toast.error("Bạn chưa đăng nhập");
       return;
     }
@@ -111,21 +196,30 @@ export default function ProfileEditPage() {
         updatedAt: serverTimestamp(),
       };
 
-      if (name.trim() !== currentData.name) {
+      if (name.trim()!== currentData.name) {
         const trimmedName = name.trim();
         updateData.name = trimmedName;
         updateData.searchKeywords = trimmedName.toLowerCase().split(" ");
         await updateProfile(auth.currentUser, { displayName: trimmedName });
       }
-      if (dob !== currentData.dob) updateData.dob = dob;
-      if (gender !== currentData.gender) updateData.gender = gender;
-      if (address.trim() !== currentData.address) updateData.address = address.trim();
+      if (dob!== currentData.dob) updateData.dob = dob;
+      if (gender!== currentData.gender) updateData.gender = gender;
+
+      const fullAddress = getFullAddress();
+      if (fullAddress!== currentData.address) {
+        updateData.address = fullAddress;
+        updateData.provinceId = selectedProvince;
+        updateData.districtId = selectedDistrict;
+        updateData.wardCode = selectedWard;
+        updateData.detailAddress = detailAddress;
+      }
 
       await setDoc(doc(db, "users", user.uid), updateData, { merge: true });
 
       if ("vibrate" in navigator) navigator.vibrate(8);
       toast.success("Đã cập nhật thông tin");
       setEditingField(null);
+      setShowAddressSheet(false);
       setTouched(false);
     } catch (err) {
       toast.error("Có lỗi xảy ra, thử lại sau");
@@ -133,9 +227,9 @@ export default function ProfileEditPage() {
     } finally {
       setLoading(false);
     }
-  }, [name, dob, gender, address, currentData, user, validateName, auth, db, editingField]);
+  }, [name, dob, gender, selectedProvince, selectedDistrict, selectedWard, detailAddress, currentData, user, validateName, auth, db, editingField, provinces, districts, wards]);
 
-  const nameError = editingField === "name" && touched ? validateName(name) : "";
+  const nameError = editingField === "name" && touched? validateName(name) : "";
 
   if (!user) return null;
 
@@ -145,7 +239,7 @@ export default function ProfileEditPage() {
     value: string,
     icon: any,
     iconColor: string,
-    type: "text" | "date" | "select" = "text",
+    type: "text" | "date" | "select" | "address" = "text",
     placeholder?: string,
     options?: { value: string; label: string }[]
   ) => {
@@ -155,22 +249,27 @@ export default function ProfileEditPage() {
     return (
       <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
         <button
-          onClick={() => !isEditing && setEditingField(field)}
+          onClick={() => {
+            if (!isEditing) {
+              if (field === "address") {
+                setShowAddressSheet(true);
+              } else {
+                setEditingField(field);
+              }
+            }
+          }}
           disabled={isEditing}
           className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 dark:active:bg-zinc-800 transition text-left disabled:active:bg-transparent"
         >
           <Icon className={`w-5 h-5 ${iconColor} flex-shrink-0`} />
           <div className="flex-1 min-w-0">
             <div className="text-xs text-gray-500 dark:text-zinc-500 uppercase">{label}</div>
-            {isEditing ? (
-              type === "select" ? (
+            {isEditing? (
+              type === "select"? (
                 <select
-                  value={field === "gender" ? gender : ""}
+                  value={field === "gender"? gender : ""}
                   onChange={(e) => setGender(e.target.value)}
                   autoFocus
-                  onBlur={() => {
-                    if (!gender && currentData.gender) setGender(currentData.gender);
-                  }}
                   className="w-full text-base font-medium bg-transparent border-0 p-0 text-gray-900 dark:text-white focus:outline-none focus:ring-0"
                 >
                   <option value="">Chọn giới tính</option>
@@ -180,24 +279,21 @@ export default function ProfileEditPage() {
                     </option>
                   ))}
                 </select>
-              ) : type === "date" ? (
+              ) : type === "date"? (
                 <input
                   type="date"
-                  value={field === "dob" ? dob : ""}
+                  value={field === "dob"? dob : ""}
                   onChange={(e) => setDob(e.target.value)}
                   autoFocus
                   className="w-full text-base font-medium bg-transparent border-0 p-0 text-gray-900 dark:text-white focus:outline-none focus:ring-0"
                 />
               ) : (
                 <input
-                  value={field === "name" ? name : field === "address" ? address : ""}
-                  onChange={(e) => {
-                    if (field === "name") setName(e.target.value);
-                    if (field === "address") setAddress(e.target.value);
-                  }}
-                  onBlur={() => field === "name" && setTouched(true)}
+                  value={field === "name"? name : ""}
+                  onChange={(e) => setName(e.target.value)}
+                  onBlur={() => setTouched(true)}
                   placeholder={placeholder}
-                  maxLength={field === "name" ? 30 : undefined}
+                  maxLength={30}
                   autoFocus
                   className="w-full text-base font-medium bg-transparent border-0 p-0 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-0"
                 />
@@ -223,7 +319,7 @@ export default function ProfileEditPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-black font-sans flex flex-col">
       <Toaster richColors position="top-center" />
-      
+
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-900">
         <div className="flex items-center justify-between px-4 h-14">
@@ -237,18 +333,8 @@ export default function ProfileEditPage() {
 
       {/* Content */}
       <div className="flex-1 px-4 mt-6 space-y-3 pb-6">
-        {/* TÊN HIỂN THỊ */}
-        {renderField(
-          "name",
-          "TÊN HIỂN THỊ",
-          currentData.name,
-          User2,
-          "text-blue-500",
-          "text",
-          "Nhập tên của bạn"
-        )}
+        {renderField("name", "TÊN HIỂN THỊ", currentData.name, User2, "text-blue-500", "text", "Nhập tên của bạn")}
 
-        {/* EMAIL - Read Only */}
         <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
           <div className="flex items-center gap-3 px-4 py-3.5">
             <Mail className="w-5 h-5 text-sky-500 flex-shrink-0" />
@@ -261,7 +347,6 @@ export default function ProfileEditPage() {
           </div>
         </div>
 
-        {/* SĐT - Read Only */}
         <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
           <div className="flex items-center gap-3 px-4 py-3.5">
             <Phone className="w-5 h-5 text-emerald-500 flex-shrink-0" />
@@ -274,7 +359,6 @@ export default function ProfileEditPage() {
           </div>
         </div>
 
-        {/* ID - Read Only */}
         <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
           <div className="flex items-center gap-3 px-4 py-3.5">
             <AtSign className="w-5 h-5 text-purple-500 flex-shrink-0" />
@@ -287,57 +371,43 @@ export default function ProfileEditPage() {
           </div>
         </div>
 
-        {/* NGÀY SINH */}
-        {renderField(
-          "dob",
-          "Ngày sinh",
-          currentData.dob ? new Date(currentData.dob).toLocaleDateString("vi-VN") : "",
-          Calendar,
-          "text-orange-500",
-          "date"
-        )}
+        {renderField("dob", "Ngày sinh", currentData.dob? new Date(currentData.dob).toLocaleDateString("vi-VN") : "", Calendar, "text-orange-500", "date")}
 
-        {/* GIỚI TÍNH */}
-        {renderField(
-          "gender",
-          "Giới tính",
-          currentData.gender === "male" ? "Nam" : currentData.gender === "female" ? "Nữ" : currentData.gender === "other" ? "Khác" : "",
-          User2,
-          "text-pink-500",
-          "select",
-          undefined,
-          [
-            { value: "male", label: "Nam" },
-            { value: "female", label: "Nữ" },
-            { value: "other", label: "Khác" }
-          ]
-        )}
+        {renderField("gender", "Giới tính", currentData.gender === "male"? "Nam" : currentData.gender === "female"? "Nữ" : currentData.gender === "other"? "Khác" : "", User2, "text-pink-500", "select", undefined, [
+          { value: "male", label: "Nam" },
+          { value: "female", label: "Nữ" },
+          { value: "other", label: "Khác" }
+        ])}
 
-        {/* ĐỊA CHỈ */}
-        {renderField(
-          "address",
-          "Địa chỉ",
-          currentData.address,
-          MapPin,
-          "text-red-500",
-          "text",
-          "Nhập địa chỉ của bạn"
-        )}
+        {/* ĐỊA CHỈ - Mở bottom sheet */}
+        <button
+          onClick={() => setShowAddressSheet(true)}
+          className="w-full bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 dark:active:bg-zinc-800 transition text-left"
+        >
+          <MapPin className="w-5 h-5 text-red-500 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="text-xs text-gray-500 dark:text-zinc-500 uppercase">Địa chỉ</div>
+            <div className="text-base font-medium text-gray-900 dark:text-white truncate">
+              {currentData.address || "Chưa cập nhật"}
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-gray-300 dark:text-zinc-600 flex-shrink-0" />
+        </button>
       </div>
 
-      {/* Nút Lưu thay đổi - Sticky bottom, chỉ hiện khi có thay đổi */}
+      {/* Nút Lưu thay đổi */}
       {hasChanges() && (
         <div className="sticky bottom-0 p-4 bg-gradient-to-t from-white via-white to-transparent dark:from-black dark:via-black pt-8">
           <button
             onClick={save}
-            disabled={loading || (editingField === "name" && !!validateName(name))}
+            disabled={loading || (editingField === "name" &&!!validateName(name))}
             className={`w-full px-4 py-3.5 rounded-2xl font-semibold text-sm transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 ${
-              loading || (editingField === "name" && !!validateName(name))
-                ? "bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-600 cursor-not-allowed"
+              loading || (editingField === "name" &&!!validateName(name))
+               ? "bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-600 cursor-not-allowed"
                 : "bg-blue-500 text-white shadow-lg shadow-blue-500/30"
             }`}
           >
-            {loading ? (
+            {loading? (
               <>
                 <FiLoader className="animate-spin" size={18} />
                 Đang lưu...
@@ -346,6 +416,119 @@ export default function ProfileEditPage() {
               "Lưu thay đổi"
             )}
           </button>
+        </div>
+      )}
+
+      {/* Bottom Sheet Chọn Địa Chỉ */}
+      {showAddressSheet && (
+        <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowAddressSheet(false)}>
+          <div
+            className="absolute bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 rounded-t-3xl max-h-[80vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100 dark:border-zinc-800">
+              <h2 className="text-base font-bold text-gray-900 dark:text-white">Chọn địa chỉ</h2>
+              <button onClick={() => setShowAddressSheet(false)} className="p-2 -mr-2 active:opacity-50">
+                <FiX className="w-5 h-5 text-gray-900 dark:text-white" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {/* Tỉnh/Thành */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-zinc-500 mb-2 uppercase">
+                  Tỉnh/Thành phố
+                </label>
+                <select
+                  value={selectedProvince}
+                  onChange={(e) => setSelectedProvince(Number(e.target.value))}
+                  className="w-full px-4 py-3 rounded-2xl border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                >
+                  <option value={0}>Chọn tỉnh/thành</option>
+                  {provinces.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Quận/Huyện */}
+              {selectedProvince > 0 && (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-zinc-500 mb-2 uppercase">
+                    Quận/Huyện
+                  </label>
+                  <select
+                    value={selectedDistrict}
+                    onChange={(e) => setSelectedDistrict(Number(e.target.value))}
+                    disabled={loadingAddress}
+                    className="w-full px-4 py-3 rounded-2xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
+                  >
+                    <option value={0}>Chọn quận/huyện</option>
+                    {districts.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Phường/Xã */}
+              {selectedDistrict > 0 && (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-zinc-500 mb-2 uppercase">
+                    Phường/Xã
+                  </label>
+                  <select
+                    value={selectedWard}
+                    onChange={(e) => setSelectedWard(e.target.value)}
+                    disabled={loadingAddress}
+                    className="w-full px-4 py-3 rounded-2xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
+                  >
+                    <option value="">Chọn phường/xã</option>
+                    {wards.map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Số nhà, tên đường */}
+              {selectedWard && (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-zinc-500 mb-2 uppercase">
+                    Số nhà, tên đường
+                  </label>
+                  <input
+                    value={detailAddress}
+                    onChange={(e) => setDetailAddress(e.target.value)}
+                    placeholder="VD: 123 Nguyễn Văn Linh"
+                    className="w-full px-4 py-3 rounded-2xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-gray-100 dark:border-zinc-800">
+              <button
+                onClick={() => {
+                  if (!selectedProvince ||!selectedDistrict ||!selectedWard) {
+                    toast.error("Vui lòng chọn đầy đủ địa chỉ");
+                    return;
+                  }
+                  setShowAddressSheet(false);
+                }}
+                disabled={!selectedProvince ||!selectedDistrict ||!selectedWard}
+                className="w-full py-3 rounded-2xl font-semibold text-sm bg-blue-500 text-white disabled:bg-gray-100 dark:disabled:bg-zinc-800 disabled:text-gray-400 active:scale-[0.98] transition"
+              >
+                Xác nhận
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
