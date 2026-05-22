@@ -617,57 +617,7 @@ function ToggleItem({
   );
 }
 
-function TimeRangeItem({
-  label,
-  icon: Icon,
-  enabled,
-  from,
-  to,
-  onChange,
-}: {
-  label: string;
-  icon: React.ElementType;
-  enabled: boolean;
-  from: string;
-  to: string;
-  onChange: (v: { enabled: boolean; from: string; to: string }) => void;
-}) {
-  return (
-    <div className="w-full border-b border-gray-100 last:border-0">
-      <div className="flex items-center gap-3 px-4 py-3.5">
-        <div className="w-9 h-9 rounded-xl bg-[#F1F5F9] flex items-center justify-center flex-shrink-0">
-          <Icon className="w-5 h-5 text-[#0F172A]" />
-        </div>
-        <div className="flex-1 text-left min-w-0">
-          <div className="text- font-semibold text-[#0F172A]">{label}</div>
-        </div>
-        <button
-          onClick={() => onChange({...{ enabled, from, to }, enabled:!enabled })}
-          className={`w-11 h-6 rounded-full transition flex-shrink-0 ${enabled? "bg-green-500" : "bg-gray-300"}`}
-        >
-          <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform ${enabled? "translate-x-5" : "translate-x-0.5"}`} />
-        </button>
-      </div>
-      {enabled && (
-        <div className="px-4 pb-3 flex items-center gap-3 bg-white">
-          <input
-            type="time"
-            value={from}
-            onChange={(e) => onChange({ enabled, from: e.target.value, to })}
-            className="flex-1 px-3 py-2 rounded-xl bg-[#F8FAFC] text- font-medium text-[#0F172A] outline-none"
-          />
-          <span className="text-[#64748B] text-">đến</span>
-          <input
-            type="time"
-            value={to}
-            onChange={(e) => onChange({ enabled, from, to: e.target.value })}
-            className="flex-1 px-3 py-2 rounded-xl bg-[#F8FAFC] text- font-medium text-[#0F172A] outline-none"
-          />
-        </div>
-      )}
-    </div>
-  );
-}
+
 
 function Modal({ title, desc, onClose, onConfirm, confirmText, danger }: { title: string; desc: string; onClose: () => void; onConfirm: () => void; confirmText: string; danger?: boolean }) {
   return (
