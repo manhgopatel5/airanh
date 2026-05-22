@@ -108,7 +108,8 @@ const generateSearchKeywords = (
   return Array.from(keywords).filter((k) => k.length >= 2);
 };
 
-const trackCurrentSession = async (uid: string, db: any) => {
+// Export để dùng ở SessionsPage
+export const trackCurrentSession = async (uid: string, db: any) => {
   try {
     const parser = new UAParser();
     const result = parser.getResult();
@@ -123,7 +124,9 @@ const trackCurrentSession = async (uid: string, db: any) => {
       const res = await fetch("https://api.ipify.org?format=json");
       const data = await res.json();
       ip = data.ip || "Unknown";
-    } catch {}
+    } catch (e) {
+      console.warn("IP fetch failed:", e);
+    }
 
     let sessionId = localStorage.getItem(SESSION_KEY);
     const sessionsRef = collection(db, "sessions");
@@ -137,7 +140,12 @@ const trackCurrentSession = async (uid: string, db: any) => {
           current: true,
           ip,
           location,
+          browser,
+          os,
+          userAgent,
         });
+        console.log("Session updated:", sessionId);
+        return sessionId;
       } else {
         sessionId = null;
         localStorage.removeItem(SESSION_KEY);
@@ -159,6 +167,7 @@ const trackCurrentSession = async (uid: string, db: any) => {
       });
       sessionId = docRef.id;
       localStorage.setItem(SESSION_KEY, sessionId);
+      console.log("Session created:", sessionId);
     }
 
     const q = query(sessionsRef, where("uid", "==", uid), where("current", "==", true));
@@ -168,9 +177,10 @@ const trackCurrentSession = async (uid: string, db: any) => {
       .map((d) => updateDoc(d.ref, { current: false }));
     await Promise.all(updates);
 
-    console.log("Tracked session:", device);
-  } catch (err) {
-    console.error("Track session error:", err);
+    return sessionId;
+  } catch (err: any) {
+    console.error("Track session error:", err.code, err.message);
+    return null;
   }
 };
 
@@ -280,17 +290,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             });
           }
 
-          // 1. TRACK SESSION TRƯỚC
-          await trackCurrentSession(firebaseUser.uid, db);
+          // XÓA: await trackCurrentSession(firebaseUser.uid, db);
 
-          // 2. UPDATE ONLINE STATUS
+          // UPDATE ONLINE STATUS
           await updateDoc(userRef, {
             isOnline: true,
             lastSeen: serverTimestamp(),
             emailVerified: firebaseUser.emailVerified,
           });
 
-          // 3. SETUP LISTENERS
+          // SETUP LISTENERS
           const handleVisibility = () => {
             if (document.visibilityState === "hidden") {
               updateDoc(userRef, {
@@ -299,7 +308,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               }).catch(() => {});
             } else {
               updateDoc(userRef, { isOnline: true }).catch(() => {});
-              trackCurrentSession(firebaseUser.uid, db);
             }
           };
           document.addEventListener("visibilitychange", handleVisibility);
@@ -314,7 +322,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           window.addEventListener("beforeunload", handleBeforeUnload);
           beforeUnloadHandlerRef.current = handleBeforeUnload;
 
-          // 4. SNAPSHOT USER DATA - TẮT LOADING Ở ĐÂY
+          // SNAPSHOT USER DATA
           userDataUnsub.current = onSnapshot(
             userRef,
             (docSnap) => {
@@ -322,7 +330,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setUserData(docSnap.data() as AppUser);
                 console.log("userData loaded:", docSnap.data().userId);
               }
-              setLoading(false); // QUAN TRỌNG: Tắt loading sau khi có userData
+              setLoading(false);
             },
             (err) => {
               console.error("Snapshot error:", err);
