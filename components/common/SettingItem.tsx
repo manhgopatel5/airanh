@@ -1,22 +1,30 @@
-import { ChevronRight } from "lucide-react";
-import { LucideIcon } from "lucide-react";
+"use client";
+
+import { ChevronRight, LucideIcon } from "lucide-react";
+import { ReactNode } from "react";
 
 type Props = {
   label: string;
   subtitle?: string;
   icon: LucideIcon;
   iconColor?: string;
+  iconBg?: string; // màu nền icon tròn, giống Zalo/WeChat
   onClick?: () => void;
   danger?: boolean;
+  rightElement?: ReactNode; // nhét QR, badge, text, toggle vào đây
+  showChevron?: boolean; // tắt chevron khi có rightElement
 };
 
 export default function SettingItem({
   label,
   subtitle,
   icon: Icon,
-  iconColor = "text-gray-500",
+  iconColor = "text-[#0F172A]",
+  iconBg = "bg-[#F1F5F9]",
   onClick,
   danger,
+  rightElement,
+  showChevron = true,
 }: Props) {
   return (
     <button
@@ -24,26 +32,40 @@ export default function SettingItem({
         if ("vibrate" in navigator) navigator.vibrate(5);
         onClick?.();
       }}
-      className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 dark:active:bg-zinc-800 transition"
+      className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-[#F8FAFC] transition"
     >
-      <Icon
-        className={`w-5 h-5 flex-shrink-0 ${danger ? "text-red-500" : iconColor}`}
-      />
+      {/* Icon có background tròn 36px giống Zalo */}
+      <div
+        className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
+          danger ? "bg-red-50" : iconBg
+        }`}
+      >
+        <Icon
+          className={`w-5 h-5 ${danger ? "text-red-500" : iconColor}`}
+        />
+      </div>
+
       <div className="flex-1 text-left min-w-0">
         <div
-          className={`text-base font-medium ${
-            danger ? "text-red-500" : "text-gray-900 dark:text-white"
+          className={`text- font-semibold ${
+            danger ? "text-red-500" : "text-[#0F172A]"
           }`}
         >
           {label}
         </div>
         {subtitle && (
-          <div className="text-xs text-gray-500 dark:text-zinc-500 mt-0.5">
+          <div className="text- text-[#64748B] mt-0.5 truncate">
             {subtitle}
           </div>
         )}
       </div>
-      <ChevronRight className="w-4 h-4 text-gray-300 dark:text-zinc-600 flex-shrink-0" />
+
+      {/* Right: ưu tiên rightElement, không có thì hiện chevron */}
+      {rightElement ? (
+        <div className="flex-shrink-0">{rightElement}</div>
+      ) : showChevron ? (
+        <ChevronRight className="w-5 h-5 text-[#CBD5E1] flex-shrink-0" />
+      ) : null}
     </button>
   );
 }
