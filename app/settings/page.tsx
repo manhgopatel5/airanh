@@ -12,7 +12,7 @@ import {
   Eye, EyeOff, UserX, Shield, Lock, Smartphone, Key, Trash2,
   Globe, DollarSign, Download, Zap, Database, Info, LogOut,
   ChevronRight, Monitor, Languages, MapPin, Calendar,
-  MessageSquare, Users, AtSign
+  MessageSquare, Users, AtSign, QrCode
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 
@@ -88,7 +88,6 @@ export default function SettingsPage() {
   const auth = getFirebaseAuth();
   const router = useRouter();
   const { user } = useAuth();
- 
 
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [sessions, setSessions] = useState<any[]>([]);
@@ -96,7 +95,6 @@ export default function SettingsPage() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [tfaEnabled, setTfaEnabled] = useState(false);
-
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -148,7 +146,7 @@ export default function SettingsPage() {
     setShowLogoutModal(false);
     updateDoc(doc(db, "users", user.uid), {
       online: false,
-      lastSeen: serverTimestamp(), // FIX: dùng serverTimestamp thay vì new Date()
+      lastSeen: serverTimestamp(),
     }).catch(() => {});
     await signOut(auth);
     window.location.href = "/login";
@@ -179,18 +177,20 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black pb-24 font-sans">
+    <div className="min-h-screen bg-white pb-24 font-sans">
       <Toaster richColors position="top-center" />
 
       {/* Header */}
-      <div className="px-6 pt-12 pb-6 flex items-center gap-3 sticky top-0 bg-white/80 dark:bg-black/80 backdrop-blur-xl z-10">
-        <button onClick={() => router.back()} className="p-2 -ml-2 active:scale-90 transition">
-          <ChevronLeft className="w-6 h-6 text-gray-900 dark:text-white" />
-        </button>
-        <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">Cài đặt</h1>
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-100">
+        <div className="relative flex items-center justify-center h-14 px-4">
+          <button onClick={() => router.back()} className="absolute left-4 p-1 active:opacity-60 transition">
+            <ChevronLeft className="w-6 h-6 text-[#0F172A]" />
+          </button>
+          <h1 className="text- font-bold text-[#0F172A]">Cài đặt</h1>
+        </div>
       </div>
 
-      <div className="px-6 space-y-7">
+      <div className="px-4 space-y-7 pt-4">
         {/* 1. GIAO DIỆN */}
         <Section title="GIAO DIỆN">
           <SelectItem
@@ -356,12 +356,12 @@ export default function SettingsPage() {
 
         {/* 4. TÀI KHOẢN */}
         <Section title="TÀI KHOẢN">
-         <SettingItem
-  label="Đổi email"
-  icon={Mail}
-  {...(user?.email ? { value: user.email } : {})}
-  onClick={() => router.push("/settings/change-email")}
-/>
+          <SettingItem
+            label="Đổi email"
+            icon={Mail}
+            {...(user?.email? { value: user.email } : {})}
+            onClick={() => router.push("/settings/change-email")}
+          />
           <SettingItem
             label="Đổi số điện thoại"
             icon={Smartphone}
@@ -376,7 +376,14 @@ export default function SettingsPage() {
             label="Xác thực 2 lớp"
             icon={Key}
             value={tfaEnabled? "Đã bật" : "Tắt"}
-            onClick={() => router.push("/settings/2fa")} // FIX: Thêm link
+            onClick={() => router.push("/settings/2fa")}
+          />
+          <SettingItem
+            label="Mã QR của tôi"
+            icon={QrCode}
+            iconBg="bg-blue-50"
+            iconColor="text-blue-500"
+            onClick={() => router.push("/settings/qr")}
           />
           <SettingItem
             label={`Phiên đăng nhập (${sessions.length})`}
@@ -450,7 +457,7 @@ export default function SettingsPage() {
             onChange={(v) => updateSetting("autoDeleteMsg", v as any)}
           />
           <SettingItem
-            label={`Dung lượng: ${(storage.used).toFixed(1)}MB / ${storage.total}MB`}
+            label={`Dung lượng: ${storage.used.toFixed(1)}MB / ${storage.total}MB`}
             icon={Database}
             onClick={() => router.push("/settings/storage")}
           />
@@ -533,8 +540,10 @@ export default function SettingsPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="text-xs font-bold text-gray-400 dark:text-zinc-600 tracking-wider mb-1">{title}</div>
-      {children}
+      <div className="text- font-bold text-[#64748B] tracking-wider mb-1">{title}</div>
+      <div className="bg-[#F8FAFC] rounded-2xl overflow-hidden">
+        {children}
+      </div>
     </div>
   );
 }
@@ -543,12 +552,16 @@ function SettingItem({
   label,
   icon: Icon,
   value,
+  iconBg = "bg-[#F1F5F9]",
+  iconColor = "text-[#0F172A]",
   onClick,
   danger,
 }: {
   label: string;
   icon: React.ElementType;
   value?: string;
+  iconBg?: string;
+  iconColor?: string;
   onClick?: () => void;
   danger?: boolean;
 }) {
@@ -558,15 +571,26 @@ function SettingItem({
         if ("vibrate" in navigator) navigator.vibrate(5);
         onClick?.();
       }}
-      className="w-full flex items-center justify-between py-4 active:opacity-50 transition"
+      className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-white transition border-b border-gray-100 last:border-0"
     >
-      <div className="flex items-center gap-3">
-        <Icon className={`w-5 h-5 ${danger? "text-red-500" : "text-gray-900 dark:text-white"}`} />
-        <span className={`text-base font-semibold ${danger? "text-red-500" : "text-gray-900 dark:text-white"}`}>{label}</span>
+      <div
+        className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
+          danger? "bg-red-50" : iconBg
+        }`}
+      >
+        <Icon className={`w-5 h-5 ${danger? "text-red-500" : iconColor}`} />
       </div>
-      <div className="flex items-center gap-2">
-        {value && <span className="text-sm text-gray-500 dark:text-zinc-400">{value}</span>}
-        <ChevronRight className="w-4 h-4 text-gray-400" />
+      <div className="flex-1 text-left min-w-0">
+        <div
+          className={`text- font-semibold ${
+            danger? "text-red-500" : "text-[#0F172A]"
+          }`}
+        >
+          {label}
+        </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {value && <span className="text- text-[#64748B]">{value}</span>}
+        <ChevronRight className="w-5 h-5 text-[#CBD5E1]" />
       </div>
     </button>
   );
@@ -588,22 +612,24 @@ function SelectItem({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="w-full">
+    <div className="w-full border-b border-gray-100 last:border-0">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between py-4 active:opacity-50 transition"
+        className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-white transition"
       >
-        <div className="flex items-center gap-3">
-          <Icon className="w-5 h-5 text-gray-900 dark:text-white" />
-          <span className="text-base font-semibold text-gray-900 dark:text-white">{label}</span>
+        <div className="w-9 h-9 rounded-xl bg-[#F1F5F9] flex items-center justify-center flex-shrink-0">
+          <Icon className="w-5 h-5 text-[#0F172A]" />
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500 dark:text-zinc-400">{value}</span>
-          <ChevronRight className={`w-4 h-4 text-gray-400 transition ${open? "rotate-90" : ""}`} />
+        <div className="flex-1 text-left min-w-0">
+          <div className="text- font-semibold text-[#0F172A]">{label}</div>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span className="text- text-[#64748B]">{value}</span>
+          <ChevronRight className={`w-5 h-5 text-[#CBD5E1] transition ${open? "rotate-90" : ""}`} />
         </div>
       </button>
       {open && (
-        <div className="ml-8 mb-2 space-y-1">
+        <div className="px-4 pb-2 space-y-1 bg-white">
           {options.map((opt) => (
             <button
               key={opt.value}
@@ -611,9 +637,9 @@ function SelectItem({
                 onChange(opt.value);
                 setOpen(false);
               }}
-              className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 active:bg-gray-200 dark:active:bg-zinc-700 transition"
+              className="w-full text-left px-3 py-2.5 rounded-xl active:bg-[#F8FAFC] transition"
             >
-              <span className={`text-sm ${value === opt.label? "font-bold text-sky-600 dark:text-sky-400" : "text-gray-700 dark:text-zinc-300"}`}>
+              <span className={`text- ${value === opt.label? "font-bold text-blue-600" : "font-medium text-[#0F172A]"}`}>
                 {opt.label}
               </span>
             </button>
@@ -636,17 +662,19 @@ function ToggleItem({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="w-full flex items-center justify-between py-4">
-      <div className="flex items-center gap-3">
-        <Icon className="w-5 h-5 text-gray-900 dark:text-white" />
-        <span className="text-base font-semibold text-gray-900 dark:text-white">{label}</span>
+    <div className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 last:border-0">
+      <div className="w-9 h-9 rounded-xl bg-[#F1F5F9] flex items-center justify-center flex-shrink-0">
+        <Icon className="w-5 h-5 text-[#0F172A]" />
+      </div>
+      <div className="flex-1 text-left min-w-0">
+        <div className="text- font-semibold text-[#0F172A]">{label}</div>
       </div>
       <button
         onClick={() => {
           if ("vibrate" in navigator) navigator.vibrate(5);
           onChange(!checked);
         }}
-        className={`w-11 h-6 rounded-full transition ${checked? "bg-green-500" : "bg-gray-300 dark:bg-zinc-700"}`}
+        className={`w-11 h-6 rounded-full transition flex-shrink-0 ${checked? "bg-green-500" : "bg-gray-300"}`}
       >
         <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform ${checked? "translate-x-5" : "translate-x-0.5"}`} />
       </button>
@@ -670,33 +698,35 @@ function TimeRangeItem({
   onChange: (v: { enabled: boolean; from: string; to: string }) => void;
 }) {
   return (
-    <div className="w-full py-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <Icon className="w-5 h-5 text-gray-900 dark:text-white" />
-          <span className="text-base font-semibold text-gray-900 dark:text-white">{label}</span>
+    <div className="w-full border-b border-gray-100 last:border-0">
+      <div className="flex items-center gap-3 px-4 py-3.5">
+        <div className="w-9 h-9 rounded-xl bg-[#F1F5F9] flex items-center justify-center flex-shrink-0">
+          <Icon className="w-5 h-5 text-[#0F172A]" />
+        </div>
+        <div className="flex-1 text-left min-w-0">
+          <div className="text- font-semibold text-[#0F172A]">{label}</div>
         </div>
         <button
           onClick={() => onChange({...{ enabled, from, to }, enabled:!enabled })}
-          className={`w-11 h-6 rounded-full transition ${enabled? "bg-green-500" : "bg-gray-300 dark:bg-zinc-700"}`}
+          className={`w-11 h-6 rounded-full transition flex-shrink-0 ${enabled? "bg-green-500" : "bg-gray-300"}`}
         >
           <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform ${enabled? "translate-x-5" : "translate-x-0.5"}`} />
         </button>
       </div>
       {enabled && (
-        <div className="ml-8 flex items-center gap-3">
+        <div className="px-4 pb-3 flex items-center gap-3 bg-white">
           <input
             type="time"
             value={from}
             onChange={(e) => onChange({ enabled, from: e.target.value, to })}
-            className="px-3 py-2 rounded-lg bg-gray-100 dark:bg-zinc-800 text-sm font-medium text-gray-900 dark:text-white"
+            className="flex-1 px-3 py-2 rounded-xl bg-[#F8FAFC] text- font-medium text-[#0F172A] outline-none"
           />
-          <span className="text-gray-500 dark:text-zinc-400">đến</span>
+          <span className="text-[#64748B] text-">đến</span>
           <input
             type="time"
             value={to}
             onChange={(e) => onChange({ enabled, from, to: e.target.value })}
-            className="px-3 py-2 rounded-lg bg-gray-100 dark:bg-zinc-800 text-sm font-medium text-gray-900 dark:text-white"
+            className="flex-1 px-3 py-2 rounded-xl bg-[#F8FAFC] text- font-medium text-[#0F172A] outline-none"
           />
         </div>
       )}
@@ -707,12 +737,12 @@ function TimeRangeItem({
 function Modal({ title, desc, onClose, onConfirm, confirmText, danger }: { title: string; desc: string; onClose: () => void; onConfirm: () => void; confirmText: string; danger?: boolean }) {
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end justify-center z-50" onClick={onClose}>
-      <div className="bg-white dark:bg-zinc-900 w-full max-w-xl rounded-t-3xl p-6 animate-in slide-in-from-bottom" onClick={(e) => e.stopPropagation()}>
-        <div className="w-12 h-1 bg-gray-300 dark:bg-zinc-700 rounded-full mx-auto mb-4" />
-        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">{title}</h3>
-        <p className="text-sm text-gray-500 dark:text-zinc-400 mb-6">{desc}</p>
-        <button onClick={onConfirm} className={`w-full py-3.5 rounded-2xl font-semibold mb-3 active:scale-[0.98] transition ${danger? "bg-red-500 text-white" : "bg-blue-500 text-white"}`}>{confirmText}</button>
-        <button onClick={onClose} className="w-full py-3.5 bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-gray-100 rounded-2xl font-semibold">Hủy</button>
+      <div className="bg-white w-full max-w-xl rounded-t-3xl p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
+        <h3 className="text- font-bold text-[#0F172A] mb-2">{title}</h3>
+        <p className="text- text-[#64748B] mb-6">{desc}</p>
+        <button onClick={onConfirm} className={`w-full h-12 rounded-2xl font-semibold mb-3 active:scale-95 transition ${danger? "bg-red-500 text-white" : "bg-blue-500 text-white"}`}>{confirmText}</button>
+        <button onClick={onClose} className="w-full h-12 bg-[#F1F5F9] text-[#0F172A] rounded-2xl font-semibold active:scale-95 transition">Hủy</button>
       </div>
     </div>
   );
