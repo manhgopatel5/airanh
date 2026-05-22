@@ -949,7 +949,7 @@ const filteredChats = useMemo(() => {
   }}
 />
 
-<div className="min-h-screen bg-[#F2F2F7] dark:bg-black select-none">
+<div className="min-h-screen bg-white dark:bg-zinc-950 select-none">
   <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50">
 
     <div className="px-4 pt-3 pb-3">
