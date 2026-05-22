@@ -237,6 +237,7 @@ export default function AppContainer() {
           <CustomTabBar
             currentTab={currentMainTab}
             onChangeTab={setCurrentMainTab}
+            unreadCount={unreadMessages.length} 
             onCreateClick={() => {
               navigator.vibrate?.([15, 35, 15]);
               setIsMenuOpen(true);
