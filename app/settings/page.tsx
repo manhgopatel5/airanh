@@ -11,8 +11,7 @@ import {
   ChevronLeft, Moon, Sun, Palette, Bell, Mail,
   Eye, EyeOff, UserX, Shield, Lock, Smartphone, Key, Trash2,
   Globe, DollarSign, Download, Zap, Database, Info, LogOut,
-  ChevronRight, Monitor, Languages, MapPin, Calendar,
-  MessageSquare, Users, AtSign, QrCode
+  ChevronRight, Monitor, Languages, MapPin, Calendar, Users, AtSign, QrCode
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 
