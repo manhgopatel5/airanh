@@ -79,7 +79,7 @@ const FloatingMenu = ({
             filter: "blur(4px)",
             transition: { duration: 0.15, ease: [0.4, 0, 1, 1] }
           }}
-          className="w-full max-w-[500px] mx-auto bg-white dark:bg-zinc-900 rounded-3xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] pointer-events-auto flex flex-col gap-3 select-none mb-3"
+className="w-full max-w-[500px] mx-auto bg-white dark:bg-zinc-900 rounded-3xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] pointer-events-auto flex flex-col gap-3 select-none"
         >
           <div className="grid grid-cols-2 gap-3">
             <motion.button
@@ -225,25 +225,26 @@ const unreadCount = useAppStore((s) => s.unreadCount); // thêm dòng này
             )}
           </AnimatePresence>
 
-          <div className="fixed bottom-0 inset-x-0 z-[70] pointer-events-none">
-            <div ref={menuRef} className="w-full flex-col items-center">
-              <FloatingMenu
-                isOpen={isMenuOpen}
-                onSelect={handleSelectCreate}
-                onClose={() => setIsMenuOpen(false)}
-              />
-            </div>
-          </div>
+   <div className="fixed inset-0 z-[70] pointer-events-none flex items-center justify-center p-5">
+  <div ref={menuRef} className="w-full max-w-[500px] pointer-events-auto">
+    <FloatingMenu
+      isOpen={isMenuOpen}
+      onSelect={handleSelectCreate}
+      onClose={() => setIsMenuOpen(false)}
+    />
+  </div>
+</div>
 
-          <CustomTabBar
-            currentTab={currentMainTab}
-            onChangeTab={setCurrentMainTab}
-unreadCount={unreadCount}
-            onCreateClick={() => {
-              navigator.vibrate?.([15, 35, 15]);
-              setIsMenuOpen(true);
-            }}
-          />
+<CustomTabBar
+  currentTab={currentMainTab}
+  onChangeTab={setCurrentMainTab}
+  unreadCount={unreadCount}
+  isMenuOpen={isMenuOpen} // thêm dòng này
+  onCreateClick={() => {
+    navigator.vibrate?.([15, 35, 15]);
+    setIsMenuOpen(true);
+  }}
+/>
         </>,
         document.body
       )}
