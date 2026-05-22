@@ -805,30 +805,27 @@ if (!friendSnap.exists()) {
     }
   };
 const handleBlock = async () => {
-  if (!user || !targetUser || actionLoading) return;
-  if (user.uid === targetUser.uid) {
-    toast.error("Không thể tự chặn mình");
-    return;
-  }
+  if (!user?.uid) return toast.error("Bạn chưa đăng nhập");
+  if (!targetUser?.uid) return toast.error("Đang tải dữ liệu...");
+  if (user.uid === targetUser.uid) return toast.error("Không thể tự chặn mình");
 
-  if (!confirm(`Chặn ${targetUser.name}? Họ sẽ không thể nhắn tin hoặc xem hồ sơ của bạn.`)) return;
+  if (!confirm(`Chặn ${targetUser.name}?`)) return;
 
   setActionLoading(true);
   try {
-    // Thay updateDoc bằng setDoc + merge
     await setDoc(doc(db, "users", user.uid), {
       settings: {
         blockedUsers: arrayUnion({
           uid: targetUser.uid,
-          blockedAt: serverTimestamp()
+          blockedAt: Timestamp.now() // ĐỔI DÒNG NÀY
         })
       }
     }, { merge: true });
     
     toast.success(`Đã chặn ${targetUser.name}`);
     if ("vibrate" in navigator) navigator.vibrate(8);
-    router.back();
-  } catch (err) {
+    router.push("/settings/blocked");
+  } catch (err: any) {
     console.error("Block error:", err);
     toast.error("Chặn thất bại");
   } finally {
