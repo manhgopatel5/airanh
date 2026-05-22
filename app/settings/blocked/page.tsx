@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/lib/AuthContext";
-
 import {
   doc,
   onSnapshot,
@@ -15,14 +14,15 @@ import {
 import { getFirebaseDB } from "@/lib/firebase";
 import {
   ChevronLeft,
-  
   Search,
   Loader2,
   Shield,
-  X
+  X,
+  UserX
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import * as Dialog from "@radix-ui/react-dialog";
 
 type BlockedUserItem = {
   uid: string;
@@ -43,93 +43,105 @@ export default function BlockedPage() {
   const router = useRouter();
   const { user } = useAuth();
 
-
-
   const [blocked, setBlocked] = useState<BlockedUser[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [unblocking, setUnblocking] = useState<string | null>(null);
+  const [confirmUser, setConfirmUser] = useState<BlockedUser | null>(null);
 
-
-
-  // Load blocked users với blockedAt
+  // Load blocked users
   useEffect(() => {
     if (!user?.uid) {
       setLoading(false);
       return;
     }
 
-    const unsub = onSnapshot(doc(db, "users", user.uid), async (snap) => {
-      if (!snap.exists()) {
-        setBlocked([]);
+    const unsub = onSnapshot(
+      doc(db, "users", user.uid),
+      async (snap) => {
+        if (!snap.exists()) {
+          setBlocked([]);
+          setLoading(false);
+          return;
+        }
+
+        const blockedData: (BlockedUserItem | string)[] =
+          snap.data().settings?.blockedUsers || [];
+
+        if (blockedData.length === 0) {
+          setBlocked([]);
+          setLoading(false);
+          return;
+        }
+
+        try {
+          const users = await Promise.all(
+            blockedData.map(async (item) => {
+              const uid = typeof item === 'string'? item : item.uid;
+              const blockedAt = typeof item === 'string'
+               ? new Date()
+                : item.blockedAt?.toDate?.() || new Date();
+
+              const userSnap = await getDoc(doc(db, "users", uid));
+              if (!userSnap.exists()) return null;
+
+              const data = userSnap.data();
+              return {
+                uid,
+                name: data.name || "Người dùng",
+                avatar: data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || "U")}&background=random`,
+                userId: data.userId || uid.slice(0, 8),
+                username: data.username,
+                blockedAt,
+              } as BlockedUser;
+            })
+          );
+
+          setBlocked(users.filter(Boolean) as BlockedUser[]);
+        } catch (err) {
+          console.error("Load blocked users error:", err);
+          toast.error("Lỗi tải danh sách");
+        } finally {
+          setLoading(false);
+        }
+      },
+      (err) => {
+        console.error("Snapshot error:", err);
+        toast.error("Không thể theo dõi danh sách");
         setLoading(false);
-        return;
       }
-
-      const blockedData: BlockedUserItem[] = snap.data().settings?.blockedUsers || [];
-
-      if (blockedData.length === 0) {
-        setBlocked([]);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const users = await Promise.all(
-          blockedData.map(async (item) => {
-            const uid = typeof item === 'string'? item : item.uid;
-            const blockedAt = typeof item === 'string'
-             ? new Date()
-              : item.blockedAt?.toDate?.() || new Date();
-
-            const userSnap = await getDoc(doc(db, "users", uid));
-            if (!userSnap.exists()) return null;
-
-            const data = userSnap.data();
-            return {
-              uid,
-              name: data.name || "User",
-              avatar: data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name || "U")}&background=random`,
-              userId: data.userId || "",
-              username: data.username,
-              blockedAt,
-            } as BlockedUser;
-          })
-        );
-
-        setBlocked(users.filter(Boolean) as BlockedUser[]);
-      } catch (err) {
-        console.error("Load blocked users error:", err);
-        toast.error("Lỗi tải danh sách");
-      } finally {
-        setLoading(false);
-      }
-    });
+    );
 
     return () => unsub();
   }, [user?.uid, db]);
 
-  const unblock = async (uid: string, name: string) => {
-    if (!user || unblocking) return;
+  const handleUnblock = async () => {
+    if (!user ||!confirmUser || unblocking) return;
 
-    if (!confirm(`Bỏ chặn ${name}?`)) return;
-
+    const { uid, name } = confirmUser;
     setUnblocking(uid);
+    setConfirmUser(null);
+
     try {
-      // Lấy object đầy đủ để remove
       const userSnap = await getDoc(doc(db, "users", user.uid));
-      const blockedList: BlockedUserItem[] = userSnap.data()?.settings?.blockedUsers || [];
-      const itemToRemove = blockedList.find((item: any) =>
+      const blockedList: (BlockedUserItem | string)[] =
+        userSnap.data()?.settings?.blockedUsers || [];
+
+      const itemToRemove = blockedList.find((item) =>
         typeof item === 'string'? item === uid : item.uid === uid
       );
 
-      if (itemToRemove) {
-        await updateDoc(doc(db, "users", user.uid), {
-          "settings.blockedUsers": arrayRemove(itemToRemove)
-        });
-        toast.success(`Đã bỏ chặn ${name}`);
-        if ("vibrate" in navigator) navigator.vibrate(8);
+      if (!itemToRemove) {
+        toast.error("Không tìm thấy người dùng");
+        return;
       }
+
+      await updateDoc(doc(db, "users", user.uid), {
+        "settings.blockedUsers": arrayRemove(itemToRemove)
+      });
+
+      toast.success(`Đã bỏ chặn ${name}`);
+      if ("vibrate" in navigator) navigator.vibrate(8);
     } catch (err) {
       console.error("Unblock error:", err);
       toast.error("Bỏ chặn thất bại");
@@ -156,6 +168,7 @@ export default function BlockedPage() {
     if (days < 1) return "Hôm nay";
     if (days < 7) return `${days} ngày trước`;
     if (days < 30) return `${Math.floor(days / 7)} tuần trước`;
+    if (days < 365) return `${Math.floor(days / 30)} tháng trước`;
     return date.toLocaleDateString("vi-VN");
   };
 
@@ -191,11 +204,19 @@ export default function BlockedPage() {
             placeholder="Tìm theo tên, ID..."
             className="flex-1 bg-transparent outline-none text-gray-900 dark:text-white placeholder:text-gray-400 text-[15px]"
           />
-          {search && (
-            <button onClick={() => setSearch("")} className="p-1">
-              <X className="w-4 h-4 text-gray-400" />
-            </button>
-          )}
+          <AnimatePresence>
+            {search && (
+              <motion.button
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+                onClick={() => setSearch("")}
+                className="p-1"
+              >
+                <X className="w-4 h-4 text-gray-400" />
+              </motion.button>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Loading */}
@@ -208,19 +229,24 @@ export default function BlockedPage() {
                   <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/3" />
                   <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/4" />
                 </div>
+                <div className="w-20 h-9 bg-gray-200 dark:bg-zinc-800 rounded-xl" />
               </div>
             ))}
           </div>
         ) : filtered.length === 0? (
           /* Empty State */
           <div className="text-center py-16">
-            <div className="w-16 h-16 bg-gray-100 dark:bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="w-16 h-16 bg-gray-100 dark:bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4"
+            >
               {search? (
                 <Search className="w-8 h-8 text-gray-300 dark:text-zinc-700" />
               ) : (
                 <Shield className="w-8 h-8 text-gray-300 dark:text-zinc-700" />
               )}
-            </div>
+            </motion.div>
             <p className="text-gray-500 dark:text-zinc-400 font-medium">
               {search? "Không tìm thấy" : "Chưa chặn ai"}
             </p>
@@ -239,13 +265,14 @@ export default function BlockedPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 dark:bg-zinc-900"
+                  className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <img
                       src={u.avatar}
                       className="w-12 h-12 rounded-full object-cover bg-gray-200 dark:bg-zinc-800 flex-shrink-0"
                       alt={u.name}
+                      loading="lazy"
                     />
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-gray-900 dark:text-white truncate">
@@ -260,9 +287,9 @@ export default function BlockedPage() {
                     </div>
                   </div>
                   <button
-                    onClick={() => unblock(u.uid, u.name)}
+                    onClick={() => setConfirmUser(u)}
                     disabled={unblocking === u.uid}
-                    className="px-4 py-2 rounded-xl bg-gray-200 dark:bg-zinc-800 text-sm font-semibold text-gray-900 dark:text-white active:scale-95 transition disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
+                    className="px-4 py-2 rounded-xl bg-gray-200 dark:bg-zinc-800 text-sm font-semibold text-gray-900 dark:text-white active:scale-95 transition disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0 hover:bg-gray-300 dark:hover:bg-zinc-700"
                   >
                     {unblocking === u.uid? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -276,6 +303,37 @@ export default function BlockedPage() {
           </div>
         )}
       </div>
+
+      {/* Confirm Dialog */}
+      <Dialog.Root open={!!confirmUser} onOpenChange={(open) =>!open && setConfirmUser(null)}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm bg-white dark:bg-zinc-900 rounded-3xl p-6 z-50 shadow-2xl">
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center mx-auto mb-4">
+                <UserX className="w-8 h-8 text-red-500" />
+              </div>
+              <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Bỏ chặn {confirmUser?.name}?
+              </Dialog.Title>
+              <Dialog.Description className="text-sm text-gray-500 dark:text-zinc-400 mb-6">
+                Họ sẽ có thể xem hồ sơ và nhắn tin cho bạn lại.
+              </Dialog.Description>
+            </div>
+            <div className="flex gap-3">
+              <Dialog.Close className="flex-1 h-12 rounded-2xl bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white font-semibold active:scale-95 transition-all">
+                Hủy
+              </Dialog.Close>
+              <button
+                onClick={handleUnblock}
+                className="flex-1 h-12 rounded-2xl bg-red-500 text-white font-semibold active:scale-95 transition-all"
+              >
+                Bỏ chặn
+              </button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   );
 }
