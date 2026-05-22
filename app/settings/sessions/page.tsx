@@ -3,11 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { doc, onSnapshot, updateDoc, arrayRemove } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { FiLoader, FiArrowLeft } from "react-icons/fi";
 import { Smartphone, Monitor, Laptop, Trash2, MapPin, Shield, LogOut } from "lucide-react";
 import { toast, Toaster } from "sonner";
+import { UAParser } from "ua-parser-js";
 
 type Session = {
   id: string;
@@ -28,26 +29,91 @@ export default function SessionsPage() {
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
+  // =========================
+  // 🔐 AUTO TRACK CURRENT SESSION
+  // =========================
   useEffect(() => {
     if (!user?.uid) return;
 
-    const unsub = onSnapshot(doc(db, "users", user.uid), (snap) => {
-      if (snap.exists()) {
-        const data = snap.data().sessions || [];
-        // Sort: current trước, sau đó theo lastActive mới nhất
-        const sorted = [...data].sort((a, b) => {
-          if (a.current &&!b.current) return -1;
-          if (!a.current && b.current) return 1;
-          const aTime = a.lastActive?.toMillis?.() || 0;
-          const bTime = b.lastActive?.toMillis?.() || 0;
-          return bTime - aTime;
-        });
-        setSessions(sorted);
-      }
-      setLoading(false);
-    });
+    const trackCurrentSession = async () => {
+      try {
+        // 1. Parse UA
+        const parser = new UAParser();
+        const result = parser.getResult();
+        const device = `${result.device.vendor || ""} ${result.device.model || result.os.name}`.trim() || "Unknown Device";
+        const browser = `${result.browser.name} ${result.browser.version}`.trim();
+        const os = `${result.os.name} ${result.os.version}`.trim();
 
-    return () => unsub();
+        // 2. Get IP + Location
+        let ip = "Unknown";
+        let location = "Unknown";
+        try {
+          const res = await fetch("https://ipapi.co/json/");
+          const data = await res.json();
+          ip = data.ip || "Unknown";
+          location = `${data.city}, ${data.country_name}` || "Unknown";
+        } catch {}
+
+        // 3. Tạo ID unique cho session này
+        const sessionId = `${user.uid}_${navigator.userAgent.slice(0, 50)}_${Date.now()}`;
+
+        const currentSession: Session = {
+          id: sessionId,
+          device,
+          browser,
+          os,
+          ip,
+          location,
+          lastActive: new Date(),
+          current: true,
+        };
+
+        // 4. Check xem đã có session current chưa
+        const userRef = doc(db, "users", user.uid);
+        const unsub = onSnapshot(userRef, async (snap) => {
+          if (snap.exists()) {
+            const data = snap.data().sessions || [];
+            const hasCurrent = data.some((s: Session) => s.current && s.device === device);
+
+            if (!hasCurrent) {
+              // Xóa session cũ current = true rồi add mới
+              const filtered = data.map((s: Session) => ({ ...s, current: false }));
+              await updateDoc(userRef, {
+                sessions: [...filtered, currentSession],
+              });
+            } else {
+              // Update lastActive
+              const updated = data.map((s: Session) =>
+                s.current ? { ...s, lastActive: new Date() } : s
+              );
+              await updateDoc(userRef, { sessions: updated });
+            }
+
+            const sorted = [...(snap.data().sessions || [])].sort((a, b) => {
+              if (a.current && !b.current) return -1;
+              if (!a.current && b.current) return 1;
+              const aTime = a.lastActive?.toMillis?.() || a.lastActive?.getTime?.() || 0;
+              const bTime = b.lastActive?.toMillis?.() || b.lastActive?.getTime?.() || 0;
+              return bTime - aTime;
+            });
+            setSessions(sorted);
+          } else {
+            // User doc chưa có, tạo mới
+            await updateDoc(userRef, {
+              sessions: [currentSession],
+            });
+          }
+          setLoading(false);
+        });
+
+        return () => unsub();
+      } catch (err) {
+        console.error("Track session error:", err);
+        setLoading(false);
+      }
+    };
+
+    trackCurrentSession();
   }, [user?.uid]);
 
   const removeSession = async (sessionId: string) => {
@@ -63,7 +129,7 @@ export default function SessionsPage() {
     setRemovingId(sessionId);
     try {
       await updateDoc(doc(db, "users", user.uid), {
-        sessions: arrayRemove(session)
+        sessions: arrayRemove(session),
       });
       toast.success("Đã đăng xuất thiết bị");
     } catch (err) {
@@ -82,7 +148,7 @@ export default function SessionsPage() {
     try {
       const current = sessions.find((s) => s.current);
       await updateDoc(doc(db, "users", user.uid), {
-        sessions: current? [current] : []
+        sessions: current ? [current] : [],
       });
       toast.success("Đã đăng xuất tất cả");
     } catch (err) {
@@ -101,7 +167,7 @@ export default function SessionsPage() {
 
   const formatTime = (timestamp: any) => {
     if (!timestamp) return "Không rõ";
-    const date = timestamp.toDate? timestamp.toDate() : new Date(timestamp);
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / 60000);
@@ -132,11 +198,11 @@ export default function SessionsPage() {
 
       {/* Content */}
       <div className="flex-1 px-4 mt-6 pb-6">
-        {loading? (
+        {loading ? (
           <div className="flex items-center justify-center py-20">
             <FiLoader className="animate-spin text-gray-400" size={24} />
           </div>
-        ) : sessions.length === 0? (
+        ) : sessions.length === 0 ? (
           /* Empty State */
           <div className="flex flex-col items-center justify-center py-20 px-6">
             <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-zinc-900 flex items-center justify-center mb-4">
@@ -204,7 +270,7 @@ export default function SessionsPage() {
                           disabled={removingId === session.id}
                           className="p-2 -mr-2 active:opacity-50 disabled:opacity-50"
                         >
-                          {removingId === session.id? (
+                          {removingId === session.id ? (
                             <FiLoader className="animate-spin w-4 h-4 text-red-500" />
                           ) : (
                             <Trash2 className="w-4 h-4 text-red-500" />
@@ -221,14 +287,14 @@ export default function SessionsPage() {
       </div>
 
       {/* Nút Sticky bottom */}
-      {sessions.length > 1 &&!loading && (
+      {sessions.length > 1 && !loading && (
         <div className="sticky bottom-0 p-4 bg-gradient-to-t from-white via-white to-transparent dark:from-black dark:via-black pt-8">
           <button
             onClick={logoutAll}
             disabled={loading}
             className="w-full px-4 py-3.5 rounded-2xl font-semibold text-sm transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 bg-red-500 text-white shadow-lg shadow-red-500/30 disabled:opacity-50"
           >
-            {loading? (
+            {loading ? (
               <>
                 <FiLoader className="animate-spin" size={18} />
                 Đang xử lý...
