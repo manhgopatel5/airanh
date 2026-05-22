@@ -24,7 +24,6 @@ import {
   where,
   getDocs,
   deleteDoc,
-  
 } from "firebase/firestore";
 import {
   ref,
@@ -53,7 +52,6 @@ export type AppUser = {
   bio?: string;
   hidden?: boolean;
   deletedAt?: any;
-  // Bỏ sessions khỏi AppUser
 };
 
 export type Session = {
@@ -110,9 +108,6 @@ const generateSearchKeywords = (
   return Array.from(keywords).filter((k) => k.length >= 2);
 };
 
-// =========================
-// 📱 TRACK SESSION HELPER
-// =========================
 const trackCurrentSession = async (uid: string, db: any) => {
   try {
     const parser = new UAParser();
@@ -128,14 +123,12 @@ const trackCurrentSession = async (uid: string, db: any) => {
       const res = await fetch("https://api.ipify.org?format=json");
       const data = await res.json();
       ip = data.ip || "Unknown";
-      // Location nên lấy qua Cloud Function để bảo mật
     } catch {}
 
     let sessionId = localStorage.getItem(SESSION_KEY);
     const sessionsRef = collection(db, "sessions");
 
     if (sessionId) {
-      // Update session cũ
       const sessionRef = doc(db, "sessions", sessionId);
       const snap = await getDoc(sessionRef);
       if (snap.exists() && snap.data().uid === uid) {
@@ -146,14 +139,12 @@ const trackCurrentSession = async (uid: string, db: any) => {
           location,
         });
       } else {
-        // Session ID cũ không hợp lệ, tạo mới
         sessionId = null;
         localStorage.removeItem(SESSION_KEY);
       }
     }
 
     if (!sessionId) {
-      // Tạo session mới
       const docRef = await addDoc(sessionsRef, {
         uid,
         device,
@@ -170,7 +161,6 @@ const trackCurrentSession = async (uid: string, db: any) => {
       localStorage.setItem(SESSION_KEY, sessionId);
     }
 
-    // Set các session khác current = false
     const q = query(sessionsRef, where("uid", "==", uid), where("current", "==", true));
     const snap = await getDocs(q);
     const updates = snap.docs
@@ -240,8 +230,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const snap = await getDoc(userRef);
 
           if (!snap.exists()) {
-            // TẠO USER MỚI
-            console.log("Tạo user mới cho:", firebaseUser.uid);
             await runTransaction(db, async (tx) => {
               let userId = "";
               for (let i = 0; i < 5; i++) {
@@ -289,20 +277,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
               tx.set(userRef, newUser);
               tx.set(doc(db, "usernames", username), { uid: firebaseUser.uid });
-              console.log("Tạo user xong:", userId, username);
             });
           }
 
-          // TRACK SESSION SAU KHI LOGIN
+          // 1. TRACK SESSION TRƯỚC
           await trackCurrentSession(firebaseUser.uid, db);
 
-          // Update isOnline
+          // 2. UPDATE ONLINE STATUS
           await updateDoc(userRef, {
             isOnline: true,
             lastSeen: serverTimestamp(),
             emailVerified: firebaseUser.emailVerified,
           });
 
+          // 3. SETUP LISTENERS
           const handleVisibility = () => {
             if (document.visibilityState === "hidden") {
               updateDoc(userRef, {
@@ -326,6 +314,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           window.addEventListener("beforeunload", handleBeforeUnload);
           beforeUnloadHandlerRef.current = handleBeforeUnload;
 
+          // 4. SNAPSHOT USER DATA - TẮT LOADING Ở ĐÂY
           userDataUnsub.current = onSnapshot(
             userRef,
             (docSnap) => {
@@ -333,7 +322,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setUserData(docSnap.data() as AppUser);
                 console.log("userData loaded:", docSnap.data().userId);
               }
-              setLoading(false);
+              setLoading(false); // QUAN TRỌNG: Tắt loading sau khi có userData
             },
             (err) => {
               console.error("Snapshot error:", err);
