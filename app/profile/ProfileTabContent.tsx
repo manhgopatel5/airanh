@@ -24,8 +24,7 @@ import {
 import { toast, Toaster } from "sonner";
 import type { UploadTask } from "firebase/storage";
 import { nanoid } from "nanoid";
-import { Html5Qrcode } from "html5-qrcode";
-import { QRCodeSVG } from "qrcode.react";
+
 
 import SettingItem from "@/components/common/SettingItem";
 import ProfileModal from "@/components/common/ProfileModal";
@@ -257,46 +256,7 @@ export default function ProfileTabContent() {
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
 
-  const stopScan = () => {
-    if (scannerRef.current?.isScanning) {
-      scannerRef.current.stop().catch(() => {});
-    }
-    setShowScanQR(false);
-  };
 
-  useEffect(() => {
-    if (!showScanQR) return;
-    const startScan = async () => {
-      const html5QrCode = new Html5Qrcode("qr-reader");
-      scannerRef.current = html5QrCode;
-      try {
-        await html5QrCode.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 250, height: 250 } },
-          (decodedText) => {
-            if ("vibrate" in navigator) navigator.vibrate(10);
-            stopScan();
-            if (decodedText.includes("/u/")) {
-              const targetUserId = decodedText.split("/u/")[1];
-              if (targetUserId === userData?.userId) {
-                toast.error("Đây là mã của bạn");
-                return;
-              }
-              router.push(`/u/${targetUserId}`);
-            } else {
-              toast.error("Mã QR không hợp lệ");
-            }
-          },
-          () => {}
-        );
-      } catch {
-        toast.error("Không mở được camera");
-        setShowScanQR(false);
-      }
-    };
-    startScan();
-    return () => stopScan();
-  }, [showScanQR, userData?.userId, router]);
 
   if (!user ||!userData) return null;
 
