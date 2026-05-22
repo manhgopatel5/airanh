@@ -122,60 +122,69 @@ export default function ChangeEmailPage() {
 
         {/* Form */}
         <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-zinc-800">
-          {/* Email mới */}
-          <div className="px-4 py-3.5">
-            <div className="flex items-center gap-3">
-              <Mail className="w-5 h-5 text-sky-500 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="text-xs text-gray-500 dark:text-zinc-500 uppercase">Email mới</div>
-                <input
-                  type="email"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  onBlur={() => setTouched((t) => ({ ...t, email: true }))}
-                  placeholder="nhap@email.moi"
-                  className="w-full text-base font-medium bg-transparent border-0 p-0 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-0"
-                />
-              </div>
-            </div>
-            {emailError && (
-              <p className="text-xs text-red-500 mt-1 ml-8">{emailError}</p>
-            )}
-          </div>
+       {/* Email mới */}
+<div className="px-4 py-3.5">
+  <div className="flex items-center gap-3">
+    <Mail className="w-5 h-5 text-sky-500 flex-shrink-0" />
+    <div className="flex-1 min-w-0">
+      <div className="text-xs text-gray-500 dark:text-zinc-500 uppercase">Email mới</div>
+      <input
+        type="email"
+        value={newEmail}
+        onChange={(e) => setNewEmail(e.target.value)}
+        onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+        placeholder="example@gmail.com"
+        autoComplete="off"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck="false"
+        data-1p-ignore
+        data-lpignore="true"
+        className="w-full text-base font-medium bg-transparent border-0 p-0 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-0"
+      />
+    </div>
+  </div>
+  {emailError && (
+    <p className="text-xs text-red-500 mt-1 ml-8">{emailError}</p>
+  )}
+</div>
 
-          {/* Mật khẩu */}
-          <div className="px-4 py-3.5">
-            <div className="flex items-center gap-3">
-              <Lock className="w-5 h-5 text-orange-500 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="text-xs text-gray-500 dark:text-zinc-500 uppercase">Mật khẩu hiện tại</div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onBlur={() => setTouched((t) => ({ ...t, password: true }))}
-                    placeholder="Nhập để xác nhận"
-                    className="flex-1 text-base font-medium bg-transparent border-0 p-0 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-0"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="p-1 active:opacity-50"
-                  >
-                    {showPassword ? (
-                      <FiEyeOff className="w-4 h-4 text-gray-400" />
-                    ) : (
-                      <FiEye className="w-4 h-4 text-gray-400" />
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-            {passwordError && (
-              <p className="text-xs text-red-500 mt-1 ml-8">{passwordError}</p>
-            )}
-          </div>
+{/* Mật khẩu */}
+<div className="px-4 py-3.5">
+  <div className="flex items-center gap-3">
+    <Lock className="w-5 h-5 text-orange-500 flex-shrink-0" />
+    <div className="flex-1 min-w-0">
+      <div className="text-xs text-gray-500 dark:text-zinc-500 uppercase">Mật khẩu hiện tại</div>
+      <div className="flex items-center gap-2">
+        <input
+          type={showPassword ? "text" : "password"}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+          placeholder="Nhập để xác nhận"
+          autoComplete="current-password"
+          data-1p-ignore
+          data-lpignore="true"
+          className="flex-1 text-base font-medium bg-transparent border-0 p-0 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-0"
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          className="p-1 active:opacity-50"
+        >
+          {showPassword ? (
+            <FiEyeOff className="w-4 h-4 text-gray-400" />
+          ) : (
+            <FiEye className="w-4 h-4 text-gray-400" />
+          )}
+        </button>
+      </div>
+    </div>
+  </div>
+  {passwordError && (
+    <p className="text-xs text-red-500 mt-1 ml-8">{passwordError}</p>
+  )}
+</div>
         </div>
 
         {/* Note */}
