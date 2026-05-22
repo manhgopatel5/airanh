@@ -43,7 +43,7 @@ export default function BlockedPage() {
   const router = useRouter();
   const { user } = useAuth();
   const mode = useAppStore((s) => s.mode);
-  const isPlan = mode === "plan";
+
 
   const [blocked, setBlocked] = useState<BlockedUser[]>([]);
   const [search, setSearch] = useState("");
