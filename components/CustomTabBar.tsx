@@ -277,12 +277,10 @@ export default function CustomTabBar({
       initial={{ y: 120, opacity: 0 }}
       animate={mounted ? { y: 0, opacity: 1 } : { y: 120, opacity: 0 }}
       transition={{ type: "spring", stiffness: 400, damping: 40 }}
-      className="fixed bottom-0 left-0 right-0 z-50 pb-safe"
+      className="fixed bottom-0 left-0 right-0 z-50"
     >
-      <div className="relative mx-auto max-w-[500px]">
-
-
-        <div className="relative px-5 pb-4">
+    <div className="relative w-full">
+  <div className="relative">
 <motion.div
   className="relative bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl transition-colors duration-300"
   whileHover={{ y: -3 }}
@@ -292,7 +290,7 @@ export default function CustomTabBar({
 
 
 
-            <div className="relative flex items-center justify-between h-20 px-2">
+<div className="relative flex items-center justify-between h-20 px-5 pb-safe">
               {tabs.map((tab) => {
                 const isActive = currentTab === tab.key;
                 const isCreate = tab.key === "create";
