@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
-import { FiCheck, FiLoader, FiArrowLeft } from "react-icons/fi";
+import { FiLoader, FiArrowLeft } from "react-icons/fi";
 import { Mail, Phone, AtSign, Calendar, User2, MapPin, ChevronRight } from "lucide-react";
 import { toast, Toaster } from "sonner";
 
