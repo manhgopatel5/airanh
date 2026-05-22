@@ -57,7 +57,7 @@ export default function QRPage() {
       canvas.height = 1024;
       ctx!.fillStyle = currentColor.bg; // giờ TS biết chắc có giá trị
       ctx!.fillRect(0, 0, 1024, 1024);
-      ctx!.drawImage(img, 0, 0, 1024);
+      ctx!.drawImage(img, 0, 0, 1024, 1024);
 
       const url = canvas.toDataURL("image/png");
       const a = document.createElement("a");
