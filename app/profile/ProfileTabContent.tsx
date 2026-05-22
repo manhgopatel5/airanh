@@ -368,7 +368,7 @@ export default function ProfileTabContent() {
             subtitle="Tên, SĐT, Email"
             icon={User}
             iconColor="text-blue-500"
-            onClick={() => router.push("/profile/edit")}
+            onClick={() => router.push("/settings/profile-edit")} 
           />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
 
