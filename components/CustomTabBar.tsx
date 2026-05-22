@@ -231,17 +231,15 @@ export default function CustomTabBar({
     setMounted(true);
   }, []);
 
-  const themes = {
+const themes = {
   task: {
     gradient: "from-[#0A84FF] via-[#0A84FF] to-[#0051D5]",
     iconActive: "text-[#0A84FF]",
-    pillBg: "bg-[#0A84FF]/15",
     ripple: "bg-[#0A84FF]/20",
   },
   plan: {
     gradient: "from-[#30D158] via-[#30D158] to-[#248A3D]",
     iconActive: "text-[#30D158]",
-    pillBg: "bg-[#30D158]/15",
     ripple: "bg-[#30D158]/20",
   },
 };
@@ -297,7 +295,7 @@ export default function CustomTabBar({
                     
 
               <motion.div
-  className={`relative w-16 h-16 rounded-2xl bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center`}
+  className={`relative w-14 h-14 rounded-2xl bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center`}
   animate={{
     rotate: isMenuOpen ? 45 : 0, // dùng isMenuOpen
   }}
@@ -327,17 +325,7 @@ export default function CustomTabBar({
   onClick={() => handleTabClick(tab.key)}
   className="relative flex items-center justify-center w-16 h-16"
 >
-  {isActive && (
-    <motion.div
-      layoutId="active-pill"
-      className={`absolute inset-0 rounded-2xl ${currentTheme.pillBg}`}
-      transition={{
-        type: "spring",
-        bounce: 0.2,
-        duration: 0.6,
-      }}
-    />
-  )}
+
 
   {/* Badge đưa ra ngoài z-10, z-20 để nổi lên trên */}
   {tab.key === "messages" && unreadCount > 0 && (
