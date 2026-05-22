@@ -192,8 +192,7 @@ END:VCARD`;
                 includeMargin
                 imageSettings={{
                   src: user.photoURL || "",
-                  x: undefined,
-                  y: undefined,
+
                   height: 100,
                   width: 100,
                   excavate: true,
