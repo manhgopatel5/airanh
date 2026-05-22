@@ -19,16 +19,7 @@ import {
   onAuthStateChanged,
   Auth,
 } from "firebase/auth";
-import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
-import {
-  doc,
-  getDoc,
-  updateDoc,
-  serverTimestamp,
-  Firestore,
-  runTransaction,
-} from "firebase/firestore";
-import { nanoid } from "nanoid";
+import { getFirebaseAuth } from "@/lib/firebase";
 import { toast, Toaster } from "sonner";
 import InstallPrompt from "@/components/InstallPrompt";
 import { motion } from "framer-motion";
@@ -37,7 +28,6 @@ export default function Login() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const authRef = useRef<Auth | null>(null);
-  const dbRef = useRef<Firestore | null>(null);
   const emailRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
@@ -62,7 +52,6 @@ export default function Login() {
 
   useEffect(() => {
     authRef.current = getFirebaseAuth();
-    dbRef.current = getFirebaseDB();
 
     // Check passkey support
     if (window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
@@ -77,17 +66,14 @@ export default function Login() {
       }
       if (email) {
         signInWithEmailLink(authRef.current, email, window.location.href)
-       .then(async (result) => {
+          .then(() => {
             localStorage.removeItem("emailForSignIn");
-            await updateUserDoc(result.user, dbRef.current!);
             toast.success("Đăng nhập thành công");
             router.replace(redirectTo);
           })
-       .catch(() => setErrors({ submit: "Link không hợp lệ hoặc đã hết hạn" }));
+          .catch(() => setErrors({ submit: "Link không hợp lệ hoặc đã hết hạn" }));
       }
     }
-
-    // FIX: XÓA getRedirectResult - không dùng redirect nữa
 
     // Remember last email
     const lastEmail = localStorage.getItem("last_email");
@@ -117,7 +103,7 @@ export default function Login() {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
         return "Email không hợp lệ";
     }
-    if (field === "password" &&!value)
+    if (field === "password" && !value)
       return "Vui lòng nhập mật khẩu";
     return "";
   };
@@ -130,72 +116,6 @@ export default function Login() {
     });
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  const updateUserDoc = async (user: any, db: Firestore) => {
-    const userRef = doc(db, "users", user.uid);
-    const snap = await getDoc(userRef).catch(() => null);
-
-    if (!snap ||!snap.exists()) {
-      // FIX: Tạo user mới + userIds/usernames
-      await runTransaction(db, async (tx) => {
-        let userId = "";
-        for (let i = 0; i < 5; i++) {
-          userId = `AIR${nanoid(6).toUpperCase()}`;
-          const q = await tx.get(doc(db, "userIds", userId));
-          if (!q.exists()) break;
-        }
-
-        const email = user.email || "";
-        const name = user.displayName || email.split("@")[0] || "User";
-
-        let baseUsername = name.toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9]/g, "");
-        if (!baseUsername) baseUsername = "user";
-        let username = baseUsername;
-        let counter = 1;
-
-        while (true) {
-          const usernameDoc = await tx.get(doc(db, "usernames", username));
-          if (!usernameDoc.exists()) break;
-          username = `${baseUsername}${counter}`;
-          counter++;
-          if (counter > 100) throw new Error("Không tạo được username");
-        }
-
-        const newUser = {
-          uid: user.uid,
-          name,
-          nameLower: name.toLowerCase(),
-          username,
-          userId,
-          email: user.email || "",
-          emailVerified: user.emailVerified,
-          avatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(email || "U")}&background=0EA5E9`,
-          bio: "",
-          isOnline: true,
-          lastSeen: serverTimestamp(),
-          createdAt: serverTimestamp(),
-          fcmTokens: [],
-          status: "active",
-          searchKeywords: [name.toLowerCase(), userId.toLowerCase(), username.toLowerCase()],
-          hidden: false,
-          deletedAt: null,
-        };
-
-        tx.set(userRef, newUser);
-        tx.set(doc(db, "userIds", userId), { uid: user.uid });
-        tx.set(doc(db, "usernames", username), { uid: user.uid });
-      });
-    } else {
-      const data = snap.data() || {};
-      const updates: any = {
-        online: true,
-        lastSeen: serverTimestamp(),
-      };
-      if (user.photoURL &&!data.avatar) updates.avatar = user.photoURL;
-      if (user.displayName &&!data.name) updates.name = user.displayName;
-      await updateDoc(userRef, updates);
-    }
   };
 
   const handleMagicLink = async () => {
@@ -236,12 +156,9 @@ export default function Login() {
     toast.info("Passkey đang phát triển. Dùng Google hoặc Email Link trước nhé");
   };
 
-  // FIX: BỎ signInWithRedirect, dùng popup cho tất cả
   const handleGoogleLogin = async () => {
     const auth = authRef.current;
-    const db = dbRef.current;
-
-    if (!auth ||!db) {
+    if (!auth) {
       toast.error("Firebase chưa sẵn sàng");
       return;
     }
@@ -252,15 +169,14 @@ export default function Login() {
 
       await setPersistence(
         auth,
-        remember? browserLocalPersistence : browserSessionPersistence
+        remember ? browserLocalPersistence : browserSessionPersistence
       );
 
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
 
-      const res = await signInWithPopup(auth, provider);
-      await updateUserDoc(res.user, db);
-      localStorage.setItem("last_email", res.user.email || "");
+      await signInWithPopup(auth, provider);
+      localStorage.setItem("last_email", auth.currentUser?.email || "");
       toast.success("Đăng nhập thành công");
       router.replace(redirectTo);
       
@@ -287,9 +203,7 @@ export default function Login() {
     if (form.honeypot) return;
 
     const auth = authRef.current;
-    const db = dbRef.current;
-
-    if (!auth ||!db) {
+    if (!auth) {
       toast.error("Firebase chưa sẵn sàng");
       return;
     }
@@ -313,7 +227,7 @@ export default function Login() {
 
       await setPersistence(
         auth,
-        remember? browserLocalPersistence : browserSessionPersistence
+        remember ? browserLocalPersistence : browserSessionPersistence
       );
 
       const res = await signInWithEmailAndPassword(
@@ -331,9 +245,7 @@ export default function Login() {
         return;
       }
 
-      await updateUserDoc(user, db);
       localStorage.setItem("last_email", form.email);
-
       failedAttempts.current = 0;
       localStorage.removeItem("login_fail_time");
 
@@ -433,7 +345,7 @@ export default function Login() {
                   <input
                     ref={emailRef}
                     className={`w-full pl-10 pr-3 py-2.5 rounded-lg border text-sm ${
-                      errors.email? "border-red-500" : "border-gray-300"
+                      errors.email ? "border-red-500" : "border-gray-300"
                     } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none transition-all`}
                     placeholder="Email"
                     value={form.email}
@@ -450,9 +362,9 @@ export default function Login() {
                 <div className="relative">
                   <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                   <input
-                    type={show? "text" : "password"}
+                    type={show ? "text" : "password"}
                     className={`w-full pl-10 pr-10 py-2.5 rounded-lg border text-sm ${
-                      errors.password? "border-red-500" : "border-gray-300"
+                      errors.password ? "border-red-500" : "border-gray-300"
                     } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none transition-all`}
                     placeholder="Mật khẩu"
                     value={form.password}
@@ -466,7 +378,7 @@ export default function Login() {
                     onClick={handleShowPass}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    {show? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                    {show ? <FiEyeOff size={18} /> : <FiEye size={18} />}
                   </button>
                 </div>
                 {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
@@ -496,7 +408,7 @@ export default function Login() {
                 disabled={loading || googleLoading || magicLoading}
                 className="w-full py-3 rounded-lg text-white font-semibold text-sm bg-sky-500 hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-sky-500/30"
               >
-                {loading? "Đang đăng nhập..." : "Đăng nhập"}
+                {loading ? "Đang đăng nhập..." : "Đăng nhập"}
               </motion.button>
             </form>
 
@@ -518,7 +430,7 @@ export default function Login() {
                 className="w-full py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-semibold text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
               >
                 <FcGoogle size={20} />
-                {googleLoading? "Đang kết nối..." : "Tiếp tục với Google"}
+                {googleLoading ? "Đang kết nối..." : "Tiếp tục với Google"}
               </motion.button>
 
               <motion.button
@@ -529,7 +441,7 @@ export default function Login() {
                 className="w-full py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-semibold text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
               >
                 <FiSend size={18} />
-                {magicLoading? "Đang gửi..." : "Đăng nhập bằng Email Link"}
+                {magicLoading ? "Đang gửi..." : "Đăng nhập bằng Email Link"}
               </motion.button>
 
               {passkeySupported && (
