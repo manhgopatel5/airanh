@@ -3,23 +3,36 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { doc, onSnapshot, arrayRemove, updateDoc } from "firebase/firestore";
+import { 
+  collection, 
+  query, 
+  where, 
+  onSnapshot, 
+  orderBy, 
+  deleteDoc, 
+  doc, 
+  getDocs 
+} from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { FiLoader, FiArrowLeft } from "react-icons/fi";
 import { Smartphone, Monitor, Laptop, Trash2, MapPin, Shield, LogOut } from "lucide-react";
 import { toast, Toaster } from "sonner";
-import { UAParser } from "ua-parser-js";
 
 type Session = {
   id: string;
+  uid: string;
   device: string;
   browser: string;
   os: string;
   ip: string;
   location: string;
   lastActive: any;
+  createdAt: any;
   current: boolean;
+  userAgent: string;
 };
+
+const SESSION_KEY = "airanh_session_id";
 
 export default function SessionsPage() {
   const db = getFirebaseDB();
@@ -30,90 +43,40 @@ export default function SessionsPage() {
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   // =========================
-  // 🔐 AUTO TRACK CURRENT SESSION
+  // 🔐 LISTEN SESSIONS REALTIME
   // =========================
   useEffect(() => {
     if (!user?.uid) return;
 
-    const trackCurrentSession = async () => {
-      try {
-        // 1. Parse UA
-        const parser = new UAParser();
-        const result = parser.getResult();
-        const device = `${result.device.vendor || ""} ${result.device.model || result.os.name}`.trim() || "Unknown Device";
-        const browser = `${result.browser.name} ${result.browser.version}`.trim();
-        const os = `${result.os.name} ${result.os.version}`.trim();
+    const q = query(
+      collection(db, "sessions"),
+      where("uid", "==", user.uid),
+      orderBy("lastActive", "desc")
+    );
 
-        // 2. Get IP + Location
-        let ip = "Unknown";
-        let location = "Unknown";
-        try {
-          const res = await fetch("https://ipapi.co/json/");
-          const data = await res.json();
-          ip = data.ip || "Unknown";
-          location = `${data.city}, ${data.country_name}` || "Unknown";
-        } catch {}
+    const unsub = onSnapshot(q, (snap) => {
+      const data = snap.docs.map((d) => ({ 
+        id: d.id, 
+        ...d.data() 
+      } as Session));
+      
+      // Sort: current lên đầu
+      const sorted = [...data].sort((a, b) => {
+        if (a.current && !b.current) return -1;
+        if (!a.current && b.current) return 1;
+        const aTime = a.lastActive?.toMillis?.() || 0;
+        const bTime = b.lastActive?.toMillis?.() || 0;
+        return bTime - aTime;
+      });
+      
+      setSessions(sorted);
+      setLoading(false);
+    }, (err) => {
+      console.error("Sessions listen error:", err);
+      setLoading(false);
+    });
 
-        // 3. Tạo ID unique cho session này
-        const sessionId = `${user.uid}_${navigator.userAgent.slice(0, 50)}_${Date.now()}`;
-
-        const currentSession: Session = {
-          id: sessionId,
-          device,
-          browser,
-          os,
-          ip,
-          location,
-          lastActive: new Date(),
-          current: true,
-        };
-
-        // 4. Check xem đã có session current chưa
-        const userRef = doc(db, "users", user.uid);
-        const unsub = onSnapshot(userRef, async (snap) => {
-          if (snap.exists()) {
-            const data = snap.data().sessions || [];
-            const hasCurrent = data.some((s: Session) => s.current && s.device === device);
-
-            if (!hasCurrent) {
-              // Xóa session cũ current = true rồi add mới
-              const filtered = data.map((s: Session) => ({ ...s, current: false }));
-              await updateDoc(userRef, {
-                sessions: [...filtered, currentSession],
-              });
-            } else {
-              // Update lastActive
-              const updated = data.map((s: Session) =>
-                s.current ? { ...s, lastActive: new Date() } : s
-              );
-              await updateDoc(userRef, { sessions: updated });
-            }
-
-            const sorted = [...(snap.data().sessions || [])].sort((a, b) => {
-              if (a.current && !b.current) return -1;
-              if (!a.current && b.current) return 1;
-              const aTime = a.lastActive?.toMillis?.() || a.lastActive?.getTime?.() || 0;
-              const bTime = b.lastActive?.toMillis?.() || b.lastActive?.getTime?.() || 0;
-              return bTime - aTime;
-            });
-            setSessions(sorted);
-          } else {
-            // User doc chưa có, tạo mới
-            await updateDoc(userRef, {
-              sessions: [currentSession],
-            });
-          }
-          setLoading(false);
-        });
-
-        return () => unsub();
-      } catch (err) {
-        console.error("Track session error:", err);
-        setLoading(false);
-      }
-    };
-
-    trackCurrentSession();
+    return () => unsub();
   }, [user?.uid]);
 
   const removeSession = async (sessionId: string) => {
@@ -128,9 +91,7 @@ export default function SessionsPage() {
 
     setRemovingId(sessionId);
     try {
-      await updateDoc(doc(db, "users", user.uid), {
-        sessions: arrayRemove(session),
-      });
+      await deleteDoc(doc(db, "sessions", sessionId));
       toast.success("Đã đăng xuất thiết bị");
     } catch (err) {
       console.error(err);
@@ -146,11 +107,18 @@ export default function SessionsPage() {
 
     setLoading(true);
     try {
-      const current = sessions.find((s) => s.current);
-      await updateDoc(doc(db, "users", user.uid), {
-        sessions: current ? [current] : [],
-      });
-      toast.success("Đã đăng xuất tất cả");
+      const currentSessionId = localStorage.getItem(SESSION_KEY);
+      const q = query(
+        collection(db, "sessions"),
+        where("uid", "==", user.uid)
+      );
+      const snap = await getDocs(q);
+      const batch = snap.docs
+        .filter((d) => d.id !== currentSessionId)
+        .map((d) => deleteDoc(d.ref));
+      
+      await Promise.all(batch);
+      toast.success("Đã đăng xuất tất cả thiết bị khác");
     } catch (err) {
       console.error(err);
       toast.error("Thất bại");
@@ -160,8 +128,9 @@ export default function SessionsPage() {
   };
 
   const getDeviceIcon = (device: string) => {
-    if (device.toLowerCase().includes("iphone") || device.toLowerCase().includes("android")) return Smartphone;
-    if (device.toLowerCase().includes("mac") || device.toLowerCase().includes("windows")) return Laptop;
+    const d = device.toLowerCase();
+    if (d.includes("iphone") || d.includes("android")) return Smartphone;
+    if (d.includes("mac") || d.includes("windows")) return Laptop;
     return Monitor;
   };
 
