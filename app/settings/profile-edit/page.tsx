@@ -92,9 +92,9 @@ export default function ProfileEditPage() {
   useEffect(() => {
     if (showAddressSheet && provinces.length === 0) {
       fetch("/api/location/province")
-      .then((res) => res.json())
-      .then(setProvinces)
-      .catch(() => toast.error("Không tải được tỉnh/thành"));
+       .then((res) => res.json())
+       .then(setProvinces)
+       .catch(() => toast.error("Không tải được tỉnh/thành"));
     }
   }, [showAddressSheet, provinces.length]);
 
@@ -107,15 +107,15 @@ export default function ProfileEditPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ provinceId: selectedProvince }),
       })
-      .then((res) => res.json())
-      .then((data) => {
+       .then((res) => res.json())
+       .then((data) => {
           setDistricts(data);
           setSelectedDistrict(0);
           setWards([]);
           setSelectedWard("");
         })
-      .catch(() => toast.error("Không tải được quận/huyện"))
-      .finally(() => setLoadingAddress(false));
+       .catch(() => toast.error("Không tải được quận/huyện"))
+       .finally(() => setLoadingAddress(false));
     }
   }, [selectedProvince]);
 
@@ -128,13 +128,13 @@ export default function ProfileEditPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ districtId: selectedDistrict }),
       })
-      .then((res) => res.json())
-      .then((data) => {
+       .then((res) => res.json())
+       .then((data) => {
           setWards(data);
           setSelectedWard("");
         })
-      .catch(() => toast.error("Không tải được phường/xã"))
-      .finally(() => setLoadingAddress(false));
+       .catch(() => toast.error("Không tải được phường/xã"))
+       .finally(() => setLoadingAddress(false));
     }
   }, [selectedDistrict]);
 
@@ -284,8 +284,11 @@ export default function ProfileEditPage() {
             </div>
           )}
 
-          {/* EMAIL */}
-          <div className="flex items-center gap-3 px-4 py-3.5">
+          {/* EMAIL - Link */}
+          <button
+            onClick={() => router.push("/settings/change-email")}
+            className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 dark:active:bg-zinc-800 transition text-left"
+          >
             <Mail className="w-5 h-5 text-sky-500 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <div className="text-xs text-gray-500 dark:text-zinc-500">Email</div>
@@ -293,10 +296,14 @@ export default function ProfileEditPage() {
                 {currentData.email || "Chưa có"}
               </div>
             </div>
-          </div>
+            <ChevronRight className="w-4 h-4 text-gray-300 dark:text-zinc-600 flex-shrink-0" />
+          </button>
 
-          {/* SĐT */}
-          <div className="flex items-center gap-3 px-4 py-3.5">
+          {/* SĐT - Link */}
+          <button
+            onClick={() => router.push("/settings/change-phone")}
+            className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 dark:active:bg-zinc-800 transition text-left"
+          >
             <Phone className="w-5 h-5 text-emerald-500 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <div className="text-xs text-gray-500 dark:text-zinc-500">Số điện thoại</div>
@@ -304,7 +311,8 @@ export default function ProfileEditPage() {
                 {currentData.phone || "Chưa xác thực"}
               </div>
             </div>
-          </div>
+            <ChevronRight className="w-4 h-4 text-gray-300 dark:text-zinc-600 flex-shrink-0" />
+          </button>
 
           {/* ID */}
           <div className="flex items-center gap-3 px-4 py-3.5">
