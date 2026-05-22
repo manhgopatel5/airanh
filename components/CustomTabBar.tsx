@@ -277,7 +277,7 @@ export default function CustomTabBar({
 
 
 
-<div className="relative flex items-center justify-between h-14 px-5 pb-safe">
+<div className="relative flex items-center justify-between h-16 px-5 pb-safe">
               {tabs.map((tab) => {
                 const isActive = currentTab === tab.key;
                 const isCreate = tab.key === "create";
