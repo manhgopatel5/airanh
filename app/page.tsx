@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation"; // THÊM useSearchParams
 import { createPortal } from "react-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { useAppStore } from "@/store/app";
@@ -121,33 +121,55 @@ const FloatingMenu = ({
 };
 
 export default function AppContainer() {
-  const { user, userData, loading: authLoading } = useAuth(); // THÊM userData
+  const { user, userData, loading: authLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams(); // THÊM DÒNG NÀY
   const mode = useAppStore((s) => s.mode);
   const unreadCount = useAppStore((s) => s.unreadCount);
   const [mounted, setMounted] = useState(false);
-  const [currentMainTab, setCurrentMainTab] = useState<MainTab>("home");
+
+  // FIX 1: Đọc tab từ URL, mặc định "home"
+  const [currentMainTab, setCurrentMainTab] = useState<MainTab>(
+    (searchParams.get("tab") as MainTab) || "home"
+  );
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [loadedTabs, setLoadedTabs] = useState<Set<MainTab>>(new Set(["home"]));
+  const [loadedTabs, setLoadedTabs] = useState<Set<MainTab>>(
+    new Set([(searchParams.get("tab") as MainTab) || "home"])
+  );
   const menuRef = useRef<HTMLDivElement>(null);
 
   const isPlanMode = mode === "plan";
 
   useEffect(() => setMounted(true), []);
 
-  // FIX 1: Đợi cả user + userData
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
       router.replace("/login");
       return;
     }
-    // Nếu có user nhưng chưa có userData thì vẫn đợi, không redirect
   }, [user, userData, authLoading, router]);
+
+  // FIX 2: Sync URL khi đổi tab
+  const handleChangeTab = useCallback((tab: MainTab) => {
+    setCurrentMainTab(tab);
+    // Update URL không reload page
+    const newUrl = tab === "home"? "/" : `/?tab=${tab}`;
+    router.replace(newUrl, { scroll: false });
+  }, [router]);
 
   useEffect(() => {
     setLoadedTabs(prev => new Set(prev).add(currentMainTab));
   }, [currentMainTab]);
+
+  // FIX 3: Sync tab khi URL đổi do back/forward
+  useEffect(() => {
+    const tabFromUrl = (searchParams.get("tab") as MainTab) || "home";
+    if (tabFromUrl!== currentMainTab) {
+      setCurrentMainTab(tabFromUrl);
+    }
+  }, [searchParams]); // Chỉ phụ thuộc searchParams
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -185,7 +207,6 @@ export default function AppContainer() {
 
   const activeColorClass = isPlanMode? "text-emerald-500" : "text-blue-600";
 
-  // FIX 2: Loading khi auth chưa xong HOẶC chưa có userData
   if (authLoading ||!userData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
@@ -243,7 +264,7 @@ export default function AppContainer() {
 
           <CustomTabBar
             currentTab={currentMainTab}
-            onChangeTab={setCurrentMainTab}
+            onChangeTab={handleChangeTab} // ĐỔI THÀNH handleChangeTab
             unreadCount={unreadCount}
             isMenuOpen={isMenuOpen}
             onCreateClick={() => {
@@ -256,8 +277,8 @@ export default function AppContainer() {
       )}
 
       <style jsx global>{`
-       .scrollbar-hide::-webkit-scrollbar{display:none}
-       .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
+      .scrollbar-hide::-webkit-scrollbar{display:none}
+      .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
         html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
         body{overscroll-behavior-y:contain}
       `}</style>
