@@ -282,7 +282,7 @@ export default function TwoFAPage() {
                 <div className="flex items-center gap-3">
                   <Smartphone className="w-5 h-5 text-emerald-500 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-gray-500 dark:text-zinc-500 uppercase">Số điện thoại mới</div>
+                    <div className="text-xs text-gray-500 dark:text-zinc-500 uppercase">Số điện thoại</div>
                     <input
                       type="text"
                       inputMode="tel"
