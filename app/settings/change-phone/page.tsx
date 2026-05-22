@@ -39,10 +39,25 @@ export default function ChangePhonePage() {
   const recaptchaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!recaptchaRef.current || window.recaptchaVerifier) return;
+    if (!recaptchaRef.current) return;
+    
+    // Clear cũ nếu có
+    if (window.recaptchaVerifier) {
+      window.recaptchaVerifier.clear();
+    }
+
     window.recaptchaVerifier = new RecaptchaVerifier(auth, recaptchaRef.current, {
       size: "invisible",
+      callback: () => {
+        console.log("reCAPTCHA solved");
+      },
+      "expired-callback": () => {
+        toast.error("reCAPTCHA hết hạn, thử lại");
+      },
     });
+
+    // Render ngay
+    window.recaptchaVerifier.render().catch(console.error);
   }, [auth]);
 
   const validatePassword = (pass: string) => {
@@ -53,29 +68,29 @@ export default function ChangePhonePage() {
 
   const validatePhone = (num: string) => {
     if (!num.trim()) return "Số điện thoại không được để trống";
-    if (!/^(\+84|0)[3|5|7|8|9][0-9]{8}$/.test(num)) return "Số điện thoại không hợp lệ";
-    const formatted = num.startsWith("0")? `+84${num.slice(1)}` : num;
+    if (!/^(\+84|0)[35789][0-9]{8}$/.test(num)) return "Số điện thoại không hợp lệ";
+    const formatted = num.startsWith("0") ? `+84${num.slice(1)}` : num;
     if (formatted === user?.phoneNumber) return "SĐT mới phải khác SĐT hiện tại";
     return "";
   };
 
   const validateOTP = (code: string) => {
     if (!code) return "Vui lòng nhập mã OTP";
-    if (code.length!== 6) return "OTP phải đủ 6 số";
+    if (code.length !== 6) return "OTP phải đủ 6 số";
     return "";
   };
 
-  const passwordError = touched.password? validatePassword(password) : "";
-  const phoneError = touched.phone? validatePhone(phone) : "";
-  const otpError = touched.otp? validateOTP(otp) : "";
+  const passwordError = touched.password ? validatePassword(password) : "";
+  const phoneError = touched.phone ? validatePhone(phone) : "";
+  const otpError = touched.otp ? validateOTP(otp) : "";
 
-  const canSubmitPassword =!validatePassword(password) && password &&!loading;
-  const canSubmitPhone =!validatePhone(phone) && phone &&!loading;
-  const canSubmitOTP =!validateOTP(otp) && otp &&!loading;
+  const canSubmitPassword = !validatePassword(password) && password && !loading;
+  const canSubmitPhone = !validatePhone(phone) && phone && !loading;
+  const canSubmitOTP = !validateOTP(otp) && otp && !loading;
 
   const verifyPassword = async () => {
     if (!user?.email) return toast.error("Tài khoản không có email");
-    setTouched((t) => ({...t, password: true }));
+    setTouched((t) => ({ ...t, password: true }));
 
     const err = validatePassword(password);
     if (err) return toast.error(err);
@@ -95,22 +110,32 @@ export default function ChangePhonePage() {
 
   const sendOTP = async () => {
     if (!user) return toast.error("Chưa đăng nhập");
-    setTouched((t) => ({...t, phone: true }));
+    setTouched((t) => ({ ...t, phone: true }));
 
     const err = validatePhone(phone);
     if (err) return toast.error(err);
 
-    const formattedPhone = phone.startsWith("0")? `+84${phone.slice(1)}` : phone;
+    const formattedPhone = phone.startsWith("0") ? `+84${phone.slice(1)}` : phone;
+    
+    if (!window.recaptchaVerifier) {
+      return toast.error("reCAPTCHA chưa sẵn sàng, reload trang");
+    }
+
     setLoading(true);
     try {
       const provider = new PhoneAuthProvider(auth);
-      const verId = await provider.verifyPhoneNumber(formattedPhone, window.recaptchaVerifier!);
+      const verId = await provider.verifyPhoneNumber(formattedPhone, window.recaptchaVerifier);
       setVerificationId(verId);
       setStep("otp");
       toast.success("Đã gửi OTP");
     } catch (err: any) {
+      console.error("Send OTP error:", err);
       if (err.code === "auth/too-many-requests") {
-        toast.error("Thử lại sau ít phút");
+        toast.error("Gửi quá nhiều lần. Thử lại sau");
+      } else if (err.code === "auth/invalid-phone-number") {
+        toast.error("SĐT không hợp lệ");
+      } else if (err.code === "auth/captcha-check-failed") {
+        toast.error("Lỗi reCAPTCHA. Reload trang");
       } else {
         toast.error("Gửi OTP thất bại");
       }
@@ -121,7 +146,7 @@ export default function ChangePhonePage() {
 
   const confirmOTP = async () => {
     if (!user) return toast.error("Chưa đăng nhập");
-    setTouched((t) => ({...t, otp: true }));
+    setTouched((t) => ({ ...t, otp: true }));
 
     const err = validateOTP(otp);
     if (err) return toast.error(err);
@@ -131,12 +156,13 @@ export default function ChangePhonePage() {
       const credential = PhoneAuthProvider.credential(verificationId, otp);
       await updatePhoneNumber(user, credential);
 
-      const formattedPhone = phone.startsWith("0")? `+84${phone.slice(1)}` : phone;
+      const formattedPhone = phone.startsWith("0") ? `+84${phone.slice(1)}` : phone;
       await updateDoc(doc(db, "users", user.uid), { phone: formattedPhone });
 
       toast.success("Đổi SĐT thành công");
       setTimeout(() => router.back(), 1500);
     } catch (err: any) {
+      console.error("Confirm OTP error:", err);
       if (err.code === "auth/invalid-verification-code") {
         toast.error("Mã OTP không đúng");
       } else if (err.code === "auth/code-expired") {
@@ -152,7 +178,9 @@ export default function ChangePhonePage() {
   return (
     <div className="min-h-screen bg-white dark:bg-black font-sans flex flex-col">
       <Toaster richColors position="top-center" />
-      <div ref={recaptchaRef} />
+      
+      {/* reCAPTCHA container - PHẢI VISIBLE */}
+      <div ref={recaptchaRef} id="recaptcha-container" />
 
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-900">
@@ -191,10 +219,10 @@ export default function ChangePhonePage() {
                     <div className="text-xs text-gray-500 dark:text-zinc-500 uppercase">Mật khẩu hiện tại</div>
                     <div className="flex items-center gap-2">
                       <input
-                        type={showPassword? "text" : "password"}
+                        type={showPassword ? "text" : "password"}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        onBlur={() => setTouched((t) => ({...t, password: true }))}
+                        onBlur={() => setTouched((t) => ({ ...t, password: true }))}
                         placeholder="Nhập để xác nhận"
                         autoComplete="current-password"
                         data-form-type="other"
@@ -208,7 +236,7 @@ export default function ChangePhonePage() {
                         onClick={() => setShowPassword(!showPassword)}
                         className="p-1 active:opacity-50"
                       >
-                        {showPassword? (
+                        {showPassword ? (
                           <FiEyeOff className="w-4 h-4 text-gray-400" />
                         ) : (
                           <FiEye className="w-4 h-4 text-gray-400" />
@@ -234,7 +262,7 @@ export default function ChangePhonePage() {
                       inputMode="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      onBlur={() => setTouched((t) => ({...t, phone: true }))}
+                      onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
                       placeholder="0901234567"
                       autoComplete="off"
                       autoCapitalize="none"
@@ -265,7 +293,7 @@ export default function ChangePhonePage() {
                       inputMode="numeric"
                       value={otp}
                       onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                      onBlur={() => setTouched((t) => ({...t, otp: true }))}
+                      onBlur={() => setTouched((t) => ({ ...t, otp: true }))}
                       placeholder="123456"
                       maxLength={6}
                       autoComplete="one-time-code"
@@ -303,12 +331,12 @@ export default function ChangePhonePage() {
             onClick={verifyPassword}
             disabled={!canSubmitPassword}
             className={`w-full px-4 py-3.5 rounded-2xl font-semibold text-sm transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 ${
-             !canSubmitPassword
-               ? "bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-600 cursor-not-allowed"
+              !canSubmitPassword
+                ? "bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-600 cursor-not-allowed"
                 : "bg-blue-500 text-white shadow-lg shadow-blue-500/30"
             }`}
           >
-            {loading? (
+            {loading ? (
               <>
                 <FiLoader className="animate-spin" size={18} />
                 Đang xác thực...
@@ -324,12 +352,12 @@ export default function ChangePhonePage() {
             onClick={sendOTP}
             disabled={!canSubmitPhone}
             className={`w-full px-4 py-3.5 rounded-2xl font-semibold text-sm transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 ${
-             !canSubmitPhone
-               ? "bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-600 cursor-not-allowed"
+              !canSubmitPhone
+                ? "bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-600 cursor-not-allowed"
                 : "bg-blue-500 text-white shadow-lg shadow-blue-500/30"
             }`}
           >
-            {loading? (
+            {loading ? (
               <>
                 <FiLoader className="animate-spin" size={18} />
                 Đang gửi...
@@ -346,12 +374,12 @@ export default function ChangePhonePage() {
               onClick={confirmOTP}
               disabled={!canSubmitOTP}
               className={`w-full px-4 py-3.5 rounded-2xl font-semibold text-sm transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 ${
-               !canSubmitOTP
-                 ? "bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-600 cursor-not-allowed"
+                !canSubmitOTP
+                  ? "bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-600 cursor-not-allowed"
                   : "bg-blue-500 text-white shadow-lg shadow-blue-500/30"
               }`}
             >
-              {loading? (
+              {loading ? (
                 <>
                   <FiLoader className="animate-spin" size={18} />
                   Đang xác thực...
@@ -367,7 +395,7 @@ export default function ChangePhonePage() {
               onClick={() => {
                 setStep("phone");
                 setOtp("");
-                setTouched((t) => ({...t, otp: false }));
+                setTouched((t) => ({ ...t, otp: false }));
               }}
               className="w-full py-3.5 rounded-2xl bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white font-semibold text-sm active:scale-[0.98] transition"
             >
