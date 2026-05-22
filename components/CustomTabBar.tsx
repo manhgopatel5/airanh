@@ -232,22 +232,19 @@ export default function CustomTabBar({
   }, []);
 
   const themes = {
-    task: {
-      gradient: "from-[#0A84FF] via-[#0A84FF] to-[#0051D5]",
-      glow: "shadow-[0_16px_48px_rgba(10,132,255,0.55)]",
-      iconActive: "text-[#0A84FF]",
-      pillBg: "bg-[#0A84FF]/15",
-      ripple: "bg-[#0A84FF]/20",
-    },
-
-    plan: {
-      gradient: "from-[#30D158] via-[#30D158] to-[#248A3D]",
-      glow: "shadow-[0_16px_48px_rgba(48,209,88,0.55)]",
-      iconActive: "text-[#30D158]",
-      pillBg: "bg-[#30D158]/15",
-      ripple: "bg-[#30D158]/20",
-    },
-  };
+  task: {
+    gradient: "from-[#0A84FF] via-[#0A84FF] to-[#0051D5]",
+    iconActive: "text-[#0A84FF]",
+    pillBg: "bg-[#0A84FF]/15",
+    ripple: "bg-[#0A84FF]/20",
+  },
+  plan: {
+    gradient: "from-[#30D158] via-[#30D158] to-[#248A3D]",
+    iconActive: "text-[#30D158]",
+    pillBg: "bg-[#30D158]/15",
+    ripple: "bg-[#30D158]/20",
+  },
+};
 
   const currentTheme = themes[mode];
 
@@ -333,21 +330,10 @@ export default function CustomTabBar({
                         onClick={() => handleTabClick(tab.key)}
                         className="relative"
                       >
-                        <motion.div
-                          animate={{
-                            scale: [1, 1.6, 1],
-                            opacity: [0.6, 0, 0.6],
-                          }}
-                          transition={{
-                            repeat: Infinity,
-                            duration: 3,
-                            ease: "easeOut",
-                          }}
-                          className={`absolute inset-0 rounded-full bg-gradient-to-br ${currentTheme.gradient} blur-xl`}
-                        />
+                    
 
                         <motion.div
-className={`relative w-16 h-16 rounded-2xl bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center ${currentTheme.glow}`}
+className={`relative w-16 h-16 rounded-2xl bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center`}
                           animate={{
                             rotate: isCreateOpen
                               ? [0, 5, -5, 0]
