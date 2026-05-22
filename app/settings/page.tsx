@@ -8,23 +8,20 @@ import { doc, updateDoc, onSnapshot, deleteDoc, serverTimestamp } from "firebase
 import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
 import { signOut, deleteUser } from "firebase/auth";
 import {
-  ChevronLeft, Moon, Sun, Palette, Bell, Mail,
-  Eye, EyeOff, UserX, Shield, Lock, Smartphone, Key, Trash2,
+  ChevronLeft, Moon, Sun, Palette, Bell,
+  Eye, EyeOff, UserX, Shield, Lock, Smartphone, Trash2,
   Globe, DollarSign, Download, Zap, Database, Info, LogOut,
-  ChevronRight, Monitor, Languages, MapPin, Calendar, Users, QrCode
+  ChevronRight, Monitor, Languages, MapPin, Calendar, Users
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 
 type Settings = {
-  // 1. Giao diện
   theme: "light" | "dark" | "system";
   accentTask: "blue" | "indigo" | "purple";
   accentPlan: "green" | "emerald" | "teal";
   fontSize: "small" | "medium" | "large";
   compactMode: boolean;
   reduceMotion: boolean;
-
-  // 2. Thông báo - chỉ giữ lại để check bật/tắt ở Settings
   notiTaskAssigned: boolean;
   notiTaskDue: boolean;
   notiPlanInvite: boolean;
@@ -33,16 +30,12 @@ type Settings = {
   notiChatAll: boolean;
   emailDigest: "off" | "daily" | "weekly";
   quietHours: { enabled: boolean; from: string; to: string };
-
-  // 3. Quyền riêng tư
   hideOnline: boolean;
   hideLastSeen: boolean;
   hidePhone: boolean;
   hideEmail: boolean;
   allowStrangers: "everyone" | "contacts" | "none";
   blockedUsers: string[];
-
-  // 4. Dữ liệu & Lưu trữ
   language: "vi" | "en";
   timezone: string;
   dateFormat: "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD";
@@ -85,11 +78,9 @@ export default function SettingsPage() {
   const { user } = useAuth();
 
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
-  const [sessions, setSessions] = useState<any[]>([]);
   const [storage, setStorage] = useState({ used: 0, total: 100 });
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [tfaEnabled, setTfaEnabled] = useState(false);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -97,9 +88,7 @@ export default function SettingsPage() {
       if (snap.exists()) {
         const data = snap.data();
         setSettings({...DEFAULT_SETTINGS,...data.settings });
-        setSessions(data.sessions || []);
         setStorage(data.storage || { used: 23.5, total: 100 });
-        setTfaEnabled(data.settings?.["2fa"] || false);
       }
     });
     return () => unsub();
@@ -177,7 +166,6 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-white pb-24 font-sans">
       <Toaster richColors position="top-center" />
 
-      {/* Header */}
       <div className="sticky top-0 z-10 bg-white border-b border-gray-100">
         <div className="relative flex items-center justify-center h-14 px-4">
           <button onClick={() => router.back()} className="absolute left-4 p-1 active:opacity-60 transition">
@@ -188,7 +176,6 @@ export default function SettingsPage() {
       </div>
 
       <div className="px-4 space-y-7 pt-4">
-        {/* 1. GIAO DIỆN */}
         <Section title="GIAO DIỆN">
           <SelectItem
             label="Chế độ"
@@ -248,7 +235,6 @@ export default function SettingsPage() {
           />
         </Section>
 
-        {/* 2. THÔNG BÁO - CHUYỂN THÀNH LINK */}
         <Section title="THÔNG BÁO">
           <SettingItem
             label="Thông báo"
@@ -260,7 +246,6 @@ export default function SettingsPage() {
           />
         </Section>
 
-        {/* 3. QUYỀN RIÊNG TƯ */}
         <Section title="QUYỀN RIÊNG TƯ">
           <ToggleItem
             label="Ẩn trạng thái online"
@@ -304,42 +289,7 @@ export default function SettingsPage() {
           />
         </Section>
 
-        {/* 4. TÀI KHOẢN */}
         <Section title="TÀI KHOẢN">
-          <SettingItem
-            label="Đổi email"
-            icon={Mail}
-            {...(user?.email? { value: user.email } : {})}
-            onClick={() => router.push("/settings/change-email")}
-          />
-          <SettingItem
-            label="Đổi số điện thoại"
-            icon={Smartphone}
-            onClick={() => router.push("/settings/change-phone")}
-          />
-          <SettingItem
-            label="Đổi mật khẩu"
-            icon={Lock}
-            onClick={() => router.push("/settings/change-password")}
-          />
-          <SettingItem
-            label="Xác thực 2 lớp"
-            icon={Key}
-            value={tfaEnabled? "Đã bật" : "Tắt"}
-            onClick={() => router.push("/settings/2fa")}
-          />
-          <SettingItem
-            label="Mã QR của tôi"
-            icon={QrCode}
-            iconBg="bg-blue-50"
-            iconColor="text-blue-500"
-            onClick={() => router.push("/settings/qr")}
-          />
-          <SettingItem
-            label={`Phiên đăng nhập (${sessions.length})`}
-            icon={Shield}
-            onClick={() => router.push("/settings/sessions")}
-          />
           <SettingItem
             label="Đăng xuất tất cả thiết bị"
             icon={LogOut}
@@ -354,7 +304,6 @@ export default function SettingsPage() {
           />
         </Section>
 
-        {/* 5. DỮ LIỆU & LƯU TRỮ */}
         <Section title="DỮ LIỆU & LƯU TRỮ">
           <SelectItem
             label="Ngôn ngữ"
@@ -424,7 +373,6 @@ export default function SettingsPage() {
           />
         </Section>
 
-        {/* 6. VỀ AIRANH */}
         <Section title="VỀ AIRANH">
           <SettingItem
             label="Phiên bản"
@@ -450,12 +398,6 @@ export default function SettingsPage() {
             label="Hotline: 1900 1234"
             icon={Smartphone}
             onClick={() => window.open("tel:19001234", "_blank")}
-          />
-          <SettingItem
-            label="Đăng xuất"
-            icon={LogOut}
-            onClick={() => setShowLogoutModal(true)}
-            danger
           />
         </Section>
       </div>
@@ -616,8 +558,6 @@ function ToggleItem({
     </div>
   );
 }
-
-
 
 function Modal({ title, desc, onClose, onConfirm, confirmText, danger }: { title: string; desc: string; onClose: () => void; onConfirm: () => void; confirmText: string; danger?: boolean }) {
   return (
