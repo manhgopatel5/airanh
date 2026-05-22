@@ -37,7 +37,7 @@ const SESSION_KEY = "airanh_session_id";
 export default function SessionsPage() {
   const db = getFirebaseDB();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState<string | null>(null);
@@ -46,7 +46,12 @@ export default function SessionsPage() {
   // 🔐 LISTEN SESSIONS REALTIME
   // =========================
   useEffect(() => {
-    if (!user?.uid) return;
+    if (authLoading) return; // Đợi auth load xong
+    if (!user?.uid) {
+      setLoading(false);
+      setSessions([]);
+      return;
+    }
 
     const q = query(
       collection(db, "sessions"),
@@ -77,7 +82,7 @@ export default function SessionsPage() {
     });
 
     return () => unsub();
-  }, [user?.uid]);
+  }, [user?.uid, authLoading]);
 
   const removeSession = async (sessionId: string) => {
     if (!user) return;
@@ -150,6 +155,15 @@ export default function SessionsPage() {
     return date.toLocaleDateString("vi-VN");
   };
 
+  // Loading toàn trang khi auth chưa xong
+  if (authLoading || (loading && !sessions.length)) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
+        <FiLoader className="animate-spin text-gray-400" size={24} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white dark:bg-black font-sans flex flex-col">
       <Toaster richColors position="top-center" />
@@ -167,11 +181,7 @@ export default function SessionsPage() {
 
       {/* Content */}
       <div className="flex-1 px-4 mt-6 pb-6">
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <FiLoader className="animate-spin text-gray-400" size={24} />
-          </div>
-        ) : sessions.length === 0 ? (
+        {sessions.length === 0 ? (
           /* Empty State */
           <div className="flex flex-col items-center justify-center py-20 px-6">
             <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-zinc-900 flex items-center justify-center mb-4">
