@@ -181,17 +181,7 @@ export default function ProfileTabContent() {
     };
   }, []);
 
-  const handleShare = async () => {
-    if (!userData) return;
-    const url = `https://airanh.vercel.app/u/${userData.userId}`;
-    if (navigator.share) {
-      await navigator.share({ title: userData.name || "Người dùng AIR", text: `Kết nối với tôi`, url });
-    } else {
-      navigator.clipboard.writeText(url);
-      toast.success("Đã copy link hồ sơ");
-    }
-    if ("vibrate" in navigator) navigator.vibrate(8);
-  };
+ 
 
   const handleLogout = async () => {
     if (!user) return;
@@ -393,13 +383,14 @@ export default function ProfileTabContent() {
 />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
 
-          <SettingItem
-            label="Chia sẻ hồ sơ"
-            subtitle="Link và mạng xã hội"
-            icon={Share2}
-            iconColor="text-purple-500"
-            onClick={handleShare}
-          />
+  <SettingItem
+  label="Chia sẻ hồ sơ"
+  subtitle="Link và mạng xã hội"
+  icon={Share2}
+  iconColor="text-purple-500"
+  iconBg="bg-purple-50"
+  onClick={() => router.push("/settings/share-profile")}
+/>
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
 
           <SettingItem
