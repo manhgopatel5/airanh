@@ -49,7 +49,7 @@ export default function BlockedPage() {
   const [unblocking, setUnblocking] = useState<string | null>(null);
   const [confirmUser, setConfirmUser] = useState<BlockedUser | null>(null);
 
-  // Load blocked users - giữ nguyên logic
+  // Load blocked users - giữ nguyên
   useEffect(() => {
     if (!user?.uid) {
       setLoading(false);
@@ -79,7 +79,7 @@ export default function BlockedPage() {
             blockedData.map(async (item) => {
               const uid = typeof item === 'string'? item : item.uid;
               const blockedAt = typeof item === 'string'
-               ? new Date()
+              ? new Date()
                 : item.blockedAt?.toDate?.() || new Date();
 
               const userSnap = await getDoc(doc(db, "users", uid));
@@ -176,7 +176,7 @@ export default function BlockedPage() {
     <div className="min-h-screen bg-white">
       <Toaster richColors position="top-center" />
 
-      {/* Header giống trang Thông tin cá nhân */}
+      {/* Header */}
       <div className="sticky top-0 z-10 bg-white border-b border-gray-100">
         <div className="relative flex items-center justify-center h-14 px-4">
           <button
@@ -197,14 +197,14 @@ export default function BlockedPage() {
       </div>
 
       <div className="px-4 pt-4">
-        {/* Search bar giống ảnh 1 */}
-        <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-[#F8FAFC] mb-4">
-          <Search className="w-5 h-5 text-[#94A3B8] flex-shrink-0" />
+        {/* Search bar - icon lúp đưa vào trong input, bo tròn */}
+        <div className="relative mb-4">
+          <Search className="w-5 h-5 text-[#94A3B8] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Tìm theo tên, ID..."
-            className="flex-1 bg-transparent outline-none text-[#0F172A] placeholder:text-[#94A3B8] text-[15px]"
+            className="w-full h-12 pl-11 pr-10 bg-[#F8FAFC] rounded-full outline-none text-[#0F172A] placeholder:text-[#94A3B8] text-[15px]"
           />
           <AnimatePresence>
             {search && (
@@ -213,7 +213,7 @@ export default function BlockedPage() {
                 animate={{ scale: 1 }}
                 exit={{ scale: 0 }}
                 onClick={() => setSearch("")}
-                className="p-0.5"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1"
               >
                 <X className="w-4 h-4 text-[#94A3B8]" />
               </motion.button>
@@ -229,7 +229,7 @@ export default function BlockedPage() {
                 key={i}
                 className="flex items-center gap-3 p-4 animate-pulse border-b border-gray-100 last:border-0"
               >
-                <div className="w-12 h-12 bg-gray-200 rounded-full" />
+                <div className="w-11 h-11 bg-gray-200 rounded-full" />
                 <div className="flex-1 space-y-2">
                   <div className="h-4 bg-gray-200 rounded w-1/3" />
                   <div className="h-3 bg-gray-200 rounded w-1/4" />
@@ -251,15 +251,15 @@ export default function BlockedPage() {
                 <Shield className="w-8 h-8 text-[#CBD5E1]" />
               )}
             </motion.div>
-            <p className="text-[#64748B] font-medium text-[15px]">
+            <p className="text-[#0F172A] font-medium text-[15px]">
               {search? "Không tìm thấy" : "Chưa chặn ai"}
             </p>
-            <p className="text-[13px] text-[#94A3B8] mt-1">
+            <p className="text-[13px] text-[#64748B] mt-1">
               {search? "Thử từ khóa khác" : "Người bị chặn sẽ hiện ở đây"}
             </p>
           </div>
         ) : (
-          /* List dạng card phẳng giống ảnh 1 */
+          /* List - đổi màu tên sang xanh dương app */
           <div className="bg-[#F8FAFC] rounded-2xl overflow-hidden">
             <AnimatePresence mode="popLayout">
               {filtered.map((u, idx) => (
@@ -287,7 +287,7 @@ export default function BlockedPage() {
                       <p className="text-[13px] text-[#64748B] truncate">
                         @{u.username || u.userId}
                       </p>
-                      <p className="text-[12px] text-[#94A3B8] mt-0.5">
+                      <p className="text-[13px] text-[#64748B] mt-0.5">
                         Chặn {formatDate(u.blockedAt)}
                       </p>
                     </div>
@@ -310,7 +310,7 @@ export default function BlockedPage() {
         )}
       </div>
 
-      {/* Confirm Dialog - giữ nguyên logic, chỉnh style nhẹ */}
+      {/* Confirm Dialog */}
       <Dialog.Root open={!!confirmUser} onOpenChange={(open) =>!open && setConfirmUser(null)}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/30 z-50 backdrop-blur-sm" />
@@ -319,10 +319,10 @@ export default function BlockedPage() {
               <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
                 <UserX className="w-8 h-8 text-red-500" />
               </div>
-              <Dialog.Title className="text-[18px] font-bold text-[#0F172A] mb-2">
+              <Dialog.Title className="text-[17px] font-bold text-[#0F172A] mb-2">
                 Bỏ chặn {confirmUser?.name}?
               </Dialog.Title>
-              <Dialog.Description className="text-[14px] text-[#64748B] mb-6 leading-relaxed">
+              <Dialog.Description className="text-[15px] text-[#64748B] mb-6 leading-relaxed">
                 Họ sẽ có thể xem hồ sơ và nhắn tin cho bạn lại.
               </Dialog.Description>
             </div>
