@@ -57,7 +57,6 @@ const config: Config = {
 
     extend: {
       colors: {
-        // ✅ GIỮ LẠI COLORS CUSTOM CỦA BRO
         border: "rgb(var(--border) / <alpha-value>)",
         bg: "rgb(var(--bg) / <alpha-value>)",
         "bg-secondary": "rgb(var(--bg-secondary) / <alpha-value>)",
@@ -71,7 +70,6 @@ const config: Config = {
         success: "rgb(var(--success) / <alpha-value>)",
         warning: "rgb(var(--warning) / <alpha-value>)",
 
-        // ✅ THÊM COLORS SHADCN UI - DÙNG HSL
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {
@@ -126,14 +124,7 @@ const config: Config = {
       },
 
       fontFamily: {
-        sans: [
-          'var(--font-inter)',
-          '"SF Pro Rounded"',
-          '"SF Pro Display"',
-          '-apple-system',
-          'BlinkMacSystemFont',
-          ...defaultTheme.fontFamily.sans,
-        ],
+        sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
         mono: ["var(--font-mono)", ...defaultTheme.fontFamily.mono],
       },
 
