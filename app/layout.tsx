@@ -1,13 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
 import { AuthProvider } from "@/lib/AuthContext";
 import EmailGuard from "@/components/EmailGuard";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({
-  subsets: ['latin'],
+const beVietnamPro = Be_Vietnam_Pro({
+  subsets: ['latin', 'vietnamese'],
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
   variable: '--font-sans',
   display: "swap",
 });
@@ -110,7 +111,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi" className={cn("font-sans", geist.variable)} suppressHydrationWarning>
+    <html lang="vi" className={cn("font-sans", beVietnamPro.variable)} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -118,8 +119,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight">
         <AuthProvider>
           <ClientLayout>
-            {/* Nếu 3 trang kia vẫn lỗi trắng xóa sau khi sửa page.tsx, 
-                bạn hãy thử tạm thời comment dòng <EmailGuard> này lại để test xem có phải do Guard chặn không nhé */}
             <EmailGuard>
               {children}
             </EmailGuard>
