@@ -7,7 +7,7 @@ import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
 import { FiCheck, FiLoader, FiArrowLeft } from "react-icons/fi";
-import { User, Mail, Phone, AtSign } from "lucide-react";
+import { Mail, Phone, AtSign } from "lucide-react";
 import { toast, Toaster } from "sonner";
 
 const BAD_WORDS = ["admin", "mod", "support", "đm", "vcl", "dm"];
