@@ -1,5 +1,5 @@
 "use client";
-import { doc, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
+
 import { Flag, Ban } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
@@ -8,6 +8,8 @@ import {
   getDoc,
   setDoc,
   deleteDoc,
+  updateDoc, 
+  arrayUnion,
   serverTimestamp,
   Timestamp,
   getDocs, // thêm
