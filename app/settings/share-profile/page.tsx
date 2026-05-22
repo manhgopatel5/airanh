@@ -72,9 +72,7 @@ END:VCARD`;
     toast.success("Đã tải danh bạ");
   };
 
-  const handleDownloadQR = () => {
-    const svg = document.getElementById("profile-qr");
-    if (!svg) return;
+
 
     const svgData = new XMLSerializer().serializeToString(svg);
     const canvas = document.createElement("canvas");
