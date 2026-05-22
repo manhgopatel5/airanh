@@ -18,7 +18,8 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
   HelpCircle, LogOut, Trash2, User, Shield, Lock,
   Camera, Check, QrCode, Share2, Settings,
-  Circle, Zap, ClipboardList, Star, ScanLine, X
+  Circle, Zap, ClipboardList, Star, ScanLine, X,
+  Mail, Phone, Monitor, Ban, Key, HardDrive
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import type { UploadTask } from "firebase/storage";
@@ -29,7 +30,6 @@ import SectionLabel from "@/components/common/SectionLabel";
 import SettingItem from "@/components/common/SettingItem";
 import ProfileModal from "@/components/common/ProfileModal";
 
-// Tạo file types/tabs.ts nếu chưa có
 type MainTab = "home" | "messages" | "tasks" | "profile";
 
 type UserData = {
@@ -71,7 +71,7 @@ export default function ProfileTabContent({ onNavigateTab }: { onNavigateTab: (t
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
   const accentGradient = isPlan
-  ? "from-green-500 to-emerald-500"
+? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-600";
 
   useEffect(() => {
@@ -302,9 +302,11 @@ export default function ProfileTabContent({ onNavigateTab }: { onNavigateTab: (t
   if (!user ||!userData) return null;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black pb-24 font-sans">
+    <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 pb-24 font-sans">
       <Toaster richColors position="top-center" />
-      <div className="px-6 pt-12 pb-6">
+
+      {/* Header */}
+      <div className="px-6 pt-12 pb-6 bg-white dark:bg-black">
         <div className="flex items-center gap-4">
           <label className="relative cursor-pointer group flex-shrink-0">
             <img
@@ -375,28 +377,145 @@ export default function ProfileTabContent({ onNavigateTab }: { onNavigateTab: (t
         </div>
       </div>
 
-      <div className="px-6 mt-2 space-y-6">
-        <div>
-          <SectionLabel>HỒ SƠ</SectionLabel>
-          <SettingItem label="Thông tin cá nhân" icon={User} onClick={() => router.push("/profile/edit")} />
-          <SettingItem label="Mã QR của tôi" icon={QrCode} onClick={() => setShowQR(true)} />
-          <SettingItem label="Quét mã QR" icon={ScanLine} onClick={() => setShowScanQR(true)} />
-          <SettingItem label="Chia sẻ hồ sơ" icon={Share2} onClick={handleShare} />
+      {/* List Settings - Map full với folder /settings/ của bạn */}
+      <div className="px-4 mt-4 space-y-4">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
+          <SettingItem
+            label="Thông tin cá nhân"
+            subtitle="Tên, SĐT, Email"
+            icon={User}
+            iconColor="text-blue-500"
+            onClick={() => router.push("/profile/edit")}
+          />
+          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+
+          <SettingItem
+            label="Đổi email"
+            subtitle="Cập nhật địa chỉ email"
+            icon={Mail}
+            iconColor="text-sky-500"
+            onClick={() => router.push("/settings/change-email")}
+          />
+          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+
+          <SettingItem
+            label="Đổi số điện thoại"
+            subtitle="Xác thực SĐT mới"
+            icon={Phone}
+            iconColor="text-emerald-500"
+            onClick={() => router.push("/settings/change-phone")}
+          />
+          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+
+          <SettingItem
+            label="Đổi mật khẩu"
+            subtitle="Cập nhật mật khẩu định kỳ"
+            icon={Lock}
+            iconColor="text-green-500"
+            onClick={() => router.push("/settings/change-password")}
+          />
+          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+
+          <SettingItem
+            label="Xác thực 2 lớp"
+            subtitle="Bật/tắt 2FA cho tài khoản"
+            icon={Shield}
+            iconColor="text-amber-500"
+            onClick={() => router.push("/settings/2fa")}
+          />
+          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+
+          <SettingItem
+            label="Phiên đăng nhập"
+            subtitle="Quản lý thiết bị đang hoạt động"
+            icon={Monitor}
+            iconColor="text-purple-500"
+            onClick={() => router.push("/settings/sessions")}
+          />
+          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+
+          <SettingItem
+            label="Tài khoản bị chặn"
+            subtitle="Danh sách người dùng đã chặn"
+            icon={Ban}
+            iconColor="text-red-500"
+            onClick={() => router.push("/settings/blocked")}
+          />
+          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+
+          <SettingItem
+            label="Mã QR của tôi"
+            subtitle="Chia sẻ & quét mã kết bạn"
+            icon={QrCode}
+            iconColor="text-amber-500"
+            onClick={() => setShowQR(true)}
+          />
+          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+
+          <SettingItem
+            label="Chia sẻ hồ sơ"
+            subtitle="Link và mạng xã hội"
+            icon={Share2}
+            iconColor="text-purple-500"
+            onClick={handleShare}
+          />
+          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+
+          <SettingItem
+            label="API Keys"
+            subtitle="Quản lý khóa API của bạn"
+            icon={Key}
+            iconColor="text-indigo-500"
+            onClick={() => router.push("/settings/api")}
+          />
+          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+
+          <SettingItem
+            label="Dung lượng"
+            subtitle="Quản lý file và bộ nhớ"
+            icon={HardDrive}
+            iconColor="text-teal-500"
+            onClick={() => router.push("/settings/storage")}
+          />
+          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+
+          <SettingItem
+            label="Cài đặt chung"
+            subtitle="Thông báo, Giao diện, Ngôn ngữ"
+            icon={Settings}
+            iconColor="text-gray-500"
+            onClick={() => router.push("/settings")}
+          />
+          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+
+          <SettingItem
+            label="Hỗ trợ"
+            subtitle="Trung tâm trợ giúp, Báo cáo sự cố"
+            icon={HelpCircle}
+            iconColor="text-red-500"
+            onClick={() => router.push("/settings/help")}
+          />
         </div>
-        <div>
-          <SectionLabel>BẢO MẬT</SectionLabel>
-          <SettingItem label="Xác thực CCCD" icon={Shield} />
-          <SettingItem label="Đổi mật khẩu" icon={Lock} onClick={() => router.push("/settings/change-password")} />
-        </div>
-        <div>
-          <SectionLabel>HỖ TRỢ</SectionLabel>
-          <SettingItem label="Trung tâm trợ giúp" icon={HelpCircle} />
-          <SettingItem label="Cài đặt" icon={Settings} onClick={() => router.push("/settings")} />
-          <SettingItem label="Đăng xuất" icon={LogOut} onClick={() => setShowLogoutModal(true)} danger />
-          <SettingItem label="Xoá tài khoản" icon={Trash2} onClick={() => setShowDeleteModal(true)} danger />
+
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
+          <SettingItem
+            label="Đăng xuất"
+            icon={LogOut}
+            iconColor="text-gray-500"
+            onClick={() => setShowLogoutModal(true)}
+          />
+          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+          <SettingItem
+            label="Xoá tài khoản"
+            icon={Trash2}
+            iconColor="text-red-500"
+            onClick={() => setShowDeleteModal(true)}
+            danger
+          />
         </div>
       </div>
 
+      {/* Modals */}
       {showQR && userData.userId && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowQR(false)}>
           <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
