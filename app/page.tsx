@@ -79,7 +79,7 @@ const FloatingMenu = ({
             filter: "blur(4px)",
             transition: { duration: 0.15, ease: [0.4, 0, 1, 1] }
           }}
-className="w-full max-w-[500px] mx-auto bg-white dark:bg-zinc-900 rounded-3xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] pointer-events-auto flex flex-col gap-3 select-none"
+          className="w-full max-w-[500px] mx-auto bg-white dark:bg-zinc-900 rounded-3xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] pointer-events-auto flex flex-col gap-3 select-none"
         >
           <div className="grid grid-cols-2 gap-3">
             <motion.button
@@ -121,10 +121,10 @@ className="w-full max-w-[500px] mx-auto bg-white dark:bg-zinc-900 rounded-3xl p-
 };
 
 export default function AppContainer() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, userData, loading: authLoading } = useAuth(); // THÊM userData
   const router = useRouter();
   const mode = useAppStore((s) => s.mode);
-const unreadCount = useAppStore((s) => s.unreadCount); // thêm dòng này
+  const unreadCount = useAppStore((s) => s.unreadCount);
   const [mounted, setMounted] = useState(false);
   const [currentMainTab, setCurrentMainTab] = useState<MainTab>("home");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -135,10 +135,15 @@ const unreadCount = useAppStore((s) => s.unreadCount); // thêm dòng này
 
   useEffect(() => setMounted(true), []);
 
+  // FIX 1: Đợi cả user + userData
   useEffect(() => {
     if (authLoading) return;
-    if (!user) router.replace("/login");
-  }, [user, authLoading, router]);
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+    // Nếu có user nhưng chưa có userData thì vẫn đợi, không redirect
+  }, [user, userData, authLoading, router]);
 
   useEffect(() => {
     setLoadedTabs(prev => new Set(prev).add(currentMainTab));
@@ -180,7 +185,8 @@ const unreadCount = useAppStore((s) => s.unreadCount); // thêm dòng này
 
   const activeColorClass = isPlanMode? "text-emerald-500" : "text-blue-600";
 
-  if (authLoading) {
+  // FIX 2: Loading khi auth chưa xong HOẶC chưa có userData
+  if (authLoading ||!userData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
         <div className="flex flex-col items-center gap-3">
@@ -206,7 +212,7 @@ const unreadCount = useAppStore((s) => s.unreadCount); // thêm dòng này
           {loadedTabs.has("tasks") && <TasksPage />}
         </div>
         <div className={currentMainTab!== "profile"? "hidden" : ""}>
-{loadedTabs.has("profile") && <ProfileTabContent />}
+          {loadedTabs.has("profile") && <ProfileTabContent />}
         </div>
       </div>
 
@@ -225,33 +231,33 @@ const unreadCount = useAppStore((s) => s.unreadCount); // thêm dòng này
             )}
           </AnimatePresence>
 
-   <div className="fixed inset-0 z-[70] pointer-events-none flex items-center justify-center p-5">
-  <div ref={menuRef} className="w-full max-w-[500px] pointer-events-auto">
-    <FloatingMenu
-      isOpen={isMenuOpen}
-      onSelect={handleSelectCreate}
-      onClose={() => setIsMenuOpen(false)}
-    />
-  </div>
-</div>
+          <div className="fixed inset-0 z-[70] pointer-events-none flex items-center justify-center p-5">
+            <div ref={menuRef} className="w-full max-w-[500px] pointer-events-auto">
+              <FloatingMenu
+                isOpen={isMenuOpen}
+                onSelect={handleSelectCreate}
+                onClose={() => setIsMenuOpen(false)}
+              />
+            </div>
+          </div>
 
-<CustomTabBar
-  currentTab={currentMainTab}
-  onChangeTab={setCurrentMainTab}
-  unreadCount={unreadCount}
-  isMenuOpen={isMenuOpen} // thêm dòng này
-  onCreateClick={() => {
-    navigator.vibrate?.([15, 35, 15]);
-    setIsMenuOpen(true);
-  }}
-/>
+          <CustomTabBar
+            currentTab={currentMainTab}
+            onChangeTab={setCurrentMainTab}
+            unreadCount={unreadCount}
+            isMenuOpen={isMenuOpen}
+            onCreateClick={() => {
+              navigator.vibrate?.([15, 35, 15]);
+              setIsMenuOpen(true);
+            }}
+          />
         </>,
         document.body
       )}
 
       <style jsx global>{`
-  .scrollbar-hide::-webkit-scrollbar{display:none}
-  .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
+       .scrollbar-hide::-webkit-scrollbar{display:none}
+       .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
         html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
         body{overscroll-behavior-y:contain}
       `}</style>
