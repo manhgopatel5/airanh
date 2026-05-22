@@ -16,6 +16,7 @@ interface CustomTabBarProps {
   currentTab: MainTab;
   onChangeTab: (tab: MainTab) => void;
   onCreateClick: () => void;
+  unreadCount?: number; // thêm dòng này
 }
 
 const IconHome = ({ active }: { active: boolean }) => (
@@ -214,10 +215,11 @@ export default function CustomTabBar({
   currentTab,
   onChangeTab,
   onCreateClick,
+  unreadCount = 0,
 }: CustomTabBarProps) {
   const mode = useAppStore((s) => s.mode) || "task";
 
-  const [unreadCount] = useState(3);
+  
   const [mounted, setMounted] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
