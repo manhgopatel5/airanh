@@ -225,9 +225,7 @@ export default function CustomTabBar({
   const [mounted, setMounted] = useState(false);
 
 
-  const [particles, setParticles] = useState<
-    { id: number; x: number; y: number }[]
-  >([]);
+ 
 
   useEffect(() => {
     setMounted(true);
@@ -287,31 +285,7 @@ export default function CustomTabBar({
                 if (isCreate) {
                   return (
                     <div key={tab.key} className="relative">
-                      <AnimatePresence>
-                        {particles.map((p) => (
-                          <motion.div
-                            key={p.id}
-                            initial={{
-                              x: 0,
-                              y: 0,
-                              opacity: 1,
-                              scale: 0,
-                            }}
-                            animate={{
-                              x: p.x,
-                              y: p.y,
-                              opacity: 0,
-                              scale: 1,
-                            }}
-                            exit={{ opacity: 0 }}
-                            transition={{
-                              duration: 0.6,
-                              ease: "easeOut",
-                            }}
-                            className={`absolute top-1/2 left-1/2 w-2 h-2 rounded-full bg-gradient-to-br ${currentTheme.gradient}`}
-                          />
-                        ))}
-                      </AnimatePresence>
+                    
 
                       <motion.button
                         whileTap={{ scale: 0.85 }}
