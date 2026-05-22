@@ -15,7 +15,7 @@ export default function HelpPage() {
 
   const handleContact = (type: "email" | "phone" | "chat") => {
     if ("vibrate" in navigator) navigator.vibrate(5);
-    if (type === "email") window.open("mailto:support@air.vn?subject=Hỗ trợ Airanh", "_blank");
+    if (type === "email") window.open("mailto:manhgopatel5@gmail.com?subject=Hỗ trợ Airanh", "_blank");
     if (type === "phone") window.open("tel:0359872122", "_blank");
     if (type === "chat") toast.info("Tính năng chat trực tiếp sắp ra mắt");
   };
@@ -71,7 +71,7 @@ export default function HelpPage() {
         <Section title="LIÊN HỆ NHANH">
           <SettingItem
             label="Gửi email"
-            subtitle="support@air.vn"
+            subtitle="manhgopatel5@gmail.com"
             icon={Mail}
             iconColor="text-blue-500"
             iconBg="bg-blue-50 dark:bg-blue-950/30"
@@ -123,7 +123,7 @@ export default function HelpPage() {
             icon={AlertCircle}
             iconColor="text-red-500"
             iconBg="bg-red-50 dark:bg-red-950/30"
-            onClick={() => window.open("mailto:support@air.vn?subject=Báo cáo sự cố", "_blank")}
+            onClick={() => window.open("mailto:manhgopatel5@gmail.com?subject=Báo cáo sự cố", "_blank")}
           />
         </Section>
 
