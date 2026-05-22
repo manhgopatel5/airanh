@@ -18,6 +18,27 @@ service cloud.firestore {
       }
     }
 
+    // ========== SESSIONS ==========
+    match /sessions/{sessionId} {
+      // Chỉ user đó mới đọc được sessions của mình
+      allow read: if isSignedIn() && request.auth.uid == resource.data.uid;
+      
+      // Tạo session mới cho chính mình
+      allow create: if isSignedIn() 
+        && request.auth.uid == request.resource.data.uid
+        && request.resource.data.keys().hasAll(['uid', 'device', 'browser', 'os', 'ip', 'location', 'userAgent', 'current', 'lastActive', 'createdAt']);
+      
+      // Update: chỉ update lastActive, current, ip, location của session mình
+      allow update: if isSignedIn() 
+        && request.auth.uid == resource.data.uid
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.diff(resource.data).changedKeys()
+          .hasOnly(['lastActive', 'current', 'ip', 'location']);
+      
+      // Xóa session của mình
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.uid;
+    }
+
     // ========== TASKS + COMMENTS ==========
     match /tasks/{taskId} {
       allow read: if true;
@@ -28,7 +49,7 @@ service cloud.firestore {
         request.auth.uid == resource.data.userId ||
         // User khác chỉ được like + save + apply + commentCount
         request.resource.data.diff(resource.data).changedKeys()
-          .hasOnly(['savedBy', 'likedBy', 'likeCount', 'commentCount', 'applicants', 'appliedCount']) // ✅ Thêm applicants + appliedCount
+          .hasOnly(['savedBy', 'likedBy', 'likeCount', 'commentCount', 'applicants', 'appliedCount'])
       );
       
       allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
@@ -38,7 +59,6 @@ service cloud.firestore {
         allow read: if true;
         allow create: if isSignedIn();
         
-        // ✅ SỬA: Cho phép 4 case update
         allow update: if isSignedIn() && (
           // Case 1: Chủ comment sửa nội dung
           (
