@@ -16,7 +16,7 @@ export default function ShareProfilePage() {
 
   useEffect(() => {
     if (user) setLoading(false);
-  }, [user]);
+  }, );
 
   if (!user) return null;
 
@@ -70,34 +70,6 @@ END:VCARD`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success("Đã tải danh bạ");
-  };
-
-
-
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    const img = new Image();
-
-    img.onload = () => {
-      canvas.width = 1024;
-      canvas.height = 1024;
-      ctx!.fillStyle = "#FFFFFF";
-      ctx!.fillRect(0, 0, 1024, 1024);
-      ctx!.drawImage(img, 0, 0, 1024, 1024);
-
-      canvas.toBlob((blob) => {
-        if (!blob) return;
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `qr-${username}.png`;
-        a.click();
-        URL.revokeObjectURL(url);
-        toast.success("Đã tải mã QR");
-      });
-    };
-    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
   };
 
   const handleCopyQRImage = async () => {
