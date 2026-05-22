@@ -29,7 +29,7 @@ import {
   Briefcase,
   Info,
   MapPin,
-  Ban,
+  
   ExternalLink,
   Zap,
   Share2,
