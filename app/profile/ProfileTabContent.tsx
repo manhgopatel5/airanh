@@ -18,7 +18,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
   HelpCircle, LogOut, Trash2, User, Shield, Lock,
   Camera, Check, QrCode, Share2, Settings,
-  Circle, Zap, ClipboardList, Star, ScanLine, X,
+  Circle, ScanLine, X,
   Mail, Phone, Monitor, Ban, Key, HardDrive
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
@@ -302,11 +302,11 @@ export default function ProfileTabContent({ onNavigateTab }: { onNavigateTab: (t
   if (!user ||!userData) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 pb-24 font-sans">
+    <div className="min-h-screen bg-white dark:bg-black pb-24 font-sans">
       <Toaster richColors position="top-center" />
 
-      {/* Header */}
-      <div className="px-6 pt-12 pb-6 bg-white dark:bg-black">
+      {/* Header - Đã bỏ 3 chip Task/Plan/Star */}
+      <div className="px-6 pt-12 pb-6">
         <div className="flex items-center gap-4">
           <label className="relative cursor-pointer group flex-shrink-0">
             <img
@@ -358,27 +358,10 @@ export default function ProfileTabContent({ onNavigateTab }: { onNavigateTab: (t
             </div>
           </div>
         </div>
-
-        <div className="flex items-center gap-2 mt-5">
-          <button onClick={() => onNavigateTab("tasks")} className="flex-1 py-2.5 rounded-2xl bg-gray-50 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95 transition">
-            <ClipboardList className="w-4 h-4 text-gray-500 dark:text-zinc-400" />
-            <span className="text-sm font-bold text-gray-900 dark:text-white">{userData.stats?.tasks?? 0}</span>
-            <span className="text-xs text-gray-400 dark:text-zinc-500">Task</span>
-          </button>
-          <button onClick={() => onNavigateTab("home")} className="flex-1 py-2.5 rounded-2xl bg-gray-50 dark:bg-zinc-900 flex items-center justify-center gap-2 active:scale-95 transition">
-            <Zap className="w-4 h-4 text-gray-500 dark:text-zinc-400" />
-            <span className="text-sm font-bold text-gray-900 dark:text-white">{userData.stats?.plans?? 0}</span>
-            <span className="text-xs text-gray-400 dark:text-zinc-500">Plan</span>
-          </button>
-          <button className="flex-1 py-2.5 rounded-2xl bg-gray-50 dark:bg-zinc-900 flex items-center justify-center gap-2">
-            <Star className="w-4 h-4 text-gray-500 dark:text-zinc-400" />
-            <span className="text-sm font-bold text-gray-900 dark:text-white">{userData.stats?.rating?? 0}</span>
-          </button>
-        </div>
       </div>
 
-      {/* List Settings - Map full với folder /settings/ của bạn */}
-      <div className="px-4 mt-4 space-y-4">
+      {/* List Settings */}
+      <div className="px-4 mt-2 space-y-4">
         <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
           <SettingItem
             label="Thông tin cá nhân"
