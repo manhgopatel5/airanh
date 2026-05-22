@@ -26,7 +26,7 @@ import type { UploadTask } from "firebase/storage";
 import { nanoid } from "nanoid";
 import { Html5Qrcode } from "html5-qrcode";
 import { QRCodeSVG } from "qrcode.react";
-import SectionLabel from "@/components/common/SectionLabel";
+
 import SettingItem from "@/components/common/SettingItem";
 import ProfileModal from "@/components/common/ProfileModal";
 
