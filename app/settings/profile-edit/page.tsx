@@ -37,7 +37,7 @@ export default function ProfileEditPage() {
   const [address, setAddress] = useState("");
   
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+
   const [touched, setTouched] = useState(false);
 
   useEffect(() => {
@@ -89,7 +89,7 @@ export default function ProfileEditPage() {
     const err = validateName(trimmedName);
 
     if (err) {
-      setError(err);
+      toast.error(err);
       setTouched(true);
       return;
     }
@@ -100,12 +100,12 @@ export default function ProfileEditPage() {
     }
 
     if (!user || !auth.currentUser) {
-      setError("Bạn chưa đăng nhập");
+      toast.error("Bạn chưa đăng nhập");
       return;
     }
 
     setLoading(true);
-    setError("");
+    toast.error("");
 
     try {
       const updateData: any = {
@@ -128,7 +128,7 @@ export default function ProfileEditPage() {
       setEditingField(null);
       setTouched(false);
     } catch (err) {
-      setError("Có lỗi xảy ra, thử lại sau");
+      toast.error("Có lỗi xảy ra, thử lại sau");
       console.error(err);
     } finally {
       setLoading(false);
