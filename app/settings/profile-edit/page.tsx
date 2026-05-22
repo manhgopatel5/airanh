@@ -37,7 +37,6 @@ export default function ProfileEditPage() {
   const [address, setAddress] = useState("");
   
   const [loading, setLoading] = useState(false);
-
   const [touched, setTouched] = useState(false);
 
   useEffect(() => {
@@ -85,13 +84,14 @@ export default function ProfileEditPage() {
   };
 
   const save = useCallback(async () => {
-    const trimmedName = name.trim();
-    const err = validateName(trimmedName);
-
-    if (err) {
-      toast.error(err);
-      setTouched(true);
-      return;
+    // Chỉ validate tên khi đang edit tên
+    if (editingField === "name") {
+      const err = validateName(name.trim());
+      if (err) {
+        toast.error(err);
+        setTouched(true);
+        return;
+      }
     }
 
     if (!hasChanges()) {
@@ -105,14 +105,14 @@ export default function ProfileEditPage() {
     }
 
     setLoading(true);
-    toast.error("");
 
     try {
       const updateData: any = {
         updatedAt: serverTimestamp(),
       };
 
-      if (trimmedName !== currentData.name) {
+      if (name.trim() !== currentData.name) {
+        const trimmedName = name.trim();
         updateData.name = trimmedName;
         updateData.searchKeywords = trimmedName.toLowerCase().split(" ");
         await updateProfile(auth.currentUser, { displayName: trimmedName });
@@ -133,7 +133,9 @@ export default function ProfileEditPage() {
     } finally {
       setLoading(false);
     }
-  }, [name, dob, gender, address, currentData, user, validateName, auth, db]);
+  }, [name, dob, gender, address, currentData, user, validateName, auth, db, editingField]);
+
+  const nameError = editingField === "name" && touched ? validateName(name) : "";
 
   if (!user) return null;
 
@@ -154,17 +156,21 @@ export default function ProfileEditPage() {
       <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
         <button
           onClick={() => !isEditing && setEditingField(field)}
-          className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 dark:active:bg-zinc-800 transition text-left"
+          disabled={isEditing}
+          className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-gray-50 dark:active:bg-zinc-800 transition text-left disabled:active:bg-transparent"
         >
           <Icon className={`w-5 h-5 ${iconColor} flex-shrink-0`} />
           <div className="flex-1 min-w-0">
-            <div className="text-xs text-gray-500 dark:text-zinc-500">{label}</div>
+            <div className="text-xs text-gray-500 dark:text-zinc-500 uppercase">{label}</div>
             {isEditing ? (
               type === "select" ? (
                 <select
                   value={field === "gender" ? gender : ""}
                   onChange={(e) => setGender(e.target.value)}
                   autoFocus
+                  onBlur={() => {
+                    if (!gender && currentData.gender) setGender(currentData.gender);
+                  }}
                   className="w-full text-base font-medium bg-transparent border-0 p-0 text-gray-900 dark:text-white focus:outline-none focus:ring-0"
                 >
                   <option value="">Chọn giới tính</option>
@@ -205,19 +211,17 @@ export default function ProfileEditPage() {
           {!isEditing && <ChevronRight className="w-4 h-4 text-gray-300 dark:text-zinc-600 flex-shrink-0" />}
         </button>
         {isEditing && field === "name" && (
-          <>
-            <div className="px-4 flex items-center justify-between pb-2">
-              <p className="text-xs text-red-500 h-4">{touched ? validateName(name) : ""}</p>
-              <p className="text-xs text-gray-400 dark:text-zinc-600">{name.length}/30</p>
-            </div>
-          </>
+          <div className="px-4 flex items-center justify-between pb-2">
+            <p className="text-xs text-red-500 h-4">{nameError}</p>
+            <p className="text-xs text-gray-400 dark:text-zinc-600">{name.length}/30</p>
+          </div>
         )}
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black font-sans pb-24">
+    <div className="min-h-screen bg-white dark:bg-black font-sans flex flex-col">
       <Toaster richColors position="top-center" />
       
       {/* Header */}
@@ -232,7 +236,7 @@ export default function ProfileEditPage() {
       </div>
 
       {/* Content */}
-      <div className="px-4 mt-6 space-y-3">
+      <div className="flex-1 px-4 mt-6 space-y-3 pb-6">
         {/* TÊN HIỂN THỊ */}
         {renderField(
           "name",
@@ -242,28 +246,6 @@ export default function ProfileEditPage() {
           "text-blue-500",
           "text",
           "Nhập tên của bạn"
-        )}
-
-        {/* Nút Lưu thay đổi - chỉ hiện khi đang edit */}
-        {editingField && (
-          <button
-            onClick={save}
-            disabled={loading || !hasChanges() || (editingField === "name" && !!validateName(name))}
-            className={`w-full px-4 py-3 rounded-2xl font-semibold text-sm transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 ${
-              loading || !hasChanges() || (editingField === "name" && !!validateName(name))
-                ? "bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-600 cursor-not-allowed"
-                : "bg-blue-500 text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40"
-            }`}
-          >
-            {loading ? (
-              <>
-                <FiLoader className="animate-spin" size={18} />
-                Đang lưu...
-              </>
-            ) : (
-              "Lưu thay đổi"
-            )}
-          </button>
         )}
 
         {/* EMAIL - Read Only */}
@@ -342,6 +324,30 @@ export default function ProfileEditPage() {
           "Nhập địa chỉ của bạn"
         )}
       </div>
+
+      {/* Nút Lưu thay đổi - Sticky bottom, chỉ hiện khi có thay đổi */}
+      {hasChanges() && (
+        <div className="sticky bottom-0 p-4 bg-gradient-to-t from-white via-white to-transparent dark:from-black dark:via-black pt-8">
+          <button
+            onClick={save}
+            disabled={loading || (editingField === "name" && !!validateName(name))}
+            className={`w-full px-4 py-3.5 rounded-2xl font-semibold text-sm transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 ${
+              loading || (editingField === "name" && !!validateName(name))
+                ? "bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-600 cursor-not-allowed"
+                : "bg-blue-500 text-white shadow-lg shadow-blue-500/30"
+            }`}
+          >
+            {loading ? (
+              <>
+                <FiLoader className="animate-spin" size={18} />
+                Đang lưu...
+              </>
+            ) : (
+              "Lưu thay đổi"
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
