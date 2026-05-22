@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { useAppStore } from "@/store/app";
+
 import {
   doc,
   onSnapshot,
@@ -42,7 +42,7 @@ export default function BlockedPage() {
   const db = getFirebaseDB();
   const router = useRouter();
   const { user } = useAuth();
-  const mode = useAppStore((s) => s.mode);
+
 
 
   const [blocked, setBlocked] = useState<BlockedUser[]>([]);
