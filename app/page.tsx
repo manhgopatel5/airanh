@@ -206,7 +206,7 @@ const unreadCount = useAppStore((s) => s.unreadCount); // thêm dòng này
           {loadedTabs.has("tasks") && <TasksPage />}
         </div>
         <div className={currentMainTab!== "profile"? "hidden" : ""}>
-          {loadedTabs.has("profile") && <ProfileTabContent onNavigateTab={(tab) => setCurrentMainTab(tab)} />}
+{loadedTabs.has("profile") && <ProfileTabContent />}
         </div>
       </div>
 
