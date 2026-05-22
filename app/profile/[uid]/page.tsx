@@ -8,7 +8,7 @@ import {
   getDoc,
   setDoc,
   deleteDoc,
-  updateDoc, 
+  
   arrayUnion,
   serverTimestamp,
   Timestamp,
