@@ -321,14 +321,14 @@ export default function SettingsPage() {
             onClick={() => window.open("https://air.vn/privacy", "_blank")}
           />
           <SettingItem
-            label="Liên hệ: support@air.vn"
+            label="Liên hệ: manhgopatel5@gmail.com"
             icon={Mail}
             onClick={() => window.open("mailto:support@air.vn", "_blank")}
           />
           <SettingItem
-            label="Hotline: 1900 1234"
+            label="Hotline: 035 987 2122"
             icon={Smartphone}
-            onClick={() => window.open("tel:19001234", "_blank")}
+            onClick={() => window.open("tel:0359872122", "_blank")}
           />
         </Section>
       </div>
