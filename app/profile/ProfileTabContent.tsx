@@ -64,11 +64,10 @@ export default function ProfileTabContent() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showQR, setShowQR] = useState(false);
-  const [showScanQR, setShowScanQR] = useState(false);
+  
   const hasCheckedId = useRef(false);
   const uploadTaskRef = useRef<UploadTask | null>(null);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+
 
   const accentGradient = isPlan
 ? "from-green-500 to-emerald-500"
@@ -426,13 +425,13 @@ export default function ProfileTabContent() {
           />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
 
-          <SettingItem
-            label="Mã QR của tôi"
-            subtitle="Chia sẻ & quét mã kết bạn"
-            icon={QrCode}
-            iconColor="text-amber-500"
-            onClick={() => setShowQR(true)}
-          />
+  <SettingItem
+  label="Mã QR của tôi"
+  subtitle="Chia sẻ & quét mã kết bạn"
+  icon={QrCode}
+  iconColor="text-amber-500"
+  onClick={() => router.push("/settings/qr")} // DÙNG DÒNG NÀY
+/>
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
 
           <SettingItem
@@ -499,38 +498,7 @@ export default function ProfileTabContent() {
       </div>
 
       {/* Modals */}
-      {showQR && userData.userId && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowQR(false)}>
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-black text-center mb-1 text-gray-900 dark:text-white">@{userData.userId}</h3>
-            <p className="text-sm text-center text-gray-500 mb-4">Quét để kết nối với {userData.name}</p>
-            <div className="bg-white p-4 rounded-2xl flex items-center justify-center">
-              <QRCodeSVG value={`https://airanh.vercel.app/u/${userData.userId}`} size={200} level="H" includeMargin />
-            </div>
-            <div className="grid grid-cols-2 gap-3 mt-4">
-              <button onClick={handleShare} className="py-3 rounded-2xl font-bold bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white flex items-center justify-center gap-2 active:scale-95 transition">
-                <Share2 size={18} /> Chia sẻ
-              </button>
-              <button onClick={() => { setShowQR(false); setShowScanQR(true); }} className={`py-3 rounded-2xl font-bold bg-gradient-to-r ${accentGradient} text-white flex items-center justify-center gap-2 active:scale-95 transition`}>
-                <ScanLine size={18} /> Quét mã
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {showScanQR && (
-        <div className="fixed inset-0 bg-black z-50">
-          <div id="qr-reader" className="w-full h-full" />
-          <button onClick={stopScan} className="absolute top-6 right-6 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center">
-            <X className="w-5 h-5 text-white" />
-          </button>
-          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-white text-center">
-            <p className="font-bold">Đưa mã QR vào khung</p>
-            <p className="text-sm opacity-70 mt-1">Tự động quét khi phát hiện</p>
-          </div>
-        </div>
-      )}
 
       {showLogoutModal && (
         <ProfileModal title="Đăng xuất?" desc="Bạn sẽ cần đăng nhập lại để sử dụng app" onClose={() => setShowLogoutModal(false)} onConfirm={handleLogout} confirmText="Đăng xuất" danger />
