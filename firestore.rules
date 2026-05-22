@@ -18,22 +18,27 @@ service cloud.firestore {
       }
     }
 
-    // ========== SESSIONS ==========
+    // ========== SESSIONS - ĐÃ FIX ==========
     match /sessions/{sessionId} {
-      // Chỉ user đó mới đọc được sessions của mình
-      allow read: if isSignedIn() && request.auth.uid == resource.data.uid;
+      // Đọc 1 document
+      allow get: if isSignedIn() && request.auth.uid == resource.data.uid;
+      
+      // List query với where
+      allow list: if isSignedIn() && request.auth.uid == resource.data.uid;
       
       // Tạo session mới cho chính mình
       allow create: if isSignedIn() 
         && request.auth.uid == request.resource.data.uid
-        && request.resource.data.keys().hasAll(['uid', 'device', 'browser', 'os', 'ip', 'location', 'userAgent', 'current', 'lastActive', 'createdAt']);
+        && request.resource.data.keys().hasAll(['uid', 'device', 'browser', 'os', 'ip', 'location', 'userAgent', 'current', 'lastActive', 'createdAt'])
+        && request.resource.data.current is bool
+        && request.resource.data.uid is string;
       
-      // Update: chỉ update lastActive, current, ip, location của session mình
+      // Update: chỉ update lastActive, current, ip, location, browser, os, userAgent, device của session mình
       allow update: if isSignedIn() 
         && request.auth.uid == resource.data.uid
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.diff(resource.data).changedKeys()
-          .hasOnly(['lastActive', 'current', 'ip', 'location']);
+          .hasOnly(['lastActive', 'current', 'ip', 'location', 'browser', 'os', 'userAgent', 'device']);
       
       // Xóa session của mình
       allow delete: if isSignedIn() && request.auth.uid == resource.data.uid;
