@@ -588,6 +588,7 @@ function SettingItem({
         >
           {label}
         </div>
+  </div>  
       <div className="flex items-center gap-2 flex-shrink-0">
         {value && <span className="text- text-[#64748B]">{value}</span>}
         <ChevronRight className="w-5 h-5 text-[#CBD5E1]" />
