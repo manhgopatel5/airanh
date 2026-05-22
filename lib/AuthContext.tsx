@@ -13,13 +13,18 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import {
   doc,
   getDoc,
-  setDoc,
   updateDoc,
   serverTimestamp,
   onSnapshot,
   Timestamp,
   runTransaction,
-  arrayUnion,
+  collection,
+  addDoc,
+  query,
+  where,
+  getDocs,
+  deleteDoc,
+  orderBy,
 } from "firebase/firestore";
 import {
   ref,
@@ -48,18 +53,21 @@ export type AppUser = {
   bio?: string;
   hidden?: boolean;
   deletedAt?: any;
-  sessions?: Session[];
+  // Bỏ sessions khỏi AppUser
 };
 
 export type Session = {
   id: string;
+  uid: string;
   device: string;
   browser: string;
   os: string;
   ip: string;
   location: string;
-  lastActive: any;
+  lastActive: Timestamp;
+  createdAt: Timestamp;
   current: boolean;
+  userAgent: string;
 };
 
 type AuthContextType = {
@@ -75,6 +83,8 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   error: null,
 });
+
+const SESSION_KEY = "airanh_session_id";
 
 const generateSearchKeywords = (
   name: string,
@@ -105,70 +115,68 @@ const generateSearchKeywords = (
 // =========================
 const trackCurrentSession = async (uid: string, db: any) => {
   try {
-    // 1. Parse UA
     const parser = new UAParser();
     const result = parser.getResult();
     const device = `${result.device.vendor || ""} ${result.device.model || result.os.name}`.trim() || "Unknown Device";
     const browser = `${result.browser.name} ${result.browser.version || ""}`.trim();
     const os = `${result.os.name} ${result.os.version || ""}`.trim();
+    const userAgent = navigator.userAgent;
 
-    // 2. Get IP + Location
     let ip = "Unknown";
     let location = "Unknown";
     try {
-      const res = await fetch("https://ipapi.co/json/");
+      const res = await fetch("https://api.ipify.org?format=json");
       const data = await res.json();
       ip = data.ip || "Unknown";
-      location = `${data.city}, ${data.country_name}` || "Unknown";
+      // Location nên lấy qua Cloud Function để bảo mật
     } catch {}
 
-    // 3. Tạo session ID unique
-    const sessionId = `${uid}_${btoa(navigator.userAgent).slice(0, 20)}_${Date.now()}`;
+    let sessionId = localStorage.getItem(SESSION_KEY);
+    const sessionsRef = collection(db, "sessions");
 
-    const currentSession: Session = {
-      id: sessionId,
-      device,
-      browser,
-      os,
-      ip,
-      location,
-      lastActive: new Date(),
-      current: true,
-    };
-
-    // 4. Update Firestore: set tất cả session cũ current = false, add session mới
-    const userRef = doc(db, "users", uid);
-    await runTransaction(db, async (tx) => {
-      const snap = await tx.get(userRef);
-      if (!snap.exists()) return;
-
-      const data = snap.data();
-      const sessions = (data.sessions || []) as Session[];
-
-      // Bỏ flag current ở session cũ
-      const updatedSessions = sessions.map((s) => ({...s, current: false }));
-
-      // Check xem device này đã có session chưa
-      const existingIdx = updatedSessions.findIndex(
-        (s) => s.device === device && s.browser === browser && s.os === os
-      );
-
-      if (existingIdx >= 0) {
-        // Update session cũ thành current
-        updatedSessions[existingIdx] = {
-         ...updatedSessions[existingIdx],
+    if (sessionId) {
+      // Update session cũ
+      const sessionRef = doc(db, "sessions", sessionId);
+      const snap = await getDoc(sessionRef);
+      if (snap.exists() && snap.data().uid === uid) {
+        await updateDoc(sessionRef, {
+          lastActive: serverTimestamp(),
           current: true,
-          lastActive: new Date(),
           ip,
           location,
-        };
+        });
       } else {
-        // Add session mới
-        updatedSessions.push(currentSession);
+        // Session ID cũ không hợp lệ, tạo mới
+        sessionId = null;
+        localStorage.removeItem(SESSION_KEY);
       }
+    }
 
-      tx.update(userRef, { sessions: updatedSessions });
-    });
+    if (!sessionId) {
+      // Tạo session mới
+      const docRef = await addDoc(sessionsRef, {
+        uid,
+        device,
+        browser,
+        os,
+        ip,
+        location,
+        userAgent,
+        lastActive: serverTimestamp(),
+        createdAt: serverTimestamp(),
+        current: true,
+      });
+      sessionId = docRef.id;
+      localStorage.setItem(SESSION_KEY, sessionId);
+    }
+
+    // Set các session khác current = false
+    const q = query(sessionsRef, where("uid", "==", uid), where("current", "==", true));
+    const snap = await getDocs(q);
+    const updates = snap.docs
+      .filter((d) => d.id !== sessionId)
+      .map((d) => updateDoc(d.ref, { current: false }));
+    await Promise.all(updates);
 
     console.log("Tracked session:", device);
   } catch (err) {
@@ -202,7 +210,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (!auth ||!db ||!rtdb) return;
+    if (!auth || !db || !rtdb) return;
 
     const unsubAuth = onAuthStateChanged(
       auth,
@@ -277,7 +285,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 searchKeywords,
                 hidden: false,
                 deletedAt: null,
-                sessions: [], // Khởi tạo rỗng
               };
 
               tx.set(userRef, newUser);
@@ -300,11 +307,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (document.visibilityState === "hidden") {
               updateDoc(userRef, {
                 isOnline: false,
-                lastSeen: serverTimestamp()
+                lastSeen: serverTimestamp(),
               }).catch(() => {});
             } else {
               updateDoc(userRef, { isOnline: true }).catch(() => {});
-              // Update lastActive của session hiện tại
               trackCurrentSession(firebaseUser.uid, db);
             }
           };
@@ -314,7 +320,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const handleBeforeUnload = () => {
             updateDoc(userRef, {
               isOnline: false,
-              lastSeen: serverTimestamp()
+              lastSeen: serverTimestamp(),
             }).catch(() => {});
           };
           window.addEventListener("beforeunload", handleBeforeUnload);
@@ -376,7 +382,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (auth?.currentUser) {
         updateDoc(doc(db, "users", auth.currentUser.uid), {
           isOnline: false,
-          lastSeen: serverTimestamp()
+          lastSeen: serverTimestamp(),
         }).catch(() => {});
       }
     };
@@ -400,24 +406,24 @@ export const useLogout = () => {
     const auth = firebase.getFirebaseAuth();
     const db = firebase.getFirebaseDB();
     const user = auth.currentUser;
-    if (user) {
+    const sessionId = localStorage.getItem(SESSION_KEY);
+
+    if (user && sessionId) {
       try {
-        // Set session hiện tại current = false khi logout
-        const userRef = doc(db, "users", user.uid);
-        const snap = await getDoc(userRef);
-        if (snap.exists()) {
-          const sessions = (snap.data().sessions || []) as Session[];
-          const updated = sessions.map((s) =>
-            s.current? {...s, current: false, lastActive: new Date() } : s
-          );
-          await updateDoc(userRef, {
-            sessions: updated,
-            isOnline: false,
-            lastSeen: serverTimestamp(),
-          });
-        }
+        await deleteDoc(doc(db, "sessions", sessionId));
+        localStorage.removeItem(SESSION_KEY);
       } catch {}
     }
+
+    if (user) {
+      try {
+        await updateDoc(doc(db, "users", user.uid), {
+          isOnline: false,
+          lastSeen: serverTimestamp(),
+        });
+      } catch {}
+    }
+
     await auth.signOut();
   };
 };
