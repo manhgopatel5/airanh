@@ -13,7 +13,7 @@ import {
 import { doc, updateDoc } from "firebase/firestore";
 import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
 import { FiLoader, FiArrowLeft } from "react-icons/fi";
-import { Smartphone, Shield, Check, AlertTriangle, Info } from "lucide-react";
+import { Smartphone, Shield, Check, AlertTriangle } from "lucide-react";
 import { toast, Toaster } from "sonner";
 
 declare global {
