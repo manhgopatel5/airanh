@@ -370,89 +370,64 @@ className={`relative w-16 h-16 rounded-2xl bg-gradient-to-br ${currentTheme.grad
                     : IconProfile;
 
                 return (
-                  <motion.button
-                    key={tab.key}
-                    whileTap={{ scale: 0.88 }}
-                    onTouchStart={() => haptics.light()}
-                    onClick={() => handleTabClick(tab.key)}
-                    className="relative flex items-center justify-center w-16 h-16"
-                  >
-                    {isActive && (
-                      <motion.div
-                        layoutId="active-pill"
-                        className={`absolute inset-0 rounded-2xl ${currentTheme.pillBg}`}
-                        transition={{
-                          type: "spring",
-                          bounce: 0.2,
-                          duration: 0.6,
-                        }}
-                      />
-                    )}
+              <motion.button
+  key={tab.key}
+  whileTap={{ scale: 0.88 }}
+  onTouchStart={() => haptics.light()}
+  onClick={() => handleTabClick(tab.key)}
+  className="relative flex items-center justify-center w-16 h-16"
+>
+  {isActive && (
+    <motion.div
+      layoutId="active-pill"
+      className={`absolute inset-0 rounded-2xl ${currentTheme.pillBg}`}
+      transition={{
+        type: "spring",
+        bounce: 0.2,
+        duration: 0.6,
+      }}
+    />
+  )}
 
-                    <div className="relative z-10">
-                      <AnimatePresence>
-                        {isActive && (
-                          <motion.div
-                            initial={{ scale: 0, opacity: 0.5 }}
-                            animate={{ scale: 2.5, opacity: 0 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.8 }}
-                            className={`absolute inset-0 rounded-full ${currentTheme.ripple}`}
-                          />
-                        )}
-                      </AnimatePresence>
+  {/* Badge đưa ra ngoài z-10, z-20 để nổi lên trên */}
+  {tab.key === "messages" && unreadCount > 0 && (
+    <motion.div
+      initial={{ scale: 0, rotate: -180 }}
+      animate={{ scale: 1, rotate: 0 }}
+      className="absolute -top-1 -right-1 z-20 min-w-[22px] h-[22px] bg-gradient-to-br from-red-500 to-red-600 rounded-full px-[6px] flex items-center justify-center shadow-lg shadow-red-500/50"
+    >
+      <motion.span
+        animate={{ scale: [1, 1.15, 1] }}
+        transition={{ repeat: Infinity, duration: 2 }}
+        className="text-[10px] font-black text-white leading-none"
+      >
+        {unreadCount > 9? "9+" : unreadCount}
+      </motion.span>
+    </motion.div>
+  )}
 
-                      <motion.div
-                        animate={
-                          isActive
-                            ? { y: [0, -4, 0] }
-                            : { y: 0 }
-                        }
-                        transition={{
-                          duration: 0.5,
-                          type: "spring",
-                          bounce: 0.5,
-                        }}
-                        className={
-                          isActive
-                            ? currentTheme.iconActive
-                            : "text-zinc-400 dark:text-zinc-600"
-                        }
-                      >
-                        <IconComponent active={isActive} />
-                      </motion.div>
+  <div className="relative z-10">
+    <AnimatePresence>
+      {isActive && (
+        <motion.div
+          initial={{ scale: 0, opacity: 0.5 }}
+          animate={{ scale: 2.5, opacity: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.8 }}
+          className={`absolute inset-0 rounded-full ${currentTheme.ripple}`}
+        />
+      )}
+    </AnimatePresence>
 
-                      {tab.key === "messages" &&
-                        unreadCount > 0 && (
-                          <motion.div
-                            initial={{
-                              scale: 0,
-                              rotate: -180,
-                            }}
-                            animate={{
-                              scale: 1,
-                              rotate: 0,
-                            }}
-                            className="absolute -top-1 -right-1 min-w-[22px] h-[22px] bg-gradient-to-br from-red-500 to-red-600 rounded-full px-[6px] flex items-center justify-center shadow-lg shadow-red-500/50"
-                          >
-                            <motion.span
-                              animate={{
-                                scale: [1, 1.15, 1],
-                              }}
-                              transition={{
-                                repeat: Infinity,
-                                duration: 2,
-                              }}
-                              className="text-[10px] font-black text-white leading-none"
-                            >
-                              {unreadCount > 9
-                                ? "9+"
-                                : unreadCount}
-                            </motion.span>
-                          </motion.div>
-                        )}
-                    </div>
-                  </motion.button>
+    <motion.div
+      animate={isActive? { y: [0, -4, 0] } : { y: 0 }}
+      transition={{ duration: 0.5, type: "spring", bounce: 0.5 }}
+      className={isActive? currentTheme.iconActive : "text-zinc-400 dark:text-zinc-600"}
+    >
+      <IconComponent active={isActive} />
+    </motion.div>
+  </div>
+</motion.button>
                 );
               })}
             </div>
