@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/lib/AuthContext";
+import { useAuth, trackCurrentSession } from "@/lib/AuthContext"; // Import thêm
 import { 
   collection, 
   query, 
@@ -41,12 +41,27 @@ export default function SessionsPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [creatingSession, setCreatingSession] = useState(false);
 
-  // =========================
-  // 🔐 LISTEN SESSIONS REALTIME
-  // =========================
+  // Tạo session khi vào trang này
   useEffect(() => {
-    if (authLoading) return; // Đợi auth load xong
+    if (authLoading || !user?.uid) return;
+    
+    const createSessionIfNeeded = async () => {
+      const sessionId = localStorage.getItem(SESSION_KEY);
+      if (!sessionId) {
+        setCreatingSession(true);
+        await trackCurrentSession(user.uid, db);
+        setCreatingSession(false);
+      }
+    };
+    
+    createSessionIfNeeded();
+  }, [user?.uid, authLoading, db]);
+
+  // LISTEN SESSIONS REALTIME
+  useEffect(() => {
+    if (authLoading) return;
     if (!user?.uid) {
       setLoading(false);
       setSessions([]);
@@ -65,7 +80,6 @@ export default function SessionsPage() {
         ...d.data() 
       } as Session));
       
-      // Sort: current lên đầu
       const sorted = [...data].sort((a, b) => {
         if (a.current && !b.current) return -1;
         if (!a.current && b.current) return 1;
@@ -82,7 +96,7 @@ export default function SessionsPage() {
     });
 
     return () => unsub();
-  }, [user?.uid, authLoading]);
+  }, [user?.uid, authLoading, db]);
 
   const removeSession = async (sessionId: string) => {
     if (!user) return;
@@ -155,7 +169,6 @@ export default function SessionsPage() {
     return date.toLocaleDateString("vi-VN");
   };
 
-  // Loading toàn trang khi auth chưa xong
   if (authLoading || (loading && !sessions.length)) {
     return (
       <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
@@ -168,7 +181,6 @@ export default function SessionsPage() {
     <div className="min-h-screen bg-white dark:bg-black font-sans flex flex-col">
       <Toaster richColors position="top-center" />
 
-      {/* Header */}
       <div className="sticky top-0 z-10 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-900">
         <div className="flex items-center justify-between px-4 h-14">
           <button onClick={() => router.back()} className="p-2 -ml-2 active:opacity-50">
@@ -179,10 +191,13 @@ export default function SessionsPage() {
         </div>
       </div>
 
-      {/* Content */}
       <div className="flex-1 px-4 mt-6 pb-6">
-        {sessions.length === 0 ? (
-          /* Empty State */
+        {creatingSession ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <FiLoader className="animate-spin text-blue-500 mb-3" size={32} />
+            <p className="text-sm text-gray-500">Đang tạo phiên...</p>
+          </div>
+        ) : sessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-6">
             <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-zinc-900 flex items-center justify-center mb-4">
               <Shield className="w-8 h-8 text-gray-400" />
@@ -196,7 +211,6 @@ export default function SessionsPage() {
           </div>
         ) : (
           <>
-            {/* Info card */}
             <div className="bg-blue-50 dark:bg-blue-950/30 rounded-2xl px-4 py-3.5 mb-6 flex items-start gap-3">
               <Shield className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
@@ -209,7 +223,6 @@ export default function SessionsPage() {
               </div>
             </div>
 
-            {/* Sessions List */}
             <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-zinc-800">
               {sessions.map((session) => {
                 const Icon = getDeviceIcon(session.device);
@@ -265,7 +278,6 @@ export default function SessionsPage() {
         )}
       </div>
 
-      {/* Nút Sticky bottom */}
       {sessions.length > 1 && !loading && (
         <div className="sticky bottom-0 p-4 bg-gradient-to-t from-white via-white to-transparent dark:from-black dark:via-black pt-8">
           <button
