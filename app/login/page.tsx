@@ -53,12 +53,10 @@ export default function Login() {
   useEffect(() => {
     authRef.current = getFirebaseAuth();
 
-    // Check passkey support
     if (window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
       PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(setPasskeySupported);
     }
 
-    // Handle magic link sign-in
     if (isSignInWithEmailLink(authRef.current, window.location.href)) {
       let email = localStorage.getItem("emailForSignIn");
       if (!email) {
@@ -66,30 +64,30 @@ export default function Login() {
       }
       if (email) {
         signInWithEmailLink(authRef.current, email, window.location.href)
-          .then(() => {
+         .then(() => {
             localStorage.removeItem("emailForSignIn");
             toast.success("Đăng nhập thành công");
-            router.replace(redirectTo);
+            // KHÔNG router.replace ở đây - để AuthContext tự làm
           })
-          .catch(() => setErrors({ submit: "Link không hợp lệ hoặc đã hết hạn" }));
+         .catch(() => setErrors({ submit: "Link không hợp lệ hoặc đã hết hạn" }));
       }
     }
 
-    // Remember last email
     const lastEmail = localStorage.getItem("last_email");
     if (lastEmail) setForm(prev => ({...prev, email: lastEmail }));
 
-    // Auto redirect nếu đã login
+    // CHỈ KIỂM TRA ĐỂ TẮT LOADING, KHÔNG REDIRECT
     const unsub = onAuthStateChanged(authRef.current, (user) => {
       if (user && user.emailVerified) {
-        router.replace(redirectTo);
+        // Đã login rồi, AuthContext sẽ redirect
+        // Không làm gì ở đây để tránh double redirect
       } else {
         setAuthChecking(false);
         setTimeout(() => emailRef.current?.focus(), 100);
       }
     });
     return () => unsub();
-  }, [router, redirectTo]);
+  }, [redirectTo]);
 
   useEffect(() => {
     return () => {
@@ -103,7 +101,7 @@ export default function Login() {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
         return "Email không hợp lệ";
     }
-    if (field === "password" && !value)
+    if (field === "password" &&!value)
       return "Vui lòng nhập mật khẩu";
     return "";
   };
@@ -121,7 +119,7 @@ export default function Login() {
   const handleMagicLink = async () => {
     const auth = authRef.current;
     if (!auth) return;
-    
+
     if (!form.email) {
       setErrors({ email: "Nhập email trước" });
       emailRef.current?.focus();
@@ -135,12 +133,12 @@ export default function Login() {
     try {
       setMagicLoading(true);
       setErrors({});
-      
+
       await sendSignInLinkToEmail(auth, form.email, {
         url: window.location.origin + "/login",
         handleCodeInApp: true,
       });
-      
+
       localStorage.setItem("emailForSignIn", form.email);
       localStorage.setItem("last_email", form.email);
       setMagicLinkSent(true);
@@ -169,7 +167,7 @@ export default function Login() {
 
       await setPersistence(
         auth,
-        remember ? browserLocalPersistence : browserSessionPersistence
+        remember? browserLocalPersistence : browserSessionPersistence
       );
 
       const provider = new GoogleAuthProvider();
@@ -178,8 +176,8 @@ export default function Login() {
       await signInWithPopup(auth, provider);
       localStorage.setItem("last_email", auth.currentUser?.email || "");
       toast.success("Đăng nhập thành công");
-      router.replace(redirectTo);
-      
+      // KHÔNG router.replace - để AuthContext tự làm sau khi tạo session
+
     } catch (err: any) {
       console.error("GOOGLE ERROR:", err.code);
       if (err.code === "auth/popup-blocked") {
@@ -227,7 +225,7 @@ export default function Login() {
 
       await setPersistence(
         auth,
-        remember ? browserLocalPersistence : browserSessionPersistence
+        remember? browserLocalPersistence : browserSessionPersistence
       );
 
       const res = await signInWithEmailAndPassword(
@@ -250,7 +248,7 @@ export default function Login() {
       localStorage.removeItem("login_fail_time");
 
       toast.success("Đăng nhập thành công");
-      router.replace(redirectTo);
+      // KHÔNG router.replace - để AuthContext tự làm sau khi tạo session
     } catch (err: any) {
       failedAttempts.current++;
       localStorage.setItem("login_fail_time", Date.now().toString());
@@ -345,7 +343,7 @@ export default function Login() {
                   <input
                     ref={emailRef}
                     className={`w-full pl-10 pr-3 py-2.5 rounded-lg border text-sm ${
-                      errors.email ? "border-red-500" : "border-gray-300"
+                      errors.email? "border-red-500" : "border-gray-300"
                     } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none transition-all`}
                     placeholder="Email"
                     value={form.email}
@@ -362,9 +360,9 @@ export default function Login() {
                 <div className="relative">
                   <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                   <input
-                    type={show ? "text" : "password"}
+                    type={show? "text" : "password"}
                     className={`w-full pl-10 pr-10 py-2.5 rounded-lg border text-sm ${
-                      errors.password ? "border-red-500" : "border-gray-300"
+                      errors.password? "border-red-500" : "border-gray-300"
                     } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none transition-all`}
                     placeholder="Mật khẩu"
                     value={form.password}
@@ -378,7 +376,7 @@ export default function Login() {
                     onClick={handleShowPass}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    {show ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                    {show? <FiEyeOff size={18} /> : <FiEye size={18} />}
                   </button>
                 </div>
                 {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
@@ -408,7 +406,7 @@ export default function Login() {
                 disabled={loading || googleLoading || magicLoading}
                 className="w-full py-3 rounded-lg text-white font-semibold text-sm bg-sky-500 hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-sky-500/30"
               >
-                {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+                {loading? "Đang đăng nhập..." : "Đăng nhập"}
               </motion.button>
             </form>
 
@@ -430,7 +428,7 @@ export default function Login() {
                 className="w-full py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-semibold text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
               >
                 <FcGoogle size={20} />
-                {googleLoading ? "Đang kết nối..." : "Tiếp tục với Google"}
+                {googleLoading? "Đang kết nối..." : "Tiếp tục với Google"}
               </motion.button>
 
               <motion.button
@@ -441,7 +439,7 @@ export default function Login() {
                 className="w-full py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-semibold text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
               >
                 <FiSend size={18} />
-                {magicLoading ? "Đang gửi..." : "Đăng nhập bằng Email Link"}
+                {magicLoading? "Đang gửi..." : "Đăng nhập bằng Email Link"}
               </motion.button>
 
               {passkeySupported && (
