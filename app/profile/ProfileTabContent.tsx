@@ -18,18 +18,15 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
   HelpCircle, LogOut, Trash2, User, Shield, Lock,
   Camera, Check, QrCode, Share2, Settings,
-  Circle,
-  Mail, Phone, Monitor, Ban, Key, HardDrive
+  Circle, Bell,
+  Mail, Phone, Monitor, Ban, HardDrive
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import type { UploadTask } from "firebase/storage";
 import { nanoid } from "nanoid";
 
-
 import SettingItem from "@/components/common/SettingItem";
 import ProfileModal from "@/components/common/ProfileModal";
-
-
 
 type UserData = {
   uid: string;
@@ -63,13 +60,12 @@ export default function ProfileTabContent() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  
+
   const hasCheckedId = useRef(false);
   const uploadTaskRef = useRef<UploadTask | null>(null);
 
-
   const accentGradient = isPlan
-? "from-green-500 to-emerald-500"
+   ? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-600";
 
   useEffect(() => {
@@ -181,8 +177,6 @@ export default function ProfileTabContent() {
     };
   }, []);
 
- 
-
   const handleLogout = async () => {
     if (!user) return;
     setShowLogoutModal(false);
@@ -238,14 +232,11 @@ export default function ProfileTabContent() {
       if (e.key === "Escape") {
         setShowLogoutModal(false);
         setShowDeleteModal(false);
-        
       }
     };
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
-
-
 
   if (!user ||!userData) return null;
 
@@ -253,7 +244,7 @@ export default function ProfileTabContent() {
     <div className="min-h-screen bg-white dark:bg-black pb-24 font-sans">
       <Toaster richColors position="top-center" />
 
-      {/* Header - Đã bỏ 3 chip Task/Plan/Star */}
+      {/* Header */}
       <div className="px-6 pt-12 pb-6">
         <div className="flex items-center gap-4">
           <label className="relative cursor-pointer group flex-shrink-0">
@@ -316,7 +307,7 @@ export default function ProfileTabContent() {
             subtitle="Tên, SĐT, Email"
             icon={User}
             iconColor="text-blue-500"
-            onClick={() => router.push("/settings/profile-edit")} 
+            onClick={() => router.push("/settings/profile-edit")}
           />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
 
@@ -374,31 +365,32 @@ export default function ProfileTabContent() {
           />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
 
-  <SettingItem
-  label="Mã QR của tôi"
-  subtitle="Chia sẻ & quét mã kết bạn"
-  icon={QrCode}
-  iconColor="text-amber-500"
-  onClick={() => router.push("/settings/qr")} // DÙNG DÒNG NÀY
-/>
-          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
-  <SettingItem
-  label="Chia sẻ hồ sơ"
-  subtitle="Link và mạng xã hội"
-  icon={Share2}
-  iconColor="text-purple-500"
-  iconBg="bg-purple-50"
-  onClick={() => router.push("/settings/share-profile")}
-/>
+          <SettingItem
+            label="Mã QR của tôi"
+            subtitle="Chia sẻ & quét mã kết bạn"
+            icon={QrCode}
+            iconColor="text-amber-500"
+            onClick={() => router.push("/settings/qr")}
+          />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
 
           <SettingItem
-            label="API Keys"
-            subtitle="Quản lý khóa API của bạn"
-            icon={Key}
-            iconColor="text-indigo-500"
-            onClick={() => router.push("/settings/api")}
+            label="Chia sẻ hồ sơ"
+            subtitle="Link và mạng xã hội"
+            icon={Share2}
+            iconColor="text-purple-500"
+            iconBg="bg-purple-50"
+            onClick={() => router.push("/settings/share-profile")}
+          />
+          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+
+          <SettingItem
+            label="Thông báo"
+            subtitle="Push, email, giờ im lặng"
+            icon={Bell}
+            iconColor="text-blue-500"
+            iconBg="bg-blue-50"
+            onClick={() => router.push("/settings/notifications")}
           />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
 
@@ -446,9 +438,6 @@ export default function ProfileTabContent() {
           />
         </div>
       </div>
-
-      {/* Modals */}
-
 
       {showLogoutModal && (
         <ProfileModal title="Đăng xuất?" desc="Bạn sẽ cần đăng nhập lại để sử dụng app" onClose={() => setShowLogoutModal(false)} onConfirm={handleLogout} confirmText="Đăng xuất" danger />
