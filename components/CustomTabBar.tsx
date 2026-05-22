@@ -220,12 +220,7 @@ export default function CustomTabBar({
   const [unreadCount] = useState(3);
   const [mounted, setMounted] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-const { scrollY } = useScroll();
 
-useMotionValueEvent(scrollY, "change", (latest) => {
-  setScrolled(latest > 10);
-});
   const [particles, setParticles] = useState<
     { id: number; x: number; y: number }[]
   >([]);
@@ -289,11 +284,7 @@ useMotionValueEvent(scrollY, "change", (latest) => {
 
         <div className="relative px-5 pb-4">
 <motion.div
-  className="relative transition-colors duration-300"
-  animate={{
-    backgroundColor: scrolled? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0)",
-    backdropFilter: scrolled? "blur(20px)" : "blur(0px)",
-  }}
+  className="relative bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl transition-colors duration-300"
   whileHover={{ y: -3 }}
   transition={{ duration: 0.3 }}
 >
