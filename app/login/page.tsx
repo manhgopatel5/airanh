@@ -48,7 +48,7 @@ export default function Login() {
 
   const failedAttempts = useRef(0);
   const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const redirectTo = searchParams.get("redirect") || "/chat";
+const redirectTo = searchParams.get("redirect") || "/";
 
   // FIX: Redirect khi đã login + có userData + hết loading
   useEffect(() => {
