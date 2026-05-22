@@ -815,17 +815,19 @@ const handleBlock = async () => {
 
   setActionLoading(true);
   try {
-    // ĐÂY LÀ CHỖ BẠN HỎI
-    await updateDoc(doc(db, "users", user.uid), {
-      "settings.blockedUsers": arrayUnion({
-        uid: targetUser.uid,
-        blockedAt: serverTimestamp() // Lưu cả thời gian chặn
-      })
-    });
+    // Thay updateDoc bằng setDoc + merge
+    await setDoc(doc(db, "users", user.uid), {
+      settings: {
+        blockedUsers: arrayUnion({
+          uid: targetUser.uid,
+          blockedAt: serverTimestamp()
+        })
+      }
+    }, { merge: true });
     
     toast.success(`Đã chặn ${targetUser.name}`);
     if ("vibrate" in navigator) navigator.vibrate(8);
-    router.back(); // Quay về sau khi chặn
+    router.back();
   } catch (err) {
     console.error("Block error:", err);
     toast.error("Chặn thất bại");
