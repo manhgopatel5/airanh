@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/app";
 import { ChevronLeft, Mail, MessageSquare, Phone, FileText, AlertCircle, ChevronRight, HelpCircle } from "lucide-react";
 import { toast, Toaster } from "sonner";
-
+import { useState } from "react"; 
 export default function HelpPage() {
   const router = useRouter();
   const mode = useAppStore((s) => s.mode);
