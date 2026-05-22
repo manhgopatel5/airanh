@@ -8,9 +8,9 @@ import { doc, updateDoc, onSnapshot, deleteDoc, serverTimestamp } from "firebase
 import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
 import { signOut, deleteUser } from "firebase/auth";
 import {
-  ChevronLeft, Moon, Sun, Palette, Bell,
+  ChevronLeft, Moon, Sun, Palette,
   Eye, EyeOff, UserX, Shield, Lock, Smartphone, Trash2,
-  Globe, DollarSign, Download, Zap, Database, Info, LogOut,
+  Globe, DollarSign, Zap, Info, LogOut,
   ChevronRight, Mail, Monitor, Languages, MapPin, Calendar, Users
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
@@ -22,14 +22,6 @@ type Settings = {
   fontSize: "small" | "medium" | "large";
   compactMode: boolean;
   reduceMotion: boolean;
-  notiTaskAssigned: boolean;
-  notiTaskDue: boolean;
-  notiPlanInvite: boolean;
-  notiPlanDeadline: boolean;
-  notiChatMention: boolean;
-  notiChatAll: boolean;
-  emailDigest: "off" | "daily" | "weekly";
-  quietHours: { enabled: boolean; from: string; to: string };
   hideOnline: boolean;
   hideLastSeen: boolean;
   hidePhone: boolean;
@@ -50,14 +42,6 @@ const DEFAULT_SETTINGS: Settings = {
   fontSize: "medium",
   compactMode: false,
   reduceMotion: false,
-  notiTaskAssigned: true,
-  notiTaskDue: true,
-  notiPlanInvite: true,
-  notiPlanDeadline: true,
-  notiChatMention: true,
-  notiChatAll: false,
-  emailDigest: "off",
-  quietHours: { enabled: true, from: "22:00", to: "07:00" },
   hideOnline: false,
   hideLastSeen: false,
   hidePhone: false,
@@ -78,7 +62,6 @@ export default function SettingsPage() {
   const { user } = useAuth();
 
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
-  const [storage, setStorage] = useState({ used: 0, total: 100 });
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -88,7 +71,6 @@ export default function SettingsPage() {
       if (snap.exists()) {
         const data = snap.data();
         setSettings({...DEFAULT_SETTINGS,...data.settings });
-        setStorage(data.storage || { used: 23.5, total: 100 });
       }
     });
     return () => unsub();
@@ -101,28 +83,6 @@ export default function SettingsPage() {
     await updateDoc(doc(db, "users", user.uid), { settings: newSettings });
     toast.success("Đã cập nhật");
     if ("vibrate" in navigator) navigator.vibrate(5);
-  };
-
-  const clearCache = async () => {
-    if ("caches" in window) {
-      const names = await caches.keys();
-      await Promise.all(names.map((n) => caches.delete(n)));
-    }
-    localStorage.clear();
-    sessionStorage.clear();
-    toast.success("Đã xóa cache");
-  };
-
-  const exportData = async () => {
-    if (!user) return;
-    const data = { user: user.uid, settings, exportDate: new Date().toISOString() };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `air-data-${user.uid}.json`;
-    a.click();
-    toast.success("Đã tải xuống");
   };
 
   const handleLogout = async () => {
@@ -159,8 +119,6 @@ export default function SettingsPage() {
     await signOut(auth);
     window.location.href = "/login";
   };
-
-  const isNotificationOn = settings.notiTaskAssigned || settings.notiChatMention || settings.notiPlanInvite;
 
   return (
     <div className="min-h-screen bg-white pb-24 font-sans">
@@ -235,17 +193,6 @@ export default function SettingsPage() {
           />
         </Section>
 
-        <Section title="THÔNG BÁO">
-          <SettingItem
-            label="Thông báo"
-            icon={Bell}
-            iconBg="bg-blue-50"
-            iconColor="text-blue-500"
-            value={isNotificationOn? "Bật" : "Tắt"}
-            onClick={() => router.push("/settings/notifications")}
-          />
-        </Section>
-
         <Section title="QUYỀN RIÊNG TƯ">
           <ToggleItem
             label="Ẩn trạng thái online"
@@ -286,21 +233,6 @@ export default function SettingsPage() {
             label={`Đã chặn ${settings.blockedUsers.length} người`}
             icon={UserX}
             onClick={() => router.push("/settings/blocked")}
-          />
-        </Section>
-
-        <Section title="TÀI KHOẢN">
-          <SettingItem
-            label="Đăng xuất tất cả thiết bị"
-            icon={LogOut}
-            onClick={logoutAllDevices}
-            danger
-          />
-          <SettingItem
-            label="Xóa tài khoản"
-            icon={Trash2}
-            onClick={() => setShowDeleteModal(true)}
-            danger
           />
         </Section>
 
@@ -355,20 +287,19 @@ export default function SettingsPage() {
             ]}
             onChange={(v) => updateSetting("autoDeleteMsg", v as any)}
           />
+        </Section>
+
+        <Section title="TÀI KHOẢN">
           <SettingItem
-            label={`Dung lượng: ${storage.used.toFixed(1)}MB / ${storage.total}MB`}
-            icon={Database}
-            onClick={() => router.push("/settings/storage")}
+            label="Đăng xuất tất cả thiết bị"
+            icon={LogOut}
+            onClick={logoutAllDevices}
+            danger
           />
           <SettingItem
-            label="Xuất dữ liệu của tôi"
-            icon={Download}
-            onClick={exportData}
-          />
-          <SettingItem
-            label="Xóa bộ nhớ đệm"
+            label="Xóa tài khoản"
             icon={Trash2}
-            onClick={clearCache}
+            onClick={() => setShowDeleteModal(true)}
             danger
           />
         </Section>
