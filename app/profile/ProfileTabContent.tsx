@@ -30,7 +30,7 @@ import { QRCodeSVG } from "qrcode.react";
 import SettingItem from "@/components/common/SettingItem";
 import ProfileModal from "@/components/common/ProfileModal";
 
-type MainTab = "home" | "messages" | "tasks" | "profile";
+
 
 type UserData = {
   uid: string;
@@ -48,7 +48,7 @@ type UserData = {
   stats?: { tasks: number; plans: number; completed: number; rating: number };
 };
 
-export default function ProfileTabContent({ onNavigateTab }: { onNavigateTab: (tab: MainTab) => void }) {
+export default function ProfileTabContent() {
   const db = getFirebaseDB();
   const auth = getFirebaseAuth();
   const storage = getFirebaseStorage();
