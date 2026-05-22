@@ -248,8 +248,7 @@ export default function ProfileTabContent() {
       if (e.key === "Escape") {
         setShowLogoutModal(false);
         setShowDeleteModal(false);
-        setShowQR(false);
-        setShowScanQR(false);
+        
       }
     };
     window.addEventListener("keydown", handleEsc);
