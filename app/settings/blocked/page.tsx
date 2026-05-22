@@ -50,9 +50,7 @@ export default function BlockedPage() {
   const [loading, setLoading] = useState(true);
   const [unblocking, setUnblocking] = useState<string | null>(null);
 
-  const accentGradient = isPlan
-   ? "from-green-500 to-emerald-500"
-    : "from-sky-500 to-blue-600";
+
 
   // Load blocked users với blockedAt
   useEffect(() => {
