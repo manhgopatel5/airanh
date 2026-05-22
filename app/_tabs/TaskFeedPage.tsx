@@ -346,26 +346,30 @@ export default function TaskFeedPage() {
 
         <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl">
           <div className="px-4 pt-3 pb-2">
-            <div className="flex items-center p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800">
-              <button
-                onClick={() => { setMode("task"); vibrate(); }}
-                className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
-                  mode === "task"? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm` : "text-zinc-500 dark:text-zinc-400"
-                }`}
-              >
-                <HiBolt className="w-4 h-4" />
-                Task
-              </button>
-              <button
-                onClick={() => { setMode("plan"); vibrate(); }}
-                className={`relative flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm transition-all ${
-                  mode === "plan"? `bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-sm` : "text-zinc-500 dark:text-zinc-400"
-                }`}
-              >
-                <HiCalendarDays className="w-4 h-4" />
-                Plan
-              </button>
-            </div>
+          <div className="flex items-center gap-2">
+  <button
+    onClick={() => { setMode("task"); vibrate(); }}
+    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+      mode === "task"
+        ? "bg-[#0A84FF] text-white shadow-[0_8px_30px_rgba(10,132,255,0.3)]"
+        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
+    }`}
+  >
+    <HiBolt className="w-4 h-4" />
+    Task
+  </button>
+  <button
+    onClick={() => { setMode("plan"); vibrate(); }}
+    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+      mode === "plan"
+        ? "bg-[#30D158] text-white shadow-[0_8px_30px_rgba(48,209,88,0.3)]"
+        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
+    }`}
+  >
+    <HiCalendarDays className="w-4 h-4" />
+    Plan
+  </button>
+</div>
           </div>
 
           <div className="px-4 pb-3">
