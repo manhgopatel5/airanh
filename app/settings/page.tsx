@@ -25,7 +25,7 @@ type Settings = {
   compactMode: boolean;
   reduceMotion: boolean;
 
-  // 2. Thông báo
+  // 2. Thông báo - chỉ giữ lại để check bật/tắt ở Settings
   notiTaskAssigned: boolean;
   notiTaskDue: boolean;
   notiPlanInvite: boolean;
@@ -49,10 +49,6 @@ type Settings = {
   dateFormat: "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD";
   currency: "VND" | "USD" | "EUR";
   autoDeleteMsg: "off" | "7d" | "30d" | "90d";
-
-  // 5. Nâng cao
-  apiKey?: string;
-  webhookUrl?: string;
 };
 
 const DEFAULT_SETTINGS: Settings = {
@@ -176,6 +172,8 @@ export default function SettingsPage() {
     window.location.href = "/login";
   };
 
+  const isNotificationOn = settings.notiTaskAssigned || settings.notiChatMention || settings.notiPlanInvite;
+
   return (
     <div className="min-h-screen bg-white pb-24 font-sans">
       <Toaster richColors position="top-center" />
@@ -251,62 +249,15 @@ export default function SettingsPage() {
           />
         </Section>
 
-        {/* 2. THÔNG BÁO */}
+        {/* 2. THÔNG BÁO - CHUYỂN THÀNH LINK */}
         <Section title="THÔNG BÁO">
-          <ToggleItem
-            label="Task được giao"
+          <SettingItem
+            label="Thông báo"
             icon={Bell}
-            checked={settings.notiTaskAssigned}
-            onChange={(v) => updateSetting("notiTaskAssigned", v)}
-          />
-          <ToggleItem
-            label="Task sắp hết hạn"
-            icon={Bell}
-            checked={settings.notiTaskDue}
-            onChange={(v) => updateSetting("notiTaskDue", v)}
-          />
-          <ToggleItem
-            label="Mời vào Plan"
-            icon={Bell}
-            checked={settings.notiPlanInvite}
-            onChange={(v) => updateSetting("notiPlanInvite", v)}
-          />
-          <ToggleItem
-            label="Plan sắp deadline"
-            icon={Bell}
-            checked={settings.notiPlanDeadline}
-            onChange={(v) => updateSetting("notiPlanDeadline", v)}
-          />
-          <ToggleItem
-            label="Nhắc đến trong chat"
-            icon={AtSign}
-            checked={settings.notiChatMention}
-            onChange={(v) => updateSetting("notiChatMention", v)}
-          />
-          <ToggleItem
-            label="Tất cả tin nhắn"
-            icon={MessageSquare}
-            checked={settings.notiChatAll}
-            onChange={(v) => updateSetting("notiChatAll", v)}
-          />
-          <SelectItem
-            label="Email tóm tắt"
-            icon={Mail}
-            value={settings.emailDigest === "off"? "Tắt" : settings.emailDigest === "daily"? "Hàng ngày" : "Hàng tuần"}
-            options={[
-              { label: "Tắt", value: "off" },
-              { label: "Hàng ngày", value: "daily" },
-              { label: "Hàng tuần", value: "weekly" },
-            ]}
-            onChange={(v) => updateSetting("emailDigest", v as any)}
-          />
-          <TimeRangeItem
-            label="Giờ im lặng"
-            icon={Clock}
-            enabled={settings.quietHours.enabled}
-            from={settings.quietHours.from}
-            to={settings.quietHours.to}
-            onChange={(v) => updateSetting("quietHours", v)}
+            iconBg="bg-blue-50"
+            iconColor="text-blue-500"
+            value={isNotificationOn? "Bật" : "Tắt"}
+            onClick={() => router.push("/settings/notifications")}
           />
         </Section>
 
@@ -474,23 +425,7 @@ export default function SettingsPage() {
           />
         </Section>
 
-        {/* 6. NÂNG CAO */}
-        <Section title="NÂNG CAO">
-          <SettingItem
-            label="API Key"
-            icon={Key}
-            value={settings.apiKey? "••••••••" : "Chưa tạo"}
-            onClick={() => router.push("/settings/api")}
-          />
-          <SettingItem
-            label="Webhook"
-            icon={Zap}
-            value={settings.webhookUrl? "Đã kết nối" : "Chưa kết nối"}
-            onClick={() => router.push("/settings/api")}
-          />
-        </Section>
-
-        {/* 7. VỀ AIRANH */}
+        {/* 6. VỀ AIRANH */}
         <Section title="VỀ AIRANH">
           <SettingItem
             label="Phiên bản"
@@ -588,7 +523,7 @@ function SettingItem({
         >
           {label}
         </div>
-  </div>  
+  </div>
       <div className="flex items-center gap-2 flex-shrink-0">
         {value && <span className="text- text-[#64748B]">{value}</span>}
         <ChevronRight className="w-5 h-5 text-[#CBD5E1]" />
