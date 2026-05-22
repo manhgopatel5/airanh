@@ -285,7 +285,7 @@ function TimeRangeItem({
           <div className="text- font-semibold text-[#0F172A]">{label}</div>
         </div>
         <button
-          onClick={() => onChange({ enabled, from, to, enabled:!enabled })}
+onClick={() => onChange({ enabled:!enabled, from, to })}
           className={`w-11 h-6 rounded-full transition flex-shrink-0 ${
             enabled? "bg-green-500" : "bg-gray-300"
           }`}
