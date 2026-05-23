@@ -11,7 +11,7 @@
     --color-primary: 59 130 246;
     --color-primary-dark: 37 99 235;
     --header-height: 60px;
-    --bottom-nav-height: 68px; /* ✅ Fix: khớp với h- trong TabBar */
+    --bottom-nav-height: 68px;
     --radius-sm: 0.75rem;
     --radius-md: 1rem;
     --radius-lg: 1.5rem;
@@ -127,12 +127,12 @@
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: 'tnum' 1;
     scrollbar-gutter: stable;
+    overscroll-behavior: none; /* chặn pull-to-refresh */
   }
 
   body {
     margin: 0;
-    /* ✅ Fix: Thêm padding bottom cho tab bar */
-    padding-bottom: var(--bottom-nav-height);
+    /* XÓA: padding-bottom: var(--bottom-nav-height); */
   }
 
   input,
