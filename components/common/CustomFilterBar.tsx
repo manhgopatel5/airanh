@@ -645,7 +645,7 @@ export default function CustomFilterBar({
             value={currentSearchQuery}
             onChange={(e) => onSearchChange(currentFilter, e.target.value)}
             placeholder={`Tìm ${filters.find(f => f.key === currentFilter)?.label.toLowerCase()}...`}
-            className="relative w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 border-2 outline-none font-semibold text-base text-zinc-900 dark:text-zinc-100 transition-colors"
+className="relative w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 border-2 outline-none focus:outline-none focus:ring-0 focus:border-blue-400 dark:focus:border-blue-500 font-semibold text-base text-zinc-900 dark:text-zinc-100 transition-colors"
             style={{
               borderColor: mode === "task"? "#93c5fd" : "#86efac"
             }}
