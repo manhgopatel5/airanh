@@ -322,7 +322,7 @@ Nearby: ({ isActive }: { isActive: boolean }) => (
   </svg>
 ),
 
-// FRIENDS PLAN: Trái tim đỏ phóng to thu nhỏ - fix animation
+// FRIENDS PLAN: Trái tim đỏ phóng to thu nhỏ - đập nhẹ hơn
 Friends: ({ isActive }: { isActive: boolean }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
     <motion.path
@@ -333,7 +333,7 @@ Friends: ({ isActive }: { isActive: boolean }) => (
       fill={isActive? "#FF3B30" : "none"}
       initial={{ scale: 1 }}
       animate={{
-        scale: isActive? [1, 1.35, 1] : 1,
+        scale: isActive? [1, 1.2, 1] : 1, // Đổi 1.35 -> 1.2
       }}
       transition={{
         duration: 0.7,
@@ -353,13 +353,13 @@ Friends: ({ isActive }: { isActive: boolean }) => (
     ].map((p, i) => (
       <motion.circle
         key={i}
-        cx={p.x} cy={p.y} r="1.2"
+        cx={p.x} cy={p.y} r="1"
         fill="#FF3B30"
         initial={{ scale: 0, opacity: 0 }}
         animate={{
           y: [0, -8, -14],
           opacity: [0, 1, 0],
-          scale: [0, 1.3, 0]
+          scale: [0, 1.1, 0] // Hạt cũng nhỏ hơn
         }}
         transition={{
           duration: 1.2,
