@@ -728,7 +728,7 @@ export default function CustomFilterBar({
             whileHover={{ scale: 1.02 }}
             onTouchStart={() => haptics.light()}
             onClick={handleSearchClick}
-            className="w-full h-11 rounded-2xl bg-gray-100 dark:bg-zinc-800 flex items-center justify-center gap-2.5 text-gray-600 dark:text-zinc-400 font-bold text-base overflow-hidden shadow-sm"
+            className="w-full h-11 rounded-2xl bg-white dark:bg-zinc-900 border-2 border-gray-200 dark:border-zinc-700 flex items-center justify-center gap-2.5 text-gray-700 dark:text-zinc-300 font-bold text-base overflow-hidden shadow-sm hover:border-blue-500 dark:hover:border-blue-400 transition-colors"
           >
             <motion.div
               animate={{ x: [0, -2, 2, 0] }}
