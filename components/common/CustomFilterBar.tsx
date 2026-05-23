@@ -286,7 +286,7 @@ Nearby: ({ isActive }: { isActive: boolean }) => (
     {/* Chấm xanh to hơn r=3 và xuống cy=16 */}
     {isActive && (
       <motion.circle
-        cx="12" cy="18" r="4"
+        cx="12" cy="16" r="3"
         fill="#0A84FF"
         animate={{
           scale: [1, 1.4, 1],
@@ -321,7 +321,7 @@ Nearby: ({ isActive }: { isActive: boolean }) => (
   </svg>
 ),
 
-// FRIENDS PLAN: Trái tim đỏ phóng to thu nhỏ
+// FRIENDS PLAN: Trái tim đỏ phóng to thu nhỏ - fix animation
 Friends: ({ isActive }: { isActive: boolean }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
     <motion.path
@@ -330,33 +330,38 @@ Friends: ({ isActive }: { isActive: boolean }) => (
       strokeWidth="2"
       strokeLinecap="round"
       fill={isActive? "#FF3B30" : "none"}
-      animate={isActive? {
-        scale: [1, 1.3, 1],
-      } : {}}
-      transition={{ 
-        duration: 0.8, 
-        repeat: Infinity, 
-        ease: "easeInOut",
-        repeatDelay: 0.2
+      initial={{ scale: 1 }}
+      animate={{
+        scale: isActive? [1, 1.35, 1] : 1,
       }}
-      style={{ originX: "50%", originY: "60%" }}
+      transition={{
+        duration: 0.7,
+        repeat: Infinity,
+        ease: "easeInOut",
+        repeatDelay: 0.3
+      }}
+      style={{ 
+        transformOrigin: "12px 12px",
+        transformBox: "fill-box"
+      }}
     />
     {isActive && [
       { x: 8, y: 8, delay: 0 },
-      { x: 16, y: 8, delay: 0.2 },
-      { x: 12, y: 5, delay: 0.4 },
+      { x: 16, y: 8, delay: 0.15 },
+      { x: 12, y: 5, delay: 0.3 },
     ].map((p, i) => (
       <motion.circle
         key={i}
-        cx={p.x} cy={p.y} r="1"
+        cx={p.x} cy={p.y} r="1.2"
         fill="#FF3B30"
+        initial={{ scale: 0, opacity: 0 }}
         animate={{
-          y: [0, -8, -12],
+          y: [0, -8, -14],
           opacity: [0, 1, 0],
-          scale: [0, 1.2, 0]
+          scale: [0, 1.3, 0]
         }}
         transition={{
-          duration: 1.5,
+          duration: 1.2,
           repeat: Infinity,
           delay: p.delay,
           ease: "easeOut"
