@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation"; // THÊM useSearchParams
+import { useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { useAppStore } from "@/store/app";
@@ -79,7 +79,7 @@ const FloatingMenu = ({
             filter: "blur(4px)",
             transition: { duration: 0.15, ease: [0.4, 0, 1, 1] }
           }}
-          className="w-full max-w-[500px] mx-auto bg-white dark:bg-zinc-900 rounded-3xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] pointer-events-auto flex flex-col gap-3 select-none"
+          className="w-full max-w-[500px] mx-auto bg-white dark:bg-zinc-900 rounded-3xl p-4 pointer-events-auto flex flex-col gap-3 select-none"
         >
           <div className="grid grid-cols-2 gap-3">
             <motion.button
@@ -123,12 +123,11 @@ const FloatingMenu = ({
 export default function AppContainer() {
   const { user, userData, loading: authLoading } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams(); // THÊM DÒNG NÀY
+  const searchParams = useSearchParams();
   const mode = useAppStore((s) => s.mode);
   const unreadCount = useAppStore((s) => s.unreadCount);
   const [mounted, setMounted] = useState(false);
 
-  // FIX 1: Đọc tab từ URL, mặc định "home"
   const [currentMainTab, setCurrentMainTab] = useState<MainTab>(
     (searchParams.get("tab") as MainTab) || "home"
   );
@@ -151,10 +150,8 @@ export default function AppContainer() {
     }
   }, [user, userData, authLoading, router]);
 
-  // FIX 2: Sync URL khi đổi tab
   const handleChangeTab = useCallback((tab: MainTab) => {
     setCurrentMainTab(tab);
-    // Update URL không reload page
     const newUrl = tab === "home"? "/" : `/?tab=${tab}`;
     router.replace(newUrl, { scroll: false });
   }, [router]);
@@ -163,13 +160,12 @@ export default function AppContainer() {
     setLoadedTabs(prev => new Set(prev).add(currentMainTab));
   }, [currentMainTab]);
 
-  // FIX 3: Sync tab khi URL đổi do back/forward
   useEffect(() => {
     const tabFromUrl = (searchParams.get("tab") as MainTab) || "home";
     if (tabFromUrl!== currentMainTab) {
       setCurrentMainTab(tabFromUrl);
     }
-  }, [searchParams]); // Chỉ phụ thuộc searchParams
+  }, [searchParams]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -209,7 +205,7 @@ export default function AppContainer() {
 
   if (authLoading ||!userData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
+      <div className="h-screen flex items-center justify-center bg-white dark:bg-black">
         <div className="flex flex-col items-center gap-3">
           <FiLoader className={`animate-spin ${activeColorClass}`} size={32} />
           <p className="text-sm text-gray-500">Đang tải...</p>
@@ -219,20 +215,21 @@ export default function AppContainer() {
   }
 
   return (
-    <div className="min-h-screen pb-28 font-sans bg-white dark:bg-zinc-950 select-none relative">
+    <div className="h-screen flex flex-col font-sans bg-white dark:bg-zinc-950 select-none relative overflow-hidden">
       <Toaster richColors position="top-center" toastOptions={{ duration: 2000, style: { fontSize: "14px" } }} />
 
-      <div className="w-full max-w-2xl mx-auto">
-        <div className={currentMainTab!== "home"? "hidden" : ""}>
+      {/* Main content - mỗi tab 1 scroll container riêng */}
+      <div className="flex-1 overflow-hidden w-full max-w-2xl mx-auto">
+        <div className={`h-full overflow-y-auto ${currentMainTab!== "home"? "hidden" : ""}`}>
           {loadedTabs.has("home") && <TaskFeedPage />}
         </div>
-        <div className={currentMainTab!== "messages"? "hidden" : ""}>
+        <div className={`h-full overflow-y-auto ${currentMainTab!== "messages"? "hidden" : ""}`}>
           {loadedTabs.has("messages") && <ChatClient />}
         </div>
-        <div className={currentMainTab!== "tasks"? "hidden" : ""}>
+        <div className={`h-full overflow-y-auto ${currentMainTab!== "tasks"? "hidden" : ""}`}>
           {loadedTabs.has("tasks") && <TasksPage />}
         </div>
-        <div className={currentMainTab!== "profile"? "hidden" : ""}>
+        <div className={`h-full overflow-y-auto ${currentMainTab!== "profile"? "hidden" : ""}`}>
           {loadedTabs.has("profile") && <ProfileTabContent />}
         </div>
       </div>
@@ -264,7 +261,7 @@ export default function AppContainer() {
 
           <CustomTabBar
             currentTab={currentMainTab}
-            onChangeTab={handleChangeTab} // ĐỔI THÀNH handleChangeTab
+            onChangeTab={handleChangeTab}
             unreadCount={unreadCount}
             isMenuOpen={isMenuOpen}
             onCreateClick={() => {
@@ -277,8 +274,8 @@ export default function AppContainer() {
       )}
 
       <style jsx global>{`
-      .scrollbar-hide::-webkit-scrollbar{display:none}
-      .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
+       .scrollbar-hide::-webkit-scrollbar{display:none}
+       .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
         html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
         body{overscroll-behavior-y:contain}
       `}</style>
