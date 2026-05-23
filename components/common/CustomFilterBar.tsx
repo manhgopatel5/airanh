@@ -207,7 +207,7 @@ const PlanIcons = {
         </linearGradient>
       </defs>
       <motion.path
-        d="M12 22C10 22 7.5 19 7.5 15C7.5 12 9.5 12 6C14.5 9.5 16.5 12 16.5 15C16.5 19 14 22 12 22Z"
+        d="M12 22C10 22 7.5 19 7.5 15C7.5 12 9.5 9.5 12 6C14.5 9.5 16.5 12 16.5 15C16.5 19 14 22 12 22Z"
         fill={isActive? "url(#planFireGrad)" : "none"}
         stroke="currentColor"
         strokeWidth="2"
@@ -324,7 +324,6 @@ export default function CustomFilterBar({
   const [hovered, setHovered] = useState<string | null>(null);
   const [isSearchMode, setIsSearchMode] = useState(false);
 
-  // Tắt pull-to-refresh
   useEffect(() => {
     document.body.style.overscrollBehavior = 'none';
     return () => {
