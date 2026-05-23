@@ -21,18 +21,18 @@ interface CustomFilterBarProps {
 
 // Bộ icon custom cho Task - style tech, nhanh, sắc
 // Bộ icon custom cho Task - style tech, nhanh, sắc
+// Bộ icon custom cho Task - style tech, nhanh, sắc
 const TaskIcons = {
   Hot: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
       <defs>
-        {/* Gradient lửa - từ vàng -> cam -> đỏ */}
+        {/* Dùng fill prop để tạo gradient động */}
         <linearGradient id="flameGradient" x1="12" y1="17" x2="12" y2="2" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor={isActive ? "#FF3B30" : "currentColor"} />
-          <stop offset="50%" stopColor={isActive ? "#FF9500" : "currentColor"} />
+          <stop offset="0%" stopColor={isActive ? fill : "currentColor"} />
+          <stop offset="50%" stopColor={isActive ? fill : "currentColor"} stopOpacity={0.8} />
           <stop offset="100%" stopColor={isActive ? "#FFD60A" : "currentColor"} />
         </linearGradient>
         
-        {/* Filter glow khi active */}
         <filter id="flameGlow" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="1.5" result="blur" />
           <feComposite in="SourceGraphic" in2="blur" operator="over" />
@@ -51,7 +51,6 @@ const TaskIcons = {
         }}
         style={{ originX: "50%", originY: "85%" }}
       >
-        {/* Lớp glow ngoài */}
         {isActive && (
           <motion.path
             d="M12 2C9 6 7 8.5 7 12C7 15.866 9.134 19 12 19C14.866 19 17 15.866 17 12C17 8.5 15 6 12 2Z"
@@ -66,7 +65,6 @@ const TaskIcons = {
           />
         )}
 
-        {/* Ngọn lửa chính */}
         <motion.path
           d="M12 3C10 6.5 8.5 8.8 8.5 11.8C8.5 14.64 10.36 17 12 17C13.64 17 15.5 14.64 15.5 11.8C15.5 8.8 14 6.5 12 3Z"
           fill={isActive ? "url(#flameGradient)" : "none"}
@@ -85,7 +83,6 @@ const TaskIcons = {
           transition={{ duration: 0.9, repeat: isActive ? Infinity : 0, ease: "easeInOut" }}
         />
 
-        {/* Lõi lửa trắng/vàng sáng */}
         {isActive && (
           <motion.path
             d="M12 7C11 9 10.2 10.5 10.2 12.5C10.2 13.88 11.1 15 12 15C12.9 15 13.8 13.88 13.8 12.5C13.8 10.5 13 9 12 7Z"
@@ -105,12 +102,11 @@ const TaskIcons = {
           />
         )}
 
-        {/* Spark bay lên */}
         {isActive && (
           <>
             <motion.circle
               cx="11" cy="8" r="0.8"
-              fill="#FFD60A"
+              fill={fill}
               initial={{ y: 0, opacity: 0 }}
               animate={{
                 y: [-2, -6, -10],
@@ -126,7 +122,7 @@ const TaskIcons = {
             />
             <motion.circle
               cx="13" cy="9" r="0.6"
-              fill="#FF9F0A"
+              fill={fill}
               initial={{ y: 0, opacity: 0 }}
               animate={{
                 y: [-1, -5, -9],
