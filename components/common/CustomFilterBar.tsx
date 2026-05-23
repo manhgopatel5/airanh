@@ -189,117 +189,72 @@ Nearby: ({ isActive }: { isActive: boolean }) => (
     </svg>
   ),
 
-// NEW TASK: Hạt nhân phân tách - tạo task mới
-New: ({ isActive }: { isActive: boolean }) => (
+// NEW TASK: Bút vẽ tạo mới
+New: ({ isActive, fill }: { isActive: boolean; fill?: string }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    <defs>
-      <radialGradient id="nucleusGrad" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stopColor="#5AC8FA" />
-        <stop offset="100%" stopColor="#0A84FF" />
-      </radialGradient>
-      <filter id="particleGlow">
-        <feGaussianBlur stdDeviation="0.8" />
-      </filter>
-    </defs>
-
-    {/* 3 hạt electron bay quanh quỹ đạo */}
-    {isActive && [0, 120, 240].map((angle, i) => (
-      <motion.g
-        key={i}
-        animate={{ rotate: 360 }}
-        transition={{ 
-          duration: 2, 
-          repeat: Infinity, 
-          ease: "linear",
-          delay: i * 0.15
-        }}
-        style={{ originX: "12px", originY: "12px" }}
-      >
-        {/* Quỹ đạo elip */}
-        <ellipse
-          cx="12" cy="12" rx="8" ry="4"
-          stroke="#0A84FF"
-          strokeWidth="1"
-          fill="none"
-          opacity={0.2}
-          transform={`rotate(${angle} 12 12)`}
-        />
-        {/* Hạt electron */}
-        <motion.circle
-          cx="20" cy="12" r="1.5"
-          fill="#5AC8FA"
-          filter="url(#particleGlow)"
-          animate={{
-            scale: [1, 1.4, 1],
-          }}
-          transition={{
-            duration: 1,
-            repeat: Infinity,
-            delay: i * 0.3
-          }}
-          transform={`rotate(${angle} 12 12)`}
-        />
-      </motion.g>
-    ))}
-
-    {/* Hạt nhân trung tâm - pulse + tách đôi */}
-    <motion.g style={{ originX: "12px", originY: "12px" }}>
-      <motion.circle
-        cx="12" cy="12" r="3"
-        fill={isActive? "url(#nucleusGrad)" : "currentColor"}
-        animate={isActive? {
-          scale: [1, 1.3, 1],
-        } : {}}
-        transition={{
-          duration: 1.5,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
+    {/* Trang giấy */}
+    <motion.path
+      d="M6 3H15L19 7V19C19 20.1 18.1 21 17 21H7C5.9 21 5 20.1 5 19V5C5 3.9 5.9 3 6 3Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      fill="none"
+      opacity={isActive? 0.3 : 0.5}
+    />
+    <path
+      d="M15 3V7H19"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      fill="none"
+      opacity={isActive? 0.3 : 0.5}
+    />
+    
+    {/* Bút vẽ */}
+    <motion.g
+      animate={isActive? {
+        x: [0, 3, 0, -2, 0],
+        y: [0, 2, 4, 2, 0],
+        rotate: [0, -15, 0, 10, 0]
+      } : {}}
+      transition={{ 
+        duration: 2, 
+        repeat: Infinity,
+        ease: "easeInOut"
+      }}
+      style={{ originX: "16px", originY: "16px" }}
+    >
+      <path
+        d="M13 6L18 11L10 19H5V14L13 6Z"
+        fill={isActive? (fill || "#0A84FF") : "currentColor"}
+        stroke={isActive? (fill || "#0A84FF") : "currentColor"}
+        strokeWidth="1"
       />
-      
-      {/* Hiệu ứng phân tách - 2 mảnh văng ra */}
-      {isActive && [
-        { x: -1, y: -1 },
-        { x: 1, y: 1 },
-      ].map((dir, i) => (
-        <motion.circle
-          key={i}
-          cx="12" cy="12" r="1.5"
-          fill="#0A84FF"
-          animate={{
-            x: [0, dir.x * 6, 0],
-            y: [0, dir.y * 6, 0],
-            opacity: [0, 1, 0],
-            scale: [0.5, 1, 0.5]
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            delay: 0.5,
-            ease: "easeOut"
-          }}
-        />
-      ))}
-    </motion.g>
-
-    {/* Tia sáng tỏa khi phân tách */}
-    {isActive && [0, 90, 180, 270].map((deg) => (
-      <motion.line
-        key={deg}
-        x1="12" y1="12"
-        x2="12" y2="6"
-        stroke="#5AC8FA"
+      <path
+        d="M16 8L14 10"
+        stroke={isActive? "white" : "none"}
         strokeWidth="1.5"
         strokeLinecap="round"
-        style={{ originX: "12px", originY: "12px", rotate: deg }}
-        animate={{
-          scaleY: [0, 1.5, 0],
-          opacity: [0, 0.8, 0]
-        }}
+      />
+    </motion.g>
+
+    {/* 3 đường vẽ xuất hiện */}
+    {isActive && [
+      { d: "M8 12H12", delay: 0.2 },
+      { d: "M8 14H11", delay: 0.4 },
+      { d: "M8 16H13", delay: 0.6 },
+    ].map((line, i) => (
+      <motion.path
+        key={i}
+        d={line.d}
+        stroke={fill || "#0A84FF"}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: [0, 1, 1, 0] }}
         transition={{
           duration: 2,
           repeat: Infinity,
-          delay: 0.5,
+          delay: line.delay,
+          times: [0, 0.3, 0.7, 1]
         }}
       />
     ))}
