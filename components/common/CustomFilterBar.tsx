@@ -50,7 +50,7 @@ export default function CustomFilterBar({
     },
   };
 
-  const currentTheme = themes[mode];
+  const currentTheme = themes;
 
   const filters = [
     {
@@ -127,15 +127,16 @@ export default function CustomFilterBar({
   };
 
   return (
-    <div className="flex items-center gap-3 px-4 pb-4 overflow-x-auto no-scrollbar">
+    <div className="px-4 pb-3 space-y-2">
+      {/* Hàng 1: 4 tab filter */}
       <AnimatePresence mode="wait">
         {!isSearchMode? (
           <motion.div
             key="filters"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="flex items-center gap-3"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="flex items-center gap-2 overflow-x-auto no-scrollbar"
           >
             {filters.map((filter) => {
               const isActive = currentFilter === filter.key;
@@ -157,7 +158,7 @@ export default function CustomFilterBar({
                   {isActive && (
                     <motion.div
                       layoutId="activeFilter"
-                      className="absolute inset-0 rounded-2xl"
+                      className="absolute inset-0 rounded-xl"
                       style={{ background: currentTheme.bgGradient }}
                       transition={{
                         type: "spring",
@@ -168,9 +169,9 @@ export default function CustomFilterBar({
                   )}
 
                   <motion.div
-                    className={`relative h-12 px-5 rounded-2xl flex items-center gap-2.5 font-bold text-[15px] ${
+                    className={`relative h-9 px-4 rounded-xl flex items-center gap-2 font-semibold ${
                       isActive
-                       ? "text-white"
+                     ? "text-white"
                         : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400"
                     }`}
                     animate={{
@@ -189,14 +190,14 @@ export default function CustomFilterBar({
                       }}
                     >
                       <Icon
-                        className="w-5 h-5"
+                        className="w-4 h-4"
                         strokeWidth={isActive? 2.8 : 2}
                         fill={isActive? currentTheme.accent : "none"}
                         fillOpacity={isActive? 0.3 : 0}
                       />
                     </motion.div>
 
-                    <span>{filter.label}</span>
+                    <span className="text-sm">{filter.label}</span>
 
                     <AnimatePresence>
                       {isHovered &&!isActive && (
@@ -204,7 +205,7 @@ export default function CustomFilterBar({
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
                           exit={{ scale: 0 }}
-                          className="absolute inset-0 rounded-2xl bg-gray-200 dark:bg-zinc-700 -z-10"
+                          className="absolute inset-0 rounded-xl bg-gray-200 dark:bg-zinc-700 -z-10"
                         />
                       )}
                     </AnimatePresence>
@@ -216,14 +217,14 @@ export default function CustomFilterBar({
         ) : (
           <motion.div
             key="search"
-            initial={{ opacity: 0, x: 20, scale: 0.9 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 20, scale: 0.9 }}
-            className="flex items-center gap-2 flex-1"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="flex items-center gap-2"
           >
             <div className="relative flex-1">
               <div
-                className="absolute inset-0 rounded-2xl"
+                className="absolute inset-0 rounded-xl"
                 style={{ background: currentTheme.bgGradient, opacity: 0.1 }}
               />
               <input
@@ -231,47 +232,41 @@ export default function CustomFilterBar({
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder={mode === "task"? "Tìm task..." : "Tìm plan..."}
-                className="relative w-full h-12 px-5 pr-12 rounded-2xl bg-gray-100 dark:bg-zinc-800 outline-none font-semibold text-zinc-900 dark:text-zinc-100"
+                className="relative w-full h-9 px-4 pr-10 rounded-xl bg-gray-100 dark:bg-zinc-800 outline-none font-semibold text-sm text-zinc-900 dark:text-zinc-100"
               />
               {searchQuery && (
                 <motion.button
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   onClick={() => onSearchChange("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700"
                 >
-                  <X size={18} className="text-zinc-500" />
+                  <X size={16} className="text-zinc-500" />
                 </motion.button>
               )}
             </div>
             <motion.button
               whileTap={{ scale: 0.85 }}
               onClick={handleCloseSearch}
-              className="h-12 w-12 rounded-2xl bg-gray-100 dark:bg-zinc-800 flex items-center justify-center text-gray-600 dark:text-zinc-400"
+              className="h-9 w-9 rounded-xl bg-gray-100 dark:bg-zinc-800 flex items-center justify-center text-gray-600 dark:text-zinc-400 flex-shrink-0"
             >
-              <X className="w-5 h-5" strokeWidth={2.8} />
+              <X className="w-4 h-4" strokeWidth={2.8} />
             </motion.button>
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* Hàng 2: Nút Search */}
       {!isSearchMode && (
         <motion.button
-          whileTap={{ scale: 0.85 }}
-          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.02 }}
           onTouchStart={() => haptics.light()}
           onClick={handleSearchClick}
-          className="flex-shrink-0"
+          className="w-full h-9 rounded-xl bg-gray-100 dark:bg-zinc-800 flex items-center justify-center gap-2 text-gray-600 dark:text-zinc-400 font-semibold text-sm"
         >
-          <div
-            className={`h-12 w-12 rounded-2xl flex items-center justify-center ${
-              mode === "task"
-               ? "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400"
-                : "bg-gradient-to-br from-amber-400 to-orange-500 text-white"
-            }`}
-          >
-            <Search className="w-5 h-5" strokeWidth={2.8} />
-          </div>
+          <Search className="w-4 h-4" strokeWidth={2.8} />
+          <span>Tìm kiếm</span>
         </motion.button>
       )}
     </div>
