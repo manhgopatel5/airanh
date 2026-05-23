@@ -23,13 +23,13 @@ const TaskIcons = {
   Hot: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <defs>
-        <radialGradient id="fireCore" cx="50%" cy="70%" r="60%">
-          <stop offset="0%" stopColor={isActive? "#FF3B30" : "currentColor"} stopOpacity={1} />
-          <stop offset="50%" stopColor={isActive? fill : "currentColor"} stopOpacity={0.9} />
-          <stop offset="100%" stopColor={isActive? "#FF9500" : "currentColor"} stopOpacity={0} />
-        </radialGradient>
-        <filter id="fireGlow">
-          <feGaussianBlur stdDeviation="1.5" result="blur" />
+        <linearGradient id="taskFireGrad" x1="50%" y1="100%" x2="50%" y2="0%">
+          <stop offset="0%" stopColor="#FF9500" />
+          <stop offset="40%" stopColor="#FF3B30" />
+          <stop offset="100%" stopColor="#FFD60A" />
+        </linearGradient>
+        <filter id="taskFireGlow">
+          <feGaussianBlur stdDeviation="2" result="blur" />
           <feMerge>
             <feMergeNode in="blur"/>
             <feMergeNode in="SourceGraphic"/>
@@ -37,53 +37,57 @@ const TaskIcons = {
         </filter>
       </defs>
 
+      {/* Ngọn lửa ngoài - giống emoji 🔥 */}
       <motion.path
-        d="M12 3C10 3 7 7 7 11C7 14.5 9 17 12 17C15 17 17 14.5 17 11C17 7 14 3 12 3Z"
-        fill={isActive? "url(#fireCore)" : "none"}
+        d="M12 22C10 22 7.5 19 7.5 15C7.5 12 9.5 9.5 12 6C14.5 9.5 16.5 12 16.5 15C16.5 19 14 22 12 22Z"
+        fill={isActive? "url(#taskFireGrad)" : "none"}
         stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"
-        filter={isActive? "url(#fireGlow)" : undefined}
+        filter={isActive? "url(#taskFireGlow)" : undefined}
         animate={isActive? {
-          scaleY: [1, 1.15, 0.95, 1.1, 1],
-          scaleX: [1, 0.9, 1.05, 0.95, 1],
+          scaleY: [1, 1.12, 0.96, 1.08, 1],
+          scaleX: [1, 0.92, 1.04, 0.96, 1],
+          rotate: [0, -2, 2, -1, 0]
         } : {}}
-        transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-        style={{ originX: "50%", originY: "80%" }}
+        transition={{ duration: 1.3, repeat: Infinity, ease: "easeInOut" }}
+        style={{ originX: "50%", originY: "85%" }}
       />
 
+      {/* Lửa trong */}
       <motion.path
-        d="M12 7C11 7 9.5 9.5 9.5 11.5C9.5 13 10.5 14.5 12 14.5C13.5 14.5 14.5 13 14.5 11.5C14.5 9.5 13 7 12 7Z"
-        fill={isActive? fill : "none"}
+        d="M12 18C10.8 18 9.5 16 9.5 13.5C9.5 11.5 10.5 9.5 12 8C13.5 9.5 14.5 11.5 14.5 13.5C14.5 16 13.2 18 12 18Z"
+        fill={isActive? "#FFD60A" : "none"}
         stroke="currentColor"
         strokeWidth="1.5"
-        opacity={0.8}
+        opacity={isActive? 0.9 : 0}
         animate={isActive? {
-          scaleY: [1, 1.2, 0.9, 1.15, 1],
-          opacity: [0.8, 1, 0.7, 1, 0.8]
+          scaleY: [1, 1.18, 0.92, 1.12, 1],
+          opacity: [0.9, 1, 0.8, 1, 0.9]
         } : {}}
-        transition={{ duration: 1, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
-        style={{ originX: "50%", originY: "80%" }}
+        transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
+        style={{ originX: "50%", originY: "85%" }}
       />
 
+      {/* Tia lửa */}
       {isActive && [
         { x: 10, delay: 0 },
-        { x: 12, delay: 0.4 },
-        { x: 14, delay: 0.8 },
+        { x: 12, delay: 0.3 },
+        { x: 14, delay: 0.6 },
       ].map((spark, i) => (
         <motion.circle
           key={i}
           cx={spark.x}
-          cy="11"
-          r="1"
-          fill={fill}
+          cy="10"
+          r="0.8"
+          fill="#FFD60A"
           animate={{
-            y: [0, -8, -12],
+            y: [0, -10, -14],
             opacity: [0, 1, 0],
-            scale: [0, 1, 0]
+            scale: [0, 1.2, 0]
           }}
           transition={{
-            duration: 1.5,
+            duration: 1.4,
             repeat: Infinity,
             delay: spark.delay,
             ease: "easeOut"
@@ -92,27 +96,53 @@ const TaskIcons = {
       ))}
     </svg>
   ),
-  Nearby: ({ isActive }: { isActive: boolean }) => (
+  Nearby: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <defs>
+        <radialGradient id="mapPulse" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor={fill} stopOpacity={0.6} />
+          <stop offset="100%" stopColor={fill} stopOpacity={0} />
+        </radialGradient>
+      </defs>
+      
+      {/* Map background */}
+      <path
+        d="M3 6L9 3L15 6L21 3V18L15 21L9 18L3 21V6Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+      <path d="M9 3V18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M15 6V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      
+      {/* Pin */}
       <motion.g
-        animate={isActive? { rotate: [0, 360] } : {}}
-        transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
-        style={{ originX: "50%", originY: "50%" }}
+        animate={isActive? { y: [0, -3, 0] } : {}}
+        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
       >
-        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3"/>
+        <path
+          d="M12 8C10.3 8 9.3 9 11C9 13.5 12 17 12 17C12 17 15 13.5 15 11C15 9.3 13.7 8 12 8Z"
+          fill={isActive? fill : "currentColor"}
+          stroke={isActive? "white" : "currentColor"}
+          strokeWidth="1.5"
+        />
+        <circle cx="12" cy="11" r="1.5" fill="white" />
       </motion.g>
-      <motion.circle
-        cx="12" cy="12" r="6"
-        stroke="currentColor" strokeWidth="2"
-        animate={isActive? { scale: [1, 1.3, 1], opacity: [1, 0.4, 1] } : {}}
-        transition={{ duration: 1.8, repeat: Infinity }}
-      />
-      <motion.circle
-        cx="12" cy="12" r="2.5"
-        fill="currentColor"
-        animate={isActive? { scale: [1, 1.5, 1] } : {}}
-        transition={{ duration: 1.8, repeat: Infinity }}
-      />
+
+      {/* Pulse ring */}
+      {isActive && (
+        <motion.circle
+          cx="12" cy="11" r="3"
+          fill="url(#mapPulse)"
+          animate={{
+            scale: [1, 2.5, 1],
+            opacity: [0.6, 0, 0.6]
+          }}
+          transition={{ duration: 2, repeat: Infinity }}
+        />
+      )}
     </svg>
   ),
   Friends: ({ isActive }: { isActive: boolean }) => (
@@ -128,14 +158,12 @@ const TaskIcons = {
       <motion.path
         d="M5 21V17C5 14.7909 6.79086 13 9 13H11C13.2091 13 15 14.7909 15 17V21"
         stroke="currentColor" strokeWidth="2"
-        strokeDasharray="1"
         animate={isActive? { pathLength: [0.6, 1, 0.6], pathOffset: [0, 0.3, 0] } : {}}
         transition={{ duration: 2.5, repeat: Infinity }}
       />
       <motion.path
         d="M13 21V17C13 14.7909 14.7909 13 17 13H19C21.2091 13 23 14.7909 23 17V21"
         stroke="currentColor" strokeWidth="2"
-        strokeDasharray="1"
         animate={isActive? { pathLength: [0.6, 1, 0.6], pathOffset: [0, 0.3, 0] } : {}}
         transition={{ duration: 2.5, delay: 0.3, repeat: Infinity }}
       />
@@ -172,51 +200,103 @@ const TaskIcons = {
 const PlanIcons = {
   Hot: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <defs>
+        <linearGradient id="planFireGrad" x1="50%" y1="100%" x2="50%" y2="0%">
+          <stop offset="0%" stopColor="#FF9F0A" />
+          <stop offset="100%" stopColor={fill} />
+        </linearGradient>
+      </defs>
       <motion.path
-        d="M12 3C10 3 7 7 7 11C7 14.5 9 17 12 17C15 17 17 14.5 17 11C17 7 14 3 12 3Z"
-        fill={isActive? fill : "none"}
+        d="M12 22C10 22 7.5 19 7.5 15C7.5 12 9.5 9.5 12 6C14.5 9.5 16.5 12 16.5 15C16.5 19 14 22 12 22Z"
+        fill={isActive? "url(#planFireGrad)" : "none"}
         stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"
         animate={isActive? {
-          scaleY: [1, 1.1, 0.95, 1.05, 1],
-          scaleX: [1, 0.95, 1.02, 0.98, 1],
+          scaleY: [1, 1.08, 0.97, 1.04, 1],
+          scaleX: [1, 0.96, 1.02, 0.98, 1],
         } : {}}
-        transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-        style={{ originX: "50%", originY: "80%" }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        style={{ originX: "50%", originY: "85%" }}
       />
       {isActive && (
-        <motion.circle cx="12" cy="12" r="3" fill={fill} opacity={0.6}
-          animate={{ scale: [0.8, 1.2, 0.8], opacity: [0.3, 0.6, 0.3] }}
+        <motion.circle cx="12" cy="13" r="2.5" fill={fill} opacity={0.5}
+          animate={{ scale: [0.7, 1.3, 0.7], opacity: [0.2, 0.5, 0.2] }}
+          transition={{ duration: 3, repeat: Infinity }}
+        />
+      )}
+    </svg>
+  ),
+  Nearby: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      {/* Map với wave */}
+      <path
+        d="M3 7L9 4L15 7L21 4V17L15 20L9 17L3 20V7Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+      <motion.path
+        d="M9 4V17M15 7V20"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        animate={isActive? { pathLength: [0.5, 1, 0.5] } : {}}
+        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+      />
+      {/* Wave pulse */}
+      {isActive && (
+        <motion.circle
+          cx="12" cy="12" r="2"
+          stroke={fill} strokeWidth="1.5" fill="none"
+          animate={{
+            r: [2, 6, 2],
+            opacity: [0.8, 0, 0.8]
+          }}
           transition={{ duration: 2.5, repeat: Infinity }}
         />
       )}
     </svg>
   ),
-  Nearby: ({ isActive }: { isActive: boolean }) => (
+  Friends: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      {/* Heart thay cho người */}
       <motion.path
-        d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2Z"
-        stroke="currentColor" strokeWidth="2"
-        animate={isActive? { scale: [1, 1.1, 1] } : {}}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        d="M12 21C12 21 4 13.5 4 8.5C4 5.5 6.5 3 9.5 3C11.1 3 12 3.8 12 3.8C12 3.8 12.9 3 14.5 3C17.5 3 20 5.5 20 8.5C20 13.5 12 21 12 21Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        fill={isActive? fill : "none"}
+        animate={isActive? {
+          scale: [1, 1.15, 1],
+        } : {}}
+        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+        style={{ originX: "50%", originY: "50%" }}
       />
-      <motion.circle cx="12" cy="9" r="2.5" fill="currentColor"
-        animate={isActive? { scale: [1, 1.4, 1] } : {}}
-        transition={{ duration: 3, repeat: Infinity }}
-      />
-    </svg>
-  ),
-  Friends: ({ isActive }: { isActive: boolean }) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <motion.g
-        animate={isActive? { rotate: [0, 10, -10, 0] } : {}}
-        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-        style={{ originX: "50%", originY: "70%" }}
-      >
-        <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2"/>
-        <path d="M5 21V19C5 16.2386 7.23858 14 10 14H14C16.7614 14 19 16.2386 19 19V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      </motion.g>
+      {isActive && [
+        { x: 8, y: 8, delay: 0 },
+        { x: 16, y: 8, delay: 0.3 },
+        { x: 12, y: 5, delay: 0.6 },
+      ].map((p, i) => (
+        <motion.circle
+          key={i}
+          cx={p.x} cy={p.y} r="1"
+          fill={fill}
+          animate={{
+            y: [0, -6, -10],
+            opacity: [0, 1, 0],
+            scale: [0, 1, 0]
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            delay: p.delay,
+            ease: "easeOut"
+          }}
+        />
+      ))}
     </svg>
   ),
   New: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
@@ -246,6 +326,14 @@ export default function CustomFilterBar({
   const mode = useAppStore((s) => s.mode) || "task";
   const [hovered, setHovered] = useState<string | null>(null);
   const [isSearchMode, setIsSearchMode] = useState(false);
+
+  // Tắt pull-to-refresh
+  useEffect(() => {
+    document.body.style.overscrollBehavior = 'none';
+    return () => {
+      document.body.style.overscrollBehavior = 'auto';
+    };
+  }, []);
 
   useEffect(() => {
     if (searchQuery &&!isSearchMode) {
@@ -328,7 +416,7 @@ export default function CustomFilterBar({
               <motion.div
                 className={`relative h-12 rounded-2xl flex items-center justify-center gap-1.5 font-bold overflow-hidden px-2 ${
                   isActive
-               ? "text-white"
+              ? "text-white"
                     : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400"
                 }`}
                 animate={{
