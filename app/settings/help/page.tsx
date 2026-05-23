@@ -35,52 +35,42 @@ export default function HelpPage() {
     {
       q: "Làm sao đổi mật khẩu?",
       a: "Vào Cài đặt → Đổi mật khẩu. Cần nhập mật khẩu cũ để xác nhận. Nếu quên mật khẩu, dùng 'Quên mật khẩu' ở màn đăng nhập.",
-      tag: "tài khoản"
     },
     {
       q: "Quên mật khẩu phải làm sao?",
       a: "Tại màn đăng nhập, bấm 'Quên mật khẩu'. Nhập email, check hộp thư và làm theo link đặt lại mật khẩu. Link có hiệu lực 15 phút.",
-      tag: "tài khoản"
     },
     {
       q: "Xóa tài khoản có khôi phục được không?",
       a: "Không. Sau khi xác nhận xóa, toàn bộ dữ liệu task, plan, tin nhắn sẽ bị xóa vĩnh viễn sau 30 ngày và không thể khôi phục.",
-      tag: "tài khoản"
     },
     {
       q: "Airanh có thu phí không?",
       a: "Hiện tại Airanh miễn phí 100% cho tất cả tính năng. Gói Pro với AI nâng cao, dung lượng 50GB sẽ ra mắt Q2/2027.",
-      tag: "thanh toán"
     },
     {
       q: "Làm sao mời bạn vào Plan?",
       a: "Mở Plan → bấm icon Share → Gửi link hoặc mã QR. Người được mời cần có tài khoản Airanh để tham gia.",
-      tag: "plan"
     },
     {
       q: "Task đã xóa có lấy lại được không?",
       a: "Có. Vào Cài đặt → Thùng rác → Khôi phục. Task bị xóa sau 30 ngày sẽ mất vĩnh viễn.",
-      tag: "task"
     },
     {
       q: "Đồng bộ dữ liệu giữa điện thoại và web?",
       a: "Có. Airanh đồng bộ realtime qua Firebase. Chỉ cần đăng nhập cùng tài khoản trên mọi thiết bị.",
-      tag: "đồng bộ"
     },
     {
       q: "Bị mất kết nối có dùng được không?",
       a: "Airanh hỗ trợ offline mode. Bạn vẫn tạo/sửa task được. Dữ liệu sẽ tự sync khi có mạng lại.",
-      tag: "đồng bộ"
     },
     {
       q: "Làm sao báo cáo người dùng xấu?",
       a: "Vào Profile người đó → bấm ⋯ → Báo cáo. Hoặc gửi email với ID người dùng về support@air.vn.",
-      tag: "an toàn"
     },
     {
       q: "Dữ liệu của tôi có an toàn không?",
       a: "Có. Airanh mã hóa end-to-end, lưu trên server Firebase đạt chuẩn ISO 27001. Xem Chính sách bảo mật để biết chi tiết.",
-      tag: "bảo mật"
     },
   ];
 
@@ -89,8 +79,7 @@ export default function HelpPage() {
     const query = searchQuery.toLowerCase();
     return faqs.filter(f =>
       f.q.toLowerCase().includes(query) ||
-      f.a.toLowerCase().includes(query) ||
-      f.tag.toLowerCase().includes(query)
+      f.a.toLowerCase().includes(query)
     );
   }, [searchQuery]);
 
@@ -110,14 +99,11 @@ export default function HelpPage() {
 
       <div className="px-4 pt-4 space-y-7">
         {/* Hero Card */}
-        <div className="bg-gradient-to-br from-[#F8FAFC] to-[#F1F5F9] dark:from-zinc-900 dark:to-zinc-900/50 rounded-3xl p-6 border-gray-100 dark:border-zinc-800">
-          <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${accentGradient} flex items-center justify-center mb-4 shadow-lg shadow-blue-500/20`}>
-            <MessageSquare className="w-8 h-8 text-white" />
-          </div>
-          <h2 className="text-2xl font-extrabold text-[#0F172A] dark:text-white mb-2">
+        <div className="bg-gradient-to-br from-[#F8FAFC] to-[#F1F5F9] dark:from-zinc-900 dark:to-zinc-900/50 rounded-3xl p-6 border border-gray-100 dark:border-zinc-800">
+          <h2 className="text-2xl font-extrabold text-[#0F172A] dark:text-white mb-2 text-center">
             Cần giúp đỡ?
           </h2>
-          <p className="text-base text-[#64748B] dark:text-zinc-400 leading-relaxed mb-4">
+          <p className="text-base text-[#64748B] dark:text-zinc-400 leading-relaxed mb-4 text-center">
             Đội ngũ Airanh phản hồi trong vòng 24h. Chọn kênh phù hợp với bạn.
           </p>
           <button
@@ -159,33 +145,7 @@ export default function HelpPage() {
           />
         </Section>
 
-        {/* FAQ với Search */}
-        <Section title="CÂU HỎI THƯỜNG GẶP">
-          <div className="p-4 border-b border-gray-100 dark:border-zinc-800">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#94A3B8] dark:text-zinc-500" />
-              <input
-                type="text"
-                placeholder="Tìm câu hỏi..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-11 pl-11 pr-4 rounded-xl bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 outline-none text- text-[#0F172A] dark:text-white placeholder:text-[#94A3B8] dark:placeholder:text-zinc-500 focus:border-blue-500 transition"
-              />
-            </div>
-          </div>
-          {filteredFaqs.length > 0? (
-            filteredFaqs.map((item, i) => (
-              <FaqItem key={i} question={item.q} answer={item.a} tag={item.tag} />
-            ))
-          ) : (
-            <div className="px-4 py-8 text-center">
-              <HelpCircle className="w-12 h-12 text-[#CBD5E1] dark:text-zinc-700 mx-auto mb-2" />
-              <p className="text- text-[#64748B] dark:text-zinc-500">Không tìm thấy câu hỏi phù hợp</p>
-            </div>
-          )}
-        </Section>
-
-        {/* Tài liệu */}
+        {/* Tài liệu - Đẩy lên trên FAQ */}
         <Section title="TÀI LIỆU & PHÁP LÝ">
           <SettingItem
             label="Điều khoản dịch vụ"
@@ -213,14 +173,40 @@ export default function HelpPage() {
           />
         </Section>
 
+        {/* FAQ */}
+        <Section title="CÂU HỎI THƯỜNG GẶP">
+          <div className="p-4 border-b border-gray-100 dark:border-zinc-800">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#94A3B8] dark:text-zinc-500" />
+              <input
+                type="text"
+                placeholder="Tìm câu hỏi..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-11 pl-11 pr-4 rounded-xl bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 outline-none text-base text-[#0F172A] dark:text-white placeholder:text-[#94A3B8] dark:placeholder:text-zinc-500 focus:border-blue-500 transition"
+              />
+            </div>
+          </div>
+          {filteredFaqs.length > 0? (
+            filteredFaqs.map((item, i) => (
+              <FaqItem key={i} question={item.q} answer={item.a} />
+            ))
+          ) : (
+            <div className="px-4 py-8 text-center">
+              <HelpCircle className="w-12 h-12 text-[#CBD5E1] dark:text-zinc-700 mx-auto mb-2" />
+              <p className="text-base text-[#64748B] dark:text-zinc-500">Không tìm thấy câu hỏi phù hợp</p>
+            </div>
+          )}
+        </Section>
+
         {/* Footer */}
         <div className="pt-2 pb-8">
           <div className="flex flex-col items-center gap-2 text-[#94A3B8] dark:text-zinc-600">
             <div className="flex items-center gap-2">
               <HelpCircle className="w-4 h-4" />
-              <span className="text- font-medium">Airanh v1.0.0 · Build 2026.04.28</span>
+              <span className="text-base font-medium">Airanh v1.0.0 · Build 2026.04.28</span>
             </div>
-            <p className="text-">Made with ❤️ in Vietnam</p>
+            <p className="text-base">Made with ❤️ in Vietnam</p>
           </div>
         </div>
       </div>
@@ -274,7 +260,7 @@ function SettingItem({
         <Icon className={`w-5 h-5 ${iconColor}`} />
       </div>
       <div className="flex-1 text-left min-w-0">
-        <div className="text- font-semibold text-[#0F172A] dark:text-white">{label}</div>
+        <div className="text-base font-semibold text-[#0F172A] dark:text-white">{label}</div>
         {subtitle && <div className="text- text-[#64748B] dark:text-zinc-400 mt-0.5">{subtitle}</div>}
       </div>
       <RightIcon className="w-5 h-5 text-[#CBD5E1] dark:text-zinc-600 flex-shrink-0" />
@@ -282,7 +268,7 @@ function SettingItem({
   );
 }
 
-function FaqItem({ question, answer, tag }: { question: string; answer: string; tag: string }) {
+function FaqItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -292,18 +278,13 @@ function FaqItem({ question, answer, tag }: { question: string; answer: string; 
         className="w-full flex items-start gap-3 px-4 py-3.5 active:bg-white dark:active:bg-zinc-800 transition text-left"
       >
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text- font-semibold text-[#0F172A] dark:text-white">{question}</span>
-          </div>
-          <span className="inline-block px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/30 text- text-blue-600 dark:text-blue-400 font-medium">
-            {tag}
-          </span>
+          <span className="text-base font-semibold text-[#0F172A] dark:text-white">{question}</span>
         </div>
         <ChevronRight className={`w-5 h-5 text-[#CBD5E1] dark:text-zinc-600 transition flex-shrink-0 mt-0.5 ${open? "rotate-90" : ""}`} />
       </button>
       {open && (
-        <div className="px-4 pb-3.5 pl-4">
-          <p className="text- text-[#64748B] dark:text-zinc-400 leading-relaxed">{answer}</p>
+        <div className="px-4 pb-3.5">
+          <p className="text-base text-[#64748B] dark:text-zinc-400 leading-relaxed">{answer}</p>
         </div>
       )}
     </div>
