@@ -32,7 +32,6 @@ type FeedTask = Task & {
   hidden?: boolean;
 };
 
-// Type guard cho task có location
 type TaskWithLocation = FeedTask & {
   location: { lat: number; lng: number };
 };
@@ -63,7 +62,6 @@ export default function TaskFeedPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
 
@@ -151,7 +149,7 @@ export default function TaskFeedPage() {
       const snap = await getDocs(q);
       let data = snap.docs.map((doc) => ({
         id: doc.id,
- ...doc.data(),
+...doc.data(),
       })) as FeedTask[];
 
       if (isRefresh) {
@@ -237,12 +235,6 @@ export default function TaskFeedPage() {
   const filteredTasks = useMemo(() => {
     let result = tasks.filter(t =>!t.banned &&!t.hidden);
 
-    if (searchQuery) {
-      result = result.filter(t =>
-        t.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
     if (activeTab === "hot") {
       result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
     } else if (activeTab === "new") {
@@ -267,7 +259,7 @@ export default function TaskFeedPage() {
     }
 
     return result;
-  }, [tasks, searchQuery, activeTab, userLocation]);
+  }, [tasks, activeTab, userLocation]);
 
   const handleShare = useCallback((task: FeedTask) => {
     vibrate(5);
@@ -310,7 +302,7 @@ export default function TaskFeedPage() {
                 onClick={() => { setMode("task"); vibrate(); }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                   mode === "task"
-             ? "text-white"
+            ? "text-white"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={mode === "task"? { background: theme.task.gradient } : {}}
@@ -322,7 +314,7 @@ export default function TaskFeedPage() {
                 onClick={() => { setMode("plan"); vibrate(); }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                   mode === "plan"
-             ? "text-white"
+            ? "text-white"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={mode === "plan"? { background: theme.plan.gradient } : {}}
@@ -336,8 +328,6 @@ export default function TaskFeedPage() {
           <CustomFilterBar
             currentFilter={activeTab}
             onChangeFilter={setActiveTab}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
           />
         </div>
 
@@ -436,8 +426,8 @@ export default function TaskFeedPage() {
       </div>
 
       <style jsx global>{`
- .scrollbar-hide::-webkit-scrollbar { display: none; }
- .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale }
         body { overscroll-behavior-y: contain }
       `}</style>
