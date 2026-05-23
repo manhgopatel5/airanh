@@ -54,7 +54,7 @@ export default function TaskFeedPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
 
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
