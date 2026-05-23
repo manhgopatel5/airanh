@@ -390,13 +390,15 @@ Hot: ({ isActive }: { isActive: boolean }) => (
   </svg>
 ),
 
-// NEARBY PLAN: Target Scan - 1 mục tiêu duy nhất
+// NEARBY PLAN: Target Scan - Chấm xanh chỉ sáng khi tia quét trúng
 Nearby: ({ isActive }: { isActive: boolean }) => {
-  const targetAngle = 45; // Vị trí mục tiêu: 45 độ = góc trên phải
+  const targetAngle = 45; // 45° = góc trên phải
+  const scanDuration = 2.5; // Tốc độ quét 1 vòng
+  const triggerTime = targetAngle / 360; // 0.125 = 12.5% thời gian
   
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      {/* 3 vòng tròn đồng tâm */}
+      {/* 3 vòng tròn đồng tâm tĩnh */}
       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" opacity={0.15} />
       <circle cx="12" cy="12" r="6.5" stroke="currentColor" strokeWidth="1.5" opacity={0.25} />
       <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5" opacity={0.4} />
@@ -408,7 +410,7 @@ Nearby: ({ isActive }: { isActive: boolean }) => {
       {isActive && (
         <motion.g
           animate={{ rotate: 360 }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
+          transition={{ duration: scanDuration, repeat: Infinity, ease: "linear" }}
           style={{ originX: "12px", originY: "12px" }}
         >
           <defs>
@@ -437,7 +439,7 @@ Nearby: ({ isActive }: { isActive: boolean }) => {
         transition={{ duration: 1, repeat: Infinity }}
       />
 
-      {/* 1 mục tiêu duy nhất - nháy khi tia quét qua góc 45° */}
+      {/* Chấm xanh - chỉ hiện khi tia quét trúng */}
       {isActive && (
         <motion.g>
           <motion.circle
@@ -445,18 +447,19 @@ Nearby: ({ isActive }: { isActive: boolean }) => {
             cy={12 + Math.sin((targetAngle - 90) * Math.PI / 180) * 7}
             r="2"
             fill="#0A84FF"
+            initial={{ scale: 0, opacity: 0 }}
             animate={{
-              scale: [0, 1.5, 1.5, 0],
-              opacity: [0, 1, 1, 0]
+              scale: [0, 0, 1.6, 1, 0], // Bắt đầu từ 0, đến lúc quét trúng mới bật
+              opacity: [0, 0, 1, 1, 0]
             }}
             transition={{
-              duration: 2.5,
+              duration: scanDuration,
               repeat: Infinity,
-              times: [0, 0.18, 0.3, 0.35], // Hiện ở 0.18 = 45°/360° * 2.5s
+              times: [0, triggerTime - 0.01, triggerTime, triggerTime + 0.15, triggerTime + 0.25],
               ease: "easeOut"
             }}
           />
-          {/* Vòng ripple khi detect */}
+          {/* Ripple lan ra khi detect */}
           <motion.circle
             cx={12 + Math.cos((targetAngle - 90) * Math.PI / 180) * 7}
             cy={12 + Math.sin((targetAngle - 90) * Math.PI / 180) * 7}
@@ -464,14 +467,15 @@ Nearby: ({ isActive }: { isActive: boolean }) => {
             stroke="#0A84FF"
             strokeWidth="1.5"
             fill="none"
+            initial={{ scale: 1, opacity: 0 }}
             animate={{
-              scale: [1, 3],
-              opacity: [0.8, 0]
+              scale: [1, 1, 3.5],
+              opacity: [0, 0, 0.7, 0]
             }}
             transition={{
-              duration: 2.5,
+              duration: scanDuration,
               repeat: Infinity,
-              times: [0, 0.18, 0.5, 1],
+              times: [0, triggerTime, triggerTime + 0.05, triggerTime + 0.4],
               ease: "easeOut"
             }}
           />
