@@ -36,6 +36,8 @@ type TaskWithLocation = FeedTask & {
   location: { lat: number; lng: number };
 };
 
+type CacheKey = `${TabId}-${"task" | "plan"}`;
+
 const hasLocation = (task: FeedTask): task is TaskWithLocation => {
   return task.location?.lat!= null && task.location?.lng!= null;
 };
@@ -56,16 +58,27 @@ export default function TaskFeedPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const { mode = "task", setMode } = useAppStore();
   const [activeTab, setActiveTab] = useState<TabId>("hot");
-  const [tasks, setTasks] = useState<FeedTask[]>([]);
+  
+  // CACHE THEO TAB + MODE
+  const [tasksCache, setTasksCache] = useState<Record<CacheKey, FeedTask[]>>({
+    "hot-task": [], "nearby-task": [], "friends-task": [], "new-task": [],
+    "hot-plan": [], "nearby-plan": [], "friends-plan": [], "new-plan": [],
+  });
+  const [lastDocs, setLastDocs] = useState<Record<CacheKey, QueryDocumentSnapshot<DocumentData> | null>>({
+    "hot-task": null, "nearby-task": null, "friends-task": null, "new-task": null,
+    "hot-plan": null, "nearby-plan": null, "friends-plan": null, "new-plan": null,
+  });
+  const [hasMoreMap, setHasMoreMap] = useState<Record<CacheKey, boolean>>({
+    "hot-task": true, "nearby-task": true, "friends-task": true, "new-task": true,
+    "hot-plan": true, "nearby-plan": true, "friends-plan": true, "new-plan": true,
+  });
+  
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   
-  // ĐỔI STATE SEARCH THÀNH OBJECT
   const [searchQueries, setSearchQueries] = useState<Record<TabId, string>>({
     hot: "",
     nearby: "",
@@ -87,6 +100,10 @@ export default function TaskFeedPage() {
       gradient: "linear-gradient(135deg, #30D158 0%, #28B44C 100%)",
     }
   };
+
+  const currentCacheKey: CacheKey = `${activeTab}-${mode}`;
+  const tasks = tasksCache[currentCacheKey];
+  const hasMore = hasMoreMap[currentCacheKey];
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -139,33 +156,40 @@ export default function TaskFeedPage() {
 
   const fetchTasks = useCallback(async (isRefresh = false) => {
     if (!db) return;
+    const key = currentCacheKey;
 
     if (isRefresh) {
       setRefreshing(true);
-      setLastDoc(null);
-      setHasMore(true);
     } else {
       setLoadingMore(true);
     }
 
     try {
-      const q = buildQuery(isRefresh? undefined : lastDoc || undefined);
+      const startDoc = isRefresh? undefined : lastDocs[key] || undefined;
+      const q = buildQuery(startDoc);
       if (!q) return;
 
       const snap = await getDocs(q);
       let data = snap.docs.map((doc) => ({
         id: doc.id,
-      ...doc.data(),
+     ...doc.data(),
       })) as FeedTask[];
 
-      if (isRefresh) {
-        setTasks(data);
-      } else {
-        setTasks(prev => [...prev,...data]);
-      }
+      setTasksCache(prev => ({
+       ...prev, 
+        [key]: isRefresh? data : [...prev[key],...data]
+      }));
+      
+      setLastDocs(prev => ({
+       ...prev,
+        [key]: snap.docs[snap.docs.length - 1] || null
+      }));
+      
+      setHasMoreMap(prev => ({
+       ...prev,
+        [key]: snap.docs.length === PAGE_SIZE
+      }));
 
-      setLastDoc(snap.docs[snap.docs.length - 1] || null);
-      setHasMore(snap.docs.length === PAGE_SIZE);
     } catch (err: any) {
       console.error("Firestore Fetch Error: ", err);
       if (err.code === "failed-precondition") {
@@ -180,11 +204,18 @@ export default function TaskFeedPage() {
       setLoadingMore(false);
       setRefreshing(false);
     }
-  }, [db, buildQuery, lastDoc]);
+  }, [db, buildQuery, lastDocs, currentCacheKey]);
 
+  // LOAD KHI ĐỔI TAB/MODE - CHỈ FETCH NẾU CHƯA CÓ CACHE
   useEffect(() => {
-    if (currentUser) {
+    if (!currentUser) return;
+    
+    const key = currentCacheKey;
+    if (tasksCache[key].length === 0 && hasMoreMap[key]) {
+      setLoading(true);
       fetchTasks(true);
+    } else {
+      setLoading(false);
     }
   }, [mode, activeTab, currentUser]);
 
@@ -238,7 +269,6 @@ export default function TaskFeedPage() {
     setPullDistance(0);
   };
 
-  // THÊM FUNCTION UPDATE SEARCH THEO TAB
   const handleSearchChange = useCallback((filter: TabId, query: string) => {
     setSearchQueries(prev => ({...prev, [filter]: query }));
   }, []);
@@ -246,7 +276,6 @@ export default function TaskFeedPage() {
   const filteredTasks = useMemo(() => {
     let result = tasks.filter(t =>!t.banned &&!t.hidden);
 
-    // DÙNG SEARCH RIÊNG CỦA TAB
     const currentQuery = searchQueries[activeTab];
     if (currentQuery) {
       result = result.filter(t =>
@@ -287,11 +316,23 @@ export default function TaskFeedPage() {
   }, []);
 
   const handleTaskUpdate = useCallback((taskId: string, updates: Partial<FeedTask>) => {
-    setTasks(prev => prev.map(t => t.id === taskId? ({...t,...updates } as FeedTask) : t));
+    setTasksCache(prev => ({
+     ...prev,
+      [currentCacheKey]: prev[currentCacheKey].map(t => 
+        t.id === taskId? ({...t,...updates } as FeedTask) : t
+      )
+    }));
     if (updates.status === "completed") {
       vibrate([10, 20, 10]);
     }
-  }, []);
+  }, [currentCacheKey]);
+
+  const handleDelete = useCallback((id: string) => {
+    setTasksCache(prev => ({
+     ...prev,
+      [currentCacheKey]: prev[currentCacheKey].filter(t => t.id!== id)
+    }));
+  }, [currentCacheKey]);
 
   return (
     <>
@@ -322,7 +363,7 @@ export default function TaskFeedPage() {
                 onClick={() => { setMode("task"); vibrate(); }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                   mode === "task"
-                  ? "text-white"
+                 ? "text-white"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={mode === "task"? { background: theme.task.gradient } : {}}
@@ -334,7 +375,7 @@ export default function TaskFeedPage() {
                 onClick={() => { setMode("plan"); vibrate(); }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                   mode === "plan"
-                  ? "text-white"
+                 ? "text-white"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={mode === "plan"? { background: theme.plan.gradient } : {}}
@@ -420,7 +461,7 @@ export default function TaskFeedPage() {
                     <TaskCard
                       task={task}
                       theme={mode}
-                      onDelete={(id) => setTasks(prev => prev.filter(t => t.id!== id))}
+                      onDelete={handleDelete}
                       onShare={handleShare}
                       onTaskUpdate={handleTaskUpdate}
                     />
@@ -448,8 +489,8 @@ export default function TaskFeedPage() {
       </div>
 
       <style jsx global>{`
-      .scrollbar-hide::-webkit-scrollbar { display: none; }
-      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+     .scrollbar-hide::-webkit-scrollbar { display: none; }
+     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale }
         body { overscroll-behavior-y: contain }
       `}</style>
