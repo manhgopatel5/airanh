@@ -20,6 +20,7 @@ interface CustomFilterBarProps {
 }
 
 // Bộ icon custom cho Task - style tech, nhanh, sắc
+// Bộ icon custom cho Task - style tech, nhanh, sắc
 const TaskIcons = {
   Hot: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -144,7 +145,6 @@ const TaskIcons = {
       </motion.g>
     </svg>
   ),
-
   Nearby: ({ isActive }: { isActive: boolean }) => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
       <motion.circle
