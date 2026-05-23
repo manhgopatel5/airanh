@@ -20,15 +20,14 @@ interface CustomFilterBarProps {
   onSearchChange: (query: string) => void;
 }
 
-// Bộ icon custom cho Task - style tech, nhanh, sắc
 const TaskIcons = {
   Hot: ({ isActive }: { isActive: boolean }) => {
     if (!isActive) {
       return (
         <Image
           src="/icons/house-3d.webp"
-          width={20}
-          height={20}
+          width={26}
+          height={26}
           alt="Hot"
           className="opacity-50 grayscale"
         />
@@ -37,23 +36,23 @@ const TaskIcons = {
 
     return (
       <motion.div 
-        className="relative w-5 h-5"
+        className="relative w-full h-full"
         initial={{ scale: 0.9 }}
-        animate={{ scale: [0.9, 1.08, 1] }}
+        animate={{ scale: [0.9, 1.05, 1] }}
         transition={{ duration: 0.4, ease: "backOut" }}
       >
         <Image
           src="/icons/house-3d.webp"
-          width={20}
-          height={20}
+          width={48}
+          height={48}
           alt="Hot"
-          className="relative z-10"
+          className="relative z-10 object-contain"
           priority
         />
 
-        {/* Cửa gỗ mở ra - căn theo vị trí cửa trong ảnh 20px */}
+        {/* Cửa gỗ mở - scale theo 48px */}
         <motion.div
-          className="absolute left-[8.5px] top-[7px] w-[2px] h-[5px] bg-[#1C1C1E] z-20 rounded-[0.5px]"
+          className="absolute left-[20.5px] top-[17px] w-[4.5px] h- bg-[#1C1C1E] z-20 rounded-[1px]"
           style={{ transformOrigin: 'left center' }}
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
@@ -62,7 +61,7 @@ const TaskIcons = {
 
         {/* Bụi cây trái bay mất */}
         <motion.div
-          className="absolute left-[3px] top-[9px] w-[3px] h-[3px] bg-[#E5E5E7] rounded-full z-20"
+          className="absolute left-[7px] top- w-[7px] h-[7px] bg-[#E5E5E7] rounded-full z-20"
           initial={{ scale: 1, opacity: 1 }}
           animate={{
             scale: [1, 1.3, 0.7, 0],
@@ -74,10 +73,10 @@ const TaskIcons = {
 
         {/* Đèn hắt vàng từ cửa */}
         <motion.div
-          className="absolute left-[9px] top-[8px] w-[2.5px] h-[4px] z-0"
+          className="absolute left- top- w-[6px] h- z-0"
           style={{
             background: 'linear-gradient(90deg, #FFD60A 0%, transparent 100%)',
-            filter: 'blur(1px)'
+            filter: 'blur(2px)'
           }}
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{
@@ -94,10 +93,10 @@ const TaskIcons = {
 
         {/* Đèn tường nháy */}
         <motion.div
-          className="absolute left-[6.5px] top-[7.5px] w-[1.5px] h-[1.5px] rounded-full z-0"
+          className="absolute left- top- w-[3.5px] h-[3.5px] rounded-full z-0"
           style={{
             background: '#FFD60A',
-            boxShadow: '0 0 3px #FFD60A'
+            boxShadow: '0 0 6px #FFD60A'
           }}
           initial={{ opacity: 0 }}
           animate={{ opacity: [0, 1, 0.2, 1] }}
@@ -188,7 +187,6 @@ const TaskIcons = {
   ),
 };
 
-// Bộ icon custom cho Plan - style organic, mềm, chill
 const PlanIcons = {
   Hot: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
     <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
@@ -267,7 +265,6 @@ export default function CustomFilterBar({
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [showLabel, setShowLabel] = useState(false);
 
-  // 5s toggle: icon <-> chữ
   useEffect(() => {
     const interval = setInterval(() => {
       setShowLabel(prev =>!prev);
@@ -324,12 +321,12 @@ export default function CustomFilterBar({
 
   return (
     <div className="px-4 pb-3 space-y-3">
-      {/* Hàng 1: 4 tab filter - chia đều 4 cột, width cố định */}
       <div className="grid grid-cols-4 gap-2">
         {filters.map((filter) => {
           const isActive = currentFilter === filter.key;
           const isHovered = hovered === filter.key;
           const Icon = filter.Icon;
+          const isHotActive = isActive && filter.key === "hot";
 
           return (
             <motion.button
@@ -341,7 +338,7 @@ export default function CustomFilterBar({
               onHoverEnd={() => setHovered(null)}
               className="relative w-full"
             >
-              {isActive && (
+              {isActive &&!isHotActive && (
                 <motion.div
                   layoutId="activeFilter"
                   className="absolute inset-0 rounded-2xl"
@@ -356,9 +353,11 @@ export default function CustomFilterBar({
 
               <motion.div
                 className={`relative h-12 rounded-2xl flex items-center justify-center font-bold overflow-hidden ${
-                  isActive
-                ? "text-white"
-                    : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400"
+                  isHotActive
+                 ? "bg-white" 
+                  : isActive
+                 ? "text-white"
+                  : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400"
                 }`}
                 animate={{
                   scale: isActive? 1 : 0.96,
@@ -418,7 +417,6 @@ export default function CustomFilterBar({
         })}
       </div>
 
-      {/* Hàng 2: Search */}
       <AnimatePresence initial={false} mode="wait">
         {isSearchMode? (
           <motion.div
