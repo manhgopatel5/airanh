@@ -341,7 +341,7 @@ New: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
     ))}
   </svg>
 ),
-
+};
 const PlanIcons = {
 // HOT PLAN: Rising Sun - tia sáng dài hơn
 Hot: ({ isActive }: { isActive: boolean }) => (
