@@ -23,23 +23,54 @@ interface CustomFilterBarProps {
 const TaskIcons = {
   Hot: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <motion.path
-        d="M12 2L7 9L10 11L8 15L16 9L13 7L15 2H12Z"
-        fill={isActive ? fill : "none"}
-        stroke={isActive ? fill : "currentColor"}
-        strokeWidth={isActive ? 0 : 2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
+      <motion.g
         animate={isActive ? {
-          d: [
-            "M12 2L7 9L10 11L8 15L16 9L13 7L15 2H12Z",
-            "M12 1L6 9L10 12L7 16L17 8L13 6L16 1H12Z",
-            "M12 2L7 9L10 11L8 15L16 9L13 7L15 2H12Z"
-          ],
-          scale: [1, 1.2, 1],
+          scale: [1, 1.08, 0.95, 1.05, 1],
+          rotate: [0, -2, 3, -1, 0],
         } : {}}
-        transition={{ duration: 0.6, repeat: isActive ? Infinity : 0, repeatDelay: 2 }}
-      />
+        transition={{ 
+          duration: 1.2, 
+          repeat: isActive ? Infinity : 0, 
+          ease: "easeInOut" 
+        }}
+        style={{ originX: "50%", originY: "90%" }}
+      >
+        {/* Ngọn lửa ngoài */}
+        <motion.path
+          d="M12 2C10 5 8 7 8 11C8 14.3137 9.79086 17 12 17C14.2091 17 16 14.3137 16 11C16 7 14 5 12 2Z"
+          fill={isActive ? fill : "none"}
+          stroke={isActive ? fill : "currentColor"}
+          strokeWidth={isActive ? 0 : 2}
+          strokeLinecap="round"
+          animate={isActive ? {
+            d: [
+              "M12 2C10 5 8 7 8 11C8 14.3137 9.79086 17 12 17C14.2091 17 16 14.3137 16 11C16 7 14 5 12 2Z",
+              "M12 1.5C9.5 5.2 7.5 7.5 7.5 11.5C7.5 14.5 9.5 17.5 12 17.5C14.5 17.5 16.5 14.5 16.5 11.5C16.5 7.5 14.5 5.2 12 1.5Z",
+              "M12 2C10 5 8 7 8 11C8 14.3137 9.79086 17 12 17C14.2091 17 16 14.3137 16 11C16 7 14 5 12 2Z"
+            ]
+          } : {}}
+          transition={{ duration: 0.8, repeat: isActive ? Infinity : 0, ease: "easeInOut" }}
+        />
+        {/* Ngọn lửa trong */}
+        {isActive && (
+          <motion.path
+            d="M12 6C11 8 10 9.5 10 12C10 13.6569 10.8954 15 12 15C13.1046 15 14 13.6569 14 12C14 9.5 13 8 12 6Z"
+            fill="#FFD60A"
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{
+              opacity: [0.6, 1, 0.7, 1],
+              scale: [0.9, 1.1, 0.95, 1],
+              y: [0, -1, 0, -0.5, 0]
+            }}
+            transition={{ 
+              duration: 0.6, 
+              repeat: Infinity, 
+              ease: "easeInOut",
+              times: [0, 0.3, 0.6, 1]
+            }}
+          />
+        )}
+      </motion.g>
     </svg>
   ),
   Nearby: ({ isActive }: { isActive: boolean }) => (
