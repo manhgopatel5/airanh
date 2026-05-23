@@ -199,35 +199,82 @@ const TaskIcons = {
 };
 
 const PlanIcons = {
-  Hot: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <defs>
-        <linearGradient id="planFireGrad" x1="50%" y1="100%" x2="50%" y2="0%">
-          <stop offset="0%" stopColor="#FF9F0A" />
-          <stop offset="100%" stopColor={fill} />
-        </linearGradient>
-      </defs>
-      <motion.path
-        d="M12 22C10 22 7.5 19 7.5 15C7.5 12 9.5 9.5 12 6C14.5 9.5 16.5 12 16.5 15C16.5 19 14 22 12 22Z"
-        fill={isActive? "url(#planFireGrad)" : "none"}
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        animate={isActive? {
-          scaleY: [1, 1.08, 0.97, 1.04, 1],
-          scaleX: [1, 0.96, 1.02, 0.98, 1],
-        } : {}}
-        transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-        style={{ originX: "50%", originY: "85%" }}
-      />
-      {isActive && (
-        <motion.circle cx="12" cy="13" r="2.5" fill={fill} opacity={0.6}
-          animate={{ scale: [0.8, 1.2, 0.8], opacity: [0.3, 0.6, 0.3] }}
-          transition={{ duration: 2.5, repeat: Infinity }}
+  Hot: ({ isActive }: { isActive: boolean }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <defs>
+      <filter id="heatGlow">
+        <feGaussianBlur stdDeviation="0.8" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+
+    {/* Grid 3x3 heatmap */}
+    {[
+      { x: 2, y: 2, delay: 0, baseColor: "#0A84FF" },
+      { x: 9, y: 2, delay: 0.1, baseColor: "#5AC8FA" },
+      { x: 16, y: 2, delay: 0.2, baseColor: "#0A84FF" },
+      { x: 2, y: 9, delay: 0.15, baseColor: "#5AC8FA" },
+      { x: 9, y: 9, delay: 0, baseColor: "#FF3B30" }, // Tâm hot nhất
+      { x: 16, y: 9, delay: 0.15, baseColor: "#FF9500" },
+      { x: 2, y: 16, delay: 0.2, baseColor: "#0A84FF" },
+      { x: 9, y: 16, delay: 0.1, baseColor: "#FF9500" },
+      { x: 16, y: 16, delay: 0.2, baseColor: "#5AC8FA" },
+    ].map((cell, i) => {
+      const isCenter = cell.x === 9 && cell.y === 9;
+      
+      return (
+        <motion.rect
+          key={i}
+          x={cell.x}
+          y={cell.y}
+          width="6"
+          height="6"
+          rx="1.5"
+          fill={isActive ? cell.baseColor : "currentColor"}
+          opacity={isActive ? 0.3 : 1}
+          filter={isActive && isCenter ? "url(#heatGlow)" : undefined}
+          animate={isActive ? {
+            opacity: isCenter ? [0.3, 1, 0.3] : [0.3, 0.7, 0.3],
+            scale: isCenter ? [1, 1.15, 1] : [1, 1.05, 1],
+          } : {}}
+          transition={{
+            duration: isCenter ? 1.2 : 1.8,
+            repeat: Infinity,
+            delay: cell.delay,
+            ease: "easeInOut"
+          }}
         />
-      )}
-    </svg>
-  ),
+      );
+    })}
+
+    {/* Pulse ring từ tâm khi active */}
+    {isActive && (
+      <motion.rect
+        x="9"
+        y="9"
+        width="6"
+        height="6"
+        rx="1.5"
+        stroke="#FF3B30"
+        strokeWidth="1.5"
+        fill="none"
+        animate={{
+          scale: [1, 2.5, 1],
+          opacity: [0.8, 0, 0.8],
+        }}
+        transition={{
+          duration: 1.5,
+          repeat: Infinity,
+          ease: "easeOut"
+        }}
+        style={{ originX: "50%", originY: "50%" }}
+      />
+    )}
+  </svg>
+),
   Nearby: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <path
