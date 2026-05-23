@@ -1,12 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { signOut, deleteUser } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { useAppStore } from "@/store/app";
 import {
-  doc, onSnapshot, updateDoc, serverTimestamp, getDoc, setDoc, deleteDoc
+  doc, onSnapshot, updateDoc, serverTimestamp, getDoc, setDoc
 } from "firebase/firestore";
 import type { Timestamp } from "firebase/firestore";
 import {
@@ -16,7 +16,7 @@ import {
 } from "@/lib/firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
-  HelpCircle, LogOut, Trash2, User, Shield, Lock,
+  HelpCircle, LogOut, User, Shield, Lock,
   Camera, Check, QrCode, Share2, Settings,
   Circle, Bell,
   Mail, Phone, Monitor, Ban, HardDrive
@@ -59,13 +59,12 @@ export default function ProfileTabContent() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const hasCheckedId = useRef(false);
   const uploadTaskRef = useRef<UploadTask | null>(null);
 
   const accentGradient = isPlan
-   ? "from-green-500 to-emerald-500"
+  ? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-600";
 
   useEffect(() => {
@@ -189,29 +188,6 @@ export default function ProfileTabContent() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    if (!user) return;
-    setShowDeleteModal(false);
-    try {
-      await Promise.all([
-        deleteDoc(doc(db, "users", user.uid)),
-        deleteDoc(doc(db, "usernames", userData?.userId || "")),
-      ]);
-      await deleteUser(user);
-      toast.success("Đã xóa tài khoản");
-      window.location.href = "/register";
-    } catch (err: unknown) {
-      const error = err as { code?: string };
-      if (error.code === "auth/requires-recent-login") {
-        toast.error("Vui lòng đăng nhập lại để xóa tài khoản");
-        await signOut(auth);
-        router.push("/login");
-      } else {
-        toast.error("Xóa thất bại");
-      }
-    }
-  };
-
   useEffect(() => {
     if (!user?.uid) return;
     const updateOnline = () => updateDoc(doc(db, "users", user.uid), { online: true }).catch(() => {});
@@ -231,7 +207,6 @@ export default function ProfileTabContent() {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setShowLogoutModal(false);
-        setShowDeleteModal(false);
       }
     };
     window.addEventListener("keydown", handleEsc);
@@ -428,22 +403,11 @@ export default function ProfileTabContent() {
             iconColor="text-gray-500"
             onClick={() => setShowLogoutModal(true)}
           />
-          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-          <SettingItem
-            label="Xoá tài khoản"
-            icon={Trash2}
-            iconColor="text-red-500"
-            onClick={() => setShowDeleteModal(true)}
-            danger
-          />
         </div>
       </div>
 
       {showLogoutModal && (
         <ProfileModal title="Đăng xuất?" desc="Bạn sẽ cần đăng nhập lại để sử dụng app" onClose={() => setShowLogoutModal(false)} onConfirm={handleLogout} confirmText="Đăng xuất" danger />
-      )}
-      {showDeleteModal && (
-        <ProfileModal title="Xóa tài khoản?" desc="Hành động này không thể hoàn tác. Toàn bộ dữ liệu sẽ bị xóa vĩnh viễn." onClose={() => setShowDeleteModal(false)} onConfirm={handleDeleteAccount} confirmText="Xóa vĩnh viễn" danger />
       )}
     </div>
   );
