@@ -221,52 +221,53 @@ Nearby: ({ isActive }: { isActive: boolean }) => (
 };
 
 const PlanIcons = {
-  // HOT PLAN: Rising Sun - thanh ngang đưa xuống xíu
-  Hot: ({ isActive }: { isActive: boolean }) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <defs>
-        <linearGradient id="sunGrad" x1="50%" y1="100%" x2="50%" y2="0%">
-          <stop offset="0%" stopColor="#FF9500" />
-          <stop offset="100%" stopColor="#FFD60A" />
-        </linearGradient>
-      </defs>
+ // HOT PLAN: Rising Sun - mặt trời to hơn, thanh dài hơn + xuống thấp
+Hot: ({ isActive }: { isActive: boolean }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <defs>
+      <linearGradient id="sunGrad" x1="50%" y1="100%" x2="50%" y2="0%">
+        <stop offset="0%" stopColor="#FF9500" />
+        <stop offset="100%" stopColor="#FFD60A" />
+      </linearGradient>
+    </defs>
 
-      <motion.circle
-        cx="12" cy="16" r="5"
-        fill={isActive? "url(#sunGrad)" : "none"}
-        stroke="currentColor"
-        strokeWidth="2"
-        animate={isActive? { y: [16, 12, 16] } : {}}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+    {/* Mặt trời to hơn r=6 */}
+    <motion.circle
+      cx="12" cy="15" r="6"
+      fill={isActive? "url(#sunGrad)" : "none"}
+      stroke="currentColor"
+      strokeWidth="2"
+      animate={isActive? { y: [15, 11, 15] } : {}}
+      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+    />
+
+    {isActive && [0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => (
+      <motion.line
+        key={deg}
+        x1="12" y1="11"
+        x2="12" y2="3"
+        stroke="#FFD60A"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        style={{ originX: "50%", originY: "50%", rotate: deg }}
+        animate={{
+          opacity: [0.3, 1, 0.3],
+          scale: [0.8, 1.2, 0.8]
+        }}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          delay: i * 0.1
+        }}
       />
+    ))}
 
-      {isActive && [0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => (
-        <motion.line
-          key={deg}
-          x1="12" y1="12"
-          x2="12" y2="4"
-          stroke="#FFD60A"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          style={{ originX: "50%", originY: "50%", rotate: deg }}
-          animate={{
-            opacity: [0.3, 1, 0.3],
-            scale: [0.8, 1.2, 0.8]
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            delay: i * 0.1
-          }}
-        />
-      ))}
+    {/* Thanh ngang dài hơn + xuống y=22 */}
+    <path d="M1 23H23" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+),
 
-      {/* Thanh ngang đưa xuống xíu từ 18 xuống 20 */}
-      <path d="M2 20H22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  ),
-
- // NEARBY PLAN: Location pin + ripple màu xanh dương - bỏ chấm đỏ
+ // NEARBY PLAN: Location pin + ripple màu xanh dương - chấm to hơn + xuống thấp hơn
 Nearby: ({ isActive }: { isActive: boolean }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
     <motion.g
@@ -282,14 +283,14 @@ Nearby: ({ isActive }: { isActive: boolean }) => (
       <circle cx="12" cy="9" r="3" fill={isActive? "white" : "currentColor"} />
     </motion.g>
 
-    {/* Chấm xanh nhấp nháy đưa xuống y=13 */}
+    {/* Chấm xanh to hơn r=2.5 và xuống cy=14 */}
     {isActive && (
       <motion.circle
-        cx="12" cy="13" r="2"
+        cx="12" cy="16" r="2.5"
         fill="#0A84FF"
         animate={{
-          scale: [1, 1.5, 1],
-          opacity: [1, 0.5, 1]
+          scale: [1, 1.4, 1],
+          opacity: [1, 0.6, 1]
         }}
         transition={{ duration: 1, repeat: Infinity }}
       />
@@ -320,84 +321,90 @@ Nearby: ({ isActive }: { isActive: boolean }) => (
   </svg>
 ),
 
-  // FRIENDS PLAN: Trái tim đỏ + lật ngang mỗi 3s khi bấm
-  Friends: ({ isActive }: { isActive: boolean }) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+ // FRIENDS PLAN: Trái tim đỏ phóng to thu nhỏ
+Friends: ({ isActive }: { isActive: boolean }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <motion.path
+      d="M12 21C12 21 4 13.5 4 8.5C4 5.5 6.5 3 9.5 3C11.1 3 12 3.8 12 3.8C12 3.8 12.9 3 14.5 3C17.5 3 20 5.5 20 8.5C20 13.5 12 21 12 21Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      fill={isActive? "#FF3B30" : "none"}
+      animate={isActive? {
+        scale: [1, 1.25, 1],
+      } : {}}
+      transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+      style={{ originX: "50%", originY: "60%" }}
+    />
+    {isActive && [
+      { x: 8, y: 8, delay: 0 },
+      { x: 16, y: 8, delay: 0.3 },
+      { x: 12, y: 5, delay: 0.6 },
+    ].map((p, i) => (
+      <motion.circle
+        key={i}
+        cx={p.x} cy={p.y} r="1"
+        fill="#FF3B30"
+        animate={{
+          y: [0, -6, -10],
+          opacity: [0, 1, 0],
+          scale: [0, 1, 0]
+        }}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          delay: p.delay,
+          ease: "easeOut"
+        }}
+      />
+    ))}
+  </svg>
+),
+ // NEW PLAN: Ngôi sao đổi màu liên tục
+New: ({ isActive }: { isActive: boolean }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <motion.g
+      animate={isActive? { y: [0, -6, 0] } : {}}
+      transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+      style={{ originX: "50%", originY: "50%" }}
+    >
       <motion.path
-        d="M12 21C12 21 4 13.5 4 8.5C4 5.5 6.5 3 9.5 3C11.1 3 12 3.8 12 3.8C12 3.8 12.9 3 14.5 3C17.5 3 20 5.5 20 8.5C20 13.5 12 21 12 21Z"
+        d="M12 2L15 8L21 9L17 14L18 20L12 17L6 20L7 14L3 9L9 8L12 2Z"
+        fill={isActive? "#FF9500" : "none"}
         stroke="currentColor"
         strokeWidth="2"
-        strokeLinecap="round"
-        fill={isActive? "#FF3B30" : "none"}
+        strokeLinejoin="round"
         animate={isActive? {
-          scale: [1, 1.15, 1],
-          rotateY: [0, 180, 360]
+          fill: ["#FF9500", "#FFD60A", "#FF3B30", "#30D158", "#0A84FF", "#FF9500"]
         } : {}}
         transition={{
-          scale: { duration: 1.2, repeat: Infinity, ease: "easeInOut" },
-          rotateY: { duration: 3, repeat: Infinity, ease: "easeInOut" }
+          duration: 4,
+          repeat: Infinity,
+          ease: "linear"
         }}
-        style={{ originX: "50%", originY: "60%" }}
       />
-      {isActive && [
-        { x: 8, y: 8, delay: 0 },
-        { x: 16, y: 8, delay: 0.3 },
-        { x: 12, y: 5, delay: 0.6 },
-      ].map((p, i) => (
-        <motion.circle
-          key={i}
-          cx={p.x} cy={p.y} r="1"
-          fill="#FF3B30"
-          animate={{
-            y: [0, -6, -10],
-            opacity: [0, 1, 0],
-            scale: [0, 1, 0]
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            delay: p.delay,
-            ease: "easeOut"
-          }}
-        />
-      ))}
-    </svg>
-  ),
-
-  // NEW PLAN: Màu cam + xoay tròn mỗi 3s khi bấm
-  New: ({ isActive }: { isActive: boolean }) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <motion.g
-        animate={isActive? {
-          y: [0, -6, 0],
-          rotate: [0, 360]
-        } : {}}
-        transition={{
-          y: { duration: 3.5, repeat: Infinity, ease: "easeInOut" },
-          rotate: { duration: 3, repeat: Infinity, ease: "linear" }
+    </motion.g>
+    {isActive && (
+      <motion.circle
+        cx="12" cy="12" r="8"
+        stroke="#FF9500"
+        strokeWidth="1"
+        fill="none"
+        opacity={0.4}
+        animate={{ 
+          scale: [1, 1.5, 1], 
+          opacity: [0.4, 0, 0.4],
+          stroke: ["#FF9500", "#FFD60A", "#FF3B30", "#30D158", "#0A84FF", "#FF9500"]
         }}
-        style={{ originX: "50%", originY: "50%" }}
-      >
-        <path d="M12 2L15 8L21 9L17 14L18 20L12 17L6 20L7 14L3 9L9 8L12 2Z"
-          fill={isActive? "#FF9500" : "none"}
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinejoin="round"
-        />
-      </motion.g>
-      {isActive && (
-        <motion.circle
-          cx="12" cy="12" r="8"
-          stroke="#FF9500"
-          strokeWidth="1"
-          fill="none"
-          opacity={0.4}
-          animate={{ scale: [1, 1.5, 1], opacity: [0.4, 0, 0.4] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        />
-      )}
-    </svg>
-  ),
+        transition={{ 
+          scale: { duration: 2, repeat: Infinity },
+          opacity: { duration: 2, repeat: Infinity },
+          stroke: { duration: 4, repeat: Infinity, ease: "linear" }
+        }}
+      />
+    )}
+  </svg>
+),
 };
 
 export default function CustomFilterBar({
