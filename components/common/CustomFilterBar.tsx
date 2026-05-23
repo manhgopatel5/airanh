@@ -15,12 +15,11 @@ type FilterTab = "hot" | "nearby" | "friends" | "new";
 interface CustomFilterBarProps {
   currentFilter: FilterTab;
   onChangeFilter: (filter: FilterTab) => void;
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
+  searchQueries: Record<FilterTab, string>;
+  onSearchChange: (filter: FilterTab, query: string) => void;
 }
 
 const TaskIcons = {
-  // HOT TASK: 3 sọc đầy đủ kể cả khi không active, bỏ chấm đỏ
   Hot: ({ isActive }: { isActive: boolean }) => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <rect
@@ -63,7 +62,6 @@ const TaskIcons = {
     </svg>
   ),
 
-// NEARBY TASK: La bàn xoay mượt
 Nearby: ({ isActive }: { isActive: boolean }) => {
   const [angle, setAngle] = useState(0);
   const [wobble, setWobble] = useState(0);
@@ -78,14 +76,14 @@ Nearby: ({ isActive }: { isActive: boolean }) => {
     }
 
     let lastTime = performance.now();
-    const speed = 60; // độ/giây
+    const speed = 60;
 
     const animate = (time: number) => {
       const delta = time - lastTime;
       lastTime = time;
       
       setAngle(prev => (prev + (speed * delta) / 1000) % 360);
-      setWobble(Math.sin(time / 100) * 2); // wobble từ tính
+      setWobble(Math.sin(time / 100) * 2);
       
       animationRef.current = requestAnimationFrame(animate);
     };
@@ -142,7 +140,6 @@ Nearby: ({ isActive }: { isActive: boolean }) => {
         <path d="M17.66 6.34L16.95 7.05M17.66 17.66L16.95 16.95M6.34 17.66L7.05 16.95M6.34 6.34L7.05 7.05" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </g>
 
-      {/* Kim xoay mượt 60°/giây */}
       <g
         style={{
           transform: `rotate(${angle + wobble}deg)`,
@@ -234,21 +231,12 @@ Nearby: ({ isActive }: { isActive: boolean }) => {
     </svg>
   ),
 
-// NEW TASK: Số 1→99, đổi màu theo chục - bản dùng state
 New: ({ isActive, fill }: { isActive: boolean; fill?: string }) => {
   const [count, setCount] = React.useState(1);
   
   const decadeColors = [
-    "#FF3B30", // 1-9
-    "#FF9500", // 10-19
-    "#FFD60A", // 20-29
-    "#34C759", // 30-39
-    "#0A84FF", // 40-49
-    "#5E5CE6", // 50-59
-    "#FF2D55", // 60-69
-    "#00C7BE", // 70-79
-    "#AF52DE", // 80-89
-    "#8E8E93", // 90-99
+    "#FF3B30", "#FF9500", "#FFD60A", "#34C759", "#0A84FF",
+    "#5E5CE6", "#FF2D55", "#00C7BE", "#AF52DE", "#8E8E93",
   ];
 
   React.useEffect(() => {
@@ -259,7 +247,7 @@ New: ({ isActive, fill }: { isActive: boolean; fill?: string }) => {
     
     const interval = setInterval(() => {
       setCount(prev => prev >= 99? 1 : prev + 1);
-    }, 250); // 0.1s đổi 1 số
+    }, 250);
 
     return () => clearInterval(interval);
   }, [isActive]);
@@ -268,7 +256,6 @@ New: ({ isActive, fill }: { isActive: boolean; fill?: string }) => {
 
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      {/* Vòng tròn nền */}
       <circle
         cx="12" cy="12" r="10"
         stroke="currentColor"
@@ -278,14 +265,13 @@ New: ({ isActive, fill }: { isActive: boolean; fill?: string }) => {
       />
       
       <motion.g>
-        {/* Số hiện tại */}
         <motion.text
           x="12" y="16"
           textAnchor="middle"
           fontSize="10"
           fontWeight="700"
           fill={isActive? currentColor : "currentColor"}
-          key={count} // remount để animate
+          key={count}
           initial={{ scale: 0.8, opacity: 0.5 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.08 }}
@@ -293,7 +279,6 @@ New: ({ isActive, fill }: { isActive: boolean; fill?: string }) => {
           {count}
         </motion.text>
 
-        {/* Vòng pop khi đổi số */}
         {isActive && (
           <motion.circle
             cx="12" cy="12" r="9"
@@ -311,8 +296,8 @@ New: ({ isActive, fill }: { isActive: boolean; fill?: string }) => {
   );
 },
 };
+
 const PlanIcons = {
-// HOT PLAN: Rising Sun - tia sáng dài hơn
 Hot: ({ isActive }: { isActive: boolean }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
     <defs>
@@ -322,12 +307,11 @@ Hot: ({ isActive }: { isActive: boolean }) => (
       </linearGradient>
     </defs>
 
-    {/* Tia sáng dài hơn y2="7" -> y2="4" */}
     {isActive && [0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => (
       <motion.line
         key={deg}
         x1="12" y1="15"
-        x2="12" y2="4" // Đổi từ 7 -> 4
+        x2="12" y2="4"
         stroke="#FFD60A"
         strokeWidth="1.5"
         strokeLinecap="round"
@@ -344,7 +328,6 @@ Hot: ({ isActive }: { isActive: boolean }) => (
       />
     ))}
 
-    {/* Mặt trời render sau để đè lên tia */}
     <motion.circle
       cx="12" cy="15" r="6"
       fill={isActive? "url(#sunGrad)" : "none"}
@@ -354,28 +337,23 @@ Hot: ({ isActive }: { isActive: boolean }) => (
       transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
     />
 
-    {/* Thanh ngang dài full + xuống y=23 */}
     <path d="M0 24H24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
   </svg>
 ),
 
-// NEARBY PLAN: Target Scan - Chấm xanh chỉ sáng khi tia quét trúng
 Nearby: ({ isActive }: { isActive: boolean }) => {
-  const targetAngle = 45; // 45° = góc trên phải
-  const scanDuration = 2.5; // Tốc độ quét 1 vòng
-  const triggerTime = targetAngle / 360; // 0.125 = 12.5% thời gian
+  const targetAngle = 45;
+  const scanDuration = 2.5;
+  const triggerTime = targetAngle / 360;
   
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      {/* 3 vòng tròn đồng tâm tĩnh */}
       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" opacity={0.15} />
       <circle cx="12" cy="12" r="6.5" stroke="currentColor" strokeWidth="1.5" opacity={0.25} />
       <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5" opacity={0.4} />
       
-      {/* Trục crosshair */}
       <path d="M12 2V6M12 18V22M2 12H6M18 12H22" stroke="currentColor" strokeWidth="1.5" opacity={0.3} />
 
-      {/* Tia quét xoay */}
       {isActive && (
         <motion.g
           animate={{ rotate: 360 }}
@@ -397,7 +375,6 @@ Nearby: ({ isActive }: { isActive: boolean }) => {
         </motion.g>
       )}
 
-      {/* Tâm đỏ pulse */}
       <motion.circle
         cx="12" cy="12" r="2"
         fill={isActive? "#FF3B30" : "currentColor"}
@@ -408,7 +385,6 @@ Nearby: ({ isActive }: { isActive: boolean }) => {
         transition={{ duration: 1, repeat: Infinity }}
       />
 
-      {/* Chấm xanh - chỉ hiện khi tia quét trúng */}
       {isActive && (
         <motion.g>
           <motion.circle
@@ -418,7 +394,7 @@ Nearby: ({ isActive }: { isActive: boolean }) => {
             fill="#0A84FF"
             initial={{ scale: 0, opacity: 0 }}
             animate={{
-              scale: [0, 0, 1.6, 1, 0], // Bắt đầu từ 0, đến lúc quét trúng mới bật
+              scale: [0, 0, 1.6, 1, 0],
               opacity: [0, 0, 1, 1, 0]
             }}
             transition={{
@@ -428,7 +404,6 @@ Nearby: ({ isActive }: { isActive: boolean }) => {
               ease: "easeOut"
             }}
           />
-          {/* Ripple lan ra khi detect */}
           <motion.circle
             cx={12 + Math.cos((targetAngle - 90) * Math.PI / 180) * 7}
             cy={12 + Math.sin((targetAngle - 90) * Math.PI / 180) * 7}
@@ -453,7 +428,7 @@ Nearby: ({ isActive }: { isActive: boolean }) => {
     </svg>
   );
 },
-// FRIENDS PLAN: Trái tim đỏ phóng to thu nhỏ - đập nhẹ hơn
+
 Friends: ({ isActive }: { isActive: boolean }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
     <motion.path
@@ -464,7 +439,7 @@ Friends: ({ isActive }: { isActive: boolean }) => (
       fill={isActive? "#FF3B30" : "none"}
       initial={{ scale: 1 }}
       animate={{
-        scale: isActive? [1, 1.2, 1] : 1, // Đổi 1.35 -> 1.2
+        scale: isActive? [1, 1.2, 1] : 1,
       }}
       transition={{
         duration: 0.7,
@@ -490,7 +465,7 @@ Friends: ({ isActive }: { isActive: boolean }) => (
         animate={{
           y: [0, -8, -14],
           opacity: [0, 1, 0],
-          scale: [0, 1.1, 0] // Hạt cũng nhỏ hơn
+          scale: [0, 1.1, 0]
         }}
         transition={{
           duration: 1.2,
@@ -502,7 +477,7 @@ Friends: ({ isActive }: { isActive: boolean }) => (
     ))}
   </svg>
 ),
- // NEW PLAN: Ngôi sao đổi màu liên tục
+
 New: ({ isActive }: { isActive: boolean }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
     <motion.g
@@ -552,12 +527,11 @@ New: ({ isActive }: { isActive: boolean }) => (
 export default function CustomFilterBar({
   currentFilter,
   onChangeFilter,
-  searchQuery,
+  searchQueries,
   onSearchChange,
 }: CustomFilterBarProps) {
   const mode = useAppStore((s) => s.mode) || "task";
   const [hovered, setHovered] = useState<string | null>(null);
-  const [isSearchMode, setIsSearchMode] = useState(false);
 
   useEffect(() => {
     document.body.style.overscrollBehavior = 'none';
@@ -565,12 +539,6 @@ export default function CustomFilterBar({
       document.body.style.overscrollBehavior = 'auto';
     };
   }, []);
-
-  useEffect(() => {
-    if (searchQuery &&!isSearchMode) {
-      setIsSearchMode(true);
-    }
-  }, [searchQuery, isSearchMode]);
 
   const themes = {
     task: {
@@ -602,16 +570,7 @@ export default function CustomFilterBar({
     onChangeFilter(key);
   };
 
-  const handleSearchClick = () => {
-    haptics.medium();
-    setIsSearchMode(true);
-  };
-
-  const handleCloseSearch = () => {
-    haptics.light();
-    setIsSearchMode(false);
-    onSearchChange("");
-  };
+  const currentSearchQuery = searchQueries[currentFilter] || "";
 
   return (
     <div className="px-4 pb-3 space-y-3">
@@ -641,7 +600,7 @@ export default function CustomFilterBar({
               <motion.div
                 className={`relative h-12 rounded-2xl flex items-center justify-center gap-1.5 font-bold overflow-hidden px-2 ${
                   isActive
-            ? "text-white"
+           ? "text-white"
                     : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400"
                 }`}
                 animate={{
@@ -653,7 +612,7 @@ export default function CustomFilterBar({
               >
                 <Icon 
   isActive={isActive} 
-  {...(filter.key === "new" && mode === "task" ? { fill: currentTheme.accent } : {})} 
+  {...(filter.key === "new" && mode === "task"? { fill: currentTheme.accent } : {})} 
 />
                 <span className="text-xs whitespace-nowrap">{filter.label}</span>
 
@@ -673,76 +632,45 @@ export default function CustomFilterBar({
         })}
       </div>
 
-      <AnimatePresence initial={false} mode="wait">
-        {isSearchMode? (
-          <motion.div
-            key="search"
-            initial={{ opacity: 0, height: 0, y: -10 }}
-            animate={{ opacity: 1, height: "auto", y: 0 }}
-            exit={{ opacity: 0, height: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-            className="flex items-center gap-2 overflow-hidden"
-          >
-            <div className="relative flex-1">
-              <motion.div
-                className="absolute inset-0 rounded-2xl"
-                style={{ background: currentTheme.bgGradient }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.15 }}
-              />
-              <input
-                autoFocus
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                placeholder={mode === "task"? "Tìm task nhanh..." : "Tìm plan chill..."}
-                className="relative w-full h-11 px-4 pr-10 rounded-2xl bg-gray-100 dark:bg-zinc-800 outline-none font-semibold text-base text-zinc-900 dark:text-zinc-100"
-              />
-              {searchQuery && (
+      <AnimatePresence>
+        <motion.div
+          key={currentFilter}
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          className="relative"
+        >
+          <div className="relative">
+            <motion.div
+              className="absolute inset-0 rounded-2xl"
+              style={{ background: currentTheme.bgGradient }}
+              animate={{ opacity: 0.15 }}
+            />
+            <input
+              value={currentSearchQuery}
+              onChange={(e) => onSearchChange(currentFilter, e.target.value)}
+              placeholder={`Tìm ${filters.find(f => f.key === currentFilter)?.label.toLowerCase()}...`}
+              className="relative w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 border-2 outline-none font-semibold text-base text-zinc-900 dark:text-zinc-100 transition-colors"
+              style={{
+                borderColor: mode === "task"? "#93c5fd" : "#86efac"
+              }}
+            />
+            <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
+              {currentSearchQuery? (
                 <motion.button
-                  initial={{ scale: 0, rotate: -90 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  exit={{ scale: 0, rotate: 90 }}
-                  onClick={() => onSearchChange("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  onClick={() => onSearchChange(currentFilter, "")}
+                  className="p-1.5 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700"
                 >
                   <X size={18} className="text-zinc-500" />
                 </motion.button>
+              ) : (
+                <Search size={18} className="text-zinc-400" />
               )}
             </div>
-            <motion.button
-              whileTap={{ scale: 0.85 }}
-              onClick={handleCloseSearch}
-              className="h-11 w-11 rounded-2xl bg-gray-100 dark:bg-zinc-800 flex items-center justify-center text-gray-600 dark:text-zinc-400 flex-shrink-0"
-            >
-              <X className="w-5 h-5" strokeWidth={2.8} />
-            </motion.button>
-          </motion.div>
-        ) : (
-          <motion.button
-            key="search-btn"
-            initial={{ opacity: 0, height: 0, y: -10 }}
-            animate={{ opacity: 1, height: "auto", y: 0 }}
-            exit={{ opacity: 0, height: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: 1.02 }}
-            onTouchStart={() => haptics.light()}
-            onClick={handleSearchClick}
-className={`w-full h-11 rounded-2xl bg-white dark:bg-zinc-900 border-2 flex items-center justify-center gap-2.5 text-gray-700 dark:text-zinc-300 font-bold text-base overflow-hidden shadow-sm transition-colors ${
-  mode === "task" 
-    ? "border-blue-200 dark:border-blue-900 hover:border-blue-500 dark:hover:border-blue-400" 
-    : "border-green-200 dark:border-green-900 hover:border-green-500 dark:hover:border-green-400"
-}`}
-          >
-            <motion.div
-              animate={{ x: [0, -2, 2, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <Search className="w-5 h-5" strokeWidth={2.8} />
-            </motion.div>
-            <span>Tìm kiếm</span>
-          </motion.button>
-        )}
+          </div>
+        </motion.div>
       </AnimatePresence>
     </div>
   );
