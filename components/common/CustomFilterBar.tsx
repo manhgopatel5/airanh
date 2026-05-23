@@ -631,18 +631,12 @@ export default function CustomFilterBar({
               onHoverEnd={() => setHovered(null)}
               className="relative w-full"
             >
-              {isActive && (
-                <motion.div
-                  layoutId="activeFilter"
-                  className="absolute inset-0 rounded-2xl"
-                  style={{ background: currentTheme.bgGradient }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 500,
-                    damping: 35,
-                  }}
-                />
-              )}
+     {isActive && (
+  <div
+    className="absolute inset-0 rounded-2xl"
+    style={{ background: currentTheme.bgGradient }}
+  />
+)}
 
               <motion.div
                 className={`relative h-12 rounded-2xl flex items-center justify-center gap-1.5 font-bold overflow-hidden px-2 ${
