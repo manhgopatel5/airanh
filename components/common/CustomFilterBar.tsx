@@ -30,10 +30,10 @@ export default function CustomFilterBar({
   const [isSearchMode, setIsSearchMode] = useState(false);
 
   useEffect(() => {
-    if (searchQuery &&!isSearchMode) {
+    if (searchQuery && !isSearchMode) {
       setIsSearchMode(true);
     }
-  }, [searchQuery]);
+  }, [searchQuery, isSearchMode]);
 
   const themes = {
     task: {
@@ -50,7 +50,7 @@ export default function CustomFilterBar({
     },
   };
 
-  const currentTheme = themes[mode];
+  const currentTheme = themes;
 
   const filters = [
     {
@@ -130,7 +130,7 @@ export default function CustomFilterBar({
     <div className="px-4 pb-3 space-y-2">
       {/* Hàng 1: 4 tab filter */}
       <AnimatePresence mode="wait">
-        {!isSearchMode? (
+        {!isSearchMode ? (
           <motion.div
             key="filters"
             initial={{ opacity: 0, y: -10 }}
@@ -142,7 +142,7 @@ export default function CustomFilterBar({
               const isActive = currentFilter === filter.key;
               const isHovered = hovered === filter.key;
               const Icon = filter.icon;
-              const iconAnim = mode === "task"? filter.taskAnim : filter.planAnim;
+              const iconAnim = mode === "task" ? filter.taskAnim : filter.planAnim;
 
               return (
                 <motion.button
@@ -159,7 +159,7 @@ export default function CustomFilterBar({
                     <motion.div
                       layoutId="activeFilter"
                       className="absolute inset-0 rounded-xl"
-                      style={{ background: currentTheme[mode].bgGradient }}
+                      style={{ background: currentTheme.bgGradient }}
                       transition={{
                         type: "spring",
                         stiffness: 400,
@@ -171,18 +171,18 @@ export default function CustomFilterBar({
                   <motion.div
                     className={`relative h-9 px-4 rounded-xl flex items-center gap-2 font-semibold ${
                       isActive
-                     ? "text-white"
+                        ? "text-white"
                         : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400"
                     }`}
                     animate={{
-                      scale: isActive? 1 : 0.95,
+                      scale: isActive ? 1 : 0.95,
                     }}
                     transition={{
                       scale: { type: "spring", stiffness: 500, damping: 25 },
                     }}
                   >
                     <motion.div
-                      animate={isActive? iconAnim : {}}
+                      animate={isActive ? iconAnim : {}}
                       transition={{
                         duration: 0.6,
                         type: "spring",
@@ -191,16 +191,16 @@ export default function CustomFilterBar({
                     >
                       <Icon
                         className="w-4 h-4"
-                        strokeWidth={isActive? 2.8 : 2}
-                        fill={isActive? currentTheme[mode].accent : "none"}
-                        fillOpacity={isActive? 0.3 : 0}
+                        strokeWidth={isActive ? 2.8 : 2}
+                        fill={isActive ? currentTheme.accent : "none"}
+                        fillOpacity={isActive ? 0.3 : 0}
                       />
                     </motion.div>
 
                     <span className="text-sm">{filter.label}</span>
 
                     <AnimatePresence>
-                      {isHovered &&!isActive && (
+                      {isHovered && !isActive && (
                         <motion.div
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
@@ -225,13 +225,13 @@ export default function CustomFilterBar({
             <div className="relative flex-1">
               <div
                 className="absolute inset-0 rounded-xl"
-                style={{ background: currentTheme[mode].bgGradient, opacity: 0.1 }}
+                style={{ background: currentTheme.bgGradient, opacity: 0.1 }}
               />
               <input
                 autoFocus
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
-                placeholder={mode === "task"? "Tìm task..." : "Tìm plan..."}
+                placeholder={mode === "task" ? "Tìm task..." : "Tìm plan..."}
                 className="relative w-full h-9 px-4 pr-10 rounded-xl bg-gray-100 dark:bg-zinc-800 outline-none font-semibold text-sm text-zinc-900 dark:text-zinc-100"
               />
               {searchQuery && (
