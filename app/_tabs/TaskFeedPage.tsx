@@ -142,7 +142,7 @@ export default function TaskFeedPage() {
       const snap = await getDocs(q);
       let data = snap.docs.map((doc) => ({
         id: doc.id,
-     ...doc.data(),
+    ...doc.data(),
       })) as FeedTask[];
 
       if (isRefresh) {
@@ -243,7 +243,7 @@ export default function TaskFeedPage() {
         return bTime - aTime;
       });
     } else if (activeTab === "nearby" && userLocation) {
-      result = result.filter(task => task.location?.lat && task.location?.lng);
+      result = result.filter(task => task.location?.lat!= null && task.location?.lng!= null);
       result.sort((a, b) => {
         const aLat = a.location!.lat;
         const aLng = a.location!.lng;
@@ -306,7 +306,7 @@ export default function TaskFeedPage() {
                 onClick={() => { setMode("task"); vibrate(); }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                   mode === "task"
-               ? "text-white"
+              ? "text-white"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={mode === "task"? { background: theme.task.gradient } : {}}
@@ -318,7 +318,7 @@ export default function TaskFeedPage() {
                 onClick={() => { setMode("plan"); vibrate(); }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                   mode === "plan"
-               ? "text-white"
+              ? "text-white"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={mode === "plan"? { background: theme.plan.gradient } : {}}
@@ -432,8 +432,8 @@ export default function TaskFeedPage() {
       </div>
 
       <style jsx global>{`
-    .scrollbar-hide::-webkit-scrollbar { display: none; }
-    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+   .scrollbar-hide::-webkit-scrollbar { display: none; }
+   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale }
         body { overscroll-behavior-y: contain }
       `}</style>
