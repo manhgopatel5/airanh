@@ -37,21 +37,22 @@ const TaskIcons = {
         </filter>
       </defs>
 
-      <motion.path
-        d="M12 22C10 22 7.5 19 7.5 15C7.5 12 9.5 9.5 12 6C14.5 9.5 16.5 12 16.5 15C16.5 19 14 22 12 22Z"
-        fill={isActive? "url(#taskFireGrad)" : "none"}
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        filter={isActive? "url(#taskFireGlow)" : undefined}
-        animate={isActive? {
-          scaleY: [1, 1.12, 0.96, 1.08, 1],
-          scaleX: [1, 0.92, 1.04, 0.96, 1],
-          rotate: [0, -2, 2, -1, 0]
-        } : {}}
-        transition={{ duration: 1.3, repeat: Infinity, ease: "easeInOut" }}
-        style={{ originX: "50%", originY: "85%" }}
-      />
+    <motion.path
+  d="M12 2C9.5 2 7 4.5 7 9C7 11.5 8 14 9.5 17C10.5 18.5 11.5 20 12 22C12.5 20 13.5 18.5 14.5 17C16 14 17 11.5 17 9C17 4.5 14.5 2 12 2Z"
+  fill={isActive? "url(#taskFireGrad)" : "none"}
+  stroke="currentColor"
+  strokeWidth="2"
+  strokeLinecap="round"
+  strokeLinejoin="round"
+  filter={isActive? "url(#taskFireGlow)" : undefined}
+  animate={isActive? {
+    scaleY: [1, 1.12, 0.96, 1.08, 1],
+    scaleX: [1, 0.92, 1.04, 0.96, 1],
+    rotate: [0, -2, 2, -1, 0]
+  } : {}}
+  transition={{ duration: 1.3, repeat: Infinity, ease: "easeInOut" }}
+  style={{ originX: "50%", originY: "85%" }}
+/>
 
       <motion.path
         d="M12 18C10.8 18 9.5 16 9.5 13.5C9.5 11.5 10.5 9.5 12 8C13.5 9.5 14.5 11.5 14.5 13.5C14.5 16 13.2 18 12 18Z"
