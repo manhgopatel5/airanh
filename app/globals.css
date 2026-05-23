@@ -119,7 +119,6 @@
     touch-action: manipulation;
   }
 
-  /* FIX STATUS BAR IOS */
   html {
     background-color: #ffffff;
     min-height: 100vh;
@@ -146,7 +145,6 @@
     background-color: #ffffff;
     min-height: 100vh;
     min-height: -webkit-fill-available;
-    /* QUAN TRỌNG: padding-top để nội dung không đè status bar */
     padding-top: env(safe-area-inset-top);
   }
 
@@ -154,7 +152,6 @@
     background-color: #000000;
   }
 
-  /* Ép safe-area luôn trắng/đen, không bị toast đổi màu */
   body::before {
     content: '';
     position: fixed;
@@ -186,7 +183,6 @@
     color: theme('colors.gray.100');
   }
 
-  /* SCROLLBAR */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -301,10 +297,91 @@
 
 /* ================= TOAST FIX ================= */
 
-/* Sonner toast */
 [data-sonner-toaster] {
   top: calc(env(safe-area-inset-top) + 8px) !important;
 }
 
 [data-sonner-toast] {
-  background-color: #ffffff
+  background-color: #ffffff !important;
+}
+
+.dark [data-sonner-toast] {
+  background-color: #18181b !important;
+}
+
+[data-radix-toast-viewport] {
+  top: calc(env(safe-area-inset-top) + 8px) !important;
+}
+
+.go2072408551 {
+  top: calc(env(safe-area-inset-top) + 8px) !important;
+}
+
+/* ================= UTILITIES ================= */
+
+@layer utilities {
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .animate-in {
+    will-change: transform, opacity;
+    animation: slideIn 0.3s ease-out;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideFromBottom {
+      from {
+        opacity: 0;
+        transform: translateY(100%);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes shimmer {
+      100% { 
+        transform: translateX(100%); 
+      }
+    }
+  }
+
+  .slide-in-from-bottom {
+    will-change: transform, opacity;
+    animation: slideFromBottom 0.3s ease-out;
+  }
+}
