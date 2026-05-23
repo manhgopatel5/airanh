@@ -267,7 +267,7 @@ Hot: ({ isActive }: { isActive: boolean }) => (
   </svg>
 ),
 
- // NEARBY PLAN: Location pin + ripple màu xanh dương - chấm to hơn + xuống thấp hơn
+// NEARBY PLAN: Location pin + ripple màu xanh dương - chấm to hơn + xuống thấp
 Nearby: ({ isActive }: { isActive: boolean }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
     <motion.g
@@ -283,10 +283,10 @@ Nearby: ({ isActive }: { isActive: boolean }) => (
       <circle cx="12" cy="9" r="3" fill={isActive? "white" : "currentColor"} />
     </motion.g>
 
-    {/* Chấm xanh to hơn r=2.5 và xuống cy=14 */}
+    {/* Chấm xanh to hơn r=3 và xuống cy=16 */}
     {isActive && (
       <motion.circle
-        cx="12" cy="16" r="2.5"
+        cx="12" cy="18" r="4"
         fill="#0A84FF"
         animate={{
           scale: [1, 1.4, 1],
@@ -321,7 +321,7 @@ Nearby: ({ isActive }: { isActive: boolean }) => (
   </svg>
 ),
 
- // FRIENDS PLAN: Trái tim đỏ phóng to thu nhỏ
+// FRIENDS PLAN: Trái tim đỏ phóng to thu nhỏ
 Friends: ({ isActive }: { isActive: boolean }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
     <motion.path
@@ -331,27 +331,32 @@ Friends: ({ isActive }: { isActive: boolean }) => (
       strokeLinecap="round"
       fill={isActive? "#FF3B30" : "none"}
       animate={isActive? {
-        scale: [1, 1.25, 1],
+        scale: [1, 1.3, 1],
       } : {}}
-      transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+      transition={{ 
+        duration: 0.8, 
+        repeat: Infinity, 
+        ease: "easeInOut",
+        repeatDelay: 0.2
+      }}
       style={{ originX: "50%", originY: "60%" }}
     />
     {isActive && [
       { x: 8, y: 8, delay: 0 },
-      { x: 16, y: 8, delay: 0.3 },
-      { x: 12, y: 5, delay: 0.6 },
+      { x: 16, y: 8, delay: 0.2 },
+      { x: 12, y: 5, delay: 0.4 },
     ].map((p, i) => (
       <motion.circle
         key={i}
         cx={p.x} cy={p.y} r="1"
         fill="#FF3B30"
         animate={{
-          y: [0, -6, -10],
+          y: [0, -8, -12],
           opacity: [0, 1, 0],
-          scale: [0, 1, 0]
+          scale: [0, 1.2, 0]
         }}
         transition={{
-          duration: 2,
+          duration: 1.5,
           repeat: Infinity,
           delay: p.delay,
           ease: "easeOut"
