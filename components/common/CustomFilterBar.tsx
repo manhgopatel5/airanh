@@ -221,7 +221,7 @@ Nearby: ({ isActive }: { isActive: boolean }) => (
 };
 
 const PlanIcons = {
- // HOT PLAN: Rising Sun - mặt trời to hơn, thanh dài hơn + xuống thấp
+// HOT PLAN: Rising Sun - tia sáng ở sau mặt trời
 Hot: ({ isActive }: { isActive: boolean }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
     <defs>
@@ -231,25 +231,16 @@ Hot: ({ isActive }: { isActive: boolean }) => (
       </linearGradient>
     </defs>
 
-    {/* Mặt trời to hơn r=6 */}
-    <motion.circle
-      cx="12" cy="15" r="6"
-      fill={isActive? "url(#sunGrad)" : "none"}
-      stroke="currentColor"
-      strokeWidth="2"
-      animate={isActive? { y: [15, 11, 15] } : {}}
-      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-    />
-
+    {/* Tia sáng render trước để nằm sau mặt trời */}
     {isActive && [0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => (
       <motion.line
         key={deg}
-        x1="12" y1="11"
-        x2="12" y2="3"
+        x1="12" y1="15"
+        x2="12" y2="7"
         stroke="#FFD60A"
         strokeWidth="1.5"
         strokeLinecap="round"
-        style={{ originX: "50%", originY: "50%", rotate: deg }}
+        style={{ originX: "12px", originY: "15px", rotate: deg }}
         animate={{
           opacity: [0.3, 1, 0.3],
           scale: [0.8, 1.2, 0.8]
@@ -262,8 +253,18 @@ Hot: ({ isActive }: { isActive: boolean }) => (
       />
     ))}
 
-    {/* Thanh ngang dài hơn + xuống y=22 */}
-    <path d="M1 24H24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    {/* Mặt trời render sau để đè lên tia */}
+    <motion.circle
+      cx="12" cy="15" r="6"
+      fill={isActive? "url(#sunGrad)" : "none"}
+      stroke="currentColor"
+      strokeWidth="2"
+      animate={isActive? { y: [15, 11, 15] } : {}}
+      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+    />
+
+    {/* Thanh ngang dài full + xuống y=23 */}
+    <path d="M0 24H24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
   </svg>
 ),
 
@@ -280,7 +281,7 @@ Nearby: ({ isActive }: { isActive: boolean }) => (
         stroke="currentColor"
         strokeWidth="2"
       />
-      <circle cx="12" cy="9" r="3" fill={isActive? "white" : "currentColor"} />
+      <circle cx="12" cy="16" r="3" fill={isActive? "white" : "currentColor"} />
     </motion.g>
 
     {/* Chấm xanh to hơn r=3 và xuống cy=16 */}
