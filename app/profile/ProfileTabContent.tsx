@@ -64,7 +64,7 @@ export default function ProfileTabContent() {
   const uploadTaskRef = useRef<UploadTask | null>(null);
 
   const accentGradient = isPlan
-  ? "from-green-500 to-emerald-500"
+ ? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-600";
 
   useEffect(() => {
