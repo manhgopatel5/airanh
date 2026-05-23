@@ -298,7 +298,7 @@ export default function TaskFeedPage() {
             <FiRefreshCw
               className={`${pullDistance > 60? 'animate-spin' : ''}`}
               size={20}
-              style={{ color: currentTheme.primary }}
+style={{ color: theme.primary }}
             />
           </div>
         )}
