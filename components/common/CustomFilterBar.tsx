@@ -189,20 +189,37 @@ Nearby: ({ isActive }: { isActive: boolean }) => (
     </svg>
   ),
 
-// NEW TASK: Số 1→99, đổi màu theo chục
+// NEW TASK: Số 1→99, đổi màu theo chục - bản dùng state
 New: ({ isActive, fill }: { isActive: boolean; fill?: string }) => {
+  const [count, setCount] = React.useState(1);
+  
   const decadeColors = [
-    "#FF3B30", // 1-9   đỏ
-    "#FF9500", // 10-19 cam  
-    "#FFD60A", // 20-29 vàng
-    "#34C759", // 30-39 xanh lá
-    "#0A84FF", // 40-49 xanh dương
-    "#5E5CE6", // 50-59 tím
-    "#FF2D55", // 60-69 hồng
-    "#00C7BE", // 70-79 xanh ngọc
-    "#AF52DE", // 80-89 tím nhạt
-    "#8E8E93", // 90-99 xám
+    "#FF3B30", // 1-9
+    "#FF9500", // 10-19
+    "#FFD60A", // 20-29
+    "#34C759", // 30-39
+    "#0A84FF", // 40-49
+    "#5E5CE6", // 50-59
+    "#FF2D55", // 60-69
+    "#00C7BE", // 70-79
+    "#AF52DE", // 80-89
+    "#8E8E93", // 90-99
   ];
+
+  React.useEffect(() => {
+    if (!isActive) {
+      setCount(1);
+      return;
+    }
+    
+    const interval = setInterval(() => {
+      setCount(prev => prev >= 99? 1 : prev + 1);
+    }, 100); // 0.1s đổi 1 số
+
+    return () => clearInterval(interval);
+  }, [isActive]);
+
+  const currentColor = decadeColors[Math.floor((count - 1) / 10)] || fill || "#0A84FF";
 
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -215,63 +232,36 @@ New: ({ isActive, fill }: { isActive: boolean; fill?: string }) => {
         opacity={0.2}
       />
       
-      {isActive ? (
-        <motion.g>
-          {/* Số nhảy từ 1→99 */}
-          <motion.text
-            x="12" y="16"
-            textAnchor="middle"
-            fontSize="10"
-            fontWeight="700"
-            animate={{
-              fill: decadeColors,
-            }}
-            transition={{
-              duration: 9.9,
-              repeat: Infinity,
-              ease: "linear",
-              times: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], // 10 mốc
-            }}
-          >
-            <motion.animate
-              attributeName="textContent"
-              values={Array.from({ length: 99 }, (_, i) => i + 1).join(";")}
-              dur="9.9s"
-              repeatCount="indefinite"
-              calcMode="discrete"
-            />
-            1
-          </motion.text>
-
-          {/* Vòng pop mỗi 0.1s */}
-          <motion.circle
-            cx="12" cy="12" r="9"
-            stroke={fill || "#0A84FF"}
-            strokeWidth="1.5"
-            fill="none"
-            initial={{ scale: 1, opacity: 0 }}
-            animate={{
-              scale: [1, 1.15, 1],
-              opacity: [0, 0.5, 0]
-            }}
-            transition={{
-              duration: 0.1,
-              repeat: Infinity,
-              repeatDelay: 0.09
-            }}
-          />
-        </motion.g>
-      ) : (
-        <text
+      <motion.g>
+        {/* Số hiện tại */}
+        <motion.text
           x="12" y="16"
           textAnchor="middle"
           fontSize="10"
           fontWeight="700"
-          fill="currentColor"
+          fill={isActive? currentColor : "currentColor"}
+          key={count} // remount để animate
+          initial={{ scale: 0.8, opacity: 0.5 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.08 }}
         >
-          1
-        </text>
-      )}
+          {count}
+        </motion.text>
+
+        {/* Vòng pop khi đổi số */}
+        {isActive && (
+          <motion.circle
+            cx="12" cy="12" r="9"
+            stroke={currentColor}
+            strokeWidth="1.5"
+            fill="none"
+            key={`ring-${count}`}
+            initial={{ scale: 1, opacity: 0.6 }}
+            animate={{ scale: 1.2, opacity: 0 }}
+            transition={{ duration: 0.1 }}
+          />
+        )}
+      </motion.g>
     </svg>
   );
 },
