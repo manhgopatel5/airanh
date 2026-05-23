@@ -159,7 +159,7 @@ export default function CustomFilterBar({
                     <motion.div
                       layoutId="activeFilter"
                       className="absolute inset-0 rounded-xl"
-                      style={{ background: currentTheme.bgGradient }}
+                      style={{ background: currentTheme[mode].bgGradient }}
                       transition={{
                         type: "spring",
                         stiffness: 400,
