@@ -390,159 +390,96 @@ Hot: ({ isActive }: { isActive: boolean }) => (
   </svg>
 ),
 
-// NEARBY PLAN: Location pin + Sonar quét + Ripple 3 lớp
-Nearby: ({ isActive }: { isActive: boolean }) => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    <defs>
-      <radialGradient id="sonarGrad" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stopColor="#0A84FF" stopOpacity={0.8} />
-        <stop offset="70%" stopColor="#0A84FF" stopOpacity={0.2} />
-        <stop offset="100%" stopColor="#0A84FF" stopOpacity={0} />
-      </radialGradient>
-      <filter id="glow">
-        <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
-        <feMerge>
-          <feMergeNode in="coloredBlur"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
-      </filter>
-    </defs>
+// NEARBY PLAN: Target Scan - 1 mục tiêu duy nhất
+Nearby: ({ isActive }: { isActive: boolean }) => {
+  const targetAngle = 45; // Vị trí mục tiêu: 45 độ = góc trên phải
+  
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      {/* 3 vòng tròn đồng tâm */}
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" opacity={0.15} />
+      <circle cx="12" cy="12" r="6.5" stroke="currentColor" strokeWidth="1.5" opacity={0.25} />
+      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5" opacity={0.4} />
+      
+      {/* Trục crosshair */}
+      <path d="M12 2V6M12 18V22M2 12H6M18 12H22" stroke="currentColor" strokeWidth="1.5" opacity={0.3} />
 
-    {/* Vòng ripple lan rộng 3 lớp từ đáy */}
-    {isActive && [
-      { delay: 0, duration: 2.5 },
-      { delay: 0.8, duration: 2.5 },
-      { delay: 1.6, duration: 2.5 },
-    ].map((r, i) => (
+      {/* Tia quét xoay */}
+      {isActive && (
+        <motion.g
+          animate={{ rotate: 360 }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
+          style={{ originX: "12px", originY: "12px" }}
+        >
+          <defs>
+            <linearGradient id="scanLine" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#0A84FF" stopOpacity={0} />
+              <stop offset="100%" stopColor="#0A84FF" stopOpacity={1} />
+            </linearGradient>
+          </defs>
+          <line 
+            x1="12" y1="12" x2="12" y2="2" 
+            stroke="url(#scanLine)" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+          />
+        </motion.g>
+      )}
+
+      {/* Tâm đỏ pulse */}
       <motion.circle
-        key={`ripple-${i}`}
-        cx="12" cy="21" r="1"
-        stroke="#0A84FF"
-        strokeWidth="2"
-        fill="none"
-        initial={{ scale: 0, opacity: 0.8 }}
-        animate={{
-          scale: [0, 8],
-          opacity: [0.8, 0]
-        }}
-        transition={{
-          duration: r.duration,
-          repeat: Infinity,
-          delay: r.delay,
-          ease: "easeOut"
-        }}
+        cx="12" cy="12" r="2"
+        fill={isActive? "#FF3B30" : "currentColor"}
+        animate={isActive? {
+          scale: [1, 1.4, 1],
+          opacity: [1, 0.5, 1]
+        } : {}}
+        transition={{ duration: 1, repeat: Infinity }}
       />
-    ))}
 
-    {/* Sonar quét hình nón */}
-    {isActive && (
-      <motion.g
-        animate={{ rotate: 360 }}
-        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-        style={{ originX: "12px", originY: "12px" }}
-      >
-        <path
-          d="M12 12 L12 2 A10 10 0 0 1 19.5 5.5 Z"
-          fill="url(#sonarGrad)"
-          opacity={0.6}
-        />
-      </motion.g>
-    )}
-
-    {/* Pin location chính */}
-    <motion.g
-      animate={isActive? { 
-        y: [0, -5, 0],
-        scale: [1, 1.05, 1]
-      } : {}}
-      transition={{ 
-        y: { duration: 2, repeat: Infinity, ease: "easeInOut" },
-        scale: { duration: 1, repeat: Infinity, ease: "easeInOut" }
-      }}
-      style={{ originX: "12px", originY: "21px" }}
-    >
-      {/* Bóng pin */}
+      {/* 1 mục tiêu duy nhất - nháy khi tia quét qua góc 45° */}
       {isActive && (
-        <motion.ellipse
-          cx="12" cy="22" rx="4" ry="1"
-          fill="#0A84FF"
-          opacity={0.3}
-          animate={{
-            scaleX: [1, 1.3, 1],
-            opacity: [0.3, 0.15, 0.3]
-          }}
-          transition={{ duration: 2, repeat: Infinity }}
-        />
+        <motion.g>
+          <motion.circle
+            cx={12 + Math.cos((targetAngle - 90) * Math.PI / 180) * 7}
+            cy={12 + Math.sin((targetAngle - 90) * Math.PI / 180) * 7}
+            r="2"
+            fill="#0A84FF"
+            animate={{
+              scale: [0, 1.5, 1.5, 0],
+              opacity: [0, 1, 1, 0]
+            }}
+            transition={{
+              duration: 2.5,
+              repeat: Infinity,
+              times: [0, 0.18, 0.3, 0.35], // Hiện ở 0.18 = 45°/360° * 2.5s
+              ease: "easeOut"
+            }}
+          />
+          {/* Vòng ripple khi detect */}
+          <motion.circle
+            cx={12 + Math.cos((targetAngle - 90) * Math.PI / 180) * 7}
+            cy={12 + Math.sin((targetAngle - 90) * Math.PI / 180) * 7}
+            r="2"
+            stroke="#0A84FF"
+            strokeWidth="1.5"
+            fill="none"
+            animate={{
+              scale: [1, 3],
+              opacity: [0.8, 0]
+            }}
+            transition={{
+              duration: 2.5,
+              repeat: Infinity,
+              times: [0, 0.18, 0.5, 1],
+              ease: "easeOut"
+            }}
+          />
+        </motion.g>
       )}
-      
-      {/* Thân pin */}
-      <path
-        d="M12 21C16 16 20 12.4183 20 9C20 4.58172 16.4183 1 12 1C7.58172 1 4 4.58172 4 9C4 12.4183 8 16 12 21Z"
-        fill={isActive? "#0A84FF" : "none"}
-        stroke="currentColor"
-        strokeWidth="2"
-        filter={isActive? "url(#glow)" : "none"}
-      />
-      
-      {/* Chấm trắng tâm */}
-      <circle cx="12" cy="9" r="3" fill={isActive? "white" : "currentColor"} />
-      
-      {/* Chấm xanh pulse đè lên */}
-      {isActive && (
-        <motion.circle
-          cx="12" cy="9" r="3"
-          fill="#0A84FF"
-          animate={{
-            scale: [1, 1.8, 1],
-            opacity: [1, 0, 1]
-          }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-        />
-      )}
-    </motion.g>
-
-    {/* Ping xung quanh khi quét trúng */}
-    {isActive && [
-      { x: 6, y: 6, delay: 0.5 },
-      { x: 18, y: 7, delay: 1.2 },
-      { x: 17, y: 17, delay: 1.9 },
-      { x: 7, y: 16, delay: 2.6 },
-    ].map((p, i) => (
-      <motion.g key={`ping-${i}`}>
-        <motion.circle
-          cx={p.x} cy={p.y} r="1.5"
-          fill="#0A84FF"
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{
-            scale: [0, 1.5, 1],
-            opacity: [0, 1, 0.8]
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            delay: p.delay
-          }}
-        />
-        <motion.circle
-          cx={p.x} cy={p.y} r="1.5"
-          stroke="#0A84FF"
-          strokeWidth="1.5"
-          fill="none"
-          initial={{ scale: 1, opacity: 1 }}
-          animate={{
-            scale: [1, 3],
-            opacity: [1, 0]
-          }}
-          transition={{
-            duration: 1.5,
-            repeat: Infinity,
-            delay: p.delay + 0.2
-          }}
-        />
-      </motion.g>
-    ))}
-  </svg>
-),
+    </svg>
+  );
+},
 // FRIENDS PLAN: Trái tim đỏ phóng to thu nhỏ - đập nhẹ hơn
 Friends: ({ isActive }: { isActive: boolean }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
