@@ -24,13 +24,21 @@ const TaskIcons = {
   Hot: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
       <defs>
-        <linearGradient id="taskFlameCore" x1="12" y1="18" x2="12" y2="2">
-          <stop offset="0%" stopColor={isActive? fill : "currentColor"} />
-          <stop offset="50%" stopColor={isActive? fill : "currentColor"} stopOpacity={0.8} />
+        <radialGradient id="taskFlameOuter" cx="50%" cy="90%" r="60%">
+          <stop offset="0%" stopColor={isActive? fill : "currentColor"} stopOpacity={0.6} />
+          <stop offset="100%" stopColor={isActive? fill : "currentColor"} stopOpacity={0} />
+        </radialGradient>
+        <linearGradient id="taskFlameCore" x1="12" y1="19" x2="12" y2="1">
+          <stop offset="0%" stopColor={isActive? "#FF3B30" : "currentColor"} />
+          <stop offset="30%" stopColor={isActive? fill : "currentColor"} />
+          <stop offset="65%" stopColor={isActive? "#FF9500" : "currentColor"} />
           <stop offset="100%" stopColor={isActive? "#FFD60A" : "currentColor"} />
         </linearGradient>
+        <filter id="taskFlameBlur" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="1.2" />
+        </filter>
         <filter id="taskFlameGlow">
-          <feGaussianBlur stdDeviation="2" result="blur" />
+          <feGaussianBlur stdDeviation="2.5" result="blur" />
           <feMerge>
             <feMergeNode in="blur"/>
             <feMergeNode in="SourceGraphic"/>
@@ -41,31 +49,75 @@ const TaskIcons = {
       <motion.g style={{ originX: "50%", originY: "85%" }}>
         {isActive && (
           <>
-            <motion.path
-              d="M12 1C8 6 6 9 6 13C6 17 8.5 20 12 20C15.5 20 18 17 18 13C18 9 16 6 12 1Z"
-              fill="url(#taskFlameCore)"
-              opacity={0.3}
-              filter="url(#taskFlameGlow)"
+            {/* Lớp 1: Aura ngoài */}
+            <motion.ellipse
+              cx="12" cy="16" rx="6" ry="4"
+              fill="url(#taskFlameOuter)"
               animate={{
-                scale: [1, 1.2, 0.85, 1.15, 1],
-                opacity: [0.2, 0.5, 0.15, 0.4, 0.2]
+                scale: [1, 1.3, 0.8, 1.2, 1],
+                opacity: [0.3, 0.6, 0.2, 0.5, 0.3]
               }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              transition={{ duration: 1.8, repeat: Infinity }}
             />
-            <motion.circle
-              cx="10" cy="10" r="1" fill="#FFD60A"
-              animate={{ y: [-2, -8, -12], opacity: [0, 1, 0], x: [0, -2, 1] }}
-              transition={{ duration: 1.8, repeat: Infinity, delay: 0.2 }}
+            {/* Lớp 2: Lửa phụ trái */}
+            <motion.path
+              d="M9 4C7 7 6 10 6 13.5C6 16 7.5 18.5 9.5 18.5C11.5 18.5 12.5 16 12.5 13.5C12.5 10 11 7 9 4Z"
+              fill="url(#taskFlameCore)"
+              opacity={0.5}
+              filter="url(#taskFlameBlur)"
+              animate={{
+                d: [
+                  "M9 4C7 7 6 10 6 13.5C6 16 7.5 18.5 9.5 18.5C11.5 18.5 12.5 16 12.5 13.5C12.5 10 11 7 9 4Z",
+                  "M8.5 3.5C6.5 7.5 5.5 10.5 5.5 14C5.5 16.5 7 19 9 19C11 19 12 16.5 12 14C12 10.5 10.5 7.5 8.5 3.5Z",
+                  "M9 4C7 7 6 10 6 13.5C6 16 7.5 18.5 9.5 18.5C11.5 18.5 12.5 16 12.5 13.5C12.5 10 11 7 9 4Z"
+                ],
+                x: [0, -0.5, 0.3, 0]
+              }}
+              transition={{ duration: 1.3, repeat: Infinity }}
             />
-            <motion.circle
-              cx="14" cy="11" r="0.7" fill={fill}
-              animate={{ y: [-1, -7, -11], opacity: [0, 0.9, 0], x: [0, 2, -1] }}
-              transition={{ duration: 1.6, repeat: Infinity, delay: 0.9 }}
+            {/* Lớp 3: Lửa phụ phải */}
+            <motion.path
+              d="M15 4C17 7 18 10 18 13.5C18 16.5 18.5 14.5 18.5C12.5 18.5 11.5 16 11.5 13.5C11.5 10 13 7 15 4Z"
+              fill="url(#taskFlameCore)"
+              opacity={0.5}
+              filter="url(#taskFlameBlur)"
+              animate={{
+                d: [
+                  "M15 4C17 7 18 10 18 13.5C18 16 16.5 18.5 14.5 18.5C12.5 18.5 11.5 16 11.5 13.5C11.5 10 13 7 15 4Z",
+                  "M15.5 3.5C17.5 7.5 18.5 10.5 18.5 14C18.5 16.5 17 19 15 19C13 19 12 16.5 12 14C12 10.5 13.5 7.5 15.5 3.5Z",
+                  "M15 4C17 7 18 10 18 13.5C18 16 16.5 18.5 14.5 18.5C12.5 18.5 11.5 16 11.5 13.5C11.5 10 13 7 15 4Z"
+                ],
+                x: [0, 0.5, -0.3, 0]
+              }}
+              transition={{ duration: 1.4, repeat: Infinity, delay: 0.2 }}
             />
+            {/* Spark bay */}
+            {[...Array(4)].map((_, i) => (
+              <motion.circle
+                key={i}
+                cx={10 + i * 1.5}
+                cy={9 + (i % 2) * 2}
+                r={0.8 - i * 0.15}
+                fill={i % 2? fill : "#FFD60A"}
+                animate={{
+                  y: [-2, -9, -14],
+                  x: [0, (i - 1.5) * 2, (i - 1.5) * 3],
+                  opacity: [0, 1, 0],
+                  scale: [0, 1, 0]
+                }}
+                transition={{
+                  duration: 1.5 + i * 0.2,
+                  repeat: Infinity,
+                  delay: i * 0.3,
+                  ease: "easeOut"
+                }}
+              />
+            ))}
           </>
         )}
+        {/* Lửa chính */}
         <motion.path
-          d="M12 2.5C9 7 7.5 10 7.5 13.5C7.5 16.5 9.5 19 12 19C14.5 19 16.5 16.5 16.5 13.5C16.5 10 15 7 12 2.5Z"
+          d="M12 2C9 6.5 7 9.5 7 13C7 16.866 9.134 20 12 20C14.866 20 17 16.866 17 13C17 9.5 15 6.5 12 2Z"
           fill={isActive? "url(#taskFlameCore)" : "none"}
           stroke={isActive? "none" : "currentColor"}
           strokeWidth={2}
@@ -73,26 +125,28 @@ const TaskIcons = {
           filter={isActive? "url(#taskFlameGlow)" : undefined}
           animate={isActive? {
             d: [
-              "M12 2.5C9 7 7.5 10 7.5 13.5C7.5 16.5 9.5 19 12 19C14.5 19 16.5 13.5C16.5 10 15 7 12 2.5Z",
-              "M12 2C8.5 7.5 7 10.5 7 14C7 17 9 19.5 12 19.5C15 19.5 17 17 17 14C17 10.5 15.5 7.5 12 2Z",
-              "M12 3C9.5 6.8 8 9.8 8 13.2C8 16.2 9.8 18.8 12 18.8C14.2 18.8 16 16.2 16 13.2C16 9.8 14.5 6.8 12 3Z",
-              "M12 2.5C9 7 7.5 10 7.5 13.5C7.5 16.5 9.5 19 12 19C14.5 19 16.5 13.5C16.5 10 15 7 12 2.5Z"
+              "M12 2C9 6.5 7 9.5 7 13C7 16.866 9.134 20 12 20C14.866 20 17 13C17 9.5 15 6.5 12 2Z",
+              "M12 1.5C8.5 7 6.5 10 6.5 13.5C6.5 17.5 8.8 20.5 12 20.5C15.2 20.5 17.5 17.5 17.5 13.5C17.5 10 15.5 7 12 1.5Z",
+              "M12 2.5C9.2 6.2 7.2 9.2 7.2 12.8C7.2 16.6 9.2 19.8 12 19.8C14.8 19.8 16.6 16.8 12.8C16.8 9.2 14.8 6.2 12 2.5Z",
+              "M12 2C9 6.5 7 9.5 7 13C7 16.866 9.134 20 12 20C14.866 20 17 13C17 9.5 15 6.5 12 2Z"
             ],
-            scale: [1, 1.05, 0.98, 1.03, 1],
-            rotate: [0, -2, 2, -1, 0]
+            scale: [1, 1.08, 0.96, 1.04, 1],
+            rotate: [0, -3, 3, -1, 0]
           } : {}}
-          transition={{ duration: 1.2, repeat: isActive? Infinity : 0, ease: "easeInOut" }}
+          transition={{ duration: 1.1, repeat: isActive? Infinity : 0, ease: "easeInOut" }}
         />
+        {/* Lõi trắng */}
         {isActive && (
           <motion.path
-            d="M12 8C11 10.3 11.5 10.3 13.5C10.3 14.88 11.1 16 12 16C12.9 16 13.7 14.88 13.7 13.5C13.7 11.5 13 10 12 8Z"
+            d="M12 7C10.5 9.5 9.5 11.5 9.5 13.5C9.5 15.5 10.8 17 12 17C13.2 17 14.5 15.5 14.5 13.5C14.5 11.5 13.5 9.5 12 7Z"
             fill="#FFF"
             style={{ mixBlendMode: "screen" }}
             animate={{
-              opacity: [0.7, 1, 0.5, 0.9, 0.7],
-              scale: [0.9, 1.1, 0.85, 1.05, 0.9]
+              opacity: [0.6, 1, 0.4, 0.9, 0.6],
+              scale: [0.85, 1.15, 0.8, 1.1, 0.85],
+              y: [0, -1, 0.5, -0.5, 0]
             }}
-            transition={{ duration: 0.6, repeat: Infinity }}
+            transition={{ duration: 0.7, repeat: Infinity }}
           />
         )}
       </motion.g>
@@ -200,7 +254,7 @@ const PlanIcons = {
   Nearby: ({ isActive }: { isActive: boolean }) => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
       <motion.path
-        d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2Z"
+        d="M12 2C8.13 2 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2Z"
         stroke="currentColor" strokeWidth="2"
         animate={isActive? { scale: [1, 1.08, 1] } : {}}
         transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
@@ -250,9 +304,9 @@ export default function CustomFilterBar({
   const mode = useAppStore((s) => s.mode) || "task";
   const [hovered, setHovered] = useState<string | null>(null);
   const [isSearchMode, setIsSearchMode] = useState(false);
-  const [showLabel, setShowLabel] = useState(false);
+  const [showLabel, setShowLabel] = useState(false); // false = chỉ icon, true = chỉ chữ
 
-  // 5s đầu chỉ icon, sau đó hiện chữ, lặp
+  // 5s toggle: icon <-> chữ
   useEffect(() => {
     const interval = setInterval(() => {
       setShowLabel(prev =>!prev);
@@ -309,8 +363,8 @@ export default function CustomFilterBar({
 
   return (
     <div className="px-4 pb-3 space-y-3">
-      {/* Hàng 1: 4 tab filter */}
-      <motion.div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+      {/* Hàng 1: 4 tab filter - chia đều 4 cột */}
+      <motion.div className="grid grid-cols-4 gap-2">
         {filters.map((filter) => {
           const isActive = currentFilter === filter.key;
           const isHovered = hovered === filter.key;
@@ -325,7 +379,7 @@ export default function CustomFilterBar({
               onClick={() => handleClick(filter.key as FilterTab)}
               onHoverStart={() => setHovered(filter.key)}
               onHoverEnd={() => setHovered(null)}
-              className="relative flex-shrink-0"
+              className="relative w-full"
             >
               {isActive && (
                 <motion.div
@@ -341,9 +395,9 @@ export default function CustomFilterBar({
               )}
 
               <motion.div
-                className={`relative h-11 px-4 rounded-2xl flex items-center gap-2 font-bold transition-all ${
+                className={`relative h-12 rounded-2xl flex items-center justify-center font-bold ${
                   isActive
-                  ? "text-white"
+                 ? "text-white"
                     : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400"
                 }`}
                 animate={{
@@ -353,19 +407,28 @@ export default function CustomFilterBar({
                   scale: { type: "spring", stiffness: 500, damping: 25 },
                 }}
               >
-                <Icon isActive={isActive} fill={currentTheme.accent} />
                 <AnimatePresence mode="wait">
-                  {showLabel && (
+                  {showLabel? (
                     <motion.span
                       key="label"
-                      initial={{ opacity: 0, width: 0, x: -10 }}
-                      animate={{ opacity: 1, width: "auto", x: 0 }}
-                      exit={{ opacity: 0, width: 0, x: -10 }}
-                      transition={{ duration: 0.3 }}
-                      className="text-sm whitespace-nowrap overflow-hidden"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.25 }}
+                      className="text-sm whitespace-nowrap"
                     >
                       {filter.label}
                     </motion.span>
+                  ) : (
+                    <motion.div
+                      key="icon"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.25 }}
+                    >
+                      <Icon isActive={isActive} fill={currentTheme.accent} />
+                    </motion.div>
                   )}
                 </AnimatePresence>
 
