@@ -50,7 +50,7 @@ export default function CustomFilterBar({
     },
   };
 
-  const currentTheme = themes;
+  const currentTheme = themes[mode];
 
   const filters = [
     {
@@ -192,7 +192,7 @@ export default function CustomFilterBar({
                       <Icon
                         className="w-4 h-4"
                         strokeWidth={isActive? 2.8 : 2}
-                        fill={isActive? currentTheme.accent : "none"}
+                        fill={isActive? currentTheme[mode].accent : "none"}
                         fillOpacity={isActive? 0.3 : 0}
                       />
                     </motion.div>
@@ -225,7 +225,7 @@ export default function CustomFilterBar({
             <div className="relative flex-1">
               <div
                 className="absolute inset-0 rounded-xl"
-                style={{ background: currentTheme.bgGradient, opacity: 0.1 }}
+                style={{ background: currentTheme[mode].bgGradient, opacity: 0.1 }}
               />
               <input
                 autoFocus
