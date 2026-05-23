@@ -20,7 +20,7 @@ interface CustomFilterBarProps {
 }
 
 const TaskIcons = {
-  Hot: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
+  Hot: ({ isActive }: { isActive: boolean }) => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <defs>
         <linearGradient id="taskFireGrad" x1="50%" y1="100%" x2="50%" y2="0%">
@@ -37,7 +37,6 @@ const TaskIcons = {
         </filter>
       </defs>
 
-      {/* Ngọn lửa ngoài - giống emoji 🔥 */}
       <motion.path
         d="M12 22C10 22 7.5 19 7.5 15C7.5 12 9.5 9.5 12 6C14.5 9.5 16.5 12 16.5 15C16.5 19 14 22 12 22Z"
         fill={isActive? "url(#taskFireGrad)" : "none"}
@@ -54,7 +53,6 @@ const TaskIcons = {
         style={{ originX: "50%", originY: "85%" }}
       />
 
-      {/* Lửa trong */}
       <motion.path
         d="M12 18C10.8 18 9.5 16 9.5 13.5C9.5 11.5 10.5 9.5 12 8C13.5 9.5 14.5 11.5 14.5 13.5C14.5 16 13.2 18 12 18Z"
         fill={isActive? "#FFD60A" : "none"}
@@ -69,7 +67,6 @@ const TaskIcons = {
         style={{ originX: "50%", originY: "85%" }}
       />
 
-      {/* Tia lửa */}
       {isActive && [
         { x: 10, delay: 0 },
         { x: 12, delay: 0.3 },
@@ -96,42 +93,45 @@ const TaskIcons = {
       ))}
     </svg>
   ),
-  Nearby: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
+  Nearby: ({ isActive }: { isActive: boolean }) => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <defs>
         <radialGradient id="mapPulse" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor={fill} stopOpacity={0.6} />
-          <stop offset="100%" stopColor={fill} stopOpacity={0} />
+          <stop offset="0%" stopColor="currentColor" stopOpacity={0.6} />
+          <stop offset="100%" stopColor="currentColor" stopOpacity={0} />
         </radialGradient>
       </defs>
       
-      {/* Map background */}
       <path
-        d="M3 6L9 3L15 6L21 3V18L15 21L9 18L3 21V6Z"
+        d="M3 7L9 4L15 7L21 4V17L15 20L9 17L3 20V7Z"
         stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="none"
       />
-      <path d="M9 3V18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <path d="M15 6V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <motion.path
+        d="M9 4V17M15 7V20"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        animate={isActive? { pathLength: [0.5, 1, 0.5] } : {}}
+        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+      />
       
-      {/* Pin */}
       <motion.g
         animate={isActive? { y: [0, -3, 0] } : {}}
         transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
       >
         <path
           d="M12 8C10.3 8 9.3 9 11C9 13.5 12 17 12 17C12 17 15 13.5 15 11C15 9.3 13.7 8 12 8Z"
-          fill={isActive? fill : "currentColor"}
-          stroke={isActive? "white" : "currentColor"}
+          fill={isActive? "currentColor" : "none"}
+          stroke="currentColor"
           strokeWidth="1.5"
         />
         <circle cx="12" cy="11" r="1.5" fill="white" />
       </motion.g>
 
-      {/* Pulse ring */}
       {isActive && (
         <motion.circle
           cx="12" cy="11" r="3"
@@ -207,7 +207,7 @@ const PlanIcons = {
         </linearGradient>
       </defs>
       <motion.path
-        d="M12 22C10 22 7.5 19 7.5 15C7.5 12 9.5 9.5 12 6C14.5 9.5 16.5 12 16.5 15C16.5 19 14 22 12 22Z"
+        d="M12 22C10 22 7.5 19 7.5 15C7.5 12 9.5 12 6C14.5 9.5 16.5 12 16.5 15C16.5 19 14 22 12 22Z"
         fill={isActive? "url(#planFireGrad)" : "none"}
         stroke="currentColor"
         strokeWidth="2"
@@ -216,20 +216,19 @@ const PlanIcons = {
           scaleY: [1, 1.08, 0.97, 1.04, 1],
           scaleX: [1, 0.96, 1.02, 0.98, 1],
         } : {}}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
         style={{ originX: "50%", originY: "85%" }}
       />
       {isActive && (
-        <motion.circle cx="12" cy="13" r="2.5" fill={fill} opacity={0.5}
-          animate={{ scale: [0.7, 1.3, 0.7], opacity: [0.2, 0.5, 0.2] }}
-          transition={{ duration: 3, repeat: Infinity }}
+        <motion.circle cx="12" cy="13" r="2.5" fill={fill} opacity={0.6}
+          animate={{ scale: [0.8, 1.2, 0.8], opacity: [0.3, 0.6, 0.3] }}
+          transition={{ duration: 2.5, repeat: Infinity }}
         />
       )}
     </svg>
   ),
   Nearby: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      {/* Map với wave */}
       <path
         d="M3 7L9 4L15 7L21 4V17L15 20L9 17L3 20V7Z"
         stroke="currentColor"
@@ -246,7 +245,6 @@ const PlanIcons = {
         animate={isActive? { pathLength: [0.5, 1, 0.5] } : {}}
         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
       />
-      {/* Wave pulse */}
       {isActive && (
         <motion.circle
           cx="12" cy="12" r="2"
@@ -262,7 +260,6 @@ const PlanIcons = {
   ),
   Friends: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      {/* Heart thay cho người */}
       <motion.path
         d="M12 21C12 21 4 13.5 4 8.5C4 5.5 6.5 3 9.5 3C11.1 3 12 3.8 12 3.8C12 3.8 12.9 3 14.5 3C17.5 3 20 5.5 20 8.5C20 13.5 12 21 12 21Z"
         stroke="currentColor"
@@ -356,7 +353,7 @@ export default function CustomFilterBar({
     },
   };
 
-  const currentTheme = themes[mode];
+  const currentTheme = themes;
   const IconSet = mode === "task"? TaskIcons : PlanIcons;
 
   const filters = [
