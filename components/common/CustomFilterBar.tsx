@@ -113,7 +113,7 @@ Nearby: ({ isActive }: { isActive: boolean }) => {
 
       <circle
         cx="12" cy="12" r="10"
-        fill={isActive? "#F5F5F7" : "none"}
+        fill={isActive? "#F5F7" : "none"}
         stroke="currentColor"
         strokeWidth="2"
         opacity={isActive? 1 : 0.3}
@@ -600,7 +600,7 @@ export default function CustomFilterBar({
               <motion.div
                 className={`relative h-12 rounded-2xl flex items-center justify-center gap-1.5 font-bold overflow-hidden px-2 ${
                   isActive
-           ? "text-white"
+          ? "text-white"
                     : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400"
                 }`}
                 animate={{
@@ -632,46 +632,40 @@ export default function CustomFilterBar({
         })}
       </div>
 
-      <AnimatePresence>
-        <motion.div
-          key={currentFilter}
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          className="relative"
-        >
-          <div className="relative">
-            <motion.div
-              className="absolute inset-0 rounded-2xl"
-              style={{ background: currentTheme.bgGradient }}
-              animate={{ opacity: 0.15 }}
-            />
-            <input
-              value={currentSearchQuery}
-              onChange={(e) => onSearchChange(currentFilter, e.target.value)}
-              placeholder={`Tìm ${filters.find(f => f.key === currentFilter)?.label.toLowerCase()}...`}
-              className="relative w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 border-2 outline-none font-semibold text-base text-zinc-900 dark:text-zinc-100 transition-colors"
-              style={{
-                borderColor: mode === "task"? "#93c5fd" : "#86efac"
-              }}
-            />
-            <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-              {currentSearchQuery? (
-                <motion.button
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  onClick={() => onSearchChange(currentFilter, "")}
-                  className="p-1.5 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700"
-                >
-                  <X size={18} className="text-zinc-500" />
-                </motion.button>
-              ) : (
-                <Search size={18} className="text-zinc-400" />
-              )}
-            </div>
+      {/* BỎ ANIMATEPRESENCE + HEIGHT ĐỂ KHÔNG CHẠY LÊN XUỐNG */}
+      <div className="relative">
+        <div className="relative">
+          <motion.div
+            className="absolute inset-0 rounded-2xl"
+            style={{ background: currentTheme.bgGradient }}
+            animate={{ opacity: 0.15 }}
+          />
+          <input
+            key={currentFilter}
+            value={currentSearchQuery}
+            onChange={(e) => onSearchChange(currentFilter, e.target.value)}
+            placeholder={`Tìm ${filters.find(f => f.key === currentFilter)?.label.toLowerCase()}...`}
+            className="relative w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 border-2 outline-none font-semibold text-base text-zinc-900 dark:text-zinc-100 transition-colors"
+            style={{
+              borderColor: mode === "task"? "#93c5fd" : "#86efac"
+            }}
+          />
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
+            {currentSearchQuery? (
+              <motion.button
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                onClick={() => onSearchChange(currentFilter, "")}
+                className="p-1.5 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700"
+              >
+                <X size={18} className="text-zinc-500" />
+              </motion.button>
+            ) : (
+              <Search size={18} className="text-zinc-400" />
+            )}
           </div>
-        </motion.div>
-      </AnimatePresence>
+        </div>
+      </div>
     </div>
   );
 }
