@@ -24,32 +24,12 @@ const TaskIcons = {
   Hot: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
     <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
       <defs>
-        {/* Gradient lõi lửa - từ trắng -> vàng -> cam -> đỏ */}
-        <radialGradient id="taskFlameInner" cx="50%" cy="70%" r="50%">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity={isActive? 1 : 0} />
-          <stop offset="30%" stopColor={isActive? "#FFF700" : "currentColor"} stopOpacity={0.9} />
-          <stop offset="60%" stopColor={isActive? "#FF9500" : "currentColor"} stopOpacity={0.7} />
-          <stop offset="100%" stopColor={isActive? fill : "currentColor"} stopOpacity={0.5} />
-        </radialGradient>
-        
-        {/* Gradient thân lửa */}
-        <linearGradient id="taskFlameBody" x1="12" y1="20" x2="12" y2="0">
-          <stop offset="0%" stopColor={isActive? "#FF3B30" : "currentColor"} />
-          <stop offset="25%" stopColor={isActive? fill : "currentColor"} />
-          <stop offset="55%" stopColor={isActive? "#FF9500" : "currentColor"} />
-          <stop offset="85%" stopColor={isActive? "#FFD60A" : "currentColor"} />
-          <stop offset="100%" stopColor={isActive? "#FFF" : "currentColor"} stopOpacity={0.3} />
+        <linearGradient id="neuralGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={isActive? fill : "currentColor"} />
+          <stop offset="100%" stopColor={isActive? "#00D9FF" : "currentColor"} />
         </linearGradient>
-
-        {/* Noise filter cho lửa thật */}
-        <filter id="taskFlameTurbulence">
-          <feTurbulence type="fractalNoise" baseFrequency="0.02 0.15" numOctaves="3" seed="5" result="turb"/>
-          <feDisplacementMap in="SourceGraphic" in2="turb" scale="2"/>
-        </filter>
-
-        {/* Glow mạnh */}
-        <filter id="taskFlameGlow" x="-100%" y="-100%" width="300%" height="300%">
-          <feGaussianBlur stdDeviation="3" result="blur"/>
+        <filter id="neuralGlow">
+          <feGaussianBlur stdDeviation="1.5" result="blur" />
           <feMerge>
             <feMergeNode in="blur"/>
             <feMergeNode in="SourceGraphic"/>
@@ -57,118 +37,109 @@ const TaskIcons = {
         </filter>
       </defs>
 
-      <motion.g style={{ originX: "50%", originY: "90%" }}>
-        {isActive && (
-          <>
-            {/* Lớp 1: Halo xa */}
-            <motion.ellipse
-              cx="12" cy="18" rx="7" ry="3.5"
-              fill={fill}
-              opacity={0.15}
-              filter="url(#taskFlameGlow)"
-              animate={{
-                scaleX: [1, 1.4, 0.7, 1.2, 1],
-                scaleY: [1, 0.9, 1.3, 1, 1],
-                opacity: [0.1, 0.3, 0.05, 0.25, 0.1]
-              }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-            
-            {/* Lớp 2: Lửa phụ trái - có turbulence */}
-            <motion.path
-              d="M8.5 4.5C6 8 5 11 5 14.5C5 17 6.5 19.5 9 19.5C11.5 19.5 12.5 17 12.5 14.5C12.5 11 10.5 8 8.5 4.5Z"
-              fill="url(#taskFlameBody)"
-              opacity={0.6}
-              filter="url(#taskFlameTurbulence)"
-              animate={{
-                d: [
-                  "M8.5 4.5C6 8 5 11 5 14.5C5 17 6.5 19.5 9 19.5C11.5 19.5 12.5 17 12.5 14.5C12.5 11 10.5 8 8.5 4.5Z",
-                  "M8 4C5.5 8.5 4.5 11.5 4.5 15C4.5 17.5 6 20 8.5 20C11 20 12 17.5 12 15C12 11.5 10 8.5 8 4Z",
-                  "M9 5C6.5 7.5 5.5 10.5 5.5 14C5.5 16.5 7 19 9.5 19C12 19 13 16.5 13 14C13 10.5 11.5 7.5 9 5Z",
-                  "M8.5 4.5C6 8 5 11 5 14.5C5 17 6.5 19.5 9 19.5C11.5 19.5 12.5 17 12.5 14.5C12.5 11 10.5 8 8.5 4.5Z"
-                ],
-                x: [0, -1, 0.5, 0]
-              }}
-              transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-            />
-
-            {/* Lớp 3: Lửa phụ phải */}
-            <motion.path
-              d="M15.5 4.5C18 8 19 11 19 14.5C19 17 17.5 19.5 15 19.5C12.5 19.5 11.5 17 11.5 14.5C11.5 11 13.5 8 15.5 4.5Z"
-              fill="url(#taskFlameBody)"
-              opacity={0.6}
-              filter="url(#taskFlameTurbulence)"
-              animate={{
-                d: [
-                  "M15.5 4.5C18 8 19 11 19 14.5C19 17 17.5 19.5 15 19.5C12.5 19.5 11.5 17 11.5 14.5C11.5 11 13.5 8 15.5 4.5Z",
-                  "M16 4C18.5 8.5 19.5 11.5 19.5 15C19.5 17.5 18 20 15.5 20C13 20 12 17.5 12 15C12 11.5 14 8.5 16 4Z",
-                  "M15 5C17.5 7.5 18.5 10.5 18.5 14C18.5 16.5 17 19 14.5 19C12 19 11 16.5 11 14C11 10.5 12.5 7.5 15 5Z",
-                  "M15.5 4.5C18 8 19 11 19 14.5C19 17 17.5 19.5 15 19.5C12.5 19.5 11.5 17 11.5 14.5C11.5 11 13.5 8 15.5 4.5Z"
-                ],
-                x: [0, 1, -0.5, 0]
-              }}
-              transition={{ duration: 1.7, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
-            />
-
-            {/* Spark particles */}
-            {[...Array(6)].map((_, i) => (
-              <motion.circle
-                key={i}
-                cx={9 + i * 1.2}
-                cy={10 + (i % 3)}
-                r={1.2 - i * 0.15}
-                fill={i % 2? "#FFD60A" : fill}
-                filter="url(#taskFlameGlow)"
-                animate={{
-                  y: [-2, -10, -18],
-                  x: [0, (i - 2.5) * 1.5, (i - 2.5) * 2.5],
-                  opacity: [0, 1, 0],
-                  scale: [0, 1.2, 0]
-                }}
-                transition={{
-                  duration: 1.8 + i * 0.15,
-                  repeat: Infinity,
-                  delay: i * 0.25,
-                  ease: "easeOut"
-                }}
-              />
-            ))}
-          </>
-        )}
-
-        {/* Lửa chính - có turbulence */}
-        <motion.path
-          d="M12 1.5C8 6.5 6 10 6 14C6 18 8.5 21 12 21C15.5 21 18 18 14C18 10 16 6.5 12 1.5Z"
-          fill={isActive? "url(#taskFlameBody)" : "none"}
-          stroke={isActive? "none" : "currentColor"}
-          strokeWidth={2}
-          strokeLinecap="round"
-          filter={isActive? "url(#taskFlameTurbulence)" : undefined}
-          animate={isActive? {
-            d: [
-              "M12 1.5C8 6.5 6 10 6 14C6 18 8.5 21 12 21C15.5 21 18 18 18 14C18 10 16 6.5 12 1.5Z",
-              "M12 1C7.5 7 5.5 10.5 5.5 14.5C5.5 18.5 8 21.5 12 21.5C16 21.5 18.5 18.5 18.5 14.5C18.5 10.5 16.5 7 12 1Z",
-              "M12 2C8.5 6 6.5 9.5 6.5 13.5C6.5 17.5 8.8 20.5 12 20.5C15.2 20.5 17.5 13.5C17.5 9.5 15.5 6 12 2Z",
-              "M12 1.8C8.2 6.8 6.2 10.2 6.2 14.2C6.2 18.2 8.7 21.2 12 21.2C15.3 21.2 17.8 18.2 17.8 14.2C17.8 10.2 15.8 6.8 12 1.8Z",
-              "M12 1.5C8 6.5 6 10 6 14C6 18 8.5 21 12 21C15.5 21 18 18 18 14C18 10 16 6.5 12 1.5Z"
-            ],
-            scale: [1, 1.1, 0.95, 1.06, 1],
-            rotate: [0, -4, 4, -2, 0]
-          } : {}}
-          transition={{ duration: 1.3, repeat: isActive? Infinity : 0, ease: "easeInOut" }}
-        />
-
-        {/* Lõi lửa sáng */}
-        {isActive && (
-          <motion.path
-            d="M12 6C10 9 9 11.5 9 14C9 16 10.5 18 12 18C13.5 18 15 16 15 14C15 11.5 14 9 12 6Z"
-            fill="url(#taskFlameInner)"
-            animate={{
-              scale: [0.9, 1.2, 0.85, 1.15, 0.9],
-              y: [0, -1.5, 0.8, -1, 0],
-              opacity: [0.8, 1, 0.6, 0.95, 0.8]
+      <motion.g>
+        {/* 9 node grid 3x3 */}
+        {[
+          [8, 8], [12, 8], [16, 8],
+          [8, 12], [12, 12], [16, 12],
+          [8, 16], [12, 16], [16, 16]
+        ].map(([cx, cy], i) => (
+          <motion.circle
+            key={i}
+            cx={cx}
+            cy={cy}
+            r={isActive? 1.5 : 1}
+            fill={isActive? "url(#neuralGradient)" : "currentColor"}
+            filter={isActive? "url(#neuralGlow)" : undefined}
+            animate={isActive? {
+              scale: [1, 1.5, 1],
+              opacity: [0.4, 1, 0.4]
+            } : {}}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              delay: i * 0.1,
+              ease: "easeInOut"
             }}
-            transition={{ duration: 0.8, repeat: Infinity }}
+          />
+        ))}
+
+        {/* Đường nối ngang */}
+        {isActive && [
+          { x1: 8, y1: 8, x2: 12, y2: 8 },
+          { x1: 12, y1: 8, x2: 16, y2: 8 },
+          { x1: 8, y1: 12, x2: 12, y2: 12 },
+          { x1: 12, y1: 12, x2: 16, y2: 12 },
+          { x1: 8, y1: 16, x2: 12, y2: 16 },
+          { x1: 12, y1: 16, x2: 16, y2: 16 },
+        ].map((line, i) => (
+          <motion.line
+            key={`h-${i}`}
+            {...line}
+            stroke="url(#neuralGradient)"
+            strokeWidth="1"
+            strokeLinecap="round"
+            opacity={0.6}
+            animate={{
+              pathLength: [0, 1, 0],
+              opacity: [0, 0.8, 0]
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              delay: i * 0.15,
+              ease: "easeInOut"
+            }}
+          />
+        ))}
+
+        {/* Đường nối dọc */}
+        {isActive && [
+          { x1: 8, y1: 8, x2: 8, y2: 12 },
+          { x1: 8, y1: 12, x2: 8, y2: 16 },
+          { x1: 12, y1: 8, x2: 12, y2: 12 },
+          { x1: 12, y1: 12, x2: 12, y2: 16 },
+          { x1: 16, y1: 8, x2: 16, y2: 12 },
+          { x1: 16, y1: 12, x2: 16, y2: 16 },
+        ].map((line, i) => (
+          <motion.line
+            key={`v-${i}`}
+            {...line}
+            stroke="url(#neuralGradient)"
+            strokeWidth="1"
+            strokeLinecap="round"
+            opacity={0.6}
+            animate={{
+              pathLength: [0, 1, 0],
+              opacity: [0, 0.8, 0]
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              delay: i * 0.15 + 0.5,
+              ease: "easeInOut"
+            }}
+          />
+        ))}
+
+        {/* Pulse từ tâm */}
+        {isActive && (
+          <motion.circle
+            cx="12"
+            cy="12"
+            r="2"
+            fill="none"
+            stroke={fill}
+            strokeWidth="1.5"
+            animate={{
+              r: [2, 8, 2],
+              opacity: [1, 0, 1]
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeOut"
+            }}
           />
         )}
       </motion.g>
@@ -330,30 +301,6 @@ export default function CustomFilterBar({
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [showLabel, setShowLabel] = useState(false);
 
-  // Hiệu ứng vào trang: fade + slide up + scale
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.5,
-        staggerChildren: 0.08,
-        delayChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 15, scale: 0.9 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: { type: "spring", stiffness: 400, damping: 25 }
-    }
-  };
-
   // 5s toggle: icon <-> chữ
   useEffect(() => {
     const interval = setInterval(() => {
@@ -383,7 +330,7 @@ export default function CustomFilterBar({
     },
   };
 
-  const currentTheme = themes[mode];
+  const currentTheme = themes;
   const IconSet = mode === "task"? TaskIcons : PlanIcons;
 
   const filters = [
@@ -412,12 +359,7 @@ export default function CustomFilterBar({
   return (
     <div className="px-4 pb-3 space-y-3">
       {/* Hàng 1: 4 tab filter - chia đều 4 cột, width cố định */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-4 gap-2"
-      >
+      <div className="grid grid-cols-4 gap-2">
         {filters.map((filter) => {
           const isActive = currentFilter === filter.key;
           const isHovered = hovered === filter.key;
@@ -426,7 +368,6 @@ export default function CustomFilterBar({
           return (
             <motion.button
               key={filter.key}
-              variants={itemVariants}
               whileTap={{ scale: 0.92 }}
               onTouchStart={() => haptics.light()}
               onClick={() => handleClick(filter.key as FilterTab)}
@@ -509,7 +450,7 @@ export default function CustomFilterBar({
             </motion.button>
           );
         })}
-      </motion.div>
+      </div>
 
       {/* Hàng 2: Search */}
       <AnimatePresence initial={false} mode="wait">
