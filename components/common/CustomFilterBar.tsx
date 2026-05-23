@@ -189,7 +189,7 @@ export default function CustomFilterBar({
     },
   };
 
-  const currentTheme = themes;
+const currentTheme = themes[mode]; // Đúng
   const IconSet = mode === "task" ? TaskIcons : PlanIcons;
 
   const filters = [
