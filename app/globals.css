@@ -119,6 +119,17 @@
     touch-action: manipulation;
   }
 
+  /* FIX STATUS BAR IOS */
+  html {
+    background-color: #ffffff;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+
+  .dark html {
+    background-color: #000000;
+  }
+
   html,
   body {
     height: 100%;
@@ -127,12 +138,37 @@
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: 'tnum' 1;
     scrollbar-gutter: stable;
-    overscroll-behavior: none; /* chặn pull-to-refresh */
+    overscroll-behavior: none;
   }
 
   body {
     margin: 0;
-    /* XÓA: padding-bottom: var(--bottom-nav-height); */
+    background-color: #ffffff;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    /* QUAN TRỌNG: padding-top để nội dung không đè status bar */
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .dark body {
+    background-color: #000000;
+  }
+
+  /* Ép safe-area luôn trắng/đen, không bị toast đổi màu */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-top);
+    background-color: #ffffff;
+    z-index: 9999;
+    pointer-events: none;
+  }
+
+  .dark body::before {
+    background-color: #000000;
   }
 
   input,
@@ -263,71 +299,12 @@
   }
 }
 
-/* ================= UTILITIES ================= */
+/* ================= TOAST FIX ================= */
 
-@layer utilities {
-  .safe-top {
-    padding-top: env(safe-area-inset-top);
-  }
-
-  .safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  .text-gradient {
-    @apply bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent;
-  }
-
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  .animate-in {
-    will-change: transform, opacity;
-    animation: slideIn 0.3s ease-out;
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes slideFromBottom {
-      from {
-        opacity: 0;
-        transform: translateY(100%);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes shimmer {
-      100% { 
-        transform: translateX(100%); 
-      }
-    }
-  }
-
-  .slide-in-from-bottom {
-    will-change: transform, opacity;
-    animation: slideFromBottom 0.3s ease-out;
-  }
+/* Sonner toast */
+[data-sonner-toaster] {
+  top: calc(env(safe-area-inset-top) + 8px) !important;
 }
+
+[data-sonner-toast] {
+  background-color: #ffffff
