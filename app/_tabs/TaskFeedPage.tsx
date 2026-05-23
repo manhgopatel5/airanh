@@ -81,7 +81,7 @@ export default function TaskFeedPage() {
     }
   };
 
-  const currentTheme = theme;
+  
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -375,7 +375,7 @@ export default function TaskFeedPage() {
                 <button
                   onClick={requestLocation}
                   className="px-6 h-11 rounded-xl text-white text-sm font-semibold active:scale-95 transition-all flex items-center gap-2 mx-auto"
-                  style={{ background: currentTheme.gradient }}
+                  style={{ background: theme.gradient }}
                 >
                   <FiNavigation /> Bật định vị ngay
                 </button>
@@ -383,7 +383,7 @@ export default function TaskFeedPage() {
                 <button
                   onClick={handleRefresh}
                   className="px-6 h-11 rounded-xl text-white text-sm font-semibold active:scale-95 transition-all flex items-center gap-2 mx-auto"
-                  style={{ background: currentTheme.gradient }}
+                  style={{ background: theme.gradient }}
                 >
                   <FiRefreshCw /> Tải lại
                 </button>
@@ -420,7 +420,7 @@ export default function TaskFeedPage() {
 
           {(loadingMore || refreshing) && (
             <div className="flex justify-center py-6">
-              <FiRefreshCw className="animate-spin" size={24} style={{ color: currentTheme.primary }} />
+              <FiRefreshCw className="animate-spin" size={24} style={{ color: theme.primary }} />
             </div>
           )}
 
