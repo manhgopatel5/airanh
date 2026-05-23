@@ -221,10 +221,7 @@ export default function TasksPage() {
     return () => observer.disconnect();
   }, [hasMore, loading, loadingMore]);
 
-  const handleRefresh = async () => {
-    vibrate(10);
-    await fetchTasks(true);
-  };
+
 
   const handleTabChange = (newTab: SubTab) => {
     vibrate();
