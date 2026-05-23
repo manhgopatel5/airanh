@@ -23,56 +23,128 @@ interface CustomFilterBarProps {
 const TaskIcons = {
   Hot: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <defs>
+        {/* Gradient lửa - từ vàng -> cam -> đỏ */}
+        <linearGradient id="flameGradient" x1="12" y1="17" x2="12" y2="2" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor={isActive ? "#FF3B30" : "currentColor"} />
+          <stop offset="50%" stopColor={isActive ? "#FF9500" : "currentColor"} />
+          <stop offset="100%" stopColor={isActive ? "#FFD60A" : "currentColor"} />
+        </linearGradient>
+        
+        {/* Filter glow khi active */}
+        <filter id="flameGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="1.5" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+      </defs>
+
       <motion.g
         animate={isActive ? {
-          scale: [1, 1.08, 0.95, 1.05, 1],
-          rotate: [0, -2, 3, -1, 0],
+          scale: [1, 1.06, 0.98, 1.04, 1],
+          rotate: [0, -1.5, 2, -0.5, 0],
         } : {}}
         transition={{ 
-          duration: 1.2, 
+          duration: 1.4, 
           repeat: isActive ? Infinity : 0, 
           ease: "easeInOut" 
         }}
-        style={{ originX: "50%", originY: "90%" }}
+        style={{ originX: "50%", originY: "85%" }}
       >
-        {/* Ngọn lửa ngoài */}
-        <motion.path
-          d="M12 2C10 5 8 7 8 11C8 14.3137 9.79086 17 12 17C14.2091 17 16 14.3137 16 11C16 7 14 5 12 2Z"
-          fill={isActive ? fill : "none"}
-          stroke={isActive ? fill : "currentColor"}
-          strokeWidth={isActive ? 0 : 2}
-          strokeLinecap="round"
-          animate={isActive ? {
-            d: [
-              "M12 2C10 5 8 7 8 11C8 14.3137 9.79086 17 12 17C14.2091 17 16 14.3137 16 11C16 7 14 5 12 2Z",
-              "M12 1.5C9.5 5.2 7.5 7.5 7.5 11.5C7.5 14.5 9.5 17.5 12 17.5C14.5 17.5 16.5 14.5 16.5 11.5C16.5 7.5 14.5 5.2 12 1.5Z",
-              "M12 2C10 5 8 7 8 11C8 14.3137 9.79086 17 12 17C14.2091 17 16 14.3137 16 11C16 7 14 5 12 2Z"
-            ]
-          } : {}}
-          transition={{ duration: 0.8, repeat: isActive ? Infinity : 0, ease: "easeInOut" }}
-        />
-        {/* Ngọn lửa trong */}
+        {/* Lớp glow ngoài */}
         {isActive && (
           <motion.path
-            d="M12 6C11 8 10 9.5 10 12C10 13.6569 10.8954 15 12 15C13.1046 15 14 13.6569 14 12C14 9.5 13 8 12 6Z"
-            fill="#FFD60A"
-            initial={{ opacity: 0, scale: 0.5 }}
+            d="M12 2C9 6 7 8.5 7 12C7 15.866 9.134 19 12 19C14.866 19 17 15.866 17 12C17 8.5 15 6 12 2Z"
+            fill="url(#flameGradient)"
+            opacity={0.4}
+            filter="url(#flameGlow)"
             animate={{
-              opacity: [0.6, 1, 0.7, 1],
-              scale: [0.9, 1.1, 0.95, 1],
-              y: [0, -1, 0, -0.5, 0]
+              scale: [1, 1.15, 0.9, 1.1, 1],
+              opacity: [0.3, 0.5, 0.25, 0.45, 0.3]
+            }}
+            transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+          />
+        )}
+
+        {/* Ngọn lửa chính */}
+        <motion.path
+          d="M12 3C10 6.5 8.5 8.8 8.5 11.8C8.5 14.64 10.36 17 12 17C13.64 17 15.5 14.64 15.5 11.8C15.5 8.8 14 6.5 12 3Z"
+          fill={isActive ? "url(#flameGradient)" : "none"}
+          stroke={isActive ? "none" : "currentColor"}
+          strokeWidth={2}
+          strokeLinecap="round"
+          filter={isActive ? "url(#flameGlow)" : undefined}
+          animate={isActive ? {
+            d: [
+              "M12 3C10 6.5 8.5 8.8 8.5 11.8C8.5 14.64 10.36 17 12 17C13.64 17 15.5 14.64 15.5 11.8C15.5 8.8 14 6.5 12 3Z",
+              "M12 2.5C9.5 6.8 8 9.2 8 12.2C8 15.2 10 17.5 12 17.5C14 17.5 16 15.2 16 12.2C16 9.2 14.5 6.8 12 2.5Z",
+              "M12 3.2C10.2 6.3 8.7 8.6 8.7 11.6C8.7 14.5 10.4 16.8 12 16.8C13.6 16.8 15.3 14.5 15.3 11.6C15.3 8.6 13.8 6.3 12 3.2Z",
+              "M12 3C10 6.5 8.5 8.8 8.5 11.8C8.5 14.64 10.36 17 12 17C13.64 17 15.5 14.64 15.5 11.8C15.5 8.8 14 6.5 12 3Z"
+            ]
+          } : {}}
+          transition={{ duration: 0.9, repeat: isActive ? Infinity : 0, ease: "easeInOut" }}
+        />
+
+        {/* Lõi lửa trắng/vàng sáng */}
+        {isActive && (
+          <motion.path
+            d="M12 7C11 9 10.2 10.5 10.2 12.5C10.2 13.88 11.1 15 12 15C12.9 15 13.8 13.88 13.8 12.5C13.8 10.5 13 9 12 7Z"
+            fill="#FFF"
+            initial={{ opacity: 0 }}
+            animate={{
+              opacity: [0.8, 1, 0.6, 0.9, 0.8],
+              scale: [0.95, 1.08, 0.9, 1.05, 0.95],
+              y: [0, -0.8, 0.3, -0.5, 0]
             }}
             transition={{ 
-              duration: 0.6, 
+              duration: 0.7, 
               repeat: Infinity, 
-              ease: "easeInOut",
-              times: [0, 0.3, 0.6, 1]
+              ease: "easeInOut"
             }}
+            style={{ mixBlendMode: "screen" }}
           />
+        )}
+
+        {/* Spark bay lên */}
+        {isActive && (
+          <>
+            <motion.circle
+              cx="11" cy="8" r="0.8"
+              fill="#FFD60A"
+              initial={{ y: 0, opacity: 0 }}
+              animate={{
+                y: [-2, -6, -10],
+                opacity: [0, 1, 0],
+                x: [0, -1, 0.5]
+              }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                delay: 0.2,
+                ease: "easeOut"
+              }}
+            />
+            <motion.circle
+              cx="13" cy="9" r="0.6"
+              fill="#FF9F0A"
+              initial={{ y: 0, opacity: 0 }}
+              animate={{
+                y: [-1, -5, -9],
+                opacity: [0, 0.8, 0],
+                x: [0, 1, -0.5]
+              }}
+              transition={{
+                duration: 1.3,
+                repeat: Infinity,
+                delay: 0.8,
+                ease: "easeOut"
+              }}
+            />
+          </>
         )}
       </motion.g>
     </svg>
   ),
+
   Nearby: ({ isActive }: { isActive: boolean }) => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
       <motion.circle
