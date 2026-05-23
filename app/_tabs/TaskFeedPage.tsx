@@ -64,6 +64,7 @@ export default function TaskFeedPage() {
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const pullStartY = useRef(0);
@@ -235,6 +236,12 @@ export default function TaskFeedPage() {
   const filteredTasks = useMemo(() => {
     let result = tasks.filter(t =>!t.banned &&!t.hidden);
 
+    if (searchQuery) {
+      result = result.filter(t =>
+        t.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
     if (activeTab === "hot") {
       result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
     } else if (activeTab === "new") {
@@ -244,8 +251,8 @@ export default function TaskFeedPage() {
         return bTime - aTime;
       });
     } else if (activeTab === "nearby" && userLocation) {
-      result = result.filter(hasLocation);
-      result.sort((a, b) => {
+      const withLocation = result.filter(hasLocation);
+      withLocation.sort((a, b) => {
         const distA = geofire.distanceBetween(
           [userLocation.lat, userLocation.lng],
           [a.location.lat, a.location.lng]
@@ -256,10 +263,11 @@ export default function TaskFeedPage() {
         );
         return distA - distB;
       });
+      result = withLocation;
     }
 
     return result;
-  }, [tasks, activeTab, userLocation]);
+  }, [tasks, searchQuery, activeTab, userLocation]);
 
   const handleShare = useCallback((task: FeedTask) => {
     vibrate(5);
@@ -302,7 +310,7 @@ export default function TaskFeedPage() {
                 onClick={() => { setMode("task"); vibrate(); }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                   mode === "task"
-            ? "text-white"
+          ? "text-white"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={mode === "task"? { background: theme.task.gradient } : {}}
@@ -314,7 +322,7 @@ export default function TaskFeedPage() {
                 onClick={() => { setMode("plan"); vibrate(); }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                   mode === "plan"
-            ? "text-white"
+          ? "text-white"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={mode === "plan"? { background: theme.plan.gradient } : {}}
@@ -328,6 +336,8 @@ export default function TaskFeedPage() {
           <CustomFilterBar
             currentFilter={activeTab}
             onChangeFilter={setActiveTab}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
           />
         </div>
 
