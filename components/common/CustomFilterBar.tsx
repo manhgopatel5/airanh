@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Flame, MapPin, Users, Sparkles, Search, X } from "lucide-react";
 import { useAppStore } from "@/store/app";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const haptics = {
   light: () => navigator?.vibrate?.(5),
@@ -29,8 +29,13 @@ export default function CustomFilterBar({
   const [hovered, setHovered] = useState<string | null>(null);
   const [isSearchMode, setIsSearchMode] = useState(false);
 
-  // TASK: Cyber/Neon/Glitch - Morph + Stretch
-  // PLAN: Organic/Fluid/Breath - Scale + Float
+  // Auto mở search nếu có query từ bên ngoài
+  useEffect(() => {
+    if (searchQuery &&!isSearchMode) {
+      setIsSearchMode(true);
+    }
+  }, [searchQuery]);
+
   const themes = {
     task: {
       bg: "#0A84FF",
@@ -46,57 +51,57 @@ export default function CustomFilterBar({
     },
   };
 
-  const currentTheme = themes;
+  const currentTheme = themes[mode];
 
   const filters = [
-    { 
-      key: "hot", 
-      label: "Hot", 
+    {
+      key: "hot",
+      label: "Hot",
       icon: Flame,
-      taskAnim: { 
+      taskAnim: {
         scale: [1, 1.4, 0.9, 1.1, 1],
         rotate: [0, -15, 15, -5, 0],
       },
-      planAnim: { 
+      planAnim: {
         y: [0, -12, 0, -4, 0],
         scale: [1, 1.25, 0.95, 1],
       },
     },
-    { 
-      key: "nearby", 
-      label: "Gần bạn", 
+    {
+      key: "nearby",
+      label: "Gần bạn",
       icon: MapPin,
-      taskAnim: { 
+      taskAnim: {
         scale: [1, 0.7, 1.5, 1],
         rotate: [0, 10, -10, 0],
       },
-      planAnim: { 
+      planAnim: {
         scale: [1, 0.85, 1.15, 1],
         y: [0, 4, -4, 0],
       },
     },
-    { 
-      key: "friends", 
-      label: "Bạn bè", 
+    {
+      key: "friends",
+      label: "Bạn bè",
       icon: Users,
-      taskAnim: { 
+      taskAnim: {
         x: [0, -5, 5, -3, 0],
         scale: [1, 1.2, 1],
       },
-      planAnim: { 
+      planAnim: {
         rotate: [0, 180, 360],
         scale: [1, 1.3, 1],
       },
     },
-    { 
-      key: "new", 
-      label: "Mới", 
+    {
+      key: "new",
+      label: "Mới",
       icon: Sparkles,
-      taskAnim: { 
+      taskAnim: {
         rotate: [0, 90, 180, 270, 360],
         scale: [1, 1.4, 1],
       },
-      planAnim: { 
+      planAnim: {
         y: [0, -10, 0, -5, 0],
         rotate: [0, 25, -25, 0],
         scale: [1, 1.2, 1],
@@ -139,11 +144,12 @@ export default function CustomFilterBar({
               const isActive = currentFilter === filter.key;
               const isHovered = hovered === filter.key;
               const Icon = filter.icon;
-              const iconAnim = mode === "task" ? filter.taskAnim : filter.planAnim;
+              const iconAnim = mode === "task"? filter.taskAnim : filter.planAnim;
 
               return (
                 <motion.button
                   key={filter.key}
+                  layout
                   whileTap={{ scale: 0.82 }}
                   onTouchStart={() => haptics.light()}
                   onClick={() => handleClick(filter.key as FilterTab)}
@@ -151,19 +157,20 @@ export default function CustomFilterBar({
                   onHoverEnd={() => setHovered(null)}
                   className="relative flex-shrink-0"
                 >
-                  {/* Liquid blob background - morph khi active */}
                   <AnimatePresence>
                     {isActive && (
                       <motion.div
+                        layoutId="activeFilter"
                         initial={{ scale: 0, borderRadius: "50%" }}
-                        animate={{ 
-                          scale: 1, 
-                          borderRadius: mode === "task" ? ["50%", "40%", "50%"] : ["50%", "45%", "50%"],
+                        animate={{
+                          scale: 1,
+                          borderRadius: mode === "task"? ["50%", "40%", "50%"] : ["50%", "45%", "50%"],
                         }}
                         exit={{ scale: 0, borderRadius: "50%" }}
-                        transition={{ 
+                        transition={{
                           scale: { type: "spring", stiffness: 300, damping: 25 },
-                          borderRadius: { repeat: Infinity, duration: mode === "task" ? 1.5 : 2.5 }
+                          borderRadius: { repeat: Infinity, duration: mode === "task"? 1.5 : 2.5 },
+                          layout: { type: "spring", stiffness: 400, damping: 30 }
                         }}
                         className="absolute inset-0"
                         style={{ background: currentTheme.bgGradient }}
@@ -171,19 +178,18 @@ export default function CustomFilterBar({
                     )}
                   </AnimatePresence>
 
-                  {/* Pulse rings - Task: 3 rings, Plan: 2 rings */}
                   <AnimatePresence>
                     {isActive && (
                       <>
-                        {[...Array(mode === "task" ? 3 : 2)].map((_, i) => (
+                        {[...Array(mode === "task"? 3 : 2)].map((_, i) => (
                           <motion.div
                             key={i}
                             initial={{ scale: 1, opacity: 0.5 }}
                             animate={{ scale: 2.5, opacity: 0 }}
                             exit={{ opacity: 0 }}
                             transition={{
-                              duration: mode === "task" ? 1.2 : 1.8,
-                              delay: i * (mode === "task" ? 0.2 : 0.3),
+                              duration: mode === "task"? 1.2 : 1.8,
+                              delay: i * (mode === "task"? 0.2 : 0.3),
                               repeat: Infinity,
                               ease: "easeOut",
                             }}
@@ -196,31 +202,30 @@ export default function CustomFilterBar({
                   </AnimatePresence>
 
                   <motion.div
-                    className={`relative h-12 px-5 rounded-2xl flex items-center gap-2.5 font-bold text- ${
+                    className={`relative h-12 px-5 rounded-2xl flex items-center gap-2.5 font-bold text-[15px] ${
                       isActive
-                      ? "text-white"
+                     ? "text-white"
                         : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400"
                     }`}
                     animate={{
                       scale: isActive? 1 : 0.92,
-                      y: isActive && mode === "plan" ? [0, -3, 0] : 0,
+                      y: isActive && mode === "plan"? [0, -3, 0] : 0,
                     }}
                     transition={{
-                      scale: { type: "spring", stiffness: mode === "task" ? 600 : 350, damping: 20 },
-                      y: { repeat: isActive && mode === "plan" ? Infinity : 0, duration: 2 },
+                      scale: { type: "spring", stiffness: mode === "task"? 600 : 350, damping: 20 },
+                      y: { repeat: isActive && mode === "plan"? Infinity : 0, duration: 2 },
                     }}
                   >
-                    {/* Icon với anim riêng cho mỗi tab */}
                     <motion.div
                       animate={isActive? iconAnim : {}}
                       transition={{
-                        duration: mode === "task" ? 0.7 : 1,
+                        duration: mode === "task"? 0.7 : 1,
                         type: "spring",
-                        bounce: mode === "plan" ? 0.6 : 0.2,
+                        bounce: mode === "plan"? 0.6 : 0.2,
                       }}
                     >
-                      <Icon 
-                        className="w-5 h-5" 
+                      <Icon
+                        className="w-5 h-5"
                         strokeWidth={isActive? 2.8 : 2}
                         fill={isActive? currentTheme.accent : "none"}
                         fillOpacity={isActive? 0.3 : 0}
@@ -228,42 +233,40 @@ export default function CustomFilterBar({
                     </motion.div>
 
                     <motion.span
-                      animate={isActive? { 
-                        letterSpacing: mode === "task" ? ["0px", "1px", "0px"] : "0px",
+                      animate={isActive? {
+                        letterSpacing: mode === "task"? ["0px", "1px", "0px"] : "0px",
                       } : {}}
                       transition={{ duration: 0.4 }}
                     >
                       {filter.label}
                     </motion.span>
 
-                    {/* Floating orbs - Task: 4 orbs, Plan: 3 orbs */}
                     {isActive && (
                       <>
-                        {[...Array(mode === "task" ? 4 : 3)].map((_, i) => (
+                        {[...Array(mode === "task"? 4 : 3)].map((_, i) => (
                           <motion.div
                             key={i}
                             initial={{ scale: 0, x: 0, y: 0 }}
                             animate={{
                               scale: [0, 1, 0],
-                              x: Math.cos((i * Math.PI * 2) / (mode === "task" ? 4 : 3)) * 25,
-                              y: Math.sin((i * Math.PI * 2) / (mode === "task" ? 4 : 3)) * 25,
+                              x: Math.cos((i * Math.PI * 2) / (mode === "task"? 4 : 3)) * 25,
+                              y: Math.sin((i * Math.PI * 2) / (mode === "task"? 4 : 3)) * 25,
                             }}
                             transition={{
-                              duration: mode === "task" ? 1.5 : 2,
+                              duration: mode === "task"? 1.5 : 2,
                               delay: i * 0.15,
                               repeat: Infinity,
                               repeatDelay: 1,
                             }}
                             className="absolute w-1.5 h-1.5 rounded-full"
-                            style={{ 
-                              backgroundColor: i % 2 === 0? currentTheme.accent : currentTheme.secondary 
+                            style={{
+                              backgroundColor: i % 2 === 0? currentTheme.accent : currentTheme.secondary
                             }}
                           />
                         ))}
                       </>
                     )}
 
-                    {/* Hover indicator */}
                     <AnimatePresence>
                       {isHovered &&!isActive && (
                         <motion.div
@@ -288,7 +291,6 @@ export default function CustomFilterBar({
             className="flex items-center gap-2 flex-1"
           >
             <div className="relative flex-1">
-              {/* Liquid background khi focus */}
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
@@ -299,8 +301,8 @@ export default function CustomFilterBar({
                 autoFocus
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
-                placeholder={mode === "task" ? "Tìm task..." : "Tìm plan..."}
-                className={`relative w-full h-12 px-5 pr-12 rounded-2xl bg-gray-100 dark:bg-zinc-800 outline-none font-semibold text- text-zinc-900 dark:text-zinc-100`}
+                placeholder={mode === "task"? "Tìm task..." : "Tìm plan..."}
+                className="relative w-full h-12 px-5 pr-12 rounded-2xl bg-gray-100 dark:bg-zinc-800 outline-none font-semibold text-zinc-900 dark:text-zinc-100"
               />
               {searchQuery && (
                 <motion.button
@@ -324,13 +326,12 @@ export default function CustomFilterBar({
         )}
       </AnimatePresence>
 
-      {/* Search button - chỉ hiện khi không search */}
       {!isSearchMode && (
         <motion.button
           whileTap={{ scale: 0.85 }}
-          whileHover={{ 
-            scale: 1.1, 
-            rotate: mode === "task" ? 90 : [0, -10, 10, 0],
+          whileHover={{
+            scale: 1.1,
+            rotate: mode === "task"? 90 : [0, -10, 10, 0],
           }}
           onTouchStart={() => haptics.light()}
           onClick={handleSearchClick}
@@ -339,14 +340,14 @@ export default function CustomFilterBar({
           <motion.div
             className={`h-12 w-12 rounded-2xl flex items-center justify-center ${
               mode === "task"
-              ? "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400"
+             ? "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400"
                 : "bg-gradient-to-br from-amber-400 to-orange-500 text-white"
             }`}
-            animate={mode === "plan"? { 
+            animate={mode === "plan"? {
               scale: [1, 1.05, 1],
             } : {}}
-            transition={{ 
-              scale: { repeat: mode === "plan" ? Infinity : 0, duration: 2 }
+            transition={{
+              scale: { repeat: mode === "plan"? Infinity : 0, duration: 2 }
             }}
           >
             <Search className="w-5 h-5" strokeWidth={2.8} />
