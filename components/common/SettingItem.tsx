@@ -8,19 +8,19 @@ type Props = {
   subtitle?: string;
   icon: LucideIcon;
   iconColor?: string;
-  iconBg?: string; // màu nền icon tròn, giống Zalo/WeChat
+  iconBg?: string;
   onClick?: () => void;
   danger?: boolean;
-  rightElement?: ReactNode; // nhét QR, badge, text, toggle vào đây
-  showChevron?: boolean; // tắt chevron khi có rightElement
+  rightElement?: ReactNode;
+  showChevron?: boolean;
 };
 
 export default function SettingItem({
   label,
   subtitle,
   icon: Icon,
-  iconColor = "text-[#0F172A]",
-  iconBg = "bg-[#F1F5F9]",
+  iconColor = "text-[#0F172A] dark:text-white",
+  iconBg = "bg-[#F1F5F9] dark:bg-zinc-800",
   onClick,
   danger,
   rightElement,
@@ -32,12 +32,12 @@ export default function SettingItem({
         if ("vibrate" in navigator) navigator.vibrate(5);
         onClick?.();
       }}
-      className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-[#F8FAFC] transition"
+      className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-[#F8FAFC] dark:active:bg-zinc-800 transition"
     >
-      {/* Icon có background tròn 36px giống Zalo */}
+      {/* Icon 36px giống Zalo */}
       <div
         className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
-          danger ? "bg-red-50" : iconBg
+          danger ? "bg-red-50 dark:bg-red-950/30" : iconBg
         }`}
       >
         <Icon
@@ -47,14 +47,14 @@ export default function SettingItem({
 
       <div className="flex-1 text-left min-w-0">
         <div
-          className={`text- font-semibold ${
-            danger ? "text-red-500" : "text-[#0F172A]"
+          className={`text-base font-semibold ${
+            danger ? "text-red-500" : "text-[#0F172A] dark:text-white"
           }`}
         >
           {label}
         </div>
         {subtitle && (
-          <div className="text- text-[#64748B] mt-0.5 truncate">
+          <div className="text-sm text-[#64748B] dark:text-zinc-400 mt-0.5 truncate">
             {subtitle}
           </div>
         )}
@@ -64,7 +64,7 @@ export default function SettingItem({
       {rightElement ? (
         <div className="flex-shrink-0">{rightElement}</div>
       ) : showChevron ? (
-        <ChevronRight className="w-5 h-5 text-[#CBD5E1] flex-shrink-0" />
+        <ChevronRight className="w-5 h-5 text-[#CBD5E1] dark:text-zinc-600 flex-shrink-0" />
       ) : null}
     </button>
   );
