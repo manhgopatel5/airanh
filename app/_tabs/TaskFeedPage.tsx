@@ -58,7 +58,7 @@ export default function TaskFeedPage() {
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
 
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [locationDenied, setLocationDenied] = useState(false);
+
   const [radiusKm, setRadiusKm] = useState(5);
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
