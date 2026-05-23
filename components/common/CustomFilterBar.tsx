@@ -214,7 +214,7 @@ New: ({ isActive, fill }: { isActive: boolean; fill?: string }) => {
     
     const interval = setInterval(() => {
       setCount(prev => prev >= 99? 1 : prev + 1);
-    }, 100); // 0.1s đổi 1 số
+    }, 250); // 0.1s đổi 1 số
 
     return () => clearInterval(interval);
   }, [isActive]);
