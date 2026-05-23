@@ -63,54 +63,56 @@ const TaskIcons = {
     </svg>
   ),
 
-// NEARBY TASK: La bàn hoàn hảo
+// NEARBY TASK: La bàn xoay mượt
 Nearby: ({ isActive }: { isActive: boolean }) => {
   const [angle, setAngle] = useState(0);
   const [wobble, setWobble] = useState(0);
+  const animationRef = React.useRef<number>();
 
   useEffect(() => {
     if (!isActive) {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
       setAngle(0);
       setWobble(0);
       return;
     }
 
-    // Xoay chính
-    const rotateInterval = setInterval(() => {
-      setAngle(prev => (prev + 45) % 360);
-    }, 800);
+    let lastTime = performance.now();
+    const speed = 60; // độ/giây
 
-    // Wobble từ tính
-    const wobbleInterval = setInterval(() => {
-      setWobble(Math.random() * 6 - 3);
-    }, 150);
+    const animate = (time: number) => {
+      const delta = time - lastTime;
+      lastTime = time;
+      
+      setAngle(prev => (prev + (speed * delta) / 1000) % 360);
+      setWobble(Math.sin(time / 100) * 2); // wobble từ tính
+      
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
 
     return () => {
-      clearInterval(rotateInterval);
-      clearInterval(wobbleInterval);
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
   }, [isActive]);
 
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <defs>
-        {/* Gradient kim đỏ */}
         <linearGradient id="needleRed" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="#FF6B6B" />
           <stop offset="100%" stopColor="#FF3B30" />
         </linearGradient>
-        {/* Gradient kim xanh */}
         <linearGradient id="needleBlue" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="#5AC8FA" />
           <stop offset="100%" stopColor="#0A84FF" />
         </linearGradient>
-        {/* Shadow */}
         <filter id="shadow">
           <feDropShadow dx="0" dy="1" stdDeviation="1" floodOpacity="0.2"/>
         </filter>
       </defs>
 
-      {/* Vỏ la bàn */}
       <circle
         cx="12" cy="12" r="10"
         fill={isActive? "#F5F5F7" : "none"}
@@ -120,14 +122,12 @@ Nearby: ({ isActive }: { isActive: boolean }) => {
         filter={isActive? "url(#shadow)" : "none"}
       />
 
-      {/* Vạch N-E-S-W */}
       <g opacity={isActive? 0.6 : 0.3}>
         <path d="M12 3V5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         <path d="M21 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         <path d="M12 19V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         <path d="M3 12H5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         
-        {/* Chữ N-E-S-W */}
         {isActive && (
           <>
             <text x="12" y="2.5" textAnchor="middle" fontSize="4" fontWeight="700" fill="#FF3B30">N</text>
@@ -138,32 +138,30 @@ Nearby: ({ isActive }: { isActive: boolean }) => {
         )}
       </g>
 
-      {/* Vạch nhỏ 45° */}
       <g opacity={0.2}>
         <path d="M17.66 6.34L16.95 7.05M17.66 17.66L16.95 16.95M6.34 17.66L7.05 16.95M6.34 6.34L7.05 7.05" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </g>
 
-      {/* Kim la bàn */}
-      <motion.g
-        animate={{ rotate: angle + wobble }}
-        transition={{ type: "spring", stiffness: 150, damping: 12 }}
-        style={{ originX: "12px", originY: "12px" }}
+      {/* Kim xoay mượt 60°/giây */}
+      <g
+        style={{
+          transform: `rotate(${angle + wobble}deg)`,
+          transformOrigin: "12px 12px",
+          transition: "none"
+        }}
       >
-        {/* Kim đỏ chỉ Bắc - dài hơn */}
         <path
           d="M12 12L11 5L12 4L13 5L12 12Z"
           fill={isActive? "url(#needleRed)" : "currentColor"}
           filter={isActive? "url(#shadow)" : "none"}
         />
-        {/* Kim xanh chỉ Nam */}
         <path
           d="M12 12L11 19L12 20L13 19L12 12Z"
           fill={isActive? "url(#needleBlue)" : "currentColor"}
           opacity={0.8}
         />
-      </motion.g>
+      </g>
 
-      {/* Tâm la bàn - có viền */}
       <circle
         cx="12" cy="12" r="2.5"
         fill={isActive? "#FFFFFF" : "currentColor"}
@@ -172,7 +170,6 @@ Nearby: ({ isActive }: { isActive: boolean }) => {
       />
       <circle cx="12" cy="12" r="1" fill={isActive? "#0A84FF" : "currentColor"} />
 
-      {/* Vòng định vị pulse */}
       {isActive && (
         <>
           <motion.circle
@@ -180,7 +177,6 @@ Nearby: ({ isActive }: { isActive: boolean }) => {
             stroke="#0A84FF"
             strokeWidth="1"
             fill="none"
-            initial={{ scale: 0.5, opacity: 0 }}
             animate={{
               scale: [0.5, 1.2],
               opacity: [0.6, 0]
@@ -196,7 +192,6 @@ Nearby: ({ isActive }: { isActive: boolean }) => {
             stroke="#0A84FF"
             strokeWidth="1"
             fill="none"
-            initial={{ scale: 0.5, opacity: 0 }}
             animate={{
               scale: [0.5, 1.2],
               opacity: [0.6, 0]
