@@ -46,9 +46,7 @@ export default function TasksPage() {
   const [shareTask, setShareTask] = useState<Task | null>(null);
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  const pullStartY = useRef(0);
-  const [pullDistance, setPullDistance] = useState(0);
-
+  
   const theme = {
     task: {
       primary: "#0A84FF",
@@ -239,30 +237,7 @@ export default function TasksPage() {
     setMode(newMode);
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (window.scrollY === 0) {
-      pullStartY.current = e.touches[0]?.clientY?? 0;
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (pullStartY.current > 0 && window.scrollY === 0) {
-      const touchY = e.touches[0]?.clientY;
-      if (!touchY) return;
-      const distance = touchY - pullStartY.current;
-      if (distance > 0) {
-        setPullDistance(Math.min(distance, 80));
-      }
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (pullDistance > 60) {
-      handleRefresh();
-    }
-    pullStartY.current = 0;
-    setPullDistance(0);
-  };
+  
 
   const filteredTasks = tasks;
   const currentTheme = theme[mode] || theme.task;
@@ -270,23 +245,8 @@ export default function TasksPage() {
   return (
     <>
       <Toaster richColors position="top-center" />
-      <div
-        className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 select-none pb-28"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        {pullDistance > 0 && (
-          <div
-            className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl"
-            style={{ height: `${pullDistance}px`, transition: pullDistance === 0? 'height 0.3s' : 'none' }}
-          >
-            <FiRefreshCw
-              className={`${pullDistance > 60? 'animate-spin' : ''} text-[#0A84FF]`}
-              size={20}
-            />
-          </div>
-        )}
+<div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 select-none pb-28">
+ 
 
         <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl">
           <div className="px-4 pt-3 pb-2">
