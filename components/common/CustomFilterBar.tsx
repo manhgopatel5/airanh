@@ -63,79 +63,106 @@ const TaskIcons = {
     </svg>
   ),
 
-  // NEARBY TASK: Hiệu ứng lan rộng quét vật thể - sóng tròn + grid + quét
-  Nearby: ({ isActive }: { isActive: boolean }) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      {/* Grid scan */}
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1" opacity={0.15} />
-      <circle cx="12" cy="12" r="7" stroke="currentColor" strokeWidth="1" opacity={0.2} />
-      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1" opacity={0.25} />
+  // NEARBY TASK: Radar quét vật thể - sóng lan rộng + ping mạnh
+Nearby: ({ isActive }: { isActive: boolean }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    {/* Grid nền rõ hơn */}
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" opacity={0.2} />
+    <circle cx="12" cy="12" r="7" stroke="currentColor" strokeWidth="1.5" opacity={0.3} />
+    <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.5" opacity={0.4} />
+    
+    {/* Crosshair */}
+    <path d="M12 2V22M2 12H22" stroke="currentColor" strokeWidth="1" opacity={0.3} />
 
-      {/* Crosshair */}
-      <path d="M12 2V22M2 12H22" stroke="currentColor" strokeWidth="1" opacity={0.2} />
+    {/* Tia quét xoay - to hơn */}
+    <motion.g
+      animate={isActive? { rotate: 360 } : {}}
+      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+      style={{ originX: "50%", originY: "50%" }}
+    >
+      <defs>
+        <linearGradient id="taskScanGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#0A84FF" stopOpacity={0} />
+          <stop offset="50%" stopColor="#0A84FF" stopOpacity={0.3} />
+          <stop offset="100%" stopColor="#0A84FF" stopOpacity={1} />
+        </linearGradient>
+      </defs>
+      <path d="M12 12L12 2A10 10 0 0 1 22 12Z" fill={isActive? "url(#taskScanGrad)" : "none"} />
+      <line x1="12" y1="12" x2="12" y2="2" stroke="#0A84FF" strokeWidth="2" strokeLinecap="round" opacity={isActive? 1 : 0} />
+    </motion.g>
 
-      {/* Tia quét xoay */}
-      <motion.g
-        animate={isActive? { rotate: 360 } : {}}
-        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-        style={{ originX: "50%", originY: "50%" }}
-      >
-        <defs>
-          <linearGradient id="taskScanGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#0A84FF" stopOpacity={0} />
-            <stop offset="100%" stopColor="#0A84FF" stopOpacity={0.6} />
-          </linearGradient>
-        </defs>
-        <path d="M12 12L12 2A10 10 0 0 1 22 12Z" fill={isActive? "url(#taskScanGrad)" : "none"} />
-      </motion.g>
+    {/* Sóng lan rộng từ tâm - rõ hơn */}
+    {isActive && [0, 0.6, 1.2].map((delay, i) => (
+      <motion.circle
+        key={i}
+        cx="12" cy="12" r="2"
+        stroke="#0A84FF"
+        strokeWidth="2.5"
+        fill="none"
+        animate={{
+          scale: [1, 5],
+          opacity: [1, 0]
+        }}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          delay: delay,
+          ease: "easeOut"
+        }}
+      />
+    ))}
 
-      {/* Sóng lan rộng */}
-      {isActive && [0, 0.5, 1].map((delay, i) => (
+    {/* Tâm pulse */}
+    <motion.circle
+      cx="12" cy="12" r="2.5"
+      fill={isActive? "#0A84FF" : "currentColor"}
+      animate={isActive? {
+        scale: [1, 1.3, 1],
+        opacity: [1, 0.6, 1]
+      } : {}}
+      transition={{ duration: 1, repeat: Infinity }}
+    />
+
+    {/* Vật thể bị quét - hiện rõ + pulse */}
+    {isActive && [
+      { x: 7, y: 8, delay: 0.4 },
+      { x: 17, y: 7, delay: 1.2 },
+      { x: 16, y: 16, delay: 1.8 },
+      { x: 8, y: 17, delay: 2.4 },
+    ].map((obj, i) => (
+      <motion.g key={i}>
         <motion.circle
-          key={i}
-          cx="12" cy="12" r="3"
-          stroke="#0A84FF"
-          strokeWidth="2"
-          fill="none"
-          animate={{
-            scale: [1, 4],
-            opacity: [0.8, 0]
-          }}
-          transition={{
-            duration: 2.5,
-            repeat: Infinity,
-            delay: delay,
-            ease: "easeOut"
-          }}
-        />
-      ))}
-
-      {/* Tâm */}
-      <circle cx="12" cy="12" r="2.5" fill={isActive? "#0A84FF" : "currentColor"} />
-
-      {/* Vật thể phát hiện */}
-      {isActive && [
-        { x: 7, y: 8, delay: 0.3 },
-        { x: 17, y: 7, delay: 1.1 },
-        { x: 16, y: 16, delay: 1.9 },
-      ].map((obj, i) => (
-        <motion.circle
-          key={i}
-          cx={obj.x} cy={obj.y} r="1.5"
+          cx={obj.x} cy={obj.y} r="2"
           fill="#0A84FF"
           animate={{
             scale: [0, 1.5, 1],
-            opacity: [0, 1, 0.7]
+            opacity: [0, 1, 0.8]
           }}
           transition={{
-            duration: 2.5,
+            duration: 2,
             repeat: Infinity,
             delay: obj.delay
           }}
         />
-      ))}
-    </svg>
-  ),
+        <motion.circle
+          cx={obj.x} cy={obj.y} r="2"
+          stroke="#0A84FF"
+          strokeWidth="1.5"
+          fill="none"
+          animate={{
+            scale: [1, 2.5],
+            opacity: [1, 0]
+          }}
+          transition={{
+            duration: 1.5,
+            repeat: Infinity,
+            delay: obj.delay + 0.3
+          }}
+        />
+      </motion.g>
+    ))}
+  </svg>
+),
 
   Friends: ({ isActive }: { isActive: boolean }) => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -239,59 +266,59 @@ const PlanIcons = {
     </svg>
   ),
 
-  // NEARBY PLAN: Location pin + ripple màu xanh dương, chấm nhấp nháy đưa xuống + màu đỏ
-  Nearby: ({ isActive }: { isActive: boolean }) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <motion.g
-        animate={isActive? { y: [0, -4, 0] } : {}}
-        transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <path
-          d="M12 21C16 16 20 12.4183 20 9C20 4.58172 16.4183 1 12 1C7.58172 1 4 4.58172 4 9C4 12.4183 8 16 12 21Z"
-          fill={isActive? "#0A84FF" : "none"}
-          stroke="currentColor"
-          strokeWidth="2"
-        />
-        <circle cx="12" cy="9" r="3" fill={isActive? "white" : "currentColor"} />
-      </motion.g>
+ // NEARBY PLAN: Location pin + ripple màu xanh dương - bỏ chấm đỏ
+Nearby: ({ isActive }: { isActive: boolean }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <motion.g
+      animate={isActive? { y: [0, -4, 0] } : {}}
+      transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+    >
+      <path
+        d="M12 21C16 16 20 12.4183 20 9C20 4.58172 16.4183 1 12 1C7.58172 1 4 4.58172 4 9C4 12.4183 8 16 12 21Z"
+        fill={isActive? "#0A84FF" : "none"}
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+      <circle cx="12" cy="9" r="3" fill={isActive? "white" : "currentColor"} />
+    </motion.g>
 
-      {/* Chấm nhấp nháy đưa xuống xíu từ y=9 xuống y=11, màu đỏ */}
-      {isActive && (
-        <motion.circle
-          cx="12" cy="11" r="2"
-          fill="#FF3B30"
-          animate={{
-            scale: [1, 1.5, 1],
-            opacity: [1, 0.5, 1]
-          }}
-          transition={{ duration: 1, repeat: Infinity }}
-        />
-      )}
+    {/* Chấm xanh nhấp nháy đưa xuống y=13 */}
+    {isActive && (
+      <motion.circle
+        cx="12" cy="13" r="2"
+        fill="#0A84FF"
+        animate={{
+          scale: [1, 1.5, 1],
+          opacity: [1, 0.5, 1]
+        }}
+        transition={{ duration: 1, repeat: Infinity }}
+      />
+    )}
 
-      {isActive && [
-        { scale: 1.5, opacity: 0.6, delay: 0 },
-        { scale: 2.2, opacity: 0.3, delay: 0.4 },
-        { scale: 3, opacity: 0, delay: 0.8 }
-      ].map((ring, i) => (
-        <motion.circle
-          key={i}
-          cx="12" cy="21" r="2"
-          stroke="#0A84FF"
-          strokeWidth="1.5"
-          fill="none"
-          animate={{
-            scale: [1, ring.scale],
-            opacity: [ring.opacity, 0]
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            delay: ring.delay
-          }}
-        />
-      ))}
-    </svg>
-  ),
+    {isActive && [
+      { scale: 1.5, opacity: 0.6, delay: 0 },
+      { scale: 2.2, opacity: 0.3, delay: 0.4 },
+      { scale: 3, opacity: 0, delay: 0.8 }
+    ].map((ring, i) => (
+      <motion.circle
+        key={i}
+        cx="12" cy="21" r="2"
+        stroke="#0A84FF"
+        strokeWidth="1.5"
+        fill="none"
+        animate={{
+          scale: [1, ring.scale],
+          opacity: [ring.opacity, 0]
+        }}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          delay: ring.delay
+        }}
+      />
+    ))}
+  </svg>
+),
 
   // FRIENDS PLAN: Trái tim đỏ + lật ngang mỗi 3s khi bấm
   Friends: ({ isActive }: { isActive: boolean }) => (
