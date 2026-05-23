@@ -263,7 +263,7 @@ Hot: ({ isActive }: { isActive: boolean }) => (
     ))}
 
     {/* Thanh ngang dài hơn + xuống y=22 */}
-    <path d="M1 23H23" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M1 24H24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
   </svg>
 ),
 
