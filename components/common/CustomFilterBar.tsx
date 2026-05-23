@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, X } from "lucide-react";
 import { useAppStore } from "@/store/app";
 import { useState, useEffect } from "react";
+import Image from 'next/image'
 
 const haptics = {
   light: () => navigator?.vibrate?.(5),
@@ -21,240 +22,95 @@ interface CustomFilterBarProps {
 
 // Bộ icon custom cho Task - style tech, nhanh, sắc
 const TaskIcons = {
-  Hot: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-      <defs>
-        <radialGradient id="targetCore" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor={isActive? "#FF3B30" : "currentColor"} stopOpacity={1} />
-          <stop offset="60%" stopColor={isActive? fill : "currentColor"} stopOpacity={0.8} />
-          <stop offset="100%" stopColor={isActive? "#00D9FF" : "currentColor"} stopOpacity={0} />
-        </radialGradient>
-        <filter id="targetGlow" x="-100%" y="-100%" width="300%" height="300%">
-          <feGaussianBlur stdDeviation="2" result="blur" />
-          <feColorMatrix in="blur" type="saturate" values="3"/>
-          <feMerge>
-            <feMergeNode in="blur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-        <filter id="targetDistort">
-          <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="1" seed="10" result="noise"/>
-          <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.5"/>
-        </filter>
-        <filter id="targetGlitch">
-          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="5" result="turb"/>
-          <feDisplacementMap in="SourceGraphic" in2="turb" scale="3"/>
-        </filter>
-      </defs>
+  Hot: ({ isActive }: { isActive: boolean }) => {
+    if (!isActive) {
+      return (
+        <Image
+          src="/icons/house-3d.webp"
+          width={20}
+          height={20}
+          alt="Hot"
+          className="opacity-50 grayscale"
+        />
+      )
+    }
 
-      <motion.g style={{ originX: "50%", originY: "50%" }}>
-        {isActive && (
-          <>
-            {/* Layer 1: Radar Scan */}
-            <motion.circle
-              cx="12" cy="12" r="10"
-              fill="none"
-              stroke={fill}
-              strokeWidth="1"
-              strokeDasharray="2 4"
-              opacity={0.3}
-              animate={{ rotate: [0, 360] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-            />
-
-            {/* Layer 2: Corner Lock */}
-            {[
-              { d: "M4 4 L4 7 L7 7", delay: 0 },
-              { d: "M20 4 L20 7 L17 7", delay: 0.1 },
-              { d: "M4 20 L4 17 L7 17", delay: 0.2 },
-              { d: "M20 20 L20 17 L17 17", delay: 0.3 },
-            ].map((corner, i) => (
-              <motion.path
-                key={i}
-                d={corner.d}
-                stroke={fill}
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                fill="none"
-                filter="url(#targetGlow)"
-                animate={{
-                  pathLength: [0, 1, 1, 0],
-                  opacity: [0, 1, 1, 0],
-                  scale: [0.8, 1, 1, 0.8]
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  delay: corner.delay,
-                  ease: "easeInOut"
-                }}
-              />
-            ))}
-
-            {/* Layer 3: Pulse Rings */}
-            {[0, 1, 2].map((i) => (
-              <motion.circle
-                key={`ring-${i}`}
-                cx="12" cy="12"
-                r={9 - i * 2}
-                fill="none"
-                stroke={fill}
-                strokeWidth={1.5 - i * 0.3}
-                opacity={0.6 - i * 0.15}
-                animate={{
-                  scale: [1.3, 0.7, 1.3],
-                  opacity: [0, 0.8, 0]
-                }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  delay: i * 0.3,
-                  ease: "easeOut"
-                }}
-              />
-            ))}
-
-            {/* Layer 4: Crosshair */}
-            <motion.line
-              x1="12" y1="4" x2="12" y2="20"
-              stroke={fill}
-              strokeWidth="1"
-              opacity={0.5}
-              animate={{
-                rotate: [0, 180, 360],
-                opacity: [0, 0.7, 0]
-              }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              style={{ originX: "50%", originY: "50%" }}
-            />
-            <motion.line
-              x1="4" y1="12" x2="20" y2="12"
-              stroke={fill}
-              strokeWidth="1"
-              opacity={0.5}
-              animate={{
-                rotate: [0, 180, 360],
-                opacity: [0, 0.7, 0]
-              }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              style={{ originX: "50%", originY: "50%" }}
-            />
-
-            {/* Layer 5: Particle Burst */}
-            {[...Array(8)].map((_, i) => {
-              const angle = (i * 45) * Math.PI / 180;
-              return (
-                <motion.circle
-                  key={`particle-${i}`}
-                  cx="12"
-                  cy="12"
-                  r="1"
-                  fill={i % 2? fill : "#FF3B30"}
-                  filter="url(#targetGlow)"
-                  animate={{
-                    x: [0, Math.cos(angle) * 8, Math.cos(angle) * 12],
-                    y: [0, Math.sin(angle) * 8, Math.sin(angle) * 12],
-                    opacity: [0, 1, 0],
-                    scale: [0, 1.5, 0]
-                  }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    delay: i * 0.1,
-                    ease: "easeOut"
-                  }}
-                />
-              );
-            })}
-
-            {/* Layer 8: Scan Line */}
-            <motion.rect
-              x="4" y="4" width="16" height="1"
-              fill={fill}
-              opacity={0.6}
-              filter="url(#targetGlow)"
-              animate={{
-                y: [4, 20, 4],
-                opacity: [0, 0.8, 0]
-              }}
-              transition={{
-                duration: 2.5,
-                repeat: Infinity,
-                ease: "linear"
-              }}
-            />
-
-            {/* Layer 9: Glitch Distort */}
-            <motion.g
-              filter="url(#targetGlitch)"
-              animate={{
-                opacity: [0, 0, 1, 0, 0]
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                times: [0, 0.92, 0.93, 0.94, 1]
-              }}
-            >
-              <rect x="4" y="4" width="16" height="16" fill={fill} opacity={0.1} />
-            </motion.g>
-
-            {/* Layer 10: Data Stream */}
-            {[0, 1, 2, 3].map((i) => (
-              <motion.text
-                key={`data-${i}`}
-                x="12"
-                y="12"
-                fontSize="2"
-                fill={fill}
-                opacity={0.4}
-                textAnchor="middle"
-                animate={{
-                  rotate: [i * 90, i * 90 + 360]
-                }}
-                transition={{
-                  duration: 4,
-                  repeat: Infinity,
-                  ease: "linear"
-                }}
-                style={{ originX: "50%", originY: "50%" }}
-              >
-                {i % 2? "101" : "010"}
-              </motion.text>
-            ))}
-          </>
-        )}
-
-        {/* Layer 6: Core Target */}
-        <motion.circle
-          cx="12" cy="12" r="3"
-          fill={isActive? "url(#targetCore)" : "none"}
-          stroke={isActive? "none" : "currentColor"}
-          strokeWidth={2}
-          filter={isActive? "url(#targetDistort)" : undefined}
-          animate={isActive? {
-            scale: [1, 1.4, 0.9, 1.2, 1],
-            opacity: [0.8, 1, 0.7, 1, 0.8]
-          } : {}}
-          transition={{ duration: 1, repeat: isActive? Infinity : 0 }}
+    return (
+      <motion.div 
+        className="relative w-5 h-5"
+        initial={{ scale: 0.9 }}
+        animate={{ scale: [0.9, 1.08, 1] }}
+        transition={{ duration: 0.4, ease: "backOut" }}
+      >
+        <Image
+          src="/icons/house-3d.webp"
+          width={20}
+          height={20}
+          alt="Hot"
+          className="relative z-10"
+          priority
         />
 
-        {/* Layer 7: Lock Point */}
-        {isActive && (
-          <motion.circle
-            cx="12" cy="12" r="1"
-            fill="#FFFFFF"
-            style={{ mixBlendMode: "screen" }}
-            animate={{
-              scale: [0.5, 1.5, 0.5],
-              opacity: [0.5, 1, 0.5]
-            }}
-            transition={{ duration: 0.5, repeat: Infinity }}
-          />
-        )}
-      </motion.g>
-    </svg>
-  ),
+        {/* Cửa gỗ mở ra - căn theo vị trí cửa trong ảnh 20px */}
+        <motion.div
+          className="absolute left-[8.5px] top-[7px] w-[2px] h-[5px] bg-[#1C1C1E] z-20 rounded-[0.5px]"
+          style={{ transformOrigin: 'left center' }}
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        />
+
+        {/* Bụi cây trái bay mất */}
+        <motion.div
+          className="absolute left-[3px] top-[9px] w-[3px] h-[3px] bg-[#E5E5E7] rounded-full z-20"
+          initial={{ scale: 1, opacity: 1 }}
+          animate={{
+            scale: [1, 1.3, 0.7, 0],
+            opacity: [1, 1, 0.5, 0],
+            rotate: [0, -20, 20, 0]
+          }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        />
+
+        {/* Đèn hắt vàng từ cửa */}
+        <motion.div
+          className="absolute left-[9px] top-[8px] w-[2.5px] h-[4px] z-0"
+          style={{
+            background: 'linear-gradient(90deg, #FFD60A 0%, transparent 100%)',
+            filter: 'blur(1px)'
+          }}
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{
+            opacity: [0, 1, 0.7, 1],
+            scaleX: [0, 1.8, 1.2, 1.6]
+          }}
+          transition={{
+            duration: 1.2,
+            delay: 0.25,
+            repeat: Infinity,
+            repeatDelay: 2.2
+          }}
+        />
+
+        {/* Đèn tường nháy */}
+        <motion.div
+          className="absolute left-[6.5px] top-[7.5px] w-[1.5px] h-[1.5px] rounded-full z-0"
+          style={{
+            background: '#FFD60A',
+            boxShadow: '0 0 3px #FFD60A'
+          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 0.2, 1] }}
+          transition={{
+            duration: 0.9,
+            delay: 0.45,
+            repeat: Infinity,
+            repeatDelay: 1.8
+          }}
+        />
+      </motion.div>
+    )
+  },
   Nearby: ({ isActive }: { isActive: boolean }) => (
     <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
       <motion.g
@@ -501,7 +357,7 @@ export default function CustomFilterBar({
               <motion.div
                 className={`relative h-12 rounded-2xl flex items-center justify-center font-bold overflow-hidden ${
                   isActive
-                 ? "text-white"
+                ? "text-white"
                     : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400"
                 }`}
                 animate={{
