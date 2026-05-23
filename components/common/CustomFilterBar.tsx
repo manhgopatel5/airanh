@@ -54,19 +54,19 @@ const TaskIcons = {
   style={{ originX: "50%", originY: "85%" }}
 />
 
-      <motion.path
-        d="M12 18C10.8 18 9.5 16 9.5 13.5C9.5 11.5 10.5 9.5 12 8C13.5 9.5 14.5 11.5 14.5 13.5C14.5 16 13.2 18 12 18Z"
-        fill={isActive? "#FFD60A" : "none"}
-        stroke="currentColor"
-        strokeWidth="1.5"
-        opacity={isActive? 0.9 : 0}
-        animate={isActive? {
-          scaleY: [1, 1.18, 0.92, 1.12, 1],
-          opacity: [0.9, 1, 0.8, 1, 0.9]
-        } : {}}
-        transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
-        style={{ originX: "50%", originY: "85%" }}
-      />
+<motion.path
+  d="M12 5C10.8 5 9.5 7 9.5 10C9.5 12 10.2 14 11 16C11.5 17 11.8 18 12 20C12.2 18 12.5 17 13 16C13.8 14 14.5 12 14.5 10C14.5 7 13.2 5 12 5Z"
+  fill={isActive? "#FFD60A" : "none"}
+  stroke="currentColor"
+  strokeWidth="1.5"
+  opacity={isActive? 0.9 : 0}
+  animate={isActive? {
+    scaleY: [1, 1.18, 0.92, 1.12, 1],
+    opacity: [0.9, 1, 0.8, 1, 0.9]
+  } : {}}
+  transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
+  style={{ originX: "50%", originY: "85%" }}
+/>
 
       {isActive && [
         { x: 10, delay: 0 },
