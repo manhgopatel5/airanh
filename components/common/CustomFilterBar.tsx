@@ -652,7 +652,10 @@ export default function CustomFilterBar({
                   scale: { type: "spring", stiffness: 600, damping: 30 },
                 }}
               >
-                <Icon isActive={isActive} fill={currentTheme.accent} />
+                <Icon 
+  isActive={isActive} 
+  {...(filter.key === "new" && mode === "task" ? { fill: currentTheme.accent } : {})} 
+/>
                 <span className="text-xs whitespace-nowrap">{filter.label}</span>
 
                 <AnimatePresence>
