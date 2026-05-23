@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiInbox, FiRefreshCw } from "react-icons/fi";
+import { FiInbox, FiRefreshCw, FiNavigation } from "react-icons/fi";
 import { HiBolt, HiCalendarDays } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 import ShareTaskModal from "@/components/ShareTaskModal";
@@ -24,9 +24,9 @@ import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
 import { useAppStore } from "@/store/app";
 import * as geofire from 'geofire-common';
-import CustomFilterBar from "@/components/common/CustomFilterBar"; // Dùng file custom riêng
+import CustomFilterBar from "@/components/common/CustomFilterBar";
 
-type TabId = "hot" | "near" | "friends" | "new";
+type TabId = "hot" | "nearby" | "friends" | "new";
 type FeedTask = Task & {
   banned?: boolean;
   hidden?: boolean;
@@ -54,12 +54,9 @@ export default function TaskFeedPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-
+  const [searchQuery, setSearchQuery] = useState("");
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
-
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-
-  const [radiusKm, setRadiusKm] = useState(5);
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const pullStartY = useRef(0);
@@ -97,12 +94,10 @@ export default function TaskFeedPage() {
       (pos) => {
         const { latitude, longitude } = pos.coords;
         setUserLocation({ lat: latitude, lng: longitude });
-        setLocationDenied(false);
         vibrate([10, 20, 10]);
         toast.success("Đã xác định vị trí thành công");
       },
       (err) => {
-        setLocationDenied(true);
         if (err.code === 1) toast.error("Bạn đã chặn quyền truy cập vị trí");
         else toast.error("Không thể lấy vị trí. Thử lại sau");
         setLoading(false);
@@ -147,19 +142,8 @@ export default function TaskFeedPage() {
       const snap = await getDocs(q);
       let data = snap.docs.map((doc) => ({
         id: doc.id,
-      ...doc.data(),
+     ...doc.data(),
       })) as FeedTask[];
-
-      if (activeTab === "near" && userLocation) {
-        data = data.filter(task => {
-          if (!task.location?.lat ||!task.location?.lng) return false;
-          const distanceInKm = geofire.distanceBetween(
-            [userLocation.lat, userLocation.lng],
-            [task.location.lat, task.location.lng]
-          );
-          return distanceInKm <= radiusKm;
-        });
-      }
 
       if (isRefresh) {
         setTasks(data);
@@ -183,13 +167,19 @@ export default function TaskFeedPage() {
       setLoadingMore(false);
       setRefreshing(false);
     }
-  }, [db, buildQuery, lastDoc, activeTab, userLocation, radiusKm]);
+  }, [db, buildQuery, lastDoc]);
 
   useEffect(() => {
     if (currentUser) {
       fetchTasks(true);
     }
-  }, [mode, activeTab, userLocation, radiusKm, currentUser]);
+  }, [mode, activeTab, currentUser]);
+
+  useEffect(() => {
+    if (activeTab === "nearby" &&!userLocation) {
+      requestLocation();
+    }
+  }, [activeTab, userLocation, requestLocation]);
 
   useEffect(() => {
     if (!loadMoreRef.current) return;
@@ -252,15 +242,13 @@ export default function TaskFeedPage() {
         const bTime = b.createdAt?.toMillis() || 0;
         return bTime - aTime;
       });
-    } else if (activeTab === "near" && userLocation) {
+    } else if (activeTab === "nearby" && userLocation) {
+      result = result.filter(task => task.location?.lat && task.location?.lng);
       result.sort((a, b) => {
-        const aLat = a.location?.lat;
-        const aLng = a.location?.lng;
-        const bLat = b.location?.lat;
-        const bLng = b.location?.lng;
-
-        if (aLat == null || aLng == null) return 1;
-        if (bLat == null || bLng == null) return -1;
+        const aLat = a.location!.lat;
+        const aLng = a.location!.lng;
+        const bLat = b.location!.lat;
+        const bLng = b.location!.lng;
 
         const distA = geofire.distanceBetween(
           [userLocation.lat, userLocation.lng],
@@ -318,7 +306,7 @@ export default function TaskFeedPage() {
                 onClick={() => { setMode("task"); vibrate(); }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                   mode === "task"
-                  ? "text-white"
+               ? "text-white"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={mode === "task"? { background: theme.task.gradient } : {}}
@@ -330,7 +318,7 @@ export default function TaskFeedPage() {
                 onClick={() => { setMode("plan"); vibrate(); }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                   mode === "plan"
-                  ? "text-white"
+               ? "text-white"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={mode === "plan"? { background: theme.plan.gradient } : {}}
@@ -341,11 +329,11 @@ export default function TaskFeedPage() {
             </div>
           </div>
 
-          {/* Dùng CustomFilterBar riêng */}
           <CustomFilterBar
             currentFilter={activeTab}
             onChangeFilter={setActiveTab}
-            onSearchClick={() => router.push("/search")}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
           />
         </div>
 
@@ -374,12 +362,12 @@ export default function TaskFeedPage() {
                 <FiInbox size={32} className="text-zinc-400" />
               </div>
               <p className="text-base font-bold text-zinc-900 dark:text-zinc-100 mb-1">
-                {activeTab === "near" &&!userLocation? "Chưa bật định vị" : `Chưa có ${mode === "task"? "task" : "plan"} nào`}
+                {activeTab === "nearby" &&!userLocation? "Chưa bật định vị" : `Chưa có ${mode === "task"? "task" : "plan"} nào`}
               </p>
               <p className="text-sm text-zinc-500 mb-6">
-                {activeTab === "near" &&!userLocation? "Bật định vị để khám phá task xung quanh bạn" : "Kéo xuống để làm mới danh sách"}
+                {activeTab === "nearby" &&!userLocation? "Bật định vị để khám phá task xung quanh bạn" : "Kéo xuống để làm mới danh sách"}
               </p>
-              {activeTab === "near" &&!userLocation? (
+              {activeTab === "nearby" &&!userLocation? (
                 <button
                   onClick={requestLocation}
                   className="px-6 h-11 rounded-xl text-white text-sm font-semibold active:scale-95 transition-all flex items-center gap-2 mx-auto"
@@ -444,8 +432,8 @@ export default function TaskFeedPage() {
       </div>
 
       <style jsx global>{`
-      .scrollbar-hide::-webkit-scrollbar { display: none; }
-      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale }
         body { overscroll-behavior-y: contain }
       `}</style>
