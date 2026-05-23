@@ -63,106 +63,156 @@ const TaskIcons = {
     </svg>
   ),
 
-  // NEARBY TASK: Radar quét vật thể - sóng lan rộng + ping mạnh
-Nearby: ({ isActive }: { isActive: boolean }) => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    {/* Grid nền rõ hơn */}
-    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" opacity={0.2} />
-    <circle cx="12" cy="12" r="7" stroke="currentColor" strokeWidth="1.5" opacity={0.3} />
-    <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.5" opacity={0.4} />
-    
-    {/* Crosshair */}
-    <path d="M12 2V22M2 12H22" stroke="currentColor" strokeWidth="1" opacity={0.3} />
+// NEARBY TASK: La bàn hoàn hảo
+Nearby: ({ isActive }: { isActive: boolean }) => {
+  const [angle, setAngle] = useState(0);
+  const [wobble, setWobble] = useState(0);
 
-    {/* Tia quét xoay - to hơn */}
-    <motion.g
-      animate={isActive? { rotate: 360 } : {}}
-      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-      style={{ originX: "50%", originY: "50%" }}
-    >
+  useEffect(() => {
+    if (!isActive) {
+      setAngle(0);
+      setWobble(0);
+      return;
+    }
+
+    // Xoay chính
+    const rotateInterval = setInterval(() => {
+      setAngle(prev => (prev + 45) % 360);
+    }, 800);
+
+    // Wobble từ tính
+    const wobbleInterval = setInterval(() => {
+      setWobble(Math.random() * 6 - 3);
+    }, 150);
+
+    return () => {
+      clearInterval(rotateInterval);
+      clearInterval(wobbleInterval);
+    };
+  }, [isActive]);
+
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <defs>
-        <linearGradient id="taskScanGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#0A84FF" stopOpacity={0} />
-          <stop offset="50%" stopColor="#0A84FF" stopOpacity={0.3} />
-          <stop offset="100%" stopColor="#0A84FF" stopOpacity={1} />
+        {/* Gradient kim đỏ */}
+        <linearGradient id="needleRed" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FF6B6B" />
+          <stop offset="100%" stopColor="#FF3B30" />
         </linearGradient>
+        {/* Gradient kim xanh */}
+        <linearGradient id="needleBlue" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#5AC8FA" />
+          <stop offset="100%" stopColor="#0A84FF" />
+        </linearGradient>
+        {/* Shadow */}
+        <filter id="shadow">
+          <feDropShadow dx="0" dy="1" stdDeviation="1" floodOpacity="0.2"/>
+        </filter>
       </defs>
-      <path d="M12 12L12 2A10 10 0 0 1 22 12Z" fill={isActive? "url(#taskScanGrad)" : "none"} />
-      <line x1="12" y1="12" x2="12" y2="2" stroke="#0A84FF" strokeWidth="2" strokeLinecap="round" opacity={isActive? 1 : 0} />
-    </motion.g>
 
-    {/* Sóng lan rộng từ tâm - rõ hơn */}
-    {isActive && [0, 0.6, 1.2].map((delay, i) => (
-      <motion.circle
-        key={i}
-        cx="12" cy="12" r="2"
-        stroke="#0A84FF"
-        strokeWidth="2.5"
-        fill="none"
-        animate={{
-          scale: [1, 5],
-          opacity: [1, 0]
-        }}
-        transition={{
-          duration: 2,
-          repeat: Infinity,
-          delay: delay,
-          ease: "easeOut"
-        }}
+      {/* Vỏ la bàn */}
+      <circle
+        cx="12" cy="12" r="10"
+        fill={isActive? "#F5F5F7" : "none"}
+        stroke="currentColor"
+        strokeWidth="2"
+        opacity={isActive? 1 : 0.3}
+        filter={isActive? "url(#shadow)" : "none"}
       />
-    ))}
 
-    {/* Tâm pulse */}
-    <motion.circle
-      cx="12" cy="12" r="2.5"
-      fill={isActive? "#0A84FF" : "currentColor"}
-      animate={isActive? {
-        scale: [1, 1.3, 1],
-        opacity: [1, 0.6, 1]
-      } : {}}
-      transition={{ duration: 1, repeat: Infinity }}
-    />
+      {/* Vạch N-E-S-W */}
+      <g opacity={isActive? 0.6 : 0.3}>
+        <path d="M12 3V5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="M21 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="M12 19V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="M3 12H5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        
+        {/* Chữ N-E-S-W */}
+        {isActive && (
+          <>
+            <text x="12" y="2.5" textAnchor="middle" fontSize="4" fontWeight="700" fill="#FF3B30">N</text>
+            <text x="21.5" y="13.5" textAnchor="middle" fontSize="4" fontWeight="700" fill="currentColor">E</text>
+            <text x="12" y="23" textAnchor="middle" fontSize="4" fontWeight="700" fill="currentColor">S</text>
+            <text x="2.5" y="13.5" textAnchor="middle" fontSize="4" fontWeight="700" fill="currentColor">W</text>
+          </>
+        )}
+      </g>
 
-    {/* Vật thể bị quét - hiện rõ + pulse */}
-    {isActive && [
-      { x: 7, y: 8, delay: 0.4 },
-      { x: 17, y: 7, delay: 1.2 },
-      { x: 16, y: 16, delay: 1.8 },
-      { x: 8, y: 17, delay: 2.4 },
-    ].map((obj, i) => (
-      <motion.g key={i}>
-        <motion.circle
-          cx={obj.x} cy={obj.y} r="2"
-          fill="#0A84FF"
-          animate={{
-            scale: [0, 1.5, 1],
-            opacity: [0, 1, 0.8]
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            delay: obj.delay
-          }}
+      {/* Vạch nhỏ 45° */}
+      <g opacity={0.2}>
+        <path d="M17.66 6.34L16.95 7.05M17.66 17.66L16.95 16.95M6.34 17.66L7.05 16.95M6.34 6.34L7.05 7.05" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </g>
+
+      {/* Kim la bàn */}
+      <motion.g
+        animate={{ rotate: angle + wobble }}
+        transition={{ type: "spring", stiffness: 150, damping: 12 }}
+        style={{ originX: "12px", originY: "12px" }}
+      >
+        {/* Kim đỏ chỉ Bắc - dài hơn */}
+        <path
+          d="M12 12L11 5L12 4L13 5L12 12Z"
+          fill={isActive? "url(#needleRed)" : "currentColor"}
+          filter={isActive? "url(#shadow)" : "none"}
         />
-        <motion.circle
-          cx={obj.x} cy={obj.y} r="2"
-          stroke="#0A84FF"
-          strokeWidth="1.5"
-          fill="none"
-          animate={{
-            scale: [1, 2.5],
-            opacity: [1, 0]
-          }}
-          transition={{
-            duration: 1.5,
-            repeat: Infinity,
-            delay: obj.delay + 0.3
-          }}
+        {/* Kim xanh chỉ Nam */}
+        <path
+          d="M12 12L11 19L12 20L13 19L12 12Z"
+          fill={isActive? "url(#needleBlue)" : "currentColor"}
+          opacity={0.8}
         />
       </motion.g>
-    ))}
-  </svg>
-),
+
+      {/* Tâm la bàn - có viền */}
+      <circle
+        cx="12" cy="12" r="2.5"
+        fill={isActive? "#FFFFFF" : "currentColor"}
+        stroke={isActive? "#0A84FF" : "none"}
+        strokeWidth="1.5"
+      />
+      <circle cx="12" cy="12" r="1" fill={isActive? "#0A84FF" : "currentColor"} />
+
+      {/* Vòng định vị pulse */}
+      {isActive && (
+        <>
+          <motion.circle
+            cx="12" cy="12" r="8"
+            stroke="#0A84FF"
+            strokeWidth="1"
+            fill="none"
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{
+              scale: [0.5, 1.2],
+              opacity: [0.6, 0]
+            }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              ease: "easeOut"
+            }}
+          />
+          <motion.circle
+            cx="12" cy="12" r="8"
+            stroke="#0A84FF"
+            strokeWidth="1"
+            fill="none"
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{
+              scale: [0.5, 1.2],
+              opacity: [0.6, 0]
+            }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              ease: "easeOut",
+              delay: 0.75
+            }}
+          />
+        </>
+      )}
+    </svg>
+  );
+},
 
   Friends: ({ isActive }: { isActive: boolean }) => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
