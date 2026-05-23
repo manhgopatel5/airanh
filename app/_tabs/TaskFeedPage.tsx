@@ -81,8 +81,6 @@ export default function TaskFeedPage() {
     }
   };
 
-  
-
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -150,7 +148,7 @@ export default function TaskFeedPage() {
       const snap = await getDocs(q);
       let data = snap.docs.map((doc) => ({
         id: doc.id,
-...doc.data(),
+       ...doc.data(),
       })) as FeedTask[];
 
       if (isRefresh) {
@@ -298,7 +296,7 @@ export default function TaskFeedPage() {
             <FiRefreshCw
               className={`${pullDistance > 60? 'animate-spin' : ''}`}
               size={20}
-style={{ color: theme.primary }}
+              style={{ color: theme[mode].primary }}
             />
           </div>
         )}
@@ -310,7 +308,7 @@ style={{ color: theme.primary }}
                 onClick={() => { setMode("task"); vibrate(); }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                   mode === "task"
-          ? "text-white"
+                   ? "text-white"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={mode === "task"? { background: theme.task.gradient } : {}}
@@ -322,7 +320,7 @@ style={{ color: theme.primary }}
                 onClick={() => { setMode("plan"); vibrate(); }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                   mode === "plan"
-          ? "text-white"
+                   ? "text-white"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={mode === "plan"? { background: theme.plan.gradient } : {}}
@@ -375,7 +373,7 @@ style={{ color: theme.primary }}
                 <button
                   onClick={requestLocation}
                   className="px-6 h-11 rounded-xl text-white text-sm font-semibold active:scale-95 transition-all flex items-center gap-2 mx-auto"
-                  style={{ background: theme.gradient }}
+                  style={{ background: theme[mode].gradient }}
                 >
                   <FiNavigation /> Bật định vị ngay
                 </button>
@@ -383,7 +381,7 @@ style={{ color: theme.primary }}
                 <button
                   onClick={handleRefresh}
                   className="px-6 h-11 rounded-xl text-white text-sm font-semibold active:scale-95 transition-all flex items-center gap-2 mx-auto"
-                  style={{ background: theme.gradient }}
+                  style={{ background: theme[mode].gradient }}
                 >
                   <FiRefreshCw /> Tải lại
                 </button>
@@ -420,7 +418,7 @@ style={{ color: theme.primary }}
 
           {(loadingMore || refreshing) && (
             <div className="flex justify-center py-6">
-              <FiRefreshCw className="animate-spin" size={24} style={{ color: theme.primary }} />
+              <FiRefreshCw className="animate-spin" size={24} style={{ color: theme[mode].primary }} />
             </div>
           )}
 
@@ -436,8 +434,8 @@ style={{ color: theme.primary }}
       </div>
 
       <style jsx global>{`
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+       .scrollbar-hide::-webkit-scrollbar { display: none; }
+       .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale }
         body { overscroll-behavior-y: contain }
       `}</style>
