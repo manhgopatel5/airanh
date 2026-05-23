@@ -32,6 +32,15 @@ type FeedTask = Task & {
   hidden?: boolean;
 };
 
+// Type guard cho task có location
+type TaskWithLocation = FeedTask & {
+  location: { lat: number; lng: number };
+};
+
+const hasLocation = (task: FeedTask): task is TaskWithLocation => {
+  return task.location?.lat!= null && task.location?.lng!= null;
+};
+
 const PAGE_SIZE = 50;
 
 const vibrate = (p: number | number[] = 5) => {
@@ -142,7 +151,7 @@ export default function TaskFeedPage() {
       const snap = await getDocs(q);
       let data = snap.docs.map((doc) => ({
         id: doc.id,
-    ...doc.data(),
+ ...doc.data(),
       })) as FeedTask[];
 
       if (isRefresh) {
@@ -243,20 +252,15 @@ export default function TaskFeedPage() {
         return bTime - aTime;
       });
     } else if (activeTab === "nearby" && userLocation) {
-      result = result.filter(task => task.location?.lat!= null && task.location?.lng!= null);
+      result = result.filter(hasLocation);
       result.sort((a, b) => {
-        const aLat = a.location!.lat;
-        const aLng = a.location!.lng;
-        const bLat = b.location!.lat;
-        const bLng = b.location!.lng;
-
         const distA = geofire.distanceBetween(
           [userLocation.lat, userLocation.lng],
-          [aLat, aLng]
+          [a.location.lat, a.location.lng]
         );
         const distB = geofire.distanceBetween(
           [userLocation.lat, userLocation.lng],
-          [bLat, bLng]
+          [b.location.lat, b.location.lng]
         );
         return distA - distB;
       });
@@ -306,7 +310,7 @@ export default function TaskFeedPage() {
                 onClick={() => { setMode("task"); vibrate(); }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                   mode === "task"
-              ? "text-white"
+             ? "text-white"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={mode === "task"? { background: theme.task.gradient } : {}}
@@ -318,7 +322,7 @@ export default function TaskFeedPage() {
                 onClick={() => { setMode("plan"); vibrate(); }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                   mode === "plan"
-              ? "text-white"
+             ? "text-white"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
                 }`}
                 style={mode === "plan"? { background: theme.plan.gradient } : {}}
@@ -432,8 +436,8 @@ export default function TaskFeedPage() {
       </div>
 
       <style jsx global>{`
-   .scrollbar-hide::-webkit-scrollbar { display: none; }
-   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+ .scrollbar-hide::-webkit-scrollbar { display: none; }
+ .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale }
         body { overscroll-behavior-y: contain }
       `}</style>
