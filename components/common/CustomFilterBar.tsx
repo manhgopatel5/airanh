@@ -109,10 +109,6 @@ export default function CustomFilterBar({
   const handleClick = (key: FilterTab) => {
     haptics.medium();
     onChangeFilter(key);
-    if (isSearchMode) {
-      setIsSearchMode(false);
-      onSearchChange("");
-    }
   };
 
   const handleSearchClick = () => {
@@ -128,98 +124,94 @@ export default function CustomFilterBar({
 
   return (
     <div className="px-4 pb-3 space-y-2">
-      <AnimatePresence mode="wait">
-        {!isSearchMode? (
-          <motion.div
-            key="filters"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="flex items-center gap-2 overflow-x-auto no-scrollbar"
-          >
-            {filters.map((filter) => {
-              const isActive = currentFilter === filter.key;
-              const isHovered = hovered === filter.key;
-              const Icon = filter.icon;
-              const iconAnim = mode === "task"? filter.taskAnim : filter.planAnim;
+      {/* Hàng 1: 4 tab filter - luôn hiển thị */}
+      <motion.div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+        {filters.map((filter) => {
+          const isActive = currentFilter === filter.key;
+          const isHovered = hovered === filter.key;
+          const Icon = filter.icon;
+          const iconAnim = mode === "task"? filter.taskAnim : filter.planAnim;
 
-              return (
-                <motion.button
-                  key={filter.key}
-                  layout
-                  whileTap={{ scale: 0.9 }}
-                  onTouchStart={() => haptics.light()}
-                  onClick={() => handleClick(filter.key as FilterTab)}
-                  onHoverStart={() => setHovered(filter.key)}
-                  onHoverEnd={() => setHovered(null)}
-                  className="relative flex-shrink-0"
+          return (
+            <motion.button
+              key={filter.key}
+              layout
+              whileTap={{ scale: 0.9 }}
+              onTouchStart={() => haptics.light()}
+              onClick={() => handleClick(filter.key as FilterTab)}
+              onHoverStart={() => setHovered(filter.key)}
+              onHoverEnd={() => setHovered(null)}
+              className="relative flex-shrink-0"
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="activeFilter"
+                  className="absolute inset-0 rounded-xl"
+                  style={{ background: currentTheme.bgGradient }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 400,
+                    damping: 30,
+                  }}
+                />
+              )}
+
+              <motion.div
+                className={`relative h-9 px-4 rounded-xl flex items-center gap-2 font-semibold ${
+                  isActive
+                   ? "text-white"
+                    : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400"
+                }`}
+                animate={{
+                  scale: isActive? 1 : 0.95,
+                }}
+                transition={{
+                  scale: { type: "spring", stiffness: 500, damping: 25 },
+                }}
+              >
+                <motion.div
+                  animate={isActive? iconAnim : {}}
+                  transition={{
+                    duration: 0.6,
+                    type: "spring",
+                    bounce: 0.3,
+                  }}
                 >
-                  {isActive && (
+                  <Icon
+                    className="w-4 h-4"
+                    strokeWidth={isActive? 2.8 : 2}
+                    fill={isActive? currentTheme.accent : "none"}
+                    fillOpacity={isActive? 0.3 : 0}
+                  />
+                </motion.div>
+
+                <span className="text-sm">{filter.label}</span>
+
+                <AnimatePresence>
+                  {isHovered &&!isActive && (
                     <motion.div
-                      layoutId="activeFilter"
-                      className="absolute inset-0 rounded-xl"
-                      style={{ background: currentTheme.bgGradient }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 400,
-                        damping: 30
-                      }}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      className="absolute inset-0 rounded-xl bg-gray-200 dark:bg-zinc-700 -z-10"
                     />
                   )}
+                </AnimatePresence>
+              </motion.div>
+            </motion.button>
+          );
+        })}
+      </motion.div>
 
-                  <motion.div
-                    className={`relative h-9 px-4 rounded-xl flex items-center gap-2 font-semibold ${
-                      isActive
-                       ? "text-white"
-                        : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400"
-                    }`}
-                    animate={{
-                      scale: isActive? 1 : 0.95,
-                    }}
-                    transition={{
-                      scale: { type: "spring", stiffness: 500, damping: 25 },
-                    }}
-                  >
-                    <motion.div
-                      animate={isActive? iconAnim : {}}
-                      transition={{
-                        duration: 0.6,
-                        type: "spring",
-                        bounce: 0.3,
-                      }}
-                    >
-                      <Icon
-                        className="w-4 h-4"
-                        strokeWidth={isActive? 2.8 : 2}
-                        fill={isActive? currentTheme.accent : "none"}
-                        fillOpacity={isActive? 0.3 : 0}
-                      />
-                    </motion.div>
-
-                    <span className="text-sm">{filter.label}</span>
-
-                    <AnimatePresence>
-                      {isHovered &&!isActive && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          exit={{ scale: 0 }}
-                          className="absolute inset-0 rounded-xl bg-gray-200 dark:bg-zinc-700 -z-10"
-                        />
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                </motion.button>
-              );
-            })}
-          </motion.div>
-        ) : (
+      {/* Hàng 2: Search input hoặc nút Search */}
+      <AnimatePresence initial={false} mode="wait">
+        {isSearchMode? (
           <motion.div
             key="search"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="flex items-center gap-2"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="flex items-center gap-2 overflow-hidden"
           >
             <div className="relative flex-1">
               <div
@@ -252,21 +244,23 @@ export default function CustomFilterBar({
               <X className="w-4 h-4" strokeWidth={2.8} />
             </motion.button>
           </motion.div>
+        ) : (
+          <motion.button
+            key="search-btn"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            onTouchStart={() => haptics.light()}
+            onClick={handleSearchClick}
+            className="w-full h-9 rounded-xl bg-gray-100 dark:bg-zinc-800 flex items-center justify-center gap-2 text-gray-600 dark:text-zinc-400 font-semibold text-sm overflow-hidden"
+          >
+            <Search className="w-4 h-4" strokeWidth={2.8} />
+            <span>Tìm kiếm</span>
+          </motion.button>
         )}
       </AnimatePresence>
-
-      {!isSearchMode && (
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          whileHover={{ scale: 1.02 }}
-          onTouchStart={() => haptics.light()}
-          onClick={handleSearchClick}
-          className="w-full h-9 rounded-xl bg-gray-100 dark:bg-zinc-800 flex items-center justify-center gap-2 text-gray-600 dark:text-zinc-400 font-semibold text-sm"
-        >
-          <Search className="w-4 h-4" strokeWidth={2.8} />
-          <span>Tìm kiếm</span>
-        </motion.button>
-      )}
     </div>
   );
 }
