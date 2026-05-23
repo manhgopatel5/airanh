@@ -21,7 +21,7 @@ interface CustomFilterBarProps {
 
 const TaskIcons = {
   Hot: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <defs>
         <radialGradient id="fireCore" cx="50%" cy="70%" r="60%">
           <stop offset="0%" stopColor={isActive? "#FF3B30" : "currentColor"} stopOpacity={1} />
@@ -37,7 +37,6 @@ const TaskIcons = {
         </filter>
       </defs>
 
-      {/* Ngọn lửa chính */}
       <motion.path
         d="M12 3C10 3 7 7 7 11C7 14.5 9 17 12 17C15 17 17 14.5 17 11C17 7 14 3 12 3Z"
         fill={isActive? "url(#fireCore)" : "none"}
@@ -53,7 +52,6 @@ const TaskIcons = {
         style={{ originX: "50%", originY: "80%" }}
       />
 
-      {/* Ngọn lửa phụ bên trong */}
       <motion.path
         d="M12 7C11 7 9.5 9.5 9.5 11.5C9.5 13 10.5 14.5 12 14.5C13.5 14.5 14.5 13 14.5 11.5C14.5 9.5 13 7 12 7Z"
         fill={isActive? fill : "none"}
@@ -68,7 +66,6 @@ const TaskIcons = {
         style={{ originX: "50%", originY: "80%" }}
       />
 
-      {/* Tia lửa bay lên */}
       {isActive && [
         { x: 10, delay: 0 },
         { x: 12, delay: 0.4 },
@@ -96,7 +93,7 @@ const TaskIcons = {
     </svg>
   ),
   Nearby: ({ isActive }: { isActive: boolean }) => (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <motion.g
         animate={isActive? { rotate: [0, 360] } : {}}
         transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
@@ -119,7 +116,7 @@ const TaskIcons = {
     </svg>
   ),
   Friends: ({ isActive }: { isActive: boolean }) => (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <motion.circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="2"
         animate={isActive? { y: [0, -4, 0], scale: [1, 1.15, 1] } : {}}
         transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 1.2 }}
@@ -145,7 +142,7 @@ const TaskIcons = {
     </svg>
   ),
   New: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <motion.path
         d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
         fill={isActive? fill : "none"}
@@ -174,7 +171,7 @@ const TaskIcons = {
 
 const PlanIcons = {
   Hot: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <motion.path
         d="M12 3C10 3 7 7 7 11C7 14.5 9 17 12 17C15 17 17 14.5 17 11C17 7 14 3 12 3Z"
         fill={isActive? fill : "none"}
@@ -197,9 +194,9 @@ const PlanIcons = {
     </svg>
   ),
   Nearby: ({ isActive }: { isActive: boolean }) => (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <motion.path
-        d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2Z"
+        d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2Z"
         stroke="currentColor" strokeWidth="2"
         animate={isActive? { scale: [1, 1.1, 1] } : {}}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
@@ -211,7 +208,7 @@ const PlanIcons = {
     </svg>
   ),
   Friends: ({ isActive }: { isActive: boolean }) => (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <motion.g
         animate={isActive? { rotate: [0, 10, -10, 0] } : {}}
         transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
@@ -223,7 +220,7 @@ const PlanIcons = {
     </svg>
   ),
   New: ({ isActive, fill }: { isActive: boolean; fill: string }) => (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <motion.g
         animate={isActive? { y: [0, -6, 0], rotate: [0, 20, -20, 0] } : {}}
         transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
@@ -249,14 +246,6 @@ export default function CustomFilterBar({
   const mode = useAppStore((s) => s.mode) || "task";
   const [hovered, setHovered] = useState<string | null>(null);
   const [isSearchMode, setIsSearchMode] = useState(false);
-  const [showLabel, setShowLabel] = useState(false);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setShowLabel(prev =>!prev);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     if (searchQuery &&!isSearchMode) {
@@ -337,7 +326,7 @@ export default function CustomFilterBar({
               )}
 
               <motion.div
-                className={`relative h-12 rounded-2xl flex items-center justify-center gap-1.5 font-bold overflow-hidden ${
+                className={`relative h-12 rounded-2xl flex items-center justify-center gap-1.5 font-bold overflow-hidden px-2 ${
                   isActive
                ? "text-white"
                     : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400"
@@ -349,40 +338,8 @@ export default function CustomFilterBar({
                   scale: { type: "spring", stiffness: 600, damping: 30 },
                 }}
               >
-                <AnimatePresence mode="wait">
-                  {showLabel? (
-                    <motion.span
-                      key="label"
-                      initial={{ opacity: 0, y: 10, scale: 0.8 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -10, scale: 0.8 }}
-                      transition={{ 
-                        duration: 0.35,
-                        type: "spring",
-                        stiffness: 500,
-                        damping: 30
-                      }}
-                      className="text-sm whitespace-nowrap px-1"
-                    >
-                      {filter.label}
-                    </motion.span>
-                  ) : (
-                    <motion.div
-                      key="icon"
-                      initial={{ opacity: 0, scale: 0.6, rotate: -180 }}
-                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                      exit={{ opacity: 0, scale: 0.6, rotate: 180 }}
-                      transition={{ 
-                        duration: 0.35,
-                        type: "spring",
-                        stiffness: 500,
-                        damping: 25
-                      }}
-                    >
-                      <Icon isActive={isActive} fill={currentTheme.accent} />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                <Icon isActive={isActive} fill={currentTheme.accent} />
+                <span className="text-xs whitespace-nowrap">{filter.label}</span>
 
                 <AnimatePresence>
                   {isHovered &&!isActive && (
