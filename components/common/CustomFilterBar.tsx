@@ -189,77 +189,92 @@ Nearby: ({ isActive }: { isActive: boolean }) => (
     </svg>
   ),
 
-// NEW TASK: Bút vẽ tạo mới
-New: ({ isActive, fill }: { isActive: boolean; fill?: string }) => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    {/* Trang giấy */}
-    <motion.path
-      d="M6 3H15L19 7V19C19 20.1 18.1 21 17 21H7C5.9 21 5 20.1 5 19V5C5 3.9 5.9 3 6 3Z"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      fill="none"
-      opacity={isActive? 0.3 : 0.5}
-    />
-    <path
-      d="M15 3V7H19"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      fill="none"
-      opacity={isActive? 0.3 : 0.5}
-    />
-    
-    {/* Bút vẽ */}
-    <motion.g
-      animate={isActive? {
-        x: [0, 3, 0, -2, 0],
-        y: [0, 2, 4, 2, 0],
-        rotate: [0, -15, 0, 10, 0]
-      } : {}}
-      transition={{ 
-        duration: 2, 
-        repeat: Infinity,
-        ease: "easeInOut"
-      }}
-      style={{ originX: "16px", originY: "16px" }}
-    >
-      <path
-        d="M13 6L18 11L10 19H5V14L13 6Z"
-        fill={isActive? (fill || "#0A84FF") : "currentColor"}
-        stroke={isActive? (fill || "#0A84FF") : "currentColor"}
-        strokeWidth="1"
-      />
-      <path
-        d="M16 8L14 10"
-        stroke={isActive? "white" : "none"}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </motion.g>
+// NEW TASK: Số 1→99, đổi màu theo chục
+New: ({ isActive, fill }: { isActive: boolean; fill?: string }) => {
+  const decadeColors = [
+    "#FF3B30", // 1-9   đỏ
+    "#FF9500", // 10-19 cam  
+    "#FFD60A", // 20-29 vàng
+    "#34C759", // 30-39 xanh lá
+    "#0A84FF", // 40-49 xanh dương
+    "#5E5CE6", // 50-59 tím
+    "#FF2D55", // 60-69 hồng
+    "#00C7BE", // 70-79 xanh ngọc
+    "#AF52DE", // 80-89 tím nhạt
+    "#8E8E93", // 90-99 xám
+  ];
 
-    {/* 3 đường vẽ xuất hiện */}
-    {isActive && [
-      { d: "M8 12H12", delay: 0.2 },
-      { d: "M8 14H11", delay: 0.4 },
-      { d: "M8 16H13", delay: 0.6 },
-    ].map((line, i) => (
-      <motion.path
-        key={i}
-        d={line.d}
-        stroke={fill || "#0A84FF"}
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      {/* Vòng tròn nền */}
+      <circle
+        cx="12" cy="12" r="10"
+        stroke="currentColor"
         strokeWidth="1.5"
-        strokeLinecap="round"
-        initial={{ pathLength: 0 }}
-        animate={{ pathLength: [0, 1, 1, 0] }}
-        transition={{
-          duration: 2,
-          repeat: Infinity,
-          delay: line.delay,
-          times: [0, 0.3, 0.7, 1]
-        }}
+        fill="none"
+        opacity={0.2}
       />
-    ))}
-  </svg>
-),
+      
+      {isActive ? (
+        <motion.g>
+          {/* Số nhảy từ 1→99 */}
+          <motion.text
+            x="12" y="16"
+            textAnchor="middle"
+            fontSize="10"
+            fontWeight="700"
+            animate={{
+              fill: decadeColors,
+            }}
+            transition={{
+              duration: 9.9,
+              repeat: Infinity,
+              ease: "linear",
+              times: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], // 10 mốc
+            }}
+          >
+            <motion.animate
+              attributeName="textContent"
+              values={Array.from({ length: 99 }, (_, i) => i + 1).join(";")}
+              dur="9.9s"
+              repeatCount="indefinite"
+              calcMode="discrete"
+            />
+            1
+          </motion.text>
+
+          {/* Vòng pop mỗi 0.1s */}
+          <motion.circle
+            cx="12" cy="12" r="9"
+            stroke={fill || "#0A84FF"}
+            strokeWidth="1.5"
+            fill="none"
+            initial={{ scale: 1, opacity: 0 }}
+            animate={{
+              scale: [1, 1.15, 1],
+              opacity: [0, 0.5, 0]
+            }}
+            transition={{
+              duration: 0.1,
+              repeat: Infinity,
+              repeatDelay: 0.09
+            }}
+          />
+        </motion.g>
+      ) : (
+        <text
+          x="12" y="16"
+          textAnchor="middle"
+          fontSize="10"
+          fontWeight="700"
+          fill="currentColor"
+        >
+          1
+        </text>
+      )}
+    </svg>
+  );
+},
 };
 const PlanIcons = {
 // HOT PLAN: Rising Sun - tia sáng dài hơn
