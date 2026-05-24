@@ -1,26 +1,13 @@
 "use client";
-import { DotLottieReact } from '@dotlottie/react-player';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { motion } from 'framer-motion';
 
 export const Briefcase3D = ({ active }: { active: boolean }) => (
-  <motion.div
-    className="relative w-9 h-9"
-    animate={active? {
-      y: [0, -5, 0],
-      scale: [1, 1.18, 1],
-      rotateZ: [0, -4, 4, -2, 0],
-    } : { 
-      y: 0, 
-      scale: 0.9, 
-      rotateZ: 0,
-      opacity: 0.55
-    }}
-    transition={{
-      duration: 0.9,
-      ease: [0.34, 1.56, 0.64, 1]
-    }}
+  <motion.div 
+    className="relative w-9 h-9" 
+    animate={active? { y: [0, -5, 0], scale: [1, 1.18, 1], rotateZ: [0, -4, 4, -2, 0] } : { y: 0, scale: 0.9, rotateZ: 0, opacity: 0.55 }}
+    transition={{ duration: 0.9, ease: [0.34, 1.56, 0.64, 1] }}
   >
-    {/* Shadow pulse giữ lại cho đẹp */}
     <motion.div
       className="absolute bottom-0 left-1/2 -translate-x-1/2 w-7 h-2.5 rounded-full blur-lg"
       animate={{
@@ -41,22 +28,10 @@ export const Briefcase3D = ({ active }: { active: boolean }) => (
 );
 
 export const Palm3D = ({ active }: { active: boolean }) => (
-  <motion.div
-    className="relative w-9 h-9"
-    animate={active? {
-      y: [0, -5, 0],
-      scale: [1, 1.18, 1],
-      rotateZ: [0, 4, -4, 3, 0],
-    } : { 
-      y: 0, 
-      scale: 0.9, 
-      rotateZ: 0,
-      opacity: 0.55
-    }}
-    transition={{
-      duration: 0.9,
-      ease: [0.34, 1.56, 0.64, 1]
-    }}
+  <motion.div 
+    className="relative w-9 h-9" 
+    animate={active? { y: [0, -5, 0], scale: [1, 1.18, 1], rotateZ: [0, 4, -4, 3, 0] } : { y: 0, scale: 0.9, rotateZ: 0, opacity: 0.55 }}
+    transition={{ duration: 0.9, ease: [0.34, 1.56, 0.64, 1] }}
   >
     <motion.div
       className="absolute bottom-0 left-1/2 -translate-x-1/2 w-7 h-2.5 rounded-full blur-lg"
