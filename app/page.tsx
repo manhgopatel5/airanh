@@ -277,7 +277,7 @@ export default function AppContainer() {
        .scrollbar-hide::-webkit-scrollbar{display:none}
        .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
         html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
-        body{overscroll-behavior-y:contain}
+body{overscroll-behavior-y:auto}
       `}</style>
     </div>
   );
