@@ -215,7 +215,7 @@ export default function AppContainer() {
   }
 
   return (
-    <div className="h-screen flex flex-col font-sans bg-white dark:bg-zinc-950 select-none relative overflow-hidden">
+<div className="h-screen flex flex-col font-sans bg-white dark:bg-zinc-950 select-none relative">
       <Toaster richColors position="top-center" toastOptions={{ duration: 2000, style: { fontSize: "14px" } }} />
 
       {/* Main content - mỗi tab 1 scroll container riêng */}
