@@ -58,8 +58,7 @@ export default function TaskFeedPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const { mode = "task", setMode } = useAppStore();
   const [activeTab, setActiveTab] = useState<TabId>("hot");
-  
-  // CACHE THEO TAB + MODE
+
   const [tasksCache, setTasksCache] = useState<Record<CacheKey, FeedTask[]>>({
     "hot-task": [], "nearby-task": [], "friends-task": [], "new-task": [],
     "hot-plan": [], "nearby-plan": [], "friends-plan": [], "new-plan": [],
@@ -72,13 +71,13 @@ export default function TaskFeedPage() {
     "hot-task": true, "nearby-task": true, "friends-task": true, "new-task": true,
     "hot-plan": true, "nearby-plan": true, "friends-plan": true, "new-plan": true,
   });
-  
+
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-  
+
   const [searchQueries, setSearchQueries] = useState<Record<TabId, string>>({
     hot: "",
     nearby: "",
@@ -87,7 +86,7 @@ export default function TaskFeedPage() {
   });
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  
+
   const theme = {
     task: {
       primary: "#0A84FF",
@@ -170,19 +169,19 @@ export default function TaskFeedPage() {
       const snap = await getDocs(q);
       let data = snap.docs.map((doc) => ({
         id: doc.id,
-     ...doc.data(),
+       ...doc.data(),
       })) as FeedTask[];
 
       setTasksCache(prev => ({
-       ...prev, 
+       ...prev,
         [key]: isRefresh? data : [...prev[key],...data]
       }));
-      
+
       setLastDocs(prev => ({
        ...prev,
         [key]: snap.docs[snap.docs.length - 1] || null
       }));
-      
+
       setHasMoreMap(prev => ({
        ...prev,
         [key]: snap.docs.length === PAGE_SIZE
@@ -204,10 +203,9 @@ export default function TaskFeedPage() {
     }
   }, [db, buildQuery, lastDocs, currentCacheKey]);
 
-  // LOAD KHI ĐỔI TAB/MODE - CHỈ FETCH NẾU CHƯA CÓ CACHE
   useEffect(() => {
     if (!currentUser) return;
-    
+
     const key = currentCacheKey;
     if (tasksCache[key].length === 0 && hasMoreMap[key]) {
       setLoading(true);
@@ -236,10 +234,6 @@ export default function TaskFeedPage() {
     observer.observe(loadMoreRef.current);
     return () => observer.disconnect();
   }, [hasMore, loading, loadingMore, refreshing, fetchTasks]);
-
-
-
-  
 
   const handleSearchChange = useCallback((filter: TabId, query: string) => {
     setSearchQueries(prev => ({...prev, [filter]: query }));
@@ -290,7 +284,7 @@ export default function TaskFeedPage() {
   const handleTaskUpdate = useCallback((taskId: string, updates: Partial<FeedTask>) => {
     setTasksCache(prev => ({
      ...prev,
-      [currentCacheKey]: prev[currentCacheKey].map(t => 
+      [currentCacheKey]: prev[currentCacheKey].map(t =>
         t.id === taskId? ({...t,...updates } as FeedTask) : t
       )
     }));
@@ -309,10 +303,9 @@ export default function TaskFeedPage() {
   return (
     <>
       <Toaster richColors position="top-center" />
-<div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 select-none">
-
-
-<div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl">
+      {/* FIX: Xóa min-h-screen, không tự scroll */}
+      <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 select-none">
+        <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl">
           <div className="px-4 pt-3 pb-2">
             <div className="flex items-center gap-2">
               <button
@@ -388,18 +381,18 @@ export default function TaskFeedPage() {
                 >
                   <FiNavigation /> Bật định vị ngay
                 </button>
-       ) : (
-  <button
-    onClick={() => {
-      vibrate(10);
-      fetchTasks(true);
-    }}
-    className="px-6 h-11 rounded-xl text-white text-sm font-semibold active:scale-95 transition-all flex items-center gap-2 mx-auto"
-style={{ background: theme[mode].gradient }}
-  >
-    <FiRefreshCw /> Tải lại
-  </button>
-)}
+              ) : (
+                <button
+                  onClick={() => {
+                    vibrate(10);
+                    fetchTasks(true);
+                  }}
+                  className="px-6 h-11 rounded-xl text-white text-sm font-semibold active:scale-95 transition-all flex items-center gap-2 mx-auto"
+                  style={{ background: theme[mode].gradient }}
+                >
+                  <FiRefreshCw /> Tải lại
+                </button>
+              )}
             </motion.div>
           ) : (
             <AnimatePresence mode="popLayout">
@@ -444,14 +437,15 @@ style={{ background: theme[mode].gradient }}
           )}
 
           <div ref={loadMoreRef} className="h-4" />
+          {/* FIX: Thêm spacer 24px để không bị tab bar che */}
+          <div className="h-6" />
         </div>
       </div>
 
       <style jsx global>{`
-     .scrollbar-hide::-webkit-scrollbar { display: none; }
-     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+       .scrollbar-hide::-webkit-scrollbar { display: none; }
+       .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale }
-
       `}</style>
     </>
   );
