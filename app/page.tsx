@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import { useAuth } from "@/lib/AuthContext";
@@ -20,6 +20,7 @@ import ProfileTabContent from "./profile/ProfileTabContent";
 import TaskFeedPage from "./_tabs/TaskFeedPage";
 import TasksPage from "./_tabs/MyTasksPage";
 import CustomTabBar from "@/components/CustomTabBar";
+import { useTabBarHeight } from "@/hooks/useTabBarHeight";
 
 type MainTab = "home" | "messages" | "tasks" | "profile";
 
@@ -137,6 +138,7 @@ export default function AppContainer() {
     new Set([(searchParams.get("tab") as MainTab) || "home"])
   );
   const menuRef = useRef<HTMLDivElement>(null);
+  const tabBarHeight = useTabBarHeight();
 
   const isPlanMode = mode === "plan";
 
@@ -218,8 +220,11 @@ export default function AppContainer() {
     <div className="h-screen flex flex-col font-sans bg-white dark:bg-zinc-950 select-none relative">
       <Toaster richColors position="top-center" toastOptions={{ duration: 2000, style: { fontSize: "14px" } }} />
 
-      {/* FIX: Chỉ 1 scroll container duy nhất ở cha */}
-      <div className="flex-1 w-full max-w-2xl mx-auto overflow-y-auto [-webkit-overflow-scrolling:touch]">
+      {/* FIX: Chỉ 1 scroll container + padding-bottom động theo tabBarHeight */}
+      <div
+        className="flex-1 w-full max-w-2xl mx-auto overflow-y-auto [-webkit-overflow-scrolling:touch] overscroll-y-contain"
+        style={{ paddingBottom: tabBarHeight }}
+      >
         <div className={currentMainTab!== "home"? "hidden" : ""}>
           {loadedTabs.has("home") && <TaskFeedPage />}
         </div>
@@ -274,8 +279,8 @@ export default function AppContainer() {
       )}
 
       <style jsx global>{`
-       .scrollbar-hide::-webkit-scrollbar{display:none}
-       .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
+      .scrollbar-hide::-webkit-scrollbar{display:none}
+      .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
         html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
         body{overscroll-behavior-y:contain}
       `}</style>
