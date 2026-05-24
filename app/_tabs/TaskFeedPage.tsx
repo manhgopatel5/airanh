@@ -325,7 +325,7 @@ const theme = {
     {/* Pill trượt có nền */}
     
     <motion.div
-      className="absolute top-1.5 bottom-1.5 rounded-xl overflow-hidden"
+className="absolute top-1.5 bottom-1.5 rounded-xl overflow-hidden pointer-events-none"
       animate={{
         left: mode === "task" ? "6px" : "calc(50% + 3px)",
         width: "calc(50% - 9px)"
