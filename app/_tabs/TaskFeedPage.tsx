@@ -87,9 +87,7 @@ export default function TaskFeedPage() {
   });
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  const pullStartY = useRef(0);
-  const [pullDistance, setPullDistance] = useState(0);
-
+  
   const theme = {
     task: {
       primary: "#0A84FF",
@@ -239,35 +237,9 @@ export default function TaskFeedPage() {
     return () => observer.disconnect();
   }, [hasMore, loading, loadingMore, refreshing, fetchTasks]);
 
-  const handleRefresh = async () => {
-    vibrate(10);
-    await fetchTasks(true);
-  };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (window.scrollY === 0) {
-      pullStartY.current = e.touches[0]?.clientY?? 0;
-    }
-  };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (pullStartY.current > 0 && window.scrollY === 0) {
-      const touchY = e.touches[0]?.clientY;
-      if (!touchY) return;
-      const distance = touchY - pullStartY.current;
-      if (distance > 0) {
-        setPullDistance(Math.min(distance, 80));
-      }
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (pullDistance > 60) {
-      handleRefresh();
-    }
-    pullStartY.current = 0;
-    setPullDistance(0);
-  };
+  
 
   const handleSearchChange = useCallback((filter: TabId, query: string) => {
     setSearchQueries(prev => ({...prev, [filter]: query }));
@@ -337,24 +309,8 @@ export default function TaskFeedPage() {
   return (
     <>
       <Toaster richColors position="top-center" />
-      <div
-        className="h-full bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 select-none"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        {pullDistance > 0 && (
-          <div
-            className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl"
-            style={{ height: `${pullDistance}px`, transition: pullDistance === 0? 'height 0.3s' : 'none' }}
-          >
-            <FiRefreshCw
-              className={`${pullDistance > 60? 'animate-spin' : ''}`}
-              size={20}
-              style={{ color: theme[mode].primary }}
-            />
-          </div>
-        )}
+<div className="h-full bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 select-none">
+
 
         <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl">
           <div className="px-4 pt-3 pb-2">
