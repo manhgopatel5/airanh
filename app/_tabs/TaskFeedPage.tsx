@@ -395,7 +395,7 @@ export default function TaskFeedPage() {
       fetchTasks(true);
     }}
     className="px-6 h-11 rounded-xl text-white text-sm font-semibold active:scale-95 transition-all flex items-center gap-2 mx-auto"
-    style={{ background: theme.gradient }}
+style={{ background: theme[mode].gradient }}
   >
     <FiRefreshCw /> Tải lại
   </button>
