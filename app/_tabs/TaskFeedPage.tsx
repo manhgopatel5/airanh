@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiInbox, FiRefreshCw, FiNavigation } from "react-icons/fi";
-import { HiBolt, HiCalendarDays } from "react-icons/hi2";
+import { Briefcase3D, Palm3D } from "@/components/icons/Mode3DIcons";
 import { useRouter } from "next/navigation";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import { onAuthStateChanged, User } from "firebase/auth";
@@ -87,16 +87,18 @@ export default function TaskFeedPage() {
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  const theme = {
-    task: {
-      primary: "#0A84FF",
-      gradient: "linear-gradient(135deg, #0A84FF 0%, #0066CC 100%)",
-    },
-    plan: {
-      primary: "#30D158",
-      gradient: "linear-gradient(135deg, #30D158 0%, #28B44C 100%)",
-    }
-  };
+const theme = {
+  task: {
+    primary: "#0A84FF",
+    gradient: "linear-gradient(135deg, #5B9DFF 0%, #0A84FF 100%)",
+    glow: "rgba(10, 132, 255, 0.5)",
+  },
+  plan: {
+    primary: "#30D158",
+    gradient: "linear-gradient(135deg, #5BEB7B 0%, #30D158 100%)",
+    glow: "rgba(48, 209, 88, 0.5)",
+  }
+};
 
   const currentCacheKey: CacheKey = `${activeTab}-${mode}`;
   const tasks = tasksCache[currentCacheKey];
@@ -306,34 +308,112 @@ export default function TaskFeedPage() {
       {/* FIX: Xóa min-h-screen, không tự scroll */}
       <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 select-none">
         <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl">
-          <div className="px-4 pt-3 pb-2">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => { setMode("task"); vibrate(); }}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
-                  mode === "task"
-                 ? "text-white"
-                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
-                }`}
-                style={mode === "task"? { background: theme.task.gradient } : {}}
-              >
-                <HiBolt className="w-4 h-4" />
-                Task
-              </button>
-              <button
-                onClick={() => { setMode("plan"); vibrate(); }}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
-                  mode === "plan"
-                 ? "text-white"
-                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
-                }`}
-                style={mode === "plan"? { background: theme.plan.gradient } : {}}
-              >
-                <HiCalendarDays className="w-4 h-4" />
-                Plan
-              </button>
-            </div>
-          </div>
+        <div className="px-4 pt-4 pb-2">
+  <div className="relative h-16 rounded-2xl bg-gradient-to-br from-zinc-50 via-white to-zinc-100 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950 p-1.5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8),inset_0_-1px_0_0_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),inset_0_-1px_0_0_rgba(0,0,0,0.5),0_4px_12px_rgba(0,0,0,0.3)]">
+
+    <motion.div
+      className="absolute -inset-3 rounded-2xl opacity-50 blur-2xl"
+      animate={{
+        background: mode === "task"
+       ? "radial-gradient(ellipse at 25% 50%, rgba(10,132,255,0.4) 0%, rgba(10,132,255,0.1) 40%, transparent 70%)"
+          : "radial-gradient(ellipse at 75% 50%, rgba(48,209,88,0.4) 0%, rgba(48,209,88,0.1) 40%, transparent 70%)"
+      }}
+      transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+    />
+
+    <motion.div
+      className="absolute top-1.5 bottom-1.5 rounded-xl overflow-hidden"
+      animate={{
+        x: mode === "task"? "1.5%" : "98.5%",
+        left: mode === "task"? 0 : "auto",
+        right: mode === "plan"? 0 : "auto"
+      }}
+      style={{ width: "49.2%" }}
+      transition={{
+        type: "spring",
+        stiffness: 320,
+        damping: 32,
+        mass: 0.9
+      }}
+    >
+      <motion.div
+        className="absolute inset-0"
+        animate={{
+          background: mode === "task"
+         ? "linear-gradient(135deg, rgba(139,196,255,0.3) 0%, rgba(91,157,255,0.25) 50%, rgba(10,132,255,0.2) 100%)"
+            : "linear-gradient(135deg, rgba(159,255,176,0.3) 0%, rgba(91,235,123,0.25) 50%, rgba(48,209,88,0.2) 100%)"
+        }}
+        transition={{ duration: 0.5 }}
+      />
+
+      <motion.div
+        className="absolute -inset-2 rounded-xl blur-lg opacity-70"
+        animate={{
+          background: mode === "task"
+           ? "radial-gradient(circle, rgba(10,132,255,0.6) 0%, transparent 70%)"
+            : "radial-gradient(circle, rgba(48,209,88,0.6) 0%, transparent 70%)"
+        }}
+        transition={{ duration: 0.5 }}
+      />
+
+      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/60 via-white/30 to-transparent dark:from-white/15 dark:via-white/8" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-80" />
+      <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent" />
+    </motion.div>
+
+    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-px h-7 bg-gradient-to-b from-transparent via-zinc-300/70 to-transparent dark:via-zinc-600/70" />
+
+    <div className="relative z-10 flex h-full">
+      <button
+        onClick={() => {
+          if (mode!== "task") {
+            vibrate([10, 25, 10]);
+            setMode("task");
+          }
+        }}
+        className="flex-1 flex items-center justify-center gap-2.5 active:scale-95 transition-transform"
+      >
+        <Briefcase3D active={mode === "task"} />
+        <motion.span
+          className="font-extrabold text-base tracking-tight"
+          animate={{
+            color: mode === "task"? "#1A1A1A" : "#9CA3AF",
+            scale: mode === "task"? 1.05 : 1
+          }}
+          style={{
+            textShadow: mode === "task"? "0 1px 2px rgba(0,0,0,0.1)" : "none"
+          }}
+        >
+          Task
+        </motion.span>
+      </button>
+
+      <button
+        onClick={() => {
+          if (mode!== "plan") {
+            vibrate([10, 25, 10]);
+            setMode("plan");
+          }
+        }}
+        className="flex-1 flex items-center justify-center gap-2.5 active:scale-95 transition-transform"
+      >
+        <Palm3D active={mode === "plan"} />
+        <motion.span
+          className="font-extrabold text-base tracking-tight"
+          animate={{
+            color: mode === "plan"? "#1A1A1A" : "#9CA3AF",
+            scale: mode === "plan"? 1.05 : 1
+          }}
+          style={{
+            textShadow: mode === "plan"? "0 1px 2px rgba(0,0,0,0.1)" : "none"
+          }}
+        >
+          Plan
+        </motion.span>
+      </button>
+    </div>
+  </div>
+</div>
 
           <CustomFilterBar
             currentFilter={activeTab}
