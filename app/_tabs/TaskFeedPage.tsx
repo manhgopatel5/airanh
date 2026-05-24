@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiInbox, FiRefreshCw, FiNavigation } from "react-icons/fi";
-import { Briefcase3D, Palm3D } from "@/components/icons/LottieIcons";
+import { Briefcase3D, Palm3D } from "@/components/icons/Mode3DIcons";
 import { useRouter } from "next/navigation";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import { onAuthStateChanged, User } from "firebase/auth";
@@ -374,29 +374,29 @@ const theme = {
 
     {/* Icon to, bỏ text */}
     <div className="relative z-10 flex h-full">
-<button
-  onClick={() => {
-    if (mode!== "task") {
-      vibrate([10, 25, 10]);
-      setMode("task");
-    }
-  }}
-  className="relative flex-1 active:scale-95 transition-transform"
->
-  <Briefcase3D active={mode === "task"} />
-</button>
+      <button
+        onClick={() => {
+          if (mode!== "task") {
+            vibrate([10, 25, 10]);
+            setMode("task");
+          }
+        }}
+        className="flex-1 flex items-center justify-center active:scale-90 transition-transform"
+      >
+        <Briefcase3D active={mode === "task"} />
+      </button>
 
-<button
-  onClick={() => {
-    if (mode!== "plan") {
-      vibrate([10, 25, 10]);
-      setMode("plan");
-    }
-  }}
-  className="relative flex-1 active:scale-95 transition-transform"
->
-  <Palm3D active={mode === "plan"} />
-</button>
+      <button
+        onClick={() => {
+          if (mode!== "plan") {
+            vibrate([10, 25, 10]);
+            setMode("plan");
+          }
+        }}
+        className="flex-1 flex items-center justify-center active:scale-90 transition-transform"
+      >
+        <Palm3D active={mode === "plan"} />
+      </button>
     </div>
   </div>
 </div>
