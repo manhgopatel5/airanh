@@ -43,6 +43,8 @@ const nextConfig = {
         'https://*.firebaseapp.com',
         'https://*.firebaseio.com',
         'https://*.firebasedatabase.app',
+        'https://cdn.jsdelivr.net',
+        'https://unpkg.com',
       ].join(' '),
 
       "style-src 'self' 'unsafe-inline'",
@@ -71,7 +73,12 @@ const nextConfig = {
         'https://fcm.googleapis.com',
         'https://*.cloudfunctions.net',
         'https://asia-southeast1-airanh-ba64c.cloudfunctions.net',
+        'https://cdn.jsdelivr.net',
+        'https://unpkg.com',
       ].join(' '),
+
+      "worker-src 'self' blob:",
+      "media-src 'self' blob:",
 
       [
         'frame-src',
@@ -114,6 +121,13 @@ const nextConfig = {
             key: 'Referrer-Policy',
             value: 'strict-origin-when-cross-origin',
           },
+        ],
+      },
+      {
+        source: '/animations/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
     ];
