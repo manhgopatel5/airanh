@@ -263,11 +263,12 @@ const themes = {
       animate={mounted ? { y: 0, opacity: 1 } : { y: 120, opacity: 0 }}
       transition={{ type: "spring", stiffness: 400, damping: 40 }}
       className="fixed bottom-0 left-0 right-0 z-50"
+      data-tab-bar
     >
     <div className="relative w-full">
   <div className="relative">
 <motion.div
-  className="relative bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl transition-colors duration-300"
+  className="relative bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl transition-colors duration-300 pb-[env(safe-area-inset-bottom)]" // <-- THÊM pb-[env(safe-area-inset-bottom)]
   whileHover={{ y: -3 }}
   transition={{ duration: 0.3 }}
 >
