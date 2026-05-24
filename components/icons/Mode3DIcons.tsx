@@ -20,7 +20,6 @@ export const Briefcase3D = ({ active }: { active: boolean }) => (
       times: [0, 0.25, 0.5, 0.75, 1]
     }}
   >
-    {/* Shadow đáy pulse */}
     <motion.div
       className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-2 rounded-full blur-md"
       animate={{
@@ -45,12 +44,17 @@ export const Briefcase3D = ({ active }: { active: boolean }) => (
           <stop offset="100%" stopColor="#0051D5" />
         </linearGradient>
         <linearGradient id="metalShine" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#F5F5F5" />
-          <stop offset="30%" stopColor="#E0E0E0" />
-          <stop offset="50%" stopColor="#BDBDBD" />
-          <stop offset="70%" stopColor="#9E9E9E" />
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="20%" stopColor="#F5F5F5" />
+          <stop offset="40%" stopColor="#E0E0E0" />
+          <stop offset="60%" stopColor="#BDBDBD" />
+          <stop offset="80%" stopColor="#9E9E9E" />
           <stop offset="100%" stopColor="#757575" />
         </linearGradient>
+        <radialGradient id="leatherTexture" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#4DA3FF" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="#0A84FF" stopOpacity="0.1" />
+        </radialGradient>
         <filter id="softShadow" x="-50%" y="-50%" width="200%" height="200%">
           <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#0A84FF" floodOpacity="0.5"/>
           <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000000" floodOpacity="0.25"/>
@@ -69,40 +73,46 @@ export const Briefcase3D = ({ active }: { active: boolean }) => (
       {active && <ellipse cx="16" cy="28.5" rx="11" ry="1.8" fill="#000000" opacity="0.12" />}
 
       <rect x="3" y="9" width="26" height="20" rx="3" fill={active? "url(#briefcaseMain)" : "#E5E7EB"} filter={active? "url(#softShadow)" : "none"} />
+      {active && <rect x="3" y="9" width="26" height="20" rx="3" fill="url(#leatherTexture)" />}
       <rect x="3" y="9" width="26" height="10" rx="3" fill={active? "url(#briefcaseLid)" : "#D1D5DB"} />
 
       {active && (
         <>
-          <path d="M4.5 9.5H27.5" stroke="white" strokeWidth="1.5" opacity="0.7" strokeLinecap="round" />
           <ellipse cx="16" cy="12" rx="8" ry="2" fill="white" opacity="0.15" />
+          <rect x="4.5" y="9.5" width="23" height="1" fill="white" opacity="0.5" rx="0.5" />
         </>
       )}
 
-      <path d="M10.5 9V5.5C10.5 4.67 11.17 4 12 4H20C20.83 4 21.5 4.67 21.5 5.5V9" stroke={active? "#002E7A" : "#9CA3AF"} strokeWidth="3" strokeLinecap="round" filter={active? "url(#blueGlow)" : "none"} />
+      {/* Quai fill, không stroke */}
+      <path d="M10.5 9V5.5C10.5 4.67 11.17 4 12 4H20C20.83 4 21.5 4.67 21.5 5.5V9H10.5Z" fill={active? "#002E7A" : "#9CA3AF"} />
 
-      <g filter={active? "url(#blueGlow)" : "none"}>
+      <g>
         <rect x="13" y="15" width="6" height="4.5" rx="1" fill={active? "url(#metalShine)" : "#9CA3AF"} />
-        <circle cx="16" cy="17.2" r="1.5" fill={active? "#0A84FF" : "#6B7280"} />
-        <rect x="15.3" y="17.2" width="1.4" height="2.5" fill={active? "#5BA3FF" : "#D1D5DB"} />
+        {active && (
+          <motion.g
+            animate={{ rotate: [0, 90, 0] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            style={{ transformOrigin: "16px 17.2px" }}
+          >
+            <circle cx="16" cy="17.2" r="1.5" fill="#0A84FF" />
+            <rect x="15.6" y="16.2" width="0.8" height="2" fill="#FFFFFF" />
+          </motion.g>
+        )}
       </g>
 
       {active && (
         <>
-          <path d="M5 11L8 10L11 11" stroke="white" strokeWidth="2" strokeLinecap="round" opacity="0.8" />
-          <path d="M21 11L24 10L27 11" stroke="white" strokeWidth="2" strokeLinecap="round" opacity="0.8" />
-          <ellipse cx="9" cy="15" rx="2.5" ry="1.2" fill="white" opacity="0.25" />
-          <ellipse cx="23" cy="15" rx="2.5" ry="1.2" fill="white" opacity="0.25" />
+          <rect x="6" y="16" width="3" height="4" rx="0.5" fill="#FFFFFF" opacity="0.35" />
+          <rect x="6.3" y="16.3" width="2.4" height="0.6" fill="#0A84FF" opacity="0.6" />
+          <rect x="6.3" y="17.2" width="2.4" height="0.6" fill="#0A84FF" opacity="0.6" />
         </>
       )}
 
       {active && (
-        <g opacity="0.2">
-          <circle cx="7" cy="19" r="0.6" fill="white" />
-          <circle cx="25" cy="21" r="0.6" fill="white" />
-          <circle cx="16" cy="25" r="0.6" fill="white" />
-          <circle cx="10" cy="24" r="0.4" fill="white" />
-          <circle cx="22" cy="24" r="0.4" fill="white" />
-        </g>
+        <>
+          <ellipse cx="9" cy="15" rx="2.5" ry="1.2" fill="white" opacity="0.2" />
+          <ellipse cx="23" cy="15" rx="2.5" ry="1.2" fill="white" opacity="0.2" />
+        </>
       )}
     </svg>
   </motion.div>
@@ -153,6 +163,11 @@ export const Palm3D = ({ active }: { active: boolean }) => (
           <stop offset="100%" stopColor="#FFD60A" stopOpacity="0" />
         </linearGradient>
 
+        <radialGradient id="cloudGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.3" />
+        </radialGradient>
+
         <linearGradient id="island3D" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="#FFF5E6" />
           <stop offset="20%" stopColor="#FFE4C4" />
@@ -167,6 +182,12 @@ export const Palm3D = ({ active }: { active: boolean }) => (
           <circle cx="2" cy="4" r="0.35" fill="#FFA54F" opacity="0.5" />
           <circle cx="4" cy="1.5" r="0.3" fill="#FF9638" opacity="0.4" />
         </pattern>
+
+        <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#5AC8FA" stopOpacity="0.6" />
+          <stop offset="50%" stopColor="#4DB8F5" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#5AC8FA" stopOpacity="0.6" />
+        </linearGradient>
 
         <linearGradient id="leaf3D" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#C8FFD4" />
@@ -212,20 +233,30 @@ export const Palm3D = ({ active }: { active: boolean }) => (
       </defs>
 
       {active && (
+        <motion.g
+          animate={{ x: [-2, 2, -2] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <ellipse cx="8" cy="5" rx="2.5" ry="1.2" fill="url(#cloudGrad)" opacity="0.7" />
+          <ellipse cx="10" cy="5.5" rx="2" ry="1" fill="url(#cloudGrad)" opacity="0.6" />
+        </motion.g>
+      )}
+
+      {active && (
         <g filter="url(#sunGlow)">
           <motion.g
             animate={{ rotate: [0, 360] }}
             transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
             style={{ transformOrigin: "24px 7px" }}
           >
-            <line x1="24" y1="1.5" x2="24" y2="0" stroke="url(#rayGrad)" strokeWidth="2" strokeLinecap="round" />
-            <line x1="29.5" y1="7" x2="31.5" y2="7" stroke="url(#rayGrad)" strokeWidth="2" strokeLinecap="round" />
-            <line x1="18.5" y1="7" x2="16.5" y2="7" stroke="url(#rayGrad)" strokeWidth="2" strokeLinecap="round" />
-            <line x1="24" y1="12.5" x2="24" y2="14.5" stroke="url(#rayGrad)" strokeWidth="2" strokeLinecap="round" />
-            <line x1="28" y1="3" x2="29.5" y2="1.5" stroke="url(#rayGrad)" strokeWidth="1.5" strokeLinecap="round" />
-            <line x1="20" y1="3" x2="18.5" y2="1.5" stroke="url(#rayGrad)" strokeWidth="1.5" strokeLinecap="round" />
-            <line x1="28" y1="11" x2="29.5" y2="12.5" stroke="url(#rayGrad)" strokeWidth="1.5" strokeLinecap="round" />
-            <line x1="20" y1="11" x2="18.5" y2="12.5" stroke="url(#rayGrad)" strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="24" y1="1.5" x2="24" y2="0" stroke="url(#rayGrad)" strokeWidth="2" />
+            <line x1="29.5" y1="7" x2="31.5" y2="7" stroke="url(#rayGrad)" strokeWidth="2" />
+            <line x1="18.5" y1="7" x2="16.5" y2="7" stroke="url(#rayGrad)" strokeWidth="2" />
+            <line x1="24" y1="12.5" x2="24" y2="14.5" stroke="url(#rayGrad)" strokeWidth="2" />
+            <line x1="28" y1="3" x2="29.5" y2="1.5" stroke="url(#rayGrad)" strokeWidth="1.5" />
+            <line x1="20" y1="3" x2="18.5" y2="1.5" stroke="url(#rayGrad)" strokeWidth="1.5" />
+            <line x1="28" y1="11" x2="29.5" y2="12.5" stroke="url(#rayGrad)" strokeWidth="1.5" />
+            <line x1="20" y1="11" x2="18.5" y2="12.5" stroke="url(#rayGrad)" strokeWidth="1.5" />
           </motion.g>
 
           <motion.circle
@@ -248,7 +279,40 @@ export const Palm3D = ({ active }: { active: boolean }) => (
           <ellipse cx="16" cy="23.8" rx="7" ry="1.8" fill="#FFFFFF" opacity="0.4" />
           <ellipse cx="11" cy="24.5" rx="1.2" ry="0.6" fill="#FFD4A3" opacity="0.7" />
           <ellipse cx="21" cy="25.5" rx="1.8" ry="0.7" fill="#FFD4A3" opacity="0.7" />
+          <ellipse cx="16" cy="24" rx="1.5" ry="0.6" fill="#FFD4A3" opacity="0.6" />
+          
+          <motion.path
+            d="M6 26.5C8 26 10 26.5 12 26C14 25.5 16 26 18 26.5C20 27 22 26.5 24 26C26 25.5 28 26 30 26.5"
+            stroke="url(#waveGrad)"
+            strokeWidth="1.5"
+            fill="none"
+            animate={{ x: [0, 4, 0] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.path
+            d="M6 27.5C8 27 10 27.5 12 27C14 26.5 16 27 18 27.5C20 28 22 27.5 24 27C26 26.5 28 27 30 27.5"
+            stroke="url(#waveGrad)"
+            strokeWidth="1.2"
+            fill="none"
+            opacity="0.6"
+            animate={{ x: [0, -4, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          />
         </>
+      )}
+
+      {active && (
+        <g opacity="0.8">
+          <ellipse cx="9" cy="23" rx="1" ry="0.8" fill="#8B6F47" />
+          <ellipse cx="9" cy="22" rx="0.8" ry="0.6" fill="#6B5345" />
+          <rect x="8.7" y="20" width="0.6" height="2" fill="#7FE896" />
+          <ellipse cx="9" cy="19" rx="0.8" ry="0.4" fill="#5BEB7B" transform="rotate(-20 9 19)" />
+          
+          <ellipse cx="23" cy="24" rx="1" ry="0.8" fill="#8B6F47" />
+          <ellipse cx="23" cy="23" rx="0.8" ry="0.6" fill="#6B5345" />
+          <rect x="22.7" y="21" width="0.6" height="2" fill="#7FE896" />
+          <ellipse cx="23" cy="20" rx="0.8" ry="0.4" fill="#5BEB7B" transform="rotate(20 23 20)" />
+        </g>
       )}
 
       <g filter={active? "url(#greenGlow)" : "none"}>
