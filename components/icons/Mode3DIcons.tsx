@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 
 export const Briefcase3D = ({ active }: { active: boolean }) => (
   <motion.div
-    className="absolute inset-0 flex items-center justify-center"
+    className="relative w-12 h-12 flex items-center justify-center"
     animate={active? {
       y: [0, -5, 0],
       scale: [1, 1.18, 1],
@@ -32,7 +32,7 @@ export const Briefcase3D = ({ active }: { active: boolean }) => (
       transition={{ duration: 1.8, repeat: active? Infinity : 0, ease: "easeInOut" }}
     />
 
-<svg viewBox="2 1 28 29" fill="none" className="w-full h-full">
+    <svg viewBox="2 3 28 26" fill="none" className="w-full h-full">
       <defs>
         <linearGradient id="briefcaseMain" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="#A5D6FF" />
@@ -66,7 +66,6 @@ export const Briefcase3D = ({ active }: { active: boolean }) => (
 
       {active && <ellipse cx="16" cy="29" rx="12" ry="2" fill="#000000" opacity="0.15" />}
 
-      {/* Bỏ filter={active? "url(#softShadow)" : "none"} */}
       <rect x="2.5" y="8.5" width="27" height="21" rx="3.5" fill={active? "url(#briefcaseMain)" : "#E5E7EB"} />
       {active && <rect x="2.5" y="8.5" width="27" height="21" rx="3.5" fill="url(#leatherTexture)" />}
       <rect x="2.5" y="8.5" width="27" height="11" rx="3.5" fill={active? "url(#briefcaseLid)" : "#D1D5DB"} />
@@ -121,7 +120,7 @@ export const Briefcase3D = ({ active }: { active: boolean }) => (
 
 export const Palm3D = ({ active }: { active: boolean }) => (
   <motion.div
-    className="absolute inset-0 flex items-center justify-center"
+    className="relative w-12 h-12 flex items-center justify-center"
     animate={active? {
       y: [0, -5, 0],
       scale: [1, 1.18, 1],
@@ -150,7 +149,7 @@ export const Palm3D = ({ active }: { active: boolean }) => (
       transition={{ duration: 1.8, repeat: active? Infinity : 0, ease: "easeInOut" }}
     />
 
-<svg viewBox="2 3 28 26" fill="none" className="w-full h-full">
+    <svg viewBox="2 1 28 29" fill="none" className="w-full h-full">
       <defs>
         <radialGradient id="sun3D">
           <stop offset="0%" stopColor="#FFFFFF" />
@@ -265,7 +264,6 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         </g>
       )}
 
-      {/* Bỏ filter={active? "url(#palmShadow)" : "none"} */}
       <ellipse cx="16" cy="25.5" rx="11" ry="4.5" fill={active? "url(#island3D)" : "#E5E7EB"} />
       {active && (
         <>
