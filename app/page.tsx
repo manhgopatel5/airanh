@@ -221,10 +221,10 @@ export default function AppContainer() {
       <Toaster richColors position="top-center" toastOptions={{ duration: 2000, style: { fontSize: "14px" } }} />
 
       {/* FIX: Chỉ 1 scroll container + padding-bottom động theo tabBarHeight */}
-      <div
-        className="flex-1 w-full max-w-2xl mx-auto overflow-y-auto [-webkit-overflow-scrolling:touch] overscroll-y-contain"
-        style={{ paddingBottom: tabBarHeight }}
-      >
+ <div
+  className="flex-1 w-full max-w-2xl mx-auto overflow-y-auto [-webkit-overflow-scrolling:touch] overscroll-y-contain"
+  style={{ paddingBottom: tabBarHeight + 24 }} // +24px để thở
+>
         <div className={currentMainTab!== "home"? "hidden" : ""}>
           {loadedTabs.has("home") && <TaskFeedPage />}
         </div>
