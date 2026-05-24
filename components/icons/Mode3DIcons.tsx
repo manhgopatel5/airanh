@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 
 export const Briefcase3D = ({ active }: { active: boolean }) => (
   <motion.div
-    className="relative w-9 h-9"
+    className="absolute inset-0 flex items-center justify-center"
     animate={active? {
       y: [0, -5, 0],
       scale: [1, 1.18, 1],
@@ -53,7 +53,7 @@ export const Briefcase3D = ({ active }: { active: boolean }) => (
           <stop offset="15%" stopColor="#F8F8F8" />
           <stop offset="30%" stopColor="#E8E8E8" />
           <stop offset="50%" stopColor="#D0D0D0" />
-          <stop offset="70%" stopColor="#B0B0" />
+          <stop offset="70%" stopColor="#B0B0B0" />
           <stop offset="85%" stopColor="#909090" />
           <stop offset="100%" stopColor="#707070" />
         </linearGradient>
@@ -62,24 +62,12 @@ export const Briefcase3D = ({ active }: { active: boolean }) => (
           <stop offset="50%" stopColor="#4DA3FF" stopOpacity="0.2" />
           <stop offset="100%" stopColor="#0A84FF" stopOpacity="0.05" />
         </radialGradient>
-        <filter id="softShadow" x="-100%" y="-100%" width="300%" height="300%">
-          <feDropShadow dx="0" dy="5" stdDeviation="5" floodColor="#0A84FF" floodOpacity="0.6"/>
-          <feDropShadow dx="0" dy="3" stdDeviation="3" floodColor="#000000" floodOpacity="0.3"/>
-        </filter>
-        <filter id="blueGlow">
-          <feGaussianBlur stdDeviation="3" result="blur"/>
-          <feFlood floodColor="#0A84FF" floodOpacity="1" result="glow"/>
-          <feComposite in="glow" in2="blur" operator="in" result="coloredBlur"/>
-          <feMerge>
-            <feMergeNode in="coloredBlur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
       </defs>
 
       {active && <ellipse cx="16" cy="29" rx="12" ry="2" fill="#000000" opacity="0.15" />}
 
-      <rect x="2.5" y="8.5" width="27" height="21" rx="3.5" fill={active? "url(#briefcaseMain)" : "#E5E7EB"} filter={active? "url(#softShadow)" : "none"} />
+      {/* Bỏ filter={active? "url(#softShadow)" : "none"} */}
+      <rect x="2.5" y="8.5" width="27" height="21" rx="3.5" fill={active? "url(#briefcaseMain)" : "#E5E7EB"} />
       {active && <rect x="2.5" y="8.5" width="27" height="21" rx="3.5" fill="url(#leatherTexture)" />}
       <rect x="2.5" y="8.5" width="27" height="11" rx="3.5" fill={active? "url(#briefcaseLid)" : "#D1D5DB"} />
 
@@ -91,10 +79,8 @@ export const Briefcase3D = ({ active }: { active: boolean }) => (
         </>
       )}
 
-      {/* Quai fill */}
       <path d="M10 8.5V5C10 4.17 10.67 3.5 11.5 3.5H20.5C21.33 3.5 22 4.17 22 5V8.5H10.5Z" fill={active? "#002E7A" : "#9CA3AF"} />
 
-      {/* Khóa xoay 3D */}
       <g>
         <rect x="12.5" y="14.5" width="7" height="5" rx="1.2" fill={active? "url(#metalShine)" : "#9CA3AF"} />
         {active && (
@@ -109,7 +95,6 @@ export const Briefcase3D = ({ active }: { active: boolean }) => (
         )}
       </g>
 
-      {/* Card holder + RFID chip */}
       {active && (
         <motion.g
           animate={{ opacity: [0.3, 0.5, 0.3] }}
@@ -119,7 +104,6 @@ export const Briefcase3D = ({ active }: { active: boolean }) => (
           <rect x="5.8" y="15.8" width="2.9" height="0.7" fill="#0A84FF" opacity="0.7" />
           <rect x="5.8" y="16.8" width="2.9" height="0.7" fill="#0A84FF" opacity="0.7" />
           <rect x="5.8" y="17.8" width="2.9" height="0.7" fill="#0A84FF" opacity="0.7" />
-          {/* RFID */}
           <circle cx="7.3" cy="19.2" r="0.4" fill="#FFD60A" opacity="0.8" />
         </motion.g>
       )}
@@ -137,7 +121,7 @@ export const Briefcase3D = ({ active }: { active: boolean }) => (
 
 export const Palm3D = ({ active }: { active: boolean }) => (
   <motion.div
-    className="relative w-9 h-9"
+    className="absolute inset-0 flex items-center justify-center"
     animate={active? {
       y: [0, -5, 0],
       scale: [1, 1.18, 1],
@@ -176,20 +160,17 @@ export const Palm3D = ({ active }: { active: boolean }) => (
           <stop offset="75%" stopColor="#FFD60A" />
           <stop offset="100%" stopColor="#FF9500" />
         </radialGradient>
-
         <linearGradient id="rayGrad" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="#FFD60A" stopOpacity="1" />
           <stop offset="30%" stopColor="#FFD60A" stopOpacity="0.8" />
           <stop offset="70%" stopColor="#FFD60A" stopOpacity="0.4" />
           <stop offset="100%" stopColor="#FFD60A" stopOpacity="0" />
         </linearGradient>
-
         <radialGradient id="cloudGrad" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
           <stop offset="70%" stopColor="#FFFFFF" stopOpacity="0.6" />
           <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.2" />
         </radialGradient>
-
         <linearGradient id="island3D" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="#FFF9F0" />
           <stop offset="15%" stopColor="#FFF5E6" />
@@ -198,7 +179,6 @@ export const Palm3D = ({ active }: { active: boolean }) => (
           <stop offset="85%" stopColor="#FFB366" />
           <stop offset="100%" stopColor="#FF9F40" />
         </linearGradient>
-
         <pattern id="sandPattern" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse">
           <circle cx="1" cy="1" r="0.6" fill="#FFC47D" opacity="0.8" />
           <circle cx="4" cy="2.5" r="0.5" fill="#FFB366" opacity="0.7" />
@@ -206,7 +186,6 @@ export const Palm3D = ({ active }: { active: boolean }) => (
           <circle cx="5" cy="1.5" r="0.35" fill="#FF9638" opacity="0.5" />
           <circle cx="3" cy="3.5" r="0.3" fill="#FF8520" opacity="0.4" />
         </pattern>
-
         <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stopColor="#5AC8FA" stopOpacity="0.7" />
           <stop offset="25%" stopColor="#4DB8F5" stopOpacity="0.5" />
@@ -214,7 +193,6 @@ export const Palm3D = ({ active }: { active: boolean }) => (
           <stop offset="75%" stopColor="#4DB8F5" stopOpacity="0.5" />
           <stop offset="100%" stopColor="#5AC8FA" stopOpacity="0.7" />
         </linearGradient>
-
         <linearGradient id="leaf3D" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#D4FFE0" />
           <stop offset="20%" stopColor="#B8FFC7" />
@@ -223,7 +201,6 @@ export const Palm3D = ({ active }: { active: boolean }) => (
           <stop offset="80%" stopColor="#5BEB7B" />
           <stop offset="100%" stopColor="#30D158" />
         </linearGradient>
-
         <linearGradient id="trunk3D" x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stopColor="#5A4435" />
           <stop offset="10%" stopColor="#6B5345" />
@@ -235,34 +212,8 @@ export const Palm3D = ({ active }: { active: boolean }) => (
           <stop offset="90%" stopColor="#6B5345" />
           <stop offset="100%" stopColor="#5A4435" />
         </linearGradient>
-
-        <filter id="greenGlow">
-          <feGaussianBlur stdDeviation="3.5" result="blur"/>
-          <feFlood floodColor="#30D158" floodOpacity="0.9" result="glow"/>
-          <feComposite in="glow" in2="blur" operator="in" result="coloredBlur"/>
-          <feMerge>
-            <feMergeNode in="coloredBlur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-
-        <filter id="sunGlow">
-          <feGaussianBlur stdDeviation="2.5" result="blur"/>
-          <feFlood floodColor="#FFD60A" floodOpacity="1" result="glow"/>
-          <feComposite in="glow" in2="blur" operator="in" result="coloredBlur"/>
-          <feMerge>
-            <feMergeNode in="coloredBlur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-
-        <filter id="palmShadow">
-          <feDropShadow dx="0" dy="5" stdDeviation="5" floodColor="#30D158" floodOpacity="0.5"/>
-          <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000000" floodOpacity="0.2"/>
-        </filter>
       </defs>
 
-      {/* Chim bay */}
       {active && (
         <motion.g
           animate={{ x: [-5, 35, -5] }}
@@ -273,7 +224,6 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         </motion.g>
       )}
 
-      {/* Mây bay */}
       {active && (
         <motion.g
           animate={{ x: [-3, 3, -3] }}
@@ -286,7 +236,7 @@ export const Palm3D = ({ active }: { active: boolean }) => (
       )}
 
       {active && (
-        <g filter="url(#sunGlow)">
+        <g>
           <motion.g
             animate={{ rotate: [0, 360] }}
             transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
@@ -301,7 +251,6 @@ export const Palm3D = ({ active }: { active: boolean }) => (
             <line x1="28" y1="10.5" x2="29.5" y2="12" stroke="url(#rayGrad)" strokeWidth="2" />
             <line x1="20" y1="10.5" x2="18.5" y2="12" stroke="url(#rayGrad)" strokeWidth="2" />
           </motion.g>
-
           <motion.circle
             cx="24" cy="6.5" r="4"
             fill="url(#sun3D)"
@@ -311,13 +260,13 @@ export const Palm3D = ({ active }: { active: boolean }) => (
             }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
           />
-          
           <circle cx="24" cy="6.5" r="6" fill="#FFD60A" opacity="0.2" />
           <circle cx="24" cy="6.5" r="8" fill="#FFD60A" opacity="0.1" />
         </g>
       )}
 
-      <ellipse cx="16" cy="25.5" rx="11" ry="4.5" fill={active? "url(#island3D)" : "#E5E7EB"} filter={active? "url(#palmShadow)" : "none"} />
+      {/* Bỏ filter={active? "url(#palmShadow)" : "none"} */}
+      <ellipse cx="16" cy="25.5" rx="11" ry="4.5" fill={active? "url(#island3D)" : "#E5E7EB"} />
       {active && (
         <>
           <ellipse cx="16" cy="25.5" rx="11" ry="4.5" fill="url(#sandPattern)" />
@@ -329,7 +278,6 @@ export const Palm3D = ({ active }: { active: boolean }) => (
           <ellipse cx="12" cy="25.8" rx="1" ry="0.5" fill="#FFC47D" opacity="0.6" />
           <ellipse cx="20" cy="25.2" rx="1.3" ry="0.6" fill="#FFC47D" opacity="0.6" />
           
-          {/* Sóng 4 lớp */}
           <motion.path
             d="M5 27C7 26.5 9 27 11 26.5C13 26 15 26.5 17 27C19 27.5 21 27 23 26.5C25 26 27 26.5 29 27"
             stroke="url(#waveGrad)"
@@ -339,7 +287,7 @@ export const Palm3D = ({ active }: { active: boolean }) => (
             transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
           />
           <motion.path
-            d="M5 28C7 27.5 9 28 11 27.5C13 27 15 27.5 17 28C19 28.5 21 28 23 27.5C25 27 27.5 29 28"
+            d="M5 28C7 27.5 9 28 11 27.5C13 27 15 27.5 17 28C19 28.5 21 28 23 27.5C25 27 27 28 29 28.5"
             stroke="url(#waveGrad)"
             strokeWidth="1.5"
             fill="none"
@@ -356,21 +304,11 @@ export const Palm3D = ({ active }: { active: boolean }) => (
             animate={{ x: [0, 3, 0] }}
             transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
           />
-          <motion.path
-            d="M5 30C7 29.5 9 30 11 29.5C13 29 15 30 17 30.5C19 31 21 30.5 23 30C25 29.5 27 30 29 30.5"
-            stroke="url(#waveGrad)"
-            strokeWidth="0.8"
-            fill="none"
-            opacity="0.3"
-            animate={{ x: [0, -3, 0] }}
-            transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
-          />
         </>
       )}
 
       {active && (
         <g opacity="0.9">
-          {/* Dừa 1 */}
           <ellipse cx="8.5" cy="22.5" rx="1.2" ry="1" fill="#8B6F47" />
           <ellipse cx="8.5" cy="21.5" rx="1" ry="0.8" fill="#6B5345" />
           <rect x="8.2" y="19.5" width="0.6" height="2.5" fill="#7FE896" />
@@ -381,7 +319,6 @@ export const Palm3D = ({ active }: { active: boolean }) => (
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           />
           
-          {/* Dừa 2 */}
           <ellipse cx="23.5" cy="23.5" rx="1.2" ry="1" fill="#8B6F47" />
           <ellipse cx="23.5" cy="22.5" rx="1" ry="0.8" fill="#6B5345" />
           <rect x="23.2" y="20.5" width="0.6" height="2.5" fill="#7FE896" />
@@ -392,13 +329,12 @@ export const Palm3D = ({ active }: { active: boolean }) => (
             transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
           />
           
-          {/* Dừa 3 */}
           <ellipse cx="14" cy="23" rx="1" ry="0.8" fill="#8B6F47" />
           <ellipse cx="14" cy="22" rx="0.8" ry="0.6" fill="#6B5345" />
         </g>
       )}
 
-      <g filter={active? "url(#greenGlow)" : "none"}>
+      <g>
         <rect x="14.5" y="11.5" width="3" height="14" rx="1.5" fill={active? "url(#trunk3D)" : "#D1D5DB"} />
         {active && (
           <>
@@ -413,7 +349,7 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         )}
       </g>
 
-      <g filter={active? "url(#greenGlow)" : "none"}>
+      <g>
         <motion.ellipse
           cx="9.5" cy="11.5" rx="5.8" ry="2.8"
           fill={active? "url(#leaf3D)" : "#D1D5DB"}
@@ -432,7 +368,7 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         )}
       </g>
 
-      <g filter={active? "url(#greenGlow)" : "none"}>
+      <g>
         <motion.ellipse
           cx="22.5" cy="11.5" rx="5.8" ry="2.8"
           fill={active? "url(#leaf3D)" : "#D1D5DB"}
@@ -451,7 +387,7 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         )}
       </g>
 
-      <g filter={active? "url(#greenGlow)" : "none"}>
+      <g>
         <motion.ellipse
           cx="16" cy="8" rx="4.2" ry="3.5"
           fill={active? "url(#leaf3D)" : "#D1D5DB"}
