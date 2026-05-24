@@ -308,104 +308,88 @@ const theme = {
       {/* FIX: Xóa min-h-screen, không tự scroll */}
       <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 select-none">
         <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl">
-        <div className="px-4 pt-4 pb-2">
-  <div className="relative h-16 rounded-2xl bg-gradient-to-br from-zinc-50 via-white to-zinc-100 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950 p-1.5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.8),inset_0_-1px_0_0_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),inset_0_-1px_0_0_rgba(0,0,0,0.5),0_4px_12px_rgba(0,0,0,0.3)]">
+      <div className="px-4 pt-4 pb-2">
+  <div className="relative h-14 rounded-2xl bg-white dark:bg-zinc-900 p-1 shadow-[0_2px_8px_rgba(0,0,0,0.06),inset_0_1px_0_0_rgba(255,255,255,0.8)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_0_rgba(255,255,255,0.05)]">
 
+    {/* Pill trượt có nền riêng */}
     <motion.div
-      className="absolute -inset-3 rounded-2xl opacity-50 blur-2xl"
+      className="absolute top-1 bottom-1 rounded-xl overflow-hidden"
       animate={{
-        background: mode === "task"
-       ? "radial-gradient(ellipse at 25% 50%, rgba(10,132,255,0.4) 0%, rgba(10,132,255,0.1) 40%, transparent 70%)"
-          : "radial-gradient(ellipse at 75% 50%, rgba(48,209,88,0.4) 0%, rgba(48,209,88,0.1) 40%, transparent 70%)"
-      }}
-      transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-    />
-
-    <motion.div
-      className="absolute top-1.5 bottom-1.5 rounded-xl overflow-hidden"
-      animate={{
-        x: mode === "task"? "1.5%" : "98.5%",
+        x: mode === "task"? "2%" : "98%",
         left: mode === "task"? 0 : "auto",
         right: mode === "plan"? 0 : "auto"
       }}
-      style={{ width: "49.2%" }}
+      style={{ width: "49%" }}
       transition={{
         type: "spring",
-        stiffness: 320,
-        damping: 32,
-        mass: 0.9
+        stiffness: 350,
+        damping: 35,
+        mass: 0.8
       }}
     >
+      {/* Nền pill đổi màu: Xanh dương cho Task, Xanh lá cho Plan */}
       <motion.div
-        className="absolute inset-0"
+        className="absolute inset-0 rounded-xl"
         animate={{
           background: mode === "task"
-         ? "linear-gradient(135deg, rgba(139,196,255,0.3) 0%, rgba(91,157,255,0.25) 50%, rgba(10,132,255,0.2) 100%)"
-            : "linear-gradient(135deg, rgba(159,255,176,0.3) 0%, rgba(91,235,123,0.25) 50%, rgba(48,209,88,0.2) 100%)"
+         ? "linear-gradient(135deg, #E3F2FF 0%, #D1E9FF 50%, #B8DEFF 100%)"
+            : "linear-gradient(135deg, #E8FFF0 0%, #D4F7E0 50%, #BEF0CE 100%)",
+          boxShadow: mode === "task"
+         ? "inset 0 1px 2px rgba(10,132,255,0.2), inset 0 -1px 1px rgba(0,81,213,0.1)"
+            : "inset 0 1px 2px rgba(48,209,88,0.2), inset 0 -1px 1px rgba(40,180,76,0.1)"
         }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.4 }}
       />
 
-      <motion.div
-        className="absolute -inset-2 rounded-xl blur-lg opacity-70"
-        animate={{
-          background: mode === "task"
-           ? "radial-gradient(circle, rgba(10,132,255,0.6) 0%, transparent 70%)"
-            : "radial-gradient(circle, rgba(48,209,88,0.6) 0%, transparent 70%)"
-        }}
-        transition={{ duration: 0.5 }}
-      />
+      {/* Highlight viền trên */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-90" />
 
-      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/60 via-white/30 to-transparent dark:from-white/15 dark:via-white/8" />
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-80" />
-      <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent" />
+      {/* Highlight viền trái */}
+      <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent" />
     </motion.div>
 
-    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-px h-7 bg-gradient-to-b from-transparent via-zinc-300/70 to-transparent dark:via-zinc-600/70" />
+    {/* Divider giữa */}
+    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-px h-6 bg-zinc-200/80 dark:bg-zinc-700/80" />
 
     <div className="relative z-10 flex h-full">
+      {/* TASK - XANH DƯƠNG */}
       <button
         onClick={() => {
           if (mode!== "task") {
-            vibrate([10, 25, 10]);
+            vibrate([8, 20, 8]);
             setMode("task");
           }
         }}
-        className="flex-1 flex items-center justify-center gap-2.5 active:scale-95 transition-transform"
+        className="flex-1 flex items-center justify-center gap-2 active:scale-95 transition-transform"
       >
         <Briefcase3D active={mode === "task"} />
         <motion.span
-          className="font-extrabold text-base tracking-tight"
+          className="font-bold text-[15px] tracking-tight"
           animate={{
             color: mode === "task"? "#1A1A1A" : "#9CA3AF",
-            scale: mode === "task"? 1.05 : 1
-          }}
-          style={{
-            textShadow: mode === "task"? "0 1px 2px rgba(0,0,0,0.1)" : "none"
+            scale: mode === "task"? 1.02 : 1
           }}
         >
           Task
         </motion.span>
       </button>
 
+      {/* PLAN - XANH LÁ */}
       <button
         onClick={() => {
           if (mode!== "plan") {
-            vibrate([10, 25, 10]);
+            vibrate([8, 20, 8]);
             setMode("plan");
           }
         }}
-        className="flex-1 flex items-center justify-center gap-2.5 active:scale-95 transition-transform"
+        className="flex-1 flex items-center justify-center gap-2 active:scale-95 transition-transform"
       >
         <Palm3D active={mode === "plan"} />
         <motion.span
-          className="font-extrabold text-base tracking-tight"
+          className="font-bold text-[15px] tracking-tight"
           animate={{
             color: mode === "plan"? "#1A1A1A" : "#9CA3AF",
-            scale: mode === "plan"? 1.05 : 1
-          }}
-          style={{
-            textShadow: mode === "plan"? "0 1px 2px rgba(0,0,0,0.1)" : "none"
+            scale: mode === "plan"? 1.02 : 1
           }}
         >
           Plan
