@@ -215,21 +215,21 @@ export default function AppContainer() {
   }
 
   return (
-<div className="h-screen flex flex-col font-sans bg-white dark:bg-zinc-950 select-none relative">
+    <div className="h-screen flex flex-col font-sans bg-white dark:bg-zinc-950 select-none relative">
       <Toaster richColors position="top-center" toastOptions={{ duration: 2000, style: { fontSize: "14px" } }} />
 
-      {/* Main content - mỗi tab 1 scroll container riêng */}
-<div className="flex-1 w-full max-w-2xl mx-auto">
-<div className={`h-full overflow-y-auto [-webkit-overflow-scrolling:touch] ${currentMainTab !== "home" ? "hidden" : ""}`}>
+      {/* FIX: Chỉ 1 scroll container duy nhất ở cha */}
+      <div className="flex-1 w-full max-w-2xl mx-auto overflow-y-auto [-webkit-overflow-scrolling:touch]">
+        <div className={currentMainTab!== "home"? "hidden" : ""}>
           {loadedTabs.has("home") && <TaskFeedPage />}
         </div>
-        <div className={`h-full overflow-y-auto ${currentMainTab!== "messages"? "hidden" : ""}`}>
+        <div className={currentMainTab!== "messages"? "hidden" : ""}>
           {loadedTabs.has("messages") && <ChatClient />}
         </div>
-        <div className={`h-full overflow-y-auto ${currentMainTab!== "tasks"? "hidden" : ""}`}>
+        <div className={currentMainTab!== "tasks"? "hidden" : ""}>
           {loadedTabs.has("tasks") && <TasksPage />}
         </div>
-        <div className={`h-full overflow-y-auto ${currentMainTab!== "profile"? "hidden" : ""}`}>
+        <div className={currentMainTab!== "profile"? "hidden" : ""}>
           {loadedTabs.has("profile") && <ProfileTabContent />}
         </div>
       </div>
@@ -277,7 +277,7 @@ export default function AppContainer() {
        .scrollbar-hide::-webkit-scrollbar{display:none}
        .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
         html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
-body{overscroll-behavior-y:auto}
+        body{overscroll-behavior-y:contain}
       `}</style>
     </div>
   );
