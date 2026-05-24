@@ -224,44 +224,49 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         </motion.g>
       )}
 
-   {active && (
+{active && (
   <g>
-    {/* Tia nắng tỏa từ tâm - không xoay */}
-    <g>
-      {[...Array(12)].map((_, i) => {
-        const angle = (i * 30) * Math.PI / 180;
-        const x1 = 24 + Math.cos(angle) * 5.5;
-        const y1 = 6.5 + Math.sin(angle) * 5.5;
-        const x2 = 24 + Math.cos(angle) * 8;
-        const y2 = 6.5 + Math.sin(angle) * 8;
-        return (
-          <motion.line 
-            key={i}
-            x1={x1} y1={y1} x2={x2} y2={y2} 
-            stroke="url(#rayGrad)" 
-            strokeWidth={i % 3 === 0 ? "2.5" : "1.8"}
-            strokeLinecap="round"
-            animate={{ opacity: [0.6, 1, 0.6] }}
-            transition={{ 
-              duration: 2, 
-              repeat: Infinity, 
-              ease: "easeInOut",
-              delay: i * 0.1 
-            }}
-          />
-        );
-      })}
-    </g>
+    {/* Tia nắng tỏa từ tâm - không xoay, chỉ pulse */}
+    {[...Array(16)].map((_, i) => {
+      const angle = (i * 22.5) * Math.PI / 180;
+      const x1 = 24 + Math.cos(angle) * 5.2;
+      const y1 = 6.5 + Math.sin(angle) * 5.2;
+      const x2 = 24 + Math.cos(angle) * 9;
+      const y2 = 6.5 + Math.sin(angle) * 9;
+      return (
+        <motion.line 
+          key={i}
+          x1={x1} y1={y1} x2={x2} y2={y2} 
+          stroke="#FFD60A"
+          strokeWidth={i % 2 === 0 ? "2.8" : "1.8"}
+          strokeLinecap="round"
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ 
+            pathLength: [0, 1, 1, 0],
+            opacity: [0, 1, 1, 0],
+            scale: [0.8, 1, 1, 0.8]
+          }}
+          transition={{ 
+            duration: 1.5, 
+            repeat: Infinity, 
+            ease: "easeInOut",
+            delay: i * 0.08,
+            repeatDelay: 0.5
+          }}
+          style={{ transformOrigin: "24px 6.5px" }}
+        />
+      );
+    })}
     
     {/* Mặt trời */}
     <motion.circle
       cx="24" cy="6.5" r="4"
       fill="url(#sun3D)"
       animate={{
-        scale: [1, 1.15, 1],
-        opacity: [1, 0.9, 1]
+        scale: [1, 1.2, 1],
+        filter: ["brightness(1)", "brightness(1.3)", "brightness(1)"]
       }}
-      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
     />
   </g>
 )}
