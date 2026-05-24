@@ -389,13 +389,7 @@ export default function TaskFeedPage() {
                   <FiNavigation /> Bật định vị ngay
                 </button>
               ) : (
-                <button
-                  onClick={handleRefresh}
-                  className="px-6 h-11 rounded-xl text-white text-sm font-semibold active:scale-95 transition-all flex items-center gap-2 mx-auto"
-                  style={{ background: theme[mode].gradient }}
-                >
-                  <FiRefreshCw /> Tải lại
-                </button>
+       
               )}
             </motion.div>
           ) : (
