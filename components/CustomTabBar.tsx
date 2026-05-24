@@ -268,7 +268,7 @@ const themes = {
     <div className="relative w-full">
   <div className="relative">
 <motion.div
-  className="relative bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl transition-colors duration-300 pb-[env(safe-area-inset-bottom)]" // <-- THÊM pb-[env(safe-area-inset-bottom)]
+  className="relative bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl transition-colors duration-300 pb-1" // <-- ĐỔI THÀNH pb-1
   whileHover={{ y: -3 }}
   transition={{ duration: 0.3 }}
 >
