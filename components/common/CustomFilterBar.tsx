@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Search, X } from "lucide-react";
 import { useAppStore } from "@/store/app";
 import React, { useState, useEffect } from "react";
