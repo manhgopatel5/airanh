@@ -323,14 +323,13 @@ const theme = {
     />
 
     {/* Pill trượt có nền */}
+    
     <motion.div
       className="absolute top-1.5 bottom-1.5 rounded-xl overflow-hidden"
       animate={{
-        x: mode === "task"? "1.5%" : "98.5%",
-        left: mode === "task"? 0 : "auto",
-        right: mode === "plan"? 0 : "auto"
+        left: mode === "task" ? "6px" : "calc(50% + 3px)",
+        width: "calc(50% - 9px)"
       }}
-      style={{ width: "49.2%" }}
       transition={{
         type: "spring",
         stiffness: 380,
