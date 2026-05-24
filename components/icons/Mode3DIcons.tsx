@@ -213,8 +213,6 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         </linearGradient>
       </defs>
 
-      {/* Bỏ con chim đen */}
-
       {active && (
         <motion.g
           animate={{ x: [-3, 3, -3] }}
@@ -226,35 +224,47 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         </motion.g>
       )}
 
-      {active && (
-        <g>
-          <motion.g
-            animate={{ rotate: [0, 360] }}
-            transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-            style={{ transformOrigin: "24px 6.5px" }}
-          >
-            <line x1="24" y1="1" x2="24" y2="-0.5" stroke="url(#rayGrad)" strokeWidth="2.5" />
-            <line x1="29.5" y1="6.5" x2="31.5" y2="6.5" stroke="url(#rayGrad)" strokeWidth="2.5" />
-            <line x1="18.5" y1="6.5" x2="16.5" y2="6.5" stroke="url(#rayGrad)" strokeWidth="2.5" />
-            <line x1="24" y1="12" x2="24" y2="14" stroke="url(#rayGrad)" strokeWidth="2.5" />
-            <line x1="28" y1="2.5" x2="29.5" y2="1" stroke="url(#rayGrad)" strokeWidth="2" />
-            <line x1="20" y1="2.5" x2="18.5" y2="1" stroke="url(#rayGrad)" strokeWidth="2" />
-            <line x1="28" y1="10.5" x2="29.5" y2="12" stroke="url(#rayGrad)" strokeWidth="2" />
-            <line x1="20" y1="10.5" x2="18.5" y2="12" stroke="url(#rayGrad)" strokeWidth="2" />
-          </motion.g>
-          <motion.circle
-            cx="24" cy="6.5" r="4"
-            fill="url(#sun3D)"
-            animate={{
-              scale: [1, 1.25, 1],
-              opacity: [1, 0.85, 1]
+   {active && (
+  <g>
+    {/* Tia nắng tỏa từ tâm - không xoay */}
+    <g>
+      {[...Array(12)].map((_, i) => {
+        const angle = (i * 30) * Math.PI / 180;
+        const x1 = 24 + Math.cos(angle) * 5.5;
+        const y1 = 6.5 + Math.sin(angle) * 5.5;
+        const x2 = 24 + Math.cos(angle) * 8;
+        const y2 = 6.5 + Math.sin(angle) * 8;
+        return (
+          <motion.line 
+            key={i}
+            x1={x1} y1={y1} x2={x2} y2={y2} 
+            stroke="url(#rayGrad)" 
+            strokeWidth={i % 3 === 0 ? "2.5" : "1.8"}
+            strokeLinecap="round"
+            animate={{ opacity: [0.6, 1, 0.6] }}
+            transition={{ 
+              duration: 2, 
+              repeat: Infinity, 
+              ease: "easeInOut",
+              delay: i * 0.1 
             }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
           />
-          <circle cx="24" cy="6.5" r="6" fill="#FFD60A" opacity="0.2" />
-          <circle cx="24" cy="6.5" r="8" fill="#FFD60A" opacity="0.1" />
-        </g>
-      )}
+        );
+      })}
+    </g>
+    
+    {/* Mặt trời */}
+    <motion.circle
+      cx="24" cy="6.5" r="4"
+      fill="url(#sun3D)"
+      animate={{
+        scale: [1, 1.15, 1],
+        opacity: [1, 0.9, 1]
+      }}
+      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+    />
+  </g>
+)}
 
       <ellipse cx="16" cy="25.5" rx="11" ry="4.5" fill={active? "url(#island3D)" : "#E5E7EB"} />
       {active && (
