@@ -438,7 +438,7 @@ export default function TaskFeedPage() {
 
           <div ref={loadMoreRef} className="h-4" />
           {/* FIX: Thêm spacer 24px để không bị tab bar che */}
-          <div className="h-6" />
+          <div className="h-10" />
         </div>
       </div>
 
