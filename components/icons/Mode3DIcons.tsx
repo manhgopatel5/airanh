@@ -32,7 +32,7 @@ export const Briefcase3D = ({ active }: { active: boolean }) => (
       transition={{ duration: 1.8, repeat: active? Infinity : 0, ease: "easeInOut" }}
     />
 
-    <svg viewBox="0 0 32 32" fill="none" className="w-full h-full">
+<svg viewBox="2 1 28 29" fill="none" className="w-full h-full">
       <defs>
         <linearGradient id="briefcaseMain" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="#A5D6FF" />
@@ -150,7 +150,7 @@ export const Palm3D = ({ active }: { active: boolean }) => (
       transition={{ duration: 1.8, repeat: active? Infinity : 0, ease: "easeInOut" }}
     />
 
-    <svg viewBox="0 0 32 32" fill="none" className="w-full h-full">
+<svg viewBox="2 3 28 26" fill="none" className="w-full h-full">
       <defs>
         <radialGradient id="sun3D">
           <stop offset="0%" stopColor="#FFFFFF" />
