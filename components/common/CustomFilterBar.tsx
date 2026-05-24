@@ -533,12 +533,7 @@ export default function CustomFilterBar({
   const mode = useAppStore((s) => s.mode) || "task";
   const [hovered, setHovered] = useState<string | null>(null);
 
-  useEffect(() => {
-    document.body.style.overscrollBehavior = 'none';
-    return () => {
-      document.body.style.overscrollBehavior = 'auto';
-    };
-  }, []);
+
 
   const themes = {
     task: {
