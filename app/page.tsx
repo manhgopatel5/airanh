@@ -219,8 +219,8 @@ export default function AppContainer() {
       <Toaster richColors position="top-center" toastOptions={{ duration: 2000, style: { fontSize: "14px" } }} />
 
       {/* Main content - mỗi tab 1 scroll container riêng */}
-      <div className="flex-1 overflow-hidden w-full max-w-2xl mx-auto">
-        <div className={`h-full overflow-y-auto ${currentMainTab!== "home"? "hidden" : ""}`}>
+<div className="flex-1 w-full max-w-2xl mx-auto">
+<div className={`h-full overflow-y-auto [-webkit-overflow-scrolling:touch] ${currentMainTab !== "home" ? "hidden" : ""}`}>
           {loadedTabs.has("home") && <TaskFeedPage />}
         </div>
         <div className={`h-full overflow-y-auto ${currentMainTab!== "messages"? "hidden" : ""}`}>
