@@ -50,7 +50,7 @@ export const Briefcase3D = ({ active }: { active: boolean }) => (
         </linearGradient>
         <linearGradient id="metalShine" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="15%" stopColor="#F8F8F8" />
+          <stop offset="15%" stopColor="#F8" />
           <stop offset="30%" stopColor="#E8E8E8" />
           <stop offset="50%" stopColor="#D0D0D0" />
           <stop offset="70%" stopColor="#B0B0B0" />
@@ -166,9 +166,9 @@ export const Palm3D = ({ active }: { active: boolean }) => (
           <stop offset="100%" stopColor="#FFD60A" stopOpacity="0" />
         </linearGradient>
         <radialGradient id="cloudGrad" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
-          <stop offset="70%" stopColor="#FFFFFF" stopOpacity="0.6" />
-          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.2" />
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="1" />
+          <stop offset="60%" stopColor="#FFFFFF" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#F0F9FF" stopOpacity="0.7" />
         </radialGradient>
         <linearGradient id="island3D" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="#FFF9F0" />
@@ -213,24 +213,16 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         </linearGradient>
       </defs>
 
-      {active && (
-        <motion.g
-          animate={{ x: [-5, 35, -5] }}
-          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-        >
-          <path d="M0 4L2 5L0 6" fill="#000" opacity="0.3" />
-          <path d="M3 5L5 6L3 7" fill="#000000" opacity="0.3" />
-        </motion.g>
-      )}
+      {/* Bỏ con chim đen */}
 
       {active && (
         <motion.g
           animate={{ x: [-3, 3, -3] }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
         >
-          <ellipse cx="7" cy="4.5" rx="3" ry="1.5" fill="url(#cloudGrad)" opacity="0.8" />
-          <ellipse cx="9.5" cy="5" rx="2.5" ry="1.2" fill="url(#cloudGrad)" opacity="0.7" />
-          <ellipse cx="6" cy="5.2" rx="1.8" ry="1" fill="url(#cloudGrad)" opacity="0.6" />
+          <ellipse cx="7" cy="4.5" rx="3.2" ry="1.7" fill="url(#cloudGrad)" opacity="1" />
+          <ellipse cx="9.5" cy="5" rx="2.7" ry="1.4" fill="url(#cloudGrad)" opacity="0.95" />
+          <ellipse cx="6" cy="5.2" rx="2" ry="1.2" fill="url(#cloudGrad)" opacity="0.9" />
         </motion.g>
       )}
 
@@ -357,9 +349,6 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         />
         {active && (
           <>
-            <line x1="9.5" y1="11.5" x2="4.5" y2="9" stroke="#1F8A3D" strokeWidth="0.9" opacity="0.8" transform="rotate(-40 9.5 11.5)" />
-            <line x1="9.5" y1="11.5" x2="5.5" y2="12.5" stroke="#1F8A3D" strokeWidth="0.7" opacity="0.7" transform="rotate(-40 9.5 11.5)" />
-            <line x1="9.5" y1="11.5" x2="6" y2="11" stroke="#1F8A3D" strokeWidth="0.6" opacity="0.6" transform="rotate(-40 9.5 11.5)" />
             <ellipse cx="8" cy="11" rx="2.2" ry="1.1" fill="white" opacity="0.6" transform="rotate(-40 8 11)" />
             <ellipse cx="7" cy="10.5" rx="1.5" ry="0.8" fill="white" opacity="0.4" transform="rotate(-40 7 10.5)" />
           </>
@@ -376,9 +365,6 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         />
         {active && (
           <>
-            <line x1="22.5" y1="11.5" x2="27.5" y2="9" stroke="#1F8A3D" strokeWidth="0.9" opacity="0.8" transform="rotate(40 22.5 11.5)" />
-            <line x1="22.5" y1="11.5" x2="26.5" y2="12.5" stroke="#1F8A3D" strokeWidth="0.7" opacity="0.7" transform="rotate(40 22.5 11.5)" />
-            <line x1="22.5" y1="11.5" x2="26" y2="11" stroke="#1F8A3D" strokeWidth="0.6" opacity="0.6" transform="rotate(40 22.5 11.5)" />
             <ellipse cx="24" cy="11" rx="2.2" ry="1.1" fill="white" opacity="0.6" transform="rotate(40 24 11)" />
             <ellipse cx="25" cy="10.5" rx="1.5" ry="0.8" fill="white" opacity="0.4" transform="rotate(40 25 10.5)" />
           </>
@@ -394,11 +380,6 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         />
         {active && (
           <>
-            <line x1="16" y1="8" x2="16" y2="4.5" stroke="#1F8A3D" strokeWidth="1" opacity="0.8" />
-            <line x1="16" y1="8" x2="13.5" y2="5.5" stroke="#1F8A3D" strokeWidth="0.8" opacity="0.7" />
-            <line x1="16" y1="8" x2="18.5" y2="5.5" stroke="#1F8A3D" strokeWidth="0.8" opacity="0.7" />
-            <line x1="16" y1="8" x2="14" y2="6.5" stroke="#1F8A3D" strokeWidth="0.7" opacity="0.6" />
-            <line x1="16" y1="8" x2="18" y2="6.5" stroke="#1F8A3D" strokeWidth="0.7" opacity="0.6" />
             <ellipse cx="16" cy="7" rx="1.8" ry="1.4" fill="white" opacity="0.6" />
             <ellipse cx="14.5" cy="7.5" rx="1" ry="0.8" fill="white" opacity="0.4" />
             <ellipse cx="17.5" cy="7.5" rx="1" ry="0.8" fill="white" opacity="0.4" />
