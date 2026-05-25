@@ -1255,8 +1255,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
             onClose={() => setShareTask(null)}
           />
         )}
-
+      </div>
     </>
   );
-}
-                  
+}            
