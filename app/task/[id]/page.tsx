@@ -843,13 +843,13 @@ void status;
     )}
   </div>
 ) : (
-<div className="flex mt-4 -mx-4 border-t border-[#E5E5EA] dark:border-zinc-800">
+<div className="flex mt-4 -mx-4 border-b border-[#E5E5EA] dark:border-zinc-800">
   <motion.button
     whileTap={{ scale: 0.98 }}
     onClick={handleStartChat}
     className="flex-1 h- flex flex-col items-center justify-center gap-1 text-[#8E8E93] dark:text-zinc-500 active:bg-[#F2F2F7] dark:active:bg-zinc-800 transition-colors"
   >
-    <FiMessageSquare size={20} strokeWidth={2.2} />
+    <FiMessageSquare size={20} strokeWidth={2.2} className="text-[#0A84FF]" />
     <span className="text- font-semibold leading-none">Nhắn tin</span>
   </motion.button>
 
@@ -859,7 +859,7 @@ void status;
     disabled={!owner?.phone}
     className="flex-1 h- flex flex-col items-center justify-center gap-1 text-[#8E8E93] dark:text-zinc-500 active:bg-[#F2F2F7] dark:active:bg-zinc-800 disabled:opacity-40 transition-colors"
   >
-    <FiPhone size={20} strokeWidth={2.2} />
+    <FiPhone size={20} strokeWidth={2.2} className="text-[#34C759]" />
     <span className="text- font-semibold leading-none">Gọi điện</span>
   </motion.button>
 
@@ -870,11 +870,11 @@ void status;
     className="flex-1 h- flex flex-col items-center justify-center gap-1 text-[#8E8E93] dark:text-zinc-500 active:bg-[#F2F2F7] dark:active:bg-zinc-800 disabled:opacity-40 transition-colors"
   >
     {joining? (
-      <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+      <div className="w-5 h-5 border-2 border-[#00A86B] border-t-transparent rounded-full animate-spin" />
     ) : isApplied? (
-      <FiCheckCircle size={20} strokeWidth={2.5} />
+      <FiCheckCircle size={20} strokeWidth={2.5} className="text-[#00A86B]" />
     ) : (
-      <FiSend size={20} strokeWidth={2.5} />
+      <FiSend size={20} strokeWidth={2.5} className="text-[#00A86B]" />
     )}
     <span className="text- font-semibold leading-none">{isApplied? "Đã ứng tuyển" : "Ứng tuyển"}</span>
   </motion.button>
@@ -884,7 +884,7 @@ void status;
     onClick={() => toast.info("Đã gửi báo cáo")}
     className="flex-1 h- flex flex-col items-center justify-center gap-1 text-[#8E8E93] dark:text-zinc-500 active:bg-[#F2F2F7] dark:active:bg-zinc-800 transition-colors"
   >
-    <FiAlertTriangle size={20} strokeWidth={2.2} />
+    <FiAlertTriangle size={20} strokeWidth={2.2} className="text-[#FF9500]" />
     <span className="text- font-semibold leading-none">Báo cáo</span>
   </motion.button>
 </div>
