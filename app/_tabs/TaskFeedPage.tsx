@@ -369,7 +369,7 @@ className="absolute top-1.5 bottom-1.5 rounded-xl overflow-hidden pointer-events
     </motion.div>
 
     {/* Divider */}
-    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-px h-8 bg-gradient-to-b from-transparent via-zinc-300/80 to-transparent dark:via-zinc-600/80" />
+
 
     {/* Icon to, bỏ text */}
     <div className="relative z-10 flex h-full">
