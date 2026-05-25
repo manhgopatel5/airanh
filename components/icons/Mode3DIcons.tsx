@@ -367,11 +367,12 @@ export const Palm3D = ({ active }: { active: boolean }) => (
     fill={active? "url(#trunkGrad)" : "#D1D5DB"} 
   />
   
-  {/* 3 LÁ - DÙNG TRANSFORM TRANSLATEX, KHÔNG ĐỔI X */}
-  {/* 1. Lá trái */}
+  {/* 3 LÁ - XOAY 15 ĐỘ QUANH TÂM */}
+  {/* 1. Lá trái - tâm 11,15 */}
   <motion.g
-    animate={{ x: [-3, 0, -3] }}
-    transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+    animate={{ rotate: [-15, 15, -15] }}
+    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+    style={{ transformOrigin: "11px 15px" }}
   >
     <ellipse
       cx="11" cy="15" rx="5.5" ry="3.5"
@@ -387,10 +388,11 @@ export const Palm3D = ({ active }: { active: boolean }) => (
     )}
   </motion.g>
   
-  {/* 2. Lá phải */}
+  {/* 2. Lá phải - tâm 23,15 */}
   <motion.g
-    animate={{ x: [-2, 0, -2] }}
-    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+    animate={{ rotate: [15, -15, 15] }}
+    transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+    style={{ transformOrigin: "23px 15px" }}
   >
     <ellipse
       cx="23" cy="15" rx="5.5" ry="3.5"
@@ -406,10 +408,11 @@ export const Palm3D = ({ active }: { active: boolean }) => (
     )}
   </motion.g>
 
-  {/* 3. Lá trên */}
+  {/* 3. Lá trên - tâm 17,10.5 */}
   <motion.g
-    animate={{ x: [-1.5, 0, -1.5] }}
-    transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+    animate={{ rotate: [-15, 15, -15] }}
+    transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
+    style={{ transformOrigin: "17px 10.5px" }}
   >
     <ellipse
       cx="17" cy="10.5" rx="3" ry="4.2"
