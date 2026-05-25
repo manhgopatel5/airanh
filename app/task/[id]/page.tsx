@@ -552,710 +552,642 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
    ? { label: "Đã hết hạn", color: "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B]", dot: "bg-[#FF3B30]" }
     : statusMap[task.status] || statusMap.open;
 
-  return (
-    <>
-      <Toaster richColors position="top-center" />
-<div className="max-w-xl mx-auto bg-white dark:bg-zinc-950 min-h-dvh pb-28 px-3 pt-2">
+return (
+  <div className="max-w-xl mx-auto bg-white dark:bg-zinc-950 min-h-dvh pb-28 px-3 pt-2">
+    <Toaster richColors position="top-center" />
 
-       {/* HEADER MỚI - ĐỒNG BỘ APP */}
-<div className="bg-white dark:bg-zinc-950">
-  <div className="px-4 pt-4 pb-3">
-    {/* Hàng 1: Avatar + Info + Actions */}
-    <div className="flex gap-3 items-start">
-      <Link href={`/profile/${task.userId}`} className="relative shrink-0 active:opacity-70 transition-opacity">
-        <UserAvatar src={owner?.avatar} name={owner?.name} size={52} />
-        {owner?.rating && owner.rating >= 4.8 && (
-          <div className="absolute -bottom-0.5 -right-0.5 bg-[#00A86B] rounded-full p-0.5 ring-2 ring-white dark:ring-zinc-950">
-            <FiCheckCircle className="text-white" size={12} />
+    {/* HEADER MỚI - ĐỒNG BỘ APP */}
+    <div className="bg-white dark:bg-zinc-950">
+      <div className="px-4 pt-4 pb-3">
+        {/* Hàng 1: Avatar + Info + Actions */}
+        <div className="flex gap-3 items-start">
+          <Link href={`/profile/${task.userId}`} className="relative shrink-0 active:opacity-70 transition-opacity">
+            <UserAvatar src={owner?.avatar} name={owner?.name} size={52} />
+            {owner?.rating && owner.rating >= 4.8 && (
+              <div className="absolute -bottom-0.5 -right-0.5 bg-[#00A86B] rounded-full p-0.5 ring-2 ring-white dark:ring-zinc-950">
+                <FiCheckCircle className="text-white" size={12} />
+              </div>
+            )}
+          </Link>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <Link href={`/profile/${task.userId}`} className="font-semibold text- text-[#1C1C1E] dark:text-zinc-100 truncate block leading-5 active:opacity-70">
+                  {owner?.name || "Minh Tran"}
+                </Link>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <FiStar className="fill-[#FFB800] text-[#FFB800] shrink-0" size={14} />
+                  <span className="font-semibold text- text-[#1C1C1E] dark:text-zinc-100">{owner?.rating || "4.9"}</span>
+                  <span className="text- text-[#8E8E93]">({owner?.reviewCount || 21})</span>
+                  <span className="text- text-[#8E8E93]">•</span>
+                  <span className="text- text-[#00A86B] font-medium">Mới tham gia</span>
+                </div>
+              </div>
+
+              {/* Actions: Bookmark + Share + Menu */}
+              <div className="flex items-center gap-1 shrink-0 -mr-1">
+                {!isOwner && (
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="w-9 h-9 rounded-full flex items-center justify-center active:bg-[#F2F2F7] dark:active:bg-zinc-800 disabled:opacity-50"
+                  >
+                    <FiBookmark
+                      size={20}
+                      strokeWidth={2}
+                      className={isSaved? "fill-[#0A84FF] text-[#0A84FF]" : "text-[#8E8E93]"}
+                    />
+                  </motion.button>
+                )}
+
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => task && setShareTask(task)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center active:bg-[#F2F2F7] dark:active:bg-zinc-800"
+                >
+                  <FiShare2 size={19} className="text-[#8E8E93]" strokeWidth={2} />
+                </motion.button>
+
+                <div className="relative">
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setMenuPos({ x: rect.right - 200, y: rect.bottom + 8 });
+                      setShowMenu(!showMenu);
+                    }}
+                    className="w-9 h-9 rounded-full flex items-center justify-center active:bg-[#F2F2F7] dark:active:bg-zinc-800"
+                  >
+                    <FiMoreHorizontal size={20} className="text-[#8E8E93]" strokeWidth={2.5} />
+                  </motion.button>
+                  <AnimatePresence>
+                    {showMenu && (
+                      <Portal>
+                        <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                          transition={{ duration: 0.15 }}
+                          className="fixed z-50 min-w- rounded- shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 py-2 overflow-hidden"
+                          style={{ top: `${menuPos.y}px`, left: `${menuPos.x}px` }}
+                        >
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleSave(); setShowMenu(false); }}
+                            className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
+                          >
+                            {isSaved? <FiCheck size={18} /> : <FiBookmark size={18} />}
+                            {isSaved? "Đã lưu" : "Lưu công việc"}
+                          </button>
+                          {isOwner && (
+                            <>
+                              <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setShowMenu(false); router.push(`/task/${task.id}/edit`); }}
+                                className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
+                              >
+                                <FiEdit2 size={18} />
+                                Sửa công việc
+                              </button>
+                              <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setShowMenu(false); handleDelete(); }}
+                                className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 w-full transition-all active:scale-95"
+                              >
+                                <FiTrash2 size={18} />
+                                Xóa
+                              </button>
+                            </>
+                          )}
+                        </motion.div>
+                      </Portal>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {isOwner? (
+          <div ref={appsRef} className="bg-white dark:bg-zinc-900 -mx-3">
+            <div className="px-5 py-4 flex items-center justify-between border-b border-[#F2F2F7] dark:border-zinc-800">
+              <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
+                Ứng viên ({applications.length})
+              </h3>
+
+              {applications.length > 1 && (
+                <button
+                  onClick={() => setShowAllApps(!showAllApps)}
+                  className="text-sm font-semibold text-[#0a84ff] active:opacity-60 transition-opacity"
+                >
+                  {showAllApps? "Thu gọn" : "Xem tất cả"} ›
+                </button>
+              )}
+            </div>
+
+            {applications.length === 0? (
+              <div className="px-5 py-12 text-center">
+                <p className="text-sm text-[#8E8E93] dark:text-zinc-500">
+                  Chưa có ai ứng tuyển
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-[#F2F2F7] dark:divide-zinc-800">
+                {(showAllApps? applications : applications.slice(0, 1)).map((app) => (
+                  <motion.div
+                    key={app.id}
+                    layout
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center justify-between gap-3 px-5 py-3"
+                  >
+                    <Link
+                      href={`/profile/${app.userId}`}
+                      className="flex items-center gap-3 min-w-0 flex-1 active:opacity-70"
+                    >
+                      <UserAvatar src={app.userAvatar} name={app.userName} size={40} />
+
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100 truncate">
+                          {app.userName}
+                        </p>
+
+                        <p className="text-xs text-[#8E8E93] dark:text-zinc-500">
+                          {app.createdAt?.toDate? app.createdAt.toDate().toLocaleDateString("vi-VN") : "Vừa xong"} • Nộp {timeAgo(app.createdAt)}
+                        </p>
+                      </div>
+                    </Link>
+
+                    <div className="flex gap-2 shrink-0">
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.vibrate?.(8);
+                          handleAcceptApp(app.id, app.userId);
+                        }}
+                        className="h-8 px-3 rounded-full bg-[#E6F4EA] dark:bg-[#1E8E3E]/20 flex items-center gap-1.5 active:bg-[#D4EDDA] dark:active:bg-[#1E8E3E]/30 transition-all"
+                      >
+                        <div className="w-4 h-4 rounded-full bg-[#00A86B] flex items-center justify-center">
+                          <FiCheck size={10} strokeWidth={3} className="text-white" />
+                        </div>
+
+                        <span className="text-xs font-semibold text-[#00A86B]">
+                          Đồng ý
+                        </span>
+                      </motion.button>
+
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.vibrate?.(8);
+                          handleRejectApp(app.id);
+                        }}
+                        className="h-8 px-3 rounded-full bg-[#FFE5E5] dark:bg-[#FF3B30]/20 flex items-center gap-1.5 active:bg-[#FFD6D6] dark:active:bg-[#FF3B30]/30 transition-all"
+                      >
+                        <div className="w-4 h-4 rounded-full bg-[#FF3B30] flex items-center justify-center">
+                          <FiX size={10} strokeWidth={3} className="text-white" />
+                        </div>
+
+                        <span className="text-xs font-semibold text-[#FF3B30]">
+                          Từ chối
+                        </span>
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="mt-4 -mx-1 px-1">
+            <div className="grid grid-cols-4 gap-2">
+              <motion.button
+                whileTap={{ scale: 0.92 }}
+                transition={{ type: "spring", stiffness: 400, damping: 18 }}
+                onClick={handleStartChat}
+                className="h- rounded- bg-gradient-to-b from-[#F7FBFF] to-[#E3F2FD] dark:from-[#0A84FF]/20 dark:to-[#0A84FF]/10 border border-white/80 dark:border-white/5 shadow-[0_6px_18px_rgba(10,132,255,0.14)] flex flex-col items-center justify-center gap-1.5 active:brightness-95"
+              >
+                <div className="w-10 h-10 rounded-2xl bg-[#0A84FF] flex items-center justify-center shadow-lg shadow-[#0A84FF]/25">
+                  <FiMessageSquare size={18} strokeWidth={2.4} className="text-white" />
+                </div>
+
+                <span className="text- font-bold tracking-tight text-[#0A84FF] dark:text-[#5AC8FA]">
+                  Nhắn tin
+                </span>
+              </motion.button>
+
+              <motion.button
+                whileTap={{ scale: 0.92 }}
+                transition={{ type: "spring", stiffness: 400, damping: 18 }}
+                onClick={() => owner?.phone && window.open(`tel:${owner.phone}`)}
+                disabled={!owner?.phone}
+                className="h- rounded- bg-gradient-to-b from-[#F4FFF8] to-[#E8F5E9] dark:from-[#1E8E3E]/20 dark:to-[#1E8E3E]/10 border border-white/80 dark:border-white/5 shadow-[0_6px_18px_rgba(0,168,107,0.14)] flex flex-col items-center justify-center gap-1.5 active:brightness-95 disabled:opacity-40"
+              >
+                <div className="w-10 h-10 rounded-2xl bg-[#00A86B] flex items-center justify-center shadow-lg shadow-[#00A86B]/25">
+                  <FiPhone size={18} strokeWidth={2.4} className="text-white" />
+                </div>
+
+                <span className="text- font-bold tracking-tight text-[#00A86B]">
+                  Gọi điện
+                </span>
+              </motion.button>
+
+              <motion.button
+                whileTap={{ scale: 0.92 }}
+                transition={{ type: "spring", stiffness: 400, damping: 18 }}
+                onClick={isApplied? handleCancelApply : handleJoinTask}
+                disabled={(!isApplied && (isFull || task.status!== "open")) || joining}
+                className={`h- rounded- border flex flex-col items-center justify-center gap-1.5 active:brightness-95 disabled:opacity-40 transition-all ${
+                  isApplied
+                  ? "bg-gradient-to-b from-[#F4FFF8] to-[#E8F5E9] dark:from-green-950/40 dark:to-green-900/20 border-white/80 dark:border-white/5 shadow-[0_6px_18px_rgba(0,168,107,0.14)]"
+                    : "bg-gradient-to-b from-[#00C97B] to-[#00A86B] border-[#00B973] shadow-[0_10px_28px_rgba(0,168,107,0.34)]"
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${
+                  isApplied? "bg-[#00A86B] shadow-lg shadow-[#00A86B]/25" : "bg-white/20 backdrop-blur-md"
+                }`}>
+                  {joining? (
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin text-white" />
+                  ) : isApplied? (
+                    <FiCheckCircle size={18} strokeWidth={2.5} className="text-white" />
+                  ) : (
+                    <FiSend size={18} strokeWidth={2.5} className="text-white" />
+                  )}
+                </div>
+
+                <span className={`text- font-bold tracking-tight ${isApplied? "text-[#00A86B]" : "text-white"}`}>
+                  {isApplied? "Đã ứng tuyển" : "Ứng tuyển"}
+                </span>
+              </motion.button>
+
+              <motion.button
+                whileTap={{ scale: 0.92 }}
+                transition={{ type: "spring", stiffness: 400, damping: 18 }}
+                onClick={() => toast.info("Đã gửi báo cáo")}
+                className="h- rounded- bg-gradient-to-b from-[#FFF8F0] to-[#FFF4E5] dark:from-[#FF9500]/20 dark:to-[#FF9500]/10 border border-white/80 dark:border-white/5 shadow-[0_6px_18px_rgba(255,149,0,0.14)] flex flex-col items-center justify-center gap-1.5 active:brightness-95"
+              >
+                <div className="w-10 h-10 rounded-2xl bg-[#FF9500] flex items-center justify-center shadow-lg shadow-[#FF9500]/25">
+                  <FiAlertTriangle size={18} strokeWidth={2.4} className="text-white" />
+                </div>
+
+                <span className="text- font-bold tracking-tight text-[#FF9500]">
+                  Báo cáo
+                </span>
+              </motion.button>
+            </div>
           </div>
         )}
-      </Link>
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <Link href={`/profile/${task.userId}`} className="font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100 truncate block leading-5 active:opacity-70">
-              {owner?.name || "Minh Tran"}
-            </Link>
-            <div className="flex items-center gap-1 mt-0.5">
-              <FiStar className="fill-[#FFB800] text-[#FFB800] shrink-0" size={14} />
-              <span className="font-semibold text-[13px] text-[#1C1C1E] dark:text-zinc-100">{owner?.rating || "4.9"}</span>
-              <span className="text-[13px] text-[#8E8E93]">({owner?.reviewCount || 21})</span>
-              <span className="text-[13px] text-[#8E8E93]">•</span>
-              <span className="text-[13px] text-[#00A86B] font-medium">Mới tham gia</span>
+        {/* Hàng 2: 4 Badge đồng bộ style app */}
+        <div className="grid grid-cols-4 gap-2 mt-3">
+          <div className={`px-2 h-8 rounded- text- font-semibold flex items-center justify-center gap-1.5 ${status.color}`}>
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${status.dot}`} />
+            <span className="truncate">{status.label}</span>
+          </div>
+
+          {isTask(task) && (
+            <div className="px-2 h-8 rounded- text- font-semibold bg-[#E8F0FE] text-[#1A73E8] dark:bg-[#1A73E8]/20 dark:text-[#8AB4F8] flex items-center justify-center gap-1.5">
+              <FiUsers size={14} className="shrink-0" />
+              <span className="truncate">{task.appliedCount || 0}/{task.totalSlots}</span>
+            </div>
+          )}
+
+          {isTask(task) && task.price > 0 && (
+            <div className="px-2 h-8 rounded- text- font-semibold bg-[#E3F2FD] text-[#0A84FF] dark:bg-[#0A84FF]/20 dark:text-[#5AC8FA] flex items-center justify-center">
+              <span className="truncate">{task.price.toLocaleString("vi-VN")} đ</span>
+            </div>
+          )}
+
+          {isTask(task) && task.deadline?.seconds && task.status!== "completed" && (
+            <div className={`px-2 h-8 rounded- text- font-semibold flex items-center justify-center ${
+              isUrgent
+             ? "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B] animate-pulse"
+                : "bg-[#FEF7E0] text-[#F9AB00] dark:bg-[#F9AB00]/20 dark:text-[#FDD663]"
+            }`}>
+              <span className="tabular-nums truncate">{timeLeft?.replace('Còn ', '') || "Hết hạn"}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Hàng 3: Title + Description */}
+        <div className="mt-4">
+          <h2 className="font-bold text- leading-snug text-[#1C1C1E] dark:text-zinc-100">{task.title}</h2>
+
+          {task.description && (
+            <Linkify options={{ target: "_blank", className: `text-[#0A84FF] hover:underline` }}>
+              <p className="text- text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed mt-2">{task.description}</p>
+            </Linkify>
+          )}
+        </div>
+
+        {/* Hàng 4: 2 Card Ngày đăng/Hạn chót - đồng bộ ảnh 3 */}
+        <div className="grid grid-cols-2 gap-2 mt-4">
+          <div className="px-3 py-3 rounded- bg-[#F2F2F7] dark:bg-zinc-800/60">
+            <div className="flex items-center gap-2">
+              <FiCalendar size={16} className="shrink-0 text-[#8E8E93]" />
+              <div className="min-w-0">
+                <p className="text- text-[#8E8E93] leading-none">Ngày đăng</p>
+                <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 tabular-nums leading-none mt-1">
+                  {taskDate}
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Actions: Bookmark + Share + Menu */}
-          <div className="flex items-center gap-1 shrink-0 -mr-1">
-            {!isOwner && (
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={handleSave}
-                disabled={saving}
-                className="w-9 h-9 rounded-full flex items-center justify-center active:bg-[#F2F2F7] dark:active:bg-zinc-800 disabled:opacity-50"
-              >
-                <FiBookmark 
-                  size={20} 
-                  strokeWidth={2}
-                  className={isSaved? "fill-[#0A84FF] text-[#0A84FF]" : "text-[#8E8E93]"} 
-                />
-              </motion.button>
-            )}
+          <div className="px-3 py-3 rounded- bg-[#FFE5E5] dark:bg-[#FF3B30]/10">
+            <div className="flex items-center gap-2">
+              <FiClock size={16} className="shrink-0 text-[#FF3B30]" />
+              <div className="min-w-0">
+                <p className="text- text-[#FF3B30] leading-none">Hạn chót</p>
+                <p className="text- font-semibold text-[#FF3B30] tabular-nums leading-none mt-1">
+                  {taskDeadline || "Chưa có"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
+    <div className="pt-3 pb-2">
+      {task.location?.lat && task.location?.lng && (
+        <>
+          <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800" />
+          <div className="p-3">
+            <div className="relative h-32 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+              <iframe
+                src={`https://www.google.com/maps?q=${task.location.lat},${task.location.lng}&output=embed`}
+                className="w-full h-full border-0"
+                loading="lazy"
+              />
+              <div className="absolute top-2 left-2 bg-white dark:bg-zinc-900 px-2 py-1 rounded-lg text-sm font-medium shadow">
+                Bản đồ
+              </div>
+            </div>
+            <button className="w-full mt-2 text-[#0a84ff] font-semibold text-sm">
+              Xem chi tiết
+            </button>
+          </div>
+        </>
+      )}
+
+      {task.images && task.images.length > 0 && (
+        <div className="px-4 pt-3 pb-2">
+          {task.images.length === 1? (
             <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => task && setShareTask(task)}
-              className="w-9 h-9 rounded-full flex items-center justify-center active:bg-[#F2F2F7] dark:active:bg-zinc-800"
+              whileTap={{ scale: 0.94 }}
+              onClick={() => setShowImageGallery(0)}
+              className="relative w-20 h-20 rounded-xl overflow-hidden"
             >
-              <FiShare2 size={19} className="text-[#8E8E93]" strokeWidth={2} />
+              <Image
+                src={task.images[0]!}
+                alt="Ảnh đính kèm"
+                fill
+                sizes="80px"
+                className="object-cover"
+                priority
+              />
             </motion.button>
+          ) : task.images.length === 2? (
+            <div className="flex gap-2">
+              {task.images.slice(0, 2).map((img, i) => (
+                <motion.button
+                  key={i}
+                  whileTap={{ scale: 0.94 }}
+                  onClick={() => setShowImageGallery(i)}
+                  className="relative w-20 h-20 rounded-xl overflow-hidden"
+                >
+                  <Image
+                    src={img!}
+                    alt=""
+                    fill
+                    sizes="80px"
+                    className="object-cover"
+                    priority={i === 0}
+                  />
+                </motion.button>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2 max-w-[264px]">
+              {task.images.slice(0, 3).map((img, i) => (
+                <motion.button
+                  key={i}
+                  whileTap={{ scale: 0.94 }}
+                  onClick={() => setShowImageGallery(i)}
+                  className="relative aspect-square rounded-xl overflow-hidden"
+                >
+                  <Image
+                    src={img!}
+                    alt=""
+                    fill
+                    sizes="80px"
+                    className="object-cover"
+                    priority={i === 0}
+                  />
+                  {i === 2 && task.images!.length > 3 && (
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">
+                        +{task.images!.length - 3}
+                      </span>
+                    </div>
+                  )}
+                </motion.button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Bình luận */}
+      <div className="mt-4">
+        <div className="rounded-3xl bg-white dark:bg-zinc-900 border border-white dark:border-zinc-800 shadow-[0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] overflow-hidden">
+          <div className="px-5 py-4 flex items-center justify-between">
+            <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
+              Bình luận ({parentComments.length})
+            </h3>
 
             <div className="relative">
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  setMenuPos({ x: rect.right - 200, y: rect.bottom + 8 });
-                  setShowMenu(!showMenu);
-                }}
-                className="w-9 h-9 rounded-full flex items-center justify-center active:bg-[#F2F2F7] dark:active:bg-zinc-800"
+              <button
+                onClick={() => setShowSortMenu(!showSortMenu)}
+                className="flex items-center gap-1 text-sm font-semibold text-zinc-600 dark:text-zinc-400 active:opacity-60"
               >
-                <FiMoreHorizontal size={20} className="text-[#8E8E93]" strokeWidth={2.5} />
-              </motion.button>
-              {/* Menu giữ nguyên, chỉ đổi rounded-2xl -> rounded-[20px] */}
+                {commentSort === 'relevant'? 'Phù hợp nhất' : commentSort === 'newest'? 'Mới nhất' : 'Tất cả bình luận'}
+                <FiChevronDown size={16} />
+              </button>
+
               <AnimatePresence>
-                {showMenu && (
+                {showSortMenu && (
                   <Portal>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+                    <div className="fixed inset-0 z-40" onClick={() => setShowSortMenu(false)} />
                     <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                      transition={{ duration: 0.15 }}
-                      className="fixed z-50 min-w-[200px] bg-white dark:bg-zinc-900 rounded-[20px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 py-2 overflow-hidden"
-                      style={{ top: `${menuPos.y}px`, left: `${menuPos.x}px` }}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-zinc-900 rounded-t-3xl shadow-2xl pb-safe"
                     >
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleSave(); setShowMenu(false); }}
-                        className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
-                      >
-                        {isSaved? <FiCheck size={18} /> : <FiBookmark size={18} />}
-                        {isSaved? "Đã lưu" : "Lưu công việc"}
-                      </button>
-                      {isOwner && (
-                        <>
-                          <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setShowMenu(false); router.push(`/task/${task.id}/edit`); }}
-                            className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
-                          >
-                            <FiEdit2 size={18} />
-                            Sửa công việc
-                          </button>
-                          <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setShowMenu(false); handleDelete(); }}
-                            className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 w-full transition-all active:scale-95"
-                          >
-                            <FiTrash2 size={18} />
-                            Xóa
-                          </button>
-                        </>
-                      )}
+                      <div className="w-12 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mt-3 mb-2" />
+                      <div className="px-5 py-3">
+                        <h4 className="font-bold text-lg mb-4">Sắp xếp theo</h4>
+
+                        <button
+                          onClick={() => { setCommentSort('relevant'); setShowSortMenu(false); setVisibleCount(5); }}
+                          className="w-full text-left py-3 flex items-start gap-3"
+                        >
+                          <div className={`w-5 h-5 rounded-full border-2 mt-0.5 ${commentSort === 'relevant'? 'border-[#0a84ff] bg-[#0a84ff]' : 'border-zinc-300'}`}>
+                            {commentSort === 'relevant' && <div className="w-2 h-2 bg-white rounded-full m-auto mt-[3px]" />}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-sm">Phù hợp nhất</p>
+                            <p className="text-xs text-zinc-500">Hiển thị bình luận tác giả và nhiều tương tác trước.</p>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={() => { setCommentSort('newest'); setShowSortMenu(false); setVisibleCount(5); }}
+                          className="w-full text-left py-3 flex items-start gap-3"
+                        >
+                          <div className={`w-5 h-5 rounded-full border-2 mt-0.5 ${commentSort === 'newest'? 'border-[#0a84ff] bg-[#0a84ff]' : 'border-zinc-300'}`}>
+                            {commentSort === 'newest' && <div className="w-2 h-2 bg-white rounded-full m-auto mt-[3px]" />}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-sm">Mới nhất</p>
+                            <p className="text-xs text-zinc-500">Hiển thị bình luận mới nhất trước tiên.</p>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={() => { setCommentSort('all'); setShowSortMenu(false); setVisibleCount(5); }}
+                          className="w-full text-left py-3 flex items-start gap-3"
+                        >
+                          <div className={`w-5 h-5 rounded-full border-2 mt-0.5 ${commentSort === 'all'? 'border-[#0a84ff] bg-[#0a84ff]' : 'border-zinc-300'}`}>
+                            {commentSort === 'all' && <div className="w-2 h-2 bg-white rounded-full m-auto mt-[3px]" />}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-sm">Tất cả bình luận</p>
+                            <p className="text-xs text-zinc-500">Hiển thị tất cả bình luận.</p>
+                          </div>
+                        </button>
+                      </div>
                     </motion.div>
                   </Portal>
                 )}
               </AnimatePresence>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-{isOwner ? (
-  <div ref={appsRef} className="bg-white dark:bg-zinc-900 -mx-3">
-    <div className="px-5 py-4 flex items-center justify-between border-b border-[#F2F2F7] dark:border-zinc-800">
-      <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
-        Ứng viên ({applications.length})
-      </h3>
 
-      {applications.length > 1 && (
-        <button
-          onClick={() => setShowAllApps(!showAllApps)}
-          className="text-sm font-semibold text-[#0a84ff] active:opacity-60 transition-opacity"
-        >
-          {showAllApps ? "Thu gọn" : "Xem tất cả"} ›
-        </button>
-      )}
-    </div>
-
-    {applications.length === 0 ? (
-      <div className="px-5 py-12 text-center">
-        <p className="text-sm text-[#8E8E93] dark:text-zinc-500">
-          Chưa có ai ứng tuyển
-        </p>
-      </div>
-    ) : (
-      <div className="divide-y divide-[#F2F2F7] dark:divide-zinc-800">
-        {(showAllApps
-          ? applications
-          : applications.slice(0, 1)
-        ).map((app) => (
-          <motion.div
-            key={app.id}
-            layout
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex items-center justify-between gap-3 px-5 py-3"
-          >
-            <Link
-              href={`/profile/${app.userId}`}
-              className="flex items-center gap-3 min-w-0 flex-1 active:opacity-70"
-            >
-              <UserAvatar
-                src={app.userAvatar}
-                name={app.userName}
-                size={40}
-              />
-
-              <div className="min-w-0">
-                <p className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100 truncate">
-                  {app.userName}
-                </p>
-
-                <p className="text-xs text-[#8E8E93] dark:text-zinc-500">
-                  {app.createdAt?.toDate
-                    ? app.createdAt
-                        .toDate()
-                        .toLocaleDateString("vi-VN")
-                    : "Vừa xong"}{" "}
-                  • Nộp {timeAgo(app.createdAt)}
-                </p>
+          <div className="px-5 py-4">
+            {parentComments.length === 0? (
+              <div className="text-center py-12 text-zinc-400 text-sm">
+                <FiMessageCircle size={48} className="mx-auto mb-3 opacity-30" />
+                Chưa có bình luận nào<br />Hãy là người đầu tiên
               </div>
-            </Link>
-
-            <div className="flex gap-2 shrink-0">
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigator.vibrate?.(8);
-                  handleAcceptApp(app.id, app.userId);
-                }}
-                className="h-8 px-3 rounded-full bg-[#E6F4EA] dark:bg-[#1E8E3E]/20 flex items-center gap-1.5 active:bg-[#D4EDDA] dark:active:bg-[#1E8E3E]/30 transition-all"
-              >
-                <div className="w-4 h-4 rounded-full bg-[#00A86B] flex items-center justify-center">
-                  <FiCheck
-                    size={10}
-                    strokeWidth={3}
-                    className="text-white"
-                  />
-                </div>
-
-                <span className="text-xs font-semibold text-[#00A86B]">
-                  Đồng ý
-                </span>
-              </motion.button>
-
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigator.vibrate?.(8);
-                  handleRejectApp(app.id);
-                }}
-                className="h-8 px-3 rounded-full bg-[#FFE5E5] dark:bg-[#FF3B30]/20 flex items-center gap-1.5 active:bg-[#FFD6D6] dark:active:bg-[#FF3B30]/30 transition-all"
-              >
-                <div className="w-4 h-4 rounded-full bg-[#FF3B30] flex items-center justify-center">
-                  <FiX
-                    size={10}
-                    strokeWidth={3}
-                    className="text-white"
-                  />
-                </div>
-
-                <span className="text-xs font-semibold text-[#FF3B30]">
-                  Từ chối
-                </span>
-              </motion.button>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    )}
-  </div>
-) : (
-  <div className="mt-4 -mx-1 px-1">
-    <div className="grid grid-cols-4 gap-2">
-
-      {/* Nhắn tin */}
-      <motion.button
-        whileTap={{ scale: 0.92 }}
-        transition={{ type: "spring", stiffness: 400, damping: 18 }}
-        onClick={handleStartChat}
-        className="h-[78px] rounded-[28px] bg-gradient-to-b from-[#F7FBFF] to-[#E3F2FD] dark:from-[#0A84FF]/20 dark:to-[#0A84FF]/10 border border-white/80 dark:border-white/5 shadow-[0_6px_18px_rgba(10,132,255,0.14)] flex flex-col items-center justify-center gap-1.5 active:brightness-95"
-      >
-        <div className="w-10 h-10 rounded-2xl bg-[#0A84FF] flex items-center justify-center shadow-lg shadow-[#0A84FF]/25">
-          <FiMessageSquare
-            size={18}
-            strokeWidth={2.4}
-            className="text-white"
-          />
-        </div>
-
-        <span className="text-[11px] font-bold tracking-tight text-[#0A84FF] dark:text-[#5AC8FA]">
-          Nhắn tin
-        </span>
-      </motion.button>
-
-      {/* Gọi điện */}
-      <motion.button
-        whileTap={{ scale: 0.92 }}
-        transition={{ type: "spring", stiffness: 400, damping: 18 }}
-        onClick={() =>
-          owner?.phone && window.open(`tel:${owner.phone}`)
-        }
-        disabled={!owner?.phone}
-        className="h-[78px] rounded-[28px] bg-gradient-to-b from-[#F4FFF8] to-[#E8F5E9] dark:from-[#1E8E3E]/20 dark:to-[#1E8E3E]/10 border border-white/80 dark:border-white/5 shadow-[0_6px_18px_rgba(0,168,107,0.14)] flex flex-col items-center justify-center gap-1.5 active:brightness-95 disabled:opacity-40"
-      >
-        <div className="w-10 h-10 rounded-2xl bg-[#00A86B] flex items-center justify-center shadow-lg shadow-[#00A86B]/25">
-          <FiPhone
-            size={18}
-            strokeWidth={2.4}
-            className="text-white"
-          />
-        </div>
-
-        <span className="text-[11px] font-bold tracking-tight text-[#00A86B]">
-          Gọi điện
-        </span>
-      </motion.button>
-
-      {/* Ứng tuyển */}
-      <motion.button
-        whileTap={{ scale: 0.92 }}
-        transition={{ type: "spring", stiffness: 400, damping: 18 }}
-        onClick={isApplied ? handleCancelApply : handleJoinTask}
-        disabled={
-          (!isApplied &&
-            (isFull || task.status !== "open")) ||
-          joining
-        }
-        className={`h-[78px] rounded-[28px] border flex flex-col items-center justify-center gap-1.5 active:brightness-95 disabled:opacity-40 transition-all ${
-          isApplied
-            ? "bg-gradient-to-b from-[#F4FFF8] to-[#E8F5E9] dark:from-green-950/40 dark:to-green-900/20 border-white/80 dark:border-white/5 shadow-[0_6px_18px_rgba(0,168,107,0.14)]"
-            : "bg-gradient-to-b from-[#00C97B] to-[#00A86B] border-[#00B973] shadow-[0_10px_28px_rgba(0,168,107,0.34)]"
-        }`}
-      >
-        <div
-          className={`w-10 h-10 rounded-2xl flex items-center justify-center ${
-            isApplied
-              ? "bg-[#00A86B] shadow-lg shadow-[#00A86B]/25"
-              : "bg-white/20 backdrop-blur-md"
-          }`}
-        >
-          {joining ? (
-            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin text-white" />
-          ) : isApplied ? (
-            <FiCheckCircle
-              size={18}
-              strokeWidth={2.5}
-              className="text-white"
-            />
-          ) : (
-            <FiSend
-              size={18}
-              strokeWidth={2.5}
-              className="text-white"
-            />
-          )}
-        </div>
-
-        <span
-          className={`text-[11px] font-bold tracking-tight ${
-            isApplied
-              ? "text-[#00A86B]"
-              : "text-white"
-          }`}
-        >
-          {isApplied ? "Đã ứng tuyển" : "Ứng tuyển"}
-        </span>
-      </motion.button>
-
-      {/* Báo cáo */}
-      <motion.button
-        whileTap={{ scale: 0.92 }}
-        transition={{ type: "spring", stiffness: 400, damping: 18 }}
-        onClick={() => toast.info("Đã gửi báo cáo")}
-        className="h-[78px] rounded-[28px] bg-gradient-to-b from-[#FFF8F0] to-[#FFF4E5] dark:from-[#FF9500]/20 dark:to-[#FF9500]/10 border border-white/80 dark:border-white/5 shadow-[0_6px_18px_rgba(255,149,0,0.14)] flex flex-col items-center justify-center gap-1.5 active:brightness-95"
-      >
-        <div className="w-10 h-10 rounded-2xl bg-[#FF9500] flex items-center justify-center shadow-lg shadow-[#FF9500]/25">
-          <FiAlertTriangle
-            size={18}
-            strokeWidth={2.4}
-            className="text-white"
-          />
-        </div>
-
-        <span className="text-[11px] font-bold tracking-tight text-[#FF9500]">
-          Báo cáo
-        </span>
-      </motion.button>
-    </div>
-  </div>
-)}
-    {/* Hàng 2: 4 Badge đồng bộ style app */}
-    <div className="grid grid-cols-4 gap-2 mt-3">
-      <div className={`px-2 h-8 rounded-[20px] text-[13px] font-semibold flex items-center justify-center gap-1.5 ${status.color}`}>
-        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${status.dot}`} />
-        <span className="truncate">{status.label}</span>
-      </div>
-
-      {isTask(task) && (
-        <div className="px-2 h-8 rounded-[20px] text-[13px] font-semibold bg-[#E8F0FE] text-[#1A73E8] dark:bg-[#1A73E8]/20 dark:text-[#8AB4F8] flex items-center justify-center gap-1.5">
-          <FiUsers size={14} className="shrink-0" />
-          <span className="truncate">{task.appliedCount || 0}/{task.totalSlots}</span>
-        </div>
-      )}
-
-      {isTask(task) && task.price > 0 && (
-        <div className="px-2 h-8 rounded-[20px] text-[13px] font-semibold bg-[#E3F2FD] text-[#0A84FF] dark:bg-[#0A84FF]/20 dark:text-[#5AC8FA] flex items-center justify-center">
-          <span className="truncate">{task.price.toLocaleString("vi-VN")} đ</span>
-        </div>
-      )}
-
-      {isTask(task) && task.deadline?.seconds && task.status!== "completed" && (
-        <div className={`px-2 h-8 rounded-[20px] text-[13px] font-semibold flex items-center justify-center ${
-          isUrgent 
-           ? "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B] animate-pulse" 
-            : "bg-[#FEF7E0] text-[#F9AB00] dark:bg-[#F9AB00]/20 dark:text-[#FDD663]"
-        }`}>
-          <span className="tabular-nums truncate">{timeLeft?.replace('Còn ', '') || "Hết hạn"}</span>
-        </div>
-      )}
-    </div>
-
-    {/* Hàng 3: Title + Description */}
-    <div className="mt-4">
-      <h2 className="font-bold text-[17px] leading-snug text-[#1C1C1E] dark:text-zinc-100">{task.title}</h2>
-      
-      {task.description && (
-        <Linkify options={{ target: "_blank", className: `text-[#0A84FF] hover:underline` }}>
-          <p className="text-[15px] text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed mt-2">{task.description}</p>
-        </Linkify>
-      )}
-    </div>
-
-    {/* Hàng 4: 2 Card Ngày đăng/Hạn chót - đồng bộ ảnh 3 */}
-    <div className="grid grid-cols-2 gap-2 mt-4">
-      <div className="px-3 py-3 rounded-[20px] bg-[#F2F2F7] dark:bg-zinc-800/60">
-        <div className="flex items-center gap-2">
-          <FiCalendar size={16} className="shrink-0 text-[#8E8E93]" />
-          <div className="min-w-0">
-            <p className="text-[12px] text-[#8E8E93] leading-none">Ngày đăng</p>
-            <p className="text-[14px] font-semibold text-[#1C1C1E] dark:text-zinc-100 tabular-nums leading-none mt-1">
-              {taskDate}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="px-3 py-3 rounded-[20px] bg-[#FFE5E5] dark:bg-[#FF3B30]/10">
-        <div className="flex items-center gap-2">
-          <FiClock size={16} className="shrink-0 text-[#FF3B30]" />
-          <div className="min-w-0">
-            <p className="text-[12px] text-[#FF3B30] leading-none">Hạn chót</p>
-            <p className="text-[14px] font-semibold text-[#FF3B30] tabular-nums leading-none mt-1">
-              {taskDeadline || "Chưa có"}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-
-<div className="pt-3 pb-2">
- 
-
-            {task.location?.lat && task.location?.lng && (
-              <>
-                <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800" />
-                <div className="p-3">
-                  <div className="relative h-32 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800">
-                    <iframe
-                      src={`https://www.google.com/maps?q=${task.location.lat},${task.location.lng}&output=embed`}
-                      className="w-full h-full border-0"
-                      loading="lazy"
+            ) : (
+              <div className="space-y-4">
+                <AnimatePresence>
+                  {visibleComments.map((c) => (
+                    <CommentList
+                      key={c.id}
+                      comment={c}
+                      replies={getReplies(c.id)}
+                      currentUserId={currentUser?.uid}
+                      taskOwnerId={task.userId}
+                      onLike={handleLikeComment}
+                      onReply={handleReply}
+                      onDelete={handleDeleteComment}
+                      onEdit={(id) => { setEditingComment(id); setEditText(c.text); }}
+                      isEditing={editingComment === c.id}
+                      editText={editText}
+                      setEditText={setEditText}
+                      onSaveEdit={handleEditComment}
+                      onCancelEdit={() => { setEditingComment(null); setEditText(""); }}
+                      likingComments={likingComments}
                     />
-                    <div className="absolute top-2 left-2 bg-white dark:bg-zinc-900 px-2 py-1 rounded-lg text- font-medium shadow">
-                      Bản đồ
-                    </div>
-                  </div>
-                  <button className="w-full mt-2 text-[#0a84ff] font-semibold text-">
-                    Xem chi tiết
-                  </button>
-                </div>
-              </>
-            )}
+                  ))}
+                </AnimatePresence>
 
-            {task.images && task.images.length > 0 && (
-              <div className="px-4 pt-3 pb-2">
-                {task.images.length === 1? (
-                  <motion.button
-                    whileTap={{ scale: 0.94 }}
-                    onClick={() => setShowImageGallery(0)}
-                    className="relative w-20 h-20 rounded-xl overflow-hidden"
+                {hasMoreComments && (
+                  <button
+                    onClick={() => setVisibleCount(prev => prev + 5)}
+                    className="w-full py-3 text-sm font-semibold text-[#0a84ff] active:bg-zinc-50 dark:active:bg-zinc-800 rounded-xl mt-2"
                   >
-                    <Image
-                      src={task.images[0]!}
-                      alt="Ảnh đính kèm"
-                      fill
-                      sizes="80px"
-                      className="object-cover"
-                      priority
-                    />
-                  </motion.button>
-                ) : task.images.length === 2? (
-                  <div className="flex gap-2">
-                    {task.images.slice(0, 2).map((img, i) => (
-                      <motion.button
-                        key={i}
-                        whileTap={{ scale: 0.94 }}
-                        onClick={() => setShowImageGallery(i)}
-                        className="relative w-20 h-20 rounded-xl overflow-hidden"
-                      >
-                        <Image
-                          src={img!}
-                          alt=""
-                          fill
-                          sizes="80px"
-                          className="object-cover"
-                          priority={i === 0}
-                        />
-                      </motion.button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-3 gap-2 max-w-[264px]">
-                    {task.images.slice(0, 3).map((img, i) => (
-                      <motion.button
-                        key={i}
-                        whileTap={{ scale: 0.94 }}
-                        onClick={() => setShowImageGallery(i)}
-                        className="relative aspect-square rounded-xl overflow-hidden"
-                      >
-                        <Image
-                          src={img!}
-                          alt=""
-                          fill
-                          sizes="80px"
-                          className="object-cover"
-                          priority={i === 0}
-                        />
-                        {i === 2 && task.images!.length > 3 && (
-                          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
-                            <span className="text-white font-bold text-">
-                              +{task.images!.length - 3}
-                            </span>
-                          </div>
-                        )}
-                      </motion.button>
-                    ))}
-                  </div>
+                    Xem thêm bình luận
+                  </button>
                 )}
               </div>
             )}
 
-          {/* Bình luận */}
-<div className="mt-4">
-  <div className="rounded-3xl bg-white dark:bg-zinc-900 border border-white dark:border-zinc-800 shadow-[0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] overflow-hidden">
-<div className="px-5 py-4 flex items-center justify-between">
-  <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
-    Bình luận ({parentComments.length})
-  </h3>
-  
-  <div className="relative">
-    <button
-      onClick={() => setShowSortMenu(!showSortMenu)}
-      className="flex items-center gap-1 text-sm font-semibold text-zinc-600 dark:text-zinc-400 active:opacity-60"
-    >
-      {commentSort === 'relevant'? 'Phù hợp nhất' : commentSort === 'newest'? 'Mới nhất' : 'Tất cả bình luận'}
-      <FiChevronDown size={16} />
-    </button>
+            <div ref={bottomRef} />
+          </div>
 
-    <AnimatePresence>
-      {showSortMenu && (
-        <Portal>
-          <div className="fixed inset-0 z-40" onClick={() => setShowSortMenu(false)} />
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-zinc-900 rounded-t-3xl shadow-2xl pb-safe"
-          >
-            <div className="w-12 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mt-3 mb-2" />
-            <div className="px-5 py-3">
-              <h4 className="font-bold text-lg mb-4">Sắp xếp theo</h4>
-              
-              <button
-                onClick={() => { setCommentSort('relevant'); setShowSortMenu(false); setVisibleCount(5); }}
-                className="w-full text-left py-3 flex items-start gap-3"
-              >
-                <div className={`w-5 h-5 rounded-full border-2 mt-0.5 ${commentSort === 'relevant'? 'border-[#0a84ff] bg-[#0a84ff]' : 'border-zinc-300'}`}>
-                  {commentSort === 'relevant' && <div className="w-2 h-2 bg-white rounded-full m-auto mt-[3px]" />}
-                </div>
-                <div>
-                  <p className="font-semibold text-sm">Phù hợp nhất</p>
-                  <p className="text-xs text-zinc-500">Hiển thị bình luận tác giả và nhiều tương tác trước.</p>
-                </div>
-              </button>
-
-              <button
-                onClick={() => { setCommentSort('newest'); setShowSortMenu(false); setVisibleCount(5); }}
-                className="w-full text-left py-3 flex items-start gap-3"
-              >
-                <div className={`w-5 h-5 rounded-full border-2 mt-0.5 ${commentSort === 'newest'? 'border-[#0a84ff] bg-[#0a84ff]' : 'border-zinc-300'}`}>
-                  {commentSort === 'newest' && <div className="w-2 h-2 bg-white rounded-full m-auto mt-[3px]" />}
-                </div>
-                <div>
-                  <p className="font-semibold text-sm">Mới nhất</p>
-                  <p className="text-xs text-zinc-500">Hiển thị bình luận mới nhất trước tiên.</p>
-                </div>
-              </button>
-
-              <button
-                onClick={() => { setCommentSort('all'); setShowSortMenu(false); setVisibleCount(5); }}
-                className="w-full text-left py-3 flex items-start gap-3"
-              >
-                <div className={`w-5 h-5 rounded-full border-2 mt-0.5 ${commentSort === 'all'? 'border-[#0a84ff] bg-[#0a84ff]' : 'border-zinc-300'}`}>
-                  {commentSort === 'all' && <div className="w-2 h-2 bg-white rounded-full m-auto mt-[3px]" />}
-                </div>
-                <div>
-                  <p className="font-semibold text-sm">Tất cả bình luận</p>
-                  <p className="text-xs text-zinc-500">Hiển thị tất cả bình luận.</p>
-                </div>
-              </button>
-            </div>
-          </motion.div>
-        </Portal>
-      )}
-    </AnimatePresence>
-  </div>
-</div>
-
-    <div className="px-5 py-4">
-      {parentComments.length === 0? (
-        <div className="text-center py-12 text-zinc-400 text-sm">
-          <FiMessageCircle size={48} className="mx-auto mb-3 opacity-30" />
-          Chưa có bình luận nào<br />Hãy là người đầu tiên
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <AnimatePresence>
-{visibleComments.map((c) => (
-              <CommentList
-                key={c.id}
-                comment={c}
-                replies={getReplies(c.id)}
-                currentUserId={currentUser?.uid}
-                taskOwnerId={task.userId}
-                onLike={handleLikeComment}
-                onReply={handleReply}
-                onDelete={handleDeleteComment}
-                onEdit={(id) => { setEditingComment(id); setEditText(c.text); }}
-                isEditing={editingComment === c.id}
-                editText={editText}
-                setEditText={setEditText}
-                onSaveEdit={handleEditComment}
-                onCancelEdit={() => { setEditingComment(null); setEditText(""); }}
-                likingComments={likingComments}
-              />
-            ))}
-          </AnimatePresence>
-
-
-{hasMoreComments && (
-  <button
-    onClick={() => setVisibleCount(prev => prev + 5)}
-    className="w-full py-3 text-sm font-semibold text-[#0a84ff] active:bg-zinc-50 dark:active:bg-zinc-800 rounded-xl mt-2"
-  >
-    Xem thêm bình luận
-  </button>
-)}
-        </div>
-      )}
-
-      <div ref={bottomRef} />
-    </div>
-
-    <div className="sticky bottom-0 bg-white dark:bg-zinc-900 px-5 py-3 border-t border-[#F2F2F7] dark:border-zinc-800">
-      {replyTo && (
-        <div className="text-sm dark:text-zinc-400 mb-2 flex items-center justify-between bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 px-3.5 py-2 rounded-xl">
-          <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
-          <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg active:scale-90 transition-all"><FiX size={14} /></button>
-        </div>
-      )}
-      <div className="flex gap-2 items-end relative">
-        <div className="flex-1 relative">
-          <input
-            ref={inputRef}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSendComment()}
-            placeholder={currentUser? "Viết bình luận..." : "Đăng nhập để bình luận"}
-            className="w-full px-4 py-2.5 rounded-full bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 outline-none text-sm focus:ring-2 focus:ring-[#0a84ff]/20 focus:border-[#0a84ff] transition-all"
-            disabled={sending ||!currentUser}
-          />
-          {showMention && mentionUsersList.length > 0 && (
-            <div className="absolute bottom-12 left-0 w-64 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-[#E5E5EA] dark:border-zinc-800 max-h-60 overflow-auto z-50">
-              <div className="p-2">
-                <input
-                  placeholder="Tìm người..."
-                  value={mentionQuery}
-                  onChange={(e) => setMentionQuery(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg outline-none mb-2"
-                />
-                {mentionUsersList.map((user) => (
-                  <button
-                    key={user.uid}
-                    onClick={() => handleSelectMention(user)}
-                    className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#F2F2F7] dark:hover:bg-zinc-800 rounded-lg text-left"
-                  >
-                    <UserAvatar src={user.avatar} name={user.name} size={24} />
-                    <span className="text-sm">{user.name}</span>
-                  </button>
-                ))}
+          <div className="sticky bottom-0 bg-white dark:bg-zinc-900 px-5 py-3 border-t border-[#F2F2F7] dark:border-zinc-800">
+            {replyTo && (
+              <div className="text-sm dark:text-zinc-400 mb-2 flex items-center justify-between bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 px-3.5 py-2 rounded-xl">
+                <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
+                <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg active:scale-90 transition-all"><FiX size={14} /></button>
               </div>
+            )}
+            <div className="flex gap-2 items-end relative">
+              <div className="flex-1 relative">
+                <input
+                  ref={inputRef}
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSendComment()}
+                  placeholder={currentUser? "Viết bình luận..." : "Đăng nhập để bình luận"}
+                  className="w-full px-4 py-2.5 rounded-full bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 outline-none text-sm focus:ring-2 focus:ring-[#0a84ff]/20 focus:border-[#0a84ff] transition-all"
+                  disabled={sending ||!currentUser}
+                />
+                {showMention && mentionUsersList.length > 0 && (
+                  <div className="absolute bottom-12 left-0 w-64 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-[#E5E5EA] dark:border-zinc-800 max-h-60 overflow-auto z-50">
+                    <div className="p-2">
+                      <input
+                        placeholder="Tìm người..."
+                        value={mentionQuery}
+                        onChange={(e) => setMentionQuery(e.target.value)}
+                        className="w-full px-3 py-1.5 text-sm bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg outline-none mb-2"
+                      />
+                      {mentionUsersList.map((user) => (
+                        <button
+                          key={user.uid}
+                          onClick={() => handleSelectMention(user)}
+                          className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#F2F2F7] dark:hover:bg-zinc-800 rounded-lg text-left"
+                        >
+                          <UserAvatar src={user.avatar} name={user.name} size={24} />
+                          <span className="text-sm">{user.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={handleSendComment}
+                disabled={!text.trim() || sending ||!currentUser}
+                className={`p-2.5 rounded-full bg-[#0a84ff] hover:bg-[#0071e3] text-white disabled:bg-zinc-300 dark:disabled:bg-zinc-700 disabled:cursor-not-allowed active:scale-90 transition-all`}
+              >
+                <FiSend size={18} />
+              </motion.button>
             </div>
-          )}
+          </div>
         </div>
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={handleSendComment}
-          disabled={!text.trim() || sending ||!currentUser}
-          className={`p-2.5 rounded-full bg-[#0a84ff] hover:bg-[#0071e3] text-white disabled:bg-zinc-300 dark:disabled:bg-zinc-700 disabled:cursor-not-allowed active:scale-90 transition-all`}
-        >
-          <FiSend size={18} />
-        </motion.button>
       </div>
+
+      <ImageGallery open={showImageGallery!== null} images={task.images || []} initialIndex={showImageGallery || 0} onClose={() => setShowImageGallery(null)} />
+      {shareTask && (
+        <ShareTaskModal
+          task={shareTask}
+          onClose={() => setShareTask(null)}
+        />
+      )}
     </div>
   </div>
-</div>
-
-
-        <ImageGallery open={showImageGallery!== null} images={task.images || []} initialIndex={showImageGallery || 0} onClose={() => setShowImageGallery(null)} />
-        {shareTask && (
-          <ShareTaskModal
-            task={shareTask}
-            onClose={() => setShareTask(null)}
-          />
-        )}
-      </div>
-    </>
-  );
-}            
+);
