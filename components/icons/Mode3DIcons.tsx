@@ -367,11 +367,11 @@ export const Palm3D = ({ active }: { active: boolean }) => (
     fill={active? "url(#trunkGrad)" : "#D1D5DB"} 
   />
   
-  {/* 3 LÁ - XOAY 15 ĐỘ QUANH TÂM */}
+  {/* 3 LÁ - XOAY 30 ĐỘ QUANH TÂM */}
   {/* 1. Lá trái - tâm 11,15 */}
   <motion.g
-    animate={{ rotate: [-15, 15, -15] }}
-    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+    animate={{ rotate: [-30, 30, -30] }}
+    transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
     style={{ transformOrigin: "11px 15px" }}
   >
     <ellipse
@@ -390,8 +390,8 @@ export const Palm3D = ({ active }: { active: boolean }) => (
   
   {/* 2. Lá phải - tâm 23,15 */}
   <motion.g
-    animate={{ rotate: [15, -15, 15] }}
-    transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+    animate={{ rotate: [30, -30, 30] }}
+    transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
     style={{ transformOrigin: "23px 15px" }}
   >
     <ellipse
@@ -410,8 +410,8 @@ export const Palm3D = ({ active }: { active: boolean }) => (
 
   {/* 3. Lá trên - tâm 17,10.5 */}
   <motion.g
-    animate={{ rotate: [-15, 15, -15] }}
-    transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
+    animate={{ rotate: [-30, 30, -30] }}
+    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
     style={{ transformOrigin: "17px 10.5px" }}
   >
     <ellipse
