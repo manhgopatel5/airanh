@@ -844,28 +844,36 @@ void status;
     </div>
 
     {/* Khung phải: Địa chỉ + Đã nhận + Ngày đăng */}
-    <div className="px-3 py-3 rounded-[20px] bg-[#F2F2F7] dark:bg-zinc-800/60 space-y-2">
-      <div>
-        <p className="text- text-[#8E8E93] dark:text-zinc-400 leading-none">Địa chỉ</p>
-        <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 leading-none mt-1 truncate">
-          {task.address || "Online"}
-        </p>
-      </div>
-      {isTask(task) && (
-        <div>
-          <p className="text- text-[#8E8E93] dark:text-zinc-400 leading-none">Đã nhận</p>
-          <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 leading-none mt-1">
-            {applications.filter(a => a.status === 'accepted').length} người
-          </p>
-        </div>
-      )}
-      <div>
-        <p className="text- text-[#8E8E93] dark:text-zinc-400 leading-none">Ngày đăng</p>
-        <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 leading-none mt-1">
-          {taskDate}
-        </p>
-      </div>
+  <div className="px-3 py-3 rounded- bg-[#F2F2F7] dark:bg-zinc-800/60 space-y-2">
+  <div>
+    <p className="text- text-[#8E8E93] dark:text-zinc-400 leading-none">Địa chỉ</p>
+    <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 leading-none mt-1 truncate">
+      {task.location?.address || task.location?.city || "Online"}
+    </p>
+  </div>
+  {isTask(task) && (
+    <div>
+      <p className="text- text-[#8E8E93] dark:text-zinc-400 leading-none">Đã nhận</p>
+      <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 leading-none mt-1">
+        {applications.filter(a => a.status === 'accepted').length} người
+      </p>
     </div>
+  )}
+  {isPlan(task) && (
+    <div>
+      <p className="text- text-[#8E8E93] dark:text-zinc-400 leading-none">Đã tham gia</p>
+      <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 leading-none mt-1">
+        {task.currentParticipants} người
+      </p>
+    </div>
+  )}
+  <div>
+    <p className="text- text-[#8E8E93] dark:text-zinc-400 leading-none">Ngày đăng</p>
+    <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 leading-none mt-1">
+      {taskDate}
+    </p>
+  </div>
+</div>
   </div>
 
   {/* Gạch ngang + tiêu đề Mô tả */}
