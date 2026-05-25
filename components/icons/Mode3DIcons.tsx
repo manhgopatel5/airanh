@@ -362,13 +362,10 @@ export const Palm3D = ({ active }: { active: boolean }) => (
 
       {/* 5. CÂY DỪA */}
       <g>
-        <path 
-          d="M16 26 Q18 19 17 12" 
-          stroke={active? "url(#trunkGrad)" : "#D1D5DB"} 
-          strokeWidth="4" 
-          strokeLinecap="round"
-          fill="none"
-        />
+<path 
+  d="M17 12 Q19 19 16 26 L14 26 Q17 19 16.5 12 Z" 
+  fill={active? "url(#trunkGrad)" : "#D1D5DB"} 
+/>
         {active && (
           <>
             <line x1="16.3" y1="25" x2="17.7" y2="24.8" stroke="#6B4423" strokeWidth="0.8" />
@@ -380,38 +377,47 @@ export const Palm3D = ({ active }: { active: boolean }) => (
           </>
         )}
         
-        <motion.g
-          animate={active? { rotate: [-3, 3, -3] } : {}}
-          transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-          style={{ transformOrigin: "17px 15px" }}
-        >
-          <ellipse
-            cx="11" cy="15" rx="5.5" ry="3.5"
-            fill={active? "#A8E6A3" : "#D1D5DB"}
-            transform="rotate(-30 11 15)"
-          />
-          {active && (
-            <ellipse cx="9.5" cy="14.5" rx="2" ry="1.3" fill="white" opacity="0.6" transform="rotate(-30 9.5 14.5)" />
-          )}
-          
-          <ellipse
-            cx="23" cy="15" rx="5.5" ry="3.5"
-            fill={active? "#5FD068" : "#D1D5DB"}
-            transform="rotate(30 23 15)"
-          />
-          {active && (
-            <ellipse cx="24.5" cy="14.5" rx="2" ry="1.3" fill="white" opacity="0.5" transform="rotate(30 24.5 14.5)" />
-          )}
+    <motion.g
+  animate={active? { rotate: [-3, 3, -3] } : {}}
+  transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+  style={{ transformOrigin: "17px 15px" }}
+>
+  {/* 1. Lá trái - nhạt nhất */}
+  <ellipse
+    cx="11" cy="15" rx="5.5" ry="3.5"
+    fill={active? "#A8E6A3" : "#D1D5DB"}
+    transform="rotate(-30 11 15)"
+  />
+  {active && (
+    <ellipse cx="9.5" cy="14.5" rx="2" ry="1.3" fill="white" opacity="0.6" transform="rotate(-30 9.5 14.5)" />
+  )}
+  
+  {/* 2. Lá phải - trung bình */}
+  <ellipse
+    cx="23" cy="15" rx="5.5" ry="3.5"
+    fill={active? "#5FD068" : "#D1D5DB"}
+    transform="rotate(30 23 15)"
+  />
+  {active && (
+    <ellipse cx="24.5" cy="14.5" rx="2" ry="1.3" fill="white" opacity="0.5" transform="rotate(30 24.5 14.5)" />
+  )}
 
-          <ellipse
-            cx="17" cy="12.5" rx="4.8" ry="4"
-            fill={active? "#2E8B3E" : "#D1D5DB"}
-          />
-          {active && (
-            <ellipse cx="17" cy="11.5" rx="2" ry="1.6" fill="white" opacity="0.4" />
-          )}
-        </motion.g>
-      </g>
-    </svg>
-  </motion.div>
+  {/* 3. Lá giữa - NHỎ LẠI */}
+  <ellipse
+    cx="17" cy="13" rx="3.5" ry="3"
+    fill={active? "#2E8B3E" : "#D1D5DB"}
+  />
+  {active && (
+    <ellipse cx="17" cy="12.2" rx="1.5" ry="1.2" fill="white" opacity="0.4" />
+  )}
+
+  {/* 4. LÁ MỚI - HƯỚNG LÊN */}
+  <ellipse
+    cx="17" cy="10.5" rx="3" ry="4.2"
+    fill={active? "#3CB043" : "#D1D5DB"}
+  />
+  {active && (
+    <ellipse cx="17" cy="9.5" rx="1.3" ry="1.8" fill="white" opacity="0.5" />
+  )}
+</motion.g>
 );
