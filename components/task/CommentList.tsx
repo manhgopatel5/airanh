@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, memo } from "react";
+import { useState, useRef, useEffect } from "react";
 import { FiMoreHorizontal } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
@@ -26,7 +26,7 @@ type Props = {
   likingComments: Set<string>;
 };
 
-function CommentListComponent({
+export function CommentList({
   comment: c,
   replies,
   currentUserId,
@@ -244,4 +244,3 @@ function CommentListComponent({
     </motion.div>
   );
 }
-export const CommentList = memo(CommentListComponent);
