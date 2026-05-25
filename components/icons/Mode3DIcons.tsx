@@ -367,12 +367,13 @@ export const Palm3D = ({ active }: { active: boolean }) => (
     fill={active? "url(#trunkGrad)" : "#D1D5DB"} 
   />
   
-  {/* 3 LÁ HƯỚNG VÀO TÂM - LẮC LƯ BIÊN ĐỘ KHÁC NHAU */}
+  {/* 3 LÁ - LUÔN RUNG, CHỈ ĐỔI MÀU KHI ACTIVE */}
+  {/* 1. Lá trái - lắc mạnh */}
   <motion.g
-    animate={active ? { 
+    animate={{ 
       rotate: [-6, 6, -6],
       x: [-0.3, 0.3, -0.3]
-    } : {}}
+    }}
     transition={{ 
       rotate: { duration: 2.2, repeat: Infinity, ease: "easeInOut" },
       x: { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
@@ -384,18 +385,21 @@ export const Palm3D = ({ active }: { active: boolean }) => (
       fill={active? "#A8E6A3" : "#D1D5DB"}
       transform="rotate(-25 11 15)"
     />
-    <ellipse 
-      cx="12.5" cy="14.5" rx="2" ry="1.3" 
-      fill="white" opacity="0.6" 
-      transform="rotate(-25 12.5 14.5)" 
-    />
+    {active && (
+      <ellipse 
+        cx="12.5" cy="14.5" rx="2" ry="1.3" 
+        fill="white" opacity="0.6" 
+        transform="rotate(-25 12.5 14.5)" 
+      />
+    )}
   </motion.g>
   
+  {/* 2. Lá phải - lắc vừa */}
   <motion.g
-    animate={active ? { 
+    animate={{ 
       rotate: [4, -4, 4],
       x: [0.2, -0.2, 0.2]
-    } : {}}
+    }}
     transition={{ 
       rotate: { duration: 3.1, repeat: Infinity, ease: "easeInOut", delay: 0.4 },
       x: { duration: 3.1, repeat: Infinity, ease: "easeInOut", delay: 0.4 }
@@ -407,18 +411,21 @@ export const Palm3D = ({ active }: { active: boolean }) => (
       fill={active? "#5FD068" : "#D1D5DB"}
       transform="rotate(25 23 15)"
     />
-    <ellipse 
-      cx="21.5" cy="14.5" rx="2" ry="1.3" 
-      fill="white" opacity="0.5" 
-      transform="rotate(25 21.5 14.5)" 
-    />
+    {active && (
+      <ellipse 
+        cx="21.5" cy="14.5" rx="2" ry="1.3" 
+        fill="white" opacity="0.5" 
+        transform="rotate(25 21.5 14.5)" 
+      />
+    )}
   </motion.g>
 
+  {/* 3. Lá trên - lắc nhẹ */}
   <motion.g
-    animate={active ? { 
+    animate={{ 
       rotate: [-2.5, 2.5, -2.5],
       y: [-0.2, 0.2, -0.2]
-    } : {}}
+    }}
     transition={{ 
       rotate: { duration: 2.7, repeat: Infinity, ease: "easeInOut", delay: 0.7 },
       y: { duration: 2.7, repeat: Infinity, ease: "easeInOut", delay: 0.7 }
@@ -429,10 +436,12 @@ export const Palm3D = ({ active }: { active: boolean }) => (
       cx="17" cy="10.5" rx="3" ry="4.2"
       fill={active? "#3CB043" : "#D1D5DB"}
     />
-    <ellipse 
-      cx="17" cy="11.5" rx="1.3" ry="1.8" 
-      fill="white" opacity="0.5" 
-    />
+    {active && (
+      <ellipse 
+        cx="17" cy="11.5" rx="1.3" ry="1.8" 
+        fill="white" opacity="0.5" 
+      />
+    )}
   </motion.g>
 </g>
     </svg>
