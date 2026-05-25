@@ -843,55 +843,51 @@ void status;
     )}
   </div>
 ) : (
-<div className="flex mt-4 mb-1 -mx-4 overflow-hidden rounded-2xl">
-<motion.button
-  whileTap={{ scale: 0.98 }}
-  onClick={handleStartChat}
-  className="flex-1 h-[64px] bg-[#E3F2FD] dark:bg-[#0A84FF]/20 flex flex-col items-center justify-center gap-1 text-[#0A84FF] dark:text-[#5AC8FA] active:bg-[#D1E9FC] dark:active:bg-[#0A84FF]/30 transition-colors border-r border-white/40 dark:border-zinc-800"
->
-      <FiMessageSquare size={20} strokeWidth={2.2} />
-      <span className="text- font-semibold leading-none">Nhắn tin</span>
-    </motion.button>
+<div className="flex mt-4 -mx-4 border-t border-[#E5E5EA] dark:border-zinc-800">
+  <motion.button
+    whileTap={{ scale: 0.98 }}
+    onClick={handleStartChat}
+    className="flex-1 h- flex flex-col items-center justify-center gap-1 text-[#8E8E93] dark:text-zinc-500 active:bg-[#F2F2F7] dark:active:bg-zinc-800 transition-colors"
+  >
+    <FiMessageSquare size={20} strokeWidth={2.2} />
+    <span className="text- font-semibold leading-none">Nhắn tin</span>
+  </motion.button>
 
-<motion.button
-  whileTap={{ scale: 0.98 }}
-  onClick={() => owner?.phone && window.open(`tel:${owner.phone}`)}
-  disabled={!owner?.phone}
-  className="flex-1 h-[64px] bg-[#E8F5E9] dark:bg-[#1E8E3E]/20 flex flex-col items-center justify-center gap-1 text-[#00A86B] active:bg-[#D4EDDA] dark:active:bg-[#1E8E3E]/30 disabled:opacity-40 disabled:active:bg-[#E8F5E9] transition-colors border-r border-white/40 dark:border-zinc-800"
->
-      <FiPhone size={20} strokeWidth={2.2} />
-      <span className="text- font-semibold leading-none">Gọi điện</span>
-    </motion.button>
+  <motion.button
+    whileTap={{ scale: 0.98 }}
+    onClick={() => owner?.phone && window.open(`tel:${owner.phone}`)}
+    disabled={!owner?.phone}
+    className="flex-1 h- flex flex-col items-center justify-center gap-1 text-[#8E8E93] dark:text-zinc-500 active:bg-[#F2F2F7] dark:active:bg-zinc-800 disabled:opacity-40 transition-colors"
+  >
+    <FiPhone size={20} strokeWidth={2.2} />
+    <span className="text- font-semibold leading-none">Gọi điện</span>
+  </motion.button>
 
-    <motion.button
-      whileTap={{ scale: 0.98 }}
-      onClick={isApplied? handleCancelApply : handleJoinTask}
-      disabled={(!isApplied && (isFull || task.status!== "open")) || joining}
- className={`flex-1 h-[64px] flex flex-col items-center justify-center gap-1 font-semibold active:opacity-90 disabled:opacity-40 transition-colors border-r border-white/40 dark:border-zinc-800 ${
-  isApplied
-    ? "bg-[#E8F5E9] dark:bg-green-950/40 text-[#00A86B] active:bg-[#D4EDDA] dark:active:bg-green-900/60"
-    : "bg-[#00A86B] active:bg-[#009960] text-white"
-}`}
-    >
-      {joining? (
-        <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-      ) : isApplied? (
-        <FiCheckCircle size={20} strokeWidth={2.5} />
-      ) : (
-        <FiSend size={20} strokeWidth={2.5} />
-      )}
-      <span className="text- leading-none">{isApplied? "Đã ứng tuyển" : "Ứng tuyển"}</span>
-    </motion.button>
+  <motion.button
+    whileTap={{ scale: 0.98 }}
+    onClick={isApplied? handleCancelApply : handleJoinTask}
+    disabled={(!isApplied && (isFull || task.status!== "open")) || joining}
+    className="flex-1 h- flex flex-col items-center justify-center gap-1 text-[#8E8E93] dark:text-zinc-500 active:bg-[#F2F2F7] dark:active:bg-zinc-800 disabled:opacity-40 transition-colors"
+  >
+    {joining? (
+      <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+    ) : isApplied? (
+      <FiCheckCircle size={20} strokeWidth={2.5} />
+    ) : (
+      <FiSend size={20} strokeWidth={2.5} />
+    )}
+    <span className="text- font-semibold leading-none">{isApplied? "Đã ứng tuyển" : "Ứng tuyển"}</span>
+  </motion.button>
 
-<motion.button
-  whileTap={{ scale: 0.98 }}
-  onClick={() => toast.info("Đã gửi báo cáo")}
-  className="flex-1 h-[64px] bg-[#FFF4E5] dark:bg-[#FF9500]/15 flex flex-col items-center justify-center gap-1 text-[#FF9500] active:bg-[#FFE8CC] dark:active:bg-[#FF9500]/25 transition-colors"
->
-      <FiAlertTriangle size={20} strokeWidth={2.2} />
-      <span className="text- font-semibold leading-none">Báo cáo</span>
-    </motion.button>
-  </div>
+  <motion.button
+    whileTap={{ scale: 0.98 }}
+    onClick={() => toast.info("Đã gửi báo cáo")}
+    className="flex-1 h- flex flex-col items-center justify-center gap-1 text-[#8E8E93] dark:text-zinc-500 active:bg-[#F2F2F7] dark:active:bg-zinc-800 transition-colors"
+  >
+    <FiAlertTriangle size={20} strokeWidth={2.2} />
+    <span className="text- font-semibold leading-none">Báo cáo</span>
+  </motion.button>
+</div>
 )}
   </div>
 </div>
