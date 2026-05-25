@@ -516,7 +516,7 @@ const sortedParents = useMemo(() => {
     return 0;
   });
 }, [parentComments, commentSort, task?.userId]); // <-- task?.userId có thể undefined
-const visibleComments = useMemo(() => sortedParents, [sortedParents]);
+const visibleComments = sortedParents;
 
 const hasMoreComments =!!lastDoc && comments.length >= 5;
   const getReplies = (id: string) => comments.filter((c) => c.parentId === id);
@@ -1171,7 +1171,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
                     onClick={() => handleSelectMention(user)}
                     className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#F2F2F7] dark:hover:bg-zinc-800 rounded-lg text-left"
                   >
-                    <UserAvatar src={user.avatar} name={user.name} size={24} />
+<UserAvatar src={user.avatar || ""} name={user.name || "User"} size={24} />
                     <span className="text-sm">{user.name}</span>
                   </button>
                 ))}
