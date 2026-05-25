@@ -534,7 +534,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
   return (
     <>
       <Toaster richColors position="top-center" />
-      <div className="max-w-xl mx-auto bg-[#F2F2F7] dark:bg-black min-h-screen pb-4 px-3 pt-2">
+<div className="max-w-xl mx-auto bg-white dark:bg-zinc-950 min-h-screen pb-4 px-3 pt-2">
         <div className="bg-white dark:bg-zinc-900 rounded-3xl border-zinc-100 dark:border-zinc-800 shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden">
           <div className="p-5">
            <div className="flex gap-3 items-start">
@@ -706,7 +706,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
               {/* 2 khung: Ngày đăng - Hạn chót */}
 <div className="flex items-center gap-2 mt-4">
   {/* 1. Ngày đăng */}
-  <div className="flex-1 px-1.5 py-2.5 rounded-xl bg-[#F2F2F7] dark:bg-zinc-800/60 border border-[#E5E5E7] dark:border-zinc-700">
+<div className="flex-1 px-1.5 py-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-[#E5E5E7] dark:border-zinc-700">
     <div className="flex items-center justify-center gap-1">
       <FiCalendar size={14} className="shrink-0 text-[#8E8E93]" />
       <div className="text-center">
