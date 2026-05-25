@@ -309,7 +309,7 @@ const theme = {
       <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 select-none">
         <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl">
     <div className="px-4 pt-4 pb-2">
-  <div className="relative h-16 rounded-2xl bg-white dark:bg-zinc-900 p-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.08),inset_0_1px_0_0_rgba(255,255,255,0.9)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.4),inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+<div className="relative h-16 rounded-2xl p-1.5">
 
     {/* Ambient glow tỏa ra ngoài */}
     <motion.div
