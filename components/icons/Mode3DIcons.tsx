@@ -367,51 +367,47 @@ export const Palm3D = ({ active }: { active: boolean }) => (
     fill={active? "url(#trunkGrad)" : "#D1D5DB"} 
   />
   
-  {/* 3 LÁ - XOAY 30 ĐỘ QUANH TÂM */}
-  {/* 1. Lá trái - tâm 11,15 */}
+  {/* 3 LÁ - GỘP ROTATE GỐC + ROTATE ANIMATE */}
+  {/* 1. Lá trái: gốc -25°, lắc ±30° */}
   <motion.g
-    animate={{ rotate: [-30, 30, -30] }}
-    transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+    animate={{ rotate: [-55, 5, -55] }}
+    transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
     style={{ transformOrigin: "11px 15px" }}
   >
     <ellipse
       cx="11" cy="15" rx="5.5" ry="3.5"
       fill={active? "#A8E6A3" : "#D1D5DB"}
-      transform="rotate(-25 11 15)"
     />
     {active && (
       <ellipse 
         cx="12.5" cy="14.5" rx="2" ry="1.3" 
         fill="white" opacity="0.6" 
-        transform="rotate(-25 12.5 14.5)" 
       />
     )}
   </motion.g>
   
-  {/* 2. Lá phải - tâm 23,15 */}
+  {/* 2. Lá phải: gốc 25°, lắc ±30° */}
   <motion.g
-    animate={{ rotate: [30, -30, 30] }}
-    transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+    animate={{ rotate: [55, -5, 55] }}
+    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
     style={{ transformOrigin: "23px 15px" }}
   >
     <ellipse
       cx="23" cy="15" rx="5.5" ry="3.5"
       fill={active? "#5FD068" : "#D1D5DB"}
-      transform="rotate(25 23 15)"
     />
     {active && (
       <ellipse 
         cx="21.5" cy="14.5" rx="2" ry="1.3" 
         fill="white" opacity="0.5" 
-        transform="rotate(25 21.5 14.5)" 
       />
     )}
   </motion.g>
 
-  {/* 3. Lá trên - tâm 17,10.5 */}
+  {/* 3. Lá trên: gốc 0°, lắc ±30° */}
   <motion.g
     animate={{ rotate: [-30, 30, -30] }}
-    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+    transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
     style={{ transformOrigin: "17px 10.5px" }}
   >
     <ellipse
