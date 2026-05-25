@@ -307,7 +307,7 @@ const theme = {
       <Toaster richColors position="top-center" />
       {/* FIX: Xóa min-h-screen, không tự scroll */}
       <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 select-none">
-        <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl">
+<div className="sticky top-0 z-40 bg-white dark:bg-zinc-950">
     <div className="px-4 pt-4 pb-2">
 <div className="relative h-16 rounded-2xl p-1.5 bg-white dark:bg-zinc-900">
 
