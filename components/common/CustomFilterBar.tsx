@@ -111,14 +111,14 @@ const TaskIcons = {
           </filter>
         </defs>
 
-        <circle
-          cx="12" cy="12" r="10"
-          fill={isActive? "#F5F7" : "none"}
-          stroke="currentColor"
-          strokeWidth="2"
-          opacity={isActive? 1 : 0.3}
-          filter={isActive? "url(#shadow)" : "none"}
-        />
+  <circle
+  cx="12" cy="12" r="10"
+  fill={isActive? "#FFFFFF" : "none"}  // Đổi #F5F7 thành #FFFFFF
+  stroke="currentColor"
+  strokeWidth="2"
+  opacity={isActive? 1 : 0.3}
+  filter={isActive? "url(#shadow)" : "none"}
+/>
 
         <g opacity={isActive? 0.6 : 0.3}>
           <path d="M12 3V5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
