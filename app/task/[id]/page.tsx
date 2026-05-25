@@ -809,47 +809,41 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
   </div>
 )}
 </div>
-    {/* Hàng 2: 4 Badge đồng bộ style app */}
-    <div className="grid grid-cols-4 gap-2 mt-3">
-      <div className={`px-2 h-8 rounded-[20px] text-[13px] font-semibold flex items-center justify-center gap-1.5 ${status.color}`}>
-        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${status.dot}`} />
-        <span className="truncate">{status.label}</span>
+  
+
+  <div className="mt-4">
+  <h2 className="font-bold text-[17px] leading-snug text-[#1C1C1E] dark:text-zinc-100">{task.title}</h2>
+
+  {/* 3 dòng text thay cho 3 badge */}
+  <div className="mt-2 space-y-1.5">
+    {isTask(task) && task.price > 0 && (
+      <div className="flex items-center gap-2 text-[15px]">
+        <span className="text-[#8E8E93] dark:text-zinc-400">Tiền công:</span>
+        <span className="font-semibold text-[#0A84FF]">{task.price.toLocaleString("vi-VN")} đ</span>
       </div>
+    )}
+    {isTask(task) && (
+      <div className="flex items-center gap-2 text-[15px]">
+        <span className="text-[#8E8E93] dark:text-zinc-400">Số người ứng tuyển:</span>
+        <span className="font-semibold text-[#1C1C1E] dark:text-zinc-100">{task.appliedCount || 0}/{task.totalSlots}</span>
+      </div>
+    )}
+    {isTask(task) && task.deadline?.seconds && (
+      <div className="flex items-center gap-2 text-[15px]">
+        <span className="text-[#8E8E93] dark:text-zinc-400">Hạn chót:</span>
+        <span className={`font-semibold ${isUrgent? 'text-[#FF3B30]' : 'text-[#1C1C1E] dark:text-zinc-100'}`}>
+          {taskDeadline}
+        </span>
+      </div>
+    )}
+  </div>
 
-      {isTask(task) && (
-        <div className="px-2 h-8 rounded-[20px] text-[13px] font-semibold bg-[#E8F0FE] text-[#1A73E8] dark:bg-[#1A73E8]/20 dark:text-[#8AB4F8] flex items-center justify-center gap-1.5">
-          <FiUsers size={14} className="shrink-0" />
-          <span className="truncate">{task.appliedCount || 0}/{task.totalSlots}</span>
-        </div>
-      )}
-
-      {isTask(task) && task.price > 0 && (
-        <div className="px-2 h-8 rounded-[20px] text-[13px] font-semibold bg-[#E3F2FD] text-[#0A84FF] dark:bg-[#0A84FF]/20 dark:text-[#5AC8FA] flex items-center justify-center">
-          <span className="truncate">{task.price.toLocaleString("vi-VN")} đ</span>
-        </div>
-      )}
-
-      {isTask(task) && task.deadline?.seconds && task.status!== "completed" && (
-        <div className={`px-2 h-8 rounded-[20px] text-[13px] font-semibold flex items-center justify-center ${
-          isUrgent 
-           ? "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B] animate-pulse" 
-            : "bg-[#FEF7E0] text-[#F9AB00] dark:bg-[#F9AB00]/20 dark:text-[#FDD663]"
-        }`}>
-          <span className="tabular-nums truncate">{timeLeft?.replace('Còn ', '') || "Hết hạn"}</span>
-        </div>
-      )}
-    </div>
-
-    {/* Hàng 3: Title + Description */}
-    <div className="mt-4">
-      <h2 className="font-bold text-[17px] leading-snug text-[#1C1C1E] dark:text-zinc-100">{task.title}</h2>
-      
-      {task.description && (
-        <Linkify options={{ target: "_blank", className: `text-[#0A84FF] hover:underline` }}>
-          <p className="text-[15px] text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed mt-2">{task.description}</p>
-        </Linkify>
-      )}
-    </div>
+  {task.description && (
+    <Linkify options={{ target: "_blank", className: `text-[#0A84FF] hover:underline` }}>
+      <p className="text-[15px] text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed mt-3">{task.description}</p>
+    </Linkify>
+  )}
+</div>
 
     {/* Hàng 4: 2 Card Ngày đăng/Hạn chót - đồng bộ ảnh 3 */}
     <div className="grid grid-cols-2 gap-2 mt-4">
