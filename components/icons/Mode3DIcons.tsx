@@ -335,13 +335,13 @@ export const Palm3D = ({ active }: { active: boolean }) => (
           </>
         )}
         
-{/* 3 LÁ TRÒN KIỂU CŨ - DỊCH XUỐNG CHE ĐẦU CÂY */}
+{/* 3 LÁ TRÒN - LÁ PHẢI NẰM DƯỚI LÁ GIỮA */}
 <motion.g
   animate={active? { rotate: [-3, 3, -3] } : {}}
   transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
   style={{ transformOrigin: "17px 15px" }}
 >
-  {/* Lá trái */}
+  {/* 1. Lá trái - vẽ đầu tiên */}
   <ellipse
     cx="11" cy="15" rx="5.5" ry="3.5"
     fill={active? "url(#leaf3D)" : "#D1D5DB"}
@@ -351,16 +351,7 @@ export const Palm3D = ({ active }: { active: boolean }) => (
     <ellipse cx="9.5" cy="14.5" rx="2" ry="1.3" fill="white" opacity="0.5" transform="rotate(-30 9.5 14.5)" />
   )}
   
-  {/* Lá giữa */}
-  <ellipse
-    cx="17" cy="12.5" rx="4.8" ry="4"
-    fill={active? "url(#leaf3D)" : "#D1D5DB"}
-  />
-  {active && (
-    <ellipse cx="17" cy="11.5" rx="2" ry="1.6" fill="white" opacity="0.5" />
-  )}
-  
-  {/* Lá phải */}
+  {/* 2. Lá phải - vẽ thứ 2, nằm dưới lá giữa */}
   <ellipse
     cx="23" cy="15" rx="5.5" ry="3.5"
     fill={active? "url(#leaf3D)" : "#D1D5DB"}
@@ -369,10 +360,19 @@ export const Palm3D = ({ active }: { active: boolean }) => (
   {active && (
     <ellipse cx="24.5" cy="14.5" rx="2" ry="1.3" fill="white" opacity="0.5" transform="rotate(30 24.5 14.5)" />
   )}
+
+  {/* 3. Lá giữa - vẽ cuối cùng để đè lên */}
+  <ellipse
+    cx="17" cy="12.5" rx="4.8" ry="4"
+    fill={active? "url(#leaf3D)" : "#D1D5DB"}
+  />
+  {active && (
+    <ellipse cx="17" cy="11.5" rx="2" ry="1.6" fill="white" opacity="0.5" />
+  )}
 </motion.g>
       </g>
 
-      {active && <ellipse cx="16" cy="27.5" rx="7" ry="1.8" fill="#000000" opacity="0.2" />}
+
     </svg>
   </motion.div>
 );
