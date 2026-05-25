@@ -811,73 +811,77 @@ void status;
 </div>
   
 
-  <div className="mt-4">
-  <h2 className="font-bold text-[17px] leading-snug text-[#1C1C1E] dark:text-zinc-100">{task.title}</h2>
+ <div className="mt-4">
+  <h2 className="font-bold text- leading-snug text-[#1C1C1E] dark:text-zinc-100">{task.title}</h2>
 
-  {/* 3 dòng text - nhỏ đều */}
-  <div className="mt-2 space-y-1">
-    {isTask(task) && task.price > 0 && (
-      <div className="flex items-center gap-2 text-[13px]">
-        <span className="text-[#8E8E93] dark:text-zinc-400">Tiền công:</span>
-        <span className="font-medium text-[#0A84FF]">{task.price.toLocaleString("vi-VN")} đ</span>
+  {/* 2 khung chia đôi */}
+  <div className="grid grid-cols-2 gap-2 mt-3">
+    {/* Khung trái: Tiền công + Số người ứng tuyển + Hạn chót */}
+    <div className="px-3 py-3 rounded-[20px] bg-[#F2F2F7] dark:bg-zinc-800/60 space-y-2">
+      {isTask(task) && task.price > 0 && (
+        <div>
+          <p className="text- text-[#8E8E93] dark:text-zinc-400 leading-none">Tiền công</p>
+          <p className="text- font-semibold text-[#0A84FF] leading-none mt-1">
+            {task.price.toLocaleString("vi-VN")} đ
+          </p>
+        </div>
+      )}
+      {isTask(task) && (
+        <div>
+          <p className="text- text-[#8E8E93] dark:text-zinc-400 leading-none">Ứng tuyển</p>
+          <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 leading-none mt-1">
+            {task.appliedCount || 0}/{task.totalSlots}
+          </p>
+        </div>
+      )}
+      {isTask(task) && task.deadline?.seconds && (
+        <div>
+          <p className="text- text-[#8E8E93] dark:text-zinc-400 leading-none">Hạn chót</p>
+          <p className={`text- font-semibold leading-none mt-1 ${isUrgent? 'text-[#FF3B30]' : 'text-[#1C1C1E] dark:text-zinc-100'}`}>
+            {timeLeft || taskDeadline}
+          </p>
+        </div>
+      )}
+    </div>
+
+    {/* Khung phải: Địa chỉ + Đã nhận + Ngày đăng */}
+    <div className="px-3 py-3 rounded-[20px] bg-[#F2F2F7] dark:bg-zinc-800/60 space-y-2">
+      <div>
+        <p className="text- text-[#8E8E93] dark:text-zinc-400 leading-none">Địa chỉ</p>
+        <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 leading-none mt-1 truncate">
+          {task.address || "Online"}
+        </p>
       </div>
-    )}
-    {isTask(task) && (
-      <div className="flex items-center gap-2 text-[13px]">
-        <span className="text-[#8E8E93] dark:text-zinc-400">Số người ứng tuyển:</span>
-        <span className="font-medium text-[#1C1C1E] dark:text-zinc-100">{task.appliedCount || 0}/{task.totalSlots}</span>
+      {isTask(task) && (
+        <div>
+          <p className="text- text-[#8E8E93] dark:text-zinc-400 leading-none">Đã nhận</p>
+          <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 leading-none mt-1">
+            {applications.filter(a => a.status === 'accepted').length} người
+          </p>
+        </div>
+      )}
+      <div>
+        <p className="text- text-[#8E8E93] dark:text-zinc-400 leading-none">Ngày đăng</p>
+        <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 leading-none mt-1">
+          {taskDate}
+        </p>
       </div>
-    )}
-    {isTask(task) && task.deadline?.seconds && (
-      <div className="flex items-center gap-2 text-[13px]">
-        <span className="text-[#8E8E93] dark:text-zinc-400">Hạn chót:</span>
-        <span className={`font-medium ${isUrgent? 'text-[#FF3B30]' : 'text-[#1C1C1E] dark:text-zinc-100'}`}>
-          {timeLeft || taskDeadline}
-        </span>
-      </div>
-    )}
+    </div>
   </div>
 
-  {/* Gạch ngang + tiêu đề Mô tả - to in đậm */}
+  {/* Gạch ngang + tiêu đề Mô tả */}
   {task.description && (
     <>
       <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 my-4" />
-      <h3 className="font-bold text-[16px] text-[#1C1C1E] dark:text-zinc-100 mb-2">
+      <h3 className="font-bold text- text-[#1C1C1E] dark:text-zinc-100 mb-2">
         Mô tả công việc
       </h3>
       <Linkify options={{ target: "_blank", className: `text-[#0A84FF] hover:underline` }}>
-        <p className="text-[13px] text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">{task.description}</p>
+        <p className="text- text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">{task.description}</p>
       </Linkify>
     </>
   )}
 </div>
-
-    {/* Hàng 4: 2 Card Ngày đăng/Hạn chót - đồng bộ ảnh 3 */}
-    <div className="grid grid-cols-2 gap-2 mt-4">
-      <div className="px-3 py-3 rounded-[20px] bg-[#F2F2F7] dark:bg-zinc-800/60">
-        <div className="flex items-center gap-2">
-          <FiCalendar size={16} className="shrink-0 text-[#8E8E93]" />
-          <div className="min-w-0">
-            <p className="text-[12px] text-[#8E8E93] leading-none">Ngày đăng</p>
-            <p className="text-[14px] font-semibold text-[#1C1C1E] dark:text-zinc-100 tabular-nums leading-none mt-1">
-              {taskDate}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="px-3 py-3 rounded-[20px] bg-[#FFE5E5] dark:bg-[#FF3B30]/10">
-        <div className="flex items-center gap-2">
-          <FiClock size={16} className="shrink-0 text-[#FF3B30]" />
-          <div className="min-w-0">
-            <p className="text-[12px] text-[#FF3B30] leading-none">Hạn chót</p>
-            <p className="text-[14px] font-semibold text-[#FF3B30] tabular-nums leading-none mt-1">
-              {taskDeadline || "Chưa có"}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 
