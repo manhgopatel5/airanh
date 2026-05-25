@@ -67,7 +67,7 @@ const Portal = ({ children }: { children: React.ReactNode }) => {
   return mounted? createPortal(children, document.body) : null;
 };
 
-
+const PRIMARY = "#0a84ff";
 
 export default function TaskDetailPage() {
   const { id } = useParams();
@@ -85,7 +85,7 @@ export default function TaskDetailPage() {
   const [owner, setOwner] = useState<UserData | null>(null);
   const [comments, setComments] = useState<TaskComment[]>([]);
 const [commentSort, setCommentSort] = useState<'relevant' | 'newest' | 'all'>('newest');
-
+const [visibleCount, setVisibleCount] = useState(5);
 const [showSortMenu, setShowSortMenu] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const isOwner = currentUser?.uid === task?.userId;
@@ -171,23 +171,9 @@ useEffect(() => {
     setApplications(apps);
   };
 const [lastDoc, setLastDoc] = useState<any>(null);
-const [loadingMore, setLoadingMore] = useState(false);
 
-const loadComments = async () => {
-  if (!task?.id ||!db) return;
-  const q = query(
-    collection(db, "tasks", task.id, "comments"),
-    orderBy("createdAt", "desc"),
-    limit(5)
-  );
-  const snap = await getDocs(q);
-  setComments(snap.docs.map(d => ({ id: d.id,...d.data() } as TaskComment)));
-  setLastDoc(snap.docs[snap.docs.length - 1] || null);
-  
-};
 const loadMoreComments = async () => {
-  if (!task?.id ||!lastDoc || loadingMore) return;
-  setLoadingMore(true);
+  if (!task?.id || !lastDoc) return;
   const q = query(
     collection(db, "tasks", task.id, "comments"),
     orderBy("createdAt", "desc"),
@@ -195,16 +181,10 @@ const loadMoreComments = async () => {
     limit(5)
   );
   const snap = await getDocs(q);
-  if (snap.empty) {
-    setLastDoc(null); // <-- THÊM DÒNG NÀY
-    setLoadingMore(false);
-    return;
-  }
   const newComments = snap.docs.map(d => ({ id: d.id,...d.data() } as TaskComment));
-  setComments(prev => [...prev,...newComments]);
+  setComments(prev => [...prev, ...newComments]);
   setLastDoc(snap.docs[snap.docs.length - 1]);
-  
-  setLoadingMore(false);
+  setVisibleCount(prev => prev + 5);
 };
 
   useEffect(() => {
@@ -498,10 +478,7 @@ setComments(prev => {
   if (loading) return <div className="p-4 text-center">Đang tải...</div>;
   if (!task) return <div className="p-4 text-center">Không tìm thấy task</div>;
 
-const parentComments = useMemo(() =>
-  comments?.filter((c) =>!c.parentId) || [],
-  [comments]
-);
+  const parentComments = comments.filter((c) =>!c.parentId);
 
 const sortedParents = useMemo(() => {
   return [...parentComments].sort((a, b) => {
@@ -515,10 +492,14 @@ const sortedParents = useMemo(() => {
     }
     return 0;
   });
-}, [parentComments, commentSort, task?.userId]); // <-- task?.userId có thể undefined
-const visibleComments = sortedParents;
+}, [parentComments, commentSort, task?.userId]);
 
-const hasMoreComments =!!lastDoc && comments.length >= 5;
+const visibleComments = useMemo(() => 
+  sortedParents.slice(0, visibleCount), 
+  [sortedParents, visibleCount]
+);
+
+const hasMoreComments = sortedParents.length > visibleCount;
   const getReplies = (id: string) => comments.filter((c) => c.parentId === id);
 
   const handleAcceptApp = async (appId: string, applicantId: string) => {
@@ -583,7 +564,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
   const isExpired = isTask(task) && task.deadline && task.deadline.seconds * 1000 < Date.now();
   const status = isExpired
    ? { label: "Đã hết hạn", color: "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B]", dot: "bg-[#FF3B30]" }
-    : statusMap[task.status as TaskStatus] || statusMap.open || statusMap.open;
+    : statusMap[task.status] || statusMap.open;
 
   return (
     <>
@@ -752,12 +733,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
               <h2 className="font-semibold text-base leading-snug mb-2 text-[#1C1C1E]">{task.title}</h2>
               
               {task.description && (
-            <Linkify
-  options={{
-    target: "_blank",
-    className: "text-blue-500 hover:underline"
-  }}
->
+                               <Linkify options={{ target: "_blank", className: `text-[${PRIMARY}] hover:underline` }}>
                   <p className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed mb-3">{task.description}</p>
                 </Linkify>
               )}
@@ -1006,10 +982,10 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
                           className="object-cover"
                           priority={i === 0}
                         />
-                        {i === 2 && (task.images?.length || 0) > 3 && (
+                        {i === 2 && task.images!.length > 3 && (
                           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
                             <span className="text-white font-bold text-">
-                              +{(task.images?.length || 0) - 3}
+                              +{task.images!.length - 3}
                             </span>
                           </div>
                         )}
@@ -1052,7 +1028,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
               <h4 className="font-bold text-lg mb-4">Sắp xếp theo</h4>
               
               <button
-                onClick={() => { setCommentSort('relevant'); setShowSortMenu(false);  }}
+                onClick={() => { setCommentSort('relevant'); setShowSortMenu(false); setVisibleCount(5); }}
                 className="w-full text-left py-3 flex items-start gap-3"
               >
                 <div className={`w-5 h-5 rounded-full border-2 mt-0.5 ${commentSort === 'relevant'? 'border-[#0a84ff] bg-[#0a84ff]' : 'border-zinc-300'}`}>
@@ -1065,7 +1041,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
               </button>
 
               <button
-                onClick={() => { setCommentSort('newest'); setShowSortMenu(false);  }}
+                onClick={() => { setCommentSort('newest'); setShowSortMenu(false); setVisibleCount(5); }}
                 className="w-full text-left py-3 flex items-start gap-3"
               >
                 <div className={`w-5 h-5 rounded-full border-2 mt-0.5 ${commentSort === 'newest'? 'border-[#0a84ff] bg-[#0a84ff]' : 'border-zinc-300'}`}>
@@ -1078,7 +1054,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
               </button>
 
               <button
-                onClick={() => { setCommentSort('all'); setShowSortMenu(false);  }}
+                onClick={() => { setCommentSort('all'); setShowSortMenu(false); setVisibleCount(5); }}
                 className="w-full text-left py-3 flex items-start gap-3"
               >
                 <div className={`w-5 h-5 rounded-full border-2 mt-0.5 ${commentSort === 'all'? 'border-[#0a84ff] bg-[#0a84ff]' : 'border-zinc-300'}`}>
@@ -1131,10 +1107,9 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
 {hasMoreComments && (
   <button
     onClick={loadMoreComments}
-    disabled={loadingMore}
-    className="w-full py-3 text-sm font-semibold text-[#0a84ff] active:bg-zinc-50 dark:active:bg-zinc-800 rounded-xl mt-2 disabled:opacity-50"
+    className="w-full py-3 text-sm font-semibold text-[#0a84ff] active:bg-zinc-50 dark:active:bg-zinc-800 rounded-xl mt-2"
   >
-    {loadingMore ? "Đang tải..." : "Xem thêm bình luận"}
+    Xem thêm bình luận
   </button>
 )}
         </div>
@@ -1176,7 +1151,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
                     onClick={() => handleSelectMention(user)}
                     className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#F2F2F7] dark:hover:bg-zinc-800 rounded-lg text-left"
                   >
-<UserAvatar src={user.avatar || ""} name={user.name || "User"} size={24} />
+                    <UserAvatar src={user.avatar} name={user.name} size={24} />
                     <span className="text-sm">{user.name}</span>
                   </button>
                 ))}
