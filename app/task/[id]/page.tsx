@@ -183,7 +183,7 @@ const loadComments = async () => {
   const snap = await getDocs(q);
   setComments(snap.docs.map(d => ({ id: d.id,...d.data() } as TaskComment)));
   setLastDoc(snap.docs[snap.docs.length - 1] || null);
-  setVisibleCount(5);
+  
 };
 const loadMoreComments = async () => {
   if (!task?.id ||!lastDoc || loadingMore) return;
@@ -203,7 +203,7 @@ const loadMoreComments = async () => {
   const newComments = snap.docs.map(d => ({ id: d.id,...d.data() } as TaskComment));
   setComments(prev => [...prev,...newComments]);
   setLastDoc(snap.docs[snap.docs.length - 1]);
-  setVisibleCount(prev => prev + 5);
+  
   setLoadingMore(false);
 };
 
@@ -1044,7 +1044,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
               <h4 className="font-bold text-lg mb-4">Sắp xếp theo</h4>
               
               <button
-                onClick={() => { setCommentSort('relevant'); setShowSortMenu(false); setVisibleCount(5); }}
+                onClick={() => { setCommentSort('relevant'); setShowSortMenu(false);  }}
                 className="w-full text-left py-3 flex items-start gap-3"
               >
                 <div className={`w-5 h-5 rounded-full border-2 mt-0.5 ${commentSort === 'relevant'? 'border-[#0a84ff] bg-[#0a84ff]' : 'border-zinc-300'}`}>
@@ -1057,7 +1057,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
               </button>
 
               <button
-                onClick={() => { setCommentSort('newest'); setShowSortMenu(false); setVisibleCount(5); }}
+                onClick={() => { setCommentSort('newest'); setShowSortMenu(false);  }}
                 className="w-full text-left py-3 flex items-start gap-3"
               >
                 <div className={`w-5 h-5 rounded-full border-2 mt-0.5 ${commentSort === 'newest'? 'border-[#0a84ff] bg-[#0a84ff]' : 'border-zinc-300'}`}>
@@ -1070,7 +1070,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
               </button>
 
               <button
-                onClick={() => { setCommentSort('all'); setShowSortMenu(false); setVisibleCount(5); }}
+                onClick={() => { setCommentSort('all'); setShowSortMenu(false);  }}
                 className="w-full text-left py-3 flex items-start gap-3"
               >
                 <div className={`w-5 h-5 rounded-full border-2 mt-0.5 ${commentSort === 'all'? 'border-[#0a84ff] bg-[#0a84ff]' : 'border-zinc-300'}`}>
