@@ -193,23 +193,14 @@ export const Palm3D = ({ active }: { active: boolean }) => (
           <stop offset="100%" stopColor="#5AC8FA" stopOpacity="0.7" />
         </linearGradient>
         <linearGradient id="leaf3D" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#D4FFE0" />
-          <stop offset="20%" stopColor="#B8FFC7" />
-          <stop offset="40%" stopColor="#9FFFB0" />
-          <stop offset="60%" stopColor="#7FE896" />
-          <stop offset="80%" stopColor="#5BEB7B" />
-          <stop offset="100%" stopColor="#30D158" />
+          <stop offset="0%" stopColor="#7ED957" />
+          <stop offset="50%" stopColor="#5FD068" />
+          <stop offset="100%" stopColor="#3CB043" />
         </linearGradient>
-        <linearGradient id="trunk3D" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#5A4435" />
-          <stop offset="10%" stopColor="#6B5345" />
-          <stop offset="25%" stopColor="#8B6F47" />
-          <stop offset="40%" stopColor="#A67C52" />
-          <stop offset="50%" stopColor="#C19A6B" />
-          <stop offset="60%" stopColor="#A67C52" />
-          <stop offset="75%" stopColor="#8B6F47" />
-          <stop offset="90%" stopColor="#6B5345" />
-          <stop offset="100%" stopColor="#5A4435" />
+        <linearGradient id="trunkGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#8B5A2B" />
+          <stop offset="50%" stopColor="#A0522D" />
+          <stop offset="100%" stopColor="#8B5A2B" />
         </linearGradient>
       </defs>
 
@@ -224,7 +215,7 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         </motion.g>
       )}
 
-{active && (
+    {active && (
   <g>
     {/* Tia nắng tỏa từ tâm - không xoay, chỉ pulse */}
     {[...Array(16)].map((_, i) => {
@@ -238,13 +229,13 @@ export const Palm3D = ({ active }: { active: boolean }) => (
           key={i}
           x1={x1} y1={y1} x2={x2} y2={y2} 
           stroke="#FFD60A"
-          strokeWidth={i % 2 === 0 ? "2.8" : "1.8"}
+          strokeWidth={i % 2 === 0 ? "2.2" : "1.4"}
           strokeLinecap="round"
           initial={{ pathLength: 0, opacity: 0 }}
           animate={{ 
             pathLength: [0, 1, 1, 0],
             opacity: [0, 1, 1, 0],
-            scale: [0.8, 1, 1, 0.8]
+            scale: [0.8, 1, 0.8]
           }}
           transition={{ 
             duration: 1.5, 
@@ -312,94 +303,87 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         </>
       )}
 
-      {active && (
-        <g opacity="0.9">
-          <ellipse cx="8.5" cy="22.5" rx="1.2" ry="1" fill="#8B6F47" />
-          <ellipse cx="8.5" cy="21.5" rx="1" ry="0.8" fill="#6B5345" />
-          <rect x="8.2" y="19.5" width="0.6" height="2.5" fill="#7FE896" />
-          <motion.ellipse 
-            cx="8.5" cy="18.5" rx="0.9" ry="0.5" fill="#5BEB7B" 
-            transform="rotate(-15 8.5 18.5)"
-            animate={{ rotate: [-15, -5, -15] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          />
-          
-          <ellipse cx="23.5" cy="23.5" rx="1.2" ry="1" fill="#8B6F47" />
-          <ellipse cx="23.5" cy="22.5" rx="1" ry="0.8" fill="#6B5345" />
-          <rect x="23.2" y="20.5" width="0.6" height="2.5" fill="#7FE896" />
-          <motion.ellipse 
-            cx="23.5" cy="19.5" rx="0.9" ry="0.5" fill="#5BEB7B" 
-            transform="rotate(15 23.5 19.5)"
-            animate={{ rotate: [15, 5, 15] }}
-            transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-          />
-          
-          <ellipse cx="14" cy="23" rx="1" ry="0.8" fill="#8B6F47" />
-          <ellipse cx="14" cy="22" rx="0.8" ry="0.6" fill="#6B5345" />
-        </g>
-      )}
-
+      {/* Cây dừa nhỏ bên trái - THÂN CONG */}
       <g>
-        <rect x="14.5" y="11.5" width="3" height="14" rx="1.5" fill={active? "url(#trunk3D)" : "#D1D5DB"} />
+        <path 
+          d="M9 24 Q9.8 19 10.2 15" 
+          stroke={active? "url(#trunkGrad)" : "#D1D5DB"} 
+          strokeWidth="2.2" 
+          strokeLinecap="round"
+          fill="none"
+        />
         {active && (
           <>
-            <line x1="14.5" y1="14" x2="17.5" y2="14" stroke="#6B5345" strokeWidth="0.6" opacity="0.7" />
-            <line x1="14.5" y1="16.5" x2="17.5" y2="16.5" stroke="#6B5345" strokeWidth="0.6" opacity="0.7" />
-            <line x1="14.5" y1="19" x2="17.5" y2="19" stroke="#6B5345" strokeWidth="0.6" opacity="0.7" />
-            <line x1="14.5" y1="21.5" x2="17.5" y2="21.5" stroke="#6B5345" strokeWidth="0.6" opacity="0.7" />
-            <line x1="14.5" y1="24" x2="17.5" y2="24" stroke="#6B5345" strokeWidth="0.6" opacity="0.7" />
-            <rect x="15.2" y="12" width="0.7" height="13" fill="#D4B896" opacity="0.8" rx="0.35" />
-            <rect x="16.1" y="12" width="0.7" height="13" fill="#D4B896" opacity="0.6" rx="0.35" />
+            <line x1="9.2" y1="23" x2="9.8" y2="23" stroke="#6B4423" strokeWidth="0.5" />
+            <line x1="9.5" y1="20" x2="10.1" y2="20" stroke="#6B4423" strokeWidth="0.5" />
+            <line x1="9.7" y1="17" x2="10.3" y2="17" stroke="#6B4423" strokeWidth="0.5" />
           </>
         )}
-      </g>
-
-      <g>
-        <motion.ellipse
-          cx="9.5" cy="11.5" rx="5.8" ry="2.8"
-          fill={active? "url(#leaf3D)" : "#D1D5DB"}
-          transform="rotate(-40 9.5 11.5)"
-          animate={active? { rotate: [-40, -33, -40] } : {}}
+        
+        {/* Lá cây nhỏ - răng cưa */}
+        <motion.g
+          animate={active? { rotate: [-5, 5, -5] } : {}}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-        />
-        {active && (
-          <>
-            <ellipse cx="8" cy="11" rx="2.2" ry="1.1" fill="white" opacity="0.6" transform="rotate(-40 8 11)" />
-            <ellipse cx="7" cy="10.5" rx="1.5" ry="0.8" fill="white" opacity="0.4" transform="rotate(-40 7 10.5)" />
-          </>
-        )}
+          style={{ transformOrigin: "10.2px 15px" }}
+        >
+          <path 
+            d="M10.2 15 L8.8 13.2 L9.3 13.9 L8.5 14.6 L10.2 15" 
+            fill={active? "url(#leafGrad)" : "#D1D5DB"}
+          />
+          <path 
+            d="M10.2 15 L11.8 13.2 L11.3 13.9 L12.1 14.6 L10.2 15" 
+            fill={active? "url(#leafGrad)" : "#D1D5DB"}
+          />
+        </motion.g>
       </g>
 
+      {/* Cây dừa lớn bên phải - THÂN CONG */}
       <g>
-        <motion.ellipse
-          cx="22.5" cy="11.5" rx="5.8" ry="2.8"
-          fill={active? "url(#leaf3D)" : "#D1D5DB"}
-          transform="rotate(40 22.5 11.5)"
-          animate={active? { rotate: [40, 33, 40] } : {}}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+        <path 
+          d="M19 25 Q22 18 21 11" 
+          stroke={active? "url(#trunkGrad)" : "#D1D5DB"} 
+          strokeWidth="4" 
+          strokeLinecap="round"
+          fill="none"
         />
         {active && (
           <>
-            <ellipse cx="24" cy="11" rx="2.2" ry="1.1" fill="white" opacity="0.6" transform="rotate(40 24 11)" />
-            <ellipse cx="25" cy="10.5" rx="1.5" ry="0.8" fill="white" opacity="0.4" transform="rotate(40 25 10.5)" />
+            <line x1="19.3" y1="24" x2="20.7" y2="23.8" stroke="#6B4423" strokeWidth="0.8" />
+            <line x1="19.8" y1="21.5" x2="21.2" y2="21.3" stroke="#6B4423" strokeWidth="0.8" />
+            <line x1="20.3" y1="19" x2="21.5" y2="18.8" stroke="#6B4423" strokeWidth="0.8" />
+            <line x1="20.6" y1="16.5" x2="21.6" y2="16.3" stroke="#6B4423" strokeWidth="0.8" />
+            <line x1="20.8" y1="14" x2="21.5" y2="13.8" stroke="#6B4423" strokeWidth="0.8" />
+            <line x1="20.9" y1="11.5" x2="21.3" y2="11.3" stroke="#6B4423" strokeWidth="0.8" />
           </>
         )}
-      </g>
-
-      <g>
-        <motion.ellipse
-          cx="16" cy="8" rx="4.2" ry="3.5"
-          fill={active? "url(#leaf3D)" : "#D1D5DB"}
-          animate={active? { scaleY: [1, 1.18, 1] } : {}}
-          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-        />
-        {active && (
-          <>
-            <ellipse cx="16" cy="7" rx="1.8" ry="1.4" fill="white" opacity="0.6" />
-            <ellipse cx="14.5" cy="7.5" rx="1" ry="0.8" fill="white" opacity="0.4" />
-            <ellipse cx="17.5" cy="7.5" rx="1" ry="0.8" fill="white" opacity="0.4" />
-          </>
-        )}
+        
+        {/* Lá cây lớn - 4 lá nhọn răng cưa */}
+        <motion.g
+          animate={active? { rotate: [-3, 3, -3] } : {}}
+          transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+          style={{ transformOrigin: "21px 11px" }}
+        >
+          {/* Lá trên */}
+          <path 
+            d="M21 11 L19.5 6 L20.2 7.5 L19.8 8.8 L21 11" 
+            fill={active? "url(#leafGrad)" : "#D1D5DB"}
+          />
+          {/* Lá phải */}
+          <path 
+            d="M21 11 L25.5 9.5 L24 10.5 L25 11.5 L21 11" 
+            fill={active? "url(#leafGrad)" : "#D1D5DB"}
+          />
+          {/* Lá trái */}
+          <path 
+            d="M21 11 L16.5 9.5 L18 10.5 L17 11.5 L21 11" 
+            fill={active? "url(#leafGrad)" : "#D1D5DB"}
+          />
+          {/* Lá phải dưới */}
+          <path 
+            d="M21 11 L24.5 14 L23 13 L23.8 14.5 L21 11" 
+            fill={active? "url(#leafGrad)" : "#D1D5DB"}
+          />
+        </motion.g>
       </g>
 
       {active && <ellipse cx="16" cy="27.5" rx="7" ry="1.8" fill="#000000" opacity="0.2" />}
