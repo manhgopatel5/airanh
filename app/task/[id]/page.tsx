@@ -67,7 +67,7 @@ const Portal = ({ children }: { children: React.ReactNode }) => {
   return mounted? createPortal(children, document.body) : null;
 };
 
-const PRIMARY = "#0a84ff";
+
 
 export default function TaskDetailPage() {
   const { id } = useParams();
