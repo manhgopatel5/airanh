@@ -204,13 +204,13 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         </linearGradient>
       </defs>
 
-      {/* NƯỚC - VẼ ĐẦU TIÊN = NẰM DƯỚI CÙNG */}
+      {/* 1. NƯỚC - VẼ ĐẦU TIÊN = NẰM DƯỚI CÙNG */}
       {active && (
         <>
           <motion.rect
             x="0" y="24" width="32" height="8"
             fill="#5AC8FA"
-            opacity="0.6"
+            opacity="0.7"
             animate={{ y: [24, 24.5, 24] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           />
@@ -220,32 +220,32 @@ export const Palm3D = ({ active }: { active: boolean }) => (
             stroke="#3AA8F0"
             strokeWidth="1.5"
             fill="none"
-            opacity="0.7"
+            opacity="0.8"
             animate={{ x: [0, -8, 0] }}
             transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
           />
           <motion.path
-            d="M0 27.5C4 27 8 28 12 27.5C16 27 20 28 24 27.5C28 27 32 27.5 32 27.5"
+            d="M0 27.5C4 27 8 28 12 27.5C16 27 20 28 24 27.5C28 27 32 27.5"
             stroke="#4DB8F5"
             strokeWidth="1.2"
             fill="none"
-            opacity="0.6"
+            opacity="0.7"
             animate={{ x: [0, 8, 0] }}
             transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
           />
           <motion.path
-            d="M0 29C4 28.5 8 29.5 12 29C16 28.5 20 29.5 24 29C28 28.5 32 29 32 29"
+            d="M0 29C4 28.5 8 29.5 12 29C16 28.5 20 29.5 24 29C28 28.5 32 29"
             stroke="#5AC8FA"
             strokeWidth="1"
             fill="none"
-            opacity="0.5"
+            opacity="0.6"
             animate={{ x: [0, -6, 0] }}
             transition={{ duration: 3.5, repeat: Infinity, ease: "linear" }}
           />
         </>
       )}
 
-      {/* MÂY */}
+      {/* 2. MÂY */}
       {active && (
         <>
           <motion.ellipse 
@@ -269,7 +269,7 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         </>
       )}
 
-      {/* MẶT TRỜI */}
+      {/* 3. MẶT TRỜI */}
       {active && (
         <g>
           {[...Array(16)].map((_, i) => {
@@ -315,49 +315,22 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         </g>
       )}
 
-      {/* ĐẢO */}
+      {/* 4. ĐẢO - ĐÃ XÓA SÓNG BÊN TRONG + OPACITY 1 */}
       <ellipse cx="16" cy="25.5" rx="11" ry="4.5" fill={active? "url(#island3D)" : "#E5E7EB"} />
       {active && (
         <>
-          <ellipse cx="16" cy="25.5" rx="11" ry="4.5" fill="url(#sandPattern)" />
+          <ellipse cx="16" cy="25.5" rx="11" ry="4.5" fill="url(#sandPattern)" opacity="1" />
           <ellipse cx="16" cy="26.8" rx="9" ry="3" fill="#000000" opacity="0.15" />
           <ellipse cx="16" cy="24.2" rx="8" ry="2" fill="#FFFFFF" opacity="0.45" />
-          <ellipse cx="10" cy="24.8" rx="1.5" ry="0.8" fill="#FFD4A3" opacity="0.8" />
-          <ellipse cx="22" cy="26" rx="2.2" ry="0.9" fill="#FFD4A3" opacity="0.8" />
-          <ellipse cx="16" cy="24.5" rx="1.8" ry="0.7" fill="#FFD4A3" opacity="0.7" />
-          <ellipse cx="12" cy="25.8" rx="1" ry="0.5" fill="#FFC47D" opacity="0.6" />
-          <ellipse cx="20" cy="25.2" rx="1.3" ry="0.6" fill="#FFC47D" opacity="0.6" />
-          
-          <motion.path
-            d="M5 27C7 26.5 9 27 11 26.5C13 26 15 26.5 17 27C19 27.5 21 27 23 26.5C25 26 27 26.5 29 27"
-            stroke="url(#waveGrad)"
-            strokeWidth="2"
-            fill="none"
-            animate={{ x: [0, 5, 0] }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.path
-            d="M5 28C7 27.5 9 28 11 27.5C13 27 15 27.5 17 28C19 28.5 21 28 23 27.5C25 27 27 28 29 28.5"
-            stroke="url(#waveGrad)"
-            strokeWidth="1.5"
-            fill="none"
-            opacity="0.7"
-            animate={{ x: [0, -5, 0] }}
-            transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.path
-            d="M5 29C7 28.5 9 29 11 28.5C13 28 15 29 17 29.5C19 30 21 29.5 23 29C25 28.5 27 29 29 29.5"
-            stroke="url(#waveGrad)"
-            strokeWidth="1"
-            fill="none"
-            opacity="0.5"
-            animate={{ x: [0, 3, 0] }}
-            transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-          />
+          <ellipse cx="10" cy="24.8" rx="1.5" ry="0.8" fill="#FFD4A3" opacity="1" />
+          <ellipse cx="22" cy="26" rx="2.2" ry="0.9" fill="#FFD4A3" opacity="1" />
+          <ellipse cx="16" cy="24.5" rx="1.8" ry="0.7" fill="#FFD4A3" opacity="1" />
+          <ellipse cx="12" cy="25.8" rx="1" ry="0.5" fill="#FFC47D" opacity="1" />
+          <ellipse cx="20" cy="25.2" rx="1.3" ry="0.6" fill="#FFC47D" opacity="1" />
         </>
       )}
 
-      {/* CÂY DỪA */}
+      {/* 5. CÂY DỪA */}
       <g>
         <path 
           d="M16 26 Q18 19 17 12" 
@@ -383,7 +356,6 @@ export const Palm3D = ({ active }: { active: boolean }) => (
           transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
           style={{ transformOrigin: "17px 15px" }}
         >
-          {/* 1. Lá trái - màu nhạt nhất */}
           <ellipse
             cx="11" cy="15" rx="5.5" ry="3.5"
             fill={active? "#A8E6A3" : "#D1D5DB"}
@@ -393,7 +365,6 @@ export const Palm3D = ({ active }: { active: boolean }) => (
             <ellipse cx="9.5" cy="14.5" rx="2" ry="1.3" fill="white" opacity="0.6" transform="rotate(-30 9.5 14.5)" />
           )}
           
-          {/* 2. Lá phải - màu trung bình */}
           <ellipse
             cx="23" cy="15" rx="5.5" ry="3.5"
             fill={active? "#5FD068" : "#D1D5DB"}
@@ -403,7 +374,6 @@ export const Palm3D = ({ active }: { active: boolean }) => (
             <ellipse cx="24.5" cy="14.5" rx="2" ry="1.3" fill="white" opacity="0.5" transform="rotate(30 24.5 14.5)" />
           )}
 
-          {/* 3. Lá giữa - màu đậm nhất, đè lên */}
           <ellipse
             cx="17" cy="12.5" rx="4.8" ry="4"
             fill={active? "#2E8B3E" : "#D1D5DB"}
