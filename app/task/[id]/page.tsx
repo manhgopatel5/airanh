@@ -171,9 +171,22 @@ useEffect(() => {
     setApplications(apps);
   };
 const [lastDoc, setLastDoc] = useState<any>(null);
-
+const [loadingMore, setLoadingMore] = useState(false);
+const loadComments = async () => {
+  if (!task?.id || !db) return;
+  const q = query(
+    collection(db, "tasks", task.id, "comments"),
+    orderBy("createdAt", "desc"),
+    limit(5)
+  );
+  const snap = await getDocs(q);
+  setComments(snap.docs.map(d => ({ id: d.id, ...d.data() } as TaskComment)));
+  setLastDoc(snap.docs[snap.docs.length - 1]);
+  setVisibleCount(5);
+};
 const loadMoreComments = async () => {
-  if (!task?.id || !lastDoc) return;
+  if (!task?.id || !lastDoc || loadingMore) return;
+  setLoadingMore(true);
   const q = query(
     collection(db, "tasks", task.id, "comments"),
     orderBy("createdAt", "desc"),
@@ -181,10 +194,15 @@ const loadMoreComments = async () => {
     limit(5)
   );
   const snap = await getDocs(q);
-  const newComments = snap.docs.map(d => ({ id: d.id,...d.data() } as TaskComment));
+  if (snap.empty) {
+    setLoadingMore(false);
+    return;
+  }
+  const newComments = snap.docs.map(d => ({ id: d.id, ...d.data() } as TaskComment));
   setComments(prev => [...prev, ...newComments]);
   setLastDoc(snap.docs[snap.docs.length - 1]);
   setVisibleCount(prev => prev + 5);
+  setLoadingMore(false);
 };
 
   useEffect(() => {
@@ -499,7 +517,7 @@ const visibleComments = useMemo(() =>
   [sortedParents, visibleCount]
 );
 
-const hasMoreComments = sortedParents.length > visibleCount;
+const hasMoreComments = comments.length >= visibleCount && !!lastDoc;
   const getReplies = (id: string) => comments.filter((c) => c.parentId === id);
 
   const handleAcceptApp = async (appId: string, applicantId: string) => {
@@ -1107,9 +1125,10 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
 {hasMoreComments && (
   <button
     onClick={loadMoreComments}
-    className="w-full py-3 text-sm font-semibold text-[#0a84ff] active:bg-zinc-50 dark:active:bg-zinc-800 rounded-xl mt-2"
+    disabled={loadingMore}
+    className="w-full py-3 text-sm font-semibold text-[#0a84ff] active:bg-zinc-50 dark:active:bg-zinc-800 rounded-xl mt-2 disabled:opacity-50"
   >
-    Xem thêm bình luận
+    {loadingMore ? "Đang tải..." : "Xem thêm bình luận"}
   </button>
 )}
         </div>
