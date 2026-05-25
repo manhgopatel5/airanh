@@ -11,7 +11,7 @@ import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import {
   FiSend, FiClock, FiUsers, FiX, FiCheckCircle, FiMessageCircle,
   FiCalendar, FiMessageSquare, FiPhone, FiAlertTriangle,
-  FiStar, FiBookmark, FiMoreHorizontal, FiShare2, FiCheck, FiTrash2, FiEdit2
+  FiStar, FiBookmark, FiMoreHorizontal, FiShare2, FiCheck, FiChevronDown, FiTrash2, FiEdit2
 } from "react-icons/fi";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import { incrementTaskView } from "@/lib/task";
@@ -83,6 +83,9 @@ export default function TaskDetailPage() {
   const [task, setTask] = useState<Task | null>(null);
   const [owner, setOwner] = useState<UserData | null>(null);
   const [comments, setComments] = useState<TaskComment[]>([]);
+const [commentSort, setCommentSort] = useState<'relevant' | 'newest' | 'all'>('newest');
+const [visibleCount, setVisibleCount] = useState(5);
+const [showSortMenu, setShowSortMenu] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const isOwner = currentUser?.uid === task?.userId;
   const [applications, setApplications] = useState<Application[]>([]);
@@ -175,6 +178,7 @@ useEffect(() => {
     );
     const snap = await getDocs(q);
     setComments(snap.docs.map(d => ({ id: d.id,...d.data() } as TaskComment)));
+    setVisibleCount(5);
   };
 
   useEffect(() => {
@@ -465,6 +469,22 @@ useEffect(() => {
   if (!task) return <div className="p-4 text-center">Không tìm thấy task</div>;
 
   const parentComments = comments.filter((c) =>!c.parentId);
+
+const sortedParents = [...parentComments].sort((a, b) => {
+  if (commentSort === 'newest') {
+    return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+  }
+  if (commentSort === 'relevant') {
+    // Ưu tiên tác giả + nhiều like
+    if (a.userId === task?.userId && b.userId!== task?.userId) return -1;
+    if (b.userId === task?.userId && a.userId!== task?.userId) return 1;
+    return (b.likeCount || 0) - (a.likeCount || 0);
+  }
+  return 0; // 'all' giữ nguyên
+});
+
+const visibleComments = sortedParents.slice(0, visibleCount);
+const hasMoreComments = sortedParents.length > visibleCount;
   const getReplies = (id: string) => comments.filter((c) => c.parentId === id);
 
   const handleAcceptApp = async (appId: string, applicantId: string) => {
@@ -964,10 +984,78 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
           {/* Bình luận */}
 <div className="mt-4">
   <div className="rounded-3xl bg-white dark:bg-zinc-900 border border-white dark:border-zinc-800 shadow-[0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] overflow-hidden">
-  <div className="px-5 py-4">
+<div className="px-5 py-4 flex items-center justify-between">
   <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
-    Bình luận ({comments.length})
+    Bình luận ({parentComments.length})
   </h3>
+  
+  <div className="relative">
+    <button
+      onClick={() => setShowSortMenu(!showSortMenu)}
+      className="flex items-center gap-1 text-sm font-semibold text-zinc-600 dark:text-zinc-400 active:opacity-60"
+    >
+      {commentSort === 'relevant'? 'Phù hợp nhất' : commentSort === 'newest'? 'Mới nhất' : 'Tất cả bình luận'}
+      <FiChevronDown size={16} />
+    </button>
+
+    <AnimatePresence>
+      {showSortMenu && (
+        <Portal>
+          <div className="fixed inset-0 z-40" onClick={() => setShowSortMenu(false)} />
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-zinc-900 rounded-t-3xl shadow-2xl pb-safe"
+          >
+            <div className="w-12 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mt-3 mb-2" />
+            <div className="px-5 py-3">
+              <h4 className="font-bold text-lg mb-4">Sắp xếp theo</h4>
+              
+              <button
+                onClick={() => { setCommentSort('relevant'); setShowSortMenu(false); setVisibleCount(5); }}
+                className="w-full text-left py-3 flex items-start gap-3"
+              >
+                <div className={`w-5 h-5 rounded-full border-2 mt-0.5 ${commentSort === 'relevant'? 'border-[#0a84ff] bg-[#0a84ff]' : 'border-zinc-300'}`}>
+                  {commentSort === 'relevant' && <div className="w-2 h-2 bg-white rounded-full m-auto mt-[3px]" />}
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Phù hợp nhất</p>
+                  <p className="text-xs text-zinc-500">Hiển thị bình luận tác giả và nhiều tương tác trước.</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => { setCommentSort('newest'); setShowSortMenu(false); setVisibleCount(5); }}
+                className="w-full text-left py-3 flex items-start gap-3"
+              >
+                <div className={`w-5 h-5 rounded-full border-2 mt-0.5 ${commentSort === 'newest'? 'border-[#0a84ff] bg-[#0a84ff]' : 'border-zinc-300'}`}>
+                  {commentSort === 'newest' && <div className="w-2 h-2 bg-white rounded-full m-auto mt-[3px]" />}
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Mới nhất</p>
+                  <p className="text-xs text-zinc-500">Hiển thị bình luận mới nhất trước tiên.</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => { setCommentSort('all'); setShowSortMenu(false); setVisibleCount(5); }}
+                className="w-full text-left py-3 flex items-start gap-3"
+              >
+                <div className={`w-5 h-5 rounded-full border-2 mt-0.5 ${commentSort === 'all'? 'border-[#0a84ff] bg-[#0a84ff]' : 'border-zinc-300'}`}>
+                  {commentSort === 'all' && <div className="w-2 h-2 bg-white rounded-full m-auto mt-[3px]" />}
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Tất cả bình luận</p>
+                  <p className="text-xs text-zinc-500">Hiển thị tất cả bình luận.</p>
+                </div>
+              </button>
+            </div>
+          </motion.div>
+        </Portal>
+      )}
+    </AnimatePresence>
+  </div>
 </div>
 
     <div className="px-5 py-4">
@@ -979,7 +1067,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
       ) : (
         <div className="space-y-4">
           <AnimatePresence>
-            {parentComments.map((c) => (
+{visibleComments.map((c) => (
               <CommentList
                 key={c.id}
                 comment={c}
@@ -999,6 +1087,16 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
               />
             ))}
           </AnimatePresence>
+</AnimatePresence>
+
+{hasMoreComments && (
+  <button
+    onClick={() => setVisibleCount(prev => prev + 5)}
+    className="w-full py-3 text-sm font-semibold text-[#0a84ff] active:bg-zinc-50 dark:active:bg-zinc-800 rounded-xl mt-2"
+  >
+    Xem thêm bình luận
+  </button>
+)}
         </div>
       )}
 
