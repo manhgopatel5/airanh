@@ -828,14 +828,14 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
         <span className="font-semibold text-[#1C1C1E] dark:text-zinc-100">{task.appliedCount || 0}/{task.totalSlots}</span>
       </div>
     )}
-    {isTask(task) && task.deadline?.seconds && (
-      <div className="flex items-center gap-2 text-[15px]">
-        <span className="text-[#8E8E93] dark:text-zinc-400">Hạn chót:</span>
-        <span className={`font-semibold ${isUrgent? 'text-[#FF3B30]' : 'text-[#1C1C1E] dark:text-zinc-100'}`}>
-          {taskDeadline}
-        </span>
-      </div>
-    )}
+{isTask(task) && task.deadline?.seconds && (
+  <div className="flex items-center gap-2 text-">
+    <span className="text-[#8E8E93] dark:text-zinc-400">Hạn chót:</span>
+    <span className={`font-semibold ${isUrgent? 'text-[#FF3B30]' : 'text-[#1C1C1E] dark:text-zinc-100'}`}>
+      {timeLeft || taskDeadline}
+    </span>
+  </div>
+)}
   </div>
 
   {task.description && (
