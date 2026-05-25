@@ -813,68 +813,68 @@ void status;
  <div className="mt-4">
   <h2 className="font-bold text- leading-snug text-[#1C1C1E] dark:text-zinc-100">{task.title}</h2>
 
-  {/* 2 khung chia đôi */}
-  <div className="grid grid-cols-2 gap-2 mt-3">
-    {/* Khung trái: Tiền công + Số người ứng tuyển + Hạn chót */}
-    <div className="px-3 py-3 rounded-[20px] bg-[#F2F2F7] dark:bg-zinc-800/60 space-y-2">
-      {isTask(task) && task.price > 0 && (
-        <div>
-          <p className="text- text-[#8E8E93] dark:text-zinc-400 leading-none">Tiền công</p>
-          <p className="text- font-semibold text-[#0A84FF] leading-none mt-1">
-            {task.price.toLocaleString("vi-VN")} đ
-          </p>
-        </div>
-      )}
-      {isTask(task) && (
-        <div>
-          <p className="text- text-[#8E8E93] dark:text-zinc-400 leading-none">Ứng tuyển</p>
-          <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 leading-none mt-1">
-            {task.appliedCount || 0}/{task.totalSlots}
-          </p>
-        </div>
-      )}
-      {isTask(task) && task.deadline?.seconds && (
-        <div>
-          <p className="text- text-[#8E8E93] dark:text-zinc-400 leading-none">Hạn chót</p>
-          <p className={`text- font-semibold leading-none mt-1 ${isUrgent? 'text-[#FF3B30]' : 'text-[#1C1C1E] dark:text-zinc-100'}`}>
-            {timeLeft || taskDeadline}
-          </p>
-        </div>
-      )}
-    </div>
-
-    {/* Khung phải: Địa chỉ + Đã nhận + Ngày đăng */}
-  <div className="px-3 py-3 rounded- bg-[#F2F2F7] dark:bg-zinc-800/60 space-y-2">
-  <div>
-    <p className="text- text-[#8E8E93] dark:text-zinc-400 leading-none">Địa chỉ</p>
-    <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 leading-none mt-1 truncate">
-      {task.location?.address || task.location?.city || "Online"}
-    </p>
+{/* 2 cột info - không nền, không viền */}
+<div className="grid grid-cols-2 gap-x-6 gap-y-3 mt-3">
+  {/* Cột trái */}
+  <div className="space-y-3">
+    {isTask(task) && task.price > 0 && (
+      <div>
+        <p className="text- text-[#8E8E93] dark:text-zinc-500">Tiền công</p>
+        <p className="text- font-semibold text-[#0A84FF] mt-0.5">
+          {task.price.toLocaleString("vi-VN")} đ
+        </p>
+      </div>
+    )}
+    {isTask(task) && (
+      <div>
+        <p className="text- text-[#8E8E93] dark:text-zinc-500">Ứng tuyển</p>
+        <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
+          {task.appliedCount || 0}/{task.totalSlots}
+        </p>
+      </div>
+    )}
+    {isTask(task) && task.deadline?.seconds && (
+      <div>
+        <p className="text- text-[#8E8E93] dark:text-zinc-500">Hạn chót</p>
+        <p className={`text- font-semibold mt-0.5 ${isUrgent? 'text-[#FF3B30]' : 'text-[#1C1C1E] dark:text-zinc-100'}`}>
+          {timeLeft || taskDeadline}
+        </p>
+      </div>
+    )}
   </div>
-  {isTask(task) && (
+
+  {/* Cột phải */}
+  <div className="space-y-3">
     <div>
-      <p className="text- text-[#8E8E93] dark:text-zinc-400 leading-none">Đã nhận</p>
-      <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 leading-none mt-1">
-        {applications.filter(a => a.status === 'accepted').length} người
+      <p className="text- text-[#8E8E93] dark:text-zinc-500">Địa chỉ</p>
+      <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5 truncate">
+        {task.location?.address || task.location?.city || "Online"}
       </p>
     </div>
-  )}
-  {isPlan(task) && (
+    {isTask(task) && (
+      <div>
+        <p className="text- text-[#8E8E93] dark:text-zinc-500">Đã nhận</p>
+        <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
+          {applications.filter(a => a.status === 'accepted').length} người
+        </p>
+      </div>
+    )}
+    {isPlan(task) && (
+      <div>
+        <p className="text- text-[#8E8E93] dark:text-zinc-500">Đã tham gia</p>
+        <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
+          {task.currentParticipants} người
+        </p>
+      </div>
+    )}
     <div>
-      <p className="text- text-[#8E8E93] dark:text-zinc-400 leading-none">Đã tham gia</p>
-      <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 leading-none mt-1">
-        {task.currentParticipants} người
+      <p className="text- text-[#8E8E93] dark:text-zinc-500">Ngày đăng</p>
+      <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
+        {taskDate}
       </p>
     </div>
-  )}
-  <div>
-    <p className="text- text-[#8E8E93] dark:text-zinc-400 leading-none">Ngày đăng</p>
-    <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 leading-none mt-1">
-      {taskDate}
-    </p>
   </div>
 </div>
-  </div>
 
   {/* Gạch ngang + tiêu đề Mô tả */}
   {task.description && (
