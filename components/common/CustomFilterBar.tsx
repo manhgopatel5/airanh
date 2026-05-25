@@ -262,8 +262,7 @@ const TaskIcons = {
         } : { duration: 0.3 }}
       />
     </svg>
-  ),
-  },
+  )
 };
 
 const PlanIcons = {
