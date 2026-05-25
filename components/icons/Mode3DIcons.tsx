@@ -367,18 +367,11 @@ export const Palm3D = ({ active }: { active: boolean }) => (
     fill={active? "url(#trunkGrad)" : "#D1D5DB"} 
   />
   
-  {/* 3 LÁ - LUÔN RUNG, CHỈ ĐỔI MÀU KHI ACTIVE */}
-  {/* 1. Lá trái - lắc mạnh */}
+  {/* 3 LÁ - LẮC NGANG NHẸ, GIỮ TÂM */}
+  {/* 1. Lá trái - lắc trái mạnh nhất */}
   <motion.g
-    animate={{ 
-      rotate: [-6, 6, -6],
-      x: [-0.3, 0.3, -0.3]
-    }}
-    transition={{ 
-      rotate: { duration: 2.2, repeat: Infinity, ease: "easeInOut" },
-      x: { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
-    }}
-    style={{ transformOrigin: "11px 15px" }}
+    animate={{ x: [-1.2, 0, -1.2] }}
+    transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
   >
     <ellipse
       cx="11" cy="15" rx="5.5" ry="3.5"
@@ -394,17 +387,10 @@ export const Palm3D = ({ active }: { active: boolean }) => (
     )}
   </motion.g>
   
-  {/* 2. Lá phải - lắc vừa */}
+  {/* 2. Lá phải - lắc trái vừa */}
   <motion.g
-    animate={{ 
-      rotate: [4, -4, 4],
-      x: [0.2, -0.2, 0.2]
-    }}
-    transition={{ 
-      rotate: { duration: 3.1, repeat: Infinity, ease: "easeInOut", delay: 0.4 },
-      x: { duration: 3.1, repeat: Infinity, ease: "easeInOut", delay: 0.4 }
-    }}
-    style={{ transformOrigin: "23px 15px" }}
+    animate={{ x: [-0.8, 0, -0.8] }}
+    transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
   >
     <ellipse
       cx="23" cy="15" rx="5.5" ry="3.5"
@@ -420,17 +406,10 @@ export const Palm3D = ({ active }: { active: boolean }) => (
     )}
   </motion.g>
 
-  {/* 3. Lá trên - lắc nhẹ */}
+  {/* 3. Lá trên - lắc trái nhẹ */}
   <motion.g
-    animate={{ 
-      rotate: [-2.5, 2.5, -2.5],
-      y: [-0.2, 0.2, -0.2]
-    }}
-    transition={{ 
-      rotate: { duration: 2.7, repeat: Infinity, ease: "easeInOut", delay: 0.7 },
-      y: { duration: 2.7, repeat: Infinity, ease: "easeInOut", delay: 0.7 }
-    }}
-    style={{ transformOrigin: "17px 10.5px" }}
+    animate={{ x: [-0.6, 0, -0.6] }}
+    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
   >
     <ellipse
       cx="17" cy="10.5" rx="3" ry="4.2"
