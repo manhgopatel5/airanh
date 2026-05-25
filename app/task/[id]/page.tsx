@@ -67,21 +67,7 @@ const Portal = ({ children }: { children: React.ReactNode }) => {
   return mounted? createPortal(children, document.body) : null;
 };
 
-const COLORS = {
-  primary: "#0A84FF",
-  green: "#1E8E3E",
-  greenBg: "#E6F4EA",
-  yellow: "#F9AB00",
-  yellowBg: "#FEF7E0",
-  red: "#FF3B30",
-  redBg: "#FFE5E5",
-  blueBg: "#E8F0FE",
-  greyBg: "#F2F2F7",
-  border: "#E5E5E7",
-  text: "#1C1C1E",
-  subtext: "#8E8E93",
-};
-const RADIUS = { pill: 20, card: 24 };
+
 
 export default function TaskDetailPage() {
   const { id } = useParams();
