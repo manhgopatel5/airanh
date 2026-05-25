@@ -85,7 +85,7 @@ export default function TaskDetailPage() {
   const [owner, setOwner] = useState<UserData | null>(null);
   const [comments, setComments] = useState<TaskComment[]>([]);
 const [commentSort, setCommentSort] = useState<'relevant' | 'newest' | 'all'>('newest');
-const [visibleCount, setVisibleCount] = useState(5);
+
 const [showSortMenu, setShowSortMenu] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const isOwner = currentUser?.uid === task?.userId;
@@ -172,20 +172,21 @@ useEffect(() => {
   };
 const [lastDoc, setLastDoc] = useState<any>(null);
 const [loadingMore, setLoadingMore] = useState(false);
+
 const loadComments = async () => {
-  if (!task?.id || !db) return;
+  if (!task?.id ||!db) return;
   const q = query(
     collection(db, "tasks", task.id, "comments"),
     orderBy("createdAt", "desc"),
     limit(5)
   );
   const snap = await getDocs(q);
-  setComments(snap.docs.map(d => ({ id: d.id, ...d.data() } as TaskComment)));
-  setLastDoc(snap.docs[snap.docs.length - 1]);
+  setComments(snap.docs.map(d => ({ id: d.id,...d.data() } as TaskComment)));
+  setLastDoc(snap.docs[snap.docs.length - 1] || null);
   setVisibleCount(5);
 };
 const loadMoreComments = async () => {
-  if (!task?.id || !lastDoc || loadingMore) return;
+  if (!task?.id ||!lastDoc || loadingMore) return;
   setLoadingMore(true);
   const q = query(
     collection(db, "tasks", task.id, "comments"),
@@ -195,11 +196,12 @@ const loadMoreComments = async () => {
   );
   const snap = await getDocs(q);
   if (snap.empty) {
+    setLastDoc(null); // <-- THÊM DÒNG NÀY
     setLoadingMore(false);
     return;
   }
-  const newComments = snap.docs.map(d => ({ id: d.id, ...d.data() } as TaskComment));
-  setComments(prev => [...prev, ...newComments]);
+  const newComments = snap.docs.map(d => ({ id: d.id,...d.data() } as TaskComment));
+  setComments(prev => [...prev,...newComments]);
   setLastDoc(snap.docs[snap.docs.length - 1]);
   setVisibleCount(prev => prev + 5);
   setLoadingMore(false);
@@ -511,13 +513,9 @@ const sortedParents = useMemo(() => {
     return 0;
   });
 }, [parentComments, commentSort, task?.userId]);
+const visibleComments = useMemo(() => sortedParents, [sortedParents]);
 
-const visibleComments = useMemo(() => 
-  sortedParents.slice(0, visibleCount), 
-  [sortedParents, visibleCount]
-);
-
-const hasMoreComments = comments.length >= visibleCount && !!lastDoc;
+const hasMoreComments =!!lastDoc && comments.length >= 5;
   const getReplies = (id: string) => comments.filter((c) => c.parentId === id);
 
   const handleAcceptApp = async (appId: string, applicantId: string) => {
