@@ -51,7 +51,7 @@ export const Briefcase3D = ({ active }: { active: boolean }) => (
         <linearGradient id="metalShine" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#FFFFFF" />
           <stop offset="15%" stopColor="#F8" />
-          <stop offset="30%" stopColor="#E8E8E8" />
+          <stop offset="30%" stopColor="#E8E8" />
           <stop offset="50%" stopColor="#D0D0D0" />
           <stop offset="70%" stopColor="#B0B0B0" />
           <stop offset="85%" stopColor="#909090" />
@@ -368,79 +368,72 @@ export const Palm3D = ({ active }: { active: boolean }) => (
   />
   
   {/* 3 LÁ HƯỚNG VÀO TÂM - LẮC LƯ BIÊN ĐỘ KHÁC NHAU */}
-  {active && (
-    <>
-      {/* 1. Lá trái - lắc mạnh */}
-      <motion.g
-        animate={{ 
-          rotate: [-6, 6, -6],
-          x: [-0.3, 0.3, -0.3]
-        }}
-        transition={{ 
-          rotate: { duration: 2.2, repeat: Infinity, ease: "easeInOut" },
-          x: { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
-        }}
-        style={{ transformOrigin: "11px 15px" }}
-      >
-        <ellipse
-          cx="11" cy="15" rx="5.5" ry="3.5"
-          fill="#A8E6A3"
-          transform="rotate(-25 11 15)"
-        />
-        <ellipse 
-          cx="12.5" cy="14.5" rx="2" ry="1.3" 
-          fill="white" opacity="0.6" 
-          transform="rotate(-25 12.5 14.5)" 
-        />
-      </motion.g>
-      
-      {/* 2. Lá phải - lắc vừa */}
-      <motion.g
-        animate={{ 
-          rotate: [4, -4, 4],
-          x: [0.2, -0.2, 0.2]
-        }}
-        transition={{ 
-          rotate: { duration: 3.1, repeat: Infinity, ease: "easeInOut", delay: 0.4 },
-          x: { duration: 3.1, repeat: Infinity, ease: "easeInOut", delay: 0.4 }
-        }}
-        style={{ transformOrigin: "23px 15px" }}
-      >
-        <ellipse
-          cx="23" cy="15" rx="5.5" ry="3.5"
-          fill="#5FD068"
-          transform="rotate(25 23 15)"
-        />
-        <ellipse 
-          cx="21.5" cy="14.5" rx="2" ry="1.3" 
-          fill="white" opacity="0.5" 
-          transform="rotate(25 21.5 14.5)" 
-        />
-      </motion.g>
+  <motion.g
+    animate={active ? { 
+      rotate: [-6, 6, -6],
+      x: [-0.3, 0.3, -0.3]
+    } : {}}
+    transition={{ 
+      rotate: { duration: 2.2, repeat: Infinity, ease: "easeInOut" },
+      x: { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
+    }}
+    style={{ transformOrigin: "11px 15px" }}
+  >
+    <ellipse
+      cx="11" cy="15" rx="5.5" ry="3.5"
+      fill={active? "#A8E6A3" : "#D1D5DB"}
+      transform="rotate(-25 11 15)"
+    />
+    <ellipse 
+      cx="12.5" cy="14.5" rx="2" ry="1.3" 
+      fill="white" opacity="0.6" 
+      transform="rotate(-25 12.5 14.5)" 
+    />
+  </motion.g>
+  
+  <motion.g
+    animate={active ? { 
+      rotate: [4, -4, 4],
+      x: [0.2, -0.2, 0.2]
+    } : {}}
+    transition={{ 
+      rotate: { duration: 3.1, repeat: Infinity, ease: "easeInOut", delay: 0.4 },
+      x: { duration: 3.1, repeat: Infinity, ease: "easeInOut", delay: 0.4 }
+    }}
+    style={{ transformOrigin: "23px 15px" }}
+  >
+    <ellipse
+      cx="23" cy="15" rx="5.5" ry="3.5"
+      fill={active? "#5FD068" : "#D1D5DB"}
+      transform="rotate(25 23 15)"
+    />
+    <ellipse 
+      cx="21.5" cy="14.5" rx="2" ry="1.3" 
+      fill="white" opacity="0.5" 
+      transform="rotate(25 21.5 14.5)" 
+    />
+  </motion.g>
 
-      {/* 3. Lá trên - lắc nhẹ */}
-      <motion.g
-        animate={{ 
-          rotate: [-2.5, 2.5, -2.5],
-          y: [-0.2, 0.2, -0.2]
-        }}
-        transition={{ 
-          rotate: { duration: 2.7, repeat: Infinity, ease: "easeInOut", delay: 0.7 },
-          y: { duration: 2.7, repeat: Infinity, ease: "easeInOut", delay: 0.7 }
-        }}
-        style={{ transformOrigin: "17px 10.5px" }}
-      >
-        <ellipse
-          cx="17" cy="10.5" rx="3" ry="4.2"
-          fill="#3CB043"
-        />
-        <ellipse 
-          cx="17" cy="11.5" rx="1.3" ry="1.8" 
-          fill="white" opacity="0.5" 
-        />
-      </motion.g>
-    </>
-  )}
+  <motion.g
+    animate={active ? { 
+      rotate: [-2.5, 2.5, -2.5],
+      y: [-0.2, 0.2, -0.2]
+    } : {}}
+    transition={{ 
+      rotate: { duration: 2.7, repeat: Infinity, ease: "easeInOut", delay: 0.7 },
+      y: { duration: 2.7, repeat: Infinity, ease: "easeInOut", delay: 0.7 }
+    }}
+    style={{ transformOrigin: "17px 10.5px" }}
+  >
+    <ellipse
+      cx="17" cy="10.5" rx="3" ry="4.2"
+      fill={active? "#3CB043" : "#D1D5DB"}
+    />
+    <ellipse 
+      cx="17" cy="11.5" rx="1.3" ry="1.8" 
+      fill="white" opacity="0.5" 
+    />
+  </motion.g>
 </g>
     </svg>
   </motion.div>
