@@ -478,50 +478,39 @@ const PlanIcons = {
     </svg>
   ),
 
-  New: ({ isActive }: { isActive: boolean }) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <motion.g
-        animate={isActive? { y: [0, -6, 0] } : {}}
-        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-        style={{ originX: "50%", originY: "50%" }}
-      >
-        <motion.path
-          d="M12 2L15 8L21 9L17 14L18 20L12 17L6 20L7 14L3 9L9 8L12 2Z"
-          fill={isActive? "#FF9500" : "none"}
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinejoin="round"
-          animate={isActive? {
-            fill: ["#FF9500", "#FFD60A", "#FF3B30", "#30D158", "#0A84FF", "#FF9500"]
-          } : {}}
-          transition={{
-            duration: 4,
-            repeat: Infinity,
-            ease: "linear"
-          }}
-        />
-      </motion.g>
-      {isActive && (
-        <motion.circle
-          cx="12" cy="12" r="8"
-          stroke="#FF9500"
-          strokeWidth="1"
-          fill="none"
-          opacity={0.4}
-          animate={{
-            scale: [1, 1.5, 1],
-            opacity: [0.4, 0, 0.4],
-            stroke: ["#FF9500", "#FFD60A", "#FF3B30", "#30D158", "#0A84FF", "#FF9500"]
-          }}
-          transition={{
-            scale: { duration: 2, repeat: Infinity },
-            opacity: { duration: 2, repeat: Infinity },
-            stroke: { duration: 4, repeat: Infinity, ease: "linear" }
-          }}
-        />
-      )}
-    </svg>
-  ),
+New: ({ isActive }: { isActive: boolean }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <defs>
+      <linearGradient id="hbTaskNew" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#0A84FF" />
+        <stop offset="100%" stopColor="#00D9FF" />
+      </linearGradient>
+    </defs>
+    
+    {/* Nhịp tim */}
+    <motion.path
+      d="M 2 12 L 6 12 L 9 6 L 12 18 L 15 12 L 22 12"
+      stroke="url(#hbTaskNew)"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+      initial={false}
+      animate={isActive ? {
+        pathLength: [0, 1, 1, 0],
+        opacity: [0.5, 1, 1, 0.5]
+      } : {
+        pathLength: 1,
+        opacity: 0.7
+      }}
+      transition={isActive ? {
+        duration: 1.2,
+        repeat: Infinity,
+        ease: "easeInOut"
+      } : { duration: 0.3 }}
+    />
+  </svg>
+),
 };
 
 export default function CustomFilterBar({
