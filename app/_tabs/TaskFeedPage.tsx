@@ -311,16 +311,7 @@ const theme = {
     <div className="px-4 pt-4 pb-2">
 <div className="relative h-16 rounded-2xl p-1.5 bg-white dark:bg-zinc-900">
 
-    {/* Ambient glow tỏa ra ngoài */}
-    <motion.div
-      className="absolute -inset-4 rounded-2xl opacity-60 blur-3xl"
-      animate={{
-        background: mode === "task"
-       ? "radial-gradient(ellipse at 25% 50%, rgba(10,132,255,0.5) 0%, rgba(10,132,255,0.15) 40%, transparent 70%)"
-          : "radial-gradient(ellipse at 75% 50%, rgba(48,209,88,0.5) 0%, rgba(48,209,88,0.15) 40%, transparent 70%)"
-      }}
-      transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-    />
+
 
     {/* Pill trượt có nền */}
     
