@@ -171,7 +171,24 @@ useEffect(() => {
     setApplications(apps);
   };
 const [lastDoc, setLastDoc] = useState<any>(null);
-
+const loadComments = async () => {
+  if (!db || !task?.id) return;
+  try {
+    const q = query(
+      collection(db, "tasks", task.id, "comments"),
+      orderBy("createdAt", "desc"),
+      limit(5)
+    );
+    const snap = await getDocs(q);
+    const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as TaskComment));
+    setComments(list);
+    setLastDoc(snap.docs[snap.docs.length - 1] || null);
+    setVisibleCount(5);
+  } catch (err) {
+    console.error("Load comments error:", err);
+    toast.error("Lỗi tải bình luận");
+  }
+};
 const loadMoreComments = async () => {
   if (!task?.id || !lastDoc) return;
   const q = query(
