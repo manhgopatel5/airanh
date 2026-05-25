@@ -583,7 +583,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
   const isExpired = isTask(task) && task.deadline && task.deadline.seconds * 1000 < Date.now();
   const status = isExpired
    ? { label: "Đã hết hạn", color: "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B]", dot: "bg-[#FF3B30]" }
-    : statusMap[task.status] || statusMap.open;
+    : statusMap[task.status as TaskStatus] || statusMap.open || statusMap.open;
 
   return (
     <>
@@ -752,7 +752,12 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
               <h2 className="font-semibold text-base leading-snug mb-2 text-[#1C1C1E]">{task.title}</h2>
               
               {task.description && (
-                               <Linkify options={{ target: "_blank", className: `text-[${PRIMARY}] hover:underline` }}>
+            <Linkify
+  options={{
+    target: "_blank",
+    className: "text-blue-500 hover:underline"
+  }}
+>
                   <p className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed mb-3">{task.description}</p>
                 </Linkify>
               )}
@@ -1001,10 +1006,10 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
                           className="object-cover"
                           priority={i === 0}
                         />
-                        {i === 2 && task.images!.length > 3 && (
+                        {i === 2 && (task.images?.length || 0) > 3 && (
                           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
                             <span className="text-white font-bold text-">
-                              +{task.images!.length - 3}
+                              +{(task.images?.length || 0) - 3}
                             </span>
                           </div>
                         )}
