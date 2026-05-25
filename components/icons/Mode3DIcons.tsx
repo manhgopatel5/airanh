@@ -367,13 +367,19 @@ export const Palm3D = ({ active }: { active: boolean }) => (
     fill={active? "url(#trunkGrad)" : "#D1D5DB"} 
   />
   
-  {/* 3 LÁ HƯỚNG VÀO TÂM - RUNG RIÊNG */}
+  {/* 3 LÁ HƯỚNG VÀO TÂM - LẮC LƯ BIÊN ĐỘ KHÁC NHAU */}
   {active && (
     <>
-      {/* 1. Lá trái - hướng vào tâm */}
+      {/* 1. Lá trái - lắc mạnh */}
       <motion.g
-        animate={{ rotate: [-4, 4, -4] }}
-        transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+        animate={{ 
+          rotate: [-6, 6, -6],
+          x: [-0.3, 0.3, -0.3]
+        }}
+        transition={{ 
+          rotate: { duration: 2.2, repeat: Infinity, ease: "easeInOut" },
+          x: { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
+        }}
         style={{ transformOrigin: "11px 15px" }}
       >
         <ellipse
@@ -388,10 +394,16 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         />
       </motion.g>
       
-      {/* 2. Lá phải - hướng vào tâm */}
+      {/* 2. Lá phải - lắc vừa */}
       <motion.g
-        animate={{ rotate: [4, -4, 4] }}
-        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+        animate={{ 
+          rotate: [4, -4, 4],
+          x: [0.2, -0.2, 0.2]
+        }}
+        transition={{ 
+          rotate: { duration: 3.1, repeat: Infinity, ease: "easeInOut", delay: 0.4 },
+          x: { duration: 3.1, repeat: Infinity, ease: "easeInOut", delay: 0.4 }
+        }}
         style={{ transformOrigin: "23px 15px" }}
       >
         <ellipse
@@ -406,10 +418,16 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         />
       </motion.g>
 
-      {/* 3. Lá trên - hướng xuống tâm */}
+      {/* 3. Lá trên - lắc nhẹ */}
       <motion.g
-        animate={{ rotate: [-3, 3, -3] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
+        animate={{ 
+          rotate: [-2.5, 2.5, -2.5],
+          y: [-0.2, 0.2, -0.2]
+        }}
+        transition={{ 
+          rotate: { duration: 2.7, repeat: Infinity, ease: "easeInOut", delay: 0.7 },
+          y: { duration: 2.7, repeat: Infinity, ease: "easeInOut", delay: 0.7 }
+        }}
         style={{ transformOrigin: "17px 10.5px" }}
       >
         <ellipse
