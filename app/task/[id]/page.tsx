@@ -551,7 +551,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
   const status = isExpired
    ? { label: "Đã hết hạn", color: "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B]", dot: "bg-[#FF3B30]" }
     : statusMap[task.status] || statusMap.open;
-
+void status;
   return (
     <>
       <Toaster richColors position="top-center" />
