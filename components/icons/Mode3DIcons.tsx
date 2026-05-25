@@ -192,6 +192,12 @@ export const Palm3D = ({ active }: { active: boolean }) => (
           <stop offset="75%" stopColor="#4DB8F5" stopOpacity="0.5" />
           <stop offset="100%" stopColor="#5AC8FA" stopOpacity="0.7" />
         </linearGradient>
+        <linearGradient id="seaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#6BC8FF" />
+          <stop offset="30%" stopColor="#5AC8FA" />
+          <stop offset="60%" stopColor="#4DB8F5" />
+          <stop offset="100%" stopColor="#3AA8F0" />
+        </linearGradient>
         <linearGradient id="leaf3D" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#7ED957" />
           <stop offset="50%" stopColor="#5FD068" />
@@ -204,75 +210,70 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         </linearGradient>
       </defs>
 
-   {/* 1. NƯỚC - NHẤP NHÔ + CHẢY TỪ TRÁI SANG PHẢI */}
-{active && (
-  <>
-    <motion.rect
-      x="0" y="24" width="32" height="8"
-      fill="#5AC8FA"
-      opacity="0.7"
-      animate={{ 
-        y: [24, 23.5, 24, 24.5, 24]
-      }}
-      transition={{ 
-        duration: 2.5, 
-        repeat: Infinity, 
-        ease: "easeInOut" 
-      }}
-    />
-    
-    {/* Sóng 1 - chảy phải + nhấp nhô */}
-    <motion.path
-      d="M-8 26C-4 25.5 0 26.5 4 26C8 25.5 12 26.5 16 26C20 25.5 24 26.5 28 26C32 25.5 36 26.5 40 26"
-      stroke="#3AA8F0"
-      strokeWidth="1.5"
-      fill="none"
-      opacity="0.8"
-      animate={{ 
-        x: [0, 32, 0],
-        y: [0, -0.5, 0, 0.5, 0]
-      }}
-      transition={{ 
-        x: { duration: 6, repeat: Infinity, ease: "linear" },
-        y: { duration: 1.5, repeat: Infinity, ease: "easeInOut" }
-      }}
-    />
-    
-    {/* Sóng 2 - chảy phải chậm hơn + nhấp nhô */}
-    <motion.path
-      d="M-8 27.5C-4 27 0 28 4 27.5C8 27 12 28 16 27.5C20 27 24 28 28 27.5C32 27 36 28 40 27.5"
-      stroke="#4DB8F5"
-      strokeWidth="1.2"
-      fill="none"
-      opacity="0.7"
-      animate={{ 
-        x: [0, 32, 0],
-        y: [0, 0.5, 0, -0.5, 0]
-      }}
-      transition={{ 
-        x: { duration: 8, repeat: Infinity, ease: "linear" },
-        y: { duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.3 }
-      }}
-    />
-    
-    {/* Sóng 3 - chảy phải nhanh + nhấp nhô */}
-    <motion.path
-      d="M-8 29C-4 28.5 0 29.5 4 29C8 28.5 12 29.5 16 29C20 28.5 24 29.5 28 29C32 28.5 36 29.5 40 29"
-      stroke="#5AC8FA"
-      strokeWidth="1"
-      fill="none"
-      opacity="0.6"
-      animate={{ 
-        x: [0, 32, 0],
-        y: [0, -0.3, 0, 0.3, 0]
-      }}
-      transition={{ 
-        x: { duration: 4.5, repeat: Infinity, ease: "linear" },
-        y: { duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 0.6 }
-      }}
-    />
-  </>
-)}
+      {/* 1. NƯỚC - FULL WIDTH + GRADIENT MƯỢT + NHẤP NHÔ MẠNH */}
+      {active && (
+        <>
+          <motion.rect
+            x="-4" y="23" width="40" height="10"
+            fill="url(#seaGrad)"
+            opacity="0.9"
+            animate={{ 
+              y: [23, 22, 23, 24, 23]
+            }}
+            transition={{ 
+              duration: 2, 
+              repeat: Infinity, 
+              ease: "easeInOut" 
+            }}
+          />
+          
+          <motion.path
+            d="M-12 25.5C-8 25 0 26 8 25.5C16 25 24 26 32 25.5C40 25 48 26 48 26"
+            stroke="#FFFFFF"
+            strokeWidth="1.8"
+            fill="none"
+            opacity="0.5"
+            animate={{ 
+              x: [0, 40, 0],
+              y: [0, -1.5, 0, 1.5, 0]
+            }}
+            transition={{ 
+              x: { duration: 5, repeat: Infinity, ease: "linear" },
+              y: { duration: 1.2, repeat: Infinity, ease: "easeInOut" }
+            }}
+          />
+          <motion.path
+            d="M-12 27C-8 26.5 0 27.5 8 27C16 26.5 24 27.5 32 27C40 26.5 48 27.5 48 27.5"
+            stroke="#FFFFFF"
+            strokeWidth="1.4"
+            fill="none"
+            opacity="0.4"
+            animate={{ 
+              x: [0, 40, 0],
+              y: [0, 1.5, 0, -1.5, 0]
+            }}
+            transition={{ 
+              x: { duration: 7, repeat: Infinity, ease: "linear" },
+              y: { duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 0.2 }
+            }}
+          />
+          <motion.path
+            d="M-12 28.5C-8 28 0 29 8 28.5C16 28 24 29 32 28.5C40 28 48 29"
+            stroke="#FFFFFF"
+            strokeWidth="1.2"
+            fill="none"
+            opacity="0.35"
+            animate={{ 
+              x: [0, 40, 0],
+              y: [0, -1, 0, 1, 0]
+            }}
+            transition={{ 
+              x: { duration: 4, repeat: Infinity, ease: "linear" },
+              y: { duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.4 }
+            }}
+          />
+        </>
+      )}
 
       {/* 2. MÂY */}
       {active && (
@@ -344,7 +345,7 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         </g>
       )}
 
-      {/* 4. ĐẢO - ĐÃ XÓA SÓNG BÊN TRONG + OPACITY 1 */}
+      {/* 4. ĐẢO - OPACITY 1 HẾT, KHÔNG SÓNG */}
       <ellipse cx="16" cy="25.5" rx="11" ry="4.5" fill={active? "url(#island3D)" : "#E5E7EB"} />
       {active && (
         <>
@@ -379,7 +380,6 @@ export const Palm3D = ({ active }: { active: boolean }) => (
           </>
         )}
         
-        {/* 3 LÁ TRÒN - 3 TONE MÀU KHÁC NHAU */}
         <motion.g
           animate={active? { rotate: [-3, 3, -3] } : {}}
           transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
