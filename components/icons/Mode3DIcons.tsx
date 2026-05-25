@@ -209,19 +209,19 @@ export const Palm3D = ({ active }: { active: boolean }) => (
     <motion.ellipse 
       cx="7" cy="4.5" rx="4" ry="2.2" 
       fill="url(#cloudGrad)" opacity="1"
-      animate={{ x: [-4, 4, -4] }}
+      animate={{ cx: [7, 11, 7] }}
       transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
     />
     <motion.ellipse 
       cx="9.5" cy="5" rx="3.4" ry="1.9" 
       fill="url(#cloudGrad)" opacity="1"
-      animate={{ x: [-4, 4, -4] }}
+      animate={{ cx: [9.5, 13.5, 9.5] }}
       transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
     />
     <motion.ellipse 
       cx="6" cy="5.2" rx="2.6" ry="1.6" 
       fill="url(#cloudGrad)" opacity="1"
-      animate={{ x: [-4, 4, -4] }}
+      animate={{ cx: [6, 10, 6] }}
       transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
     />
   </>
