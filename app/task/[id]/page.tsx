@@ -1,12 +1,11 @@
 "use client";
 import Link from "next/link"; 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import {
   doc, updateDoc, arrayRemove, Timestamp, setDoc, serverTimestamp,
-  getDoc, getDocs, collection, limit, query, where, arrayUnion, deleteDoc,
-  orderBy, startAfter // <-- THÊM DÒNG NÀY
+  getDoc, getDocs, collection, limit, query, where, arrayUnion, deleteDoc
 } from "firebase/firestore";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import {
@@ -170,39 +169,17 @@ useEffect(() => {
     const apps = snap.docs.map(d => ({ id: d.id,...d.data() } as Application));
     setApplications(apps);
   };
-const [lastDoc, setLastDoc] = useState<any>(null);
-const loadComments = async () => {
-  if (!db || !task?.id) return;
-  try {
+
+  const loadComments = async () => {
+    if (!task?.id) return;
     const q = query(
       collection(db, "tasks", task.id, "comments"),
-      orderBy("createdAt", "desc"),
-      limit(5)
+      limit(20)
     );
     const snap = await getDocs(q);
-    const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as TaskComment));
-    setComments(list);
-    setLastDoc(snap.docs[snap.docs.length - 1] || null);
+    setComments(snap.docs.map(d => ({ id: d.id,...d.data() } as TaskComment)));
     setVisibleCount(5);
-  } catch (err) {
-    console.error("Load comments error:", err);
-    toast.error("Lỗi tải bình luận");
-  }
-};
-const loadMoreComments = async () => {
-  if (!task?.id || !lastDoc) return;
-  const q = query(
-    collection(db, "tasks", task.id, "comments"),
-    orderBy("createdAt", "desc"),
-    startAfter(lastDoc),
-    limit(5)
-  );
-  const snap = await getDocs(q);
-  const newComments = snap.docs.map(d => ({ id: d.id,...d.data() } as TaskComment));
-  setComments(prev => [...prev, ...newComments]);
-  setLastDoc(snap.docs[snap.docs.length - 1]);
-  setVisibleCount(prev => prev + 5);
-};
+  };
 
   useEffect(() => {
     const firebaseAuth = getFirebaseAuth();
@@ -410,11 +387,7 @@ const loadMoreComments = async () => {
       text: text.trim(), createdAt: Timestamp.now(), likeCount: 0, likedBy: [],
   ...(replyTo && { parentId: replyTo.parentId || replyTo.id, replyToUserId: replyTo.userId, replyToUserName: replyTo.userName }),
     };
-setComments(prev => {
-  // Chỉ thêm vào cuối nếu là comment mới nhất
-  if (commentSort === 'newest') return [tempComment, ...prev];
-  return [...prev, tempComment];
-});
+    setComments(prev => [...prev, tempComment]);
     setText(""); setReplyTo(null); setSending(true);
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
     try {
@@ -497,25 +470,20 @@ setComments(prev => {
 
   const parentComments = comments.filter((c) =>!c.parentId);
 
-const sortedParents = useMemo(() => {
-  return [...parentComments].sort((a, b) => {
-    if (commentSort === 'newest') {
-      return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
-    }
-    if (commentSort === 'relevant') {
-      if (a.userId === task?.userId && b.userId!== task?.userId) return -1;
-      if (b.userId === task?.userId && a.userId!== task?.userId) return 1;
-      return (b.likeCount || 0) - (a.likeCount || 0);
-    }
-    return 0;
-  });
-}, [parentComments, commentSort, task?.userId]);
+const sortedParents = [...parentComments].sort((a, b) => {
+  if (commentSort === 'newest') {
+    return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+  }
+  if (commentSort === 'relevant') {
+    // Ưu tiên tác giả + nhiều like
+    if (a.userId === task?.userId && b.userId!== task?.userId) return -1;
+    if (b.userId === task?.userId && a.userId!== task?.userId) return 1;
+    return (b.likeCount || 0) - (a.likeCount || 0);
+  }
+  return 0; // 'all' giữ nguyên
+});
 
-const visibleComments = useMemo(() => 
-  sortedParents.slice(0, visibleCount), 
-  [sortedParents, visibleCount]
-);
-
+const visibleComments = sortedParents.slice(0, visibleCount);
 const hasMoreComments = sortedParents.length > visibleCount;
   const getReplies = (id: string) => comments.filter((c) => c.parentId === id);
 
@@ -1123,7 +1091,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
 
 {hasMoreComments && (
   <button
-    onClick={loadMoreComments}
+    onClick={() => setVisibleCount(prev => prev + 5)}
     className="w-full py-3 text-sm font-semibold text-[#0a84ff] active:bg-zinc-50 dark:active:bg-zinc-800 rounded-xl mt-2"
   >
     Xem thêm bình luận
