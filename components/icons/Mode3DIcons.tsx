@@ -367,58 +367,61 @@ export const Palm3D = ({ active }: { active: boolean }) => (
     fill={active? "url(#trunkGrad)" : "#D1D5DB"} 
   />
   
-  {/* 3 LÁ - DÙNG MOTION.ELLIPSE TRỰC TIẾP, RUNG MẠNH */}
+  {/* 3 LÁ - DÙNG TRANSFORM TRANSLATEX, KHÔNG ĐỔI X */}
   {/* 1. Lá trái */}
-  <motion.ellipse
-    cx="11" cy="15" rx="5.5" ry="3.5"
-    fill={active? "#A8E6A3" : "#D1D5DB"}
-    transform="rotate(-25 11 15)"
-    animate={{ x: [-2.5, 0, -2.5] }}
-    transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-  />
-  {active && (
-    <motion.ellipse 
-      cx="12.5" cy="14.5" rx="2" ry="1.3" 
-      fill="white" opacity="0.6" 
-      transform="rotate(-25 12.5 14.5)" 
-      animate={{ x: [-2.5, 0, -2.5] }}
-      transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+  <motion.g
+    animate={{ x: [-3, 0, -3] }}
+    transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+  >
+    <ellipse
+      cx="11" cy="15" rx="5.5" ry="3.5"
+      fill={active? "#A8E6A3" : "#D1D5DB"}
+      transform="rotate(-25 11 15)"
     />
-  )}
+    {active && (
+      <ellipse 
+        cx="12.5" cy="14.5" rx="2" ry="1.3" 
+        fill="white" opacity="0.6" 
+        transform="rotate(-25 12.5 14.5)" 
+      />
+    )}
+  </motion.g>
   
   {/* 2. Lá phải */}
-  <motion.ellipse
-    cx="23" cy="15" rx="5.5" ry="3.5"
-    fill={active? "#5FD068" : "#D1D5DB"}
-    transform="rotate(25 23 15)"
-    animate={{ x: [-1.8, 0, -1.8] }}
-    transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
-  />
-  {active && (
-    <motion.ellipse 
-      cx="21.5" cy="14.5" rx="2" ry="1.3" 
-      fill="white" opacity="0.5" 
-      transform="rotate(25 21.5 14.5)" 
-      animate={{ x: [-1.8, 0, -1.8] }}
-      transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+  <motion.g
+    animate={{ x: [-2, 0, -2] }}
+    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+  >
+    <ellipse
+      cx="23" cy="15" rx="5.5" ry="3.5"
+      fill={active? "#5FD068" : "#D1D5DB"}
+      transform="rotate(25 23 15)"
     />
-  )}
+    {active && (
+      <ellipse 
+        cx="21.5" cy="14.5" rx="2" ry="1.3" 
+        fill="white" opacity="0.5" 
+        transform="rotate(25 21.5 14.5)" 
+      />
+    )}
+  </motion.g>
 
   {/* 3. Lá trên */}
-  <motion.ellipse
-    cx="17" cy="10.5" rx="3" ry="4.2"
-    fill={active? "#3CB043" : "#D1D5DB"}
-    animate={{ x: [-1.2, 0, -1.2] }}
-    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
-  />
-  {active && (
-    <motion.ellipse 
-      cx="17" cy="11.5" rx="1.3" ry="1.8" 
-      fill="white" opacity="0.5" 
-      animate={{ x: [-1.2, 0, -1.2] }}
-      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
+  <motion.g
+    animate={{ x: [-1.5, 0, -1.5] }}
+    transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+  >
+    <ellipse
+      cx="17" cy="10.5" rx="3" ry="4.2"
+      fill={active? "#3CB043" : "#D1D5DB"}
     />
-  )}
+    {active && (
+      <ellipse 
+        cx="17" cy="11.5" rx="1.3" ry="1.8" 
+        fill="white" opacity="0.5" 
+      />
+    )}
+  </motion.g>
 </g>
     </svg>
   </motion.div>
