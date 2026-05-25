@@ -768,12 +768,12 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
       <span className="text- font-semibold leading-none">Nhắn tin</span>
     </motion.button>
 
-    <motion.button
-      whileTap={{ scale: 0.98 }}
-      onClick={() => owner?.phone && window.open(`tel:${owner.phone}`)}
-      disabled={!owner?.phone}
-      className="flex-1 h-[64px] bg-[#E8F5E9] dark:bg-[#1E8E3E]/20 flex flex-col items-center justify-center gap-1 text-[#00A86B] active:bg-[#D4EDDA] dark:active:bg-[#1E8E3E]/30 disabled:opacity-40 disabled:active:bg-[#E8F5E9] transition-colors border-r border-white/40 dark:border-zinc-800" dark:bg-[#1E8E3E]/20 flex flex-col items-center justify-center gap-1 text-[#00A86B] active:bg-[#D4EDDA] dark:active:bg-[#1E8E3E]/30 disabled:opacity-40 disabled:active:bg-[#E8F5E9] transition-colors"
-    >
+<motion.button
+  whileTap={{ scale: 0.98 }}
+  onClick={() => owner?.phone && window.open(`tel:${owner.phone}`)}
+  disabled={!owner?.phone}
+  className="flex-1 h-[64px] bg-[#E8F5E9] dark:bg-[#1E8E3E]/20 flex flex-col items-center justify-center gap-1 text-[#00A86B] active:bg-[#D4EDDA] dark:active:bg-[#1E8E3E]/30 disabled:opacity-40 disabled:active:bg-[#E8F5E9] transition-colors border-r border-white/40 dark:border-zinc-800"
+>
       <FiPhone size={20} strokeWidth={2.2} />
       <span className="text- font-semibold leading-none">Gọi điện</span>
     </motion.button>
