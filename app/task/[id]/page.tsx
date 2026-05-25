@@ -574,9 +574,9 @@ void status;
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <Link href={`/profile/${task.userId}`} className="font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100 truncate block leading-5 active:opacity-70">
-              {owner?.name || "Minh Tran"}
-            </Link>
+       <Link href={`/profile/${task.userId}`} className="font-bold text-[16px] text-[#1C1C1E] dark:text-zinc-100 truncate block leading-5 active:opacity-70">
+  {owner?.name || "Minh Tran"}
+</Link>
             <div className="flex items-center gap-1 mt-0.5">
               <FiStar className="fill-[#FFB800] text-[#FFB800] shrink-0" size={14} />
               <span className="font-semibold text-[13px] text-[#1C1C1E] dark:text-zinc-100">{owner?.rating || "4.9"}</span>
@@ -814,39 +814,39 @@ void status;
   <div className="mt-4">
   <h2 className="font-bold text-[17px] leading-snug text-[#1C1C1E] dark:text-zinc-100">{task.title}</h2>
 
-  {/* 3 dòng text thay cho 3 badge */}
-  <div className="mt-2 space-y-1.5">
+  {/* 3 dòng text - nhỏ đều */}
+  <div className="mt-2 space-y-1">
     {isTask(task) && task.price > 0 && (
-      <div className="flex items-center gap-2 text-[15px]">
+      <div className="flex items-center gap-2 text-[13px]">
         <span className="text-[#8E8E93] dark:text-zinc-400">Tiền công:</span>
-        <span className="font-semibold text-[#0A84FF]">{task.price.toLocaleString("vi-VN")} đ</span>
+        <span className="font-medium text-[#0A84FF]">{task.price.toLocaleString("vi-VN")} đ</span>
       </div>
     )}
     {isTask(task) && (
-      <div className="flex items-center gap-2 text-[15px]">
+      <div className="flex items-center gap-2 text-[13px]">
         <span className="text-[#8E8E93] dark:text-zinc-400">Số người ứng tuyển:</span>
-        <span className="font-semibold text-[#1C1C1E] dark:text-zinc-100">{task.appliedCount || 0}/{task.totalSlots}</span>
+        <span className="font-medium text-[#1C1C1E] dark:text-zinc-100">{task.appliedCount || 0}/{task.totalSlots}</span>
       </div>
     )}
-{isTask(task) && task.deadline?.seconds && (
-  <div className="flex items-center gap-2 text-">
-    <span className="text-[#8E8E93] dark:text-zinc-400">Hạn chót:</span>
-    <span className={`font-semibold ${isUrgent? 'text-[#FF3B30]' : 'text-[#1C1C1E] dark:text-zinc-100'}`}>
-      {timeLeft || taskDeadline}
-    </span>
-  </div>
-)}
+    {isTask(task) && task.deadline?.seconds && (
+      <div className="flex items-center gap-2 text-[13px]">
+        <span className="text-[#8E8E93] dark:text-zinc-400">Hạn chót:</span>
+        <span className={`font-medium ${isUrgent? 'text-[#FF3B30]' : 'text-[#1C1C1E] dark:text-zinc-100'}`}>
+          {timeLeft || taskDeadline}
+        </span>
+      </div>
+    )}
   </div>
 
-    {/* Gạch ngang + tiêu đề Mô tả */}
+  {/* Gạch ngang + tiêu đề Mô tả - to in đậm */}
   {task.description && (
     <>
       <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 my-4" />
-      <h3 className="font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100 mb-2">
+      <h3 className="font-bold text-[16px] text-[#1C1C1E] dark:text-zinc-100 mb-2">
         Mô tả công việc
       </h3>
       <Linkify options={{ target: "_blank", className: `text-[#0A84FF] hover:underline` }}>
-        <p className="text-[15px] text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">{task.description}</p>
+        <p className="text-[13px] text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">{task.description}</p>
       </Linkify>
     </>
   )}
