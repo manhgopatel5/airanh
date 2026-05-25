@@ -838,10 +838,17 @@ void status;
 )}
   </div>
 
+    {/* Gạch ngang + tiêu đề Mô tả */}
   {task.description && (
-    <Linkify options={{ target: "_blank", className: `text-[#0A84FF] hover:underline` }}>
-      <p className="text-[15px] text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed mt-3">{task.description}</p>
-    </Linkify>
+    <>
+      <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 my-4" />
+      <h3 className="font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100 mb-2">
+        Mô tả công việc
+      </h3>
+      <Linkify options={{ target: "_blank", className: `text-[#0A84FF] hover:underline` }}>
+        <p className="text-[15px] text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">{task.description}</p>
+      </Linkify>
+    </>
   )}
 </div>
 
