@@ -360,58 +360,70 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         </>
       )}
 
-      {/* 5. CÂY DỪA - THÂN CONG PHẢI + THON DẦN */}
-      <g>
-        <path 
-          d="M17 12 Q19 19 16 26 L14 26 Q17 19 16.5 12 Z" 
-          fill={active? "url(#trunkGrad)" : "#D1D5DB"} 
+{/* 5. CÂY DỪA - THÂN CONG PHẢI + THON DẦN */}
+<g>
+  <path 
+    d="M17 12 Q19 19 16 26 L14 26 Q17 19 16.5 12 Z" 
+    fill={active? "url(#trunkGrad)" : "#D1D5DB"} 
+  />
+  
+  {/* 3 LÁ HƯỚNG VÀO TÂM - RUNG RIÊNG */}
+  {active && (
+    <>
+      {/* 1. Lá trái - hướng vào tâm */}
+      <motion.g
+        animate={{ rotate: [-4, 4, -4] }}
+        transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+        style={{ transformOrigin: "11px 15px" }}
+      >
+        <ellipse
+          cx="11" cy="15" rx="5.5" ry="3.5"
+          fill="#A8E6A3"
+          transform="rotate(-25 11 15)"
         />
-        
-        {/* 4 LÁ - THÊM LÁ HƯỚNG LÊN */}
-        <motion.g
-          animate={active? { rotate: [-3, 3, -3] } : {}}
-          transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-          style={{ transformOrigin: "17px 15px" }}
-        >
-          {/* 1. Lá trái - nhạt nhất */}
-          <ellipse
-            cx="11" cy="15" rx="5.5" ry="3.5"
-            fill={active? "#A8E6A3" : "#D1D5DB"}
-            transform="rotate(-30 11 15)"
-          />
-          {active && (
-            <ellipse cx="9.5" cy="14.5" rx="2" ry="1.3" fill="white" opacity="0.6" transform="rotate(-30 9.5 14.5)" />
-          )}
-          
-          {/* 2. Lá phải - trung bình */}
-          <ellipse
-            cx="23" cy="15" rx="5.5" ry="3.5"
-            fill={active? "#5FD068" : "#D1D5DB"}
-            transform="rotate(30 23 15)"
-          />
-          {active && (
-            <ellipse cx="24.5" cy="14.5" rx="2" ry="1.3" fill="white" opacity="0.5" transform="rotate(30 24.5 14.5)" />
-          )}
+        <ellipse 
+          cx="12.5" cy="14.5" rx="2" ry="1.3" 
+          fill="white" opacity="0.6" 
+          transform="rotate(-25 12.5 14.5)" 
+        />
+      </motion.g>
+      
+      {/* 2. Lá phải - hướng vào tâm */}
+      <motion.g
+        animate={{ rotate: [4, -4, 4] }}
+        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+        style={{ transformOrigin: "23px 15px" }}
+      >
+        <ellipse
+          cx="23" cy="15" rx="5.5" ry="3.5"
+          fill="#5FD068"
+          transform="rotate(25 23 15)"
+        />
+        <ellipse 
+          cx="21.5" cy="14.5" rx="2" ry="1.3" 
+          fill="white" opacity="0.5" 
+          transform="rotate(25 21.5 14.5)" 
+        />
+      </motion.g>
 
-          {/* 3. Lá giữa - NHỎ LẠI */}
-          <ellipse
-            cx="17" cy="13" rx="3.5" ry="3"
-            fill={active? "#2E8B3E" : "#D1D5DB"}
-          />
-          {active && (
-            <ellipse cx="17" cy="12.2" rx="1.5" ry="1.2" fill="white" opacity="0.4" />
-          )}
-
-          {/* 4. LÁ MỚI - HƯỚNG LÊN */}
-          <ellipse
-            cx="17" cy="10.5" rx="3" ry="4.2"
-            fill={active? "#3CB043" : "#D1D5DB"}
-          />
-          {active && (
-            <ellipse cx="17" cy="9.5" rx="1.3" ry="1.8" fill="white" opacity="0.5" />
-          )}
-        </motion.g>
-      </g>
+      {/* 3. Lá trên - hướng xuống tâm */}
+      <motion.g
+        animate={{ rotate: [-3, 3, -3] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
+        style={{ transformOrigin: "17px 10.5px" }}
+      >
+        <ellipse
+          cx="17" cy="10.5" rx="3" ry="4.2"
+          fill="#3CB043"
+        />
+        <ellipse 
+          cx="17" cy="11.5" rx="1.3" ry="1.8" 
+          fill="white" opacity="0.5" 
+        />
+      </motion.g>
+    </>
+  )}
+</g>
     </svg>
   </motion.div>
 );
