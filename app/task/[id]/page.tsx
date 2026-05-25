@@ -498,7 +498,10 @@ setComments(prev => {
   if (loading) return <div className="p-4 text-center">Đang tải...</div>;
   if (!task) return <div className="p-4 text-center">Không tìm thấy task</div>;
 
-  const parentComments = comments.filter((c) =>!c.parentId);
+const parentComments = useMemo(() =>
+  comments?.filter((c) =>!c.parentId) || [],
+  [comments]
+);
 
 const sortedParents = useMemo(() => {
   return [...parentComments].sort((a, b) => {
@@ -512,7 +515,7 @@ const sortedParents = useMemo(() => {
     }
     return 0;
   });
-}, [parentComments, commentSort, task?.userId]);
+}, [parentComments, commentSort, task?.userId]); // <-- task?.userId có thể undefined
 const visibleComments = useMemo(() => sortedParents, [sortedParents]);
 
 const hasMoreComments =!!lastDoc && comments.length >= 5;
