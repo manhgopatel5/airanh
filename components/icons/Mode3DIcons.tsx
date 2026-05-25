@@ -138,7 +138,7 @@ export const Briefcase3D = ({ active }: { active: boolean }) => (
 export const Palm3D = ({ active }: { active: boolean }) => (
   <div className="flex items-center gap-2">
     <motion.div
-      className="relative w-12 h-12 flex items-center justify-center"
+className="relative w-12 h-12 flex items-center justify-center rounded-2xl bg-white/40 backdrop-blur-sm overflow-hidden"
       animate={active? {
         y: [0, -5, 0],
         scale: [1, 1.18, 1],
