@@ -323,43 +323,43 @@ export const Palm3D = ({ active }: { active: boolean }) => (
           </>
         )}
         
-        {/* 6 LÁ RĂNG CƯA - ĐÃ THẤY RÕ */}
-        <motion.g
-          animate={active? { rotate: [-3, 3, -3] } : {}}
-          transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-          style={{ transformOrigin: "17px 12px" }}
-        >
-          {/* Lá 1 - Trên */}
-          <path 
-            d="M17 12 L15.5 7 L16.2 8.5 L15.8 9.8 L17 12" 
-fill={active? "url(#leaf3D)" : "#D1D5DB"}
-          />
-          {/* Lá 2 - Phải trên */}
-          <path 
-            d="M17 12 L21.5 10.5 L20 11.5 L21 12.5 L17 12" 
-fill={active? "url(#leaf3D)" : "#D1D5DB"}
-          />
-          {/* Lá 3 - Trái trên */}
-          <path 
-            d="M17 12 L12.5 10.5 L14 11.5 L13 12.5 L17 12" 
-fill={active? "url(#leaf3D)" : "#D1D5DB"}
-          />
-          {/* Lá 4 - Phải dưới */}
-          <path 
-            d="M17 12 L20.5 15 L19 14 L19.8 15.5 L17 12" 
-fill={active? "url(#leaf3D)" : "#D1D5DB"}
-          />
-          {/* Lá 5 - Trái dưới */}
-          <path 
-            d="M17 12 L13.5 15 L15 14 L14.2 15.5 L17 12" 
-fill={active? "url(#leaf3D)" : "#D1D5DB"}
-          />
-          {/* Lá 6 - Dưới */}
-          <path 
-            d="M17 12 L17 16.5 L16.3 15 L17.7 15 L17 12" 
-fill={active? "url(#leaf3D)" : "#D1D5DB"}
-          />
-        </motion.g>
+    {/* 6 LÁ RĂNG CƯA - TO GẤP ĐÔI */}
+<motion.g
+  animate={active? { rotate: [-3, 3, -3] } : {}}
+  transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+  style={{ transformOrigin: "17px 12px" }}
+>
+  {/* Lá 1 - Trên */}
+  <path 
+    d="M17 12 L13 4 L15 7 L14 9 L17 12" 
+    fill={active? "url(#leaf3D)" : "#D1D5DB"}
+  />
+  {/* Lá 2 - Phải trên */}
+  <path 
+    d="M17 12 L25 8 L22 10 L23 11.5 L17 12" 
+    fill={active? "url(#leaf3D)" : "#D1D5DB"}
+  />
+  {/* Lá 3 - Trái trên */}
+  <path 
+    d="M17 12 L9 8 L12 10 L11 11.5 L17 12" 
+    fill={active? "url(#leaf3D)" : "#D1D5DB"}
+  />
+  {/* Lá 4 - Phải dưới */}
+  <path 
+    d="M17 12 L23 17 L20.5 15.5 L22 16.5 L17 12" 
+    fill={active? "url(#leaf3D)" : "#D1D5DB"}
+  />
+  {/* Lá 5 - Trái dưới */}
+  <path 
+    d="M17 12 L11 17 L13.5 15.5 L12 16.5 L17 12" 
+    fill={active? "url(#leaf3D)" : "#D1D5DB"}
+  />
+  {/* Lá 6 - Dưới */}
+  <path 
+    d="M17 12 L17 19 L15.5 17 L18.5 17 L17 12" 
+    fill={active? "url(#leaf3D)" : "#D1D5DB"}
+  />
+</motion.g>
       </g>
 
       {active && <ellipse cx="16" cy="27.5" rx="7" ry="1.8" fill="#000000" opacity="0.2" />}
