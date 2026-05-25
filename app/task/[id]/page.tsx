@@ -534,7 +534,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
   return (
     <>
       <Toaster richColors position="top-center" />
-<div className="max-w-xl mx-auto bg-white dark:bg-zinc-950 min-h-screen pb-28 px-3 pt-2">
+<div className="max-w-xl mx-auto bg-white dark:bg-zinc-950 min-h-dvh pb-28 px-3 pt-2">
 
           <div className="p-5">
            <div className="flex gap-3 items-start">
