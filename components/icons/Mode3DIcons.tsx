@@ -204,46 +204,75 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         </linearGradient>
       </defs>
 
-      {/* 1. NƯỚC - VẼ ĐẦU TIÊN = NẰM DƯỚI CÙNG */}
-      {active && (
-        <>
-          <motion.rect
-            x="0" y="24" width="32" height="8"
-            fill="#5AC8FA"
-            opacity="0.7"
-            animate={{ y: [24, 24.5, 24] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          />
-          
-          <motion.path
-            d="M0 26C4 25.5 8 26.5 12 26C16 25.5 20 26.5 24 26C28 25.5 32 26"
-            stroke="#3AA8F0"
-            strokeWidth="1.5"
-            fill="none"
-            opacity="0.8"
-            animate={{ x: [0, -8, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-          />
-          <motion.path
-            d="M0 27.5C4 27 8 28 12 27.5C16 27 20 28 24 27.5C28 27 32 27.5"
-            stroke="#4DB8F5"
-            strokeWidth="1.2"
-            fill="none"
-            opacity="0.7"
-            animate={{ x: [0, 8, 0] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-          />
-          <motion.path
-            d="M0 29C4 28.5 8 29.5 12 29C16 28.5 20 29.5 24 29C28 28.5 32 29"
-            stroke="#5AC8FA"
-            strokeWidth="1"
-            fill="none"
-            opacity="0.6"
-            animate={{ x: [0, -6, 0] }}
-            transition={{ duration: 3.5, repeat: Infinity, ease: "linear" }}
-          />
-        </>
-      )}
+   {/* 1. NƯỚC - NHẤP NHÔ + CHẢY TỪ TRÁI SANG PHẢI */}
+{active && (
+  <>
+    <motion.rect
+      x="0" y="24" width="32" height="8"
+      fill="#5AC8FA"
+      opacity="0.7"
+      animate={{ 
+        y: [24, 23.5, 24, 24.5, 24]
+      }}
+      transition={{ 
+        duration: 2.5, 
+        repeat: Infinity, 
+        ease: "easeInOut" 
+      }}
+    />
+    
+    {/* Sóng 1 - chảy phải + nhấp nhô */}
+    <motion.path
+      d="M-8 26C-4 25.5 0 26.5 4 26C8 25.5 12 26.5 16 26C20 25.5 24 26.5 28 26C32 25.5 36 26.5 40 26"
+      stroke="#3AA8F0"
+      strokeWidth="1.5"
+      fill="none"
+      opacity="0.8"
+      animate={{ 
+        x: [0, 32, 0],
+        y: [0, -0.5, 0, 0.5, 0]
+      }}
+      transition={{ 
+        x: { duration: 6, repeat: Infinity, ease: "linear" },
+        y: { duration: 1.5, repeat: Infinity, ease: "easeInOut" }
+      }}
+    />
+    
+    {/* Sóng 2 - chảy phải chậm hơn + nhấp nhô */}
+    <motion.path
+      d="M-8 27.5C-4 27 0 28 4 27.5C8 27 12 28 16 27.5C20 27 24 28 28 27.5C32 27 36 28 40 27.5"
+      stroke="#4DB8F5"
+      strokeWidth="1.2"
+      fill="none"
+      opacity="0.7"
+      animate={{ 
+        x: [0, 32, 0],
+        y: [0, 0.5, 0, -0.5, 0]
+      }}
+      transition={{ 
+        x: { duration: 8, repeat: Infinity, ease: "linear" },
+        y: { duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.3 }
+      }}
+    />
+    
+    {/* Sóng 3 - chảy phải nhanh + nhấp nhô */}
+    <motion.path
+      d="M-8 29C-4 28.5 0 29.5 4 29C8 28.5 12 29.5 16 29C20 28.5 24 29.5 28 29C32 28.5 36 29.5 40 29"
+      stroke="#5AC8FA"
+      strokeWidth="1"
+      fill="none"
+      opacity="0.6"
+      animate={{ 
+        x: [0, 32, 0],
+        y: [0, -0.3, 0, 0.3, 0]
+      }}
+      transition={{ 
+        x: { duration: 4.5, repeat: Infinity, ease: "linear" },
+        y: { duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 0.6 }
+      }}
+    />
+  </>
+)}
 
       {/* 2. MÂY */}
       {active && (
