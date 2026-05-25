@@ -10,7 +10,7 @@ import {
 } from "firebase/firestore";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import {
-  FiSend, FiClock, FiUsers, FiX, FiCheckCircle, FiMessageCircle,
+  FiSend, FiClock, FiX, FiCheckCircle, FiMessageCircle,
   FiCalendar, FiMessageSquare, FiPhone, FiAlertTriangle,
   FiStar, FiBookmark, FiMoreHorizontal, FiShare2, FiCheck, FiChevronDown, FiTrash2, FiEdit2
 } from "react-icons/fi";
