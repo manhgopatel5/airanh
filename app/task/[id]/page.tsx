@@ -674,54 +674,137 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
         </div>
       </div>
     </div>
-{!isOwner && (
-  <div className="flex -mx-3">
+{isOwner? (
+  <div ref={appsRef} className="bg-white dark:bg-zinc-900 -mx-3">
+    <div className="px-5 py-4 flex items-center justify-between border-b border-[#F2F2F7] dark:border-zinc-800">
+      <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
+        Ứng viên ({applications.length})
+      </h3>
+      {applications.length > 1 && (
+        <button
+          onClick={() => setShowAllApps(!showAllApps)}
+          className="text-sm font-semibold text-[#0a84ff] active:opacity-60 transition-opacity"
+        >
+          {showAllApps? 'Thu gọn' : 'Xem tất cả'} ›
+        </button>
+      )}
+    </div>
+
+    {applications.length === 0? (
+      <div className="px-5 py-12 text-center">
+        <p className="text-sm text-[#8E8E93] dark:text-zinc-500">
+          Chưa có ai ứng tuyển
+        </p>
+      </div>
+    ) : (
+      <div className="divide-y divide-[#F2F2F7] dark:divide-zinc-800">
+        {(showAllApps? applications : applications.slice(0, 1)).map(app => (
+          <motion.div 
+            key={app.id} 
+            layout
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center justify-between gap-3 px-5 py-3"
+          >
+            <Link
+              href={`/profile/${app.userId}`}
+              className="flex items-center gap-3 min-w-0 flex-1 active:opacity-70"
+            >
+              <UserAvatar src={app.userAvatar} name={app.userName} size={40} />
+              <div className="min-w-0">
+                <p className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100 truncate">
+                  {app.userName}
+                </p>
+                <p className="text-xs text-[#8E8E93] dark:text-zinc-500">
+                  {app.createdAt?.toDate? app.createdAt.toDate().toLocaleDateString('vi-VN') : 'Vừa xong'} • Nộp {timeAgo(app.createdAt)}
+                </p>
+              </div>
+            </Link>
+
+            <div className="flex gap-2 shrink-0">
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.vibrate?.(8);
+                  handleAcceptApp(app.id, app.userId);
+                }}
+                className="h-8 px-3 rounded-full bg-[#E6F4EA] dark:bg-[#1E8E3E]/20 flex items-center gap-1.5 active:bg-[#D4EDDA] dark:active:bg-[#1E8E3E]/30 transition-all"
+              >
+                <div className="w-4 h-4 rounded-full bg-[#00A86B] flex items-center justify-center">
+                  <FiCheck size={10} strokeWidth={3} className="text-white" />
+                </div>
+                <span className="text-xs font-semibold text-[#00A86B]">Đồng ý</span>
+              </motion.button>
+              
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.vibrate?.(8);
+                  handleRejectApp(app.id);
+                }}
+                className="h-8 px-3 rounded-full bg-[#FFE5E5] dark:bg-[#FF3B30]/20 flex items-center gap-1.5 active:bg-[#FFD6D6] dark:active:bg-[#FF3B30]/30 transition-all"
+              >
+                <div className="w-4 h-4 rounded-full bg-[#FF3B30] flex items-center justify-center">
+                  <FiX size={10} strokeWidth={3} className="text-white" />
+                </div>
+                <span className="text-xs font-semibold text-[#FF3B30]">Từ chối</span>
+              </motion.button>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    )}
+  </div>
+) : (
+  <div className="flex mt-4 mb-1 -mx-3">
     <motion.button
       whileTap={{ scale: 0.98 }}
       onClick={handleStartChat}
-      className="flex-1 h-16 bg-[#E3F2FD] dark:bg-[#0A84FF]/20 flex flex-col items-center justify-center gap-1 text-[#0A84FF] dark:text-[#5AC8FA] active:bg-[#D1E9FC] dark:active:bg-[#0A84FF]/30 transition-colors"
+      className="flex-1 h- bg-[#E3F2FD] dark:bg-[#0A84FF]/20 flex flex-col items-center justify-center gap-1 text-[#0A84FF] dark:text-[#5AC8FA] active:bg-[#D1E9FC] dark:active:bg-[#0A84FF]/30 transition-colors"
     >
-      <FiMessageSquare size={22} strokeWidth={2.2} />
-      <span className="text-[11px] font-semibold leading-none">Nhắn tin</span>
+      <FiMessageSquare size={20} strokeWidth={2.2} />
+      <span className="text- font-semibold leading-none">Nhắn tin</span>
     </motion.button>
 
     <motion.button
       whileTap={{ scale: 0.98 }}
       onClick={() => owner?.phone && window.open(`tel:${owner.phone}`)}
       disabled={!owner?.phone}
-      className="flex-1 h-16 bg-[#E8F5E9] dark:bg-[#1E8E3E]/20 flex flex-col items-center justify-center gap-1 text-[#00A86B] active:bg-[#D4EDDA] dark:active:bg-[#1E8E3E]/30 disabled:opacity-40 disabled:active:bg-[#E8F5E9] transition-colors"
+      className="flex-1 h- bg-[#E8F5E9] dark:bg-[#1E8E3E]/20 flex flex-col items-center justify-center gap-1 text-[#00A86B] active:bg-[#D4EDDA] dark:active:bg-[#1E8E3E]/30 disabled:opacity-40 disabled:active:bg-[#E8F5E9] transition-colors"
     >
-      <FiPhone size={22} strokeWidth={2.2} />
-      <span className="text-[11px] font-semibold leading-none">Gọi điện</span>
+      <FiPhone size={20} strokeWidth={2.2} />
+      <span className="text- font-semibold leading-none">Gọi điện</span>
     </motion.button>
 
     <motion.button
       whileTap={{ scale: 0.98 }}
       onClick={isApplied? handleCancelApply : handleJoinTask}
       disabled={(!isApplied && (isFull || task.status!== "open")) || joining}
-      className={`flex-1 h-16 flex flex-col items-center justify-center gap-1 font-semibold active:opacity-90 disabled:opacity-40 transition-colors ${
+      className={`flex-1 h- flex flex-col items-center justify-center gap-1 font-semibold active:opacity-90 disabled:opacity-40 transition-colors ${
         isApplied
-       ? "bg-[#E8F5E9] dark:bg-green-950/40 text-[#00A86B] active:bg-[#D4EDDA] dark:active:bg-green-900/60"
+        ? "bg-[#E8F5E9] dark:bg-green-950/40 text-[#00A86B] active:bg-[#D4EDDA] dark:active:bg-green-900/60"
           : "bg-[#00A86B] active:bg-[#009960] text-white"
       }`}
     >
       {joining? (
         <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
       ) : isApplied? (
-        <FiCheckCircle size={22} strokeWidth={2.5} />
+        <FiCheckCircle size={20} strokeWidth={2.5} />
       ) : (
-        <FiSend size={22} strokeWidth={2.5} />
+        <FiSend size={20} strokeWidth={2.5} />
       )}
-      <span className="text-[11px] leading-none">{isApplied? "Đã ứng tuyển" : "Ứng tuyển"}</span>
+      <span className="text- leading-none">{isApplied? "Đã ứng tuyển" : "Ứng tuyển"}</span>
     </motion.button>
 
     <motion.button
       whileTap={{ scale: 0.98 }}
       onClick={() => toast.info("Đã gửi báo cáo")}
-      className="flex-1 h-16 bg-[#FFF4E5] dark:bg-[#FF9500]/15 flex flex-col items-center justify-center gap-1 text-[#FF9500] active:bg-[#FFE8CC] dark:active:bg-[#FF9500]/25 transition-colors"
+      className="flex-1 h- bg-[#FFF4E5] dark:bg-[#FF9500]/15 flex flex-col items-center justify-center gap-1 text-[#FF9500] active:bg-[#FFE8CC] dark:active:bg-[#FF9500]/25 transition-colors"
     >
-      <FiAlertTriangle size={22} strokeWidth={2.2} />
-      <span className="text-[11px] font-semibold leading-none">Báo cáo</span>
+      <FiAlertTriangle size={20} strokeWidth={2.2} />
+      <span className="text- font-semibold leading-none">Báo cáo</span>
     </motion.button>
   </div>
 )}
