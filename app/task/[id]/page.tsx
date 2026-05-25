@@ -759,11 +759,11 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
   </div>
 ) : (
 <div className="flex mt-4 mb-1 -mx-4 overflow-hidden rounded-2xl">
-    <motion.button
-      whileTap={{ scale: 0.98 }}
-      onClick={handleStartChat}
-      className="flex-1 h-[64px] bg-[#E3F2FD] dark:bg-[#0A84FF]/20 flex flex-col items-center justify-center gap-1 text-[#0A84FF] dark:text-[#5AC8FA] active:bg-[#D1E9FC] dark:active:bg-[#0A84FF]/30 transition-colors border-r border-white/40 dark:border-zinc-800" dark:bg-[#0A84FF]/20 flex flex-col items-center justify-center gap-1 text-[#0A84FF] dark:text-[#5AC8FA] active:bg-[#D1E9FC] dark:active:bg-[#0A84FF]/30 transition-colors"
-    >
+<motion.button
+  whileTap={{ scale: 0.98 }}
+  onClick={handleStartChat}
+  className="flex-1 h-[64px] bg-[#E3F2FD] dark:bg-[#0A84FF]/20 flex flex-col items-center justify-center gap-1 text-[#0A84FF] dark:text-[#5AC8FA] active:bg-[#D1E9FC] dark:active:bg-[#0A84FF]/30 transition-colors border-r border-white/40 dark:border-zinc-800"
+>
       <FiMessageSquare size={20} strokeWidth={2.2} />
       <span className="text- font-semibold leading-none">Nhắn tin</span>
     </motion.button>
