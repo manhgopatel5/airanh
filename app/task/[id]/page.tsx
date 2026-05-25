@@ -798,11 +798,11 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
       <span className="text- leading-none">{isApplied? "Đã ứng tuyển" : "Ứng tuyển"}</span>
     </motion.button>
 
-    <motion.button
-      whileTap={{ scale: 0.98 }}
-      onClick={() => toast.info("Đã gửi báo cáo")}
-      className="flex-1 h-[64px] bg-[#FFF4E5] dark:bg-[#FF9500]/15 flex flex-col items-center justify-center gap-1 text-[#FF9500] active:bg-[#FFE8CC] dark:active:bg-[#FF9500]/25 transition-colors" dark:bg-[#FF9500]/15 flex flex-col items-center justify-center gap-1 text-[#FF9500] active:bg-[#FFE8CC] dark:active:bg-[#FF9500]/25 transition-colors"
-    >
+<motion.button
+  whileTap={{ scale: 0.98 }}
+  onClick={() => toast.info("Đã gửi báo cáo")}
+  className="flex-1 h-[64px] bg-[#FFF4E5] dark:bg-[#FF9500]/15 flex flex-col items-center justify-center gap-1 text-[#FF9500] active:bg-[#FFE8CC] dark:active:bg-[#FF9500]/25 transition-colors"
+>
       <FiAlertTriangle size={20} strokeWidth={2.2} />
       <span className="text- font-semibold leading-none">Báo cáo</span>
     </motion.button>
