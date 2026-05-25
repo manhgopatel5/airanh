@@ -674,23 +674,24 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
         </div>
       </div>
     </div>
-{isOwner? (
+{isOwner ? (
   <div ref={appsRef} className="bg-white dark:bg-zinc-900 -mx-3">
     <div className="px-5 py-4 flex items-center justify-between border-b border-[#F2F2F7] dark:border-zinc-800">
       <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
         Ứng viên ({applications.length})
       </h3>
+
       {applications.length > 1 && (
         <button
           onClick={() => setShowAllApps(!showAllApps)}
           className="text-sm font-semibold text-[#0a84ff] active:opacity-60 transition-opacity"
         >
-          {showAllApps? 'Thu gọn' : 'Xem tất cả'} ›
+          {showAllApps ? "Thu gọn" : "Xem tất cả"} ›
         </button>
       )}
     </div>
 
-    {applications.length === 0? (
+    {applications.length === 0 ? (
       <div className="px-5 py-12 text-center">
         <p className="text-sm text-[#8E8E93] dark:text-zinc-500">
           Chưa có ai ứng tuyển
@@ -698,9 +699,12 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
       </div>
     ) : (
       <div className="divide-y divide-[#F2F2F7] dark:divide-zinc-800">
-        {(showAllApps? applications : applications.slice(0, 1)).map(app => (
-          <motion.div 
-            key={app.id} 
+        {(showAllApps
+          ? applications
+          : applications.slice(0, 1)
+        ).map((app) => (
+          <motion.div
+            key={app.id}
             layout
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -710,13 +714,24 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
               href={`/profile/${app.userId}`}
               className="flex items-center gap-3 min-w-0 flex-1 active:opacity-70"
             >
-              <UserAvatar src={app.userAvatar} name={app.userName} size={40} />
+              <UserAvatar
+                src={app.userAvatar}
+                name={app.userName}
+                size={40}
+              />
+
               <div className="min-w-0">
                 <p className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100 truncate">
                   {app.userName}
                 </p>
+
                 <p className="text-xs text-[#8E8E93] dark:text-zinc-500">
-                  {app.createdAt?.toDate? app.createdAt.toDate().toLocaleDateString('vi-VN') : 'Vừa xong'} • Nộp {timeAgo(app.createdAt)}
+                  {app.createdAt?.toDate
+                    ? app.createdAt
+                        .toDate()
+                        .toLocaleDateString("vi-VN")
+                    : "Vừa xong"}{" "}
+                  • Nộp {timeAgo(app.createdAt)}
                 </p>
               </div>
             </Link>
@@ -732,11 +747,18 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
                 className="h-8 px-3 rounded-full bg-[#E6F4EA] dark:bg-[#1E8E3E]/20 flex items-center gap-1.5 active:bg-[#D4EDDA] dark:active:bg-[#1E8E3E]/30 transition-all"
               >
                 <div className="w-4 h-4 rounded-full bg-[#00A86B] flex items-center justify-center">
-                  <FiCheck size={10} strokeWidth={3} className="text-white" />
+                  <FiCheck
+                    size={10}
+                    strokeWidth={3}
+                    className="text-white"
+                  />
                 </div>
-                <span className="text-xs font-semibold text-[#00A86B]">Đồng ý</span>
+
+                <span className="text-xs font-semibold text-[#00A86B]">
+                  Đồng ý
+                </span>
               </motion.button>
-              
+
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={(e) => {
@@ -747,9 +769,16 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
                 className="h-8 px-3 rounded-full bg-[#FFE5E5] dark:bg-[#FF3B30]/20 flex items-center gap-1.5 active:bg-[#FFD6D6] dark:active:bg-[#FF3B30]/30 transition-all"
               >
                 <div className="w-4 h-4 rounded-full bg-[#FF3B30] flex items-center justify-center">
-                  <FiX size={10} strokeWidth={3} className="text-white" />
+                  <FiX
+                    size={10}
+                    strokeWidth={3}
+                    className="text-white"
+                  />
                 </div>
-                <span className="text-xs font-semibold text-[#FF3B30]">Từ chối</span>
+
+                <span className="text-xs font-semibold text-[#FF3B30]">
+                  Từ chối
+                </span>
               </motion.button>
             </div>
           </motion.div>
@@ -758,57 +787,125 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
     )}
   </div>
 ) : (
-<div className="flex mt-4 mb-1 -mx-4 overflow-hidden rounded-2xl">
-<motion.button
-  whileTap={{ scale: 0.98 }}
-  onClick={handleStartChat}
-  className="flex-1 h-[64px] bg-[#E3F2FD] dark:bg-[#0A84FF]/20 flex flex-col items-center justify-center gap-1 text-[#0A84FF] dark:text-[#5AC8FA] active:bg-[#D1E9FC] dark:active:bg-[#0A84FF]/30 transition-colors border-r border-white/40 dark:border-zinc-800"
->
-      <FiMessageSquare size={20} strokeWidth={2.2} />
-      <span className="text- font-semibold leading-none">Nhắn tin</span>
-    </motion.button>
+  <div className="mt-4 -mx-1 px-1">
+    <div className="grid grid-cols-4 gap-2">
 
-<motion.button
-  whileTap={{ scale: 0.98 }}
-  onClick={() => owner?.phone && window.open(`tel:${owner.phone}`)}
-  disabled={!owner?.phone}
-  className="flex-1 h-[64px] bg-[#E8F5E9] dark:bg-[#1E8E3E]/20 flex flex-col items-center justify-center gap-1 text-[#00A86B] active:bg-[#D4EDDA] dark:active:bg-[#1E8E3E]/30 disabled:opacity-40 disabled:active:bg-[#E8F5E9] transition-colors border-r border-white/40 dark:border-zinc-800"
->
-      <FiPhone size={20} strokeWidth={2.2} />
-      <span className="text- font-semibold leading-none">Gọi điện</span>
-    </motion.button>
+      {/* Nhắn tin */}
+      <motion.button
+        whileTap={{ scale: 0.92 }}
+        transition={{ type: "spring", stiffness: 400, damping: 18 }}
+        onClick={handleStartChat}
+        className="h-[78px] rounded-[28px] bg-gradient-to-b from-[#F7FBFF] to-[#E3F2FD] dark:from-[#0A84FF]/20 dark:to-[#0A84FF]/10 border border-white/80 dark:border-white/5 shadow-[0_6px_18px_rgba(10,132,255,0.14)] flex flex-col items-center justify-center gap-1.5 active:brightness-95"
+      >
+        <div className="w-10 h-10 rounded-2xl bg-[#0A84FF] flex items-center justify-center shadow-lg shadow-[#0A84FF]/25">
+          <FiMessageSquare
+            size={18}
+            strokeWidth={2.4}
+            className="text-white"
+          />
+        </div>
 
-    <motion.button
-      whileTap={{ scale: 0.98 }}
-      onClick={isApplied? handleCancelApply : handleJoinTask}
-      disabled={(!isApplied && (isFull || task.status!== "open")) || joining}
- className={`flex-1 h-[64px] flex flex-col items-center justify-center gap-1 font-semibold active:opacity-90 disabled:opacity-40 transition-colors border-r border-white/40 dark:border-zinc-800 ${
-  isApplied
-    ? "bg-[#E8F5E9] dark:bg-green-950/40 text-[#00A86B] active:bg-[#D4EDDA] dark:active:bg-green-900/60"
-    : "bg-[#00A86B] active:bg-[#009960] text-white"
-}`}
-    >
-      {joining? (
-        <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-      ) : isApplied? (
-        <FiCheckCircle size={20} strokeWidth={2.5} />
-      ) : (
-        <FiSend size={20} strokeWidth={2.5} />
-      )}
-      <span className="text- leading-none">{isApplied? "Đã ứng tuyển" : "Ứng tuyển"}</span>
-    </motion.button>
+        <span className="text-[11px] font-bold tracking-tight text-[#0A84FF] dark:text-[#5AC8FA]">
+          Nhắn tin
+        </span>
+      </motion.button>
 
-<motion.button
-  whileTap={{ scale: 0.98 }}
-  onClick={() => toast.info("Đã gửi báo cáo")}
-  className="flex-1 h-[64px] bg-[#FFF4E5] dark:bg-[#FF9500]/15 flex flex-col items-center justify-center gap-1 text-[#FF9500] active:bg-[#FFE8CC] dark:active:bg-[#FF9500]/25 transition-colors"
->
-      <FiAlertTriangle size={20} strokeWidth={2.2} />
-      <span className="text- font-semibold leading-none">Báo cáo</span>
-    </motion.button>
+      {/* Gọi điện */}
+      <motion.button
+        whileTap={{ scale: 0.92 }}
+        transition={{ type: "spring", stiffness: 400, damping: 18 }}
+        onClick={() =>
+          owner?.phone && window.open(`tel:${owner.phone}`)
+        }
+        disabled={!owner?.phone}
+        className="h-[78px] rounded-[28px] bg-gradient-to-b from-[#F4FFF8] to-[#E8F5E9] dark:from-[#1E8E3E]/20 dark:to-[#1E8E3E]/10 border border-white/80 dark:border-white/5 shadow-[0_6px_18px_rgba(0,168,107,0.14)] flex flex-col items-center justify-center gap-1.5 active:brightness-95 disabled:opacity-40"
+      >
+        <div className="w-10 h-10 rounded-2xl bg-[#00A86B] flex items-center justify-center shadow-lg shadow-[#00A86B]/25">
+          <FiPhone
+            size={18}
+            strokeWidth={2.4}
+            className="text-white"
+          />
+        </div>
+
+        <span className="text-[11px] font-bold tracking-tight text-[#00A86B]">
+          Gọi điện
+        </span>
+      </motion.button>
+
+      {/* Ứng tuyển */}
+      <motion.button
+        whileTap={{ scale: 0.92 }}
+        transition={{ type: "spring", stiffness: 400, damping: 18 }}
+        onClick={isApplied ? handleCancelApply : handleJoinTask}
+        disabled={
+          (!isApplied &&
+            (isFull || task.status !== "open")) ||
+          joining
+        }
+        className={`h-[78px] rounded-[28px] border flex flex-col items-center justify-center gap-1.5 active:brightness-95 disabled:opacity-40 transition-all ${
+          isApplied
+            ? "bg-gradient-to-b from-[#F4FFF8] to-[#E8F5E9] dark:from-green-950/40 dark:to-green-900/20 border-white/80 dark:border-white/5 shadow-[0_6px_18px_rgba(0,168,107,0.14)]"
+            : "bg-gradient-to-b from-[#00C97B] to-[#00A86B] border-[#00B973] shadow-[0_10px_28px_rgba(0,168,107,0.34)]"
+        }`}
+      >
+        <div
+          className={`w-10 h-10 rounded-2xl flex items-center justify-center ${
+            isApplied
+              ? "bg-[#00A86B] shadow-lg shadow-[#00A86B]/25"
+              : "bg-white/20 backdrop-blur-md"
+          }`}
+        >
+          {joining ? (
+            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin text-white" />
+          ) : isApplied ? (
+            <FiCheckCircle
+              size={18}
+              strokeWidth={2.5}
+              className="text-white"
+            />
+          ) : (
+            <FiSend
+              size={18}
+              strokeWidth={2.5}
+              className="text-white"
+            />
+          )}
+        </div>
+
+        <span
+          className={`text-[11px] font-bold tracking-tight ${
+            isApplied
+              ? "text-[#00A86B]"
+              : "text-white"
+          }`}
+        >
+          {isApplied ? "Đã ứng tuyển" : "Ứng tuyển"}
+        </span>
+      </motion.button>
+
+      {/* Báo cáo */}
+      <motion.button
+        whileTap={{ scale: 0.92 }}
+        transition={{ type: "spring", stiffness: 400, damping: 18 }}
+        onClick={() => toast.info("Đã gửi báo cáo")}
+        className="h-[78px] rounded-[28px] bg-gradient-to-b from-[#FFF8F0] to-[#FFF4E5] dark:from-[#FF9500]/20 dark:to-[#FF9500]/10 border border-white/80 dark:border-white/5 shadow-[0_6px_18px_rgba(255,149,0,0.14)] flex flex-col items-center justify-center gap-1.5 active:brightness-95"
+      >
+        <div className="w-10 h-10 rounded-2xl bg-[#FF9500] flex items-center justify-center shadow-lg shadow-[#FF9500]/25">
+          <FiAlertTriangle
+            size={18}
+            strokeWidth={2.4}
+            className="text-white"
+          />
+        </div>
+
+        <span className="text-[11px] font-bold tracking-tight text-[#FF9500]">
+          Báo cáo
+        </span>
+      </motion.button>
+    </div>
   </div>
 )}
-</div>
     {/* Hàng 2: 4 Badge đồng bộ style app */}
     <div className="grid grid-cols-4 gap-2 mt-3">
       <div className={`px-2 h-8 rounded-[20px] text-[13px] font-semibold flex items-center justify-center gap-1.5 ${status.color}`}>
