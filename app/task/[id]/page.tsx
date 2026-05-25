@@ -1087,7 +1087,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
               />
             ))}
           </AnimatePresence>
-</AnimatePresence>
+
 
 {hasMoreComments && (
   <button
