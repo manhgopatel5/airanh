@@ -535,7 +535,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
     <>
       <Toaster richColors position="top-center" />
 <div className="max-w-xl mx-auto bg-white dark:bg-zinc-950 min-h-screen pb-4 px-3 pt-2">
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl border-zinc-100 dark:border-zinc-800 shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden">
+
           <div className="p-5">
            <div className="flex gap-3 items-start">
   <Link href={`/profile/${task.userId}`} className="relative shrink-0 active:opacity-70 transition-opacity">
@@ -1059,7 +1059,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
   </div>
 </div>
         </div>
-</div>
+
         <ImageGallery open={showImageGallery!== null} images={task.images || []} initialIndex={showImageGallery || 0} onClose={() => setShowImageGallery(null)} />
         {shareTask && (
           <ShareTaskModal
