@@ -204,15 +204,27 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         </linearGradient>
       </defs>
 
- {active && (
-  <motion.g
-    animate={{ x: [-5, 5, -5] }}
-    transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-  >
-    <ellipse cx="7" cy="4.5" rx="4" ry="2.2" fill="url(#cloudGrad)" opacity="1" />
-    <ellipse cx="9.5" cy="5" rx="3.4" ry="1.9" fill="url(#cloudGrad)" opacity="1" />
-    <ellipse cx="6" cy="5.2" rx="2.6" ry="1.6" fill="url(#cloudGrad)" opacity="1" />
-  </motion.g>
+{active && (
+  <>
+    <motion.ellipse 
+      cx="7" cy="4.5" rx="4" ry="2.2" 
+      fill="url(#cloudGrad)" opacity="1"
+      animate={{ x: [-4, 4, -4] }}
+      transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+    />
+    <motion.ellipse 
+      cx="9.5" cy="5" rx="3.4" ry="1.9" 
+      fill="url(#cloudGrad)" opacity="1"
+      animate={{ x: [-4, 4, -4] }}
+      transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+    />
+    <motion.ellipse 
+      cx="6" cy="5.2" rx="2.6" ry="1.6" 
+      fill="url(#cloudGrad)" opacity="1"
+      animate={{ x: [-4, 4, -4] }}
+      transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
+    />
+  </>
 )}
 
       {active && (
