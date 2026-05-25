@@ -204,32 +204,74 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         </linearGradient>
       </defs>
 
-{active && (
-  <>
-    <motion.ellipse 
-      cx="7" cy="4.5" rx="4" ry="2.2" 
-      fill="url(#cloudGrad)" opacity="1"
-      animate={{ cx: [7, 11, 7] }}
-      transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-    />
-    <motion.ellipse 
-      cx="9.5" cy="5" rx="3.4" ry="1.9" 
-      fill="url(#cloudGrad)" opacity="1"
-      animate={{ cx: [9.5, 13.5, 9.5] }}
-      transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
-    />
-    <motion.ellipse 
-      cx="6" cy="5.2" rx="2.6" ry="1.6" 
-      fill="url(#cloudGrad)" opacity="1"
-      animate={{ cx: [6, 10, 6] }}
-      transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
-    />
-  </>
-)}
+      {/* NƯỚC - VẼ ĐẦU TIÊN = NẰM DƯỚI CÙNG */}
+      {active && (
+        <>
+          <motion.rect
+            x="0" y="24" width="32" height="8"
+            fill="#5AC8FA"
+            opacity="0.6"
+            animate={{ y: [24, 24.5, 24] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          />
+          
+          <motion.path
+            d="M0 26C4 25.5 8 26.5 12 26C16 25.5 20 26.5 24 26C28 25.5 32 26"
+            stroke="#3AA8F0"
+            strokeWidth="1.5"
+            fill="none"
+            opacity="0.7"
+            animate={{ x: [0, -8, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+          />
+          <motion.path
+            d="M0 27.5C4 27 8 28 12 27.5C16 27 20 28 24 27.5C28 27 32 27.5 32 27.5"
+            stroke="#4DB8F5"
+            strokeWidth="1.2"
+            fill="none"
+            opacity="0.6"
+            animate={{ x: [0, 8, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
+          />
+          <motion.path
+            d="M0 29C4 28.5 8 29.5 12 29C16 28.5 20 29.5 24 29C28 28.5 32 29 32 29"
+            stroke="#5AC8FA"
+            strokeWidth="1"
+            fill="none"
+            opacity="0.5"
+            animate={{ x: [0, -6, 0] }}
+            transition={{ duration: 3.5, repeat: Infinity, ease: "linear" }}
+          />
+        </>
+      )}
 
+      {/* MÂY */}
+      {active && (
+        <>
+          <motion.ellipse 
+            cx="7" cy="4.5" rx="4" ry="2.2" 
+            fill="url(#cloudGrad)" opacity="1"
+            animate={{ cx: [7, 11, 7] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.ellipse 
+            cx="9.5" cy="5" rx="3.4" ry="1.9" 
+            fill="url(#cloudGrad)" opacity="1"
+            animate={{ cx: [9.5, 13.5, 9.5] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+          />
+          <motion.ellipse 
+            cx="6" cy="5.2" rx="2.6" ry="1.6" 
+            fill="url(#cloudGrad)" opacity="1"
+            animate={{ cx: [6, 10, 6] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
+          />
+        </>
+      )}
+
+      {/* MẶT TRỜI */}
       {active && (
         <g>
-          {/* Tia nắng tỏa từ tâm - không xoay, chỉ pulse */}
           {[...Array(16)].map((_, i) => {
             const angle = (i * 22.5) * Math.PI / 180;
             const x1 = 24 + Math.cos(angle) * 5.2;
@@ -261,7 +303,6 @@ export const Palm3D = ({ active }: { active: boolean }) => (
             );
           })}
           
-          {/* Mặt trời */}
           <motion.circle
             cx="24" cy="6.5" r="4"
             fill="url(#sun3D)"
@@ -274,48 +315,8 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         </g>
       )}
 
-{/* NƯỚC Ở SAU ĐẢO + CHẢY */}
-{active && (
-  <>
-    <motion.rect
-      x="0" y="24" width="32" height="8"
-      fill="#5AC8FA"
-      opacity="0.5"
-      animate={{ y: [24, 24.5, 24] }}
-      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-    />
-    
-    <motion.path
-      d="M0 26C4 25.5 8 26.5 12 26C16 25.5 20 26.5 24 26C28 25.5 32 26 32 26"
-      stroke="#3AA8F0"
-      strokeWidth="1.5"
-      fill="none"
-      opacity="0.7"
-      animate={{ x: [0, -8, 0] }}
-      transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-    />
-    <motion.path
-      d="M0 27.5C4 27 8 28 12 27.5C16 27 20 28 24 27.5C28 27 32 27.5 32 27.5"
-      stroke="#4DB8F5"
-      strokeWidth="1.2"
-      fill="none"
-      opacity="0.6"
-      animate={{ x: [0, 8, 0] }}
-      transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-    />
-    <motion.path
-      d="M0 29C4 28.5 8 29.5 12 29C16 28.5 20 29.5 24 29C28 28.5 32 29 32 29"
-      stroke="#5AC8FA"
-      strokeWidth="1"
-      fill="none"
-      opacity="0.5"
-      animate={{ x: [0, -6, 0] }}
-      transition={{ duration: 3.5, repeat: Infinity, ease: "linear" }}
-    />
-  </>
-)}
-
-<ellipse cx="16" cy="25.5" rx="11" ry="4.5" fill={active? "url(#island3D)" : "#E5E7EB"} />
+      {/* ĐẢO */}
+      <ellipse cx="16" cy="25.5" rx="11" ry="4.5" fill={active? "url(#island3D)" : "#E5E7EB"} />
       {active && (
         <>
           <ellipse cx="16" cy="25.5" rx="11" ry="4.5" fill="url(#sandPattern)" />
@@ -356,7 +357,7 @@ export const Palm3D = ({ active }: { active: boolean }) => (
         </>
       )}
 
-      {/* Cây dừa duy nhất - THÂN CONG GIỮA */}
+      {/* CÂY DỪA */}
       <g>
         <path 
           d="M16 26 Q18 19 17 12" 
@@ -376,44 +377,42 @@ export const Palm3D = ({ active }: { active: boolean }) => (
           </>
         )}
         
-{/* 3 LÁ TRÒN - 3 TONE MÀU KHÁC NHAU */}
-<motion.g
-  animate={active? { rotate: [-3, 3, -3] } : {}}
-  transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-  style={{ transformOrigin: "17px 15px" }}
->
-  {/* 1. Lá trái - màu nhạt nhất */}
-  <ellipse
-    cx="11" cy="15" rx="5.5" ry="3.5"
-    fill={active? "#A8E6A3" : "#D1D5DB"}
-    transform="rotate(-30 11 15)"
-  />
-  {active && (
-    <ellipse cx="9.5" cy="14.5" rx="2" ry="1.3" fill="white" opacity="0.6" transform="rotate(-30 9.5 14.5)" />
-  )}
-  
-  {/* 2. Lá phải - màu trung bình */}
-  <ellipse
-    cx="23" cy="15" rx="5.5" ry="3.5"
-    fill={active? "#5FD068" : "#D1D5DB"}
-    transform="rotate(30 23 15)"
-  />
-  {active && (
-    <ellipse cx="24.5" cy="14.5" rx="2" ry="1.3" fill="white" opacity="0.5" transform="rotate(30 24.5 14.5)" />
-  )}
+        {/* 3 LÁ TRÒN - 3 TONE MÀU KHÁC NHAU */}
+        <motion.g
+          animate={active? { rotate: [-3, 3, -3] } : {}}
+          transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+          style={{ transformOrigin: "17px 15px" }}
+        >
+          {/* 1. Lá trái - màu nhạt nhất */}
+          <ellipse
+            cx="11" cy="15" rx="5.5" ry="3.5"
+            fill={active? "#A8E6A3" : "#D1D5DB"}
+            transform="rotate(-30 11 15)"
+          />
+          {active && (
+            <ellipse cx="9.5" cy="14.5" rx="2" ry="1.3" fill="white" opacity="0.6" transform="rotate(-30 9.5 14.5)" />
+          )}
+          
+          {/* 2. Lá phải - màu trung bình */}
+          <ellipse
+            cx="23" cy="15" rx="5.5" ry="3.5"
+            fill={active? "#5FD068" : "#D1D5DB"}
+            transform="rotate(30 23 15)"
+          />
+          {active && (
+            <ellipse cx="24.5" cy="14.5" rx="2" ry="1.3" fill="white" opacity="0.5" transform="rotate(30 24.5 14.5)" />
+          )}
 
-  {/* 3. Lá giữa - màu đậm nhất, đè lên */}
-  <ellipse
-    cx="17" cy="12.5" rx="4.8" ry="4"
-    fill={active? "#2E8B3E" : "#D1D5DB"}
-  />
-  {active && (
-    <ellipse cx="17" cy="11.5" rx="2" ry="1.6" fill="white" opacity="0.4" />
-  )}
-</motion.g>
+          {/* 3. Lá giữa - màu đậm nhất, đè lên */}
+          <ellipse
+            cx="17" cy="12.5" rx="4.8" ry="4"
+            fill={active? "#2E8B3E" : "#D1D5DB"}
+          />
+          {active && (
+            <ellipse cx="17" cy="11.5" rx="2" ry="1.6" fill="white" opacity="0.4" />
+          )}
+        </motion.g>
       </g>
-
-
     </svg>
   </motion.div>
 );
