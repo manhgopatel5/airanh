@@ -129,16 +129,18 @@
     background-color: #000000;
   }
 
-  html,
-  body {
-    height: 100%;
-    @apply bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    font-feature-settings: 'tnum' 1;
-    scrollbar-gutter: stable;
-    overscroll-behavior: none;
-  }
+html,
+body {
+  height: 100%;
+  @apply bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'tnum' 1;
+  scrollbar-gutter: stable;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none; /* <-- THÊM DÒNG NÀY */
+  touch-action: pan-y; /* <-- THÊM DÒNG NÀY */
+}
 
   body {
     margin: 0;
