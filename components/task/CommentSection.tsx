@@ -185,7 +185,7 @@ export default function CommentSection({
       <div className="h-4" />
 
       {/* QUAN TRỌNG: Đổi fixed -> sticky */}
-      <div className="sticky bottom-0 z-20 bg-white dark:bg-zinc-900 px-5 py-3 border-t border-[#E5E5EA] dark:border-zinc-800">
+<div className="sticky bottom-0 z-20 bg-white dark:bg-zinc-900 px-5 py-3">
         {replyTo && (
           <div className="text-sm dark:text-zinc-400 mb-2 flex items-center justify-between bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 px-3.5 py-2 rounded-xl">
             <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
