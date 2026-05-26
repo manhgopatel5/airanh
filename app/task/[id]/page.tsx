@@ -800,14 +800,16 @@ void status;
         {task.description}
       </p>
     </Linkify>
-    {showDescMore && (
-      <button
-        onClick={() => setDescExpanded(!descExpanded)}
-        className="text-sm font-semibold text-[#0A84FF] mt-1 active:opacity-60"
-      >
-        {descExpanded ? 'Thu gọn' : 'Xem thêm'}
-      </button>
-    )}
+ {showDescMore && (
+  <div className="text-center">
+    <button
+      onClick={() => setDescExpanded(!descExpanded)}
+      className="text-sm font-semibold text-[#0A84FF] mt-1 active:opacity-60"
+    >
+      {descExpanded ? 'Thu gọn' : 'Xem thêm mô tả'}
+    </button>
+  </div>
+)}
   </>
 )}
 </div>
