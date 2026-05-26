@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { toast, Toaster } from "sonner";
+import { Toaster } from "sonner";
 
 import { useTask } from "@/hooks/useTask";
 import { useComments } from "@/hooks/useComments";
