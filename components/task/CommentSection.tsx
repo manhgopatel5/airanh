@@ -6,9 +6,6 @@ import { FiChevronDown, FiMessageCircle, FiSend, FiX } from "react-icons/fi";
 import { createPortal } from "react-dom";
 import { CommentList } from "./CommentList";
 
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
-import { getFirebaseDB } from "@/lib/firebase";
-import { useTask } from "@/hooks/useTask";
 import type { TaskComment } from "@/types/task";
 import type { User } from "firebase/auth";
 
@@ -177,7 +174,11 @@ export default function CommentSection({
                   currentUserId={currentUser?.uid}
                   taskOwnerId={taskOwnerId}
                   onLike={handleLike}
-                  onReply={(c) => { setReplyTo(c); inputRef.current?.focus(); }}
+                  onReply={(c) => { 
+                    setReplyTo(c); 
+                    inputRef.current?.focus();
+                    navigator.vibrate?.(5);
+                  }}
                   onDelete={(id) => currentUser && onDelete(id, currentUser.uid)}
                   onEdit={(id) => { setEditingComment(id); setEditText(c.text); }}
                   isEditing={editingComment === c.id}
