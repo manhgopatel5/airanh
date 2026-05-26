@@ -1,19 +1,20 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { FiMoreHorizontal } from "react-icons/fi";
+import { FiMoreHorizontal, FiChevronDown, FiChevronUp } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import type { TaskComment } from "@/types/task";
+import Linkify from "linkify-react";
 
 type Props = {
   comment: TaskComment;
   replies: TaskComment[];
   currentUserId?: string | null | undefined;
-  taskOwnerId: string; // ✅ Thêm prop này
+  taskOwnerId: string;
   onLike: (id: string) => void;
   onReply: (c: TaskComment) => void;
   onDelete: (id: string) => void;
@@ -26,11 +27,13 @@ type Props = {
   likingComments: Set<string>;
 };
 
+const MAX_TEXT_LINES = 5;
+
 export function CommentList({
   comment: c,
   replies,
   currentUserId,
-  taskOwnerId, // ✅ Nhận prop
+  taskOwnerId,
   onLike,
   onReply,
   onDelete,
@@ -44,21 +47,40 @@ export function CommentList({
 }: Props) {
   const liked =!!(currentUserId && c.likedBy?.includes(currentUserId));
   const isOwnComment = currentUserId === c.userId;
-  const [showAllReplies, setShowAllReplies] = useState(false);
+  const [showReplies, setShowReplies] = useState(false);
+  const [expandedText, setExpandedText] = useState(false);
+  const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
+  const [editReplyText, setEditReplyText] = useState("");
   const editInputRef = useRef<HTMLInputElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
+  const [showMoreText, setShowMoreText] = useState(false);
 
-  const displayReplies = showAllReplies? replies : replies.slice(0, 1);
+  const displayReplies = showReplies? replies : [];
 
   useEffect(() => {
     if (isEditing) editInputRef.current?.focus();
   }, [isEditing]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    if (textRef.current &&!c.deleted) {
+      setShowMoreText(textRef.current.scrollHeight > textRef.current.clientHeight);
+    }
+  }, [c.text, c.deleted]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, isReply = false, replyId?: string) => {
     if (e.key === "Enter" &&!e.shiftKey) {
       e.preventDefault();
-      if (editText.trim()) onSaveEdit(c.id);
+      if (isReply && replyId && editReplyText.trim()) {
+        onSaveEdit(replyId);
+        setEditingReplyId(null);
+        setEditReplyText("");
+      } else if (!isReply && editText.trim()) {
+        onSaveEdit(c.id);
+      }
     }
-    if (e.key === "Escape") onCancelEdit();
+    if (e.key === "Escape") {
+      isReply? setEditingReplyId(null) : onCancelEdit();
+    }
   };
 
   const timeAgo = (timestamp: any) => {
@@ -67,7 +89,34 @@ export function CommentList({
     if (seconds < 60) return "Vừa xong";
     if (seconds < 3600) return `${Math.floor(seconds / 60)} phút`;
     if (seconds < 86400) return `${Math.floor(seconds / 3600)} giờ`;
-    return `${Math.floor(seconds / 86400)} ngày`;
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)} ngày`;
+    return timestamp.toDate().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+  };
+
+  const linkifyOptions = {
+    target: "_blank",
+    className: "text-[#0a84ff] hover:underline break-all",
+    rel: "noopener noreferrer"
+  };
+
+  const renderText = (text: string, replyToUserName?: string) => {
+    // Highlight @mention trước khi linkify
+    const mentionRegex = /@(\w+)/g;
+    const parts = text.split(mentionRegex);
+    
+    const content = parts.map((part, i) => {
+      if (i % 2 === 1) {
+        return <span key={i} className="text-[#0a84ff] font-medium">@{part}</span>;
+      }
+      return part;
+    });
+
+    return (
+      <Linkify options={linkifyOptions}>
+        {replyToUserName && <span className="text-[#0a84ff] font-medium">@{replyToUserName} </span>}
+        {content}
+      </Linkify>
+    );
   };
 
   return (
@@ -76,18 +125,19 @@ export function CommentList({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="text-[15px] group"
+      transition={{ type: "spring", damping: 25, stiffness: 400 }}
+      className="text- group"
     >
       <div className="flex gap-2.5">
         <UserAvatar src={c.userAvatar} name={c.userName} size={32} />
 
         <div className="flex-1 min-w-0">
           <div className="relative">
-            <div className="bg-transparent px-0 py-1">
+            <div className="bg-[#F2F2F7] dark:bg-zinc-800 rounded-2xl px-3 py-2">
               <div className="flex items-center gap-1.5">
-                <div className="font-semibold text-[14px]">{c.userName}</div>
-                {c.userId === taskOwnerId && ( // ✅ Dùng taskOwnerId
-                  <span className="text-[11px] px-1.5 py-0.5 rounded-md bg-[#0a84ff]/10 text-[#0a84ff] font-medium">
+                <div className="font-semibold text-">{c.userName}</div>
+                {c.userId === taskOwnerId && (
+                  <span className="text- px-1.5 py-0.5 rounded-md bg-[#0a84ff]/10 text-[#0a84ff] font-medium">
                     Tác giả
                   </span>
                 )}
@@ -100,38 +150,53 @@ export function CommentList({
                     value={editText}
                     onChange={(e) => setEditText(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 text-[15px] outline-none ring-2 ring-[#0a84ff]/50"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 text- outline-none ring-2 ring-[#0a84ff]/50"
                     placeholder="Chỉnh sửa bình luận..."
                   />
                   <div className="flex gap-2 mt-2 justify-end">
                     <button
                       onClick={onCancelEdit}
-                      className="px-3 py-1.5 text-[13px] text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition-all active:scale-95"
+                      className="px-3 py-1.5 text- text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition-all active:scale-95"
                     >
                       Huỷ
                     </button>
                     <button
                       onClick={() => onSaveEdit(c.id)}
                       disabled={!editText.trim()}
-                      className="px-3 py-1.5 text-[13px] bg-[#0a84ff] hover:bg-[#0071e3] text-white rounded-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1.5 text- bg-[#0a84ff] hover:bg-[#0071e3] text-white rounded-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Lưu
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="break-words text-[15px] leading-relaxed mt-0.5 whitespace-pre-wrap">
+                <div
+                  ref={textRef}
+                  className={cn(
+                    "break-words text- leading-relaxed mt-0.5 whitespace-pre-wrap",
+                   !expandedText && "line-clamp-5"
+                  )}
+                >
                   {c.deleted? (
                     <i className="text-zinc-500">Bình luận đã bị xoá</i>
                   ) : (
                     <>
-                      {c.text}
+                      {renderText(c.text)}
                       {c.edited && (
-                        <span className="text-[12px] text-zinc-500 ml-1.5">· đã chỉnh sửa</span>
+                        <span className="text- text-zinc-500 ml-1.5">· đã chỉnh sửa</span>
                       )}
                     </>
                   )}
                 </div>
+              )}
+              
+              {showMoreText &&!expandedText &&!isEditing &&!c.deleted && (
+                <button
+                  onClick={() => setExpandedText(true)}
+                  className="text- font-semibold text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 mt-1"
+                >
+                  Xem thêm
+                </button>
               )}
             </div>
 
@@ -142,20 +207,20 @@ export function CommentList({
                 className="absolute -bottom-2 -right-2 flex items-center gap-1 px-1.5 py-0.5 bg-white dark:bg-zinc-900 rounded-full shadow-md border border-zinc-200 dark:border-zinc-700"
               >
                 <FaHeart className="text-red-500" size={11} />
-                <span className="text-[12px] font-medium tabular-nums">{c.likeCount}</span>
+                <span className="text- font-medium tabular-nums">{c.likeCount}</span>
               </motion.div>
             )}
           </div>
 
           {!c.deleted &&!isEditing && (
-            <div className="flex items-center gap-4 mt-1.5 px-3.5 text-[13px] text-zinc-500">
+            <div className="flex items-center gap-4 mt-1.5 px-3 text- text-zinc-500">
               <span>{timeAgo(c.createdAt)}</span>
               <button
                 onClick={() => onLike(c.id)}
                 disabled={likingComments.has(c.id)}
                 className={cn(
                   "font-semibold hover:underline active:scale-95 transition-all disabled:opacity-50",
-                  liked && "text-red-500"
+                  liked && "text-[#0a84ff]"
                 )}
               >
                 {liked? "Đã thích" : "Thích"}
@@ -167,76 +232,178 @@ export function CommentList({
                 Trả lời
               </button>
 
-            {isOwnComment && (
-  <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <button className="p-1 -m-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-full transition-all active:scale-90">
-        <FiMoreHorizontal size={16} className="text-zinc-500" />
-      </button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent 
-      align="end" 
-      side="top"
-      sideOffset={4}
-      className="rounded-xl min-w-[140px] p-1.5 bg-white dark:bg-zinc-900 shadow-lg border border-zinc-200 dark:border-zinc-800"
-    >
-      <DropdownMenuItem 
-        onClick={() => onEdit(c.id)}
-        className="px-3 py-2 text-[14px] font-medium rounded-lg cursor-pointer focus:bg-zinc-100 dark:focus:bg-zinc-800"
-      >
-        Chỉnh sửa
-      </DropdownMenuItem>
-      <DropdownMenuItem
-        onClick={() => onDelete(c.id)}
-        className="px-3 py-2 text-[14px] font-medium rounded-lg cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-50 dark:focus:bg-red-950/50"
-      >
-        Xoá
-      </DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
-)}
+              {isOwnComment && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="p-1 -m-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-full transition-all active:scale-90 opacity-0 group-hover:opacity-100">
+                      <FiMoreHorizontal size={16} className="text-zinc-500" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    align="end" 
+                    side="top"
+                    sideOffset={4}
+                    className="rounded-xl min-w-[140px] p-1.5 bg-white dark:bg-zinc-900 shadow-lg border border-zinc-200 dark:border-zinc-800"
+                  >
+                    <DropdownMenuItem 
+                      onClick={() => onEdit(c.id)}
+                      className="px-3 py-2 text- font-medium rounded-lg cursor-pointer focus:bg-zinc-100 dark:focus:bg-zinc-800"
+                    >
+                      Chỉnh sửa
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onDelete(c.id)}
+                      className="px-3 py-2 text- font-medium rounded-lg cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-50 dark:focus:bg-red-950/50"
+                    >
+                      Xoá
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           )}
 
           <AnimatePresence>
-            {displayReplies.map((r) => (
-              <motion.div
-                key={r.id}
-                layout
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="flex gap-2.5 mt-3"
-              >
-                <UserAvatar src={r.userAvatar} name={r.userName} size={28} />
-                <div className="flex-1 min-w-0">
-                 <div className="bg-white dark:bg-zinc-900 border border-[#F2F2F7] dark:border-zinc-800 rounded-2xl px-3.5 py-2.5">
-                    <div className="font-semibold text-[13px]">{r.userName}</div>
-                    <div className="text-[14px] leading-relaxed mt-0.5 whitespace-pre-wrap">
-                      {r.deleted? ( // ✅ Check deleted cho reply
-                        <i className="text-zinc-500">Bình luận đã bị xoá</i>
+            {displayReplies.map((r) => {
+              const rLiked =!!(currentUserId && r.likedBy?.includes(currentUserId));
+              const isOwnReply = currentUserId === r.userId;
+              const isEditingReply = editingReplyId === r.id;
+              
+              return (
+                <motion.div
+                  key={r.id}
+                  layout
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="flex gap-2.5 mt-3 group/reply"
+                >
+                  <UserAvatar src={r.userAvatar} name={r.userName} size={28} />
+                  <div className="flex-1 min-w-0">
+                    <div className="bg-[#F2F2F7] dark:bg-zinc-800 rounded-2xl px-3 py-2 relative">
+                      <div className="font-semibold text-">{r.userName}</div>
+                      
+                      {isEditingReply? (
+                        <div className="mt-1">
+                          <input
+                            value={editReplyText}
+                            onChange={(e) => setEditReplyText(e.target.value)}
+                            onKeyDown={(e) => handleKeyDown(e, true, r.id)}
+                            className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-zinc-900 text- outline-none ring-2 ring-[#0a84ff]/50"
+                            placeholder="Chỉnh sửa..."
+                            autoFocus
+                          />
+                          <div className="flex gap-2 mt-1.5 justify-end">
+                            <button
+                              onClick={() => setEditingReplyId(null)}
+                              className="px-2 py-1 text- text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg"
+                            >
+                              Huỷ
+                            </button>
+                            <button
+                              onClick={() => {
+                                onSaveEdit(r.id);
+                                setEditingReplyId(null);
+                                setEditReplyText("");
+                              }}
+                              disabled={!editReplyText.trim()}
+                              className="px-2 py-1 text- bg-[#0a84ff] text-white rounded-lg disabled:opacity-50"
+                            >
+                              Lưu
+                            </button>
+                          </div>
+                        </div>
                       ) : (
-                        <>
-                          <span className="text-[#0a84ff] font-medium">@{r.replyToUserName}</span>{" "}
-                          {r.text}
-                        </>
+                        <div className="text- leading-relaxed mt-0.5 whitespace-pre-wrap">
+                          {r.deleted? (
+                            <i className="text-zinc-500">Bình luận đã bị xoá</i>
+                          ) : (
+                            renderText(r.text, r.replyToUserName)
+                          )}
+                        </div>
+                      )}
+
+                      {r.likeCount > 0 &&!isEditingReply && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="absolute -bottom-2 -right-2 flex items-center gap-1 px-1.5 py-0.5 bg-white dark:bg-zinc-900 rounded-full shadow-md border border-zinc-200 dark:border-zinc-700"
+                        >
+                          <FaHeart className="text-red-500" size={10} />
+                          <span className="text- font-medium tabular-nums">{r.likeCount}</span>
+                        </motion.div>
                       )}
                     </div>
+                    
+                    {!r.deleted &&!isEditingReply && (
+                      <div className="flex items-center gap-4 mt-1 px-3 text- text-zinc-500">
+                        <span>{timeAgo(r.createdAt)}</span>
+                        <button
+                          onClick={() => onLike(r.id)}
+                          disabled={likingComments.has(r.id)}
+                          className={cn(
+                            "font-semibold hover:underline active:scale-95 transition-all disabled:opacity-50",
+                            rLiked && "text-[#0a84ff]"
+                          )}
+                        >
+                          {rLiked? "Đã thích" : "Thích"}
+                        </button>
+                        <button
+                          onClick={() => onReply(r)}
+                          className="font-semibold hover:underline active:scale-95 transition-all"
+                        >
+                          Trả lời
+                        </button>
+                        {isOwnReply && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="p-1 -m-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-full transition-all active:scale-90 opacity-0 group-hover/reply:opacity-100">
+                                <FiMoreHorizontal size={14} className="text-zinc-500" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" side="top" className="rounded-xl min-w-[140px] p-1.5">
+                              <DropdownMenuItem 
+                                onClick={() => {
+                                  setEditingReplyId(r.id);
+                                  setEditReplyText(r.text);
+                                }} 
+                                className="px-3 py-2 text- font-medium rounded-lg"
+                              >
+                                Chỉnh sửa
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => onDelete(r.id)} 
+                                className="px-3 py-2 text- font-medium rounded-lg text-red-500 focus:text-red-500"
+                              >
+                                Xoá
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-4 mt-1 px-3.5 text-[12px] text-zinc-500">
-                    <span>{timeAgo(r.createdAt)}</span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
 
-          {replies.length > 1 &&!showAllReplies && (
+          {replies.length > 0 && (
             <button
-              onClick={() => setShowAllReplies(true)}
-              className="mt-2 text-[13px] font-semibold text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+              onClick={() => setShowReplies(!showReplies)}
+              className="mt-2 text- font-semibold text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors flex items-center gap-1"
             >
-              — Xem {replies.length - 1} câu trả lời khác
+              {showReplies? (
+                <>
+                  <FiChevronUp size={16} />
+                  Ẩn bớt
+                </>
+              ) : (
+                <>
+                  <FiChevronDown size={16} />
+                  Xem {replies.length} phản hồi
+                </>
+              )}
             </button>
           )}
         </div>
