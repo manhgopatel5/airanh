@@ -1,0 +1,223 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { FiChevronDown, FiMessageCircle, FiSend, FiX } from "react-icons/fi";
+import { createPortal } from "react-dom";
+import { CommentList } from "./CommentList";
+import { UserAvatar } from "@/components/ui/UserAvatar";
+import type { TaskComment } from "@/types/task";
+import type { User } from "firebase/auth";
+
+type Props = {
+  taskId: string;
+  taskOwnerId: string;
+  comments: TaskComment[];
+  currentUser: User | null;
+  sending: boolean;
+  onSend: (text: string, user: User, replyTo: TaskComment | null) => Promise<void>;
+  onLike: (commentId: string, userId: string) => void;
+  onDelete: (commentId: string, userId: string) => void;
+  onEdit: (commentId: string, userId: string, text: string) => void;
+};
+
+const Portal = ({ children }: { children: React.ReactNode }) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted? createPortal(children, document.body) : null;
+};
+
+export default function CommentSection({
+  taskId,
+  taskOwnerId,
+  comments,
+  currentUser,
+  sending,
+  onSend,
+  onLike,
+  onDelete,
+  onEdit
+}: Props) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const [text, setText] = useState("");
+  const [replyTo, setReplyTo] = useState<TaskComment | null>(null);
+  const [editingComment, setEditingComment] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+  const [commentSort, setCommentSort] = useState<'relevant' | 'newest' | 'all'>('newest');
+  const [visibleCount, setVisibleCount] = useState(5);
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const [likingComments, setLikingComments] = useState<Set<string>>(new Set());
+
+  const parentComments = comments.filter((c) =>!c.parentId);
+
+  const sortedParents = [...parentComments].sort((a, b) => {
+    if (commentSort === 'newest') {
+      return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+    }
+    if (commentSort === 'relevant') {
+      if (a.userId === taskOwnerId && b.userId!== taskOwnerId) return -1;
+      if (b.userId === taskOwnerId && a.userId!== taskOwnerId) return 1;
+      return (b.likeCount || 0) - (a.likeCount || 0);
+    }
+    return 0;
+  });
+
+  const visibleComments = sortedParents.slice(0, visibleCount);
+  const hasMoreComments = sortedParents.length > visibleCount;
+  const getReplies = (id: string) => comments.filter((c) => c.parentId === id);
+
+  const handleSend = async () => {
+    if (!currentUser ||!text.trim()) return;
+    try {
+      await onSend(text, currentUser, replyTo);
+      setText("");
+      setReplyTo(null);
+      inputRef.current?.blur();
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+    } catch {}
+  };
+
+  const handleLike = (commentId: string) => {
+    if (!currentUser) return;
+    onLike(commentId, currentUser.uid);
+  };
+
+  return (
+    <>
+      <div className="bg-white dark:bg-zinc-950 overflow-hidden">
+        <div className="flex items-center justify-between pt-4 pb-3">
+          <h3 className="font-semibold text- text-[#1C1C1E] dark:text-zinc-100">
+            Bình luận ({parentComments.length})
+          </h3>
+
+          <div className="relative min-w-0">
+            <button
+              onClick={() => setShowSortMenu(!showSortMenu)}
+              className="flex items-center gap-1 text- font-semibold text-zinc-600 dark:text-zinc-400 active:opacity-60"
+            >
+              <span className="whitespace-nowrap">
+                {commentSort === 'relevant'? 'Phù hợp nhất' : commentSort === 'newest'? 'Mới nhất' : 'Tất cả bình luận'}
+              </span>
+              <FiChevronDown size={16} className="shrink-0" />
+            </button>
+
+            <AnimatePresence>
+              {showSortMenu && (
+                <Portal>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowSortMenu(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-zinc-900 rounded-t-3xl shadow-2xl pb-safe"
+                  >
+                    <div className="w-12 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mt-3 mb-2" />
+                    <div className="px-5 py-3">
+                      <h4 className="font-bold text-lg mb-4">Sắp xếp theo</h4>
+                      {[
+                        { key: 'relevant', label: 'Phù hợp nhất', desc: 'Hiển thị bình luận tác giả và nhiều tương tác trước.' },
+                        { key: 'newest', label: 'Mới nhất', desc: 'Hiển thị bình luận mới nhất trước tiên.' },
+                        { key: 'all', label: 'Tất cả bình luận', desc: 'Hiển thị tất cả bình luận.' }
+                      ].map(item => (
+                        <button
+                          key={item.key}
+                          onClick={() => { setCommentSort(item.key as any); setShowSortMenu(false); setVisibleCount(5); }}
+                          className="w-full text-left py-3 flex items-start gap-3"
+                        >
+                          <div className={`w-5 h-5 rounded-full border-2 mt-0.5 ${commentSort === item.key? 'border-[#0a84ff] bg-[#0a84ff]' : 'border-zinc-300'}`}>
+                            {commentSort === item.key && <div className="w-2 h-2 bg-white rounded-full m-auto mt-[3px]" />}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-">{item.label}</p>
+                            <p className="text- text-zinc-500">{item.desc}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                </Portal>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        <div className="px-5 py-4">
+          {parentComments.length === 0? (
+            <div className="text-center py-12 text-zinc-400 text-">
+              <FiMessageCircle size={48} className="mx-auto mb-3 opacity-30" />
+              Chưa có bình luận nào<br />Hãy là người đầu tiên
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <AnimatePresence>
+                {visibleComments.map((c) => (
+                  <CommentList
+                    key={c.id}
+                    comment={c}
+                    replies={getReplies(c.id)}
+                    currentUserId={currentUser?.uid}
+                    taskOwnerId={taskOwnerId}
+                    onLike={handleLike}
+                    onReply={(c) => { setReplyTo(c); inputRef.current?.focus(); }}
+                    onDelete={(id) => currentUser && onDelete(id, currentUser.uid)}
+                    onEdit={(id) => { setEditingComment(id); setEditText(c.text); }}
+                    isEditing={editingComment === c.id}
+                    editText={editText}
+                    setEditText={setEditText}
+                    onSaveEdit={(id) => currentUser && onEdit(id, currentUser.uid, editText)}
+                    onCancelEdit={() => { setEditingComment(null); setEditText(""); }}
+                    likingComments={likingComments}
+                  />
+                ))}
+              </AnimatePresence>
+
+              {hasMoreComments && (
+                <button
+                  onClick={() => setVisibleCount(prev => prev + 5)}
+                  className="w-full py-3 text- font-semibold text-[#0a84ff] active:bg-zinc-50 dark:active:bg-zinc-800 rounded-xl mt-2"
+                >
+                  Xem thêm bình luận
+                </button>
+              )}
+            </div>
+          )}
+          <div ref={bottomRef} />
+        </div>
+      </div>
+
+      <div
+        className="shrink-0 bg-white dark:bg-zinc-900 px-5 py-3 border-t border-[#E5E5EA] dark:border-zinc-800"
+        style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}
+      >
+        {replyTo && (
+          <div className="text- dark:text-zinc-400 mb-2 flex items-center justify-between bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 px-3.5 py-2 rounded-xl">
+            <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
+            <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg active:scale-90 transition-all">
+              <FiX size={14} />
+            </button>
+          </div>
+        )}
+        <div className="flex gap-2 items-end relative">
+          <input
+            ref={inputRef}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSend()}
+            placeholder={currentUser? "Viết bình luận..." : "Đăng nhập để bình luận"}
+            className="flex-1 px-4 py-2.5 rounded-full bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 outline-none text- focus:ring-2 focus:ring-[#0a84ff]/20 focus:border-[#0a84ff] transition-all"
+            disabled={sending ||!currentUser}
+          />
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={handleSend}
+            disabled={!text.trim() || sending ||!currentUser}
+            className="p-2.5 rounded-full bg-[#0a84ff] hover:bg-[#0071e3] text-white disabled:bg-zinc-300 dark:disabled:bg-zinc-700 disabled:cursor-not-allowed active:scale-90 transition-all"
+          >
+            <FiSend size={18} />
+          </motion.button>
+        </div>
+      </div>
+    </>
+  );
+}
