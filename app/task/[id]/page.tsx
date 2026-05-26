@@ -853,9 +853,9 @@ void status;
     <motion.button
       whileTap={{ scale: 0.98 }}
       onClick={handleStartChat}
-      className="flex flex-col items-start gap-1 text-[#8E8E93] dark:text-zinc-500 active:opacity-60 transition-opacity"
+      className="flex flex-col items-center gap-1.5 text-[#8E8E93] dark:text-zinc-500 active:opacity-60 transition-opacity"
     >
-      <FiMessageSquare size={20} strokeWidth={2.2} className="text-[#0A84FF]" />
+      <FiMessageSquare size={22} strokeWidth={2.2} className="text-[#0A84FF]" />
       <span className="text-sm font-semibold leading-none">Nhắn tin</span>
     </motion.button>
 
@@ -863,9 +863,9 @@ void status;
       whileTap={{ scale: 0.98 }}
       onClick={() => owner?.phone && window.open(`tel:${owner.phone}`)}
       disabled={!owner?.phone}
-      className="flex flex-col items-start gap-1 text-[#8E8E93] dark:text-zinc-500 active:opacity-60 disabled:opacity-40 transition-opacity"
+      className="flex flex-col items-center gap-1.5 text-[#8E8E93] dark:text-zinc-500 active:opacity-60 disabled:opacity-40 transition-opacity"
     >
-      <FiPhone size={20} strokeWidth={2.2} className="text-[#34C759]" />
+      <FiPhone size={22} strokeWidth={2.2} className="text-[#34C759]" />
       <span className="text-sm font-semibold leading-none">Gọi điện</span>
     </motion.button>
 
@@ -873,14 +873,14 @@ void status;
       whileTap={{ scale: 0.98 }}
       onClick={isApplied? handleCancelApply : handleJoinTask}
       disabled={(!isApplied && (isFull || task.status!== "open")) || joining}
-      className="flex flex-col items-start gap-1 text-[#8E8E93] dark:text-zinc-500 active:opacity-60 disabled:opacity-40 transition-opacity"
+      className="flex flex-col items-center gap-1.5 text-[#8E8E93] dark:text-zinc-500 active:opacity-60 disabled:opacity-40 transition-opacity"
     >
       {joining? (
-        <div className="w-5 h-5 border-2 border-[#00A86B] border-t-transparent rounded-full animate-spin" />
+        <div className="w-[22px] h-[22px] border-2 border-[#00A86B] border-t-transparent rounded-full animate-spin" />
       ) : isApplied? (
-        <FiCheckCircle size={20} strokeWidth={2.5} className="text-[#00A86B]" />
+        <FiCheckCircle size={22} strokeWidth={2.5} className="text-[#00A86B]" />
       ) : (
-        <FiSend size={20} strokeWidth={2.5} className="text-[#00A86B]" />
+        <FiSend size={22} strokeWidth={2.5} className="text-[#00A86B]" />
       )}
       <span className="text-sm font-semibold leading-none">{isApplied? "Đã ứng tuyển" : "Ứng tuyển"}</span>
     </motion.button>
@@ -888,9 +888,9 @@ void status;
     <motion.button
       whileTap={{ scale: 0.98 }}
       onClick={() => toast.info("Đã gửi báo cáo")}
-      className="flex flex-col items-start gap-1 text-[#8E8E93] dark:text-zinc-500 active:opacity-60 transition-opacity"
+      className="flex flex-col items-center gap-1.5 text-[#8E8E93] dark:text-zinc-500 active:opacity-60 transition-opacity"
     >
-      <FiAlertTriangle size={20} strokeWidth={2.2} className="text-[#FF9500]" />
+      <FiAlertTriangle size={22} strokeWidth={2.2} className="text-[#FF9500]" />
       <span className="text-sm font-semibold leading-none">Báo cáo</span>
     </motion.button>
   </div>
