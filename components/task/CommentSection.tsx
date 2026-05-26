@@ -10,11 +10,11 @@ import type { TaskComment } from "@/types/task";
 import type { User } from "firebase/auth";
 
 type Props = {
-  
   taskOwnerId: string;
   comments: TaskComment[];
   currentUser: User | null;
   sending: boolean;
+  likingComments: Set<string>;
   onSend: (text: string, user: User, replyTo: TaskComment | null) => Promise<void>;
   onLike: (commentId: string, userId: string) => void;
   onDelete: (commentId: string, userId: string) => void;
@@ -28,11 +28,11 @@ const Portal = ({ children }: { children: React.ReactNode }) => {
 };
 
 export default function CommentSection({
-  
   taskOwnerId,
   comments,
   currentUser,
   sending,
+  likingComments,
   onSend,
   onLike,
   onDelete,
@@ -47,7 +47,6 @@ export default function CommentSection({
   const [commentSort, setCommentSort] = useState<'relevant' | 'newest' | 'all'>('newest');
   const [visibleCount, setVisibleCount] = useState(5);
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const [likingComments, setLikingComments] = useState<Set<string>>(new Set());
 
   const parentComments = comments.filter((c) =>!c.parentId);
 
