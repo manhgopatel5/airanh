@@ -9,7 +9,7 @@ import {
   FiBookmark, FiMoreHorizontal, FiCheck, FiEdit2, FiTrash2,
   FiStar, FiCheckCircle, FiX, FiInfo
 } from "react-icons/fi";
-import { doc, deleteDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore"; 
+import { doc, deleteDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/ui/UserAvatar";
@@ -40,7 +40,7 @@ const Portal = ({ children }: { children: React.ReactNode }) => {
 
 export default function TaskDetailHeader({ task, owner, currentUser, isOwner, onTaskDeleted }: Props) {
   const router = useRouter();
-  
+
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const [isSaved, setIsSaved] = useState(!!currentUser?.uid &&!!task.savedBy?.includes(currentUser.uid));
@@ -82,37 +82,37 @@ export default function TaskDetailHeader({ task, owner, currentUser, isOwner, on
 
   return (
     <div className="bg-white dark:bg-zinc-950">
-<div className="pt-4 pb-3">
+      <div className="pt-4 pb-3">
         <div className="flex gap-3">
           <Link href={`/profile/${task.userId}`} className="relative shrink-0 active:opacity-70 transition-opacity">
-<UserAvatar src={owner?.avatar} name={owner?.name} size={56} />
+            <UserAvatar src={owner?.avatar} name={owner?.name} size={48} />
           </Link>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 min-w-0 grid grid-rows-3 gap-0.5">
-                <Link href={`/profile/${task.userId}`} className="font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100 truncate leading-5 active:opacity-70">
+              <div className="flex-1 min-w-0">
+                <Link href={`/profile/${task.userId}`} className="font-medium text-base text-[#1C1C1E] dark:text-zinc-100 truncate leading-5 active:opacity-70">
                   {owner?.name || "Minh Tran"}
                 </Link>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 mt-0.5">
                   <FiStar className="fill-[#FFB800] text-[#FFB800] shrink-0" size={14} />
-                  <span className="font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100">{owner?.rating || "4.9"}</span>
-                  <span className="text-[15px] font-semibold text-[#8E8E93]">({owner?.reviewCount || 21})</span>
-                  <span className="text-[15px] font-semibold text-[#8E8E93]">•</span>
-                  <span className="text-[15px] font-semibold text-[#00A86B]">Mới tham gia</span>
+                  <span className="font-medium text-sm text-[#1C1C1E] dark:text-zinc-100">{owner?.rating?.toFixed(1) || "4.9"}</span>
+                  <span className="text-sm text-[#8E8E93]">({owner?.reviewCount || 21})</span>
+                  <span className="text-sm text-[#8E8E93]">·</span>
+                  <span className="text-sm text-[#34C759]">Mới tham gia</span>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 mt-0.5">
                   {owner?.verified? (
                     <>
                       <FiCheckCircle className="text-[#0A84FF] shrink-0" size={14} />
-                      <span className="text-[15px] font-semibold text-[#0A84FF]">Đã xác thực</span>
+                      <span className="text-sm font-medium text-[#0A84FF]">Đã xác thực</span>
                     </>
                   ) : (
                     <>
                       <FiX className="text-[#8E8E93] shrink-0" size={14} />
-                      <span className="text-[15px] text-[#8E8E93] font-semibold">Chưa xác thực</span>
+                      <span className="text-sm text-[#8E8E93] font-medium">Chưa xác thực</span>
                       {!isOwner && (
                         <motion.button
                           whileTap={{ scale: 0.9 }}
@@ -121,7 +121,7 @@ export default function TaskDetailHeader({ task, owner, currentUser, isOwner, on
                             e.stopPropagation();
                             toast.warning("Cẩn thận với tài khoản chưa xác thực", {
                               description: (
-                                <div className="space-y-1">
+                                <div className="space-y-1 text-sm">
                                   <p>Hãy kiểm tra kỹ thông tin trước khi giao dịch.</p>
                                   <p>Không chuyển tiền trước.</p>
                                   <p>Ưu tiên gặp mặt trực tiếp hoặc gọi video xác minh.</p>
@@ -152,8 +152,8 @@ export default function TaskDetailHeader({ task, owner, currentUser, isOwner, on
                   >
                     <FiBookmark
                       size={20}
-                      strokeWidth={2}
-                      className={isSaved? "fill-[#0A84FF] text-[#0A84FF]" : "text-[#8E8E93]"}
+                      strokeWidth={1.5}
+                      className={isSaved? "fill-[#1C1C1E] text-[#1C1C1E] dark:fill-zinc-100 dark:text-zinc-100" : "text-[#8E8E93]"}
                     />
                   </motion.button>
                 ) : (
@@ -169,7 +169,7 @@ export default function TaskDetailHeader({ task, owner, currentUser, isOwner, on
                       }}
                       className="w-9 h-9 rounded-full flex items-center justify-center active:bg-[#F2F2F7] dark:active:bg-zinc-800"
                     >
-                      <FiMoreHorizontal size={20} className="text-[#8E8E93]" strokeWidth={2.5} />
+                      <FiMoreHorizontal size={20} className="text-[#8E8E93]" strokeWidth={2} />
                     </motion.button>
                     <AnimatePresence>
                       {showMenu && (
@@ -185,7 +185,7 @@ export default function TaskDetailHeader({ task, owner, currentUser, isOwner, on
                           >
                             <button
                               onClick={(e) => { e.stopPropagation(); handleSave(); setShowMenu(false); }}
-                              className="flex items-center gap-3 px-4 py-3 text-[15px] font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
+                              className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
                             >
                               {isSaved? <FiCheck size={18} /> : <FiBookmark size={18} />}
                               {isSaved? "Đã lưu" : "Lưu công việc"}
@@ -193,7 +193,7 @@ export default function TaskDetailHeader({ task, owner, currentUser, isOwner, on
                             <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
                             <button
                               onClick={(e) => { e.stopPropagation(); setShowMenu(false); router.push(`/task/${task.id}/edit`); }}
-                              className="flex items-center gap-3 px-4 py-3 text-[15px] font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
+                              className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
                             >
                               <FiEdit2 size={18} />
                               Sửa công việc
@@ -201,7 +201,7 @@ export default function TaskDetailHeader({ task, owner, currentUser, isOwner, on
                             <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
                             <button
                               onClick={(e) => { e.stopPropagation(); setShowMenu(false); handleDelete(); }}
-                              className="flex items-center gap-3 px-4 py-3 text-[15px] font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 w-full transition-all active:scale-95"
+                              className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 w-full transition-all active:scale-95"
                             >
                               <FiTrash2 size={18} />
                               Xóa
