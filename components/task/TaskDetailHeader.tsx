@@ -82,10 +82,10 @@ export default function TaskDetailHeader({ task, owner, currentUser, isOwner, on
 
   return (
     <div className="bg-white dark:bg-zinc-950">
-      <div className="px-4 pt-4 pb-3">
+<div className="pt-4 pb-3">
         <div className="flex gap-3">
           <Link href={`/profile/${task.userId}`} className="relative shrink-0 active:opacity-70 transition-opacity">
-            <UserAvatar src={owner?.avatar} name={owner?.name} size={60} />
+<UserAvatar src={owner?.avatar} name={owner?.name} size={56} />
           </Link>
 
           <div className="flex-1 min-w-0">
@@ -142,7 +142,7 @@ export default function TaskDetailHeader({ task, owner, currentUser, isOwner, on
                 </div>
               </div>
 
-              <div className="flex items-center gap-1 shrink-0 -mr-1">
+              <div className="flex items-center gap-1 shrink-0">
                 {!isOwner? (
                   <motion.button
                     whileTap={{ scale: 0.9 }}
