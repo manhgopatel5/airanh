@@ -101,7 +101,7 @@ const [showSortMenu, setShowSortMenu] = useState(false);
   const [showMention, setShowMention] = useState(false);
   const [mentionUsersList, setMentionUsersList] = useState<UserData[]>([]);
   const [mentionQuery, setMentionQuery] = useState("");
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
 
 
   const [loading, setLoading] = useState(true);
