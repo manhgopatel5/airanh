@@ -101,7 +101,20 @@ const [showSortMenu, setShowSortMenu] = useState(false);
   const [showMention, setShowMention] = useState(false);
   const [mentionUsersList, setMentionUsersList] = useState<UserData[]>([]);
   const [mentionQuery, setMentionQuery] = useState("");
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
+useEffect(() => {
+  if (typeof window === 'undefined' || !window.visualViewport) return;
+  
+  const handleResize = () => {
+    const viewport = window.visualViewport!;
+    const heightDiff = window.innerHeight - viewport.height;
+    setKeyboardHeight(heightDiff > 150 ? heightDiff : 0); // >150px mới coi là bàn phím
+  };
+
+  window.visualViewport.addEventListener('resize', handleResize);
+  return () => window.visualViewport?.removeEventListener('resize', handleResize);
+}, []);
   const [loading, setLoading] = useState(true);
   const [showAllApps, setShowAllApps] = useState(false);
   const [sending, setSending] = useState(false);
@@ -1262,7 +1275,12 @@ void status;
       <div ref={bottomRef} />
     </div>
 
-<div className="sticky bottom-0 bg-white dark:bg-zinc-900 px-5 py-3">
+<motion.div 
+  className="fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 px-5 py-3 border-t border-[#E5E5EA] dark:border-zinc-800"
+  animate={{ y: -keyboardHeight }}
+  transition={{ type: "spring", damping: 30, stiffness: 400 }}
+  style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}
+>
       {replyTo && (
         <div className="text-[13px] dark:text-zinc-400 mb-2 flex items-center justify-between bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 px-3.5 py-2 rounded-xl">
           <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
