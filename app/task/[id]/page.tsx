@@ -35,15 +35,16 @@ export default function TaskDetailPage() {
     reloadApplications
   } = useTask(id, currentUser?.uid);
 
-  const { 
-  comments, 
-  sending, 
-  likingComments, // thêm dòng này
-  sendComment, 
-  likeComment, 
-  deleteComment, 
-  editComment 
-} = useComments(task?.id);
+  const {
+    comments,
+    sending,
+    likingComments,
+    sendComment,
+    likeComment,
+    deleteComment,
+    editComment
+  } = useComments(task?.id);
+
   const [showImageGallery, setShowImageGallery] = useState<number | null>(null);
   const [shareTask, setShareTask] = useState<typeof task | null>(null);
 
@@ -59,8 +60,10 @@ export default function TaskDetailPage() {
   return (
     <>
       <Toaster richColors position="top-center" />
-      <div className="h-[100dvh] flex flex-col bg-white dark:bg-zinc-950">
-        <div className="flex-1 overflow-y-auto overscroll-none px-3 pt-2 pb-4">
+      {/* Bỏ h-[100dvh] flex flex-col overflow-y-auto đi */}
+      <div className="min-h-screen bg-white dark:bg-zinc-950">
+        {/* Phần content scroll tự nhiên */}
+        <div className="px-3 pt-2">
           <TaskDetailHeader
             task={task}
             owner={owner}
@@ -96,20 +99,20 @@ export default function TaskDetailPage() {
               onShare={() => setShareTask(task)}
             />
           )}
-
-          <CommentSection
-            
-            taskOwnerId={task.userId}
-            comments={comments}
-            currentUser={currentUser}
-            sending={sending}
-            likingComments={likingComments}
-            onSend={sendComment}
-            onLike={likeComment}
-            onDelete={deleteComment}
-            onEdit={editComment}
-          />
         </div>
+
+        {/* CommentSection nằm ngoài, input sticky sẽ dính đáy viewport */}
+        <CommentSection
+          taskOwnerId={task.userId}
+          comments={comments}
+          currentUser={currentUser}
+          sending={sending}
+          likingComments={likingComments}
+          onSend={sendComment}
+          onLike={likeComment}
+          onDelete={deleteComment}
+          onEdit={editComment}
+        />
       </div>
 
       <ImageGallery
