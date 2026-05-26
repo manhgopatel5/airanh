@@ -1272,75 +1272,74 @@ void status;
       )}
 
       <div ref={bottomRef} />
-    </div>
-  </div> {/* end comment section */}
+    </div> {/* end comment section */}
+  </div> {/* end scroll container */}
 
-</div> {/* end scroll container */}
-
-<div 
-  className="shrink-0 bg-white dark:bg-zinc-900 px-5 py-3 border-t border-[#E5E5EA] dark:border-zinc-800"
-  style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}
->
-  {replyTo && (
-    <div className="text- dark:text-zinc-400 mb-2 flex items-center justify-between bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 px-3.5 py-2 rounded-xl">
-      <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
-      <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg active:scale-90 transition-all"><FiX size={14} /></button>
-    </div>
-  )}
-  <div className="flex gap-2 items-end relative">
-    <div className="flex-1 relative">
-      <input
-        ref={inputRef}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSendComment()}
-        placeholder={currentUser? "Viết bình luận..." : "Đăng nhập để bình luận"}
-        className="w-full px-4 py-2.5 rounded-full bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 outline-none text- focus:ring-2 focus:ring-[#0a84ff]/20 focus:border-[#0a84ff] transition-all"
-        disabled={sending ||!currentUser}
-      />
-      {showMention && mentionUsersList.length > 0 && (
-        <div className="absolute bottom-12 left-0 w-64 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-[#E5E5EA] dark:border-zinc-800 max-h-60 overflow-auto z-50">
-          <div className="p-2">
-            <input
-              placeholder="Tìm người..."
-              value={mentionQuery}
-              onChange={(e) => setMentionQuery(e.target.value)}
-              className="w-full px-3 py-1.5 text- bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg outline-none mb-2"
-            />
-            {mentionUsersList.map((user) => (
-              <button
-                key={user.uid}
-                onClick={() => handleSelectMention(user)}
-                className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#F2F2F7] dark:hover:bg-zinc-800 rounded-lg text-left"
-              >
-                <UserAvatar src={user.avatar} name={user.name} size={24} />
-                <span className="text-">{user.name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-    <motion.button
-      whileTap={{ scale: 0.9 }}
-      onClick={handleSendComment}
-      disabled={!text.trim() || sending ||!currentUser}
-      className={`p-2.5 rounded-full bg-[#0a84ff] hover:bg-[#0071e3] text-white disabled:bg-zinc-300 dark:disabled:bg-zinc-700 disabled:cursor-not-allowed active:scale-90 transition-all`}
-    >
-      <FiSend size={18} />
-    </motion.button>
-  </div>
-        </div>
+  {/* Khối Input bình luận nằm cố định ở bottom */}
+  <div 
+    className="shrink-0 bg-white dark:bg-zinc-900 px-5 py-3 border-t border-[#E5E5EA] dark:border-zinc-800"
+    style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}
+  >
+    {replyTo && (
+      <div className="text-sm dark:text-zinc-400 mb-2 flex items-center justify-between bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 px-3.5 py-2 rounded-xl">
+        <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
+        <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg active:scale-90 transition-all"><FiX size={14} /></button>
       </div>
-    </div>
-
-    <ImageGallery open={showImageGallery!== null} images={task.images || []} initialIndex={showImageGallery || 0} onClose={() => setShowImageGallery(null)} />
-    {shareTask && (
-      <ShareTaskModal
-        task={shareTask}
-        onClose={() => setShareTask(null)}
-      />
     )}
-    </>
+    <div className="flex gap-2 items-end relative">
+      <div className="flex-1 relative">
+        <input
+          ref={inputRef}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendComment()}
+          placeholder={currentUser ? "Viết bình luận..." : "Đăng nhập để bình luận"}
+          className="w-full px-4 py-2.5 rounded-full bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 outline-none focus:ring-2 focus:ring-[#0a84ff]/20 focus:border-[#0a84ff] transition-all"
+          disabled={sending || !currentUser}
+        />
+        {showMention && mentionUsersList.length > 0 && (
+          <div className="absolute bottom-12 left-0 w-64 bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-[#E5E5EA] dark:border-zinc-800 max-h-60 overflow-auto z-50">
+            <div className="p-2">
+              <input
+                placeholder="Tìm người..."
+                value={mentionQuery}
+                onChange={(e) => setMentionQuery(e.target.value)}
+                className="w-full px-3 py-1.5 bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg outline-none mb-2"
+              />
+              {mentionUsersList.map((user) => (
+                <button
+                  key={user.uid}
+                  onClick={() => handleSelectMention(user)}
+                  className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#F2F2F7] dark:hover:bg-zinc-800 rounded-lg text-left"
+                >
+                  <UserAvatar src={user.avatar} name={user.name} size={24} />
+                  <span>{user.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      <motion.button
+        whileTap={{ scale: 0.9 }}
+        onClick={handleSendComment}
+        disabled={!text.trim() || sending || !currentUser}
+        className={`p-2.5 rounded-full bg-[#0a84ff] hover:bg-[#0071e3] text-white disabled:bg-zinc-300 dark:disabled:bg-zinc-700 disabled:cursor-not-allowed active:scale-90 transition-all`}
+      >
+        <FiSend size={18} />
+      </motion.button>
+    </div>
+  </div> 
+
+</div> 
+
+<ImageGallery open={showImageGallery !== null} images={task.images || []} initialIndex={showImageGallery || 0} onClose={() => setShowImageGallery(null)} />
+{shareTask && (
+  <ShareTaskModal
+    task={shareTask}
+    onClose={() => setShareTask(null)}
+  />
+)}
+</>
   );
-}         
+}
