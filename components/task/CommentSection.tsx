@@ -73,7 +73,7 @@ export default function CommentSection({
       setText("");
       setReplyTo(null);
       inputRef.current?.blur();
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     } catch {}
   };
 
@@ -84,16 +84,17 @@ export default function CommentSection({
 
   return (
     <>
-      <div className="bg-white dark:bg-zinc-950 overflow-hidden">
-        <div className="flex items-center justify-between pt-4 pb-3">
-          <h3 className="font-semibold text- text-[#1C1C1E] dark:text-zinc-100">
+      {/* Bỏ overflow-hidden, thêm px-5 cho header */}
+      <div className="bg-white dark:bg-zinc-950">
+        <div className="flex items-center justify-between pt-4 pb-3 px-5">
+          <h3 className="font-semibold text-base text-[#1C1C1E] dark:text-zinc-100">
             Bình luận ({parentComments.length})
           </h3>
 
           <div className="relative min-w-0">
             <button
               onClick={() => setShowSortMenu(!showSortMenu)}
-              className="flex items-center gap-1 text- font-semibold text-zinc-600 dark:text-zinc-400 active:opacity-60"
+              className="flex items-center gap-1 text-sm font-semibold text-zinc-600 dark:text-zinc-400 active:opacity-60"
             >
               <span className="whitespace-nowrap">
                 {commentSort === 'relevant'? 'Phù hợp nhất' : commentSort === 'newest'? 'Mới nhất' : 'Tất cả bình luận'}
@@ -128,8 +129,8 @@ export default function CommentSection({
                             {commentSort === item.key && <div className="w-2 h-2 bg-white rounded-full m-auto mt-[3px]" />}
                           </div>
                           <div>
-                            <p className="font-semibold text-">{item.label}</p>
-                            <p className="text- text-zinc-500">{item.desc}</p>
+                            <p className="font-semibold text-base">{item.label}</p>
+                            <p className="text-sm text-zinc-500">{item.desc}</p>
                           </div>
                         </button>
                       ))}
@@ -141,9 +142,10 @@ export default function CommentSection({
           </div>
         </div>
 
-        <div className="px-5 py-4">
+        {/* Thêm pb-24 để chừa chỗ cho input sticky */}
+        <div className="px-5 pb-24">
           {parentComments.length === 0? (
-            <div className="text-center py-12 text-zinc-400 text-">
+            <div className="text-center py-12 text-zinc-400 text-sm">
               <FiMessageCircle size={48} className="mx-auto mb-3 opacity-30" />
               Chưa có bình luận nào<br />Hãy là người đầu tiên
             </div>
@@ -174,7 +176,7 @@ export default function CommentSection({
               {hasMoreComments && (
                 <button
                   onClick={() => setVisibleCount(prev => prev + 5)}
-                  className="w-full py-3 text- font-semibold text-[#0a84ff] active:bg-zinc-50 dark:active:bg-zinc-800 rounded-xl mt-2"
+                  className="w-full py-3 text-sm font-semibold text-[#0a84ff] active:bg-zinc-50 dark:active:bg-zinc-800 rounded-xl mt-2"
                 >
                   Xem thêm bình luận
                 </button>
@@ -185,12 +187,13 @@ export default function CommentSection({
         </div>
       </div>
 
+      {/* Đổi sang sticky bottom-0 thay vì shrink-0 */}
       <div
-        className="shrink-0 bg-white dark:bg-zinc-900 px-5 py-3 border-t border-[#E5E5EA] dark:border-zinc-800"
+        className="sticky bottom-0 z-20 bg-white dark:bg-zinc-900 px-5 py-3 border-t border-[#E5E5EA] dark:border-zinc-800"
         style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}
       >
         {replyTo && (
-          <div className="text- dark:text-zinc-400 mb-2 flex items-center justify-between bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 px-3.5 py-2 rounded-xl">
+          <div className="text-sm dark:text-zinc-400 mb-2 flex items-center justify-between bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 px-3.5 py-2 rounded-xl">
             <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
             <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg active:scale-90 transition-all">
               <FiX size={14} />
@@ -204,7 +207,7 @@ export default function CommentSection({
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSend()}
             placeholder={currentUser? "Viết bình luận..." : "Đăng nhập để bình luận"}
-            className="flex-1 px-4 py-2.5 rounded-full bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 outline-none text- focus:ring-2 focus:ring-[#0a84ff]/20 focus:border-[#0a84ff] transition-all"
+            className="flex-1 px-4 py-2.5 rounded-full bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 outline-none text-sm focus:ring-2 focus:ring-[#0a84ff]/20 focus:border-[#0a84ff] transition-all"
             disabled={sending ||!currentUser}
           />
           <motion.button
