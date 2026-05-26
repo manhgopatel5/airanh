@@ -103,6 +103,7 @@ export default function TaskDetailPage() {
             comments={comments}
             currentUser={currentUser}
             sending={sending}
+            likingComments={likingComments}
             onSend={sendComment}
             onLike={likeComment}
             onDelete={deleteComment}
