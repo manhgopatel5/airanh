@@ -843,7 +843,7 @@ void status;
     )}
   </div>
 ) : (
-<div className="flex mt-4 -mx-4 border-b border-[#E5E5EA] dark:border-zinc-800">
+<div className="flex mt-4 -mx-4 pb-4 border-b border-[#E5E5EA] dark:border-zinc-800">
   <motion.button
     whileTap={{ scale: 0.98 }}
     onClick={handleStartChat}
