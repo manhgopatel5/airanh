@@ -1330,7 +1330,7 @@ void status;
       <FiSend size={18} />
     </motion.button>
   </div>
-</motion.div> // <-- Đảm bảo có thẻ đóng này
+</motion.div> 
     </div>
   </div>
 </div>
