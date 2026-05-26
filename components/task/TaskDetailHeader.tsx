@@ -97,22 +97,22 @@ export default function TaskDetailHeader({ task, owner, currentUser, isOwner, on
 
                 <div className="flex items-center gap-1">
                   <FiStar className="fill-[#FFB800] text-[#FFB800] shrink-0" size={14} />
-                  <span className="font-semibold text-[13px] text-[#1C1C1E] dark:text-zinc-100">{owner?.rating || "4.9"}</span>
-                  <span className="text-[13px] font-semibold text-[#8E8E93]">({owner?.reviewCount || 21})</span>
-                  <span className="text-[13px] font-semibold text-[#8E8E93]">•</span>
-                  <span className="text-[13px] font-semibold text-[#00A86B]">Mới tham gia</span>
+                  <span className="font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100">{owner?.rating || "4.9"}</span>
+                  <span className="text-[15px] font-semibold text-[#8E8E93]">({owner?.reviewCount || 21})</span>
+                  <span className="text-[15px] font-semibold text-[#8E8E93]">•</span>
+                  <span className="text-[15px] font-semibold text-[#00A86B]">Mới tham gia</span>
                 </div>
 
                 <div className="flex items-center gap-1">
                   {owner?.verified? (
                     <>
                       <FiCheckCircle className="text-[#0A84FF] shrink-0" size={14} />
-                      <span className="text-[13px] font-semibold text-[#0A84FF]">Đã xác thực</span>
+                      <span className="text-[15px] font-semibold text-[#0A84FF]">Đã xác thực</span>
                     </>
                   ) : (
                     <>
                       <FiX className="text-[#8E8E93] shrink-0" size={14} />
-                      <span className="text-[13px] text-[#8E8E93] font-semibold">Chưa xác thực</span>
+                      <span className="text-[15px] text-[#8E8E93] font-semibold">Chưa xác thực</span>
                       {!isOwner && (
                         <motion.button
                           whileTap={{ scale: 0.9 }}
@@ -185,7 +185,7 @@ export default function TaskDetailHeader({ task, owner, currentUser, isOwner, on
                           >
                             <button
                               onClick={(e) => { e.stopPropagation(); handleSave(); setShowMenu(false); }}
-                              className="flex items-center gap-3 px-4 py-3 text-[13px] font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
+                              className="flex items-center gap-3 px-4 py-3 text-[15px] font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
                             >
                               {isSaved? <FiCheck size={18} /> : <FiBookmark size={18} />}
                               {isSaved? "Đã lưu" : "Lưu công việc"}
@@ -193,7 +193,7 @@ export default function TaskDetailHeader({ task, owner, currentUser, isOwner, on
                             <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
                             <button
                               onClick={(e) => { e.stopPropagation(); setShowMenu(false); router.push(`/task/${task.id}/edit`); }}
-                              className="flex items-center gap-3 px-4 py-3 text-[13px] font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
+                              className="flex items-center gap-3 px-4 py-3 text-[15px] font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
                             >
                               <FiEdit2 size={18} />
                               Sửa công việc
@@ -201,7 +201,7 @@ export default function TaskDetailHeader({ task, owner, currentUser, isOwner, on
                             <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
                             <button
                               onClick={(e) => { e.stopPropagation(); setShowMenu(false); handleDelete(); }}
-                              className="flex items-center gap-3 px-4 py-3 text-[13px] font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 w-full transition-all active:scale-95"
+                              className="flex items-center gap-3 px-4 py-3 text-[15px] font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 w-full transition-all active:scale-95"
                             >
                               <FiTrash2 size={18} />
                               Xóa
