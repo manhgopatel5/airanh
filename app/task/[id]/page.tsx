@@ -845,7 +845,7 @@ void status;
     )}
   </div>
 ) : (
-<div className="flex mt-4 -mx-4 pt-4">
+<div className="flex mt-4 pt-4">
   <motion.button
     whileTap={{ scale: 0.98 }}
     onClick={handleStartChat}
