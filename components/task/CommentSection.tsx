@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiChevronDown, FiMessageCircle, FiSend, FiX } from "react-icons/fi";
 import { createPortal } from "react-dom";
 import { CommentList } from "./CommentList";
-import { toast } from "sonner";
+
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useTask } from "@/hooks/useTask";
