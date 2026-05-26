@@ -10,7 +10,7 @@ import type { TaskComment } from "@/types/task";
 import type { User } from "firebase/auth";
 
 type Props = {
-  taskId: string;
+  
   taskOwnerId: string;
   comments: TaskComment[];
   currentUser: User | null;
@@ -28,7 +28,7 @@ const Portal = ({ children }: { children: React.ReactNode }) => {
 };
 
 export default function CommentSection({
-  taskId,
+  
   taskOwnerId,
   comments,
   currentUser,
