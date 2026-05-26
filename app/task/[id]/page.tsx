@@ -788,16 +788,16 @@ void status;
  <h3 className="font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100 mb-2">
   Mô tả công việc
 </h3>
-    <Linkify options={{ target: "_blank", className: `text-[#0A84FF] hover:underline` }}>
-      <p
-        ref={descRef}
-        className={`text-[13px] text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed ${
-          !descExpanded ? 'line-clamp-5' : ''
-        }`}
-      >
-        {task.description}
-      </p>
-    </Linkify>
+<Linkify options={{ target: "_blank", className: `text-[#0A84FF] hover:underline` }}>
+  <p
+    ref={descRef}
+    className={`text-[13px] font-semibold text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed ${
+      !descExpanded ? 'line-clamp-5' : ''
+    }`}
+  >
+    {task.description}
+  </p>
+</Linkify>
  {showDescMore && (
   <div className="text-center">
     <button
