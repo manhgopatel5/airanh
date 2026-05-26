@@ -415,6 +415,7 @@ const handleJoinTask = async () => {
     };
     setComments(prev => [...prev, tempComment]);
     setText(""); setReplyTo(null); setSending(true);
+    inputRef.current?.blur();
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
     try {
       await createComment(task.id, { uid: currentUser.uid, displayName: currentUser.displayName, photoURL: currentUser.photoURL }, {
@@ -611,7 +612,10 @@ void status;
     <>
       <Toaster richColors position="top-center" />
  <ApplyConfirmModal />
-<div className="max-w-xl mx-auto bg-white dark:bg-zinc-950 min-h-dvh pb-28 px-3 pt-2">
+<div 
+  className="max-w-xl mx-auto bg-white dark:bg-zinc-950 min-h-dvh pb-28 px-3 pt-2"
+  style={{ paddingBottom: keyboardHeight + 112 }}
+>
 
        {/* HEADER MỚI - ĐỒNG BỘ APP */}
 <div className="bg-white dark:bg-zinc-950">
@@ -1277,10 +1281,8 @@ void status;
       <div ref={bottomRef} />
     </div>
 
-<motion.div 
+<div 
   className="fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 px-5 py-3 border-t border-[#E5E5EA] dark:border-zinc-800 z-30"
-  animate={{ y: -keyboardHeight }}
-  transition={{ type: "spring", damping: 30, stiffness: 400 }}
   style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}
 >
   {replyTo && (
@@ -1332,7 +1334,7 @@ void status;
       <FiSend size={18} />
     </motion.button>
   </div>
-</motion.div> 
+ </div>
     </div>
   </div>
 </div>
