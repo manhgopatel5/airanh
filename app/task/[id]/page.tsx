@@ -103,18 +103,7 @@ const [showSortMenu, setShowSortMenu] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-useEffect(() => {
-  if (typeof window === 'undefined' || !window.visualViewport) return;
-  
-  const handleResize = () => {
-    const viewport = window.visualViewport!;
-    const heightDiff = window.innerHeight - viewport.height;
-    setKeyboardHeight(heightDiff > 150 ? heightDiff : 0); // >150px mới coi là bàn phím
-  };
 
-  window.visualViewport.addEventListener('resize', handleResize);
-  return () => window.visualViewport?.removeEventListener('resize', handleResize);
-}, []);
   const [loading, setLoading] = useState(true);
   const [showAllApps, setShowAllApps] = useState(false);
   const [sending, setSending] = useState(false);
@@ -612,10 +601,8 @@ void status;
     <>
       <Toaster richColors position="top-center" />
  <ApplyConfirmModal />
-<div 
-  className="max-w-xl mx-auto bg-white dark:bg-zinc-950 min-h-dvh pb-28 px-3 pt-2"
-  style={{ paddingBottom: keyboardHeight + 112 }}
->
+<div className="h-[100dvh] flex flex-col bg-white dark:bg-zinc-950">
+  <div className="flex-1 overflow-y-auto overscroll-none px-3 pt-2 pb-4">
 
        {/* HEADER MỚI - ĐỒNG BỘ APP */}
 <div className="bg-white dark:bg-zinc-950">
@@ -1281,8 +1268,10 @@ void status;
       <div ref={bottomRef} />
     </div>
 
+</div> {/* đóng div scroll ở trên */}
+
 <div 
-  className="fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 px-5 py-3 border-t border-[#E5E5EA] dark:border-zinc-800 z-30"
+  className="shrink-0 bg-white dark:bg-zinc-900 px-5 py-3 border-t border-[#E5E5EA] dark:border-zinc-800"
   style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}
 >
   {replyTo && (
