@@ -602,13 +602,7 @@ void status;
               </motion.button>
             )}
 
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => task && setShareTask(task)}
-              className="w-9 h-9 rounded-full flex items-center justify-center active:bg-[#F2F2F7] dark:active:bg-zinc-800"
-            >
-              <FiShare2 size={19} className="text-[#8E8E93]" strokeWidth={2} />
-            </motion.button>
+     
 
             <div className="relative">
               <motion.button
@@ -849,7 +843,7 @@ void status;
   {/* Gạch ngang trên */}
   <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 w-screen -ml-3 mt-4" />
 
-  <div className="grid grid-cols-4 py-4">
+  <div className="grid grid-cols-5 py-4">
     <motion.button
       whileTap={{ scale: 0.98 }}
       onClick={handleStartChat}
@@ -883,6 +877,15 @@ void status;
         <FiSend size={22} strokeWidth={2.5} className="text-[#00A86B]" />
       )}
       <span className="text-sm font-semibold leading-none">{isApplied? "Đã ứng tuyển" : "Ứng tuyển"}</span>
+    </motion.button>
+
+    <motion.button
+      whileTap={{ scale: 0.98 }}
+      onClick={() => task && setShareTask(task)}
+      className="flex flex-col items-center gap-1.5 text-[#8E8E93] dark:text-zinc-500 active:opacity-60 transition-opacity"
+    >
+      <FiShare2 size={22} strokeWidth={2.2} className="text-[#5856D6]" />
+      <span className="text-sm font-semibold leading-none">Chia sẻ</span>
     </motion.button>
 
     <motion.button
