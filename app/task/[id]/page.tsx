@@ -596,21 +596,21 @@ void status;
                 <FiX className="text-[#8E8E93] shrink-0" size={14} />
                 <span className="text- text-[#8E8E93] font-medium">Chưa xác thực</span>
                 {!isOwner && (
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      toast.warning("Cẩn thận với tài khoản chưa xác thực", {
-                        description: "Hãy kiểm tra kỹ thông tin trước khi giao dịch. Không chuyển tiền trước.",
-                        duration: 4000,
-                      });
-                      navigator.vibrate?.(8);
-                    }}
-                    className="ml-0.5 p-0.5 rounded-full active:bg-zinc-200 dark:active:bg-zinc-700"
-                  >
-                    <FiInfo className="text-[#8E8E93]" size={13} />
-                  </motion.button>
+              <motion.button
+  whileTap={{ scale: 0.9 }}
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toast.warning("Cẩn thận với tài khoản chưa xác thực", {
+      description: "Hãy kiểm tra kỹ thông tin trước khi giao dịch.\nKhông chuyển tiền trước.\nƯu tiên gặp mặt trực tiếp hoặc gọi video xác minh.\nBáo cáo ngay nếu phát hiện dấu hiệu lừa đảo.",
+      duration: 5000,
+    });
+    navigator.vibrate?.(8);
+  }}
+  className="ml-0.5 p-0.5 rounded-full active:bg-zinc-200 dark:active:bg-zinc-700"
+>
+  <FiInfo className="text-[#8E8E93]" size={13} />
+</motion.button>
                 )}
               </>
             )}
