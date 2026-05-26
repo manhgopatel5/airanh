@@ -906,7 +906,8 @@ void status;
 
 
  
-<div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 w-full" />
+
+
             {task.location?.lat && task.location?.lng && (
               <>
                 <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800" />
