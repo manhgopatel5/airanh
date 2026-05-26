@@ -266,6 +266,8 @@ export async function createPlan(
     participants: [ownerParticipant],
     maxParticipants: data.maxParticipants,
     currentParticipants: 1,
+    totalSlots: data.totalSlots, // THÊM DÒNG NÀY
+  appliedCount: 0, 
  ...(inviteCode && { inviteCode }),
     allowInvite: data.allowInvite?? true,
     costType: data.costType,
