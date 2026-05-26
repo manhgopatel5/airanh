@@ -131,7 +131,8 @@ export default function TaskActionBar({
 
   return (
     <>
-<div className="h-px bg-zinc-200 dark:bg-zinc-800" />
+      <div className="h-px bg-zinc-200 dark:bg-zinc-800 w-screen -ml-4 my-4" />
+      
       <div className="grid grid-cols-5 py-3">
         <ActionButton
           icon={FiMessageSquare}
@@ -176,7 +177,8 @@ export default function TaskActionBar({
           onClick={() => toast.info("Đã gửi báo cáo")}
         />
       </div>
-<div className="h-px bg-zinc-200 dark:bg-zinc-800 mt-4" />
+
+      <div className="h-px bg-zinc-200 dark:bg-zinc-800 w-screen -ml-4 my-4" />
 
       <AnimatePresence>
         {showApplyModal && (
