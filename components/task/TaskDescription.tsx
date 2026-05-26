@@ -30,13 +30,13 @@ export default function TaskDescription({ description, images, onImageClick }: P
       {description && (
         <>
           <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 w-screen -ml-3 my-4" />
-          <h3 className="font-semibold text- text-[#1C1C1E] dark:text-zinc-100 mb-2">
+          <h3 className="font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100 mb-2">
             Mô tả công việc
           </h3>
           <Linkify options={{ target: "_blank", className: `text-[#0A84FF] hover:underline` }}>
             <p
               ref={descRef}
-              className={`text- text-[#1C1C1E] dark:text-zinc-100 whitespace-pre-wrap leading-relaxed ${
+              className={`text-[15px] text-[#1C1C1E] dark:text-zinc-100 whitespace-pre-wrap leading-relaxed ${
                !descExpanded? 'line-clamp-5' : ''
               }`}
             >
@@ -47,7 +47,7 @@ export default function TaskDescription({ description, images, onImageClick }: P
             <div className="text-center">
               <button
                 onClick={() => setDescExpanded(!descExpanded)}
-                className="text- font-semibold text-[#0A84FF] mt-1 active:opacity-60"
+                className="text-[15px] font-semibold text-[#0A84FF] mt-1 active:opacity-60"
               >
                 {descExpanded? 'Thu gọn' : 'Xem thêm mô tả'}
               </button>
@@ -59,7 +59,7 @@ export default function TaskDescription({ description, images, onImageClick }: P
       {images && images.length > 0 && (
         <>
           <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 w-screen -ml-3 my-4" />
-          <h3 className="font-semibold text- text-[#1C1C1E] dark:text-zinc-100 mb-2">
+          <h3 className="font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100 mb-2">
             Xem ảnh và file
           </h3>
           <div className="px-4 pt-0 pb-2">
@@ -117,7 +117,7 @@ export default function TaskDescription({ description, images, onImageClick }: P
                     />
                     {i === 2 && images.length > 3 && (
                       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
-                        <span className="text-white font-bold text-">
+                        <span className="text-white font-bold text-[15px]">
                           +{images.length - 3}
                         </span>
                       </div>
