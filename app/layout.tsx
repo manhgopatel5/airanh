@@ -10,6 +10,7 @@ const beVietnamPro = Be_Vietnam_Pro({
   subsets: ['latin', 'vietnamese'],
   weight: ['300', '400', '500', '600', '700', '800', '900'],
   display: "swap",
+  variable: "--font-sans", // QUAN TRỌNG: phải là --font-sans để khớp tailwind
 });
 
 export const metadata: Metadata = {
@@ -104,7 +105,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  interactiveWidget: 'resizes-content', // QUAN TRỌNG: iOS 16.4+ / Android
+  interactiveWidget: 'resizes-content',
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#000000" },
@@ -114,7 +115,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi" className={cn("h-full", beVietnamPro.className)} suppressHydrationWarning>
+    <html lang="vi" className={cn("h-full", beVietnamPro.variable)} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -122,8 +123,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
       </head>
-      {/* QUAN TRỌNG: fixed + overflow-hidden để lock body */}
-      <body className="h-full w-full fixed overflow-hidden bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight">
+      <body className="h-full w-full fixed overflow-hidden bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight font-sans">
         <AuthProvider>
           <ClientLayout>
             <EmailGuard>
