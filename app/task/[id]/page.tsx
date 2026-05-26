@@ -894,7 +894,7 @@ void status;
 
 
 
-<div className="pt-3 pb-2">
+
  
 
             {task.location?.lat && task.location?.lng && (
@@ -986,9 +986,8 @@ void status;
               </div>
             )}
 
-          {/* Bình luận */}
 {/* Bình luận */}
-<div className="mt-0">
+<div className="-mt-px">
   <div className="bg-white dark:bg-zinc-950 overflow-hidden">
 <div className="px-5 pt-4 pb-3 flex items-center justify-between">
   <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
