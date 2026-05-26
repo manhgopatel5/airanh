@@ -9,7 +9,7 @@ import {
   FiBookmark, FiMoreHorizontal, FiCheck, FiEdit2, FiTrash2,
   FiStar, FiCheckCircle, FiX, FiInfo
 } from "react-icons/fi";
-import { deleteDoc, doc } from "firebase/firestore";
+import { doc, deleteDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore"; 
 import { getFirebaseDB } from "@/lib/firebase";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/ui/UserAvatar";
@@ -40,6 +40,7 @@ const Portal = ({ children }: { children: React.ReactNode }) => {
 
 export default function TaskDetailHeader({ task, owner, currentUser, isOwner, onTaskDeleted }: Props) {
   const router = useRouter();
+  const db = getFirebaseDB();
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const [isSaved, setIsSaved] = useState(!!currentUser?.uid &&!!task.savedBy?.includes(currentUser.uid));
