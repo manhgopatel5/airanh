@@ -897,67 +897,123 @@ void status;
     )}
   </div>
 ) : (
-<>
-  {/* Gạch ngang trên */}
-  <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 w-screen -ml-3 mt-4" />
+  <>
+    {/* Gạch ngang trên */}
+    <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 mt-4" />
 
-  <div className="grid grid-cols-5 py-4">
-    <motion.button
-      whileTap={{ scale: 0.98 }}
-      onClick={handleStartChat}
-      className="flex flex-col items-center gap-1.5 text-[#8E8E93] dark:text-zinc-500 active:opacity-60 transition-opacity"
-    >
-      <FiMessageSquare size={22} strokeWidth={2.2} className="text-[#0A84FF]" />
-      <span className="text-sm font-semibold leading-none">Nhắn tin</span>
-    </motion.button>
+    <div className="grid grid-cols-5 py-3">
+      {/* 1. Nhắn tin */}
+      <motion.button
+        whileTap={{ scale: 0.97 }}
+        onClick={() => {
+          navigator.vibrate?.(8);
+          handleStartChat();
+        }}
+        className="flex flex-col items-center gap-1 active:opacity-60 transition-opacity"
+      >
+        <FiMessageSquare
+          size={22}
+          strokeWidth={2}
+          className="text-[#8E8E93] dark:text-zinc-500"
+        />
+        <span className="text-xs font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
+          Nhắn tin
+        </span>
+      </motion.button>
 
-    <motion.button
-      whileTap={{ scale: 0.98 }}
-      onClick={() => owner?.phone && window.open(`tel:${owner.phone}`)}
-      disabled={!owner?.phone}
-      className="flex flex-col items-center gap-1.5 text-[#8E8E93] dark:text-zinc-500 active:opacity-60 disabled:opacity-40 transition-opacity"
-    >
-      <FiPhone size={22} strokeWidth={2.2} className="text-[#34C759]" />
-      <span className="text-sm font-semibold leading-none">Gọi điện</span>
-    </motion.button>
+      {/* 2. Gọi điện */}
+      <motion.button
+        whileTap={{ scale: 0.97 }}
+        onClick={() => {
+          navigator.vibrate?.(8);
+          owner?.phone && window.open(`tel:${owner.phone}`);
+        }}
+        disabled={!owner?.phone}
+        className="flex flex-col items-center gap-1 active:opacity-60 transition-opacity disabled:opacity-40 disabled:pointer-events-none"
+      >
+        <FiPhone
+          size={22}
+          strokeWidth={2}
+          className="text-[#8E8E93] dark:text-zinc-500"
+        />
+        <span className="text-xs font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
+          Gọi điện
+        </span>
+      </motion.button>
 
-    <motion.button
-      whileTap={{ scale: 0.98 }}
-      onClick={isApplied? handleCancelApply : handleJoinTask}
-      disabled={(!isApplied && (isFull || task.status!== "open")) || joining}
-      className="flex flex-col items-center gap-1.5 text-[#8E8E93] dark:text-zinc-500 active:opacity-60 disabled:opacity-40 transition-opacity"
-    >
-      {joining? (
-        <div className="w-[22px] h-[22px] border-2 border-[#00A86B] border-t-transparent rounded-full animate-spin" />
-      ) : isApplied? (
-        <FiCheckCircle size={22} strokeWidth={2.5} className="text-[#00A86B]" />
-      ) : (
-        <FiSend size={22} strokeWidth={2.5} className="text-[#00A86B]" />
-      )}
-      <span className="text-sm font-semibold leading-none">{isApplied? "Đã ứng tuyển" : "Ứng tuyển"}</span>
-    </motion.button>
+      {/* 3. Ứng tuyển - CTA CHÍNH */}
+      <motion.button
+        whileTap={{ scale: 0.97 }}
+        onClick={() => {
+          navigator.vibrate?.(8);
+          isApplied? handleCancelApply() : handleJoinTask();
+        }}
+        disabled={(!isApplied && (isFull || task.status!== "open")) || joining}
+        className="flex flex-col items-center gap-1 active:opacity-60 transition-opacity disabled:opacity-40 disabled:pointer-events-none"
+      >
+        {joining? (
+          <div className="w-5 h-5 border-2 border-[#0A84FF] border-t-transparent rounded-full animate-spin" />
+        ) : isApplied? (
+          <FiCheckCircle
+            size={22}
+            strokeWidth={2.5}
+            className="text-[#34C759]"
+          />
+        ) : (
+          <FiSend
+            size={22}
+            strokeWidth={2.5}
+            className="text-[#0A84FF]"
+          />
+        )}
+        <span className={`text-xs font-semibold leading-none ${
+          isApplied? 'text-[#34C759]' : 'text-[#0A84FF]'
+        }`}>
+          {isApplied? "Đã ứng tuyển" : "Ứng tuyển"}
+        </span>
+      </motion.button>
 
-    <motion.button
-      whileTap={{ scale: 0.98 }}
-      onClick={() => task && setShareTask(task)}
-      className="flex flex-col items-center gap-1.5 text-[#8E8E93] dark:text-zinc-500 active:opacity-60 transition-opacity"
-    >
-      <FiShare2 size={22} strokeWidth={2.2} className="text-[#5856D6]" />
-      <span className="text-sm font-semibold leading-none">Chia sẻ</span>
-    </motion.button>
+      {/* 4. Chia sẻ */}
+      <motion.button
+        whileTap={{ scale: 0.97 }}
+        onClick={() => {
+          navigator.vibrate?.(8);
+          task && setShareTask(task);
+        }}
+        className="flex flex-col items-center gap-1 active:opacity-60 transition-opacity"
+      >
+        <FiShare2
+          size={22}
+          strokeWidth={2}
+          className="text-[#8E8E93] dark:text-zinc-500"
+        />
+        <span className="text-xs font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
+          Chia sẻ
+        </span>
+      </motion.button>
 
-    <motion.button
-      whileTap={{ scale: 0.98 }}
-      onClick={() => toast.info("Đã gửi báo cáo")}
-      className="flex flex-col items-center gap-1.5 text-[#8E8E93] dark:text-zinc-500 active:opacity-60 transition-opacity"
-    >
-      <FiAlertTriangle size={22} strokeWidth={2.2} className="text-[#FF9500]" />
-      <span className="text-sm font-semibold leading-none">Báo cáo</span>
-    </motion.button>
-  </div>
+      {/* 5. Báo cáo */}
+      <motion.button
+        whileTap={{ scale: 0.97 }}
+        onClick={() => {
+          navigator.vibrate?.(8);
+          toast.info("Đã gửi báo cáo");
+        }}
+        className="flex flex-col items-center gap-1 active:opacity-60 transition-opacity"
+      >
+        <FiAlertTriangle
+          size={22}
+          strokeWidth={2}
+          className="text-[#8E8E93] dark:text-zinc-500"
+        />
+        <span className="text-xs font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
+          Báo cáo
+        </span>
+      </motion.button>
+    </div>
 
-  {/* Gạch ngang dưới */}
-  <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 w-screen -ml-3" />
+    {/* Gạch ngang dưới */}
+    <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800" />
 </>
 )}
   </div>
