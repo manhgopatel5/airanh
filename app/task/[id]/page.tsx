@@ -1117,7 +1117,7 @@ void status;
 <div>
   <div className="bg-white dark:bg-zinc-950 overflow-hidden">
 <div className="grid grid-cols-4 pt-4 pb-3">
-<h<h3 className="col-span-3 font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100">
+<h3 className="col-span-3 font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100">
   Bình luận ({parentComments.length})
 </h3>
   
