@@ -748,22 +748,20 @@ void status;
 
   {/* Gạch ngang + tiêu đề Mô tả */}
 {task.description && (
-    <>
-      {/* Gạch ngang full màn hình */}
-      <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 w-screen -ml-3 my-4" />
-      
-      <h3 className="font-bold text- text-[#1C1C1E] dark:text-zinc-100 mb-2">
-        Mô tả công việc
-      </h3>
-      <Linkify options={{ target: "_blank", className: `text-[#0A84FF] hover:underline` }}>
-        <p className="text- text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">{task.description}</p>
-      </Linkify>
-    </>
+  <>
+    {/* Gạch ngang full màn hình */}
+    <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 w-screen -ml-3 my-4" />
+    
+    <h3 className="font-bold text- text-[#1C1C1E] dark:text-zinc-100 mb-2">
+      Mô tả công việc
+    </h3>
+    <Linkify options={{ target: "_blank", className: `text-[#0A84FF] hover:underline` }}>
+      <p className="text- text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">{task.description}</p>
+    </Linkify>
+  </>
 )}
-    </>
-  )}
 </div>
-{isOwner? (
+{isOwner ? (
   <div ref={appsRef} className="bg-white dark:bg-zinc-900 -mx-3">
     <div className="px-5 py-4 flex items-center justify-between border-b border-[#F2F2F7] dark:border-zinc-800">
       <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
