@@ -252,7 +252,7 @@ export default function CommentSection({
         </div>
       </div>
 
-      <div className="h-px bg-zinc-200 dark:bg-zinc-800 w-screen -ml-4 my-4" />
+
     </div>
   );
 }
