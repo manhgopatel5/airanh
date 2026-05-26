@@ -724,7 +724,7 @@ void status;
   <div className="space-y-3">
     {isTask(task) && task.price > 0 && (
       <div>
-        <p className="text-[13px] text-[#8E8E93] dark:text-zinc-500">Tiền công</p>
+        <p className="text-[13px] text-[#1C1C1E] dark:text-zinc-100">Tiền công</p>
         <p className="text-[13px] font-semibold text-[#0A84FF] mt-0.5">
           {task.price.toLocaleString("vi-VN")} đ
         </p>
@@ -732,7 +732,7 @@ void status;
     )}
     {isTask(task) && (
       <div>
-        <p className="text-[13px] text-[#8E8E93] dark:text-zinc-500">Ứng tuyển</p>
+        <p className="text-[13px] text-[#1C1C1E] dark:text-zinc-100">Ứng tuyển</p>
         <p className="text-[13px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
           {task.appliedCount || 0}/{task.totalSlots}
         </p>
@@ -740,7 +740,7 @@ void status;
     )}
     {isTask(task) && task.deadline?.seconds && (
       <div>
-        <p className="text-[13px] text-[#8E8E93] dark:text-zinc-500">Hạn chót</p>
+        <p className="text-[13px] text-[#1C1C1E] dark:text-zinc-100">Hạn chót</p>
         <p className={`text-[13px] font-semibold mt-0.5 ${isUrgent? 'text-[#FF3B30]' : 'text-[#1C1C1E] dark:text-zinc-100'}`}>
           {timeLeft || taskDeadline}
         </p>
@@ -750,14 +750,14 @@ void status;
 
   <div className="space-y-3">
     <div>
-      <p className="text-[13px] text-[#8E8E93] dark:text-zinc-500">Địa chỉ</p>
+      <p className="text-[13px] text-[#1C1C1E] dark:text-zinc-100">Địa chỉ</p>
       <p className="text-[13px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5 truncate">
         {task.location?.address || task.location?.city || "Online"}
       </p>
     </div>
     {isTask(task) && (
       <div>
-        <p className="text-[13px] text-[#8E8E93] dark:text-zinc-500">Đã nhận</p>
+        <p className="text-[13px] text-[#1C1C1E] dark:text-zinc-100">Đã nhận</p>
         <p className="text-[13px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
           {applications.filter(a => a.status === 'accepted').length} người
         </p>
@@ -765,14 +765,14 @@ void status;
     )}
     {isPlan(task) && (
       <div>
-        <p className="text-[13px] text-[#8E8E93] dark:text-zinc-500">Đã tham gia</p>
+        <p className="text-[13px] text-[#1C1C1E] dark:text-zinc-100">Đã tham gia</p>
         <p className="text-[13px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
           {task.currentParticipants} người
         </p>
       </div>
     )}
     <div>
-      <p className="text-[13px] text-[#8E8E93] dark:text-zinc-500">Ngày đăng</p>
+      <p className="text-[13px] text-[#1C1C1E] dark:text-zinc-100">Ngày đăng</p>
       <p className="text-[13px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
         {taskDate}
       </p>
