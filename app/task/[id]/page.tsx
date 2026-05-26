@@ -569,7 +569,7 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
         <Dialog.Title className="font-bold text-lg text-[#1C1C1E] dark:text-zinc-100">
           Xác nhận ứng tuyển
         </Dialog.Title>
-        <Dialog.Description className="text- text-zinc-600 dark:text-zinc-400 mt-2">
+        <Dialog.Description className="text-[13px] text-zinc-600 dark:text-zinc-400 mt-2">
           Bạn có chắc muốn ứng tuyển công việc "{task?.title}"?
         </Dialog.Description>
         <div className="flex gap-2 mt-5">
@@ -1330,20 +1330,17 @@ void status;
       <FiSend size={18} />
     </motion.button>
   </div>
- </div>
+        </div>
+      </div>
     </div>
- </div>
 
-
-        <ImageGallery open={showImageGallery!== null} images={task.images || []} initialIndex={showImageGallery || 0} onClose={() => setShowImageGallery(null)} />
-        {shareTask && (
-          <ShareTaskModal
-            task={shareTask}
-            onClose={() => setShareTask(null)}
-          />
-        )}
-
+    <ImageGallery open={showImageGallery!== null} images={task.images || []} initialIndex={showImageGallery || 0} onClose={() => setShowImageGallery(null)} />
+    {shareTask && (
+      <ShareTaskModal
+        task={shareTask}
+        onClose={() => setShareTask(null)}
+      />
+    )}
     </>
   );
-}
-                  
+}         
