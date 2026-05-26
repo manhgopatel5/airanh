@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FiMessageSquare, FiPhone, FiSend, FiCheckCircle,
   FiShare2, FiAlertTriangle
@@ -74,6 +74,7 @@ export default function TaskActionBar({
         },
       }, { merge: true });
       router.push(`/chat/${chatId}`);
+      navigator.vibrate?.(8);
     } catch (err) {
       console.error(err);
       toast.error("Không thể mở chat");
@@ -97,45 +98,57 @@ export default function TaskActionBar({
 
   const canApply =!isApplied &&!isFull && task.status === "open" &&!isOwner;
 
+  const ActionButton = ({ 
+    icon: Icon, 
+    label, 
+    onClick, 
+    disabled = false, 
+    active = false,
+    color = "text-zinc-500 dark:text-zinc-400"
+  }: {
+    icon: any;
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
+    active?: boolean;
+    color?: string;
+  }) => (
+    <motion.button
+      whileTap={{ scale: 0.97 }}
+      onClick={() => {
+        navigator.vibrate?.(8);
+        onClick();
+      }}
+      disabled={disabled}
+      className="flex flex-col items-center gap-1 active:opacity-60 transition-opacity disabled:opacity-40 disabled:pointer-events-none"
+    >
+      <Icon size={22} strokeWidth={active? 2.5 : 2} className={color} />
+      <span className={`text-xs font-semibold leading-none ${color}`}>
+        {label}
+      </span>
+    </motion.button>
+  );
+
   return (
     <>
-      <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 mt-4" />
+      <div className="h-px bg-zinc-200 dark:bg-zinc-800 mt-4" />
       <div className="grid grid-cols-5 py-3">
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={() => {
-            navigator.vibrate?.(8);
-            handleStartChat();
-          }}
-          className="flex flex-col items-center gap-1 active:opacity-60 transition-opacity"
-        >
-          <FiMessageSquare size={22} strokeWidth={2} className="text-[#8E8E93] dark:text-zinc-500" />
-          <span className="text-[13px] font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
-            Nhắn tin
-          </span>
-        </motion.button>
+        <ActionButton
+          icon={FiMessageSquare}
+          label="Nhắn tin"
+          onClick={handleStartChat}
+        />
 
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={() => {
-            navigator.vibrate?.(8);
-            owner?.phone && window.open(`tel:${owner.phone}`);
-          }}
+        <ActionButton
+          icon={FiPhone}
+          label="Gọi điện"
+          onClick={() => owner?.phone && window.open(`tel:${owner.phone}`)}
           disabled={!owner?.phone}
-          className="flex flex-col items-center gap-1 active:opacity-60 transition-opacity disabled:opacity-40 disabled:pointer-events-none"
-        >
-          <FiPhone size={22} strokeWidth={2} className="text-[#8E8E93] dark:text-zinc-500" />
-          <span className="text-[13px] font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
-            Gọi điện
-          </span>
-        </motion.button>
+        />
 
         <motion.button
           whileTap={{ scale: 0.97 }}
-          onClick={() => {
-            navigator.vibrate?.(8);
-            handleApplyClick();
-          }}
+          onClick={handleApplyClick}
           disabled={!canApply &&!isApplied || joining}
           className="flex flex-col items-center gap-1 active:opacity-60 transition-opacity disabled:opacity-40 disabled:pointer-events-none"
         >
@@ -146,75 +159,76 @@ export default function TaskActionBar({
           ) : (
             <FiSend size={22} strokeWidth={2.5} className="text-[#0A84FF]" />
           )}
-          <span className={`text-[13px] font-semibold leading-none ${isApplied? 'text-[#34C759]' : 'text-[#0A84FF]'}`}>
+          <span className={`text-xs font-semibold leading-none ${isApplied? 'text-[#34C759]' : 'text-[#0A84FF]'}`}>
             {isApplied? "Đã ứng tuyển" : "Ứng tuyển"}
           </span>
         </motion.button>
 
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={() => {
-            navigator.vibrate?.(8);
-            onShare();
-          }}
-          className="flex flex-col items-center gap-1 active:opacity-60 transition-opacity"
-        >
-          <FiShare2 size={22} strokeWidth={2} className="text-[#8E8E93] dark:text-zinc-500" />
-          <span className="text-[13px] font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
-            Chia sẻ
-          </span>
-        </motion.button>
+        <ActionButton
+          icon={FiShare2}
+          label="Chia sẻ"
+          onClick={onShare}
+        />
 
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={() => {
-            navigator.vibrate?.(8);
-            toast.info("Đã gửi báo cáo");
-          }}
-          className="flex flex-col items-center gap-1 active:opacity-60 transition-opacity"
-        >
-          <FiAlertTriangle size={22} strokeWidth={2} className="text-[#8E8E93] dark:text-zinc-500" />
-          <span className="text-[13px] font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
-            Báo cáo
-          </span>
-        </motion.button>
+        <ActionButton
+          icon={FiAlertTriangle}
+          label="Báo cáo"
+          onClick={() => toast.info("Đã gửi báo cáo")}
+        />
       </div>
-      <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800" />
+      <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
 
-      {showApplyModal && (
-        <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setShowApplyModal(false)} />
-      )}
-      {showApplyModal && (
-        <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-zinc-900 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
-          >
-            <h3 className="font-bold text-lg text-[#1C1C1E] dark:text-zinc-100">
-              Xác nhận ứng tuyển
-            </h3>
-            <p className="text-zinc-600 dark:text-zinc-400 mt-2">
-              Bạn có chắc muốn ứng tuyển công việc "{task.title}"?
-            </p>
-            <div className="flex gap-2 mt-5">
-              <button
-                onClick={() => setShowApplyModal(false)}
-                className="flex-1 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-semibold active:scale-95 transition-all"
+      <AnimatePresence>
+        {showApplyModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/30 z-50 backdrop-blur-sm"
+              onClick={() => setShowApplyModal(false)}
+            />
+            <div className="fixed inset-0 flex items-center justify-center p-4 z-50 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl p-6 max-w-sm w-full shadow-2xl ring-1 ring-black/5 dark:ring-white/10 pointer-events-auto"
               >
-                Hủy
-              </button>
-              <button
-                onClick={confirmApply}
-                disabled={joining}
-                className="flex-1 py-2.5 rounded-xl bg-[#0A84FF] text-white font-semibold active:scale-95 transition-all disabled:opacity-50"
-              >
-                {joining? 'Đang gửi...' : 'Xác nhận'}
-              </button>
+                <h3 className="font-bold text-base text-zinc-900 dark:text-zinc-100">
+                  Xác nhận ứng tuyển
+                </h3>
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2 leading-relaxed">
+                  Bạn có chắc muốn ứng tuyển công việc "{task.title}"?
+                </p>
+                <div className="flex gap-2 mt-5">
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      setShowApplyModal(false);
+                      navigator.vibrate?.(5);
+                    }}
+                    className="flex-1 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-sm font-semibold text-zinc-900 dark:text-zinc-100 active:scale-95 transition-all"
+                  >
+                    Hủy
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      confirmApply();
+                      navigator.vibrate?.(5);
+                    }}
+                    disabled={joining}
+                    className="flex-1 py-2.5 rounded-xl bg-[#0A84FF] text-white text-sm font-semibold active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    {joining? 'Đang gửi...' : 'Xác nhận'}
+                  </motion.button>
+                </div>
+              </motion.div>
             </div>
-          </motion.div>
-        </div>
-      )}
+          </>
+        )}
+      </AnimatePresence>
     </>
   );
 }
