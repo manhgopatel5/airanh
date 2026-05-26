@@ -132,11 +132,11 @@ const config: Config = {
         '2xs': ['10px', { lineHeight: '14px', letterSpacing: '-0.01em' }],
         'xs': ['12px', { lineHeight: '16px', letterSpacing: '-0.01em' }],
         'sm': ['13px', { lineHeight: '18px', letterSpacing: '-0.01em' }],
-        'base': ['15px', { lineHeight: '22px', letterSpacing: '-0.015em' }],
-        'lg': ['17px', { lineHeight: '24px', letterSpacing: '-0.02em' }],
-        'xl': ['20px', { lineHeight: '28px', letterSpacing: '-0.02em' }],
-        '2xl': ['24px', { lineHeight: '32px', letterSpacing: '-0.025em' }],
-        '3xl': ['30px', { lineHeight: '36px', letterSpacing: '-0.03em' }],
+        'base': ['14px', { lineHeight: '20px', letterSpacing: '-0.01em' }],
+        'lg': ['16px', { lineHeight: '24px', letterSpacing: '-0.015em' }],
+        'xl': ['18px', { lineHeight: '26px', letterSpacing: '-0.015em' }],
+        '2xl': ['20px', { lineHeight: '28px', letterSpacing: '-0.02em' }],
+        '3xl': ['24px', { lineHeight: '32px', letterSpacing: '-0.02em' }],
       },
 
       spacing: {
