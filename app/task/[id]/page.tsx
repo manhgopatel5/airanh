@@ -678,13 +678,10 @@ void status;
   
 
 <div className="mt-4">
-   <h2 className="font-bold text- leading-snug text-[#1C1C1E] dark:text-zinc-100">{task.title}</h2>
-</div>
+  <h2 className="font-bold text- leading-snug text-[#1C1C1E] dark:text-zinc-100">{task.title}</h2>
 
 {/* Gạch ngang full màn hình */}
-<div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 w-screen -ml-3" />
-
-<div className="px-4">
+<div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 w-screen -ml-3 my-3" />
 
   {/* 2 cột info - không nền, không viền */}
   <div className="grid grid-cols-2 gap-x-6 gap-y-3">
@@ -750,9 +747,14 @@ void status;
 </div>
 
   {/* Gạch ngang + tiêu đề Mô tả */}
-  {task.description && (
+{task.description && (
     <>
-      <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 my-4" />
+</div>
+
+{/* Gạch ngang full màn hình */}
+<div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 w-screen -ml-3 my-4" />
+
+<div className="px-4">
       <h3 className="font-bold text- text-[#1C1C1E] dark:text-zinc-100 mb-2">
         Mô tả công việc
       </h3>
