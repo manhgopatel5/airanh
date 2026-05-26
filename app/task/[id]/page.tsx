@@ -824,7 +824,7 @@ void status;
 <Linkify options={{ target: "_blank", className: `text-[#0A84FF] hover:underline` }}>
   <p
     ref={descRef}
-    className={`text-[13px] font-semibold text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed ${
+    className={`text-[13px] font-semibold text-[#1C1C1E] dark:text-zinc-100 whitespace-pre-wrap leading-relaxed ${
       !descExpanded ? 'line-clamp-5' : ''
     }`}
   >
