@@ -788,11 +788,11 @@ void status;
 )}
 </div>
 {isOwner ? (
-  <div ref={appsRef} className="bg-white dark:bg-zinc-900 -mx-3">
-    <div className="px-5 py-4 flex items-center justify-between border-b border-[#F2F2F7] dark:border-zinc-800">
-      <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
-        Ứng viên ({applications.length})
-      </h3>
+<div ref={appsRef} className="bg-white dark:bg-zinc-900">
+  <div className="py-4 flex items-center justify-between border-b border-[#F2F2F7] dark:border-zinc-800">
+    <h3 className="font-semibold text- text-[#1C1C1E] dark:text-zinc-100">
+      Ứng viên ({applications.length})
+    </h3>
       {applications.length > 1 && (
         <button
           onClick={() => setShowAllApps(!showAllApps)}
