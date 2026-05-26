@@ -84,7 +84,7 @@ export default function CommentSection({
 
   return (
     <div className="bg-white dark:bg-zinc-950">
-      <div className="flex items-center justify-between pt-4 pb-3 px-4">
+<div className="flex items-center justify-between pt-4 pb-3 px-4 border-b border-zinc-200 dark:border-zinc-800">
         <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
           Bình luận ({parentComments.length})
         </h3>
@@ -209,7 +209,7 @@ export default function CommentSection({
 
       <div className="h-4" />
 
-      <div className="sticky bottom-0 z-20 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl px-4 py-3 border-t border-zinc-200 dark:border-zinc-800">
+<div className="sticky bottom-0 z-20 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl px-4 py-3 border-t border-zinc-200 dark:border-zinc-800 border-b">
         {replyTo && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
