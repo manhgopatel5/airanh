@@ -11,7 +11,7 @@ import {
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import {
   FiSend, FiX, FiCheckCircle, FiMessageCircle, FiMessageSquare, FiPhone, FiAlertTriangle,
-  FiStar, FiBookmark, FiMoreHorizontal, FiShare2, FiCheck, FiChevronDown, FiTrash2, FiEdit2
+  FiStar, FiInfo, FiBookmark, FiMoreHorizontal, FiShare2, FiCheck, FiChevronDown, FiTrash2, FiEdit2
 } from "react-icons/fi";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import { incrementTaskView } from "@/lib/task";
@@ -562,6 +562,7 @@ void status;
 <div className="px-4 pt-4 pb-3">
   {/* Hàng 1: Avatar + Info + Actions */}
   <div className="flex gap-3">
+    {/* Avatar chiếm 3 hàng */}
     <Link href={`/profile/${task.userId}`} className="relative shrink-0 active:opacity-70 transition-opacity">
       <UserAvatar src={owner?.avatar} name={owner?.name} size={60} />
     </Link>
@@ -594,6 +595,23 @@ void status;
               <>
                 <FiX className="text-[#8E8E93] shrink-0" size={14} />
                 <span className="text- text-[#8E8E93] font-medium">Chưa xác thực</span>
+                {!isOwner && (
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toast.warning("Cẩn thận với tài khoản chưa xác thực", {
+                        description: "Hãy kiểm tra kỹ thông tin trước khi giao dịch. Không chuyển tiền trước.",
+                        duration: 4000,
+                      });
+                      navigator.vibrate?.(8);
+                    }}
+                    className="ml-0.5 p-0.5 rounded-full active:bg-zinc-200 dark:active:bg-zinc-700"
+                  >
+                    <FiInfo className="text-[#8E8E93]" size={13} />
+                  </motion.button>
+                )}
               </>
             )}
           </div>
