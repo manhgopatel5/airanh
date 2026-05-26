@@ -824,7 +824,7 @@ void status;
 <Linkify options={{ target: "_blank", className: `text-[#0A84FF] hover:underline` }}>
   <p
     ref={descRef}
-    className={`text-[13px] font-semibold text-[#1C1C1E] dark:text-zinc-100 whitespace-pre-wrap leading-relaxed ${
+    className={`text- font-semibold text-[#1C1C1E] dark:text-zinc-100 whitespace-pre-wrap leading-relaxed ${
       !descExpanded ? 'line-clamp-5' : ''
     }`}
   >
@@ -835,15 +835,24 @@ void status;
   <div className="text-center">
     <button
       onClick={() => setDescExpanded(!descExpanded)}
-      className="text-[13px] font-semibold text-[#0A84FF] mt-1 active:opacity-60"
+      className="text- font-semibold text-[#0A84FF] mt-1 active:opacity-60"
     >
       {descExpanded ? 'Thu gọn' : 'Xem thêm mô tả'}
     </button>
   </div>
 )}
+
+{task.images && task.images.length > 0 && (
+  <h3 className="font-semibold text- text-[#1C1C1E] dark:text-zinc-100 mt-3 mb-2">
+    Xem ảnh và file
+  </h3>
+)}
   </>
 )}
 </div>
+
+{task.images && task.images.length > 0 && (
+  <div className="px-4 pt-0 pb-2">
 {isOwner ? (
 <div ref={appsRef} className="bg-white dark:bg-zinc-900">
   <div className="py-4 flex items-center justify-between border-b border-[#F2F2F7] dark:border-zinc-800">
