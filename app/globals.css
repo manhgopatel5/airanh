@@ -8,6 +8,7 @@
 
 @layer base {
   :root {
+    --font-sans: var(--font-sans); /* QUAN TRỌNG: nhận từ layout.tsx */
     --color-primary: 59 130 246;
     --color-primary-dark: 37 99 235;
     --header-height: 60px;
@@ -99,6 +100,7 @@
   }
   
   html {
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
     @apply font-sans;
   }
 }
@@ -124,10 +126,9 @@
     touch-action: manipulation;
   }
 
-  /* QUAN TRỌNG: Lock html/body */
   html {
     height: -webkit-fill-available;
-    overflow: hidden; /* Chặn scroll html */
+    overflow: hidden;
   }
 
   .dark html {
@@ -144,30 +145,26 @@
     overscroll-behavior: none;
   }
 
-  /* QUAN TRỌNG: Lock body, chỉ app scroll */
   body {
     margin: 0;
     height: 100vh;
     height: -webkit-fill-available;
-    overflow: hidden; /* Chặn body scroll */
-    position: fixed; /* Lock hoàn toàn */
+    overflow: hidden;
+    position: fixed;
     width: 100%;
     top: 0;
     left: 0;
   }
 
-  /* Cho phép #__next scroll */
   #__next {
     height: 100%;
     overflow: hidden;
   }
 
-  /* Bỏ body::before vì gây lỗi với fixed */
-
   input,
   textarea,
   select {
-    font-size: 16px; /* Tránh zoom iOS */
+    font-size: 16px;
     background-color: theme('colors.white');
     color: theme('colors.gray.900');
   }
