@@ -20,7 +20,7 @@ type Props = {
   theme: "task" | "plan";
   onDelete?: (id: string) => void;
   onShare?: (task: Task) => void;
-  onTaskUpdate?: (taskId: string, updates: Partial<Task>) => void; // ✅ Thêm
+  onTaskUpdate?: (taskId: string, updates: Partial<Task>) => void;
 };
 
 const Portal = ({ children }: { children: React.ReactNode }) => {
@@ -35,17 +35,30 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
   const db = getFirebaseDB();
 
   const [isSaved, setIsSaved] = useState(false);
-const [saving, setSaving] = useState(false);
- 
- 
+  const [saving, setSaving] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const menuBtnRef = useRef<HTMLButtonElement>(null);
 
+  const themeColor = {
+    task: {
+      primary: "#0A84FF",
+      light: "bg-[#0A84FF]/10 dark:bg-[#0A84FF]/20",
+      text: "text-[#0A84FF] dark:text-[#8AB4F8]",
+      fill: "fill-[#0A84FF]",
+    },
+    plan: {
+      primary: "#30D158",
+      light: "bg-[#30D158]/10 dark:bg-[#30D158]/20",
+      text: "text-[#30D158] dark:text-[#81C995]",
+      fill: "fill-[#30D158]",
+    }
+  }[theme];
+
   useEffect(() => {
-  if (!task?.id) return;
-  setIsSaved(!!user?.uid &&!!task.savedBy?.includes(user.uid));
-}, [user?.uid, task?.savedBy, task?.id]);
+    if (!task?.id) return;
+    setIsSaved(!!user?.uid &&!!task.savedBy?.includes(user.uid));
+  }, [user?.uid, task?.savedBy, task?.id]);
 
   useEffect(() => {
     const closeMenu = () => setShowMenu(false);
@@ -63,32 +76,11 @@ const [saving, setSaving] = useState(false);
 
   const isOwner = user?.uid === task.userId;
   const applicants = task.applicants?? [];
- 
-
-  const themeColor = {
-    task: {
-      primary: "#0A84FF",
-      gradient: "from-[#0A84FF] to-[#0066CC]",
-      light: "bg-[#E8F0FE]",
-      text: "text-[#0A84FF]",
-      fill: "fill-[#0A84FF]",
-      shadow: "shadow-[0_4px_20px_rgba(10,132,255,0.25)]"
-    },
-    plan: {
-      primary: "#30D158",
-      gradient: "from-[#30D158] to-[#28B44C]",
-      light: "bg-[#E8F5E9]",
-      text: "text-[#30D158]",
-      fill: "fill-[#30D158]",
-      shadow: "shadow-[0_4px_20px_rgba(48,209,88,0.25)]"
-    }
-  }[theme];
 
   const vibrate = (ms = 8) => {
     if ("vibrate" in navigator) navigator.vibrate(ms);
   };
 
-  // ✅ SỬA: handleSave với Optimistic Update
   const handleSave = useCallback(async () => {
     if (!user) return router.push("/login");
     if (saving) return;
@@ -98,22 +90,19 @@ const [saving, setSaving] = useState(false);
     const newSaved =!isSaved;
     const oldSavedBy = task.savedBy || [];
 
-    // 1. Update UI ngay
     setIsSaved(newSaved);
     onTaskUpdate?.(task.id, {
       savedBy: newSaved
-       ? [...oldSavedBy, user.uid]
+      ? [...oldSavedBy, user.uid]
         : oldSavedBy.filter(id => id!== user.uid)
     });
 
     try {
-      // 2. Gọi Firebase
       await updateDoc(doc(db, "tasks", task.id), {
         savedBy: newSaved? arrayUnion(user.uid) : arrayRemove(user.uid),
       });
-      toast.success(newSaved? "Đã lưu" : "Đã bỏ lưu", { icon: "📌" });
+      toast.success(newSaved? "Đã lưu" : "Đã bỏ lưu");
     } catch (err) {
-      // 3. Fail thì rollback
       setIsSaved(!newSaved);
       onTaskUpdate?.(task.id, { savedBy: oldSavedBy });
       toast.error("Lỗi");
@@ -121,8 +110,6 @@ const [saving, setSaving] = useState(false);
       setSaving(false);
     }
   }, [user, isSaved, saving, task, router, db, onTaskUpdate]);
-
-
 
   const handleDelete = useCallback(async () => {
     if (!isOwner) return;
@@ -143,28 +130,32 @@ const [saving, setSaving] = useState(false);
   };
 
   const taskDate = task.type === "task" && task.deadline?.seconds
-  ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+ ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
     : "";
 
   const statusMap: Record<TaskStatus, { label: string; color: string; dot: string }> = {
-    open: { label: "Đang tuyển", color: "bg-[#E6F4EA] text-[#1E8E3E] dark:bg-[#1E8E3E]/20 dark:text-[#81C995]", dot: "bg-[#1E8E3E]" },
-    full: { label: "Đã đủ", color: "bg-[#FEE8E8] text-[#D93025] dark:bg-[#D93025]/20 dark:text-[#F28B82]", dot: "bg-[#D93025]" },
-    doing: { label: "Đang làm", color: "bg-[#E8F0FE] text-[#1A73E8] dark:bg-[#1A73E8]/20 dark:text-[#8AB4F8]", dot: "bg-[#1A73E8]" },
-    completed: { label: "Hoàn thành", color: "bg-[#F1F3F4] text-[#5F6368] dark:bg-zinc-800 dark:text-zinc-400", dot: "bg-[#5F6368]" },
-    cancelled: { label: "Đã hủy", color: "bg-[#F1F3F4] text-[#5F6368] dark:bg-zinc-800 dark:text-zinc-400", dot: "bg-[#5F6368]" },
-    deleted: { label: "Đã xóa", color: "bg-[#F1F3F4] text-[#5F6368] dark:bg-zinc-800 dark:text-zinc-400", dot: "bg-[#5F6368]" },
-    expired: { label: "Hết hạn", color: "bg-[#FEF7E0] text-[#F9AB00] dark:bg-[#F9AB00]/20 dark:text-[#FDD663]", dot: "bg-[#F9AB00]" },
-    pending: { label: "Chờ duyệt", color: "bg-[#FEF7E0] text-[#F9AB00] dark:bg-[#F9AB00]/20 dark:text-[#FDD663]", dot: "bg-[#F9AB00]" },
+    open: { label: "Đang tuyển", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400", dot: "bg-green-600" },
+    full: { label: "Đã đủ", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", dot: "bg-red-600" },
+    doing: { label: "Đang làm", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", dot: "bg-blue-600" },
+    completed: { label: "Hoàn thành", color: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400", dot: "bg-zinc-500" },
+    cancelled: { label: "Đã hủy", color: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400", dot: "bg-zinc-500" },
+    deleted: { label: "Đã xóa", color: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400", dot: "bg-zinc-500" },
+    expired: { label: "Hết hạn", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", dot: "bg-amber-600" },
+    pending: { label: "Chờ duyệt", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", dot: "bg-amber-600" },
   };
 
   const isExpired = isTask(task) && task.deadline && task.deadline.seconds * 1000 < Date.now();
   const status = isExpired
-   ? { label: "Đã hết hạn", color: "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B]", dot: "bg-[#FF3B30]" }
+  ? { label: "Đã hết hạn", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", dot: "bg-red-600" }
     : statusMap[task.status] || statusMap.open;
   const maxSlots = task.type === "task"? task.totalSlots?? 0 : task.maxParticipants?? 0;
 
   return (
-    <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 p-4 shadow-sm hover:shadow-md transition-shadow relative">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 p-4 shadow-sm hover:shadow-md transition-all"
+    >
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1 min-w-0 cursor-pointer" onClick={goToTask}>
           <div className="flex items-center gap-2 mb-2.5 flex-wrap">
@@ -173,61 +164,60 @@ const [saving, setSaving] = useState(false);
               {status.label}
             </div>
             {task.type === "task" && (task.price?? 0) > 0 && (
-              <div className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-[#0A84FF]/10 to-[#0066CC]/10 dark:from-[#0A84FF]/20 dark:to-[#0066CC]/20 text-[#0A84FF] dark:text-[#8AB4F8] text-xs font-bold">
+              <div className={`px-2.5 py-1 rounded-lg ${themeColor.light} ${themeColor.text} text-xs font-bold`}>
                 {task.price.toLocaleString("vi-VN")}đ
               </div>
             )}
             {(task.viewCount?? 0) > 10 && (
               <div className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
                 <FiEye size={12} />
-                <span>{task.viewCount}</span>
+                <span className="font-medium">{task.viewCount}</span>
               </div>
             )}
           </div>
-          <h3 className="font-bold text-sm text-zinc-900 dark:text-white line-clamp-2 leading-snug">
+          <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 line-clamp-2 leading-snug">
             {task.title}
           </h3>
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-       
-
-          <button
-            type="button"
+          <motion.button
+            whileTap={{ scale: 0.9 }}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               handleSave();
             }}
             disabled={saving}
-            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all disabled:opacity-50 touch-manipulation select-none"
+            className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all disabled:opacity-50 touch-manipulation select-none"
             style={{ WebkitTapHighlightColor: 'transparent' }}
           >
             <FiBookmark
               size={18}
-              className={isSaved? `${themeColor.fill} ${themeColor.text}` : "text-zinc-400 dark:text-zinc-500"}
+              strokeWidth={1.5}
+              className={isSaved? `${themeColor.fill} ${themeColor.text}` : "text-zinc-500 dark:text-zinc-400"}
             />
-          </button>
+          </motion.button>
 
-          <button
-            type="button"
+          <motion.button
+            whileTap={{ scale: 0.9 }}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               vibrate(8);
               onShare?.(task);
             }}
-            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all touch-manipulation select-none"
+            className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all touch-manipulation select-none"
             style={{ WebkitTapHighlightColor: 'transparent' }}
           >
-            <FiShare2 size={18} className="text-zinc-400 dark:text-zinc-500" />
-          </button>
+            <FiShare2 size={18} className="text-zinc-500 dark:text-zinc-400" />
+          </motion.button>
 
           {isOwner && (
             <div className="relative">
-              <button
+              <motion.button
                 ref={menuBtnRef}
-                type="button"
+                whileTap={{ scale: 0.9 }}
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -239,11 +229,11 @@ const [saving, setSaving] = useState(false);
                   vibrate();
                   setShowMenu(!showMenu);
                 }}
-                className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-90 transition-all touch-manipulation select-none"
+                className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all touch-manipulation select-none"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                <FiMoreHorizontal size={18} className="text-zinc-400 dark:text-zinc-500" />
-              </button>
+                <FiMoreHorizontal size={18} className="text-zinc-500 dark:text-zinc-400" />
+              </motion.button>
               <AnimatePresence>
                 {showMenu && (
                   <Portal>
@@ -256,34 +246,32 @@ const [saving, setSaving] = useState(false);
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: -10 }}
                       transition={{ duration: 0.15 }}
-                      className="fixed z-[9999] min-w-[180px] bg-white dark:bg-zinc-900 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 py-2 overflow-hidden"
+                      className="fixed z-[9999] min-w-[180px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 py-2 overflow-hidden"
                       style={{
                         top: `${menuPos.y}px`,
                         left: `${menuPos.x}px`,
                       }}
                     >
                       <button
-                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           vibrate();
                           setShowMenu(false);
                           router.push(`/task/${task.id}/edit`);
                         }}
-                        className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
+                        className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 w-full transition-all active:scale-95"
                       >
                         <FiEdit2 size={18} />
                         Sửa công việc
                       </button>
-                      <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
+                      <div className="h-px bg-zinc-200 dark:bg-zinc-800 mx-2" />
                       <button
-                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           setShowMenu(false);
                           handleDelete();
                         }}
-                        className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 w-full transition-all active:scale-95"
+                        className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-[#FF3B30] hover:bg-red-50 dark:hover:bg-red-950/50 w-full transition-all active:scale-95"
                       >
                         <FiTrash2 size={18} />
                         Xóa
@@ -309,7 +297,6 @@ const [saving, setSaving] = useState(false);
             <FiUsers size={13} />
             <span className="font-medium">{applicants.length}/{maxSlots}</span>
           </div>
-       
           {task.location?.city && (
             <div className="flex items-center gap-1 truncate">
               <FiMapPin size={13} />
@@ -317,9 +304,7 @@ const [saving, setSaving] = useState(false);
             </div>
           )}
         </div>
-
-  
       </div>
-    </div>
+    </motion.div>
   );
 }
