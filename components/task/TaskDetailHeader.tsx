@@ -40,7 +40,7 @@ const Portal = ({ children }: { children: React.ReactNode }) => {
 
 export default function TaskDetailHeader({ task, owner, currentUser, isOwner, onTaskDeleted }: Props) {
   const router = useRouter();
-  const db = getFirebaseDB();
+  
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const [isSaved, setIsSaved] = useState(!!currentUser?.uid &&!!task.savedBy?.includes(currentUser.uid));
@@ -51,6 +51,7 @@ export default function TaskDetailHeader({ task, owner, currentUser, isOwner, on
     if (saving) return;
     setSaving(true);
     const db = getFirebaseDB();
+
     const newSaved =!isSaved;
     setIsSaved(newSaved);
     try {
