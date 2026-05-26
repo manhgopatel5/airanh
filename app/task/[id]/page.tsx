@@ -116,7 +116,17 @@ const [showSortMenu, setShowSortMenu] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   
   const [saving, setSaving] = useState(false);
- 
+ const [descExpanded, setDescExpanded] = useState(false);
+const [showDescMore, setShowDescMore] = useState(false);
+const descRef = useRef<HTMLParagraphElement>(null);
+
+useEffect(() => {
+  if (descRef.current) {
+    const el = descRef.current;
+    // check nếu nội dung cao hơn 5 dòng
+    setShowDescMore(el.scrollHeight > el.clientHeight);
+  }
+}, [task?.description]);
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const appsRef = useRef<HTMLDivElement>(null);
@@ -772,7 +782,6 @@ void status;
   </div>
 </div>
 
-  {/* Gạch ngang + tiêu đề Mô tả */}
 {task.description && (
   <>
     {/* Gạch ngang full màn hình */}
@@ -782,8 +791,23 @@ void status;
       Mô tả công việc
     </h3>
     <Linkify options={{ target: "_blank", className: `text-[#0A84FF] hover:underline` }}>
-      <p className="text- text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">{task.description}</p>
+      <p
+        ref={descRef}
+        className={`text- text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed ${
+          !descExpanded ? 'line-clamp-5' : ''
+        }`}
+      >
+        {task.description}
+      </p>
     </Linkify>
+    {showDescMore && (
+      <button
+        onClick={() => setDescExpanded(!descExpanded)}
+        className="text-sm font-semibold text-[#0A84FF] mt-1 active:opacity-60"
+      >
+        {descExpanded ? 'Thu gọn' : 'Xem thêm'}
+      </button>
+    )}
   </>
 )}
 </div>
