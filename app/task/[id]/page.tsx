@@ -624,93 +624,78 @@ void status;
           </div>
         </div>
 
-        {/* Actions: Người xem chỉ có bookmark */}
-        <div className="flex items-center gap-1 shrink-0 -mr-1">
-          {!isOwner? (
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={handleSave}
-              disabled={saving}
-              className="w-9 h-9 rounded-full flex items-center justify-center active:bg-[#F2F2F7] dark:active:bg-zinc-800 disabled:opacity-50"
+     {/* Actions: Người xem chỉ có bookmark */}
+<div className="flex items-center gap-1 shrink-0 -mr-1">
+  {!isOwner? (
+    <motion.button
+      whileTap={{ scale: 0.9 }}
+      onClick={handleSave}
+      disabled={saving}
+      className="w-9 h-9 rounded-full flex items-center justify-center active:bg-[#F2F2F7] dark:active:bg-zinc-800 disabled:opacity-50"
+    >
+      <FiBookmark 
+        size={20} 
+        strokeWidth={2}
+        className={isSaved? "fill-[#0A84FF] text-[#0A84FF]" : "text-[#8E8E93]"} 
+      />
+    </motion.button>
+  ) : (
+    <div className="relative">
+      <motion.button
+        whileTap={{ scale: 0.9 }}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const rect = e.currentTarget.getBoundingClientRect();
+          setMenuPos({ x: rect.right - 200, y: rect.bottom + 8 });
+          setShowMenu(!showMenu);
+        }}
+        className="w-9 h-9 rounded-full flex items-center justify-center active:bg-[#F2F2F7] dark:active:bg-zinc-800"
+      >
+        <FiMoreHorizontal size={20} className="text-[#8E8E93]" strokeWidth={2.5} />
+      </motion.button>
+      <AnimatePresence>
+        {showMenu && (
+          <Portal>
+            <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              transition={{ duration: 0.15 }}
+              className="fixed z-50 min-w-[200px] bg-white dark:bg-zinc-900 rounded- shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 py-2 overflow-hidden"
+              style={{ top: `${menuPos.y}px`, left: `${menuPos.x}px` }}
             >
-              <FiBookmark 
-                size={20} 
-                strokeWidth={2}
-                className={isSaved? "fill-[#0A84FF] text-[#0A84FF]" : "text-[#8E8E93]"} 
-              />
-            </motion.button>
-          ) : (
-            <>
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={handleSave}
-                disabled={saving}
-                className="w-9 h-9 rounded-full flex items-center justify-center active:bg-[#F2F2F7] dark:active:bg-zinc-800 disabled:opacity-50"
+              <button
+                onClick={(e) => { e.stopPropagation(); handleSave(); setShowMenu(false); }}
+                className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
               >
-                <FiBookmark 
-                  size={20} 
-                  strokeWidth={2}
-                  className={isSaved? "fill-[#0A84FF] text-[#0A84FF]" : "text-[#8E8E93]"} 
-                />
-              </motion.button>
-
-              <div className="relative">
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    setMenuPos({ x: rect.right - 200, y: rect.bottom + 8 });
-                    setShowMenu(!showMenu);
-                  }}
-                  className="w-9 h-9 rounded-full flex items-center justify-center active:bg-[#F2F2F7] dark:active:bg-zinc-800"
-                >
-                  <FiMoreHorizontal size={20} className="text-[#8E8E93]" strokeWidth={2.5} />
-                </motion.button>
-                <AnimatePresence>
-                  {showMenu && (
-                    <Portal>
-                      <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                        transition={{ duration: 0.15 }}
-                        className="fixed z-50 min-w-[200px] bg-white dark:bg-zinc-900 rounded- shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 py-2 overflow-hidden"
-                        style={{ top: `${menuPos.y}px`, left: `${menuPos.x}px` }}
-                      >
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleSave(); setShowMenu(false); }}
-                          className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
-                        >
-                          {isSaved? <FiCheck size={18} /> : <FiBookmark size={18} />}
-                          {isSaved? "Đã lưu" : "Lưu công việc"}
-                        </button>
-                        <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setShowMenu(false); router.push(`/task/${task.id}/edit`); }}
-                          className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
-                        >
-                          <FiEdit2 size={18} />
-                          Sửa công việc
-                        </button>
-                        <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setShowMenu(false); handleDelete(); }}
-                          className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 w-full transition-all active:scale-95"
-                        >
-                          <FiTrash2 size={18} />
-                          Xóa
-                        </button>
-                      </motion.div>
-                    </Portal>
-                  )}
-                </AnimatePresence>
-              </div>
-            </>
-          )}
-        </div>
+                {isSaved? <FiCheck size={18} /> : <FiBookmark size={18} />}
+                {isSaved? "Đã lưu" : "Lưu công việc"}
+              </button>
+              <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowMenu(false); router.push(`/task/${task.id}/edit`); }}
+                className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
+              >
+                <FiEdit2 size={18} />
+                Sửa công việc
+              </button>
+              <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowMenu(false); handleDelete(); }}
+                className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 w-full transition-all active:scale-95"
+              >
+                <FiTrash2 size={18} />
+                Xóa
+              </button>
+            </motion.div>
+          </Portal>
+        )}
+      </AnimatePresence>
+    </div>
+  )}
+</div>
       </div>
     </div>
   </div>
@@ -718,7 +703,7 @@ void status;
 </div>
   
 
-<div className="mt-4">
+<div className="mt-4"> 
   <h2 className="font-bold text- leading-snug text-[#1C1C1E] dark:text-zinc-100">{task.title}</h2>
 
 {/* Gạch ngang full màn hình */}
