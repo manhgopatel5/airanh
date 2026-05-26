@@ -849,7 +849,7 @@ void status;
   {/* Gạch ngang trên */}
   <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 w-screen -ml-3 mt-4" />
 
-  <div className="grid grid-cols-2 gap-y-4 py-4">
+  <div className="grid grid-cols-4 py-4">
     <motion.button
       whileTap={{ scale: 0.98 }}
       onClick={handleStartChat}
