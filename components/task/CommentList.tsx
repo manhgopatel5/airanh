@@ -135,7 +135,7 @@ export function CommentList({
 
         <div className="flex-1 min-w-0">
           <div className="relative">
-            <div className="bg-[#F2F2F7] dark:bg-zinc-800 rounded-2xl px-3 py-2">
+<div className="bg-transparent px-0 py-1">
               <div className="flex items-center gap-1.5">
                 <div className="font-semibold text-">{c.userName}</div>
                 {c.userId === taskOwnerId && (
@@ -282,7 +282,7 @@ export function CommentList({
                 >
                   <UserAvatar src={r.userAvatar} name={r.userName} size={28} />
                   <div className="flex-1 min-w-0">
-                    <div className="bg-[#F2F2F7] dark:bg-zinc-800 rounded-2xl px-3 py-2 relative">
+<div className="bg-transparent px-0 py-1 relative">
                       <div className="font-semibold text-">{r.userName}</div>
                       
                       {isEditingReply? (
