@@ -601,8 +601,14 @@ void status;
     <>
       <Toaster richColors position="top-center" />
  <ApplyConfirmModal />
-<div className="h-[100dvh] flex flex-col bg-white dark:bg-zinc-950">
-  <div className="flex-1 overflow-y-auto overscroll-none px-3 pt-2 pb-4">
+<div className="h-[100dvh] flex flex-col bg-white dark:bg-zinc-950 overflow-hidden">
+<div
+  className="flex-1 overflow-y-auto overscroll-y-contain px-3 pt-2"
+  style={{
+    WebkitOverflowScrolling: "touch",
+    paddingBottom: "120px",
+  }}
+>
 
        {/* HEADER MỚI - ĐỒNG BỘ APP */}
 <div className="bg-white dark:bg-zinc-950">
@@ -1267,8 +1273,9 @@ void status;
 
       <div ref={bottomRef} />
     </div>
+  </div> {/* end comment section */}
 
-</div> {/* đóng div scroll ở trên */}
+</div> {/* end scroll container */}
 
 <div 
   className="shrink-0 bg-white dark:bg-zinc-900 px-5 py-3 border-t border-[#E5E5EA] dark:border-zinc-800"
@@ -1325,9 +1332,7 @@ void status;
   </div>
  </div>
     </div>
-  </div>
-</div>
-     </div>
+
 
         <ImageGallery open={showImageGallery!== null} images={task.images || []} initialIndex={showImageGallery || 0} onClose={() => setShowImageGallery(null)} />
         {shareTask && (
