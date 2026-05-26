@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiChevronDown, FiMessageCircle, FiSend, FiX } from "react-icons/fi";
 import { createPortal } from "react-dom";
 import { CommentList } from "./CommentList";
-import { UserAvatar } from "@/components/ui/UserAvatar";
+
 import type { TaskComment } from "@/types/task";
 import type { User } from "firebase/auth";
 
