@@ -50,10 +50,11 @@ export default function TaskInfoGrid({ task, applications }: Props) {
     : "";
 
   const acceptedCount = applications.filter(a => a.status === 'accepted').length;
+  const totalApplied = applications.length;
 
   return (
     <div className="mt-4">
-      <h2 className="font-semibold text-[15px] leading-snug text-[#1C1C1E] dark:text-zinc-100">{task.title}</h2>
+      <h2 className="font-semibold text- leading-snug text-[#1C1C1E] dark:text-zinc-100">{task.title}</h2>
 
       <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 w-screen -ml-3 my-3" />
 
@@ -61,27 +62,25 @@ export default function TaskInfoGrid({ task, applications }: Props) {
         <div className="space-y-3">
           {isTask(task) && task.price > 0 && (
             <div>
-              {/* Đổi text-[13px] -> text-[15px] font-semibold */}
-              <p className="text-[15px] font-semibold text-[#1C1C1E] dark:text-zinc-100">Tiền công</p>
-              <p className="text-[15px] font-semibold text-[#0A84FF] mt-0.5">
+              <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100">Tiền công</p>
+              <p className="text- font-semibold text-[#0A84FF] mt-0.5">
                 {task.price.toLocaleString("vi-VN")} đ
               </p>
             </div>
           )}
           {isTask(task) && (
             <div>
-              {/* Đổi text-[13px] -> text-[15px] font-semibold */}
-              <p className="text-[15px] font-semibold text-[#1C1C1E] dark:text-zinc-100">Ứng tuyển</p>
-              <p className="text-[15px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
-                {task.appliedCount || 0}/{task.totalSlots}
+              <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100">Ứng tuyển</p>
+              {/* Đổi: hiện "10 người" thay vì "0/1" */}
+              <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
+                {totalApplied} người
               </p>
             </div>
           )}
           {isTask(task) && task.deadline?.seconds && (
             <div>
-              {/* Đổi text-[13px] -> text-[15px] font-semibold */}
-              <p className="text-[15px] font-semibold text-[#1C1C1E] dark:text-zinc-100">Hạn chót</p>
-              <p className={`text-[15px] font-semibold mt-0.5 ${isUrgent? 'text-[#FF3B30]' : 'text-[#1C1C1E] dark:text-zinc-100'}`}>
+              <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100">Hạn chót</p>
+              <p className={`text- font-semibold mt-0.5 ${isUrgent? 'text-[#FF3B30]' : 'text-[#1C1C1E] dark:text-zinc-100'}`}>
                 {timeLeft || taskDeadline}
               </p>
             </div>
@@ -90,23 +89,21 @@ export default function TaskInfoGrid({ task, applications }: Props) {
 
         <div className="space-y-3">
           <div>
-            {/* Đổi text-[13px] -> text-[15px] font-semibold */}
-            <p className="text-[15px] font-semibold text-[#1C1C1E] dark:text-zinc-100">Địa chỉ</p>
-            <p className="text-[15px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5 truncate">
+            <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100">Địa chỉ</p>
+            <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5 truncate">
               {task.location?.address || task.location?.city || "Online"}
             </p>
           </div>
           <div>
-            {/* Đổi text-[13px] -> text-[15px] font-semibold */}
-            <p className="text-[15px] font-semibold text-[#1C1C1E] dark:text-zinc-100">Đã nhận</p>
-            <p className="text-[15px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
-              {acceptedCount} người
+            <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100">Đã nhận</p>
+            {/* Đổi: hiện "0/2 người" thay vì "0 người" */}
+            <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
+              {acceptedCount}/{task.totalSlots} người
             </p>
           </div>
           <div>
-            {/* Đổi text-[13px] -> text-[15px] font-semibold */}
-            <p className="text-[15px] font-semibold text-[#1C1C1E] dark:text-zinc-100">Ngày đăng</p>
-            <p className="text-[15px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
+            <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100">Ngày đăng</p>
+            <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
               {taskDate}
             </p>
           </div>
