@@ -71,7 +71,6 @@ export default function TaskInfoGrid({ task, applications }: Props) {
           {isTask(task) && (
             <div>
               <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100">Ứng tuyển</p>
-              {/* Đổi: hiện "10 người" thay vì "0/1" */}
               <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
                 {totalApplied} người
               </p>
@@ -96,7 +95,6 @@ export default function TaskInfoGrid({ task, applications }: Props) {
           </div>
           <div>
             <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100">Đã nhận</p>
-            {/* Đổi: hiện "0/2 người" thay vì "0 người" */}
             <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
               {acceptedCount}/{task.totalSlots} người
             </p>
