@@ -26,7 +26,6 @@ export function ImageGallery({ open, images, initialIndex, onClose }: Props) {
   const lastTapRef = useRef(0);
   const hideUITimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Reset khi đổi ảnh hoặc đóng
   useEffect(() => {
     setCurrentIndex(initialIndex);
     setIsZoomed(false);
@@ -35,23 +34,21 @@ export function ImageGallery({ open, images, initialIndex, onClose }: Props) {
     y.set(0);
   }, [initialIndex, open, x, y]);
 
-  // Preload ảnh trước/sau
   useEffect(() => {
     if (!open) return;
-const preload = (idx: number) => {
-  if (idx >= 0 && idx < images.length) {
-    const src = images[idx];
-    if (src) {
-      const img = new Image();
-      img.src = src;
-    }
-  }
-};
+    const preload = (idx: number) => {
+      if (idx >= 0 && idx < images.length) {
+        const src = images[idx];
+        if (src) {
+          const img = new Image();
+          img.src = src;
+        }
+      }
+    };
     preload(currentIndex + 1);
     preload(currentIndex - 1);
   }, [currentIndex, images, open]);
 
-  // Auto hide UI
   useEffect(() => {
     if (!showUI) return;
     if (hideUITimeoutRef.current) clearTimeout(hideUITimeoutRef.current);
@@ -71,6 +68,7 @@ const preload = (idx: number) => {
       return next;
     });
     setShowUI(true);
+    navigator.vibrate?.(5);
   };
 
   const handleDoubleTap = () => {
@@ -92,6 +90,7 @@ const preload = (idx: number) => {
       setIsZoomed(true);
     }
     setShowUI(true);
+    navigator.vibrate?.(5);
   };
 
   const variants = {
@@ -129,7 +128,6 @@ const preload = (idx: number) => {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-full max-h-full w-screen h-screen bg-black border-0 p-0 overflow-hidden">
-        {/* UI Overlay */}
         <AnimatePresence>
           {showUI && (
             <motion.div
@@ -138,63 +136,69 @@ const preload = (idx: number) => {
               exit={{ opacity: 0 }}
               className="absolute inset-0 z-50 pointer-events-none"
             >
-              {/* Top bar */}
               <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/60 to-transparent pointer-events-auto">
                 <div className="flex items-center justify-between max-w-7xl mx-auto">
-                  <div className="px-3 py-1.5 bg-black/50 backdrop-blur-xl text-white text- rounded-full tabular-nums">
+                  <div className="px-3 py-1.5 bg-black/50 backdrop-blur-xl text-white text-sm font-semibold rounded-full tabular-nums">
                     {currentIndex + 1} / {images.length}
                   </div>
                   <div className="flex gap-2">
-                    <button
+                    <motion.button
+                      whileTap={{ scale: 0.9 }}
                       onClick={toggleZoom}
                       className="p-2.5 bg-black/50 backdrop-blur-xl hover:bg-black/70 text-white rounded-full active:scale-90 transition-all"
                     >
                       {isZoomed? <FiZoomOut size={20} /> : <FiZoomIn size={20} />}
-                    </button>
-                    <button
-                      onClick={onClose}
+                    </motion.button>
+                    <motion.button
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => {
+                        onClose();
+                        navigator.vibrate?.(5);
+                      }}
                       className="p-2.5 bg-black/50 backdrop-blur-xl hover:bg-black/70 text-white rounded-full active:scale-90 transition-all"
                     >
                       <FiX size={20} />
-                    </button>
+                    </motion.button>
                   </div>
                 </div>
               </div>
 
-              {/* Nav buttons */}
               {images.length > 1 &&!isZoomed && (
                 <>
-                  <button
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
                     onClick={() => paginate(-1)}
                     className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-black/50 backdrop-blur-xl hover:bg-black/70 text-white rounded-full active:scale-90 transition-all pointer-events-auto"
                   >
                     <FiChevronLeft size={24} />
-                  </button>
-                  <button
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
                     onClick={() => paginate(1)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-black/50 backdrop-blur-xl hover:bg-black/70 text-white rounded-full active:scale-90 transition-all pointer-events-auto"
                   >
                     <FiChevronLeft size={24} className="rotate-180" />
-                  </button>
+                  </motion.button>
                 </>
               )}
 
-              {/* Thumbnail bar */}
               {images.length > 1 && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 max-w-full px-4 pointer-events-auto">
                   <div className="flex gap-2 p-2 bg-black/50 backdrop-blur-xl rounded-2xl overflow-x-auto scrollbar-hide">
                     {images.map((img, idx) => (
-                      <button
+                      <motion.button
                         key={idx}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => {
                           setDirection(idx > currentIndex? 1 : -1);
                           setCurrentIndex(idx);
                           setShowUI(true);
+                          navigator.vibrate?.(5);
                         }}
                         className={cn(
                           "relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden transition-all",
                           idx === currentIndex
-                           ? "ring-2 ring-white scale-110"
+                         ? "ring-2 ring-white scale-110"
                             : "opacity-50 hover:opacity-100"
                         )}
                       >
@@ -203,7 +207,7 @@ const preload = (idx: number) => {
                           alt=""
                           className="w-full h-full object-cover"
                         />
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 </div>
@@ -212,7 +216,6 @@ const preload = (idx: number) => {
           )}
         </AnimatePresence>
 
-        {/* Image container */}
         <div
           className="relative w-full h-full flex items-center justify-center"
           onClick={() => setShowUI(!showUI)}
