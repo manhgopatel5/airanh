@@ -589,9 +589,9 @@ void status;
           <div className="flex items-center gap-1">
             <FiStar className="fill-[#FFB800] text-[#FFB800] shrink-0" size={14} />
             <span className="font-semibold text-[13px] text-[#1C1C1E] dark:text-zinc-100">{owner?.rating || "4.9"}</span>
-            <span className="text-[13px] text-[#8E8E93]">({owner?.reviewCount || 21})</span>
-            <span className="text-[13px] text-[#8E8E93]">•</span>
-            <span className="text-[13px] text-[#00A86B] font-medium">Mới tham gia</span>
+            <span className="text-[13px] font-semibold text-[#8E8E93]">({owner?.reviewCount || 21})</span>
+            <span className="text-[13px] font-semibold text-[#8E8E93]">•</span>
+            <span className="text-[13px] font-semibold text-[#00A86B] font-semibold">Mới tham gia</span>
           </div>
 
           {/* Hàng 3: Đã xác thực / Chưa xác thực */}
@@ -599,12 +599,12 @@ void status;
             {owner?.verified? (
               <>
                 <FiCheckCircle className="text-[#0A84FF] shrink-0" size={14} />
-                <span className="text-[13px] text-[#0A84FF] font-medium">Đã xác thực</span>
+                <span className="text-[13px] font-semibold text-[#0A84FF] font-semibold">Đã xác thực</span>
               </>
             ) : (
               <>
                 <FiX className="text-[#8E8E93] shrink-0" size={14} />
-                <span className="text-[13px] text-[#8E8E93] font-medium">Chưa xác thực</span>
+                <span className="text-[13px] text-[#8E8E93] font-semibold">Chưa xác thực</span>
                 {!isOwner && (
              <motion.button
   whileTap={{ scale: 0.9 }}
@@ -1033,7 +1033,7 @@ void status;
                       className="w-full h-full border-0"
                       loading="lazy"
                     />
-                    <div className="absolute top-2 left-2 bg-white dark:bg-zinc-900 px-2 py-1 rounded-lg text-[13px] font-medium shadow">
+                    <div className="absolute top-2 left-2 bg-white dark:bg-zinc-900 px-2 py-1 rounded-lg text-[13px] font-semibold shadow">
                       Bản đồ
                     </div>
                   </div>
