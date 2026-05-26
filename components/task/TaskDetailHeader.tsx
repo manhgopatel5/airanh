@@ -55,7 +55,7 @@ export default function TaskDetailHeader({
   const [isSaved, setIsSaved] = useState(!!currentUser?.uid &&!!task.savedBy?.includes(currentUser.uid));
   const [saving, setSaving] = useState(false);
 
-  const accentColor = theme === "task"? "#0A84FF" : "#30D158";
+
 
   const handleSave = async () => {
     if (!currentUser) return router.push("/login");
