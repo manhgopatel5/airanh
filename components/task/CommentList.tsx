@@ -63,7 +63,6 @@ export function CommentList({
 
   useEffect(() => {
     if (textRef.current &&!c.deleted &&!isEditing) {
-      // Check nếu text cao hơn MAX_TEXT_LINES
       const lineHeight = parseInt(window.getComputedStyle(textRef.current).lineHeight);
       const maxHeight = lineHeight * MAX_TEXT_LINES;
       setShowMoreText(textRef.current.scrollHeight > maxHeight + 2);
@@ -98,24 +97,24 @@ export function CommentList({
 
   const linkifyOptions = {
     target: "_blank",
-    className: "text-[#0a84ff] hover:underline break-all",
+    className: "text-[#0A84FF] hover:underline break-all font-medium",
     rel: "noopener noreferrer"
   };
 
   const renderText = (text: string, replyToUserName?: string) => {
     const mentionRegex = /@(\w+)/g;
     const parts = text.split(mentionRegex);
-    
+
     const content = parts.map((part, i) => {
       if (i % 2 === 1) {
-        return <span key={i} className="text-[#0a84ff] font-medium">@{part}</span>;
+        return <span key={i} className="text-[#0A84FF] font-semibold">@{part}</span>;
       }
       return part;
     });
 
     return (
       <Linkify options={linkifyOptions}>
-        {replyToUserName && <span className="text-[#0a84ff] font-medium">@{replyToUserName} </span>}
+        {replyToUserName && <span className="text-[#0A84FF] font-semibold">@{replyToUserName} </span>}
         {content}
       </Linkify>
     );
@@ -128,18 +127,18 @@ export function CommentList({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ type: "spring", damping: 25, stiffness: 400 }}
-      className="text- group"
+      className="text-sm group"
     >
       <div className="flex gap-2.5">
         <UserAvatar src={c.userAvatar} name={c.userName} size={32} />
 
         <div className="flex-1 min-w-0">
           <div className="relative">
-<div className="bg-transparent px-0 py-1">
-              <div className="flex items-center gap-1.5">
-                <div className="font-semibold text-">{c.userName}</div>
+            <div className="bg-zinc-100 dark:bg-zinc-800 rounded-2xl px-3 py-2">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">{c.userName}</span>
                 {c.userId === taskOwnerId && (
-                  <span className="text- px-1.5 py-0.5 rounded-md bg-[#0a84ff]/10 text-[#0a84ff] font-medium">
+                  <span className="text-xs px-1.5 py-0.5 rounded-md bg-[#0A84FF]/10 text-[#0A84FF] font-semibold">
                     Tác giả
                   </span>
                 )}
@@ -152,50 +151,55 @@ export function CommentList({
                     value={editText}
                     onChange={(e) => setEditText(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 text- outline-none ring-2 ring-[#0a84ff]/50"
+                    className="w-full px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 text-sm text-zinc-900 dark:text-zinc-100 outline-none ring-2 ring-[#0A84FF]/50"
                     placeholder="Chỉnh sửa bình luận..."
                   />
                   <div className="flex gap-2 mt-2 justify-end">
-                    <button
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
                       onClick={onCancelEdit}
-                      className="px-3 py-1.5 text- text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition-all active:scale-95"
+                      className="px-3 py-1.5 text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition-all font-semibold"
                     >
                       Huỷ
-                    </button>
-                    <button
+                    </motion.button>
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
                       onClick={() => onSaveEdit(c.id)}
                       disabled={!editText.trim()}
-                      className="px-3 py-1.5 text- bg-[#0a84ff] hover:bg-[#0071e3] text-white rounded-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1.5 text-sm bg-[#0A84FF] hover:bg-[#0071e3] text-white rounded-lg transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Lưu
-                    </button>
+                    </motion.button>
                   </div>
                 </div>
               ) : (
                 <div
                   ref={textRef}
                   className={cn(
-                    "break-words text- leading-relaxed mt-0.5 whitespace-pre-wrap",
-                  !expandedText && `line-clamp-${MAX_TEXT_LINES}`
+                    "break-words text-sm text-zinc-900 dark:text-zinc-100 leading-relaxed mt-0.5 whitespace-pre-wrap",
+                 !expandedText && `line-clamp-${MAX_TEXT_LINES}`
                   )}
                 >
                   {c.deleted? (
-                    <i className="text-zinc-500">Bình luận đã bị xoá</i>
+                    <i className="text-zinc-500 dark:text-zinc-400">Bình luận đã bị xoá</i>
                   ) : (
                     <>
                       {renderText(c.text)}
                       {c.edited && (
-                        <span className="text- text-zinc-500 ml-1.5">· đã chỉnh sửa</span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400 ml-1.5">· đã chỉnh sửa</span>
                       )}
                     </>
                   )}
                 </div>
               )}
-              
+
               {showMoreText &&!expandedText &&!isEditing &&!c.deleted && (
                 <button
-                  onClick={() => setExpandedText(true)}
-                  className="text- font-semibold text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 mt-1"
+                  onClick={() => {
+                    setExpandedText(true);
+                    navigator.vibrate?.(5);
+                  }}
+                  className="text-sm font-semibold text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 mt-1 transition-colors"
                 >
                   Xem thêm
                 </button>
@@ -209,53 +213,70 @@ export function CommentList({
                 className="absolute -bottom-2 -right-2 flex items-center gap-1 px-1.5 py-0.5 bg-white dark:bg-zinc-900 rounded-full shadow-md border border-zinc-200 dark:border-zinc-700"
               >
                 <FaHeart className="text-red-500" size={11} />
-                <span className="text- font-medium tabular-nums">{c.likeCount}</span>
+                <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">{c.likeCount}</span>
               </motion.div>
             )}
           </div>
 
           {!c.deleted &&!isEditing && (
-            <div className="flex items-center gap-4 mt-1.5 px-3 text- text-zinc-500">
-              <span>{timeAgo(c.createdAt)}</span>
-              <button
-                onClick={() => onLike(c.id)}
+            <div className="flex items-center gap-4 mt-1.5 px-3 text-xs text-zinc-500 dark:text-zinc-400">
+              <span className="font-medium">{timeAgo(c.createdAt)}</span>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  onLike(c.id);
+                  navigator.vibrate?.(5);
+                }}
                 disabled={likingComments.has(c.id)}
                 className={cn(
                   "font-semibold hover:underline active:scale-95 transition-all disabled:opacity-50",
-                  liked && "text-[#0a84ff]"
+                  liked && "text-[#0A84FF]"
                 )}
               >
                 {liked? "Đã thích" : "Thích"}
-              </button>
-              <button
-                onClick={() => onReply(c)}
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  onReply(c);
+                  navigator.vibrate?.(5);
+                }}
                 className="font-semibold hover:underline active:scale-95 transition-all"
               >
                 Trả lời
-              </button>
+              </motion.button>
 
               {isOwnComment && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="p-1 -m-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-full transition-all active:scale-90 opacity-0 group-hover:opacity-100">
-                      <FiMoreHorizontal size={16} className="text-zinc-500" />
-                    </button>
+                    <motion.button
+                      whileTap={{ scale: 0.9 }}
+                      className="p-1 -m-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-full transition-all active:scale-90 opacity-0 group-hover:opacity-100"
+                    >
+                      <FiMoreHorizontal size={16} className="text-zinc-500 dark:text-zinc-400" />
+                    </motion.button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent 
-                    align="end" 
+                  <DropdownMenuContent
+                    align="end"
                     side="top"
                     sideOffset={4}
-                    className="rounded-xl min-w-[140px] p-1.5 bg-white dark:bg-zinc-900 shadow-lg border border-zinc-200 dark:border-zinc-800"
+                    className="rounded-xl min-w-[140px] p-1.5 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl shadow-xl border border-zinc-200 dark:border-zinc-800"
                   >
-                    <DropdownMenuItem 
-                      onClick={() => onEdit(c.id)}
-                      className="px-3 py-2 text- font-medium rounded-lg cursor-pointer focus:bg-zinc-100 dark:focus:bg-zinc-800"
+                    <DropdownMenuItem
+                      onClick={() => {
+                        onEdit(c.id);
+                        navigator.vibrate?.(5);
+                      }}
+                      className="px-3 py-2 text-sm font-semibold rounded-lg cursor-pointer focus:bg-zinc-100 dark:focus:bg-zinc-800"
                     >
                       Chỉnh sửa
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => onDelete(c.id)}
-                      className="px-3 py-2 text- font-medium rounded-lg cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-50 dark:focus:bg-red-950/50"
+                      onClick={() => {
+                        onDelete(c.id);
+                        navigator.vibrate?.(5);
+                      }}
+                      className="px-3 py-2 text-sm font-semibold rounded-lg cursor-pointer text-[#FF3B30] focus:text-[#FF3B30] focus:bg-red-50 dark:focus:bg-red-950/50"
                     >
                       Xoá
                     </DropdownMenuItem>
@@ -270,7 +291,7 @@ export function CommentList({
               const rLiked =!!(currentUserId && r.likedBy?.includes(currentUserId));
               const isOwnReply = currentUserId === r.userId;
               const isEditingReply = editingReplyId === r.id;
-              
+
               return (
                 <motion.div
                   key={r.id}
@@ -282,43 +303,49 @@ export function CommentList({
                 >
                   <UserAvatar src={r.userAvatar} name={r.userName} size={28} />
                   <div className="flex-1 min-w-0">
-<div className="bg-transparent px-0 py-1 relative">
-                      <div className="font-semibold text-">{r.userName}</div>
-                      
+                    <div className="bg-zinc-100 dark:bg-zinc-800 rounded-2xl px-3 py-2 relative">
+                      <div className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">{r.userName}</div>
+
                       {isEditingReply? (
                         <div className="mt-1">
                           <input
                             value={editReplyText}
                             onChange={(e) => setEditReplyText(e.target.value)}
                             onKeyDown={(e) => handleKeyDown(e, true, r.id)}
-                            className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-zinc-900 text- outline-none ring-2 ring-[#0a84ff]/50"
+                            className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-zinc-900 text-sm text-zinc-900 dark:text-zinc-100 outline-none ring-2 ring-[#0A84FF]/50"
                             placeholder="Chỉnh sửa..."
                             autoFocus
                           />
                           <div className="flex gap-2 mt-1.5 justify-end">
-                            <button
-                              onClick={() => setEditingReplyId(null)}
-                              className="px-2 py-1 text- text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg"
+                            <motion.button
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => {
+                                setEditingReplyId(null);
+                                navigator.vibrate?.(5);
+                              }}
+                              className="px-2 py-1 text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg font-semibold"
                             >
                               Huỷ
-                            </button>
-                            <button
+                            </motion.button>
+                            <motion.button
+                              whileTap={{ scale: 0.95 }}
                               onClick={() => {
                                 onSaveEdit(r.id);
                                 setEditingReplyId(null);
                                 setEditReplyText("");
+                                navigator.vibrate?.(5);
                               }}
                               disabled={!editReplyText.trim()}
-                              className="px-2 py-1 text- bg-[#0a84ff] text-white rounded-lg disabled:opacity-50"
+                              className="px-2 py-1 text-sm bg-[#0A84FF] text-white rounded-lg disabled:opacity-50 font-semibold"
                             >
                               Lưu
-                            </button>
+                            </motion.button>
                           </div>
                         </div>
                       ) : (
-                        <div className="text- leading-relaxed mt-0.5 whitespace-pre-wrap break-words">
+                        <div className="text-sm text-zinc-900 dark:text-zinc-100 leading-relaxed mt-0.5 whitespace-pre-wrap break-words">
                           {r.deleted? (
-                            <i className="text-zinc-500">Bình luận đã bị xoá</i>
+                            <i className="text-zinc-500 dark:text-zinc-400">Bình luận đã bị xoá</i>
                           ) : (
                             renderText(r.text, r.replyToUserName)
                           )}
@@ -332,50 +359,65 @@ export function CommentList({
                           className="absolute -bottom-2 -right-2 flex items-center gap-1 px-1.5 py-0.5 bg-white dark:bg-zinc-900 rounded-full shadow-md border border-zinc-200 dark:border-zinc-700"
                         >
                           <FaHeart className="text-red-500" size={10} />
-                          <span className="text- font-medium tabular-nums">{r.likeCount}</span>
+                          <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">{r.likeCount}</span>
                         </motion.div>
                       )}
                     </div>
-                    
+
                     {!r.deleted &&!isEditingReply && (
-                      <div className="flex items-center gap-4 mt-1 px-3 text- text-zinc-500">
-                        <span>{timeAgo(r.createdAt)}</span>
-                        <button
-                          onClick={() => onLike(r.id)}
+                      <div className="flex items-center gap-4 mt-1 px-3 text-xs text-zinc-500 dark:text-zinc-400">
+                        <span className="font-medium">{timeAgo(r.createdAt)}</span>
+                        <motion.button
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => {
+                            onLike(r.id);
+                            navigator.vibrate?.(5);
+                          }}
                           disabled={likingComments.has(r.id)}
                           className={cn(
                             "font-semibold hover:underline active:scale-95 transition-all disabled:opacity-50",
-                            rLiked && "text-[#0a84ff]"
+                            rLiked && "text-[#0A84FF]"
                           )}
                         >
                           {rLiked? "Đã thích" : "Thích"}
-                        </button>
-                        <button
-                          onClick={() => onReply(r)}
+                        </motion.button>
+                        <motion.button
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => {
+                            onReply(r);
+                            navigator.vibrate?.(5);
+                          }}
                           className="font-semibold hover:underline active:scale-95 transition-all"
                         >
                           Trả lời
-                        </button>
+                        </motion.button>
                         {isOwnReply && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <button className="p-1 -m-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-full transition-all active:scale-90 opacity-0 group-hover/reply:opacity-100">
-                                <FiMoreHorizontal size={14} className="text-zinc-500" />
-                              </button>
+                              <motion.button
+                                whileTap={{ scale: 0.9 }}
+                                className="p-1 -m-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-full transition-all active:scale-90 opacity-0 group-hover/reply:opacity-100"
+                              >
+                                <FiMoreHorizontal size={14} className="text-zinc-500 dark:text-zinc-400" />
+                              </motion.button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" side="top" className="rounded-xl min-w-[140px] p-1.5">
-                              <DropdownMenuItem 
+                            <DropdownMenuContent align="end" side="top" className="rounded-xl min-w-[140px] p-1.5 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl">
+                              <DropdownMenuItem
                                 onClick={() => {
                                   setEditingReplyId(r.id);
                                   setEditReplyText(r.text);
-                                }} 
-                                className="px-3 py-2 text- font-medium rounded-lg"
+                                  navigator.vibrate?.(5);
+                                }}
+                                className="px-3 py-2 text-sm font-semibold rounded-lg"
                               >
                                 Chỉnh sửa
                               </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => onDelete(r.id)} 
-                                className="px-3 py-2 text- font-medium rounded-lg text-red-500 focus:text-red-500"
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  onDelete(r.id);
+                                  navigator.vibrate?.(5);
+                                }}
+                                className="px-3 py-2 text-sm font-semibold rounded-lg text-[#FF3B30] focus:text-[#FF3B30]"
                               >
                                 Xoá
                               </DropdownMenuItem>
@@ -391,9 +433,13 @@ export function CommentList({
           </AnimatePresence>
 
           {replies.length > 0 && (
-            <button
-              onClick={() => setShowReplies(!showReplies)}
-              className="mt-2 text- font-semibold text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors flex items-center gap-1"
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                setShowReplies(!showReplies);
+                navigator.vibrate?.(5);
+              }}
+              className="mt-2 text-sm font-semibold text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors flex items-center gap-1 active:scale-95"
             >
               {showReplies? (
                 <>
@@ -406,7 +452,7 @@ export function CommentList({
                   Xem {replies.length} phản hồi
                 </>
               )}
-            </button>
+            </motion.button>
           )}
         </div>
       </div>
