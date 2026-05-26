@@ -1037,7 +1037,7 @@ void status;
                       Bản đồ
                     </div>
                   </div>
-                  <button className="w-full mt-2 text-[#0a84ff] font-semibold text-xs>
+                  <button className="w-full mt-2 text-[#0a84ff] font-semibold text-xs">
                     Xem chi tiết
                   </button>
                 </div>
@@ -1100,7 +1100,7 @@ void status;
                         />
                         {i === 2 && task.images!.length > 3 && (
                           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
-                            <span className="text-white font-bold text-xs>
+                            <span className="text-white font-bold text-xs">
                               +{task.images!.length - 3}
                             </span>
                           </div>
