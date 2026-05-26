@@ -60,59 +60,61 @@ export default function TaskDetailPage() {
   return (
     <>
       <Toaster richColors position="top-center" />
-      {/* Bỏ h-[100dvh] flex flex-col overflow-y-auto đi */}
-      <div className="min-h-screen bg-white dark:bg-zinc-950">
-        {/* Phần content scroll tự nhiên */}
-        <div className="px-3 pt-2">
-          <TaskDetailHeader
-            task={task}
-            owner={owner}
-            currentUser={currentUser}
-            isOwner={isOwner}
-            onTaskDeleted={() => router.push("/tasks")}
-          />
-
-          <TaskInfoGrid task={task} applications={applications} />
-
-          <TaskDescription
-            description={task.description}
-            images={task.images}
-            onImageClick={setShowImageGallery}
-          />
-
-          {isOwner? (
-            <TaskApplications
-              applications={applications}
-              task={task}
-              currentUserId={currentUser!.uid}
-              onUpdate={reloadApplications}
-            />
-          ) : (
-            <TaskActionBar
+      {/* Quan trọng: h-[100dvh] flex flex-col */}
+      <div className="h-[100dvh] flex flex-col bg-white dark:bg-zinc-950">
+        {/* Phần scroll: header + content + comment list */}
+        <div className="flex-1 overflow-y-auto overscroll-none">
+          <div className="px-3 pt-2">
+            <TaskDetailHeader
               task={task}
               owner={owner}
               currentUser={currentUser}
-              isApplied={isApplied}
-              isFull={isFull}
               isOwner={isOwner}
-              onApplied={reloadTask}
-              onShare={() => setShareTask(task)}
+              onTaskDeleted={() => router.push("/tasks")}
             />
-          )}
-        </div>
 
-        {/* CommentSection nằm ngoài, input sticky sẽ dính đáy viewport */}
-        <CommentSection
-          taskOwnerId={task.userId}
-          comments={comments}
-          currentUser={currentUser}
-          sending={sending}
-          likingComments={likingComments}
-          onSend={sendComment}
-          onLike={likeComment}
-          onDelete={deleteComment}
-          onEdit={editComment}
-        />
+            <TaskInfoGrid task={task} applications={applications} />
+
+            <TaskDescription
+              description={task.description}
+              images={task.images}
+              onImageClick={setShowImageGallery}
+            />
+
+            {isOwner? (
+              <TaskApplications
+                applications={applications}
+                task={task}
+                currentUserId={currentUser!.uid}
+                onUpdate={reloadApplications}
+              />
+            ) : (
+              <TaskActionBar
+                task={task}
+                owner={owner}
+                currentUser={currentUser}
+                isApplied={isApplied}
+                isFull={isFull}
+                isOwner={isOwner}
+                onApplied={reloadTask}
+                onShare={() => setShareTask(task)}
+              />
+            )}
+          </div>
+
+          {/* CommentSection nằm trong scroll, chỉ input fixed */}
+          <CommentSection
+            taskOwnerId={task.userId}
+            comments={comments}
+            currentUser={currentUser}
+            sending={sending}
+            likingComments={likingComments}
+            onSend={sendComment}
+            onLike={likeComment}
+            onDelete={deleteComment}
+            onEdit={editComment}
+          />
+        </div>
       </div>
 
       <ImageGallery
