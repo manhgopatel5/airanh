@@ -84,7 +84,7 @@ export default function CommentSection({
 
   return (
     <div className="bg-white dark:bg-zinc-950">
-      <div className="h-px bg-zinc-200 dark:bg-zinc-800 w-screen -ml-4 my-4" />
+
       
       <div className="flex items-center justify-between pb-3">
         <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
