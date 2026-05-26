@@ -818,14 +818,14 @@ void status;
     {/* Gạch ngang full màn hình */}
     <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 w-screen -ml-3 my-4" />
     
-    <h3 className="font-semibold text- text-[#1C1C1E] dark:text-zinc-100 mb-2">
+    <h3 className="font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100 mb-2">
       Mô tả công việc
     </h3>
     <Linkify options={{ target: "_blank", className: `text-[#0A84FF] hover:underline` }}>
       <p
         ref={descRef}
-        className={`text- font-semibold text-[#1C1C1E] dark:text-zinc-100 whitespace-pre-wrap leading-relaxed ${
-         !descExpanded? 'line-clamp-5' : ''
+        className={`text-[13px] font-semibold text-[#1C1C1E] dark:text-zinc-100 whitespace-pre-wrap leading-relaxed ${
+        !descExpanded? 'line-clamp-5' : ''
         }`}
       >
         {task.description}
@@ -835,7 +835,7 @@ void status;
       <div className="text-center">
         <button
           onClick={() => setDescExpanded(!descExpanded)}
-          className="text- font-semibold text-[#0A84FF] mt-1 active:opacity-60"
+          className="text-[13px] font-semibold text-[#0A84FF] mt-1 active:opacity-60"
         >
           {descExpanded? 'Thu gọn' : 'Xem thêm mô tả'}
         </button>
@@ -843,7 +843,7 @@ void status;
     )}
 
     {task.images && task.images.length > 0 && (
-      <h3 className="font-semibold text- text-[#1C1C1E] dark:text-zinc-100 mt-3 mb-2">
+      <h3 className="font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100 mt-3 mb-2">
         Xem ảnh và file
       </h3>
     )}
@@ -907,7 +907,7 @@ void status;
             />
             {i === 2 && task.images!.length > 3 && (
               <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
-                <span className="text-white font-bold text-">
+                <span className="text-white font-bold text-[13px]">
                   +{task.images!.length - 3}
                 </span>
               </div>
@@ -922,13 +922,13 @@ void status;
 {isOwner? (
   <div ref={appsRef} className="bg-white dark:bg-zinc-900">
     <div className="py-4 flex items-center justify-between border-b border-[#F2F2F7] dark:border-zinc-800">
-      <h3 className="font-semibold text- text-[#1C1C1E] dark:text-zinc-100">
+      <h3 className="font-semibold text-[13px] text-[#1C1C1E] dark:text-zinc-100">
         Ứng viên ({applications.length})
       </h3>
       {applications.length > 1 && (
         <button
           onClick={() => setShowAllApps(!showAllApps)}
-          className="text- font-semibold text-[#0a84ff] active:opacity-60 transition-opacity"
+          className="text-[13px] font-semibold text-[#0a84ff] active:opacity-60 transition-opacity"
         >
           {showAllApps? 'Thu gọn' : 'Xem tất cả'} ›
         </button>
@@ -937,7 +937,7 @@ void status;
 
     {applications.length === 0? (
       <div className="px-5 py-12 text-center">
-        <p className="text- text-[#8E8E93] dark:text-zinc-500">
+        <p className="text-[13px] text-[#8E8E93] dark:text-zinc-500">
           Chưa có ai ứng tuyển
         </p>
       </div>
@@ -957,10 +957,10 @@ void status;
             >
               <UserAvatar src={app.userAvatar} name={app.userName} size={40} />
               <div className="min-w-0">
-                <p className="font-semibold text- text-[#1C1C1E] dark:text-zinc-100 truncate">
+                <p className="font-semibold text-[13px] text-[#1C1C1E] dark:text-zinc-100 truncate">
                   {app.userName}
                 </p>
-                <p className="text- text-[#8E8E93] dark:text-zinc-500">
+                <p className="text-[13px] text-[#8E8E93] dark:text-zinc-500">
                   {app.createdAt?.toDate? app.createdAt.toDate().toLocaleDateString('vi-VN') : 'Vừa xong'} • Nộp {timeAgo(app.createdAt)}
                 </p>
               </div>
@@ -979,7 +979,7 @@ void status;
                 <div className="w-4 h-4 rounded-full bg-[#00A86B] flex items-center justify-center">
                   <FiCheck size={10} strokeWidth={3} className="text-white" />
                 </div>
-                <span className="text- font-semibold text-[#00A86B]">Đồng ý</span>
+                <span className="text-[13px] font-semibold text-[#00A86B]">Đồng ý</span>
               </motion.button>
               
               <motion.button
@@ -994,7 +994,7 @@ void status;
                 <div className="w-4 h-4 rounded-full bg-[#FF3B30] flex items-center justify-center">
                   <FiX size={10} strokeWidth={3} className="text-white" />
                 </div>
-                <span className="text- font-semibold text-[#FF3B30]">Từ chối</span>
+                <span className="text-[13px] font-semibold text-[#FF3B30]">Từ chối</span>
               </motion.button>
             </div>
           </motion.div>
@@ -1022,7 +1022,7 @@ void status;
           strokeWidth={2}
           className="text-[#8E8E93] dark:text-zinc-500"
         />
-        <span className="text- font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
+        <span className="text-[13px] font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
           Nhắn tin
         </span>
       </motion.button>
@@ -1042,7 +1042,7 @@ void status;
           strokeWidth={2}
           className="text-[#8E8E93] dark:text-zinc-500"
         />
-        <span className="text- font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
+        <span className="text-[13px] font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
           Gọi điện
         </span>
       </motion.button>
@@ -1058,13 +1058,13 @@ void status;
         className="flex flex-col items-center gap-1 active:opacity-60 transition-opacity disabled:opacity-40 disabled:pointer-events-none"
       >
         {joining? (
-          <div className="w- h- border-2 border-[#0A84FF] border-t-transparent rounded-full animate-spin" />
+          <div className="w-[22px] h-[22px] border-2 border-[#0A84FF] border-t-transparent rounded-full animate-spin" />
         ) : isApplied? (
           <FiCheckCircle size={22} strokeWidth={2.5} className="text-[#34C759]" />
         ) : (
           <FiSend size={22} strokeWidth={2.5} className="text-[#0A84FF]" />
         )}
-        <span className={`text- font-semibold leading-none ${
+        <span className={`text-[13px] font-semibold leading-none ${
           isApplied? 'text-[#34C759]' : 'text-[#0A84FF]'
         }`}>
           {isApplied? "Đã ứng tuyển" : "Ứng tuyển"}
@@ -1085,7 +1085,7 @@ void status;
           strokeWidth={2}
           className="text-[#8E8E93] dark:text-zinc-500"
         />
-        <span className="text- font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
+        <span className="text-[13px] font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
           Chia sẻ
         </span>
       </motion.button>
@@ -1104,7 +1104,7 @@ void status;
           strokeWidth={2}
           className="text-[#8E8E93] dark:text-zinc-500"
         />
-        <span className="text- font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
+        <span className="text-[13px] font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
           Báo cáo
         </span>
       </motion.button>
@@ -1125,11 +1125,11 @@ void status;
           className="w-full h-full border-0"
           loading="lazy"
         />
-        <div className="absolute top-2 left-2 bg-white dark:bg-zinc-900 px-2 py-1 rounded-lg text- font-semibold shadow">
+        <div className="absolute top-2 left-2 bg-white dark:bg-zinc-900 px-2 py-1 rounded-lg text-[13px] font-semibold shadow">
           Bản đồ
         </div>
       </div>
-      <button className="w-full mt-2 text-[#0a84ff] font-semibold text-">
+      <button className="w-full mt-2 text-[#0a84ff] font-semibold text-[13px]">
         Xem chi tiết
       </button>
     </div>
@@ -1142,14 +1142,14 @@ void status;
 <div>
   <div className="bg-white dark:bg-zinc-950 overflow-hidden">
     <div className="grid grid-cols-4 pt-4 pb-3">
-      <h3 className="col-span-3 font-semibold text- text-[#1C1C1E] dark:text-zinc-100">
+      <h3 className="col-span-3 font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100">
         Bình luận ({parentComments.length})
       </h3>
   
       <div className="relative flex justify-end">
         <button
           onClick={() => setShowSortMenu(!showSortMenu)}
-          className="flex items-center gap-1 text- font-semibold text-zinc-600 dark:text-zinc-400 active:opacity-60"
+          className="flex items-center gap-1 text-[15px] font-semibold text-zinc-600 dark:text-zinc-400 active:opacity-60"
         >
           {commentSort === 'relevant'? 'Phù hợp nhất' : commentSort === 'newest'? 'Mới nhất' : 'Tất cả bình luận'}
           <FiChevronDown size={16} />
@@ -1177,8 +1177,8 @@ void status;
                       {commentSort === 'relevant' && <div className="w-2 h-2 bg-white rounded-full m-auto mt-[3px]" />}
                     </div>
                     <div>
-                      <p className="font-semibold text-">Phù hợp nhất</p>
-                      <p className="text- text-zinc-500">Hiển thị bình luận tác giả và nhiều tương tác trước.</p>
+                      <p className="font-semibold text-[15px]">Phù hợp nhất</p>
+                      <p className="text-[13px] text-zinc-500">Hiển thị bình luận tác giả và nhiều tương tác trước.</p>
                     </div>
                   </button>
 
@@ -1190,8 +1190,8 @@ void status;
                       {commentSort === 'newest' && <div className="w-2 h-2 bg-white rounded-full m-auto mt-[3px]" />}
                     </div>
                     <div>
-                      <p className="font-semibold text-">Mới nhất</p>
-                      <p className="text- text-zinc-500">Hiển thị bình luận mới nhất trước tiên.</p>
+                      <p className="font-semibold text-[15px]">Mới nhất</p>
+                      <p className="text-[13px] text-zinc-500">Hiển thị bình luận mới nhất trước tiên.</p>
                     </div>
                   </button>
 
@@ -1203,8 +1203,8 @@ void status;
                       {commentSort === 'all' && <div className="w-2 h-2 bg-white rounded-full m-auto mt-[3px]" />}
                     </div>
                     <div>
-                      <p className="font-semibold text-">Tất cả bình luận</p>
-                      <p className="text- text-zinc-500">Hiển thị tất cả bình luận.</p>
+                      <p className="font-semibold text-[15px]">Tất cả bình luận</p>
+                      <p className="text-[13px] text-zinc-500">Hiển thị tất cả bình luận.</p>
                     </div>
                   </button>
                 </div>
@@ -1217,7 +1217,7 @@ void status;
 
     <div className="px-5 py-4">
       {parentComments.length === 0? (
-        <div className="text-center py-12 text-zinc-400 text-">
+        <div className="text-center py-12 text-zinc-400 text-[13px]">
           <FiMessageCircle size={48} className="mx-auto mb-3 opacity-30" />
           Chưa có bình luận nào<br />Hãy là người đầu tiên
         </div>
