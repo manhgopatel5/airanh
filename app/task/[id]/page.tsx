@@ -749,18 +749,17 @@ void status;
   {/* Gạch ngang + tiêu đề Mô tả */}
 {task.description && (
     <>
-</div>
-
-{/* Gạch ngang full màn hình */}
-<div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 w-screen -ml-3 my-4" />
-
-<div className="px-4">
+      {/* Gạch ngang full màn hình */}
+      <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 w-screen -ml-3 my-4" />
+      
       <h3 className="font-bold text- text-[#1C1C1E] dark:text-zinc-100 mb-2">
         Mô tả công việc
       </h3>
       <Linkify options={{ target: "_blank", className: `text-[#0A84FF] hover:underline` }}>
         <p className="text- text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">{task.description}</p>
       </Linkify>
+    </>
+)}
     </>
   )}
 </div>
