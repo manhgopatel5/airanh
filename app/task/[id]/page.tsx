@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link"; 
+import { Dialog } from '@headlessui/react';
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
@@ -74,13 +75,13 @@ export default function TaskDetailPage() {
   const router = useRouter();
 
   const [db, setDb] = useState<any>(null);
-
+  
   useEffect(() => {
     setDb(getFirebaseDB());
   }, []);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
+  const [showApplyModal, setShowApplyModal] = useState(false);
   const [task, setTask] = useState<Task | null>(null);
   const [owner, setOwner] = useState<UserData | null>(null);
   const [comments, setComments] = useState<TaskComment[]>([]);
@@ -356,22 +357,23 @@ useEffect(() => {
     }
   };
 
-  const handleJoinTask = async () => {
-    if (!currentUser ||!task || isApplied || isFull || joining || isOwner) return;
-    setJoining(true);
-    try {
-      await applyToTask(task.id, currentUser.uid);
-      toast.success("Đã gửi yêu cầu ứng tuyển!");
-      navigator.vibrate?.(10);
-      await loadTask();
-      await loadApplications();
-    } catch (err: any) {
-      toast.error(err.message || "Ứng tuyển thất bại");
-      console.error(err);
-    } finally {
-      setJoining(false);
-    }
-  };
+const handleJoinTask = async () => {
+  if (!currentUser || !task || isApplied || isFull || joining || isOwner) return;
+  setShowApplyModal(false); // thêm dòng này
+  setJoining(true);
+  try {
+    await applyToTask(task.id, currentUser.uid);
+    toast.success("Đã gửi yêu cầu ứng tuyển!");
+    navigator.vibrate?.(10);
+    await loadTask();
+    await loadApplications();
+  } catch (err: any) {
+    toast.error(err.message || "Ứng tuyển thất bại");
+    console.error(err);
+  } finally {
+    setJoining(false);
+  }
+};
 
   const handleCancelApply = async () => {
     if (!currentUser ||!task ||!isApplied || joining) return;
@@ -556,7 +558,37 @@ const taskDeadline = isTask(task) && task.deadline?.seconds
     pending: { label: "Chờ duyệt", color: "bg-[#FEF7E0] text-[#F9AB00] dark:bg-[#F9AB00]/20 dark:text-[#FDD663]", dot: "bg-[#F9AB00]" },
   };
 
-  
+  const ApplyConfirmModal = () => (
+  <Dialog open={showApplyModal} onClose={() => setShowApplyModal(false)}>
+    <div className="fixed inset-0 bg-black/30 z-50" />
+    <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
+      <Dialog.Panel className="bg-white dark:bg-zinc-900 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+        <Dialog.Title className="font-bold text-lg text-[#1C1C1E] dark:text-zinc-100">
+          Xác nhận ứng tuyển
+        </Dialog.Title>
+        <Dialog.Description className="text- text-zinc-600 dark:text-zinc-400 mt-2">
+          Bạn có chắc muốn ứng tuyển công việc "{task?.title}"?
+        </Dialog.Description>
+        <div className="flex gap-2 mt-5">
+          <button 
+            onClick={() => setShowApplyModal(false)} 
+            className="flex-1 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-semibold text- active:scale-95 transition-all"
+          >
+            Hủy
+          </button>
+          <button 
+            onClick={handleJoinTask} 
+            disabled={joining}
+            className="flex-1 py-2.5 rounded-xl bg-[#0A84FF] text-white font-semibold text- active:scale-95 transition-all disabled:opacity-50"
+          >
+            {joining ? 'Đang gửi...' : 'Xác nhận'}
+          </button>
+        </div>
+      </Dialog.Panel>
+    </div>
+  </Dialog>
+);
+
   const isExpired = isTask(task) && task.deadline && task.deadline.seconds * 1000 < Date.now();
   const status = isExpired
    ? { label: "Đã hết hạn", color: "bg-[#FFE5E5] text-[#FF3B30] dark:bg-[#FF3B30]/20 dark:text-[#FF6B6B]", dot: "bg-[#FF3B30]" }
@@ -565,6 +597,7 @@ void status;
   return (
     <>
       <Toaster richColors position="top-center" />
+ <ApplyConfirmModal />
 <div className="max-w-xl mx-auto bg-white dark:bg-zinc-950 min-h-dvh pb-28 px-3 pt-2">
 
        {/* HEADER MỚI - ĐỒNG BỘ APP */}
@@ -940,15 +973,15 @@ void status;
       </motion.button>
 
       {/* 3. Ứng tuyển - CTA CHÍNH */}
-      <motion.button
-        whileTap={{ scale: 0.97 }}
-        onClick={() => {
-          navigator.vibrate?.(8);
-          isApplied? handleCancelApply() : handleJoinTask();
-        }}
-        disabled={(!isApplied && (isFull || task.status!== "open")) || joining}
-        className="flex flex-col items-center gap-1 active:opacity-60 transition-opacity disabled:opacity-40 disabled:pointer-events-none"
-      >
+<motion.button
+  whileTap={{ scale: 0.97 }}
+  onClick={() => {
+    navigator.vibrate?.(8);
+    isApplied ? handleCancelApply() : setShowApplyModal(true); // đổi dòng này
+  }}
+  disabled={(!isApplied && (isFull || task.status !== "open")) || joining}
+  className="flex flex-col items-center gap-1 active:opacity-60 transition-opacity disabled:opacity-40 disabled:pointer-events-none"
+>
         {joining? (
           <div className="w-5 h-5 border-2 border-[#0A84FF] border-t-transparent rounded-full animate-spin" />
         ) : isApplied? (
