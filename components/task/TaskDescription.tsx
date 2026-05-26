@@ -40,9 +40,9 @@ export default function TaskDescription({
       <div className="pb-4">
         {description && (
           <>
-            <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 mb-2">
-              Mô tả công việc
-            </h3>
+          <h3 className="font-semibold text-base text-zinc-900 dark:text-zinc-100 leading-5">
+  Mô tả công việc
+</h3>
             <Linkify
               options={{
                 target: "_blank",
