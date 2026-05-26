@@ -84,7 +84,9 @@ export default function CommentSection({
 
   return (
     <div className="bg-white dark:bg-zinc-950">
-<div className="flex items-center justify-between pt-4 pb-3 px-4 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="h-px bg-zinc-200 dark:bg-zinc-800 w-screen -ml-4 my-4" />
+      
+      <div className="flex items-center justify-between pb-3">
         <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
           Bình luận ({parentComments.length})
         </h3>
@@ -157,7 +159,7 @@ export default function CommentSection({
         </div>
       </div>
 
-      <div className="px-4">
+      <div>
         {parentComments.length === 0? (
           <div className="text-center py-12 text-zinc-400 dark:text-zinc-500 text-sm">
             <FiMessageCircle size={48} className="mx-auto mb-3 opacity-30" />
@@ -209,7 +211,7 @@ export default function CommentSection({
 
       <div className="h-4" />
 
-<div className="sticky bottom-0 z-20 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl px-4 py-3 border-t border-zinc-200 dark:border-zinc-800 border-b">
+      <div className="sticky bottom-0 z-20 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl py-3">
         {replyTo && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -249,6 +251,8 @@ export default function CommentSection({
           </motion.button>
         </div>
       </div>
+
+      <div className="h-px bg-zinc-200 dark:bg-zinc-800 w-screen -ml-4 my-4" />
     </div>
   );
 }
