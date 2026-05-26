@@ -977,32 +977,24 @@ void status;
   whileTap={{ scale: 0.97 }}
   onClick={() => {
     navigator.vibrate?.(8);
-    isApplied ? handleCancelApply() : setShowApplyModal(true); // đổi dòng này
+    isApplied? handleCancelApply() : setShowApplyModal(true);
   }}
-  disabled={(!isApplied && (isFull || task.status !== "open")) || joining}
+  disabled={(!isApplied && (isFull || task.status!== "open")) || joining}
   className="flex flex-col items-center gap-1 active:opacity-60 transition-opacity disabled:opacity-40 disabled:pointer-events-none"
 >
-        {joining? (
-          <div className="w-5 h-5 border-2 border-[#0A84FF] border-t-transparent rounded-full animate-spin" />
-        ) : isApplied? (
-          <FiCheckCircle
-            size={22}
-            strokeWidth={2.5}
-            className="text-[#34C759]"
-          />
-        ) : (
-          <FiSend
-            size={22}
-            strokeWidth={2.5}
-            className="text-[#0A84FF]"
-          />
-        )}
-        <span className={`text-[13px] font-semibold leading-none ${
-          isApplied? 'text-[#34C759]' : 'text-[#0A84FF]'
-        }`}>
-          {isApplied? "Đã ứng tuyển" : "Ứng tuyển"}
-        </span>
-      </motion.button>
+  {joining? (
+    <div className="w-[22px] h-[22px] border-2 border-[#0A84FF] border-t-transparent rounded-full animate-spin" />
+  ) : isApplied? (
+    <FiCheckCircle size={22} strokeWidth={2.5} className="text-[#34C759]" />
+  ) : (
+    <FiSend size={22} strokeWidth={2.5} className="text-[#0A84FF]" />
+  )}
+  <span className={`text-[13px] font-semibold leading-none ${
+    isApplied? 'text-[#34C759]' : 'text-[#0A84FF]'
+  }`}>
+    {isApplied? "Đã ứng tuyển" : "Ứng tuyển"}
+  </span>
+</motion.button>
 
       {/* 4. Chia sẻ */}
       <motion.button
