@@ -62,10 +62,13 @@ export function CommentList({
   }, [isEditing]);
 
   useEffect(() => {
-    if (textRef.current &&!c.deleted) {
-      setShowMoreText(textRef.current.scrollHeight > textRef.current.clientHeight);
+    if (textRef.current &&!c.deleted &&!isEditing) {
+      // Check nếu text cao hơn MAX_TEXT_LINES
+      const lineHeight = parseInt(window.getComputedStyle(textRef.current).lineHeight);
+      const maxHeight = lineHeight * MAX_TEXT_LINES;
+      setShowMoreText(textRef.current.scrollHeight > maxHeight + 2);
     }
-  }, [c.text, c.deleted]);
+  }, [c.text, c.deleted, isEditing]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, isReply = false, replyId?: string) => {
     if (e.key === "Enter" &&!e.shiftKey) {
@@ -100,7 +103,6 @@ export function CommentList({
   };
 
   const renderText = (text: string, replyToUserName?: string) => {
-    // Highlight @mention trước khi linkify
     const mentionRegex = /@(\w+)/g;
     const parts = text.split(mentionRegex);
     
@@ -174,7 +176,7 @@ export function CommentList({
                   ref={textRef}
                   className={cn(
                     "break-words text- leading-relaxed mt-0.5 whitespace-pre-wrap",
-                   !expandedText && "line-clamp-5"
+                  !expandedText && `line-clamp-${MAX_TEXT_LINES}`
                   )}
                 >
                   {c.deleted? (
@@ -314,7 +316,7 @@ export function CommentList({
                           </div>
                         </div>
                       ) : (
-                        <div className="text- leading-relaxed mt-0.5 whitespace-pre-wrap">
+                        <div className="text- leading-relaxed mt-0.5 whitespace-pre-wrap break-words">
                           {r.deleted? (
                             <i className="text-zinc-500">Bình luận đã bị xoá</i>
                           ) : (
