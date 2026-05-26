@@ -39,7 +39,7 @@ export default function CommentSection({
   onEdit
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<TaskComment | null>(null);
   const [editingComment, setEditingComment] = useState<string | null>(null);
@@ -73,7 +73,7 @@ export default function CommentSection({
       setText("");
       setReplyTo(null);
       inputRef.current?.blur();
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+      // Bỏ scrollIntoView - để tự nhiên
     } catch {}
   };
 
@@ -84,8 +84,8 @@ export default function CommentSection({
 
   return (
     <>
-      {/* Bỏ overflow-hidden, thêm px-5 cho header */}
-      <div className="bg-white dark:bg-zinc-950">
+      {/* List comment nằm trong page scroll */}
+      <div ref={listRef} className="bg-white dark:bg-zinc-950">
         <div className="flex items-center justify-between pt-4 pb-3 px-5">
           <h3 className="font-semibold text-base text-[#1C1C1E] dark:text-zinc-100">
             Bình luận ({parentComments.length})
@@ -142,8 +142,8 @@ export default function CommentSection({
           </div>
         </div>
 
-        {/* Thêm pb-24 để chừa chỗ cho input sticky */}
-        <div className="px-5 pb-24">
+        {/* Thêm pb-20 để chừa chỗ cho input fixed */}
+        <div className="px-5 pb-20">
           {parentComments.length === 0? (
             <div className="text-center py-12 text-zinc-400 text-sm">
               <FiMessageCircle size={48} className="mx-auto mb-3 opacity-30" />
@@ -183,13 +183,12 @@ export default function CommentSection({
               )}
             </div>
           )}
-          <div ref={bottomRef} />
         </div>
       </div>
 
-      {/* Đổi sang sticky bottom-0 thay vì shrink-0 */}
+      {/* Input fixed đáy màn hình */}
       <div
-        className="sticky bottom-0 z-20 bg-white dark:bg-zinc-900 px-5 py-3 border-t border-[#E5E5EA] dark:border-zinc-800"
+        className="fixed bottom-0 left-0 right-0 z-20 bg-white dark:bg-zinc-900 px-5 py-3 border-t border-[#E5E5EA] dark:border-zinc-800"
         style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}
       >
         {replyTo && (
