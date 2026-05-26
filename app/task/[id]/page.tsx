@@ -987,9 +987,10 @@ void status;
             )}
 
           {/* Bình luận */}
-<div className="mt-4">
-  <div className="rounded-3xl bg-white dark:bg-zinc-900 border border-white dark:border-zinc-800 shadow-[0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] overflow-hidden">
-<div className="px-5 py-4 flex items-center justify-between">
+{/* Bình luận */}
+<div className="mt-0">
+  <div className="bg-white dark:bg-zinc-950 overflow-hidden">
+<div className="px-5 pt-4 pb-3 flex items-center justify-between">
   <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
     Bình luận ({parentComments.length})
   </h3>
