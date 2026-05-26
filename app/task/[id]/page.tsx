@@ -581,17 +581,17 @@ void status;
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0 grid grid-rows-3 gap-0.5">
           {/* Hàng 1: Tên */}
-    <Link href={`/profile/${task.userId}`} className="font-bold text-base text-[#1C1C1E] dark:text-zinc-100 truncate leading-5 active:opacity-70">
+    <Link href={`/profile/${task.userId}`} className="font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100 truncate leading-5 active:opacity-70">
   {owner?.name || "Minh Tran"}
 </Link>
           
           {/* Hàng 2: Đánh giá + Mới tham gia */}
           <div className="flex items-center gap-1">
             <FiStar className="fill-[#FFB800] text-[#FFB800] shrink-0" size={14} />
-            <span className="font-semibold text-xs text-[#1C1C1E] dark:text-zinc-100">{owner?.rating || "4.9"}</span>
-            <span className="text-xs text-[#8E8E93]">({owner?.reviewCount || 21})</span>
-            <span className="text-xs text-[#8E8E93]">•</span>
-            <span className="text-xs text-[#00A86B] font-medium">Mới tham gia</span>
+            <span className="font-semibold text-[13px] text-[#1C1C1E] dark:text-zinc-100">{owner?.rating || "4.9"}</span>
+            <span className="text-[13px] text-[#8E8E93]">({owner?.reviewCount || 21})</span>
+            <span className="text-[13px] text-[#8E8E93]">•</span>
+            <span className="text-[13px] text-[#00A86B] font-medium">Mới tham gia</span>
           </div>
 
           {/* Hàng 3: Đã xác thực / Chưa xác thực */}
@@ -599,12 +599,12 @@ void status;
             {owner?.verified? (
               <>
                 <FiCheckCircle className="text-[#0A84FF] shrink-0" size={14} />
-                <span className="text-xs text-[#0A84FF] font-medium">Đã xác thực</span>
+                <span className="text-[13px] text-[#0A84FF] font-medium">Đã xác thực</span>
               </>
             ) : (
               <>
                 <FiX className="text-[#8E8E93] shrink-0" size={14} />
-                <span className="text-xs text-[#8E8E93] font-medium">Chưa xác thực</span>
+                <span className="text-[13px] text-[#8E8E93] font-medium">Chưa xác thực</span>
                 {!isOwner && (
              <motion.button
   whileTap={{ scale: 0.9 }}
@@ -678,7 +678,7 @@ void status;
             >
               <button
                 onClick={(e) => { e.stopPropagation(); handleSave(); setShowMenu(false); }}
-                className="flex items-center gap-3 px-4 py-3 text-xs font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
+                className="flex items-center gap-3 px-4 py-3 text-[13px] font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
               >
                 {isSaved? <FiCheck size={18} /> : <FiBookmark size={18} />}
                 {isSaved? "Đã lưu" : "Lưu công việc"}
@@ -686,7 +686,7 @@ void status;
               <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
               <button
                 onClick={(e) => { e.stopPropagation(); setShowMenu(false); router.push(`/task/${task.id}/edit`); }}
-                className="flex items-center gap-3 px-4 py-3 text-xs font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
+                className="flex items-center gap-3 px-4 py-3 text-[13px] font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-600 dark:hover:text-blue-400 w-full transition-all active:scale-95"
               >
                 <FiEdit2 size={18} />
                 Sửa công việc
@@ -694,7 +694,7 @@ void status;
               <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-2" />
               <button
                 onClick={(e) => { e.stopPropagation(); setShowMenu(false); handleDelete(); }}
-                className="flex items-center gap-3 px-4 py-3 text-xs font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 w-full transition-all active:scale-95"
+                className="flex items-center gap-3 px-4 py-3 text-[13px] font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-600 w-full transition-all active:scale-95"
               >
                 <FiTrash2 size={18} />
                 Xóa
@@ -714,7 +714,7 @@ void status;
   
 
 <div className="mt-4"> 
-<h2 className="font-bold text-base leading-snug text-[#1C1C1E] dark:text-zinc-100">{task.title}</h2>
+<h2 className="font-semibold text-[15px] leading-snug text-[#1C1C1E] dark:text-zinc-100">{task.title}</h2>
 
 {/* Gạch ngang full màn hình */}
 <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 w-screen -ml-3 my-3" />
@@ -724,24 +724,24 @@ void status;
   <div className="space-y-3">
     {isTask(task) && task.price > 0 && (
       <div>
-        <p className="text-xs text-[#8E8E93] dark:text-zinc-500">Tiền công</p>
-        <p className="text-xs font-semibold text-[#0A84FF] mt-0.5">
+        <p className="text-[13px] text-[#8E8E93] dark:text-zinc-500">Tiền công</p>
+        <p className="text-[13px] font-semibold text-[#0A84FF] mt-0.5">
           {task.price.toLocaleString("vi-VN")} đ
         </p>
       </div>
     )}
     {isTask(task) && (
       <div>
-        <p className="text-xs text-[#8E8E93] dark:text-zinc-500">Ứng tuyển</p>
-        <p className="text-xs font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
+        <p className="text-[13px] text-[#8E8E93] dark:text-zinc-500">Ứng tuyển</p>
+        <p className="text-[13px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
           {task.appliedCount || 0}/{task.totalSlots}
         </p>
       </div>
     )}
     {isTask(task) && task.deadline?.seconds && (
       <div>
-        <p className="text-xs text-[#8E8E93] dark:text-zinc-500">Hạn chót</p>
-        <p className={`text-xs font-semibold mt-0.5 ${isUrgent? 'text-[#FF3B30]' : 'text-[#1C1C1E] dark:text-zinc-100'}`}>
+        <p className="text-[13px] text-[#8E8E93] dark:text-zinc-500">Hạn chót</p>
+        <p className={`text-[13px] font-semibold mt-0.5 ${isUrgent? 'text-[#FF3B30]' : 'text-[#1C1C1E] dark:text-zinc-100'}`}>
           {timeLeft || taskDeadline}
         </p>
       </div>
@@ -750,30 +750,30 @@ void status;
 
   <div className="space-y-3">
     <div>
-      <p className="text-xs text-[#8E8E93] dark:text-zinc-500">Địa chỉ</p>
-      <p className="text-xs font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5 truncate">
+      <p className="text-[13px] text-[#8E8E93] dark:text-zinc-500">Địa chỉ</p>
+      <p className="text-[13px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5 truncate">
         {task.location?.address || task.location?.city || "Online"}
       </p>
     </div>
     {isTask(task) && (
       <div>
-        <p className="text-xs text-[#8E8E93] dark:text-zinc-500">Đã nhận</p>
-        <p className="text-xs font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
+        <p className="text-[13px] text-[#8E8E93] dark:text-zinc-500">Đã nhận</p>
+        <p className="text-[13px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
           {applications.filter(a => a.status === 'accepted').length} người
         </p>
       </div>
     )}
     {isPlan(task) && (
       <div>
-        <p className="text-xs text-[#8E8E93] dark:text-zinc-500">Đã tham gia</p>
-        <p className="text-xs font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
+        <p className="text-[13px] text-[#8E8E93] dark:text-zinc-500">Đã tham gia</p>
+        <p className="text-[13px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
           {task.currentParticipants} người
         </p>
       </div>
     )}
     <div>
-      <p className="text-xs text-[#8E8E93] dark:text-zinc-500">Ngày đăng</p>
-      <p className="text-xs font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
+      <p className="text-[13px] text-[#8E8E93] dark:text-zinc-500">Ngày đăng</p>
+      <p className="text-[13px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
         {taskDate}
       </p>
     </div>
@@ -785,13 +785,13 @@ void status;
     {/* Gạch ngang full màn hình */}
     <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 w-screen -ml-3 my-4" />
     
-  <h3 className="font-bold text-base text-[#1C1C1E] dark:text-zinc-100 mb-2">
+ <h3 className="font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100 mb-2">
   Mô tả công việc
 </h3>
     <Linkify options={{ target: "_blank", className: `text-[#0A84FF] hover:underline` }}>
       <p
         ref={descRef}
-        className={`text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed ${
+        className={`text-[13px] text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed ${
           !descExpanded ? 'line-clamp-5' : ''
         }`}
       >
@@ -802,7 +802,7 @@ void status;
   <div className="text-center">
     <button
       onClick={() => setDescExpanded(!descExpanded)}
-      className="text-xs font-semibold text-[#0A84FF] mt-1 active:opacity-60"
+      className="text-[13px] font-semibold text-[#0A84FF] mt-1 active:opacity-60"
     >
       {descExpanded ? 'Thu gọn' : 'Xem thêm mô tả'}
     </button>
@@ -814,13 +814,13 @@ void status;
 {isOwner ? (
 <div ref={appsRef} className="bg-white dark:bg-zinc-900">
   <div className="py-4 flex items-center justify-between border-b border-[#F2F2F7] dark:border-zinc-800">
-    <h3 className="font-semibold text-xs text-[#1C1C1E] dark:text-zinc-100">
+    <h3 className="font-semibold text-[13px] text-[#1C1C1E] dark:text-zinc-100">
       Ứng viên ({applications.length})
     </h3>
       {applications.length > 1 && (
         <button
           onClick={() => setShowAllApps(!showAllApps)}
-          className="text-xs font-semibold text-[#0a84ff] active:opacity-60 transition-opacity"
+          className="text-[13px] font-semibold text-[#0a84ff] active:opacity-60 transition-opacity"
         >
           {showAllApps? 'Thu gọn' : 'Xem tất cả'} ›
         </button>
@@ -829,7 +829,7 @@ void status;
 
     {applications.length === 0? (
       <div className="px-5 py-12 text-center">
-        <p className="text-xs text-[#8E8E93] dark:text-zinc-500">
+        <p className="text-[13px] text-[#8E8E93] dark:text-zinc-500">
           Chưa có ai ứng tuyển
         </p>
       </div>
@@ -849,10 +849,10 @@ void status;
             >
               <UserAvatar src={app.userAvatar} name={app.userName} size={40} />
               <div className="min-w-0">
-                <p className="font-semibold text-xs text-[#1C1C1E] dark:text-zinc-100 truncate">
+                <p className="font-semibold text-[13px] text-[#1C1C1E] dark:text-zinc-100 truncate">
                   {app.userName}
                 </p>
-                <p className="text-xs text-[#8E8E93] dark:text-zinc-500">
+                <p className="text-[13px] text-[#8E8E93] dark:text-zinc-500">
                   {app.createdAt?.toDate? app.createdAt.toDate().toLocaleDateString('vi-VN') : 'Vừa xong'} • Nộp {timeAgo(app.createdAt)}
                 </p>
               </div>
@@ -871,7 +871,7 @@ void status;
                 <div className="w-4 h-4 rounded-full bg-[#00A86B] flex items-center justify-center">
                   <FiCheck size={10} strokeWidth={3} className="text-white" />
                 </div>
-                <span className="text-xs font-semibold text-[#00A86B]">Đồng ý</span>
+                <span className="text-[13px] font-semibold text-[#00A86B]">Đồng ý</span>
               </motion.button>
               
               <motion.button
@@ -886,7 +886,7 @@ void status;
                 <div className="w-4 h-4 rounded-full bg-[#FF3B30] flex items-center justify-center">
                   <FiX size={10} strokeWidth={3} className="text-white" />
                 </div>
-                <span className="text-xs font-semibold text-[#FF3B30]">Từ chối</span>
+                <span className="text-[13px] font-semibold text-[#FF3B30]">Từ chối</span>
               </motion.button>
             </div>
           </motion.div>
@@ -914,7 +914,7 @@ void status;
           strokeWidth={2}
           className="text-[#8E8E93] dark:text-zinc-500"
         />
-        <span className="text-xs font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
+        <span className="text-[13px] font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
           Nhắn tin
         </span>
       </motion.button>
@@ -934,7 +934,7 @@ void status;
           strokeWidth={2}
           className="text-[#8E8E93] dark:text-zinc-500"
         />
-        <span className="text-xs font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
+        <span className="text-[13px] font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
           Gọi điện
         </span>
       </motion.button>
@@ -964,7 +964,7 @@ void status;
             className="text-[#0A84FF]"
           />
         )}
-        <span className={`text-xs font-semibold leading-none ${
+        <span className={`text-[13px] font-semibold leading-none ${
           isApplied? 'text-[#34C759]' : 'text-[#0A84FF]'
         }`}>
           {isApplied? "Đã ứng tuyển" : "Ứng tuyển"}
@@ -985,7 +985,7 @@ void status;
           strokeWidth={2}
           className="text-[#8E8E93] dark:text-zinc-500"
         />
-        <span className="text-xs font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
+        <span className="text-[13px] font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
           Chia sẻ
         </span>
       </motion.button>
@@ -1004,7 +1004,7 @@ void status;
           strokeWidth={2}
           className="text-[#8E8E93] dark:text-zinc-500"
         />
-        <span className="text-xs font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
+        <span className="text-[13px] font-semibold leading-none text-[#8E8E93] dark:text-zinc-500">
           Báo cáo
         </span>
       </motion.button>
@@ -1033,11 +1033,11 @@ void status;
                       className="w-full h-full border-0"
                       loading="lazy"
                     />
-                    <div className="absolute top-2 left-2 bg-white dark:bg-zinc-900 px-2 py-1 rounded-lg text-xs font-medium shadow">
+                    <div className="absolute top-2 left-2 bg-white dark:bg-zinc-900 px-2 py-1 rounded-lg text-[13px] font-medium shadow">
                       Bản đồ
                     </div>
                   </div>
-                  <button className="w-full mt-2 text-[#0a84ff] font-semibold text-xs">
+                  <button className="w-full mt-2 text-[#0a84ff] font-semibold text-[13px]">
                     Xem chi tiết
                   </button>
                 </div>
@@ -1100,7 +1100,7 @@ void status;
                         />
                         {i === 2 && task.images!.length > 3 && (
                           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
-                            <span className="text-white font-bold text-xs">
+                            <span className="text-white font-bold text-[13px]">
                               +{task.images!.length - 3}
                             </span>
                           </div>
@@ -1117,14 +1117,14 @@ void status;
 <div>
   <div className="bg-white dark:bg-zinc-950 overflow-hidden">
 <div className="grid grid-cols-4 pt-4 pb-3">
-<h3 className="col-span-3 font-bold text-base text-[#1C1C1E] dark:text-zinc-100">
+<h<h3 className="col-span-3 font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100">
   Bình luận ({parentComments.length})
 </h3>
   
   <div className="relative flex justify-end">
     <button
       onClick={() => setShowSortMenu(!showSortMenu)}
-      className="flex items-center gap-1 text-xs font-semibold text-zinc-600 dark:text-zinc-400 active:opacity-60"
+      className="flex items-center gap-1 text-[13px] font-semibold text-zinc-600 dark:text-zinc-400 active:opacity-60"
     >
       {commentSort === 'relevant'? 'Phù hợp nhất' : commentSort === 'newest'? 'Mới nhất' : 'Tất cả bình luận'}
       <FiChevronDown size={16} />
@@ -1152,8 +1152,8 @@ void status;
                   {commentSort === 'relevant' && <div className="w-2 h-2 bg-white rounded-full m-auto mt-[3px]" />}
                 </div>
                 <div>
-                  <p className="font-semibold text-xs">Phù hợp nhất</p>
-                  <p className="text-xs text-zinc-500">Hiển thị bình luận tác giả và nhiều tương tác trước.</p>
+                  <p className="font-semibold text-[15px]">Phù hợp nhất</p>
+                  <p className="text-[13px] text-zinc-500">Hiển thị bình luận tác giả và nhiều tương tác trước.</p>
                 </div>
               </button>
 
@@ -1165,8 +1165,8 @@ void status;
                   {commentSort === 'newest' && <div className="w-2 h-2 bg-white rounded-full m-auto mt-[3px]" />}
                 </div>
                 <div>
-                  <p className="font-semibold text-xs">Mới nhất</p>
-                  <p className="text-xs text-zinc-500">Hiển thị bình luận mới nhất trước tiên.</p>
+                  <p className="font-semibold text-[15px]">Mới nhất</p>
+                  <p className="text-[13px] text-zinc-500">Hiển thị bình luận mới nhất trước tiên.</p>
                 </div>
               </button>
 
@@ -1178,8 +1178,8 @@ void status;
                   {commentSort === 'all' && <div className="w-2 h-2 bg-white rounded-full m-auto mt-[3px]" />}
                 </div>
                 <div>
-                  <p className="font-semibold text-xs">Tất cả bình luận</p>
-                  <p className="text-xs text-zinc-500">Hiển thị tất cả bình luận.</p>
+                  <p className="font-semibold text-[15px]">Tất cả bình luận</p>
+                  <p className="text-[13px] text-zinc-500">Hiển thị tất cả bình luận.</p>
                 </div>
               </button>
             </div>
@@ -1192,7 +1192,7 @@ void status;
 
     <div className="px-5 py-4">
       {parentComments.length === 0? (
-        <div className="text-center py-12 text-zinc-400 text-xs">
+        <div className="text-center py-12 text-zinc-400 text-[13px]">
           <FiMessageCircle size={48} className="mx-auto mb-3 opacity-30" />
           Chưa có bình luận nào<br />Hãy là người đầu tiên
         </div>
@@ -1224,7 +1224,7 @@ void status;
 {hasMoreComments && (
   <button
     onClick={() => setVisibleCount(prev => prev + 5)}
-    className="w-full py-3 text-xs font-semibold text-[#0a84ff] active:bg-zinc-50 dark:active:bg-zinc-800 rounded-xl mt-2"
+    className="w-full py-3 text-[13px] font-semibold text-[#0a84ff] active:bg-zinc-50 dark:active:bg-zinc-800 rounded-xl mt-2"
   >
     Xem thêm bình luận
   </button>
@@ -1237,7 +1237,7 @@ void status;
 
 <div className="sticky bottom-0 bg-white dark:bg-zinc-900 px-5 py-3">
       {replyTo && (
-        <div className="text-xs dark:text-zinc-400 mb-2 flex items-center justify-between bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 px-3.5 py-2 rounded-xl">
+        <div className="text-[13px] dark:text-zinc-400 mb-2 flex items-center justify-between bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 px-3.5 py-2 rounded-xl">
           <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
           <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg active:scale-90 transition-all"><FiX size={14} /></button>
         </div>
@@ -1250,7 +1250,7 @@ void status;
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSendComment()}
             placeholder={currentUser? "Viết bình luận..." : "Đăng nhập để bình luận"}
-            className="w-full px-4 py-2.5 rounded-full bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 outline-none text-xs focus:ring-2 focus:ring-[#0a84ff]/20 focus:border-[#0a84ff] transition-all"
+            className="w-full px-4 py-2.5 rounded-full bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 outline-none text-[13px] focus:ring-2 focus:ring-[#0a84ff]/20 focus:border-[#0a84ff] transition-all"
             disabled={sending ||!currentUser}
           />
           {showMention && mentionUsersList.length > 0 && (
@@ -1260,7 +1260,7 @@ void status;
                   placeholder="Tìm người..."
                   value={mentionQuery}
                   onChange={(e) => setMentionQuery(e.target.value)}
-                  className="w-full px-3 py-1.5 text-xs bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg outline-none mb-2"
+                  className="w-full px-3 py-1.5 text-[13px] bg-[#F2F2F7] dark:bg-zinc-800 rounded-lg outline-none mb-2"
                 />
                 {mentionUsersList.map((user) => (
                   <button
@@ -1269,7 +1269,7 @@ void status;
                     className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#F2F2F7] dark:hover:bg-zinc-800 rounded-lg text-left"
                   >
                     <UserAvatar src={user.avatar} name={user.name} size={24} />
-                    <span className="text-xs">{user.name}</span>
+                    <span className="text-[13px]">{user.name}</span>
                   </button>
                 ))}
               </div>
