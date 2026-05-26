@@ -98,10 +98,6 @@
     @apply border-border;
   }
   
-  body {
-    @apply bg-background text-foreground;
-  }
-  
   html {
     @apply font-sans;
   }
@@ -128,10 +124,10 @@
     touch-action: manipulation;
   }
 
+  /* QUAN TRỌNG: Lock html/body */
   html {
-    background-color: #ffffff;
-    min-height: 100vh;
-    min-height: -webkit-fill-available;
+    height: -webkit-fill-available;
+    overflow: hidden; /* Chặn scroll html */
   }
 
   .dark html {
@@ -145,44 +141,33 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: 'tnum' 1;
-    scrollbar-gutter: stable;
     overscroll-behavior: none;
-    overscroll-behavior-y: none;
-    touch-action: pan-y;
   }
 
+  /* QUAN TRỌNG: Lock body, chỉ app scroll */
   body {
     margin: 0;
-    background-color: #ffffff;
-    min-height: 100vh;
-    min-height: -webkit-fill-available;
-    padding-top: env(safe-area-inset-top);
-  }
-
-  .dark body {
-    background-color: #000000;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
+    height: 100vh;
+    height: -webkit-fill-available;
+    overflow: hidden; /* Chặn body scroll */
+    position: fixed; /* Lock hoàn toàn */
+    width: 100%;
     top: 0;
     left: 0;
-    right: 0;
-    height: env(safe-area-inset-top);
-    background-color: #ffffff;
-    z-index: 9999;
-    pointer-events: none;
   }
 
-  .dark body::before {
-    background-color: #000000;
+  /* Cho phép #__next scroll */
+  #__next {
+    height: 100%;
+    overflow: hidden;
   }
+
+  /* Bỏ body::before vì gây lỗi với fixed */
 
   input,
   textarea,
   select {
-    font-size: 16px;
+    font-size: 16px; /* Tránh zoom iOS */
     background-color: theme('colors.white');
     color: theme('colors.gray.900');
   }
