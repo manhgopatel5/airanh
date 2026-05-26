@@ -596,13 +596,20 @@ void status;
                 <FiX className="text-[#8E8E93] shrink-0" size={14} />
                 <span className="text- text-[#8E8E93] font-medium">Chưa xác thực</span>
                 {!isOwner && (
-              <motion.button
+             <motion.button
   whileTap={{ scale: 0.9 }}
   onClick={(e) => {
     e.preventDefault();
     e.stopPropagation();
     toast.warning("Cẩn thận với tài khoản chưa xác thực", {
-      description: "Hãy kiểm tra kỹ thông tin trước khi giao dịch.\nKhông chuyển tiền trước.\nƯu tiên gặp mặt trực tiếp hoặc gọi video xác minh.\nBáo cáo ngay nếu phát hiện dấu hiệu lừa đảo.",
+      description: (
+        <div className="space-y-1">
+          <p>Hãy kiểm tra kỹ thông tin trước khi giao dịch.</p>
+          <p>Không chuyển tiền trước.</p>
+          <p>Ưu tiên gặp mặt trực tiếp hoặc gọi video xác minh.</p>
+          <p>Báo cáo ngay nếu phát hiện dấu hiệu lừa đảo.</p>
+        </div>
+      ),
       duration: 5000,
     });
     navigator.vibrate?.(8);
