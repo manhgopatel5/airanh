@@ -42,11 +42,11 @@ export default function TaskInfoGrid({ task, applications }: Props) {
   }, [task]);
 
   const taskDate = isTask(task) && task.createdAt?.seconds
-   ? new Date(task.createdAt.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  ? new Date(task.createdAt.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
     : "Chưa xác định";
 
   const taskDeadline = isTask(task) && task.deadline?.seconds
-   ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
     : "";
 
   const acceptedCount = applications.filter(a => a.status === 'accepted').length;
@@ -61,24 +61,27 @@ export default function TaskInfoGrid({ task, applications }: Props) {
         <div className="space-y-3">
           {isTask(task) && task.price > 0 && (
             <div>
-              <p className="text-[13px] text-[#1C1C1E] dark:text-zinc-100">Tiền công</p>
-              <p className="text-[13px] font-semibold text-[#0A84FF] mt-0.5">
+              {/* Đổi text-[13px] -> text-[15px] font-semibold */}
+              <p className="text-[15px] font-semibold text-[#1C1C1E] dark:text-zinc-100">Tiền công</p>
+              <p className="text-[15px] font-semibold text-[#0A84FF] mt-0.5">
                 {task.price.toLocaleString("vi-VN")} đ
               </p>
             </div>
           )}
           {isTask(task) && (
             <div>
-              <p className="text-[13px] text-[#1C1C1E] dark:text-zinc-100">Ứng tuyển</p>
-              <p className="text-[13px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
+              {/* Đổi text-[13px] -> text-[15px] font-semibold */}
+              <p className="text-[15px] font-semibold text-[#1C1C1E] dark:text-zinc-100">Ứng tuyển</p>
+              <p className="text-[15px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
                 {task.appliedCount || 0}/{task.totalSlots}
               </p>
             </div>
           )}
           {isTask(task) && task.deadline?.seconds && (
             <div>
-              <p className="text-[13px] text-[#1C1C1E] dark:text-zinc-100">Hạn chót</p>
-              <p className={`text-[13px] font-semibold mt-0.5 ${isUrgent? 'text-[#FF3B30]' : 'text-[#1C1C1E] dark:text-zinc-100'}`}>
+              {/* Đổi text-[13px] -> text-[15px] font-semibold */}
+              <p className="text-[15px] font-semibold text-[#1C1C1E] dark:text-zinc-100">Hạn chót</p>
+              <p className={`text-[15px] font-semibold mt-0.5 ${isUrgent? 'text-[#FF3B30]' : 'text-[#1C1C1E] dark:text-zinc-100'}`}>
                 {timeLeft || taskDeadline}
               </p>
             </div>
@@ -87,20 +90,23 @@ export default function TaskInfoGrid({ task, applications }: Props) {
 
         <div className="space-y-3">
           <div>
-            <p className="text-[13px] text-[#1C1C1E] dark:text-zinc-100">Địa chỉ</p>
-            <p className="text-[13px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5 truncate">
+            {/* Đổi text-[13px] -> text-[15px] font-semibold */}
+            <p className="text-[15px] font-semibold text-[#1C1C1E] dark:text-zinc-100">Địa chỉ</p>
+            <p className="text-[15px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5 truncate">
               {task.location?.address || task.location?.city || "Online"}
             </p>
           </div>
           <div>
-            <p className="text-[13px] text-[#1C1C1E] dark:text-zinc-100">Đã nhận</p>
-            <p className="text-[13px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
+            {/* Đổi text-[13px] -> text-[15px] font-semibold */}
+            <p className="text-[15px] font-semibold text-[#1C1C1E] dark:text-zinc-100">Đã nhận</p>
+            <p className="text-[15px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
               {acceptedCount} người
             </p>
           </div>
           <div>
-            <p className="text-[13px] text-[#1C1C1E] dark:text-zinc-100">Ngày đăng</p>
-            <p className="text-[13px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
+            {/* Đổi text-[13px] -> text-[15px] font-semibold */}
+            <p className="text-[15px] font-semibold text-[#1C1C1E] dark:text-zinc-100">Ngày đăng</p>
+            <p className="text-[15px] font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
               {taskDate}
             </p>
           </div>
