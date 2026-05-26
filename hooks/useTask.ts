@@ -164,7 +164,10 @@ export function useTask(taskId: string | undefined, currentUserId?: string) {
   const isApplied = applications.some(
     app => app.userId === currentUserId && ['pending', 'accepted'].includes(app.status)
   );
-  const isFull = task && 'totalSlots' in task? (task.appliedCount || 0) >= task.totalSlots : false;
+  // Sửa: dùng?? 0 và check cả totalSlots + appliedCount
+  const isFull = task && 'totalSlots' in task && 'appliedCount' in task
+   ? (task.appliedCount?? 0) >= task.totalSlots
+    : false;
 
   return {
     task,
