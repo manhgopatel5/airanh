@@ -31,7 +31,7 @@ type Props = {
   currentUser: any;
   isOwner: boolean;
   onTaskDeleted: () => void;
-  theme?: "task" | "plan";
+
 };
 
 const Portal = ({ children }: { children: React.ReactNode }) => {
@@ -46,7 +46,7 @@ export default function TaskDetailHeader({
   currentUser,
   isOwner,
   onTaskDeleted,
-  theme = "task"
+  
 }: Props) {
   const router = useRouter();
 
