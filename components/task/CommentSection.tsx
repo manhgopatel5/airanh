@@ -39,7 +39,6 @@ export default function CommentSection({
   onEdit
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<TaskComment | null>(null);
   const [editingComment, setEditingComment] = useState<string | null>(null);
@@ -73,7 +72,6 @@ export default function CommentSection({
       setText("");
       setReplyTo(null);
       inputRef.current?.blur();
-      // Bỏ scrollIntoView - để tự nhiên
     } catch {}
   };
 
@@ -83,114 +81,111 @@ export default function CommentSection({
   };
 
   return (
-    <>
-      {/* List comment nằm trong page scroll */}
-      <div ref={listRef} className="bg-white dark:bg-zinc-950">
-        <div className="flex items-center justify-between pt-4 pb-3 px-5">
-          <h3 className="font-semibold text-base text-[#1C1C1E] dark:text-zinc-100">
-            Bình luận ({parentComments.length})
-          </h3>
+    <div className="bg-white dark:bg-zinc-950">
+      <div className="flex items-center justify-between pt-4 pb-3 px-5">
+        <h3 className="font-semibold text-base text-[#1C1C1E] dark:text-zinc-100">
+          Bình luận ({parentComments.length})
+        </h3>
 
-          <div className="relative min-w-0">
-            <button
-              onClick={() => setShowSortMenu(!showSortMenu)}
-              className="flex items-center gap-1 text-sm font-semibold text-zinc-600 dark:text-zinc-400 active:opacity-60"
-            >
-              <span className="whitespace-nowrap">
-                {commentSort === 'relevant'? 'Phù hợp nhất' : commentSort === 'newest'? 'Mới nhất' : 'Tất cả bình luận'}
-              </span>
-              <FiChevronDown size={16} className="shrink-0" />
-            </button>
+        <div className="relative min-w-0">
+          <button
+            onClick={() => setShowSortMenu(!showSortMenu)}
+            className="flex items-center gap-1 text-sm font-semibold text-zinc-600 dark:text-zinc-400 active:opacity-60"
+          >
+            <span className="whitespace-nowrap">
+              {commentSort === 'relevant'? 'Phù hợp nhất' : commentSort === 'newest'? 'Mới nhất' : 'Tất cả bình luận'}
+            </span>
+            <FiChevronDown size={16} className="shrink-0" />
+          </button>
 
-            <AnimatePresence>
-              {showSortMenu && (
-                <Portal>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowSortMenu(false)} />
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-zinc-900 rounded-t-3xl shadow-2xl pb-safe"
-                  >
-                    <div className="w-12 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mt-3 mb-2" />
-                    <div className="px-5 py-3">
-                      <h4 className="font-bold text-lg mb-4">Sắp xếp theo</h4>
-                      {[
-                        { key: 'relevant', label: 'Phù hợp nhất', desc: 'Hiển thị bình luận tác giả và nhiều tương tác trước.' },
-                        { key: 'newest', label: 'Mới nhất', desc: 'Hiển thị bình luận mới nhất trước tiên.' },
-                        { key: 'all', label: 'Tất cả bình luận', desc: 'Hiển thị tất cả bình luận.' }
-                      ].map(item => (
-                        <button
-                          key={item.key}
-                          onClick={() => { setCommentSort(item.key as any); setShowSortMenu(false); setVisibleCount(5); }}
-                          className="w-full text-left py-3 flex items-start gap-3"
-                        >
-                          <div className={`w-5 h-5 rounded-full border-2 mt-0.5 ${commentSort === item.key? 'border-[#0a84ff] bg-[#0a84ff]' : 'border-zinc-300'}`}>
-                            {commentSort === item.key && <div className="w-2 h-2 bg-white rounded-full m-auto mt-[3px]" />}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-base">{item.label}</p>
-                            <p className="text-sm text-zinc-500">{item.desc}</p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
-                </Portal>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {/* Thêm pb-20 để chừa chỗ cho input fixed */}
-        <div className="px-5 pb-20">
-          {parentComments.length === 0? (
-            <div className="text-center py-12 text-zinc-400 text-sm">
-              <FiMessageCircle size={48} className="mx-auto mb-3 opacity-30" />
-              Chưa có bình luận nào<br />Hãy là người đầu tiên
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <AnimatePresence>
-                {visibleComments.map((c) => (
-                  <CommentList
-                    key={c.id}
-                    comment={c}
-                    replies={getReplies(c.id)}
-                    currentUserId={currentUser?.uid}
-                    taskOwnerId={taskOwnerId}
-                    onLike={handleLike}
-                    onReply={(c) => { setReplyTo(c); inputRef.current?.focus(); }}
-                    onDelete={(id) => currentUser && onDelete(id, currentUser.uid)}
-                    onEdit={(id) => { setEditingComment(id); setEditText(c.text); }}
-                    isEditing={editingComment === c.id}
-                    editText={editText}
-                    setEditText={setEditText}
-                    onSaveEdit={(id) => currentUser && onEdit(id, currentUser.uid, editText)}
-                    onCancelEdit={() => { setEditingComment(null); setEditText(""); }}
-                    likingComments={likingComments}
-                  />
-                ))}
-              </AnimatePresence>
-
-              {hasMoreComments && (
-                <button
-                  onClick={() => setVisibleCount(prev => prev + 5)}
-                  className="w-full py-3 text-sm font-semibold text-[#0a84ff] active:bg-zinc-50 dark:active:bg-zinc-800 rounded-xl mt-2"
+          <AnimatePresence>
+            {showSortMenu && (
+              <Portal>
+                <div className="fixed inset-0 z-40" onClick={() => setShowSortMenu(false)} />
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-zinc-900 rounded-t-3xl shadow-2xl pb-safe"
                 >
-                  Xem thêm bình luận
-                </button>
-              )}
-            </div>
-          )}
+                  <div className="w-12 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mt-3 mb-2" />
+                  <div className="px-5 py-3">
+                    <h4 className="font-bold text-lg mb-4">Sắp xếp theo</h4>
+                    {[
+                      { key: 'relevant', label: 'Phù hợp nhất', desc: 'Hiển thị bình luận tác giả và nhiều tương tác trước.' },
+                      { key: 'newest', label: 'Mới nhất', desc: 'Hiển thị bình luận mới nhất trước tiên.' },
+                      { key: 'all', label: 'Tất cả bình luận', desc: 'Hiển thị tất cả bình luận.' }
+                    ].map(item => (
+                      <button
+                        key={item.key}
+                        onClick={() => { setCommentSort(item.key as any); setShowSortMenu(false); setVisibleCount(5); }}
+                        className="w-full text-left py-3 flex items-start gap-3"
+                      >
+                        <div className={`w-5 h-5 rounded-full border-2 mt-0.5 ${commentSort === item.key? 'border-[#0a84ff] bg-[#0a84ff]' : 'border-zinc-300'}`}>
+                          {commentSort === item.key && <div className="w-2 h-2 bg-white rounded-full m-auto mt-[3px]" />}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-base">{item.label}</p>
+                          <p className="text-sm text-zinc-500">{item.desc}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              </Portal>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
-      {/* Input fixed đáy màn hình */}
-      <div
-        className="fixed bottom-0 left-0 right-0 z-20 bg-white dark:bg-zinc-900 px-5 py-3 border-t border-[#E5E5EA] dark:border-zinc-800"
-        style={{ paddingBottom: `max(12px, env(safe-area-inset-bottom))` }}
-      >
+      {/* Bỏ pb-20 */}
+      <div className="px-5">
+        {parentComments.length === 0? (
+          <div className="text-center py-12 text-zinc-400 text-sm">
+            <FiMessageCircle size={48} className="mx-auto mb-3 opacity-30" />
+            Chưa có bình luận nào<br />Hãy là người đầu tiên
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <AnimatePresence>
+              {visibleComments.map((c) => (
+                <CommentList
+                  key={c.id}
+                  comment={c}
+                  replies={getReplies(c.id)}
+                  currentUserId={currentUser?.uid}
+                  taskOwnerId={taskOwnerId}
+                  onLike={handleLike}
+                  onReply={(c) => { setReplyTo(c); inputRef.current?.focus(); }}
+                  onDelete={(id) => currentUser && onDelete(id, currentUser.uid)}
+                  onEdit={(id) => { setEditingComment(id); setEditText(c.text); }}
+                  isEditing={editingComment === c.id}
+                  editText={editText}
+                  setEditText={setEditText}
+                  onSaveEdit={(id) => currentUser && onEdit(id, currentUser.uid, editText)}
+                  onCancelEdit={() => { setEditingComment(null); setEditText(""); }}
+                  likingComments={likingComments}
+                />
+              ))}
+            </AnimatePresence>
+
+            {hasMoreComments && (
+              <button
+                onClick={() => setVisibleCount(prev => prev + 5)}
+                className="w-full py-3 text-sm font-semibold text-[#0a84ff] active:bg-zinc-50 dark:active:bg-zinc-800 rounded-xl mt-2"
+              >
+                Xem thêm bình luận
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Spacer thay cho pb-20 */}
+      <div className="h-4" />
+
+      {/* QUAN TRỌNG: Đổi fixed -> sticky */}
+      <div className="sticky bottom-0 z-20 bg-white dark:bg-zinc-900 px-5 py-3 border-t border-[#E5E5EA] dark:border-zinc-800">
         {replyTo && (
           <div className="text-sm dark:text-zinc-400 mb-2 flex items-center justify-between bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 px-3.5 py-2 rounded-xl">
             <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
@@ -219,6 +214,6 @@ export default function CommentSection({
           </motion.button>
         </div>
       </div>
-    </>
+    </div>
   );
 }
