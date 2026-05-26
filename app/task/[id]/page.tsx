@@ -98,7 +98,7 @@ export default function TaskDetailPage() {
           )}
 
           <CommentSection
-            taskId={task.id}
+            
             taskOwnerId={task.userId}
             comments={comments}
             currentUser={currentUser}
