@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   doc, getDoc, getDocs, collection, query, where,
-  updateDoc, arrayUnion, arrayRemove, serverTimestamp
+  updateDoc, arrayUnion, arrayRemove
 } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { toast } from "sonner";
