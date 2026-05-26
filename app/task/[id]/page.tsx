@@ -60,10 +60,10 @@ export default function TaskDetailPage() {
   return (
     <>
       <Toaster richColors position="top-center" />
-      {/* Quan trọng: h-[100dvh] flex flex-col */}
-      <div className="h-[100dvh] flex flex-col bg-white dark:bg-zinc-950">
+      {/* QUAN TRỌNG: Thêm overflow-hidden để chặn body scroll */}
+      <div className="h-[100dvh] flex flex-col bg-white dark:bg-zinc-950 overflow-hidden">
         {/* Phần scroll: header + content + comment list */}
-        <div className="flex-1 overflow-y-auto overscroll-none">
+        <div className="flex-1 overflow-y-auto overscroll-contain">
           <div className="px-3 pt-2">
             <TaskDetailHeader
               task={task}
@@ -102,7 +102,7 @@ export default function TaskDetailPage() {
             )}
           </div>
 
-          {/* CommentSection nằm trong scroll, chỉ input fixed */}
+          {/* CommentSection nằm trong scroll, input sticky */}
           <CommentSection
             taskOwnerId={task.userId}
             comments={comments}
