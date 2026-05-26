@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils";
 const beVietnamPro = Be_Vietnam_Pro({
   subsets: ['latin', 'vietnamese'],
   weight: ['300', '400', '500', '600', '700', '800', '900'],
-  variable: '--font-sans',
   display: "swap",
 });
 
@@ -114,16 +113,15 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi" className={cn("h-full font-sans", beVietnamPro.variable)} suppressHydrationWarning>
+    <html lang="vi" className={cn("h-full", beVietnamPro.className)} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* Fix status bar iOS */}
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
       </head>
-      <body className="h-full overflow-hidden font-sans bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight">
+      <body className="h-full overflow-hidden bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight">
         <AuthProvider>
           <ClientLayout>
             <EmailGuard>
