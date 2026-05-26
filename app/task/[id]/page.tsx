@@ -843,9 +843,12 @@ void status;
     )}
 
     {task.images && task.images.length > 0 && (
-      <h3 className="font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100 mt-3 mb-2">
-        Xem ảnh và file
-      </h3>
+      <>
+        <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 w-screen -ml-3 my-4" />
+        <h3 className="font-semibold text- text-[#1C1C1E] dark:text-zinc-100 mb-2">
+          Xem ảnh và file
+        </h3>
+      </>
     )}
   </>
 )}
