@@ -843,7 +843,7 @@ void status;
     )}
   </div>
 ) : (
-<div className="flex mt-4 -mx-4 pb-4 border-b border-[#E5E5EA] dark:border-zinc-800">
+<div className="flex mt-4 -mx-4 pt-4">
   <motion.button
     whileTap={{ scale: 0.98 }}
     onClick={handleStartChat}
@@ -896,7 +896,7 @@ void status;
 
 
  
-
+<div className="h-px bg-[#E5E5EA] dark:bg-zinc-800 my-4 -mx-3" />
             {task.location?.lat && task.location?.lng && (
               <>
                 <div className="h-px bg-[#E5E5EA] dark:bg-zinc-800" />
@@ -987,7 +987,8 @@ void status;
             )}
 
 {/* Bình luận */}
-<div className="-mt-px">
+{/* Bình luận */}
+<div>
   <div className="bg-white dark:bg-zinc-950 overflow-hidden">
 <div className="px-5 pt-4 pb-3 flex items-center justify-between">
   <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
