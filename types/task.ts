@@ -16,7 +16,7 @@ export type TaskStatus =
 export type Visibility = "public" | "private" | "friends" | "unlisted";
 export type BudgetType = "fixed" | "hourly" | "negotiable";
 export type CostType = "free" | "share" | "host";
-export type PaymentMethod = "app" | "cash"; // THÊM
+export type PaymentMethod = "app" | "cash"; 
 
 export type PlanParticipantRole = "owner" | "admin" | "member";
 export type PlanStatus = "draft" | "open" | "in_progress" | "completed" | "cancelled";
@@ -42,7 +42,7 @@ export type BaseItem = {
   savedBy?: string[]; 
   description: string;
   category: string;
-  tags: string[]; // ĐÃ CÓ
+  tags: string[]; 
   images: string[];
   attachments?: string[];
   
@@ -73,8 +73,8 @@ export type BaseItem = {
     country?: string;
     city?: string;
     address?: string;
-    lat?: number; // ĐÃ CÓ
-    lng?: number; // ĐÃ CÓ
+    lat?: number; 
+    lng?: number; 
   };
 
   // Search
@@ -102,7 +102,7 @@ export type TaskItem = BaseItem & {
   paymentMethod?: PaymentMethod;
   totalSlots: number;
   joined: number;
-  appliedCount?: number;  // ← THÊM DÒNG NÀY
+  appliedCount?: number;  
   requirements?: string;
   isRemote: boolean;
   applicationDeadline?: Timestamp | null;
@@ -150,6 +150,7 @@ export type PlanItem = BaseItem & {
   participants: PlanParticipant[];
   maxParticipants: number;
   currentParticipants: number;
+  totalSlots: number; // THÊM DÒNG NÀY
   inviteCode?: string; // mã mời private
   allowInvite: boolean;
 
@@ -157,7 +158,7 @@ export type PlanItem = BaseItem & {
   costType: CostType;
   costAmount?: number; // Nếu costType = share/host
   costDescription?: string; // Mô tả chi phí
-  paymentMethod?: PaymentMethod; // THÊM DÒNG NÀY
+  paymentMethod?: PaymentMethod; 
 
   // Settings
   autoAccept?: boolean; // Tự động accept khi join
@@ -175,7 +176,7 @@ export type CreateTaskInput = {
   price: number;
   currency?: string;
   budgetType?: BudgetType;
-  paymentMethod?: PaymentMethod; // THÊM DÒNG NÀY
+  paymentMethod?: PaymentMethod; 
   totalSlots: number;
   visibility?: Visibility;
   category?: string;
@@ -199,10 +200,11 @@ export type CreatePlanInput = {
   eventDate: Timestamp;
   endDate?: Timestamp;
   maxParticipants: number;
+  totalSlots: number; // THÊM DÒNG NÀY
   costType: CostType;
   costAmount?: number;
   costDescription?: string;
-  paymentMethod?: PaymentMethod; // THÊM DÒNG NÀY
+  paymentMethod?: PaymentMethod; 
   allowInvite?: boolean;
   autoAccept?: boolean;
   requireApproval?: boolean;
@@ -248,7 +250,7 @@ export type TaskListItem = Pick<
   | "isRemote"
   | "likes"
   | "budgetType"
-  | "paymentMethod" // THÊM DÒNG NÀY
+  | "paymentMethod" 
   | "userId"
   | "description"
   | "type"
@@ -284,9 +286,10 @@ export type PlanListItem = Pick<
   | "endDate"
   | "maxParticipants"
   | "currentParticipants"
+  | "totalSlots" // THÊM DÒNG NÀY
   | "costType"
   | "costAmount"
-  | "paymentMethod" // THÊM DÒNG NÀY
+  | "paymentMethod" 
   | "milestones"
   | "savedBy"      
   | "applicants"  
@@ -312,17 +315,17 @@ export type TaskComment = {
   userId: string;
   userName: string;
   userAvatar: string;
-  text: string; // đổi content -> text
+  text: string; 
   createdAt: Timestamp;
   taskOwnerId?: string;
   updatedAt?: Timestamp;
   edited?: boolean;
-  parentId?: string | null; // thêm null
+  parentId?: string | null; 
   replyToUserId?: string;
   replyToUserName?: string;
   likeCount: number;
-  likedBy: string[]; // đổi likes -> likedBy
-  deleted?: boolean; // thêm field này
+  likedBy: string[]; 
+  deleted?: boolean; 
 };
 
 /* ================= TYPE GUARDS ================= */
@@ -377,7 +380,7 @@ export const isTaskOpen = (task: Task): boolean => {
   if (isPlan(task)) {
     if (task.status !== "open" && task.status !== "doing") return false;
     if (task.eventDate.toMillis() < Date.now()) return false;
-    if (task.currentParticipants >= task.maxParticipants) return false;
+    if (task.currentParticipants >= task.totalSlots) return false; // SỬA DÒNG NÀY
   }
   
   return true;
