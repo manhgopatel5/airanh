@@ -76,12 +76,15 @@ export function CommentList({
         onSaveEdit(replyId);
         setEditingReplyId(null);
         setEditReplyText("");
+        navigator.vibrate?.(5);
       } else if (!isReply && editText.trim()) {
         onSaveEdit(c.id);
+        navigator.vibrate?.(5);
       }
     }
     if (e.key === "Escape") {
       isReply? setEditingReplyId(null) : onCancelEdit();
+      navigator.vibrate?.(5);
     }
   };
 
@@ -97,7 +100,7 @@ export function CommentList({
 
   const linkifyOptions = {
     target: "_blank",
-    className: "text-[#0A84FF] hover:underline break-all font-medium",
+    className: "text-[#0A84FF] hover:underline break-all font-semibold",
     rel: "noopener noreferrer"
   };
 
@@ -157,14 +160,20 @@ export function CommentList({
                   <div className="flex gap-2 mt-2 justify-end">
                     <motion.button
                       whileTap={{ scale: 0.95 }}
-                      onClick={onCancelEdit}
+                      onClick={() => {
+                        onCancelEdit();
+                        navigator.vibrate?.(5);
+                      }}
                       className="px-3 py-1.5 text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition-all font-semibold"
                     >
                       Huỷ
                     </motion.button>
                     <motion.button
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => onSaveEdit(c.id)}
+                      onClick={() => {
+                        onSaveEdit(c.id);
+                        navigator.vibrate?.(5);
+                      }}
                       disabled={!editText.trim()}
                       className="px-3 py-1.5 text-sm bg-[#0A84FF] hover:bg-[#0071e3] text-white rounded-lg transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -177,7 +186,7 @@ export function CommentList({
                   ref={textRef}
                   className={cn(
                     "break-words text-sm text-zinc-900 dark:text-zinc-100 leading-relaxed mt-0.5 whitespace-pre-wrap",
-                 !expandedText && `line-clamp-${MAX_TEXT_LINES}`
+                !expandedText && `line-clamp-${MAX_TEXT_LINES}`
                   )}
                 >
                   {c.deleted? (
@@ -194,7 +203,8 @@ export function CommentList({
               )}
 
               {showMoreText &&!expandedText &&!isEditing &&!c.deleted && (
-                <button
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => {
                     setExpandedText(true);
                     navigator.vibrate?.(5);
@@ -202,7 +212,7 @@ export function CommentList({
                   className="text-sm font-semibold text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 mt-1 transition-colors"
                 >
                   Xem thêm
-                </button>
+                </motion.button>
               )}
             </div>
 
@@ -212,7 +222,7 @@ export function CommentList({
                 animate={{ scale: 1 }}
                 className="absolute -bottom-2 -right-2 flex items-center gap-1 px-1.5 py-0.5 bg-white dark:bg-zinc-900 rounded-full shadow-md border border-zinc-200 dark:border-zinc-700"
               >
-                <FaHeart className="text-red-500" size={11} />
+                <FaHeart className="text-[#FF3B30]" size={11} />
                 <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">{c.likeCount}</span>
               </motion.div>
             )}
@@ -358,7 +368,7 @@ export function CommentList({
                           animate={{ scale: 1 }}
                           className="absolute -bottom-2 -right-2 flex items-center gap-1 px-1.5 py-0.5 bg-white dark:bg-zinc-900 rounded-full shadow-md border border-zinc-200 dark:border-zinc-700"
                         >
-                          <FaHeart className="text-red-500" size={10} />
+                          <FaHeart className="text-[#FF3B30]" size={10} />
                           <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">{r.likeCount}</span>
                         </motion.div>
                       )}
