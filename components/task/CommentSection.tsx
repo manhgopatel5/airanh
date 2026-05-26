@@ -5,7 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiChevronDown, FiMessageCircle, FiSend, FiX } from "react-icons/fi";
 import { createPortal } from "react-dom";
 import { CommentList } from "./CommentList";
-
+import { toast } from "sonner";
+import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { getFirebaseDB } from "@/lib/firebase";
+import { useTask } from "@/hooks/useTask";
 import type { TaskComment } from "@/types/task";
 import type { User } from "firebase/auth";
 
@@ -72,63 +75,82 @@ export default function CommentSection({
       setText("");
       setReplyTo(null);
       inputRef.current?.blur();
+      navigator.vibrate?.(5);
     } catch {}
   };
 
   const handleLike = (commentId: string) => {
     if (!currentUser) return;
     onLike(commentId, currentUser.uid);
+    navigator.vibrate?.(5);
   };
 
   return (
     <div className="bg-white dark:bg-zinc-950">
-      <div className="flex items-center justify-between pt-4 pb-3 px-5">
-        <h3 className="font-semibold text-base text-[#1C1C1E] dark:text-zinc-100">
+      <div className="flex items-center justify-between pt-4 pb-3 px-4">
+        <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
           Bình luận ({parentComments.length})
         </h3>
 
         <div className="relative min-w-0">
-          <button
-            onClick={() => setShowSortMenu(!showSortMenu)}
-            className="flex items-center gap-1 text-sm font-semibold text-zinc-600 dark:text-zinc-400 active:opacity-60"
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              setShowSortMenu(!showSortMenu);
+              navigator.vibrate?.(5);
+            }}
+            className="flex items-center gap-1 text-sm font-semibold text-zinc-600 dark:text-zinc-400 active:opacity-60 transition-opacity"
           >
             <span className="whitespace-nowrap">
               {commentSort === 'relevant'? 'Phù hợp nhất' : commentSort === 'newest'? 'Mới nhất' : 'Tất cả bình luận'}
             </span>
             <FiChevronDown size={16} className="shrink-0" />
-          </button>
+          </motion.button>
 
           <AnimatePresence>
             {showSortMenu && (
               <Portal>
-                <div className="fixed inset-0 z-40" onClick={() => setShowSortMenu(false)} />
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
+                  onClick={() => setShowSortMenu(false)}
+                />
+                <motion.div
+                  initial={{ opacity: 0, y: 100 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-zinc-900 rounded-t-3xl shadow-2xl pb-safe"
+                  exit={{ opacity: 0, y: 100 }}
+                  transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                  className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-t-3xl shadow-2xl ring-1 ring-black/5 dark:ring-white/10 pb-safe"
                 >
                   <div className="w-12 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mt-3 mb-2" />
-                  <div className="px-5 py-3">
-                    <h4 className="font-bold text-lg mb-4">Sắp xếp theo</h4>
+                  <div className="px-4 py-3">
+                    <h4 className="font-bold text-base text-zinc-900 dark:text-zinc-100 mb-4">Sắp xếp theo</h4>
                     {[
                       { key: 'relevant', label: 'Phù hợp nhất', desc: 'Hiển thị bình luận tác giả và nhiều tương tác trước.' },
                       { key: 'newest', label: 'Mới nhất', desc: 'Hiển thị bình luận mới nhất trước tiên.' },
                       { key: 'all', label: 'Tất cả bình luận', desc: 'Hiển thị tất cả bình luận.' }
                     ].map(item => (
-                      <button
+                      <motion.button
                         key={item.key}
-                        onClick={() => { setCommentSort(item.key as any); setShowSortMenu(false); setVisibleCount(5); }}
-                        className="w-full text-left py-3 flex items-start gap-3"
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => { 
+                          setCommentSort(item.key as any); 
+                          setShowSortMenu(false); 
+                          setVisibleCount(5);
+                          navigator.vibrate?.(5);
+                        }}
+                        className="w-full text-left py-3 flex items-start gap-3 active:bg-zinc-100 dark:active:bg-zinc-800 rounded-xl px-2"
                       >
-                        <div className={`w-5 h-5 rounded-full border-2 mt-0.5 ${commentSort === item.key? 'border-[#0a84ff] bg-[#0a84ff]' : 'border-zinc-300'}`}>
-                          {commentSort === item.key && <div className="w-2 h-2 bg-white rounded-full m-auto mt-[3px]" />}
+                        <div className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center ${commentSort === item.key? 'border-[#0A84FF] bg-[#0A84FF]' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                          {commentSort === item.key && <div className="w-2 h-2 bg-white rounded-full" />}
                         </div>
                         <div>
-                          <p className="font-semibold text-base">{item.label}</p>
-                          <p className="text-sm text-zinc-500">{item.desc}</p>
+                          <p className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">{item.label}</p>
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{item.desc}</p>
                         </div>
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 </motion.div>
@@ -138,16 +160,15 @@ export default function CommentSection({
         </div>
       </div>
 
-      {/* Bỏ pb-20 */}
-      <div className="px-5">
+      <div className="px-4">
         {parentComments.length === 0? (
-          <div className="text-center py-12 text-zinc-400 text-sm">
+          <div className="text-center py-12 text-zinc-400 dark:text-zinc-500 text-sm">
             <FiMessageCircle size={48} className="mx-auto mb-3 opacity-30" />
             Chưa có bình luận nào<br />Hãy là người đầu tiên
           </div>
         ) : (
           <div className="space-y-4">
-            <AnimatePresence>
+            <AnimatePresence mode="popLayout">
               {visibleComments.map((c) => (
                 <CommentList
                   key={c.id}
@@ -170,29 +191,42 @@ export default function CommentSection({
             </AnimatePresence>
 
             {hasMoreComments && (
-              <button
-                onClick={() => setVisibleCount(prev => prev + 5)}
-                className="w-full py-3 text-sm font-semibold text-[#0a84ff] active:bg-zinc-50 dark:active:bg-zinc-800 rounded-xl mt-2"
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  setVisibleCount(prev => prev + 5);
+                  navigator.vibrate?.(5);
+                }}
+                className="w-full py-3 text-sm font-semibold text-[#0A84FF] active:bg-zinc-100 dark:active:bg-zinc-800 rounded-xl mt-2 transition-colors"
               >
                 Xem thêm bình luận
-              </button>
+              </motion.button>
             )}
           </div>
         )}
       </div>
 
-      {/* Spacer thay cho pb-20 */}
       <div className="h-4" />
 
-      {/* QUAN TRỌNG: Đổi fixed -> sticky */}
-<div className="sticky bottom-0 z-20 bg-white dark:bg-zinc-900 px-5 py-3">
+      <div className="sticky bottom-0 z-20 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl px-4 py-3 border-t border-zinc-200 dark:border-zinc-800">
         {replyTo && (
-          <div className="text-sm dark:text-zinc-400 mb-2 flex items-center justify-between bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 px-3.5 py-2 rounded-xl">
-            <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100">{replyTo.userName}</b></span>
-            <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg active:scale-90 transition-all">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-sm text-zinc-600 dark:text-zinc-400 mb-2 flex items-center justify-between bg-zinc-100 dark:bg-zinc-800 px-3.5 py-2 rounded-xl"
+          >
+            <span>Đang trả lời <b className="text-zinc-900 dark:text-zinc-100 font-semibold">{replyTo.userName}</b></span>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => {
+                setReplyTo(null);
+                navigator.vibrate?.(5);
+              }}
+              className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg active:scale-90 transition-all"
+            >
               <FiX size={14} />
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
         )}
         <div className="flex gap-2 items-end relative">
           <input
@@ -201,14 +235,14 @@ export default function CommentSection({
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" &&!e.shiftKey && handleSend()}
             placeholder={currentUser? "Viết bình luận..." : "Đăng nhập để bình luận"}
-            className="flex-1 px-4 py-2.5 rounded-full bg-white dark:bg-zinc-900 border border-[#E5E5EA] dark:border-zinc-700 outline-none text-sm focus:ring-2 focus:ring-[#0a84ff]/20 focus:border-[#0a84ff] transition-all"
+            className="flex-1 px-4 py-2.5 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-transparent outline-none text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 focus:ring-2 focus:ring-[#0A84FF]/20 focus:border-[#0A84FF] transition-all"
             disabled={sending ||!currentUser}
           />
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={handleSend}
             disabled={!text.trim() || sending ||!currentUser}
-            className="p-2.5 rounded-full bg-[#0a84ff] hover:bg-[#0071e3] text-white disabled:bg-zinc-300 dark:disabled:bg-zinc-700 disabled:cursor-not-allowed active:scale-90 transition-all"
+            className="p-2.5 rounded-full bg-[#0A84FF] hover:bg-[#0071e3] text-white disabled:bg-zinc-300 dark:disabled:bg-zinc-700 disabled:cursor-not-allowed active:scale-90 transition-all"
           >
             <FiSend size={18} />
           </motion.button>
