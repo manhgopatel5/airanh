@@ -34,10 +34,9 @@ export default function TaskDescription({
   if (!description && (!images || images.length === 0)) return null;
 
   return (
-    <>
+    <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
       {description && (
         <>
-          <div className="h-px bg-zinc-200 dark:bg-zinc-800 w-screen -ml-4 my-4" />
           <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 mb-2">
             Mô tả công việc
           </h3>
@@ -50,7 +49,7 @@ export default function TaskDescription({
             <p
               ref={descRef}
               className={`text-sm text-zinc-900 dark:text-zinc-100 whitespace-pre-wrap leading-relaxed ${
-              !descExpanded? 'line-clamp-5' : ''
+             !descExpanded? 'line-clamp-5' : ''
               }`}
             >
               {description}
@@ -75,8 +74,7 @@ export default function TaskDescription({
       )}
 
       {images && images.length > 0 && (
-        <>
-          <div className="h-px bg-zinc-200 dark:bg-zinc-800 w-screen -ml-4 my-4" />
+        <div className={description? "mt-6" : ""}>
           <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 mb-3">
             Xem ảnh và file
           </h3>
@@ -154,8 +152,8 @@ export default function TaskDescription({
               </div>
             )}
           </div>
-        </>
+        </div>
       )}
-    </>
+    </div>
   );
 }
