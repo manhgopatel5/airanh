@@ -1001,12 +1001,12 @@ void status;
 {/* Bình luận */}
 <div>
   <div className="bg-white dark:bg-zinc-950 overflow-hidden">
-<div className="px-5 pt-4 pb-3 flex items-center justify-between">
-  <h3 className="font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
+<div className="grid grid-cols-4 pt-4 pb-3">
+  <h3 className="col-span-3 font-semibold text-sm text-[#1C1C1E] dark:text-zinc-100">
     Bình luận ({parentComments.length})
   </h3>
   
-  <div className="relative">
+  <div className="relative flex justify-end">
     <button
       onClick={() => setShowSortMenu(!showSortMenu)}
       className="flex items-center gap-1 text-sm font-semibold text-zinc-600 dark:text-zinc-400 active:opacity-60"
