@@ -41,7 +41,7 @@ export default function TaskInfoGrid({ task, applications }: Props) {
     return () => clearInterval(interval);
   }, [task]);
 
-  const taskDate = isTask(task) && task.createdAt?.seconds
+  const taskDate = task.createdAt?.seconds
   ? new Date(task.createdAt.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
     : "Chưa xác định";
 
@@ -51,6 +51,7 @@ export default function TaskInfoGrid({ task, applications }: Props) {
 
   const acceptedCount = applications.filter(a => a.status === 'accepted').length;
   const totalApplied = applications.length;
+  const totalSlots = task.totalSlots ?? 0;
 
   return (
     <div className="mt-4">
@@ -96,7 +97,7 @@ export default function TaskInfoGrid({ task, applications }: Props) {
           <div>
             <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100">Đã nhận</p>
             <p className="text- font-semibold text-[#1C1C1E] dark:text-zinc-100 mt-0.5">
-              {acceptedCount}/{task.totalSlots} người
+              {acceptedCount}/{totalSlots} người
             </p>
           </div>
           <div>
