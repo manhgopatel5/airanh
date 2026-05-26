@@ -1,155 +1,186 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
-  collection,
-  onSnapshot,
-  query,
-  orderBy,
-  where,
-  QueryConstraint,
-  limit,
-  doc,
-  QueryDocumentSnapshot,
-  DocumentData,
+  doc, getDoc, getDocs, collection, query, where,
+  updateDoc, arrayUnion, arrayRemove, serverTimestamp
 } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
-import { Task } from "@/types/task";
+import { toast } from "sonner";
+import { incrementTaskView } from "@/lib/task";
+import { applyToTask, cancelToTask } from "@/app/actions/task";
+import type { Task } from "@/types/task";
 
-/* ================= TYPES ================= */
-export type TaskFilter = {
-  status?: Task["status"] | Task["status"][];
-  userId?: string;
-  category?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  keyword?: string;
-  limit?: number;
+type UserData = {
+  uid: string;
+  name: string;
+  avatar: string;
+  online?: boolean;
+  rating?: number;
+  reviewCount?: number;
+  joinedDate?: any;
+  phone?: string;
+  verified?: boolean;
 };
 
-type UseTasksReturn = {
-  tasks: Task[];
-  loading: boolean;
-  error: string | null;
-  hasMore: boolean;
-  loadMore: () => void;
+type Application = {
+  id: string;
+  taskId: string;
+  taskOwnerId: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
+  createdAt: any;
+  updatedAt?: any;
 };
 
-/* ================= HOOK LIST ================= */
-export default function useTasks(filter?: TaskFilter): UseTasksReturn {
-  const db = getFirebaseDB();
-
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-
-  const queryConstraints = useMemo(() => {
-    const constraints: QueryConstraint[] = [];
-    const limitCount = filter?.limit || 20;
-
-    const hasPriceFilter = filter?.minPrice || filter?.maxPrice;
-
-    if (filter?.status) {
-      const statuses = Array.isArray(filter.status) ? filter.status : [filter.status];
-      constraints.push(where("status", "in", statuses));
-    } else {
-      constraints.push(where("status", "in", ["open", "full"]));
-    }
-
-    if (filter?.userId) constraints.push(where("userId", "==", filter.userId));
-    if (filter?.category) constraints.push(where("category", "==", filter.category));
-    if (filter?.keyword) constraints.push(where("searchKeywords", "array-contains", filter.keyword.toLowerCase()));
-    if (filter?.minPrice) constraints.push(where("price", ">=", filter.minPrice));
-    if (filter?.maxPrice) constraints.push(where("price", "<=", filter.maxPrice));
-
-    if (hasPriceFilter) {
-      constraints.push(orderBy("price", "asc"));
-      constraints.push(orderBy("createdAt", "desc"));
-    } else {
-      constraints.push(orderBy("createdAt", "desc"));
-    }
-
-    constraints.push(limit(limitCount));
-    return constraints;
-  }, [filter?.status, filter?.userId, filter?.category, filter?.minPrice, filter?.maxPrice, filter?.keyword, filter?.limit]);
-
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-    setTasks([]);
-    setLastDoc(null);
-
-    const q = query(collection(db, "tasks"), ...queryConstraints);
-
-    const unsub = onSnapshot(
-      q,
-      (snapshot) => {
-        const data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        } as Task));
-        setTasks(data);
-        setLastDoc(snapshot.docs[snapshot.docs.length - 1] || null);
-        setHasMore(snapshot.docs.length === (filter?.limit || 20));
-        setLoading(false);
-      },
-      (err) => {
-        console.error("Firestore error:", err);
-        setError("Không thể tải danh sách công việc");
-        setLoading(false);
-      }
-    );
-
-    return () => unsub();
-  }, [queryConstraints, db]);
-
-  const loadMore = () => {
-    if (!lastDoc || !hasMore) return;
-    // TODO: Implement pagination với startAfter(lastDoc)
-  };
-
-  return { tasks, loading, error, hasMore, loadMore };
-}
-
-/* ================= HOOK 1 TASK ================= */
-export function useTask(taskId: string | null) {
-  const db = getFirebaseDB();
-
+export function useTask(taskId: string | undefined, currentUserId?: string) {
+  const router = useRouter();
+  const [db, setDb] = useState<any>(null);
   const [task, setTask] = useState<Task | null>(null);
+  const [owner, setOwner] = useState<UserData | null>(null);
+  const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [joining, setJoining] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!taskId) {
-      setTask(null);
+    setDb(getFirebaseDB());
+  }, []);
+
+  const loadTask = useCallback(async () => {
+    if (!db ||!taskId || typeof taskId!== "string") return;
+    try {
+      const snap = await getDoc(doc(db, "tasks", taskId));
+      if (!snap.exists()) {
+        toast.error("Không tìm thấy công việc");
+        router.replace("/404");
+        return;
+      }
+      const data = snap.data();
+      if (data.banned) {
+        toast.error("Công việc này đã bị khóa");
+        router.replace("/");
+        return;
+      }
+      const taskData = { id: snap.id,...data } as Task;
+      setTask(taskData);
+      setIsSaved(!!currentUserId &&!!taskData.savedBy?.includes(currentUserId));
+      incrementTaskView(taskData.id);
+    } catch (err) {
+      console.error("Load task error:", err);
+      toast.error("Lỗi tải công việc");
+      router.replace("/404");
+    } finally {
       setLoading(false);
+    }
+  }, [db, taskId, currentUserId, router]);
+
+  const loadOwner = useCallback(async () => {
+    if (!db ||!task?.userId) return;
+    const snap = await getDoc(doc(db, "users", task.userId));
+    if (snap.exists()) setOwner({ uid: snap.id,...snap.data() } as UserData);
+  }, [db, task?.userId]);
+
+  const loadApplications = useCallback(async () => {
+    if (!db ||!task?.id) {
+      setApplications([]);
       return;
     }
+    const q = query(collection(db, 'applications'), where('taskId', '==', task.id));
+    const snap = await getDocs(q);
+    const apps = snap.docs.map(d => ({ id: d.id,...d.data() } as Application));
+    setApplications(apps);
+  }, [db, task?.id]);
 
-    setLoading(true);
-    const unsub = onSnapshot(
-      doc(db, "tasks", taskId),
-      (snap) => {
-        if (snap.exists()) {
-          setTask({ id: snap.id, ...snap.data() } as Task);
-          setError(null);
-        } else {
-          setTask(null);
-          setError("Không tìm thấy công việc");
-        }
-        setLoading(false);
-      },
-      (err) => {
-        console.error(err);
-        setError("Lỗi tải công việc");
-        setLoading(false);
-      }
-    );
+  useEffect(() => {
+    loadTask();
+  }, [loadTask]);
 
-    return () => unsub();
-  }, [taskId, db]);
+  useEffect(() => {
+    loadOwner();
+  }, [loadOwner]);
 
-  return { task, loading, error };
+  useEffect(() => {
+    loadApplications();
+  }, [loadApplications]);
+
+  const handleSave = async () => {
+    if (!currentUserId ||!task) return;
+    if (saving) return;
+    setSaving(true);
+    const newSaved =!isSaved;
+    setIsSaved(newSaved);
+    try {
+      await updateDoc(doc(db, "tasks", task.id), {
+        savedBy: newSaved? arrayUnion(currentUserId) : arrayRemove(currentUserId),
+      });
+      toast.success(newSaved? "Đã lưu" : "Đã bỏ lưu");
+    } catch {
+      setIsSaved(!newSaved);
+      toast.error("Lỗi");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleJoinTask = async () => {
+    if (!currentUserId ||!task || joining) return;
+    setJoining(true);
+    try {
+      await applyToTask(task.id, currentUserId);
+      toast.success("Đã gửi yêu cầu ứng tuyển!");
+      navigator.vibrate?.(10);
+      await loadTask();
+      await loadApplications();
+    } catch (err: any) {
+      toast.error(err.message || "Ứng tuyển thất bại");
+      console.error(err);
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  const handleCancelApply = async () => {
+    if (!currentUserId ||!task || joining) return;
+    setJoining(true);
+    try {
+      await cancelToTask(task.id, currentUserId);
+      toast.success("Đã hủy ứng tuyển");
+      navigator.vibrate?.(10);
+      await loadTask();
+      await loadApplications();
+    } catch {
+      toast.error("Hủy thất bại");
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  const isOwner = currentUserId === task?.userId;
+  const isApplied = applications.some(
+    app => app.userId === currentUserId && ['pending', 'accepted'].includes(app.status)
+  );
+  const isFull = task && 'totalSlots' in task? (task.appliedCount || 0) >= task.totalSlots : false;
+
+  return {
+    task,
+    owner,
+    applications,
+    loading,
+    isOwner,
+    isApplied,
+    isFull,
+    isSaved,
+    saving,
+    joining,
+    handleSave,
+    handleJoinTask,
+    handleCancelApply,
+    reloadTask: loadTask,
+    reloadApplications: loadApplications
+  };
 }
