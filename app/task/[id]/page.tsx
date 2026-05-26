@@ -1124,7 +1124,7 @@ void status;
   <div className="relative flex justify-end">
     <button
       onClick={() => setShowSortMenu(!showSortMenu)}
-      className="flex items-center gap-1 text-[13px] font-semibold text-zinc-600 dark:text-zinc-400 active:opacity-60"
+      className="flex items-center gap-1 text-[15px] font-semibold text-zinc-600 dark:text-zinc-400 active:opacity-60"
     >
       {commentSort === 'relevant'? 'Phù hợp nhất' : commentSort === 'newest'? 'Mới nhất' : 'Tất cả bình luận'}
       <FiChevronDown size={16} />
