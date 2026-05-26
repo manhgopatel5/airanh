@@ -35,15 +35,15 @@ export default function TaskDetailPage() {
     reloadApplications
   } = useTask(id, currentUser?.uid);
 
-  const {
-    comments,
-    sending,
-    sendComment,
-    likeComment,
-    deleteComment,
-    editComment
-  } = useComments(task?.id);
-
+  const { 
+  comments, 
+  sending, 
+  likingComments, // thêm dòng này
+  sendComment, 
+  likeComment, 
+  deleteComment, 
+  editComment 
+} = useComments(task?.id);
   const [showImageGallery, setShowImageGallery] = useState<number | null>(null);
   const [shareTask, setShareTask] = useState<typeof task | null>(null);
 
