@@ -118,7 +118,7 @@ export type PlanMilestone = {
   dueDate?: Timestamp;
   completed: boolean;
   completedAt?: Timestamp;
-  assignedTo?: string[]; // userId[]
+  assignedTo?: string[]; 
   order: number;
 };
 
@@ -142,27 +142,28 @@ export type PlanItem = BaseItem & {
   type: "plan";
   
   // Timeline
-  eventDate: Timestamp; // Ngày giờ chính diễn ra
-  endDate?: Timestamp; // Kết thúc
+  eventDate: Timestamp; 
+  endDate?: Timestamp; 
   milestones: PlanMilestone[];
 
   // Participants
   participants: PlanParticipant[];
   maxParticipants: number;
   currentParticipants: number;
-  totalSlots: number; // THÊM DÒNG NÀY
-  inviteCode?: string; // mã mời private
+  totalSlots: number; 
+  appliedCount?: number; // THÊM DÒNG NÀY
+  inviteCode?: string; 
   allowInvite: boolean;
 
   // Cost
   costType: CostType;
-  costAmount?: number; // Nếu costType = share/host
-  costDescription?: string; // Mô tả chi phí
+  costAmount?: number; 
+  costDescription?: string; 
   paymentMethod?: PaymentMethod; 
 
   // Settings
-  autoAccept?: boolean; // Tự động accept khi join
-  requireApproval?: boolean; // Owner duyệt mới join
+  autoAccept?: boolean; 
+  requireApproval?: boolean; 
 };
 
 /* ================= UNION TYPE ================= */
@@ -200,7 +201,7 @@ export type CreatePlanInput = {
   eventDate: Timestamp;
   endDate?: Timestamp;
   maxParticipants: number;
-  totalSlots: number; // THÊM DÒNG NÀY
+  totalSlots: number; 
   costType: CostType;
   costAmount?: number;
   costDescription?: string;
@@ -258,6 +259,7 @@ export type TaskListItem = Pick<
   | "startDate"
   | "savedBy"     
   | "applicants"  
+  | "appliedCount" // THÊM DÒNG NÀY
 >;
 
 export type PlanListItem = Pick<
@@ -286,7 +288,8 @@ export type PlanListItem = Pick<
   | "endDate"
   | "maxParticipants"
   | "currentParticipants"
-  | "totalSlots" // THÊM DÒNG NÀY
+  | "totalSlots" 
+  | "appliedCount" // THÊM DÒNG NÀY
   | "costType"
   | "costAmount"
   | "paymentMethod" 
@@ -380,7 +383,7 @@ export const isTaskOpen = (task: Task): boolean => {
   if (isPlan(task)) {
     if (task.status !== "open" && task.status !== "doing") return false;
     if (task.eventDate.toMillis() < Date.now()) return false;
-    if (task.currentParticipants >= task.totalSlots) return false; // SỬA DÒNG NÀY
+    if (task.currentParticipants >= task.totalSlots) return false; 
   }
   
   return true;
