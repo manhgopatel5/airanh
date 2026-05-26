@@ -1157,21 +1157,21 @@ void status;
 {/* Bình luận */}
 <div>
   <div className="bg-white dark:bg-zinc-950 overflow-hidden">
-    <div className="grid grid-cols-4 pt-4 pb-3">
-      <h3 className="col-span-3 font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100">
+    <div className="flex items-center justify-between pt-4 pb-3">
+      <h3 className="font-semibold text-[15px] text-[#1C1C1E] dark:text-zinc-100">
         Bình luận ({parentComments.length})
       </h3>
   
-      <div className="relative flex justify-end">
- <button
-  onClick={() => setShowSortMenu(!showSortMenu)}
-  className="flex items-center gap-1 text- font-semibold text-zinc-600 dark:text-zinc-400 active:opacity-60 justify-end min-w-0"
->
-  <span className="whitespace-nowrap overflow-hidden">
-    {commentSort === 'relevant'? 'Phù hợp nhất' : commentSort === 'newest'? 'Mới nhất' : 'Tất cả bình luận'}
-  </span>
-  <FiChevronDown size={16} className="shrink-0" />
-</button>
+      <div className="relative min-w-0">
+        <button
+          onClick={() => setShowSortMenu(!showSortMenu)}
+          className="flex items-center gap-1 text-[15px] font-semibold text-zinc-600 dark:text-zinc-400 active:opacity-60"
+        >
+          <span className="whitespace-nowrap">
+            {commentSort === 'relevant'? 'Phù hợp nhất' : commentSort === 'newest'? 'Mới nhất' : 'Tất cả bình luận'}
+          </span>
+          <FiChevronDown size={16} className="shrink-0" />
+        </button>
 
         <AnimatePresence>
           {showSortMenu && (
