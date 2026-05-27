@@ -10,7 +10,7 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { toast } from "sonner";
 import { incrementTaskView } from "@/lib/task";
 import { applyToTask, cancelToTask } from "@/app/actions/task";
-import type { FeedTask } from "@/types/task"; // FIX: Dùng FeedTask
+import type { FeedTask } from "@/types/task";
 
 type UserData = {
   uid: string;
@@ -39,7 +39,7 @@ type Application = {
 export function useTask(taskId: string | undefined, currentUserId?: string) {
   const router = useRouter();
   const [db, setDb] = useState<any>(null);
-  const [task, setTask] = useState<FeedTask | null>(null); // FIX: FeedTask
+  const [task, setTask] = useState<FeedTask | null>(null);
   const [owner, setOwner] = useState<UserData | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +67,7 @@ export function useTask(taskId: string | undefined, currentUserId?: string) {
         return;
       }
 
-      // FIX: Convert toàn bộ sang FeedTask + string
+      // FIX: Convert sang FeedTask chuẩn - tất cả optional đều check undefined
       const taskData: FeedTask = {
         id: snap.id,
         slug: d.slug || "",
@@ -77,38 +77,50 @@ export function useTask(taskId: string | undefined, currentUserId?: string) {
         type: d.type || "task",
         status: d.status || "open",
         userId: d.userId || "",
-        owner: d.owner || null,
-        price: d.price || 0,
+        userName: d.userName || "",
+        userAvatar: d.userAvatar || "",
+       ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
+       ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
+        price: d.price?? 0,
         currency: d.currency || "VND",
         budgetType: d.budgetType || "fixed",
-        paymentMethod: d.paymentMethod || null,
-        totalSlots: d.totalSlots || 0,
-        joined: d.joined || 0,
-        applicants: d.applicants || [],
-        savedBy: d.savedBy || [],
-        assignees: d.assignees || [],
-        location: d.location || null,
-        tags: d.tags || [],
-        categories: d.categories || [],
+       ...(d.paymentMethod!== undefined && { paymentMethod: d.paymentMethod }),
+        totalSlots: d.totalSlots?? 0,
+        joined: d.joined?? 0,
+        maxParticipants: d.maxParticipants?? d.totalSlots?? 0,
+        currentParticipants: d.currentParticipants?? d.joined?? 0,
+        applicants: Array.isArray(d.applicants)? d.applicants : [],
+        savedBy: Array.isArray(d.savedBy)? d.savedBy : [],
+        assignees: Array.isArray(d.assignees)? d.assignees : [],
+        likes: Array.isArray(d.likes)? d.likes : [],
+       ...(d.location!== undefined && { location: d.location }),
+        tags: Array.isArray(d.tags)? d.tags : [],
+        category: d.category || "",
+        images: Array.isArray(d.images)? d.images : [],
         visibility: d.visibility || "public",
-        likeCount: d.likeCount || 0,
-        viewCount: d.viewCount || 0,
-        shareCount: d.shareCount || 0,
-        bookmarkCount: d.bookmarkCount || 0,
-        priority: d.priority || 0,
-        featured: d.featured || false,
-        banned: d.banned || false,
-        hidden: d.hidden || false,
-        searchKeywords: d.searchKeywords || [],
-        images: d.images || [],
-        // FIX: Timestamp -> string
+        likeCount: d.likeCount?? 0,
+        viewCount: d.viewCount?? 0,
+        commentCount: d.commentCount?? 0,
+        shareCount: d.shareCount?? 0,
+        bookmarkCount: d.bookmarkCount?? 0,
+       ...(d.isRemote!== undefined && { isRemote: d.isRemote }),
+       ...(d.banned!== undefined && { banned: d.banned }),
+       ...(d.hidden!== undefined && { hidden: d.hidden }),
+       ...(d.appliedCount!== undefined && { appliedCount: d.appliedCount }),
+        // Timestamp -> string
         createdAt: d.createdAt?.toDate?.()?.toISOString() || null,
-        updatedAt: d.updatedAt?.toDate?.()?.toISOString() || null,
-        deadline: d.deadline?.toDate?.()?.toISOString() || null,
-        eventDate: d.eventDate?.toDate?.()?.toISOString() || null,
-        endDate: d.endDate?.toDate?.()?.toISOString() || null,
-        startDate: d.startDate?.toDate?.()?.toISOString() || null,
-        applicationDeadline: d.applicationDeadline?.toDate?.()?.toISOString() || null,
+       ...(d.updatedAt?.toDate && { updatedAt: d.updatedAt.toDate().toISOString() }),
+       ...(d.deadline?.toDate && { deadline: d.deadline.toDate().toISOString() }),
+       ...(d.eventDate?.toDate && { eventDate: d.eventDate.toDate().toISOString() }),
+       ...(d.endDate?.toDate && { endDate: d.endDate.toDate().toISOString() }),
+       ...(d.startDate?.toDate && { startDate: d.startDate.toDate().toISOString() }),
+       ...(d.applicationDeadline?.toDate && { applicationDeadline: d.applicationDeadline.toDate().toISOString() }),
+        // Plan fields
+       ...(d.type === "plan" && {
+          milestones: Array.isArray(d.milestones)? d.milestones : [],
+          costType: d.costType || "free",
+         ...(d.costAmount!== undefined && { costAmount: d.costAmount }),
+        }),
       };
 
       setTask(taskData);
@@ -208,11 +220,15 @@ export function useTask(taskId: string | undefined, currentUserId?: string) {
   const isApplied = applications.some(
     app => app.userId === currentUserId && ['pending', 'accepted'].includes(app.status)
   );
-  // FIX: Dùng joined thay appliedCount cho đúng FeedTask
-  const isFull = task? (task.joined?? 0) >= task.totalSlots : false;
+  // FIX: Dùng joined cho task, currentParticipants cho plan
+  const isFull = task?
+    (task.type === "task"
+     ? (task.joined?? 0) >= task.totalSlots
+      : (task.currentParticipants?? 0) >= (task.maxParticipants?? task.totalSlots)
+    ) : false;
 
   return {
-    task, // FeedTask | null
+    task,
     owner,
     applications,
     loading,
