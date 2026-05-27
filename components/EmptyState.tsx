@@ -1,8 +1,9 @@
 "use client";
+
 import { HiPlus } from "react-icons/hi2";
 import {
   FiTrendingUp, FiSend, FiInbox, FiUsers,
-  FiZap, FiMapPin, FiClock, FiUserPlus
+  FiZap, FiMapPin, FiClock, FiUserPlus, FiRefreshCw
 } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -47,25 +48,24 @@ const CONTENT_POOL = {
       ]
     },
     friends: {
-      titles: ["    Kèo người quen, tiền ít nhưng drama nhiều 🌚"],
-      descs: ["    Giúp nhau hôm nay, mai cưới nhớ gửi thiệp 😌"],
+      titles: ["Kèo người quen, tiền ít nhưng drama nhiều 🌚"],
+      descs: ["Giúp nhau hôm nay, mai cưới nhớ gửi thiệp 😌"],
       icon: FiUsers,
       suggests: [
         "Qua phụ dọn nhà, tui bao ăn 🧹",
         "Việc cho người quen thôi, qua Cam kiếm tiền",
         "Comment dạo giúp tui cho bài đỡ flop 💬 trả công 5 chục",
-        "Tìm người đốt nhà ngừoi yêu cũ 🤫"
+        "Tìm người đốt nhà người yêu cũ 🤫"
       ]
     },
   },
-
   plan: {
     hot: {
       titles: ["Kèo này mà bỏ là phí thanh xuân đó 😭🔥"],
       descs: ["Join lẹ kẻo full slot đó 👀"],
       icon: FiZap,
       suggests: [
-        "Cafe sáng tám chuyện chill chill đê  ☕",
+        "Cafe sáng tám chuyện chill chill đê ☕",
         "Đi ăn chung cho tui đỡ ngại đi một mình 🍜",
         "Boardgame thua trả tiền nào 😏",
         "Phượt Vũng tàu nhẹ cái cho đã 🏍️"
@@ -90,7 +90,7 @@ const CONTENT_POOL = {
         "Kèo tối nay Q1 luôn không tụi bây 🍻",
         "Đi ăn không đặt bàn nhanh nào 😤",
         "Tối xem C1 trận MU - Ars nào 🤡",
-        "Ê tự nhiên muốn đi đảo khỉ Cần Giờ  🐒"
+        "Ê tự nhiên muốn đi đảo khỉ Cần Giờ 🐒"
       ]
     },
     friends: {
@@ -105,7 +105,7 @@ const CONTENT_POOL = {
       ]
     },
   },
-};
+} as const;
 
 const THEME = {
   task: {
@@ -128,22 +128,25 @@ const THEME = {
     tabActive: "text-green-500",
     tabLine: "bg-green-500",
   },
-};
+} as const;
 
-const getRandomItems = <T,>(arr: T[], count: number): T[] => {
+const getRandomItems = <T,>(arr: readonly T[], count: number): T[] => {
   const shuffled = [...arr].sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);
 };
 
+// FIX: Thêm onRefresh vào Props cho exactOptionalPropertyTypes
 type Props = {
   tab: TabId;
-  type?: PostType;
+  type: PostType;
+  onRefresh?: () => Promise<void> | void;
 };
 
-export default function EmptyState({ tab, type = "task" }: Props) {
+export default function EmptyState({ tab, type, onRefresh }: Props) {
   const router = useRouter();
   const theme = THEME[type];
   const pool = CONTENT_POOL[type][tab];
+  const [refreshing, setRefreshing] = useState(false);
 
   const [content, setContent] = useState(() => ({
     title: pool.titles[0],
@@ -170,8 +173,20 @@ export default function EmptyState({ tab, type = "task" }: Props) {
   };
 
   const handleCreateClick = () => {
+    if ("vibrate" in navigator) navigator.vibrate(5);
     const path = type === "task"? "/create/task" : "/create/plan";
     router.push(path);
+  };
+
+  const handleRefreshClick = async () => {
+    if (!onRefresh || refreshing) return;
+    setRefreshing(true);
+    if ("vibrate" in navigator) navigator.vibrate(5);
+    try {
+      await onRefresh();
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   return (
@@ -220,6 +235,7 @@ export default function EmptyState({ tab, type = "task" }: Props) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.15 }}
+        className="flex flex-col gap-3"
       >
         <button
           onClick={handleCreateClick}
@@ -228,6 +244,17 @@ export default function EmptyState({ tab, type = "task" }: Props) {
           <HiPlus size={20} strokeWidth={2.5} />
           {type === "task"? "Đăng việc mới" : "Tạo kế hoạch"}
         </button>
+
+        {onRefresh && (
+          <button
+            onClick={handleRefreshClick}
+            disabled={refreshing}
+            className="px-5 py-2.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold text-sm flex items-center gap-2 justify-center active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FiRefreshCw size={18} className={refreshing? "animate-spin" : ""} />
+            {refreshing? "Đang tải..." : "Tải lại"}
+          </button>
+        )}
       </motion.div>
     </div>
   );
