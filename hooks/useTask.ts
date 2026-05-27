@@ -10,7 +10,7 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { toast } from "sonner";
 import { incrementTaskView } from "@/lib/task";
 import { applyToTask, cancelToTask } from "@/app/actions/task";
-import type { Task } from "@/types/task";
+import type { FeedTask } from "@/types/task"; // FIX: Dùng FeedTask
 
 type UserData = {
   uid: string;
@@ -39,7 +39,7 @@ type Application = {
 export function useTask(taskId: string | undefined, currentUserId?: string) {
   const router = useRouter();
   const [db, setDb] = useState<any>(null);
-  const [task, setTask] = useState<Task | null>(null);
+  const [task, setTask] = useState<FeedTask | null>(null); // FIX: FeedTask
   const [owner, setOwner] = useState<UserData | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,13 +60,57 @@ export function useTask(taskId: string | undefined, currentUserId?: string) {
         router.replace("/404");
         return;
       }
-      const data = snap.data();
-      if (data.banned) {
+      const d = snap.data();
+      if (d.banned) {
         toast.error("Công việc này đã bị khóa");
         router.replace("/");
         return;
       }
-      const taskData = { id: snap.id,...data } as Task;
+
+      // FIX: Convert toàn bộ sang FeedTask + string
+      const taskData: FeedTask = {
+        id: snap.id,
+        slug: d.slug || "",
+        shortId: d.shortId || "",
+        title: d.title || "",
+        description: d.description || "",
+        type: d.type || "task",
+        status: d.status || "open",
+        userId: d.userId || "",
+        owner: d.owner || null,
+        price: d.price || 0,
+        currency: d.currency || "VND",
+        budgetType: d.budgetType || "fixed",
+        paymentMethod: d.paymentMethod || null,
+        totalSlots: d.totalSlots || 0,
+        joined: d.joined || 0,
+        applicants: d.applicants || [],
+        savedBy: d.savedBy || [],
+        assignees: d.assignees || [],
+        location: d.location || null,
+        tags: d.tags || [],
+        categories: d.categories || [],
+        visibility: d.visibility || "public",
+        likeCount: d.likeCount || 0,
+        viewCount: d.viewCount || 0,
+        shareCount: d.shareCount || 0,
+        bookmarkCount: d.bookmarkCount || 0,
+        priority: d.priority || 0,
+        featured: d.featured || false,
+        banned: d.banned || false,
+        hidden: d.hidden || false,
+        searchKeywords: d.searchKeywords || [],
+        images: d.images || [],
+        // FIX: Timestamp -> string
+        createdAt: d.createdAt?.toDate?.()?.toISOString() || null,
+        updatedAt: d.updatedAt?.toDate?.()?.toISOString() || null,
+        deadline: d.deadline?.toDate?.()?.toISOString() || null,
+        eventDate: d.eventDate?.toDate?.()?.toISOString() || null,
+        endDate: d.endDate?.toDate?.()?.toISOString() || null,
+        startDate: d.startDate?.toDate?.()?.toISOString() || null,
+        applicationDeadline: d.applicationDeadline?.toDate?.()?.toISOString() || null,
+      };
+
       setTask(taskData);
       setIsSaved(!!currentUserId &&!!taskData.savedBy?.includes(currentUserId));
       incrementTaskView(taskData.id);
@@ -164,13 +208,11 @@ export function useTask(taskId: string | undefined, currentUserId?: string) {
   const isApplied = applications.some(
     app => app.userId === currentUserId && ['pending', 'accepted'].includes(app.status)
   );
-  // Sửa: dùng?? 0 và check cả totalSlots + appliedCount
-  const isFull = task && 'totalSlots' in task && 'appliedCount' in task
-   ? (task.appliedCount?? 0) >= task.totalSlots
-    : false;
+  // FIX: Dùng joined thay appliedCount cho đúng FeedTask
+  const isFull = task? (task.joined?? 0) >= task.totalSlots : false;
 
   return {
-    task,
+    task, // FeedTask | null
     owner,
     applications,
     loading,
