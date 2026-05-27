@@ -3,26 +3,29 @@
 import { useRouter } from "next/navigation";
 import {
   FiUsers, FiClock, FiMapPin, FiBookmark, FiMoreHorizontal,
-  FiTrash2, FiEdit2, FiShare2, FiEye
+  FiTrash2, FiEdit2, FiShare2, FiEye, FiMessageCircle
 } from "react-icons/fi";
+import { HiHeart, HiOutlineHeart } from "react-icons/hi2";
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
-import { type TaskStatus, type FeedTask, isTask } from "@/types/task"; // SỬA: FeedTask
+import { type TaskStatus, type FeedTask, isTask } from "@/types/task";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
+import Image from "next/image";
 
 type Props = {
-  task: FeedTask; // SỬA: Task -> FeedTask
+  task: FeedTask;
   theme: "task" | "plan";
   onDelete?: (id: string) => void;
-  onShare?: (task: FeedTask) => void; // SỬA: Task -> FeedTask
-  onTaskUpdate?: (taskId: string, updates: Partial<FeedTask>) => void; // SỬA
+  onShare?: (task: FeedTask) => void;
+  onTaskUpdate?: (taskId: string, updates: Partial<FeedTask>) => void;
+  priority?: boolean;
 };
 
 const Portal = ({ children }: { children: React.ReactNode }) => {
@@ -31,36 +34,26 @@ const Portal = ({ children }: { children: React.ReactNode }) => {
   return mounted? createPortal(children, document.body) : null;
 };
 
-export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
+export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, priority = false }: Props) {
   const router = useRouter();
   const { user } = useAuth();
   const db = getFirebaseDB();
 
   const [isSaved, setIsSaved] = useState(false);
+  const [liked, setLiked] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const menuBtnRef = useRef<HTMLButtonElement>(null);
 
-  const themeColor = {
-    task: {
-      primary: "#0A84FF",
-      light: "bg-[#0A84FF]/10 dark:bg-[#0A84FF]/20",
-      text: "text-[#0A84FF] dark:text-[#8AB4F8]",
-      fill: "fill-[#0A84FF]",
-    },
-    plan: {
-      primary: "#30D158",
-      light: "bg-[#30D158]/10 dark:bg-[#30D158]/20",
-      text: "text-[#30D158] dark:text-[#81C995]",
-      fill: "fill-[#30D158]",
-    }
-  }[theme];
+  const isTaskTheme = theme === "task";
+  const primaryColor = isTaskTheme? "#0A84FF" : "#30D158";
 
   useEffect(() => {
     if (!task?.id) return;
     setIsSaved(!!user?.uid &&!!task.savedBy?.includes(user.uid));
-  }, [user?.uid, task?.savedBy, task?.id]);
+    setLiked(!!user?.uid &&!!task.likes?.includes(user.uid));
+  }, [user?.uid, task?.savedBy, task?.likes, task?.id]);
 
   useEffect(() => {
     const closeMenu = () => setShowMenu(false);
@@ -83,6 +76,30 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
     if ("vibrate" in navigator) navigator.vibrate(ms);
   };
 
+  const handleLike = useCallback(async () => {
+    if (!user) return router.push("/login");
+    vibrate(10);
+    const newLiked =!liked;
+    const oldLikes = task.likes || [];
+
+    setLiked(newLiked);
+    onTaskUpdate?.(task.id, {
+      likes: newLiked? [...oldLikes, user.uid] : oldLikes.filter(id => id!== user.uid),
+      likeCount: (task.likeCount || 0) + (newLiked? 1 : -1)
+    });
+
+    try {
+      await updateDoc(doc(db, "tasks", task.id), {
+        likes: newLiked? arrayUnion(user.uid) : arrayRemove(user.uid),
+        likeCount: newLiked? (task.likeCount || 0) + 1 : (task.likeCount || 0) - 1,
+      });
+    } catch {
+      setLiked(!newLiked);
+      onTaskUpdate?.(task.id, { likes: oldLikes, likeCount: task.likeCount });
+      toast.error("Lỗi");
+    }
+  }, [user, liked, task, router, db, onTaskUpdate]);
+
   const handleSave = useCallback(async () => {
     if (!user) return router.push("/login");
     if (saving) return;
@@ -95,7 +112,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
     setIsSaved(newSaved);
     onTaskUpdate?.(task.id, {
       savedBy: newSaved
-   ? [...oldSavedBy, user.uid]
+  ? [...oldSavedBy, user.uid]
         : oldSavedBy.filter(id => id!== user.uid)
     });
 
@@ -104,7 +121,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
         savedBy: newSaved? arrayUnion(user.uid) : arrayRemove(user.uid),
       });
       toast.success(newSaved? "Đã lưu" : "Đã bỏ lưu");
-    } catch (err) {
+    } catch {
       setIsSaved(!newSaved);
       onTaskUpdate?.(task.id, { savedBy: oldSavedBy });
       toast.error("Lỗi");
@@ -131,187 +148,286 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
     router.push(`/task/${task.id}`);
   };
 
-  // SỬA: deadline là string, không có.seconds
   const taskDate = task.type === "task" && task.deadline
 ? new Date(task.deadline).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
     : "";
 
-  // SỬA: createdAt là string
   const createdDate = task.createdAt? new Date(task.createdAt) : new Date();
   const timeAgo = formatDistanceToNow(createdDate, { addSuffix: true, locale: vi });
 
-  const statusMap: Record<TaskStatus, { label: string; color: string; dot: string }> = {
-    open: { label: "Đang tuyển", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400", dot: "bg-green-600" },
-    full: { label: "Đã đủ", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", dot: "bg-red-600" },
-    doing: { label: "Đang làm", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", dot: "bg-blue-600" },
-    completed: { label: "Hoàn thành", color: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400", dot: "bg-zinc-500" },
-    cancelled: { label: "Đã hủy", color: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400", dot: "bg-zinc-500" },
-    deleted: { label: "Đã xóa", color: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400", dot: "bg-zinc-500" },
-    expired: { label: "Hết hạn", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", dot: "bg-amber-600" },
-    pending: { label: "Chờ duyệt", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", dot: "bg-amber-600" },
-  };
-
-  // SỬA: deadline là string
-  const isExpired = isTask(task) && task.deadline && new Date(task.deadline).getTime() < Date.now();
-  const status = isExpired
-? { label: "Đã hết hạn", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", dot: "bg-red-600" }
-    : statusMap[task.status] || statusMap.open;
   const maxSlots = task.type === "task"? task.totalSlots?? 0 : task.maxParticipants?? 0;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 p-4 shadow-sm hover:shadow-md transition-all"
+      className="group"
     >
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex-1 min-w-0 cursor-pointer" onClick={goToTask}>
-          <div className="flex items-center gap-2 mb-2.5 flex-wrap">
-            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${status.color}`}>
-              <div className={`w-1.5 h-1.5 rounded-full ${status.dot} animate-pulse`} />
-              {status.label}
-            </div>
-            {task.type === "task" && (task.price?? 0) > 0 && (
-              <div className={`px-2.5 py-1 rounded-lg ${themeColor.light} ${themeColor.text} text-xs font-bold`}>
-                {task.price.toLocaleString("vi-VN")}đ
-              </div>
+      <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl rounded- border border-zinc-200/40 dark:border-zinc-800/40 overflow-hidden active:scale-[0.985] transition-all duration-200 shadow-sm">
+
+        {/* HEADER: Avatar + Tên - ẨN HẾT STATUS */}
+        <div className="flex items-start gap-3 p-4 pb-3">
+          <div className="relative">
+            <img
+              src={task.userAvatar || "/default-avatar.png"}
+              alt={task.userName}
+              className="w-11 h-11 rounded-2xl object-cover ring-2 ring-white dark:ring-zinc-900"
+            />
+            {task.userVerified && (
+              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[#0A84FF] rounded-full border-2 border-white dark:border-zinc-900" />
             )}
-            {(task.viewCount?? 0) > 10 && (
-              <div className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
-                <FiEye size={12} />
-                <span className="font-medium">{task.viewCount}</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <p className="font-bold text- text-zinc-900 dark:text-zinc-100">
+                {task.userName}
+              </p>
+              {/* FIX: ẨN TẤT CẢ STATUS - Không render gì */}
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+              <span>{timeAgo}</span>
+              {task.location?.city && (
+                <>
+                  <span>•</span>
+                  <FiMapPin size={12} />
+                  <span className="truncate max-w-[120px]">{task.location.city}</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0">
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleSave();
+              }}
+              disabled={saving}
+              className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all disabled:opacity-50 touch-manipulation select-none"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
+            >
+              <FiBookmark
+                size={18}
+                strokeWidth={1.5}
+                className={isSaved? `fill-current` : "text-zinc-500 dark:text-zinc-400"}
+                style={{ color: isSaved? primaryColor : undefined }}
+              />
+            </motion.button>
+
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                vibrate(8);
+                onShare?.(task);
+              }}
+              className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all touch-manipulation select-none"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
+            >
+              <FiShare2 size={18} className="text-zinc-500 dark:text-zinc-400" />
+            </motion.button>
+
+            {isOwner && (
+              <div className="relative">
+                <motion.button
+                  ref={menuBtnRef}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setMenuPos({
+                      x: rect.right - 180,
+                      y: rect.bottom + 8
+                    });
+                    vibrate();
+                    setShowMenu(!showMenu);
+                  }}
+                  className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all touch-manipulation select-none"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <FiMoreHorizontal size={18} className="text-zinc-500 dark:text-zinc-400" />
+                </motion.button>
+                <AnimatePresence>
+                  {showMenu && (
+                    <Portal>
+                      <div
+                        className="fixed inset-0 z-[9998]"
+                        onClick={() => setShowMenu(false)}
+                      />
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                        transition={{ duration: 0.15 }}
+                        className="fixed z-[9999] min-w-[180px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 py-2 overflow-hidden"
+                        style={{
+                          top: `${menuPos.y}px`,
+                          left: `${menuPos.x}px`,
+                        }}
+                      >
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            vibrate();
+                            setShowMenu(false);
+                            router.push(`/task/${task.id}/edit`);
+                          }}
+                          className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 w-full transition-all active:scale-95"
+                        >
+                          <FiEdit2 size={18} />
+                          Sửa công việc
+                        </button>
+                        <div className="h-px bg-zinc-200 dark:bg-zinc-800 mx-2" />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowMenu(false);
+                            handleDelete();
+                          }}
+                          className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-[#FF3B30] hover:bg-red-50 dark:hover:bg-red-950/50 w-full transition-all active:scale-95"
+                        >
+                          <FiTrash2 size={18} />
+                          Xóa
+                        </button>
+                      </motion.div>
+                    </Portal>
+                  )}
+                </AnimatePresence>
               </div>
             )}
           </div>
-          <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 line-clamp-2 leading-snug">
+        </div>
+
+        {/* ẢNH COVER */}
+        {task.images?.[0] && (
+          <div className="px-4 pb-4 cursor-pointer" onClick={goToTask}>
+            <div className="relative rounded-3xl overflow-hidden">
+              <Image
+                src={task.images[0]}
+                alt={task.title}
+                width={600}
+                height={208}
+                className="w-full h-52 object-cover"
+                priority={priority}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-black/0 to-transparent" />
+              {task.price > 0 && (
+                <div className="absolute top-3 right-3 px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur-md">
+                  <span className="font-bold text-white text-">
+                    {task.price.toLocaleString("vi-VN")}đ
+                  </span>
+                  {task.budgetType === "hourly" && <span className="text-white/80 text-xs">/h</span>}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* CONTENT: Tiêu đề + Mô tả full ra ngoài */}
+        <div className="px-4 pb-4 cursor-pointer" onClick={goToTask}>
+          <h3 className="font-bold text- text-zinc-900 dark:text-zinc-100 leading-snug mb-2.5">
             {task.title}
           </h3>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{timeAgo}</p>
-        </div>
 
-        <div className="flex items-center gap-1 shrink-0">
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleSave();
-            }}
-            disabled={saving}
-            className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all disabled:opacity-50 touch-manipulation select-none"
-            style={{ WebkitTapHighlightColor: 'transparent' }}
-          >
-            <FiBookmark
-              size={18}
-              strokeWidth={1.5}
-              className={isSaved? `${themeColor.fill} ${themeColor.text}` : "text-zinc-500 dark:text-zinc-400"}
-            />
-          </motion.button>
+          {task.description && (
+            <p className="text- text-zinc-600 dark:text-zinc-300 leading-[1.6] line-clamp-4 mb-3.5">
+              {task.description}
+            </p>
+          )}
 
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              vibrate(8);
-              onShare?.(task);
-            }}
-            className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all touch-manipulation select-none"
-            style={{ WebkitTapHighlightColor: 'transparent' }}
-          >
-            <FiShare2 size={18} className="text-zinc-500 dark:text-zinc-400" />
-          </motion.button>
-
-          {isOwner && (
-            <div className="relative">
-              <motion.button
-                ref={menuBtnRef}
-                whileTap={{ scale: 0.9 }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  setMenuPos({
-                    x: rect.right - 180,
-                    y: rect.bottom + 8
-                  });
-                  vibrate();
-                  setShowMenu(!showMenu);
-                }}
-                className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all touch-manipulation select-none"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                <FiMoreHorizontal size={18} className="text-zinc-500 dark:text-zinc-400" />
-              </motion.button>
-              <AnimatePresence>
-                {showMenu && (
-                  <Portal>
-                    <div
-                      className="fixed inset-0 z-[9998]"
-                      onClick={() => setShowMenu(false)}
-                    />
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                      transition={{ duration: 0.15 }}
-                      className="fixed z-[9999] min-w-[180px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 py-2 overflow-hidden"
-                      style={{
-                        top: `${menuPos.y}px`,
-                        left: `${menuPos.x}px`,
-                      }}
-                    >
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          vibrate();
-                          setShowMenu(false);
-                          router.push(`/task/${task.id}/edit`);
-                        }}
-                        className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 w-full transition-all active:scale-95"
-                      >
-                        <FiEdit2 size={18} />
-                        Sửa công việc
-                      </button>
-                      <div className="h-px bg-zinc-200 dark:bg-zinc-800 mx-2" />
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowMenu(false);
-                          handleDelete();
-                        }}
-                        className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-[#FF3B30] hover:bg-red-50 dark:hover:bg-red-950/50 w-full transition-all active:scale-95"
-                      >
-                        <FiTrash2 size={18} />
-                        Xóa
-                      </button>
-                    </motion.div>
-                  </Portal>
-                )}
-              </AnimatePresence>
+          {task.tags && task.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3.5">
+              {task.tags.slice(0, 4).map((tag) => (
+                <span
+                  key={tag}
+                  className="px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-xs font-semibold text-zinc-600 dark:text-zinc-400"
+                >
+                  #{tag}
+                </span>
+              ))}
             </div>
           )}
-        </div>
-      </div>
 
-      <div className="cursor-pointer" onClick={goToTask}>
-        <div className="flex items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400 flex-wrap">
-          {taskDate && (
-            <div className="flex items-center gap-1">
-              <FiClock size={13} />
-              <span className="font-medium">{taskDate}</span>
-            </div>
-          )}
-          <div className="flex items-center gap-1">
-            <FiUsers size={13} />
-            <span className="font-medium">{applicants.length}/{maxSlots}</span>
+          {/* META INFO: Slot + Deadline + Skill + Category */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-">
+            {maxSlots > 0 && (
+              <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+                <FiUsers size={15} />
+                <span className="font-semibold">{applicants.length}/{maxSlots} người</span>
+              </div>
+            )}
+            {taskDate && (
+              <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+                <FiClock size={15} />
+                <span className="font-semibold">{taskDate}</span>
+              </div>
+            )}
+            {task.skillLevel && (
+              <div className="flex items-center gap-1.5">
+                <div className={`w-1.5 h-1.5 rounded-full`} style={{ background: primaryColor }} />
+                <span className="font-semibold text-zinc-600 dark:text-zinc-400">{task.skillLevel}</span>
+              </div>
+            )}
+            {task.category && (
+              <span className="font-semibold text-zinc-500 dark:text-zinc-500">• {task.category}</span>
+            )}
           </div>
-          {task.location?.city && (
-            <div className="flex items-center gap-1 truncate">
-              <FiMapPin size={13} />
-              <span className="truncate font-medium">{task.location.city}</span>
+        </div>
+
+        <div className="h-px bg-gradient-to-r from-transparent via-zinc-200/60 dark:via-zinc-800/60 to-transparent" />
+
+        {/* FOOTER: Actions */}
+        <div className="flex items-center justify-between px-2 py-2.5">
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleLike();
+              }}
+              className="flex items-center gap-2 px-3.5 h-10 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all"
+            >
+              {liked? (
+                <HiHeart size={22} className="text-red-500" />
+              ) : (
+                <HiOutlineHeart size={22} className="text-zinc-600 dark:text-zinc-400" />
+              )}
+              <span className="text- font-bold text-zinc-700 dark:text-zinc-300">
+                {task.likeCount || 0}
+              </span>
+            </button>
+
+            <button
+              onClick={goToTask}
+              className="flex items-center gap-2 px-3.5 h-10 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all"
+            >
+              <FiMessageCircle size={20} className="text-zinc-600 dark:text-zinc-400" />
+              <span className="text- font-bold text-zinc-700 dark:text-zinc-300">
+                {task.commentCount || 0}
+              </span>
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                vibrate(8);
+                onShare?.(task);
+              }}
+              className="flex items-center gap-2 px-3.5 h-10 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all"
+            >
+              <FiShare2 size={19} className="text-zinc-600 dark:text-zinc-400" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3 pr-2">
+            <div className="flex items-center gap-1.5 text-zinc-400">
+              <FiEye size={17} />
+              <span className="text-xs font-semibold">{task.viewCount || 0}</span>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </motion.div>
