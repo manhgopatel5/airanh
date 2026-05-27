@@ -100,6 +100,7 @@ export default function TaskInfoGrid({ task, applications, theme = "task" }: Pro
             <InfoItem 
               label="Ứng tuyển" 
               value={`${totalApplied} người`}
+              highlight
             />
           )}
           {isTask(task) && task.deadline?.seconds && (
@@ -115,14 +116,17 @@ export default function TaskInfoGrid({ task, applications, theme = "task" }: Pro
           <InfoItem 
             label="Địa chỉ" 
             value={task.location?.address || task.location?.city || "Online"}
+            highlight
           />
           <InfoItem 
             label="Đã nhận" 
             value={`${acceptedCount}/${totalSlots} người`}
+            highlight
           />
           <InfoItem 
             label="Ngày đăng" 
             value={taskDate}
+            highlight
           />
         </div>
       </div>
