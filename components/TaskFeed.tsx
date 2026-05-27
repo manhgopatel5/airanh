@@ -1,19 +1,19 @@
 "use client";
 
-import { Task } from "@/types/task";
-import TaskCard from "@/components/task/TaskCard"; // ✅ Đổi từ TaskCardRealtime
+import { FeedTask } from "@/types/task"; // FIX: Task -> FeedTask
+import TaskCard from "@/components/task/TaskCard";
 import EmptyState from "@/components/EmptyState";
 import { AppMode } from "@/types/app";
 
 type TabId = "hot" | "near" | "friends" | "new";
 
 type Props = {
-  tasks: Task[];
+  tasks: FeedTask[]; // FIX: Task[] -> FeedTask[]
   mode: AppMode;
   activeTab: TabId;
-  onShare?: (task: Task) => void;
+  onShare?: (task: FeedTask) => void; // FIX: Task -> FeedTask
   onDelete?: (id: string) => void;
-  onTaskUpdate?: (taskId: string, updates: Partial<Task>) => void; // ✅ Thêm
+  onTaskUpdate?: (taskId: string, updates: Partial<FeedTask>) => void; // FIX: Task -> FeedTask
 };
 
 export default function TaskFeed({ tasks, mode, activeTab, onShare, onDelete, onTaskUpdate }: Props) {
@@ -29,13 +29,13 @@ export default function TaskFeed({ tasks, mode, activeTab, onShare, onDelete, on
           className="px-4"
           style={{ animationDelay: `${idx * 50}ms` }}
         >
-<TaskCard
-  task={task}
-  theme={mode}
-  {...(onTaskUpdate && { onTaskUpdate })}
-  {...(onShare && { onShare })}
-  {...(onDelete && { onDelete })}
-/>
+          <TaskCard
+            task={task}
+            theme={mode}
+            {...(onTaskUpdate && { onTaskUpdate })}
+            {...(onShare && { onShare })}
+            {...(onDelete && { onDelete })}
+          />
         </div>
       ))}
     </div>
