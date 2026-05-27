@@ -8,22 +8,15 @@ import {
   useMemo,
   ReactNode,
   useContext,
+  useCallback,
 } from "react";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { onAuthStateChanged, User, signOut } from "firebase/auth";
 import {
   doc,
-  getDoc,
-  updateDoc,
-  serverTimestamp,
   onSnapshot,
   Timestamp,
-  runTransaction,
-  collection,
-  addDoc,
-  query,
-  where,
-  getDocs,
-  deleteDoc,
+  updateDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import {
   ref,
@@ -32,8 +25,7 @@ import {
   onDisconnect,
   serverTimestamp as rtdbTimestamp,
 } from "firebase/database";
-import { nanoid } from "nanoid";
-import { UAParser } from "ua-parser-js";
+import { setCookie, deleteCookie } from 'cookies-next';
 
 export type AppUser = {
   uid: string;
@@ -54,25 +46,12 @@ export type AppUser = {
   deletedAt?: any;
 };
 
-export type Session = {
-  id: string;
-  uid: string;
-  device: string;
-  browser: string;
-  os: string;
-  ip: string;
-  location: string;
-  lastActive: Timestamp;
-  createdAt: Timestamp;
-  current: boolean;
-  userAgent: string;
-};
-
 type AuthContextType = {
   user: User | null;
   userData: AppUser | null;
   loading: boolean;
   error: string | null;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -80,109 +59,8 @@ const AuthContext = createContext<AuthContextType>({
   userData: null,
   loading: true,
   error: null,
+  logout: async () => {},
 });
-
-const SESSION_KEY = "airanh_session_id";
-
-const generateSearchKeywords = (
-  name: string,
-  userId: string,
-  username?: string
-): string[] => {
-  const keywords = new Set<string>();
-  const nameLower = name.toLowerCase().trim();
-
-  if (nameLower) {
-    keywords.add(nameLower);
-    keywords.add(nameLower.replace(/\s+/g, ""));
-    const no = nameLower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    keywords.add(no);
-    keywords.add(no.replace(/\s+/g, ""));
-    nameLower.split(" ").forEach((w) => {
-      if (w.length >= 2) keywords.add(w);
-    });
-  }
-
-  keywords.add(userId.toLowerCase());
-  if (username) keywords.add(username.toLowerCase());
-  return Array.from(keywords).filter((k) => k.length >= 2);
-};
-
-// Export để dùng ở SessionsPage
-export const trackCurrentSession = async (uid: string, db: any) => {
-  try {
-    const parser = new UAParser();
-    const result = parser.getResult();
-    const device = `${result.device.vendor || ""} ${result.device.model || result.os.name}`.trim() || "Unknown Device";
-    const browser = `${result.browser.name} ${result.browser.version || ""}`.trim();
-    const os = `${result.os.name} ${result.os.version || ""}`.trim();
-    const userAgent = navigator.userAgent;
-
-    let ip = "Unknown";
-    let location = "Unknown";
-    try {
-      const res = await fetch("https://api.ipify.org?format=json");
-      const data = await res.json();
-      ip = data.ip || "Unknown";
-    } catch (e) {
-      console.warn("IP fetch failed:", e);
-    }
-
-    let sessionId = localStorage.getItem(SESSION_KEY);
-    const sessionsRef = collection(db, "sessions");
-
-    if (sessionId) {
-      const sessionRef = doc(db, "sessions", sessionId);
-      const snap = await getDoc(sessionRef);
-      if (snap.exists() && snap.data().uid === uid) {
-        await updateDoc(sessionRef, {
-          lastActive: serverTimestamp(),
-          current: true,
-          ip,
-          location,
-          browser,
-          os,
-          userAgent,
-        });
-        console.log("Session updated:", sessionId);
-        return sessionId;
-      } else {
-        sessionId = null;
-        localStorage.removeItem(SESSION_KEY);
-      }
-    }
-
-    if (!sessionId) {
-      const docRef = await addDoc(sessionsRef, {
-        uid,
-        device,
-        browser,
-        os,
-        ip,
-        location,
-        userAgent,
-        lastActive: serverTimestamp(),
-        createdAt: serverTimestamp(),
-        current: true,
-      });
-      sessionId = docRef.id;
-      localStorage.setItem(SESSION_KEY, sessionId);
-      console.log("Session created:", sessionId);
-    }
-
-    const q = query(sessionsRef, where("uid", "==", uid), where("current", "==", true));
-    const snap = await getDocs(q);
-    const updates = snap.docs
-      .filter((d) => d.id !== sessionId)
-      .map((d) => updateDoc(d.ref, { current: false }));
-    await Promise.all(updates);
-
-    return sessionId;
-  } catch (err: any) {
-    console.error("Track session error:", err.code, err.message);
-    return null;
-  }
-};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [auth, setAuth] = useState<any>(null);
@@ -196,9 +74,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const userDataUnsub = useRef<(() => void) | null>(null);
   const presenceUnsub = useRef<(() => void) | null>(null);
-  const visibilityHandlerRef = useRef<(() => void) | null>(null);
-  const beforeUnloadHandlerRef = useRef<(() => void) | null>(null);
 
+  // 1. Dynamic import Firebase để giảm bundle ban đầu
   useEffect(() => {
     const init = async () => {
       const firebase = await import("@/lib/firebase");
@@ -209,218 +86,126 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     init();
   }, []);
 
+  // 2. Hàm tạo user mới -> gọi API route, không chạy runTransaction ở client
+  const createUserProfile = useCallback(async (firebaseUser: User) => {
+    try {
+      const token = await firebaseUser.getIdToken();
+      const res = await fetch('/api/user/create', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to create user profile');
+    } catch (e) {
+      console.error("Create user error:", e);
+    }
+  }, []);
+
   useEffect(() => {
     if (!auth || !db || !rtdb) return;
 
-    const unsubAuth = onAuthStateChanged(
-      auth,
-      async (firebaseUser) => {
-        setUser(firebaseUser);
-        setError(null);
+    const unsubAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      // 3. XOÁ TOÀN BỘ LOGIC NẶNG. Chỉ set state + cookie
+      setUser(firebaseUser);
+      setError(null);
 
-        if (userDataUnsub.current) userDataUnsub.current();
-        if (presenceUnsub.current) presenceUnsub.current();
-        if (visibilityHandlerRef.current) {
-          document.removeEventListener("visibilitychange", visibilityHandlerRef.current);
-          visibilityHandlerRef.current = null;
-        }
-        if (beforeUnloadHandlerRef.current) {
-          window.removeEventListener("beforeunload", beforeUnloadHandlerRef.current);
-          beforeUnloadHandlerRef.current = null;
-        }
+      // Cleanup listeners cũ
+      userDataUnsub.current?.();
+      presenceUnsub.current?.();
 
-        if (!firebaseUser) {
-          setUserData(null);
-          setLoading(false);
-          return;
-        }
+      if (!firebaseUser) {
+        setUserData(null);
+        deleteCookie('__session');
+        setLoading(false);
+        return;
+      }
 
-        try {
-          const userRef = doc(db, "users", firebaseUser.uid);
-          const snap = await getDoc(userRef);
+      try {
+        // 4. Set cookie cho middleware đọc, không chặn UI
+        const token = await firebaseUser.getIdToken();
+        setCookie('__session', token, { 
+          maxAge: 60 * 60 * 24 * 7, // 7 ngày
+          path: '/',
+          sameSite: 'lax'
+        });
 
-          if (!snap.exists()) {
-            await runTransaction(db, async (tx) => {
-              let userId = "";
-              for (let i = 0; i < 5; i++) {
-                userId = `AIR${nanoid(6).toUpperCase()}`;
-                const q = await tx.get(doc(db, "users", firebaseUser.uid));
-                if (!q.exists()) break;
-              }
-
-              const email = firebaseUser.email || "";
-              const name = firebaseUser.displayName || email.split("@")[0] || "User";
-
-              let baseUsername = name.toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9]/g, "");
-              if (!baseUsername) baseUsername = "user";
-              let username = baseUsername;
-              let counter = 1;
-
-              while (true) {
-                const usernameDoc = await tx.get(doc(db, "usernames", username));
-                if (!usernameDoc.exists()) break;
-                username = `${baseUsername}${counter}`;
-                counter++;
-                if (counter > 100) throw new Error("Không tạo được username");
-              }
-
-              const searchKeywords = generateSearchKeywords(name, userId, username);
-
-              const newUser: AppUser = {
-                uid: firebaseUser.uid,
-                name: name,
-                nameLower: name.toLowerCase(),
-                username,
-                userId,
-                email: firebaseUser.email || "",
-                emailVerified: firebaseUser.emailVerified,
-                avatar: firebaseUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
-                bio: "",
-                isOnline: true,
-                lastSeen: serverTimestamp() as Timestamp,
-                fcmTokens: [],
-                status: "active",
-                searchKeywords,
-                hidden: false,
-                deletedAt: null,
-              };
-
-              tx.set(userRef, newUser);
-              tx.set(doc(db, "usernames", username), { uid: firebaseUser.uid });
-            });
-          }
-
-          // XÓA: await trackCurrentSession(firebaseUser.uid, db);
-
-          // UPDATE ONLINE STATUS
-          await updateDoc(userRef, {
-            isOnline: true,
-            lastSeen: serverTimestamp(),
-            emailVerified: firebaseUser.emailVerified,
-          });
-
-          // SETUP LISTENERS
-          const handleVisibility = () => {
-            if (document.visibilityState === "hidden") {
-              updateDoc(userRef, {
-                isOnline: false,
-                lastSeen: serverTimestamp(),
-              }).catch(() => {});
+        // 5. Chỉ onSnapshot user data. Không await gì hết
+        const userRef = doc(db, "users", firebaseUser.uid);
+        userDataUnsub.current = onSnapshot(
+          userRef,
+          (docSnap) => {
+            if (docSnap.exists()) {
+              setUserData(docSnap.data() as AppUser);
             } else {
-              updateDoc(userRef, { isOnline: true }).catch(() => {});
+              // Nếu chưa có profile thì gọi API tạo
+              createUserProfile(firebaseUser);
             }
-          };
-          document.addEventListener("visibilitychange", handleVisibility);
-          visibilityHandlerRef.current = handleVisibility;
+            setLoading(false); // Bỏ loading ngay khi có user
+          },
+          (err) => {
+            console.error("Snapshot error:", err);
+            setError(err.message);
+            setLoading(false);
+          }
+        );
 
-          const handleBeforeUnload = () => {
-            updateDoc(userRef, {
-              isOnline: false,
-              lastSeen: serverTimestamp(),
-            }).catch(() => {});
-          };
-          window.addEventListener("beforeunload", handleBeforeUnload);
-          beforeUnloadHandlerRef.current = handleBeforeUnload;
+        // 6. XOÁ trackCurrentSession. Tốn 3-5 reads mỗi lần F5. Dùng middleware + API
+        
+        // 7. Presence chỉ dùng RTDB, không update Firestore mỗi lần online
+        const statusRef = ref(rtdb, `/status/${firebaseUser.uid}`);
+        const connectedRef = ref(rtdb, ".info/connected");
 
-          // SNAPSHOT USER DATA
-          userDataUnsub.current = onSnapshot(
-            userRef,
-            (docSnap) => {
-              if (docSnap.exists()) {
-                setUserData(docSnap.data() as AppUser);
-                console.log("userData loaded:", docSnap.data().userId);
-              }
-              setLoading(false);
-            },
-            (err) => {
-              console.error("Snapshot error:", err);
-              setError(err.message);
-              setLoading(false);
-            }
-          );
-
-          const statusRef = ref(rtdb, `/status/${firebaseUser.uid}`);
-          const connectedRef = ref(rtdb, ".info/connected");
-
-          presenceUnsub.current = onValue(connectedRef, (snap) => {
-            if (!snap.val()) return;
-            onDisconnect(statusRef).set({
-              isOnline: false,
-              lastSeen: rtdbTimestamp(),
-            });
-            set(statusRef, {
-              isOnline: true,
-              lastSeen: rtdbTimestamp(),
-            });
+        presenceUnsub.current = onValue(connectedRef, (snap) => {
+          if (!snap.val()) return;
+          onDisconnect(statusRef).set({
+            isOnline: false,
+            lastSeen: rtdbTimestamp(),
           });
-        } catch (e: any) {
-          console.error("Auth error:", e);
-          setError(e.message);
-          setLoading(false);
-        }
-      },
-      (err) => {
-        console.error("Auth error:", err);
-        setError("Lỗi xác thực");
+          set(statusRef, {
+            isOnline: true,
+            lastSeen: rtdbTimestamp(),
+          });
+        });
+
+      } catch (e: any) {
+        console.error("Auth error:", e);
+        setError(e.message);
         setLoading(false);
       }
-    );
+    });
 
     return () => {
       unsubAuth();
-      if (userDataUnsub.current) userDataUnsub.current();
-      if (presenceUnsub.current) presenceUnsub.current();
-      if (visibilityHandlerRef.current) {
-        document.removeEventListener("visibilitychange", visibilityHandlerRef.current);
-      }
-      if (beforeUnloadHandlerRef.current) {
-        window.removeEventListener("beforeunload", beforeUnloadHandlerRef.current);
-      }
-      if (auth?.currentUser) {
-        updateDoc(doc(db, "users", auth.currentUser.uid), {
-          isOnline: false,
-          lastSeen: serverTimestamp(),
-        }).catch(() => {});
-      }
+      userDataUnsub.current?.();
+      presenceUnsub.current?.();
     };
-  }, [auth, db, rtdb]);
+  }, [auth, db, rtdb, createUserProfile]);
+
+  // 8. Hàm logout tập trung
+  const logout = useCallback(async () => {
+    if (!auth || !db) return;
+    const currentUser = auth.currentUser;
+    
+    // Xóa session ở server
+    if (currentUser) {
+      try {
+        const token = await currentUser.getIdToken();
+        await fetch('/api/user/logout', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      } catch {}
+    }
+
+    deleteCookie('__session');
+    await signOut(auth);
+  }, [auth, db]);
 
   const value = useMemo(
-    () => ({ user, userData, loading, error }),
-    [user, userData, loading, error]
+    () => ({ user, userData, loading, error, logout }),
+    [user, userData, loading, error, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
-
-export const useLogout = () => {
-  return async () => {
-    const firebase = await import("@/lib/firebase");
-    const auth = firebase.getFirebaseAuth();
-    const db = firebase.getFirebaseDB();
-    const user = auth.currentUser;
-    const sessionId = localStorage.getItem(SESSION_KEY);
-
-    if (user && sessionId) {
-      try {
-        await deleteDoc(doc(db, "sessions", sessionId));
-        localStorage.removeItem(SESSION_KEY);
-      } catch {}
-    }
-
-    if (user) {
-      try {
-        await updateDoc(doc(db, "users", user.uid), {
-          isOnline: false,
-          lastSeen: serverTimestamp(),
-        });
-      } catch {}
-    }
-
-    await auth.signOut();
-  };
-};
+export const useAuth = () => useContext(AuthContext);
