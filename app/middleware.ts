@@ -1,7 +1,24 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
 
-// 1. Các route không cần check auth
+// Init Admin SDK 1 lần
+if (!getApps().length) {
+  initializeApp({
+    credential: cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    }),
+  });
+}
+
+const auth = getAuth();
+const db = getFirestore();
+
+// 1. Routes không cần check auth
 const PUBLIC_ROUTES = ['/login', '/signup', '/forgot-password']
 const PUBLIC_FILE = /\.(.*)$/
 
@@ -18,37 +35,52 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // 3. Lấy token từ cookie. Firebase Auth web thường lưu tên __session hoặc bạn tự set
-  const token = request.cookies.get('__session')?.value || 
-                request.cookies.get('firebase-auth-token')?.value
-
+  const token = request.cookies.get('__session')?.value
   const isPublicRoute = PUBLIC_ROUTES.some(route => pathname.startsWith(route))
 
-  // 4. Chưa login mà vào route private -> đá về /login
+  // 3. Chưa login mà vào route private -> /login
   if (!token && !isPublicRoute) {
     const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('redirect', pathname) // Để login xong back lại
+    loginUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
-  // 5. Có login rồi mà vào /login -> đá về home
-  if (token && isPublicRoute) {
-    return NextResponse.redirect(new URL('/', request.url))
+  // 4. Có login -> verify + check onboarding
+  if (token) {
+    try {
+      const decoded = await auth.verifySessionCookie(token, true);
+      const userSnap = await db.doc(`users/${decoded.uid}`).get();
+      const userData = userSnap.data();
+
+      // Chưa onboard mà vào route khác -> đá về /onboarding
+      if (!userData?.onboardingCompleted && pathname !== '/onboarding') {
+        return NextResponse.redirect(new URL('/onboarding', request.url));
+      }
+
+      // Onboard rồi mà vào /onboarding -> đá về home
+      if (userData?.onboardingCompleted && pathname === '/onboarding') {
+        return NextResponse.redirect(new URL('/', request.url));
+      }
+
+      // Có login mà vào /login -> đá về home
+      if (isPublicRoute) {
+        return NextResponse.redirect(new URL('/', request.url))
+      }
+
+    } catch (err) {
+      // Token sai/hết hạn -> xóa cookie + về /login
+      const response = NextResponse.redirect(new URL('/login', request.url));
+      response.cookies.delete('__session');
+      return response;
+    }
   }
 
   return NextResponse.next()
 }
 
-// 6. Chỉ chạy middleware cho các route này, bỏ qua static files
+// 5. Matcher chuẩn
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
