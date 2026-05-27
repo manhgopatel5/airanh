@@ -1,4 +1,3 @@
-// hooks/useTaskFeed.ts
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
@@ -40,15 +39,15 @@ const docToFeedTask = (doc: QueryDocumentSnapshot<DocumentData>): FeedTask => {
     userId: d.userId || "",
     userName: d.userName || "",
     userAvatar: d.userAvatar || "",
-  ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
-  ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
+   ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
+   ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
     price: d.price?? 0,
     currency: d.currency || "VND",
     totalSlots: d.totalSlots?? 0,
     joined: d.joined?? 0,
     budgetType: d.budgetType || "fixed",
-  ...(d.paymentMethod!== undefined && { paymentMethod: d.paymentMethod }),
-  ...(d.isRemote!== undefined && { isRemote: d.isRemote }),
+   ...(d.paymentMethod!== undefined && { paymentMethod: d.paymentMethod }),
+   ...(d.isRemote!== undefined && { isRemote: d.isRemote }),
     category: d.category || "",
     tags: Array.isArray(d.tags)? d.tags : [],
     images: Array.isArray(d.images)? d.images : [],
@@ -56,17 +55,17 @@ const docToFeedTask = (doc: QueryDocumentSnapshot<DocumentData>): FeedTask => {
     likeCount: d.likeCount?? 0,
     commentCount: d.commentCount?? 0,
     likes: Array.isArray(d.likes)? d.likes : [],
-  ...(d.location!== undefined && { location: d.location }),
+   ...(d.location!== undefined && { location: d.location }),
     savedBy: Array.isArray(d.savedBy)? d.savedBy : [],
     applicants: Array.isArray(d.applicants)? d.applicants : [],
-  ...(d.banned!== undefined && { banned: d.banned }),
-  ...(d.hidden!== undefined && { hidden: d.hidden }),
-  ...(d.appliedCount!== undefined && { appliedCount: d.appliedCount }),
+   ...(d.banned!== undefined && { banned: d.banned }),
+   ...(d.hidden!== undefined && { hidden: d.hidden }),
+   ...(d.appliedCount!== undefined && { appliedCount: d.appliedCount }),
     createdAt: tsToString(d.createdAt),
-  ...(d.updatedAt && { updatedAt: tsToString(d.updatedAt) }),
-  ...(d.deadline && { deadline: tsToString(d.deadline) }),
-  ...(d.startDate && { startDate: tsToString(d.startDate) }),
-  ...(d.applicationDeadline && { applicationDeadline: tsToString(d.applicationDeadline) }),
+   ...(d.updatedAt && { updatedAt: tsToString(d.updatedAt) }),
+   ...(d.deadline && { deadline: tsToString(d.deadline) }),
+   ...(d.startDate && { startDate: tsToString(d.startDate) }),
+   ...(d.applicationDeadline && { applicationDeadline: tsToString(d.applicationDeadline) }),
   } as FeedTask;
 };
 
@@ -92,14 +91,12 @@ export function useTaskFeed(tab: TabId = "hot") {
       where("hidden", "!=", true)
     );
 
-    // Tab filter
     if (tab === "hot") q = query(q, orderBy("viewCount", "desc"));
     else if (tab === "new") q = query(q, orderBy("createdAt", "desc"));
-    else q = query(q, orderBy("createdAt", "desc")); // near, friends cần geo/user logic riêng
+    else q = query(q, orderBy("createdAt", "desc"));
 
     q = query(q, limit(20));
     if (after) q = query(q, startAfter(after));
-
     return q;
   }, [tab]);
 
@@ -108,32 +105,43 @@ export function useTaskFeed(tab: TabId = "hot") {
     if (unsubRef.current) unsubRef.current();
 
     setLoading(true);
-    firstLoadTimeRef.current = Timestamp.now();
+    firstLoadTimeRef.current = Timestamp.now(); // FIX 1: Chốt mốc thời gian
     taskIdsRef.current.clear();
+    setNewTaskCount(0); // FIX 2: Reset count khi load lại
 
     unsubRef.current = onSnapshot(buildQuery(db), (snap) => {
-      const newTasks = snap.docs.map(docToFeedTask);
-      setTasks(newTasks);
-      newTasks.forEach(t => taskIdsRef.current.add(t.id));
-      lastDocRef.current = snap.docs[snap.docs.length - 1] || null;
-      setHasMore(snap.docs.length === 20);
-      setLoading(false);
-
-      // Count new tasks
-      let count = 0;
+      // FIX 3: Chỉ count added, không count modified/removed
+      let addedCount = 0;
       snap.docChanges().forEach((change) => {
         if (change.type === "added") {
-          const createdAt = change.doc.data().createdAt;
+          const data = change.doc.data();
+          const createdAt = data.createdAt;
+
+          // FIX 4: Check 3 điều kiện: createdAt > firstLoad + id chưa có + không phải lần đầu load
           if (
             createdAt instanceof Timestamp &&
-            createdAt.toMillis() > firstLoadTimeRef.current!.toMillis() &&
-          !taskIdsRef.current.has(change.doc.id)
+            firstLoadTimeRef.current &&
+            createdAt.toMillis() > firstLoadTimeRef.current.toMillis() &&
+           !taskIdsRef.current.has(change.doc.id)
           ) {
-            count++;
+            addedCount++;
           }
         }
       });
-      if (count > 0) setNewTaskCount(prev => prev + count);
+
+      if (addedCount > 0) {
+        setNewTaskCount((prev) => prev + addedCount);
+      }
+
+      // Update list + dedupe
+      const newTasks = snap.docs.map(docToFeedTask);
+      setTasks(newTasks);
+
+      // FIX 5: Update Set sau khi đã check
+      taskIdsRef.current = new Set(newTasks.map((t) => t.id));
+      lastDocRef.current = snap.docs[snap.docs.length - 1] || null;
+      setHasMore(snap.docs.length === 20);
+      setLoading(false);
     });
 
     return () => {
@@ -153,9 +161,11 @@ export function useTaskFeed(tab: TabId = "hot") {
     const snap = await getDocs(buildQuery(db, lastDocRef.current));
 
     const moreTasks = snap.docs.map(docToFeedTask);
-    setTasks(prev => {
-      const existing = new Set(prev.map(t => t.id));
-      return [...prev,...moreTasks.filter(t =>!existing.has(t.id))];
+    setTasks((prev) => {
+      const existing = new Set(prev.map((t) => t.id));
+      const filtered = moreTasks.filter((t) =>!existing.has(t.id));
+      filtered.forEach((t) => taskIdsRef.current.add(t.id));
+      return [...prev,...filtered];
     });
 
     lastDocRef.current = snap.docs[snap.docs.length - 1] || null;
@@ -164,7 +174,6 @@ export function useTaskFeed(tab: TabId = "hot") {
   }, [loadingMore, hasMore, buildQuery]);
 
   const refresh = useCallback(async () => {
-    setNewTaskCount(0);
     loadInitial();
   }, [loadInitial]);
 
@@ -178,6 +187,6 @@ export function useTaskFeed(tab: TabId = "hot") {
     hasMore,
     resetNewTaskCount,
     loadMore,
-    refresh
+    refresh,
   };
 }
