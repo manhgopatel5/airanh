@@ -16,7 +16,7 @@ import {
   limit,
   Timestamp,
 } from "firebase/firestore";
-import type { FeedTask, Task } from "@/types/task";
+import type { FeedTask } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast } from "sonner";
 import { useAppStore } from "@/store/app";
@@ -397,12 +397,12 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
             </div>
           )}
 
-          {shareTask && (
-            <ShareTaskModal
-              task={shareTask as Task}
-              onClose={() => setShareTask(null)}
-            />
-          )}
+     {shareTask && (
+  <ShareTaskModal
+    task={shareTask} // BỎ `as Task`
+    onClose={() => setShareTask(null)}
+  />
+)}
 
           <div className="h-10" />
         </div>
