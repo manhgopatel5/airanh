@@ -17,7 +17,6 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
-import Image from "next/image";
 
 type Props = {
   task: FeedTask;
@@ -71,7 +70,6 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate,
 
   const isOwner = user?.uid === task.userId;
 
-
   const vibrate = (ms = 8) => {
     if ("vibrate" in navigator) navigator.vibrate(ms);
   };
@@ -112,7 +110,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate,
     setIsSaved(newSaved);
     onTaskUpdate?.(task.id, {
       savedBy: newSaved
- ? [...oldSavedBy, user.uid]
+? [...oldSavedBy, user.uid]
         : oldSavedBy.filter(id => id!== user.uid)
     });
 
@@ -166,9 +164,10 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate,
       animate={{ opacity: 1, y: 0 }}
       className="group"
     >
-      <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl rounded- border border-zinc-200/40 dark:border-zinc-800/40 overflow-hidden active:scale-[0.985] transition-all duration-200 shadow-sm">
+      {/* BO TRÒN 4 GÓC: rounded-3xl */}
+      <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl rounded-3xl border border-zinc-200/40 dark:border-zinc-800/40 overflow-hidden active:scale-[0.985] transition-all duration-200 shadow-sm">
 
-        {/* HEADER: Avatar + Tên - ẨN HẾT STATUS */}
+        {/* HEADER: Avatar + Tên */}
         <div className="flex items-start gap-3 p-4 pb-3">
           <div className="relative">
             <img
@@ -185,7 +184,6 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate,
               <p className="font-bold text- text-zinc-900 dark:text-zinc-100">
                 {task.userName}
               </p>
-              {/* FIX: ẨN TẤT CẢ STATUS - Không render gì */}
             </div>
             <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
               <span>{timeAgo}</span>
@@ -258,7 +256,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate,
                   {showMenu && (
                     <Portal>
                       <div
-                        className="fixed inset-0 z-[9998]"
+                        className="fixed inset-0 z-"
                         onClick={() => setShowMenu(false)}
                       />
                       <motion.div
@@ -266,7 +264,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate,
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: -10 }}
                         transition={{ duration: 0.15 }}
-                        className="fixed z-[9999] min-w-[180px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 py-2 overflow-hidden"
+                        className="fixed z- min-w-[180px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 py-2 overflow-hidden"
                         style={{
                           top: `${menuPos.y}px`,
                           left: `${menuPos.x}px`,
@@ -305,63 +303,49 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate,
           </div>
         </div>
 
-        {/* ẢNH COVER */}
-        {task.images?.[0] && (
-          <div className="px-4 pb-4 cursor-pointer" onClick={goToTask}>
-            <div className="relative rounded-3xl overflow-hidden">
-              <Image
-                src={task.images[0]}
-                alt={task.title}
-                width={600}
-                height={208}
-                className="w-full h-52 object-cover"
-                priority={priority}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-black/0 to-transparent" />
+        {/* BADGE GIÁ - ĐẶT RIÊNG KHÔNG CẦN ẢNH */}
+        {(task.type === "task" && task.price > 0) || (task.type === "plan" && task.costType!== "free") && (
+          <div className="px-4 pb-3">
+            {task.type === "task" && task.price > 0 && (
+              <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/5">
+                <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                  {task.price.toLocaleString("vi-VN")}đ
+                </span>
+                {task.budgetType === "hourly" && <span className="text-zinc-500 dark:text-zinc-400 text-xs ml-1">/h</span>}
+              </div>
+            )}
 
-              {/* BADGE GIÁ - TASK */}
-              {task.type === "task" && task.price > 0 && (
-                <div className="absolute top-3 right-3 px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur-md">
-                  <span className="font-bold text-white text-">
-                    {task.price.toLocaleString("vi-VN")}đ
-                  </span>
-                  {task.budgetType === "hourly" && <span className="text-white/80 text-xs">/h</span>}
-                </div>
-              )}
+            {task.type === "plan" && task.costType === "free" && (
+              <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-green-500/10">
+                <span className="font-bold text-green-600 dark:text-green-400">Miễn phí</span>
+              </div>
+            )}
 
-              {/* BADGE GIÁ - PLAN ĐỦ 4 KIỂU */}
-              {task.type === "plan" && task.costType === "free" && (
-                <div className="absolute top-3 right-3 px-3 py-1.5 rounded-xl bg-green-500/90 backdrop-blur-md">
-                  <span className="font-bold text-white text-">Miễn phí</span>
-                </div>
-              )}
+            {task.type === "plan" && task.costType === "share" && (
+              <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/5">
+                <span className="font-bold text-zinc-900 dark:text-zinc-100">Chia đều</span>
+              </div>
+            )}
 
-              {task.type === "plan" && task.costType === "share" && (
-                <div className="absolute top-3 right-3 px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur-md">
-                  <span className="font-bold text-white text-">Chia đều</span>
-                </div>
-              )}
+            {task.type === "plan" && task.costType === "host" && task.costAmount && task.costAmount > 0 && (
+              <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-[#FF9500]/10">
+                <span className="font-bold text-[#FF9500]">
+                  Mình bao • {task.costAmount.toLocaleString("vi-VN")}đ
+                </span>
+              </div>
+            )}
 
-              {task.type === "plan" && task.costType === "host" && task.costAmount && task.costAmount > 0 && (
-                <div className="absolute top-3 right-3 px-3 py-1.5 rounded-xl bg-[#FF9500]/90 backdrop-blur-md">
-                  <span className="font-bold text-white text-">
-                    Mình bao • {task.costAmount.toLocaleString("vi-VN")}đ
-                  </span>
-                </div>
-              )}
-
-              {task.type === "plan" && task.costType === "ticket" && task.costAmount && task.costAmount > 0 && (
-                <div className="absolute top-3 right-3 px-3 py-1.5 rounded-xl bg-[#0A84FF]/90 backdrop-blur-md">
-                  <span className="font-bold text-white text-">
-                    Có vé • {task.costAmount.toLocaleString("vi-VN")}đ
-                  </span>
-                </div>
-              )}
-            </div>
+            {task.type === "plan" && task.costType === "ticket" && task.costAmount > 0 && (
+              <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-[#0A84FF]/10">
+                <span className="font-bold text-[#0A84FF]">
+                  Có vé • {task.costAmount.toLocaleString("vi-VN")}đ
+                </span>
+              </div>
+            )}
           </div>
         )}
 
-        {/* CONTENT: Tiêu đề + Mô tả full ra ngoài */}
+        {/* CONTENT: Tiêu đề + Mô tả */}
         <div className="px-4 pb-4 cursor-pointer" onClick={goToTask}>
           <h3 className="font-bold text- text-zinc-900 dark:text-zinc-100 leading-snug mb-2.5">
             {task.title}
@@ -401,7 +385,6 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate,
               </div>
             )}
 
-            {/* HIỂN THỊ KIỂU CHI PHÍ CHO PLAN */}
             {task.type === "plan" && task.costType === "free" && (
               <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
                 <FiGift size={15} />
