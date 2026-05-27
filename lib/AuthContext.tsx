@@ -11,14 +11,7 @@ import {
   useCallback,
 } from "react";
 import { onAuthStateChanged, User, signOut } from "firebase/auth";
-import {
-  doc,
-  onSnapshot,
-  Timestamp,
-  
-  
-
-} from "firebase/firestore";
+import { doc, onSnapshot, Timestamp } from "firebase/firestore";
 import {
   ref,
   onValue,
@@ -27,18 +20,19 @@ import {
   serverTimestamp as rtdbTimestamp,
 } from "firebase/database";
 import { setCookie, deleteCookie } from 'cookies-next';
+import { useRouter } from "next/navigation";
 
 export type AppUser = {
   uid: string;
-  name: string;
-  username: string;
-  userId: string;
-  email: string;
+  displayName: string; // Bắt buộc
+  username: string; // Bắt buộc
+  email: string | null;
   emailVerified: boolean;
-  avatar: string;
+  photoURL: string | null;
   isOnline: boolean;
   lastSeen: Timestamp;
   fcmTokens?: string[];
+  verified: boolean;
   status: "active" | "banned" | "deleted" | "deactivated";
   searchKeywords: string[];
   nameLower: string;
@@ -75,8 +69,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const userDataUnsub = useRef<(() => void) | null>(null);
   const presenceUnsub = useRef<(() => void) | null>(null);
+  const router = useRouter();
 
-  // 1. Dynamic import Firebase để giảm bundle ban đầu
   useEffect(() => {
     const init = async () => {
       const firebase = await import("@/lib/firebase");
@@ -87,7 +81,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     init();
   }, []);
 
-  // 2. Hàm tạo user mới -> gọi API route, không chạy runTransaction ở client
   const createUserProfile = useCallback(async (firebaseUser: User) => {
     try {
       const token = await firebaseUser.getIdToken();
@@ -98,18 +91,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!res.ok) throw new Error('Failed to create user profile');
     } catch (e) {
       console.error("Create user error:", e);
+      setError("Không tạo được hồ sơ");
     }
   }, []);
 
   useEffect(() => {
-    if (!auth || !db || !rtdb) return;
+    if (!auth ||!db ||!rtdb) return;
 
     const unsubAuth = onAuthStateChanged(auth, async (firebaseUser) => {
-      // 3. XOÁ TOÀN BỘ LOGIC NẶNG. Chỉ set state + cookie
       setUser(firebaseUser);
       setError(null);
 
-      // Cleanup listeners cũ
       userDataUnsub.current?.();
       presenceUnsub.current?.();
 
@@ -121,26 +113,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       try {
-        // 4. Set cookie cho middleware đọc, không chặn UI
         const token = await firebaseUser.getIdToken();
-        setCookie('__session', token, { 
-          maxAge: 60 * 60 * 24 * 7, // 7 ngày
+        setCookie('__session', token, {
+          maxAge: 60 * 60 * 24 * 7,
           path: '/',
           sameSite: 'lax'
         });
 
-        // 5. Chỉ onSnapshot user data. Không await gì hết
         const userRef = doc(db, "users", firebaseUser.uid);
         userDataUnsub.current = onSnapshot(
           userRef,
           (docSnap) => {
             if (docSnap.exists()) {
-              setUserData(docSnap.data() as AppUser);
+              const data = docSnap.data() as AppUser;
+
+              // CHUẨN: Force user hoàn tất profile
+              if (!data.displayName?.trim()) {
+                setError("PROFILE_INCOMPLETE");
+                router.push("/onboarding");
+                setLoading(false);
+                return;
+              }
+
+              setUserData(data);
             } else {
-              // Nếu chưa có profile thì gọi API tạo
               createUserProfile(firebaseUser);
             }
-            setLoading(false); // Bỏ loading ngay khi có user
+            setLoading(false);
           },
           (err) => {
             console.error("Snapshot error:", err);
@@ -149,9 +148,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         );
 
-        // 6. XOÁ trackCurrentSession. Tốn 3-5 reads mỗi lần F5. Dùng middleware + API
-        
-        // 7. Presence chỉ dùng RTDB, không update Firestore mỗi lần online
+        // Presence RTDB
         const statusRef = ref(rtdb, `/status/${firebaseUser.uid}`);
         const connectedRef = ref(rtdb, ".info/connected");
 
@@ -179,14 +176,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       userDataUnsub.current?.();
       presenceUnsub.current?.();
     };
-  }, [auth, db, rtdb, createUserProfile]);
+  }, [auth, db, rtdb, createUserProfile, router]);
 
-  // 8. Hàm logout tập trung
   const logout = useCallback(async () => {
-    if (!auth || !db) return;
+    if (!auth) return;
     const currentUser = auth.currentUser;
-    
-    // Xóa session ở server
+
     if (currentUser) {
       try {
         const token = await currentUser.getIdToken();
@@ -199,7 +194,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     deleteCookie('__session');
     await signOut(auth);
-  }, [auth, db]);
+  }, [auth]);
 
   const value = useMemo(
     () => ({ user, userData, loading, error, logout }),
