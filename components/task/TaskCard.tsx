@@ -11,16 +11,18 @@ import { createPortal } from "react-dom";
 import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
-import { type TaskStatus, type Task, isTask } from "@/types/task";
+import { type TaskStatus, type FeedTask, isTask } from "@/types/task"; // SỬA: FeedTask
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatDistanceToNow } from "date-fns";
+import { vi } from "date-fns/locale";
 
 type Props = {
-  task: Task;
+  task: FeedTask; // SỬA: Task -> FeedTask
   theme: "task" | "plan";
   onDelete?: (id: string) => void;
-  onShare?: (task: Task) => void;
-  onTaskUpdate?: (taskId: string, updates: Partial<Task>) => void;
+  onShare?: (task: FeedTask) => void; // SỬA: Task -> FeedTask
+  onTaskUpdate?: (taskId: string, updates: Partial<FeedTask>) => void; // SỬA
 };
 
 const Portal = ({ children }: { children: React.ReactNode }) => {
@@ -93,7 +95,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
     setIsSaved(newSaved);
     onTaskUpdate?.(task.id, {
       savedBy: newSaved
-      ? [...oldSavedBy, user.uid]
+   ? [...oldSavedBy, user.uid]
         : oldSavedBy.filter(id => id!== user.uid)
     });
 
@@ -129,9 +131,14 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
     router.push(`/task/${task.id}`);
   };
 
-  const taskDate = task.type === "task" && task.deadline?.seconds
- ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+  // SỬA: deadline là string, không có.seconds
+  const taskDate = task.type === "task" && task.deadline
+? new Date(task.deadline).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
     : "";
+
+  // SỬA: createdAt là string
+  const createdDate = task.createdAt? new Date(task.createdAt) : new Date();
+  const timeAgo = formatDistanceToNow(createdDate, { addSuffix: true, locale: vi });
 
   const statusMap: Record<TaskStatus, { label: string; color: string; dot: string }> = {
     open: { label: "Đang tuyển", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400", dot: "bg-green-600" },
@@ -144,9 +151,10 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
     pending: { label: "Chờ duyệt", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", dot: "bg-amber-600" },
   };
 
-  const isExpired = isTask(task) && task.deadline && task.deadline.seconds * 1000 < Date.now();
+  // SỬA: deadline là string
+  const isExpired = isTask(task) && task.deadline && new Date(task.deadline).getTime() < Date.now();
   const status = isExpired
-  ? { label: "Đã hết hạn", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", dot: "bg-red-600" }
+? { label: "Đã hết hạn", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", dot: "bg-red-600" }
     : statusMap[task.status] || statusMap.open;
   const maxSlots = task.type === "task"? task.totalSlots?? 0 : task.maxParticipants?? 0;
 
@@ -178,6 +186,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
           <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 line-clamp-2 leading-snug">
             {task.title}
           </h3>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{timeAgo}</p>
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
