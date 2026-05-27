@@ -25,11 +25,12 @@ export type PlanStatus = "draft" | "open" | "in_progress" | "completed" | "cance
 export type User = {
   uid: string;
   email?: string | null;
-  displayName?: string | null;
-  photoURL?: string | null;
+  displayName?: string | null; // Đổi từ displayName? -> đúng rồi
+  photoURL?: string | null; // Đổi từ photoURL? -> đúng rồi
   role?: "admin" | "user";
   shortId?: string;
   username?: string;
+  verified?: boolean; // Thêm
 };
 
 /* ================= BASE ITEM ================= */
@@ -46,10 +47,10 @@ export type BaseItem = {
   images: string[];
   attachments?: string[];
   
-  // Owner
+  // Owner - DENORMALIZED SNAPSHOT
   userId: string;
-  userName: string;
-  userAvatar: string;
+  userName: string; // Snapshot: lấy từ users.displayName lúc tạo
+  userAvatar: string | null; // Snapshot: lấy từ users.photoURL lúc tạo
   userVerified?: boolean; 
   userShortId?: string;
   userUsername?: string;
@@ -125,8 +126,8 @@ export type PlanMilestone = {
 
 export type PlanParticipant = {
   userId: string;
-  userName: string;
-  userAvatar: string;
+  userName: string; // Snapshot từ users.displayName
+  userAvatar: string | null; // Snapshot từ users.photoURL
   role: PlanParticipantRole;
   joinedAt: Timestamp;
   permissions: {
@@ -231,7 +232,7 @@ export type TaskListItem = Pick<
   TaskItem,
   | "id"
   | "slug"
-  | "shortId" // THÊM
+  | "shortId"
   | "title"
   | "price"
   | "currency"
@@ -271,7 +272,7 @@ export type PlanListItem = Pick<
   PlanItem,
   | "id"
   | "slug"
-  | "shortId" // THÊM
+  | "shortId"
   | "title"
   | "type"
   | "status"
@@ -310,7 +311,6 @@ export type PlanListItem = Pick<
 export type ItemListItem = TaskListItem | PlanListItem;
 
 /* ================= FEED TYPE CHO ISR ================= */
-// Dùng cho Server Component: Timestamp -> string để serialize qua RSC
 export type FeedTask = (TaskListItem | PlanListItem) & {
   createdAt: string | null;
   updatedAt?: string | null;
@@ -318,17 +318,16 @@ export type FeedTask = (TaskListItem | PlanListItem) & {
   eventDate?: string | null;
   endDate?: string | null;
   startDate?: string | null;
-  
   applicationDeadline?: string | null;
-  shortId?: string; // FIX: Thêm để build pass
+  shortId?: string;
 };
 
 /* ================= PARTICIPANT ================= */
 export type TaskParticipant = {
   taskId: string;
   userId: string;
-  userName: string;
-  userAvatar: string;
+  userName: string; // Snapshot từ users.displayName
+  userAvatar: string | null; // Snapshot từ users.photoURL
   joinedAt: Timestamp;
   status: "joined" | "left" | "kicked" | "completed";
   note?: string;
@@ -339,8 +338,8 @@ export type TaskComment = {
   id: string;
   taskId: string;
   userId: string;
-  userName: string;
-  userAvatar: string;
+  userName: string; // Snapshot từ users.displayName
+  userAvatar: string | null; // Snapshot từ users.photoURL
   text: string; 
   createdAt: Timestamp;
   taskOwnerId?: string;
