@@ -8,7 +8,7 @@ import { doc, updateDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/ui/UserAvatar";
-import type { Task } from "@/types/task";
+import type { FeedTask } from "@/types/task"; // FIX: Task -> FeedTask
 
 type Application = {
   id: string;
@@ -24,7 +24,7 @@ type Application = {
 
 type Props = {
   applications: Application[];
-  task: Task;
+  task: FeedTask; // FIX: Task -> FeedTask
   currentUserId: string;
   onUpdate: () => void;
 };
