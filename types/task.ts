@@ -110,7 +110,7 @@ export type TaskItem = BaseItem & {
   startDate?: Timestamp | null;
 };
 
-/* ================= PLAN TYPE - NÂNG CẤP ================= */
+/* ================= PLAN TYPE ================= */
 export type PlanMilestone = {
   id: string;
   title: string;
@@ -230,6 +230,7 @@ export type TaskListItem = Pick<
   TaskItem,
   | "id"
   | "slug"
+  | "shortId" // THÊM
   | "title"
   | "price"
   | "currency"
@@ -260,14 +261,15 @@ export type TaskListItem = Pick<
   | "savedBy"     
   | "applicants"  
   | "appliedCount"
-  | "banned"      // THÊM: Fix lỗi build
-  | "hidden"      // THÊM: Fix lỗi build
+  | "banned"
+  | "hidden"
 >;
 
 export type PlanListItem = Pick<
   PlanItem,
   | "id"
   | "slug"
+  | "shortId" // THÊM
   | "title"
   | "type"
   | "status"
@@ -298,8 +300,8 @@ export type PlanListItem = Pick<
   | "milestones"
   | "savedBy"      
   | "applicants"  
-  | "banned"      // THÊM: Fix lỗi build
-  | "hidden"      // THÊM: Fix lỗi build
+  | "banned"
+  | "hidden"
 >;
 
 export type ItemListItem = TaskListItem | PlanListItem;
@@ -314,6 +316,7 @@ export type FeedTask = (TaskListItem | PlanListItem) & {
   endDate?: string | null;
   startDate?: string | null;
   applicationDeadline?: string | null;
+  shortId?: string; // FIX: Thêm để build pass
 };
 
 /* ================= PARTICIPANT ================= */
