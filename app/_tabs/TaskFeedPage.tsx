@@ -349,21 +349,21 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
                 {activeTab === "nearby" &&!userLocation? "Bật định vị để khám phá task xung quanh bạn" : "Kéo xuống để làm mới danh sách"}
               </p>
               {activeTab === "nearby" &&!userLocation? (
-                <button
-                  onClick={requestLocation}
-                  className="px-6 h-11 rounded-xl text-white text-sm font-semibold active:scale-95 transition-all flex items-center gap-2 mx-auto"
-                  style={{ background: theme.gradient }}
-                >
-                  <FiNavigation /> Bật định vị ngay
-                </button>
+       <button
+  onClick={requestLocation}
+  className="px-6 h-11 rounded-xl text-white text-sm font-semibold active:scale-95 transition-all flex items-center gap-2 mx-auto"
+  style={{ background: theme[mode].gradient }}
+>
+  <FiNavigation /> Bật định vị ngay
+</button>
               ) : (
-                <button
-                  onClick={handleRefresh}
-                  className="px-6 h-11 rounded-xl text-white text-sm font-semibold active:scale-95 transition-all flex items-center gap-2 mx-auto"
-                  style={{ background: theme.gradient }}
-                >
-                  <FiRefreshCw /> Tải lại
-                </button>
+         <button
+  onClick={handleRefresh}
+  className="px-6 h-11 rounded-xl text-white text-sm font-semibold active:scale-95 transition-all flex items-center gap-2 mx-auto"
+  style={{ background: theme[mode].gradient }}
+>
+  <FiRefreshCw /> Tải lại
+</button>
               )}
             </motion.div>
           ) : (
@@ -397,7 +397,7 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
 
           {refreshing && (
             <div className="flex justify-center py-6">
-              <FiRefreshCw className="animate-spin" size={24} style={{ color: theme.primary }} />
+<FiRefreshCw className="animate-spin" size={24} style={{ color: theme[mode].primary }} />
             </div>
           )}
 
