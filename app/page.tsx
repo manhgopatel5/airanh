@@ -1,6 +1,6 @@
 import { getJobsFromFirebaseAdmin } from '@/lib/firebase-admin'
 import AppContainer from './AppContainer'
-import type { Task } from '@/types/task'
+import type { FeedTask } from '@/types/task' // CHUẨN: Import type gốc, không tự tạo
 
 // 1. ISR: Cache HTML + data 60s cho toàn bộ user
 // 1000 user vào trong 60s chỉ tốn 10 Firestore reads
@@ -19,10 +19,8 @@ export async function generateMetadata() {
   }
 }
 
-type FeedTask = Task & {
-  banned?: boolean;
-  hidden?: boolean;
-};
+// XÓA HOÀN TOÀN: Không được tự định nghĩa FeedTask ở đây
+// type FeedTask = Task & { banned?: boolean; hidden?: boolean; };
 
 export default async function HomePage({
   searchParams,
