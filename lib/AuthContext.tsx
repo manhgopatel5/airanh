@@ -128,12 +128,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               const data = docSnap.data() as AppUser;
 
               // CHUẨN: Force user hoàn tất profile
-              if (!data.displayName?.trim()) {
-                setError("PROFILE_INCOMPLETE");
-                router.push("/onboarding");
-                setLoading(false);
-                return;
-              }
+    
 
               setUserData(data);
             } else {
