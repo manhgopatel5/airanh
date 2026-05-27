@@ -65,9 +65,9 @@ const generateUniqueShortId = async (): Promise<string> => {
   throw new TaskError("Không tạo được shortId duy nhất");
 };
 
-/* ================= CREATE TASK ================= */
+/* ================= CREATE TASK - ĐÃ FIX ================= */
 export const createTask = async (
-  user: { uid: string; displayName?: string | null; photoURL?: string | null; shortId?: string; username?: string },
+  user: { uid: string; displayName?: string | null; photoURL?: string | null; email?: string | null; shortId?: string; username?: string },
   data: CreateTaskInput
 ): Promise<{ id: string; slug: string }> => {
   const db = getFirebaseDB();
@@ -78,6 +78,21 @@ export const createTask = async (
   if (data.description && data.description.length > 5000) throw new TaskError("Mô tả tối đa 5000 ký tự");
   if (data.price < 0) throw new TaskError("Giá không hợp lệ");
   if (data.totalSlots < 1) throw new TaskError("Số lượng tuyển tối thiểu là 1");
+
+  // FIX: Lấy user data mới nhất từ collection users
+  const userSnap = await getDoc(doc(db, "users", user.uid));
+  const userData = userSnap.data();
+
+  const userName = userData?.displayName
+    || user.displayName
+    || user.email?.split('@')[0]
+    || "Ẩn danh";
+
+  const userAvatar = userData?.photoURL
+    || user.photoURL
+    || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=0A84FF&color=fff`;
+
+  const userVerified = userData?.verified || false;
 
   const baseSlug = slugify(data.title);
   let slug = `${baseSlug}-${nanoid(6)}`;
@@ -113,10 +128,11 @@ export const createTask = async (
       visibility: data.visibility || "public",
 
       userId: user.uid,
-      userName: user.displayName || "Ẩn danh",
-      userAvatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || "U")}`,
- ...(user.shortId && { userShortId: user.shortId }),
- ...(user.username && { userUsername: user.username }),
+      userName, // ĐÃ FIX
+      userAvatar, // ĐÃ FIX
+      userVerified, // THÊM FIELD NÀY
+...(userData?.shortId && { userShortId: userData.shortId }),
+...(userData?.username && { userUsername: userData.username }),
 
       createdAt: now,
       updatedAt: now,
@@ -129,7 +145,7 @@ export const createTask = async (
       images: data.images || [],
       attachments: data.attachments || [],
       requirements: data.requirements || "",
- ...(data.location && { location: data.location }),
+...(data.location && { location: data.location }),
       isRemote: data.isRemote?? false,
 
       searchKeywords: generateSearchKeywords(data.title, data.description, data.tags),
