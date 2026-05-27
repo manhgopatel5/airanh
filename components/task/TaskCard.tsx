@@ -163,7 +163,6 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
       animate={{ opacity: 1, y: 0 }}
       className="group"
     >
-      {/* BO TRÒN 4 GÓC: rounded-3xl */}
       <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl rounded-3xl border border-zinc-200/40 dark:border-zinc-800/40 overflow-hidden active:scale-[0.985] transition-all duration-200 shadow-sm">
 
         {/* HEADER */}
@@ -302,53 +301,52 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
           </div>
         </div>
 
-        {/* BADGE GIÁ - FIX TYPE NARROWING */}
-        {((task.type === "task" && task.price > 0) || (task.type === "plan" && task.costType!== "free"))? (
-          <div className="px-4 pb-3">
+        {/* CONTENT */}
+        <div className="px-4 pb-4 cursor-pointer" onClick={goToTask}>
+          {/* TIÊU ĐỀ + GIÁ CÙNG HÀNG */}
+          <div className="flex items-start justify-between gap-3 mb-2.5">
+            <h3 className="font-bold text- text-zinc-900 dark:text-zinc-100 leading-snug flex-1">
+              {task.title}
+            </h3>
+
+            {/* SỐ TIỀN GÓC PHẢI */}
             {task.type === "task" && task.price > 0 && (
-              <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/5">
-                <span className="font-bold text-zinc-900 dark:text-zinc-100">
+              <div className="shrink-0 px-2.5 py-1 rounded-lg bg-black/5 dark:bg-white/5">
+                <span className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
                   {task.price.toLocaleString("vi-VN")}đ
                 </span>
-                {task.budgetType === "hourly" && <span className="text-zinc-500 dark:text-zinc-400 text-xs ml-1">/h</span>}
+                {task.budgetType === "hourly" && <span className="text-zinc-500 dark:text-zinc-400 text-xs">/h</span>}
               </div>
             )}
 
             {task.type === "plan" && task.costType === "free" && (
-              <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-green-500/10">
-                <span className="font-bold text-green-600 dark:text-green-400">Miễn phí</span>
+              <div className="shrink-0 px-2.5 py-1 rounded-lg bg-green-500/10">
+                <span className="font-bold text-sm text-green-600 dark:text-green-400">Miễn phí</span>
               </div>
             )}
 
             {task.type === "plan" && task.costType === "share" && (
-              <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/5">
-                <span className="font-bold text-zinc-900 dark:text-zinc-100">Chia đều</span>
+              <div className="shrink-0 px-2.5 py-1 rounded-lg bg-black/5 dark:bg-white/5">
+                <span className="font-bold text-sm text-zinc-900 dark:text-zinc-100">Chia đều</span>
               </div>
             )}
 
             {task.type === "plan" && task.costType === "host" && task.costAmount && task.costAmount > 0 && (
-              <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-[#FF9500]/10">
-                <span className="font-bold text-[#FF9500]">
-                  Mình bao • {task.costAmount.toLocaleString("vi-VN")}đ
+              <div className="shrink-0 px-2.5 py-1 rounded-lg bg-[#FF9500]/10">
+                <span className="font-bold text-sm text-[#FF9500]">
+                  {task.costAmount.toLocaleString("vi-VN")}đ
                 </span>
               </div>
             )}
 
             {task.type === "plan" && task.costType === "ticket" && task.costAmount && task.costAmount > 0 && (
-              <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-[#0A84FF]/10">
-                <span className="font-bold text-[#0A84FF]">
-                  Có vé • {task.costAmount.toLocaleString("vi-VN")}đ
+              <div className="shrink-0 px-2.5 py-1 rounded-lg bg-[#0A84FF]/10">
+                <span className="font-bold text-sm text-[#0A84FF]">
+                  {task.costAmount.toLocaleString("vi-VN")}đ
                 </span>
               </div>
             )}
           </div>
-        ) : null}
-
-        {/* CONTENT */}
-        <div className="px-4 pb-4 cursor-pointer" onClick={goToTask}>
-          <h3 className="font-bold text- text-zinc-900 dark:text-zinc-100 leading-snug mb-2.5">
-            {task.title}
-          </h3>
 
           {task.description && (
             <p className="text- text-zinc-600 dark:text-zinc-300 leading-[1.6] line-clamp-4 mb-3.5">
@@ -356,18 +354,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
             </p>
           )}
 
-          {task.tags && task.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-3.5">
-              {task.tags.slice(0, 4).map((tag) => (
-                <span
-                  key={tag}
-                  className="px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-xs font-semibold text-zinc-600 dark:text-zinc-400"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
+          {/* ĐÃ XÓA HASHTAG */}
 
           {/* META INFO */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-">
