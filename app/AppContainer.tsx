@@ -11,23 +11,28 @@ import { Toaster } from "sonner";
 import CustomTabBar from "@/components/CustomTabBar";
 import { useTabBarHeight } from "@/hooks/useTabBarHeight";
 import JobSkeleton from "@/components/JobSkeleton";
+import type { FeedTask } from '@/types/task';
 
 // 1. DYNAMIC IMPORT: Giảm 400KB JS ban đầu. Chỉ tab home SSR
 const TaskFeedPage = dynamic(() => import('./_tabs/TaskFeedPage'), {
-  loading: () => <JobSkeleton />,
+  loading: () => <JobSkeleton theme="task" count={5} />,
   ssr: true // SEO + FCP nhanh cho tab chính
+})
+const PlanFeedPage = dynamic(() => import('./_tabs/PlanFeedPage'), {
+  loading: () => <JobSkeleton theme="plan" count={5} />,
+  ssr: true
 })
 const ChatClient = dynamic(() => import('./chat/ChatClient'), { 
   ssr: false,
-  loading: () => <JobSkeleton /> 
+  loading: () => <JobSkeleton count={1} /> 
 })
 const TasksPage = dynamic(() => import('./_tabs/MyTasksPage'), { 
   ssr: false,
-  loading: () => <JobSkeleton /> 
+  loading: () => <JobSkeleton count={5} /> 
 })
 const ProfileTabContent = dynamic(() => import('./profile/ProfileTabContent'), { 
   ssr: false,
-  loading: () => <JobSkeleton /> 
+  loading: () => <JobSkeleton count={1} /> 
 })
 
 // 2. TÁCH FRAMER-MOTION: 120KB chỉ load khi bấm nút +
@@ -36,16 +41,15 @@ const FloatingMenu = dynamic(() => import('@/components/FloatingMenu'), {
 })
 
 type MainTab = "home" | "messages" | "tasks" | "profile";
-type Job = any; // Thay bằng type thật của bạn
 
 interface AppContainerProps {
-  initialJobs?: Job[]; // Nhận từ Server Component page.tsx
+  initialJobs?: FeedTask[]; // Nhận từ Server Component page.tsx
 }
 
-export default function AppContainer({ initialJobs }: AppContainerProps) {
-
+export default function AppContainer({ initialJobs = [] }: AppContainerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  // ĐÃ DÙNG: mode để switch Task/Plan, unreadCount cho badge
   const mode = useAppStore((s) => s.mode);
   const unreadCount = useAppStore((s) => s.unreadCount);
   const [mounted, setMounted] = useState(false);
@@ -59,8 +63,7 @@ export default function AppContainer({ initialJobs }: AppContainerProps) {
 
   useEffect(() => setMounted(true), []);
 
-  // 3. XOÁ useEffect check user. Dùng middleware.ts chạy ở Edge nhanh hơn
-  // useEffect(() => { if (!user) router.replace("/login") }, [])
+  // 3. ĐÃ XÓA useEffect check user. Middleware.ts lo
 
   const handleChangeTab = useCallback((tab: MainTab) => {
     setCurrentMainTab(tab);
@@ -68,8 +71,7 @@ export default function AppContainer({ initialJobs }: AppContainerProps) {
     router.replace(newUrl, { scroll: false });
   }, [router]);
 
-  // 4. XOÁ loadedTabs. Dynamic import tự cache, không cần state này
-
+  // 4. Đồng bộ tab từ URL khi back/forward
   useEffect(() => {
     const tabFromUrl = (searchParams.get("tab") as MainTab) || "home";
     if (tabFromUrl!== currentMainTab) {
@@ -77,6 +79,7 @@ export default function AppContainer({ initialJobs }: AppContainerProps) {
     }
   }, [searchParams, currentMainTab]);
 
+  // Đóng menu bằng ESC
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") setIsMenuOpen(false);
@@ -85,6 +88,7 @@ export default function AppContainer({ initialJobs }: AppContainerProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  // Click ngoài đóng menu + lock scroll
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent | TouchEvent) => {
       const target = e.target as HTMLElement;
@@ -111,8 +115,23 @@ export default function AppContainer({ initialJobs }: AppContainerProps) {
     router.push(`/create/${type}`);
   }, [router]);
 
-  // 5. XOÁ BLOCK LOADING SPINNER. Để app/loading.tsx lo, tránh màn hình trắng
-  // if (authLoading ||!userData) { return <FiLoader... /> }
+  // 5. SỬA: Dùng mode để render đúng feed, không bị lỗi unused var
+  const renderCurrentTab = () => {
+    switch (currentMainTab) {
+      case "home":
+        return mode === 'task'
+         ? <TaskFeedPage initialJobs={initialJobs.filter(j => j.type === 'task')} />
+          : <PlanFeedPage initialJobs={initialJobs.filter(j => j.type === 'plan')} />
+      case "messages":
+        return <ChatClient />
+      case "tasks":
+        return <TasksPage />
+      case "profile":
+        return <ProfileTabContent />
+      default:
+        return <TaskFeedPage initialJobs={initialJobs} />
+    }
+  }
 
   return (
     <div className="h-screen flex flex-col font-sans bg-white dark:bg-zinc-950 select-none relative">
@@ -122,11 +141,8 @@ export default function AppContainer({ initialJobs }: AppContainerProps) {
         className="flex-1 w-full max-w-2xl mx-auto overflow-y-auto [-webkit-overflow-scrolling:touch] overscroll-y-contain"
         style={{ paddingBottom: tabBarHeight + 24 }}
       >
-        {/* 6. KHÔNG DÙNG hidden. Render có điều kiện để unmount tab cũ, đỡ RAM + CPU */}
-        {currentMainTab === "home" && <TaskFeedPage initialJobs={initialJobs} />}
-        {currentMainTab === "messages" && <ChatClient />}
-        {currentMainTab === "tasks" && <TasksPage />}
-        {currentMainTab === "profile" && <ProfileTabContent />}
+        {/* 6. Render có điều kiện: Unmount tab cũ để đỡ RAM */}
+        {renderCurrentTab()}
       </div>
 
       {mounted && createPortal(
