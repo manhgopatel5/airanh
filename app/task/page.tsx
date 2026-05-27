@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useTaskFeed } from "@/hooks/useTaskFeed";
-import TaskFeed from "@/components/TaskFeed";
+import TaskFeed from "@/components/task/TaskFeed";
+import EmptyState from "@/components/EmptyState";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiLoader, FiRefreshCw } from "react-icons/fi";
-import EmptyState from "@/components/EmptyState";
 import type { AppMode } from "@/types/app";
 
 type TabId = "hot" | "near" | "friends" | "new";
@@ -16,49 +16,14 @@ export default function TaskPage() {
   const [mode] = useState<AppMode>("task");
   const {
     tasks,
-    newTaskCount,
     loading,
     loadingMore,
     hasMore,
-    resetNewTaskCount,
     loadMore,
     refresh
-  } = useTaskFeed(activeTab);
+  } = useTaskFeed(activeTab); // FIX: Bỏ newTaskCount, resetNewTaskCount
 
-  const toastIdRef = useRef<string | number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // FIX: Chỉ show toast 1 lần, update nếu count tăng
-  useEffect(() => {
-    if (newTaskCount > 0) {
-      // Dismiss toast cũ nếu có
-      if (toastIdRef.current) toast.dismiss(toastIdRef.current);
-
-      toastIdRef.current = toast.success(
-        `Có ${newTaskCount} ${mode === "task"? "công việc" : "kế hoạch"} mới`,
-        {
-          action: {
-            label: "Xem ngay",
-            onClick: () => {
-              window.scrollTo({ top: 0, behavior: "smooth" });
-              resetNewTaskCount();
-              navigator.vibrate?.(5);
-            },
-          },
-          duration: 6000,
-          onDismiss: () => {
-            toastIdRef.current = null;
-          },
-        }
-      );
-    } else {
-      // Nếu newTaskCount về 0 thì dismiss toast
-      if (toastIdRef.current) {
-        toast.dismiss(toastIdRef.current);
-        toastIdRef.current = null;
-      }
-    }
-  }, [newTaskCount, mode, resetNewTaskCount]);
 
   // Pull to refresh
   const handleRefresh = useCallback(async () => {
