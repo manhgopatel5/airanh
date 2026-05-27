@@ -1,3 +1,5 @@
+"use client";
+
 // app/loading.tsx
 // Server Component: render ngay 0ms, không JS
 // Mục đích: Hết màn hình trắng, FCP < 0.3s
