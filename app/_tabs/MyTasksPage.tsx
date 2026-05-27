@@ -8,8 +8,22 @@ import { useRouter } from "next/navigation";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy, limit, startAfter, QueryDocumentSnapshot, DocumentData, Timestamp } from "firebase/firestore";
-import type { Task } from "@/types/task";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  orderBy,
+  limit,
+  startAfter,
+  QueryDocumentSnapshot,
+  DocumentData,
+  Timestamp,
+  doc,
+  updateDoc,
+  deleteDoc
+} from "firebase/firestore";
+import type { FeedTask } from "@/types/task"; // SỬA: Task -> FeedTask
 import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
 import { useAppStore } from "@/store/app";
@@ -36,17 +50,17 @@ export default function TasksPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const { mode = "task", setMode } = useAppStore();
   const [subTab, setSubTab] = useState<SubTab>("mine");
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<FeedTask[]>([]); // SỬA: Task[] -> FeedTask[]
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
 
-  const [shareTask, setShareTask] = useState<Task | null>(null);
+  const [shareTask, setShareTask] = useState<FeedTask | null>(null); // SỬA
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  
+
   const theme = {
     task: {
       primary: "#0A84FF",
@@ -74,7 +88,7 @@ export default function TasksPage() {
       if (!user) router.push("/login");
     });
     return () => unsub();
-  }, []);
+  }, [auth, router]);
 
   const fetchTasks = useCallback(async (isRefresh = false) => {
     if (!currentUser) {
@@ -96,12 +110,13 @@ export default function TasksPage() {
       let q = query(
         baseCollection,
         where("type", "==", mode),
+        orderBy("createdAt", "desc"), // Thêm orderBy mặc định để tối ưu
         limit(PAGE_SIZE)
       );
 
       switch (subTab) {
         case "mine":
-          q = query(baseCollection, where("userId", "==", currentUser.uid), where("type", "==", mode), limit(PAGE_SIZE));
+          q = query(baseCollection, where("userId", "==", currentUser.uid), where("type", "==", mode), orderBy("createdAt", "desc"), limit(PAGE_SIZE));
           break;
         case "expired":
           const now = Timestamp.now();
@@ -117,19 +132,19 @@ export default function TasksPage() {
           );
           break;
         case "saved":
-          q = query(baseCollection, where("savedBy", "array-contains", currentUser.uid), where("type", "==", mode), limit(PAGE_SIZE));
+          q = query(baseCollection, where("savedBy", "array-contains", currentUser.uid), where("type", "==", mode), orderBy("createdAt", "desc"), limit(PAGE_SIZE));
           break;
         case "doing":
-          q = query(baseCollection, where("assignees", "array-contains", currentUser.uid), where("type", "==", mode), limit(PAGE_SIZE));
+          q = query(baseCollection, where("assignees", "array-contains", currentUser.uid), where("type", "==", mode), where("status", "==", "doing"), orderBy("createdAt", "desc"), limit(PAGE_SIZE));
           break;
         case "applied":
-          q = query(baseCollection, where("applicants", "array-contains", currentUser.uid), where("type", "==", mode), limit(PAGE_SIZE));
+          q = query(baseCollection, where("applicants", "array-contains", currentUser.uid), where("type", "==", mode), where("status", "in", ["open", "pending"]), orderBy("createdAt", "desc"), limit(PAGE_SIZE));
           break;
         case "completed":
-          q = query(baseCollection, where("assignees", "array-contains", currentUser.uid), where("type", "==", mode), limit(PAGE_SIZE));
+          q = query(baseCollection, where("assignees", "array-contains", currentUser.uid), where("type", "==", mode), where("status", "==", "completed"), orderBy("createdAt", "desc"), limit(PAGE_SIZE));
           break;
         case "cancelled":
-          q = query(baseCollection, where("userId", "==", currentUser.uid), where("type", "==", mode), limit(PAGE_SIZE));
+          q = query(baseCollection, where("userId", "==", currentUser.uid), where("type", "==", mode), where("status", "==", "cancelled"), orderBy("createdAt", "desc"), limit(PAGE_SIZE));
           break;
       }
 
@@ -139,44 +154,24 @@ export default function TasksPage() {
 
       const snap = await getDocs(q);
 
-      let data = snap.docs.map(doc => {
+      const data = snap.docs.map(doc => {
         const d = doc.data();
         return {
           id: doc.id,
-          title: d.title || "Không có tiêu đề",
-          type: d.type || mode,
-          status: d.status || "open",
-         ...d
-        } as Task;
+       ...d,
+          // FIX: Convert Timestamp -> string cho FeedTask
+          createdAt: d.createdAt?.toDate?.()?.toISOString() || null,
+          updatedAt: d.updatedAt?.toDate?.()?.toISOString() || null,
+          deadline: d.deadline?.toDate?.()?.toISOString() || null,
+          eventDate: d.eventDate?.toDate?.()?.toISOString() || null,
+          endDate: d.endDate?.toDate?.()?.toISOString() || null,
+          startDate: d.startDate?.toDate?.()?.toISOString() || null,
+          applicationDeadline: d.applicationDeadline?.toDate?.()?.toISOString() || null,
+        } as FeedTask;
       })
-     .filter(t => t.id && t.title);
+    .filter(t => t.id && t.title);
 
-      switch (subTab) {
-        case "mine":
-          data = data.filter(t =>!["deleted", "cancelled"].includes(t.status));
-          break;
-        case "expired":
-          data = data.filter(t => t.type === "task" && t.deadline && t.deadline.seconds * 1000 < Date.now());
-          break;
-        case "saved":
-          data = data.filter(t =>!["deleted", "cancelled"].includes(t.status));
-          break;
-        case "doing":
-          data = data.filter(t => t.status === "doing");
-          break;
-        case "applied":
-          data = data.filter(t => ["open", "pending"].includes(t.status));
-          break;
-        case "completed":
-          data = data.filter(t => t.status === "completed");
-          break;
-        case "cancelled":
-          data = data.filter(t => t.status === "cancelled");
-          break;
-      }
-
-      data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-
+      // Bỏ filter client vì đã query đúng từ server -> tiết kiệm read
       if (isRefresh) {
         setTasks(data);
       } else {
@@ -193,17 +188,11 @@ export default function TasksPage() {
       setLoadingMore(false);
       setRefreshing(false);
     }
-  }, [currentUser, mode, subTab, db]);
-
-  const fetchTasksRef2 = useRef(fetchTasks);
-  fetchTasksRef2.current = fetchTasks;
+  }, [currentUser, mode, subTab, db, lastDoc]);
 
   useEffect(() => {
-    if (currentUser) fetchTasksRef2.current(true);
+    if (currentUser) fetchTasks(true);
   }, [currentUser, mode, subTab]);
-
-  const fetchTasksRef = useRef(fetchTasks);
-  fetchTasksRef.current = fetchTasks;
 
   useEffect(() => {
     if (!loadMoreRef.current) return;
@@ -211,7 +200,7 @@ export default function TasksPage() {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting && hasMore &&!loading &&!loadingMore) {
-          fetchTasksRef.current(false);
+          fetchTasks(false);
         }
       },
       { threshold: 0.1 }
@@ -219,9 +208,7 @@ export default function TasksPage() {
 
     observer.observe(loadMoreRef.current);
     return () => observer.disconnect();
-  }, [hasMore, loading, loadingMore]);
-
-
+  }, [hasMore, loading, loadingMore, fetchTasks]);
 
   const handleTabChange = (newTab: SubTab) => {
     vibrate();
@@ -234,16 +221,32 @@ export default function TasksPage() {
     setMode(newMode);
   };
 
-  
+  const handleTaskUpdate = useCallback((taskId: string, updates: Partial<FeedTask>) => {
+    setTasks(prev => prev.map(t => t.id === taskId? ({...t,...updates } as FeedTask) : t));
+  }, []);
 
-  const filteredTasks = tasks;
+  const handleDelete = useCallback(async (id: string) => {
+    if (!confirm("Xóa task này?")) return;
+    try {
+      await deleteDoc(doc(db, "tasks", id));
+      setTasks(prev => prev.filter(t => t.id!== id));
+      toast.success("Đã xóa");
+    } catch {
+      toast.error("Xóa thất bại");
+    }
+  }, [db]);
+
+  const handleShare = useCallback((task: FeedTask) => { // SỬA
+    vibrate(5);
+    setShareTask(task);
+  }, []);
+
   const currentTheme = theme[mode] || theme.task;
 
   return (
     <>
       <Toaster richColors position="top-center" />
 <div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 select-none pb-28">
- 
 
         <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl">
           <div className="px-4 pt-3 pb-2">
@@ -252,10 +255,10 @@ export default function TasksPage() {
     onClick={() => handleModeChange("task")}
     className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
       mode === "task"
-        ? "bg-[#0A84FF] text-white shadow-[0_8px_30px_rgba(10,132,255,0.3)]"
+       ? "bg-[#0A84FF] text-white shadow-[0_8px_30px_rgba(10,132,255,0.3)]"
         : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
     }`}
-    style={{ 
+    style={{
       WebkitTapHighlightColor: 'transparent',
       touchAction: 'manipulation'
     }}
@@ -265,13 +268,13 @@ export default function TasksPage() {
   </button>
 
   <button
-    onPointerDown={() => handleModeChange("plan")}
+    onClick={() => handleModeChange("plan")}
     className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
       mode === "plan"
-        ? "bg-[#30D158] text-white shadow-[0_8px_30px_rgba(48,209,88,0.3)]"
+       ? "bg-[#30D158] text-white shadow-[0_8px_30px_rgba(48,209,88,0.3)]"
         : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
     }`}
-    style={{ 
+    style={{
       WebkitTapHighlightColor: 'transparent',
       touchAction: 'manipulation'
     }}
@@ -291,14 +294,14 @@ export default function TasksPage() {
           onClick={() => handleTabChange(tab.key)}
           className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap ${
             subTab === tab.key
-             ? mode === "task"
-               ? "bg-[#0A84FF] text-white"
+          ? mode === "task"
+            ? "bg-[#0A84FF] text-white"
                 : "bg-[#30D158] text-white"
               : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 active:bg-zinc-200 dark:active:bg-zinc-700"
           }`}
-          style={{ 
+          style={{
             WebkitTapHighlightColor: 'transparent',
-            touchAction: 'manipulation' // Fix double tap iOS
+            touchAction: 'manipulation'
           }}
         >
           {tab.label}
@@ -324,7 +327,7 @@ export default function TasksPage() {
                 </div>
               ))}
             </div>
-          ) : filteredTasks.length === 0? (
+          ) : tasks.length === 0? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -343,6 +346,7 @@ export default function TasksPage() {
                 {subTab === "applied" && `Ứng tuyển ${mode} phù hợp`}
                 {subTab === "completed" && `Hoàn thành ${mode} đầu tiên`}
                 {subTab === "cancelled" && `Không có ${mode} nào bị hủy`}
+                {subTab === "expired" && `Không có ${mode} hết hạn`}
               </p>
               {subTab === "mine" && (
                 <button
@@ -365,7 +369,7 @@ export default function TasksPage() {
                 exit={{ opacity: 0 }}
                 className="space-y-3"
               >
-                {filteredTasks.map((task, idx) => (
+                {tasks.map((task, idx) => (
                   <motion.div
                     key={task.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -375,8 +379,9 @@ export default function TasksPage() {
                     <TaskCard
                       task={task}
                       theme={mode}
-                      onDelete={(id) => setTasks(prev => prev.filter(t => t.id!== id))}
-                      onShare={(t) => setShareTask(t)}
+                      onDelete={handleDelete}
+                      onShare={handleShare}
+                      onTaskUpdate={handleTaskUpdate}
                     />
                   </motion.div>
                 ))}
@@ -408,8 +413,8 @@ export default function TasksPage() {
       </div>
 
       <style jsx global>{`
-      .scrollbar-hide::-webkit-scrollbar { display: none; }
-      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+     .scrollbar-hide::-webkit-scrollbar { display: none; }
+     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </>
   );
