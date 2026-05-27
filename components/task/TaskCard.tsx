@@ -304,9 +304,9 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
         </div>
 
         {/* BADGE GIÁ - ĐẶT RIÊNG KHÔNG CẦN ẢNH */}
-        {(task.type === "task" && task.price > 0) || (task.type === "plan" && task.costType!== "free") && (
-          <div className="px-4 pb-3">
-            {task.type === "task" && task.price > 0 && (
+{((task.type === "task" && task.price > 0) || (task.type === "plan" && task.costType!== "free")) && (
+  <div className="px-4 pb-3">
+    {task.type === "task" && task.price > 0 && (
               <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/5">
                 <span className="font-bold text-zinc-900 dark:text-zinc-100">
                   {task.price.toLocaleString("vi-VN")}đ
