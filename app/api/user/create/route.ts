@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { nanoid } from 'nanoid';
 
-// FIX: Validate env để tránh string | undefined
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
@@ -50,7 +49,7 @@ export async function POST(req: NextRequest) {
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const decodedToken = await adminAuth.verifyIdToken(token);
-    const { uid, email, name, picture } = decodedToken;
+    const { uid, email, name, picture, email_verified } = decodedToken;
 
     const userRef = db.collection('users').doc(uid);
     const userSnap = await userRef.get();
@@ -58,35 +57,47 @@ export async function POST(req: NextRequest) {
 
     await db.runTransaction(async (tx) => {
       let userId = `AIR${nanoid(6).toUpperCase()}`;
-      let baseUsername = (name || email?.split('@')[0] || 'user')
+
+      const baseName = name || email?.split('@')[0] || 'User';
+      let baseUsername = baseName
       .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
       .replace(/\s+/g, "")
       .replace(/[^a-z0-9]/g, "");
+
       let username = baseUsername || 'user';
       let counter = 1;
       while ((await tx.get(db.collection('usernames').doc(username))).exists) {
         username = `${baseUsername}${counter++}`;
       }
 
-      const userName = name || email?.split('@')[0] || 'User';
+      // CHUẨN: displayName bắt buộc, không null
+      const displayName = name?.trim() || email?.split('@')[0] || 'User';
+      const photoURL = picture || null;
+
       const newUser = {
         uid,
-        name: userName,
-        nameLower: userName.toLowerCase(),
+        displayName, // Đổi từ name -> displayName cho khớp Auth
+        nameLower: displayName.toLowerCase(),
         username,
         userId,
-        email: email || "", // FIX: không dùng undefined
-        emailVerified: decodedToken.email_verified || false,
-        avatar: picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=random`,
+        email: email || null,
+        emailVerified: email_verified || false,
+        photoURL, // Đổi từ avatar -> photoURL cho khớp Auth
         bio: "",
         isOnline: true,
-        lastSeen: Timestamp.now(), // FIX: Dùng Timestamp thay Date
+        lastSeen: FieldValue.serverTimestamp(),
         fcmTokens: [],
+        verified: false, // Thêm field này cho createTask
         status: "active" as const,
-        searchKeywords: generateSearchKeywords(userName, userId, username),
+        searchKeywords: generateSearchKeywords(displayName, userId, username),
         hidden: false,
-        deletedAt: null, // FIX: explicit null thay vì undefined
+        deletedAt: null,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       };
+
       tx.set(userRef, newUser);
       tx.set(db.collection('usernames').doc(username), { uid });
     });
