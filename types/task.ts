@@ -50,6 +50,7 @@ export type BaseItem = {
   userId: string;
   userName: string;
   userAvatar: string;
+  userVerified?: boolean; 
   userShortId?: string;
   userUsername?: string;
 
@@ -315,6 +316,7 @@ export type FeedTask = (TaskListItem | PlanListItem) & {
   eventDate?: string | null;
   endDate?: string | null;
   startDate?: string | null;
+  
   applicationDeadline?: string | null;
   shortId?: string; // FIX: Thêm để build pass
 };
