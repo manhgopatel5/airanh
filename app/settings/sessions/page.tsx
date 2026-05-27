@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { useAuth, trackCurrentSession } from "@/lib/AuthContext"; // Import thêm
+import { useAuth } from "@/lib/AuthContext"; // Bỏ trackCurrentSession
 import { 
   collection, 
   query, 
@@ -41,25 +41,11 @@ export default function SessionsPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState<string | null>(null);
-  const [creatingSession, setCreatingSession] = useState(false);
 
-  // Tạo session khi vào trang này
-  useEffect(() => {
-    if (authLoading || !user?.uid) return;
-    
-    const createSessionIfNeeded = async () => {
-      const sessionId = localStorage.getItem(SESSION_KEY);
-      if (!sessionId) {
-        setCreatingSession(true);
-        await trackCurrentSession(user.uid, db);
-        setCreatingSession(false);
-      }
-    };
-    
-    createSessionIfNeeded();
-  }, [user?.uid, authLoading, db]);
+  // XÓA: useEffect tạo session. Session giờ tạo ở API route /api/user/session
+  // Client chỉ đọc, không write để tiết kiệm quota
 
-  // LISTEN SESSIONS REALTIME
+  // LISTEN SESSIONS REALTIME - Chỉ đọc, 0 write
   useEffect(() => {
     if (authLoading) return;
     if (!user?.uid) {
@@ -92,6 +78,7 @@ export default function SessionsPage() {
       setLoading(false);
     }, (err) => {
       console.error("Sessions listen error:", err);
+      toast.error("Không tải được danh sách phiên");
       setLoading(false);
     });
 
@@ -102,7 +89,7 @@ export default function SessionsPage() {
     if (!user) return;
     const session = sessions.find((s) => s.id === sessionId);
     if (session?.current) {
-      toast.error("Không thể xóa phiên hiện tại");
+      toast.error("Không thể xóa phiên hiện tại. Hãy đăng xuất.");
       return;
     }
 
@@ -122,7 +109,7 @@ export default function SessionsPage() {
 
   const logoutAll = async () => {
     if (!user) return;
-    if (!confirm("Đăng xuất tất cả thiết bị khác?")) return;
+    if (!confirm("Đăng xuất tất cả thiết bị khác? Thiết bị này vẫn giữ đăng nhập.")) return;
 
     setLoading(true);
     try {
@@ -148,8 +135,8 @@ export default function SessionsPage() {
 
   const getDeviceIcon = (device: string) => {
     const d = device.toLowerCase();
-    if (d.includes("iphone") || d.includes("android")) return Smartphone;
-    if (d.includes("mac") || d.includes("windows")) return Laptop;
+    if (d.includes("iphone") || d.includes("android") || d.includes("mobile")) return Smartphone;
+    if (d.includes("mac") || d.includes("windows") || d.includes("linux")) return Laptop;
     return Monitor;
   };
 
@@ -192,12 +179,7 @@ export default function SessionsPage() {
       </div>
 
       <div className="flex-1 px-4 mt-6 pb-6">
-        {creatingSession ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <FiLoader className="animate-spin text-blue-500 mb-3" size={32} />
-            <p className="text-sm text-gray-500">Đang tạo phiên...</p>
-          </div>
-        ) : sessions.length === 0 ? (
+        {sessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-6">
             <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-zinc-900 flex items-center justify-center mb-4">
               <Shield className="w-8 h-8 text-gray-400" />
@@ -234,7 +216,7 @@ export default function SessionsPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <p className="text-base font-bold text-gray-900 dark:text-white truncate">
-                              {session.device}
+                              {session.device || "Thiết bị không rõ"}
                             </p>
                             {session.current && (
                               <span className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-semibold flex-shrink-0">
@@ -248,7 +230,7 @@ export default function SessionsPage() {
                           <div className="flex items-center gap-1.5 mt-1">
                             <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                             <p className="text-xs text-gray-500 dark:text-zinc-400 truncate">
-                              {session.location} · {session.ip}
+                              {session.location || "Không rõ"} · {session.ip || "Ẩn"}
                             </p>
                           </div>
                           <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">
@@ -261,6 +243,7 @@ export default function SessionsPage() {
                           onClick={() => removeSession(session.id)}
                           disabled={removingId === session.id}
                           className="p-2 -mr-2 active:opacity-50 disabled:opacity-50"
+                          aria-label="Xóa phiên"
                         >
                           {removingId === session.id ? (
                             <FiLoader className="animate-spin w-4 h-4 text-red-500" />
