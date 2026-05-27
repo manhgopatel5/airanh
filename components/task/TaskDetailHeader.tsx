@@ -13,7 +13,7 @@ import { doc, deleteDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/fir
 import { getFirebaseDB } from "@/lib/firebase";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/ui/UserAvatar";
-import type { Task } from "@/types/task";
+import type { FeedTask } from "@/types/task"; // FIX: Task -> FeedTask
 
 type UserData = {
   uid: string;
@@ -26,12 +26,11 @@ type UserData = {
 };
 
 type Props = {
-  task: Task;
+  task: FeedTask; // FIX: Task -> FeedTask
   owner: UserData | null;
   currentUser: any;
   isOwner: boolean;
   onTaskDeleted: () => void;
-
 };
 
 const Portal = ({ children }: { children: React.ReactNode }) => {
@@ -46,7 +45,6 @@ export default function TaskDetailHeader({
   currentUser,
   isOwner,
   onTaskDeleted,
-  
 }: Props) {
   const router = useRouter();
 
@@ -54,8 +52,6 @@ export default function TaskDetailHeader({
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const [isSaved, setIsSaved] = useState(!!currentUser?.uid &&!!task.savedBy?.includes(currentUser.uid));
   const [saving, setSaving] = useState(false);
-
-
 
   const handleSave = async () => {
     if (!currentUser) return router.push("/login");
