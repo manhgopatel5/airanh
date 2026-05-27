@@ -304,9 +304,9 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
         </div>
 
         {/* BADGE GIÁ - ĐẶT RIÊNG KHÔNG CẦN ẢNH */}
-{((task.type === "task" && task.price > 0) || (task.type === "plan" && task.costType!== "free")) && (
-  <div className="px-4 pb-3">
-    {task.type === "task" && task.price > 0 && (
+        {(task.type === "task" && task.price > 0) || (task.type === "plan" && task.costType!== "free") && (
+          <div className="px-4 pb-3">
+            {task.type === "task" && task.price > 0 && (
               <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/5">
                 <span className="font-bold text-zinc-900 dark:text-zinc-100">
                   {task.price.toLocaleString("vi-VN")}đ
@@ -327,7 +327,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
               </div>
             )}
 
-            {task.type === "plan" && task.costType === "host" && task.costAmount && task.costAmount > 0 && (
+{task.type === "plan" && task.costType === "host" && task.costAmount > 0 && (
               <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-[#FF9500]/10">
                 <span className="font-bold text-[#FF9500]">
                   Mình bao • {task.costAmount.toLocaleString("vi-VN")}đ
@@ -335,7 +335,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
               </div>
             )}
 
-            {task.type === "plan" && task.costType === "ticket" && task.costAmount > 0 && (
+{task.type === "plan" && task.costType === "ticket" && task.costAmount && task.costAmount > 0 && (
               <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-[#0A84FF]/10">
                 <span className="font-bold text-[#0A84FF]">
                   Có vé • {task.costAmount.toLocaleString("vi-VN")}đ
