@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { isTask, type Task } from "@/types/task";
+import { isTask, type FeedTask } from "@/types/task"; // FIX: Task -> FeedTask
 import { motion } from "framer-motion";
 import { FiDollarSign, FiUsers, FiClock, FiMapPin, FiUserCheck, FiCalendar } from "react-icons/fi";
 
@@ -11,7 +11,7 @@ type Application = {
 };
 
 type Props = {
-  task: Task;
+  task: FeedTask; // FIX: Task -> FeedTask
   applications: Application[];
   theme?: "task" | "plan";
 };
@@ -23,12 +23,20 @@ export default function TaskInfoGrid({ task, applications, theme = "task" }: Pro
   const accentColor = theme === "task" ? "#0A84FF" : "#30D158";
 
   useEffect(() => {
-    if (!isTask(task) || !task.deadline?.seconds || task.status === "completed") {
+    // FIX: task.deadline giờ là string | null, không phải Timestamp
+    if (!isTask(task) || !task.deadline || task.status === "completed") {
       setIsUrgent(false);
       return;
     }
+
+    const deadlineMs = new Date(task.deadline).getTime();
+    if (isNaN(deadlineMs)) {
+      setIsUrgent(false);
+      return;
+    }
+
     const tick = () => {
-      const diff = task.deadline!.seconds * 1000 - Date.now();
+      const diff = deadlineMs - Date.now();
       if (diff <= 0) {
         setTimeLeft("Đã hết hạn");
         setIsUrgent(true);
@@ -46,12 +54,14 @@ export default function TaskInfoGrid({ task, applications, theme = "task" }: Pro
     return () => clearInterval(interval);
   }, [task]);
 
-  const taskDate = task.createdAt?.seconds
-    ? new Date(task.createdAt.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  // FIX: createdAt là string | null
+  const taskDate = task.createdAt
+    ? new Date(task.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
     : "Chưa xác định";
 
-  const taskDeadline = isTask(task) && task.deadline?.seconds
-    ? new Date(task.deadline.seconds * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  // FIX: deadline là string | null
+  const taskDeadline = isTask(task) && task.deadline
+    ? new Date(task.deadline).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
     : "";
 
   const acceptedCount = applications.filter(a => a.status === 'accepted').length;
@@ -127,7 +137,7 @@ export default function TaskInfoGrid({ task, applications, theme = "task" }: Pro
               highlight
             />
           )}
-          {isTask(task) && task.deadline?.seconds && (
+          {isTask(task) && task.deadline && (
             <InfoItem 
               icon={FiClock}
               label="Hạn chót" 
