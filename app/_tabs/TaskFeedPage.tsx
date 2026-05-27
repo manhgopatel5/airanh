@@ -16,7 +16,7 @@ import {
   limit,
   Timestamp,
 } from "firebase/firestore";
-import type { Task } from "@/types/task";
+import type { FeedTask, Task } from "@/types/task"; // SỬA: Dùng FeedTask
 import TaskCard from "@/components/task/TaskCard";
 import { toast } from "sonner";
 import { useAppStore } from "@/store/app";
@@ -24,16 +24,10 @@ import * as geofire from 'geofire-common';
 import CustomFilterBar from "@/components/common/CustomFilterBar";
 
 type TabId = "hot" | "nearby" | "friends" | "new";
-type FeedTask = Task & {
-  banned?: boolean;
-  hidden?: boolean;
-};
 
 type TaskWithLocation = FeedTask & {
   location: { lat: number; lng: number };
 };
-
-type CacheKey = `${TabId}-${"task" | "plan"}`;
 
 const hasLocation = (task: FeedTask): task is TaskWithLocation => {
   return task.location?.lat!= null && task.location?.lng!= null;
@@ -46,7 +40,7 @@ const vibrate = (p: number | number[] = 5) => {
 };
 
 interface TaskFeedPageProps {
-  initialJobs?: FeedTask[]; // Nhận từ page.tsx SSR
+  initialJobs?: FeedTask[]; // SỬA: FeedTask thay vì Task
 }
 
 export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
@@ -58,7 +52,6 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
   const { mode = "task", setMode } = useAppStore();
   const [activeTab, setActiveTab] = useState<TabId>("hot");
 
-  // 1. Dùng initialJobs làm state ban đầu, không fetch lại
   const [tasks, setTasks] = useState<FeedTask[]>(initialJobs);
   const [loading, setLoading] = useState(initialJobs.length === 0);
   const [refreshing, setRefreshing] = useState(false);
@@ -119,14 +112,16 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
     );
   }, []);
 
-  // 2. CHỈ onSnapshot job mới tạo sau thời điểm load trang, không getDocs lại
+  // SỬA: onSnapshot chỉ lấy job mới, convert Timestamp -> string
   useEffect(() => {
     if (!currentUser ||!db) return;
     unsubRef.current?.();
 
-    // Nếu đã có initialJobs thì chỉ listen job mới hơn
-    const lastCreatedAt = initialJobs[0]?.createdAt || Timestamp.now();
-    
+    // Lấy time của job cuối cùng từ initialJobs
+    const lastCreatedAt = initialJobs[0]?.createdAt
+    ? Timestamp.fromDate(new Date(initialJobs[0].createdAt))
+      : Timestamp.now();
+
     const now = Timestamp.now();
     const q = query(
       collection(db, "tasks"),
@@ -134,16 +129,30 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
       where("visibility", "==", "public"),
       where("status", "in", ["open", "full", "doing"]),
       where("deadline", ">", now),
-      where("createdAt", ">", lastCreatedAt), // Chỉ lấy job mới
+      where("createdAt", ">", lastCreatedAt),
       orderBy("createdAt", "desc"),
       limit(20)
     );
 
     unsubRef.current = onSnapshot(q, (snap) => {
       const newJobs = snap.docChanges()
-       .filter(change => change.type === "added")
-       .map(doc => ({ id: doc.doc.id,...doc.doc.data() } as FeedTask));
-      
+      .filter(change => change.type === "added")
+      .map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.doc.id,
+          ...data,
+            // Convert Timestamp -> string để match FeedTask
+            createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
+            updatedAt: data.updatedAt?.toDate?.()?.toISOString() || null,
+            deadline: data.deadline?.toDate?.()?.toISOString() || null,
+            eventDate: data.eventDate?.toDate?.()?.toISOString() || null,
+            endDate: data.endDate?.toDate?.()?.toISOString() || null,
+            startDate: data.startDate?.toDate?.()?.toISOString() || null,
+            applicationDeadline: data.applicationDeadline?.toDate?.()?.toISOString() || null,
+          } as FeedTask;
+        });
+
       if (newJobs.length > 0) {
         setTasks(prev => [...newJobs,...prev]);
         toast.success(`Có ${newJobs.length} ${mode === "task"? "task" : "plan"} mới`);
@@ -180,9 +189,10 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
     if (activeTab === "hot") {
       result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
     } else if (activeTab === "new") {
+      // SỬA: createdAt là string, không có toMillis()
       result.sort((a, b) => {
-        const aTime = a.createdAt?.toMillis() || 0;
-        const bTime = b.createdAt?.toMillis() || 0;
+        const aTime = a.createdAt? new Date(a.createdAt).getTime() : 0;
+        const bTime = b.createdAt? new Date(b.createdAt).getTime() : 0;
         return bTime - aTime;
       });
     } else if (activeTab === "nearby" && userLocation) {
@@ -225,7 +235,6 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
   const handleRefresh = useCallback(() => {
     vibrate(10);
     setRefreshing(true);
-    // Reload trang để lấy ISR mới từ server
     window.location.reload();
   }, []);
 
@@ -252,10 +261,10 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
                   className="absolute inset-0 rounded-xl"
                   animate={{
                     background: mode === "task"
-                  ? "linear-gradient(135deg, #E3F2FF 0%, #D1E9FF 40%, #B8DEFF 100%)"
+                 ? "linear-gradient(135deg, #E3F2FF 0%, #D1E9FF 40%, #B8DEFF 100%)"
                       : "linear-gradient(135deg, #E8FFF0 0%, #D4F7E0 40%, #BEF0CE 100%)",
                     boxShadow: mode === "task"
-                  ? "inset 0 2px 4px rgba(10,132,255,0.25), inset 0 -2px 2px rgba(0,81,213,0.15), 0 0 20px rgba(10,132,255,0.3)"
+                 ? "inset 0 2px 4px rgba(10,132,255,0.25), inset 0 -2px 2px rgba(0,81,213,0.15), 0 0 20px rgba(10,132,255,0.3)"
                       : "inset 0 2px 4px rgba(48,209,88,0.25), inset 0 -2px 2px rgba(40,180,76,0.15), 0 0 20px rgba(48,209,88,0.3)"
                   }}
                   transition={{ duration: 0.6 }}
@@ -264,7 +273,7 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
                   className="absolute -inset-3 rounded-xl blur-2xl opacity-80"
                   animate={{
                     background: mode === "task"
-                    ? "radial-gradient(circle, rgba(10,132,255,0.7) 0%, transparent 70%)"
+                   ? "radial-gradient(circle, rgba(10,132,255,0.7) 0%, transparent 70%)"
                       : "radial-gradient(circle, rgba(48,209,88,0.7) 0%, transparent 70%)"
                   }}
                   transition={{ duration: 0.6 }}
@@ -403,8 +412,8 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
       </div>
 
       <style jsx global>{`
-      .scrollbar-hide::-webkit-scrollbar { display: none; }
-      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale }
       `}</style>
     </>
