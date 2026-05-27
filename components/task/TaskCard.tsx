@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import {
   FiUsers, FiClock, FiMapPin, FiBookmark, FiMoreHorizontal,
-  FiTrash2, FiEdit2, FiShare2, FiEye, FiMessageCircle
+  FiTrash2, FiEdit2, FiShare2, FiEye, FiMessageCircle, FiGift, FiDollarSign, FiTag
 } from "react-icons/fi";
 import { HiHeart, HiOutlineHeart } from "react-icons/hi2";
 
@@ -112,7 +112,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate,
     setIsSaved(newSaved);
     onTaskUpdate?.(task.id, {
       savedBy: newSaved
-  ? [...oldSavedBy, user.uid]
+ ? [...oldSavedBy, user.uid]
         : oldSavedBy.filter(id => id!== user.uid)
     });
 
@@ -150,12 +150,15 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate,
 
   const taskDate = task.type === "task" && task.deadline
 ? new Date(task.deadline).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+    : task.type === "plan" && task.eventDate
+? new Date(task.eventDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
     : "";
 
   const createdDate = task.createdAt? new Date(task.createdAt) : new Date();
   const timeAgo = formatDistanceToNow(createdDate, { addSuffix: true, locale: vi });
 
   const maxSlots = task.type === "task"? task.totalSlots?? 0 : task.maxParticipants?? 0;
+  const currentCount = task.type === "task"? task.joined?? 0 : task.currentParticipants?? 0;
 
   return (
     <motion.div
@@ -315,12 +318,43 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate,
                 priority={priority}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-black/0 to-transparent" />
-              {task.price > 0 && (
+
+              {/* BADGE GIÁ - TASK */}
+              {task.type === "task" && task.price > 0 && (
                 <div className="absolute top-3 right-3 px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur-md">
                   <span className="font-bold text-white text-">
                     {task.price.toLocaleString("vi-VN")}đ
                   </span>
                   {task.budgetType === "hourly" && <span className="text-white/80 text-xs">/h</span>}
+                </div>
+              )}
+
+              {/* BADGE GIÁ - PLAN ĐỦ 4 KIỂU */}
+              {task.type === "plan" && task.costType === "free" && (
+                <div className="absolute top-3 right-3 px-3 py-1.5 rounded-xl bg-green-500/90 backdrop-blur-md">
+                  <span className="font-bold text-white text-">Miễn phí</span>
+                </div>
+              )}
+
+              {task.type === "plan" && task.costType === "share" && (
+                <div className="absolute top-3 right-3 px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur-md">
+                  <span className="font-bold text-white text-">Chia đều</span>
+                </div>
+              )}
+
+              {task.type === "plan" && task.costType === "host" && task.costAmount && task.costAmount > 0 && (
+                <div className="absolute top-3 right-3 px-3 py-1.5 rounded-xl bg-[#FF9500]/90 backdrop-blur-md">
+                  <span className="font-bold text-white text-">
+                    Mình bao • {task.costAmount.toLocaleString("vi-VN")}đ
+                  </span>
+                </div>
+              )}
+
+              {task.type === "plan" && task.costType === "ticket" && task.costAmount && task.costAmount > 0 && (
+                <div className="absolute top-3 right-3 px-3 py-1.5 rounded-xl bg-[#0A84FF]/90 backdrop-blur-md">
+                  <span className="font-bold text-white text-">
+                    Có vé • {task.costAmount.toLocaleString("vi-VN")}đ
+                  </span>
                 </div>
               )}
             </div>
@@ -352,12 +386,12 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate,
             </div>
           )}
 
-          {/* META INFO: Slot + Deadline + Skill + Category */}
+          {/* META INFO: Slot + Deadline + Chi phí + Category */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-">
             {maxSlots > 0 && (
               <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
                 <FiUsers size={15} />
-                <span className="font-semibold">{applicants.length}/{maxSlots} người</span>
+                <span className="font-semibold">{currentCount}/{maxSlots} người</span>
               </div>
             )}
             {taskDate && (
@@ -366,12 +400,33 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate,
                 <span className="font-semibold">{taskDate}</span>
               </div>
             )}
-            {task.skillLevel && (
-              <div className="flex items-center gap-1.5">
-                <div className={`w-1.5 h-1.5 rounded-full`} style={{ background: primaryColor }} />
-                <span className="font-semibold text-zinc-600 dark:text-zinc-400">{task.skillLevel}</span>
+
+            {/* HIỂN THỊ KIỂU CHI PHÍ CHO PLAN */}
+            {task.type === "plan" && task.costType === "free" && (
+              <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                <FiGift size={15} />
+                <span className="font-semibold">Miễn phí</span>
               </div>
             )}
+            {task.type === "plan" && task.costType === "share" && (
+              <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+                <FiUsers size={15} />
+                <span className="font-semibold">Chia đều</span>
+              </div>
+            )}
+            {task.type === "plan" && task.costType === "host" && (
+              <div className="flex items-center gap-1.5 text-[#FF9500]">
+                <FiDollarSign size={15} />
+                <span className="font-semibold">Chủ bao</span>
+              </div>
+            )}
+            {task.type === "plan" && task.costType === "ticket" && (
+              <div className="flex items-center gap-1.5 text-[#0A84FF]">
+                <FiTag size={15} />
+                <span className="font-semibold">Có vé</span>
+              </div>
+            )}
+
             {task.category && (
               <span className="font-semibold text-zinc-500 dark:text-zinc-500">• {task.category}</span>
             )}
