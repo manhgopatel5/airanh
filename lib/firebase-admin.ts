@@ -2,7 +2,7 @@ import { initializeApp, getApps, cert, App, ServiceAccount } from "firebase-admi
 import { getMessaging, Messaging, BatchResponse, Message } from "firebase-admin/messaging";
 import { getFirestore, Firestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getAuth, Auth } from "firebase-admin/auth";
-import type { FeedTask } from "@/types/task";
+import type { FeedTask, TaskListItem } from "@/types/task";
 
 /* ================= VALIDATE ENV ================= */
 const requiredEnvs = [
@@ -35,7 +35,7 @@ function getFirebaseAdmin() {
     try {
       app = initializeApp({
         credential: cert(serviceAccount),
-   ...(process.env.FIREBASE_DATABASE_URL && {
+  ...(process.env.FIREBASE_DATABASE_URL && {
           databaseURL: process.env.FIREBASE_DATABASE_URL,
         }),
       });
@@ -61,63 +61,74 @@ export const adminMessaging = () => getFirebaseAdmin().messaging;
 export const adminDb = () => getFirebaseAdmin().db;
 export const adminAuth = () => getFirebaseAdmin().auth;
 
-/* ================= GET JOBS CHO ISR - FIX TYPE ================= */
+/* ================= HELPER: Timestamp -> string ================= */
+const tsToString = (ts: any): string | null => {
+  if (!ts) return null;
+  if (ts instanceof Timestamp) return ts.toDate().toISOString();
+  if (typeof ts?.toDate === "function") return ts.toDate().toISOString();
+  return null;
+};
+
+/* ================= GET JOBS CHO ISR ================= */
 export async function getJobsFromFirebaseAdmin(limitCount = 10): Promise<FeedTask[]> {
   const { db } = getFirebaseAdmin();
   const now = Timestamp.now();
 
   const snap = await db.collection('tasks')
-  .where('type', '==', 'task')
-  .where('visibility', '==', 'public')
-  .where('status', 'in', ['open', 'full', 'doing'])
-  .where('deadline', '>', now)
-  .orderBy('deadline', 'asc')
-  .limit(limitCount)
-  .get();
+ .where('type', '==', 'task')
+ .where('visibility', '==', 'public')
+ .where('status', 'in', ['open', 'full', 'doing'])
+ .where('deadline', '>', now)
+ .orderBy('deadline', 'asc')
+ .limit(limitCount)
+ .get();
 
   return snap.docs.map(doc => {
     const d = doc.data();
-    return {
+
+    // FIX: Build TaskListItem đầy đủ field bắt buộc + optional đúng cách
+    const taskData: TaskListItem = {
       id: doc.id,
-      // BaseItem fields - default để tránh undefined với exactOptionalPropertyTypes
       slug: d.slug || "",
       shortId: d.shortId || "",
       title: d.title || "",
       description: d.description || "",
-      type: d.type || "task",
+      type: "task",
       status: d.status || "open",
       userId: d.userId || "",
-      owner: d.owner || null,
-
-      // TaskListItem fields
-      price: d.price || 0,
+      userName: d.userName || "",
+      userAvatar: d.userAvatar || "",
+    ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
+    ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
+      price: d.price?? 0,
       currency: d.currency || "VND",
+      totalSlots: d.totalSlots?? 0,
+      joined: d.joined?? 0,
       budgetType: d.budgetType || "fixed",
-      paymentMethod: d.paymentMethod || null,
-      totalSlots: d.totalSlots || 0,
-      joined: d.joined || 0,
-      applicants: d.applicants || [],
-      savedBy: d.savedBy || [],
-      location: d.location || null,
-      tags: d.tags || [],
-      categories: d.categories || [],
-      visibility: d.visibility || "public",
-      likeCount: d.likeCount || 0,
-      viewCount: d.viewCount || 0,
-      priority: d.priority || 0,
-      featured: d.featured || false,
-      banned: d.banned || false,
-      hidden: d.hidden || false,
+    ...(d.paymentMethod!== undefined && { paymentMethod: d.paymentMethod }),
+    ...(d.isRemote!== undefined && { isRemote: d.isRemote }),
+      category: d.category || "",
+      tags: Array.isArray(d.tags)? d.tags : [],
+      images: Array.isArray(d.images)? d.images : [],
+      viewCount: d.viewCount?? 0,
+      likeCount: d.likeCount?? 0,
+      commentCount: d.commentCount?? 0,
+      likes: Array.isArray(d.likes)? d.likes : [],
+    ...(d.location!== undefined && { location: d.location }),
+      savedBy: Array.isArray(d.savedBy)? d.savedBy : [],
+      applicants: Array.isArray(d.applicants)? d.applicants : [],
+    ...(d.banned!== undefined && { banned: d.banned }),
+    ...(d.hidden!== undefined && { hidden: d.hidden }),
+    ...(d.appliedCount!== undefined && { appliedCount: d.appliedCount }),
+      // Convert Timestamp -> string cho FeedTask
+      createdAt: tsToString(d.createdAt),
+    ...(d.updatedAt && { updatedAt: tsToString(d.updatedAt) }),
+    ...(d.deadline && { deadline: tsToString(d.deadline) }),
+    ...(d.startDate && { startDate: tsToString(d.startDate) }),
+    ...(d.applicationDeadline && { applicationDeadline: tsToString(d.applicationDeadline) }),
+    };
 
-      // FIX: Convert Timestamp -> string cho FeedTask
-      createdAt: d.createdAt?.toDate?.()?.toISOString() || null,
-      updatedAt: d.updatedAt?.toDate?.()?.toISOString() || null,
-      deadline: d.deadline?.toDate?.()?.toISOString() || null,
-      eventDate: d.eventDate?.toDate?.()?.toISOString() || null,
-      endDate: d.endDate?.toDate?.()?.toISOString() || null,
-      startDate: d.startDate?.toDate?.()?.toISOString() || null,
-      applicationDeadline: d.applicationDeadline?.toDate?.()?.toISOString() || null,
-    } as FeedTask;
+    return taskData as FeedTask;
   });
 }
 
@@ -177,7 +188,7 @@ export async function sendNotification(
       notification: {
         icon: "ic_notification",
         color: "#3B82F6",
- ...(priority === "high" && { sound: "default" }),
+...(priority === "high" && { sound: "default" }),
       },
     },
     apns: {
@@ -185,7 +196,7 @@ export async function sendNotification(
       payload: {
         aps: {
           badge: 1,
-   ...(priority === "high" && { sound: "default" }),
+  ...(priority === "high" && { sound: "default" }),
           "content-available": 1,
         },
       },
