@@ -12,10 +12,10 @@ import CustomTabBar from "@/components/CustomTabBar";
 import { useTabBarHeight } from "@/hooks/useTabBarHeight";
 import JobSkeleton from "@/components/JobSkeleton";
 
-// 1. DYNAMIC IMPORT: Giảm 450KB JS ban đầu. Chỉ tab home SSR
+// 1. DYNAMIC IMPORT: Giảm 400KB JS ban đầu. Chỉ tab home SSR
 const TaskFeedPage = dynamic(() => import('./_tabs/TaskFeedPage'), {
   loading: () => <JobSkeleton />,
-  ssr: true 
+  ssr: true // SEO + FCP nhanh cho tab chính
 })
 const ChatClient = dynamic(() => import('./chat/ChatClient'), { 
   ssr: false,
@@ -36,9 +36,10 @@ const FloatingMenu = dynamic(() => import('@/components/FloatingMenu'), {
 })
 
 type MainTab = "home" | "messages" | "tasks" | "profile";
+type Job = any; // Thay bằng type thật của bạn
 
 interface AppContainerProps {
-  initialJobs?: any[]; // Nhận từ Server Component page.tsx để ISR
+  initialJobs?: Job[]; // Nhận từ Server Component page.tsx
 }
 
 export default function AppContainer({ initialJobs }: AppContainerProps) {
@@ -58,7 +59,7 @@ export default function AppContainer({ initialJobs }: AppContainerProps) {
 
   useEffect(() => setMounted(true), []);
 
-  // 3. XOÁ useEffect check user. Dùng middleware.ts ở Edge nhanh hơn 500ms
+  // 3. XOÁ useEffect check user. Dùng middleware.ts chạy ở Edge nhanh hơn
   // useEffect(() => { if (!user) router.replace("/login") }, [])
 
   const handleChangeTab = useCallback((tab: MainTab) => {
@@ -105,7 +106,7 @@ export default function AppContainer({ initialJobs }: AppContainerProps) {
   }, [isMenuOpen]);
 
   const handleSelectCreate = useCallback((type: "task" | "plan") => {
-    if (typeof navigator!== 'undefined') navigator.vibrate?.([15, 30, 15]);
+    navigator.vibrate?.([15, 30, 15]);
     setIsMenuOpen(false);
     router.push(`/create/${type}`);
   }, [router]);
@@ -161,7 +162,7 @@ export default function AppContainer({ initialJobs }: AppContainerProps) {
             unreadCount={unreadCount}
             isMenuOpen={isMenuOpen}
             onCreateClick={() => {
-              if (typeof navigator!== 'undefined') navigator.vibrate?.([15, 35, 15]);
+              navigator.vibrate?.([15, 35, 15]);
               setIsMenuOpen(true);
             }}
           />
