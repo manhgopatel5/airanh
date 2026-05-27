@@ -78,7 +78,7 @@ export default function TaskDescription({
 
         {images && images.length > 0 && (
           <div className={description? "mt-6" : ""}>
-            <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 mb-3">
+            <h3 className="font-semibold text-base text-zinc-900 dark:text-zinc-100 mb-3">
               Xem ảnh và file
             </h3>
             <div className="pt-0">
