@@ -24,7 +24,6 @@ type Props = {
   onDelete?: (id: string) => void;
   onShare?: (task: FeedTask) => void;
   onTaskUpdate?: (taskId: string, updates: Partial<FeedTask>) => void;
-
 };
 
 const Portal = ({ children }: { children: React.ReactNode }) => {
@@ -167,7 +166,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
       {/* BO TRÒN 4 GÓC: rounded-3xl */}
       <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl rounded-3xl border border-zinc-200/40 dark:border-zinc-800/40 overflow-hidden active:scale-[0.985] transition-all duration-200 shadow-sm">
 
-        {/* HEADER: Avatar + Tên */}
+        {/* HEADER */}
         <div className="flex items-start gap-3 p-4 pb-3">
           <div className="relative">
             <img
@@ -303,8 +302,8 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
           </div>
         </div>
 
-        {/* BADGE GIÁ - ĐẶT RIÊNG KHÔNG CẦN ẢNH */}
-        {(task.type === "task" && task.price > 0) || (task.type === "plan" && task.costType!== "free") && (
+        {/* BADGE GIÁ - FIX TYPE NARROWING */}
+        {((task.type === "task" && task.price > 0) || (task.type === "plan" && task.costType!== "free"))? (
           <div className="px-4 pb-3">
             {task.type === "task" && task.price > 0 && (
               <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/5">
@@ -327,7 +326,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
               </div>
             )}
 
-{task.type === "plan" && task.costType === "host" && task.costAmount > 0 && (
+            {task.type === "plan" && task.costType === "host" && task.costAmount && task.costAmount > 0 && (
               <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-[#FF9500]/10">
                 <span className="font-bold text-[#FF9500]">
                   Mình bao • {task.costAmount.toLocaleString("vi-VN")}đ
@@ -335,7 +334,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
               </div>
             )}
 
-{task.type === "plan" && task.costType === "ticket" && task.costAmount && task.costAmount > 0 && (
+            {task.type === "plan" && task.costType === "ticket" && task.costAmount && task.costAmount > 0 && (
               <div className="inline-flex items-center px-3 py-1.5 rounded-xl bg-[#0A84FF]/10">
                 <span className="font-bold text-[#0A84FF]">
                   Có vé • {task.costAmount.toLocaleString("vi-VN")}đ
@@ -343,9 +342,9 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
               </div>
             )}
           </div>
-        )}
+        ) : null}
 
-        {/* CONTENT: Tiêu đề + Mô tả */}
+        {/* CONTENT */}
         <div className="px-4 pb-4 cursor-pointer" onClick={goToTask}>
           <h3 className="font-bold text- text-zinc-900 dark:text-zinc-100 leading-snug mb-2.5">
             {task.title}
@@ -370,7 +369,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
             </div>
           )}
 
-          {/* META INFO: Slot + Deadline + Chi phí + Category */}
+          {/* META INFO */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-">
             {maxSlots > 0 && (
               <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
@@ -418,7 +417,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
 
         <div className="h-px bg-gradient-to-r from-transparent via-zinc-200/60 dark:via-zinc-800/60 to-transparent" />
 
-        {/* FOOTER: Actions */}
+        {/* FOOTER */}
         <div className="flex items-center justify-between px-2 py-2.5">
           <div className="flex items-center gap-0.5">
             <button
