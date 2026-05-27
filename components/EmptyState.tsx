@@ -7,7 +7,7 @@ import {
 } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useState, ComponentType } from "react";
 
 type TabId = "hot" | "near" | "new" | "friends";
 type PostType = "task" | "plan";
@@ -126,9 +126,17 @@ const THEME = {
   },
 } as const;
 
-const getRandomItems = <T,>(arr: readonly T[], count: number): T[] => {
+const getRandomItems = (arr: readonly string[], count: number): string[] => {
   const shuffled = [...arr].sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);
+};
+
+// FIX: Khai báo type rõ cho state để tránh literal quá hẹp
+type ContentState = {
+  title: string;
+  desc: string;
+  icon: ComponentType<{ className?: string; size?: number; strokeWidth?: number }>;
+  suggests: string[];
 };
 
 type Props = {
@@ -143,15 +151,15 @@ export default function EmptyState({ tab, type, onRefresh }: Props) {
   const pool = CONTENT_POOL[type][tab];
   const [refreshing, setRefreshing] = useState(false);
 
-  const [content, setContent] = useState(() => ({
-    title: pool.titles[0]!, // FIX:! vì array có ít nhất 1 phần tử
+  // FIX: Dùng ContentState thay vì infer từ initial value
+  const [content, setContent] = useState<ContentState>(() => ({
+    title: pool.titles[0]!,
     desc: pool.descs[0]!,
     icon: pool.icon,
-    suggests: pool.suggests.slice(0, 4),
+    suggests: [...pool.suggests].slice(0, 4), // FIX: spread để thành string[] thay vì readonly
   }));
 
   useEffect(() => {
-    // FIX: Dùng! vì Math.random() luôn < 1, index luôn hợp lệ
     const randomTitle = pool.titles[Math.floor(Math.random() * pool.titles.length)]!;
     const randomDesc = pool.descs[Math.floor(Math.random() * pool.descs.length)]!;
 
