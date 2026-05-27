@@ -43,7 +43,7 @@ interface AppContainerProps {
 }
 
 export default function AppContainer({ initialJobs }: AppContainerProps) {
-  const { userData } = useAuth(); // Bỏ authLoading, để middleware + loading.tsx lo
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const mode = useAppStore((s) => s.mode);
