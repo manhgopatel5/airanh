@@ -16,7 +16,7 @@ import {
   limit,
   Timestamp,
 } from "firebase/firestore";
-import type { FeedTask, Task } from "@/types/task"; // SỬA: Dùng FeedTask
+import type { FeedTask, Task } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast } from "sonner";
 import { useAppStore } from "@/store/app";
@@ -40,7 +40,7 @@ const vibrate = (p: number | number[] = 5) => {
 };
 
 interface TaskFeedPageProps {
-  initialJobs?: FeedTask[]; // SỬA: FeedTask thay vì Task
+  initialJobs?: FeedTask[];
 }
 
 export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
@@ -112,14 +112,13 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
     );
   }, []);
 
-  // SỬA: onSnapshot chỉ lấy job mới, convert Timestamp -> string
+  // FIX: onSnapshot chỉ lấy job mới, convert Timestamp -> string
   useEffect(() => {
     if (!currentUser ||!db) return;
     unsubRef.current?.();
 
-    // Lấy time của job cuối cùng từ initialJobs
     const lastCreatedAt = initialJobs[0]?.createdAt
-    ? Timestamp.fromDate(new Date(initialJobs[0].createdAt))
+  ? Timestamp.fromDate(new Date(initialJobs[0].createdAt))
       : Timestamp.now();
 
     const now = Timestamp.now();
@@ -136,13 +135,12 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
 
     unsubRef.current = onSnapshot(q, (snap) => {
       const newJobs = snap.docChanges()
-      .filter(change => change.type === "added")
-      .map(doc => {
-          const data = doc.data();
+    .filter(change => change.type === "added")
+    .map(change => {
+          const data = change.doc.data();
           return {
-            id: doc.doc.id,
-          ...data,
-            // Convert Timestamp -> string để match FeedTask
+            id: change.doc.id,
+        ...data,
             createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
             updatedAt: data.updatedAt?.toDate?.()?.toISOString() || null,
             deadline: data.deadline?.toDate?.()?.toISOString() || null,
@@ -189,7 +187,6 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
     if (activeTab === "hot") {
       result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
     } else if (activeTab === "new") {
-      // SỬA: createdAt là string, không có toMillis()
       result.sort((a, b) => {
         const aTime = a.createdAt? new Date(a.createdAt).getTime() : 0;
         const bTime = b.createdAt? new Date(b.createdAt).getTime() : 0;
@@ -261,10 +258,10 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
                   className="absolute inset-0 rounded-xl"
                   animate={{
                     background: mode === "task"
-                 ? "linear-gradient(135deg, #E3F2FF 0%, #D1E9FF 40%, #B8DEFF 100%)"
+               ? "linear-gradient(135deg, #E3F2FF 0%, #D1E9FF 40%, #B8DEFF 100%)"
                       : "linear-gradient(135deg, #E8FFF0 0%, #D4F7E0 40%, #BEF0CE 100%)",
                     boxShadow: mode === "task"
-                 ? "inset 0 2px 4px rgba(10,132,255,0.25), inset 0 -2px 2px rgba(0,81,213,0.15), 0 0 20px rgba(10,132,255,0.3)"
+               ? "inset 0 2px 4px rgba(10,132,255,0.25), inset 0 -2px 2px rgba(0,81,213,0.15), 0 0 20px rgba(10,132,255,0.3)"
                       : "inset 0 2px 4px rgba(48,209,88,0.25), inset 0 -2px 2px rgba(40,180,76,0.15), 0 0 20px rgba(48,209,88,0.3)"
                   }}
                   transition={{ duration: 0.6 }}
@@ -273,7 +270,7 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
                   className="absolute -inset-3 rounded-xl blur-2xl opacity-80"
                   animate={{
                     background: mode === "task"
-                   ? "radial-gradient(circle, rgba(10,132,255,0.7) 0%, transparent 70%)"
+                 ? "radial-gradient(circle, rgba(10,132,255,0.7) 0%, transparent 70%)"
                       : "radial-gradient(circle, rgba(48,209,88,0.7) 0%, transparent 70%)"
                   }}
                   transition={{ duration: 0.6 }}
@@ -412,8 +409,8 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
       </div>
 
       <style jsx global>{`
-    .scrollbar-hide::-webkit-scrollbar { display: none; }
-    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+ .scrollbar-hide::-webkit-scrollbar { display: none; }
+ .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale }
       `}</style>
     </>
