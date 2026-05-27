@@ -1,4 +1,4 @@
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
@@ -27,8 +27,8 @@ export const onFriendRequestCreated = onDocumentCreated(
       await db.collection(`notifications/${to}/items`).add({
         type: "friend_request",
         fromUid: from,
-        fromName: fromUser?.name || "Người dùng",
-        fromAvatar: fromUser?.avatar || "",
+        fromName: fromUser?.displayName || fromUser?.name || "Người dùng",
+        fromAvatar: fromUser?.photoURL || fromUser?.avatar || "",
         title: "Lời mời kết bạn",
         message: "đã gửi lời mời kết bạn",
         actionData: { requesterId: from },
@@ -63,8 +63,8 @@ export const onFriendAccepted = onDocumentCreated(
       await db.collection(`notifications/${friendId}/items`).add({
         type: "friend_accepted",
         fromUid: userId,
-        fromName: userData?.name || "Người dùng",
-        fromAvatar: userData?.avatar || "",
+        fromName: userData?.displayName || userData?.name || "Người dùng",
+        fromAvatar: userData?.photoURL || userData?.avatar || "",
         title: "Đã chấp nhận kết bạn",
         message: "đã chấp nhận lời mời kết bạn của bạn",
         actionData: { chatId: [userId, friendId].sort().join("_") },
@@ -130,13 +130,13 @@ export const acceptFriendRequest = onCall(
         lastSenderName: "Hệ thống",
         membersInfo: {
           [uid]: {
-            name: currentData?.name || "User",
-            avatar: currentData?.avatar || "",
+            name: currentData?.displayName || currentData?.name || "User",
+            avatar: currentData?.photoURL || currentData?.avatar || "",
             username: currentData?.username || "",
           },
           [fromUid]: {
-            name: fromData?.name || "User",
-            avatar: fromData?.avatar || "",
+            name: fromData?.displayName || fromData?.name || "User",
+            avatar: fromData?.photoURL || fromData?.avatar || "",
             username: fromData?.username || "",
           },
         },
@@ -160,32 +160,22 @@ export const unfriend = onCall(
     const uid = request.auth?.uid;
 
     if (!uid) {
-      throw new HttpsError(
-        "unauthenticated",
-        "Chưa đăng nhập"
-      );
+      throw new HttpsError("unauthenticated", "Chưa đăng nhập");
     }
 
     const { friendUid } = request.data;
 
     if (!friendUid) {
-      throw new HttpsError(
-        "invalid-argument",
-        "Thiếu friendUid"
-      );
+      throw new HttpsError("invalid-argument", "Thiếu friendUid");
     }
 
     if (uid === friendUid) {
-      throw new HttpsError(
-        "invalid-argument",
-        "Không thể tự hủy kết bạn"
-      );
+      throw new HttpsError("invalid-argument", "Không thể tự hủy kết bạn");
     }
 
     try {
       const batch = db.batch();
 
-      // A remove B
       const myFriendRef = db.doc(`users/${uid}/friends/${friendUid}`);
 
       batch.set(
@@ -198,15 +188,12 @@ export const unfriend = onCall(
         { merge: true }
       );
 
-      // B vẫn giữ A
       const theirFriendRef = db.doc(`users/${friendUid}/friends/${uid}`);
-
       const theirFriendDoc = await theirFriendRef.get();
 
       if (theirFriendDoc.exists) {
         const theirData = theirFriendDoc.data();
 
-        // Nếu họ đã hủy mình trước đó
         if (theirData?.removedBy === friendUid) {
           batch.set(
             theirFriendRef,
@@ -218,7 +205,6 @@ export const unfriend = onCall(
             { merge: true }
           );
         } else {
-          // Chỉ một phía hủy
           batch.set(
             theirFriendRef,
             {
@@ -231,17 +217,13 @@ export const unfriend = onCall(
         }
       }
 
-      // update chat
       const chatId = [uid, friendUid].sort().join("_");
-
       const chatRef = db.doc(`chats/${chatId}`);
-
       const chatDoc = await chatRef.get();
 
       if (chatDoc.exists) {
         const userDoc = await db.doc(`users/${uid}`).get();
-
-        const userName = userDoc.data()?.name || "Người dùng";
+        const userName = userDoc.data()?.displayName || userDoc.data()?.name || "Người dùng";
 
         batch.update(chatRef, {
           status: "active",
@@ -254,22 +236,10 @@ export const unfriend = onCall(
       }
 
       await batch.commit();
-
-      return {
-        success: true
-      };
-
+      return { success: true };
     } catch (error: any) {
-
-      console.error(
-        "unfriend error:",
-        error
-      );
-
-      throw new HttpsError(
-        "internal",
-        `Lỗi server: ${error.message}`
-      );
+      console.error("unfriend error:", error);
+      throw new HttpsError("internal", `Lỗi server: ${error.message}`);
     }
   }
 );
@@ -287,10 +257,11 @@ export const cleanupExpiredTasks = onSchedule(
       new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     );
 
-    const expiredTasks = await db.collection("tasks")
-    .where("deadline", "<", sevenDaysAgo)
-    .limit(500)
-    .get();
+    const expiredTasks = await db
+     .collection("tasks")
+     .where("deadline", "<", sevenDaysAgo)
+     .limit(500)
+     .get();
 
     if (expiredTasks.empty) {
       console.log("No expired tasks to delete");
@@ -298,11 +269,71 @@ export const cleanupExpiredTasks = onSchedule(
     }
 
     const batch = db.batch();
-    expiredTasks.docs.forEach(doc => {
+    expiredTasks.docs.forEach((doc) => {
       batch.delete(doc.ref);
     });
 
     await batch.commit();
     console.log(`Deleted ${expiredTasks.size} expired tasks`);
+  }
+);
+
+// 6. CHUẨN APP LỚN: Sync task khi user đổi tên/avatar
+export const onUserProfileUpdate = onDocumentUpdated(
+  {
+    document: "users/{userId}",
+    region: "asia-southeast1",
+    memory: "256MiB",
+  },
+  async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    const userId = event.params.userId;
+
+    if (!before ||!after) return;
+
+    // Chỉ sync khi displayName, photoURL hoặc verified đổi
+    if (
+      before.displayName === after.displayName &&
+      before.photoURL === after.photoURL &&
+      before.verified === after.verified
+    ) {
+      console.log(`User ${userId} update không liên quan profile, skip`);
+      return;
+    }
+
+    console.log(`User ${userId} đổi profile, bắt đầu sync tasks...`);
+
+    const tasksSnap = await db
+     .collection("tasks")
+     .where("userId", "==", userId)
+     .get();
+
+    if (tasksSnap.empty) {
+      console.log(`User ${userId} không có task nào`);
+      return;
+    }
+
+    // Batch 500 docs/lần
+    const batch = db.batch();
+    let count = 0;
+
+    tasksSnap.forEach((taskDoc) => {
+      batch.update(taskDoc.ref, {
+        userName: after.displayName || "User",
+        userAvatar: after.photoURL || null,
+        userVerified: after.verified || false,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      count++;
+
+      if (count === 500) {
+        batch.commit();
+        count = 0;
+      }
+    });
+
+    if (count > 0) await batch.commit();
+    console.log(`Đã sync ${tasksSnap.size} tasks cho user ${userId}`);
   }
 );
