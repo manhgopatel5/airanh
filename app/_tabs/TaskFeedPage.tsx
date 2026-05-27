@@ -112,13 +112,13 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
     );
   }, []);
 
-  // FIX: onSnapshot chỉ lấy job mới, convert Timestamp -> string
+  // FIX: Bỏ toast "Có X task mới", chỉ update list im lặng
   useEffect(() => {
     if (!currentUser ||!db) return;
     unsubRef.current?.();
 
     const lastCreatedAt = initialJobs[0]?.createdAt
-  ? Timestamp.fromDate(new Date(initialJobs[0].createdAt))
+? Timestamp.fromDate(new Date(initialJobs[0].createdAt))
       : Timestamp.now();
 
     const now = Timestamp.now();
@@ -135,12 +135,12 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
 
     unsubRef.current = onSnapshot(q, (snap) => {
       const newJobs = snap.docChanges()
-    .filter(change => change.type === "added")
-    .map(change => {
+  .filter(change => change.type === "added")
+  .map(change => {
           const data = change.doc.data();
           return {
             id: change.doc.id,
-        ...data,
+      ...data,
             createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
             updatedAt: data.updatedAt?.toDate?.()?.toISOString() || null,
             deadline: data.deadline?.toDate?.()?.toISOString() || null,
@@ -153,7 +153,7 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
 
       if (newJobs.length > 0) {
         setTasks(prev => [...newJobs,...prev]);
-        toast.success(`Có ${newJobs.length} ${mode === "task"? "task" : "plan"} mới`);
+        // FIX: XÓA DÒNG NÀY -> toast.success(`Có ${newJobs.length} ${mode === "task"? "task" : "plan"} mới`);
       }
       setLoading(false);
     }, (err) => {
@@ -258,10 +258,10 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
                   className="absolute inset-0 rounded-xl"
                   animate={{
                     background: mode === "task"
-               ? "linear-gradient(135deg, #E3F2FF 0%, #D1E9FF 40%, #B8DEFF 100%)"
+              ? "linear-gradient(135deg, #E3F2FF 0%, #D1E9FF 40%, #B8DEFF 100%)"
                       : "linear-gradient(135deg, #E8FFF0 0%, #D4F7E0 40%, #BEF0CE 100%)",
                     boxShadow: mode === "task"
-               ? "inset 0 2px 4px rgba(10,132,255,0.25), inset 0 -2px 2px rgba(0,81,213,0.15), 0 0 20px rgba(10,132,255,0.3)"
+              ? "inset 0 2px 4px rgba(10,132,255,0.25), inset 0 -2px 2px rgba(0,81,213,0.15), 0 0 20px rgba(10,132,255,0.3)"
                       : "inset 0 2px 4px rgba(48,209,88,0.25), inset 0 -2px 2px rgba(40,180,76,0.15), 0 0 20px rgba(48,209,88,0.3)"
                   }}
                   transition={{ duration: 0.6 }}
@@ -270,7 +270,7 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
                   className="absolute -inset-3 rounded-xl blur-2xl opacity-80"
                   animate={{
                     background: mode === "task"
-                 ? "radial-gradient(circle, rgba(10,132,255,0.7) 0%, transparent 70%)"
+                ? "radial-gradient(circle, rgba(10,132,255,0.7) 0%, transparent 70%)"
                       : "radial-gradient(circle, rgba(48,209,88,0.7) 0%, transparent 70%)"
                   }}
                   transition={{ duration: 0.6 }}
@@ -399,7 +399,7 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
 
      {shareTask && (
   <ShareTaskModal
-    task={shareTask} // BỎ `as Task`
+    task={shareTask}
     onClose={() => setShareTask(null)}
   />
 )}
@@ -409,8 +409,8 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
       </div>
 
       <style jsx global>{`
- .scrollbar-hide::-webkit-scrollbar { display: none; }
- .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale }
       `}</style>
     </>
