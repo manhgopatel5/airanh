@@ -24,7 +24,7 @@ type Props = {
   onDelete?: (id: string) => void;
   onShare?: (task: FeedTask) => void;
   onTaskUpdate?: (taskId: string, updates: Partial<FeedTask>) => void;
-  priority?: boolean;
+
 };
 
 const Portal = ({ children }: { children: React.ReactNode }) => {
@@ -33,7 +33,7 @@ const Portal = ({ children }: { children: React.ReactNode }) => {
   return mounted? createPortal(children, document.body) : null;
 };
 
-export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, priority = false }: Props) {
+export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
   const router = useRouter();
   const { user } = useAuth();
   const db = getFirebaseDB();
