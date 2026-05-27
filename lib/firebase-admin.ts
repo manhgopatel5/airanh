@@ -1,6 +1,6 @@
 import { initializeApp, getApps, cert, App, ServiceAccount } from "firebase-admin/app";
 import { getMessaging, Messaging, BatchResponse, Message } from "firebase-admin/messaging";
-import { getFirestore, Firestore, FieldValue } from "firebase-admin/firestore";
+import { getFirestore, Firestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getAuth, Auth } from "firebase-admin/auth";
 
 /* ================= VALIDATE ENV ================= */
@@ -34,7 +34,7 @@ function getFirebaseAdmin() {
     try {
       app = initializeApp({
         credential: cert(serviceAccount),
-      ...(process.env.FIREBASE_DATABASE_URL && {
+       ...(process.env.FIREBASE_DATABASE_URL && {
           databaseURL: process.env.FIREBASE_DATABASE_URL,
         }),
       });
@@ -59,6 +59,34 @@ export const adminApp = () => getFirebaseAdmin().app;
 export const adminMessaging = () => getFirebaseAdmin().messaging;
 export const adminDb = () => getFirebaseAdmin().db;
 export const adminAuth = () => getFirebaseAdmin().auth;
+
+/* ================= THÊM: GET JOBS CHO ISR ================= */
+export async function getJobsFromFirebaseAdmin(limit = 10) {
+  const { db } = getFirebaseAdmin();
+  const now = Timestamp.now();
+  
+  const snap = await db.collection('tasks')
+   .where('type', '==', 'task')
+   .where('visibility', '==', 'public')
+   .where('status', 'in', ['open', 'full', 'doing'])
+   .where('deadline', '>', now)
+   .orderBy('deadline', 'asc')
+   .limit(limit)
+   .get();
+  
+  return snap.docs.map(doc => {
+    const data = doc.data();
+    return { 
+      id: doc.id,
+     ...data,
+      // Convert Timestamp để serialize qua Client Component, tránh lỗi
+      createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
+      updatedAt: data.updatedAt?.toDate?.()?.toISOString() || null,
+      deadline: data.deadline?.toDate?.()?.toISOString() || null,
+      lastSeen: data.lastSeen?.toDate?.()?.toISOString() || null,
+    };
+  });
+}
 
 /* ================= TYPE ================= */
 export type SendNotificationPayload = {
@@ -116,7 +144,7 @@ export async function sendNotification(
       notification: {
         icon: "ic_notification",
         color: "#3B82F6",
-    ...(priority === "high" && { sound: "default" }),
+   ...(priority === "high" && { sound: "default" }),
       },
     },
     apns: {
@@ -124,7 +152,7 @@ export async function sendNotification(
       payload: {
         aps: {
           badge: 1,
-      ...(priority === "high" && { sound: "default" }),
+     ...(priority === "high" && { sound: "default" }),
           "content-available": 1,
         },
       },
