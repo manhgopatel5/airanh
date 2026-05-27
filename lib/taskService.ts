@@ -35,25 +35,24 @@ export class TaskError extends Error {
 /* ================= HELPERS ================= */
 const slugify = (str: string): string =>
   str
-.toLowerCase()
-.normalize("NFD")
-.replace(/[\u0300-\u036f]/g, "")
-.replace(/[^a-z0-9]+/g, "-")
-.replace(/^-|-$/g, "")
-.slice(0, 60);
+   .toLowerCase()
+   .normalize("NFD")
+   .replace(/[\u0300-\u036f]/g, "")
+   .replace(/[^a-z0-9]+/g, "-")
+   .replace(/^-|-$/g, "")
+   .slice(0, 60);
 
 const generateSearchKeywords = (title: string, description?: string, tags?: string[]): string[] => {
   const words = [
-...title.toLowerCase().split(" "),
-...(description?.toLowerCase().split(" ").slice(0, 20) || []),
-...(tags?.map((t) => t.toLowerCase()) || []),
+   ...title.toLowerCase().split(" "),
+   ...(description?.toLowerCase().split(" ").slice(0, 20) || []),
+   ...(tags?.map((t) => t.toLowerCase()) || []),
   ].filter(Boolean);
   return [...new Set(words)].slice(0, 20);
 };
 
 const generateUniqueShortId = async (): Promise<string> => {
   const db = getFirebaseDB();
-
   let attempts = 0;
   while (attempts < 10) {
     const shortId = nanoid(8).toUpperCase();
@@ -65,9 +64,9 @@ const generateUniqueShortId = async (): Promise<string> => {
   throw new TaskError("Không tạo được shortId duy nhất");
 };
 
-/* ================= CREATE TASK - ĐÃ FIX ================= */
+/* ================= CREATE TASK - CHUẨN APP LỚN ================= */
 export const createTask = async (
-  user: { uid: string; displayName?: string | null; photoURL?: string | null; email?: string | null; shortId?: string; username?: string },
+  user: { uid: string; displayName?: string | null; photoURL?: string | null; email?: string | null },
   data: CreateTaskInput
 ): Promise<{ id: string; slug: string }> => {
   const db = getFirebaseDB();
@@ -79,20 +78,20 @@ export const createTask = async (
   if (data.price < 0) throw new TaskError("Giá không hợp lệ");
   if (data.totalSlots < 1) throw new TaskError("Số lượng tuyển tối thiểu là 1");
 
-  // FIX: Lấy user data mới nhất từ collection users
+  // CHUẨN: Bắt buộc phải có user profile trong Firestore
   const userSnap = await getDoc(doc(db, "users", user.uid));
+  if (!userSnap.exists()) {
+    throw new TaskError("Vui lòng hoàn tất hồ sơ trước khi đăng task", "PROFILE_NOT_FOUND");
+  }
+
   const userData = userSnap.data();
+  if (!userData.displayName?.trim()) {
+    throw new TaskError("Vui lòng cập nhật tên hiển thị trong hồ sơ", "NAME_REQUIRED");
+  }
 
-  const userName = userData?.displayName
-    || user.displayName
-    || user.email?.split('@')[0]
-    || "Ẩn danh";
-
-  const userAvatar = userData?.photoURL
-    || user.photoURL
-    || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=0A84FF&color=fff`;
-
-  const userVerified = userData?.verified || false;
+  const userName = userData.displayName.trim();
+  const userAvatar = userData.photoURL || null;
+  const userVerified = userData.verified || false;
 
   const baseSlug = slugify(data.title);
   let slug = `${baseSlug}-${nanoid(6)}`;
@@ -128,11 +127,11 @@ export const createTask = async (
       visibility: data.visibility || "public",
 
       userId: user.uid,
-      userName, // ĐÃ FIX
-      userAvatar, // ĐÃ FIX
-      userVerified, // THÊM FIELD NÀY
-...(userData?.shortId && { userShortId: userData.shortId }),
-...(userData?.username && { userUsername: userData.username }),
+      userName, // Denormalized snapshot
+      userAvatar, // Denormalized snapshot
+      userVerified, // Denormalized snapshot
+     ...(userData.shortId && { userShortId: userData.shortId }),
+     ...(userData.username && { userUsername: userData.username }),
 
       createdAt: now,
       updatedAt: now,
@@ -145,7 +144,7 @@ export const createTask = async (
       images: data.images || [],
       attachments: data.attachments || [],
       requirements: data.requirements || "",
-...(data.location && { location: data.location }),
+     ...(data.location && { location: data.location }),
       isRemote: data.isRemote?? false,
 
       searchKeywords: generateSearchKeywords(data.title, data.description, data.tags),
@@ -191,20 +190,25 @@ export const updateTask = async (
 
     if (data.type === "task") {
       const taskData = data as TaskItem;
-      if (taskData.deadline && taskData.deadline.toMillis() < Date.now()) throw new TaskError("Công việc đã hết hạn");
-      if (updates.totalSlots && updates.totalSlots < taskData.joined) throw new TaskError("Số người không được nhỏ hơn đã tham gia");
+      if (taskData.deadline && taskData.deadline.toMillis() < Date.now()) {
+        throw new TaskError("Công việc đã hết hạn");
+      }
+      if (updates.totalSlots && updates.totalSlots < taskData.joined) {
+        throw new TaskError("Số người không được nhỏ hơn đã tham gia");
+      }
     }
 
-    const newSearchKeywords = updates.title || updates.description || updates.tags
-? generateSearchKeywords(
-          updates.title || data.title,
-          updates.description || data.description,
-          updates.tags || data.tags
-        )
-      : data.searchKeywords;
+    const newSearchKeywords =
+      updates.title || updates.description || updates.tags
+       ? generateSearchKeywords(
+            updates.title || data.title,
+            updates.description || data.description,
+            updates.tags || data.tags
+          )
+        : data.searchKeywords;
 
     const updateData: any = {
-...updates,
+     ...updates,
       searchKeywords: newSearchKeywords,
       edited: true,
       editedAt: serverTimestamp(),
@@ -373,7 +377,6 @@ export const addReactionToTask = async (taskId: string, userId: string, type: st
 /* ================= VIEW ================= */
 export const incrementTaskView = async (taskId: string): Promise<void> => {
   const db = getFirebaseDB();
-
   if (!taskId) return;
   await updateDoc(doc(db, "tasks", taskId), { viewCount: increment(1) }).catch(() => {});
 };
