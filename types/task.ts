@@ -260,6 +260,8 @@ export type TaskListItem = Pick<
   | "savedBy"     
   | "applicants"  
   | "appliedCount"
+  | "banned"      // THÊM: Fix lỗi build
+  | "hidden"      // THÊM: Fix lỗi build
 >;
 
 export type PlanListItem = Pick<
@@ -296,12 +298,13 @@ export type PlanListItem = Pick<
   | "milestones"
   | "savedBy"      
   | "applicants"  
+  | "banned"      // THÊM: Fix lỗi build
+  | "hidden"      // THÊM: Fix lỗi build
 >;
 
 export type ItemListItem = TaskListItem | PlanListItem;
 
 /* ================= FEED TYPE CHO ISR ================= */
-// THÊM ĐOẠN NÀY ĐỂ FIX LỖI BUILD
 // Dùng cho Server Component: Timestamp -> string để serialize qua RSC
 export type FeedTask = (TaskListItem | PlanListItem) & {
   createdAt: string | null;
