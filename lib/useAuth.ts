@@ -23,24 +23,28 @@ import { ref, onDisconnect, set, serverTimestamp as rtdbServerTimestamp, Databas
 import { useRouter } from "next/navigation";
 import { nanoid } from "nanoid";
 
-/* ================= TYPES ================= */
+/* ================= TYPES - CHUẨN ================= */
 export type UserProfile = {
   uid: string;
-  name: string;
-  email: string;
+  displayName: string; // Đổi từ name -> displayName
+  email: string | null;
   emailVerified: boolean;
-  avatar: string;
+  photoURL: string | null; // Đổi từ avatar -> photoURL
   shortId: string;
   username?: string;
   bio?: string;
   isOnline: boolean;
   lastSeen: Timestamp;
   role: "user" | "admin" | "moderator";
+  verified: boolean; // Thêm field này
   createdAt: Timestamp;
   updatedAt?: Timestamp;
   postsCount?: number;
   tasksJoined?: number;
   friendRequestsUnread?: number;
+  searchKeywords: string[]; // Thêm
+  nameLower: string; // Thêm
+  status: "active" | "banned" | "deleted" | "deactivated"; // Thêm
 };
 
 export type UseAuthReturn = {
@@ -90,7 +94,7 @@ function initAuthStore() {
       loading,
       loadingProfile,
       error,
-      isAuthenticated: !!user && !loading,
+      isAuthenticated:!!user &&!loading,
       isAdmin: profile?.role === "admin" || claims?.admin === true,
       signOut: async () => {
         if (user) {
@@ -133,7 +137,7 @@ function initAuthStore() {
     if (!rtdb) return;
     const userStatusRef = ref(rtdb, `/status/${uid}`);
     presenceRef = userStatusRef;
-    
+
     const isOffline = {
       isOnline: false,
       lastSeen: rtdbServerTimestamp(),
@@ -193,17 +197,27 @@ function initAuthStore() {
         const userSnap = await getDoc(userRef);
 
         if (!userSnap.exists()) {
+          // FIX: Tạo user với displayName + photoURL chuẩn
+          const displayName = u.displayName?.trim() || u.email?.split("@")[0] || "User";
+          const photoURL = u.photoURL || null;
+
           const newProfile: Omit<UserProfile, "uid"> = {
-            name: u.displayName || u.email?.split("@")[0] || "User",
-            email: u.email || "",
+            displayName, // Đổi từ name
+            nameLower: displayName.toLowerCase(),
+            email: u.email || null,
             emailVerified: u.emailVerified,
-            avatar: u.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.email || "U")}`,
+            photoURL, // Đổi từ avatar
             shortId: nanoid(8).toUpperCase(),
+            username: u.uid.slice(0, 8),
             bio: "",
             isOnline: true,
             lastSeen: Timestamp.now(),
             role: "user",
+            verified: false, // Thêm
+            status: "active", // Thêm
+            searchKeywords: [displayName.toLowerCase(), u.email || ""].filter(Boolean),
             createdAt: serverTimestamp() as Timestamp,
+            updatedAt: serverTimestamp() as Timestamp,
             postsCount: 0,
             tasksJoined: 0,
             friendRequestsUnread: 0,
@@ -319,7 +333,7 @@ export function useAuth(): UseAuthReturn {
 /* ================= BONUS HOOKS ================= */
 export function useIsOwner(ownerId?: string): boolean {
   const { user } = useAuth();
-  return useMemo(() => !!user && !!ownerId && user.uid === ownerId, [user, ownerId]);
+  return useMemo(() =>!!user &&!!ownerId && user.uid === ownerId, [user, ownerId]);
 }
 
 export function useRequireAuth(redirectTo = "/login") {
@@ -327,12 +341,12 @@ export function useRequireAuth(redirectTo = "/login") {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading &&!user) {
       router.replace(redirectTo);
     }
   }, [user, loading, redirectTo, router]);
 
-  return { user, loading, isAuthenticated: !!user && !loading };
+  return { user, loading, isAuthenticated:!!user &&!loading };
 }
 
 export function useRequireAdmin(redirectTo = "/") {
@@ -340,7 +354,7 @@ export function useRequireAdmin(redirectTo = "/") {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !isAdmin) {
+    if (!loading &&!isAdmin) {
       router.replace(redirectTo);
     }
   }, [isAdmin, loading, redirectTo, router]);
