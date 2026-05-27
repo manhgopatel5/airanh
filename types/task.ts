@@ -151,7 +151,7 @@ export type PlanItem = BaseItem & {
   maxParticipants: number;
   currentParticipants: number;
   totalSlots: number; 
-  appliedCount?: number; // THÊM DÒNG NÀY
+  appliedCount?: number;
   inviteCode?: string; 
   allowInvite: boolean;
 
@@ -259,7 +259,7 @@ export type TaskListItem = Pick<
   | "startDate"
   | "savedBy"     
   | "applicants"  
-  | "appliedCount" // THÊM DÒNG NÀY
+  | "appliedCount"
 >;
 
 export type PlanListItem = Pick<
@@ -289,7 +289,7 @@ export type PlanListItem = Pick<
   | "maxParticipants"
   | "currentParticipants"
   | "totalSlots" 
-  | "appliedCount" // THÊM DÒNG NÀY
+  | "appliedCount"
   | "costType"
   | "costAmount"
   | "paymentMethod" 
@@ -299,6 +299,19 @@ export type PlanListItem = Pick<
 >;
 
 export type ItemListItem = TaskListItem | PlanListItem;
+
+/* ================= FEED TYPE CHO ISR ================= */
+// THÊM ĐOẠN NÀY ĐỂ FIX LỖI BUILD
+// Dùng cho Server Component: Timestamp -> string để serialize qua RSC
+export type FeedTask = (TaskListItem | PlanListItem) & {
+  createdAt: string | null;
+  updatedAt?: string | null;
+  deadline?: string | null;
+  eventDate?: string | null;
+  endDate?: string | null;
+  startDate?: string | null;
+  applicationDeadline?: string | null;
+};
 
 /* ================= PARTICIPANT ================= */
 export type TaskParticipant = {
