@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { useTask } from "@/hooks/useTask";
-import type { Task } from "@/types/task";
+import type { FeedTask } from "@/types/task"; // FIX: Task -> FeedTask
 
 type UserData = {
   uid: string;
@@ -20,7 +20,7 @@ type UserData = {
 };
 
 type Props = {
-  task: Task;
+  task: FeedTask; // FIX: Task -> FeedTask
   owner: UserData | null;
   currentUser: any;
   isApplied: boolean;
