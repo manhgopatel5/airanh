@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useTaskFeed } from "@/hooks/useTaskFeed";
-import TaskFeed from "@/components/task/TaskFeed";
+import TaskFeed from "@/components/TaskFeed";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiLoader, FiRefreshCw } from "react-icons/fi";
