@@ -115,8 +115,6 @@ const THEME = {
     tagText: "text-sky-700 dark:text-sky-300",
     buttonBg: "bg-sky-500 hover:bg-sky-600 dark:bg-sky-500 dark:hover:bg-sky-600",
     buttonText: "text-white",
-    tabActive: "text-sky-500",
-    tabLine: "bg-sky-500",
   },
   plan: {
     iconBg: "bg-green-500/10 dark:bg-green-400/15",
@@ -125,8 +123,6 @@ const THEME = {
     tagText: "text-green-700 dark:text-green-300",
     buttonBg: "bg-green-500 hover:bg-green-600 dark:bg-green-500 dark:hover:bg-green-600",
     buttonText: "text-white",
-    tabActive: "text-green-500",
-    tabLine: "bg-green-500",
   },
 } as const;
 
@@ -135,7 +131,6 @@ const getRandomItems = <T,>(arr: readonly T[], count: number): T[] => {
   return shuffled.slice(0, count);
 };
 
-// FIX: Thêm onRefresh vào Props cho exactOptionalPropertyTypes
 type Props = {
   tab: TabId;
   type: PostType;
@@ -149,16 +144,20 @@ export default function EmptyState({ tab, type, onRefresh }: Props) {
   const [refreshing, setRefreshing] = useState(false);
 
   const [content, setContent] = useState(() => ({
-    title: pool.titles[0],
-    desc: pool.descs[0],
+    title: pool.titles[0]!, // FIX:! vì array có ít nhất 1 phần tử
+    desc: pool.descs[0]!,
     icon: pool.icon,
     suggests: pool.suggests.slice(0, 4),
   }));
 
   useEffect(() => {
+    // FIX: Dùng! vì Math.random() luôn < 1, index luôn hợp lệ
+    const randomTitle = pool.titles[Math.floor(Math.random() * pool.titles.length)]!;
+    const randomDesc = pool.descs[Math.floor(Math.random() * pool.descs.length)]!;
+
     setContent({
-      title: pool.titles[Math.floor(Math.random() * pool.titles.length)],
-      desc: pool.descs[Math.floor(Math.random() * pool.descs.length)],
+      title: randomTitle,
+      desc: randomDesc,
       icon: pool.icon,
       suggests: getRandomItems(pool.suggests, 4),
     });
