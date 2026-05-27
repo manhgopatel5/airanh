@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { isTask, type Task } from "@/types/task";
 import { motion } from "framer-motion";
+import { FiDollarSign, FiUsers, FiClock, FiMapPin, FiUserCheck, FiCalendar } from "react-icons/fi";
 
 type Application = {
   id: string;
@@ -57,21 +58,32 @@ export default function TaskInfoGrid({ task, applications, theme = "task" }: Pro
   const totalApplied = applications.length;
   const totalSlots = task.totalSlots ?? 0;
 
-  const InfoItem = ({ label, value, highlight = false, urgent = false }: { 
+  const InfoItem = ({ icon: Icon, label, value, highlight = false, urgent = false }: { 
+    icon: any;
     label: string; 
     value: string; 
     highlight?: boolean;
     urgent?: boolean;
   }) => (
-    <div>
-      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{label}</p>
-      <p className={`text-sm font-semibold mt-0.5 ${
-        urgent ? 'text-[#FF3B30]' : 
-        highlight ? `text-[${accentColor}]` : 
-        'text-zinc-900 dark:text-zinc-100'
-      }`}>
-        {value}
-      </p>
+    <div className="flex items-start gap-2">
+      <Icon 
+        size={16} 
+        className={`mt-0.5 shrink-0 ${
+          urgent ? 'text-[#FF3B30]' : 
+          highlight ? `text-[${accentColor}]` : 
+          'text-zinc-500 dark:text-zinc-400'
+        }`}
+      />
+      <div>
+        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{label}</p>
+        <p className={`text-sm font-semibold mt-0.5 ${
+          urgent ? 'text-[#FF3B30]' : 
+          highlight ? `text-[${accentColor}]` : 
+          'text-zinc-900 dark:text-zinc-100'
+        }`}>
+          {value}
+        </p>
+      </div>
     </div>
   );
 
@@ -87,10 +99,11 @@ export default function TaskInfoGrid({ task, applications, theme = "task" }: Pro
 
       <div className="h-px bg-zinc-200 dark:bg-zinc-800 w-screen -ml-4 my-3" />
 
-      <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-        <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+        <div className="space-y-4">
           {isTask(task) && task.price > 0 && (
             <InfoItem 
+              icon={FiDollarSign}
               label="Tiền công" 
               value={`${task.price.toLocaleString("vi-VN")} đ`}
               highlight
@@ -98,6 +111,7 @@ export default function TaskInfoGrid({ task, applications, theme = "task" }: Pro
           )}
           {isTask(task) && (
             <InfoItem 
+              icon={FiUsers}
               label="Ứng tuyển" 
               value={`${totalApplied} người`}
               highlight
@@ -105,6 +119,7 @@ export default function TaskInfoGrid({ task, applications, theme = "task" }: Pro
           )}
           {isTask(task) && task.deadline?.seconds && (
             <InfoItem 
+              icon={FiClock}
               label="Hạn chót" 
               value={timeLeft || taskDeadline}
               urgent={isUrgent}
@@ -112,18 +127,21 @@ export default function TaskInfoGrid({ task, applications, theme = "task" }: Pro
           )}
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           <InfoItem 
+            icon={FiMapPin}
             label="Địa chỉ" 
             value={task.location?.address || task.location?.city || "Online"}
             highlight
           />
           <InfoItem 
+            icon={FiUserCheck}
             label="Đã nhận" 
             value={`${acceptedCount}/${totalSlots} người`}
             highlight
           />
           <InfoItem 
+            icon={FiCalendar}
             label="Ngày đăng" 
             value={taskDate}
             highlight
