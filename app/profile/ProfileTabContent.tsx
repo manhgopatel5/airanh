@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
+import { signOut, updateProfile } from "firebase/auth";
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { useAppStore } from "@/store/app";
@@ -30,18 +30,22 @@ import ProfileModal from "@/components/common/ProfileModal";
 
 type UserData = {
   uid: string;
-  name: string;
-  email: string;
+  displayName: string; // Đổi từ name
+  email: string | null;
   phone?: string;
   userId: string;
-  avatar: string;
+  photoURL: string | null; // Đổi từ avatar
   bio?: string;
   online?: boolean;
   lastSeen?: Timestamp;
   createdAt?: Timestamp;
   emailVerified?: boolean;
+  verified: boolean; // Thêm
   hidePhone?: boolean;
   stats?: { tasks: number; plans: number; completed: number; rating: number };
+  nameLower: string; // Thêm
+  username?: string;
+  status: "active" | "banned" | "deleted" | "deactivated"; // Thêm
 };
 
 export default function ProfileTabContent() {
@@ -54,7 +58,7 @@ export default function ProfileTabContent() {
   const isPlan = mode === "plan";
 
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [name, setName] = useState("");
+  const [displayName, setDisplayName] = useState(""); // Đổi từ name
   const [editingName, setEditingName] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -64,7 +68,7 @@ export default function ProfileTabContent() {
   const uploadTaskRef = useRef<UploadTask | null>(null);
 
   const accentGradient = isPlan
- ? "from-green-500 to-emerald-500"
+? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-600";
 
   useEffect(() => {
@@ -77,7 +81,7 @@ export default function ProfileTabContent() {
       if (snap.exists()) {
         const data = { uid: snap.id,...snap.data() } as UserData;
         setUserData(data);
-        setName(data.name || "");
+        setDisplayName(data.displayName || ""); // Đổi
         if (user &&!user.emailVerified &&!data.emailVerified) {
           router.replace("/verify-email");
         }
@@ -111,25 +115,33 @@ export default function ProfileTabContent() {
   }, [user, userData, db]);
 
   const handleUpdateName = async () => {
-    if (!user ||!name.trim() || name.length < 2) {
+    if (!user ||!displayName.trim() || displayName.length < 2) {
       toast.error("Tên tối thiểu 2 ký tự");
       return;
     }
-    if (name === userData?.name) {
+    if (displayName === userData?.displayName) {
       setEditingName(false);
       return;
     }
-    const oldName = userData?.name;
+    const oldName = userData?.displayName;
     setEditingName(false);
-    setUserData((prev) => prev? {...prev, name: name.trim() } : null);
+    setUserData((prev) => prev? {...prev, displayName: displayName.trim() } : null);
     try {
-      await updateDoc(doc(db, "users", user.uid), { name: name.trim() });
+      // FIX: Update cả Auth + Firestore
+      await Promise.all([
+        updateProfile(user, { displayName: displayName.trim() }),
+        updateDoc(doc(db, "users", user.uid), {
+          displayName: displayName.trim(),
+          nameLower: displayName.trim().toLowerCase(),
+          updatedAt: serverTimestamp(),
+        })
+      ]);
       toast.success("Cập nhật tên thành công");
       if ("vibrate" in navigator) navigator.vibrate(8);
     } catch {
       toast.error("Cập nhật thất bại");
-      setUserData((prev) => prev? {...prev, name: oldName || "" } : null);
-      setName(oldName || "");
+      setUserData((prev) => prev? {...prev, displayName: oldName || "" } : null);
+      setDisplayName(oldName || "");
     }
   };
 
@@ -156,7 +168,11 @@ export default function ProfileTabContent() {
           const task = uploadTaskRef.current;
           if (!task) return;
           const url = await getDownloadURL(task.snapshot.ref);
-          await updateDoc(doc(db, "users", user.uid), { avatar: url });
+          // FIX: Update cả Auth + Firestore photoURL
+          await Promise.all([
+            updateProfile(user, { photoURL: url }),
+            updateDoc(doc(db, "users", user.uid), { photoURL: url })
+          ]);
           toast.success("Cập nhật avatar thành công");
           if ("vibrate" in navigator) navigator.vibrate(8);
           setUploading(false);
@@ -224,7 +240,7 @@ export default function ProfileTabContent() {
         <div className="flex items-center gap-4">
           <label className="relative cursor-pointer group flex-shrink-0">
             <img
-              src={userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&size=176&background=8B5E3C&color=fff`}
+              src={userData.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.displayName)}&size=176&background=8B5E3C&color=fff`}
               className="w-16 h-16 rounded-full object-cover"
               alt="Avatar"
             />
@@ -248,8 +264,8 @@ export default function ProfileTabContent() {
             {editingName? (
               <div className="flex items-center gap-2">
                 <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
                   onBlur={handleUpdateName}
                   onKeyDown={(e) => e.key === "Enter" && handleUpdateName()}
                   autoFocus
@@ -261,7 +277,7 @@ export default function ProfileTabContent() {
               </div>
             ) : (
               <h1 onClick={() => setEditingName(true)} className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight cursor-pointer leading-tight">
-                {userData.name}
+                {userData.displayName}
               </h1>
             )}
             <div className="flex items-center gap-1.5 mt-1">
@@ -274,7 +290,7 @@ export default function ProfileTabContent() {
         </div>
       </div>
 
-      {/* List Settings */}
+      {/* List Settings - giữ nguyên */}
       <div className="px-4 mt-2 space-y-4">
         <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
           <SettingItem
@@ -285,7 +301,6 @@ export default function ProfileTabContent() {
             onClick={() => router.push("/settings/profile-edit")}
           />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
           <SettingItem
             label="Đổi email"
             subtitle="Cập nhật địa chỉ email"
@@ -294,7 +309,6 @@ export default function ProfileTabContent() {
             onClick={() => router.push("/settings/change-email")}
           />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
           <SettingItem
             label="Đổi số điện thoại"
             subtitle="Xác thực SĐT mới"
@@ -303,7 +317,6 @@ export default function ProfileTabContent() {
             onClick={() => router.push("/settings/change-phone")}
           />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
           <SettingItem
             label="Đổi mật khẩu"
             subtitle="Cập nhật mật khẩu định kỳ"
@@ -312,7 +325,6 @@ export default function ProfileTabContent() {
             onClick={() => router.push("/settings/change-password")}
           />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
           <SettingItem
             label="Xác thực 2 lớp"
             subtitle="Bật/tắt 2FA cho tài khoản"
@@ -321,7 +333,6 @@ export default function ProfileTabContent() {
             onClick={() => router.push("/settings/2fa")}
           />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
           <SettingItem
             label="Phiên đăng nhập"
             subtitle="Quản lý thiết bị đang hoạt động"
@@ -330,7 +341,6 @@ export default function ProfileTabContent() {
             onClick={() => router.push("/settings/sessions")}
           />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
           <SettingItem
             label="Tài khoản bị chặn"
             subtitle="Danh sách người dùng đã chặn"
@@ -339,7 +349,6 @@ export default function ProfileTabContent() {
             onClick={() => router.push("/settings/blocked")}
           />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
           <SettingItem
             label="Mã QR của tôi"
             subtitle="Chia sẻ & quét mã kết bạn"
@@ -348,7 +357,6 @@ export default function ProfileTabContent() {
             onClick={() => router.push("/settings/qr")}
           />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
           <SettingItem
             label="Chia sẻ hồ sơ"
             subtitle="Link và mạng xã hội"
@@ -358,7 +366,6 @@ export default function ProfileTabContent() {
             onClick={() => router.push("/settings/share-profile")}
           />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
           <SettingItem
             label="Thông báo"
             subtitle="Push, email, giờ im lặng"
@@ -368,7 +375,6 @@ export default function ProfileTabContent() {
             onClick={() => router.push("/settings/notifications")}
           />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
           <SettingItem
             label="Dung lượng"
             subtitle="Quản lý file và bộ nhớ"
@@ -377,7 +383,6 @@ export default function ProfileTabContent() {
             onClick={() => router.push("/settings/storage")}
           />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
           <SettingItem
             label="Cài đặt chung"
             subtitle="Thông báo, Giao diện, Ngôn ngữ"
@@ -386,7 +391,6 @@ export default function ProfileTabContent() {
             onClick={() => router.push("/settings")}
           />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
           <SettingItem
             label="Hỗ trợ"
             subtitle="Trung tâm trợ giúp, Báo cáo sự cố"
