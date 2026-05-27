@@ -1,9 +1,24 @@
+// hooks/useTaskFeed.ts
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { collection, query, where, orderBy, limit, onSnapshot, Timestamp } from "firebase/firestore";
+import { useEffect, useState, useRef, useCallback } from "react";
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  onSnapshot,
+  startAfter,
+  getDocs,
+  Timestamp,
+  QueryDocumentSnapshot,
+  DocumentData,
+} from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import type { FeedTask } from "@/types/task";
+
+type TabId = "hot" | "near" | "friends" | "new";
 
 const tsToString = (ts: any): string | null => {
   if (!ts) return null;
@@ -12,158 +27,157 @@ const tsToString = (ts: any): string | null => {
   return null;
 };
 
-export function useTaskFeed() {
+const docToFeedTask = (doc: QueryDocumentSnapshot<DocumentData>): FeedTask => {
+  const d = doc.data();
+  return {
+    id: doc.id,
+    slug: d.slug || "",
+    shortId: d.shortId || "",
+    title: d.title || "",
+    description: d.description || "",
+    type: "task",
+    status: d.status || "open",
+    userId: d.userId || "",
+    userName: d.userName || "",
+    userAvatar: d.userAvatar || "",
+  ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
+  ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
+    price: d.price?? 0,
+    currency: d.currency || "VND",
+    totalSlots: d.totalSlots?? 0,
+    joined: d.joined?? 0,
+    budgetType: d.budgetType || "fixed",
+  ...(d.paymentMethod!== undefined && { paymentMethod: d.paymentMethod }),
+  ...(d.isRemote!== undefined && { isRemote: d.isRemote }),
+    category: d.category || "",
+    tags: Array.isArray(d.tags)? d.tags : [],
+    images: Array.isArray(d.images)? d.images : [],
+    viewCount: d.viewCount?? 0,
+    likeCount: d.likeCount?? 0,
+    commentCount: d.commentCount?? 0,
+    likes: Array.isArray(d.likes)? d.likes : [],
+  ...(d.location!== undefined && { location: d.location }),
+    savedBy: Array.isArray(d.savedBy)? d.savedBy : [],
+    applicants: Array.isArray(d.applicants)? d.applicants : [],
+  ...(d.banned!== undefined && { banned: d.banned }),
+  ...(d.hidden!== undefined && { hidden: d.hidden }),
+  ...(d.appliedCount!== undefined && { appliedCount: d.appliedCount }),
+    createdAt: tsToString(d.createdAt),
+  ...(d.updatedAt && { updatedAt: tsToString(d.updatedAt) }),
+  ...(d.deadline && { deadline: tsToString(d.deadline) }),
+  ...(d.startDate && { startDate: tsToString(d.startDate) }),
+  ...(d.applicationDeadline && { applicationDeadline: tsToString(d.applicationDeadline) }),
+  } as FeedTask;
+};
+
+export function useTaskFeed(tab: TabId = "hot") {
   const [tasks, setTasks] = useState<FeedTask[]>([]);
   const [newTaskCount, setNewTaskCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  
-  // FIX: Lưu timestamp lần đầu load để chỉ count task mới hơn
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+
   const firstLoadTimeRef = useRef<Timestamp | null>(null);
   const taskIdsRef = useRef<Set<string>>(new Set());
+  const lastDocRef = useRef<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const unsubRef = useRef<(() => void) | null>(null);
 
-  useEffect(() => {
-    const db = getFirebaseDB();
-    const q = query(
+  const buildQuery = useCallback((db: any, after?: QueryDocumentSnapshot<DocumentData>) => {
+    let q = query(
       collection(db, "tasks"),
       where("type", "==", "task"),
       where("visibility", "==", "public"),
       where("status", "in", ["open", "doing"]),
       where("banned", "!=", true),
-      where("hidden", "!=", true),
-      orderBy("createdAt", "desc"),
-      limit(20)
+      where("hidden", "!=", true)
     );
 
-    const unsub = onSnapshot(q, (snap) => {
-      // Lần đầu load
-      if (!firstLoadTimeRef.current) {
-        firstLoadTimeRef.current = Timestamp.now();
-        
-        const newTasks: FeedTask[] = snap.docs.map(doc => {
-          const d = doc.data();
-          taskIdsRef.current.add(doc.id);
-          
-          return {
-            id: doc.id,
-            slug: d.slug || "",
-            shortId: d.shortId || "",
-            title: d.title || "",
-            description: d.description || "",
-            type: "task",
-            status: d.status || "open",
-            userId: d.userId || "",
-            userName: d.userName || "",
-            userAvatar: d.userAvatar || "",
-           ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
-           ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
-            price: d.price?? 0,
-            currency: d.currency || "VND",
-            totalSlots: d.totalSlots?? 0,
-            joined: d.joined?? 0,
-            budgetType: d.budgetType || "fixed",
-           ...(d.paymentMethod!== undefined && { paymentMethod: d.paymentMethod }),
-           ...(d.isRemote!== undefined && { isRemote: d.isRemote }),
-            category: d.category || "",
-            tags: Array.isArray(d.tags)? d.tags : [],
-            images: Array.isArray(d.images)? d.images : [],
-            viewCount: d.viewCount?? 0,
-            likeCount: d.likeCount?? 0,
-            commentCount: d.commentCount?? 0,
-            likes: Array.isArray(d.likes)? d.likes : [],
-           ...(d.location!== undefined && { location: d.location }),
-            savedBy: Array.isArray(d.savedBy)? d.savedBy : [],
-            applicants: Array.isArray(d.applicants)? d.applicants : [],
-           ...(d.banned!== undefined && { banned: d.banned }),
-           ...(d.hidden!== undefined && { hidden: d.hidden }),
-           ...(d.appliedCount!== undefined && { appliedCount: d.appliedCount }),
-            createdAt: tsToString(d.createdAt),
-           ...(d.updatedAt && { updatedAt: tsToString(d.updatedAt) }),
-           ...(d.deadline && { deadline: tsToString(d.deadline) }),
-           ...(d.startDate && { startDate: tsToString(d.startDate) }),
-           ...(d.applicationDeadline && { applicationDeadline: tsToString(d.applicationDeadline) }),
-          } as FeedTask;
-        });
-        
-        setTasks(newTasks);
-        setLoading(false);
-        return;
-      }
+    // Tab filter
+    if (tab === "hot") q = query(q, orderBy("viewCount", "desc"));
+    else if (tab === "new") q = query(q, orderBy("createdAt", "desc"));
+    else q = query(q, orderBy("createdAt", "desc")); // near, friends cần geo/user logic riêng
 
-      // FIX: Chỉ count task thực sự mới - có createdAt > firstLoadTime và id chưa có
+    q = query(q, limit(20));
+    if (after) q = query(q, startAfter(after));
+
+    return q;
+  }, [tab]);
+
+  const loadInitial = useCallback(() => {
+    const db = getFirebaseDB();
+    if (unsubRef.current) unsubRef.current();
+
+    setLoading(true);
+    firstLoadTimeRef.current = Timestamp.now();
+    taskIdsRef.current.clear();
+
+    unsubRef.current = onSnapshot(buildQuery(db), (snap) => {
+      const newTasks = snap.docs.map(docToFeedTask);
+      setTasks(newTasks);
+      newTasks.forEach(t => taskIdsRef.current.add(t.id));
+      lastDocRef.current = snap.docs[snap.docs.length - 1] || null;
+      setHasMore(snap.docs.length === 20);
+      setLoading(false);
+
+      // Count new tasks
       let count = 0;
       snap.docChanges().forEach((change) => {
         if (change.type === "added") {
-          const data = change.doc.data();
-          const createdAt = data.createdAt;
-          
-          // Task mới = tạo sau lần load đầu + id chưa có trong list
+          const createdAt = change.doc.data().createdAt;
           if (
             createdAt instanceof Timestamp &&
             createdAt.toMillis() > firstLoadTimeRef.current!.toMillis() &&
-           !taskIdsRef.current.has(change.doc.id)
+          !taskIdsRef.current.has(change.doc.id)
           ) {
             count++;
           }
         }
       });
-      
-      if (count > 0) {
-        setNewTaskCount(prev => prev + count);
-      }
-
-      // Update list + dedupe
-      const updatedTasks: FeedTask[] = snap.docs.map(doc => {
-        const d = doc.data();
-        taskIdsRef.current.add(doc.id);
-        
-        return {
-          id: doc.id,
-          slug: d.slug || "",
-          shortId: d.shortId || "",
-          title: d.title || "",
-          description: d.description || "",
-          type: "task",
-          status: d.status || "open",
-          userId: d.userId || "",
-          userName: d.userName || "",
-          userAvatar: d.userAvatar || "",
-         ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
-         ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
-          price: d.price?? 0,
-          currency: d.currency || "VND",
-          totalSlots: d.totalSlots?? 0,
-          joined: d.joined?? 0,
-          budgetType: d.budgetType || "fixed",
-         ...(d.paymentMethod!== undefined && { paymentMethod: d.paymentMethod }),
-         ...(d.isRemote!== undefined && { isRemote: d.isRemote }),
-          category: d.category || "",
-          tags: Array.isArray(d.tags)? d.tags : [],
-          images: Array.isArray(d.images)? d.images : [],
-          viewCount: d.viewCount?? 0,
-          likeCount: d.likeCount?? 0,
-          commentCount: d.commentCount?? 0,
-          likes: Array.isArray(d.likes)? d.likes : [],
-         ...(d.location!== undefined && { location: d.location }),
-          savedBy: Array.isArray(d.savedBy)? d.savedBy : [],
-          applicants: Array.isArray(d.applicants)? d.applicants : [],
-         ...(d.banned!== undefined && { banned: d.banned }),
-         ...(d.hidden!== undefined && { hidden: d.hidden }),
-         ...(d.appliedCount!== undefined && { appliedCount: d.appliedCount }),
-          createdAt: tsToString(d.createdAt),
-         ...(d.updatedAt && { updatedAt: tsToString(d.updatedAt) }),
-         ...(d.deadline && { deadline: tsToString(d.deadline) }),
-         ...(d.startDate && { startDate: tsToString(d.startDate) }),
-         ...(d.applicationDeadline && { applicationDeadline: tsToString(d.applicationDeadline) }),
-        } as FeedTask;
-      });
-      
-      setTasks(updatedTasks);
+      if (count > 0) setNewTaskCount(prev => prev + count);
     });
 
-    return () => unsub();
-  }, []);
+    return () => {
+      if (unsubRef.current) unsubRef.current();
+    };
+  }, [buildQuery]);
 
-  const resetNewTaskCount = () => setNewTaskCount(0);
+  useEffect(() => {
+    return loadInitial();
+  }, [loadInitial]);
 
-  return { tasks, newTaskCount, loading, resetNewTaskCount };
+  const loadMore = useCallback(async () => {
+    if (loadingMore ||!hasMore ||!lastDocRef.current) return;
+    setLoadingMore(true);
+
+    const db = getFirebaseDB();
+    const snap = await getDocs(buildQuery(db, lastDocRef.current));
+
+    const moreTasks = snap.docs.map(docToFeedTask);
+    setTasks(prev => {
+      const existing = new Set(prev.map(t => t.id));
+      return [...prev,...moreTasks.filter(t =>!existing.has(t.id))];
+    });
+
+    lastDocRef.current = snap.docs[snap.docs.length - 1] || null;
+    setHasMore(snap.docs.length === 20);
+    setLoadingMore(false);
+  }, [loadingMore, hasMore, buildQuery]);
+
+  const refresh = useCallback(async () => {
+    setNewTaskCount(0);
+    loadInitial();
+  }, [loadInitial]);
+
+  const resetNewTaskCount = useCallback(() => setNewTaskCount(0), []);
+
+  return {
+    tasks,
+    newTaskCount,
+    loading,
+    loadingMore,
+    hasMore,
+    resetNewTaskCount,
+    loadMore,
+    refresh
+  };
 }
