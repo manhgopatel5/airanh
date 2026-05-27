@@ -11,17 +11,14 @@ import {
   collection,
   query,
   where,
-  getDocs,
+  onSnapshot,
   orderBy,
   limit,
-  startAfter,
-  QueryDocumentSnapshot,
-  DocumentData,
   Timestamp,
 } from "firebase/firestore";
 import type { Task } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import { useAppStore } from "@/store/app";
 import * as geofire from 'geofire-common';
 import CustomFilterBar from "@/components/common/CustomFilterBar";
@@ -42,15 +39,17 @@ const hasLocation = (task: FeedTask): task is TaskWithLocation => {
   return task.location?.lat!= null && task.location?.lng!= null;
 };
 
-const PAGE_SIZE = 50;
-
 const vibrate = (p: number | number[] = 5) => {
   if (typeof navigator!== "undefined" && "vibrate" in navigator) {
     navigator.vibrate(p);
   }
 };
 
-export default function TaskFeedPage() {
+interface TaskFeedPageProps {
+  initialJobs?: FeedTask[]; // Nhận từ page.tsx SSR
+}
+
+export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
   const auth = getFirebaseAuth();
   const db = getFirebaseDB();
   const router = useRouter();
@@ -59,21 +58,9 @@ export default function TaskFeedPage() {
   const { mode = "task", setMode } = useAppStore();
   const [activeTab, setActiveTab] = useState<TabId>("hot");
 
-  const [tasksCache, setTasksCache] = useState<Record<CacheKey, FeedTask[]>>({
-    "hot-task": [], "nearby-task": [], "friends-task": [], "new-task": [],
-    "hot-plan": [], "nearby-plan": [], "friends-plan": [], "new-plan": [],
-  });
-  const [lastDocs, setLastDocs] = useState<Record<CacheKey, QueryDocumentSnapshot<DocumentData> | null>>({
-    "hot-task": null, "nearby-task": null, "friends-task": null, "new-task": null,
-    "hot-plan": null, "nearby-plan": null, "friends-plan": null, "new-plan": null,
-  });
-  const [hasMoreMap, setHasMoreMap] = useState<Record<CacheKey, boolean>>({
-    "hot-task": true, "nearby-task": true, "friends-task": true, "new-task": true,
-    "hot-plan": true, "nearby-plan": true, "friends-plan": true, "new-plan": true,
-  });
-
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  // 1. Dùng initialJobs làm state ban đầu, không fetch lại
+  const [tasks, setTasks] = useState<FeedTask[]>(initialJobs);
+  const [loading, setLoading] = useState(initialJobs.length === 0);
   const [refreshing, setRefreshing] = useState(false);
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
@@ -85,24 +72,20 @@ export default function TaskFeedPage() {
     new: ""
   });
 
-  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const unsubRef = useRef<(() => void) | null>(null);
 
-const theme = {
-  task: {
-    primary: "#0A84FF",
-    gradient: "linear-gradient(135deg, #5B9DFF 0%, #0A84FF 100%)",
-    glow: "rgba(10, 132, 255, 0.5)",
-  },
-  plan: {
-    primary: "#30D158",
-    gradient: "linear-gradient(135deg, #5BEB7B 0%, #30D158 100%)",
-    glow: "rgba(48, 209, 88, 0.5)",
-  }
-};
-
-  const currentCacheKey: CacheKey = `${activeTab}-${mode}`;
-  const tasks = tasksCache[currentCacheKey];
-  const hasMore = hasMoreMap[currentCacheKey];
+  const theme = {
+    task: {
+      primary: "#0A84FF",
+      gradient: "linear-gradient(135deg, #5B9DFF 0%, #0A84FF 100%)",
+      glow: "rgba(10, 132, 255, 0.5)",
+    },
+    plan: {
+      primary: "#30D158",
+      gradient: "linear-gradient(135deg, #5BEB7B 0%, #30D158 100%)",
+      glow: "rgba(48, 209, 88, 0.5)",
+    }
+  };
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -125,6 +108,7 @@ const theme = {
         setUserLocation({ lat: latitude, lng: longitude });
         vibrate([10, 20, 10]);
         toast.success("Đã xác định vị trí thành công");
+        setLoading(false);
       },
       (err) => {
         if (err.code === 1) toast.error("Bạn đã chặn quyền truy cập vị trí");
@@ -135,107 +119,49 @@ const theme = {
     );
   }, []);
 
-  const buildQuery = useCallback(
-    (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
-      if (!db) return null;
-      const now = Timestamp.now();
-      const constraints: any[] = [
-        where("type", "==", mode),
-        where("visibility", "==", "public"),
-        where("status", "in", ["open", "full", "doing"]),
-        where("deadline", ">", now),
-        orderBy("deadline", "asc"),
-        limit(PAGE_SIZE),
-      ];
-      if (startAfterDoc) constraints.push(startAfter(startAfterDoc));
-      return query(collection(db, "tasks"),...constraints);
-    },
-    [db, mode]
-  );
-
-  const fetchTasks = useCallback(async (isRefresh = false) => {
-    if (!db) return;
-    const key = currentCacheKey;
-
-    if (isRefresh) {
-      setRefreshing(true);
-    } else {
-      setLoadingMore(true);
-    }
-
-    try {
-      const startDoc = isRefresh? undefined : lastDocs[key] || undefined;
-      const q = buildQuery(startDoc);
-      if (!q) return;
-
-      const snap = await getDocs(q);
-      let data = snap.docs.map((doc) => ({
-        id: doc.id,
-       ...doc.data(),
-      })) as FeedTask[];
-
-      setTasksCache(prev => ({
-       ...prev,
-        [key]: isRefresh? data : [...prev[key],...data]
-      }));
-
-      setLastDocs(prev => ({
-       ...prev,
-        [key]: snap.docs[snap.docs.length - 1] || null
-      }));
-
-      setHasMoreMap(prev => ({
-       ...prev,
-        [key]: snap.docs.length === PAGE_SIZE
-      }));
-
-    } catch (err: any) {
-      console.error("Firestore Fetch Error: ", err);
-      if (err.code === "failed-precondition") {
-        toast.error("Thiếu index Firestore. Kiểm tra console để tạo.");
-      } else if (err.code === "permission-denied") {
-        toast.info("Chưa có dữ liệu");
-      } else {
-        toast.error("Tải dữ liệu thất bại");
-      }
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-      setRefreshing(false);
-    }
-  }, [db, buildQuery, lastDocs, currentCacheKey]);
-
+  // 2. CHỈ onSnapshot job mới tạo sau thời điểm load trang, không getDocs lại
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser ||!db) return;
+    unsubRef.current?.();
 
-    const key = currentCacheKey;
-    if (tasksCache[key].length === 0 && hasMoreMap[key]) {
-      setLoading(true);
-      fetchTasks(true);
-    } else {
+    // Nếu đã có initialJobs thì chỉ listen job mới hơn
+    const lastCreatedAt = initialJobs[0]?.createdAt || Timestamp.now();
+    
+    const now = Timestamp.now();
+    const q = query(
+      collection(db, "tasks"),
+      where("type", "==", mode),
+      where("visibility", "==", "public"),
+      where("status", "in", ["open", "full", "doing"]),
+      where("deadline", ">", now),
+      where("createdAt", ">", lastCreatedAt), // Chỉ lấy job mới
+      orderBy("createdAt", "desc"),
+      limit(20)
+    );
+
+    unsubRef.current = onSnapshot(q, (snap) => {
+      const newJobs = snap.docChanges()
+       .filter(change => change.type === "added")
+       .map(doc => ({ id: doc.doc.id,...doc.doc.data() } as FeedTask));
+      
+      if (newJobs.length > 0) {
+        setTasks(prev => [...newJobs,...prev]);
+        toast.success(`Có ${newJobs.length} ${mode === "task"? "task" : "plan"} mới`);
+      }
       setLoading(false);
-    }
-  }, [mode, activeTab, currentUser]);
+    }, (err) => {
+      console.error("Snapshot error:", err);
+      setLoading(false);
+    });
+
+    return () => unsubRef.current?.();
+  }, [currentUser, db, mode, initialJobs]);
 
   useEffect(() => {
     if (activeTab === "nearby" &&!userLocation) {
       requestLocation();
     }
   }, [activeTab, userLocation, requestLocation]);
-
-  useEffect(() => {
-    if (!loadMoreRef.current) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && hasMore &&!loading &&!loadingMore &&!refreshing) {
-          fetchTasks(false);
-        }
-      },
-      { threshold: 0.1, rootMargin: "200px" }
-    );
-    observer.observe(loadMoreRef.current);
-    return () => observer.disconnect();
-  }, [hasMore, loading, loadingMore, refreshing, fetchTasks]);
 
   const handleSearchChange = useCallback((filter: TabId, query: string) => {
     setSearchQueries(prev => ({...prev, [filter]: query }));
@@ -284,112 +210,96 @@ const theme = {
   }, []);
 
   const handleTaskUpdate = useCallback((taskId: string, updates: Partial<FeedTask>) => {
-    setTasksCache(prev => ({
-     ...prev,
-      [currentCacheKey]: prev[currentCacheKey].map(t =>
-        t.id === taskId? ({...t,...updates } as FeedTask) : t
-      )
-    }));
+    setTasks(prev => prev.map(t =>
+      t.id === taskId? ({...t,...updates } as FeedTask) : t
+    ));
     if (updates.status === "completed") {
       vibrate([10, 20, 10]);
     }
-  }, [currentCacheKey]);
+  }, []);
 
   const handleDelete = useCallback((id: string) => {
-    setTasksCache(prev => ({
-     ...prev,
-      [currentCacheKey]: prev[currentCacheKey].filter(t => t.id!== id)
-    }));
-  }, [currentCacheKey]);
+    setTasks(prev => prev.filter(t => t.id!== id));
+  }, []);
+
+  const handleRefresh = useCallback(() => {
+    vibrate(10);
+    setRefreshing(true);
+    // Reload trang để lấy ISR mới từ server
+    window.location.reload();
+  }, []);
 
   return (
     <>
-      <Toaster richColors position="top-center" />
-      {/* FIX: Xóa min-h-screen, không tự scroll */}
       <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 select-none">
-<div className="sticky top-0 z-40 bg-white dark:bg-zinc-950">
-    <div className="px-4 pt-4 pb-2">
-<div className="relative h-16 rounded-2xl p-1.5 bg-white dark:bg-zinc-900">
+        <div className="sticky top-0 z-40 bg-white dark:bg-zinc-950">
+          <div className="px-4 pt-4 pb-2">
+            <div className="relative h-16 rounded-2xl p-1.5 bg-white dark:bg-zinc-900">
+              <motion.div
+                className="absolute top-1.5 bottom-1.5 rounded-xl overflow-hidden pointer-events-none"
+                animate={{
+                  left: mode === "task"? "6px" : "calc(50% + 3px)",
+                  width: "calc(50% - 9px)"
+                }}
+                transition={{
+                  type: "spring",
+                  stiffness: 380,
+                  damping: 35,
+                  mass: 0.8
+                }}
+              >
+                <motion.div
+                  className="absolute inset-0 rounded-xl"
+                  animate={{
+                    background: mode === "task"
+                  ? "linear-gradient(135deg, #E3F2FF 0%, #D1E9FF 40%, #B8DEFF 100%)"
+                      : "linear-gradient(135deg, #E8FFF0 0%, #D4F7E0 40%, #BEF0CE 100%)",
+                    boxShadow: mode === "task"
+                  ? "inset 0 2px 4px rgba(10,132,255,0.25), inset 0 -2px 2px rgba(0,81,213,0.15), 0 0 20px rgba(10,132,255,0.3)"
+                      : "inset 0 2px 4px rgba(48,209,88,0.25), inset 0 -2px 2px rgba(40,180,76,0.15), 0 0 20px rgba(48,209,88,0.3)"
+                  }}
+                  transition={{ duration: 0.6 }}
+                />
+                <motion.div
+                  className="absolute -inset-3 rounded-xl blur-2xl opacity-80"
+                  animate={{
+                    background: mode === "task"
+                    ? "radial-gradient(circle, rgba(10,132,255,0.7) 0%, transparent 70%)"
+                      : "radial-gradient(circle, rgba(48,209,88,0.7) 0%, transparent 70%)"
+                  }}
+                  transition={{ duration: 0.6 }}
+                />
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/70 via-white/40 to-transparent dark:from-white/20 dark:via-white/10" />
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-90" />
+                <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/60 to-transparent" />
+              </motion.div>
 
-
-
-    {/* Pill trượt có nền */}
-    
-    <motion.div
-className="absolute top-1.5 bottom-1.5 rounded-xl overflow-hidden pointer-events-none"
-      animate={{
-        left: mode === "task" ? "6px" : "calc(50% + 3px)",
-        width: "calc(50% - 9px)"
-      }}
-      transition={{
-        type: "spring",
-        stiffness: 380,
-        damping: 35,
-        mass: 0.8
-      }}
-    >
-      {/* Nền pill gradient + shadow */}
-      <motion.div
-        className="absolute inset-0 rounded-xl"
-        animate={{
-          background: mode === "task"
-         ? "linear-gradient(135deg, #E3F2FF 0%, #D1E9FF 40%, #B8DEFF 100%)"
-            : "linear-gradient(135deg, #E8FFF0 0%, #D4F7E0 40%, #BEF0CE 100%)",
-          boxShadow: mode === "task"
-         ? "inset 0 2px 4px rgba(10,132,255,0.25), inset 0 -2px 2px rgba(0,81,213,0.15), 0 0 20px rgba(10,132,255,0.3)"
-            : "inset 0 2px 4px rgba(48,209,88,0.25), inset 0 -2px 2px rgba(40,180,76,0.15), 0 0 20px rgba(48,209,88,0.3)"
-        }}
-        transition={{ duration: 0.6 }}
-      />
-
-      {/* Outer glow */}
-      <motion.div
-        className="absolute -inset-3 rounded-xl blur-2xl opacity-80"
-        animate={{
-          background: mode === "task"
-           ? "radial-gradient(circle, rgba(10,132,255,0.7) 0%, transparent 70%)"
-            : "radial-gradient(circle, rgba(48,209,88,0.7) 0%, transparent 70%)"
-        }}
-        transition={{ duration: 0.6 }}
-      />
-
-      {/* Glass reflection */}
-      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/70 via-white/40 to-transparent dark:from-white/20 dark:via-white/10" />
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-90" />
-      <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/60 to-transparent" />
-    </motion.div>
-
-    {/* Divider */}
-
-
-    {/* Icon to, bỏ text */}
-    <div className="relative z-10 flex h-full">
-      <button
-        onClick={() => {
-          if (mode!== "task") {
-            vibrate([10, 25, 10]);
-            setMode("task");
-          }
-        }}
-        className="flex-1 flex items-center justify-center active:scale-90 transition-transform"
-      >
-        <Briefcase3D active={mode === "task"} />
-      </button>
-
-      <button
-        onClick={() => {
-          if (mode!== "plan") {
-            vibrate([10, 25, 10]);
-            setMode("plan");
-          }
-        }}
-        className="flex-1 flex items-center justify-center active:scale-90 transition-transform"
-      >
-        <Palm3D active={mode === "plan"} />
-      </button>
-    </div>
-  </div>
-</div>
+              <div className="relative z-10 flex h-full">
+                <button
+                  onClick={() => {
+                    if (mode!== "task") {
+                      vibrate([10, 25, 10]);
+                      setMode("task");
+                    }
+                  }}
+                  className="flex-1 flex items-center justify-center active:scale-90 transition-transform"
+                >
+                  <Briefcase3D active={mode === "task"} />
+                </button>
+                <button
+                  onClick={() => {
+                    if (mode!== "plan") {
+                      vibrate([10, 25, 10]);
+                      setMode("plan");
+                    }
+                  }}
+                  className="flex-1 flex items-center justify-center active:scale-90 transition-transform"
+                >
+                  <Palm3D active={mode === "plan"} />
+                </button>
+              </div>
+            </div>
+          </div>
           <CustomFilterBar
             currentFilter={activeTab}
             onChangeFilter={setActiveTab}
@@ -438,10 +348,7 @@ className="absolute top-1.5 bottom-1.5 rounded-xl overflow-hidden pointer-events
                 </button>
               ) : (
                 <button
-                  onClick={() => {
-                    vibrate(10);
-                    fetchTasks(true);
-                  }}
+                  onClick={handleRefresh}
                   className="px-6 h-11 rounded-xl text-white text-sm font-semibold active:scale-95 transition-all flex items-center gap-2 mx-auto"
                   style={{ background: theme[mode].gradient }}
                 >
@@ -478,7 +385,7 @@ className="absolute top-1.5 bottom-1.5 rounded-xl overflow-hidden pointer-events
             </AnimatePresence>
           )}
 
-          {(loadingMore || refreshing) && (
+          {refreshing && (
             <div className="flex justify-center py-6">
               <FiRefreshCw className="animate-spin" size={24} style={{ color: theme[mode].primary }} />
             </div>
@@ -491,15 +398,13 @@ className="absolute top-1.5 bottom-1.5 rounded-xl overflow-hidden pointer-events
             />
           )}
 
-          <div ref={loadMoreRef} className="h-4" />
-          {/* FIX: Thêm spacer 24px để không bị tab bar che */}
           <div className="h-10" />
         </div>
       </div>
 
       <style jsx global>{`
-       .scrollbar-hide::-webkit-scrollbar { display: none; }
-       .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale }
       `}</style>
     </>
