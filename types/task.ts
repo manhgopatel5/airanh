@@ -15,7 +15,7 @@ export type TaskStatus =
 
 export type Visibility = "public" | "private" | "friends" | "unlisted";
 export type BudgetType = "fixed" | "hourly" | "negotiable";
-export type CostType = "free" | "share" | "host";
+export type CostType = "free" | "share" | "host" | "ticket";
 export type PaymentMethod = "app" | "cash"; 
 
 export type PlanParticipantRole = "owner" | "admin" | "member";
