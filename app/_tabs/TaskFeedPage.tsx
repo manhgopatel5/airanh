@@ -12,7 +12,6 @@ import {
   query,
   where,
   onSnapshot,
-  orderBy,
   limit,
   Timestamp,
 } from "firebase/firestore";
@@ -52,8 +51,11 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
   const { mode = "task", setMode } = useAppStore();
   const [activeTab, setActiveTab] = useState<TabId>("hot");
 
-  const [tasks, setTasks] = useState<FeedTask[]>(initialJobs);
-  const [loading, setLoading] = useState(initialJobs.length === 0);
+  // FIX 1: Lọc initialJobs theo mode ngay từ đầu
+  const [tasks, setTasks] = useState<FeedTask[]>(() =>
+    initialJobs.filter(j => j.type === mode)
+  );
+  const [loading, setLoading] = useState(initialJobs.filter(j => j.type === mode).length === 0);
   const [refreshing, setRefreshing] = useState(false);
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
@@ -112,49 +114,51 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
     );
   }, []);
 
-  // FIX: Bỏ toast "Có X task mới", chỉ update list im lặng
+  // FIX 2: Reset tasks khi đổi mode để không lẫn task/plan
+  useEffect(() => {
+    setTasks(initialJobs.filter(j => j.type === mode));
+    setLoading(initialJobs.filter(j => j.type === mode).length === 0);
+  }, [mode, initialJobs]);
+
+  // FIX 3: onSnapshot chỉ lấy đúng type=mode
   useEffect(() => {
     if (!currentUser ||!db) return;
     unsubRef.current?.();
 
-    const lastCreatedAt = initialJobs[0]?.createdAt
-? Timestamp.fromDate(new Date(initialJobs[0].createdAt))
-      : Timestamp.now();
-
     const now = Timestamp.now();
     const q = query(
       collection(db, "tasks"),
-      where("type", "==", mode),
+      where("type", "==", mode), // FIX: Chỉ lấy đúng mode hiện tại
       where("visibility", "==", "public"),
       where("status", "in", ["open", "full", "doing"]),
       where("deadline", ">", now),
-      where("createdAt", ">", lastCreatedAt),
-      orderBy("createdAt", "desc"),
       limit(20)
     );
 
     unsubRef.current = onSnapshot(q, (snap) => {
-      const newJobs = snap.docChanges()
-  .filter(change => change.type === "added")
-  .map(change => {
-          const data = change.doc.data();
-          return {
-            id: change.doc.id,
-      ...data,
-            createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
-            updatedAt: data.updatedAt?.toDate?.()?.toISOString() || null,
-            deadline: data.deadline?.toDate?.()?.toISOString() || null,
-            eventDate: data.eventDate?.toDate?.()?.toISOString() || null,
-            endDate: data.endDate?.toDate?.()?.toISOString() || null,
-            startDate: data.startDate?.toDate?.()?.toISOString() || null,
-            applicationDeadline: data.applicationDeadline?.toDate?.()?.toISOString() || null,
-          } as FeedTask;
-        });
+      const newJobs = snap.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+   ...data,
+          createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
+          updatedAt: data.updatedAt?.toDate?.()?.toISOString() || null,
+          deadline: data.deadline?.toDate?.()?.toISOString() || null,
+          eventDate: data.eventDate?.toDate?.()?.toISOString() || null,
+          endDate: data.endDate?.toDate?.()?.toISOString() || null,
+          startDate: data.startDate?.toDate?.()?.toISOString() || null,
+          applicationDeadline: data.applicationDeadline?.toDate?.()?.toISOString() || null,
+        } as FeedTask;
+      })
+      // FIX 4: Double check filter client để chắc chắn
+     .filter(j => j.type === mode &&!j.banned &&!j.hidden)
+     .sort((a, b) => {
+        const aTime = a.createdAt? new Date(a.createdAt).getTime() : 0;
+        const bTime = b.createdAt? new Date(b.createdAt).getTime() : 0;
+        return bTime - aTime;
+      });
 
-      if (newJobs.length > 0) {
-        setTasks(prev => [...newJobs,...prev]);
-        // FIX: XÓA DÒNG NÀY -> toast.success(`Có ${newJobs.length} ${mode === "task"? "task" : "plan"} mới`);
-      }
+      setTasks(newJobs);
       setLoading(false);
     }, (err) => {
       console.error("Snapshot error:", err);
@@ -162,7 +166,7 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
     });
 
     return () => unsubRef.current?.();
-  }, [currentUser, db, mode, initialJobs]);
+  }, [currentUser, db, mode]); // FIX 5: Bỏ initialJobs khỏi deps để không sub lại
 
   useEffect(() => {
     if (activeTab === "nearby" &&!userLocation) {
@@ -175,7 +179,7 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
   }, []);
 
   const filteredTasks = useMemo(() => {
-    let result = tasks.filter(t =>!t.banned &&!t.hidden);
+    let result = tasks.filter(t =>!t.banned &&!t.hidden && t.type === mode); // FIX 6: Lọc lại type lần nữa
 
     const currentQuery = searchQueries[activeTab];
     if (currentQuery) {
@@ -209,7 +213,7 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
     }
 
     return result;
-  }, [tasks, searchQueries, activeTab, userLocation]);
+  }, [tasks, searchQueries, activeTab, userLocation, mode]);
 
   const handleShare = useCallback((task: FeedTask) => {
     vibrate(5);
@@ -258,10 +262,10 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
                   className="absolute inset-0 rounded-xl"
                   animate={{
                     background: mode === "task"
-              ? "linear-gradient(135deg, #E3F2FF 0%, #D1E9FF 40%, #B8DEFF 100%)"
+            ? "linear-gradient(135deg, #E3F2FF 0%, #D1E9FF 40%, #B8DEFF 100%)"
                       : "linear-gradient(135deg, #E8FFF0 0%, #D4F7E0 40%, #BEF0CE 100%)",
                     boxShadow: mode === "task"
-              ? "inset 0 2px 4px rgba(10,132,255,0.25), inset 0 -2px 2px rgba(0,81,213,0.15), 0 0 20px rgba(10,132,255,0.3)"
+            ? "inset 0 2px 4px rgba(10,132,255,0.25), inset 0 -2px 2px rgba(0,81,213,0.15), 0 0 20px rgba(10,132,255,0.3)"
                       : "inset 0 2px 4px rgba(48,209,88,0.25), inset 0 -2px 2px rgba(40,180,76,0.15), 0 0 20px rgba(48,209,88,0.3)"
                   }}
                   transition={{ duration: 0.6 }}
@@ -270,7 +274,7 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
                   className="absolute -inset-3 rounded-xl blur-2xl opacity-80"
                   animate={{
                     background: mode === "task"
-                ? "radial-gradient(circle, rgba(10,132,255,0.7) 0%, transparent 70%)"
+              ? "radial-gradient(circle, rgba(10,132,255,0.7) 0%, transparent 70%)"
                       : "radial-gradient(circle, rgba(48,209,88,0.7) 0%, transparent 70%)"
                   }}
                   transition={{ duration: 0.6 }}
@@ -348,7 +352,7 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
                 <button
                   onClick={requestLocation}
                   className="px-6 h-11 rounded-xl text-white text-sm font-semibold active:scale-95 transition-all flex items-center gap-2 mx-auto"
-                  style={{ background: theme[mode].gradient }}
+                  style={{ background: theme.gradient }}
                 >
                   <FiNavigation /> Bật định vị ngay
                 </button>
@@ -356,7 +360,7 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
                 <button
                   onClick={handleRefresh}
                   className="px-6 h-11 rounded-xl text-white text-sm font-semibold active:scale-95 transition-all flex items-center gap-2 mx-auto"
-                  style={{ background: theme[mode].gradient }}
+                  style={{ background: theme.gradient }}
                 >
                   <FiRefreshCw /> Tải lại
                 </button>
@@ -393,7 +397,7 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
 
           {refreshing && (
             <div className="flex justify-center py-6">
-              <FiRefreshCw className="animate-spin" size={24} style={{ color: theme[mode].primary }} />
+              <FiRefreshCw className="animate-spin" size={24} style={{ color: theme.primary }} />
             </div>
           )}
 
