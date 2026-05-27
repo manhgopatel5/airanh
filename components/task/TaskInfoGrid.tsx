@@ -35,7 +35,7 @@ export default function TaskInfoGrid({ task, applications, theme = "task" }: Pro
         return;
       }
       const totalHours = diff / 3600000;
-      setIsUrgent(totalHours <= 1);
+      setIsUrgent(totalHours <= 5); // Đổi 1h → 5h
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
       const s = Math.floor((diff % 60000) / 1000);
@@ -58,31 +58,41 @@ export default function TaskInfoGrid({ task, applications, theme = "task" }: Pro
   const totalApplied = applications.length;
   const totalSlots = task.totalSlots ?? 0;
 
-  const InfoItem = ({ icon: Icon, label, value, highlight = false, urgent = false }: { 
+  const InfoItem = ({ icon: Icon, label, value, highlight = false, urgent = false, blinking = false }: { 
     icon: any;
     label: string; 
     value: string; 
     highlight?: boolean;
     urgent?: boolean;
+    blinking?: boolean;
   }) => (
     <div className="flex items-start gap-2">
-      <Icon 
-        size={16} 
-        className={`mt-0.5 shrink-0 ${
-          urgent ? 'text-[#FF3B30]' : 
-          highlight ? `text-[${accentColor}]` : 
-          'text-zinc-500 dark:text-zinc-400'
-        }`}
-      />
+      <motion.div
+        animate={blinking ? { opacity: [1, 0.3, 1] } : {}}
+        transition={blinking ? { duration: 1, repeat: Infinity } : {}}
+      >
+        <Icon 
+          size={16} 
+          className={`mt-0.5 shrink-0 ${
+            urgent ? 'text-[#FF3B30]' : 
+            highlight ? `text-[${accentColor}]` : 
+            'text-zinc-500 dark:text-zinc-400'
+          }`}
+        />
+      </motion.div>
       <div>
         <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{label}</p>
-        <p className={`text-sm font-semibold mt-0.5 ${
-          urgent ? 'text-[#FF3B30]' : 
-          highlight ? `text-[${accentColor}]` : 
-          'text-zinc-900 dark:text-zinc-100'
-        }`}>
+        <motion.p 
+          animate={blinking ? { opacity: [1, 0.3, 1] } : {}}
+          transition={blinking ? { duration: 1, repeat: Infinity } : {}}
+          className={`text-sm font-semibold mt-0.5 ${
+            urgent ? 'text-[#FF3B30]' : 
+            highlight ? `text-[${accentColor}]` : 
+            'text-zinc-900 dark:text-zinc-100'
+          }`}
+        >
           {value}
-        </p>
+        </motion.p>
       </div>
     </div>
   );
@@ -122,7 +132,9 @@ export default function TaskInfoGrid({ task, applications, theme = "task" }: Pro
               icon={FiClock}
               label="Hạn chót" 
               value={timeLeft || taskDeadline}
+              highlight={!isUrgent}
               urgent={isUrgent}
+              blinking={isUrgent}
             />
           )}
         </div>
