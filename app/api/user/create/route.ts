@@ -4,7 +4,6 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { nanoid } from 'nanoid';
 
-
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
@@ -61,11 +60,11 @@ export async function POST(req: NextRequest) {
 
       const baseName = name || email?.split('@')[0] || 'User';
       let baseUsername = baseName
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/\s+/g, "")
-      .replace(/[^a-z0-9]/g, "");
+       .toLowerCase()
+       .normalize("NFD")
+       .replace(/[\u0300-\u036f]/g, "")
+       .replace(/\s+/g, "")
+       .replace(/[^a-z0-9]/g, "");
 
       let username = baseUsername || 'user';
       let counter = 1;
@@ -73,30 +72,30 @@ export async function POST(req: NextRequest) {
         username = `${baseUsername}${counter++}`;
       }
 
-      // CHUẨN: displayName bắt buộc, không null
       const displayName = name?.trim() || email?.split('@')[0] || 'User';
       const photoURL = picture || null;
 
       const newUser = {
         uid,
-        displayName, // Đổi từ name -> displayName cho khớp Auth
+        displayName,
         nameLower: displayName.toLowerCase(),
         username,
         userId,
         email: email || null,
         emailVerified: email_verified || false,
-        photoURL, // Đổi từ avatar -> photoURL cho khớp Auth
+        photoURL,
         bio: "",
         isOnline: true,
         lastSeen: FieldValue.serverTimestamp(),
         fcmTokens: [],
-        verified: false, // Thêm field này cho createTask
+        verified: false,
         status: "active" as const,
         searchKeywords: generateSearchKeywords(displayName, userId, username),
         hidden: false,
         deletedAt: null,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
+        onboardingCompleted: false, // <- THÊM DÒNG NÀY
       };
 
       tx.set(userRef, newUser);
