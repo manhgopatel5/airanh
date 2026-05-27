@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useTaskFeed } from "@/hooks/useTaskFeed";
-import TaskFeed from "@/components/task/TaskFeed";
+import TaskFeed from "@/components/TaskFeed";
 import EmptyState from "@/components/EmptyState";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
