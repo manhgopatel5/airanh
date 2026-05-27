@@ -212,7 +212,7 @@ export default function CommentSection({
 
         <div className="h-4" />
 
-        <div className="sticky bottom-0 z-20 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl py-3">
+        <div className="sticky bottom-0 z-20 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl py-2">
           {replyTo && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
