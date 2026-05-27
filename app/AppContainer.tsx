@@ -13,12 +13,10 @@ import { useTabBarHeight } from "@/hooks/useTabBarHeight";
 import JobSkeleton from "@/components/JobSkeleton";
 import type { FeedTask } from '@/types/task';
 
-// 1. CHỈ 1 FEED: TaskFeedPage xử lý cả task + plan
 const TaskFeedPage = dynamic(() => import('./_tabs/TaskFeedPage'), {
   loading: () => <JobSkeleton count={5} />,
   ssr: true
 })
-// XÓA: PlanFeedPage
 
 const ChatClient = dynamic(() => import('./chat/ChatClient'), {
   ssr: false,
@@ -46,8 +44,7 @@ interface AppContainerProps {
 export default function AppContainer({ initialJobs = [] }: AppContainerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  // mode vẫn cần để TaskFeedPage biết filter task hay plan
-  const mode = useAppStore((s) => s.mode);
+  // XÓA mode: TaskFeedPage tự đọc từ store
   const unreadCount = useAppStore((s) => s.unreadCount);
   const [mounted, setMounted] = useState(false);
 
@@ -107,10 +104,10 @@ export default function AppContainer({ initialJobs = [] }: AppContainerProps) {
     router.push(`/create/${type}`);
   }, [router]);
 
-  // 2. SỬA: Chỉ render TaskFeedPage, truyền mode để nó tự filter
   const renderCurrentTab = () => {
     switch (currentMainTab) {
       case "home":
+        // TaskFeedPage tự đọc mode từ useAppStore và tự filter
         return <TaskFeedPage initialJobs={initialJobs} />
       case "messages":
         return <ChatClient />
@@ -176,8 +173,8 @@ export default function AppContainer({ initialJobs = [] }: AppContainerProps) {
       )}
 
       <style jsx global>{`
-     .scrollbar-hide::-webkit-scrollbar{display:none}
-     .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
+    .scrollbar-hide::-webkit-scrollbar{display:none}
+    .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
         html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
         body{overscroll-behavior-y:contain}
       `}</style>
