@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { Toaster } from "sonner";
+import type { FeedTask } from "@/types/task"; // FIX: Import FeedTask
 
 import { useTask } from "@/hooks/useTask";
 import { useComments } from "@/hooks/useComments";
@@ -24,7 +25,7 @@ export default function TaskDetailPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const {
-    task,
+    task, // Giờ là FeedTask | null
     owner,
     applications,
     loading,
@@ -46,7 +47,7 @@ export default function TaskDetailPage() {
   } = useComments(task?.id);
 
   const [showImageGallery, setShowImageGallery] = useState<number | null>(null);
-  const [shareTask, setShareTask] = useState<typeof task | null>(null);
+  const [shareTask, setShareTask] = useState<FeedTask | null>(null); // FIX: FeedTask
 
   useEffect(() => {
     const auth = getFirebaseAuth();
@@ -60,9 +61,7 @@ export default function TaskDetailPage() {
   return (
     <>
       <Toaster richColors position="top-center" />
-      {/* QUAN TRỌNG: Thêm overflow-hidden để chặn body scroll */}
       <div className="h-[100dvh] flex flex-col bg-white dark:bg-zinc-950 overflow-hidden">
-        {/* Phần scroll: header + content + comment list */}
         <div className="flex-1 overflow-y-auto overscroll-contain">
           <div className="px-3 pt-2">
             <TaskDetailHeader
@@ -97,12 +96,11 @@ export default function TaskDetailPage() {
                 isFull={isFull}
                 isOwner={isOwner}
                 onApplied={reloadTask}
-                onShare={() => setShareTask(task)}
+                onShare={() => setShareTask(task)} // task giờ là FeedTask
               />
             )}
           </div>
 
-          {/* CommentSection nằm trong scroll, input sticky */}
           <CommentSection
             taskOwnerId={task.userId}
             comments={comments}
@@ -126,7 +124,7 @@ export default function TaskDetailPage() {
 
       {shareTask && (
         <ShareTaskModal
-          task={shareTask}
+          task={shareTask} // FeedTask
           onClose={() => setShareTask(null)}
         />
       )}
