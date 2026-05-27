@@ -70,7 +70,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate,
   if (!task?.id ||!task?.title ||!task?.type ||!task?.status) return null;
 
   const isOwner = user?.uid === task.userId;
-  const applicants = task.applicants?? [];
+
 
   const vibrate = (ms = 8) => {
     if ("vibrate" in navigator) navigator.vibrate(ms);
