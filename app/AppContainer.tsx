@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import dynamic from 'next/dynamic';
-import { useAuth } from "@/lib/AuthContext";
+
 import { useAppStore } from "@/store/app";
 import { AnimatePresence, motion } from "framer-motion";
 import { Toaster } from "sonner";
