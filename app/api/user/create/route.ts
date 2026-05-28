@@ -1,33 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { getAuth } from 'firebase-admin/auth';
+import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import { nanoid } from 'nanoid';
-
-const projectId = process.env.FIREBASE_PROJECT_ID;
-const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-
-if (!projectId ||!clientEmail ||!privateKey) {
-  throw new Error("Missing Firebase Admin credentials: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY");
-}
-
-if (!getApps().length) {
-  initializeApp({
-    credential: cert({
-      projectId,
-      clientEmail,
-      privateKey,
-    }),
-  });
-}
-
-const db = getFirestore();
-const adminAuth = getAuth();
 
 const generateSearchKeywords = (name: string, userId: string, username?: string): string[] => {
   const keywords = new Set<string>();
   const nameLower = name.toLowerCase().trim();
+
   if (nameLower) {
     keywords.add(nameLower);
     keywords.add(nameLower.replace(/\s+/g, ""));
@@ -38,38 +17,56 @@ const generateSearchKeywords = (name: string, userId: string, username?: string)
       if (w.length >= 2) keywords.add(w);
     });
   }
+
   keywords.add(userId.toLowerCase());
   if (username) keywords.add(username.toLowerCase());
+
   return Array.from(keywords).filter((k) => k.length >= 2);
 };
 
 export async function POST(req: NextRequest) {
   try {
-    const token = req.headers.get('Authorization')?.split('Bearer ')[1];
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // 1. Verify token
+    const authHeader = req.headers.get('Authorization');
+    const token = authHeader?.split('Bearer ')[1];
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    const decodedToken = await adminAuth.verifyIdToken(token);
+    const auth = adminAuth();
+    const decodedToken = await auth.verifyIdToken(token);
     const { uid, email, name, picture, email_verified } = decodedToken;
 
+    // 2. Check user đã tồn tại chưa
+    const db = adminDb();
     const userRef = db.collection('users').doc(uid);
     const userSnap = await userRef.get();
-    if (userSnap.exists) return NextResponse.json({ success: true });
 
+    if (userSnap.exists) {
+      return NextResponse.json({ success: true, existed: true });
+    }
+
+    // 3. Tạo user mới trong transaction
     await db.runTransaction(async (tx) => {
-      let userId = `AIR${nanoid(6).toUpperCase()}`;
+      const userId = `AIR${nanoid(6).toUpperCase()}`;
 
-      const baseName = name || email?.split('@')[0] || 'User';
+      // Generate username unique
+      const baseName = name || email?.split('@')[0] || 'user';
       let baseUsername = baseName
        .toLowerCase()
        .normalize("NFD")
        .replace(/[\u0300-\u036f]/g, "")
        .replace(/\s+/g, "")
-       .replace(/[^a-z0-9]/g, "");
+       .replace(/[^a-z0-9]/g, "")
+       .slice(0, 20); // Giới hạn độ dài
 
       let username = baseUsername || 'user';
       let counter = 1;
+
+      // Check username trùng trong transaction
       while ((await tx.get(db.collection('usernames').doc(username))).exists) {
         username = `${baseUsername}${counter++}`;
+        if (counter > 100) throw new Error('Cannot generate unique username');
       }
 
       const displayName = name?.trim() || email?.split('@')[0] || 'User';
@@ -95,16 +92,29 @@ export async function POST(req: NextRequest) {
         deletedAt: null,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
-        onboardingCompleted: false, // <- THÊM DÒNG NÀY
+        onboardingCompleted: false, // QUAN TRỌNG
       };
 
       tx.set(userRef, newUser);
       tx.set(db.collection('usernames').doc(username), { uid });
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, existed: false });
+
   } catch (e: any) {
     console.error("Create user error:", e);
-    return NextResponse.json({ error: e.message || "Internal error" }, { status: 500 });
+
+    // Trả error code cụ thể
+    if (e.code === 'auth/id-token-expired') {
+      return NextResponse.json({ error: 'Token expired' }, { status: 401 });
+    }
+    if (e.code === 'auth/argument-error') {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+
+    return NextResponse.json(
+      { error: e.message || "Internal error" },
+      { status: 500 }
+    );
   }
 }
