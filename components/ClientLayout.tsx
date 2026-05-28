@@ -3,7 +3,6 @@
 import { usePathname, useRouter } from "next/navigation";
 import FCMProvider from "@/components/FCMProvider";
 import { useEffect, useMemo } from "react";
-import BottomNav from "@/components/BottomNav";
 import { Toaster } from "react-hot-toast";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -31,10 +30,6 @@ export default function ClientLayout({ children }: Props) {
     [pathname]
   );
 
-  const isChatDetail = /^\/chat\/[^/]+$/.test(pathname);
-  const isCreate = pathname.startsWith("/create");
-
-  /* ================= REDIRECT ================= */
   useEffect(() => {
     if (loading) return;
     
@@ -59,22 +54,15 @@ export default function ClientLayout({ children }: Props) {
     }
   }, [user, userData, loading, isPublic, pathname, router]);
 
-  // Trang nào có BottomNav
-  const exactBottomNavRoutes = ["/", "/orders", "/notifications", "/profile"];
-  const shouldShowBottomNav = exactBottomNavRoutes.includes(pathname) &&!isChatDetail &&!isCreate;
-
   return (
-    // 1. Bỏ overflow-hidden ở đây. Để main tự scroll
     <div className="h-dvh flex flex-col bg-gray-50 dark:bg-zinc-950 font-sans">
       {user && <FCMProvider userId={user.uid} />}
 
-      {/* 2. Main không cần pb-20 nữa vì BottomNav của bạn đã là floating */}
       <main className="flex-1 overflow-y-auto">
         {children}
       </main>
 
-      {/* 3. QUAN TRỌNG: KHÔNG BỌC BottomNav. Để nó tự lo fixed + z-index */}
-      {shouldShowBottomNav &&!isPublic && user && <BottomNav />}
+      {/* BỎ HẾT BOTTOMNAV Ở ĐÂY. Để page tự import */}
 
       <Toaster
         position="top-center"
