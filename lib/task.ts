@@ -89,6 +89,19 @@ const validateCoords = (lat?: number | null, lng?: number | null) => {
   }
 };
 
+const getUserDisplayInfo = (user: User, userData: any) => {
+  const displayName = userData.displayName || user.email?.split('@')[0] || `User${user.uid.slice(0,4)}`;
+  const photoURL = userData.photoURL || user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0A84FF&color=fff&bold=true`;
+  const username = userData.username || slugify(displayName);
+  const userShortId = userData.userId || `AIR${user.uid.slice(0, 6).toUpperCase()}`;
+
+  if (displayName === "Ẩn danh") {
+    throw new TaskError("Vui lòng cập nhật tên hiển thị trong Profile");
+  }
+
+  return { displayName, photoURL, username, userShortId };
+};
+
 /* ================= CREATE TASK ================= */
 export async function createTask(
   data: CreateTaskInput,
@@ -124,11 +137,7 @@ export async function createTask(
   const category = data.category || "other";
   const tags = cleanTags(data.tags || [], data.title, category);
 
-  // FIX: Fallback cho user chưa onboard
-  const displayName = userData.displayName || user.displayName || "Ẩn danh";
-  const photoURL = userData.photoURL || user.photoURL || null;
-  const username = userData.username || slugify(displayName);
-  const userShortId = userData.userId || `AIR${user.uid.slice(0, 6).toUpperCase()}`;
+  const { displayName, photoURL, username, userShortId } = getUserDisplayInfo(user, userData);
 
   const taskData: Omit<TaskItem, "id"> = {
     type: "task",
@@ -231,16 +240,12 @@ export async function createPlan(
     order: idx,
   }));
 
-// THAY ĐOẠN NÀY trong createTask và createPlan
-const displayName = userData.displayName || user.email?.split('@')[0] || "Người dùng";
-const photoURL = userData.photoURL || user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0A84FF&color=fff`;
-const username = userData.username || slugify(displayName);
-const userShortId = userData.userId || `AIR${user.uid.slice(0, 6).toUpperCase()}`;
+  const { displayName, photoURL, username, userShortId } = getUserDisplayInfo(user, userData);
 
   const ownerParticipant: PlanParticipant = {
     userId: user.uid,
     userName: displayName,
-    userAvatar: photoURL || "",
+    userAvatar: photoURL,
     role: "owner",
     joinedAt: Timestamp.now(),
     permissions: {
@@ -266,7 +271,7 @@ const userShortId = userData.userId || `AIR${user.uid.slice(0, 6).toUpperCase()}
     attachments: data.attachments || [],
     userId: user.uid,
     userName: displayName,
-    userAvatar: photoURL || "",
+    userAvatar: photoURL,
     userUsername: username,
     userShortId: userShortId,
     status: "open",
@@ -342,7 +347,7 @@ export async function updateTask(
     }
 
     const newSearchKeywords = updates.title || updates.description || updates.tags || updates.category
-  ? generateTaskSearchKeywords({
+ ? generateTaskSearchKeywords({
           title: updates.title || data.title,
           description: updates.description || data.description,
           tags: updates.tags || data.tags,
@@ -352,7 +357,7 @@ export async function updateTask(
       : data.searchKeywords;
 
     transaction.update(taskRef, {
-  ...updates,
+ ...updates,
       searchKeywords: newSearchKeywords,
       edited: true,
       editedAt: serverTimestamp(),
@@ -394,7 +399,7 @@ export async function updatePlan(
     }
 
     const newSearchKeywords = updates.title || updates.description || updates.tags || updates.category
-  ? generateTaskSearchKeywords({
+ ? generateTaskSearchKeywords({
           title: updates.title || data.title,
           description: updates.description || data.description,
           tags: updates.tags || data.tags,
@@ -404,7 +409,7 @@ export async function updatePlan(
       : data.searchKeywords;
 
     transaction.update(planRef, {
-  ...updates,
+ ...updates,
       searchKeywords: newSearchKeywords,
       edited: true,
       editedAt: serverTimestamp(),
@@ -569,11 +574,14 @@ export async function joinTask(taskId: string, user: User): Promise<void> {
     if (task.userId === user.uid) throw new TaskError("Không thể tham gia công việc của chính mình");
     if (participantSnap.exists()) throw new TaskError("Bạn đã tham gia");
 
+    const displayName = user.displayName || user.email?.split('@')[0] || `User${user.uid.slice(0,4)}`;
+    const photoURL = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0A84FF&color=fff&bold=true`;
+
     const participant = {
       taskId,
       userId: user.uid,
-      userName: user.displayName || "Ẩn danh",
-      userAvatar: user.photoURL || "",
+      userName: displayName,
+      userAvatar: photoURL,
       joinedAt: Timestamp.now(),
       status: "joined" as const,
     };
@@ -626,10 +634,13 @@ export async function joinPlan(taskId: string, user: User, inviteCode?: string):
       throw new TaskError("Kế hoạch cần duyệt, chưa hỗ trợ");
     }
 
+    const displayName = user.displayName || user.email?.split('@')[0] || `User${user.uid.slice(0,4)}`;
+    const photoURL = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0A84FF&color=fff&bold=true`;
+
     const planParticipant: PlanParticipant = {
       userId: user.uid,
-      userName: user.displayName || "Ẩn danh",
-      userAvatar: user.photoURL || "",
+      userName: displayName,
+      userAvatar: photoURL,
       role: "member",
       joinedAt: Timestamp.now(),
       permissions: {
@@ -644,8 +655,8 @@ export async function joinPlan(taskId: string, user: User, inviteCode?: string):
     const participant = {
       taskId,
       userId: user.uid,
-      userName: user.displayName || "Ẩn danh",
-      userAvatar: user.photoURL || "",
+      userName: displayName,
+      userAvatar: photoURL,
       joinedAt: Timestamp.now(),
       status: "joined" as const,
     };
@@ -686,7 +697,7 @@ export async function toggleMilestone(
         if (!canToggle) throw new TaskError("Bạn không có quyền thay đổi mốc này");
 
         return {
-      ...m,
+     ...m,
           completed:!m.completed,
           completedAt: m.completed? undefined : Timestamp.now(),
         };
