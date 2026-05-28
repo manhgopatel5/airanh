@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseStorage, getFirebaseDB } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { collection, query, where, onSnapshot, getDocs, getDoc, Timestamp } from "firebase/firestore";
+import { collection, query, where, onSnapshot, getDocs, Timestamp } from "firebase/firestore";
 import { createTask } from "@/lib/task";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
