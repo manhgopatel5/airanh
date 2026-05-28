@@ -25,9 +25,9 @@ export async function GET(request: Request) {
 
   try {
     let q = db.collection('tasks')
-     .where('type', '==', type)
-     .select('slug','shortId','title','description','type','status','userId','userName','userAvatar','price','currency','totalSlots','joined','budgetType','category','tags','images','viewCount','likeCount','commentCount','location','banned','hidden','appliedCount','createdAt','updatedAt','deadline')
-     .limit(10)
+   .where('type', '==', type) // FIX 1: Chỉ where type 1 lần ở đây
+   .select('slug','shortId','title','description','type','status','userId','userName','userAvatar','price','currency','totalSlots','joined','budgetType','category','tags','images','viewCount','likeCount','commentCount','location','banned','hidden','appliedCount','createdAt','updatedAt','deadline')
+   .limit(10)
 
     // Build query theo tab
     switch (tab) {
@@ -47,8 +47,10 @@ export async function GET(request: Request) {
         q = q.where('assignees', 'array-contains', uid).where('status', '==', 'completed')
         break
       case 'expired':
+        // FIX 2: Bỏ where('type') trùng. Chỉ cho task mới có deadline
+        if (type!== 'task') return NextResponse.json([])
         const sevenDaysAgo = Timestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
-        q = q.where('userId', '==', uid).where('type', '==', 'task').where('deadline', '<', now).where('deadline', '>', sevenDaysAgo)
+        q = q.where('userId', '==', uid).where('deadline', '<', now).where('deadline', '>', sevenDaysAgo)
         break
       case 'cancelled':
         q = q.where('userId', '==', uid).where('status', '==', 'cancelled')
@@ -60,14 +62,14 @@ export async function GET(request: Request) {
       const d = doc.data()
       return {
         id: doc.id,
-       ...d,
+      ...d,
         createdAt: d.createdAt?.toDate?.()?.toISOString() || null,
         updatedAt: d.updatedAt?.toDate?.()?.toISOString() || null,
         deadline: d.deadline?.toDate?.()?.toISOString() || null,
       } as FeedTask
     })
-   .filter(t =>!t.banned &&!t.hidden)
-   .sort((a, b) => {
+  .filter(t =>!t.banned &&!t.hidden)
+  .sort((a, b) => {
       const aTime = a.createdAt? new Date(a.createdAt).getTime() : 0
       const bTime = b.createdAt? new Date(b.createdAt).getTime() : 0
       return bTime - aTime
