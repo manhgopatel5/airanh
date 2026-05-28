@@ -6,10 +6,9 @@ import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { useAppStore } from "@/store/app";
 import {
-  doc, onSnapshot, updateDoc, serverTimestamp, getDoc, setDoc
+  doc, onSnapshot, updateDoc, serverTimestamp, getDoc, setDoc, Timestamp
 } from "firebase/firestore";
 import imageCompression from 'browser-image-compression';
-import type { Timestamp } from "firebase/firestore";
 import {
   getFirebaseDB,
   getFirebaseAuth,
@@ -20,7 +19,7 @@ import {
   HelpCircle, LogOut, User, Shield, Lock,
   Camera, Check, QrCode, Share2, Settings,
   Circle, Bell,
-  Mail, Phone, Monitor, Ban, HardDrive
+  Mail, Phone, Monitor, Ban, HardDrive, X
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import type { UploadTask } from "firebase/storage";
@@ -47,6 +46,7 @@ type UserData = {
   nameLower: string;
   username?: string;
   status: "active" | "banned" | "deleted" | "deactivated";
+  lastNameChangeAt?: Timestamp; // NEW
 };
 
 export default function ProfileTabContent() {
@@ -60,7 +60,7 @@ export default function ProfileTabContent() {
 
   const [userData, setUserData] = useState<UserData | null>(null);
   const [displayName, setDisplayName] = useState("");
-  const [editingName, setEditingName] = useState(false);
+  const [showNameModal, setShowNameModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -69,7 +69,7 @@ export default function ProfileTabContent() {
   const uploadTaskRef = useRef<UploadTask | null>(null);
 
   const accentGradient = isPlan
-   ? "from-green-500 to-emerald-500"
+  ? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-600";
 
   useEffect(() => {
@@ -82,7 +82,6 @@ export default function ProfileTabContent() {
       if (snap.exists()) {
         const data = { uid: snap.id,...snap.data() } as UserData;
         setUserData(data);
-        // FIX: Fallback email nếu displayName rỗng
         setDisplayName(data.displayName || user.email?.split('@')[0] || `User${data.userId?.slice(-4) || user.uid.slice(0,4)}`);
         if (user &&!user.emailVerified &&!data.emailVerified) {
           router.replace("/verify-email");
@@ -116,31 +115,74 @@ export default function ProfileTabContent() {
     createId().catch(() => {});
   }, [user, userData, db]);
 
+  // FIX: Check 3 tháng + validate tên thật
+  const canChangeName = () => {
+    if (!userData?.lastNameChangeAt) return { allowed: true };
+    const lastChange = userData.lastNameChangeAt.toDate();
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    if (lastChange > threeMonthsAgo) {
+      const nextChange = new Date(lastChange);
+      nextChange.setMonth(nextChange.getMonth() + 3);
+      return {
+        allowed: false,
+        nextDate: nextChange.toLocaleDateString('vi-VN')
+      };
+    }
+    return { allowed: true };
+  };
+
+  const validateRealName = (name: string): string | null => {
+    const trimmed = name.trim();
+    if (trimmed.length < 2) return "Tên tối thiểu 2 ký tự";
+    if (trimmed.length > 50) return "Tên tối đa 50 ký tự";
+    // Chỉ cho phép chữ cái, số, dấu cách, dấu tiếng Việt
+    const regex = /^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂẾưăạảấầẩẫậắằẳẵặẹẻẽềềểếỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ\s\d]+$/;
+    if (!regex.test(trimmed)) return "Tên chỉ được chứa chữ cái, số và dấu cách";
+    if (/\s{2,}/.test(trimmed)) return "Không được có 2 dấu cách liên tiếp";
+    return null;
+  };
+
+  const handleOpenNameModal = () => {
+    const check = canChangeName();
+    if (!check.allowed) {
+      toast.error(`Bạn chỉ được đổi tên 1 lần mỗi 3 tháng. Lần đổi tiếp: ${check.nextDate}`);
+      return;
+    }
+    setShowNameModal(true);
+  };
+
   const handleUpdateName = async () => {
-    if (!user ||!displayName.trim() || displayName.length < 2) {
-      toast.error("Tên tối thiểu 2 ký tự");
+    if (!user) return;
+
+    const error = validateRealName(displayName);
+    if (error) {
+      toast.error(error);
       return;
     }
-    if (displayName === userData?.displayName) {
-      setEditingName(false);
-      return;
-    }
-    const oldName = userData?.displayName;
-    setEditingName(false);
+
     const newName = displayName.trim();
+    if (newName === userData?.displayName) {
+      setShowNameModal(false);
+      return;
+    }
+
+    const oldName = userData?.displayName;
+    setShowNameModal(false);
     setUserData((prev) => prev? {...prev, displayName: newName } : null);
+
     try {
-      // FIX: Update cả Auth + Firestore + reload user
       await Promise.all([
         updateProfile(user, { displayName: newName }),
         updateDoc(doc(db, "users", user.uid), {
           displayName: newName,
           nameLower: newName.toLowerCase(),
+          lastNameChangeAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         })
       ]);
-      await user.reload(); // Force reload auth
-      toast.success("Cập nhật tên thành công");
+      await user.reload();
+      toast.success("Cập nhật tên thành công. Bạn có thể đổi lại sau 3 tháng");
       if ("vibrate" in navigator) navigator.vibrate(8);
     } catch {
       toast.error("Cập nhật thất bại");
@@ -149,27 +191,22 @@ export default function ProfileTabContent() {
     }
   };
 
-  
-
-const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file ||!user) return;
     if (!file.type.startsWith("image/")) return toast.error("Chỉ chấp nhận file ảnh");
-
-    // FIX: Cho phép 20MB, nén xuống 1MB
     if (file.size > 20 * 1024 * 1024) return toast.error("Ảnh không được vượt quá 20MB");
 
     setUploading(true);
     setUploadProgress(0);
 
     try {
-      // Nén ảnh trước khi upload
       toast.loading("Đang nén ảnh...");
       const options = {
-        maxSizeMB: 1, // Nén về tối đa 1MB
-        maxWidthOrHeight: 1024, // Resize về 1024px
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1024,
         useWebWorker: true,
-        fileType: 'image/webp', // Chuyển sang webp nhẹ hơn
+        fileType: 'image/webp',
       };
 
       const compressedFile = await imageCompression(file, options);
@@ -250,6 +287,7 @@ const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setShowLogoutModal(false);
+        setShowNameModal(false);
       }
     };
     window.addEventListener("keydown", handleEsc);
@@ -258,7 +296,6 @@ const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
   if (!user ||!userData) return null;
 
-  // FIX: Fallback tên nếu Firestore trống
   const finalDisplayName = userData.displayName || user.email?.split('@')[0] || `User${userData.userId?.slice(-4) || user.uid.slice(0,4)}`;
   const avatarUrl = userData.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(finalDisplayName)}&size=176&background=0A84FF&color=fff&bold=true`;
 
@@ -292,25 +329,9 @@ const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
           </label>
 
           <div className="flex-1 min-w-0">
-            {editingName? (
-              <div className="flex items-center gap-2">
-                <input
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  onBlur={handleUpdateName}
-                  onKeyDown={(e) => e.key === "Enter" && handleUpdateName()}
-                  autoFocus
-                  className="text-2xl font-extrabold border-b-2 border-gray-300 dark:border-zinc-700 outline-none bg-transparent text-gray-900 dark:text-white flex-1 tracking-tight"
-                />
-                <button onClick={handleUpdateName} className={`p-1.5 bg-gradient-to-br ${accentGradient} rounded-full`}>
-                  <Check size={14} className="text-white" />
-                </button>
-              </div>
-            ) : (
-              <h1 onClick={() => setEditingName(true)} className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight cursor-pointer leading-tight">
-                {finalDisplayName}
-              </h1>
-            )}
+            <h1 onClick={handleOpenNameModal} className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight cursor-pointer leading-tight active:opacity-70">
+              {finalDisplayName}
+            </h1>
             <div className="flex items-center gap-1.5 mt-1">
               <Circle className={`w-2 h-2 fill-current ${userData.online? "text-green-500" : "text-gray-400"}`} />
               <span className="text-sm text-gray-500 dark:text-zinc-400 font-medium">
@@ -440,6 +461,55 @@ const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
           />
         </div>
       </div>
+
+      {/* Modal đổi tên */}
+      {showNameModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Đổi tên hiển thị</h2>
+              <button onClick={() => setShowNameModal(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2 block">Tên mới</label>
+                <input
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Nhập tên thật của bạn"
+                  maxLength={50}
+                  className="w-full px-4 py-3 border border-gray-200 dark:border-zinc-700 rounded-xl outline-none bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  autoFocus
+                />
+              </div>
+              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3">
+                <p className="text-sm text-amber-800 dark:text-amber-300 font-medium mb-1">Lưu ý:</p>
+                <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-1 list-disc list-inside">
+                  <li>Mỗi tài khoản chỉ được đổi tên 1 lần mỗi 3 tháng</li>
+                  <li>Vui lòng dùng tên thật, không chứa ký tự đặc biệt</li>
+                  <li>Tên sẽ hiển thị công khai với mọi người</li>
+                </ul>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowNameModal(false)}
+                className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 font-semibold text-gray-700 dark:text-zinc-300 active:scale-95 transition"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleUpdateName}
+                className={`flex-1 py-3 rounded-xl bg-gradient-to-r ${accentGradient} font-semibold text-white active:scale-95 transition`}
+              >
+                Lưu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showLogoutModal && (
         <ProfileModal title="Đăng xuất?" desc="Bạn sẽ cần đăng nhập lại để sử dụng app" onClose={() => setShowLogoutModal(false)} onConfirm={handleLogout} confirmText="Đăng xuất" danger />
