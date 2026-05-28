@@ -496,6 +496,23 @@ export default function ProfileTabContent() {
     return null;
   }
 
+useEffect(() => {
+  const nav = document.querySelector('nav'); // hoặc id/class nav bar của bạn
+  if (!nav) return;
+
+  const shouldHide = showNameModal || showAvatarModal || showCropModal || showLogoutModal;
+  
+  if (shouldHide) {
+    nav.style.display = 'none';
+  } else {
+    nav.style.display = '';
+  }
+
+  return () => {
+    nav.style.display = '';
+  };
+}, [showNameModal, showAvatarModal, showCropModal, showLogoutModal]);
+
   const finalDisplayName =
     userData.displayName ||
     user.email?.split("@")[0] ||
