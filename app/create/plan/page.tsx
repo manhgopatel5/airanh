@@ -419,8 +419,7 @@ const submit = async () => {
     const userSnap = await getDoc(doc(db, "users", user.uid));
 const userData = userSnap.data();
 
-await addDoc(collection(db, 'plans'), {
-  // Fields bạn đã có
+await addDoc(collection(db, 'tasks'), { // ← Đổi 'plans' thành 'tasks'
   title: title.trim(),
   desc: desc.trim(),
   category: category.id,
@@ -442,21 +441,23 @@ await addDoc(collection(db, 'plans'), {
   cover,
   participants: [user?.uid],
   
-  // Fields BẮT BUỘC thêm để hiện feed
-  userId: user.uid, // ← Thêm: để query
-  createdBy: user.uid, // ← Thêm: để filter "của tôi"
-  userName: userData?.displayName || user.email || "Unknown", // ← Thêm: để hiển thị
-  userAvatar: userData?.photoURL || null, // ← Thêm
-  userVerified: userData?.emailVerified || false, // ← Thêm
-  status: "active", // ← Đổi từ 'active' thành 'open' nếu feed dùng 'open'
-  banned: false, // ← Thêm: feed thường filter banned == false
-  likeCount: 0, // ← Thêm
-  commentCount: 0, // ← Thêm
-  viewCount: 0, // ← Thêm
-  likes: [], // ← Thêm
-  savedBy: [], // ← Thêm
-  createdAt: serverTimestamp(), // ← Đổi từ Timestamp.now()
-  updatedAt: serverTimestamp(), // ← Thêm
+  // THÊM 9 DÒNG NÀY:
+  type: "plan", // ← Phân biệt với task
+  userId: user.uid,
+  createdBy: user.uid,
+  userName: userData?.displayName || user.email || "Unknown",
+  userAvatar: userData?.photoURL || null,
+  userVerified: userData?.emailVerified || false,
+  status: "open", // ← Đổi từ "active" thành "open"
+  banned: false,
+  visibility: privacy, // ← Map từ privacy sang visibility
+  likeCount: 0,
+  commentCount: 0,
+  viewCount: 0,
+  likes: [],
+  savedBy: [],
+  createdAt: serverTimestamp(),
+  updatedAt: serverTimestamp(),
 });
     
     localStorage.removeItem("plan_draft");
