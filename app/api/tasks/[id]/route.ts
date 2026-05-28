@@ -1,13 +1,13 @@
 // app/api/tasks/[id]/route.ts
 import { NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase-admin'
-import { FieldValue } from 'firebase-admin/firestore' // THÊM DÒNG NÀY
+import { FieldValue } from 'firebase-admin/firestore'
 import type { FeedTask } from '@/types/task'
 
 export const revalidate = 0
 
 export async function GET(
-  req: Request,
+  _req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -25,7 +25,7 @@ export async function GET(
 
     const task: FeedTask = {
       id: snap.id,
-   ...d,
+     ...d,
       createdAt: d.createdAt?.toDate?.()?.toISOString() || null,
       updatedAt: d.updatedAt?.toDate?.()?.toISOString() || null,
       deadline: d.deadline?.toDate?.()?.toISOString() || null,
@@ -35,7 +35,7 @@ export async function GET(
       applicationDeadline: d.applicationDeadline?.toDate?.()?.toISOString() || null,
     } as FeedTask
 
-    // FIX: Dùng increment thay vì read+write
+    // Tăng viewCount atomic, không block response
     adminDb().collection('tasks').doc(params.id).update({
       viewCount: FieldValue.increment(1)
     }).catch(() => {})
