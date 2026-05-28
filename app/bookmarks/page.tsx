@@ -97,18 +97,17 @@ export default function BookmarksPage() {
     return () => unsub();
   }, [user, router]);
 
-  // FIX: Convert TaskListItem -> FeedTask, ép any để tránh lỗi Timestamp & string
   const toFeedTask = (t: TaskListItem): FeedTask => {
-    const base = { ...t } as any;
+    const raw = t as any;
     return {
-      ...base,
-      createdAt: t.createdAt?.toDate?.()?.toISOString() || null,
-      updatedAt: t.updatedAt?.toDate?.()?.toISOString() || null,
-      deadline: t.deadline?.toDate?.()?.toISOString() || null,
-      eventDate: t.eventDate?.toDate?.()?.toISOString() || null,
-      endDate: t.endDate?.toDate?.()?.toISOString() || null,
-      startDate: t.startDate?.toDate?.()?.toISOString() || null,
-      applicationDeadline: t.applicationDeadline?.toDate?.()?.toISOString() || null,
+      ...raw,
+      createdAt: raw.createdAt?.toDate?.()?.toISOString() || null,
+      updatedAt: raw.updatedAt?.toDate?.()?.toISOString() || null,
+      deadline: raw.deadline?.toDate?.()?.toISOString() || null,
+      eventDate: raw.eventDate?.toDate?.()?.toISOString() || null,
+      endDate: raw.endDate?.toDate?.()?.toISOString() || null,
+      startDate: raw.startDate?.toDate?.()?.toISOString() || null,
+      applicationDeadline: raw.applicationDeadline?.toDate?.()?.toISOString() || null,
     };
   };
 
