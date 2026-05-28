@@ -3,12 +3,12 @@ import { adminAuth, adminDb } from "@/lib/firebase-admin";
 
 function slugify(str: string): string {
   return str
-   .toLowerCase()
-   .normalize("NFD")
-   .replace(/[\u0300-\u036f]/g, "")
-   .replace(/[^a-z0-9]+/g, "-")
-   .replace(/^-|-$/g, "")
-   .slice(0, 60);
+ .toLowerCase()
+ .normalize("NFD")
+ .replace(/[\u0300-\u036f]/g, "")
+ .replace(/[^a-z0-9]+/g, "-")
+ .replace(/^-|-$/g, "")
+ .slice(0, 60);
 }
 
 export async function POST(req: NextRequest) {
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       searchKeywords: [
         displayName.toLowerCase(),
         displayName.toLowerCase().replace(/\s+/g, ""),
-       ...displayName.toLowerCase().split(" ").filter((w) => w.length >= 2),
+      ...displayName.toLowerCase().split(" ").filter((w: string) => w.length >= 2),
         username.toLowerCase(),
       ],
     });
