@@ -413,19 +413,19 @@ const userData = userSnap.data();
 
 await createTask({
   type: "task",
-  userId: user.uid, // ← Thêm
-  createdBy: user.uid, // ← Thêm
-  userName: userData?.displayName || user.email || "Unknown", // ← Thêm
-  userAvatar: userData?.photoURL || null, // ← Thêm
-  userVerified: userData?.emailVerified || false, // ← Thêm
+  userId: user.uid,
+  createdBy: user.uid,
+  userName: userData?.displayName || user.email || "Unknown",
+  userAvatar: userData?.photoURL || null,
+  userVerified: userData?.emailVerified || false,
   title: form.title.trim(),
   description: form.description.trim(),
   price: form.budgetType === "negotiable" ? 0 : basePrice,
   currency: "VND",
   budgetType: form.budgetType,
-  requiredPeople: parseInt(form.totalSlots), // ← Đổi tên: bỏ totalSlots
-  joined: 0, // ← Thêm
-  visibility: form.visibility,
+  requiredPeople: parseInt(form.totalSlots),
+  joined: 0,
+  visibility: form.visibility, // ← Check: phải là "public" 
   deadline: Timestamp.fromDate(new Date(form.endDate)),
   applicationDeadline: Timestamp.fromDate(new Date(form.endDate)),
   startDate: Timestamp.fromDate(new Date(form.startDate)),
@@ -444,13 +444,13 @@ await createTask({
   nda: form.nda,
   invites: form.invites,
   needApproval: form.needApproval,
-  status: "open", // ← Thêm
-  banned: false, // ← Thêm
-  likeCount: 0, // ← Thêm
-  commentCount: 0, // ← Thêm
-  viewCount: 0, // ← Thêm
-  likes: [], // ← Thêm
-  savedBy: [], // ← Thêm
+  status: "open", // ← THÊM DÒNG NÀY
+  banned: false, // ← THÊM DÒNG NÀY  
+  likeCount: 0, // ← THÊM DÒNG NÀY
+  commentCount: 0, // ← THÊM DÒNG NÀY
+  viewCount: 0, // ← THÊM DÒNG NÀY
+  likes: [], // ← THÊM DÒNG NÀY
+  savedBy: [], // ← THÊM DÒNG NÀY
 } as any, user);
 
       toast.success("🎉 Đăng thành công!");
