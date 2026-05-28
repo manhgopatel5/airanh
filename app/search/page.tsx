@@ -49,7 +49,6 @@ export default function SearchPage() {
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const friendIdsRef = useRef<string[]>([]);
 
-  /* ================= GET FRIENDS ================= */
   useEffect(() => {
     if (!user?.uid || activeTab!== "friends" || friendIdsRef.current.length > 0) return;
 
@@ -69,7 +68,6 @@ export default function SearchPage() {
     loadFriends();
   }, [user?.uid, activeTab]);
 
-  /* ================= GET GPS ================= */
   useEffect(() => {
     if (activeTab!== "near" ||!navigator.geolocation) return;
 
@@ -93,7 +91,6 @@ export default function SearchPage() {
     );
   }, [activeTab]);
 
-  /* ================= BUILD QUERY ================= */
   const buildQuery = useCallback(
     (startAfterDoc?: QueryDocumentSnapshot<DocumentData>) => {
       const baseConstraints = [
@@ -128,7 +125,6 @@ export default function SearchPage() {
     [activeTab, keyword, friendIds]
   );
 
-  /* ================= FETCH ================= */
   const fetchTasks = useCallback(
     async (reset = false) => {
       if (activeTab === "friends" && friendIds.length === 0 && user) return;
@@ -146,7 +142,6 @@ export default function SearchPage() {
         const snap = await getDocs(q);
         let data = snap.docs.map((doc) => ({ id: doc.id,...doc.data() } as TaskListItem));
 
-        // Tab near: filter client theo khoảng cách
         if (activeTab === "near" && userLocation) {
           data = data
            .map((t) => ({
@@ -160,7 +155,6 @@ export default function SearchPage() {
            .sort((a: any, b: any) => a.distance - b.distance);
         }
 
-        // Tránh duplicate key khi loadMore
         setTasks((prev) => {
           if (reset) return data;
           const map = new Map(prev.map((t) => [t.id, t]));
@@ -181,7 +175,6 @@ export default function SearchPage() {
     [activeTab, buildQuery, friendIds, userLocation, lastDoc, user]
   );
 
-  /* ================= SEARCH DEBOUNCE ================= */
   useEffect(() => {
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     searchTimeout.current = setTimeout(() => {
@@ -192,7 +185,6 @@ export default function SearchPage() {
     };
   }, [keyword, activeTab, friendIds, userLocation]);
 
-  /* ================= UPDATE URL ================= */
   useEffect(() => {
     const params = new URLSearchParams();
     if (keyword) params.set("q", keyword);
@@ -200,19 +192,20 @@ export default function SearchPage() {
     router.replace(`/search?${params.toString()}`, { scroll: false });
   }, [keyword, activeTab, router]);
 
-  // FIX: Convert TaskListItem -> FeedTask để đúng type cho TaskCard mới
-  const toFeedTask = (t: TaskListItem): FeedTask => ({
-   ...t,
-    createdAt: t.createdAt?.toDate?.()?.toISOString() || null,
-    updatedAt: t.updatedAt?.toDate?.()?.toISOString() || null,
-    deadline: t.deadline?.toDate?.()?.toISOString() || null,
-    eventDate: t.eventDate?.toDate?.()?.toISOString() || null,
-    endDate: t.endDate?.toDate?.()?.toISOString() || null,
-    startDate: t.startDate?.toDate?.()?.toISOString() || null,
-    applicationDeadline: t.applicationDeadline?.toDate?.()?.toISOString() || null,
-  });
+  const toFeedTask = (t: TaskListItem): FeedTask => {
+    const base = {...t } as any;
+    return {
+     ...base,
+      createdAt: t.createdAt?.toDate?.()?.toISOString() || null,
+      updatedAt: t.updatedAt?.toDate?.()?.toISOString() || null,
+      deadline: t.deadline?.toDate?.()?.toISOString() || null,
+      eventDate: t.eventDate?.toDate?.()?.toISOString() || null,
+      endDate: t.endDate?.toDate?.()?.toISOString() || null,
+      startDate: t.startDate?.toDate?.()?.toISOString() || null,
+      applicationDeadline: t.applicationDeadline?.toDate?.()?.toISOString() || null,
+    };
+  };
 
-  // FIX: Update local state khi like/save để không fetch lại
   const handleTaskUpdate = (id: string, updates: Partial<FeedTask>) => {
     setTasks(prev => prev.map(t => t.id === id? {...t,...updates } : t));
   };
@@ -228,10 +221,8 @@ export default function SearchPage() {
     <>
       <Toaster richColors position="top-center" />
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 pb-24">
-        {/* HEADER */}
         <div className="sticky top-0 z-50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800">
           <div className="max-w-2xl mx-auto px-4 py-3">
-            {/* Search Input */}
             <div className="relative mb-3">
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input
@@ -251,7 +242,6 @@ export default function SearchPage() {
               )}
             </div>
 
-            {/* Tabs */}
             <div className="flex justify-around">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
@@ -280,7 +270,6 @@ export default function SearchPage() {
           </div>
         </div>
 
-        {/* CONTENT */}
         <div className="max-w-2xl mx-auto p-4 space-y-3">
           {loading && <SkeletonList />}
           {!loading && tasks.length === 0 && (
@@ -295,7 +284,6 @@ export default function SearchPage() {
             />
           ))}
 
-          {/* LOAD MORE */}
           {!loading && hasMore && tasks.length > 0 && (
             <button
               onClick={() => fetchTasks(false)}
