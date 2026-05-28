@@ -66,7 +66,7 @@ export default function ProfileTabContent() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
+
 
   const hasCheckedId = useRef(false);
   const uploadTaskRef = useRef<UploadTask | null>(null);
@@ -223,7 +223,7 @@ export default function ProfileTabContent() {
     if (!file) return;
     setPendingAvatarFile(file);
     setShowAvatarModal(false);
-    handleUpload(file);
+    
   };
 
   const handleUpload = async (file: File) => {
