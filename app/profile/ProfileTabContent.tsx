@@ -149,7 +149,7 @@ export default function ProfileTabContent() {
     }
   };
 
-  import imageCompression from 'browser-image-compression';
+  
 
 const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
