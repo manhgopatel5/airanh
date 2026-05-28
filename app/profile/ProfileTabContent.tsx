@@ -30,22 +30,22 @@ import ProfileModal from "@/components/common/ProfileModal";
 
 type UserData = {
   uid: string;
-  displayName: string; // Đổi từ name
+  displayName: string;
   email: string | null;
   phone?: string;
   userId: string;
-  photoURL: string | null; // Đổi từ avatar
+  photoURL: string | null;
   bio?: string;
   online?: boolean;
   lastSeen?: Timestamp;
   createdAt?: Timestamp;
   emailVerified?: boolean;
-  verified: boolean; // Thêm
+  verified: boolean;
   hidePhone?: boolean;
   stats?: { tasks: number; plans: number; completed: number; rating: number };
-  nameLower: string; // Thêm
+  nameLower: string;
   username?: string;
-  status: "active" | "banned" | "deleted" | "deactivated"; // Thêm
+  status: "active" | "banned" | "deleted" | "deactivated";
 };
 
 export default function ProfileTabContent() {
@@ -58,7 +58,7 @@ export default function ProfileTabContent() {
   const isPlan = mode === "plan";
 
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [displayName, setDisplayName] = useState(""); // Đổi từ name
+  const [displayName, setDisplayName] = useState("");
   const [editingName, setEditingName] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -68,7 +68,7 @@ export default function ProfileTabContent() {
   const uploadTaskRef = useRef<UploadTask | null>(null);
 
   const accentGradient = isPlan
-? "from-green-500 to-emerald-500"
+   ? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-600";
 
   useEffect(() => {
@@ -81,7 +81,8 @@ export default function ProfileTabContent() {
       if (snap.exists()) {
         const data = { uid: snap.id,...snap.data() } as UserData;
         setUserData(data);
-        setDisplayName(data.displayName || ""); // Đổi
+        // FIX: Fallback email nếu displayName rỗng
+        setDisplayName(data.displayName || user.email?.split('@')[0] || `User${data.userId?.slice(-4) || user.uid.slice(0,4)}`);
         if (user &&!user.emailVerified &&!data.emailVerified) {
           router.replace("/verify-email");
         }
@@ -125,17 +126,19 @@ export default function ProfileTabContent() {
     }
     const oldName = userData?.displayName;
     setEditingName(false);
-    setUserData((prev) => prev? {...prev, displayName: displayName.trim() } : null);
+    const newName = displayName.trim();
+    setUserData((prev) => prev? {...prev, displayName: newName } : null);
     try {
-      // FIX: Update cả Auth + Firestore
+      // FIX: Update cả Auth + Firestore + reload user
       await Promise.all([
-        updateProfile(user, { displayName: displayName.trim() }),
+        updateProfile(user, { displayName: newName }),
         updateDoc(doc(db, "users", user.uid), {
-          displayName: displayName.trim(),
-          nameLower: displayName.trim().toLowerCase(),
+          displayName: newName,
+          nameLower: newName.toLowerCase(),
           updatedAt: serverTimestamp(),
         })
       ]);
+      await user.reload(); // Force reload auth
       toast.success("Cập nhật tên thành công");
       if ("vibrate" in navigator) navigator.vibrate(8);
     } catch {
@@ -149,7 +152,7 @@ export default function ProfileTabContent() {
     const file = e.target.files?.[0];
     if (!file ||!user) return;
     if (!file.type.startsWith("image/")) return toast.error("Chỉ chấp nhận file ảnh");
-    if (file.size > 5 * 1024 * 1024) return toast.error("Ảnh không được vượt quá 5MB");
+    if (file.size > 5 * 1024) return toast.error("Ảnh không được vượt quá 5MB");
     setUploading(true);
     setUploadProgress(0);
     try {
@@ -168,11 +171,11 @@ export default function ProfileTabContent() {
           const task = uploadTaskRef.current;
           if (!task) return;
           const url = await getDownloadURL(task.snapshot.ref);
-          // FIX: Update cả Auth + Firestore photoURL
           await Promise.all([
             updateProfile(user, { photoURL: url }),
-            updateDoc(doc(db, "users", user.uid), { photoURL: url })
+            updateDoc(doc(db, "users", user.uid), { photoURL: url, updatedAt: serverTimestamp() })
           ]);
+          await user.reload();
           toast.success("Cập nhật avatar thành công");
           if ("vibrate" in navigator) navigator.vibrate(8);
           setUploading(false);
@@ -231,6 +234,10 @@ export default function ProfileTabContent() {
 
   if (!user ||!userData) return null;
 
+  // FIX: Fallback tên nếu Firestore trống
+  const finalDisplayName = userData.displayName || user.email?.split('@')[0] || `User${userData.userId?.slice(-4) || user.uid.slice(0,4)}`;
+  const avatarUrl = userData.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(finalDisplayName)}&size=176&background=0A84FF&color=fff&bold=true`;
+
   return (
     <div className="min-h-screen bg-white dark:bg-black pb-24 font-sans">
       <Toaster richColors position="top-center" />
@@ -240,7 +247,7 @@ export default function ProfileTabContent() {
         <div className="flex items-center gap-4">
           <label className="relative cursor-pointer group flex-shrink-0">
             <img
-              src={userData.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.displayName)}&size=176&background=8B5E3C&color=fff`}
+              src={avatarUrl}
               className="w-16 h-16 rounded-full object-cover"
               alt="Avatar"
             />
@@ -277,7 +284,7 @@ export default function ProfileTabContent() {
               </div>
             ) : (
               <h1 onClick={() => setEditingName(true)} className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight cursor-pointer leading-tight">
-                {userData.displayName}
+                {finalDisplayName}
               </h1>
             )}
             <div className="flex items-center gap-1.5 mt-1">
@@ -290,7 +297,7 @@ export default function ProfileTabContent() {
         </div>
       </div>
 
-      {/* List Settings - giữ nguyên */}
+      {/* List Settings */}
       <div className="px-4 mt-2 space-y-4">
         <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
           <SettingItem
