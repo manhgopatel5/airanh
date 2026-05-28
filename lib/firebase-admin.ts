@@ -35,7 +35,7 @@ function getFirebaseAdmin() {
     try {
       app = initializeApp({
         credential: cert(serviceAccount),
-  ...(process.env.FIREBASE_DATABASE_URL && {
+       ...(process.env.FIREBASE_DATABASE_URL && {
           databaseURL: process.env.FIREBASE_DATABASE_URL,
         }),
       });
@@ -72,25 +72,24 @@ const tsToString = (ts: any): string | null => {
 /* ================= GET JOBS CHO ISR ================= */
 export async function getJobsFromFirebaseAdmin(limitCount = 10): Promise<FeedTask[]> {
   const { db } = getFirebaseAdmin();
-  const now = Timestamp.now();
 
   const snap = await db.collection('tasks')
-    .where('type', '==', 'task')
-    .where('visibility', '==', 'public')
-    .where('status', 'in', ['open', 'full', 'doing'])
-    .where('deadline', '>', now)
-    .orderBy('deadline', 'asc')
-    .limit(limitCount)
-    // THÊM DÒNG NÀY: Chỉ lấy field cần cho JobCard. Giảm 85% payload
-    .select(
-      'slug', 'shortId', 'title', 'description', 'type', 'status', 
+   .where('type', '==', 'task')
+   .where('visibility', '==', 'public')
+   .where('status', 'in', ['open', 'pending', 'full', 'doing']) // ← THÊM 'pending'
+   .where('banned', '!=', true)
+   .where('hidden', '!=', true)
+   .orderBy('createdAt', 'desc') // ← ĐỔI từ deadline sang createdAt
+   .limit(limitCount)
+   .select(
+      'slug', 'shortId', 'title', 'description', 'type', 'status',
       'userId', 'userName', 'userAvatar', 'userShortId', 'userUsername',
       'price', 'currency', 'totalSlots', 'joined', 'budgetType', 'paymentMethod',
-      'isRemote', 'category', 'tags', 'images', 'viewCount', 'likeCount', 
+      'isRemote', 'category', 'tags', 'images', 'viewCount', 'likeCount',
       'commentCount', 'location', 'banned', 'hidden', 'appliedCount',
       'createdAt', 'updatedAt', 'deadline', 'startDate', 'applicationDeadline'
     )
-    .get();
+   .get();
 
   return snap.docs.map(doc => {
     const d = doc.data();
@@ -106,38 +105,39 @@ export async function getJobsFromFirebaseAdmin(limitCount = 10): Promise<FeedTas
       userId: d.userId || "",
       userName: d.userName || "",
       userAvatar: d.userAvatar || "",
-      ...(d.userShortId !== undefined && { userShortId: d.userShortId }),
-      ...(d.userUsername !== undefined && { userUsername: d.userUsername }),
-      price: d.price ?? 0,
+     ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
+     ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
+      price: d.price?? 0,
       currency: d.currency || "VND",
-      totalSlots: d.totalSlots ?? 0,
-      joined: d.joined ?? 0,
+      totalSlots: d.totalSlots?? 0,
+      joined: d.joined?? 0,
       budgetType: d.budgetType || "fixed",
-      ...(d.paymentMethod !== undefined && { paymentMethod: d.paymentMethod }),
-      ...(d.isRemote !== undefined && { isRemote: d.isRemote }),
+     ...(d.paymentMethod!== undefined && { paymentMethod: d.paymentMethod }),
+     ...(d.isRemote!== undefined && { isRemote: d.isRemote }),
       category: d.category || "",
-      tags: Array.isArray(d.tags) ? d.tags : [],
-      images: Array.isArray(d.images) ? d.images : [],
-      viewCount: d.viewCount ?? 0,
-      likeCount: d.likeCount ?? 0,
-      commentCount: d.commentCount ?? 0,
-      likes: [], // Bỏ, không cần cho list
-      ...(d.location !== undefined && { location: d.location }),
-      savedBy: [], // Bỏ, không cần cho list
-      applicants: [], // Bỏ, không cần cho list
-      ...(d.banned !== undefined && { banned: d.banned }),
-      ...(d.hidden !== undefined && { hidden: d.hidden }),
-      ...(d.appliedCount !== undefined && { appliedCount: d.appliedCount }),
+      tags: Array.isArray(d.tags)? d.tags : [],
+      images: Array.isArray(d.images)? d.images : [],
+      viewCount: d.viewCount?? 0,
+      likeCount: d.likeCount?? 0,
+      commentCount: d.commentCount?? 0,
+      likes: [],
+     ...(d.location!== undefined && { location: d.location }),
+      savedBy: [],
+      applicants: [],
+     ...(d.banned!== undefined && { banned: d.banned }),
+     ...(d.hidden!== undefined && { hidden: d.hidden }),
+     ...(d.appliedCount!== undefined && { appliedCount: d.appliedCount }),
       createdAt: tsToString(d.createdAt),
-      ...(d.updatedAt && { updatedAt: tsToString(d.updatedAt) }),
-      ...(d.deadline && { deadline: tsToString(d.deadline) }),
-      ...(d.startDate && { startDate: tsToString(d.startDate) }),
-      ...(d.applicationDeadline && { applicationDeadline: tsToString(d.applicationDeadline) }),
+     ...(d.updatedAt && { updatedAt: tsToString(d.updatedAt) }),
+     ...(d.deadline && { deadline: tsToString(d.deadline) }),
+     ...(d.startDate && { startDate: tsToString(d.startDate) }),
+     ...(d.applicationDeadline && { applicationDeadline: tsToString(d.applicationDeadline) }),
     };
 
     return taskData as FeedTask;
   });
 }
+
 /* ================= TYPE ================= */
 export type SendNotificationPayload = {
   token: string | string[];
@@ -147,7 +147,7 @@ export type SendNotificationPayload = {
   data?: Record<string, any>;
   link?: string;
   priority?: "high" | "normal";
-  ttl?: number; // seconds
+  ttl?: number;
   dryRun?: boolean;
 };
 
@@ -194,7 +194,7 @@ export async function sendNotification(
       notification: {
         icon: "ic_notification",
         color: "#3B82F6",
-...(priority === "high" && { sound: "default" }),
+       ...(priority === "high" && { sound: "default" }),
       },
     },
     apns: {
@@ -202,7 +202,7 @@ export async function sendNotification(
       payload: {
         aps: {
           badge: 1,
-  ...(priority === "high" && { sound: "default" }),
+         ...(priority === "high" && { sound: "default" }),
           "content-available": 1,
         },
       },
