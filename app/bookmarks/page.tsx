@@ -13,7 +13,7 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
-import { TaskListItem } from "@/types/task";
+import { TaskListItem, FeedTask } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { FiBookmark, FiArrowLeft } from "react-icons/fi";
 import Link from "next/link";
@@ -97,6 +97,23 @@ export default function BookmarksPage() {
     return () => unsub();
   }, [user, router]);
 
+  // FIX: Convert TaskListItem -> FeedTask để đúng type cho TaskCard mới
+  const toFeedTask = (t: TaskListItem): FeedTask => ({
+    ...t,
+    createdAt: t.createdAt?.toDate?.()?.toISOString() || null,
+    updatedAt: t.updatedAt?.toDate?.()?.toISOString() || null,
+    deadline: t.deadline?.toDate?.()?.toISOString() || null,
+    eventDate: t.eventDate?.toDate?.()?.toISOString() || null,
+    endDate: t.endDate?.toDate?.()?.toISOString() || null,
+    startDate: t.startDate?.toDate?.()?.toISOString() || null,
+    applicationDeadline: t.applicationDeadline?.toDate?.()?.toISOString() || null,
+  });
+
+  // FIX: Update local state khi like/save để không fetch lại
+  const handleTaskUpdate = (id: string, updates: Partial<FeedTask>) => {
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+  };
+
   if (!user) return null;
 
   return (
@@ -160,8 +177,9 @@ export default function BookmarksPage() {
             {tasks.map((task) => (
               <TaskCard 
                 key={task.id} 
-                task={task} 
-                mode={task.type}
+                task={toFeedTask(task)} 
+                theme={task.type === "task" ? "task" : "plan"}
+                onTaskUpdate={handleTaskUpdate}
               />
             ))}
           </div>
