@@ -425,7 +425,14 @@ const [form, setForm] = useState({
         attachments: [],
         requirements: form.requirements,
         isRemote: form.isRemote,
-        location: form.isRemote ? {} : { address: form.address, city: form.city, lat: form.lat, lng: form.lng },
+        location: form.isRemote 
+  ? undefined 
+  : { 
+      address: form.address, 
+      city: form.city, 
+      ...(form.lat !== null && { lat: form.lat }),
+      ...(form.lng !== null && { lng: form.lng })
+    },
         urgency: form.urgency,
         milestones: form.milestones,
         autoMatch: form.autoMatch,
