@@ -4,7 +4,6 @@ const nextConfig = {
   compress: true,
   output: 'standalone',
   poweredByHeader: false,
-  // ĐÃ XÓA: swcMinify - Next 15 mặc định bật rồi, khai báo là lỗi build
 
   images: {
     remotePatterns: [
@@ -118,14 +117,11 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '2mb',
     },
-    // ĐÃ XÓA: ppr: 'incremental' - Chỉ chạy trên Next canary, stable 15.5.15 chưa có
-    
-    // GIỮ LẠI: 3 dòng này vẫn chạy tốt trên 15.5.15
     staleTimes: {
-      dynamic: 30, // Cache RSC payload 30s. Back/forward tức thì
+      dynamic: 30,
       static: 180,
     },
-    optimizeCss: true, // Gộp + minify CSS, giảm ~50kb
+    // ĐÃ XÓA: optimizeCss: true, // Thằng này cần 'critters', gây lỗi build
   },
 
   webpack: (config, { isServer }) => {
