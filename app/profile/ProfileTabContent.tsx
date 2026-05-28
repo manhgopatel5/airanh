@@ -76,7 +76,7 @@ export default function ProfileTabContent() {
   } = useAvatarUpload(user);
 
   const accentGradient = isPlan
-   ? "from-green-500 to-emerald-500"
+  ? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-600";
 
   useEffect(() => {
@@ -95,7 +95,7 @@ export default function ProfileTabContent() {
 
         const data = {
           uid: snap.id,
-         ...snap.data(),
+        ...snap.data(),
         } as UserData;
 
         setUserData(data);
@@ -108,8 +108,8 @@ export default function ProfileTabContent() {
 
         if (
           user &&
-         !user.emailVerified &&
-         !data.emailVerified
+        !user.emailVerified &&
+        !data.emailVerified
         ) {
           router.replace("/verify-email");
         }
@@ -280,8 +280,8 @@ export default function ProfileTabContent() {
 
     setUserData((prev) =>
       prev
-       ? {
-           ...prev,
+      ? {
+          ...prev,
             displayName: newName,
           }
         : null
@@ -315,8 +315,8 @@ export default function ProfileTabContent() {
 
       setUserData((prev) =>
         prev
-         ? {
-             ...prev,
+        ? {
+            ...prev,
               displayName: oldName || "",
             }
           : null
@@ -511,249 +511,251 @@ export default function ProfileTabContent() {
     )}&size=176&background=0A84FF&color=fff&bold=true`;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black pb-24 font-sans">
-      <Toaster richColors position="top-center" />
+    <div className="min-h-dvh bg-white dark:bg-black font-sans">
+      <div className="pb-32 sm:pb-24 overflow-y-auto">
+        <Toaster richColors position="top-center" />
 
-      <div className="px-6 pt-12 pb-6">
-        <div className="flex items-center gap-4">
-          <div
-            onClick={handleAvatarClick}
-            className="relative cursor-pointer group flex-shrink-0"
-          >
-            <img
-              src={avatarUrl}
-              className="w-16 h-16 rounded-full object-cover"
-              alt="Avatar"
-            />
-
-            {userData.emailVerified && (
-              <div
-                className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-gradient-to-br ${accentGradient} flex items-center justify-center border-2 border-white dark:border-black`}
-              >
-                <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
-              </div>
-            )}
-
-            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-active:opacity-100 transition-opacity">
-              <Camera
-                size={20}
-                className="text-white"
+        <div className="px-6 pt-12 pb-6">
+          <div className="flex items-center gap-4">
+            <div
+              onClick={handleAvatarClick}
+              className="relative cursor-pointer group flex-shrink-0"
+            >
+              <img
+                src={avatarUrl}
+                className="w-16 h-16 rounded-full object-cover"
+                alt="Avatar"
               />
+
+              {userData.emailVerified && (
+                <div
+                  className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-gradient-to-br ${accentGradient} flex items-center justify-center border-2 border-white dark:border-black`}
+                >
+                  <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
+                </div>
+              )}
+
+              <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-active:opacity-100 transition-opacity">
+                <Camera
+                  size={20}
+                  className="text-white"
+                />
+              </div>
+
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                id="avatar-upload"
+                onChange={handleAvatarFileSelect}
+                disabled={uploading}
+              />
+
+              {uploading && (
+                <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center backdrop-blur-sm">
+                  <span className="text-white text-xs font-bold">
+                    {uploadProgress}%
+                  </span>
+                </div>
+              )}
             </div>
 
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              id="avatar-upload"
-              onChange={handleAvatarFileSelect}
-              disabled={uploading}
-            />
+            <div className="flex-1 min-w-0">
+              <h1
+                onClick={handleOpenNameModal}
+                className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight cursor-pointer leading-tight active:opacity-70"
+              >
+                {finalDisplayName}
+              </h1>
 
-            {uploading && (
-              <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center backdrop-blur-sm">
-                <span className="text-white text-xs font-bold">
-                  {uploadProgress}%
+              <div className="flex items-center gap-1.5 mt-1">
+                <Circle
+                  className={`w-2 h-2 fill-current ${
+                    userData.online
+                    ? "text-green-500"
+                      : "text-gray-400"
+                  }`}
+                />
+
+                <span className="text-sm text-gray-500 dark:text-zinc-400 font-medium">
+                  {userData.online
+                  ? "Đang hoạt động"
+                    : "Ngoại tuyến"}
                 </span>
               </div>
-            )}
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <h1
-              onClick={handleOpenNameModal}
-              className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight cursor-pointer leading-tight active:opacity-70"
-            >
-              {finalDisplayName}
-            </h1>
-
-            <div className="flex items-center gap-1.5 mt-1">
-              <Circle
-                className={`w-2 h-2 fill-current ${
-                  userData.online
-                   ? "text-green-500"
-                    : "text-gray-400"
-                }`}
-              />
-
-              <span className="text-sm text-gray-500 dark:text-zinc-400 font-medium">
-                {userData.online
-                 ? "Đang hoạt động"
-                  : "Ngoại tuyến"}
-              </span>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* SETTINGS */}
+        {/* SETTINGS */}
 
-      <div className="px-4 mt-2 space-y-4">
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
-          <SettingItem
-            label="Thông tin cá nhân"
-            subtitle="Tên, SĐT, Email"
-            icon={User}
-            iconColor="text-blue-500"
-            onClick={() =>
-              router.push("/settings/profile-edit")
-            }
-          />
+        <div className="px-4 mt-2 space-y-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
+            <SettingItem
+              label="Thông tin cá nhân"
+              subtitle="Tên, SĐT, Email"
+              icon={User}
+              iconColor="text-blue-500"
+              onClick={() =>
+                router.push("/settings/profile-edit")
+              }
+            />
 
-          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
 
-          <SettingItem
-            label="Đổi email"
-            subtitle="Cập nhật địa chỉ email"
-            icon={Mail}
-            iconColor="text-sky-500"
-            onClick={() =>
-              router.push("/settings/change-email")
-            }
-          />
+            <SettingItem
+              label="Đổi email"
+              subtitle="Cập nhật địa chỉ email"
+              icon={Mail}
+              iconColor="text-sky-500"
+              onClick={() =>
+                router.push("/settings/change-email")
+              }
+            />
 
-          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
 
-          <SettingItem
-            label="Đổi số điện thoại"
-            subtitle="Xác thực SĐT mới"
-            icon={Phone}
-            iconColor="text-emerald-500"
-            onClick={() =>
-              router.push("/settings/change-phone")
-            }
-          />
+            <SettingItem
+              label="Đổi số điện thoại"
+              subtitle="Xác thực SĐT mới"
+              icon={Phone}
+              iconColor="text-emerald-500"
+              onClick={() =>
+                router.push("/settings/change-phone")
+              }
+            />
 
-          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
 
-          <SettingItem
-            label="Đổi mật khẩu"
-            subtitle="Cập nhật mật khẩu định kỳ"
-            icon={Lock}
-            iconColor="text-green-500"
-            onClick={() =>
-              router.push("/settings/change-password")
-            }
-          />
+            <SettingItem
+              label="Đổi mật khẩu"
+              subtitle="Cập nhật mật khẩu định kỳ"
+              icon={Lock}
+              iconColor="text-green-500"
+              onClick={() =>
+                router.push("/settings/change-password")
+              }
+            />
 
-          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
 
-          <SettingItem
-            label="Xác thực 2 lớp"
-            subtitle="Bật/tắt 2FA cho tài khoản"
-            icon={Shield}
-            iconColor="text-amber-500"
-            onClick={() =>
-              router.push("/settings/2fa")
-            }
-          />
+            <SettingItem
+              label="Xác thực 2 lớp"
+              subtitle="Bật/tắt 2FA cho tài khoản"
+              icon={Shield}
+              iconColor="text-amber-500"
+              onClick={() =>
+                router.push("/settings/2fa")
+              }
+            />
 
-          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
 
-          <SettingItem
-            label="Phiên đăng nhập"
-            subtitle="Quản lý thiết bị đang hoạt động"
-            icon={Monitor}
-            iconColor="text-purple-500"
-            onClick={() =>
-              router.push("/settings/sessions")
-            }
-          />
+            <SettingItem
+              label="Phiên đăng nhập"
+              subtitle="Quản lý thiết bị đang hoạt động"
+              icon={Monitor}
+              iconColor="text-purple-500"
+              onClick={() =>
+                router.push("/settings/sessions")
+              }
+            />
 
-          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
 
-          <SettingItem
-            label="Tài khoản bị chặn"
-            subtitle="Danh sách người dùng đã chặn"
-            icon={Ban}
-            iconColor="text-red-500"
-            onClick={() =>
-              router.push("/settings/blocked")
-            }
-          />
+            <SettingItem
+              label="Tài khoản bị chặn"
+              subtitle="Danh sách người dùng đã chặn"
+              icon={Ban}
+              iconColor="text-red-500"
+              onClick={() =>
+                router.push("/settings/blocked")
+              }
+            />
 
-          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
 
-          <SettingItem
-            label="Mã QR của tôi"
-            subtitle="Chia sẻ & quét mã kết bạn"
-            icon={QrCode}
-            iconColor="text-amber-500"
-            onClick={() =>
-              router.push("/settings/qr")
-            }
-          />
+            <SettingItem
+              label="Mã QR của tôi"
+              subtitle="Chia sẻ & quét mã kết bạn"
+              icon={QrCode}
+              iconColor="text-amber-500"
+              onClick={() =>
+                router.push("/settings/qr")
+              }
+            />
 
-          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
 
-          <SettingItem
-            label="Chia sẻ hồ sơ"
-            subtitle="Link và mạng xã hội"
-            icon={Share2}
-            iconColor="text-purple-500"
-            onClick={() =>
-              router.push("/settings/share-profile")
-            }
-          />
+            <SettingItem
+              label="Chia sẻ hồ sơ"
+              subtitle="Link và mạng xã hội"
+              icon={Share2}
+              iconColor="text-purple-500"
+              onClick={() =>
+                router.push("/settings/share-profile")
+              }
+            />
 
-          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
 
-          <SettingItem
-            label="Thông báo"
-            subtitle="Push, email, giờ im lặng"
-            icon={Bell}
-            iconColor="text-blue-500"
-            onClick={() =>
-              router.push("/settings/notifications")
-            }
-          />
+            <SettingItem
+              label="Thông báo"
+              subtitle="Push, email, giờ im lặng"
+              icon={Bell}
+              iconColor="text-blue-500"
+              onClick={() =>
+                router.push("/settings/notifications")
+              }
+            />
 
-          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
 
-          <SettingItem
-            label="Dung lượng"
-            subtitle="Quản lý file và bộ nhớ"
-            icon={HardDrive}
-            iconColor="text-teal-500"
-            onClick={() =>
-              router.push("/settings/storage")
-            }
-          />
+            <SettingItem
+              label="Dung lượng"
+              subtitle="Quản lý file và bộ nhớ"
+              icon={HardDrive}
+              iconColor="text-teal-500"
+              onClick={() =>
+                router.push("/settings/storage")
+              }
+            />
 
-          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
 
-          <SettingItem
-            label="Cài đặt chung"
-            subtitle="Thông báo, Giao diện, Ngôn ngữ"
-            icon={Settings}
-            iconColor="text-gray-500"
-            onClick={() =>
-              router.push("/settings")
-            }
-          />
+            <SettingItem
+              label="Cài đặt chung"
+              subtitle="Thông báo, Giao diện, Ngôn ngữ"
+              icon={Settings}
+              iconColor="text-gray-500"
+              onClick={() =>
+                router.push("/settings")
+              }
+            />
 
-          <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
 
-          <SettingItem
-            label="Hỗ trợ"
-            subtitle="Trung tâm trợ giúp, Báo cáo sự cố"
-            icon={HelpCircle}
-            iconColor="text-red-500"
-            onClick={() =>
-              router.push("/settings/help")
-            }
-          />
-        </div>
+            <SettingItem
+              label="Hỗ trợ"
+              subtitle="Trung tâm trợ giúp, Báo cáo sự cố"
+              icon={HelpCircle}
+              iconColor="text-red-500"
+              onClick={() =>
+                router.push("/settings/help")
+              }
+            />
+          </div>
 
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
-          <SettingItem
-            label="Đăng xuất"
-            icon={LogOut}
-            iconColor="text-gray-500"
-            onClick={() =>
-              setShowLogoutModal(true)
-            }
-          />
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
+            <SettingItem
+              label="Đăng xuất"
+              icon={LogOut}
+              iconColor="text-gray-500"
+              onClick={() =>
+                setShowLogoutModal(true)
+              }
+            />
+          </div>
         </div>
       </div>
 
@@ -787,7 +789,6 @@ export default function ProfileTabContent() {
                   <li>Tên sẽ hiển thị công khai với mọi người</li>
                 </ul>
               </div>
-            </div>
             <div className="flex gap-3">
               <button onClick={() => setShowNameModal(false)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 font-semibold text-gray-700 dark:text-zinc-300 active:scale-95 transition">
                 Hủy
