@@ -12,12 +12,18 @@ import { FiUser, FiArrowRight } from "react-icons/fi";
 
 const generateUsername = (name: string) => {
   return name
-   .toLowerCase()
-   .normalize("NFD")
-   .replace(/[\u0300-\u036f]/g, "")
-   .replace(/\s+/g, "")
-   .replace(/[^a-z0-9]/g, "")
-   .slice(0, 20) || "user";
+.toLowerCase()
+.normalize("NFD")
+.replace(/[\u0300-\u036f]/g, "")
+.replace(/\s+/g, "")
+.replace(/[^a-z0-9]/g, "")
+.slice(0, 20) || "user";
+};
+
+const sanitizeDisplayName = (name: string, fallback: string) => {
+  const trimmed = name.trim();
+  if (!trimmed || trimmed === "Ẩn danh") return fallback;
+  return trimmed;
 };
 
 export default function OnboardingPage() {
@@ -38,7 +44,8 @@ export default function OnboardingPage() {
   // 2. Auto focus + prefill từ Google/Auth hoặc email
   useEffect(() => {
     if (user &&!displayName) {
-      const name = user.displayName || user.email?.split('@')[0] || "";
+      const fallback = user.email?.split('@')[0] || `User${user.uid.slice(0,4)}`;
+      const name = sanitizeDisplayName(user.displayName || "", fallback);
       setDisplayName(name);
     }
     inputRef.current?.focus();
@@ -115,7 +122,7 @@ export default function OnboardingPage() {
           searchKeywords: [
             lowerName,
             lowerName.replace(/\s+/g, ""),
-           ...lowerName.split(" ").filter(w => w.length >= 2),
+         ...lowerName.split(" ").filter((w: string) => w.length >= 2),
             userId.toLowerCase(),
             username.toLowerCase(),
           ],
@@ -190,7 +197,7 @@ export default function OnboardingPage() {
                 disabled={saving}
                 className={`w-full px-4 py-3 rounded-xl border-2 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none transition-all ${
                   error
-                   ? "border-red-500 focus:border-red-600"
+                 ? "border-red-500 focus:border-red-600"
                     : "border-zinc-200 dark:border-zinc-700 focus:border-blue-600"
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               />
