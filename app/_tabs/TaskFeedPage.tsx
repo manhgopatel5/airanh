@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiInbox, FiRefreshCw, FiNavigation } from "react-icons/fi";
 import { Briefcase3D, Palm3D } from "@/components/icons/Mode3DIcons";
