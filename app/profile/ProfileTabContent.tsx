@@ -789,6 +789,7 @@ export default function ProfileTabContent() {
                   <li>Tên sẽ hiển thị công khai với mọi người</li>
                 </ul>
               </div>
+    </div>
             <div className="flex gap-3">
               <button onClick={() => setShowNameModal(false)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 font-semibold text-gray-700 dark:text-zinc-300 active:scale-95 transition">
                 Hủy
@@ -798,7 +799,7 @@ export default function ProfileTabContent() {
               </button>
             </div>
           </div>
-     
+         </div>
       )}
 
       {/* AVATAR MODAL */}
