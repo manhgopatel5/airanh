@@ -144,15 +144,15 @@ export default function SearchPage() {
 
         if (activeTab === "near" && userLocation) {
           data = data
-          .map((t) => ({
-            ...t,
+         .map((t) => ({
+           ...t,
               distance:
                 t.location?.lat && t.location?.lng
-                ? getDistance(userLocation, { lat: t.location.lat, lng: t.location.lng })
+               ? getDistance(userLocation, { lat: t.location.lat, lng: t.location.lng })
                   : 9999,
             }))
-          .filter((t: any) => t.distance < 50)
-          .sort((a: any, b: any) => a.distance - b.distance);
+         .filter((t: any) => t.distance < 50)
+         .sort((a: any, b: any) => a.distance - b.distance);
         }
 
         setTasks((prev) => {
@@ -193,16 +193,16 @@ export default function SearchPage() {
   }, [keyword, activeTab, router]);
 
   const toFeedTask = (t: TaskListItem): FeedTask => {
-    const base = {...t } as any;
+    const raw = t as any;
     return {
-    ...base,
-      createdAt: t.createdAt?.toDate?.()?.toISOString() || null,
-      updatedAt: t.updatedAt?.toDate?.()?.toISOString() || null,
-      deadline: t.deadline?.toDate?.()?.toISOString() || null,
-      eventDate: t.eventDate?.toDate?.()?.toISOString() || null,
-      endDate: t.endDate?.toDate?.()?.toISOString() || null,
-      startDate: t.startDate?.toDate?.()?.toISOString() || null,
-      applicationDeadline: t.applicationDeadline?.toDate?.()?.toISOString() || null,
+   ...raw,
+      createdAt: raw.createdAt?.toDate?.()?.toISOString() || null,
+      updatedAt: raw.updatedAt?.toDate?.()?.toISOString() || null,
+      deadline: raw.deadline?.toDate?.()?.toISOString() || null,
+      eventDate: raw.eventDate?.toDate?.()?.toISOString() || null,
+      endDate: raw.endDate?.toDate?.()?.toISOString() || null,
+      startDate: raw.startDate?.toDate?.()?.toISOString() || null,
+      applicationDeadline: raw.applicationDeadline?.toDate?.()?.toISOString() || null,
     };
   };
 
@@ -252,7 +252,7 @@ export default function SearchPage() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex flex-col items-center py-2 px-2 flex-1 transition-all ${
                       active
-                      ? "text-blue-600 dark:text-blue-400"
+                     ? "text-blue-600 dark:text-blue-400"
                         : "text-gray-400 dark:text-zinc-500 hover:text-gray-600"
                     }`}
                   >
