@@ -134,10 +134,7 @@ export default function TasksPage() {
     setShareTask(task);
   }, []);
 
-  const handleRefresh = useCallback(() => {
-    vibrate(10);
-    mutate(); // FIX 5: Gọi mutate để refresh
-  }, [mutate]);
+
 
   const currentTheme = theme[mode] || theme.task;
 
@@ -193,13 +190,7 @@ export default function TasksPage() {
                   </button>
                 ))}
               </div>
-              <button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 active:scale-90 transition-all disabled:opacity-50"
-              >
-                <FiRefreshCw className={refreshing? "animate-spin" : ""} size={18} />
-              </button>
+       
             </div>
           </div>
         </div>
