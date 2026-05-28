@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import dynamic from 'next/dynamic';
+import useSWR from 'swr'; // THÊM
 
 import { useAppStore } from "@/store/app";
 import { AnimatePresence, motion } from "framer-motion";
@@ -41,10 +42,12 @@ interface AppContainerProps {
   initialJobs?: FeedTask[];
 }
 
+// THÊM: Fetcher cho SWR
+const fetcher = (url: string) => fetch(url).then(r => r.json());
+
 export default function AppContainer({ initialJobs = [] }: AppContainerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  // XÓA mode: TaskFeedPage tự đọc từ store
   const unreadCount = useAppStore((s) => s.unreadCount);
   const [mounted, setMounted] = useState(false);
 
@@ -54,6 +57,19 @@ export default function AppContainer({ initialJobs = [] }: AppContainerProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const tabBarHeight = useTabBarHeight();
+
+  // THÊM: Dùng SWR với fallbackData = initialJobs từ SSR
+  // 0ms có UI, sau 60s tự revalidate ngầm 1 lần
+  const { data: jobs } = useSWR<FeedTask[]>(
+    currentMainTab === 'home'? '/api/jobs' : null,
+    fetcher,
+    {
+      fallbackData: initialJobs, // Key: Dùng data SSR
+      revalidateOnFocus: true, // User quay lại tab = check mới
+      dedupingInterval: 60000, // 1 phút mới gọi API 1 lần
+      revalidateOnReconnect: true,
+    }
+  );
 
   useEffect(() => setMounted(true), []);
 
@@ -107,8 +123,8 @@ export default function AppContainer({ initialJobs = [] }: AppContainerProps) {
   const renderCurrentTab = () => {
     switch (currentMainTab) {
       case "home":
-        // TaskFeedPage tự đọc mode từ useAppStore và tự filter
-        return <TaskFeedPage initialJobs={initialJobs} />
+        // SỬA: Truyền jobs từ SWR thay vì initialJobs
+        return <TaskFeedPage initialJobs={jobs || initialJobs} />
       case "messages":
         return <ChatClient />
       case "tasks":
@@ -116,7 +132,7 @@ export default function AppContainer({ initialJobs = [] }: AppContainerProps) {
       case "profile":
         return <ProfileTabContent />
       default:
-        return <TaskFeedPage initialJobs={initialJobs} />
+        return <TaskFeedPage initialJobs={jobs || initialJobs} />
     }
   }
 
@@ -173,8 +189,8 @@ export default function AppContainer({ initialJobs = [] }: AppContainerProps) {
       )}
 
       <style jsx global>{`
-    .scrollbar-hide::-webkit-scrollbar{display:none}
-    .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
+   .scrollbar-hide::-webkit-scrollbar{display:none}
+   .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
         html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
         body{overscroll-behavior-y:contain}
       `}</style>
