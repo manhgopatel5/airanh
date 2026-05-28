@@ -1,26 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiInbox, FiRefreshCw } from "react-icons/fi";
 import { HiBolt, HiCalendarDays } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  limit,
-  startAfter,
-  QueryDocumentSnapshot,
-  DocumentData,
-  Timestamp,
-  doc,
-  deleteDoc
-} from "firebase/firestore";
+import { getFirebaseAuth } from "@/lib/firebase";
+import useSWR, { mutate } from "swr";
 import type { FeedTask } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
@@ -38,26 +26,34 @@ const SUB_TABS: { key: SubTab; label: string }[] = [
   { key: "cancelled", label: "Đã hủy" },
 ];
 
-const PAGE_SIZE = 10;
+const fetcher = (url: string) => fetch(url).then(r => r.json());
+
+const vibrate = (ms = 8) => {
+  if ("vibrate" in navigator) navigator.vibrate(ms);
+};
 
 export default function TasksPage() {
   const auth = getFirebaseAuth();
-  const db = getFirebaseDB();
   const router = useRouter();
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const { mode = "task", setMode } = useAppStore();
   const [subTab, setSubTab] = useState<SubTab>("mine");
-  const [tasks, setTasks] = useState<FeedTask[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
 
-  // FIX 1: Tách lastDoc theo tab để pagination đúng
-  const lastDocRef = useRef<Record<string, QueryDocumentSnapshot<DocumentData> | null>>({});
-  const loadMoreRef = useRef<HTMLDivElement>(null);
+  // FIX: Dùng SWR thay getDocs. 0 reads nếu cache còn
+  const { data: tasks = [], isLoading, isValidating, mutate: refetch } = useSWR<FeedTask[]>(
+    currentUser? `/api/user-tasks?type=${mode}&tab=${subTab}` : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000, // 1 phút mới gọi API 1 lần
+      keepPreviousData: true, // Chuyển tab mượt
+    }
+  );
+
+  const loading = isLoading && tasks.length === 0;
+  const refreshing = isValidating;
 
   const theme = {
     task: {
@@ -72,10 +68,6 @@ export default function TasksPage() {
     }
   };
 
-  const vibrate = (ms = 8) => {
-    if ("vibrate" in navigator) navigator.vibrate(ms);
-  };
-
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -83,139 +75,6 @@ export default function TasksPage() {
     });
     return () => unsub();
   }, [auth, router]);
-
-  const fetchTasks = useCallback(async (isRefresh = false) => {
-    if (!currentUser) {
-      setLoading(false);
-      setTasks([]);
-      return;
-    }
-
-    const tabKey = `${mode}-${subTab}`;
-
-    if (isRefresh) {
-      setRefreshing(true);
-      setTasks([]);
-      lastDocRef.current = {};
-      setHasMore(true);
-    } else {
-      setLoadingMore(true);
-    }
-
-    try {
-      const baseCollection = collection(db, "tasks");
-      const lastDoc = lastDocRef.current[tabKey];
-
-      // FIX 2: Query đơn giản, không orderBy phức tạp -> không cần index
-      const baseConstraints = [where("type", "==", mode), limit(PAGE_SIZE)];
-      let q;
-
-      switch (subTab) {
-        case "mine":
-          q = query(baseCollection, where("userId", "==", currentUser.uid),...baseConstraints);
-          break;
-        case "expired":
-          const now = Timestamp.now();
-          const sevenDaysAgo = Timestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
-          q = query(
-            baseCollection,
-            where("userId", "==", currentUser.uid),
-            where("type", "==", "task"),
-            where("deadline", "<", now),
-            where("deadline", ">", sevenDaysAgo),
-         ...baseConstraints
-          );
-          break;
-        case "saved":
-          q = query(baseCollection, where("savedBy", "array-contains", currentUser.uid),...baseConstraints);
-          break;
-        case "doing":
-          q = query(baseCollection, where("assignees", "array-contains", currentUser.uid), where("status", "==", "doing"),...baseConstraints);
-          break;
-        case "applied":
-          q = query(baseCollection, where("applicants", "array-contains", currentUser.uid), where("status", "in", ["open", "pending"]),...baseConstraints);
-          break;
-        case "completed":
-          q = query(baseCollection, where("assignees", "array-contains", currentUser.uid), where("status", "==", "completed"),...baseConstraints);
-          break;
-        case "cancelled":
-          q = query(baseCollection, where("userId", "==", currentUser.uid), where("status", "==", "cancelled"),...baseConstraints);
-          break;
-        default:
-          q = query(baseCollection,...baseConstraints);
-      }
-
-      if (lastDoc &&!isRefresh) {
-        q = query(q, startAfter(lastDoc));
-      }
-
-      const snap = await getDocs(q);
-
-      const data = snap.docs.map(doc => {
-        const d = doc.data();
-        return {
-          id: doc.id,
-     ...d,
-          createdAt: d.createdAt?.toDate?.()?.toISOString() || null,
-          updatedAt: d.updatedAt?.toDate?.()?.toISOString() || null,
-          deadline: d.deadline?.toDate?.()?.toISOString() || null,
-          eventDate: d.eventDate?.toDate?.()?.toISOString() || null,
-          endDate: d.endDate?.toDate?.()?.toISOString() || null,
-          startDate: d.startDate?.toDate?.()?.toISOString() || null,
-          applicationDeadline: d.applicationDeadline?.toDate?.()?.toISOString() || null,
-        } as FeedTask;
-      })
-  .filter(t => t.id && t.title)
-   // FIX 3: Sort ở client thay vì orderBy Firestore -> giảm read + không cần index
-  .sort((a, b) => {
-      const aTime = a.createdAt? new Date(a.createdAt).getTime() : 0;
-      const bTime = b.createdAt? new Date(b.createdAt).getTime() : 0;
-      return bTime - aTime;
-    });
-
-      if (isRefresh) {
-        setTasks(data);
-      } else {
-        setTasks(prev => [...prev,...data]);
-      }
-
-      lastDocRef.current[tabKey] = snap.docs[snap.docs.length - 1] || null;
-      setHasMore(snap.docs.length === PAGE_SIZE);
-    } catch (err: any) {
-      console.error(err);
-      if (err.code === 'failed-precondition') {
-        toast.error("Cần tạo index Firestore");
-        console.error("Index link:", err.message);
-      } else {
-        toast.error("Tải dữ liệu thất bại");
-      }
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-      setRefreshing(false);
-    }
-  }, [currentUser, mode, subTab, db]); // FIX 4: Bỏ lastDoc khỏi deps để tránh loop
-
-  // FIX 5: Chỉ chạy khi currentUser/mode/subTab đổi
-  useEffect(() => {
-    if (currentUser) fetchTasks(true);
-  }, [currentUser, mode, subTab]);
-
-  useEffect(() => {
-    if (!loadMoreRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && hasMore &&!loading &&!loadingMore) {
-          fetchTasks(false);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(loadMoreRef.current);
-    return () => observer.disconnect();
-  }, [hasMore, loading, loadingMore]); // FIX 6: Bỏ fetchTasks khỏi deps
 
   const handleTabChange = (newTab: SubTab) => {
     vibrate();
@@ -229,82 +88,95 @@ export default function TasksPage() {
   };
 
   const handleTaskUpdate = useCallback((taskId: string, updates: Partial<FeedTask>) => {
-    setTasks(prev => prev.map(t => t.id === taskId? ({...t,...updates } as FeedTask) : t));
-  }, []);
+    mutate(
+      `/api/user-tasks?type=${mode}&tab=${subTab}`,
+      (current: FeedTask[] = []) =>
+        current.map(t => t.id === taskId? ({...t,...updates } as FeedTask) : t),
+      false
+    );
+  }, [mode, subTab]);
 
   const handleDelete = useCallback(async (id: string) => {
     if (!confirm("Xóa task này?")) return;
     try {
-      await deleteDoc(doc(db, "tasks", id));
-      setTasks(prev => prev.filter(t => t.id!== id));
+      await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+      mutate(
+        `/api/user-tasks?type=${mode}&tab=${subTab}`,
+        (current: FeedTask[] = []) => current.filter(t => t.id!== id),
+        false
+      );
       toast.success("Đã xóa");
     } catch {
       toast.error("Xóa thất bại");
     }
-  }, [db]);
+  }, [mode, subTab]);
 
   const handleShare = useCallback((task: FeedTask) => {
     vibrate(5);
     setShareTask(task);
   }, []);
 
+  const handleRefresh = useCallback(() => {
+    vibrate(10);
+    refetch();
+  }, [refetch]);
+
   const currentTheme = theme[mode] || theme.task;
 
   return (
     <>
       <Toaster richColors position="top-center" />
-<div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 select-none pb-28">
-
+      <div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 select-none pb-28">
         <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl">
           <div className="px-4 pt-3 pb-2">
-         <div className="flex items-center gap-2">
-  <button
-    onClick={() => handleModeChange("task")}
-    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
-      mode === "task"
-     ? "bg-[#0A84FF] text-white shadow-[0_8px_30px_rgba(10,132,255,0.3)]"
-        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
-    }`}
-  >
-    <HiBolt className="w-4 h-4" />
-    Task
-  </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleModeChange("task")}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                  mode === "task"
+                ? "bg-[#0A84FF] text-white shadow-[0_8px_30px_rgba(10,132,255,0.3)]"
+                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
+                }`}
+              >
+                <HiBolt className="w-4 h-4" />
+                Task
+              </button>
 
-  <button
-    onClick={() => handleModeChange("plan")}
-    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
-      mode === "plan"
-     ? "bg-[#30D158] text-white shadow-[0_8px_30px_rgba(48,209,88,0.3)]"
-        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
-    }`}
-  >
-    <HiCalendarDays className="w-4 h-4" />
-    Plan
-  </button>
-</div>
+              <button
+                onClick={() => handleModeChange("plan")}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                  mode === "plan"
+                ? "bg-[#30D158] text-white shadow-[0_8px_30px_rgba(48,209,88,0.3)]"
+                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
+                }`}
+              >
+                <HiCalendarDays className="w-4 h-4" />
+                Plan
+              </button>
+            </div>
           </div>
 
-       <div className="px-4 pb-3">
-  <div className="flex items-center gap-2 mb-3">
-    <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1">
-      {SUB_TABS.map((tab) => (
-        <button
-          key={tab.key}
-          onClick={() => handleTabChange(tab.key)}
-          className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap ${
-            subTab === tab.key
-        ? mode === "task"
-          ? "bg-[#0A84FF] text-white"
-                : "bg-[#30D158] text-white"
-              : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 active:bg-zinc-200 dark:active:bg-zinc-700"
-          }`}
-        >
-          {tab.label}
-        </button>
-      ))}
-    </div>
-  </div>
-</div>
+          <div className="px-4 pb-3">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1">
+                {SUB_TABS.map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => handleTabChange(tab.key)}
+                    className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap ${
+                      subTab === tab.key
+                  ? mode === "task"
+                    ? "bg-[#0A84FF] text-white"
+                            : "bg-[#30D158] text-white"
+                          : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 active:bg-zinc-200 dark:active:bg-zinc-700"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="max-w-[600px] mx-auto p-4">
@@ -369,7 +241,8 @@ export default function TasksPage() {
                     key={task.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.05 }}
+                    transition={{ delay: idx * 0.03 }}
+                    layout
                   >
                     <TaskCard
                       task={task}
@@ -382,12 +255,6 @@ export default function TasksPage() {
                 ))}
               </motion.div>
             </AnimatePresence>
-          )}
-
-          {loadingMore && (
-            <div className="flex justify-center py-6">
-              <FiRefreshCw className="animate-spin text-zinc-400" size={24} />
-            </div>
           )}
 
           {refreshing && (
@@ -403,7 +270,7 @@ export default function TasksPage() {
             />
           )}
 
-          <div ref={loadMoreRef} className="h-4" />
+          <div className="h-4" />
         </div>
       </div>
 
