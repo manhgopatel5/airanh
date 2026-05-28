@@ -184,6 +184,14 @@ banned: false,
 ...(data.deadline && { deadline: data.deadline }),
 ...(data.startDate && { startDate: data.startDate }),
     featured: data.featured || false,
+    urgency: data.urgency || "once",
+    milestones: data.milestones || false,
+    autoMatch: data.autoMatch || false,
+    allowBids: data.allowBids || false,
+    nda: data.nda || false,
+    invites: data.invites || [],
+    needApproval: data.needApproval ?? true,
+    recurring: data.recurring || "once",
   };
 
   const batch = writeBatch(db);
