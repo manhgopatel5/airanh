@@ -36,58 +36,45 @@ export default function ClientLayout({ children }: Props) {
 
   /* ================= REDIRECT ================= */
   useEffect(() => {
-    // 1. Đợi AuthContext load xong. Vì có cache nên loading=false ngay
     if (loading) return;
     
-    // 2. Chưa login + vào trang private -> về /login
     if (!user &&!isPublic) {
       router.replace("/login");
       return;
     }
 
-    // 3. Đã login + vào /login, /register... -> về home
-    // Loại trừ /verify-email và /onboarding
     if (user && isPublic &&!pathname.startsWith("/verify-email") && pathname!== "/onboarding") {
       router.replace("/");
       return;
     }
 
-    // 4. Check onboarding: userData có sẵn từ cache nên check được ngay 0ms
     if (user && userData && userData.onboardingCompleted === false && pathname!== "/onboarding") {
       router.replace("/onboarding");
       return;
     }
 
-    // 5. Đã onboard + ở /onboarding -> về home
     if (user && userData && userData.onboardingCompleted === true && pathname === "/onboarding") {
       router.replace("/");
       return;
     }
   }, [user, userData, loading, isPublic, pathname, router]);
 
-  // 6. KHÔNG RETURN NULL, KHÔNG SPINNER Ở ĐÂY
-  // Để AuthContext + Suspense lo. Layout phải render ngay.
-  
-  const exactBottomNavRoutes = ["/", "/orders", "/notifications"];
-  const shouldShowBottomNav = exactBottomNavRoutes.includes(pathname);
+  // Trang nào có BottomNav
+  const exactBottomNavRoutes = ["/", "/orders", "/notifications", "/profile"];
+  const shouldShowBottomNav = exactBottomNavRoutes.includes(pathname) &&!isChatDetail &&!isCreate;
 
   return (
-    // 7. FIX LAYOUT: Dùng h-dvh thay h-screen cho mobile. Bỏ overflow-hidden
-    <div className="h-dvh flex flex-col bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors font-sans">
-      {/* 8. FCM chỉ mount khi có user. Không chặn render */}
+    // 1. Bỏ overflow-hidden ở đây. Để main tự scroll
+    <div className="h-dvh flex flex-col bg-gray-50 dark:bg-zinc-950 font-sans">
       {user && <FCMProvider userId={user.uid} />}
 
-      {/* Main scroll container. Thêm pb-20 để không bị BottomNav che */}
-      <main className="flex-1 overflow-y-auto pb-20">
+      {/* 2. Main không cần pb-20 nữa vì BottomNav của bạn đã là floating */}
+      <main className="flex-1 overflow-y-auto">
         {children}
       </main>
 
-      {/* 9. FIX BOTTOMNAV: Thêm fixed + z-50 để nó luôn nằm trên cùng, không bị đè */}
-      {shouldShowBottomNav &&!isPublic && user &&!isChatDetail &&!isCreate && (
-        <div className="fixed bottom-0 left-0 right-0 z-50">
-          <BottomNav />
-        </div>
-      )}
+      {/* 3. QUAN TRỌNG: KHÔNG BỌC BottomNav. Để nó tự lo fixed + z-index */}
+      {shouldShowBottomNav &&!isPublic && user && <BottomNav />}
 
       <Toaster
         position="top-center"
