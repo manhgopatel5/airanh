@@ -116,10 +116,7 @@ export default function TasksPage() {
     setShareTask(task);
   }, []);
 
-  const handleRefresh = useCallback(() => {
-    vibrate(10);
-    refetch();
-  }, [refetch]);
+
 
   const currentTheme = theme[mode] || theme.task;
 
