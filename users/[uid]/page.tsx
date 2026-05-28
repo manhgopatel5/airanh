@@ -143,8 +143,8 @@ export const getUserProfileUrl = (user: Pick<User, "username" | "shortId">): str
   return user.username? `/@${user.username}` : `/u/${user.shortId}`;
 };
 
-export const getUserDisplayName = (user: Pick<User, "name">): string => {
-  return user.name?.trim() || "Người dùng ẩn danh";
+export const getUserDisplayName = (user: Pick<User, "name" | "email" | "shortId">): string => {
+  return user.name?.trim() || user.email?.split('@')[0] || `User${user.shortId?.slice(-4) || ""}`;
 };
 
 export const isUserOnline = (user: Pick<User, "isOnline" | "lastSeen">): boolean => {
@@ -178,14 +178,14 @@ export const generateSearchKeywords = (user: Pick<User, "name" | "email" | "user
   const email = user.email.toLowerCase();
 
   return [
-   ...new Set([
+ ...new Set([
       user.name.toLowerCase(),
       user.name.toLowerCase().replace(/\s/g, ""),
       email,
       email.split("@")[0],
       user.shortId.toLowerCase(),
       user.username?.toLowerCase(),
-     ...words,
+   ...words,
       words[0]?.[0] + words[words.length - 1]?.[0], // "na" từ "nguyen an"
     ]),
   ].filter(Boolean).slice(0, 10) as string[]; // Firestore limit 10
