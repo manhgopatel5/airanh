@@ -31,6 +31,7 @@ export type User = {
   shortId?: string;
   username?: string;
   verified?: boolean; // Thêm
+  onboardingCompleted: boolean;
 };
 
 /* ================= BASE ITEM ================= */
