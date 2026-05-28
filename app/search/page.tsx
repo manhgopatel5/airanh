@@ -15,7 +15,7 @@ import {
 import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { QueryConstraint } from "firebase/firestore";
-import { TaskListItem } from "@/types/task";
+import { TaskListItem, FeedTask } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { FiSearch, FiX, FiMapPin } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
@@ -149,15 +149,15 @@ export default function SearchPage() {
         // Tab near: filter client theo khoảng cách
         if (activeTab === "near" && userLocation) {
           data = data
-          .map((t) => ({
-            ...t,
+           .map((t) => ({
+             ...t,
               distance:
                 t.location?.lat && t.location?.lng
-                ? getDistance(userLocation, { lat: t.location.lat, lng: t.location.lng })
+                 ? getDistance(userLocation, { lat: t.location.lat, lng: t.location.lng })
                   : 9999,
             }))
-          .filter((t: any) => t.distance < 50)
-          .sort((a: any, b: any) => a.distance - b.distance);
+           .filter((t: any) => t.distance < 50)
+           .sort((a: any, b: any) => a.distance - b.distance);
         }
 
         // Tránh duplicate key khi loadMore
@@ -199,6 +199,23 @@ export default function SearchPage() {
     params.set("tab", activeTab);
     router.replace(`/search?${params.toString()}`, { scroll: false });
   }, [keyword, activeTab, router]);
+
+  // FIX: Convert TaskListItem -> FeedTask để đúng type cho TaskCard mới
+  const toFeedTask = (t: TaskListItem): FeedTask => ({
+   ...t,
+    createdAt: t.createdAt?.toDate?.()?.toISOString() || null,
+    updatedAt: t.updatedAt?.toDate?.()?.toISOString() || null,
+    deadline: t.deadline?.toDate?.()?.toISOString() || null,
+    eventDate: t.eventDate?.toDate?.()?.toISOString() || null,
+    endDate: t.endDate?.toDate?.()?.toISOString() || null,
+    startDate: t.startDate?.toDate?.()?.toISOString() || null,
+    applicationDeadline: t.applicationDeadline?.toDate?.()?.toISOString() || null,
+  });
+
+  // FIX: Update local state khi like/save để không fetch lại
+  const handleTaskUpdate = (id: string, updates: Partial<FeedTask>) => {
+    setTasks(prev => prev.map(t => t.id === id? {...t,...updates } : t));
+  };
 
   const tabs: { id: TabId; label: string; icon: any }[] = [
     { id: "hot", label: "Hot", icon: HiFire },
@@ -245,7 +262,7 @@ export default function SearchPage() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex flex-col items-center py-2 px-2 flex-1 transition-all ${
                       active
-                      ? "text-blue-600 dark:text-blue-400"
+                       ? "text-blue-600 dark:text-blue-400"
                         : "text-gray-400 dark:text-zinc-500 hover:text-gray-600"
                     }`}
                   >
@@ -272,8 +289,9 @@ export default function SearchPage() {
           {!loading && tasks.map((task) => (
             <TaskCard
               key={task.id}
-              task={task}
-              mode={task.type}
+              task={toFeedTask(task)}
+              theme={task.type === "task"? "task" : "plan"}
+              onTaskUpdate={handleTaskUpdate}
             />
           ))}
 
@@ -304,7 +322,6 @@ function SkeletonList() {
               <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
               <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/3" />
             </div>
-          </div>
           <div className="h-5 bg-gray-200 dark:bg-zinc-800 rounded w-3/4 mb-2" />
           <div className="h-20 bg-gray-200 dark:bg-zinc-800 rounded" />
         </div>
