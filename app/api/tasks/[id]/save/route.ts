@@ -1,6 +1,7 @@
 // app/api/tasks/[id]/save/route.ts
 import { NextResponse } from 'next/server'
-import { adminAuth, adminDb, FieldValue } from '@/lib/firebase-admin'
+import { adminAuth, adminDb } from '@/lib/firebase-admin'
+import { FieldValue } from 'firebase-admin/firestore' // FIX: Import từ đây
 
 export async function POST(
   req: Request,
