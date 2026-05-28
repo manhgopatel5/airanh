@@ -32,7 +32,7 @@ export class TaskCommentError extends Error {
 /* ================= CREATE COMMENT ================= */
 export const createComment = async (
   taskId: string,
-  user: User,
+  user: Pick<User, 'uid' | 'displayName' | 'photoURL'>,
   data: {
     text: string;
     parentId?: string;
