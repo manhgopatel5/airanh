@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { getFirebaseAuth, getFirebaseStorage, getFirebaseDB } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { collection, query, where, onSnapshot, getDocs, Timestamp } from "firebase/firestore";
+import { collection, query, where, onSnapshot, getDocs, doc, getDoc, Timestamp } from "firebase/firestore";
 import { createTask } from "@/lib/task";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
@@ -408,37 +408,50 @@ const [form, setForm] = useState({
         return getDownloadURL(r);
       }));
 
-      await createTask({
-        type: "task",
-        title: form.title.trim(),
-        description: form.description.trim(),
-        price: form.budgetType === "negotiable" ? 0 : basePrice,
-        currency: "VND",
-        budgetType: form.budgetType,
-        totalSlots: parseInt(form.totalSlots),
-        visibility: form.visibility,
-        deadline: Timestamp.fromDate(new Date(form.endDate)),
-        applicationDeadline: Timestamp.fromDate(new Date(form.endDate)),
-        startDate: Timestamp.fromDate(new Date(form.startDate)),
-        category: form.category,
-        tags: [...form.tags, form.urgency],
-        images: urls,
-        attachments: [],
-        requirements: form.requirements,
-        isRemote: form.isRemote,
-        location: form.isRemote ? {} : { address: form.address, city: form.city, lat: form.lat, lng: form.lng },
-        urgency: form.urgency,
-      
-        
-        milestones: form.milestones,
-        autoMatch: form.autoMatch,
-        allowBids: form.allowBids,
-        featured: form.featured,
-        nda: form.nda,
-        
-        invites: form.invites,
-        needApproval: form.needApproval,
-      } as any, user);
+      const userSnap = await getDoc(doc(db, "users", user.uid)); // ← Thêm dòng này
+const userData = userSnap.data();
+
+await createTask({
+  type: "task",
+  userId: user.uid, // ← Thêm
+  createdBy: user.uid, // ← Thêm
+  userName: userData?.displayName || user.email || "Unknown", // ← Thêm
+  userAvatar: userData?.photoURL || null, // ← Thêm
+  userVerified: userData?.emailVerified || false, // ← Thêm
+  title: form.title.trim(),
+  description: form.description.trim(),
+  price: form.budgetType === "negotiable" ? 0 : basePrice,
+  currency: "VND",
+  budgetType: form.budgetType,
+  requiredPeople: parseInt(form.totalSlots), // ← Đổi tên: bỏ totalSlots
+  joined: 0, // ← Thêm
+  visibility: form.visibility,
+  deadline: Timestamp.fromDate(new Date(form.endDate)),
+  applicationDeadline: Timestamp.fromDate(new Date(form.endDate)),
+  startDate: Timestamp.fromDate(new Date(form.startDate)),
+  category: form.category,
+  tags: [...form.tags, form.urgency],
+  images: urls,
+  attachments: [],
+  requirements: form.requirements,
+  isRemote: form.isRemote,
+  location: form.isRemote ? {} : { address: form.address, city: form.city, lat: form.lat, lng: form.lng },
+  urgency: form.urgency,
+  milestones: form.milestones,
+  autoMatch: form.autoMatch,
+  allowBids: form.allowBids,
+  featured: form.featured,
+  nda: form.nda,
+  invites: form.invites,
+  needApproval: form.needApproval,
+  status: "open", // ← Thêm
+  banned: false, // ← Thêm
+  likeCount: 0, // ← Thêm
+  commentCount: 0, // ← Thêm
+  viewCount: 0, // ← Thêm
+  likes: [], // ← Thêm
+  savedBy: [], // ← Thêm
+} as any, user);
 
       toast.success("🎉 Đăng thành công!");
       setTimeout(() => router.push("/"), 800);
