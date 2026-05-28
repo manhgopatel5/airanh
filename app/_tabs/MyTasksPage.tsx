@@ -42,7 +42,7 @@ export default function TasksPage() {
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
 
   // FIX: Dùng SWR thay getDocs. 0 reads nếu cache còn
-  const { data: tasks = [], isLoading, isValidating, mutate: refetch } = useSWR<FeedTask[]>(
+const { data: tasks = [], isLoading, isValidating } = useSWR<FeedTask[]>(
     currentUser? `/api/user-tasks?type=${mode}&tab=${subTab}` : null,
     fetcher,
     {
