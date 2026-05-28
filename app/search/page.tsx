@@ -16,7 +16,7 @@ import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { QueryConstraint } from "firebase/firestore";
 import { TaskListItem } from "@/types/task";
-import TaskCard from "@/components/TaskCard";
+import TaskCard from "@/components/task/TaskCard";
 import { FiSearch, FiX, FiMapPin } from "react-icons/fi";
 import { HiFire, HiSparkles, HiUsers } from "react-icons/hi";
 import { toast, Toaster } from "sonner";
