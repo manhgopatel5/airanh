@@ -4,7 +4,7 @@ const nextConfig = {
   compress: true,
   output: 'standalone',
   poweredByHeader: false,
-  swcMinify: true, // Giảm 30% JS bundle
+  // ĐÃ XÓA: swcMinify - Next 15 mặc định bật rồi, khai báo là lỗi build
 
   images: {
     remotePatterns: [
@@ -22,7 +22,7 @@ const nextConfig = {
         hostname: 'ui-avatars.com',
       },
     ],
-    formats: ['image/avif', 'image/webp'], // LCP giảm 40%
+    formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
@@ -106,7 +106,7 @@ const nextConfig = {
     ];
   },
 
-  serverExternalPackages: ['firebase-admin', 'sharp'], // Tách khỏi client bundle
+  serverExternalPackages: ['firebase-admin', 'sharp'],
 
   experimental: {
     optimizePackageImports: [
@@ -118,15 +118,14 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '2mb',
     },
-    // 1. THÊM: Bật Partial Prerendering - Shell load ngay, data stream sau
-    ppr: 'incremental', 
-    // 2. THÊM: Cache RSC payload 30s. User back/forward không fetch lại
+    // ĐÃ XÓA: ppr: 'incremental' - Chỉ chạy trên Next canary, stable 15.5.15 chưa có
+    
+    // GIỮ LẠI: 3 dòng này vẫn chạy tốt trên 15.5.15
     staleTimes: {
-      dynamic: 30,
+      dynamic: 30, // Cache RSC payload 30s. Back/forward tức thì
       static: 180,
     },
-    // 3. THÊM: Giảm JS gửi cho client
-    optimizeCss: true,
+    optimizeCss: true, // Gộp + minify CSS, giảm ~50kb
   },
 
   webpack: (config, { isServer }) => {
