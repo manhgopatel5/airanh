@@ -69,14 +69,12 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
 
   const isOwner = user?.uid === task.userId;
 
-  // FIX 1: Dùng API route thay vì updateDoc trực tiếp -> 0 reads
   const handleLike = useCallback(async () => {
     if (!user) return router.push("/login");
     vibrate(10);
     const newLiked =!liked;
     const oldLikes = task.likes || [];
 
-    // Optimistic UI
     setLiked(newLiked);
     onTaskUpdate?.(task.id, {
       likes: newLiked? [...oldLikes, user.uid] : oldLikes.filter(id => id!== user.uid),
@@ -96,7 +94,6 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
     }
   }, [user, liked, task, router, onTaskUpdate]);
 
-  // FIX 2: Dùng API route thay vì updateDoc
   const handleSave = useCallback(async () => {
     if (!user) return router.push("/login");
     if (saving) return;
@@ -150,9 +147,9 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
   }, [router, task.id]);
 
   const taskDate = task.type === "task" && task.deadline
-? new Date(task.deadline).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+   ? new Date(task.deadline).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
     : task.type === "plan" && task.eventDate
-? new Date(task.eventDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+   ? new Date(task.eventDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
     : "";
 
   const createdDate = task.createdAt? new Date(task.createdAt) : new Date();
@@ -160,6 +157,9 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
 
   const maxSlots = task.type === "task"? task.totalSlots?? 0 : task.maxParticipants?? 0;
   const currentCount = task.type === "task"? task.joined?? 0 : task.currentParticipants?? 0;
+
+  // FIX: Dùng avatar từ task nhưng fallback blur + lazy
+  const avatarUrl = task.userAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(task.userName)}&background=0A84FF&color=fff&bold=true&size=88`;
 
   return (
     <motion.div
@@ -174,9 +174,8 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
         {/* HEADER */}
         <div className="flex items-start gap-3 p-4 pb-3">
           <div className="relative">
-            {/* FIX 3: Lazy load + blur placeholder */}
             <img
-              src={task.userAvatar || "/default-avatar.png"}
+              src={avatarUrl}
               alt={task.userName}
               loading="lazy"
               decoding="async"
@@ -346,7 +345,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
               </div>
             )}
 
-            {task.type === "plan" && task.costType === "ticket" && task.costAmount && task.costAmount > 0 && (
+            {task.type === "plan" && task.costType === "ticket" && task.costAmount > 0 && (
               <div className="shrink-0 px-3 py-1.5 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/40 dark:to-blue-900/40 ring-1 ring-blue-200/50 dark:ring-blue-800/50">
                 <span className="font-bold text-sm text-[#0A84FF]">
                   {task.costAmount.toLocaleString("vi-VN")}đ
@@ -462,5 +461,4 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
   );
 }
 
-// FIX 4: React.memo - chỉ re-render khi props đổi
 export default memo(TaskCard);
