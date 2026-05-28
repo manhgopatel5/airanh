@@ -1,6 +1,6 @@
 "use client";
 import { TaskListItem } from "@/types/task";
-import TaskCard from "@/components/TaskCard";
+import TaskCard from "@/components/task/TaskCard";
 // import { HiCalendarDays } from "react-icons/hi2"; ❌ Xóa dòng này
 
 type Props = {
