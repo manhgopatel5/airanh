@@ -798,7 +798,7 @@ export default function ProfileTabContent() {
               </button>
             </div>
           </div>
-        </div>
+     
       )}
 
       {/* AVATAR MODAL */}
