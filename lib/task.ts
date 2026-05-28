@@ -156,6 +156,8 @@ export async function createTask(
     userShortId: userShortId,
     status: "open",
     visibility: data.visibility || "public",
+banned: false, 
+    hidden: false, 
     createdAt: serverTimestamp() as Timestamp,
     updatedAt: serverTimestamp() as Timestamp,
 ...(data.location && { location: data.location }),
