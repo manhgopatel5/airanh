@@ -231,11 +231,11 @@ export async function createPlan(
     order: idx,
   }));
 
-  // FIX: Fallback cho user chưa onboard
-  const displayName = userData.displayName || user.displayName || "Ẩn danh";
-  const photoURL = userData.photoURL || user.photoURL || null;
-  const username = userData.username || slugify(displayName);
-  const userShortId = userData.userId || `AIR${user.uid.slice(0, 6).toUpperCase()}`;
+// THAY ĐOẠN NÀY trong createTask và createPlan
+const displayName = userData.displayName || user.email?.split('@')[0] || "Người dùng";
+const photoURL = userData.photoURL || user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0A84FF&color=fff`;
+const username = userData.username || slugify(displayName);
+const userShortId = userData.userId || `AIR${user.uid.slice(0, 6).toUpperCase()}`;
 
   const ownerParticipant: PlanParticipant = {
     userId: user.uid,
