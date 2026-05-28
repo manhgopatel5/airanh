@@ -46,7 +46,6 @@ function TaskCard({ task, mode }: Props) {
   const [liking, setLiking] = useState(false);
   const [localLikes, setLocalLikes] = useState<string[]>(task.likes || []);
 
-  // Fetch user data nếu task.userName = "Ẩn danh" hoặc rỗng
   const shouldFetchUser = !task.userName || task.userName === "Ẩn danh";
   const { data: authorData } = useSWR(
     shouldFetchUser ? `user-${task.userId}` : null,
@@ -57,7 +56,7 @@ function TaskCard({ task, mode }: Props) {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, setCurrentUser);
     return () => unsub();
-  }, [auth]);
+  }, );
 
   if (!task) return <Skeleton />;
 
@@ -79,7 +78,6 @@ function TaskCard({ task, mode }: Props) {
   const taskData = task as TaskListItem;
   const planData = task as PlanListItem;
 
-  // FIX: Ưu tiên tên từ Firestore, fallback email/shortId, không bao giờ "Ẩn danh"
   const displayName = 
     authorData?.displayName ||
     (task.userName && task.userName !== "Ẩn danh" ? task.userName : null) ||
@@ -91,7 +89,6 @@ function TaskCard({ task, mode }: Props) {
     task.userAvatar || 
     `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0A84FF&color=fff&bold=true`;
 
-  /* ================= LIKE ================= */
   const handleLike = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!currentUser) return router.push("/login");
@@ -116,7 +113,6 @@ function TaskCard({ task, mode }: Props) {
     }
   }, [currentUser, liked, liking, localLikes, task.id, task.likes, router, db]);
 
-  /* ================= SHARE ================= */
   const handleShare = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (typeof window === "undefined") return;
@@ -133,7 +129,6 @@ function TaskCard({ task, mode }: Props) {
     }
   }, [task.slug, task.title, mode]);
 
-  /* ================= NAV ================= */
   const handleClick = useCallback(() => {
     incrementTaskView(task.id);
     router.push(`/${mode}/${task.slug}`);
@@ -148,7 +143,6 @@ function TaskCard({ task, mode }: Props) {
     router.prefetch(`/${mode}/${task.slug}`);
   }, [router, task.slug, mode]);
 
-  /* ================= TIME ================= */
   const timeAgo = (seconds?: number) => {
     if (!seconds) return "";
     const diff = Date.now() / 1000 - seconds;
@@ -297,6 +291,7 @@ function Skeleton() {
           <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
           <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/3" />
         </div>
+      </div>
       <div className="h-5 bg-gray-200 dark:bg-zinc-800 rounded w-3/4 mb-2" />
       <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-full" />
     </div>
