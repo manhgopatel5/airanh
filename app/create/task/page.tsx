@@ -398,8 +398,8 @@ const [form, setForm] = useState({
       toast.error("Vui lòng điền đủ thông tin");
       return;
     }
-  if (isSubmittingRef.current) return;
-  isSubmittingRef.current = true;
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
     setSubmitting(true);
     try {
       const urls = await Promise.all(imageFiles.map(async file => {
@@ -408,50 +408,33 @@ const [form, setForm] = useState({
         return getDownloadURL(r);
       }));
 
-      const userSnap = await getDoc(doc(db, "users", user.uid)); // ← Thêm dòng này
-const userData = userSnap.data();
-
-await createTask({
-  type: "task",
-  userId: user.uid,
-  createdBy: user.uid,
-  userName: userData?.displayName || user.email || "Unknown",
-  userAvatar: userData?.photoURL || null,
-  userVerified: userData?.emailVerified || false,
-  title: form.title.trim(),
-  description: form.description.trim(),
-  price: form.budgetType === "negotiable" ? 0 : basePrice,
-  currency: "VND",
-  budgetType: form.budgetType,
-  requiredPeople: parseInt(form.totalSlots),
-  joined: 0,
-  visibility: form.visibility, // ← Check: phải là "public" 
-  deadline: Timestamp.fromDate(new Date(form.endDate)),
-  applicationDeadline: Timestamp.fromDate(new Date(form.endDate)),
-  startDate: Timestamp.fromDate(new Date(form.startDate)),
-  category: form.category,
-  tags: [...form.tags, form.urgency],
-  images: urls,
-  attachments: [],
-  requirements: form.requirements,
-  isRemote: form.isRemote,
-  location: form.isRemote ? {} : { address: form.address, city: form.city, lat: form.lat, lng: form.lng },
-  urgency: form.urgency,
-  milestones: form.milestones,
-  autoMatch: form.autoMatch,
-  allowBids: form.allowBids,
-  featured: form.featured,
-  nda: form.nda,
-  invites: form.invites,
-  needApproval: form.needApproval,
-  status: "open", // ← THÊM DÒNG NÀY
-  banned: false, // ← THÊM DÒNG NÀY  
-  likeCount: 0, // ← THÊM DÒNG NÀY
-  commentCount: 0, // ← THÊM DÒNG NÀY
-  viewCount: 0, // ← THÊM DÒNG NÀY
-  likes: [], // ← THÊM DÒNG NÀY
-  savedBy: [], // ← THÊM DÒNG NÀY
-} as any, user);
+      await createTask({
+        title: form.title.trim(),
+        description: form.description.trim(),
+        price: form.budgetType === "negotiable" ? 0 : basePrice,
+        currency: "VND",
+        budgetType: form.budgetType,
+        totalSlots: parseInt(form.totalSlots),
+        visibility: form.visibility,
+        deadline: Timestamp.fromDate(new Date(form.endDate)),
+        applicationDeadline: Timestamp.fromDate(new Date(form.endDate)),
+        startDate: Timestamp.fromDate(new Date(form.startDate)),
+        category: form.category,
+        tags: [...form.tags, form.urgency],
+        images: urls,
+        attachments: [],
+        requirements: form.requirements,
+        isRemote: form.isRemote,
+        location: form.isRemote ? {} : { address: form.address, city: form.city, lat: form.lat, lng: form.lng },
+        urgency: form.urgency,
+        milestones: form.milestones,
+        autoMatch: form.autoMatch,
+        allowBids: form.allowBids,
+        featured: form.featured,
+        nda: form.nda,
+        invites: form.invites,
+        needApproval: form.needApproval,
+      }, user);
 
       toast.success("🎉 Đăng thành công!");
       setTimeout(() => router.push("/"), 800);
@@ -462,7 +445,6 @@ await createTask({
       isSubmittingRef.current = false; 
     }
   };
-
   return (
     <>
       <Toaster richColors position="top-center" />
