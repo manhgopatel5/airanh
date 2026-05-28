@@ -3,12 +3,22 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { updateProfile } from "firebase/auth";
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp, getDoc } from "firebase/firestore";
 import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { FiUser, FiArrowRight } from "react-icons/fi";
+
+const generateUsername = (name: string) => {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "")
+    .replace(/[^a-z0-9]/g, "")
+    .slice(0, 20) || "user";
+};
 
 export default function OnboardingPage() {
   const { user, userData, loading } = useAuth();
@@ -79,6 +89,11 @@ export default function OnboardingPage() {
     try {
       const db = getFirebaseDB();
       const lowerName = trimmed.toLowerCase();
+      
+      // Lấy username hiện tại để update searchKeywords
+      const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+      const currentUsername = userDoc.data()?.username || generateUsername(trimmed);
+      const userId = userDoc.data()?.userId || `AIR${currentUser.uid.slice(0, 6).toUpperCase()}`;
 
       // Update song song Auth + Firestore
       await Promise.all([
@@ -86,10 +101,13 @@ export default function OnboardingPage() {
         updateDoc(doc(db, "users", currentUser.uid), {
           displayName: trimmed,
           nameLower: lowerName,
+          username: currentUsername, // Giữ username cũ hoặc gen mới
           searchKeywords: [
             lowerName,
             lowerName.replace(/\s+/g, ""),
             ...lowerName.split(" ").filter(w => w.length >= 2),
+            userId.toLowerCase(),
+            currentUsername.toLowerCase(),
           ],
           onboardingCompleted: true,
           updatedAt: serverTimestamp(),
@@ -97,8 +115,7 @@ export default function OnboardingPage() {
       ]);
 
       toast.success(`Chào mừng, ${trimmed}!`);
-      // Middleware tự cho qua, không cần push
-      router.refresh(); // Force re-check middleware
+      router.refresh(); // Force re-check middleware + AuthContext
       router.push("/");
     } catch (e: any) {
       console.error("Onboarding error:", e);
