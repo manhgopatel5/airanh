@@ -416,7 +416,7 @@ const submit = async () => {
   setLoading(true);
   try {
     const db = getFirebaseDB();
-    const userSnap = await getDoc(doc(db, "users", user.uid));
+const userSnap = await getDoc(doc(db, "users", user.uid)); 
     const userData = userSnap.data();
 
     await addDoc(collection(db, 'tasks'), {
