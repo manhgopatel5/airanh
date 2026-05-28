@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import FCMProvider from "@/components/FCMProvider";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import BottomNav from "@/components/BottomNav";
 import { Toaster } from "react-hot-toast";
 import { useAuth } from "@/lib/AuthContext";
@@ -14,9 +14,7 @@ type Props = {
 export default function ClientLayout({ children }: Props) {
   const pathname = usePathname() || "";
   const router = useRouter();
-  const { user, loading } = useAuth();
-
-  const hasInitiallyLoaded = useRef(false);
+  const { user, userData, loading } = useAuth();
 
   const publicRoutes = ["/login", "/register", "/forgot-password", "/verify-email", "/terms", "/privacy"];
 
@@ -30,26 +28,44 @@ export default function ClientLayout({ children }: Props) {
 
   /* ================= REDIRECT ================= */
   useEffect(() => {
+    // 1. Không redirect nếu đang loading lần đầu có cache
+    // AuthContext đã lo loading rồi, ở đây chỉ redirect khi chắc chắn không có user
     if (loading) return;
+    
+    // Chưa login + vào trang private -> về /login
     if (!user &&!isPublic) {
       router.replace("/login");
+      return;
     }
-  }, [user, loading, isPublic, router]);
 
-  if (!loading &&!hasInitiallyLoaded.current) {
-    hasInitiallyLoaded.current = true;
-  }
+    // Đã login + vào /login -> về home
+    if (user && isPublic &&!pathname.startsWith("/verify-email")) {
+      router.replace("/");
+      return;
+    }
 
-  /* ================= LOADING THÔNG MINH ================= */
-  if (loading &&!hasInitiallyLoaded.current) {
-    return null;
-  }
+    // 2. Check onboarding: userData có sẵn từ cache nên check được ngay
+    if (user && userData && userData.onboardingCompleted === false && pathname!== "/onboarding") {
+      router.replace("/onboarding");
+      return;
+    }
 
-  const exactBottomNavRoutes = ["/orders", "/notifications"];
+    // Đã onboard + ở /onboarding -> về home
+    if (user && userData && userData.onboardingCompleted === true && pathname === "/onboarding") {
+      router.replace("/");
+      return;
+    }
+  }, [user, userData, loading, isPublic, pathname, router]);
+
+  // 3. BỎ HẾT LOADING Ở ĐÂY. Để AuthContext + Suspense lo.
+  // Layout phải render ngay để không trắng màn hình
+  
+  const exactBottomNavRoutes = ["/orders", "/notifications", "/"];
   const shouldShowOldBottomNav = exactBottomNavRoutes.includes(pathname);
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors font-sans overflow-hidden">
+      {/* 4. Chỉ mount FCM khi có user. Không chờ loading */}
       {user && <FCMProvider userId={user.uid} />}
 
       {/* Main scroll container - mỗi page scroll riêng */}
