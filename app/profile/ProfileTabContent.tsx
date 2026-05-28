@@ -2,13 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { signOut, updateProfile } from "firebase/auth";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { useAppStore } from "@/store/app";
 import {
   doc, onSnapshot, updateDoc, serverTimestamp, getDoc, setDoc, Timestamp
 } from "firebase/firestore";
 import imageCompression from 'browser-image-compression';
+import Cropper from 'react-easy-crop';
+import type { Area } from 'react-easy-crop';
 import {
   getFirebaseDB,
   getFirebaseAuth,
@@ -19,7 +21,7 @@ import {
   HelpCircle, LogOut, User, Shield, Lock,
   Camera, Check, QrCode, Share2, Settings,
   Circle, Bell,
-  Mail, Phone, Monitor, Ban, HardDrive, X
+  Mail, Phone, Monitor, Ban, HardDrive, X, ZoomIn, ZoomOut, RotateCw
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import type { UploadTask } from "firebase/storage";
@@ -50,6 +52,50 @@ type UserData = {
   lastAvatarChangeAt?: Timestamp;
 };
 
+// Helper crop ảnh
+async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
+  const image = await createImage(imageSrc);
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('No 2d context');
+
+  const maxSize = Math.max(image.width, image.height);
+  const safeArea = 2 * ((maxSize / 2) * Math.sqrt(2));
+
+  canvas.width = safeArea;
+  canvas.height = safeArea;
+
+  ctx.drawImage(
+    image,
+    safeArea / 2 - image.width * 0.5,
+    safeArea / 2 - image.height * 0.5
+  );
+
+  const data = ctx.getImageData(0, 0, safeArea, safeArea);
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
+
+  ctx.putImageData(
+    data,
+    Math.round(0 - safeArea / 2 + image.width * 0.5 - pixelCrop.x),
+    Math.round(0 - safeArea / 2 + image.height * 0.5 - pixelCrop.y)
+  );
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+    }, 'image/webp', 0.9);
+  });
+}
+
+const createImage = (url: string): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const image = new Image();
+    image.addEventListener('load', () => resolve(image));
+    image.addEventListener('error', (error) => reject(error));
+    image.src = url;
+  });
+
 export default function ProfileTabContent() {
   const db = getFirebaseDB();
   const auth = getFirebaseAuth();
@@ -63,10 +109,17 @@ export default function ProfileTabContent() {
   const [displayName, setDisplayName] = useState("");
   const [showNameModal, setShowNameModal] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [showCropModal, setShowCropModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
+  // Crop state
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
   const hasCheckedId = useRef(false);
   const uploadTaskRef = useRef<UploadTask | null>(null);
@@ -221,21 +274,38 @@ export default function ProfileTabContent() {
   const handleAvatarFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setPendingAvatarFile(file);
-    setShowAvatarModal(false);
-    
-  };
-
-  const handleUpload = async (file: File) => {
-    if (!user) return;
     if (!file.type.startsWith("image/")) return toast.error("Chỉ chấp nhận file ảnh");
     if (file.size > 20 * 1024 * 1024) return toast.error("Ảnh không được vượt quá 20MB");
 
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPendingAvatarFile(reader.result as string);
+      setShowAvatarModal(false);
+      setShowCropModal(true);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setRotation(0);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const handleCropSave = async () => {
+    if (!pendingAvatarFile ||!croppedAreaPixels ||!user) return;
+
+    setShowCropModal(false);
     setUploading(true);
     setUploadProgress(0);
 
     try {
-      toast.loading("Đang nén ảnh...");
+      toast.loading("Đang xử lý ảnh...");
+      const croppedBlob = await getCroppedImg(pendingAvatarFile, croppedAreaPixels);
+      const croppedFile = new File([croppedBlob], 'avatar.webp', { type: 'image/webp' });
+
       const options = {
         maxSizeMB: 1,
         maxWidthOrHeight: 1024,
@@ -243,7 +313,7 @@ export default function ProfileTabContent() {
         fileType: 'image/webp',
       };
 
-      const compressedFile = await imageCompression(file, options);
+      const compressedFile = await imageCompression(croppedFile, options);
       toast.dismiss();
 
       const storageRef = ref(storage, `avatars/${user.uid}`);
@@ -257,6 +327,7 @@ export default function ProfileTabContent() {
         (err) => {
           if (err.code!== "storage/canceled") toast.error("Upload thất bại");
           setUploading(false);
+          setPendingAvatarFile(null);
         },
         async () => {
           const task = uploadTaskRef.current;
@@ -274,12 +345,14 @@ export default function ProfileTabContent() {
           toast.success("Cập nhật avatar thành công. Bạn có thể đổi lại sau 3 tháng");
           if ("vibrate" in navigator) navigator.vibrate(8);
           setUploading(false);
+          setPendingAvatarFile(null);
         }
       );
     } catch (error) {
       console.error(error);
-      toast.error("Nén ảnh thất bại");
+      toast.error("Xử lý ảnh thất bại");
       setUploading(false);
+      setPendingAvatarFile(null);
     }
   };
 
@@ -322,6 +395,7 @@ export default function ProfileTabContent() {
         setShowLogoutModal(false);
         setShowNameModal(false);
         setShowAvatarModal(false);
+        setShowCropModal(false);
       }
     };
     window.addEventListener("keydown", handleEsc);
@@ -544,7 +618,7 @@ export default function ProfileTabContent() {
         </div>
       )}
 
-      {/* Modal đổi avatar */}
+      {/* Modal chọn avatar */}
       {showAvatarModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-md p-6 space-y-4">
@@ -559,7 +633,7 @@ export default function ProfileTabContent() {
                 <p className="text-sm text-amber-800 dark:text-amber-300 font-medium mb-1">Lưu ý:</p>
                 <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-1 list-disc list-inside">
                   <li>Mỗi tài khoản chỉ được đổi avatar 1 lần mỗi 3 tháng</li>
-                  <li>Ảnh sẽ được nén về dưới 1MB tự động</li>
+                  <li>Ảnh sẽ được cắt vuông 1:1 và nén về dưới 1MB</li>
                   <li>Ảnh sẽ hiển thị công khai với mọi người</li>
                 </ul>
               </div>
@@ -578,6 +652,65 @@ export default function ProfileTabContent() {
                 Chọn ảnh
               </label>
               <input type="file" accept="image/*" className="hidden" id="avatar-upload-modal" onChange={handleAvatarFileSelect} disabled={uploading} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal crop ảnh */}
+      {showCropModal && pendingAvatarFile && (
+        <div className="fixed inset-0 bg-black z-50 flex flex-col">
+          <div className="relative flex-1">
+            <Cropper
+              image={pendingAvatarFile}
+              crop={crop}
+              zoom={zoom}
+              rotation={rotation}
+              aspect={1}
+              onCropChange={setCrop}
+              onCropComplete={onCropComplete}
+              onZoomChange={setZoom}
+              cropShape="round"
+              showGrid={false}
+            />
+          </div>
+          <div className="bg-white dark:bg-zinc-900 p-4 space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <button onClick={() => setZoom(z => Math.max(1, z - 0.2))} className="p-3 bg-gray-100 dark:bg-zinc-800 rounded-xl">
+                <ZoomOut className="w-5 h-5" />
+              </button>
+              <input
+                type="range"
+                min={1}
+                max={3}
+                step={0.1}
+                value={zoom}
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="flex-1"
+              />
+              <button onClick={() => setZoom(z => Math.min(3, z + 0.2))} className="p-3 bg-gray-100 dark:bg-zinc-800 rounded-xl">
+                <ZoomIn className="w-5 h-5" />
+              </button>
+              <button onClick={() => setRotation(r => r + 90)} className="p-3 bg-gray-100 dark:bg-zinc-800 rounded-xl">
+                <RotateCw className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowCropModal(false);
+                  setPendingAvatarFile(null);
+                }}
+                className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 font-semibold text-gray-700 dark:text-zinc-300"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleCropSave}
+                className={`flex-1 py-3 rounded-xl bg-gradient-to-r ${accentGradient} font-semibold text-white`}
+              >
+                Lưu
+              </button>
             </div>
           </div>
         </div>
