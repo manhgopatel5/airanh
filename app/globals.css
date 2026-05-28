@@ -383,3 +383,11 @@
     animation: slideFromBottom 0.3s ease-out;
   }
 }
+
+/* ================= MODAL OPEN - HIDE BOTTOM NAV ================= */
+
+body.modal-open nav,
+body.modal-open .fixed.bottom-0,
+body.modal-open [class*="bottom-0"] {
+  display: none !important;
+}
