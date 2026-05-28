@@ -514,5 +514,5 @@ export default function ProfileTabContent() {
         <ProfileModal title="Đăng xuất?" desc="Bạn sẽ cần đăng nhập lại để sử dụng app" onClose={() => setShowLogoutModal(false)} onConfirm={handleLogout} confirmText="Đăng xuất" danger />
       )}
     </div>
-  );
+  
 }
