@@ -409,6 +409,7 @@ const [form, setForm] = useState({
       }));
 
       await createTask({
+type: "task", 
         title: form.title.trim(),
         description: form.description.trim(),
         price: form.budgetType === "negotiable" ? 0 : basePrice,
