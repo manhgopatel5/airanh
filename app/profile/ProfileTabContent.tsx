@@ -759,62 +759,45 @@ export default function ProfileTabContent() {
 
       {/* NAME MODAL */}
 
-      {showNameModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-md p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                Đổi tên hiển thị
-              </h2>
-
-              <button
-                onClick={() =>
-                  setShowNameModal(false)
-                }
-                className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2 block">
-                  Tên mới
-                </label>
-
-                <input
-                  value={displayName}
-                  onChange={(e) =>
-                    setDisplayName(e.target.value)
-                  }
-                  placeholder="Nhập tên thật của bạn"
-                  maxLength={50}
-                  className="w-full px-4 py-3 border border-gray-200 dark:border-zinc-700 rounded-xl outline-none bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() =>
-                  setShowNameModal(false)
-                }
-                className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 font-semibold"
-              >
-                Hủy
-              </button>
-
-              <button
-                onClick={handleUpdateName}
-                className={`flex-1 py-3 rounded-xl bg-gradient-to-r ${accentGradient} text-white font-semibold`}
-              >
-                Lưu
-              </button>
-            </div>
-          </div>
+{showNameModal && (
+  <div className="fixed inset-0 bg-black/50 z-[9999] flex items-end sm:items-center justify-center">
+    <div className="bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6 space-y-4 pb-24 sm:pb-6 safe-area-inset-bottom">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Đổi tên hiển thị</h2>
+        <button onClick={() => setShowNameModal(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full">
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+      <div className="space-y-3">
+        <div>
+          <label className="text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2 block">Tên mới</label>
+          <input
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder="Nhập tên thật của bạn"
+            maxLength={50}
+            className="w-full px-4 py-3 border border-gray-200 dark:border-zinc-700 rounded-xl outline-none bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+          />
         </div>
-      )}
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3">
+          <p className="text-sm text-amber-800 dark:text-amber-300 font-medium mb-1">Lưu ý:</p>
+          <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-1 list-disc list-inside">
+            <li>Mỗi tài khoản chỉ được đổi tên 1 lần mỗi 3 tháng</li>
+            <li>Vui lòng dùng tên thật, không chứa ký tự đặc biệt</li>
+            <li>Tên sẽ hiển thị công khai với mọi người</li>
+          </ul>
+        </div>
+      <div className="flex gap-3">
+        <button onClick={() => setShowNameModal(false)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 font-semibold text-gray-700 dark:text-zinc-300 active:scale-95 transition">
+          Hủy
+        </button>
+        <button onClick={handleUpdateName} className={`flex-1 py-3 rounded-xl bg-gradient-to-r ${accentGradient} font-semibold text-white active:scale-95 transition`}>
+          Lưu
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* AVATAR MODAL */}
 
