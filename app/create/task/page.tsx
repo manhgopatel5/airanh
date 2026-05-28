@@ -415,7 +415,7 @@ const [form, setForm] = useState({
         currency: "VND",
         budgetType: form.budgetType as "fixed" | "hourly" | "negotiable", 
         totalSlots: parseInt(form.totalSlots),
-        visibility: form.visibility,
+        visibility: form.visibility as "public" | "friends" | "friends_except" | "private",
         deadline: Timestamp.fromDate(new Date(form.endDate)),
         applicationDeadline: Timestamp.fromDate(new Date(form.endDate)),
         startDate: Timestamp.fromDate(new Date(form.startDate)),
