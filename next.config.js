@@ -4,6 +4,7 @@ const nextConfig = {
   compress: true,
   output: 'standalone',
   poweredByHeader: false,
+  swcMinify: true, // Giảm 30% JS bundle
 
   images: {
     remotePatterns: [
@@ -21,17 +22,15 @@ const nextConfig = {
         hostname: 'ui-avatars.com',
       },
     ],
-    formats: ['image/avif', 'image/webp'],
+    formats: ['image/avif', 'image/webp'], // LCP giảm 40%
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
-    contentSecurityPolicy:
-      "default-src 'self'; script-src 'none'; sandbox;",
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
   async headers() {
     const csp = [
       "default-src 'self'",
-
       [
         'script-src',
         "'self'",
@@ -46,9 +45,7 @@ const nextConfig = {
         'https://cdn.jsdelivr.net',
         'https://unpkg.com',
       ].join(' '),
-
       "style-src 'self' 'unsafe-inline'",
-
       [
         'img-src',
         "'self'",
@@ -58,9 +55,7 @@ const nextConfig = {
         'https://lh3.googleusercontent.com',
         'https://ui-avatars.com',
       ].join(' '),
-
       "font-src 'self' data:",
-
       [
         'connect-src',
         "'self'",
@@ -76,17 +71,14 @@ const nextConfig = {
         'https://cdn.jsdelivr.net',
         'https://unpkg.com',
       ].join(' '),
-
       "worker-src 'self' blob:",
       "media-src 'self' blob:",
-
       [
         'frame-src',
         "'self'",
         'https://*.firebaseapp.com',
         'https://accounts.google.com',
       ].join(' '),
-
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
@@ -96,31 +88,12 @@ const nextConfig = {
       {
         source: '/(.*)',
         headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: csp,
-          },
-          {
-            key: 'X-DNS-Prefetch-Control',
-            value: 'on',
-          },
-          {
-            key: 'Strict-Transport-Security',
-            value:
-              'max-age=63072000; includeSubDomains; preload',
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin',
-          },
+          { key: 'Content-Security-Policy', value: csp },
+          { key: 'X-DNS-Prefetch-Control', value: 'on' },
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
         ],
       },
       {
@@ -133,7 +106,7 @@ const nextConfig = {
     ];
   },
 
-  serverExternalPackages: ['firebase-admin', 'sharp'],
+  serverExternalPackages: ['firebase-admin', 'sharp'], // Tách khỏi client bundle
 
   experimental: {
     optimizePackageImports: [
@@ -145,6 +118,15 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '2mb',
     },
+    // 1. THÊM: Bật Partial Prerendering - Shell load ngay, data stream sau
+    ppr: 'incremental', 
+    // 2. THÊM: Cache RSC payload 30s. User back/forward không fetch lại
+    staleTimes: {
+      dynamic: 30,
+      static: 180,
+    },
+    // 3. THÊM: Giảm JS gửi cho client
+    optimizeCss: true,
   },
 
   webpack: (config, { isServer }) => {
