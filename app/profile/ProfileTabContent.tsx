@@ -47,6 +47,7 @@ type UserData = {
   username?: string;
   status: "active" | "banned" | "deleted" | "deactivated";
   lastNameChangeAt?: Timestamp;
+  lastAvatarChangeAt?: Timestamp; // NEW
 };
 
 export default function ProfileTabContent() {
@@ -61,15 +62,17 @@ export default function ProfileTabContent() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [showNameModal, setShowNameModal] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false); // NEW
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null); // NEW
 
   const hasCheckedId = useRef(false);
   const uploadTaskRef = useRef<UploadTask | null>(null);
 
   const accentGradient = isPlan
- ? "from-green-500 to-emerald-500"
+? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-600";
 
   useEffect(() => {
@@ -118,6 +121,23 @@ export default function ProfileTabContent() {
   const canChangeName = () => {
     if (!userData?.lastNameChangeAt) return { allowed: true };
     const lastChange = userData.lastNameChangeAt.toDate();
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    if (lastChange > threeMonthsAgo) {
+      const nextChange = new Date(lastChange);
+      nextChange.setMonth(nextChange.getMonth() + 3);
+      return {
+        allowed: false,
+        nextDate: nextChange.toLocaleDateString('vi-VN')
+      };
+    }
+    return { allowed: true };
+  };
+
+  // NEW: Check 3 tháng cho avatar
+  const canChangeAvatar = () => {
+    if (!userData?.lastAvatarChangeAt) return { allowed: true };
+    const lastChange = userData.lastAvatarChangeAt.toDate();
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
     if (lastChange > threeMonthsAgo) {
@@ -189,9 +209,27 @@ export default function ProfileTabContent() {
     }
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // NEW: Check trước khi chọn file
+  const handleAvatarClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const check = canChangeAvatar();
+    if (!check.allowed) {
+      toast.error(`Bạn chỉ được đổi avatar 1 lần mỗi 3 tháng. Lần đổi tiếp: ${check.nextDate}`);
+      return;
+    }
+    setShowAvatarModal(true);
+  };
+
+  const handleAvatarFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file ||!user) return;
+    if (!file) return;
+    setPendingAvatarFile(file);
+    setShowAvatarModal(false);
+    handleUpload(file);
+  };
+
+  const handleUpload = async (file: File) => {
+    if (!user) return;
     if (!file.type.startsWith("image/")) return toast.error("Chỉ chấp nhận file ảnh");
     if (file.size > 20 * 1024 * 1024) return toast.error("Ảnh không được vượt quá 20MB");
 
@@ -230,11 +268,12 @@ export default function ProfileTabContent() {
             updateProfile(user, { photoURL: url }),
             updateDoc(doc(db, "users", user.uid), {
               photoURL: url,
+              lastAvatarChangeAt: serverTimestamp(), // NEW
               updatedAt: serverTimestamp()
             })
           ]);
           await user.reload();
-          toast.success("Cập nhật avatar thành công");
+          toast.success("Cập nhật avatar thành công. Bạn có thể đổi lại sau 3 tháng");
           if ("vibrate" in navigator) navigator.vibrate(8);
           setUploading(false);
         }
@@ -243,8 +282,6 @@ export default function ProfileTabContent() {
       console.error(error);
       toast.error("Nén ảnh thất bại");
       setUploading(false);
-    } finally {
-      e.target.value = "";
     }
   };
 
@@ -286,6 +323,7 @@ export default function ProfileTabContent() {
       if (e.key === "Escape") {
         setShowLogoutModal(false);
         setShowNameModal(false);
+        setShowAvatarModal(false);
       }
     };
     window.addEventListener("keydown", handleEsc);
@@ -304,7 +342,7 @@ export default function ProfileTabContent() {
       {/* Header */}
       <div className="px-6 pt-12 pb-6">
         <div className="flex items-center gap-4">
-          <label className="relative cursor-pointer group flex-shrink-0">
+          <div onClick={handleAvatarClick} className="relative cursor-pointer group flex-shrink-0">
             <img
               src={avatarUrl}
               className="w-16 h-16 rounded-full object-cover"
@@ -318,13 +356,13 @@ export default function ProfileTabContent() {
             <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-active:opacity-100 transition-opacity">
               <Camera size={20} className="text-white" />
             </div>
-            <input type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
+            <input type="file" accept="image/*" className="hidden" id="avatar-upload" onChange={handleAvatarFileSelect} disabled={uploading} />
             {uploading && (
               <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center backdrop-blur-sm">
                 <span className="text-white text-xs font-bold">{uploadProgress}%</span>
               </div>
             )}
-          </label>
+          </div>
 
           <div className="flex-1 min-w-0">
             <h1 onClick={handleOpenNameModal} className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight cursor-pointer leading-tight active:opacity-70">
@@ -503,6 +541,44 @@ export default function ProfileTabContent() {
               >
                 Lưu
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* NEW: Modal đổi avatar */}
+      {showAvatarModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Đổi ảnh đại diện</h2>
+              <button onClick={() => setShowAvatarModal(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3">
+                <p className="text-sm text-amber-800 dark:text-amber-300 font-medium mb-1">Lưu ý:</p>
+                <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-1 list-disc list-inside">
+                  <li>Mỗi tài khoản chỉ được đổi avatar 1 lần mỗi 3 tháng</li>
+                  <li>Ảnh sẽ được nén về dưới 1MB tự động</li>
+                  <li>Ảnh sẽ hiển thị công khai với mọi người</li>
+                </ul>
+              </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowAvatarModal(false)}
+                className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 font-semibold text-gray-700 dark:text-zinc-300 active:scale-95 transition"
+              >
+                Hủy
+              </button>
+              <label
+                htmlFor="avatar-upload-modal"
+                className={`flex-1 py-3 rounded-xl bg-gradient-to-r ${accentGradient} font-semibold text-white active:scale-95 transition text-center cursor-pointer`}
+              >
+                Chọn ảnh
+              </label>
+              <input type="file" accept="image/*" className="hidden" id="avatar-upload-modal" onChange={handleAvatarFileSelect} disabled={uploading} />
             </div>
           </div>
         </div>
