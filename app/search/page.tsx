@@ -144,15 +144,15 @@ export default function SearchPage() {
 
         if (activeTab === "near" && userLocation) {
           data = data
-           .map((t) => ({
-             ...t,
+          .map((t) => ({
+            ...t,
               distance:
                 t.location?.lat && t.location?.lng
-                 ? getDistance(userLocation, { lat: t.location.lat, lng: t.location.lng })
+                ? getDistance(userLocation, { lat: t.location.lat, lng: t.location.lng })
                   : 9999,
             }))
-           .filter((t: any) => t.distance < 50)
-           .sort((a: any, b: any) => a.distance - b.distance);
+          .filter((t: any) => t.distance < 50)
+          .sort((a: any, b: any) => a.distance - b.distance);
         }
 
         setTasks((prev) => {
@@ -195,7 +195,7 @@ export default function SearchPage() {
   const toFeedTask = (t: TaskListItem): FeedTask => {
     const base = {...t } as any;
     return {
-     ...base,
+    ...base,
       createdAt: t.createdAt?.toDate?.()?.toISOString() || null,
       updatedAt: t.updatedAt?.toDate?.()?.toISOString() || null,
       deadline: t.deadline?.toDate?.()?.toISOString() || null,
@@ -252,7 +252,7 @@ export default function SearchPage() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex flex-col items-center py-2 px-2 flex-1 transition-all ${
                       active
-                       ? "text-blue-600 dark:text-blue-400"
+                      ? "text-blue-600 dark:text-blue-400"
                         : "text-gray-400 dark:text-zinc-500 hover:text-gray-600"
                     }`}
                   >
@@ -310,6 +310,7 @@ function SkeletonList() {
               <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
               <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/3" />
             </div>
+          </div>
           <div className="h-5 bg-gray-200 dark:bg-zinc-800 rounded w-3/4 mb-2" />
           <div className="h-20 bg-gray-200 dark:bg-zinc-800 rounded" />
         </div>
