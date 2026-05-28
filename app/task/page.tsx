@@ -15,7 +15,7 @@ type TabId = "hot" | "near" | "friends" | "new";
 
 export default function TaskPage() {
   const router = useRouter();
-  const { user, userData, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>("hot");
   const [mode] = useState<AppMode>("task");
   const {
