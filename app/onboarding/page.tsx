@@ -12,16 +12,16 @@ import { FiUser, FiArrowRight } from "react-icons/fi";
 
 const generateUsername = (name: string) => {
   return name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, "")
-    .replace(/[^a-z0-9]/g, "")
-    .slice(0, 20) || "user";
+   .toLowerCase()
+   .normalize("NFD")
+   .replace(/[\u0300-\u036f]/g, "")
+   .replace(/\s+/g, "")
+   .replace(/[^a-z0-9]/g, "")
+   .slice(0, 20) || "user";
 };
 
 export default function OnboardingPage() {
-  const { user, userData, loading } = useAuth();
+  const { user, userData, loading, refreshToken } = useAuth();
   const [displayName, setDisplayName] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -35,10 +35,11 @@ export default function OnboardingPage() {
     }
   }, [loading, userData, router]);
 
-  // 2. Auto focus + prefill từ Google/Auth
+  // 2. Auto focus + prefill từ Google/Auth hoặc email
   useEffect(() => {
-    if (user?.displayName && !displayName) {
-      setDisplayName(user.displayName);
+    if (user &&!displayName) {
+      const name = user.displayName || user.email?.split('@')[0] || "";
+      setDisplayName(name);
     }
     inputRef.current?.focus();
   }, [user, displayName]);
@@ -48,7 +49,8 @@ export default function OnboardingPage() {
     const trimmed = name.trim();
     if (trimmed.length < 2) return "Tên tối thiểu 2 ký tự";
     if (trimmed.length > 50) return "Tên tối đa 50 ký tự";
-    if (!/^[\p{L}\s]+$/u.test(trimmed)) return "Tên chỉ chứa chữ cái và khoảng trắng";
+    if (trimmed === "Ẩn danh") return "Không được dùng tên 'Ẩn danh'";
+    if (!/^[\p{L}\s0-9]+$/u.test(trimmed)) return "Tên chỉ chứa chữ cái, số và khoảng trắng";
     return "";
   };
 
@@ -60,7 +62,7 @@ export default function OnboardingPage() {
 
   // 4. Submit bằng Enter
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !error && displayName.trim() && !saving) {
+    if (e.key === "Enter" &&!error && displayName.trim() &&!saving) {
       handleSave();
     }
   };
@@ -69,7 +71,7 @@ export default function OnboardingPage() {
     const auth = getFirebaseAuth();
     const currentUser = auth.currentUser;
     const trimmed = displayName.trim();
-    
+
     const validationError = validate(trimmed);
     if (validationError) {
       setError(validationError);
@@ -89,34 +91,43 @@ export default function OnboardingPage() {
     try {
       const db = getFirebaseDB();
       const lowerName = trimmed.toLowerCase();
-      
-      // Lấy username hiện tại để update searchKeywords
+
+      // Lấy data cũ để giữ username/userId nếu có
       const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-      const currentUsername = userDoc.data()?.username || generateUsername(trimmed);
-      const userId = userDoc.data()?.userId || `AIR${currentUser.uid.slice(0, 6).toUpperCase()}`;
+      const oldData = userDoc.data();
+
+      const username = oldData?.username || generateUsername(trimmed);
+      const userId = oldData?.userId || `AIR${currentUser.uid.slice(0, 6).toUpperCase()}`;
+      const avatar = currentUser.photoURL || oldData?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(trimmed)}&background=0A84FF&color=fff&bold=true`;
 
       // Update song song Auth + Firestore
       await Promise.all([
-        updateProfile(currentUser, { displayName: trimmed }),
+        updateProfile(currentUser, {
+          displayName: trimmed,
+          photoURL: avatar
+        }),
         updateDoc(doc(db, "users", currentUser.uid), {
           displayName: trimmed,
           nameLower: lowerName,
-          username: currentUsername, // Giữ username cũ hoặc gen mới
+          username,
+          userId,
+          photoURL: avatar,
           searchKeywords: [
             lowerName,
             lowerName.replace(/\s+/g, ""),
-            ...lowerName.split(" ").filter(w => w.length >= 2),
+           ...lowerName.split(" ").filter(w => w.length >= 2),
             userId.toLowerCase(),
-            currentUsername.toLowerCase(),
+            username.toLowerCase(),
           ],
           onboardingCompleted: true,
           updatedAt: serverTimestamp(),
         })
       ]);
 
+      await refreshToken(); // Refresh cookie cho middleware
       toast.success(`Chào mừng, ${trimmed}!`);
-      router.refresh(); // Force re-check middleware + AuthContext
-      router.push("/");
+      router.refresh();
+      router.replace("/");
     } catch (e: any) {
       console.error("Onboarding error:", e);
       setError("Không thể lưu. Thử lại sau.");
@@ -138,7 +149,7 @@ export default function OnboardingPage() {
   // 6. Đã onboard rồi thì không render
   if (userData?.onboardingCompleted) return null;
 
-  const isValid = displayName.trim().length >= 2 && !error;
+  const isValid = displayName.trim().length >= 2 &&!error;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-950 dark:to-zinc-900 p-4">
@@ -179,7 +190,7 @@ export default function OnboardingPage() {
                 disabled={saving}
                 className={`w-full px-4 py-3 rounded-xl border-2 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none transition-all ${
                   error
-                    ? "border-red-500 focus:border-red-600"
+                   ? "border-red-500 focus:border-red-600"
                     : "border-zinc-200 dark:border-zinc-700 focus:border-blue-600"
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               />
@@ -200,10 +211,10 @@ export default function OnboardingPage() {
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={handleSave}
-              disabled={saving || !isValid}
+              disabled={saving ||!isValid}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
             >
-              {saving ? (
+              {saving? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   <span>Đang lưu...</span>
