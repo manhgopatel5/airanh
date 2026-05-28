@@ -4,13 +4,14 @@ import { useRouter } from "next/navigation";
 import { FiHeart, FiShare2, FiMessageCircle, FiUsers, FiClock, FiMapPin, FiCalendar } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
 import { useEffect, useState, useCallback, memo } from "react";
-import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion, arrayRemove, getDoc } from "firebase/firestore";
 import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { incrementTaskView } from "@/lib/task";
 import { TaskListItem, PlanListItem } from "@/types/task";
 import { AppMode } from "@/types/app";
 import { toast } from "sonner";
+import useSWR from "swr";
 
 type Props = {
   task: TaskListItem | PlanListItem;
@@ -30,6 +31,12 @@ const planCategoryEmoji: Record<string, string> = {
   other: "✨",
 };
 
+const fetchUser = async (uid: string) => {
+  const db = getFirebaseDB();
+  const snap = await getDoc(doc(db, "users", uid));
+  return snap.exists() ? snap.data() : null;
+};
+
 function TaskCard({ task, mode }: Props) {
   const router = useRouter();
   const db = getFirebaseDB();
@@ -38,6 +45,14 @@ function TaskCard({ task, mode }: Props) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [liking, setLiking] = useState(false);
   const [localLikes, setLocalLikes] = useState<string[]>(task.likes || []);
+
+  // Fetch user data nếu task.userName = "Ẩn danh" hoặc rỗng
+  const shouldFetchUser = !task.userName || task.userName === "Ẩn danh";
+  const { data: authorData } = useSWR(
+    shouldFetchUser ? `user-${task.userId}` : null,
+    () => fetchUser(task.userId),
+    { revalidateOnFocus: false, dedupingInterval: 300000 }
+  );
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, setCurrentUser);
@@ -58,11 +73,23 @@ function TaskCard({ task, mode }: Props) {
     cancelled: { text: "Đã hủy", color: "gray" },
   } as const;
 
-  const safeStatus = (task.status && task.status in statusConfig? task.status : "open") as keyof typeof statusConfig;
+  const safeStatus = (task.status && task.status in statusConfig ? task.status : "open") as keyof typeof statusConfig;
   const status = statusConfig[safeStatus];
 
   const taskData = task as TaskListItem;
   const planData = task as PlanListItem;
+
+  // FIX: Ưu tiên tên từ Firestore, fallback email/shortId, không bao giờ "Ẩn danh"
+  const displayName = 
+    authorData?.displayName ||
+    (task.userName && task.userName !== "Ẩn danh" ? task.userName : null) ||
+    task.userUsername ||
+    `User${task.userShortId?.slice(-4) || task.userId.slice(0,4)}`;
+
+  const avatar = 
+    authorData?.photoURL ||
+    task.userAvatar || 
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0A84FF&color=fff&bold=true`;
 
   /* ================= LIKE ================= */
   const handleLike = useCallback(async (e: React.MouseEvent) => {
@@ -149,14 +176,14 @@ function TaskCard({ task, mode }: Props) {
         <div className="flex items-start justify-between gap-3 mb-3">
           <button onClick={goToProfile} className="flex items-center gap-3 flex-1 min-w-0">
             <img
-              src={task.userAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(task.userName || "U")}&background=random`}
-              alt="avatar"
+              src={avatar}
+              alt={displayName}
               className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-50 dark:ring-zinc-800"
             />
             <div className="flex-1 min-w-0 text-left">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">
-                  {task.userName || "User"}
+                  {displayName}
                 </span>
                 {isPlanMode? (
                   <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-lg">
@@ -270,7 +297,6 @@ function Skeleton() {
           <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
           <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/3" />
         </div>
-      </div>
       <div className="h-5 bg-gray-200 dark:bg-zinc-800 rounded w-3/4 mb-2" />
       <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-full" />
     </div>
