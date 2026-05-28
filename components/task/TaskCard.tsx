@@ -345,7 +345,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
               </div>
             )}
 
-            {task.type === "plan" && task.costType === "ticket" && task.costAmount > 0 && (
+{task.type === "plan" && task.costType === "ticket" && task.costAmount && task.costAmount > 0 && (
               <div className="shrink-0 px-3 py-1.5 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/40 dark:to-blue-900/40 ring-1 ring-blue-200/50 dark:ring-blue-800/50">
                 <span className="font-bold text-sm text-[#0A84FF]">
                   {task.costAmount.toLocaleString("vi-VN")}đ
