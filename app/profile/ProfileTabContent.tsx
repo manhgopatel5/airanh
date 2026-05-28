@@ -47,7 +47,7 @@ type UserData = {
   username?: string;
   status: "active" | "banned" | "deleted" | "deactivated";
   lastNameChangeAt?: Timestamp;
-  lastAvatarChangeAt?: Timestamp; // NEW
+  lastAvatarChangeAt?: Timestamp;
 };
 
 export default function ProfileTabContent() {
@@ -62,11 +62,11 @@ export default function ProfileTabContent() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [showNameModal, setShowNameModal] = useState(false);
-  const [showAvatarModal, setShowAvatarModal] = useState(false); // NEW
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null); // NEW
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
 
   const hasCheckedId = useRef(false);
   const uploadTaskRef = useRef<UploadTask | null>(null);
@@ -134,7 +134,6 @@ export default function ProfileTabContent() {
     return { allowed: true };
   };
 
-  // NEW: Check 3 tháng cho avatar
   const canChangeAvatar = () => {
     if (!userData?.lastAvatarChangeAt) return { allowed: true };
     const lastChange = userData.lastAvatarChangeAt.toDate();
@@ -209,7 +208,6 @@ export default function ProfileTabContent() {
     }
   };
 
-  // NEW: Check trước khi chọn file
   const handleAvatarClick = (e: React.MouseEvent) => {
     e.preventDefault();
     const check = canChangeAvatar();
@@ -268,7 +266,7 @@ export default function ProfileTabContent() {
             updateProfile(user, { photoURL: url }),
             updateDoc(doc(db, "users", user.uid), {
               photoURL: url,
-              lastAvatarChangeAt: serverTimestamp(), // NEW
+              lastAvatarChangeAt: serverTimestamp(),
               updatedAt: serverTimestamp()
             })
           ]);
@@ -546,7 +544,7 @@ export default function ProfileTabContent() {
         </div>
       )}
 
-      {/* NEW: Modal đổi avatar */}
+      {/* Modal đổi avatar */}
       {showAvatarModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-md p-6 space-y-4">
@@ -565,6 +563,7 @@ export default function ProfileTabContent() {
                   <li>Ảnh sẽ hiển thị công khai với mọi người</li>
                 </ul>
               </div>
+            </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowAvatarModal(false)}
