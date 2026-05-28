@@ -20,12 +20,11 @@ import {
   serverTimestamp as rtdbTimestamp,
 } from "firebase/database";
 import { setCookie, deleteCookie } from 'cookies-next';
-import { useRouter } from "next/navigation";
 
 export type AppUser = {
   uid: string;
-  displayName: string; // Bắt buộc
-  username: string; // Bắt buộc
+  displayName: string;
+  username: string;
   email: string | null;
   emailVerified: boolean;
   photoURL: string | null;
@@ -39,6 +38,9 @@ export type AppUser = {
   bio?: string;
   hidden?: boolean;
   deletedAt?: any;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+  onboardingCompleted: boolean; // <- THÊM DÒNG NÀY
 };
 
 type AuthContextType = {
@@ -69,7 +71,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const userDataUnsub = useRef<(() => void) | null>(null);
   const presenceUnsub = useRef<(() => void) | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
     const init = async () => {
@@ -126,11 +127,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           (docSnap) => {
             if (docSnap.exists()) {
               const data = docSnap.data() as AppUser;
-
-              // CHUẨN: Force user hoàn tất profile
-    
-
-              setUserData(data);
+              setUserData(data); // CHUẨN: Không redirect ở đây
             } else {
               createUserProfile(firebaseUser);
             }
@@ -171,7 +168,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       userDataUnsub.current?.();
       presenceUnsub.current?.();
     };
-  }, [auth, db, rtdb, createUserProfile, router]);
+  }, [auth, db, rtdb, createUserProfile]);
 
   const logout = useCallback(async () => {
     if (!auth) return;
