@@ -97,19 +97,21 @@ export default function BookmarksPage() {
     return () => unsub();
   }, [user, router]);
 
-  // FIX: Convert TaskListItem -> FeedTask để đúng type cho TaskCard mới
-  const toFeedTask = (t: TaskListItem): FeedTask => ({
-    ...t,
-    createdAt: t.createdAt?.toDate?.()?.toISOString() || null,
-    updatedAt: t.updatedAt?.toDate?.()?.toISOString() || null,
-    deadline: t.deadline?.toDate?.()?.toISOString() || null,
-    eventDate: t.eventDate?.toDate?.()?.toISOString() || null,
-    endDate: t.endDate?.toDate?.()?.toISOString() || null,
-    startDate: t.startDate?.toDate?.()?.toISOString() || null,
-    applicationDeadline: t.applicationDeadline?.toDate?.()?.toISOString() || null,
-  });
+  // FIX: Convert TaskListItem -> FeedTask, ép any để tránh lỗi Timestamp & string
+  const toFeedTask = (t: TaskListItem): FeedTask => {
+    const base = { ...t } as any;
+    return {
+      ...base,
+      createdAt: t.createdAt?.toDate?.()?.toISOString() || null,
+      updatedAt: t.updatedAt?.toDate?.()?.toISOString() || null,
+      deadline: t.deadline?.toDate?.()?.toISOString() || null,
+      eventDate: t.eventDate?.toDate?.()?.toISOString() || null,
+      endDate: t.endDate?.toDate?.()?.toISOString() || null,
+      startDate: t.startDate?.toDate?.()?.toISOString() || null,
+      applicationDeadline: t.applicationDeadline?.toDate?.()?.toISOString() || null,
+    };
+  };
 
-  // FIX: Update local state khi like/save để không fetch lại
   const handleTaskUpdate = (id: string, updates: Partial<FeedTask>) => {
     setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
   };
