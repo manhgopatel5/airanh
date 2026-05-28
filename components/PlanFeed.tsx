@@ -54,7 +54,7 @@ export default function PlanFeed({ plans, onPlanUpdate }: Props) {
           <TaskCard 
             task={toFeedTask(plan)} 
             theme="plan"
-            onTaskUpdate={onPlanUpdate}
+            {...(onPlanUpdate && { onTaskUpdate: onPlanUpdate })}
           />
         </div>
       ))}
