@@ -40,8 +40,8 @@ export default function BookmarksPage() {
     const unsub = onSnapshot(q, async (snap) => {
       try {
         const taskIds: string[] = snap.docs
-          .map((d) => d.data()?.taskId)
-          .filter(Boolean);
+        .map((d) => d.data()?.taskId)
+        .filter(Boolean);
 
         if (taskIds.length === 0) {
           setTasks([]);
@@ -60,17 +60,17 @@ export default function BookmarksPage() {
           );
 
           return snaps
-            .filter(
+          .filter(
               (s) =>
                 s.exists() &&
-                s.data()?.status !== "cancelled" &&
-                !s.data()?.banned
+                s.data()?.status!== "cancelled" &&
+              !s.data()?.banned
             )
-            .map(
+          .map(
               (s) =>
                 ({
                   id: s.id,
-                  ...s.data(),
+                ...s.data(),
                 } as TaskListItem)
             );
         });
@@ -78,8 +78,8 @@ export default function BookmarksPage() {
         const taskArrays = await Promise.all(taskPromises);
 
         const allTasks = taskArrays
-          .flat()
-          .sort(
+        .flat()
+        .sort(
             (a, b) =>
               (b.createdAt?.toMillis?.() || 0) -
               (a.createdAt?.toMillis?.() || 0)
@@ -100,7 +100,7 @@ export default function BookmarksPage() {
   const toFeedTask = (t: TaskListItem): FeedTask => {
     const raw = t as any;
     return {
-      ...raw,
+    ...raw,
       createdAt: raw.createdAt?.toDate?.()?.toISOString() || null,
       updatedAt: raw.updatedAt?.toDate?.()?.toISOString() || null,
       deadline: raw.deadline?.toDate?.()?.toISOString() || null,
@@ -111,8 +111,9 @@ export default function BookmarksPage() {
     };
   };
 
+  // FIX: Ép any để tránh lỗi exactOptionalPropertyTypes
   const handleTaskUpdate = (id: string, updates: Partial<FeedTask>) => {
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+    setTasks(prev => prev.map(t => t.id === id ? ({ ...t, ...updates } as any) : t));
   };
 
   if (!user) return null;
@@ -131,7 +132,7 @@ export default function BookmarksPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6">
-        {loading ? (
+        {loading? (
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, i) => (
               <div
@@ -149,7 +150,7 @@ export default function BookmarksPage() {
               </div>
             ))}
           </div>
-        ) : tasks.length === 0 ? (
+        ) : tasks.length === 0? (
           <div className="text-center py-20">
             <div className="w-20 h-20 bg-gray-100 dark:bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4">
               <FiBookmark
@@ -176,10 +177,10 @@ export default function BookmarksPage() {
         ) : (
           <div className="space-y-4">
             {tasks.map((task) => (
-              <TaskCard 
-                key={task.id} 
-                task={toFeedTask(task)} 
-                theme={task.type === "task" ? "task" : "plan"}
+              <TaskCard
+                key={task.id}
+                task={toFeedTask(task)}
+                theme={task.type === "task"? "task" : "plan"}
                 onTaskUpdate={handleTaskUpdate}
               />
             ))}
