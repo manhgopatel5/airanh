@@ -40,7 +40,7 @@ export type AppUser = {
   deletedAt?: any;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
-  onboardingCompleted: boolean; // <- THÊM DÒNG NÀY
+  onboardingCompleted: boolean;
 };
 
 type AuthContextType = {
@@ -49,6 +49,7 @@ type AuthContextType = {
   loading: boolean;
   error: string | null;
   logout: () => Promise<void>;
+  refreshToken: () => Promise<void>; // Thêm hàm này
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -57,6 +58,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   error: null,
   logout: async () => {},
+  refreshToken: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -96,6 +98,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const refreshToken = useCallback(async () => {
+    if (!auth?.currentUser) return;
+    const token = await auth.currentUser.getIdToken(true); // force refresh
+    setCookie('__session', token, {
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
+  }, [auth]);
+
   useEffect(() => {
     if (!auth ||!db ||!rtdb) return;
 
@@ -114,11 +127,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       try {
-        const token = await firebaseUser.getIdToken();
+        // QUAN TRỌNG: Dùng getIdToken(true) để luôn lấy token mới
+        const token = await firebaseUser.getIdToken(true);
         setCookie('__session', token, {
           maxAge: 60 * 60 * 24 * 7,
           path: '/',
-          sameSite: 'lax'
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
         });
 
         const userRef = doc(db, "users", firebaseUser.uid);
@@ -127,7 +142,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           (docSnap) => {
             if (docSnap.exists()) {
               const data = docSnap.data() as AppUser;
-              setUserData(data); // CHUẨN: Không redirect ở đây
+              setUserData(data);
             } else {
               createUserProfile(firebaseUser);
             }
@@ -189,8 +204,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [auth]);
 
   const value = useMemo(
-    () => ({ user, userData, loading, error, logout }),
-    [user, userData, loading, error, logout]
+    () => ({ user, userData, loading, error, logout, refreshToken }),
+    [user, userData, loading, error, logout, refreshToken]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
