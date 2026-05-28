@@ -433,7 +433,7 @@ const [form, setForm] = useState({
       ...(form.lat !== null && { lat: form.lat }),
       ...(form.lng !== null && { lng: form.lng })
     },
-        urgency: form.urgency,
+        urgency: form.urgency as "once" | "urgent" | "flexible",
         milestones: form.milestones,
         autoMatch: form.autoMatch,
         allowBids: form.allowBids,
