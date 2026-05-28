@@ -417,48 +417,48 @@ const submit = async () => {
   try {
     const db = getFirebaseDB();
     const userSnap = await getDoc(doc(db, "users", user.uid));
-const userData = userSnap.data();
+    const userData = userSnap.data();
 
-await addDoc(collection(db, 'tasks'), { // ← Đổi 'plans' thành 'tasks'
-  title: title.trim(),
-  desc: desc.trim(),
-  category: category.id,
-  location: location.trim(),
-  locationDetail: locationDetail.trim(),
-  coordinates: userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : null,
-  time: Timestamp.fromDate(new Date(time)),
-  duration,
-  maxPeople,
-  costType,
-  costAmount: costType === 'free' || costType === 'host' ? 0 : costAmount,
-  privacy,
-  minAge,
-  needApproval,
-  pollTime,
-  pollLocation,
-  invites,
-  requirements,
-  cover,
-  participants: [user?.uid],
-  
-  // THÊM 9 DÒNG NÀY:
-  type: "plan", // ← Phân biệt với task
-  userId: user.uid,
-  createdBy: user.uid,
-  userName: userData?.displayName || user.email || "Unknown",
-  userAvatar: userData?.photoURL || null,
-  userVerified: userData?.emailVerified || false,
-  status: "open", // ← Đổi từ "active" thành "open"
-  banned: false,
-  visibility: privacy, // ← Map từ privacy sang visibility
-  likeCount: 0,
-  commentCount: 0,
-  viewCount: 0,
-  likes: [],
-  savedBy: [],
-  createdAt: serverTimestamp(),
-  updatedAt: serverTimestamp(),
-});
+    await addDoc(collection(db, 'tasks'), {
+      title: title.trim(),
+      desc: desc.trim(),
+      category: category.id,
+      location: location.trim(),
+      locationDetail: locationDetail.trim(),
+      coordinates: userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : null,
+      time: Timestamp.fromDate(new Date(time)),
+      duration,
+      maxPeople,
+      costType,
+      costAmount: costType === 'free' || costType === 'host' ? 0 : costAmount,
+      privacy,
+      minAge,
+      needApproval,
+      pollTime,
+      pollLocation,
+      invites,
+      requirements,
+      cover,
+      participants: [user?.uid],
+      
+      // BẮT BUỘC THÊM ĐỂ HIỆN FEED:
+      type: "plan",
+      userId: user.uid,
+      createdBy: user.uid,
+      userName: userData?.displayName || user.email || "Unknown",
+      userAvatar: userData?.photoURL || null,
+      userVerified: userData?.emailVerified || false,
+      status: "open",
+      banned: false,
+      visibility: privacy === 'public' ? 'public' : 'private',
+      likeCount: 0,
+      commentCount: 0,
+      viewCount: 0,
+      likes: [],
+      savedBy: [],
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
     
     localStorage.removeItem("plan_draft");
     toast.success("Tạo kế hoạch thành công!");
