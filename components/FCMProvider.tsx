@@ -1,87 +1,73 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { getFirebaseApp } from "@/lib/firebase";
 
 export default function FCMProvider({ userId }: { userId: string }) {
+  const initialized = useRef(false);
+
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || initialized.current) return;
+    if (typeof window === "undefined") return;
+
+    // 1. CHỈ CHẠY KHI BROWSER IDLE - Không chặn TTI
+    const onIdle = (cb: () => void) => {
+      if ('requestIdleCallback' in window) {
+        (window as any).requestIdleCallback(cb, { timeout: 2000 });
+      } else {
+        setTimeout(cb, 2000); // Fallback Safari
+      }
+    };
 
     const initFCM = async () => {
       try {
-        if (typeof window === "undefined") return;
+        // 2. Check permission trước. Nếu user chặn rồi thì khỏi load lib
+        if (Notification.permission === 'denied') return;
 
-        // 🔥 import dynamic để tránh SSR crash
-        const messagingModule = await import("firebase/messaging");
-        const {
-          getMessaging,
-          getToken,
-          isSupported,
-          onMessage,
-        } = messagingModule;
+        // 3. Dynamic import chỉ khi cần. Giảm 120kb bundle đầu
+        const { getMessaging, getToken, isSupported, onMessage } = await import("firebase/messaging");
 
-        // ✅ check browser support
         const supported = await isSupported();
-        if (!supported) {
-          console.warn("⚠️ FCM not supported in this browser");
-          return;
-        }
+        if (!supported) return;
 
-        // ✅ FIX TÊN ENV (chuẩn theo Vercel của mày)
-        const vapidKey =
-          process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY ||
-          process.env.NEXT_PUBLIC_FCM_VAPID_KEY;
-
-        if (!vapidKey) {
-          console.error("❌ Missing VAPID KEY (ENV not found)");
-          return;
-        }
-
-        console.log("✅ VAPID KEY loaded");
+        const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+        if (!vapidKey) return;
 
         const app = getFirebaseApp();
         const messaging = getMessaging(app);
 
-        // ✅ xin quyền notification
-        const permission = await Notification.requestPermission();
-        if (permission !== "granted") {
-          console.warn("❌ Notification permission denied");
-          return;
-        }
+        // 4. Không tự xin permission. Để user bấm nút "Bật thông báo" rồi mới gọi
+        if (Notification.permission!== "granted") return;
 
-        // ✅ lấy token
         const token = await getToken(messaging, { vapidKey });
+        if (!token) return;
 
-        if (!token) {
-          console.warn("❌ No FCM token returned");
-          return;
-        }
+        // 5. Gửi token lên server. Dùng fetch, không import db
+        await fetch('/api/user/fcm-token', {
+          method: 'POST',
+          body: JSON.stringify({ token }),
+          keepalive: true, // Gửi cả khi user tắt tab
+        });
 
-        console.log("🔥 FCM TOKEN:", token);
+        initialized.current = true;
 
-        // 👉 TODO: gửi token lên Firestore nếu cần
-        // await saveTokenToUser(userId, token);
-
-        // ✅ nhận message foreground
+        // 6. Lắng nghe foreground message
         onMessage(messaging, (payload) => {
-          console.log("📩 FCM foreground:", payload);
-
-          if (payload.notification) {
-            new Notification(
-              payload.notification.title ?? "Notification",
-              {
-                body: payload.notification.body ?? "",
-              }
-            );
-          }
+          if (!payload.notification) return;
+          new Notification(payload.notification.title?? "Thông báo mới", {
+            body: payload.notification.body?? "",
+            icon: '/icon-192x192.png', // Thêm icon cho đẹp
+          });
         });
 
       } catch (error) {
-        console.error("❌ FCM init error:", error);
+        // Im lặng. FCM lỗi không được crash app
+        console.error("FCM init error:", error);
       }
     };
 
-    initFCM();
+    // Chạy sau khi app rảnh 2s
+    onIdle(initFCM);
   }, [userId]);
 
   return null;
