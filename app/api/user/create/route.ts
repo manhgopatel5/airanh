@@ -48,17 +48,21 @@ export async function POST(req: NextRequest) {
 
     // 3. Tạo user mới trong transaction
     await db.runTransaction(async (tx) => {
+      // Double check trong transaction để tránh race condition
+      const checkSnap = await tx.get(userRef);
+      if (checkSnap.exists) return;
+
       const userId = `AIR${nanoid(6).toUpperCase()}`;
 
       // Generate username unique
       const baseName = name || email?.split('@')[0] || 'user';
       let baseUsername = baseName
-       .toLowerCase()
-       .normalize("NFD")
-       .replace(/[\u0300-\u036f]/g, "")
-       .replace(/\s+/g, "")
-       .replace(/[^a-z0-9]/g, "")
-       .slice(0, 20); // Giới hạn độ dài
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, "")
+      .replace(/[^a-z0-9]/g, "")
+      .slice(0, 20);
 
       let username = baseUsername || 'user';
       let counter = 1;
@@ -92,7 +96,7 @@ export async function POST(req: NextRequest) {
         deletedAt: null,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
-        onboardingCompleted: false, // QUAN TRỌNG
+        onboardingCompleted: false, // QUAN TRỌNG: Mặc định false
       };
 
       tx.set(userRef, newUser);
@@ -104,7 +108,6 @@ export async function POST(req: NextRequest) {
   } catch (e: any) {
     console.error("Create user error:", e);
 
-    // Trả error code cụ thể
     if (e.code === 'auth/id-token-expired') {
       return NextResponse.json({ error: 'Token expired' }, { status: 401 });
     }
