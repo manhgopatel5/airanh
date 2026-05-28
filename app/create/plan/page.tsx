@@ -412,7 +412,7 @@ const submit = async () => {
   if (!title.trim() || title.trim().length < 3) return toast.error("Nhập tên (tối thiểu 3 ký tự)");
   if (!location.trim()) return toast.error("Chọn địa điểm");
   if (!time || new Date(time) < new Date()) return toast.error("Chọn thời gian hợp lệ");
-  
+  if (!user) { toast.error("Bạn cần đăng nhập"); return; }
   setLoading(true);
   try {
     const db = getFirebaseDB();
