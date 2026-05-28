@@ -1,920 +1,464 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { signOut, updateProfile } from "firebase/auth";
-import { useEffect, useState, useRef } from "react";
+import {
+  FiUsers, FiClock, FiMapPin, FiBookmark, FiMoreHorizontal,
+  FiTrash2, FiEdit2, FiShare2, FiEye, FiMessageCircle, FiGift, FiDollarSign, FiTag
+} from "react-icons/fi";
+import { HiHeart, HiOutlineHeart } from "react-icons/hi2";
+import { memo, useState, useCallback, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "@/lib/AuthContext";
-import { useAppStore } from "@/store/app";
-import {
-  doc,
-  onSnapshot,
-  updateDoc,
-  serverTimestamp,
-  getDoc,
-  setDoc,
-} from "firebase/firestore";
+import { type FeedTask } from "@/types/task";
+import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
+import { formatDistanceToNow } from "date-fns";
+import { vi } from "date-fns/locale";
 
-import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
+type Props = {
+  task: FeedTask;
+  theme: "task" | "plan";
+  onDelete?: (id: string) => void;
+  onShare?: (task: FeedTask) => void;
+  onTaskUpdate?: (taskId: string, updates: Partial<FeedTask>) => void;
+};
 
-import {
-  HelpCircle,
-  LogOut,
-  User,
-  Shield,
-  Lock,
-  Camera,
-  Check,
-  QrCode,
-  Share2,
-  Settings,
-  Circle,
-  Bell,
-  Mail,
-  Phone,
-  Monitor,
-  Ban,
-  HardDrive,
-  X,
-} from "lucide-react";
+const Portal = ({ children }: { children: React.ReactNode }) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted? createPortal(children, document.body) : null;
+};
 
-import { toast, Toaster } from "sonner";
-import { nanoid } from "nanoid";
+const vibrate = (ms = 8) => {
+  if ("vibrate" in navigator) navigator.vibrate(ms);
+};
 
-import SettingItem from "@/components/common/SettingItem";
-import ProfileModal from "@/components/common/ProfileModal";
-import AvatarCropModal from "@/components/profile/AvatarCropModal";
-import { useAvatarUpload } from "@/hooks/useAvatarUpload";
-
-import type { UserData } from "@/types/user";
-
-export default function ProfileTabContent() {
-  const db = getFirebaseDB();
-  const auth = getFirebaseAuth();
-
+function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
   const router = useRouter();
   const { user } = useAuth();
 
-  const mode = useAppStore((s) => s.mode);
-  const isPlan = mode === "plan";
+  const [isSaved, setIsSaved] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
 
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [displayName, setDisplayName] = useState("");
-
-  const [showNameModal, setShowNameModal] = useState(false);
-  const [showAvatarModal, setShowAvatarModal] = useState(false);
-  const [showCropModal, setShowCropModal] = useState(false);
-  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
-
-  const hasCheckedId = useRef(false);
-
-  const {
-    uploading,
-    uploadProgress,
-    uploadAvatar,
-    cancelUpload,
-  } = useAvatarUpload(user);
-
-  const accentGradient = isPlan
- ? "from-green-500 to-emerald-500"
-    : "from-sky-500 to-blue-600";
-
-  // Ẩn nav bar khi modal mở - FIX SSR
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const shouldHide = showNameModal || showAvatarModal || showCropModal || showLogoutModal;
-    document.body.classList.toggle('modal-open', shouldHide);
-
-    return () => document.body.classList.remove('modal-open');
-  }, [showNameModal, showAvatarModal, showCropModal, showLogoutModal]);
+  const isTaskTheme = theme === "task";
+  const primaryColor = isTaskTheme? "#0A84FF" : "#30D158";
 
   useEffect(() => {
-    if (user === null) {
-      router.replace("/login");
-    }
-  }, [user, router]);
+    if (!task?.id) return;
+    setIsSaved(!!user?.uid &&!!task.savedBy?.includes(user.uid));
+    setLiked(!!user?.uid &&!!task.likes?.includes(user.uid));
+  }, [user?.uid, task?.savedBy, task?.likes, task?.id]);
 
   useEffect(() => {
-    if (!user?.uid) return;
-
-    const unsub = onSnapshot(
-      doc(db, "users", user.uid),
-      (snap) => {
-        if (!snap.exists()) return;
-
-        const data = {
-          uid: snap.id,
-       ...snap.data(),
-        } as UserData;
-
-        setUserData(data);
-
-        setDisplayName(
-          data.displayName ||
-            user.email?.split("@")[0] ||
-            `User${data.userId?.slice(-4) || user.uid.slice(0, 4)}`
-        );
-
-        if (
-          user &&
-       !user.emailVerified &&
-       !data.emailVerified
-        ) {
-          router.replace("/verify-email");
-        }
-      }
-    );
-
-    return () => unsub();
-  }, [user?.uid, router, db, user]);
-
-  useEffect(() => {
-    if (!user ||!userData || hasCheckedId.current) return;
-
-    if (userData.userId) {
-      hasCheckedId.current = true;
-      return;
+    const closeMenu = () => setShowMenu(false);
+    if (showMenu) {
+      window.addEventListener("scroll", closeMenu);
+      window.addEventListener("resize", closeMenu);
     }
-
-    const createId = async () => {
-      hasCheckedId.current = true;
-
-      let newId = `AIR${nanoid(6).toUpperCase()}`;
-      let attempts = 0;
-
-      while (attempts < 3) {
-        const snap = await getDoc(doc(db, "usernames", newId));
-
-        if (!snap.exists()) break;
-
-        newId = `AIR${nanoid(6).toUpperCase()}`;
-        attempts++;
-      }
-
-      await Promise.all([
-        updateDoc(doc(db, "users", user.uid), {
-          userId: newId,
-        }),
-
-        setDoc(doc(db, "usernames", newId), {
-          uid: user.uid,
-        }),
-      ]);
-    };
-
-    createId().catch(() => {});
-  }, [user, userData, db]);
-
-  const canChangeName = () => {
-    if (!userData?.lastNameChangeAt) {
-      return { allowed: true };
-    }
-
-    const lastChange =
-      userData.lastNameChangeAt.toDate();
-
-    const threeMonthsAgo = new Date();
-
-    threeMonthsAgo.setMonth(
-      threeMonthsAgo.getMonth() - 3
-    );
-
-    if (lastChange > threeMonthsAgo) {
-      const nextChange = new Date(lastChange);
-
-      nextChange.setMonth(
-        nextChange.getMonth() + 3
-      );
-
-      return {
-        allowed: false,
-        nextDate: nextChange.toLocaleDateString("vi-VN"),
-      };
-    }
-
-    return { allowed: true };
-  };
-
-  const canChangeAvatar = () => {
-    if (!userData?.lastAvatarChangeAt) {
-      return { allowed: true };
-    }
-
-    const lastChange =
-      userData.lastAvatarChangeAt.toDate();
-
-    const threeMonthsAgo = new Date();
-
-    threeMonthsAgo.setMonth(
-      threeMonthsAgo.getMonth() - 3
-    );
-
-    if (lastChange > threeMonthsAgo) {
-      const nextChange = new Date(lastChange);
-
-      nextChange.setMonth(
-        nextChange.getMonth() + 3
-      );
-
-      return {
-        allowed: false,
-        nextDate: nextChange.toLocaleDateString("vi-VN"),
-      };
-    }
-
-    return { allowed: true };
-  };
-
-  const validateRealName = (
-    name: string
-  ): string | null => {
-    const trimmed = name.trim();
-
-    if (trimmed.length < 2) {
-      return "Tên tối thiểu 2 ký tự";
-    }
-
-    if (trimmed.length > 50) {
-      return "Tên tối đa 50 ký tự";
-    }
-
-    const regex =
-      /^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂẾưăạảấầẩẫậắằẳẵặẹẻẽềểếỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ\s\d]+$/;
-
-    if (!regex.test(trimmed)) {
-      return "Tên chỉ được chứa chữ cái, số và dấu cách";
-    }
-
-    if (/\s{2,}/.test(trimmed)) {
-      return "Không được có 2 dấu cách liên tiếp";
-    }
-
-    return null;
-  };
-
-  const handleOpenNameModal = () => {
-    const check = canChangeName();
-
-    if (!check.allowed) {
-      toast.error(
-        `Bạn chỉ được đổi tên 1 lần mỗi 3 tháng. Lần đổi tiếp: ${check.nextDate}`
-      );
-
-      return;
-    }
-
-    setShowNameModal(true);
-  };
-
-  const handleUpdateName = async () => {
-    if (!user) return;
-
-    const error = validateRealName(displayName);
-
-    if (error) {
-      toast.error(error);
-      return;
-    }
-
-    const newName = displayName.trim();
-
-    if (newName === userData?.displayName) {
-      setShowNameModal(false);
-      return;
-    }
-
-    const oldName = userData?.displayName;
-
-    setShowNameModal(false);
-
-    setUserData((prev) =>
-      prev
-     ? {
-         ...prev,
-            displayName: newName,
-          }
-        : null
-    );
-
-    try {
-      await Promise.all([
-        updateProfile(user, {
-          displayName: newName,
-        }),
-
-        updateDoc(doc(db, "users", user.uid), {
-          displayName: newName,
-          nameLower: newName.toLowerCase(),
-          lastNameChangeAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        }),
-      ]);
-
-      await user.reload();
-
-      toast.success(
-        "Cập nhật tên thành công. Bạn có thể đổi lại sau 3 tháng"
-      );
-
-      if ("vibrate" in navigator) {
-        navigator.vibrate(8);
-      }
-    } catch {
-      toast.error("Cập nhật thất bại");
-
-      setUserData((prev) =>
-        prev
-       ? {
-           ...prev,
-              displayName: oldName || "",
-            }
-          : null
-      );
-
-      setDisplayName(oldName || "");
-    }
-  };
-
-  const handleAvatarClick = (
-    e: React.MouseEvent
-  ) => {
-    e.preventDefault();
-
-    const check = canChangeAvatar();
-
-    if (!check.allowed) {
-      toast.error(
-        `Bạn chỉ được đổi avatar 1 lần mỗi 3 tháng. Lần đổi tiếp: ${check.nextDate}`
-      );
-
-      return;
-    }
-
-    setShowAvatarModal(true);
-  };
-
-  const handleAvatarFileSelect = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0];
-
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      toast.error("Chỉ chấp nhận file ảnh");
-      return;
-    }
-
-    if (file.size > 20 * 1024 * 1024) {
-      toast.error("Ảnh không được vượt quá 20MB");
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(file);
-
-    setCropImageSrc(objectUrl);
-    setShowAvatarModal(false);
-    setShowCropModal(true);
-
-    e.target.value = "";
-  };
-
-  const handleCropComplete = async (
-    croppedBlob: Blob
-  ) => {
-    setShowCropModal(false);
-
-    if (cropImageSrc) {
-      URL.revokeObjectURL(cropImageSrc);
-    }
-
-    setCropImageSrc(null);
-
-    const file = new File(
-      [croppedBlob],
-      "avatar.webp",
-      {
-        type: "image/webp",
-      }
-    );
-
-    try {
-      await uploadAvatar(file);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  useEffect(() => {
     return () => {
-      cancelUpload();
-
-      if (cropImageSrc) {
-        URL.revokeObjectURL(cropImageSrc);
-      }
+      window.removeEventListener("scroll", closeMenu);
+      window.removeEventListener("resize", closeMenu);
     };
-  }, [cancelUpload, cropImageSrc]);
+  }, [showMenu]);
 
-  const handleLogout = async () => {
-    if (!user) return;
+  if (!task?.id ||!task?.title ||!task?.type ||!task?.status) return null;
 
-    setShowLogoutModal(false);
+  const isOwner = user?.uid === task.userId;
 
-    updateDoc(doc(db, "users", user.uid), {
-      online: false,
-      lastSeen: serverTimestamp(),
-    }).catch(() => {});
+  const handleLike = useCallback(async () => {
+    if (!user) return router.push("/login");
+    vibrate(10);
+    const newLiked =!liked;
+    const oldLikes = task.likes || [];
+
+    setLiked(newLiked);
+    onTaskUpdate?.(task.id, {
+      likes: newLiked? [...oldLikes, user.uid] : oldLikes.filter(id => id!== user.uid),
+      likeCount: (task.likeCount || 0) + (newLiked? 1 : -1)
+    });
 
     try {
-      await signOut(auth);
-      window.location.href = "/login";
+      const token = await user.getIdToken();
+      await fetch(`/api/tasks/${task.id}/like`, {
+        method: newLiked? 'POST' : 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
     } catch {
-      toast.error("Đăng xuất thất bại");
+      setLiked(!newLiked);
+      onTaskUpdate?.(task.id, { likes: oldLikes, likeCount: task.likeCount });
+      toast.error("Lỗi");
     }
-  };
+  }, [user, liked, task, router, onTaskUpdate]);
 
-  useEffect(() => {
-    if (!user?.uid) return;
+  const handleSave = useCallback(async () => {
+    if (!user) return router.push("/login");
+    if (saving) return;
 
-    const updateOnline = () =>
-      updateDoc(doc(db, "users", user.uid), {
-        online: true,
-      }).catch(() => {});
+    vibrate(10);
+    setSaving(true);
+    const newSaved =!isSaved;
+    const oldSavedBy = task.savedBy || [];
 
-    const updateOffline = () =>
-      updateDoc(doc(db, "users", user.uid), {
-        online: false,
-        lastSeen: serverTimestamp(),
-      }).catch(() => {});
+    setIsSaved(newSaved);
+    onTaskUpdate?.(task.id, {
+      savedBy: newSaved? [...oldSavedBy, user.uid] : oldSavedBy.filter(id => id!== user.uid)
+    });
 
-    const handleVisibility = () => {
-      if (document.hidden) {
-        updateOffline();
-      } else {
-        updateOnline();
-      }
-    };
+    try {
+      const token = await user.getIdToken();
+      await fetch(`/api/tasks/${task.id}/save`, {
+        method: newSaved? 'POST' : 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(newSaved? "Đã lưu" : "Đã bỏ lưu");
+    } catch {
+      setIsSaved(!newSaved);
+      onTaskUpdate?.(task.id, { savedBy: oldSavedBy });
+      toast.error("Lỗi");
+    } finally {
+      setSaving(false);
+    }
+  }, [user, isSaved, saving, task, router, onTaskUpdate]);
 
-    updateOnline();
+  const handleDelete = useCallback(async () => {
+    if (!isOwner) return;
+    if (!confirm("Xóa task này?")) return;
+    vibrate(10);
+    try {
+      const token = await user?.getIdToken();
+      await fetch(`/api/tasks/${task.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      onDelete?.(task.id);
+      toast.success("Đã xóa");
+    } catch {
+      toast.error("Xóa thất bại");
+    }
+  }, [isOwner, task.id, onDelete, user]);
 
-    window.addEventListener(
-      "beforeunload",
-      updateOffline
-    );
+  const goToTask = useCallback(() => {
+    vibrate();
+    router.push(`/task/${task.id}`);
+  }, [router, task.id]);
 
-    document.addEventListener(
-      "visibilitychange",
-      handleVisibility
-    );
+  const taskDate = task.type === "task" && task.deadline
+   ? new Date(task.deadline).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+    : task.type === "plan" && task.eventDate
+   ? new Date(task.eventDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+    : "";
 
-    return () => {
-      updateOffline();
+  const createdDate = task.createdAt? new Date(task.createdAt) : new Date();
+  const timeAgo = formatDistanceToNow(createdDate, { addSuffix: true, locale: vi });
 
-      window.removeEventListener(
-        "beforeunload",
-        updateOffline
-      );
+  const maxSlots = task.type === "task"? task.totalSlots?? 0 : task.maxParticipants?? 0;
+  const currentCount = task.type === "task"? task.joined?? 0 : task.currentParticipants?? 0;
 
-      document.removeEventListener(
-        "visibilitychange",
-        handleVisibility
-      );
-    };
-  }, [user?.uid, db]);
-
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setShowLogoutModal(false);
-        setShowNameModal(false);
-        setShowAvatarModal(false);
-        setShowCropModal(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleEsc);
-
-    return () =>
-      window.removeEventListener(
-        "keydown",
-        handleEsc
-      );
-  }, []);
-
-  if (!user ||!userData) {
-    return null;
-  }
-
-  const finalDisplayName =
-    userData.displayName ||
-    user.email?.split("@")[0] ||
-    `User${
-      userData.userId?.slice(-4) ||
-      user.uid.slice(0, 4)
-    }`;
-
-  const avatarUrl =
-    userData.photoURL ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      finalDisplayName
-    )}&size=176&background=0A84FF&color=fff&bold=true`;
+  // FIX: Dùng avatar từ task nhưng fallback blur + lazy
+  const avatarUrl = task.userAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(task.userName)}&background=0A84FF&color=fff&bold=true&size=88`;
 
   return (
-    <div className="min-h-dvh bg-white dark:bg-black font-sans">
-      <div className="pb-32 sm:pb-24 overflow-y-auto">
-        <Toaster richColors position="top-center" />
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -2 }}
+      transition={{ duration: 0.2 }}
+      className="group"
+    >
+      <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.985] transition-all duration-200 shadow-xl shadow-black/5 dark:shadow-black/20 ring-1 ring-black/5 dark:ring-white/5 hover:shadow-2xl hover:shadow-black/10 dark:hover:shadow-black/30 mb-4">
 
-        <div className="px-6 pt-12 pb-6">
-          <div className="flex items-center gap-4">
-            <div
-              onClick={handleAvatarClick}
-              className="relative cursor-pointer group flex-shrink-0"
+        {/* HEADER */}
+        <div className="flex items-start gap-3 p-4 pb-3">
+          <div className="relative">
+            <img
+              src={avatarUrl}
+              alt={task.userName}
+              loading="lazy"
+              decoding="async"
+              className="w-11 h-11 rounded-2xl object-cover ring-2 ring-white dark:ring-zinc-900 shadow-md bg-zinc-200 dark:bg-zinc-800"
+            />
+            {task.userVerified && (
+              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[#0A84FF] rounded-full border-2 border-white dark:border-zinc-900 shadow-sm" />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <p className="font-bold text-zinc-900 dark:text-zinc-100">
+                {task.userName}
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+              <span>{timeAgo}</span>
+              {task.location?.city && (
+                <>
+                  <span>•</span>
+                  <FiMapPin size={12} />
+                  <span className="truncate max-w-[120px]">{task.location.city}</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0">
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleSave();
+              }}
+              disabled={saving}
+              className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all disabled:opacity-50 touch-manipulation select-none"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
             >
-              <img
-                src={avatarUrl}
-                className="w-16 h-16 rounded-full object-cover"
-                alt="Avatar"
+              <FiBookmark
+                size={18}
+                strokeWidth={1.5}
+                className={isSaved? `fill-current` : "text-zinc-500 dark:text-zinc-400"}
+                style={{ color: isSaved? primaryColor : undefined }}
               />
+            </motion.button>
 
-              {userData.emailVerified && (
-                <div
-                  className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-gradient-to-br ${accentGradient} flex items-center justify-center border-2 border-white dark:border-black`}
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                vibrate(8);
+                onShare?.(task);
+              }}
+              className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all touch-manipulation select-none"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
+            >
+              <FiShare2 size={18} className="text-zinc-500 dark:text-zinc-400" />
+            </motion.button>
+
+            {isOwner && (
+              <div className="relative">
+                <motion.button
+                  ref={menuBtnRef}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setMenuPos({
+                      x: rect.right - 180,
+                      y: rect.bottom + 8
+                    });
+                    vibrate();
+                    setShowMenu(!showMenu);
+                  }}
+                  className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all touch-manipulation select-none"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
-                  <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
-                </div>
-              )}
-
-              <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-active:opacity-100 transition-opacity">
-                <Camera
-                  size={20}
-                  className="text-white"
-                />
+                  <FiMoreHorizontal size={18} className="text-zinc-500 dark:text-zinc-400" />
+                </motion.button>
+                <AnimatePresence>
+                  {showMenu && (
+                    <Portal>
+                      <div
+                        className="fixed inset-0 z-50"
+                        onClick={() => setShowMenu(false)}
+                      />
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                        transition={{ duration: 0.15 }}
+                        className="fixed z-50 min-w-[180px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 py-2 overflow-hidden"
+                        style={{
+                          top: `${menuPos.y}px`,
+                          left: `${menuPos.x}px`,
+                        }}
+                      >
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            vibrate();
+                            setShowMenu(false);
+                            router.push(`/task/${task.id}/edit`);
+                          }}
+                          className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 w-full transition-all active:scale-95"
+                        >
+                          <FiEdit2 size={18} />
+                          Sửa công việc
+                        </button>
+                        <div className="h-px bg-zinc-200 dark:bg-zinc-800 mx-2" />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowMenu(false);
+                            handleDelete();
+                          }}
+                          className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-[#FF3B30] hover:bg-red-50 dark:hover:bg-red-950/50 w-full transition-all active:scale-95"
+                        >
+                          <FiTrash2 size={18} />
+                          Xóa
+                        </button>
+                      </motion.div>
+                    </Portal>
+                  )}
+                </AnimatePresence>
               </div>
-
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                id="avatar-upload"
-                onChange={handleAvatarFileSelect}
-                disabled={uploading}
-              />
-
-              {uploading && (
-                <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center backdrop-blur-sm">
-                  <span className="text-white text-xs font-bold">
-                    {uploadProgress}%
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <h1
-                onClick={handleOpenNameModal}
-                className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight cursor-pointer leading-tight active:opacity-70"
-              >
-                {finalDisplayName}
-              </h1>
-
-              <div className="flex items-center gap-1.5 mt-1">
-                <Circle
-                  className={`w-2 h-2 fill-current ${
-                    userData.online
-                   ? "text-green-500"
-                      : "text-gray-400"
-                  }`}
-                />
-
-                <span className="text-sm text-gray-500 dark:text-zinc-400 font-medium">
-                  {userData.online
-                 ? "Đang hoạt động"
-                    : "Ngoại tuyến"}
-                </span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* SETTINGS */}
+        {/* CONTENT */}
+        <div className="px-4 pb-4 cursor-pointer" onClick={goToTask}>
+          <div className="flex items-start justify-between gap-3 mb-2.5">
+            <h3 className="font-bold text-zinc-900 dark:text-zinc-100 leading-snug flex-1">
+              {task.title}
+            </h3>
 
-        <div className="px-4 mt-2 space-y-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
-            <SettingItem
-              label="Thông tin cá nhân"
-              subtitle="Tên, SĐT, Email"
-              icon={User}
-              iconColor="text-blue-500"
-              onClick={() =>
-                router.push("/settings/profile-edit")
-              }
-            />
+            {task.type === "task" && task.price > 0 && (
+              <div className="shrink-0 px-3 py-1.5 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/40 dark:to-blue-900/40 ring-1 ring-blue-200/50 dark:ring-blue-800/50">
+                <span className="font-bold text-sm text-[#0A84FF]">
+                  {task.price.toLocaleString("vi-VN")}đ
+                </span>
+                {task.budgetType === "hourly" && <span className="text-[#0A84FF]/70 text-xs ml-0.5">/h</span>}
+              </div>
+            )}
 
-            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+            {task.type === "plan" && task.costType === "free" && (
+              <div className="shrink-0 px-3 py-1.5 rounded-xl bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/40 dark:to-green-900/40 ring-1 ring-green-200/50 dark:ring-green-800/50">
+                <span className="font-bold text-sm text-green-600 dark:text-green-400">Miễn phí</span>
+              </div>
+            )}
 
-            <SettingItem
-              label="Đổi email"
-              subtitle="Cập nhật địa chỉ email"
-              icon={Mail}
-              iconColor="text-sky-500"
-              onClick={() =>
-                router.push("/settings/change-email")
-              }
-            />
+            {task.type === "plan" && task.costType === "share" && (
+              <div className="shrink-0 px-3 py-1.5 rounded-xl bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-800/40 dark:to-zinc-700/40 ring-1 ring-zinc-200/50 dark:ring-zinc-700/50">
+                <span className="font-bold text-sm text-zinc-900 dark:text-zinc-100">Chia đều</span>
+              </div>
+            )}
 
-            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
+            {task.type === "plan" && task.costType === "host" && task.costAmount && task.costAmount > 0 && (
+              <div className="shrink-0 px-3 py-1.5 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/40 dark:to-orange-900/40 ring-1 ring-orange-200/50 dark:ring-orange-800/50">
+                <span className="font-bold text-sm text-[#FF9500]">
+                  {task.costAmount.toLocaleString("vi-VN")}đ
+                </span>
+              </div>
+            )}
 
-            <SettingItem
-              label="Đổi số điện thoại"
-              subtitle="Xác thực SĐT mới"
-              icon={Phone}
-              iconColor="text-emerald-500"
-              onClick={() =>
-                router.push("/settings/change-phone")
-              }
-            />
-
-            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
-            <SettingItem
-              label="Đổi mật khẩu"
-              subtitle="Cập nhật mật khẩu định kỳ"
-              icon={Lock}
-              iconColor="text-green-500"
-              onClick={() =>
-                router.push("/settings/change-password")
-              }
-            />
-
-            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
-            <SettingItem
-              label="Xác thực 2 lớp"
-              subtitle="Bật/tắt 2FA cho tài khoản"
-              icon={Shield}
-              iconColor="text-amber-500"
-              onClick={() =>
-                router.push("/settings/2fa")
-              }
-            />
-
-            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
-            <SettingItem
-              label="Phiên đăng nhập"
-              subtitle="Quản lý thiết bị đang hoạt động"
-              icon={Monitor}
-              iconColor="text-purple-500"
-              onClick={() =>
-                router.push("/settings/sessions")
-              }
-            />
-
-            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
-            <SettingItem
-              label="Tài khoản bị chặn"
-              subtitle="Danh sách người dùng đã chặn"
-              icon={Ban}
-              iconColor="text-red-500"
-              onClick={() =>
-                router.push("/settings/blocked")
-              }
-            />
-
-            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
-            <SettingItem
-              label="Mã QR của tôi"
-              subtitle="Chia sẻ & quét mã kết bạn"
-              icon={QrCode}
-              iconColor="text-amber-500"
-              onClick={() =>
-                router.push("/settings/qr")
-              }
-            />
-
-            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
-            <SettingItem
-              label="Chia sẻ hồ sơ"
-              subtitle="Link và mạng xã hội"
-              icon={Share2}
-              iconColor="text-purple-500"
-              onClick={() =>
-                router.push("/settings/share-profile")
-              }
-            />
-
-            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
-            <SettingItem
-              label="Thông báo"
-              subtitle="Push, email, giờ im lặng"
-              icon={Bell}
-              iconColor="text-blue-500"
-              onClick={() =>
-                router.push("/settings/notifications")
-              }
-            />
-
-            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
-            <SettingItem
-              label="Dung lượng"
-              subtitle="Quản lý file và bộ nhớ"
-              icon={HardDrive}
-              iconColor="text-teal-500"
-              onClick={() =>
-                router.push("/settings/storage")
-              }
-            />
-
-            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
-            <SettingItem
-              label="Cài đặt chung"
-              subtitle="Thông báo, Giao diện, Ngôn ngữ"
-              icon={Settings}
-              iconColor="text-gray-500"
-              onClick={() =>
-                router.push("/settings")
-              }
-            />
-
-            <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-
-            <SettingItem
-              label="Hỗ trợ"
-              subtitle="Trung tâm trợ giúp, Báo cáo sự cố"
-              icon={HelpCircle}
-              iconColor="text-red-500"
-              onClick={() =>
-                router.push("/settings/help")
-              }
-            />
+            {task.type === "plan" && task.costType === "ticket" && task.costAmount > 0 && (
+              <div className="shrink-0 px-3 py-1.5 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/40 dark:to-blue-900/40 ring-1 ring-blue-200/50 dark:ring-blue-800/50">
+                <span className="font-bold text-sm text-[#0A84FF]">
+                  {task.costAmount.toLocaleString("vi-VN")}đ
+                </span>
+              </div>
+            )}
           </div>
 
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
-            <SettingItem
-              label="Đăng xuất"
-              icon={LogOut}
-              iconColor="text-gray-500"
-              onClick={() =>
-                setShowLogoutModal(true)
-              }
-            />
+          {task.description && (
+            <p className="text-zinc-600 dark:text-zinc-300 leading-[1.6] line-clamp-4 mb-3.5">
+              {task.description}
+            </p>
+          )}
+
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+            {maxSlots > 0 && (
+              <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+                <FiUsers size={15} />
+                <span className="font-semibold">{currentCount}/{maxSlots} người</span>
+              </div>
+            )}
+            {taskDate && (
+              <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+                <FiClock size={15} />
+                <span className="font-semibold">{taskDate}</span>
+              </div>
+            )}
+
+            {task.type === "plan" && task.costType === "free" && (
+              <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                <FiGift size={15} />
+                <span className="font-semibold">Miễn phí</span>
+              </div>
+            )}
+            {task.type === "plan" && task.costType === "share" && (
+              <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+                <FiUsers size={15} />
+                <span className="font-semibold">Chia đều</span>
+              </div>
+            )}
+            {task.type === "plan" && task.costType === "host" && (
+              <div className="flex items-center gap-1.5 text-[#FF9500]">
+                <FiDollarSign size={15} />
+                <span className="font-semibold">Chủ bao</span>
+              </div>
+            )}
+            {task.type === "plan" && task.costType === "ticket" && (
+              <div className="flex items-center gap-1.5 text-[#0A84FF]">
+                <FiTag size={15} />
+                <span className="font-semibold">Có vé</span>
+              </div>
+            )}
+
+            {task.category && (
+              <span className="font-semibold text-zinc-500 dark:text-zinc-500">• {task.category}</span>
+            )}
+          </div>
+        </div>
+
+        <div className="h-px bg-gradient-to-r from-transparent via-zinc-200/60 dark:via-zinc-800/60 to-transparent" />
+
+        {/* FOOTER */}
+        <div className="flex items-center justify-between px-2 py-2.5">
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleLike();
+              }}
+              className="flex items-center gap-2 px-3.5 h-10 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all"
+            >
+              {liked? (
+                <HiHeart size={22} className="text-red-500" />
+              ) : (
+                <HiOutlineHeart size={22} className="text-zinc-600 dark:text-zinc-400" />
+              )}
+              <span className="text-sm font-bold text-zinc-700 dark:text-zinc-300">
+                {task.likeCount || 0}
+              </span>
+            </button>
+
+            <button
+              onClick={goToTask}
+              className="flex items-center gap-2 px-3.5 h-10 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all"
+            >
+              <FiMessageCircle size={20} className="text-zinc-600 dark:text-zinc-400" />
+              <span className="text-sm font-bold text-zinc-700 dark:text-zinc-300">
+                {task.commentCount || 0}
+              </span>
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                vibrate(8);
+                onShare?.(task);
+              }}
+              className="flex items-center gap-2 px-3.5 h-10 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all"
+            >
+              <FiShare2 size={19} className="text-zinc-600 dark:text-zinc-400" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3 pr-2">
+            <div className="flex items-center gap-1.5 text-zinc-400">
+              <FiEye size={17} />
+              <span className="text-xs font-semibold">{task.viewCount || 0}</span>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* NAME MODAL */}
-
-      {showNameModal && (
-        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-end sm:items-center justify-center">
-          <div className="bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6 space-y-4 pb-24 sm:pb-6 safe-area-inset-bottom">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Đổi tên hiển thị</h2>
-              <button onClick={() => setShowNameModal(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2 block">Tên mới</label>
-                <input
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Nhập tên thật của bạn"
-                  maxLength={50}
-                  className="w-full px-4 py-3 border border-gray-200 dark:border-zinc-700 rounded-xl outline-none bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3">
-                <p className="text-sm text-amber-800 dark:text-amber-300 font-medium mb-1">Lưu ý:</p>
-                <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-1 list-disc list-inside">
-                  <li>Mỗi tài khoản chỉ được đổi tên 1 lần mỗi 3 tháng</li>
-                  <li>Vui lòng dùng tên thật, không chứa ký tự đặc biệt</li>
-                  <li>Tên sẽ hiển thị công khai với mọi người</li>
-                </ul>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button onClick={() => setShowNameModal(false)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 font-semibold text-gray-700 dark:text-zinc-300 active:scale-95 transition">
-                Hủy
-              </button>
-              <button onClick={handleUpdateName} className={`flex-1 py-3 rounded-xl bg-gradient-to-r ${accentGradient} font-semibold text-white active:scale-95 transition`}>
-                Lưu
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* AVATAR MODAL */}
-
-      {showAvatarModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-md p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                Đổi ảnh đại diện
-              </h2>
-
-              <button
-                onClick={() =>
-                  setShowAvatarModal(false)
-                }
-                className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3">
-                <p className="text-sm text-amber-800 dark:text-amber-300 font-medium mb-1">
-                  Lưu ý:
-                </p>
-
-                <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-1 list-disc list-inside">
-                  <li>
-                    Mỗi tài khoản chỉ được đổi avatar 1 lần mỗi 3 tháng
-                  </li>
-
-                  <li>
-                    Ảnh sẽ được cắt vuông 1:1 và nén về dưới 1MB
-                  </li>
-
-                  <li>
-                    Ảnh sẽ hiển thị công khai với mọi người
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() =>
-                  setShowAvatarModal(false)
-                }
-                className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 font-semibold"
-              >
-                Hủy
-              </button>
-
-              <label
-                htmlFor="avatar-upload-modal"
-                className={`flex-1 py-3 rounded-xl bg-gradient-to-r ${accentGradient} text-white font-semibold text-center cursor-pointer`}
-              >
-                Chọn ảnh
-              </label>
-
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                id="avatar-upload-modal"
-                onChange={handleAvatarFileSelect}
-                disabled={uploading}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* CROP MODAL */}
-
-      {showCropModal && cropImageSrc && (
-        <AvatarCropModal
-          imageSrc={cropImageSrc}
-          onClose={() => {
-            setShowCropModal(false);
-
-            URL.revokeObjectURL(cropImageSrc);
-
-            setCropImageSrc(null);
-          }}
-          onCropComplete={handleCropComplete}
-          accentGradient={accentGradient}
-        />
-      )}
-
-      {/* LOGOUT MODAL */}
-
-      {showLogoutModal && (
-        <ProfileModal
-          title="Đăng xuất?"
-          desc="Bạn sẽ cần đăng nhập lại để sử dụng app"
-          onClose={() =>
-            setShowLogoutModal(false)
-          }
-          onConfirm={handleLogout}
-          confirmText="Đăng xuất"
-          danger
-        />
-      )}
-    </div>
+    </motion.div>
   );
 }
+
+export default memo(TaskCard);
