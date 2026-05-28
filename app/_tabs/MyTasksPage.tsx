@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase";
-import useSWR, { mutate } from "swr";
+import useSWR from "swr"; // FIX 1: Bỏ import mutate global
 import type { FeedTask } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
@@ -26,7 +26,18 @@ const SUB_TABS: { key: SubTab; label: string }[] = [
   { key: "cancelled", label: "Đã hủy" },
 ];
 
-const fetcher = (url: string) => fetch(url).then(r => r.json());
+// FIX 2: Fetcher phải gửi token
+const fetcher = async (url: string) => {
+  const auth = getFirebaseAuth();
+  const token = await auth.currentUser?.getIdToken();
+  if (!token) throw new Error("No auth token");
+
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error("Failed to fetch");
+  return res.json();
+};
 
 const vibrate = (ms = 8) => {
   if ("vibrate" in navigator) navigator.vibrate(ms);
@@ -41,14 +52,18 @@ export default function TasksPage() {
   const [subTab, setSubTab] = useState<SubTab>("mine");
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
 
-  // FIX: Dùng SWR thay getDocs. 0 reads nếu cache còn
-const { data: tasks = [], isLoading, isValidating } = useSWR<FeedTask[]>(
+  // FIX 3: Lấy mutate từ useSWR, không import global
+  const { data: tasks = [], isLoading, isValidating, mutate } = useSWR<FeedTask[]>(
     currentUser? `/api/user-tasks?type=${mode}&tab=${subTab}` : null,
     fetcher,
     {
       revalidateOnFocus: false,
-      dedupingInterval: 60000, // 1 phút mới gọi API 1 lần
-      keepPreviousData: true, // Chuyển tab mượt
+      dedupingInterval: 60000,
+      keepPreviousData: true,
+      onError: (err) => {
+        console.error(err);
+        toast.error("Tải dữ liệu thất bại");
+      }
     }
   );
 
@@ -88,20 +103,23 @@ const { data: tasks = [], isLoading, isValidating } = useSWR<FeedTask[]>(
   };
 
   const handleTaskUpdate = useCallback((taskId: string, updates: Partial<FeedTask>) => {
+    // FIX 4: Dùng mutate của useSWR, không cần key
     mutate(
-      `/api/user-tasks?type=${mode}&tab=${subTab}`,
       (current: FeedTask[] = []) =>
         current.map(t => t.id === taskId? ({...t,...updates } as FeedTask) : t),
       false
     );
-  }, [mode, subTab]);
+  }, [mutate]);
 
   const handleDelete = useCallback(async (id: string) => {
     if (!confirm("Xóa task này?")) return;
     try {
-      await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+      const token = await auth.currentUser?.getIdToken();
+      await fetch(`/api/tasks/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
       mutate(
-        `/api/user-tasks?type=${mode}&tab=${subTab}`,
         (current: FeedTask[] = []) => current.filter(t => t.id!== id),
         false
       );
@@ -109,14 +127,17 @@ const { data: tasks = [], isLoading, isValidating } = useSWR<FeedTask[]>(
     } catch {
       toast.error("Xóa thất bại");
     }
-  }, [mode, subTab]);
+  }, [mutate, auth]);
 
   const handleShare = useCallback((task: FeedTask) => {
     vibrate(5);
     setShareTask(task);
   }, []);
 
-
+  const handleRefresh = useCallback(() => {
+    vibrate(10);
+    mutate(); // FIX 5: Gọi mutate để refresh
+  }, [mutate]);
 
   const currentTheme = theme[mode] || theme.task;
 
@@ -131,7 +152,7 @@ const { data: tasks = [], isLoading, isValidating } = useSWR<FeedTask[]>(
                 onClick={() => handleModeChange("task")}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                   mode === "task"
-                ? "bg-[#0A84FF] text-white shadow-[0_8px_30px_rgba(10,132,255,0.3)]"
+               ? "bg-[#0A84FF] text-white shadow-[0_8px_30px_rgba(10,132,255,0.3)]"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
                 }`}
               >
@@ -143,7 +164,7 @@ const { data: tasks = [], isLoading, isValidating } = useSWR<FeedTask[]>(
                 onClick={() => handleModeChange("plan")}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                   mode === "plan"
-                ? "bg-[#30D158] text-white shadow-[0_8px_30px_rgba(48,209,88,0.3)]"
+               ? "bg-[#30D158] text-white shadow-[0_8px_30px_rgba(48,209,88,0.3)]"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
                 }`}
               >
@@ -162,8 +183,8 @@ const { data: tasks = [], isLoading, isValidating } = useSWR<FeedTask[]>(
                     onClick={() => handleTabChange(tab.key)}
                     className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap ${
                       subTab === tab.key
-                  ? mode === "task"
-                    ? "bg-[#0A84FF] text-white"
+                 ? mode === "task"
+                   ? "bg-[#0A84FF] text-white"
                             : "bg-[#30D158] text-white"
                           : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 active:bg-zinc-200 dark:active:bg-zinc-700"
                     }`}
@@ -172,6 +193,13 @@ const { data: tasks = [], isLoading, isValidating } = useSWR<FeedTask[]>(
                   </button>
                 ))}
               </div>
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 active:scale-90 transition-all disabled:opacity-50"
+              >
+                <FiRefreshCw className={refreshing? "animate-spin" : ""} size={18} />
+              </button>
             </div>
           </div>
         </div>
