@@ -14,6 +14,8 @@ type UserProfile = {
   uid: string;
   displayName?: string | null;
   photoURL?: string | null;
+  email?: string;
+  shortId?: string;
   bio?: string;
   location?: string;
   joinedAt?: any;
@@ -22,11 +24,15 @@ type UserProfile = {
   rating?: number;
 };
 
+const getDisplayName = (user: UserProfile) => {
+  return user.displayName?.trim() || user.email?.split('@')[0] || `User${user.shortId?.slice(-4) || user.uid.slice(0,4)}`;
+};
+
 export default function UserProfilePage() {
   const { uid } = useParams();
   const router = useRouter();
   const db = getFirebaseDB();
-  
+
   const [user, setUser] = useState<UserProfile | null>(null);
   const [tasks, setTasks] = useState<TaskListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,26 +78,29 @@ export default function UserProfilePage() {
   if (loading) return <div className="max-w-xl mx-auto p-4 space-y-4 animate-pulse"><div className="h-32 bg-gray-200 dark:bg-zinc-800 rounded-3xl" /></div>;
   if (!user) return <div className="flex flex-col items-center justify-center min-h-screen text-gray-400"><div className="text-6xl mb-4">😢</div><p>Không tìm thấy người dùng</p></div>;
 
+  const displayName = getDisplayName(user);
+  const avatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&size=128&background=0A84FF&color=fff&bold=true`;
+
   return (
     <div className="max-w-xl mx-auto bg-gray-50 dark:bg-zinc-950 min-h-screen pb-20">
       {/* HEADER */}
       <div className="sticky top-0 z-30 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800 px-4 py-3 flex items-center gap-3">
         <button onClick={() => router.back()} className="p-2 -ml-2 active:scale-90"><FiChevronLeft size={24} /></button>
-        <h1 className="font-bold text-lg truncate">{user.displayName || "User"}</h1>
+        <h1 className="font-bold text-lg truncate">{displayName}</h1>
       </div>
 
       {/* PROFILE CARD */}
       <div className="bg-white dark:bg-zinc-900 p-6 border-b border-gray-100 dark:border-zinc-800">
         <div className="flex items-start gap-4">
           <Image
-            src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || "U")}&size=128`}
-            alt={user.displayName || "User avatar"}
+            src={avatar}
+            alt={displayName}
             width={80}
             height={80}
             className="w-20 h-20 rounded-full object-cover ring-4 ring-gray-50 dark:ring-zinc-800"
           />
           <div className="flex-1">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{user.displayName || "Ẩn danh"}</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{displayName}</h2>
             {user.bio && <p className="text-sm text-gray-600 dark:text-zinc-400 mt-1 line-clamp-2">{user.bio}</p>}
             <div className="flex items-center gap-4 mt-3 text-xs text-gray-500 dark:text-zinc-400">
               {user.location && (
@@ -142,7 +151,7 @@ export default function UserProfilePage() {
             onClick={() => setTab(t.key as any)}
             className={`py-3 text-sm font-semibold border-b-2 transition ${
               tab === t.key
-            ? "border-blue-500 text-blue-500"
+          ? "border-blue-500 text-blue-500"
                 : "border-transparent text-gray-500 dark:text-zinc-400"
             }`}
           >
@@ -167,23 +176,23 @@ export default function UserProfilePage() {
           >
             <div className="flex gap-3">
               {task.images?.[0] && (
-                <Image 
-                  src={task.images[0]} 
+                <Image
+                  src={task.images[0]}
                   alt={task.title || "Task image"}
                   width={64}
                   height={64}
-                  className="w-16 h-16 rounded-xl object-cover flex-shrink-0" 
+                  className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
                 />
               )}
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100 line-clamp-1">{task.title}</h3>
                 <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-zinc-400">
                   <span className="font-bold text-emerald-600">
-                    {task.type === "task" ? formatTaskPrice((task as any).price) : "Miễn phí"}
+                    {task.type === "task"? formatTaskPrice((task as any).price) : "Miễn phí"}
                   </span>
                   <span>•</span>
                   <span>
-                    {task.type === "task" ? `${(task as any).joined}/${(task as any).totalSlots}` : "Kế hoạch"} người
+                    {task.type === "task"? `${(task as any).joined}/${(task as any).totalSlots}` : "Kế hoạch"} người
                   </span>
                 </div>
                 <div className="flex items-center gap-3 mt-2 text-xs">
