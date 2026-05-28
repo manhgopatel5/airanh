@@ -46,7 +46,7 @@ type UserData = {
   nameLower: string;
   username?: string;
   status: "active" | "banned" | "deleted" | "deactivated";
-  lastNameChangeAt?: Timestamp; // NEW
+  lastNameChangeAt?: Timestamp;
 };
 
 export default function ProfileTabContent() {
@@ -69,7 +69,7 @@ export default function ProfileTabContent() {
   const uploadTaskRef = useRef<UploadTask | null>(null);
 
   const accentGradient = isPlan
-  ? "from-green-500 to-emerald-500"
+ ? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-600";
 
   useEffect(() => {
@@ -115,7 +115,6 @@ export default function ProfileTabContent() {
     createId().catch(() => {});
   }, [user, userData, db]);
 
-  // FIX: Check 3 tháng + validate tên thật
   const canChangeName = () => {
     if (!userData?.lastNameChangeAt) return { allowed: true };
     const lastChange = userData.lastNameChangeAt.toDate();
@@ -136,7 +135,6 @@ export default function ProfileTabContent() {
     const trimmed = name.trim();
     if (trimmed.length < 2) return "Tên tối thiểu 2 ký tự";
     if (trimmed.length > 50) return "Tên tối đa 50 ký tự";
-    // Chỉ cho phép chữ cái, số, dấu cách, dấu tiếng Việt
     const regex = /^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂẾưăạảấầẩẫậắằẳẵặẹẻẽềềểếỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ\s\d]+$/;
     if (!regex.test(trimmed)) return "Tên chỉ được chứa chữ cái, số và dấu cách";
     if (/\s{2,}/.test(trimmed)) return "Không được có 2 dấu cách liên tiếp";
@@ -463,7 +461,7 @@ export default function ProfileTabContent() {
       </div>
 
       {/* Modal đổi tên */}
-  {showNameModal && (
+      {showNameModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between">
@@ -480,7 +478,6 @@ export default function ProfileTabContent() {
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Nhập tên thật của bạn"
                   maxLength={50}
-                  // FIX: Bỏ autoFocus, chỉ focus khi bấm vào input
                   className="w-full px-4 py-3 border border-gray-200 dark:border-zinc-700 rounded-xl outline-none bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -492,6 +489,7 @@ export default function ProfileTabContent() {
                   <li>Tên sẽ hiển thị công khai với mọi người</li>
                 </ul>
               </div>
+            </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowNameModal(false)}
@@ -514,5 +512,5 @@ export default function ProfileTabContent() {
         <ProfileModal title="Đăng xuất?" desc="Bạn sẽ cần đăng nhập lại để sử dụng app" onClose={() => setShowLogoutModal(false)} onConfirm={handleLogout} confirmText="Đăng xuất" danger />
       )}
     </div>
-  
+  );
 }
