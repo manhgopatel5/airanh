@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useTaskFeed } from "@/hooks/useTaskFeed";
+import { useAuth } from "@/lib/AuthContext";
 import TaskFeed from "@/components/TaskFeed";
 import EmptyState from "@/components/EmptyState";
 import { toast } from "sonner";
@@ -12,6 +14,8 @@ import type { AppMode } from "@/types/app";
 type TabId = "hot" | "near" | "friends" | "new";
 
 export default function TaskPage() {
+  const router = useRouter();
+  const { user, userData, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>("hot");
   const [mode] = useState<AppMode>("task");
   const {
@@ -21,9 +25,16 @@ export default function TaskPage() {
     hasMore,
     loadMore,
     refresh
-  } = useTaskFeed(activeTab); // FIX: Bỏ newTaskCount, resetNewTaskCount
+  } = useTaskFeed(activeTab);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Guard: chưa login hoặc chưa onboard thì không render feed
+  useEffect(() => {
+    if (!authLoading &&!user) {
+      router.replace("/login");
+    }
+  }, [authLoading, user, router]);
 
   // Pull to refresh
   const handleRefresh = useCallback(async () => {
@@ -46,9 +57,9 @@ export default function TaskPage() {
     const handleScroll = () => {
       if (
         window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 &&
-      !loadingMore &&
+       !loadingMore &&
         hasMore &&
-      !loading
+       !loading
       ) {
         loadMore();
       }
@@ -57,6 +68,18 @@ export default function TaskPage() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, [loadingMore, hasMore, loading, loadMore]);
+
+  // Loading auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-black">
+        <FiLoader className="animate-spin text-zinc-400" size={32} />
+      </div>
+    );
+  }
+
+  // Chưa login → middleware đã redirect, nhưng thêm guard cho chắc
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black">
@@ -93,7 +116,7 @@ export default function TaskPage() {
               }}
               className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
                 activeTab === tab.id
-                ? "bg-[#0A84FF] text-white"
+               ? "bg-[#0A84FF] text-white"
                   : "bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 active:bg-zinc-200 dark:active:bg-zinc-800"
               }`}
             >
