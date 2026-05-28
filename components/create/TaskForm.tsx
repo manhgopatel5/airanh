@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, Timestamp, doc, getDoc } from "firebase/firestore";
 import { toast } from "sonner";
 import { FiDollarSign, FiUsers, FiClock, FiWifi } from "react-icons/fi";
 
@@ -25,6 +26,7 @@ const BUDGET_TYPES = [
 
 export default function TaskForm() {
   const router = useRouter();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     title: "",
@@ -44,36 +46,57 @@ export default function TaskForm() {
   });
 
   const handleSubmit = async () => {
+    if (!user) return toast.error("Chưa đăng nhập");
     if (!form.title.trim()) return toast.error("Nhập tiêu đề");
     if (!form.description.trim()) return toast.error("Nhập mô tả");
-    if (form.price <= 0) return toast.error("Giá phải > 0");
+    if (form.price <= 0 && form.budgetType !== "negotiable") return toast.error("Giá phải > 0");
 
     setLoading(true);
     try {
       const db = getFirebaseDB();
+      
+      // 1. Lấy data user để denormalize vào task
+      const userSnap = await getDoc(doc(db, "users", user.uid));
+      const userData = userSnap.data();
+
+      const deadline = new Date();
+      deadline.setHours(deadline.getHours() + form.durationHours);
+
       await addDoc(collection(db, "tasks"), {
         type: "task",
-        userId: "current_user_id", // TODO: auth
-        title: form.title,
-        description: form.description,
+        userId: user.uid, // ← Fix: dùng uid thật
+        userName: userData?.displayName || user.displayName || "Unknown",
+        userAvatar: userData?.photoURL || user.photoURL || null,
+        userVerified: userData?.emailVerified || false,
+        title: form.title.trim(),
+        description: form.description.trim(),
         category: form.category,
         tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
         price: form.price,
         currency: form.currency,
         budgetType: form.budgetType,
-        requiredPeople: form.requiredPeople,
+        totalSlots: form.requiredPeople,
+        joined: 0,
         durationHours: form.durationHours,
-        location: { address: form.address, city: form.city },
+        deadline: Timestamp.fromDate(deadline), // ← Dùng Timestamp để orderBy
+        location: form.remote ? null : { 
+          address: form.address.trim(), 
+          city: form.city.trim() 
+        },
         remote: form.remote,
-        requirements: form.requirements,
-        visibility: form.visibility,
-        status: "open",
-        banned: false,
+        requirements: form.requirements.trim(),
+        visibility: form.visibility, // "public" để feed thấy
+        status: "open", // ← Bắt buộc để feed query
+        banned: false, // ← Bắt buộc để feed query
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         likeCount: 0,
+        commentCount: 0,
         viewCount: 0,
+        likes: [],
+        savedBy: [],
       });
+
       toast.success("Đăng việc thành công!");
       router.push("/?mode=task");
     } catch (err) {
@@ -157,7 +180,8 @@ export default function TaskForm() {
             type="number"
             value={form.price}
             onChange={(e) => setForm({ ...form, price: parseInt(e.target.value) || 0 })}
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus:ring-2 focus:ring-orange-500 outline-none"
+            disabled={form.budgetType === "negotiable"}
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus:ring-2 focus:ring-orange-500 outline-none disabled:opacity-50"
           />
         </div>
         <div>
