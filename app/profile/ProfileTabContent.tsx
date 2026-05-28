@@ -1,105 +1,30 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { signOut, updateProfile } from "firebase/auth";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { signOut } from "firebase/auth";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { useAppStore } from "@/store/app";
 import {
   doc, onSnapshot, updateDoc, serverTimestamp, getDoc, setDoc, Timestamp
 } from "firebase/firestore";
-import imageCompression from 'browser-image-compression';
-import Cropper from 'react-easy-crop';
-import type { Area } from 'react-easy-crop';
+import { getFirebaseDB, getFirebaseAuth } from "@/lib/firebase";
 import {
-  getFirebaseDB,
-  getFirebaseAuth,
-  getFirebaseStorage
-} from "@/lib/firebase";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import {
-  HelpCircle, LogOut, User, Shield, Lock,
-  Camera, Check, QrCode, Share2, Settings,
-  Circle, Bell,
-  Mail, Phone, Monitor, Ban, HardDrive, X, ZoomIn, ZoomOut, RotateCw
+  HelpCircle, LogOut, User, Shield, Lock, Camera, Check, QrCode, Share2, Settings,
+  Circle, Bell, Mail, Phone, Monitor, Ban, HardDrive, X
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
-import type { UploadTask } from "firebase/storage";
 import { nanoid } from "nanoid";
 
 import SettingItem from "@/components/common/SettingItem";
 import ProfileModal from "@/components/common/ProfileModal";
-
-type UserData = {
-  uid: string;
-  displayName: string;
-  email: string | null;
-  phone?: string;
-  userId: string;
-  photoURL: string | null;
-  bio?: string;
-  online?: boolean;
-  lastSeen?: Timestamp;
-  createdAt?: Timestamp;
-  emailVerified?: boolean;
-  verified: boolean;
-  hidePhone?: boolean;
-  stats?: { tasks: number; plans: number; completed: number; rating: number };
-  nameLower: string;
-  username?: string;
-  status: "active" | "banned" | "deleted" | "deactivated";
-  lastNameChangeAt?: Timestamp;
-  lastAvatarChangeAt?: Timestamp;
-};
-
-// Helper crop ảnh
-async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
-  const image = await createImage(imageSrc);
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('No 2d context');
-
-  const maxSize = Math.max(image.width, image.height);
-  const safeArea = 2 * ((maxSize / 2) * Math.sqrt(2));
-
-  canvas.width = safeArea;
-  canvas.height = safeArea;
-
-  ctx.drawImage(
-    image,
-    safeArea / 2 - image.width * 0.5,
-    safeArea / 2 - image.height * 0.5
-  );
-
-  const data = ctx.getImageData(0, 0, safeArea, safeArea);
-  canvas.width = pixelCrop.width;
-  canvas.height = pixelCrop.height;
-
-  ctx.putImageData(
-    data,
-    Math.round(0 - safeArea / 2 + image.width * 0.5 - pixelCrop.x),
-    Math.round(0 - safeArea / 2 + image.height * 0.5 - pixelCrop.y)
-  );
-
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => {
-      if (blob) resolve(blob);
-    }, 'image/webp', 0.9);
-  });
-}
-
-const createImage = (url: string): Promise<HTMLImageElement> =>
-  new Promise((resolve, reject) => {
-    const image = new Image();
-    image.addEventListener('load', () => resolve(image));
-    image.addEventListener('error', (error) => reject(error));
-    image.src = url;
-  });
+import AvatarCropModal from "@/components/profile/AvatarCropModal";
+import { useAvatarUpload } from "@/hooks/useAvatarUpload";
+import type { UserData } from "@/types/user";
 
 export default function ProfileTabContent() {
   const db = getFirebaseDB();
   const auth = getFirebaseAuth();
-  const storage = getFirebaseStorage();
   const router = useRouter();
   const { user } = useAuth();
   const mode = useAppStore((s) => s.mode);
@@ -110,23 +35,13 @@ export default function ProfileTabContent() {
   const [showNameModal, setShowNameModal] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showCropModal, setShowCropModal] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  // Crop state
-  const [pendingAvatarFile, setPendingAvatarFile] = useState<string | null>(null);
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [rotation, setRotation] = useState(0);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
-
   const hasCheckedId = useRef(false);
-  const uploadTaskRef = useRef<UploadTask | null>(null);
+  const { uploading, uploadProgress, uploadAvatar, cancelUpload } = useAvatarUpload(user);
 
-  const accentGradient = isPlan
-? "from-green-500 to-emerald-500"
-    : "from-sky-500 to-blue-600";
+  const accentGradient = isPlan? "from-green-500 to-emerald-500" : "from-sky-500 to-blue-600";
 
   useEffect(() => {
     if (user === null) router.replace("/login");
@@ -179,10 +94,7 @@ export default function ProfileTabContent() {
     if (lastChange > threeMonthsAgo) {
       const nextChange = new Date(lastChange);
       nextChange.setMonth(nextChange.getMonth() + 3);
-      return {
-        allowed: false,
-        nextDate: nextChange.toLocaleDateString('vi-VN')
-      };
+      return { allowed: false, nextDate: nextChange.toLocaleDateString('vi-VN') };
     }
     return { allowed: true };
   };
@@ -195,10 +107,7 @@ export default function ProfileTabContent() {
     if (lastChange > threeMonthsAgo) {
       const nextChange = new Date(lastChange);
       nextChange.setMonth(nextChange.getMonth() + 3);
-      return {
-        allowed: false,
-        nextDate: nextChange.toLocaleDateString('vi-VN')
-      };
+      return { allowed: false, nextDate: nextChange.toLocaleDateString('vi-VN') };
     }
     return { allowed: true };
   };
@@ -207,7 +116,7 @@ export default function ProfileTabContent() {
     const trimmed = name.trim();
     if (trimmed.length < 2) return "Tên tối thiểu 2 ký tự";
     if (trimmed.length > 50) return "Tên tối đa 50 ký tự";
-    const regex = /^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂẾưăạảấầẩẫậắằẳẵặẹẻẽềềểếỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ\s\d]+$/;
+    const regex = /^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂẾưăạảấầẩẫậắằẳẵặẹẻẽềểếỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ\s\d]+$/;
     if (!regex.test(trimmed)) return "Tên chỉ được chứa chữ cái, số và dấu cách";
     if (/\s{2,}/.test(trimmed)) return "Không được có 2 dấu cách liên tiếp";
     return null;
@@ -224,12 +133,8 @@ export default function ProfileTabContent() {
 
   const handleUpdateName = async () => {
     if (!user) return;
-
     const error = validateRealName(displayName);
-    if (error) {
-      toast.error(error);
-      return;
-    }
+    if (error) return toast.error(error);
 
     const newName = displayName.trim();
     if (newName === userData?.displayName) {
@@ -277,90 +182,32 @@ export default function ProfileTabContent() {
     if (!file.type.startsWith("image/")) return toast.error("Chỉ chấp nhận file ảnh");
     if (file.size > 20 * 1024 * 1024) return toast.error("Ảnh không được vượt quá 20MB");
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPendingAvatarFile(reader.result as string);
-      setShowAvatarModal(false);
-      setShowCropModal(true);
-      setCrop({ x: 0, y: 0 });
-      setZoom(1);
-      setRotation(0);
-    };
-    reader.readAsDataURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    setCropImageSrc(objectUrl);
+    setShowAvatarModal(false);
+    setShowCropModal(true);
     e.target.value = "";
   };
 
-  const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
-    setCroppedAreaPixels(croppedAreaPixels);
-  }, []);
-
-  const handleCropSave = async () => {
-    if (!pendingAvatarFile ||!croppedAreaPixels ||!user) return;
-
+  const handleCropComplete = async (croppedBlob: Blob) => {
     setShowCropModal(false);
-    setUploading(true);
-    setUploadProgress(0);
+    if (cropImageSrc) URL.revokeObjectURL(cropImageSrc);
+    setCropImageSrc(null);
 
+    const file = new File([croppedBlob], 'avatar.webp', { type: 'image/webp' });
     try {
-      toast.loading("Đang xử lý ảnh...");
-      const croppedBlob = await getCroppedImg(pendingAvatarFile, croppedAreaPixels);
-      const croppedFile = new File([croppedBlob], 'avatar.webp', { type: 'image/webp' });
-
-      const options = {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1024,
-        useWebWorker: true,
-        fileType: 'image/webp',
-      };
-
-      const compressedFile = await imageCompression(croppedFile, options);
-      toast.dismiss();
-
-      const storageRef = ref(storage, `avatars/${user.uid}`);
-      uploadTaskRef.current = uploadBytesResumable(storageRef, compressedFile);
-      uploadTaskRef.current.on(
-        "state_changed",
-        (snapshot) => {
-          const prog = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(Math.round(prog));
-        },
-        (err) => {
-          if (err.code!== "storage/canceled") toast.error("Upload thất bại");
-          setUploading(false);
-          setPendingAvatarFile(null);
-        },
-        async () => {
-          const task = uploadTaskRef.current;
-          if (!task) return;
-          const url = await getDownloadURL(task.snapshot.ref);
-          await Promise.all([
-            updateProfile(user, { photoURL: url }),
-            updateDoc(doc(db, "users", user.uid), {
-              photoURL: url,
-              lastAvatarChangeAt: serverTimestamp(),
-              updatedAt: serverTimestamp()
-            })
-          ]);
-          await user.reload();
-          toast.success("Cập nhật avatar thành công. Bạn có thể đổi lại sau 3 tháng");
-          if ("vibrate" in navigator) navigator.vibrate(8);
-          setUploading(false);
-          setPendingAvatarFile(null);
-        }
-      );
-    } catch (error) {
-      console.error(error);
-      toast.error("Xử lý ảnh thất bại");
-      setUploading(false);
-      setPendingAvatarFile(null);
+      await uploadAvatar(file);
+    } catch (err) {
+      console.error(err);
     }
   };
 
   useEffect(() => {
     return () => {
-      if (uploadTaskRef.current) uploadTaskRef.current.cancel();
+      cancelUpload();
+      if (cropImageSrc) URL.revokeObjectURL(cropImageSrc);
     };
-  }, []);
+  }, [cancelUpload, cropImageSrc]);
 
   const handleLogout = async () => {
     if (!user) return;
@@ -410,16 +257,10 @@ export default function ProfileTabContent() {
   return (
     <div className="min-h-screen bg-white dark:bg-black pb-24 font-sans">
       <Toaster richColors position="top-center" />
-
-      {/* Header */}
       <div className="px-6 pt-12 pb-6">
         <div className="flex items-center gap-4">
           <div onClick={handleAvatarClick} className="relative cursor-pointer group flex-shrink-0">
-            <img
-              src={avatarUrl}
-              className="w-16 h-16 rounded-full object-cover"
-              alt="Avatar"
-            />
+            <img src={avatarUrl} className="w-16 h-16 rounded-full object-cover" alt="Avatar" />
             {userData.emailVerified && (
               <div className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-gradient-to-br ${accentGradient} flex items-center justify-center border-2 border-white dark:border-black`}>
                 <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
@@ -435,7 +276,6 @@ export default function ProfileTabContent() {
               </div>
             )}
           </div>
-
           <div className="flex-1 min-w-0">
             <h1 onClick={handleOpenNameModal} className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight cursor-pointer leading-tight active:opacity-70">
               {finalDisplayName}
@@ -450,127 +290,39 @@ export default function ProfileTabContent() {
         </div>
       </div>
 
-      {/* List Settings */}
       <div className="px-4 mt-2 space-y-4">
         <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
-          <SettingItem
-            label="Thông tin cá nhân"
-            subtitle="Tên, SĐT, Email"
-            icon={User}
-            iconColor="text-blue-500"
-            onClick={() => router.push("/settings/profile-edit")}
-          />
+          <SettingItem label="Thông tin cá nhân" subtitle="Tên, SĐT, Email" icon={User} iconColor="text-blue-500" onClick={() => router.push("/settings/profile-edit")} />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-          <SettingItem
-            label="Đổi email"
-            subtitle="Cập nhật địa chỉ email"
-            icon={Mail}
-            iconColor="text-sky-500"
-            onClick={() => router.push("/settings/change-email")}
-          />
+          <SettingItem label="Đổi email" subtitle="Cập nhật địa chỉ email" icon={Mail} iconColor="text-sky-500" onClick={() => router.push("/settings/change-email")} />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-          <SettingItem
-            label="Đổi số điện thoại"
-            subtitle="Xác thực SĐT mới"
-            icon={Phone}
-            iconColor="text-emerald-500"
-            onClick={() => router.push("/settings/change-phone")}
-          />
+          <SettingItem label="Đổi số điện thoại" subtitle="Xác thực SĐT mới" icon={Phone} iconColor="text-emerald-500" onClick={() => router.push("/settings/change-phone")} />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-          <SettingItem
-            label="Đổi mật khẩu"
-            subtitle="Cập nhật mật khẩu định kỳ"
-            icon={Lock}
-            iconColor="text-green-500"
-            onClick={() => router.push("/settings/change-password")}
-          />
+          <SettingItem label="Đổi mật khẩu" subtitle="Cập nhật mật khẩu định kỳ" icon={Lock} iconColor="text-green-500" onClick={() => router.push("/settings/change-password")} />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-          <SettingItem
-            label="Xác thực 2 lớp"
-            subtitle="Bật/tắt 2FA cho tài khoản"
-            icon={Shield}
-            iconColor="text-amber-500"
-            onClick={() => router.push("/settings/2fa")}
-          />
+          <SettingItem label="Xác thực 2 lớp" subtitle="Bật/tắt 2FA cho tài khoản" icon={Shield} iconColor="text-amber-500" onClick={() => router.push("/settings/2fa")} />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-          <SettingItem
-            label="Phiên đăng nhập"
-            subtitle="Quản lý thiết bị đang hoạt động"
-            icon={Monitor}
-            iconColor="text-purple-500"
-            onClick={() => router.push("/settings/sessions")}
-          />
+          <SettingItem label="Phiên đăng nhập" subtitle="Quản lý thiết bị đang hoạt động" icon={Monitor} iconColor="text-purple-500" onClick={() => router.push("/settings/sessions")} />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-          <SettingItem
-            label="Tài khoản bị chặn"
-            subtitle="Danh sách người dùng đã chặn"
-            icon={Ban}
-            iconColor="text-red-500"
-            onClick={() => router.push("/settings/blocked")}
-          />
+          <SettingItem label="Tài khoản bị chặn" subtitle="Danh sách người dùng đã chặn" icon={Ban} iconColor="text-red-500" onClick={() => router.push("/settings/blocked")} />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-          <SettingItem
-            label="Mã QR của tôi"
-            subtitle="Chia sẻ & quét mã kết bạn"
-            icon={QrCode}
-            iconColor="text-amber-500"
-            onClick={() => router.push("/settings/qr")}
-          />
+          <SettingItem label="Mã QR của tôi" subtitle="Chia sẻ & quét mã kết bạn" icon={QrCode} iconColor="text-amber-500" onClick={() => router.push("/settings/qr")} />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-          <SettingItem
-            label="Chia sẻ hồ sơ"
-            subtitle="Link và mạng xã hội"
-            icon={Share2}
-            iconColor="text-purple-500"
-            iconBg="bg-purple-50"
-            onClick={() => router.push("/settings/share-profile")}
-          />
+          <SettingItem label="Chia sẻ hồ sơ" subtitle="Link và mạng xã hội" icon={Share2} iconColor="text-purple-500" iconBg="bg-purple-50" onClick={() => router.push("/settings/share-profile")} />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-          <SettingItem
-            label="Thông báo"
-            subtitle="Push, email, giờ im lặng"
-            icon={Bell}
-            iconColor="text-blue-500"
-            iconBg="bg-blue-50"
-            onClick={() => router.push("/settings/notifications")}
-          />
+          <SettingItem label="Thông báo" subtitle="Push, email, giờ im lặng" icon={Bell} iconColor="text-blue-500" iconBg="bg-blue-50" onClick={() => router.push("/settings/notifications")} />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-          <SettingItem
-            label="Dung lượng"
-            subtitle="Quản lý file và bộ nhớ"
-            icon={HardDrive}
-            iconColor="text-teal-500"
-            onClick={() => router.push("/settings/storage")}
-          />
+          <SettingItem label="Dung lượng" subtitle="Quản lý file và bộ nhớ" icon={HardDrive} iconColor="text-teal-500" onClick={() => router.push("/settings/storage")} />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-          <SettingItem
-            label="Cài đặt chung"
-            subtitle="Thông báo, Giao diện, Ngôn ngữ"
-            icon={Settings}
-            iconColor="text-gray-500"
-            onClick={() => router.push("/settings")}
-          />
+          <SettingItem label="Cài đặt chung" subtitle="Thông báo, Giao diện, Ngôn ngữ" icon={Settings} iconColor="text-gray-500" onClick={() => router.push("/settings")} />
           <div className="h-px bg-gray-100 dark:bg-zinc-800 ml-14" />
-          <SettingItem
-            label="Hỗ trợ"
-            subtitle="Trung tâm trợ giúp, Báo cáo sự cố"
-            icon={HelpCircle}
-            iconColor="text-red-500"
-            onClick={() => router.push("/settings/help")}
-          />
+          <SettingItem label="Hỗ trợ" subtitle="Trung tâm trợ giúp, Báo cáo sự cố" icon={HelpCircle} iconColor="text-red-500" onClick={() => router.push("/settings/help")} />
         </div>
-
         <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
-          <SettingItem
-            label="Đăng xuất"
-            icon={LogOut}
-            iconColor="text-gray-500"
-            onClick={() => setShowLogoutModal(true)}
-          />
+          <SettingItem label="Đăng xuất" icon={LogOut} iconColor="text-gray-500" onClick={() => setShowLogoutModal(true)} />
         </div>
       </div>
 
-      {/* Modal đổi tên */}
       {showNameModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-md p-6 space-y-4">
@@ -599,18 +351,11 @@ export default function ProfileTabContent() {
                   <li>Tên sẽ hiển thị công khai với mọi người</li>
                 </ul>
               </div>
-            </div>
             <div className="flex gap-3">
-              <button
-                onClick={() => setShowNameModal(false)}
-                className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 font-semibold text-gray-700 dark:text-zinc-300 active:scale-95 transition"
-              >
+              <button onClick={() => setShowNameModal(false)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 font-semibold text-gray-700 dark:text-zinc-300 active:scale-95 transition">
                 Hủy
               </button>
-              <button
-                onClick={handleUpdateName}
-                className={`flex-1 py-3 rounded-xl bg-gradient-to-r ${accentGradient} font-semibold text-white active:scale-95 transition`}
-              >
+              <button onClick={handleUpdateName} className={`flex-1 py-3 rounded-xl bg-gradient-to-r ${accentGradient} font-semibold text-white active:scale-95 transition`}>
                 Lưu
               </button>
             </div>
@@ -618,7 +363,6 @@ export default function ProfileTabContent() {
         </div>
       )}
 
-      {/* Modal chọn avatar */}
       {showAvatarModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-md p-6 space-y-4">
@@ -637,18 +381,11 @@ export default function ProfileTabContent() {
                   <li>Ảnh sẽ hiển thị công khai với mọi người</li>
                 </ul>
               </div>
-            </div>
             <div className="flex gap-3">
-              <button
-                onClick={() => setShowAvatarModal(false)}
-                className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 font-semibold text-gray-700 dark:text-zinc-300 active:scale-95 transition"
-              >
+              <button onClick={() => setShowAvatarModal(false)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 font-semibold text-gray-700 dark:text-zinc-300 active:scale-95 transition">
                 Hủy
               </button>
-              <label
-                htmlFor="avatar-upload-modal"
-                className={`flex-1 py-3 rounded-xl bg-gradient-to-r ${accentGradient} font-semibold text-white active:scale-95 transition text-center cursor-pointer`}
-              >
+              <label htmlFor="avatar-upload-modal" className={`flex-1 py-3 rounded-xl bg-gradient-to-r ${accentGradient} font-semibold text-white active:scale-95 transition text-center cursor-pointer`}>
                 Chọn ảnh
               </label>
               <input type="file" accept="image/*" className="hidden" id="avatar-upload-modal" onChange={handleAvatarFileSelect} disabled={uploading} />
@@ -657,63 +394,17 @@ export default function ProfileTabContent() {
         </div>
       )}
 
-      {/* Modal crop ảnh */}
-      {showCropModal && pendingAvatarFile && (
-        <div className="fixed inset-0 bg-black z-50 flex flex-col">
-          <div className="relative flex-1">
-            <Cropper
-              image={pendingAvatarFile}
-              crop={crop}
-              zoom={zoom}
-              rotation={rotation}
-              aspect={1}
-              onCropChange={setCrop}
-              onCropComplete={onCropComplete}
-              onZoomChange={setZoom}
-              cropShape="round"
-              showGrid={false}
-            />
-          </div>
-          <div className="bg-white dark:bg-zinc-900 p-4 space-y-4">
-            <div className="flex items-center justify-between gap-4">
-              <button onClick={() => setZoom(z => Math.max(1, z - 0.2))} className="p-3 bg-gray-100 dark:bg-zinc-800 rounded-xl">
-                <ZoomOut className="w-5 h-5" />
-              </button>
-              <input
-                type="range"
-                min={1}
-                max={3}
-                step={0.1}
-                value={zoom}
-                onChange={(e) => setZoom(Number(e.target.value))}
-                className="flex-1"
-              />
-              <button onClick={() => setZoom(z => Math.min(3, z + 0.2))} className="p-3 bg-gray-100 dark:bg-zinc-800 rounded-xl">
-                <ZoomIn className="w-5 h-5" />
-              </button>
-              <button onClick={() => setRotation(r => r + 90)} className="p-3 bg-gray-100 dark:bg-zinc-800 rounded-xl">
-                <RotateCw className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowCropModal(false);
-                  setPendingAvatarFile(null);
-                }}
-                className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 font-semibold text-gray-700 dark:text-zinc-300"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleCropSave}
-                className={`flex-1 py-3 rounded-xl bg-gradient-to-r ${accentGradient} font-semibold text-white`}
-              >
-                Lưu
-              </button>
-            </div>
-          </div>
-        </div>
+      {showCropModal && cropImageSrc && (
+        <AvatarCropModal
+          imageSrc={cropImageSrc}
+          onClose={() => {
+            setShowCropModal(false);
+            URL.revokeObjectURL(cropImageSrc);
+            setCropImageSrc(null);
+          }}
+          onCropComplete={handleCropComplete}
+          accentGradient={accentGradient}
+        />
       )}
 
       {showLogoutModal && (
