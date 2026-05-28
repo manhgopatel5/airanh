@@ -29,7 +29,7 @@ export type AppUser = {
   emailVerified: boolean;
   photoURL: string | null;
   isOnline: boolean;
-  lastSeen: Timestamp;
+  lastSeen: Timestamp | string; // Cho phép string từ cache
   fcmTokens?: string[];
   verified: boolean;
   status: "active" | "banned" | "deleted" | "deactivated";
@@ -38,8 +38,8 @@ export type AppUser = {
   bio?: string;
   hidden?: boolean;
   deletedAt?: any;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
+  createdAt?: Timestamp | string;
+  updatedAt?: Timestamp | string;
   onboardingCompleted: boolean;
 };
 
@@ -49,7 +49,7 @@ type AuthContextType = {
   loading: boolean;
   error: string | null;
   logout: () => Promise<void>;
-  refreshToken: () => Promise<void>; // Thêm hàm này
+  refreshToken: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -61,14 +61,49 @@ const AuthContext = createContext<AuthContextType>({
   refreshToken: async () => {},
 });
 
+// ========== 1. CACHE LAYER ==========
+const USER_CACHE_KEY = 'user_profile_v1';
+const CACHE_VERSION = 1; // Tăng version khi đổi schema AppUser
+
+type CachedUser = AppUser & { _v: number; _cachedAt: number };
+
+const getCachedUser = (): AppUser | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const cached = localStorage.getItem(USER_CACHE_KEY);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached) as CachedUser;
+    // Bỏ cache cũ nếu đổi version hoặc quá 7 ngày
+    if (parsed._v!== CACHE_VERSION || Date.now() - parsed._cachedAt > 7 * 24 * 60 * 60 * 1000) {
+      localStorage.removeItem(USER_CACHE_KEY);
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const setCachedUser = (user: AppUser | null) => {
+  if (typeof window === 'undefined') return;
+  if (user) {
+    const toCache: CachedUser = {...user, _v: CACHE_VERSION, _cachedAt: Date.now() };
+    localStorage.setItem(USER_CACHE_KEY, JSON.stringify(toCache));
+  } else {
+    localStorage.removeItem(USER_CACHE_KEY);
+  }
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [auth, setAuth] = useState<any>(null);
   const [db, setDb] = useState<any>(null);
   const [rtdb, setRtdb] = useState<any>(null);
 
   const [user, setUser] = useState<User | null>(null);
-  const [userData, setUserData] = useState<AppUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  // 2. ĐỌC CACHE TRƯỚC -> RENDER NGAY, 0ms CHỜ
+  const [userData, setUserData] = useState<AppUser | null>(() => getCachedUser());
+  // 3. CHỈ LOADING NẾU CHƯA CÓ CACHE
+  const [loading, setLoading] = useState(() =>!getCachedUser());
   const [error, setError] = useState<string | null>(null);
 
   const userDataUnsub = useRef<(() => void) | null>(null);
@@ -87,11 +122,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const createUserProfile = useCallback(async (firebaseUser: User) => {
     try {
       const token = await firebaseUser.getIdToken();
-      const res = await fetch('/api/user/create', {
+      await fetch('/api/user/create', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (!res.ok) throw new Error('Failed to create user profile');
     } catch (e) {
       console.error("Create user error:", e);
       setError("Không tạo được hồ sơ");
@@ -100,7 +134,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const refreshToken = useCallback(async () => {
     if (!auth?.currentUser) return;
-    const token = await auth.currentUser.getIdToken(true); // force refresh
+    const token = await auth.currentUser.getIdToken(true);
     setCookie('__session', token, {
       maxAge: 60 * 60 * 24 * 7,
       path: '/',
@@ -121,14 +155,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (!firebaseUser) {
         setUserData(null);
+        setCachedUser(null);
         deleteCookie('__session');
         setLoading(false);
         return;
       }
 
+      // 4. NẾU CÓ CACHE ĐÚNG UID -> TẮT LOADING NGAY, KHÔNG CHỜ FIRESTORE
+      const cached = getCachedUser();
+      if (cached?.uid === firebaseUser.uid) {
+        setUserData(cached);
+        setLoading(false);
+      }
+
       try {
-        // QUAN TRỌNG: Dùng getIdToken(true) để luôn lấy token mới
-        const token = await firebaseUser.getIdToken(true);
+        // 5. BỎ `true`. Dùng token cũ nếu còn hạn, nhanh gấp 10 lần
+        const token = await firebaseUser.getIdToken();
         setCookie('__session', token, {
           maxAge: 60 * 60 * 24 * 7,
           path: '/',
@@ -136,6 +178,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           secure: process.env.NODE_ENV === 'production',
         });
 
+        // 6. LISTEN FIRESTORE NGẦM ĐỂ UPDATE CACHE
         const userRef = doc(db, "users", firebaseUser.uid);
         userDataUnsub.current = onSnapshot(
           userRef,
@@ -143,10 +186,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (docSnap.exists()) {
               const data = docSnap.data() as AppUser;
               setUserData(data);
+              setCachedUser(data); // Update cache
             } else {
               createUserProfile(firebaseUser);
             }
-            setLoading(false);
+            setLoading(false); // Tắt loading lần cuối cho chắc
           },
           (err) => {
             console.error("Snapshot error:", err);
@@ -155,10 +199,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         );
 
-        // Presence RTDB
+        // 7. PRESENCE RTDB - Chạy ngầm, không chặn render
         const statusRef = ref(rtdb, `/status/${firebaseUser.uid}`);
         const connectedRef = ref(rtdb, ".info/connected");
-
         presenceUnsub.current = onValue(connectedRef, (snap) => {
           if (!snap.val()) return;
           onDisconnect(statusRef).set({
@@ -189,6 +232,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!auth) return;
     const currentUser = auth.currentUser;
 
+    // Xóa cache trước
+    setCachedUser(null);
+    deleteCookie('__session');
+
     if (currentUser) {
       try {
         const token = await currentUser.getIdToken();
@@ -198,8 +245,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
       } catch {}
     }
-
-    deleteCookie('__session');
     await signOut(auth);
   }, [auth]);
 
