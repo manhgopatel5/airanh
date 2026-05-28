@@ -463,8 +463,8 @@ export default function ProfileTabContent() {
       </div>
 
       {/* Modal đổi tên */}
-      {showNameModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
+  {showNameModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-zinc-900 rounded-3xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Đổi tên hiển thị</h2>
@@ -480,8 +480,8 @@ export default function ProfileTabContent() {
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Nhập tên thật của bạn"
                   maxLength={50}
+                  // FIX: Bỏ autoFocus, chỉ focus khi bấm vào input
                   className="w-full px-4 py-3 border border-gray-200 dark:border-zinc-700 rounded-xl outline-none bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                  autoFocus
                 />
               </div>
               <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3">
@@ -492,7 +492,6 @@ export default function ProfileTabContent() {
                   <li>Tên sẽ hiển thị công khai với mọi người</li>
                 </ul>
               </div>
-            </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowNameModal(false)}
