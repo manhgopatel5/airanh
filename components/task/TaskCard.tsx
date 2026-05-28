@@ -6,11 +6,8 @@ import {
   FiTrash2, FiEdit2, FiShare2, FiEye, FiMessageCircle, FiGift, FiDollarSign, FiTag
 } from "react-icons/fi";
 import { HiHeart, HiOutlineHeart } from "react-icons/hi2";
-
-import { useState, useCallback, useEffect, useRef } from "react";
+import { memo, useState, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
-import { getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { type FeedTask } from "@/types/task";
 import { toast } from "sonner";
@@ -32,10 +29,13 @@ const Portal = ({ children }: { children: React.ReactNode }) => {
   return mounted? createPortal(children, document.body) : null;
 };
 
-export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
+const vibrate = (ms = 8) => {
+  if ("vibrate" in navigator) navigator.vibrate(ms);
+};
+
+function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
   const router = useRouter();
   const { user } = useAuth();
-  const db = getFirebaseDB();
 
   const [isSaved, setIsSaved] = useState(false);
   const [liked, setLiked] = useState(false);
@@ -69,16 +69,14 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
 
   const isOwner = user?.uid === task.userId;
 
-  const vibrate = (ms = 8) => {
-    if ("vibrate" in navigator) navigator.vibrate(ms);
-  };
-
+  // FIX 1: Dùng API route thay vì updateDoc trực tiếp -> 0 reads
   const handleLike = useCallback(async () => {
     if (!user) return router.push("/login");
     vibrate(10);
     const newLiked =!liked;
     const oldLikes = task.likes || [];
 
+    // Optimistic UI
     setLiked(newLiked);
     onTaskUpdate?.(task.id, {
       likes: newLiked? [...oldLikes, user.uid] : oldLikes.filter(id => id!== user.uid),
@@ -86,17 +84,19 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
     });
 
     try {
-      await updateDoc(doc(db, "tasks", task.id), {
-        likes: newLiked? arrayUnion(user.uid) : arrayRemove(user.uid),
-        likeCount: newLiked? (task.likeCount || 0) + 1 : (task.likeCount || 0) - 1,
+      const token = await user.getIdToken();
+      await fetch(`/api/tasks/${task.id}/like`, {
+        method: newLiked? 'POST' : 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
       });
     } catch {
       setLiked(!newLiked);
       onTaskUpdate?.(task.id, { likes: oldLikes, likeCount: task.likeCount });
       toast.error("Lỗi");
     }
-  }, [user, liked, task, router, db, onTaskUpdate]);
+  }, [user, liked, task, router, onTaskUpdate]);
 
+  // FIX 2: Dùng API route thay vì updateDoc
   const handleSave = useCallback(async () => {
     if (!user) return router.push("/login");
     if (saving) return;
@@ -108,14 +108,14 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
 
     setIsSaved(newSaved);
     onTaskUpdate?.(task.id, {
-      savedBy: newSaved
-? [...oldSavedBy, user.uid]
-        : oldSavedBy.filter(id => id!== user.uid)
+      savedBy: newSaved? [...oldSavedBy, user.uid] : oldSavedBy.filter(id => id!== user.uid)
     });
 
     try {
-      await updateDoc(doc(db, "tasks", task.id), {
-        savedBy: newSaved? arrayUnion(user.uid) : arrayRemove(user.uid),
+      const token = await user.getIdToken();
+      await fetch(`/api/tasks/${task.id}/save`, {
+        method: newSaved? 'POST' : 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
       });
       toast.success(newSaved? "Đã lưu" : "Đã bỏ lưu");
     } catch {
@@ -125,25 +125,29 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
     } finally {
       setSaving(false);
     }
-  }, [user, isSaved, saving, task, router, db, onTaskUpdate]);
+  }, [user, isSaved, saving, task, router, onTaskUpdate]);
 
   const handleDelete = useCallback(async () => {
     if (!isOwner) return;
     if (!confirm("Xóa task này?")) return;
     vibrate(10);
     try {
-      await deleteDoc(doc(db, "tasks", task.id));
+      const token = await user?.getIdToken();
+      await fetch(`/api/tasks/${task.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
       onDelete?.(task.id);
       toast.success("Đã xóa");
     } catch {
       toast.error("Xóa thất bại");
     }
-  }, [isOwner, task.id, onDelete, db]);
+  }, [isOwner, task.id, onDelete, user]);
 
-  const goToTask = () => {
+  const goToTask = useCallback(() => {
     vibrate();
     router.push(`/task/${task.id}`);
-  };
+  }, [router, task.id]);
 
   const taskDate = task.type === "task" && task.deadline
 ? new Date(task.deadline).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
@@ -165,16 +169,18 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
       transition={{ duration: 0.2 }}
       className="group"
     >
-      {/* CARD NỔI: shadow-xl + ring + mb-4 để tách card */}
       <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.985] transition-all duration-200 shadow-xl shadow-black/5 dark:shadow-black/20 ring-1 ring-black/5 dark:ring-white/5 hover:shadow-2xl hover:shadow-black/10 dark:hover:shadow-black/30 mb-4">
 
         {/* HEADER */}
         <div className="flex items-start gap-3 p-4 pb-3">
           <div className="relative">
+            {/* FIX 3: Lazy load + blur placeholder */}
             <img
               src={task.userAvatar || "/default-avatar.png"}
               alt={task.userName}
-              className="w-11 h-11 rounded-2xl object-cover ring-2 ring-white dark:ring-zinc-900 shadow-md"
+              loading="lazy"
+              decoding="async"
+              className="w-11 h-11 rounded-2xl object-cover ring-2 ring-white dark:ring-zinc-900 shadow-md bg-zinc-200 dark:bg-zinc-800"
             />
             {task.userVerified && (
               <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[#0A84FF] rounded-full border-2 border-white dark:border-zinc-900 shadow-sm" />
@@ -182,7 +188,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <p className="font-bold text- text-zinc-900 dark:text-zinc-100">
+              <p className="font-bold text-zinc-900 dark:text-zinc-100">
                 {task.userName}
               </p>
             </div>
@@ -257,7 +263,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
                   {showMenu && (
                     <Portal>
                       <div
-                        className="fixed inset-0 z-"
+                        className="fixed inset-0 z-50"
                         onClick={() => setShowMenu(false)}
                       />
                       <motion.div
@@ -265,7 +271,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: -10 }}
                         transition={{ duration: 0.15 }}
-                        className="fixed z- min-w-[180px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 py-2 overflow-hidden"
+                        className="fixed z-50 min-w-[180px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10 py-2 overflow-hidden"
                         style={{
                           top: `${menuPos.y}px`,
                           left: `${menuPos.x}px`,
@@ -306,13 +312,11 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
 
         {/* CONTENT */}
         <div className="px-4 pb-4 cursor-pointer" onClick={goToTask}>
-          {/* TIÊU ĐỀ + GIÁ CÙNG HÀNG - GÓC PHẢI */}
           <div className="flex items-start justify-between gap-3 mb-2.5">
-            <h3 className="font-bold text- text-zinc-900 dark:text-zinc-100 leading-snug flex-1">
+            <h3 className="font-bold text-zinc-900 dark:text-zinc-100 leading-snug flex-1">
               {task.title}
             </h3>
 
-            {/* SỐ TIỀN GÓC PHẢI */}
             {task.type === "task" && task.price > 0 && (
               <div className="shrink-0 px-3 py-1.5 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/40 dark:to-blue-900/40 ring-1 ring-blue-200/50 dark:ring-blue-800/50">
                 <span className="font-bold text-sm text-[#0A84FF]">
@@ -352,15 +356,12 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
           </div>
 
           {task.description && (
-            <p className="text- text-zinc-600 dark:text-zinc-300 leading-[1.6] line-clamp-4 mb-3.5">
+            <p className="text-zinc-600 dark:text-zinc-300 leading-[1.6] line-clamp-4 mb-3.5">
               {task.description}
             </p>
           )}
 
-          {/* ĐÃ XÓA HASHTAG */}
-
-          {/* META INFO */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
             {maxSlots > 0 && (
               <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
                 <FiUsers size={15} />
@@ -422,7 +423,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
               ) : (
                 <HiOutlineHeart size={22} className="text-zinc-600 dark:text-zinc-400" />
               )}
-              <span className="text- font-bold text-zinc-700 dark:text-zinc-300">
+              <span className="text-sm font-bold text-zinc-700 dark:text-zinc-300">
                 {task.likeCount || 0}
               </span>
             </button>
@@ -432,7 +433,7 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
               className="flex items-center gap-2 px-3.5 h-10 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all"
             >
               <FiMessageCircle size={20} className="text-zinc-600 dark:text-zinc-400" />
-              <span className="text- font-bold text-zinc-700 dark:text-zinc-300">
+              <span className="text-sm font-bold text-zinc-700 dark:text-zinc-300">
                 {task.commentCount || 0}
               </span>
             </button>
@@ -460,3 +461,6 @@ export default function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate 
     </motion.div>
   );
 }
+
+// FIX 4: React.memo - chỉ re-render khi props đổi
+export default memo(TaskCard);
