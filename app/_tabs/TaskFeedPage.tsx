@@ -6,15 +6,8 @@ import { Briefcase3D, Palm3D } from "@/components/icons/Mode3DIcons";
 import { useRouter } from "next/navigation";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  limit,
-  Timestamp,
-} from "firebase/firestore";
+import { getFirebaseAuth } from "@/lib/firebase";
+import useSWR, { mutate } from "swr"; // THÊM
 import type { FeedTask } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast } from "sonner";
@@ -42,21 +35,16 @@ interface TaskFeedPageProps {
   initialJobs?: FeedTask[];
 }
 
+// THÊM: Fetcher cho SWR
+const fetcher = (url: string) => fetch(url).then(r => r.json());
+
 export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
   const auth = getFirebaseAuth();
-  const db = getFirebaseDB();
   const router = useRouter();
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const { mode = "task", setMode } = useAppStore();
   const [activeTab, setActiveTab] = useState<TabId>("hot");
-
-  // FIX 1: Lọc initialJobs theo mode ngay từ đầu
-  const [tasks, setTasks] = useState<FeedTask[]>(() =>
-    initialJobs.filter(j => j.type === mode)
-  );
-  const [loading, setLoading] = useState(initialJobs.filter(j => j.type === mode).length === 0);
-  const [refreshing, setRefreshing] = useState(false);
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
 
@@ -67,7 +55,20 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
     new: ""
   });
 
-  const unsubRef = useRef<(() => void) | null>(null);
+  // FIX: Dùng SWR thay onSnapshot. 0 reads nếu cache còn hạn
+  const { data: tasks = [], isLoading, isValidating } = useSWR<FeedTask[]>(
+    currentUser? `/api/jobs?type=${mode}` : null,
+    fetcher,
+    {
+      fallbackData: initialJobs.filter(j => j.type === mode), // Dùng data SSR
+      revalidateOnFocus: false, // Tắt để tiết kiệm reads
+      dedupingInterval: 60000, // 1 phút mới gọi API 1 lần
+      keepPreviousData: true, // Chuyển tab mượt, không blink
+    }
+  );
+
+  const loading = isLoading && tasks.length === 0;
+  const refreshing = isValidating;
 
   const theme = {
     task: {
@@ -96,77 +97,22 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
       return;
     }
 
-    setLoading(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
         setUserLocation({ lat: latitude, lng: longitude });
         vibrate([10, 20, 10]);
         toast.success("Đã xác định vị trí thành công");
-        setLoading(false);
       },
       (err) => {
         if (err.code === 1) toast.error("Bạn đã chặn quyền truy cập vị trí");
         else toast.error("Không thể lấy vị trí. Thử lại sau");
-        setLoading(false);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   }, []);
 
-  // FIX 2: Reset tasks khi đổi mode để không lẫn task/plan
-  useEffect(() => {
-    setTasks(initialJobs.filter(j => j.type === mode));
-    setLoading(initialJobs.filter(j => j.type === mode).length === 0);
-  }, [mode, initialJobs]);
-
-  // FIX 3: onSnapshot chỉ lấy đúng type=mode
-  useEffect(() => {
-    if (!currentUser ||!db) return;
-    unsubRef.current?.();
-
-    const now = Timestamp.now();
-    const q = query(
-      collection(db, "tasks"),
-      where("type", "==", mode), // FIX: Chỉ lấy đúng mode hiện tại
-      where("visibility", "==", "public"),
-      where("status", "in", ["open", "full", "doing"]),
-      where("deadline", ">", now),
-      limit(20)
-    );
-
-    unsubRef.current = onSnapshot(q, (snap) => {
-      const newJobs = snap.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-   ...data,
-          createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
-          updatedAt: data.updatedAt?.toDate?.()?.toISOString() || null,
-          deadline: data.deadline?.toDate?.()?.toISOString() || null,
-          eventDate: data.eventDate?.toDate?.()?.toISOString() || null,
-          endDate: data.endDate?.toDate?.()?.toISOString() || null,
-          startDate: data.startDate?.toDate?.()?.toISOString() || null,
-          applicationDeadline: data.applicationDeadline?.toDate?.()?.toISOString() || null,
-        } as FeedTask;
-      })
-      // FIX 4: Double check filter client để chắc chắn
-     .filter(j => j.type === mode &&!j.banned &&!j.hidden)
-     .sort((a, b) => {
-        const aTime = a.createdAt? new Date(a.createdAt).getTime() : 0;
-        const bTime = b.createdAt? new Date(b.createdAt).getTime() : 0;
-        return bTime - aTime;
-      });
-
-      setTasks(newJobs);
-      setLoading(false);
-    }, (err) => {
-      console.error("Snapshot error:", err);
-      setLoading(false);
-    });
-
-    return () => unsubRef.current?.();
-  }, [currentUser, db, mode]); // FIX 5: Bỏ initialJobs khỏi deps để không sub lại
+  // XÓA: Toàn bộ useEffect onSnapshot
 
   useEffect(() => {
     if (activeTab === "nearby" &&!userLocation) {
@@ -179,7 +125,7 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
   }, []);
 
   const filteredTasks = useMemo(() => {
-    let result = tasks.filter(t =>!t.banned &&!t.hidden && t.type === mode); // FIX 6: Lọc lại type lần nữa
+    let result = tasks.filter(t =>!t.banned &&!t.hidden && t.type === mode);
 
     const currentQuery = searchQueries[activeTab];
     if (currentQuery) {
@@ -221,23 +167,29 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
   }, []);
 
   const handleTaskUpdate = useCallback((taskId: string, updates: Partial<FeedTask>) => {
-    setTasks(prev => prev.map(t =>
-      t.id === taskId? ({...t,...updates } as FeedTask) : t
-    ));
+    // FIX: Update cache SWR, không setState
+    mutate(`/api/jobs?type=${mode}`, (current: FeedTask[] = []) =>
+      current.map(t => t.id === taskId? ({...t,...updates } as FeedTask) : t),
+      false // Không revalidate
+    );
     if (updates.status === "completed") {
       vibrate([10, 20, 10]);
     }
-  }, []);
+  }, [mode]);
 
   const handleDelete = useCallback((id: string) => {
-    setTasks(prev => prev.filter(t => t.id!== id));
-  }, []);
+    // FIX: Update cache SWR
+    mutate(`/api/jobs?type=${mode}`, (current: FeedTask[] = []) =>
+      current.filter(t => t.id!== id),
+      false
+    );
+  }, [mode]);
 
   const handleRefresh = useCallback(() => {
     vibrate(10);
-    setRefreshing(true);
-    window.location.reload();
-  }, []);
+    // FIX: Revalidate SWR thay vì reload
+    mutate(`/api/jobs?type=${mode}`);
+  }, [mode]);
 
   return (
     <>
@@ -262,10 +214,10 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
                   className="absolute inset-0 rounded-xl"
                   animate={{
                     background: mode === "task"
-            ? "linear-gradient(135deg, #E3F2FF 0%, #D1E9FF 40%, #B8DEFF 100%)"
+           ? "linear-gradient(135deg, #E3F2FF 0%, #D1E9FF 40%, #B8DEFF 100%)"
                       : "linear-gradient(135deg, #E8FFF0 0%, #D4F7E0 40%, #BEF0CE 100%)",
                     boxShadow: mode === "task"
-            ? "inset 0 2px 4px rgba(10,132,255,0.25), inset 0 -2px 2px rgba(0,81,213,0.15), 0 0 20px rgba(10,132,255,0.3)"
+           ? "inset 0 2px 4px rgba(10,132,255,0.25), inset 0 -2px 2px rgba(0,81,213,0.15), 0 0 20px rgba(10,132,255,0.3)"
                       : "inset 0 2px 4px rgba(48,209,88,0.25), inset 0 -2px 2px rgba(40,180,76,0.15), 0 0 20px rgba(48,209,88,0.3)"
                   }}
                   transition={{ duration: 0.6 }}
@@ -274,7 +226,7 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
                   className="absolute -inset-3 rounded-xl blur-2xl opacity-80"
                   animate={{
                     background: mode === "task"
-              ? "radial-gradient(circle, rgba(10,132,255,0.7) 0%, transparent 70%)"
+             ? "radial-gradient(circle, rgba(10,132,255,0.7) 0%, transparent 70%)"
                       : "radial-gradient(circle, rgba(48,209,88,0.7) 0%, transparent 70%)"
                   }}
                   transition={{ duration: 0.6 }}
@@ -359,10 +311,11 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
               ) : (
          <button
   onClick={handleRefresh}
-  className="px-6 h-11 rounded-xl text-white text-sm font-semibold active:scale-95 transition-all flex items-center gap-2 mx-auto"
+  disabled={refreshing}
+  className="px-6 h-11 rounded-xl text-white text-sm font-semibold active:scale-95 transition-all flex items-center gap-2 mx-auto disabled:opacity-50"
   style={{ background: theme[mode].gradient }}
 >
-  <FiRefreshCw /> Tải lại
+  <FiRefreshCw className={refreshing? "animate-spin" : ""} /> Tải lại
 </button>
               )}
             </motion.div>
@@ -380,7 +333,8 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
                     key={task.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.05 }}
+                    transition={{ delay: idx * 0.03 }} // Giảm delay cho mượt
+                    layout // THÊM: Animation khi filter/sort
                   >
                     <TaskCard
                       task={task}
