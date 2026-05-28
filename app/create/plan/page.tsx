@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { getFirebaseDB } from "@/lib/firebase";
-import { collection, query, where, onSnapshot, limit, doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, limit, doc, getDoc, updateDoc, Timestamp, serverTimestamp } from 'firebase/firestore';
 import { FiX, FiCheck, FiPlus, FiChevronRight, FiUpload, FiClock, FiMapPin, FiEye, FiCopy, FiNavigation } from "react-icons/fi";
 import { toast, Toaster } from "sonner";
 import { addDoc } from 'firebase/firestore';
@@ -416,34 +416,48 @@ const submit = async () => {
   setLoading(true);
   try {
     const db = getFirebaseDB();
-    await addDoc(collection(db, 'plans'), {
-      title: title.trim(),
-      desc: desc.trim(),
-      category: category.id,
-      location: location.trim(),
-      locationDetail: locationDetail.trim(),
-      coordinates: userLocation ? {
-        lat: userLocation.lat,
-        lng: userLocation.lng
-      } : null,
-      time: Timestamp.fromDate(new Date(time)),
-      duration,
-      maxPeople,
-      costType,
-      costAmount: costType === 'free' || costType === 'host' ? 0 : costAmount,
-      privacy,
-      minAge,
-      needApproval,
-      pollTime,
-      pollLocation,
-      invites,
-      requirements,
-      cover,
-      createdBy: user?.uid,
-      createdAt: Timestamp.now(),
-      status: 'active',
-      participants: [user?.uid],
-    });
+    const userSnap = await getDoc(doc(db, "users", user.uid));
+const userData = userSnap.data();
+
+await addDoc(collection(db, 'plans'), {
+  // Fields bạn đã có
+  title: title.trim(),
+  desc: desc.trim(),
+  category: category.id,
+  location: location.trim(),
+  locationDetail: locationDetail.trim(),
+  coordinates: userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : null,
+  time: Timestamp.fromDate(new Date(time)),
+  duration,
+  maxPeople,
+  costType,
+  costAmount: costType === 'free' || costType === 'host' ? 0 : costAmount,
+  privacy,
+  minAge,
+  needApproval,
+  pollTime,
+  pollLocation,
+  invites,
+  requirements,
+  cover,
+  participants: [user?.uid],
+  
+  // Fields BẮT BUỘC thêm để hiện feed
+  userId: user.uid, // ← Thêm: để query
+  createdBy: user.uid, // ← Thêm: để filter "của tôi"
+  userName: userData?.displayName || user.email || "Unknown", // ← Thêm: để hiển thị
+  userAvatar: userData?.photoURL || null, // ← Thêm
+  userVerified: userData?.emailVerified || false, // ← Thêm
+  status: "active", // ← Đổi từ 'active' thành 'open' nếu feed dùng 'open'
+  banned: false, // ← Thêm: feed thường filter banned == false
+  likeCount: 0, // ← Thêm
+  commentCount: 0, // ← Thêm
+  viewCount: 0, // ← Thêm
+  likes: [], // ← Thêm
+  savedBy: [], // ← Thêm
+  createdAt: serverTimestamp(), // ← Đổi từ Timestamp.now()
+  updatedAt: serverTimestamp(), // ← Thêm
+});
     
     localStorage.removeItem("plan_draft");
     toast.success("Tạo kế hoạch thành công!");
