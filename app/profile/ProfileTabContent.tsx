@@ -76,8 +76,18 @@ export default function ProfileTabContent() {
   } = useAvatarUpload(user);
 
   const accentGradient = isPlan
-  ? "from-green-500 to-emerald-500"
+ ? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-600";
+
+  // Ẩn nav bar khi modal mở - FIX SSR
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const shouldHide = showNameModal || showAvatarModal || showCropModal || showLogoutModal;
+    document.body.classList.toggle('modal-open', shouldHide);
+
+    return () => document.body.classList.remove('modal-open');
+  }, [showNameModal, showAvatarModal, showCropModal, showLogoutModal]);
 
   useEffect(() => {
     if (user === null) {
@@ -95,7 +105,7 @@ export default function ProfileTabContent() {
 
         const data = {
           uid: snap.id,
-        ...snap.data(),
+       ...snap.data(),
         } as UserData;
 
         setUserData(data);
@@ -108,8 +118,8 @@ export default function ProfileTabContent() {
 
         if (
           user &&
-        !user.emailVerified &&
-        !data.emailVerified
+       !user.emailVerified &&
+       !data.emailVerified
         ) {
           router.replace("/verify-email");
         }
@@ -280,8 +290,8 @@ export default function ProfileTabContent() {
 
     setUserData((prev) =>
       prev
-      ? {
-          ...prev,
+     ? {
+         ...prev,
             displayName: newName,
           }
         : null
@@ -315,8 +325,8 @@ export default function ProfileTabContent() {
 
       setUserData((prev) =>
         prev
-        ? {
-            ...prev,
+       ? {
+           ...prev,
               displayName: oldName || "",
             }
           : null
@@ -496,23 +506,6 @@ export default function ProfileTabContent() {
     return null;
   }
 
-useEffect(() => {
-  const nav = document.querySelector('nav'); // hoặc id/class nav bar của bạn
-  if (!nav) return;
-
-  const shouldHide = showNameModal || showAvatarModal || showCropModal || showLogoutModal;
-  
-  if (shouldHide) {
-    nav.style.display = 'none';
-  } else {
-    nav.style.display = '';
-  }
-
-  return () => {
-    nav.style.display = '';
-  };
-}, [showNameModal, showAvatarModal, showCropModal, showLogoutModal]);
-
   const finalDisplayName =
     userData.displayName ||
     user.email?.split("@")[0] ||
@@ -589,14 +582,14 @@ useEffect(() => {
                 <Circle
                   className={`w-2 h-2 fill-current ${
                     userData.online
-                    ? "text-green-500"
+                   ? "text-green-500"
                       : "text-gray-400"
                   }`}
                 />
 
                 <span className="text-sm text-gray-500 dark:text-zinc-400 font-medium">
                   {userData.online
-                  ? "Đang hoạt động"
+                 ? "Đang hoạt động"
                     : "Ngoại tuyến"}
                 </span>
               </div>
@@ -806,7 +799,7 @@ useEffect(() => {
                   <li>Tên sẽ hiển thị công khai với mọi người</li>
                 </ul>
               </div>
-    </div>
+            </div>
             <div className="flex gap-3">
               <button onClick={() => setShowNameModal(false)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 font-semibold text-gray-700 dark:text-zinc-300 active:scale-95 transition">
                 Hủy
@@ -816,7 +809,7 @@ useEffect(() => {
               </button>
             </div>
           </div>
-         </div>
+        </div>
       )}
 
       {/* AVATAR MODAL */}
