@@ -413,7 +413,7 @@ const [form, setForm] = useState({
         description: form.description.trim(),
         price: form.budgetType === "negotiable" ? 0 : basePrice,
         currency: "VND",
-        budgetType: form.budgetType,
+        budgetType: form.budgetType as "fixed" | "hourly" | "negotiable", 
         totalSlots: parseInt(form.totalSlots),
         visibility: form.visibility,
         deadline: Timestamp.fromDate(new Date(form.endDate)),
