@@ -76,7 +76,7 @@ export default function ProfileTabContent() {
   } = useAvatarUpload(user);
 
   const accentGradient = isPlan
-    ? "from-green-500 to-emerald-500"
+   ? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-600";
 
   useEffect(() => {
@@ -95,7 +95,7 @@ export default function ProfileTabContent() {
 
         const data = {
           uid: snap.id,
-          ...snap.data(),
+         ...snap.data(),
         } as UserData;
 
         setUserData(data);
@@ -108,8 +108,8 @@ export default function ProfileTabContent() {
 
         if (
           user &&
-          !user.emailVerified &&
-          !data.emailVerified
+         !user.emailVerified &&
+         !data.emailVerified
         ) {
           router.replace("/verify-email");
         }
@@ -120,7 +120,7 @@ export default function ProfileTabContent() {
   }, [user?.uid, router, db, user]);
 
   useEffect(() => {
-    if (!user || !userData || hasCheckedId.current) return;
+    if (!user ||!userData || hasCheckedId.current) return;
 
     if (userData.userId) {
       hasCheckedId.current = true;
@@ -280,8 +280,8 @@ export default function ProfileTabContent() {
 
     setUserData((prev) =>
       prev
-        ? {
-            ...prev,
+       ? {
+           ...prev,
             displayName: newName,
           }
         : null
@@ -315,8 +315,8 @@ export default function ProfileTabContent() {
 
       setUserData((prev) =>
         prev
-          ? {
-              ...prev,
+         ? {
+             ...prev,
               displayName: oldName || "",
             }
           : null
@@ -492,7 +492,7 @@ export default function ProfileTabContent() {
       );
   }, []);
 
-  if (!user || !userData) {
+  if (!user ||!userData) {
     return null;
   }
 
@@ -571,14 +571,14 @@ export default function ProfileTabContent() {
               <Circle
                 className={`w-2 h-2 fill-current ${
                   userData.online
-                    ? "text-green-500"
+                   ? "text-green-500"
                     : "text-gray-400"
                 }`}
               />
 
               <span className="text-sm text-gray-500 dark:text-zinc-400 font-medium">
                 {userData.online
-                  ? "Đang hoạt động"
+                 ? "Đang hoạt động"
                   : "Ngoại tuyến"}
               </span>
             </div>
@@ -759,45 +759,46 @@ export default function ProfileTabContent() {
 
       {/* NAME MODAL */}
 
-{showNameModal && (
-  <div className="fixed inset-0 bg-black/50 z-[9999] flex items-end sm:items-center justify-center">
-    <div className="bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6 space-y-4 pb-24 sm:pb-6 safe-area-inset-bottom">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Đổi tên hiển thị</h2>
-        <button onClick={() => setShowNameModal(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full">
-          <X className="w-5 h-5" />
-        </button>
-      </div>
-      <div className="space-y-3">
-        <div>
-          <label className="text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2 block">Tên mới</label>
-          <input
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Nhập tên thật của bạn"
-            maxLength={50}
-            className="w-full px-4 py-3 border border-gray-200 dark:border-zinc-700 rounded-xl outline-none bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-          />
+      {showNameModal && (
+        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-end sm:items-center justify-center">
+          <div className="bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6 space-y-4 pb-24 sm:pb-6 safe-area-inset-bottom">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Đổi tên hiển thị</h2>
+              <button onClick={() => setShowNameModal(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-zinc-300 mb-2 block">Tên mới</label>
+                <input
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Nhập tên thật của bạn"
+                  maxLength={50}
+                  className="w-full px-4 py-3 border border-gray-200 dark:border-zinc-700 rounded-xl outline-none bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3">
+                <p className="text-sm text-amber-800 dark:text-amber-300 font-medium mb-1">Lưu ý:</p>
+                <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-1 list-disc list-inside">
+                  <li>Mỗi tài khoản chỉ được đổi tên 1 lần mỗi 3 tháng</li>
+                  <li>Vui lòng dùng tên thật, không chứa ký tự đặc biệt</li>
+                  <li>Tên sẽ hiển thị công khai với mọi người</li>
+                </ul>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setShowNameModal(false)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 font-semibold text-gray-700 dark:text-zinc-300 active:scale-95 transition">
+                Hủy
+              </button>
+              <button onClick={handleUpdateName} className={`flex-1 py-3 rounded-xl bg-gradient-to-r ${accentGradient} font-semibold text-white active:scale-95 transition`}>
+                Lưu
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3">
-          <p className="text-sm text-amber-800 dark:text-amber-300 font-medium mb-1">Lưu ý:</p>
-          <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-1 list-disc list-inside">
-            <li>Mỗi tài khoản chỉ được đổi tên 1 lần mỗi 3 tháng</li>
-            <li>Vui lòng dùng tên thật, không chứa ký tự đặc biệt</li>
-            <li>Tên sẽ hiển thị công khai với mọi người</li>
-          </ul>
-        </div>
-      <div className="flex gap-3">
-        <button onClick={() => setShowNameModal(false)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 font-semibold text-gray-700 dark:text-zinc-300 active:scale-95 transition">
-          Hủy
-        </button>
-        <button onClick={handleUpdateName} className={`flex-1 py-3 rounded-xl bg-gradient-to-r ${accentGradient} font-semibold text-white active:scale-95 transition`}>
-          Lưu
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
       {/* AVATAR MODAL */}
 
@@ -903,5 +904,5 @@ export default function ProfileTabContent() {
         />
       )}
     </div>
-  
+  );
 }
