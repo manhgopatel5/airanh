@@ -111,6 +111,14 @@ export type TaskItem = BaseItem & {
   applicationDeadline?: Timestamp | null;
   deadline?: Timestamp | null;
   startDate?: Timestamp | null;
+  urgency?: "once" | "urgent" | "flexible";
+  milestones?: boolean;
+  autoMatch?: boolean;
+  allowBids?: boolean;
+  nda?: boolean;
+  invites?: string[];
+  needApproval?: boolean;
+  recurring?: string;
 };
 
 /* ================= PLAN TYPE ================= */
@@ -194,6 +202,14 @@ export type CreateTaskInput = {
   deadline?: Timestamp | null;
   startDate?: Timestamp | null;
   featured?: boolean;
+  urgency?: "once" | "urgent" | "flexible";
+  milestones?: boolean;
+  autoMatch?: boolean;
+  allowBids?: boolean;
+  nda?: boolean;
+  invites?: string[];
+  needApproval?: boolean;
+  recurring?: string;
 };
 
 export type CreatePlanInput = {
