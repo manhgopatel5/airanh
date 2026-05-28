@@ -1,13 +1,27 @@
 "use client";
-import { TaskListItem } from "@/types/task";
+import { TaskListItem, FeedTask } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
-// import { HiCalendarDays } from "react-icons/hi2"; ❌ Xóa dòng này
 
 type Props = {
   plans: TaskListItem[];
+  onPlanUpdate?: (id: string, updates: Partial<FeedTask>) => void;
 };
 
-export default function PlanFeed({ plans }: Props) {
+export default function PlanFeed({ plans, onPlanUpdate }: Props) {
+  const toFeedTask = (t: TaskListItem): FeedTask => {
+    const raw = t as any;
+    return {
+      ...raw,
+      createdAt: raw.createdAt?.toDate?.()?.toISOString() || null,
+      updatedAt: raw.updatedAt?.toDate?.()?.toISOString() || null,
+      deadline: raw.deadline?.toDate?.()?.toISOString() || null,
+      eventDate: raw.eventDate?.toDate?.()?.toISOString() || null,
+      endDate: raw.endDate?.toDate?.()?.toISOString() || null,
+      startDate: raw.startDate?.toDate?.()?.toISOString() || null,
+      applicationDeadline: raw.applicationDeadline?.toDate?.()?.toISOString() || null,
+    };
+  };
+
   if (plans.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
@@ -37,7 +51,11 @@ export default function PlanFeed({ plans }: Props) {
     <div className="space-y-3">
       {plans.map((plan) => (
         <div key={plan.id} className="px-4">
-          <TaskCard task={plan} mode="plan" />
+          <TaskCard 
+            task={toFeedTask(plan)} 
+            theme="plan"
+            onTaskUpdate={onPlanUpdate}
+          />
         </div>
       ))}
     </div>
