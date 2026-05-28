@@ -8,6 +8,7 @@ import { useAppStore } from "@/store/app";
 import {
   doc, onSnapshot, updateDoc, serverTimestamp, getDoc, setDoc
 } from "firebase/firestore";
+import imageCompression from 'browser-image-compression';
 import type { Timestamp } from "firebase/firestore";
 import {
   getFirebaseDB,
@@ -148,16 +149,34 @@ export default function ProfileTabContent() {
     }
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  import imageCompression from 'browser-image-compression';
+
+const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file ||!user) return;
     if (!file.type.startsWith("image/")) return toast.error("Chỉ chấp nhận file ảnh");
-    if (file.size > 5 * 1024) return toast.error("Ảnh không được vượt quá 5MB");
+
+    // FIX: Cho phép 20MB, nén xuống 1MB
+    if (file.size > 20 * 1024 * 1024) return toast.error("Ảnh không được vượt quá 20MB");
+
     setUploading(true);
     setUploadProgress(0);
+
     try {
+      // Nén ảnh trước khi upload
+      toast.loading("Đang nén ảnh...");
+      const options = {
+        maxSizeMB: 1, // Nén về tối đa 1MB
+        maxWidthOrHeight: 1024, // Resize về 1024px
+        useWebWorker: true,
+        fileType: 'image/webp', // Chuyển sang webp nhẹ hơn
+      };
+
+      const compressedFile = await imageCompression(file, options);
+      toast.dismiss();
+
       const storageRef = ref(storage, `avatars/${user.uid}`);
-      uploadTaskRef.current = uploadBytesResumable(storageRef, file);
+      uploadTaskRef.current = uploadBytesResumable(storageRef, compressedFile);
       uploadTaskRef.current.on(
         "state_changed",
         (snapshot) => {
@@ -166,6 +185,7 @@ export default function ProfileTabContent() {
         },
         (err) => {
           if (err.code!== "storage/canceled") toast.error("Upload thất bại");
+          setUploading(false);
         },
         async () => {
           const task = uploadTaskRef.current;
@@ -173,7 +193,10 @@ export default function ProfileTabContent() {
           const url = await getDownloadURL(task.snapshot.ref);
           await Promise.all([
             updateProfile(user, { photoURL: url }),
-            updateDoc(doc(db, "users", user.uid), { photoURL: url, updatedAt: serverTimestamp() })
+            updateDoc(doc(db, "users", user.uid), {
+              photoURL: url,
+              updatedAt: serverTimestamp()
+            })
           ]);
           await user.reload();
           toast.success("Cập nhật avatar thành công");
@@ -181,8 +204,9 @@ export default function ProfileTabContent() {
           setUploading(false);
         }
       );
-    } catch {
-      toast.error("Upload lỗi");
+    } catch (error) {
+      console.error(error);
+      toast.error("Nén ảnh thất bại");
       setUploading(false);
     } finally {
       e.target.value = "";
