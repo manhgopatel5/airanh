@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import dynamic from 'next/dynamic';
-import useSWR from 'swr'; // THÊM
+import useSWR from 'swr';
 
 import { useAppStore } from "@/store/app";
 import { AnimatePresence, motion } from "framer-motion";
@@ -36,16 +36,16 @@ const FloatingMenu = dynamic(() => import('@/components/FloatingMenu'), {
   ssr: false
 })
 
-type MainTab = "home" | "messages" | "tasks" | "profile";
+type MainTab = "home" | "messages" | "tasks" | "profile" | "plans";
 
 interface AppContainerProps {
   initialJobs?: FeedTask[];
+  initialPlans?: FeedTask[];
 }
 
-// THÊM: Fetcher cho SWR
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
-export default function AppContainer({ initialJobs = [] }: AppContainerProps) {
+export default function AppContainer({ initialJobs = [], initialPlans = [] }: AppContainerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const unreadCount = useAppStore((s) => s.unreadCount);
@@ -58,15 +58,26 @@ export default function AppContainer({ initialJobs = [] }: AppContainerProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const tabBarHeight = useTabBarHeight();
 
-  // THÊM: Dùng SWR với fallbackData = initialJobs từ SSR
-  // 0ms có UI, sau 60s tự revalidate ngầm 1 lần
+  // SWR cho task
   const { data: jobs } = useSWR<FeedTask[]>(
-    currentMainTab === 'home'? '/api/jobs' : null,
+    currentMainTab === 'home'? '/api/jobs?type=task' : null,
     fetcher,
     {
-      fallbackData: initialJobs, // Key: Dùng data SSR
-      revalidateOnFocus: true, // User quay lại tab = check mới
-      dedupingInterval: 60000, // 1 phút mới gọi API 1 lần
+      fallbackData: initialJobs,
+      revalidateOnFocus: true,
+      dedupingInterval: 60000,
+      revalidateOnReconnect: true,
+    }
+  );
+
+  // SWR cho plan
+  const { data: plans } = useSWR<FeedTask[]>(
+    currentMainTab === 'plans'? '/api/jobs?type=plan' : null,
+    fetcher,
+    {
+      fallbackData: initialPlans,
+      revalidateOnFocus: true,
+      dedupingInterval: 60000,
       revalidateOnReconnect: true,
     }
   );
@@ -123,8 +134,9 @@ export default function AppContainer({ initialJobs = [] }: AppContainerProps) {
   const renderCurrentTab = () => {
     switch (currentMainTab) {
       case "home":
-        // SỬA: Truyền jobs từ SWR thay vì initialJobs
         return <TaskFeedPage initialJobs={jobs || initialJobs} />
+      case "plans":
+        return <TaskFeedPage initialJobs={plans || initialPlans} />
       case "messages":
         return <ChatClient />
       case "tasks":
@@ -189,8 +201,8 @@ export default function AppContainer({ initialJobs = [] }: AppContainerProps) {
       )}
 
       <style jsx global>{`
-   .scrollbar-hide::-webkit-scrollbar{display:none}
-   .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
+  .scrollbar-hide::-webkit-scrollbar{display:none}
+  .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
         html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
         body{overscroll-behavior-y:contain}
       `}</style>
