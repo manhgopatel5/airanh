@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase";
-
+import useSWR from "swr";
 import type { FeedTask } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
