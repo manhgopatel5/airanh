@@ -165,31 +165,27 @@ const { data: tasks = [], isLoading, isValidating, mutate } = useSWR<FeedTask[]>
     vibrate(5);
     setShareTask(task);
   }, []);
+const handleTaskUpdate = useCallback((taskId: string, updates: Partial<FeedTask>) => {
+  mutate((current: FeedTask[] = []) =>
+    current.map(t => t.id === taskId? ({...t,...updates } as FeedTask) : t),
+    { revalidate: false } // Không phải false đứng riêng
+  );
+  if (updates.status === "completed") {
+    vibrate([10, 20, 10]);
+  }
+}, [mutate]);
 
-  const handleTaskUpdate = useCallback((taskId: string, updates: Partial<FeedTask>) => {
-    // FIX: Update cache SWR, không setState
-    mutate(`/api/jobs?type=${mode}`, (current: FeedTask[] = []) =>
-      current.map(t => t.id === taskId? ({...t,...updates } as FeedTask) : t),
-      false // Không revalidate
-    );
-    if (updates.status === "completed") {
-      vibrate([10, 20, 10]);
-    }
-  }, [mode]);
+const handleDelete = useCallback((id: string) => {
+  mutate((current: FeedTask[] = []) =>
+    current.filter(t => t.id!== id),
+    { revalidate: false }
+  );
+}, [mutate]);
 
-  const handleDelete = useCallback((id: string) => {
-    // FIX: Update cache SWR
-    mutate(`/api/jobs?type=${mode}`, (current: FeedTask[] = []) =>
-      current.filter(t => t.id!== id),
-      false
-    );
-  }, [mode]);
-
-  const handleRefresh = useCallback(() => {
-    vibrate(10);
-    // FIX: Revalidate SWR thay vì reload
-    mutate(`/api/jobs?type=${mode}`);
-  }, [mode]);
+const handleRefresh = useCallback(() => {
+  vibrate(10);
+  mutate(); // Gọi mutate() không truyền key
+}, [mutate]);
 
   return (
     <>
