@@ -129,7 +129,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const [locating, setLocating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [placeSuggestions, setPlaceSuggestions] = useState<string[]>([]);
-  const [loadingPlaces, setLoadingPlaces] = useState(false);
+
   const debounceRef = useRef<NodeJS.Timeout>();
 
   const isTask = mode === "task";
