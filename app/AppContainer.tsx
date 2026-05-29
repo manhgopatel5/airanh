@@ -186,16 +186,16 @@ export default function AppContainer({ initialJobs = [], initialPlans = [] }: Ap
             </div>
           </div>
 
-          <CustomTabBar
-            currentTab={currentMainTab}
-            onChangeTab={handleChangeTab}
-            unreadCount={unreadCount}
-            isMenuOpen={isMenuOpen}
-            onCreateClick={() => {
-              navigator.vibrate?.([15, 35, 15]);
-              setIsMenuOpen(true);
-            }}
-          />
+   <CustomTabBar
+  currentTab={currentMainTab === "plans"? "home" : currentMainTab as "home" | "messages" | "tasks" | "profile"}
+  onChangeTab={handleChangeTab}
+  unreadCount={unreadCount}
+  isMenuOpen={isMenuOpen}
+  onCreateClick={() => {
+    navigator.vibrate?.([15, 35, 15]);
+    setIsMenuOpen(true);
+  }}
+/>
         </>,
         document.body
       )}
