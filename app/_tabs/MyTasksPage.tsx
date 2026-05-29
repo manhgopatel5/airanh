@@ -46,7 +46,7 @@ export default function TasksPage() {
   const auth = getFirebaseAuth();
   const router = useRouter();
 
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
   const [token, setToken] = useState<string | null>(null); 
   const { mode = "task", setMode } = useAppStore();
   const [subTab, setSubTab] = useState<SubTab>("mine");
@@ -88,7 +88,7 @@ const { data: tasks = [], isLoading, isValidating, mutate } = useSWR<FeedTask[]>
   };
 useEffect(() => {
   const unsub = onAuthStateChanged(auth, async (user) => {
-    setCurrentUser(user);
+
     if (!user) {
       router.push("/login");
       setToken(null);
