@@ -819,7 +819,12 @@ function Panel({ children }: { children: React.ReactNode }) {
   return <div className="space-y-5 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">{children}</div>;
 }
 
-function Field({ label, required, error, children }: { label: string; required?: boolean; error?: string; children: React.ReactNode }) {
+function Field({ label, required, error, children }: { 
+  label: string; 
+  required?: boolean; 
+  error?: string | undefined; // <-- thêm | undefined
+  children: React.ReactNode 
+}) {
   return (
     <label className="block space-y-2">
       <span className="text-sm font-bold text-zinc-700 dark:text-zinc-200">
