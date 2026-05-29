@@ -81,8 +81,7 @@ export async function getJobsFromFirebaseAdmin(
    .where('type', '==', type)
    .where('visibility', '==', 'public')
    .where('status', 'in', ['open', 'pending', 'full', 'doing'])
-   .where('banned', '==', false)
-   .where('hidden', '==', false)
+ 
    .orderBy('createdAt', 'desc')
    .limit(limitCount)
    .select(
