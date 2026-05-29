@@ -240,17 +240,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
       setPlaceSuggestions([]);
       return;
     }
-    setLoadingPlaces(true);
-    try {
-      const res = await fetch(`/api/places/autocomplete?input=${encodeURIComponent(query)}`);
-      const data = await res.json();
-      setPlaceSuggestions(data.predictions?.map((p: any) => p.description) || []);
-    } catch {
-      setPlaceSuggestions([]);
-    } finally {
-      setLoadingPlaces(false);
-    }
-  }, []);
+
 
   const handleAddressChange = (value: string) => {
     updateLocation({ address: value });
