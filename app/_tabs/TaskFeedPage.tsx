@@ -298,7 +298,7 @@ const handleRefresh = useCallback(() => {
                 {activeTab === "nearby" &&!userLocation? "Chưa bật định vị" : `Chưa có ${mode === "task"? "task" : "plan"} nào`}
               </p>
               <p className="text-sm text-zinc-500 mb-6">
-                {activeTab === "nearby" &&!userLocation? "Bật định vị để khám phá task xung quanh bạn" : "Kéo xuống để làm mới danh sách"}
+                {activeTab === "nearby" &&!userLocation? "Bật định vị để khám phá task xung quanh bạn" : "Nhấn Tải lại để cập nhật danh sách"}
               </p>
               {activeTab === "nearby" &&!userLocation? (
        <button

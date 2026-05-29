@@ -110,6 +110,12 @@
 @layer base {
     * {
     -webkit-tap-highlight-color: transparent;
+  }
+
+  button,
+  a,
+  [role="button"],
+  [data-tab-bar] * {
     -webkit-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;
@@ -206,6 +212,17 @@
   a:focus-visible,
   input:focus-visible {
     @apply outline-none ring-2 ring-blue-500/50 ring-offset-2 ring-offset-white dark:ring-offset-zinc-950;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 

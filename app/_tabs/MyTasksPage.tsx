@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { FiInbox, FiRefreshCw } from "react-icons/fi";
-import { HiBolt, HiCalendarDays } from "react-icons/hi2";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { FiAlertCircle, FiInbox, FiRefreshCw, FiShield } from "react-icons/fi";
+import { HiBolt, HiCalendarDays, HiSparkles } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import { onAuthStateChanged } from "firebase/auth";
@@ -11,20 +11,51 @@ import { getFirebaseAuth } from "@/lib/firebase";
 import useSWR from "swr";
 import type { FeedTask } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import { useAppStore } from "@/store/app";
 
 type SubTab = "mine" | "saved" | "doing" | "applied" | "expired" | "completed" | "cancelled";
 
-const SUB_TABS: { key: SubTab; label: string }[] = [
-  { key: "mine", label: "Của tôi" },
-  { key: "saved", label: "Đã lưu" },
-  { key: "doing", label: "Đang nhận" },
-  { key: "applied", label: "Đã ứng tuyển" },
-  { key: "completed", label: "Hoàn thành" },
-  { key: "expired", label: "Đã hết hạn" },
-  { key: "cancelled", label: "Đã hủy" },
+const SUB_TABS: { key: SubTab; label: string; short: string }[] = [
+  { key: "mine", label: "Của tôi", short: "Tạo" },
+  { key: "saved", label: "Đã lưu", short: "Lưu" },
+  { key: "doing", label: "Đang nhận", short: "Nhận" },
+  { key: "applied", label: "Đã ứng tuyển", short: "Ứng tuyển" },
+  { key: "completed", label: "Hoàn thành", short: "Xong" },
+  { key: "expired", label: "Đã hết hạn", short: "Hết hạn" },
+  { key: "cancelled", label: "Đã hủy", short: "Hủy" },
 ];
+
+const EMPTY_COPY: Record<SubTab, { title: string; body: string }> = {
+  mine: { title: "Chưa có mục nào", body: "Tạo việc hoặc kế hoạch đầu tiên để bắt đầu quản lý mọi thứ tại một nơi." },
+  saved: { title: "Chưa lưu mục nào", body: "Các task và plan bạn đánh dấu sẽ nằm ở đây để quay lại nhanh." },
+  doing: { title: "Chưa nhận task nào", body: "Khi bạn nhận việc, tiến độ và thông tin liên quan sẽ xuất hiện tại đây." },
+  applied: { title: "Chưa ứng tuyển", body: "Ứng tuyển các task phù hợp để theo dõi phản hồi của chủ task." },
+  completed: { title: "Chưa hoàn thành", body: "Những việc đã xong sẽ được lưu lại như một lịch sử gọn gàng." },
+  expired: { title: "Không có mục hết hạn", body: "Các task quá hạn gần đây sẽ được gom ở đây để bạn xử lý nhanh." },
+  cancelled: { title: "Không có mục đã hủy", body: "Những mục bị hủy sẽ được tách riêng để danh sách chính luôn sạch." },
+};
+
+const MODE_THEME = {
+  task: {
+    label: "Task",
+    noun: "task",
+    primary: "#0A84FF",
+    gradient: "from-[#0A84FF] to-[#0066CC]",
+    soft: "from-[#EAF4FF] via-white to-[#F7FBFF] dark:from-[#071B33] dark:via-zinc-950 dark:to-zinc-950",
+    ring: "ring-[#0A84FF]/20",
+    shadow: "shadow-[0_14px_40px_rgba(10,132,255,0.24)]",
+  },
+  plan: {
+    label: "Plan",
+    noun: "plan",
+    primary: "#30D158",
+    gradient: "from-[#30D158] to-[#248A3D]",
+    soft: "from-[#EBFFF1] via-white to-[#F8FFFA] dark:from-[#082414] dark:via-zinc-950 dark:to-zinc-950",
+    ring: "ring-[#30D158]/20",
+    shadow: "shadow-[0_14px_40px_rgba(48,209,88,0.22)]",
+  },
+} as const;
 
 class UserTasksFetchError extends Error {
   status: number;
@@ -65,102 +96,106 @@ const fetcher = async ([url, token]: [string, string]) => {
   }
 };
 
-  
-
-const vibrate = (ms = 8) => {
-  if ("vibrate" in navigator) navigator.vibrate(ms);
+const vibrate = (ms: number | number[] = 8) => {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(ms);
 };
 
 export default function TasksPage() {
   const auth = getFirebaseAuth();
   const router = useRouter();
+  const prefersReducedMotion = useReducedMotion();
 
-
-  const [token, setToken] = useState<string | null>(null); 
+  const [token, setToken] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const { mode = "task", setMode } = useAppStore();
   const [subTab, setSubTab] = useState<SubTab>("mine");
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
 
-  // FIX 3: Lấy mutate từ useSWR, không import global
-// Dòng 47-59: Tìm đoạn useSWR này
-const { data: tasks = [], isLoading, isValidating, mutate } = useSWR<FeedTask[]>(
-  token? [`/api/user-tasks?type=${mode}&tab=${subTab}`, token] : null,
-  fetcher,
-  {
-    revalidateOnFocus: false, // Giữ nguyên
-    revalidateOnReconnect: false, // Thêm dòng này
-    revalidateIfStale: false, // Thêm dòng này
-    dedupingInterval: 600000, // Đổi từ 60000 → 600000 = 10 phút
-    keepPreviousData: true,
-    refreshInterval: 0, // Thêm dòng này: tắt auto poll
-    shouldRetryOnError: false,
-    onError: (err) => {
-      console.error(err);
-      toast.error(err?.message || "Tải dữ liệu thất bại", { id: "user-tasks-load-error" });
-    }
-  }
-);
+  const currentTheme = MODE_THEME[mode] || MODE_THEME.task;
+  const activeCopy = EMPTY_COPY[subTab];
+  const activeTabLabel = SUB_TABS.find((tab) => tab.key === subTab)?.label || "Của tôi";
 
-  const loading = isLoading && tasks.length === 0;
-  const refreshing = isValidating;
-
-  const theme = {
-    task: {
-      primary: "#0A84FF",
-      gradient: "from-[#0A84FF] to-[#0066CC]",
-      shadow: "shadow-[0_8px_30px_rgba(10,132,255,0.3)]",
-    },
-    plan: {
-      primary: "#30D158",
-      gradient: "from-[#30D158] to-[#28B44C]",
-      shadow: "shadow-[0_8px_30px_rgba(48,209,88,0.3)]",
+  const swrKey = token ? [`/api/user-tasks?type=${mode}&tab=${subTab}`, token] as const : null;
+  const { data: tasks = [], error, isLoading, isValidating, mutate } = useSWR<FeedTask[]>(
+    swrKey,
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      revalidateIfStale: true,
+      dedupingInterval: 30000,
+      keepPreviousData: true,
+      refreshInterval: 0,
+      shouldRetryOnError: false,
+      onError: (err) => {
+        console.error(err);
+        toast.error(err?.message || "Tải dữ liệu thất bại", { id: "user-tasks-load-error" });
+      },
     }
-  };
-useEffect(() => {
-  const unsub = onAuthStateChanged(auth, async (user) => {
+  );
 
-    if (!user) {
-      router.push("/login");
-      setToken(null);
-    } else {
-      const t = await user.getIdToken();
-      setToken(t);
-    }
-  });
-  return () => unsub();
-}, [auth, router]);
+  const loading = !authReady || (isLoading && tasks.length === 0);
+  const refreshing = authReady && isValidating && !loading;
+  const hasBlockingError = !!error && tasks.length === 0 && !loading;
+
+  const stats = useMemo(() => {
+    const visibleCount = tasks.length;
+    return [
+      { label: activeTabLabel, value: visibleCount.toString() },
+      { label: mode === "task" ? "Việc" : "Kế hoạch", value: currentTheme.label },
+    ];
+  }, [activeTabLabel, currentTheme.label, mode, tasks.length]);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      setAuthReady(true);
+
+      if (!user) {
+        setToken(null);
+        router.push("/login");
+        return;
+      }
+
+      const nextToken = await user.getIdToken();
+      setToken(nextToken);
+    });
+
+    return () => unsub();
+  }, [auth, router]);
 
   const handleTabChange = (newTab: SubTab) => {
-    vibrate();
+    if (newTab === subTab) return;
+    vibrate(8);
     setSubTab(newTab);
   };
 
   const handleModeChange = (newMode: "task" | "plan") => {
     if (newMode === mode) return;
-    vibrate();
+    vibrate([10, 20, 10]);
     setMode(newMode);
   };
 
   const handleTaskUpdate = useCallback((taskId: string, updates: Partial<FeedTask>) => {
-    // FIX 4: Dùng mutate của useSWR, không cần key
     mutate(
       (current: FeedTask[] = []) =>
-        current.map(t => t.id === taskId? ({...t,...updates } as FeedTask) : t),
-      false
+        current.map(t => t.id === taskId ? ({ ...t, ...updates } as FeedTask) : t),
+      { revalidate: false }
     );
   }, [mutate]);
 
   const handleDelete = useCallback(async (id: string) => {
-    if (!confirm("Xóa task này?")) return;
     try {
-      const token = await auth.currentUser?.getIdToken();
-      await fetch(`/api/tasks/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
+      const freshToken = await auth.currentUser?.getIdToken();
+      const res = await fetch(`/api/tasks/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${freshToken}` },
       });
+
+      if (!res.ok) throw new Error("Xóa thất bại");
+
       mutate(
-        (current: FeedTask[] = []) => current.filter(t => t.id!== id),
-        false
+        (current: FeedTask[] = []) => current.filter(t => t.id !== id),
+        { revalidate: false }
       );
       toast.success("Đã xóa");
     } catch {
@@ -173,131 +208,207 @@ useEffect(() => {
     setShareTask(task);
   }, []);
 
+  const retryLoad = useCallback(() => {
+    vibrate(8);
+    mutate();
+  }, [mutate]);
 
+  const createCurrentMode = useCallback(() => {
+    vibrate(10);
+    router.push(mode === "task" ? "/create/task" : "/create/plan");
+  }, [mode, router]);
 
-  const currentTheme = theme[mode] || theme.task;
+  const enterMotion = prefersReducedMotion
+    ? {}
+    : { initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0 } };
 
   return (
     <>
-      <Toaster richColors position="top-center" />
-      <div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 select-none pb-28">
-        <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl">
-          <div className="px-4 pt-3 pb-2">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleModeChange("task")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
-                  mode === "task"
-               ? "bg-[#0A84FF] text-white shadow-[0_8px_30px_rgba(10,132,255,0.3)]"
-                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
-                }`}
-              >
-                <HiBolt className="w-4 h-4" />
-                Task
-              </button>
+      <div className={`min-h-screen bg-gradient-to-b ${currentTheme.soft} text-zinc-900 dark:text-zinc-100 select-none`}>
+        <div className="sticky top-0 z-40 border-b border-white/70 bg-white/82 backdrop-blur-2xl dark:border-white/5 dark:bg-zinc-950/82">
+          <div className="mx-auto max-w-[600px] px-4 pt-3 pb-3">
+            <div className="relative rounded-[1.35rem] bg-zinc-100/80 p-1.5 ring-1 ring-black/5 dark:bg-zinc-900/90 dark:ring-white/10">
+              <motion.div
+                className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-[1rem] bg-gradient-to-r ${currentTheme.gradient} ${currentTheme.shadow}`}
+                animate={{ x: mode === "task" ? 0 : "100%" }}
+                transition={prefersReducedMotion ? { duration: 0 } : { type: "spring", stiffness: 360, damping: 34 }}
+              />
 
-              <button
-                onClick={() => handleModeChange("plan")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all ${
-                  mode === "plan"
-               ? "bg-[#30D158] text-white shadow-[0_8px_30px_rgba(48,209,88,0.3)]"
-                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
-                }`}
-              >
-                <HiCalendarDays className="w-4 h-4" />
-                Plan
-              </button>
-            </div>
-          </div>
-
-          <div className="px-4 pb-3">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1">
-                {SUB_TABS.map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => handleTabChange(tab.key)}
-                    className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap ${
-                      subTab === tab.key
-                 ? mode === "task"
-                   ? "bg-[#0A84FF] text-white"
-                            : "bg-[#30D158] text-white"
-                          : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 active:bg-zinc-200 dark:active:bg-zinc-700"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
+              <div className="relative grid grid-cols-2 gap-1">
+                <button
+                  type="button"
+                  aria-pressed={mode === "task"}
+                  onClick={() => handleModeChange("task")}
+                  className={`flex h-11 items-center justify-center gap-2 rounded-2xl text-sm font-bold transition-colors ${mode === "task" ? "text-white" : "text-zinc-500 dark:text-zinc-400"}`}
+                >
+                  <HiBolt className="h-4 w-4" />
+                  Task
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={mode === "plan"}
+                  onClick={() => handleModeChange("plan")}
+                  className={`flex h-11 items-center justify-center gap-2 rounded-2xl text-sm font-bold transition-colors ${mode === "plan" ? "text-white" : "text-zinc-500 dark:text-zinc-400"}`}
+                >
+                  <HiCalendarDays className="h-4 w-4" />
+                  Plan
+                </button>
               </div>
-       
+            </div>
+
+            <div className="relative mt-3">
+              <div className="flex snap-x gap-2 overflow-x-auto pb-1 pr-8 scrollbar-hide" role="tablist" aria-label="Bộ lọc task của tôi">
+                {SUB_TABS.map((tab) => {
+                  const active = subTab === tab.key;
+                  return (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      aria-current={active ? "page" : undefined}
+                      onClick={() => handleTabChange(tab.key)}
+                      className={`snap-start whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition-all ${active
+                        ? `bg-gradient-to-r ${currentTheme.gradient} text-white shadow-lg ${currentTheme.shadow}`
+                        : "bg-white/82 text-zinc-600 ring-1 ring-black/5 active:bg-zinc-100 dark:bg-zinc-900/82 dark:text-zinc-400 dark:ring-white/10"
+                      }`}
+                    >
+                      <span className="sm:hidden">{tab.short}</span>
+                      <span className="hidden sm:inline">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-white via-white/80 to-transparent dark:from-zinc-950 dark:via-zinc-950/80" />
             </div>
           </div>
         </div>
 
-        <div className="max-w-[600px] mx-auto p-4">
-          {loading? (
-            <div className="space-y-3">
+        <div className="mx-auto max-w-[600px] px-4 pt-4">
+          <motion.div
+            {...enterMotion}
+            transition={{ duration: 0.28 }}
+            className={`mb-4 overflow-hidden rounded-[1.75rem] border border-white/70 bg-white/76 p-4 shadow-xl shadow-black/[0.04] ring-1 ${currentTheme.ring} backdrop-blur-xl dark:border-white/10 dark:bg-zinc-900/64 dark:shadow-black/20`}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-400 dark:text-zinc-500">Không gian của bạn</p>
+                <h1 className="mt-1 text-2xl font-black tracking-tight text-zinc-950 dark:text-white">
+                  {mode === "task" ? "Quản lý task" : "Quản lý plan"}
+                </h1>
+                <p className="mt-1 text-sm leading-6 text-zinc-500 dark:text-zinc-400">
+                  Theo dõi mục đã tạo, đã lưu và tiến độ nhận việc trong một màn hình gọn.
+                </p>
+              </div>
+              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${currentTheme.gradient} text-white shadow-lg ${currentTheme.shadow}`}>
+                <FiShield className="h-5 w-5" />
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {stats.map((item) => (
+                <div key={item.label} className="rounded-2xl bg-zinc-50/90 px-3 py-2 ring-1 ring-black/5 dark:bg-zinc-950/50 dark:ring-white/10">
+                  <p className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500">{item.label}</p>
+                  <p className="mt-0.5 text-sm font-black text-zinc-900 dark:text-zinc-100">{item.value}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {loading ? (
+            <div className="space-y-3" aria-label="Đang tải danh sách">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 p-4">
-                  <div className="flex gap-3 animate-pulse">
-                    <div className="w-12 h-12 bg-zinc-200 dark:bg-zinc-800 rounded-xl" />
+                <div key={i} className="rounded-[1.5rem] border border-white/70 bg-white/78 p-4 shadow-lg shadow-black/[0.03] ring-1 ring-black/5 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-900/70 dark:ring-white/10">
+                  <div className="flex gap-3 motion-safe:animate-pulse">
+                    <div className="h-12 w-12 rounded-2xl bg-zinc-200 dark:bg-zinc-800" />
                     <div className="flex-1 space-y-2">
-                      <div className="h-4 w-3/4 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
-                      <div className="h-3 w-1/2 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
+                      <div className="h-4 w-3/4 rounded-lg bg-zinc-200 dark:bg-zinc-800" />
+                      <div className="h-3 w-1/2 rounded-lg bg-zinc-200 dark:bg-zinc-800" />
+                      <div className="h-10 w-full rounded-2xl bg-zinc-100 dark:bg-zinc-800/70" />
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-          ) : tasks.length === 0? (
+          ) : hasBlockingError ? (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 p-12 text-center"
+              {...enterMotion}
+              transition={{ duration: 0.24 }}
+              className="rounded-[1.75rem] border border-red-200/70 bg-white/82 p-8 text-center shadow-xl shadow-red-500/5 ring-1 ring-red-500/10 backdrop-blur-xl dark:border-red-500/20 dark:bg-zinc-900/74"
             >
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-                <FiInbox size={32} className="text-zinc-400" />
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50 text-red-500 ring-1 ring-red-500/10 dark:bg-red-500/10">
+                <FiAlertCircle className="h-7 w-7" />
               </div>
-              <p className="text-base font-bold text-zinc-900 dark:text-zinc-100 mb-1">
-                Chưa có {mode === "task"? "task" : "plan"} nào
+              <h2 className="mt-5 text-lg font-black text-zinc-950 dark:text-white">Chưa tải được dữ liệu</h2>
+              <p className="mx-auto mt-2 max-w-[320px] text-sm leading-6 text-zinc-500 dark:text-zinc-400">
+                Phiên đăng nhập hoặc kết nối có thể vừa hết hạn. Thử lại để làm mới token và tải danh sách.
               </p>
-              <p className="text-sm text-zinc-500 mb-6">
-                {subTab === "mine" && `Tạo ${mode} đầu tiên của bạn`}
-                {subTab === "saved" && `Lưu ${mode} để xem sau`}
-                {subTab === "doing" && `Nhận ${mode} để bắt đầu làm`}
-                {subTab === "applied" && `Ứng tuyển ${mode} phù hợp`}
-                {subTab === "completed" && `Hoàn thành ${mode} đầu tiên`}
-                {subTab === "cancelled" && `Không có ${mode} nào bị hủy`}
-                {subTab === "expired" && `Không có ${mode} hết hạn`}
-              </p>
-              {subTab === "mine" && (
-                <button
-                  onClick={() => {
-                    vibrate(10);
-                    router.push(mode === "task"? "/create/task" : "/create/plan");
-                  }}
-                  className={`px-6 h-11 rounded-xl bg-gradient-to-r ${currentTheme.gradient} text-white text-sm font-semibold active:scale-95 transition-all ${currentTheme.shadow}`}
-                >
-                  Tạo ngay
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={retryLoad}
+                className="mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-5 text-sm font-bold text-white active:scale-95 dark:bg-white dark:text-zinc-950"
+              >
+                <FiRefreshCw className="h-4 w-4" />
+                Thử lại
+              </button>
+            </motion.div>
+          ) : tasks.length === 0 ? (
+            <motion.div
+              {...enterMotion}
+              transition={{ duration: 0.28 }}
+              className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/82 p-8 text-left shadow-2xl shadow-black/[0.05] ring-1 ring-black/5 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-900/72 dark:ring-white/10"
+            >
+              <div className={`absolute -right-16 -top-16 h-40 w-40 rounded-full bg-gradient-to-br ${currentTheme.gradient} opacity-15 blur-2xl`} />
+              <div className="relative">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-zinc-100 text-zinc-400 ring-1 ring-black/5 dark:bg-zinc-800 dark:ring-white/10">
+                    <FiInbox className="h-7 w-7" />
+                  </div>
+                  <div className={`rounded-full bg-gradient-to-r ${currentTheme.gradient} px-3 py-1 text-xs font-black text-white shadow-lg ${currentTheme.shadow}`}>
+                    {activeTabLabel}
+                  </div>
+                </div>
+
+                <h2 className="mt-6 text-2xl font-black tracking-tight text-zinc-950 dark:text-white">{activeCopy.title}</h2>
+                <p className="mt-2 text-sm leading-6 text-zinc-500 dark:text-zinc-400">{activeCopy.body}</p>
+
+                <div className="mt-6 flex flex-wrap gap-2">
+                  {subTab === "mine" && (
+                    <button
+                      type="button"
+                      onClick={createCurrentMode}
+                      className={`inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r ${currentTheme.gradient} px-5 text-sm font-bold text-white active:scale-95 ${currentTheme.shadow}`}
+                    >
+                      <HiSparkles className="h-4 w-4" />
+                      Tạo {currentTheme.noun}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={retryLoad}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-zinc-100 px-5 text-sm font-bold text-zinc-700 active:scale-95 dark:bg-zinc-800 dark:text-zinc-200"
+                  >
+                    <FiRefreshCw className="h-4 w-4" />
+                    Tải lại
+                  </button>
+                </div>
+              </div>
             </motion.div>
           ) : (
             <AnimatePresence mode="popLayout">
               <motion.div
                 key={`${mode}-${subTab}`}
-                initial={{ opacity: 0 }}
+                initial={prefersReducedMotion ? false : { opacity: 0 }}
                 animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                {...(prefersReducedMotion ? {} : { exit: { opacity: 0 } })}
                 className="space-y-3"
               >
                 {tasks.map((task, idx) => (
                   <motion.div
                     key={task.id}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={prefersReducedMotion ? false : { opacity: 0, y: 18 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.03 }}
-                    layout
+                    transition={{ delay: prefersReducedMotion ? 0 : Math.min(idx * 0.025, 0.18) }}
+                    layout={!prefersReducedMotion}
                   >
                     <TaskCard
                       task={task}
@@ -313,8 +424,8 @@ useEffect(() => {
           )}
 
           {refreshing && (
-            <div className="flex justify-center py-6">
-              <FiRefreshCw className="animate-spin text-[#0A84FF]" size={24} />
+            <div className="flex justify-center py-6" aria-live="polite">
+              <FiRefreshCw className="motion-safe:animate-spin text-zinc-400" size={22} />
             </div>
           )}
 
@@ -325,7 +436,7 @@ useEffect(() => {
             />
           )}
 
-          <div className="h-4" />
+          <div className="h-6" />
         </div>
       </div>
 

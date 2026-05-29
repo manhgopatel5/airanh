@@ -212,6 +212,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
                 handleSave();
               }}
               disabled={saving}
+              aria-label={isSaved ? "Bỏ lưu" : "Lưu"}
               className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all disabled:opacity-50 touch-manipulation select-none"
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
@@ -231,6 +232,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
                 vibrate(8);
                 onShare?.(task);
               }}
+              aria-label="Chia sẻ"
               className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all touch-manipulation select-none"
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
@@ -253,6 +255,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
                     vibrate();
                     setShowMenu(!showMenu);
                   }}
+                  aria-label="Mở menu task"
                   className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all touch-manipulation select-none"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
@@ -277,6 +280,8 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
                         }}
                       >
                         <button
+                          type="button"
+                          aria-label="Sửa công việc"
                           onClick={(e) => {
                             e.stopPropagation();
                             vibrate();
@@ -290,6 +295,8 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
                         </button>
                         <div className="h-px bg-zinc-200 dark:bg-zinc-800 mx-2" />
                         <button
+                          type="button"
+                          aria-label="Xóa công việc"
                           onClick={(e) => {
                             e.stopPropagation();
                             setShowMenu(false);
@@ -411,6 +418,8 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
         <div className="flex items-center justify-between px-2 py-2.5">
           <div className="flex items-center gap-0.5">
             <button
+              type="button"
+              aria-label={liked ? "Bỏ thích" : "Thích"}
               onClick={(e) => {
                 e.stopPropagation();
                 handleLike();
@@ -428,6 +437,8 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
             </button>
 
             <button
+              type="button"
+              aria-label="Xem bình luận"
               onClick={goToTask}
               className="flex items-center gap-2 px-3.5 h-10 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all"
             >
@@ -438,6 +449,8 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
             </button>
 
             <button
+              type="button"
+              aria-label="Chia sẻ"
               onClick={(e) => {
                 e.stopPropagation();
                 vibrate(8);
