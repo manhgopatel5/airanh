@@ -61,13 +61,13 @@ const { data: tasks = [], isLoading, isValidating, mutate } = useSWR<FeedTask[]>
   currentUser? `/api/jobs?type=${mode}` : null,
   fetcher,
   {
-    fallbackData: initialJobs.filter(j => j.type === mode),
-    revalidateOnFocus: false, // ← Đổi từ false → false, giữ nguyên
-    revalidateOnReconnect: false, // ← Thêm dòng này
-    revalidateIfStale: false, // ← Thêm dòng này
-    dedupingInterval: 600000, // ← Đổi từ 60000 → 600000 = 10 phút
+    fallbackData: initialJobs, // ← SỬA: Bỏ .filter
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    dedupingInterval: 600000,
     keepPreviousData: true,
-    refreshInterval: 0, // ← Thêm dòng này
+    refreshInterval: 0,
   }
 );
 
