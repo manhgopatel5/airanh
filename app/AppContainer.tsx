@@ -149,7 +149,7 @@ export default function AppContainer({ initialJobs = [], initialPlans = [] }: Ap
   }
 
   return (
-    <div className="h-screen flex flex-col font-sans bg-white dark:bg-zinc-950 select-none relative">
+    <div className="h-dvh flex flex-col font-sans bg-white dark:bg-zinc-950 relative">
       <Toaster richColors position="top-center" toastOptions={{ duration: 2000, style: { fontSize: "14px" } }} />
 
       <div

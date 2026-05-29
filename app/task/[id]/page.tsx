@@ -4,8 +4,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { Toaster } from "sonner";
 import type { FeedTask } from "@/types/task"; // FIX: Import FeedTask
+import { FiArrowLeft, FiInbox } from "react-icons/fi";
 
 import { useTask } from "@/hooks/useTask";
 import { useComments } from "@/hooks/useComments";
@@ -55,13 +55,57 @@ export default function TaskDetailPage() {
     return onAuthStateChanged(auth, setCurrentUser);
   }, []);
 
-  if (loading) return <div className="p-4 text-center">Đang tải...</div>;
-  if (!task) return <div className="p-4 text-center">Không tìm thấy task</div>;
+  if (loading) {
+    return (
+      <div className="min-h-dvh bg-white px-4 py-5 dark:bg-zinc-950">
+        <div className="mx-auto max-w-[600px] space-y-4">
+          <div className="h-12 rounded-2xl bg-zinc-100 motion-safe:animate-pulse dark:bg-zinc-900" />
+          <div className="h-56 rounded-3xl bg-zinc-100 motion-safe:animate-pulse dark:bg-zinc-900" />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="h-24 rounded-3xl bg-zinc-100 motion-safe:animate-pulse dark:bg-zinc-900" />
+            <div className="h-24 rounded-3xl bg-zinc-100 motion-safe:animate-pulse dark:bg-zinc-900" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!task) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-white px-5 dark:bg-zinc-950">
+        <div className="w-full max-w-sm rounded-[2rem] border border-zinc-200 bg-white p-8 text-center shadow-xl shadow-black/[0.04] dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-zinc-100 text-zinc-400 dark:bg-zinc-800">
+            <FiInbox className="h-7 w-7" />
+          </div>
+          <h1 className="mt-5 text-xl font-black text-zinc-950 dark:text-white">Không tìm thấy task</h1>
+          <p className="mt-2 text-sm leading-6 text-zinc-500 dark:text-zinc-400">Task này có thể đã bị xóa hoặc không còn hiển thị.</p>
+          <button onClick={() => router.back()} className="mt-6 h-11 rounded-2xl bg-zinc-950 px-5 text-sm font-bold text-white active:scale-95 dark:bg-white dark:text-zinc-950">
+            Quay lại
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
-      <Toaster richColors position="top-center" />
       <div className="h-[100dvh] flex flex-col bg-white dark:bg-zinc-950 overflow-hidden">
+        <div className="sticky top-0 z-40 border-b border-zinc-200/70 bg-white/86 px-3 py-2 backdrop-blur-2xl dark:border-zinc-800/70 dark:bg-zinc-950/86">
+          <div className="mx-auto flex max-w-[600px] items-center gap-3">
+            <button
+              type="button"
+              aria-label="Quay lại"
+              onClick={() => router.back()}
+              className="flex h-11 w-11 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-700 active:scale-95 dark:bg-zinc-900 dark:text-zinc-200"
+            >
+              <FiArrowLeft className="h-5 w-5" />
+            </button>
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-400">Chi tiết</p>
+              <h1 className="truncate text-sm font-black text-zinc-950 dark:text-white">{task.title}</h1>
+            </div>
+          </div>
+        </div>
         <div className="flex-1 overflow-y-auto overscroll-contain">
           <div className="px-3 pt-2">
             <TaskDetailHeader

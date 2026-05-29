@@ -169,7 +169,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
       transition={{ duration: 0.2 }}
       className="group"
     >
-      <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.985] transition-all duration-200 shadow-xl shadow-black/5 dark:shadow-black/20 ring-1 ring-black/5 dark:ring-white/5 hover:shadow-2xl hover:shadow-black/10 dark:hover:shadow-black/30 mb-4">
+      <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200/70 dark:border-zinc-800/70 overflow-hidden active:scale-[0.985] transition-all duration-200 shadow-lg shadow-black/[0.04] dark:shadow-black/20 ring-1 ring-black/[0.03] dark:ring-white/5 hover:shadow-xl hover:shadow-black/[0.08] dark:hover:shadow-black/30">
 
         {/* HEADER */}
         <div className="flex items-start gap-3 p-4 pb-3">
@@ -213,7 +213,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
               }}
               disabled={saving}
               aria-label={isSaved ? "Bỏ lưu" : "Lưu"}
-              className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all disabled:opacity-50 touch-manipulation select-none"
+              className="min-h-11 min-w-11 p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all disabled:opacity-50 touch-manipulation select-none"
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
               <FiBookmark
@@ -222,21 +222,6 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
                 className={isSaved? `fill-current` : "text-zinc-500 dark:text-zinc-400"}
                 style={{ color: isSaved? primaryColor : undefined }}
               />
-            </motion.button>
-
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                vibrate(8);
-                onShare?.(task);
-              }}
-              aria-label="Chia sẻ"
-              className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all touch-manipulation select-none"
-              style={{ WebkitTapHighlightColor: 'transparent' }}
-            >
-              <FiShare2 size={18} className="text-zinc-500 dark:text-zinc-400" />
             </motion.button>
 
             {isOwner && (
@@ -248,15 +233,16 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
                     e.preventDefault();
                     e.stopPropagation();
                     const rect = e.currentTarget.getBoundingClientRect();
+                    const menuWidth = 180;
                     setMenuPos({
-                      x: rect.right - 180,
+                      x: Math.min(Math.max(8, rect.right - menuWidth), window.innerWidth - menuWidth - 8),
                       y: rect.bottom + 8
                     });
                     vibrate();
                     setShowMenu(!showMenu);
                   }}
                   aria-label="Mở menu task"
-                  className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all touch-manipulation select-none"
+                  className="min-h-11 min-w-11 p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all touch-manipulation select-none"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   <FiMoreHorizontal size={18} className="text-zinc-500 dark:text-zinc-400" />
@@ -288,7 +274,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
                             setShowMenu(false);
                             router.push(`/task/${task.id}/edit`);
                           }}
-                          className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 w-full transition-all active:scale-95"
+                          className="flex min-h-11 items-center gap-3 px-4 py-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 w-full transition-all active:scale-95"
                         >
                           <FiEdit2 size={18} />
                           Sửa công việc
@@ -302,7 +288,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
                             setShowMenu(false);
                             handleDelete();
                           }}
-                          className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-[#FF3B30] hover:bg-red-50 dark:hover:bg-red-950/50 w-full transition-all active:scale-95"
+                          className="flex min-h-11 items-center gap-3 px-4 py-3 text-sm font-semibold text-[#FF3B30] hover:bg-red-50 dark:hover:bg-red-950/50 w-full transition-all active:scale-95"
                         >
                           <FiTrash2 size={18} />
                           Xóa
@@ -424,7 +410,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
                 e.stopPropagation();
                 handleLike();
               }}
-              className="flex items-center gap-2 px-3.5 h-10 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all"
+              className="flex min-h-11 items-center gap-2 px-3.5 h-11 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all"
             >
               {liked? (
                 <HiHeart size={22} className="text-red-500" />
@@ -440,7 +426,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
               type="button"
               aria-label="Xem bình luận"
               onClick={goToTask}
-              className="flex items-center gap-2 px-3.5 h-10 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all"
+              className="flex min-h-11 items-center gap-2 px-3.5 h-11 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all"
             >
               <FiMessageCircle size={20} className="text-zinc-600 dark:text-zinc-400" />
               <span className="text-sm font-bold text-zinc-700 dark:text-zinc-300">
@@ -456,7 +442,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
                 vibrate(8);
                 onShare?.(task);
               }}
-              className="flex items-center gap-2 px-3.5 h-10 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all"
+              className="flex min-h-11 items-center gap-2 px-3.5 h-11 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-all"
             >
               <FiShare2 size={19} className="text-zinc-600 dark:text-zinc-400" />
             </button>

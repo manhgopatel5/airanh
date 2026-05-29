@@ -23,6 +23,7 @@ export default function TaskDescription({
   const descRef = useRef<HTMLParagraphElement>(null);
 
   const accentColor = theme === "task"? "#0A84FF" : "#30D158";
+  const accentLinkClass = theme === "task" ? "text-[#0A84FF] hover:underline font-medium" : "text-[#30D158] hover:underline font-medium";
 
   useEffect(() => {
     if (descRef.current) {
@@ -46,7 +47,7 @@ export default function TaskDescription({
             <Linkify
               options={{
                 target: "_blank",
-                className: `text-[${accentColor}] hover:underline font-medium`
+                className: accentLinkClass
               }}
             >
               <p

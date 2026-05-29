@@ -224,7 +224,7 @@ export default function TasksPage() {
 
   return (
     <>
-      <div className={`min-h-screen bg-gradient-to-b ${currentTheme.soft} text-zinc-900 dark:text-zinc-100 select-none`}>
+      <div className={`min-h-screen bg-gradient-to-b ${currentTheme.soft} text-zinc-900 dark:text-zinc-100`}>
         <div className="sticky top-0 z-40 border-b border-white/70 bg-white/82 backdrop-blur-2xl dark:border-white/5 dark:bg-zinc-950/82">
           <div className="mx-auto max-w-[600px] px-4 pt-3 pb-3">
             <div className="relative rounded-[1.35rem] bg-zinc-100/80 p-1.5 ring-1 ring-black/5 dark:bg-zinc-900/90 dark:ring-white/10">

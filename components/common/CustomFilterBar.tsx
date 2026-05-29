@@ -522,7 +522,6 @@ export default function CustomFilterBar({
   const filters = [
     { key: "hot", label: "Hot", Icon: IconSet.Hot },
     { key: "nearby", label: "Gần bạn", Icon: IconSet.Nearby },
-    { key: "friends", label: "Bạn bè", Icon: IconSet.Friends },
     { key: "new", label: "Mới", Icon: IconSet.New },
   ];
 
@@ -535,7 +534,7 @@ export default function CustomFilterBar({
 
   return (
     <div className="px-4 pb-3 space-y-3 min-h-[116px]">
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         {filters.map((filter) => {
           const isActive = currentFilter === filter.key;
           const isHovered = hovered === filter.key;

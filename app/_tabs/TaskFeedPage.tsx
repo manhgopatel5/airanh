@@ -193,7 +193,7 @@ const handleRefresh = useCallback(() => {
 
   return (
     <>
-      <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 select-none">
+      <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
         <div className="sticky top-0 z-40 bg-white dark:bg-zinc-950">
           <div className="px-4 pt-4 pb-2">
             <div className="relative h-16 rounded-2xl p-1.5 bg-white dark:bg-zinc-900">

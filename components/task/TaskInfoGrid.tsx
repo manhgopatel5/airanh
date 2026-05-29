@@ -20,7 +20,7 @@ export default function TaskInfoGrid({ task, applications, theme = "task" }: Pro
   const [timeLeft, setTimeLeft] = useState("");
   const [isUrgent, setIsUrgent] = useState(false);
 
-  const accentColor = theme === "task" ? "#0A84FF" : "#30D158";
+  const accentClass = theme === "task" ? "text-[#0A84FF]" : "text-[#30D158]";
 
   useEffect(() => {
     // FIX: task.deadline giờ là string | null, không phải Timestamp
@@ -85,7 +85,7 @@ export default function TaskInfoGrid({ task, applications, theme = "task" }: Pro
           size={16} 
           className={`mt-0.5 shrink-0 ${
             urgent ? 'text-[#FF3B30]' : 
-            highlight ? `text-[${accentColor}]` : 
+            highlight ? accentClass : 
             'text-zinc-500 dark:text-zinc-400'
           }`}
         />
@@ -97,7 +97,7 @@ export default function TaskInfoGrid({ task, applications, theme = "task" }: Pro
           transition={blinking ? { duration: 1, repeat: Infinity } : {}}
           className={`text-sm font-semibold mt-0.5 ${
             urgent ? 'text-[#FF3B30]' : 
-            highlight ? `text-[${accentColor}]` : 
+            highlight ? accentClass : 
             'text-zinc-900 dark:text-zinc-100'
           }`}
         >
