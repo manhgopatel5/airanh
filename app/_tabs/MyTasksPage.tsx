@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { FiAlertCircle, FiInbox, FiRefreshCw, FiShield } from "react-icons/fi";
+import { FiAlertCircle, FiInbox, FiRefreshCw } from "react-icons/fi";
 import { HiBolt, HiCalendarDays, HiSparkles } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 import ShareTaskModal from "@/components/ShareTaskModal";
@@ -137,14 +137,6 @@ export default function TasksPage() {
   const loading = !authReady || (isLoading && tasks.length === 0);
   const refreshing = authReady && isValidating && !loading;
   const hasBlockingError = !!error && tasks.length === 0 && !loading;
-
-  const stats = useMemo(() => {
-    const visibleCount = tasks.length;
-    return [
-      { label: activeTabLabel, value: visibleCount.toString() },
-      { label: mode === "task" ? "Việc" : "Kế hoạch", value: currentTheme.label },
-    ];
-  }, [activeTabLabel, currentTheme.label, mode, tasks.length]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -285,35 +277,6 @@ export default function TasksPage() {
         </div>
 
         <div className="mx-auto max-w-[600px] px-4 pt-4">
-          <motion.div
-            {...enterMotion}
-            transition={{ duration: 0.28 }}
-            className={`mb-4 overflow-hidden rounded-[1.75rem] border border-white/70 bg-white/76 p-4 shadow-xl shadow-black/[0.04] ring-1 ${currentTheme.ring} backdrop-blur-xl dark:border-white/10 dark:bg-zinc-900/64 dark:shadow-black/20`}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-400 dark:text-zinc-500">Không gian của bạn</p>
-                <h1 className="mt-1 text-2xl font-black tracking-tight text-zinc-950 dark:text-white">
-                  {mode === "task" ? "Quản lý task" : "Quản lý plan"}
-                </h1>
-                <p className="mt-1 text-sm leading-6 text-zinc-500 dark:text-zinc-400">
-                  Theo dõi mục đã tạo, đã lưu và tiến độ nhận việc trong một màn hình gọn.
-                </p>
-              </div>
-              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${currentTheme.gradient} text-white shadow-lg ${currentTheme.shadow}`}>
-                <FiShield className="h-5 w-5" />
-              </div>
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              {stats.map((item) => (
-                <div key={item.label} className="rounded-2xl bg-zinc-50/90 px-3 py-2 ring-1 ring-black/5 dark:bg-zinc-950/50 dark:ring-white/10">
-                  <p className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500">{item.label}</p>
-                  <p className="mt-0.5 text-sm font-black text-zinc-900 dark:text-zinc-100">{item.value}</p>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
           {loading ? (
             <div className="space-y-3" aria-label="Đang tải danh sách">
               {[...Array(3)].map((_, i) => (

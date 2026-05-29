@@ -1,22 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import * as geofire from "geofire-common";
 import useSWR from "swr";
 import {
-  FiCompass,
   FiInbox,
-  FiMapPin,
-  FiMessageCircle,
-  FiPlus,
   FiRefreshCw,
   FiSearch,
-  FiShield,
-  FiTrendingUp,
 } from "react-icons/fi";
-import { HiBolt, HiCalendarDays, HiSparkles } from "react-icons/hi2";
+import { HiBolt, HiCalendarDays } from "react-icons/hi2";
 import { toast } from "sonner";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import CustomFilterBar from "@/components/common/CustomFilterBar";
@@ -50,7 +43,6 @@ interface TaskFeedPageProps {
 }
 
 export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: TaskFeedPageProps) {
-  const router = useRouter();
   const reduceMotion = useReducedMotion();
   const { mode = "task", setMode } = useAppStore();
   const [activeTab, setActiveTab] = useState<TabId>("hot");
@@ -149,18 +141,6 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
     return result;
   }, [activeTab, mode, searchQueries, tasks, userLocation]);
 
-  const stats = useMemo(() => {
-    const visible = tasks.filter((task) => !task.banned && !task.hidden && task.type === mode);
-    const open = visible.filter((task) => task.status === "open" || task.status === "pending").length;
-    const totalValue = visible.reduce((sum, task) => sum + (task.type === "task" ? task.price || 0 : task.costAmount || 0), 0);
-    const withLocation = visible.filter(hasLocation).length;
-    return [
-      { label: "Đang mở", value: open.toString(), icon: FiTrendingUp },
-      { label: "Có vị trí", value: withLocation.toString(), icon: FiMapPin },
-      { label: "Tổng giá trị", value: totalValue > 0 ? `${Math.round(totalValue / 1000)}k` : "Mở", icon: FiShield },
-    ];
-  }, [mode, tasks]);
-
   const handleRefresh = useCallback(() => {
     vibrate(10);
     mutate();
@@ -193,16 +173,6 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
     <div className={`min-h-dvh bg-gradient-to-b ${softGradient} text-zinc-950 dark:text-white`}>
       <div className="sticky top-0 z-40 border-b border-white/70 bg-white/82 backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-950/82">
         <div className="mx-auto max-w-[680px] px-4 pt-3 pb-3">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-zinc-400">AIR Command</p>
-              <h1 className="text-2xl font-black tracking-tight">{isTaskMode ? "Task marketplace" : "Plan hub"}</h1>
-            </div>
-            <button type="button" onClick={handleRefresh} className="flex h-11 w-11 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-600 active:scale-95 dark:bg-zinc-900 dark:text-zinc-300" aria-label="Làm mới feed">
-              <FiRefreshCw className={refreshing ? "motion-safe:animate-spin" : ""} />
-            </button>
-          </div>
-
           <div className="relative rounded-[1.35rem] bg-zinc-100/80 p-1.5 ring-1 ring-black/5 dark:bg-zinc-900/90 dark:ring-white/10">
             <motion.div className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-[1rem] bg-gradient-to-r ${gradient} shadow-lg`} animate={{ x: isTaskMode ? 0 : "100%" }} transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 360, damping: 34 }} />
             <div className="relative grid grid-cols-2 gap-1">
@@ -216,31 +186,6 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
       </div>
 
       <div className="mx-auto max-w-[680px] px-4 pt-4">
-        <motion.section initial={reduceMotion ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="relative mb-4 overflow-hidden rounded-[2rem] border border-white/70 bg-white/82 p-5 shadow-2xl shadow-black/[0.05] ring-1 ring-black/[0.03] backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-950/72 dark:ring-white/10">
-          <div className={`absolute -right-16 -top-16 h-44 w-44 rounded-full bg-gradient-to-br ${gradient} opacity-15 blur-3xl`} />
-          <div className="relative flex items-start justify-between gap-4">
-            <div>
-              <div className={`mb-3 inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${gradient} px-3 py-1 text-xs font-black text-white shadow-lg`}><HiSparkles /> Smart match ready</div>
-              <h2 className="max-w-[360px] text-2xl font-black tracking-tight">Tìm việc, nhận plan và quản lý cơ hội như một app lớn.</h2>
-              <p className="mt-2 max-w-[420px] text-sm leading-6 text-zinc-500 dark:text-zinc-400">Feed được xếp theo độ nóng, vị trí và độ mới. Tạo nhanh, lọc nhanh, hành động nhanh.</p>
-            </div>
-          </div>
-          <div className="mt-5 grid grid-cols-3 gap-2">
-            {stats.map(({ label, value, icon: Icon }) => (
-              <div key={label} className="rounded-2xl bg-zinc-50/90 p-3 ring-1 ring-black/5 dark:bg-zinc-900/70 dark:ring-white/10">
-                <Icon className="h-4 w-4" style={{ color: accent }} />
-                <p className="mt-2 text-lg font-black">{value}</p>
-                <p className="text-[11px] font-bold text-zinc-400">{label}</p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 grid grid-cols-3 gap-2">
-            <button type="button" onClick={() => router.push(`/create/${mode}`)} className={`flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r ${gradient} text-sm font-black text-white shadow-lg active:scale-[0.98]`}><FiPlus /> Tạo</button>
-            <button type="button" onClick={() => router.push("/?tab=messages")} className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-zinc-100 text-sm font-black text-zinc-700 active:scale-[0.98] dark:bg-zinc-900 dark:text-zinc-200"><FiMessageCircle /> Chat</button>
-            <button type="button" onClick={() => setActiveTab("nearby")} className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-zinc-100 text-sm font-black text-zinc-700 active:scale-[0.98] dark:bg-zinc-900 dark:text-zinc-200"><FiCompass /> Gần</button>
-          </div>
-        </motion.section>
-
         {loading ? (
           <div className="space-y-3" aria-label="Đang tải feed">
             {[0, 1, 2].map((item) => <div key={item} className="h-52 rounded-[2rem] bg-white/80 motion-safe:animate-pulse dark:bg-zinc-900/80" />)}

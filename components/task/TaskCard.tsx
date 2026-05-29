@@ -8,8 +8,6 @@ import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import {
   FiBookmark,
-  FiBriefcase,
-  FiCalendar,
   FiCheckCircle,
   FiClock,
   FiDollarSign,
@@ -45,17 +43,6 @@ const vibrate = (ms: number | number[] = 8) => {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(ms);
 };
 
-const statusLabel: Record<string, string> = {
-  open: "Đang mở",
-  pending: "Đang duyệt",
-  full: "Đã đủ",
-  doing: "Đang làm",
-  completed: "Hoàn thành",
-  cancelled: "Đã hủy",
-  expired: "Hết hạn",
-  deleted: "Đã xóa",
-};
-
 function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
@@ -70,7 +57,6 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
 
   const isTaskTheme = theme === "task";
   const accent = isTaskTheme ? "#0A84FF" : "#30D158";
-  const accentSoft = isTaskTheme ? "bg-sky-50 text-sky-700 ring-sky-200/70 dark:bg-sky-500/10 dark:text-sky-200 dark:ring-sky-400/20" : "bg-emerald-50 text-emerald-700 ring-emerald-200/70 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20";
   const accentGradient = isTaskTheme ? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
 
   useEffect(() => {
@@ -108,7 +94,6 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
       due,
       price,
       timeAgo: formatDistanceToNow(created, { addSuffix: true, locale: vi }),
-      status: statusLabel[task.status] || task.status,
     };
   }, [task]);
 
@@ -249,13 +234,11 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
           </div>
 
           <button type="button" onClick={goToTask} className="block w-full text-left">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] ring-1 ${accentSoft}`}>
-                {task.type === "task" ? <FiBriefcase className="h-3 w-3" /> : <FiCalendar className="h-3 w-3" />}
-                {derived.status}
-              </span>
-              {task.category && <span className="inline-flex rounded-full bg-zinc-100 px-3 py-1 text-[11px] font-bold text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">{task.category}</span>}
-            </div>
+            {task.category && (
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <span className="inline-flex rounded-full bg-zinc-100 px-3 py-1 text-[11px] font-bold text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">{task.category}</span>
+              </div>
+            )}
 
             <h3 className="text-[1.08rem] font-black leading-snug tracking-tight text-zinc-950 dark:text-white">{task.title}</h3>
             {task.description && <p className="mt-2 line-clamp-3 text-sm leading-6 text-zinc-600 dark:text-zinc-300">{task.description}</p>}

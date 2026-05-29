@@ -946,9 +946,7 @@ const filteredChats = useMemo(() => {
       <div className={`absolute -right-12 -top-16 h-44 w-44 rounded-full ${isPlan ? "bg-emerald-400" : "bg-sky-400"} opacity-15 blur-3xl`} />
       <div className="relative flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-zinc-400">Inbox OS</p>
-          <h1 className="mt-1 text-2xl font-black tracking-tight">Trung tâm tin nhắn</h1>
-          <p className="mt-2 max-w-[420px] text-sm leading-6 text-zinc-500 dark:text-zinc-400">Quản lý chat, bạn bè, thông báo và nhóm như một inbox chuyên nghiệp.</p>
+          <h1 className="text-2xl font-black tracking-tight">Trung tâm tin nhắn</h1>
         </div>
         <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${primaryBg} text-white shadow-xl shadow-sky-500/20`}>
           <FiMessageSquare className="h-5 w-5" />
@@ -968,10 +966,7 @@ const filteredChats = useMemo(() => {
           </button>
         ))}
       </div>
-      <div className="relative mt-4 flex items-center justify-between rounded-2xl bg-zinc-50 px-3 py-2 text-xs font-bold text-zinc-500 ring-1 ring-black/5 dark:bg-zinc-900 dark:text-zinc-400 dark:ring-white/10">
-        <span className="inline-flex items-center gap-2"><span className={`h-2 w-2 rounded-full ${isOnline ? "bg-emerald-500" : "bg-red-500"}`} />{isOnline ? "Đang online" : "Mất kết nối"}</span>
-        <button type="button" onClick={() => setShowAdd(true)} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-white ${primaryBg}`}> <RiAddLine /> Tạo mới</button>
-      </div>
+
     </div>
   </section>
 
