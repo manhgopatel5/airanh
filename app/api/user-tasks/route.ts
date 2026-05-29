@@ -23,53 +23,56 @@ export async function GET(request: Request) {
   const now = Timestamp.now()
 
   try {
-    let q = adminDb().collection('tasks') // ← Thêm () ở đây
-  .where('type', '==', type)
-  .select('slug','shortId','title','description','type','status','userId','userName','userAvatar','price','currency','totalSlots','joined','budgetType','category','tags','images','viewCount','likeCount','commentCount','location','banned','hidden','appliedCount','createdAt','updatedAt','deadline')
-  .limit(10)
+    let q = adminDb()
+     .collection('tasks')
+     .where('type', '==', type)
+     .where('banned', '==', false)
+     .where('hidden', '==', false)
 
+    // Thêm orderBy để Firestore sort luôn, không cần sort JS
     switch (tab) {
       case 'mine':
-        q = q.where('userId', '==', uid)
+        q = q.where('userId', '==', uid).orderBy('createdAt', 'desc')
         break
       case 'saved':
-        q = q.where('savedBy', 'array-contains', uid)
+        q = q.where('savedBy', 'array-contains', uid).orderBy('createdAt', 'desc')
         break
       case 'doing':
-        q = q.where('assignees', 'array-contains', uid).where('status', '==', 'doing')
+        q = q.where('assignees', 'array-contains', uid).where('status', '==', 'doing').orderBy('createdAt', 'desc')
         break
       case 'applied':
-        q = q.where('applicants', 'array-contains', uid).where('status', 'in', ['open', 'pending'])
+        q = q.where('applicants', 'array-contains', uid).where('status', 'in', ['open', 'pending']).orderBy('createdAt', 'desc')
         break
       case 'completed':
-        q = q.where('assignees', 'array-contains', uid).where('status', '==', 'completed')
+        q = q.where('assignees', 'array-contains', uid).where('status', '==', 'completed').orderBy('createdAt', 'desc')
         break
       case 'expired':
         if (type!== 'task') return NextResponse.json([])
-        const sevenDaysAgo = Timestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
-        q = q.where('userId', '==', uid).where('deadline', '<', now).where('deadline', '>', sevenDaysAgo)
+        const sevenDaysAgo = Timestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 1000))
+        q = q.where('userId', '==', uid)
+         .where('deadline', '<', now)
+         .where('deadline', '>', sevenDaysAgo)
+         .orderBy('deadline', 'desc')
         break
       case 'cancelled':
-        q = q.where('userId', '==', uid).where('status', '==', 'cancelled')
+        q = q.where('userId', '==', uid).where('status', '==', 'cancelled').orderBy('createdAt', 'desc')
         break
     }
 
-    const snap = await q.get()
+    // Bỏ.select để lấy full field, tránh thiếu field cho các tab
+    const snap = await q.limit(20).get()
+
     const tasks: FeedTask[] = snap.docs.map(doc => {
       const d = doc.data()
       return {
         id: doc.id,
-   ...d,
+       ...d,
         createdAt: d.createdAt?.toDate?.()?.toISOString() || null,
         updatedAt: d.updatedAt?.toDate?.()?.toISOString() || null,
         deadline: d.deadline?.toDate?.()?.toISOString() || null,
+        applicationDeadline: d.applicationDeadline?.toDate?.()?.toISOString() || null,
+        startDate: d.startDate?.toDate?.()?.toISOString() || null,
       } as FeedTask
-    })
-.filter(t =>!t.banned &&!t.hidden)
-.sort((a, b) => {
-      const aTime = a.createdAt? new Date(a.createdAt).getTime() : 0
-      const bTime = b.createdAt? new Date(b.createdAt).getTime() : 0
-      return bTime - aTime
     })
 
     return NextResponse.json(tasks, {
@@ -77,8 +80,12 @@ export async function GET(request: Request) {
         'Cache-Control': 'private, no-cache, no-store, must-revalidate'
       }
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('API /user-tasks error:', error)
+    // Log chi tiết để debug index
+    if (error.code === 9) {
+      console.error('Missing Firestore index. Create it here:', error.details)
+    }
     return NextResponse.json({ error: 'Failed' }, { status: 500 })
   }
 }
