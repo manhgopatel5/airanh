@@ -1,6 +1,6 @@
 // app/api/user-tasks/route.ts
 import { NextResponse } from 'next/server'
-import { getFirebaseAuth, getFirebaseDb } from '@/lib/firebase-admin'
+import { adminAuth, adminDb } from '@/lib/firebase-admin'
 import { Timestamp } from 'firebase-admin/firestore'
 import type { FeedTask } from '@/types/task'
 
@@ -17,19 +17,17 @@ export async function GET(request: Request) {
   const token = authHeader?.split('Bearer ')[1]
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const auth = getFirebaseAuth()
-  const decoded = await auth.verifyIdToken(token).catch(() => null)
+  const decoded = await adminAuth.verifyIdToken(token).catch(() => null)
   if (!decoded) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const uid = decoded.uid
-  const db = getFirebaseDb()
   const now = Timestamp.now()
 
   try {
-    let q = db.collection('tasks')
-    .where('type', '==', type)
-    .select('slug','shortId','title','description','type','status','userId','userName','userAvatar','price','currency','totalSlots','joined','budgetType','category','tags','images','viewCount','likeCount','commentCount','location','banned','hidden','appliedCount','createdAt','updatedAt','deadline')
-    .limit(10)
+    let q = adminDb.collection('tasks')
+   .where('type', '==', type)
+   .select('slug','shortId','title','description','type','status','userId','userName','userAvatar','price','currency','totalSlots','joined','budgetType','category','tags','images','viewCount','likeCount','commentCount','location','banned','hidden','appliedCount','createdAt','updatedAt','deadline')
+   .limit(10)
 
     // Build query theo tab
     switch (tab) {
@@ -49,7 +47,6 @@ export async function GET(request: Request) {
         q = q.where('assignees', 'array-contains', uid).where('status', '==', 'completed')
         break
       case 'expired':
-        // Chỉ cho task mới có deadline
         if (type!== 'task') return NextResponse.json([])
         const sevenDaysAgo = Timestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
         q = q.where('userId', '==', uid).where('deadline', '<', now).where('deadline', '>', sevenDaysAgo)
@@ -64,14 +61,14 @@ export async function GET(request: Request) {
       const d = doc.data()
       return {
         id: doc.id,
-      ...d,
+     ...d,
         createdAt: d.createdAt?.toDate?.()?.toISOString() || null,
         updatedAt: d.updatedAt?.toDate?.()?.toISOString() || null,
         deadline: d.deadline?.toDate?.()?.toISOString() || null,
       } as FeedTask
     })
-  .filter(t =>!t.banned &&!t.hidden)
-  .sort((a, b) => {
+ .filter(t =>!t.banned &&!t.hidden)
+ .sort((a, b) => {
       const aTime = a.createdAt? new Date(a.createdAt).getTime() : 0
       const bTime = b.createdAt? new Date(b.createdAt).getTime() : 0
       return bTime - aTime
