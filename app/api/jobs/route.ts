@@ -11,11 +11,8 @@ export async function GET(request: Request) {
   const limit = Number(searchParams.get('limit')) || 10
 
   try {
-    // 1. Lấy từ Firebase Admin với .select() đã tối ưu
-    const allJobs = await getJobsFromFirebaseAdmin(limit)
-    
-    // 2. Lọc theo type ở server để giảm payload
-    const jobs: FeedTask[] = allJobs.filter(j => j.type === type)
+    // Đã filter type trong Firebase rồi, không cần filter lại ở code
+    const jobs: FeedTask[] = await getJobsFromFirebaseAdmin(type, limit)
 
     return NextResponse.json(jobs, {
       status: 200,
