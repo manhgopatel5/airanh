@@ -1,5 +1,5 @@
 // app/api/user-tasks/route.ts
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase-admin'
 import { Timestamp } from 'firebase-admin/firestore'
 import type { DocumentData, Query } from 'firebase-admin/firestore'
@@ -93,21 +93,29 @@ const matchesTab = (data: DocumentData, tab: UserTaskTab, nowMillis: number): bo
 
 const taskSortValue = (task: FeedTask, tab: UserTaskTab): number => {
   const value = tab === 'expired' ? task.deadline : task.createdAt
-  return value ? new Date(value).getTime() : 0
+  return timestampToMillis(value) || 0
 }
 
-export async function GET(request: Request) {
+const getRequestToken = (request: NextRequest): string | null => {
+  const authHeader = request.headers.get('authorization')
+  const bearerToken = authHeader?.match(/^Bearer\s+(.+)$/i)?.[1]
+  return bearerToken || request.cookies.get('__session')?.value || null
+}
+
+export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const requestedType = searchParams.get('type')
   const type: 'task' | 'plan' = requestedType === 'plan' ? 'plan' : 'task'
   const requestedTab = searchParams.get('tab')
   const tab: UserTaskTab = isUserTaskTab(requestedTab) ? requestedTab : 'mine'
 
-  const authHeader = request.headers.get('authorization')
-  const token = authHeader?.split('Bearer ')[1]
+  const token = getRequestToken(request)
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const decoded = await adminAuth().verifyIdToken(token).catch(() => null)
+  const decoded = await adminAuth().verifyIdToken(token).catch((error) => {
+    console.error('API /user-tasks auth error:', error)
+    return null
+  })
   if (!decoded) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const uid = decoded.uid
@@ -123,7 +131,7 @@ export async function GET(request: Request) {
       const d = doc.data()
       return {
         id: doc.id,
-      ...d,
+        ...d,
         createdAt: timestampToIsoString(d.createdAt),
         updatedAt: timestampToIsoString(d.updatedAt),
         deadline: timestampToIsoString(d.deadline),
@@ -144,6 +152,6 @@ export async function GET(request: Request) {
     })
   } catch (error: any) {
     console.error('API /user-tasks error:', error)
-    return NextResponse.json({ error: 'Failed' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to load user tasks' }, { status: 500 })
   }
 }

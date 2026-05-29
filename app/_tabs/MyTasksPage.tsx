@@ -26,14 +26,43 @@ const SUB_TABS: { key: SubTab; label: string }[] = [
   { key: "cancelled", label: "Đã hủy" },
 ];
 
-// FIX 2: Fetcher phải gửi token
-const fetcher = async ([url, token]: [string, string]) => {
-  if (!token) throw new Error("No auth token");
+class UserTasksFetchError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "UserTasksFetchError";
+    this.status = status;
+  }
+}
+
+const fetchUserTasks = async (url: string, token: string) => {
   const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` }
+    credentials: "same-origin",
+    headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error("Failed to fetch");
-  return res.json();
+
+  if (res.ok) return res.json();
+
+  const body = await res.json().catch(() => null);
+  throw new UserTasksFetchError(body?.error || "Tải dữ liệu thất bại", res.status);
+};
+
+const fetcher = async ([url, token]: [string, string]) => {
+  if (!token) throw new UserTasksFetchError("Chưa đăng nhập", 401);
+
+  try {
+    return await fetchUserTasks(url, token);
+  } catch (err) {
+    if (err instanceof UserTasksFetchError && err.status === 401) {
+      const freshToken = await getFirebaseAuth().currentUser?.getIdToken(true);
+      if (freshToken && freshToken !== token) {
+        return fetchUserTasks(url, freshToken);
+      }
+    }
+
+    throw err;
+  }
 };
 
   
@@ -64,9 +93,10 @@ const { data: tasks = [], isLoading, isValidating, mutate } = useSWR<FeedTask[]>
     dedupingInterval: 600000, // Đổi từ 60000 → 600000 = 10 phút
     keepPreviousData: true,
     refreshInterval: 0, // Thêm dòng này: tắt auto poll
+    shouldRetryOnError: false,
     onError: (err) => {
       console.error(err);
-      toast.error("Tải dữ liệu thất bại");
+      toast.error(err?.message || "Tải dữ liệu thất bại", { id: "user-tasks-load-error" });
     }
   }
 );
