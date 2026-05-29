@@ -147,9 +147,6 @@ const handleLongPressEnd = () => {
   }
 };
 
-const handleCancelActions = () => {
-  setLongPressChatId(null);
-};
 
 // Đóng khi click ra ngoài
 useEffect(() => {
