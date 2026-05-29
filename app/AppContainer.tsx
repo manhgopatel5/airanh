@@ -7,7 +7,6 @@ import useSWR from 'swr';
 
 import { useAppStore } from "@/store/app";
 import { AnimatePresence, motion } from "framer-motion";
-import { Toaster } from "sonner";
 
 import CustomTabBar from "@/components/CustomTabBar";
 import { useTabBarHeight } from "@/hooks/useTabBarHeight";
@@ -150,8 +149,6 @@ export default function AppContainer({ initialJobs = [], initialPlans = [] }: Ap
 
   return (
     <div className="h-dvh flex flex-col font-sans bg-white dark:bg-zinc-950 relative">
-      <Toaster richColors position="top-center" toastOptions={{ duration: 2000, style: { fontSize: "14px" } }} />
-
       <div
         className="flex-1 w-full max-w-2xl mx-auto overflow-y-auto [-webkit-overflow-scrolling:touch] overscroll-y-contain"
         style={{ paddingBottom: tabBarHeight + 24 }}

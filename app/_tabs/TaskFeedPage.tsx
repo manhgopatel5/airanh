@@ -1,19 +1,30 @@
 "use client";
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { FiInbox, FiRefreshCw, FiNavigation } from "react-icons/fi";
-import { Briefcase3D, Palm3D } from "@/components/icons/Mode3DIcons";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import ShareTaskModal from "@/components/ShareTaskModal";
-import { onAuthStateChanged, User } from "firebase/auth";
-import { getFirebaseAuth } from "@/lib/firebase";
-import useSWR from "swr"; // THÊM
-import type { FeedTask } from "@/types/task";
-import TaskCard from "@/components/task/TaskCard";
+import { onAuthStateChanged, type User } from "firebase/auth";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import * as geofire from "geofire-common";
+import useSWR from "swr";
+import {
+  FiCompass,
+  FiInbox,
+  FiMapPin,
+  FiMessageCircle,
+  FiPlus,
+  FiRefreshCw,
+  FiSearch,
+  FiShield,
+  FiTrendingUp,
+} from "react-icons/fi";
+import { HiBolt, HiCalendarDays, HiSparkles } from "react-icons/hi2";
 import { toast } from "sonner";
-import { useAppStore } from "@/store/app";
-import * as geofire from 'geofire-common';
+import ShareTaskModal from "@/components/ShareTaskModal";
 import CustomFilterBar from "@/components/common/CustomFilterBar";
+import TaskCard from "@/components/task/TaskCard";
+import { getFirebaseAuth } from "@/lib/firebase";
+import { useAppStore } from "@/store/app";
+import type { FeedTask } from "@/types/task";
 
 type TabId = "hot" | "nearby" | "friends" | "new";
 
@@ -22,70 +33,55 @@ type TaskWithLocation = FeedTask & {
 };
 
 const hasLocation = (task: FeedTask): task is TaskWithLocation => {
-  return task.location?.lat!= null && task.location?.lng!= null;
+  return task.location?.lat != null && task.location?.lng != null;
 };
 
-const vibrate = (p: number | number[] = 5) => {
-  if (typeof navigator!== "undefined" && "vibrate" in navigator) {
-    navigator.vibrate(p);
-  }
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Không tải được feed");
+  return res.json();
+};
+
+const vibrate = (pattern: number | number[] = 6) => {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(pattern);
 };
 
 interface TaskFeedPageProps {
   initialJobs?: FeedTask[];
 }
 
-// THÊM: Fetcher cho SWR
-const fetcher = (url: string) => fetch(url).then(r => r.json());
-
 export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
   const auth = getFirebaseAuth();
   const router = useRouter();
-
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const reduceMotion = useReducedMotion();
   const { mode = "task", setMode } = useAppStore();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>("hot");
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [searchQueries, setSearchQueries] = useState<Record<TabId, string>>({ hot: "", nearby: "", friends: "", new: "" });
 
-  const [searchQueries, setSearchQueries] = useState<Record<TabId, string>>({
-    hot: "",
-    nearby: "",
-    friends: "",
-    new: ""
-  });
+  const isTaskMode = mode === "task";
+  const accent = isTaskMode ? "#0A84FF" : "#30D158";
+  const gradient = isTaskMode ? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
+  const softGradient = isTaskMode
+    ? "from-[#EAF4FF] via-white to-[#F8FBFF] dark:from-[#06172B] dark:via-zinc-950 dark:to-zinc-950"
+    : "from-[#EAFFF2] via-white to-[#F9FFFB] dark:from-[#061E11] dark:via-zinc-950 dark:to-zinc-950";
 
-  // FIX: Dùng SWR thay onSnapshot. 0 reads nếu cache còn hạn
-
-const { data: tasks = [], isLoading, isValidating, mutate } = useSWR<FeedTask[]>(
-  currentUser? `/api/jobs?type=${mode}` : null,
-  fetcher,
-  {
-    fallbackData: initialJobs, // ← SỬA: Bỏ .filter
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    revalidateIfStale: false,
-    dedupingInterval: 600000,
-    keepPreviousData: true,
-    refreshInterval: 0,
-  }
-);
-
-  const loading = isLoading && tasks.length === 0;
-  const refreshing = isValidating;
-
-  const theme = {
-    task: {
-      primary: "#0A84FF",
-      gradient: "linear-gradient(135deg, #5B9DFF 0%, #0A84FF 100%)",
-      glow: "rgba(10, 132, 255, 0.5)",
-    },
-    plan: {
-      primary: "#30D158",
-      gradient: "linear-gradient(135deg, #5BEB7B 0%, #30D158 100%)",
-      glow: "rgba(48, 209, 88, 0.5)",
+  const { data: tasks = [], error, isLoading, isValidating, mutate } = useSWR<FeedTask[]>(
+    currentUser ? `/api/jobs?type=${mode}` : null,
+    fetcher,
+    {
+      fallbackData: initialJobs,
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      dedupingInterval: 45000,
+      keepPreviousData: true,
+      refreshInterval: 0,
+      shouldRetryOnError: false,
+      onError: (err) => toast.error(err?.message || "Không tải được feed", { id: "feed-load-error" }),
     }
-  };
+  );
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -100,277 +96,176 @@ const { data: tasks = [], isLoading, isValidating, mutate } = useSWR<FeedTask[]>
       toast.error("Thiết bị không hỗ trợ định vị GPS");
       return;
     }
-
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setUserLocation({ lat: latitude, lng: longitude });
+        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         vibrate([10, 20, 10]);
-        toast.success("Đã xác định vị trí thành công");
+        toast.success("Đã xác định vị trí");
       },
       (err) => {
-        if (err.code === 1) toast.error("Bạn đã chặn quyền truy cập vị trí");
-        else toast.error("Không thể lấy vị trí. Thử lại sau");
+        toast.error(err.code === 1 ? "Bạn đã chặn quyền truy cập vị trí" : "Không thể lấy vị trí. Thử lại sau");
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   }, []);
 
-  // XÓA: Toàn bộ useEffect onSnapshot
-
   useEffect(() => {
-    if (activeTab === "nearby" &&!userLocation) {
-      requestLocation();
-    }
-  }, [activeTab, userLocation, requestLocation]);
+    if (activeTab === "nearby" && !userLocation) requestLocation();
+  }, [activeTab, requestLocation, userLocation]);
 
   const handleSearchChange = useCallback((filter: TabId, query: string) => {
-    setSearchQueries(prev => ({...prev, [filter]: query }));
+    setSearchQueries((prev) => ({ ...prev, [filter]: query }));
   }, []);
 
   const filteredTasks = useMemo(() => {
-    let result = tasks.filter(t =>!t.banned &&!t.hidden && t.type === mode);
-
-    const currentQuery = searchQueries[activeTab];
-    if (currentQuery) {
-      result = result.filter(t =>
-        t.title.toLowerCase().includes(currentQuery.toLowerCase())
-      );
+    let result = tasks.filter((task) => !task.banned && !task.hidden && task.type === mode);
+    const query = searchQueries[activeTab]?.trim().toLowerCase();
+    if (query) {
+      result = result.filter((task) => `${task.title} ${task.description || ""} ${task.category || ""}`.toLowerCase().includes(query));
     }
 
     if (activeTab === "hot") {
-      result.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-    } else if (activeTab === "new") {
-      result.sort((a, b) => {
-        const aTime = a.createdAt? new Date(a.createdAt).getTime() : 0;
-        const bTime = b.createdAt? new Date(b.createdAt).getTime() : 0;
-        return bTime - aTime;
-      });
-    } else if (activeTab === "nearby" && userLocation) {
-      const withLocation = result.filter(hasLocation);
-      withLocation.sort((a, b) => {
-        const distA = geofire.distanceBetween(
-          [userLocation.lat, userLocation.lng],
-          [a.location.lat, a.location.lng]
-        );
-        const distB = geofire.distanceBetween(
-          [userLocation.lat, userLocation.lng],
-          [b.location.lat, b.location.lng]
-        );
-        return distA - distB;
-      });
-      result = withLocation;
+      result = [...result].sort((a, b) => (b.likeCount || 0) + (b.commentCount || 0) - ((a.likeCount || 0) + (a.commentCount || 0)));
     }
-
+    if (activeTab === "new") {
+      result = [...result].sort((a, b) => (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0));
+    }
+    if (activeTab === "nearby" && userLocation) {
+      result = result.filter(hasLocation).sort((a, b) => geofire.distanceBetween([userLocation.lat, userLocation.lng], [a.location.lat, a.location.lng]) - geofire.distanceBetween([userLocation.lat, userLocation.lng], [b.location.lat, b.location.lng]));
+    }
+    if (activeTab === "friends") result = [];
     return result;
-  }, [tasks, searchQueries, activeTab, userLocation, mode]);
+  }, [activeTab, mode, searchQueries, tasks, userLocation]);
+
+  const stats = useMemo(() => {
+    const visible = tasks.filter((task) => !task.banned && !task.hidden && task.type === mode);
+    const open = visible.filter((task) => task.status === "open" || task.status === "pending").length;
+    const totalValue = visible.reduce((sum, task) => sum + (task.type === "task" ? task.price || 0 : task.costAmount || 0), 0);
+    const withLocation = visible.filter(hasLocation).length;
+    return [
+      { label: "Đang mở", value: open.toString(), icon: FiTrendingUp },
+      { label: "Có vị trí", value: withLocation.toString(), icon: FiMapPin },
+      { label: "Tổng giá trị", value: totalValue > 0 ? `${Math.round(totalValue / 1000)}k` : "Mở", icon: FiShield },
+    ];
+  }, [mode, tasks]);
+
+  const handleRefresh = useCallback(() => {
+    vibrate(10);
+    mutate();
+  }, [mutate]);
+
+  const handleTaskUpdate = useCallback((taskId: string, updates: Partial<FeedTask>) => {
+    mutate((current: FeedTask[] = []) => current.map((item) => item.id === taskId ? ({ ...item, ...updates } as FeedTask) : item), { revalidate: false });
+  }, [mutate]);
+
+  const handleDelete = useCallback((id: string) => {
+    mutate((current: FeedTask[] = []) => current.filter((item) => item.id !== id), { revalidate: false });
+  }, [mutate]);
 
   const handleShare = useCallback((task: FeedTask) => {
     vibrate(5);
     setShareTask(task);
   }, []);
-const handleTaskUpdate = useCallback((taskId: string, updates: Partial<FeedTask>) => {
-  mutate((current: FeedTask[] = []) =>
-    current.map(t => t.id === taskId? ({...t,...updates } as FeedTask) : t),
-    { revalidate: false } // Không phải false đứng riêng
-  );
-  if (updates.status === "completed") {
+
+  const switchMode = (nextMode: "task" | "plan") => {
+    if (nextMode === mode) return;
     vibrate([10, 20, 10]);
-  }
-}, [mutate]);
+    setMode(nextMode);
+  };
 
-const handleDelete = useCallback((id: string) => {
-  mutate((current: FeedTask[] = []) =>
-    current.filter(t => t.id!== id),
-    { revalidate: false }
-  );
-}, [mutate]);
-
-const handleRefresh = useCallback(() => {
-  vibrate(10);
-  mutate(); // Gọi mutate() không truyền key
-}, [mutate]);
+  const loading = isLoading && tasks.length === 0;
+  const refreshing = isValidating && !loading;
+  const modeNoun = isTaskMode ? "task" : "plan";
 
   return (
-    <>
-      <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-        <div className="sticky top-0 z-40 bg-white dark:bg-zinc-950">
-          <div className="px-4 pt-4 pb-2">
-            <div className="relative h-16 rounded-2xl p-1.5 bg-white dark:bg-zinc-900">
-              <motion.div
-                className="absolute top-1.5 bottom-1.5 rounded-xl overflow-hidden pointer-events-none"
-                animate={{
-                  left: mode === "task"? "6px" : "calc(50% + 3px)",
-                  width: "calc(50% - 9px)"
-                }}
-                transition={{
-                  type: "spring",
-                  stiffness: 380,
-                  damping: 35,
-                  mass: 0.8
-                }}
-              >
-                <motion.div
-                  className="absolute inset-0 rounded-xl"
-                  animate={{
-                    background: mode === "task"
-           ? "linear-gradient(135deg, #E3F2FF 0%, #D1E9FF 40%, #B8DEFF 100%)"
-                      : "linear-gradient(135deg, #E8FFF0 0%, #D4F7E0 40%, #BEF0CE 100%)",
-                    boxShadow: mode === "task"
-           ? "inset 0 2px 4px rgba(10,132,255,0.25), inset 0 -2px 2px rgba(0,81,213,0.15), 0 0 20px rgba(10,132,255,0.3)"
-                      : "inset 0 2px 4px rgba(48,209,88,0.25), inset 0 -2px 2px rgba(40,180,76,0.15), 0 0 20px rgba(48,209,88,0.3)"
-                  }}
-                  transition={{ duration: 0.6 }}
-                />
-                <motion.div
-                  className="absolute -inset-3 rounded-xl blur-2xl opacity-80"
-                  animate={{
-                    background: mode === "task"
-             ? "radial-gradient(circle, rgba(10,132,255,0.7) 0%, transparent 70%)"
-                      : "radial-gradient(circle, rgba(48,209,88,0.7) 0%, transparent 70%)"
-                  }}
-                  transition={{ duration: 0.6 }}
-                />
-                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/70 via-white/40 to-transparent dark:from-white/20 dark:via-white/10" />
-                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-90" />
-                <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/60 to-transparent" />
-              </motion.div>
+    <div className={`min-h-dvh bg-gradient-to-b ${softGradient} text-zinc-950 dark:text-white`}>
+      <div className="sticky top-0 z-40 border-b border-white/70 bg-white/82 backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-950/82">
+        <div className="mx-auto max-w-[680px] px-4 pt-3 pb-3">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-zinc-400">AIR Command</p>
+              <h1 className="text-2xl font-black tracking-tight">{isTaskMode ? "Task marketplace" : "Plan hub"}</h1>
+            </div>
+            <button type="button" onClick={handleRefresh} className="flex h-11 w-11 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-600 active:scale-95 dark:bg-zinc-900 dark:text-zinc-300" aria-label="Làm mới feed">
+              <FiRefreshCw className={refreshing ? "motion-safe:animate-spin" : ""} />
+            </button>
+          </div>
 
-              <div className="relative z-10 flex h-full">
-                <button
-                  onClick={() => {
-                    if (mode!== "task") {
-                      vibrate([10, 25, 10]);
-                      setMode("task");
-                    }
-                  }}
-                  className="flex-1 flex items-center justify-center active:scale-90 transition-transform"
-                >
-                  <Briefcase3D active={mode === "task"} />
-                </button>
-                <button
-                  onClick={() => {
-                    if (mode!== "plan") {
-                      vibrate([10, 25, 10]);
-                      setMode("plan");
-                    }
-                  }}
-                  className="flex-1 flex items-center justify-center active:scale-90 transition-transform"
-                >
-                  <Palm3D active={mode === "plan"} />
-                </button>
-              </div>
+          <div className="relative rounded-[1.35rem] bg-zinc-100/80 p-1.5 ring-1 ring-black/5 dark:bg-zinc-900/90 dark:ring-white/10">
+            <motion.div className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-[1rem] bg-gradient-to-r ${gradient} shadow-lg`} animate={{ x: isTaskMode ? 0 : "100%" }} transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 360, damping: 34 }} />
+            <div className="relative grid grid-cols-2 gap-1">
+              <button type="button" aria-pressed={isTaskMode} onClick={() => switchMode("task")} className={`flex h-11 items-center justify-center gap-2 rounded-2xl text-sm font-black ${isTaskMode ? "text-white" : "text-zinc-500"}`}><HiBolt /> Task</button>
+              <button type="button" aria-pressed={!isTaskMode} onClick={() => switchMode("plan")} className={`flex h-11 items-center justify-center gap-2 rounded-2xl text-sm font-black ${!isTaskMode ? "text-white" : "text-zinc-500"}`}><HiCalendarDays /> Plan</button>
             </div>
           </div>
-          <CustomFilterBar
-            currentFilter={activeTab}
-            onChangeFilter={setActiveTab}
-            searchQueries={searchQueries}
-            onSearchChange={handleSearchChange}
-          />
-        </div>
 
-        <div className="max-w-[600px] mx-auto p-4">
-          {loading? (
-            <div className="space-y-3">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl p-4">
-                  <div className="flex gap-3 animate-pulse">
-                    <div className="w-12 h-12 bg-zinc-200 dark:bg-zinc-800 rounded-xl" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 w-3/4 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
-                      <div className="h-3 w-1/2 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : filteredTasks.length === 0? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl p-12 text-center"
-            >
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-                <FiInbox size={32} className="text-zinc-400" />
-              </div>
-              <p className="text-base font-bold text-zinc-900 dark:text-zinc-100 mb-1">
-                {activeTab === "nearby" &&!userLocation? "Chưa bật định vị" : `Chưa có ${mode === "task"? "task" : "plan"} nào`}
-              </p>
-              <p className="text-sm text-zinc-500 mb-6">
-                {activeTab === "nearby" &&!userLocation? "Bật định vị để khám phá task xung quanh bạn" : "Nhấn Tải lại để cập nhật danh sách"}
-              </p>
-              {activeTab === "nearby" &&!userLocation? (
-       <button
-  onClick={requestLocation}
-  className="px-6 h-11 rounded-xl text-white text-sm font-semibold active:scale-95 transition-all flex items-center gap-2 mx-auto"
-  style={{ background: theme[mode].gradient }}
->
-  <FiNavigation /> Bật định vị ngay
-</button>
-              ) : (
-         <button
-  onClick={handleRefresh}
-  disabled={refreshing}
-  className="px-6 h-11 rounded-xl text-white text-sm font-semibold active:scale-95 transition-all flex items-center gap-2 mx-auto disabled:opacity-50"
-  style={{ background: theme[mode].gradient }}
->
-  <FiRefreshCw className={refreshing? "animate-spin" : ""} /> Tải lại
-</button>
-              )}
-            </motion.div>
-          ) : (
-            <AnimatePresence mode="popLayout">
-              <motion.div
-                key={`${mode}-${activeTab}`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="space-y-3"
-              >
-                {filteredTasks.map((task, idx) => (
-                  <motion.div
-                    key={task.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.03 }} // Giảm delay cho mượt
-                    layout // THÊM: Animation khi filter/sort
-                  >
-                    <TaskCard
-                      task={task}
-                      theme={mode}
-                      onDelete={handleDelete}
-                      onShare={handleShare}
-                      onTaskUpdate={handleTaskUpdate}
-                    />
-                  </motion.div>
-                ))}
-              </motion.div>
-            </AnimatePresence>
-          )}
-
-          {refreshing && (
-            <div className="flex justify-center py-6">
-<FiRefreshCw className="animate-spin" size={24} style={{ color: theme[mode].primary }} />
-            </div>
-          )}
-
-     {shareTask && (
-  <ShareTaskModal
-    task={shareTask}
-    onClose={() => setShareTask(null)}
-  />
-)}
-
-          <div className="h-10" />
+          <CustomFilterBar currentFilter={activeTab} onChangeFilter={setActiveTab} searchQueries={searchQueries} onSearchChange={handleSearchChange} />
         </div>
       </div>
 
-      <style jsx global>{`
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale }
-      `}</style>
-    </>
+      <div className="mx-auto max-w-[680px] px-4 pt-4">
+        <motion.section initial={reduceMotion ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="relative mb-4 overflow-hidden rounded-[2rem] border border-white/70 bg-white/82 p-5 shadow-2xl shadow-black/[0.05] ring-1 ring-black/[0.03] backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-950/72 dark:ring-white/10">
+          <div className={`absolute -right-16 -top-16 h-44 w-44 rounded-full bg-gradient-to-br ${gradient} opacity-15 blur-3xl`} />
+          <div className="relative flex items-start justify-between gap-4">
+            <div>
+              <div className={`mb-3 inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${gradient} px-3 py-1 text-xs font-black text-white shadow-lg`}><HiSparkles /> Smart match ready</div>
+              <h2 className="max-w-[360px] text-2xl font-black tracking-tight">Tìm việc, nhận plan và quản lý cơ hội như một app lớn.</h2>
+              <p className="mt-2 max-w-[420px] text-sm leading-6 text-zinc-500 dark:text-zinc-400">Feed được xếp theo độ nóng, vị trí và độ mới. Tạo nhanh, lọc nhanh, hành động nhanh.</p>
+            </div>
+          </div>
+          <div className="mt-5 grid grid-cols-3 gap-2">
+            {stats.map(({ label, value, icon: Icon }) => (
+              <div key={label} className="rounded-2xl bg-zinc-50/90 p-3 ring-1 ring-black/5 dark:bg-zinc-900/70 dark:ring-white/10">
+                <Icon className="h-4 w-4" style={{ color: accent }} />
+                <p className="mt-2 text-lg font-black">{value}</p>
+                <p className="text-[11px] font-bold text-zinc-400">{label}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <button type="button" onClick={() => router.push(`/create/${mode}`)} className={`flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r ${gradient} text-sm font-black text-white shadow-lg active:scale-[0.98]`}><FiPlus /> Tạo</button>
+            <button type="button" onClick={() => router.push("/?tab=messages")} className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-zinc-100 text-sm font-black text-zinc-700 active:scale-[0.98] dark:bg-zinc-900 dark:text-zinc-200"><FiMessageCircle /> Chat</button>
+            <button type="button" onClick={() => setActiveTab("nearby")} className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-zinc-100 text-sm font-black text-zinc-700 active:scale-[0.98] dark:bg-zinc-900 dark:text-zinc-200"><FiCompass /> Gần</button>
+          </div>
+        </motion.section>
+
+        {loading ? (
+          <div className="space-y-3" aria-label="Đang tải feed">
+            {[0, 1, 2].map((item) => <div key={item} className="h-52 rounded-[2rem] bg-white/80 motion-safe:animate-pulse dark:bg-zinc-900/80" />)}
+          </div>
+        ) : error ? (
+          <div className="rounded-[2rem] border border-red-200 bg-white/82 p-8 text-center shadow-xl shadow-red-500/5 dark:border-red-500/20 dark:bg-zinc-900/80">
+            <FiInbox className="mx-auto h-9 w-9 text-red-500" />
+            <h2 className="mt-4 text-xl font-black">Feed đang gián đoạn</h2>
+            <p className="mt-2 text-sm text-zinc-500">Thử tải lại để đồng bộ dữ liệu mới nhất.</p>
+            <button type="button" onClick={handleRefresh} className="mt-5 h-11 rounded-2xl bg-zinc-950 px-5 text-sm font-bold text-white dark:bg-white dark:text-zinc-950">Tải lại</button>
+          </div>
+        ) : filteredTasks.length === 0 ? (
+          <div className="rounded-[2rem] border border-white/70 bg-white/82 p-8 text-center shadow-xl shadow-black/[0.04] dark:border-white/10 dark:bg-zinc-900/80">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-zinc-100 text-zinc-400 dark:bg-zinc-800"><FiSearch className="h-7 w-7" /></div>
+            <h2 className="mt-5 text-xl font-black">Chưa có {modeNoun} phù hợp</h2>
+            <p className="mx-auto mt-2 max-w-[320px] text-sm leading-6 text-zinc-500">{activeTab === "nearby" && !userLocation ? "Bật định vị để khám phá cơ hội quanh bạn." : "Thử đổi bộ lọc, tìm từ khóa khác hoặc tạo mục mới để bắt đầu."}</p>
+            <div className="mt-5 flex justify-center gap-2">
+              {activeTab === "nearby" && !userLocation && <button type="button" onClick={requestLocation} className={`h-11 rounded-2xl bg-gradient-to-r ${gradient} px-5 text-sm font-black text-white`}>Bật định vị</button>}
+              <button type="button" onClick={handleRefresh} className="h-11 rounded-2xl bg-zinc-100 px-5 text-sm font-black text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">Tải lại</button>
+            </div>
+          </div>
+        ) : (
+          <AnimatePresence mode="popLayout">
+            <motion.div key={`${mode}-${activeTab}`} initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+              {filteredTasks.map((task, idx) => (
+                <motion.div key={task.id} initial={reduceMotion ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: reduceMotion ? 0 : Math.min(idx * 0.02, 0.14) }} layout={!reduceMotion}>
+                  <TaskCard task={task} theme={mode} onDelete={handleDelete} onShare={handleShare} onTaskUpdate={handleTaskUpdate} />
+                </motion.div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
+        )}
+
+        {refreshing && <div className="flex justify-center py-6"><FiRefreshCw className="motion-safe:animate-spin" style={{ color: accent }} size={24} /></div>}
+        {shareTask && <ShareTaskModal task={shareTask} onClose={() => setShareTask(null)} />}
+        <div className="h-8" />
+      </div>
+    </div>
   );
 }

@@ -37,7 +37,7 @@ import {
   X,
 } from "lucide-react";
 
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import { nanoid } from "nanoid";
 
 import SettingItem from "@/components/common/SettingItem";
@@ -521,78 +521,62 @@ export default function ProfileTabContent() {
     )}&size=176&background=0A84FF&color=fff&bold=true`;
 
   return (
-    <div className="min-h-dvh bg-white dark:bg-black font-sans">
+    <div className="min-h-dvh bg-gradient-to-b from-[#F7FAFF] via-white to-[#F5F7FB] font-sans text-zinc-950 dark:from-[#05070A] dark:via-zinc-950 dark:to-[#0F172A] dark:text-white">
       <div className="pb-32 sm:pb-24 overflow-y-auto">
-        <Toaster richColors position="top-center" />
-
-        <div className="px-6 pt-12 pb-6">
-          <div className="flex items-center gap-4">
-            <div
-              onClick={handleAvatarClick}
-              className="relative cursor-pointer group flex-shrink-0"
-            >
-              <img
-                src={avatarUrl}
-                className="w-16 h-16 rounded-full object-cover"
-                alt="Avatar"
-              />
-
-              {userData.emailVerified && (
-                <div
-                  className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-gradient-to-br ${accentGradient} flex items-center justify-center border-2 border-white dark:border-black`}
-                >
-                  <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
+                <div className="px-4 pt-4 pb-4">
+          <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/82 p-5 shadow-2xl shadow-black/[0.05] ring-1 ring-black/[0.03] backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-950/72 dark:ring-white/10">
+            <div className={`absolute -right-16 -top-20 h-48 w-48 rounded-full bg-gradient-to-br ${accentGradient} opacity-20 blur-3xl`} />
+            <div className="relative flex items-start gap-4">
+              <div onClick={handleAvatarClick} className="group relative shrink-0 cursor-pointer">
+                <img src={avatarUrl} className="h-20 w-20 rounded-[1.6rem] object-cover shadow-xl shadow-black/10 ring-4 ring-white dark:ring-zinc-950" alt="Avatar" />
+                {userData.emailVerified && (
+                  <div className={`absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br ${accentGradient} ring-4 ring-white dark:ring-zinc-950`}>
+                    <Check className="h-3.5 w-3.5 text-white stroke-[3]" />
+                  </div>
+                )}
+                <div className="absolute inset-0 flex items-center justify-center rounded-[1.6rem] bg-black/45 opacity-0 transition-opacity group-active:opacity-100">
+                  <Camera size={22} className="text-white" />
                 </div>
-              )}
-
-              <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-active:opacity-100 transition-opacity">
-                <Camera
-                  size={20}
-                  className="text-white"
-                />
+                <input type="file" accept="image/*" className="hidden" id="avatar-upload" onChange={handleAvatarFileSelect} disabled={uploading} />
+                {uploading && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-[1.6rem] bg-black/60 backdrop-blur-sm">
+                    <span className="text-xs font-black text-white">{uploadProgress}%</span>
+                  </div>
+                )}
               </div>
 
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                id="avatar-upload"
-                onChange={handleAvatarFileSelect}
-                disabled={uploading}
-              />
-
-              {uploading && (
-                <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center backdrop-blur-sm">
-                  <span className="text-white text-xs font-bold">
-                    {uploadProgress}%
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-zinc-400">AIR Passport</p>
+                <h1 onClick={handleOpenNameModal} className="mt-1 cursor-pointer truncate text-3xl font-black tracking-tight text-zinc-950 active:opacity-70 dark:text-white">
+                  {finalDisplayName}
+                </h1>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
+                    <Circle className={`h-2 w-2 fill-current ${userData.online ? "text-emerald-500" : "text-zinc-400"}`} />
+                    {userData.online ? "Đang hoạt động" : "Ngoại tuyến"}
                   </span>
+                  <span className={`inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r ${accentGradient} px-3 py-1 text-xs font-black text-white`}>ID {userData.userId || "AIR"}</span>
                 </div>
-              )}
+              </div>
             </div>
 
-            <div className="flex-1 min-w-0">
-              <h1
-                onClick={handleOpenNameModal}
-                className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight cursor-pointer leading-tight active:opacity-70"
-              >
-                {finalDisplayName}
-              </h1>
+            <div className="relative mt-5 grid grid-cols-3 gap-2">
+              {[
+                { label: "Tin cậy", value: userData.emailVerified ? "100" : "60", suffix: "%" },
+                { label: "Hồ sơ", value: userData.photoURL ? "Đầy" : "Cơ bản", suffix: "" },
+                { label: "Bảo mật", value: userData.emailVerified ? "OK" : "Chờ", suffix: "" },
+              ].map((item) => (
+                <div key={item.label} className="rounded-2xl bg-zinc-50/90 p-3 ring-1 ring-black/5 dark:bg-zinc-900/70 dark:ring-white/10">
+                  <p className="text-[11px] font-bold text-zinc-400">{item.label}</p>
+                  <p className="mt-1 text-lg font-black text-zinc-950 dark:text-white">{item.value}<span className="text-sm">{item.suffix}</span></p>
+                </div>
+              ))}
+            </div>
 
-              <div className="flex items-center gap-1.5 mt-1">
-                <Circle
-                  className={`w-2 h-2 fill-current ${
-                    userData.online
-                     ? "text-green-500"
-                      : "text-gray-400"
-                  }`}
-                />
-
-                <span className="text-sm text-gray-500 dark:text-zinc-400 font-medium">
-                  {userData.online
-                   ? "Đang hoạt động"
-                    : "Ngoại tuyến"}
-                </span>
-              </div>
+            <div className="relative mt-4 grid grid-cols-3 gap-2">
+              <button type="button" onClick={() => router.push("/settings/profile-edit")} className="rounded-2xl bg-zinc-100 px-3 py-3 text-sm font-black text-zinc-700 active:scale-[0.98] dark:bg-zinc-900 dark:text-zinc-200">Sửa hồ sơ</button>
+              <button type="button" onClick={() => router.push("/settings/qr")} className="rounded-2xl bg-zinc-100 px-3 py-3 text-sm font-black text-zinc-700 active:scale-[0.98] dark:bg-zinc-900 dark:text-zinc-200">QR AIR</button>
+              <button type="button" onClick={() => router.push("/settings/share-profile")} className={`rounded-2xl bg-gradient-to-r ${accentGradient} px-3 py-3 text-sm font-black text-white active:scale-[0.98]`}>Chia sẻ</button>
             </div>
           </div>
         </div>
