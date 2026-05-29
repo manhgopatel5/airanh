@@ -941,34 +941,33 @@ const filteredChats = useMemo(() => {
   return (
     <>
 <div className="min-h-dvh bg-gradient-to-b from-[#F7FAFF] via-white to-[#F5F7FB] text-zinc-950 dark:from-[#05070A] dark:via-zinc-950 dark:to-[#0F172A] dark:text-white">
-  <section className="mx-auto max-w-[680px] px-4 pt-4">
-    <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/82 p-5 shadow-2xl shadow-black/[0.05] ring-1 ring-black/[0.03] backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-950/72 dark:ring-white/10">
-      <div className={`absolute -right-12 -top-16 h-44 w-44 rounded-full ${isPlan ? "bg-emerald-400" : "bg-sky-400"} opacity-15 blur-3xl`} />
-      <div className="relative flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">Trung tâm tin nhắn</h1>
-        </div>
-        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${primaryBg} text-white shadow-xl shadow-sky-500/20`}>
-          <FiMessageSquare className="h-5 w-5" />
-        </div>
-      </div>
-      <div className="relative mt-5 grid grid-cols-4 gap-2">
-        {[
-          { label: "Chat", value: items.length, icon: FiMessageSquare },
-          { label: "Chưa đọc", value: items.reduce((sum, item) => sum + (item.unreadCount || 0), 0), icon: FiBell },
-          { label: "Bạn bè", value: friends.length || items.filter((item) => !item.isGroup).length, icon: FiUsers },
-          { label: "Thông báo", value: unreadNotifications, icon: FiInbox },
-        ].map(({ label, value, icon: Icon }) => (
-          <button key={label} type="button" onClick={() => label === "Bạn bè" ? setActiveTab("friends") : label === "Thông báo" ? setActiveTab("notifications") : label === "Chưa đọc" ? setActiveTab("unread") : setActiveTab("all")} className="rounded-2xl bg-zinc-50/90 p-3 text-left ring-1 ring-black/5 active:scale-[0.98] dark:bg-zinc-900/70 dark:ring-white/10">
-            <Icon className={`h-4 w-4 ${primaryText}`} />
-            <p className="mt-2 text-lg font-black">{value}</p>
-            <p className="text-[11px] font-bold text-zinc-400">{label}</p>
-          </button>
-        ))}
-      </div>
+<section className="mx-auto max-w-[680px] px-4 pt-4">
+  <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/82 p-5 shadow-2xl shadow-black/[0.05] ring-1 ring-black/[0.03] backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-950/72 dark:ring-white/10">
+    <div className={`absolute -right-12 -top-16 h-44 w-44 rounded-full ${isPlan? "bg-emerald-400" : "bg-sky-400"} opacity-15 blur-3xl`} />
 
+    {/* Bỏ h1 và icon FiMessageSquare ở đây */}
+
+    <div className="relative grid grid-cols-4 gap-2">
+      {[
+        { label: "Chat", value: items.length, icon: FiMessageSquare },
+        { label: "Chưa đọc", value: items.reduce((sum, item) => sum + (item.unreadCount || 0), icon: FiBell },
+        { label: "Bạn bè", value: friends.length || items.filter((item) =>!item.isGroup).length, icon: FiUsers },
+        { label: "Thông báo", value: unreadNotifications, icon: FiInbox },
+      ].map(({ label, value, icon: Icon }) => (
+        <button
+          key={label}
+          type="button"
+          onClick={() => label === "Bạn bè"? setActiveTab("friends") : label === "Thông báo"? setActiveTab("notifications") : label === "Chưa đọc"? setActiveTab("unread") : setActiveTab("all")}
+          className="rounded-2xl bg-zinc-50/90 p-3 text-left ring-1 ring-black/5 active:scale-[0.98] dark:bg-zinc-900/70 dark:ring-white/10"
+        >
+          <Icon className={`h-4 w-4 ${primaryText}`} />
+          <p className="mt-2 text-lg font-black">{value}</p>
+          <p className="text-[11px] font-bold text-zinc-400">{label}</p>
+        </button>
+      ))}
     </div>
-  </section>
+  </div>
+</section>
 
   <div className="sticky top-0 z-40 mt-3 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50">
 
