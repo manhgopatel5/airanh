@@ -459,6 +459,9 @@ const userSnap = await getDoc(doc(db, "users", user.uid));
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+await mutate(`/api/user-tasks?type=plan&tab=mine`)
+    await mutate(`/api/user-tasks?type=task&tab=mine`)
+    await mutate(`/api/jobs?type=plan`)
     
     localStorage.removeItem("plan_draft");
     toast.success("Tạo kế hoạch thành công!");
