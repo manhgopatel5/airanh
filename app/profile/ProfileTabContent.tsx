@@ -523,7 +523,7 @@ export default function ProfileTabContent() {
   return (
     <div className="min-h-dvh bg-gradient-to-b from-[#F7FAFF] via-white to-[#F5F7FB] font-sans text-zinc-950 dark:from-[#05070A] dark:via-zinc-950 dark:to-[#0F172A] dark:text-white">
       <div className="pb-32 sm:pb-24 overflow-y-auto">
-             <div className="px-4 pt-4 pb-4">
+        <div className="px-4 pt-4 pb-4">
   <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/82 p-5 shadow-2xl shadow-black/[0.05] ring-1 ring-black/[0.03] backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-950/72 dark:ring-white/10">
     <div className={`absolute -right-16 -top-20 h-48 w-48 rounded-full bg-gradient-to-br ${accentGradient} opacity-20 blur-3xl`} />
     <div className="relative flex items-start gap-4">
@@ -546,7 +546,6 @@ export default function ProfileTabContent() {
       </div>
 
       <div className="min-w-0 flex-1">
-        {/* Bỏ dòng AIR PASSPORT */}
         <h1 onClick={handleOpenNameModal} className="cursor-pointer truncate text-3xl font-black tracking-tight text-zinc-950 active:opacity-70 dark:text-white">
           {finalDisplayName}
         </h1>
@@ -555,25 +554,22 @@ export default function ProfileTabContent() {
             <Circle className={`h-2 w-2 fill-current ${userData.online? "text-emerald-500" : "text-zinc-400"}`} />
             {userData.online? "Đang hoạt động" : "Ngoại tuyến"}
           </span>
-          {/* Bỏ badge ID */}
         </div>
       </div>
     </div>
 
-    <div className="relative mt-5 grid-cols-3 gap-2">
+    <div className="relative mt-5 grid grid-cols-3 gap-2">
       {[
         { label: "Tin cậy", value: userData.emailVerified? "100" : "60", suffix: "%" },
         { label: "Hồ sơ", value: userData.photoURL? "Đầy" : "Cơ bản", suffix: "" },
         { label: "Bảo mật", value: userData.emailVerified? "OK" : "Chờ", suffix: "" },
       ].map((item) => (
         <div key={item.label} className="rounded-2xl bg-zinc-50/90 p-3 ring-1 ring-black/5 dark:bg-zinc-900/70 dark:ring-white/10">
-          <p className="text- font-bold text-zinc-400">{item.label}</p>
+          <p className="text-[11px] font-bold text-zinc-400">{item.label}</p>
           <p className="mt-1 text-lg font-black text-zinc-950 dark:text-white">{item.value}<span className="text-sm">{item.suffix}</span></p>
         </div>
       ))}
     </div>
-
-    {/* Xóa hẳn div 3 nút Sửa hồ sơ / QR AIR / Chia sẻ */}
   </div>
 </div>
         </div>
