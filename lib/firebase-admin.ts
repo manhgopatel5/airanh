@@ -5,25 +5,25 @@ import { getFirestore, Firestore, FieldValue, Timestamp } from "firebase-admin/f
 import { getAuth, Auth } from "firebase-admin/auth";
 import type { FeedTask, TaskListItem } from "@/types/task";
 
-/* ================= VALIDATE ENV ================= */
+/* ================= SERVICE ACCOUNT ================= */
 const requiredEnvs = [
   "FIREBASE_PROJECT_ID",
   "FIREBASE_CLIENT_EMAIL",
   "FIREBASE_PRIVATE_KEY",
 ] as const;
 
-for (const env of requiredEnvs) {
-  if (!process.env[env]) {
-    throw new Error(`Missing environment variable: ${env}`);
+function getServiceAccount(): ServiceAccount {
+  const missing = requiredEnvs.filter((env) => !process.env[env]);
+  if (missing.length > 0) {
+    throw new Error(`Missing environment variable: ${missing.join(", ")}`);
   }
-}
 
-/* ================= SERVICE ACCOUNT ================= */
-const serviceAccount: ServiceAccount = {
-  projectId: process.env.FIREBASE_PROJECT_ID!,
-  clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
-  privateKey: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, "\n"),
-};
+  return {
+    projectId: process.env.FIREBASE_PROJECT_ID!,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, "\n"),
+  };
+}
 
 /* ================= LAZY INIT ================= */
 let app: App;
@@ -35,7 +35,7 @@ function getFirebaseAdmin() {
   if (!getApps().length) {
     try {
       app = initializeApp({
-        credential: cert(serviceAccount),
+        credential: cert(getServiceAccount()),
        ...(process.env.FIREBASE_DATABASE_URL && {
           databaseURL: process.env.FIREBASE_DATABASE_URL,
         }),
