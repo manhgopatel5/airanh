@@ -9,6 +9,7 @@ import { collection, query, where, onSnapshot, getDocs, Timestamp } from "fireba
 import { createTask } from "@/lib/task";
 import { toast, Toaster } from "sonner";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
+import { mutate } from 'swr';
 import {
   FiX, FiCheck, FiPlus, FiMapPin, FiEye, FiCopy,
   FiZap, FiStar, FiLayers,
@@ -443,6 +444,9 @@ type: "task",
         invites: form.invites,
         needApproval: form.needApproval,
       }, user);
+await mutate(`/api/user-tasks?type=task&tab=mine`)
+    await mutate(`/api/user-tasks?type=plan&tab=mine`)
+    await mutate(`/api/jobs?type=task`)
 
       toast.success("🎉 Đăng thành công!");
       setTimeout(() => router.push("/"), 800);
