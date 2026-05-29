@@ -5,31 +5,29 @@ import { Timestamp } from 'firebase-admin/firestore'
 import type { FeedTask } from '@/types/task'
 
 export const dynamic = 'force-dynamic'
-export const revalidate = 0 // Dynamic, không cache
+export const revalidate = 0
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const type = (searchParams.get('type') as 'task' | 'plan') || 'task'
   const tab = searchParams.get('tab') || 'mine'
 
-  // Lấy user từ session cookie
   const authHeader = request.headers.get('authorization')
   const token = authHeader?.split('Bearer ')[1]
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const decoded = await adminAuth().verifyIdToken(token).catch(() => null) // ← Thêm ()
+  const decoded = await adminAuth().verifyIdToken(token).catch(() => null)
   if (!decoded) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const uid = decoded.uid
   const now = Timestamp.now()
 
   try {
-    let q = adminDb.collection('tasks')
+    let q = adminDb().collection('tasks') // ← Thêm () ở đây
   .where('type', '==', type)
   .select('slug','shortId','title','description','type','status','userId','userName','userAvatar','price','currency','totalSlots','joined','budgetType','category','tags','images','viewCount','likeCount','commentCount','location','banned','hidden','appliedCount','createdAt','updatedAt','deadline')
   .limit(10)
 
-    // Build query theo tab
     switch (tab) {
       case 'mine':
         q = q.where('userId', '==', uid)
@@ -61,7 +59,7 @@ export async function GET(request: Request) {
       const d = doc.data()
       return {
         id: doc.id,
-    ...d,
+   ...d,
         createdAt: d.createdAt?.toDate?.()?.toISOString() || null,
         updatedAt: d.updatedAt?.toDate?.()?.toISOString() || null,
         deadline: d.deadline?.toDate?.()?.toISOString() || null,
