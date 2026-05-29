@@ -19,35 +19,23 @@ export async function generateMetadata() {
   }
 }
 
-export default async function HomePage({
-  searchParams,
-}: {
-  // Next.js 15: searchParams là Promise
-  searchParams: Promise<{ tab?: string }>
-}) {
-  // 4. Await searchParams theo Next.js 15
-  const params = await searchParams
-  const currentTab = params.tab || 'home'
+export default async function HomePage() {
   let initialJobs: FeedTask[] = []
   let initialPlans: FeedTask[] = []
 
-  // 5. Fetch SSR cho tab home và plans
-  if (currentTab === 'home' || !params.tab) {
-    try {
-      initialJobs = await getJobsFromFirebaseAdmin('task', 10)
-    } catch (error) {
-      console.error('Failed to fetch jobs:', error)
-      initialJobs = []
-    }
-  }
-
-  if (currentTab === 'plans') {
-    try {
-      initialPlans = await getJobsFromFirebaseAdmin('plan', 10)
-    } catch (error) {
-      console.error('Failed to fetch plans:', error)
-      initialPlans = []
-    }
+  // Prefetch cả Task và Plan để chuyển mode tức thì trên Home.
+  // API public đã cache CDN, nên 2 query này được amortize theo revalidate thay vì mỗi lần bấm tab.
+  try {
+    const [jobs, plans] = await Promise.all([
+      getJobsFromFirebaseAdmin('task', 12),
+      getJobsFromFirebaseAdmin('plan', 12),
+    ])
+    initialJobs = jobs
+    initialPlans = plans
+  } catch (error) {
+    console.error('Failed to prefetch feeds:', error)
+    initialJobs = []
+    initialPlans = []
   }
 
   // 6. Truyền data xuống Client Component

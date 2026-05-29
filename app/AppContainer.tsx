@@ -57,27 +57,32 @@ export default function AppContainer({ initialJobs = [], initialPlans = [] }: Ap
   const menuRef = useRef<HTMLDivElement>(null);
   const tabBarHeight = useTabBarHeight();
 
-  // SWR cho task
+  // Public feeds are prefetched and kept warm so Task/Plan switching is instant.
   const { data: jobs } = useSWR<FeedTask[]>(
-    currentMainTab === 'home'? '/api/jobs?type=task' : null,
+    '/api/jobs?type=task&limit=12',
     fetcher,
     {
       fallbackData: initialJobs,
-      revalidateOnFocus: true,
-      dedupingInterval: 60000,
+      revalidateOnMount: false,
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
       revalidateOnReconnect: true,
+      dedupingInterval: 300000,
+      keepPreviousData: true,
     }
   );
 
-  // SWR cho plan
   const { data: plans } = useSWR<FeedTask[]>(
-    currentMainTab === 'plans'? '/api/jobs?type=plan' : null,
+    '/api/jobs?type=plan&limit=12',
     fetcher,
     {
       fallbackData: initialPlans,
-      revalidateOnFocus: true,
-      dedupingInterval: 60000,
+      revalidateOnMount: false,
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
       revalidateOnReconnect: true,
+      dedupingInterval: 300000,
+      keepPreviousData: true,
     }
   );
 
@@ -133,9 +138,8 @@ export default function AppContainer({ initialJobs = [], initialPlans = [] }: Ap
   const renderCurrentTab = () => {
     switch (currentMainTab) {
       case "home":
-        return <TaskFeedPage initialJobs={jobs || initialJobs} />
       case "plans":
-        return <TaskFeedPage initialJobs={plans || initialPlans} />
+        return <TaskFeedPage initialJobs={jobs || initialJobs} initialPlans={plans || initialPlans} />
       case "messages":
         return <ChatClient />
       case "tasks":
@@ -143,7 +147,7 @@ export default function AppContainer({ initialJobs = [], initialPlans = [] }: Ap
       case "profile":
         return <ProfileTabContent />
       default:
-        return <TaskFeedPage initialJobs={jobs || initialJobs} />
+        return <TaskFeedPage initialJobs={jobs || initialJobs} initialPlans={plans || initialPlans} />
     }
   }
 

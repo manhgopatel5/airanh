@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { onAuthStateChanged, type User } from "firebase/auth";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import * as geofire from "geofire-common";
 import useSWR from "swr";
@@ -22,7 +21,6 @@ import { toast } from "sonner";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import CustomFilterBar from "@/components/common/CustomFilterBar";
 import TaskCard from "@/components/task/TaskCard";
-import { getFirebaseAuth } from "@/lib/firebase";
 import { useAppStore } from "@/store/app";
 import type { FeedTask } from "@/types/task";
 
@@ -48,14 +46,13 @@ const vibrate = (pattern: number | number[] = 6) => {
 
 interface TaskFeedPageProps {
   initialJobs?: FeedTask[];
+  initialPlans?: FeedTask[];
 }
 
-export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
-  const auth = getFirebaseAuth();
+export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: TaskFeedPageProps) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
   const { mode = "task", setMode } = useAppStore();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>("hot");
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -68,28 +65,43 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
     ? "from-[#EAF4FF] via-white to-[#F8FBFF] dark:from-[#06172B] dark:via-zinc-950 dark:to-zinc-950"
     : "from-[#EAFFF2] via-white to-[#F9FFFB] dark:from-[#061E11] dark:via-zinc-950 dark:to-zinc-950";
 
-  const { data: tasks = [], error, isLoading, isValidating, mutate } = useSWR<FeedTask[]>(
-    currentUser ? `/api/jobs?type=${mode}` : null,
+  const swrOptions = {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true,
+    dedupingInterval: 300000,
+    keepPreviousData: false,
+    refreshInterval: 0,
+    shouldRetryOnError: false,
+    onError: (err: any) => toast.error(err?.message || "Không tải được feed", { id: "feed-load-error" }),
+  };
+
+  const taskFeed = useSWR<FeedTask[]>(
+    "/api/jobs?type=task&limit=12",
     fetcher,
     {
+      ...swrOptions,
       fallbackData: initialJobs,
-      revalidateOnFocus: true,
-      revalidateOnReconnect: true,
-      dedupingInterval: 45000,
-      keepPreviousData: true,
-      refreshInterval: 0,
-      shouldRetryOnError: false,
-      onError: (err) => toast.error(err?.message || "Không tải được feed", { id: "feed-load-error" }),
+      revalidateOnMount: initialJobs.length === 0,
     }
   );
 
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      if (!user) router.push("/login");
-    });
-    return () => unsub();
-  }, [auth, router]);
+  const planFeed = useSWR<FeedTask[]>(
+    "/api/jobs?type=plan&limit=12",
+    fetcher,
+    {
+      ...swrOptions,
+      fallbackData: initialPlans,
+      revalidateOnMount: initialPlans.length === 0,
+    }
+  );
+
+  const activeFeed = mode === "task" ? taskFeed : planFeed;
+  const tasks = activeFeed.data || [];
+  const error = activeFeed.error;
+  const isLoading = activeFeed.isLoading;
+  const isValidating = activeFeed.isValidating;
+  const mutate = activeFeed.mutate;
 
   const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {

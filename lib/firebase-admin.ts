@@ -77,22 +77,49 @@ export async function getJobsFromFirebaseAdmin(
 ): Promise<FeedTask[]> {
   const { db } = getFirebaseAdmin();
 
-  const snap = await db.collection('tasks')
-   .where('type', '==', type)
-   .where('visibility', '==', 'public')
-   .where('status', 'in', ['open', 'pending', 'full', 'doing'])
- 
-   .orderBy('createdAt', 'desc')
-   .limit(limitCount)
-   .select(
-      'slug', 'shortId', 'title', 'description', 'type', 'status',
-      'userId', 'userName', 'userAvatar', 'userShortId', 'userUsername',
-      'price', 'currency', 'totalSlots', 'joined', 'budgetType', 'paymentMethod',
-      'isRemote', 'category', 'tags', 'images', 'viewCount', 'likeCount',
-      'commentCount', 'location', 'banned', 'hidden', 'appliedCount',
-      'createdAt', 'updatedAt', 'deadline', 'startDate', 'applicationDeadline'
-    )
-   .get();
+  const allowedStatuses = type === 'plan'
+    ? ['open', 'pending', 'full', 'doing', 'in_progress']
+    : ['open', 'pending', 'full', 'doing'];
+
+  const selectedFields = [
+    'slug', 'shortId', 'title', 'description', 'type', 'status', 'visibility',
+    'userId', 'userName', 'userAvatar', 'userShortId', 'userUsername', 'userVerified',
+    'price', 'currency', 'totalSlots', 'joined', 'budgetType', 'paymentMethod',
+    'isRemote', 'category', 'tags', 'images', 'viewCount', 'likeCount',
+    'commentCount', 'location', 'banned', 'hidden', 'appliedCount',
+    'createdAt', 'updatedAt', 'deadline', 'startDate', 'applicationDeadline',
+    'eventDate', 'endDate', 'maxParticipants', 'currentParticipants',
+    'costType', 'costAmount', 'costDescription', 'milestones'
+  ];
+
+  const buildQuery = (requirePublic: boolean) => {
+    let query = db.collection('tasks')
+      .where('type', '==', type)
+      .where('status', 'in', allowedStatuses)
+      .orderBy('createdAt', 'desc')
+      .limit(limitCount);
+
+    if (requirePublic) {
+      query = query.where('visibility', '==', 'public');
+    }
+
+    return query.select(...selectedFields);
+  };
+
+  let snap;
+  try {
+    snap = await buildQuery(true).get();
+  } catch (error: any) {
+    if (error?.code !== 9 && error?.code !== 'FAILED_PRECONDITION') throw error;
+    console.warn('Public jobs index unavailable, falling back without visibility filter:', error?.details || error?.message);
+    snap = await buildQuery(false).get();
+  }
+
+  // Legacy documents may not have `visibility`. Fallback keeps the feed alive while
+  // still filtering banned/hidden/private data in code below.
+  if (snap.empty) {
+    snap = await buildQuery(false).get();
+  }
 
   return snap.docs.map(doc => {
     const d = doc.data();
@@ -102,16 +129,18 @@ export async function getJobsFromFirebaseAdmin(
       shortId: d.shortId || "",
       title: d.title || "",
       description: d.description || "",
-      type: d.type || "task",
+      type: d.type || type,
       status: d.status || "open",
+      visibility: d.visibility || "public",
       userId: d.userId || "",
       userName: d.userName || "",
       userAvatar: d.userAvatar || "",
+     ...(d.userVerified!== undefined && { userVerified: d.userVerified }),
      ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
      ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
       price: d.price?? 0,
       currency: d.currency || "VND",
-      totalSlots: d.totalSlots?? 0,
+      totalSlots: d.totalSlots?? d.maxParticipants?? 0,
       joined: d.joined?? 0,
       budgetType: d.budgetType || "fixed",
      ...(d.paymentMethod!== undefined && { paymentMethod: d.paymentMethod }),
@@ -129,15 +158,23 @@ export async function getJobsFromFirebaseAdmin(
      ...(d.banned!== undefined && { banned: d.banned }),
      ...(d.hidden!== undefined && { hidden: d.hidden }),
      ...(d.appliedCount!== undefined && { appliedCount: d.appliedCount }),
+     ...(d.maxParticipants!== undefined && { maxParticipants: d.maxParticipants }),
+     ...(d.currentParticipants!== undefined && { currentParticipants: d.currentParticipants }),
+     ...(d.costType!== undefined && { costType: d.costType }),
+     ...(d.costAmount!== undefined && { costAmount: d.costAmount }),
+     ...(d.costDescription!== undefined && { costDescription: d.costDescription }),
+     ...(d.milestones!== undefined && { milestones: d.milestones }),
       createdAt: tsToString(d.createdAt),
      ...(d.updatedAt && { updatedAt: tsToString(d.updatedAt) }),
      ...(d.deadline && { deadline: tsToString(d.deadline) }),
      ...(d.startDate && { startDate: tsToString(d.startDate) }),
      ...(d.applicationDeadline && { applicationDeadline: tsToString(d.applicationDeadline) }),
+     ...(d.eventDate && { eventDate: tsToString(d.eventDate) }),
+     ...(d.endDate && { endDate: tsToString(d.endDate) }),
     };
 
     return taskData as FeedTask;
-  });
+  }).filter((task) => task.banned !== true && task.hidden !== true && (task as FeedTask & { visibility?: string }).visibility !== 'private');
 }
 
 /* ================= TYPE ================= */
