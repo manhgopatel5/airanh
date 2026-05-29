@@ -240,6 +240,14 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
       setPlaceSuggestions([]);
       return;
     }
+    try {
+      const res = await fetch(`/api/places/autocomplete?input=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      setPlaceSuggestions(data.predictions?.map((p: any) => p.description) || []);
+    } catch {
+      setPlaceSuggestions([]);
+    }
+  }, []); // <-- thiếu dấu này
 
 
   const handleAddressChange = (value: string) => {
