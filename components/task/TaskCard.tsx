@@ -1,3 +1,48 @@
+"use client";
+
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { formatDistanceToNow } from "date-fns";
+import { vi } from "date-fns/locale";
+import {
+  FiBookmark,
+  FiCheckCircle,
+  FiClock,
+  FiDollarSign,
+  FiEdit2,
+  FiEye,
+  FiMapPin,
+  FiMessageCircle,
+  FiMoreHorizontal,
+  FiShare2,
+  FiTrash2,
+  FiUsers,
+} from "react-icons/fi";
+import { HiHeart, HiOutlineHeart } from "react-icons/hi2";
+import { toast } from "sonner";
+import { useAuth } from "@/lib/AuthContext";
+import { type FeedTask } from "@/types/task";
+
+type Props = {
+  task: FeedTask;
+  theme: "task" | "plan";
+  onDelete?: (id: string) => void;
+  onShare?: (task: FeedTask) => void;
+  onTaskUpdate?: (taskId: string, updates: Partial<FeedTask>) => void;
+};
+
+const Portal = ({ children }: { children: React.ReactNode }) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted? createPortal(children, document.body) : null;
+};
+
+const vibrate = (ms: number | number[] = 8) => {
+  if (typeof navigator!== "undefined" && "vibrate" in navigator) navigator.vibrate(ms);
+};
+
 function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
@@ -138,7 +183,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
       transition={{ duration: 0.22 }}
       className="group"
     >
-      <div className="relative overflow-hidden rounded-[2rem] border border-zinc-200/70 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.03] transition-all duration-300 active:scale-[0.992] dark:border-white/10 dark:bg-zinc-950 dark:shadow-black/30">
+      <div className="relative overflow-hidden rounded- border border-zinc-200/70 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.03] transition-all duration-300 active:scale-[0.992] dark:border-white/10 dark:bg-zinc-950 dark:shadow-black/30">
         <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${accentGradient}`} />
         <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full opacity-10 blur-3xl" style={{ background: accent }} />
 
@@ -189,8 +234,6 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
           </div>
 
           <button type="button" onClick={goToTask} className="block w-full text-left">
-            {/* Bỏ hoàn toàn phần category/other/photo */}
-            
             <h3 className="text-[1.08rem] font-black leading-snug tracking-tight text-zinc-950 dark:text-white">{task.title}</h3>
             {task.description && <p className="mt-2 line-clamp-3 text-sm leading-6 text-zinc-600 dark:text-zinc-300">{task.description}</p>}
           </button>
