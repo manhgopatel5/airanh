@@ -29,16 +29,14 @@ const SUB_TABS: { key: SubTab; label: string }[] = [
 // FIX 2: Fetcher phải gửi token
 const fetcher = async ([url, token]: [string, string]) => {
   if (!token) throw new Error("No auth token");
-  const auth = getFirebaseAuth();
-  const token = await auth.currentUser?.getIdToken();
-  if (!token) throw new Error("No auth token");
-
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` }
   });
   if (!res.ok) throw new Error("Failed to fetch");
   return res.json();
 };
+
+  
 
 const vibrate = (ms = 8) => {
   if ("vibrate" in navigator) navigator.vibrate(ms);
