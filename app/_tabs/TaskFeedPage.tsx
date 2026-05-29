@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase";
-import useSWR, { mutate } from "swr"; // THÊM
+import useSWR from "swr"; // THÊM
 import type { FeedTask } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast } from "sonner";
@@ -56,7 +56,7 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
   });
 
   // FIX: Dùng SWR thay onSnapshot. 0 reads nếu cache còn hạn
-  const { data: tasks = [], isLoading, isValidating } = useSWR<FeedTask[]>(
+const { data: tasks = [], isLoading, isValidating, mutate } = useSWR<FeedTask[]>(
     currentUser? `/api/jobs?type=${mode}` : null,
     fetcher,
     {
