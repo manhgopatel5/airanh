@@ -53,19 +53,23 @@ export default function TasksPage() {
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
 
   // FIX 3: Lấy mutate từ useSWR, không import global
+// Dòng 47-59: Tìm đoạn useSWR này
 const { data: tasks = [], isLoading, isValidating, mutate } = useSWR<FeedTask[]>(
-    currentUser? `/api/user-tasks?type=${mode}&tab=${subTab}` : null,
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 60000,
-      keepPreviousData: true,
-      onError: (err) => {
-        console.error(err);
-        toast.error("Tải dữ liệu thất bại");
-      }
+  currentUser? `/api/user-tasks?type=${mode}&tab=${subTab}` : null,
+  fetcher,
+  {
+    revalidateOnFocus: false, // Giữ nguyên
+    revalidateOnReconnect: false, // Thêm dòng này
+    revalidateIfStale: false, // Thêm dòng này
+    dedupingInterval: 600000, // Đổi từ 60000 → 600000 = 10 phút
+    keepPreviousData: true,
+    refreshInterval: 0, // Thêm dòng này: tắt auto poll
+    onError: (err) => {
+      console.error(err);
+      toast.error("Tải dữ liệu thất bại");
     }
-  );
+  }
+);
 
   const loading = isLoading && tasks.length === 0;
   const refreshing = isValidating;
