@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import ShareTaskModal from "@/components/ShareTaskModal";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase";
-import useSWR from "swr"; // FIX 1: Bỏ import mutate global
+
 import type { FeedTask } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard";
 import { toast, Toaster } from "sonner";
@@ -53,7 +53,7 @@ export default function TasksPage() {
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
 
   // FIX 3: Lấy mutate từ useSWR, không import global
-  const { data: tasks = [], isLoading, isValidating, mutate } = useSWR<FeedTask[]>(
+const { data: tasks = [], isLoading, isValidating, mutate } = useSWR<FeedTask[]>(
     currentUser? `/api/user-tasks?type=${mode}&tab=${subTab}` : null,
     fetcher,
     {
