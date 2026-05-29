@@ -27,7 +27,8 @@ const SUB_TABS: { key: SubTab; label: string }[] = [
 ];
 
 // FIX 2: Fetcher phải gửi token
-const fetcher = async (url: string) => {
+const fetcher = async ([url, token]: [string, string]) => {
+  if (!token) throw new Error("No auth token");
   const auth = getFirebaseAuth();
   const token = await auth.currentUser?.getIdToken();
   if (!token) throw new Error("No auth token");
@@ -48,6 +49,7 @@ export default function TasksPage() {
   const router = useRouter();
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null); 
   const { mode = "task", setMode } = useAppStore();
   const [subTab, setSubTab] = useState<SubTab>("mine");
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
@@ -55,7 +57,7 @@ export default function TasksPage() {
   // FIX 3: Lấy mutate từ useSWR, không import global
 // Dòng 47-59: Tìm đoạn useSWR này
 const { data: tasks = [], isLoading, isValidating, mutate } = useSWR<FeedTask[]>(
-  currentUser? `/api/user-tasks?type=${mode}&tab=${subTab}` : null,
+  token? [`/api/user-tasks?type=${mode}&tab=${subTab}`, token] : null,
   fetcher,
   {
     revalidateOnFocus: false, // Giữ nguyên
@@ -86,14 +88,19 @@ const { data: tasks = [], isLoading, isValidating, mutate } = useSWR<FeedTask[]>
       shadow: "shadow-[0_8px_30px_rgba(48,209,88,0.3)]",
     }
   };
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      if (!user) router.push("/login");
-    });
-    return () => unsub();
-  }, [auth, router]);
+useEffect(() => {
+  const unsub = onAuthStateChanged(auth, async (user) => {
+    setCurrentUser(user);
+    if (!user) {
+      router.push("/login");
+      setToken(null);
+    } else {
+      const t = await user.getIdToken();
+      setToken(t);
+    }
+  });
+  return () => unsub();
+}, [auth, router]);
 
   const handleTabChange = (newTab: SubTab) => {
     vibrate();
