@@ -950,7 +950,7 @@ const filteredChats = useMemo(() => {
     <div className="relative grid grid-cols-4 gap-2">
       {[
         { label: "Chat", value: items.length, icon: FiMessageSquare },
-        { label: "Chưa đọc", value: items.reduce((sum, item) => sum + (item.unreadCount || 0), icon: FiBell },
+{ label: "Chưa đọc", value: items.reduce((sum, item) => sum + (item.unreadCount || 0), 0), icon: FiBell },
         { label: "Bạn bè", value: friends.length || items.filter((item) =>!item.isGroup).length, icon: FiUsers },
         { label: "Thông báo", value: unreadNotifications, icon: FiInbox },
       ].map(({ label, value, icon: Icon }) => (
