@@ -572,7 +572,7 @@ export default function ProfileTabContent() {
     </div>
   </div>
 </div>
-        </div>
+     
 
         {/* SETTINGS */}
 
