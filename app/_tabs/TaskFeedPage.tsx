@@ -56,16 +56,20 @@ export default function TaskFeedPage({ initialJobs = [] }: TaskFeedPageProps) {
   });
 
   // FIX: Dùng SWR thay onSnapshot. 0 reads nếu cache còn hạn
+
 const { data: tasks = [], isLoading, isValidating, mutate } = useSWR<FeedTask[]>(
-    currentUser? `/api/jobs?type=${mode}` : null,
-    fetcher,
-    {
-      fallbackData: initialJobs.filter(j => j.type === mode), // Dùng data SSR
-      revalidateOnFocus: false, // Tắt để tiết kiệm reads
-      dedupingInterval: 60000, // 1 phút mới gọi API 1 lần
-      keepPreviousData: true, // Chuyển tab mượt, không blink
-    }
-  );
+  currentUser? `/api/jobs?type=${mode}` : null,
+  fetcher,
+  {
+    fallbackData: initialJobs.filter(j => j.type === mode),
+    revalidateOnFocus: false, // ← Đổi từ false → false, giữ nguyên
+    revalidateOnReconnect: false, // ← Thêm dòng này
+    revalidateIfStale: false, // ← Thêm dòng này
+    dedupingInterval: 600000, // ← Đổi từ 60000 → 600000 = 10 phút
+    keepPreviousData: true,
+    refreshInterval: 0, // ← Thêm dòng này
+  }
+);
 
   const loading = isLoading && tasks.length === 0;
   const refreshing = isValidating;
