@@ -130,7 +130,35 @@ export default function ChatClient() {
   const primaryRing = isPlan ? "focus:ring-green-500/20" : "focus:ring-[#0a84ff]/20";
   const primaryBorder = isPlan ? "focus:border-green-500" : "focus:border-[#0a84ff]";
   const primaryBgSolid = isPlan ? "bg-green-500" : "bg-[#0a84ff]";
+  const [longPressChatId, setLongPressChatId] = useState<string | null>(null);
+const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
+const handleLongPressStart = (chatId: string) => {
+  longPressTimer.current = setTimeout(() => {
+    setLongPressChatId(chatId);
+    if ("vibrate" in navigator) navigator.vibrate(15);
+  }, 500); // giữ 500ms
+};
+
+const handleLongPressEnd = () => {
+  if (longPressTimer.current) {
+    clearTimeout(longPressTimer.current);
+    longPressTimer.current = null;
+  }
+};
+
+const handleCancelActions = () => {
+  setLongPressChatId(null);
+};
+
+// Đóng khi click ra ngoài
+useEffect(() => {
+  const handleClick = () => setLongPressChatId(null);
+  if (longPressChatId) {
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }
+}, [longPressChatId]);
   const [items, setItems] = useState<ChatItem[]>([]);
   const [friends, setFriends] = useState<FriendItem[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -1316,47 +1344,99 @@ const filteredChats = useMemo(() => {
               <div className="bg-white dark:bg-black divide-y divide-gray-100 dark:divide-zinc-900">
                 {[...pinnedChats, ...normalChats].map((chat) => (
                   <div key={chat.chatId} className="group relative">
-                    <Link href={`/chat/${chat.chatId}`} className="flex items-center gap-3 px-4 py-[10px] active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors duration-150">
-                      <div className="relative flex-shrink-0">
-                        <img src={chat.avatar} alt={chat.name} className="w-[52px] h-[52px] rounded-full object-cover bg-gray-100 dark:bg-zinc-800" loading="lazy" />
-                        {chat.isOnline && !chat.isGroup && <div className="absolute bottom-0 right-0 w-[14px] h-[14px] bg-[#30d158] rounded-full border-[2.5px] border-white dark:border-black" />}
-                      </div>
-                      <div className="flex-1 min-w-0 py-1">
-                        <div className="flex items-baseline justify-between gap-2 mb-0.5">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <p className="text-[16px] leading-[22px] font-[550] text-black dark:text-white truncate">{chat.name}</p>
-                            {pinned.includes(chat.chatId) && <RiPushpinFill size={12} className="text-[#8e8e93] dark:text-zinc-500 flex-shrink-0" />}
+                 <Link
+  href={`/chat/${chat.chatId}`}
+  className="flex items-center gap-3 px-4 py-[10px] active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors duration-150 select-none"
+  onPointerDown={() => handleLongPressStart(chat.chatId)}
+  onPointerUp={handleLongPressEnd}
+  onPointerLeave={handleLongPressEnd}
+  onContextMenu={(e) => e.preventDefault()}
+>
+  <div className="relative flex-shrink-0">
+    <img
+      src={chat.avatar}
+      alt={chat.name}
+      className="w-[52px] h-[52px] rounded-full object-cover bg-gray-100 dark:bg-zinc-800"
+      loading="lazy"
+    />
+    {chat.isOnline &&!chat.isGroup && (
+      <div className="absolute bottom-0 right-0 w-[14px] h-[14px] bg-[#30d158] rounded-full border-[2.5px] border-white dark:border-black" />
+    )}
+  </div>
+  <div className="flex-1 min-w-0 py-1">
+    <div className="flex items-baseline justify-between gap-2 mb-0.5">
+      <div className="flex items-center gap-1.5 min-w-0">
+        <p className="text-[16px] leading-[22px] font-[550] text-black dark:text-white truncate">
+          {chat.name}
+        </p>
+        {pinned.includes(chat.chatId) && (
+          <RiPushpinFill size={12} className="text-[#8e8e93] dark:text-zinc-500 flex-shrink-0" />
+        )}
+      </div>
 
-                          </div>
-                          <div className="flex items-center gap-1.5 flex-shrink-0">
-                            <span className="text-[13px] leading-[18px] text-[#8e8e93] dark:text-zinc-500 tabular-nums">{formatMessageTime(chat.updatedAt)}</span>
-                            {chat.unreadCount ? <span className={`min-w-[20px] h-5 px-1.5 ${primaryBgSolid} rounded-full flex items-center justify-center`}><span className="text-[12px] leading-none font-medium text-white">{chat.unreadCount > 99 ? "99+" : chat.unreadCount}</span></span> : null}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {chat.isTyping ? (
-                            <div className="flex items-center gap-1.5">
-                              <div className="flex gap-0.5">
-                                <span className={`w-1 h-1 ${primaryBgSolid} rounded-full animate-bounce [animation-delay:-0.3s]`} />
-                                <span className={`w-1 h-1 ${primaryBgSolid} rounded-full animate-bounce [animation-delay:-0.15s]`} />
-                                <span className={`w-1 h-1 ${primaryBgSolid} rounded-full animate-bounce`} />
-                              </div>
-                              <span className={`text-[14px] leading-[19px] ${primaryText} italic`}>đang nhập</span>
-                            </div>
-                          ) : (
-                            <p className="text-[14px] leading-[19px] text-[#8e8e93] dark:text-zinc-500 truncate">
-                              {chat.isGroup && chat.lastSenderName && chat.lastSenderId !== user?.uid ? `${chat.lastSenderName}: ` : ""}
-                              {chat.lastSenderId === user?.uid ? "Bạn: " : ""}
-                              {chat.lastMessage || "Bắt đầu trò chuyện"}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                    <div className="md:hidden flex items-center justify-end gap-4 px-4 pb-2 -mt-1">
-                      <button onClick={() => handleTogglePin(chat.chatId)} className={`text-[13px] ${primaryText} font-medium py-1 px-2 active:opacity-60 transition-opacity`}>{pinned.includes(chat.chatId) ? "Bỏ ghim" : "Ghim"}</button>
-                      <button onClick={() => handleDeleteChat(chat)} className="text-[13px] text-[#ff3b30] font-medium py-1 px-2 active:opacity-60 transition-opacity">Xóa</button>
-                    </div>
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        {longPressChatId === chat.chatId? (
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                handleTogglePin(chat.chatId);
+                setLongPressChatId(null);
+              }}
+              className="h-6 px-2.5 bg-white dark:bg-zinc-800 rounded-md text-[12px] font-medium text-[#0a84ff] shadow-sm ring-1 ring-black/5 dark:ring-white/10 active:scale-95 transition-all"
+            >
+              {pinned.includes(chat.chatId)? "Bỏ ghim" : "Ghim"}
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                handleDeleteChat(chat);
+                setLongPressChatId(null);
+              }}
+              className="h-6 px-2.5 bg-white dark:bg-zinc-800 rounded-md text-[12px] font-medium text-[#ff3b30] shadow-sm ring-1 ring-black/5 dark:ring-white/10 active:scale-95 transition-all"
+            >
+              Xóa
+            </button>
+          </div>
+        ) : (
+          <>
+            <span className="text-[13px] leading-[18px] text-[#8e8e93] dark:text-zinc-500 tabular-nums">
+              {formatMessageTime(chat.updatedAt)}
+            </span>
+            {chat.unreadCount? (
+              <span className={`min-w-[20px] h-5 px-1.5 ${primaryBgSolid} rounded-full flex items-center justify-center`}>
+                <span className="text-[12px] leading-none font-medium text-white">
+                  {chat.unreadCount > 99? "99+" : chat.unreadCount}
+                </span>
+              </span>
+            ) : null}
+          </>
+        )}
+      </div>
+    </div>
+    <div className="flex items-center gap-1">
+      {chat.isTyping? (
+        <div className="flex items-center gap-1.5">
+          <div className="flex gap-0.5">
+            <span className={`w-1 h-1 ${primaryBgSolid} rounded-full animate-bounce [animation-delay:-0.3s]`} />
+            <span className={`w-1 h-1 ${primaryBgSolid} rounded-full animate-bounce [animation-delay:-0.15s]`} />
+            <span className={`w-1 h-1 ${primaryBgSolid} rounded-full animate-bounce`} />
+          </div>
+          <span className={`text-[14px] leading-[19px] ${primaryText} italic`}>đang nhập</span>
+        </div>
+      ) : (
+        <p className="text-[14px] leading-[19px] text-[#8e8e93] dark:text-zinc-500 truncate">
+          {chat.isGroup && chat.lastSenderName && chat.lastSenderId!== user?.uid? `${chat.lastSenderName}: ` : ""}
+          {chat.lastSenderId === user?.uid? "Bạn: " : ""}
+          {chat.lastMessage || "Bắt đầu trò chuyện"}
+        </p>
+      )}
+    </div>
+  </div>
+</Link>
+                   
                   </div>
                 ))}
               </div>
