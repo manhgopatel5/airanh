@@ -8,7 +8,7 @@ import { toast, Toaster } from "sonner";
 import { addDoc } from 'firebase/firestore';
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { useAuth } from "@/lib/useAuth";
-
+import { mutate } from 'swr';
 type Category = { id: string; label: string; emoji: string; suggestions: string[] };
 type CostType = "free" | "share" | "host" | "ticket";
 type Privacy = "public" | "friends" | "friends_except" | "private";
