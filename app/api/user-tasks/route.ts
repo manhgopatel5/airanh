@@ -1,14 +1,15 @@
 // app/api/user-tasks/route.ts
 import { NextResponse } from 'next/server'
-import { adminAuth, adminDb } from '@/lib/firebase-admin'
+import { getFirebaseAuth, getFirebaseDb } from '@/lib/firebase-admin'
 import { Timestamp } from 'firebase-admin/firestore'
 import type { FeedTask } from '@/types/task'
 
+export const dynamic = 'force-dynamic'
 export const revalidate = 0 // Dynamic, không cache
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const type = searchParams.get('type') || 'task'
+  const type = (searchParams.get('type') as 'task' | 'plan') || 'task'
   const tab = searchParams.get('tab') || 'mine'
 
   // Lấy user từ session cookie
@@ -16,18 +17,19 @@ export async function GET(request: Request) {
   const token = authHeader?.split('Bearer ')[1]
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const decoded = await adminAuth().verifyIdToken(token).catch(() => null)
+  const auth = getFirebaseAuth()
+  const decoded = await auth.verifyIdToken(token).catch(() => null)
   if (!decoded) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const uid = decoded.uid
-  const db = adminDb()
+  const db = getFirebaseDb()
   const now = Timestamp.now()
 
   try {
     let q = db.collection('tasks')
-   .where('type', '==', type) // FIX 1: Chỉ where type 1 lần ở đây
-   .select('slug','shortId','title','description','type','status','userId','userName','userAvatar','price','currency','totalSlots','joined','budgetType','category','tags','images','viewCount','likeCount','commentCount','location','banned','hidden','appliedCount','createdAt','updatedAt','deadline')
-   .limit(10)
+    .where('type', '==', type)
+    .select('slug','shortId','title','description','type','status','userId','userName','userAvatar','price','currency','totalSlots','joined','budgetType','category','tags','images','viewCount','likeCount','commentCount','location','banned','hidden','appliedCount','createdAt','updatedAt','deadline')
+    .limit(10)
 
     // Build query theo tab
     switch (tab) {
@@ -47,7 +49,7 @@ export async function GET(request: Request) {
         q = q.where('assignees', 'array-contains', uid).where('status', '==', 'completed')
         break
       case 'expired':
-        // FIX 2: Bỏ where('type') trùng. Chỉ cho task mới có deadline
+        // Chỉ cho task mới có deadline
         if (type!== 'task') return NextResponse.json([])
         const sevenDaysAgo = Timestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
         q = q.where('userId', '==', uid).where('deadline', '<', now).where('deadline', '>', sevenDaysAgo)
