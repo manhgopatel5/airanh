@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { adminAuth } from '@/lib/firebase-admin' // Chỉ import auth, bỏ adminDb
 
-const PUBLIC_ROUTES = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify-email', '/terms', '/privacy']
+const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/terms', '/privacy', '/onboarding']
 const PUBLIC_API = ['/api/auth', '/api/user/create', '/api/user/logout', '/api/health']
 
 // BỎ HẾT: userCache, getUserData, CACHE_TTL. Middleware không được query DB.

@@ -1,28 +1,32 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle, FiSend, FiSmartphone } from "react-icons/fi";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FcGoogle } from "react-icons/fc";
+import { FiAlertCircle, FiEye, FiEyeOff, FiLock, FiMail, FiSend } from "react-icons/fi";
 import {
-  signInWithEmailAndPassword,
-  setPersistence,
   browserLocalPersistence,
   browserSessionPersistence,
-  sendEmailVerification,
   GoogleAuthProvider,
-  signInWithPopup,
-  sendSignInLinkToEmail,
   isSignInWithEmailLink,
+  sendEmailVerification,
+  sendSignInLinkToEmail,
+  setPersistence,
+  signInWithEmailAndPassword,
   signInWithEmailLink,
-  Auth,
+  signInWithPopup,
+  type Auth,
 } from "firebase/auth";
+import { motion } from "framer-motion";
+import { toast } from "sonner";
+import AuthShell from "@/components/auth/AuthShell";
+import { getSafeRedirect } from "@/components/auth/authRoutes";
+import InstallPrompt from "@/components/InstallPrompt";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
-import { toast, Toaster } from "sonner";
-import InstallPrompt from "@/components/InstallPrompt";
-import { motion } from "framer-motion";
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function Login() {
   const router = useRouter();
@@ -30,186 +34,129 @@ export default function Login() {
   const { user, userData, loading: authLoading } = useAuth();
   const authRef = useRef<Auth | null>(null);
   const emailRef = useRef<HTMLInputElement>(null);
+  const redirectTo = getSafeRedirect(searchParams.get("redirect"));
 
-  const [form, setForm] = useState({
-    email: "",
-    password: "",
-    honeypot: "",
-  });
-
+  const [form, setForm] = useState({ email: "", password: "", honeypot: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [show, setShow] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [magicLoading, setMagicLoading] = useState(false);
-  const [remember, setRemember] = useState(true);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
-  const [passkeySupported, setPasskeySupported] = useState(false);
-
   const failedAttempts = useRef(0);
-  const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-const redirectTo = searchParams.get("redirect") || "/";
 
-  // FIX: Redirect khi đã login + có userData + hết loading
   useEffect(() => {
-    if (!authLoading && user && user?.emailVerified && userData) {
-      console.log("Redirect to:", redirectTo);
+    if (!authLoading && user?.emailVerified && userData) {
       router.replace(redirectTo);
     }
-  }, [user, userData, authLoading, router, redirectTo]);
+  }, [authLoading, redirectTo, router, user, userData]);
 
   useEffect(() => {
-    authRef.current = getFirebaseAuth();
-
-    if (window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
-      PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(setPasskeySupported);
-    }
-
-    if (isSignInWithEmailLink(authRef.current, window.location.href)) {
-      let email = localStorage.getItem("emailForSignIn");
-      if (!email) {
-        email = window.prompt("Nhập email để xác nhận");
-      }
-      if (email) {
-        signInWithEmailLink(authRef.current, email, window.location.href)
-         .then(() => {
-            localStorage.removeItem("emailForSignIn");
-            toast.success("Đăng nhập thành công");
-          })
-         .catch(() => setErrors({ submit: "Link không hợp lệ hoặc đã hết hạn" }));
-      }
-    }
+    const auth = getFirebaseAuth();
+    authRef.current = auth;
 
     const lastEmail = localStorage.getItem("last_email");
-    if (lastEmail) setForm(prev => ({...prev, email: lastEmail }));
-    
-    setTimeout(() => emailRef.current?.focus(), 100);
-  }, []);
+    if (lastEmail) setForm((prev) => ({ ...prev, email: lastEmail }));
 
-  useEffect(() => {
-    return () => {
-      if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
-    };
-  }, []);
-
-  const validateField = (field: string, value: string) => {
-    if (field === "email") {
-      if (!value) return "Vui lòng nhập email";
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
-        return "Email không hợp lệ";
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      const email = localStorage.getItem("emailForSignIn") || lastEmail;
+      if (!email) {
+        setErrors({ submit: "Nhập email rồi gửi lại link đăng nhập để xác nhận thiết bị này." });
+      } else {
+        signInWithEmailLink(auth, email, window.location.href)
+          .then(() => {
+            localStorage.removeItem("emailForSignIn");
+            localStorage.setItem("last_email", email);
+            toast.success("Đăng nhập thành công");
+            router.replace(redirectTo);
+          })
+          .catch(() => setErrors({ submit: "Link đăng nhập không hợp lệ hoặc đã hết hạn" }));
+      }
     }
-    if (field === "password" && !value)
-      return "Vui lòng nhập mật khẩu";
-    return "";
+
+    window.setTimeout(() => emailRef.current?.focus(), 120);
+  }, [redirectTo, router]);
+
+  const setField = (field: "email" | "password" | "honeypot", value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    if (errors[field] || errors.submit) {
+      setErrors((prev) => ({ ...prev, [field]: "", submit: "" }));
+    }
   };
 
   const validate = () => {
-    const newErrors: Record<string, string> = {};
-    (["email", "password"] as const).forEach((key) => {
-      const err = validateField(key, form[key]);
-      if (err) newErrors[key] = err;
-    });
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const next: Record<string, string> = {};
+    if (!form.email) next.email = "Vui lòng nhập email";
+    else if (!emailRegex.test(form.email)) next.email = "Email không hợp lệ";
+    if (!form.password) next.password = "Vui lòng nhập mật khẩu";
+    setErrors(next);
+    return Object.keys(next).length === 0;
   };
 
   const handleMagicLink = async () => {
     const auth = authRef.current;
     if (!auth) return;
-    
-    if (!form.email) {
-      setErrors({ email: "Nhập email trước" });
+    if (!form.email || !emailRegex.test(form.email)) {
+      setErrors({ email: "Nhập email hợp lệ trước" });
       emailRef.current?.focus();
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      setErrors({ email: "Email không hợp lệ" });
       return;
     }
 
     try {
       setMagicLoading(true);
       setErrors({});
-      
       await sendSignInLinkToEmail(auth, form.email, {
-        url: window.location.origin + "/login",
+        url: `${window.location.origin}/login?redirect=${encodeURIComponent(redirectTo)}`,
         handleCodeInApp: true,
       });
-      
       localStorage.setItem("emailForSignIn", form.email);
       localStorage.setItem("last_email", form.email);
       setMagicLinkSent(true);
       toast.success("Đã gửi link đăng nhập qua email");
-    } catch (err: any) {
-      setErrors({ submit: "Gửi link thất bại" });
+    } catch {
+      setErrors({ submit: "Gửi link thất bại. Thử lại sau." });
     } finally {
       setMagicLoading(false);
     }
   };
 
-  const handlePasskey = async () => {
-    toast.info("Passkey đang phát triển. Dùng Google hoặc Email Link trước nhé");
-  };
-
   const handleGoogleLogin = async () => {
     const auth = authRef.current;
-    if (!auth) {
-      toast.error("Firebase chưa sẵn sàng");
-      return;
-    }
+    if (!auth) return;
 
     try {
       setGoogleLoading(true);
       setErrors({});
-
-      await setPersistence(
-        auth,
-        remember ? browserLocalPersistence : browserSessionPersistence
-      );
-
+      await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
-
       await signInWithPopup(auth, provider);
       localStorage.setItem("last_email", auth.currentUser?.email || "");
       toast.success("Đăng nhập thành công");
-
+      router.replace(redirectTo);
     } catch (err: any) {
-      console.error("GOOGLE ERROR:", err.code);
-      if (err.code === "auth/popup-blocked") {
-        setErrors({ submit: "Popup bị chặn. Cho phép popup và thử lại" });
-      } else if (err.code === "auth/popup-closed-by-user") {
-        return;
-      } else if (err.code === "auth/cancelled-popup-request") {
-        return;
-      } else if (err.code === "auth/unauthorized-domain") {
-        setErrors({ submit: "Domain chưa được xác thực trên Firebase" });
-      } else {
-        setErrors({ submit: "Đăng nhập Google thất bại" });
-      }
+      if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") return;
+      const message = err.code === "auth/popup-blocked"
+        ? "Popup bị chặn. Cho phép popup và thử lại."
+        : err.code === "auth/unauthorized-domain"
+          ? "Domain chưa được xác thực trên Firebase."
+          : "Đăng nhập Google thất bại";
+      setErrors({ submit: message });
     } finally {
       setGoogleLoading(false);
     }
   };
 
-  const handleLogin = async (e?: React.FormEvent) => {
-    e?.preventDefault();
+  const handleLogin = async (event?: React.FormEvent) => {
+    event?.preventDefault();
     if (form.honeypot) return;
-
     const auth = authRef.current;
-    if (!auth) {
-      toast.error("Firebase chưa sẵn sàng");
-      return;
-    }
+    if (!auth) return;
 
     const lastFail = localStorage.getItem("login_fail_time");
-
-    if (
-      failedAttempts.current >= 3 &&
-      lastFail &&
-      Date.now() - parseInt(lastFail) < 30000
-    ) {
-      setErrors({ submit: "Thử quá nhiều lần, đợi 30s" });
+    if (failedAttempts.current >= 3 && lastFail && Date.now() - Number(lastFail) < 30000) {
+      setErrors({ submit: "Thử quá nhiều lần. Đợi 30 giây rồi thử lại." });
       return;
     }
 
@@ -218,36 +165,24 @@ const redirectTo = searchParams.get("redirect") || "/";
     try {
       setLoading(true);
       setErrors({});
+      await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
+      const res = await signInWithEmailAndPassword(auth, form.email, form.password);
 
-      await setPersistence(
-        auth,
-        remember ? browserLocalPersistence : browserSessionPersistence
-      );
-
-      const res = await signInWithEmailAndPassword(
-        auth,
-        form.email,
-        form.password
-      );
-
-      const user = res.user;
-
-      if (!user.emailVerified) {
+      if (!res.user.emailVerified) {
+        await sendEmailVerification(res.user).catch(() => {});
         toast.warning("Vui lòng xác thực email trước");
-        await sendEmailVerification(user).catch(() => {});
         router.replace("/verify-email");
         return;
       }
 
-      localStorage.setItem("last_email", form.email);
       failedAttempts.current = 0;
       localStorage.removeItem("login_fail_time");
-
+      localStorage.setItem("last_email", form.email);
       toast.success("Đăng nhập thành công");
+      router.replace(redirectTo);
     } catch (err: any) {
-      failedAttempts.current++;
+      failedAttempts.current += 1;
       localStorage.setItem("login_fail_time", Date.now().toString());
-
       const errorMap: Record<string, string> = {
         "auth/invalid-credential": "Email hoặc mật khẩu không đúng",
         "auth/user-not-found": "Tài khoản không tồn tại",
@@ -255,212 +190,117 @@ const redirectTo = searchParams.get("redirect") || "/";
         "auth/too-many-requests": "Thử quá nhiều lần",
         "auth/network-request-failed": "Lỗi mạng",
       };
-
-      setErrors({
-        submit: errorMap[err.code] || "Đăng nhập thất bại",
-      });
+      setErrors({ submit: errorMap[err.code] || "Đăng nhập thất bại" });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleShowPass = () => {
-    setShow(!show);
-    if (!show) {
-      if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
-      showTimeoutRef.current = setTimeout(() => setShow(false), 3000);
-    }
-  };
-
-  // Loading skeleton khi đang check auth
   if (authLoading) {
     return (
-      <div className="h-dvh bg-gradient-to-br from-sky-400 to-sky-500 flex items-center justify-center px-4">
-        <div className="w-full max-w-sm space-y-4">
-          <div className="h-8 w-32 bg-white/20 rounded-lg animate-pulse mx-auto" />
-          <div className="h-10 w-full bg-white/20 rounded-lg animate-pulse" />
-          <div className="h-10 w-full bg-white/20 rounded-lg animate-pulse" />
-          <div className="h-12 w-full bg-white/20 rounded-lg animate-pulse" />
+      <AuthShell title="Đang chuẩn bị AIR" description="Kiểm tra phiên đăng nhập và đồng bộ hồ sơ của bạn.">
+        <div className="space-y-3" role="status" aria-label="Đang tải">
+          <div className="h-12 rounded-2xl bg-zinc-100 motion-safe:animate-pulse dark:bg-zinc-800" />
+          <div className="h-12 rounded-2xl bg-zinc-100 motion-safe:animate-pulse dark:bg-zinc-800" />
+          <div className="h-12 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-700" />
         </div>
-      </div>
+      </AuthShell>
     );
   }
 
   return (
-    <>
-      <Toaster richColors position="top-center" />
-      <InstallPrompt />
+    <AuthShell
+      title="Đăng nhập"
+      description="Vào AIR để nhận task, lưu cơ hội và quản lý việc của bạn nhanh hơn."
+      footer={
+        <>
+          Chưa có tài khoản? <Link href="/register" className="font-bold text-sky-600 dark:text-sky-300">Tạo tài khoản</Link>
+        </>
+      }
+    >
+      <form onSubmit={handleLogin} className="space-y-4">
+        <input type="text" tabIndex={-1} autoComplete="off" className="hidden" value={form.honeypot} onChange={(e) => setField("honeypot", e.target.value)} />
 
-      <div className="h-dvh bg-gradient-to-br from-sky-400 to-sky-500 flex items-center justify-center px-4 py-8 overflow-y-auto">
-        <div className="w-full max-w-sm my-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6"
-          >
-            <h1 className="text-2xl font-bold text-center text-gray-900 mb-6">
-              Đăng nhập
-            </h1>
-
-            {errors.submit && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-red-500 mb-4 flex items-center gap-2 text-sm bg-red-50 px-3 py-2.5 rounded-lg"
-              >
-                <FiAlertCircle size={16} /> {errors.submit}
-              </motion.div>
-            )}
-
-            {magicLinkSent && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-sky-50 border border-sky-200 text-sky-700 px-3 py-2.5 rounded-lg mb-4 flex items-center gap-2 text-sm"
-              >
-                <FiSend size={16} /> Đã gửi link! Kiểm tra email và thư mục Spam
-              </motion.div>
-            )}
-
-            <form onSubmit={handleLogin} className="space-y-4">
-              <input
-                type="text"
-                className="hidden"
-                value={form.honeypot}
-                onChange={(e) =>
-                  setForm({...form, honeypot: e.target.value })
-                }
-              />
-
-              <div>
-                <div className="relative">
-                  <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  <input
-                    ref={emailRef}
-                    className={`w-full pl-10 pr-3 py-2.5 rounded-lg border text-sm ${
-                      errors.email ? "border-red-500" : "border-gray-300"
-                    } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none transition-all`}
-                    placeholder="Email"
-                    value={form.email}
-                    onChange={(e) => {
-                      setForm({...form, email: e.target.value });
-                      if (errors.email) setErrors({...errors, email: "" });
-                    }}
-                  />
-                </div>
-                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-              </div>
-
-              <div>
-                <div className="relative">
-                  <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  <input
-                    type={show ? "text" : "password"}
-                    className={`w-full pl-10 pr-10 py-2.5 rounded-lg border text-sm ${
-                      errors.password ? "border-red-500" : "border-gray-300"
-                    } bg-white text-gray-900 focus:ring-2 focus:ring-sky-400 outline-none transition-all`}
-                    placeholder="Mật khẩu"
-                    value={form.password}
-                    onChange={(e) => {
-                      setForm({...form, password: e.target.value });
-                      if (errors.password) setErrors({...errors, password: "" });
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleShowPass}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {show ? <FiEyeOff size={18} /> : <FiEye size={18} />}
-                  </button>
-                </div>
-                {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
-              </div>
-
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={remember}
-                    onChange={(e) => setRemember(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 text-sky-500 focus:ring-sky-400"
-                  />
-                  <span className="text-sm text-gray-700">Ghi nhớ</span>
-                </label>
-                <Link
-                  href="/forgot-password"
-                  className="text-sm font-medium text-sky-600 hover:text-sky-700"
-                >
-                  Quên mật khẩu?
-                </Link>
-              </div>
-
-              <motion.button
-                type="submit"
-                whileTap={{ scale: 0.98 }}
-                disabled={loading || googleLoading || magicLoading}
-                className="w-full py-3 rounded-lg text-white font-semibold text-sm bg-sky-500 hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-sky-500/30"
-              >
-                {loading ? "Đang đăng nhập..." : "Đăng nhập"}
-              </motion.button>
-            </form>
-
-            <div className="relative my-5">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="bg-white px-3 text-gray-500">hoặc</span>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <motion.button
-                type="button"
-                whileTap={{ scale: 0.98 }}
-                onClick={handleGoogleLogin}
-                disabled={loading || googleLoading || magicLoading}
-                className="w-full py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-semibold text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
-              >
-                <FcGoogle size={20} />
-                {googleLoading ? "Đang kết nối..." : "Tiếp tục với Google"}
-              </motion.button>
-
-              <motion.button
-                type="button"
-                whileTap={{ scale: 0.98 }}
-                onClick={handleMagicLink}
-                disabled={loading || googleLoading || magicLoading}
-                className="w-full py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-semibold text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
-              >
-                <FiSend size={18} />
-                {magicLoading ? "Đang gửi..." : "Đăng nhập bằng Email Link"}
-              </motion.button>
-
-              {passkeySupported && (
-                <motion.button
-                  type="button"
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handlePasskey}
-                  disabled={loading || googleLoading || magicLoading}
-                  className="w-full py-3 rounded-lg border border-gray-300 bg-white text-gray-900 font-semibold text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
-                >
-                  <FiSmartphone size={18} />
-                  Đăng nhập bằng Face ID
-                </motion.button>
-              )}
-            </div>
-
-            <p className="text-center text-sm text-gray-600 mt-4">
-              Chưa có tài khoản?{" "}
-              <Link href="/register" className="font-semibold text-sky-600 hover:text-sky-700">
-                Đăng ký
-              </Link>
-            </p>
+        {errors.submit && (
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-3 py-3 text-sm font-semibold text-red-600 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300">
+            <FiAlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            {errors.submit}
           </motion.div>
+        )}
+
+        {magicLinkSent && (
+          <div className="rounded-2xl border border-sky-200 bg-sky-50 px-3 py-3 text-sm font-semibold text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-200">
+            Link đăng nhập đã được gửi. Kiểm tra hộp thư và thư mục Spam.
+          </div>
+        )}
+
+        <label className="block space-y-2">
+          <span className="text-sm font-bold text-zinc-700 dark:text-zinc-200">Email</span>
+          <span className="relative block">
+            <FiMail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+            <input
+              ref={emailRef}
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              value={form.email}
+              onChange={(e) => setField("email", e.target.value)}
+              className={`h-12 w-full rounded-2xl border bg-white pl-11 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:ring-4 dark:bg-zinc-900 dark:text-white ${errors.email ? "border-red-400 focus:ring-red-500/10" : "border-zinc-200 focus:border-sky-500 focus:ring-sky-500/10 dark:border-zinc-700"}`}
+            />
+          </span>
+          {errors.email && <span className="text-xs font-semibold text-red-500">{errors.email}</span>}
+        </label>
+
+        <label className="block space-y-2">
+          <span className="text-sm font-bold text-zinc-700 dark:text-zinc-200">Mật khẩu</span>
+          <span className="relative block">
+            <FiLock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+            <input
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              placeholder="Nhập mật khẩu"
+              value={form.password}
+              onChange={(e) => setField("password", e.target.value)}
+              className={`h-12 w-full rounded-2xl border bg-white pl-11 pr-12 text-base font-semibold text-zinc-900 outline-none transition focus:ring-4 dark:bg-zinc-900 dark:text-white ${errors.password ? "border-red-400 focus:ring-red-500/10" : "border-zinc-200 focus:border-sky-500 focus:ring-sky-500/10 dark:border-zinc-700"}`}
+            />
+            <button type="button" aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"} onClick={() => setShowPassword((v) => !v)} className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-zinc-400 active:scale-95">
+              {showPassword ? <FiEyeOff /> : <FiEye />}
+            </button>
+          </span>
+          {errors.password && <span className="text-xs font-semibold text-red-500">{errors.password}</span>}
+        </label>
+
+        <div className="flex items-center justify-between gap-3 text-sm">
+          <label className="inline-flex items-center gap-2 font-semibold text-zinc-600 dark:text-zinc-300">
+            <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="h-4 w-4 rounded border-zinc-300 text-sky-600 focus:ring-sky-500" />
+            Ghi nhớ
+          </label>
+          <Link href="/forgot-password" className="font-bold text-sky-600 dark:text-sky-300">Quên mật khẩu?</Link>
         </div>
+
+        <button type="submit" disabled={loading} className="flex h-12 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] text-sm font-black text-white shadow-xl shadow-sky-500/25 transition active:scale-[0.98] disabled:opacity-60">
+          {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+        </button>
+      </form>
+
+      <div className="my-5 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.16em] text-zinc-400">
+        <span className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
+        hoặc
+        <span className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
       </div>
-    </>
+
+      <div className="grid gap-3">
+        <button type="button" onClick={handleGoogleLogin} disabled={googleLoading} className="flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-zinc-200 bg-white text-sm font-black text-zinc-800 shadow-sm transition active:scale-[0.98] disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+          <FcGoogle className="h-5 w-5" />
+          {googleLoading ? "Đang mở Google..." : "Tiếp tục với Google"}
+        </button>
+        <button type="button" onClick={handleMagicLink} disabled={magicLoading} className="flex h-12 w-full items-center justify-center gap-3 rounded-2xl bg-zinc-100 text-sm font-black text-zinc-700 transition active:scale-[0.98] disabled:opacity-60 dark:bg-zinc-800 dark:text-zinc-200">
+          <FiSend className="h-4 w-4" />
+          {magicLoading ? "Đang gửi link..." : "Gửi link đăng nhập"}
+        </button>
+      </div>
+
+      <InstallPrompt />
+    </AuthShell>
   );
 }

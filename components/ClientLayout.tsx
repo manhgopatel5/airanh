@@ -3,8 +3,9 @@
 import { usePathname, useRouter } from "next/navigation";
 import FCMProvider from "@/components/FCMProvider";
 import { useEffect, useMemo } from "react";
-import { Toaster } from "react-hot-toast";
+import { Toaster } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
+import { isAuthPublicRoute } from "@/components/auth/authRoutes";
 
 type Props = {
   children: React.ReactNode;
@@ -15,18 +16,8 @@ export default function ClientLayout({ children }: Props) {
   const router = useRouter();
   const { user, userData, loading } = useAuth();
 
-  const publicRoutes = [
-    "/login", 
-    "/register", 
-    "/forgot-password", 
-    "/verify-email", 
-    "/terms", 
-    "/privacy", 
-    "/onboarding"
-  ];
-
   const isPublic = useMemo(
-    () => publicRoutes.some((r) => pathname.startsWith(r)),
+    () => isAuthPublicRoute(pathname),
     [pathname]
   );
 
@@ -62,13 +53,12 @@ export default function ClientLayout({ children }: Props) {
         {children}
       </main>
 
-      {/* BỎ HẾT BOTTOMNAV Ở ĐÂY. Để page tự import */}
-
       <Toaster
+        richColors
         position="top-center"
         toastOptions={{
-          className: "text-sm font-sans",
           duration: 3000,
+          style: { fontSize: "14px" },
         }}
       />
     </div>
