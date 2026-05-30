@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FiArrowLeft, FiFileText, FiPhone, FiMail, FiUser, FiAlertTriangle, FiBriefcase, FiGavel } from "react-icons/fi";
+import { FiArrowLeft, FiFileText, FiPhone, FiMail, FiUser, FiAlertTriangle, FiBriefcase } from "react-icons/fi";
 import { motion } from "framer-motion";
 import HuhaLogo from "@/components/brand/HuhaLogo";
 
