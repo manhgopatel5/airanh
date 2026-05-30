@@ -29,9 +29,8 @@ export type AppUser = {
   emailVerified: boolean;
   photoURL: string | null;
   isOnline: boolean;
-  lastSeen: Timestamp | string;
+  lastSeen: Timestamp | string; // Cho phép string từ cache
   fcmTokens?: string[];
-  interests?: string[];
   verified: boolean;
   status: "active" | "banned" | "deleted" | "deactivated";
   searchKeywords: string[];
@@ -62,8 +61,9 @@ const AuthContext = createContext<AuthContextType>({
   refreshToken: async () => {},
 });
 
+// ========== 1. CACHE LAYER ==========
 const USER_CACHE_KEY = 'user_profile_v1';
-const CACHE_VERSION = 1;
+const CACHE_VERSION = 1; // Tăng version khi đổi schema AppUser
 
 type CachedUser = AppUser & { _v: number; _cachedAt: number };
 
@@ -73,6 +73,7 @@ const getCachedUser = (): AppUser | null => {
     const cached = localStorage.getItem(USER_CACHE_KEY);
     if (!cached) return null;
     const parsed = JSON.parse(cached) as CachedUser;
+    // Bỏ cache cũ nếu đổi version hoặc quá 7 ngày
     if (parsed._v!== CACHE_VERSION || Date.now() - parsed._cachedAt > 7 * 24 * 60 * 60 * 1000) {
       localStorage.removeItem(USER_CACHE_KEY);
       return null;
@@ -99,9 +100,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [rtdb, setRtdb] = useState<any>(null);
 
   const [user, setUser] = useState<User | null>(null);
+  // 2. ĐỌC CACHE TRƯỚC -> RENDER NGAY, 0ms CHỜ
   const [userData, setUserData] = useState<AppUser | null>(() => getCachedUser());
-  // FIX 1: Luôn loading = true ban đầu, để onAuthStateChanged quyết định
-  const [loading, setLoading] = useState(true);
+  // 3. CHỈ LOADING NẾU CHƯA CÓ CACHE
+  const [loading, setLoading] = useState(() =>!getCachedUser());
   const [error, setError] = useState<string | null>(null);
 
   const userDataUnsub = useRef<(() => void) | null>(null);
@@ -159,15 +161,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      // FIX 2: Có user là tắt loading luôn, không phụ thuộc cache
-      setLoading(false);
-
+      // 4. NẾU CÓ CACHE ĐÚNG UID -> TẮT LOADING NGAY, KHÔNG CHỜ FIRESTORE
       const cached = getCachedUser();
       if (cached?.uid === firebaseUser.uid) {
         setUserData(cached);
+        setLoading(false);
       }
 
       try {
+        // 5. BỎ `true`. Dùng token cũ nếu còn hạn, nhanh gấp 10 lần
         const token = await firebaseUser.getIdToken();
         setCookie('__session', token, {
           maxAge: 60 * 60 * 24 * 7,
@@ -176,6 +178,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           secure: process.env.NODE_ENV === 'production',
         });
 
+        // 6. LISTEN FIRESTORE NGẦM ĐỂ UPDATE CACHE
         const userRef = doc(db, "users", firebaseUser.uid);
         userDataUnsub.current = onSnapshot(
           userRef,
@@ -183,17 +186,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (docSnap.exists()) {
               const data = docSnap.data() as AppUser;
               setUserData(data);
-              setCachedUser(data);
+              setCachedUser(data); // Update cache
             } else {
               createUserProfile(firebaseUser);
             }
+            setLoading(false); // Tắt loading lần cuối cho chắc
           },
           (err) => {
             console.error("Snapshot error:", err);
             setError(err.message);
+            setLoading(false);
           }
         );
 
+        // 7. PRESENCE RTDB - Chạy ngầm, không chặn render
         const statusRef = ref(rtdb, `/status/${firebaseUser.uid}`);
         const connectedRef = ref(rtdb, ".info/connected");
         presenceUnsub.current = onValue(connectedRef, (snap) => {
@@ -211,6 +217,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (e: any) {
         console.error("Auth error:", e);
         setError(e.message);
+        setLoading(false);
       }
     });
 
@@ -225,6 +232,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!auth) return;
     const currentUser = auth.currentUser;
 
+    // Xóa cache trước
     setCachedUser(null);
     deleteCookie('__session');
 
