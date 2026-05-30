@@ -53,9 +53,6 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
   const isTaskMode = mode === "task";
   const accent = isTaskMode ? "#0A84FF" : "#30D158";
   const gradient = isTaskMode ? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
-  const softGradient = isTaskMode
-    ? "from-[#EAF4FF] via-white to-[#F8FBFF] dark:from-[#06172B] dark:via-zinc-950 dark:to-zinc-950"
-    : "from-[#EAFFF2] via-white to-[#F9FFFB] dark:from-[#061E11] dark:via-zinc-950 dark:to-zinc-950";
 
   const swrOptions = {
     revalidateIfStale: false,
@@ -170,8 +167,8 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
   const modeNoun = isTaskMode ? "task" : "plan";
 
   return (
-    <div className={`min-h-dvh bg-gradient-to-b ${softGradient} text-zinc-950 dark:text-white`}>
-      <div className="sticky top-0 z-40 border-b border-white/70 bg-white/82 backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-950/82">
+<div className="min-h-dvh bg-white dark:bg-zinc-950 text-zinc-950 dark:text-white">
+<div className="sticky top-0 z-40 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
         <div className="mx-auto max-w-[680px] px-4 pt-3 pb-3">
           <div className="relative rounded-[1.35rem] bg-zinc-100/80 p-1.5 ring-1 ring-black/5 dark:bg-zinc-900/90 dark:ring-white/10">
             <motion.div className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-[1rem] bg-gradient-to-r ${gradient} shadow-lg`} animate={{ x: isTaskMode ? 0 : "100%" }} transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 360, damping: 34 }} />
@@ -188,7 +185,7 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
       <div className="mx-auto max-w-[680px] px-4 pt-4">
         {loading ? (
           <div className="space-y-3" aria-label="Đang tải feed">
-            {[0, 1, 2].map((item) => <div key={item} className="h-52 rounded-[2rem] bg-white/80 motion-safe:animate-pulse dark:bg-zinc-900/80" />)}
+            {[0, 1, 2].map((item) => <div className="rounded-[2rem] border border-white/70 bg-white p-8 text-center shadow-xl shadow-black/[0.04] dark:border-white/10 dark:bg-zinc-900/80">)}
           </div>
         ) : error ? (
           <div className="rounded-[2rem] border border-red-200 bg-white/82 p-8 text-center shadow-xl shadow-red-500/5 dark:border-red-500/20 dark:bg-zinc-900/80">
