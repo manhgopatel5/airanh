@@ -57,7 +57,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
 
   const isTaskTheme = theme === "task";
   const accent = isTaskTheme ? "#0A84FF" : "#30D158";
-  const accentGradient = isTaskTheme ? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
+
 
   useEffect(() => {
     if (!task?.id) return;
