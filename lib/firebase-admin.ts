@@ -1,4 +1,3 @@
-// lib/firebase-admin.ts
 import { initializeApp, getApps, cert, App, ServiceAccount } from "firebase-admin/app";
 import { getMessaging, Messaging, BatchResponse, Message } from "firebase-admin/messaging";
 import { getFirestore, Firestore, FieldValue, Timestamp } from "firebase-admin/firestore";
@@ -6,36 +5,41 @@ import { getAuth, Auth } from "firebase-admin/auth";
 import type { FeedTask, TaskListItem } from "@/types/task";
 
 /* ================= SERVICE ACCOUNT ================= */
-const requiredEnvs = [
-  "FIREBASE_PROJECT_ID",
-  "FIREBASE_CLIENT_EMAIL",
-  "FIREBASE_PRIVATE_KEY",
-] as const;
+function getServiceAccount(): ServiceAccount | null {
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
-function getServiceAccount(): ServiceAccount {
-  const missing = requiredEnvs.filter((env) => !process.env[env]);
-  if (missing.length > 0) {
-    throw new Error(`Missing environment variable: ${missing.join(", ")}`);
+  if (!projectId ||!clientEmail ||!privateKey) {
+    console.error('Missing Firebase Admin env:', { projectId:!!projectId, clientEmail:!!clientEmail, privateKey:!!privateKey });
+    return null;
   }
 
   return {
-    projectId: process.env.FIREBASE_PROJECT_ID!,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, "\n"),
+    projectId,
+    clientEmail,
+    privateKey: privateKey.replace(/\\n/g, "\n"),
   };
 }
 
 /* ================= LAZY INIT ================= */
-let app: App;
-let messaging: Messaging;
-let db: Firestore;
-let auth: Auth;
+let app: App | null = null;
+let messaging: Messaging | null = null;
+let db: Firestore | null = null;
+let auth: Auth | null = null;
 
 function getFirebaseAdmin() {
+  if (app) return { app, messaging: messaging!, db: db!, auth: auth! };
+
   if (!getApps().length) {
+    const serviceAccount = getServiceAccount();
+    if (!serviceAccount) {
+      throw new Error('Firebase Admin credentials not configured');
+    }
+
     try {
       app = initializeApp({
-        credential: cert(getServiceAccount()),
+        credential: cert(serviceAccount),
        ...(process.env.FIREBASE_DATABASE_URL && {
           databaseURL: process.env.FIREBASE_DATABASE_URL,
         }),
@@ -56,11 +60,38 @@ function getFirebaseAdmin() {
   return { app, messaging, db, auth };
 }
 
-/* ================= EXPORTS ================= */
-export const adminApp = () => getFirebaseAdmin().app;
-export const adminMessaging = () => getFirebaseAdmin().messaging;
-export const adminDb = () => getFirebaseAdmin().db;
-export const adminAuth = () => getFirebaseAdmin().auth;
+/* ================= EXPORTS - KHÔNG THROW ================= */
+export const adminApp = () => {
+  try {
+    return getFirebaseAdmin().app;
+  } catch {
+    return null;
+  }
+};
+
+export const adminMessaging = () => {
+  try {
+    return getFirebaseAdmin().messaging;
+  } catch {
+    return null;
+  }
+};
+
+export const adminDb = () => {
+  try {
+    return getFirebaseAdmin().db;
+  } catch {
+    return null;
+  }
+};
+
+export const adminAuth = () => {
+  try {
+    return getFirebaseAdmin().auth;
+  } catch {
+    return null;
+  }
+};
 
 /* ================= HELPER: Timestamp -> string ================= */
 const tsToString = (ts: any): string | null => {
@@ -75,10 +106,11 @@ export async function getJobsFromFirebaseAdmin(
   type: 'task' | 'plan' = 'task',
   limitCount = 10
 ): Promise<FeedTask[]> {
-  const { db } = getFirebaseAdmin();
+  const db = adminDb();
+  if (!db) throw new Error('Firestore not available');
 
   const allowedStatuses = type === 'plan'
-    ? ['open', 'pending', 'full', 'doing', 'in_progress']
+   ? ['open', 'pending', 'full', 'doing', 'in_progress']
     : ['open', 'pending', 'full', 'doing'];
 
   const selectedFields = [
@@ -94,10 +126,10 @@ export async function getJobsFromFirebaseAdmin(
 
   const buildQuery = (requirePublic: boolean) => {
     let query = db.collection('tasks')
-      .where('type', '==', type)
-      .where('status', 'in', allowedStatuses)
-      .orderBy('createdAt', 'desc')
-      .limit(limitCount);
+     .where('type', '==', type)
+     .where('status', 'in', allowedStatuses)
+     .orderBy('createdAt', 'desc')
+     .limit(limitCount);
 
     if (requirePublic) {
       query = query.where('visibility', '==', 'public');
@@ -110,13 +142,11 @@ export async function getJobsFromFirebaseAdmin(
   try {
     snap = await buildQuery(true).get();
   } catch (error: any) {
-    if (error?.code !== 9 && error?.code !== 'FAILED_PRECONDITION') throw error;
+    if (error?.code!== 9 && error?.code!== 'FAILED_PRECONDITION') throw error;
     console.warn('Public jobs index unavailable, falling back without visibility filter:', error?.details || error?.message);
     snap = await buildQuery(false).get();
   }
 
-  // Legacy documents may not have `visibility`. Fallback keeps the feed alive while
-  // still filtering banned/hidden/private data in code below.
   if (snap.empty) {
     snap = await buildQuery(false).get();
   }
@@ -174,7 +204,7 @@ export async function getJobsFromFirebaseAdmin(
     };
 
     return taskData as FeedTask;
-  }).filter((task) => task.banned !== true && task.hidden !== true && (task as FeedTask & { visibility?: string }).visibility !== 'private');
+  }).filter((task) => task.banned!== true && task.hidden!== true && (task as FeedTask & { visibility?: string }).visibility!== 'private');
 }
 
 /* ================= TYPE ================= */
@@ -213,7 +243,8 @@ export async function sendNotification(
   payload: SendNotificationPayload
 ): Promise<SendNotificationResult> {
   const { token, title, body, imageUrl, data, link, priority = "high", ttl = 86400, dryRun = false } = payload;
-  const msg = getFirebaseAdmin().messaging;
+  const msg = adminMessaging();
+  if (!msg) throw new Error('Firebase Messaging not initialized');
 
   const baseMessage: Omit<Message, "token" | "topic" | "condition"> = {
     notification: { title, body,...(imageUrl && { imageUrl }) },
@@ -318,7 +349,9 @@ export async function sendNotification(
 /* ================= VERIFY ID TOKEN ================= */
 export async function verifyIdToken(idToken: string, checkRevoked = false) {
   try {
-    const decoded = await getFirebaseAdmin().auth.verifyIdToken(idToken, checkRevoked);
+    const auth = adminAuth();
+    if (!auth) return null;
+    const decoded = await auth.verifyIdToken(idToken, checkRevoked);
     return decoded;
   } catch (e) {
     console.error("Verify token error:", e);
@@ -328,7 +361,8 @@ export async function verifyIdToken(idToken: string, checkRevoked = false) {
 
 /* ================= DELETE TOKENS ================= */
 export async function deleteInvalidTokens(userTokenMap: Map<string, string[]>): Promise<number> {
-  const { db } = getFirebaseAdmin();
+  const db = adminDb();
+  if (!db) return 0;
   let totalDeleted = 0;
 
   const entries = [...userTokenMap.entries()];
@@ -358,7 +392,8 @@ export async function sendToTopic(
   payload: Omit<SendNotificationPayload, "token">
 ): Promise<string> {
   const { title, body, imageUrl, data, link, priority = "normal", ttl = 86400 } = payload;
-  const msg = getFirebaseAdmin().messaging;
+  const msg = adminMessaging();
+  if (!msg) throw new Error('Firebase Messaging not initialized');
 
   return msg.send({
     topic,
