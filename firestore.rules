@@ -18,29 +18,23 @@ service cloud.firestore {
       }
     }
 
-    // ========== SESSIONS - ĐÃ FIX ==========
+    // ========== SESSIONS ==========
     match /sessions/{sessionId} {
-      // Đọc 1 document
       allow get: if isSignedIn() && request.auth.uid == resource.data.uid;
-      
-      // List query với where
       allow list: if isSignedIn() && request.auth.uid == resource.data.uid;
       
-      // Tạo session mới cho chính mình
       allow create: if isSignedIn() 
         && request.auth.uid == request.resource.data.uid
         && request.resource.data.keys().hasAll(['uid', 'device', 'browser', 'os', 'ip', 'location', 'userAgent', 'current', 'lastActive', 'createdAt'])
         && request.resource.data.current is bool
         && request.resource.data.uid is string;
       
-      // Update: chỉ update lastActive, current, ip, location, browser, os, userAgent, device của session mình
       allow update: if isSignedIn() 
         && request.auth.uid == resource.data.uid
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.diff(resource.data).changedKeys()
           .hasOnly(['lastActive', 'current', 'ip', 'location', 'browser', 'os', 'userAgent', 'device']);
       
-      // Xóa session của mình
       allow delete: if isSignedIn() && request.auth.uid == resource.data.uid;
     }
 
@@ -50,40 +44,33 @@ service cloud.firestore {
       allow create: if isSignedIn();
       
       allow update: if isSignedIn() && (
-        // Chủ task sửa được hết
         request.auth.uid == resource.data.userId ||
-        // User khác chỉ được like + save + apply + commentCount
         request.resource.data.diff(resource.data).changedKeys()
           .hasOnly(['savedBy', 'likedBy', 'likeCount', 'commentCount', 'applicants', 'appliedCount'])
       );
       
       allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
 
-      // COMMENTS
       match /comments/{commentId} {
         allow read: if true;
         allow create: if isSignedIn();
         
         allow update: if isSignedIn() && (
-          // Case 1: Chủ comment sửa nội dung
           (
             request.auth.uid == resource.data.userId &&
             request.resource.data.diff(resource.data).changedKeys()
               .hasOnly(['text', 'edited', 'updatedAt'])
           ) ||
-          // Case 2: Ai cũng được like/unlike
           (
             request.resource.data.diff(resource.data).changedKeys()
               .hasOnly(['likeCount', 'likedBy'])
           ) ||
-          // Case 3: Chủ comment soft-delete comment của mình
           (
             request.auth.uid == resource.data.userId &&
             request.resource.data.diff(resource.data).changedKeys()
               .hasOnly(['deleted', 'text', 'updatedAt']) &&
             request.resource.data.deleted == true
           ) ||
-          // Case 4: Chủ comment cha xóa reply của người khác
           (
             resource.data.parentId != null &&
             get(/databases/$(database)/documents/tasks/$(taskId)/comments/$(resource.data.parentId)).data.userId == request.auth.uid &&
@@ -101,25 +88,20 @@ service cloud.firestore {
     match /applications/{appId} {
       allow read: if isSignedIn();
       
-      // Chỉ user mới tạo đơn ứng tuyển cho chính mình
       allow create: if isSignedIn() 
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.keys().hasAll(['userId', 'taskOwnerId', 'status', 'userName'])
         && request.resource.data.status == 'pending';
       
-      // Ứng viên hủy đơn hoặc chủ task duyệt/từ chối
       allow update: if isSignedIn() && (
-        // Ứng viên tự hủy
         request.auth.uid == resource.data.userId && 
         request.resource.data.diff(resource.data).changedKeys().hasOnly(['status', 'updatedAt']) &&
         request.resource.data.status == 'cancelled' ||
-        // Chủ task duyệt/từ chối
         request.auth.uid == resource.data.taskOwnerId &&
         request.resource.data.diff(resource.data).changedKeys().hasOnly(['status', 'updatedAt']) &&
         request.resource.data.status in ['accepted', 'rejected']
       );
       
-      // Ứng viên xóa đơn của mình
       allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
     }
 
@@ -181,9 +163,16 @@ service cloud.firestore {
       allow delete: if isSignedIn() && (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
     }
 
+    // ========== USERNAMES - ĐÃ FIX ==========
     match /usernames/{username} {
       allow read: if true;
-      allow write: if false;
+      
+      allow create: if isSignedIn() 
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasAll(['uid', 'createdAt'])
+        && !exists(/databases/$(database)/documents/usernames/$(username));
+      
+      allow update, delete: if false;
     }
 
     match /notifications/{userId}/items/{notifId} {
