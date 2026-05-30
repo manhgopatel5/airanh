@@ -31,6 +31,7 @@ export type AppUser = {
   isOnline: boolean;
   lastSeen: Timestamp | string; // Cho phép string từ cache
   fcmTokens?: string[];
+  interests?: string[];
   verified: boolean;
   status: "active" | "banned" | "deleted" | "deactivated";
   searchKeywords: string[];
