@@ -35,8 +35,6 @@ const nextConfig = {
         "'self'",
         "'unsafe-eval'",
         "'unsafe-inline'",
-        'https://vercel.live',
-        'https://*.vercel.app',
         'https://apis.google.com',
         'https://www.gstatic.com',
         'https://www.googleapis.com',
@@ -46,7 +44,7 @@ const nextConfig = {
         'https://cdn.jsdelivr.net',
         'https://unpkg.com',
       ].join(' '),
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "style-src 'self' 'unsafe-inline'",
       [
         'img-src',
         "'self'",
@@ -56,12 +54,10 @@ const nextConfig = {
         'https://lh3.googleusercontent.com',
         'https://ui-avatars.com',
       ].join(' '),
-      "font-src 'self' data: https://fonts.gstatic.com",
+      "font-src 'self' data:",
       [
         'connect-src',
         "'self'",
-        'https://vercel.live',
-        'wss://vercel.live',
         'https://*.googleapis.com',
         'https://*.firebaseio.com',
         'wss://*.firebaseio.com',
@@ -79,7 +75,6 @@ const nextConfig = {
       [
         'frame-src',
         "'self'",
-        'https://vercel.live',
         'https://*.firebaseapp.com',
         'https://accounts.google.com',
       ].join(' '),
@@ -126,6 +121,7 @@ const nextConfig = {
       dynamic: 30,
       static: 180,
     },
+    // ĐÃ XÓA: optimizeCss: true, // Thằng này cần 'critters', gây lỗi build
   },
 
   webpack: (config, { isServer }) => {
