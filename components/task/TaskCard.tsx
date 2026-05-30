@@ -184,7 +184,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
       className="group"
     >
       <div className="relative overflow-hidden rounded-[2rem] border border-zinc-200/70 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.03] transition-all duration-300 active:scale-[0.992] dark:border-white/10 dark:bg-zinc-950 dark:shadow-black/30">
-        <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${accentGradient}`} />
+<div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${accentGradient} rounded-t-[2rem]`} />
         <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full opacity-10 blur-3xl" style={{ background: accent }} />
 
         <div className="relative p-4 pb-3">
@@ -255,16 +255,10 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
             </div>
           </div>
 
-          {derived.maxSlots > 0 && (
-            <div className="mt-3">
-              <div className="h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900">
-                <motion.div className={`h-full rounded-full bg-gradient-to-r ${accentGradient}`} initial={reduceMotion ? false : { width: 0 }} animate={{ width: `${derived.progress}%` }} transition={{ duration: 0.5 }} />
-              </div>
-            </div>
-          )}
+         
         </div>
 
-        <div className="flex items-center justify-between border-t border-zinc-100 px-3 py-2 dark:border-white/10">
+<div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-1">
             <button type="button" aria-label={liked ? "Bỏ thích" : "Thích"} onClick={(e) => { e.stopPropagation(); handleLike(); }} className="flex h-11 items-center gap-2 rounded-2xl px-3 text-sm font-black text-zinc-700 transition active:scale-95 dark:text-zinc-300">
               {liked ? <HiHeart className="h-5 w-5 text-red-500" /> : <HiOutlineHeart className="h-5 w-5" />}
