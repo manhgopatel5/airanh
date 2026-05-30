@@ -5,6 +5,17 @@ import { adminAuth } from '@/lib/firebase-admin'
 const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/terms', '/privacy', '/onboarding']
 const PUBLIC_API = ['/api/auth', '/api/user/create', '/api/user/logout', '/api/health']
 
+// CSP cho Vercel Preview + Firebase Auth
+const CSP_HEADER = `
+  default-src 'self';
+  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://*.vercel.app https://apis.google.com https://www.gstatic.com https://www.google.com https://*.firebaseio.com https://*.firebaseapp.com https://*.googleapis.com;
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  img-src 'self' data: blob: https:;
+  font-src 'self' https://fonts.gstatic.com;
+  connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com;
+  frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;
+`.replace(/\s{2,}/g, ' ').trim()
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -15,7 +26,9 @@ export async function middleware(request: NextRequest) {
     pathname.includes('.') ||
     PUBLIC_API.some(p => pathname.startsWith(p))
   ) {
-    return NextResponse.next()
+    const res = NextResponse.next()
+    res.headers.set('Content-Security-Policy', CSP_HEADER)
+    return res
   }
 
   const token = request.cookies.get('__session')?.value
@@ -26,9 +39,13 @@ export async function middleware(request: NextRequest) {
     if (!isPublicRoute) {
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('redirect', pathname)
-      return NextResponse.redirect(loginUrl)
+      const res = NextResponse.redirect(loginUrl)
+      res.headers.set('Content-Security-Policy', CSP_HEADER)
+      return res
     }
-    return NextResponse.next()
+    const res = NextResponse.next()
+    res.headers.set('Content-Security-Policy', CSP_HEADER)
+    return res
   }
 
   // 3. Có token -> chỉ verify JWT, không query DB
@@ -36,18 +53,20 @@ export async function middleware(request: NextRequest) {
     await adminAuth().verifySessionCookie(token, false)
 
     // Đã login mà vào /login, /register -> về home
-    // Fix: dùng /register thay vì /signup
     if (['/login', '/register'].includes(pathname)) {
-      return NextResponse.redirect(new URL('/', request.url))
+      const res = NextResponse.redirect(new URL('/', request.url))
+      res.headers.set('Content-Security-Policy', CSP_HEADER)
+      return res
     }
 
-    // Check onboardingCompleted đẩy xuống client
-    // ClientLayout dùng useAuth() check 0ms nhờ cache
-    return NextResponse.next()
+    const res = NextResponse.next()
+    res.headers.set('Content-Security-Policy', CSP_HEADER)
+    return res
   } catch (err) {
-    const response = NextResponse.redirect(new URL('/login', request.url))
-    response.cookies.delete('__session')
-    return response
+    const res = NextResponse.redirect(new URL('/login', request.url))
+    res.cookies.delete('__session')
+    res.headers.set('Content-Security-Policy', CSP_HEADER)
+    return res
   }
 }
 
