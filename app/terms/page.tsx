@@ -1,111 +1,168 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FiArrowLeft, FiFileText, FiPhone, FiMail, FiUser } from "react-icons/fi";
+import { FiArrowLeft, FiFileText, FiPhone, FiMail, FiUser, FiAlertTriangle, FiBriefcase, FiGavel } from "react-icons/fi";
 import { motion } from "framer-motion";
+import HuhaLogo from "@/components/brand/HuhaLogo";
 
 export default function TermsPage() {
   const router = useRouter();
-  const lastUpdated = "27/04/2026";
-  const version = "2.1";
+  const lastUpdated = "31/05/2026";
+  const version = "3.0";
 
   return (
-    <div className="h-dvh bg-gradient-to-br from-sky-400 to-sky-500 flex items-center justify-center px-4 py-8 overflow-y-auto">
-      <div className="w-full max-w-2xl my-auto">
+    <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-8 dark:bg-zinc-950">
+      <div className="mx-auto w-full max-w-2xl">
+        <button
+          onClick={() => router.back()}
+          className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 transition active:scale-95 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
+        >
+          <FiArrowLeft size={20} />
+        </button>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6"
         >
-          <button
-            onClick={() => router.back()}
-            className="mb-4 w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-gray-300 hover:bg-gray-50 active:scale-95 transition-all"
-          >
-            <FiArrowLeft className="text-gray-700" size={20} />
-          </button>
-
-          <div className="text-center mb-6">
-            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-sky-500 to-sky-600 rounded-2xl flex items-center justify-center shadow-lg shadow-sky-500/30">
-              <FiFileText className="text-white" size={32} />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-1.5">Điều khoản sử dụng Airanh</h1>
-            <p className="text-sm text-gray-600">Phiên bản {version} | Cập nhật: {lastUpdated}</p>
+          <div className="mb-8">
+            <HuhaLogo />
           </div>
 
-          <div className="space-y-5 text-sm text-gray-700 max-h-[60vh] overflow-y-auto pr-2">
-            <section>
-              <h2 className="font-bold text-gray-900 mb-2">1. Giới thiệu</h2>
-              <p>Airanh là ứng dụng mạng xã hội do <b>Nguyễn Quốc Mạnh</b> phát triển và vận hành. Bằng việc tạo tài khoản và sử dụng Airanh, bạn đồng ý bị ràng buộc bởi Điều khoản này và Chính sách bảo mật.</p>
+          <div className="mb-8 flex flex-col items-center text-center">
+            <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] shadow-lg shadow-[#0A84FF]/25">
+              <FiFileText className="text-white" size={28} />
+            </div>
+            <h1 className="text-2xl font-black text-zinc-900 dark:text-white">Điều khoản sử dụng</h1>
+            <p className="mt-1 text-sm font-bold text-zinc-500 dark:text-zinc-400">
+              Phiên bản {version} | Cập nhật: {lastUpdated}
+            </p>
+          </div>
+
+          <div className="space-y-6 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+            <section className="rounded-2xl bg-[#0A84FF]/5 p-4 dark:bg-[#0A84FF]/10">
+              <p className="text-zinc-800 dark:text-zinc-200">
+                Chào mừng đến với Huha. Bằng việc tạo tài khoản và sử dụng dịch vụ, bạn đồng ý bị ràng buộc bởi Điều khoản này, Chính sách bảo mật và pháp luật Việt Nam.
+              </p>
             </section>
 
             <section>
-              <h2 className="font-bold text-gray-900 mb-2">2. Điều kiện tài khoản</h2>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>Bạn phải từ 13 tuổi trở lên, đủ năng lực hành vi dân sự theo pháp luật Việt Nam.</li>
-                <li>Thông tin đăng ký phải chính xác. Email dùng để xác thực và khôi phục tài khoản.</li>
-                <li>Mỗi cá nhân chỉ sở hữu 01 tài khoản. Tài khoản trùng lặp, giả mạo sẽ bị vô hiệu hóa.</li>
-                <li>Bạn chịu hoàn toàn trách nhiệm bảo mật mật khẩu. Thông báo ngay cho chúng tôi nếu nghi ngờ tài khoản bị xâm phạm.</li>
-                <li>Chúng tôi có quyền từ chối cung cấp dịch vụ, tạm khóa hoặc xóa vĩnh viễn tài khoản vi phạm mà không cần báo trước.</li>
+              <h2 className="mb-2 flex items-center gap-2 text-base font-black text-zinc-900 dark:text-white">
+                <FiBriefcase className="text-[#0A84FF]" /> 1. Giới thiệu & Chấp nhận
+              </h2>
+              <p>
+                Huha là nền tảng kết nối công việc do <b>Nguyễn Quốc Mạnh</b> phát triển. Dịch vụ gồm: ứng dụng mobile, website huha.vn, API. 
+                Khi bạn click "Tạo tài khoản" hoặc "Đăng nhập" là đã đọc, hiểu và chấp nhận toàn bộ điều khoản. Nếu không đồng ý, vui lòng ngừng sử dụng.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="mb-2 text-base font-black text-zinc-900 dark:text-white">2. Điều kiện sử dụng tài khoản</h2>
+              <ul className="space-y-2">
+                <li className="flex gap-2"><span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-[#0A84FF]" /><span>Bạn từ 13 tuổi trở lên, đủ năng lực hành vi dân sự theo Bộ luật Dân sự 2015</span></li>
+                <li className="flex gap-2"><span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-[#0A84FF]" /><span>Thông tin đăng ký chính xác. Email dùng để xác thực và khôi phục</span></li>
+                <li className="flex gap-2"><span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-[#0A84FF]" /><span>Mỗi cá nhân 01 tài khoản. Tài khoản trùng lặp, giả mạo sẽ bị khóa vĩnh viễn</span></li>
+                <li className="flex gap-2"><span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-[#0A84FF]" /><span>Bảo mật mật khẩu. Báo ngay cho DPO nếu nghi ngờ bị xâm phạm qua Manhgopatel5@gmail.com</span></li>
+                <li className="flex gap-2"><span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-[#0A84FF]" /><span>Huha có quyền từ chối, tạm khóa hoặc xóa tài khoản vi phạm mà không cần báo trước</span></li>
               </ul>
             </section>
 
             <section>
-              <h2 className="font-bold text-gray-900 mb-2">3. Quyền và nghĩa vụ của bạn</h2>
-              <p className="mb-2"><b>Bạn được quyền:</b></p>
-              <ul className="list-disc pl-5 space-y-1 mb-3">
-                <li>Sử dụng đầy đủ tính năng của Airanh miễn phí.</li>
-                <li>Đăng tải, chia sẻ nội dung do bạn tạo ra.</li>
-                <li>Yêu cầu xóa tài khoản và dữ liệu cá nhân.</li>
+              <h2 className="mb-2 text-base font-black text-zinc-900 dark:text-white">3. Quyền và Nghĩa vụ của bạn</h2>
+              <div className="mb-3 rounded-xl bg-[#34C759]/10 p-3 dark:bg-[#34C759]/20">
+                <div className="mb-1 font-black text-[#34C759]">BẠN ĐƯỢC QUYỀN:</div>
+                <ul className="space-y-1 text-zinc-700 dark:text-zinc-300">
+                  <li>• Sử dụng đầy đủ tính năng Huha miễn phí: tạo task, nhận việc, chat</li>
+                  <li>• Đăng tải nội dung do bạn tạo, giữ bản quyền</li>
+                  <li>• Yêu cầu xuất dữ liệu JSON hoặc xóa tài khoản bất kỳ lúc nào</li>
+                </ul>
+              </div>
+              <div className="rounded-xl bg-red-50 p-3 dark:bg-red-500/10">
+                <div className="mb-1 font-black text-red-600 dark:text-red-400">BẠN CAM KẾT KHÔNG:</div>
+                <ul className="space-y-1 text-red-700 dark:text-red-300">
+                  <li>• Đăng nội dung vi phạm pháp luật VN: đồi trụy, bạo lực, cờ bạc, ma túy, vũ khí, thù địch, phân biệt đối xử</li>
+                  <li>• Xâm phạm bản quyền, nhãn hiệu, bí mật kinh doanh của bên thứ ba</li>
+                  <li>• Spam, lừa đảo, phishing, phát tán mã độc, tấn công DDOS</li>
+                  <li>• Thu thập dữ liệu người khác bằng bot, crawl trái phép</li>
+                  <li>• Mạo danh cá nhân/tổ chức. Lạm dụng tính năng báo cáo</li>
+                  <li>• Dùng Huha cho mục đích thương mại khi chưa có văn bản cho phép</li>
+                </ul>
+              </div>
+            </section>
+
+            <section>
+              <h2 className="mb-2 text-base font-black text-zinc-900 dark:text-white">4. Nội dung & Sở hữu trí tuệ</h2>
+              <p className="mb-2">
+                <b>Bạn giữ bản quyền</b> với mọi nội dung bạn đăng: text, ảnh, video. Khi đăng lên Huha, bạn cấp cho chúng tôi giấy phép toàn cầu, miễn phí, không độc quyền để lưu trữ, hiển thị, phân phối nội dung đó nhằm vận hành dịch vụ.
+              </p>
+              <p>
+                <b>Huha giữ bản quyền</b> với: mã nguồn, logo, thương hiệu "Huha", thiết kế UI/UX. Nghiêm cấm sao chép, dịch ngược, bán lại khi chưa được phép bằng văn bản.
+              </p>
+            </section>
+
+            <section>
+              <h2 className="mb-2 text-base font-black text-zinc-900 dark:text-white">5. Dịch vụ trả phí & Hoàn tiền</h2>
+              <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+                <p className="mb-2"><b>Hiện tại:</b> Huha 100% miễn phí cho người dùng cá nhân.</p>
+                <p><b>Tương lai:</b> Nếu ra mắt gói Huha Pro cho doanh nghiệp, chúng tôi sẽ cập nhật điều khoản thanh toán, chính sách hoàn tiền 7 ngày rõ ràng trước khi áp dụng. Bạn có quyền từ chối và tiếp tục dùng bản miễn phí.</p>
+              </div>
+            </section>
+
+            <section>
+              <h2 className="mb-2 flex items-center gap-2 text-base font-black text-zinc-900 dark:text-white">
+                <FiAlertTriangle className="text-[#0A84FF]" /> 6. Giới hạn trách nhiệm
+              </h2>
+              <div className="rounded-xl bg-zinc-100 p-3 dark:bg-zinc-900">
+                <p className="mb-2">Huha cung cấp dịch vụ "AS IS" - nguyên trạng. Trong phạm vi luật cho phép, chúng tôi <b>KHÔNG chịu trách nhiệm</b> cho:</p>
+                <ul className="space-y-1">
+                  <li>• Thiệt hại gián tiếp, ngẫu nhiên do gián đoạn dịch vụ</li>
+                  <li>• Mất dữ liệu do lỗi người dùng: xóa nhầm, quên mật khẩu</li>
+                  <li>• Tranh chấp giữa người dùng với nhau</li>
+                  <li>• Nội dung do người dùng đăng tải</li>
+                </ul>
+                <p className="mt-2 text-xs text-zinc-500">Trách nhiệm tối đa của Huha không vượt quá số tiền bạn đã trả trong 12 tháng gần nhất.</p>
+              </div>
+            </section>
+
+            <section>
+              <h2 className="mb-2 text-base font-black text-zinc-900 dark:text-white">7. Chấm dứt dịch vụ</h2>
+              <ul className="space-y-1.5">
+                <li><b>Bạn:</b> Vào Cài đặt → Xóa tài khoản. Dữ liệu ẩn ngay, xóa backup sau 30 ngày</li>
+                <li><b>Huha:</b> Có thể khóa tạm thời nếu nghi ngờ vi phạm. Xóa vĩnh viễn nếu vi phạm nghiêm trọng Điều 3</li>
+                <li><b>Hậu quả:</b> Mất quyền truy cập, dữ liệu không khôi phục được sau 30 ngày</li>
               </ul>
-              <p className="mb-2"><b>Bạn cam kết KHÔNG:</b></p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>Đăng tải nội dung vi phạm pháp luật VN: đồi trụy, bạo lực, cờ bạc, ma túy, vũ khí, thù địch, phân biệt chủng tộc, tôn giáo.</li>
-                <li>Xâm phạm bản quyền, nhãn hiệu, bí mật kinh doanh của bên thứ ba.</li>
-                <li>Spam, lừa đảo, phishing, phát tán mã độc, tấn công DDoS.</li>
-                <li>Thu thập dữ liệu người dùng khác bằng bot, crawl trái phép.</li>
-                <li>Mạo danh cá nhân, tổ chức. Lạm dụng tính năng báo cáo.</li>
-                <li>Sử dụng Airanh cho mục đích thương mại khi chưa được phép bằng văn bản.</li>
-              </ul>
             </section>
 
             <section>
-              <h2 className="font-bold text-gray-900 mb-2">4. Quyền sở hữu trí tuệ</h2>
-              <p>Bạn giữ toàn bộ quyền với nội dung bạn đăng. Khi đăng lên Airanh, bạn cấp cho chúng tôi giấy phép toàn cầu, miễn phí, không độc quyền để lưu trữ, hiển thị, phân phối nội dung đó nhằm vận hành dịch vụ. Mã nguồn, logo, thương hiệu "Airanh" thuộc sở hữu của Nguyễn Quốc Mạnh.</p>
+              <h2 className="mb-2 flex items-center gap-2 text-base font-black text-zinc-900 dark:text-white">
+                <FiGavel className="text-[#0A84FF]" /> 8. Luật áp dụng & Giải quyết tranh chấp
+              </h2>
+              <p>
+                Điều khoản này điều chỉnh bởi <b>pháp luật Việt Nam</b>. Mọi tranh chấp ưu tiên giải quyết qua thương lượng. 
+                Nếu không đạt thỏa thuận, tranh chấp sẽ đưa ra <b>Tòa án nhân dân TP. Hồ Chí Minh</b> giải quyết.
+              </p>
             </section>
 
-            <section>
-              <h2 className="font-bold text-gray-900 mb-2">5. Dịch vụ trả phí</h2>
-              <p>Hiện tại Airanh miễn phí. Nếu sau này có gói Pro, chúng tôi sẽ cập nhật điều khoản thanh toán, hoàn tiền rõ ràng trước khi áp dụng. Bạn có quyền từ chối và tiếp tục dùng bản miễn phí.</p>
-            </section>
-
-            <section>
-              <h2 className="font-bold text-gray-900 mb-2">6. Giới hạn trách nhiệm</h2>
-              <p>Airanh cung cấp dịch vụ "AS IS". Chúng tôi không đảm bảo: dịch vụ không gián đoạn, không lỗi, dữ liệu không mất mát. Trong phạm vi luật cho phép, chúng tôi không chịu trách nhiệm cho thiệt hại gián tiếp, ngẫu nhiên, do mất dữ liệu hoặc uy tín từ việc sử dụng app.</p>
-            </section>
-
-            <section>
-              <h2 className="font-bold text-gray-900 mb-2">7. Chấm dứt</h2>
-              <p>Bạn có thể xóa tài khoản trong Cài đặt. Chúng tôi có thể chấm dứt dịch vụ nếu bạn vi phạm nghiêm trọng. Sau khi xóa, dữ liệu cá nhân sẽ bị xóa khỏi server trong 30 ngày, trừ dữ liệu cần lưu trữ theo luật.</p>
-            </section>
-
-            <section>
-              <h2 className="font-bold text-gray-900 mb-2">8. Luật áp dụng</h2>
-              <p>Điều khoản này được điều chỉnh bởi pháp luật Việt Nam. Mọi tranh chấp sẽ được giải quyết tại Tòa án có thẩm quyền tại TP. Hồ Chí Minh.</p>
-            </section>
-
-            <section className="bg-sky-50 border border-sky-200 rounded-2xl p-4">
-              <h2 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <FiUser size={18} className="text-sky-600" />
+            <section className="rounded-2xl border-2 border-[#0A84FF]/20 bg-[#0A84FF]/5 p-4 dark:bg-[#0A84FF]/10">
+              <h2 className="mb-3 flex items-center gap-2 text-base font-black text-zinc-900 dark:text-white">
+                <FiUser size={18} className="text-[#0A84FF]" />
                 9. Thông tin Nhà phát hành
               </h2>
-              <div className="space-y-2">
-                <p><b>Đơn vị:</b> Cá nhân</p>
-                <p><b>Họ tên:</b> Nguyễn Quốc Mạnh</p>
-                <p className="flex items-center gap-2"><FiPhone className="text-sky-600" size={16} /><b>Hotline:</b> 0359872122</p>
-                <p className="flex items-center gap-2"><FiMail className="text-sky-600" size={16} /><b>Email:</b> Manhgopatel5@gmail.com</p>
+              <div className="space-y-2.5 text-zinc-800 dark:text-zinc-200">
+                <p><b>Đơn vị:</b> Cá nhân - Nguyễn Quốc Mạnh</p>
+                <p><b>Thương hiệu:</b> Huha</p>
+                <p className="flex items-center gap-2"><FiPhone className="text-[#0A84FF]" size={16} /><b>Hotline:</b> 0359872122 (8h-22h)</p>
+                <p className="flex items-center gap-2"><FiMail className="text-[#0A84FF]" size={16} /><b>Email:</b> Manhgopatel5@gmail.com</p>
                 <p><b>Địa chỉ:</b> TP. Hồ Chí Minh, Việt Nam</p>
+                <div className="mt-3 rounded-lg bg-white/60 p-2 text-xs dark:bg-zinc-900/60">
+                  <b>Hỗ trợ:</b> Phản hồi trong 24h làm việc. Khiếu nại xử lý 72h theo NĐ 13/2023.
+                </div>
               </div>
+            </section>
+
+            <section className="text-xs text-zinc-500 dark:text-zinc-500">
+              <p><b>Thay đổi điều khoản:</b> Khi cập nhật, Huha thông báo qua email + banner in-app 30 ngày trước khi áp dụng. Tiếp tục sử dụng sau ngày hiệu lực = chấp nhận điều khoản mới.</p>
+              <p className="mt-2"><b>Hiệu lực:</b> Từ {lastUpdated}. Thay thế mọi phiên bản trước đó.</p>
             </section>
           </div>
         </motion.div>
