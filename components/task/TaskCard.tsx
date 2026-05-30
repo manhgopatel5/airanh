@@ -184,7 +184,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
       className="group"
     >
 <div className="relative overflow-hidden rounded-[2rem] border border-zinc-200/70 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.03] transition-all duration-300 active:scale-[0.992] dark:border-white/10 dark:bg-zinc-950 dark:shadow-black/30" style={{ boxShadow: `inset 0 3px 0 0 ${accent}, 0 18px 50px rgba(15,23,42,0.07)` }}>
-        <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full opacity-10 blur-3xl" style={{ background: accent }} />
+
 
         <div className="relative p-4 pb-3">
           <div className="mb-4 flex items-start justify-between gap-3">
@@ -209,25 +209,25 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
             </div>
 
             <div className="flex shrink-0 items-center gap-1">
-              <button type="button" aria-label={isSaved ? "Bỏ lưu" : "Lưu"} onClick={(e) => { e.stopPropagation(); handleSave(); }} disabled={saving} className="flex h-11 w-11 items-center justify-center rounded-2xl bg-zinc-50 text-zinc-500 transition active:scale-95 disabled:opacity-50 dark:bg-zinc-900 dark:text-zinc-400">
-                <FiBookmark className={isSaved ? "fill-current" : ""} style={{ color: isSaved ? accent : undefined }} />
-              </button>
-              {isOwner && (
-                <button
-                  ref={menuBtnRef}
-                  type="button"
-                  aria-label="Mở menu"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const menuWidth = 188;
-                    setMenuPos({ x: Math.min(Math.max(8, rect.right - menuWidth), window.innerWidth - menuWidth - 8), y: rect.bottom + 8 });
-                    setShowMenu((value) => !value);
-                  }}
-                  className="flex h-11 w-11 items-center justify-center rounded-2xl bg-zinc-50 text-zinc-500 transition active:scale-95 dark:bg-zinc-900 dark:text-zinc-400"
-                >
-                  <FiMoreHorizontal />
-                </button>
+  <button type="button" aria-label={isSaved ? "Bỏ lưu" : "Lưu"} onClick={(e) => { e.stopPropagation(); handleSave(); }} disabled={saving} className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-zinc-500 transition active:scale-95 disabled:opacity-50 dark:bg-zinc-900 dark:text-zinc-400">
+  <FiBookmark className={isSaved ? "fill-current" : ""} style={{ color: isSaved ? accent : undefined }} />
+</button>
+
+<button
+  ref={menuBtnRef}
+  type="button"
+  aria-label="Mở menu"
+  onClick={(e) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const menuWidth = 188;
+    setMenuPos({ x: Math.min(Math.max(8, rect.right - menuWidth), window.innerWidth - menuWidth - 8), y: rect.bottom + 8 });
+    setShowMenu((value) => !value);
+  }}
+  className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-zinc-500 transition active:scale-95 dark:bg-zinc-900 dark:text-zinc-400"
+>
+  <FiMoreHorizontal />
+</button>
               )}
             </div>
           </div>
@@ -239,20 +239,20 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
             {task.description && <p className="mt-2 line-clamp-3 text-sm leading-6 text-zinc-600 dark:text-zinc-300">{task.description}</p>}
           </button>
 
-          <div className="mt-4 grid grid-cols-3 gap-2">
-            <div className="rounded-2xl bg-zinc-50 p-3 ring-1 ring-black/[0.03] dark:bg-zinc-900 dark:ring-white/5">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-400"><FiDollarSign /> Giá trị</div>
-              <p className="mt-1 truncate text-sm font-black text-zinc-950 dark:text-white">{derived.price}</p>
-            </div>
-            <div className="rounded-2xl bg-zinc-50 p-3 ring-1 ring-black/[0.03] dark:bg-zinc-900 dark:ring-white/5">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-400"><FiClock /> Thời gian</div>
-              <p className="mt-1 text-sm font-black text-zinc-950 dark:text-white">{derived.due}</p>
-            </div>
-            <div className="rounded-2xl bg-zinc-50 p-3 ring-1 ring-black/[0.03] dark:bg-zinc-900 dark:ring-white/5">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-400"><FiUsers /> Slot</div>
-              <p className="mt-1 text-sm font-black text-zinc-950 dark:text-white">{derived.maxSlots ? `${derived.currentCount}/${derived.maxSlots}` : "Mở"}</p>
-            </div>
-          </div>
+    <div className="mt-4 grid grid-cols-3 gap-2">
+  <div className="rounded-2xl bg-white p-3 ring-1 ring-black/[0.03] dark:bg-zinc-900 dark:ring-white/5">
+    <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-400"><FiDollarSign /> Giá trị</div>
+    <p className="mt-1 truncate text-sm font-black text-zinc-950 dark:text-white">{derived.price}</p>
+  </div>
+  <div className="rounded-2xl bg-white p-3 ring-1 ring-black/[0.03] dark:bg-zinc-900 dark:ring-white/5">
+    <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-400"><FiClock /> Thời gian</div>
+    <p className="mt-1 text-sm font-black text-zinc-950 dark:text-white">{derived.due}</p>
+  </div>
+  <div className="rounded-2xl bg-white p-3 ring-1 ring-black/[0.03] dark:bg-zinc-900 dark:ring-white/5">
+    <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-400"><FiUsers /> Slot</div>
+    <p className="mt-1 text-sm font-black text-zinc-950 dark:text-white">{derived.maxSlots ? `${derived.currentCount}/${derived.maxSlots}` : "Mở"}</p>
+  </div>
+</div>
 
          
         </div>
