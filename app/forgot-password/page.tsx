@@ -7,7 +7,7 @@ import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { FiAlertCircle, FiCheck, FiMail } from "react-icons/fi";
-import AuthShell from "@/components/auth/AuthShell";
+import HuhaLogo from "@/components/brand/HuhaLogo";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -107,56 +107,74 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <AuthShell
-      title="Đặt lại mật khẩu"
-      description={sent ? "Link đặt lại mật khẩu đã được gửi. Kiểm tra hộp thư và thư mục Spam." : "Nhập email đã đăng ký để nhận link đặt lại mật khẩu an toàn."}
-      icon={sent ? <FiCheck className="h-6 w-6" /> : <FiMail className="h-6 w-6" />}
-      footer={<Link href="/login" className="font-bold text-sky-600 dark:text-sky-300">Quay lại đăng nhập</Link>}
-    >
-      {error && (
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-4 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-3 py-3 text-sm font-semibold text-red-600 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300">
-          <FiAlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          {error}
-        </motion.div>
-      )}
-
-      {sent && (
-        <div className="mb-4 rounded-2xl border border-sky-200 bg-sky-50 px-3 py-3 text-sm font-semibold text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-200">
-          Đã gửi thành công. Bạn có thể gửi lại sau {cooldown}s.
+    <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
+      <div className="mx-auto w-full max-w-md">
+        <div className="mb-10">
+          <HuhaLogo />
         </div>
-      )}
 
-      <form onSubmit={handleReset} className="space-y-4">
-        <label className="block space-y-2">
-          <span className="text-sm font-bold text-zinc-700 dark:text-zinc-200">Email</span>
-          <span className="relative block">
-            <FiMail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-            <input
-              ref={emailRef}
-              type="email"
-              autoComplete="email"
-              placeholder="you@example.com"
-              value={email}
-              disabled={sent && cooldown > 0}
-              onChange={(event) => {
-                setEmail(event.target.value);
-                if (error) setError("");
-              }}
-              className={`h-12 w-full rounded-2xl border bg-white pl-11 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:ring-4 dark:bg-zinc-900 dark:text-white ${error ? "border-red-400 focus:ring-red-500/10" : "border-zinc-200 focus:border-sky-500 focus:ring-sky-500/10 dark:border-zinc-700"}`}
-            />
-          </span>
-        </label>
-
-        {cooldown > 0 && (
-          <div className="h-1.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-            <motion.div initial={{ width: "100%" }} animate={{ width: "0%" }} transition={{ duration: cooldown, ease: "linear" }} className="h-full bg-sky-500" />
-          </div>
+        {sent && (
+          <motion.div 
+            initial={{ opacity: 0, y: -8 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            className="mb-6 flex items-start gap-3 rounded-2xl border border-[#34C759]/30 bg-[#34C759]/10 px-4 py-4 text-sm font-bold text-[#34C759]"
+          >
+            <FiCheck className="mt-0.5 h-5 w-5 shrink-0" />
+            <div>
+              <div className="font-black">Đã gửi link đặt lại</div>
+              <div className="mt-0.5 font-semibold text-[#34C759]/80">
+                Kiểm tra hộp thư và thư mục Spam. Bạn có thể gửi lại sau {cooldown}s.
+              </div>
+            </div>
+          </motion.div>
         )}
 
-        <button type="submit" disabled={loading || checking || (sent && cooldown > 0)} className="flex h-12 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] text-sm font-black text-white shadow-xl shadow-sky-500/25 transition active:scale-[0.98] disabled:opacity-60">
-          {checking ? "Đang kiểm tra..." : loading ? "Đang gửi..." : sent && cooldown > 0 ? `Gửi lại sau ${cooldown}s` : "Gửi link đặt lại"}
-        </button>
-      </form>
-    </AuthShell>
+        {error && (
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-4 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300">
+            <FiAlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            {error}
+          </motion.div>
+        )}
+
+        <form onSubmit={handleReset} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-zinc-700 dark:text-zinc-200">Email</label>
+            <div className="relative">
+              <FiMail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+              <input
+                ref={emailRef}
+                type="email"
+                autoComplete="email"
+                placeholder="Email của bạn"
+                value={email}
+                disabled={sent && cooldown > 0}
+                onChange={(event) => {
+                  setEmail(event.target.value);
+                  if (error) setError("");
+                }}
+                className={`h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${error ? "border-red-400 focus:border-red-500" : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"}`}
+              />
+            </div>
+          </div>
+
+          {cooldown > 0 && (
+            <div className="h-1.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+              <motion.div initial={{ width: "100%" }} animate={{ width: "0%" }} transition={{ duration: cooldown, ease: "linear" }} className="h-full bg-[#0A84FF]" />
+            </div>
+          )}
+
+          <button type="submit" disabled={loading || checking || (sent && cooldown > 0)} className="flex h-14 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] text-base font-black text-white shadow-lg shadow-[#0A84FF]/25 transition active:scale-[0.98] disabled:opacity-60">
+            {checking ? "Đang kiểm tra..." : loading ? "Đang gửi..." : sent && cooldown > 0 ? `Gửi lại sau ${cooldown}s` : "Gửi link đặt lại"}
+          </button>
+        </form>
+
+        <p className="mt-8 text-center text-sm font-semibold text-zinc-600 dark:text-zinc-400">
+          Nhớ mật khẩu?{" "}
+          <Link href="/login" className="font-black text-[#0A84FF]">
+            Đăng nhập
+          </Link>
+        </p>
+      </div>
+    </div>
   );
 }
