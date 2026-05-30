@@ -183,11 +183,11 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
       </div>
 
       <div className="mx-auto max-w-[680px] px-4 pt-4">
-        {loading ? (
-          <div className="space-y-3" aria-label="Đang tải feed">
-            {[0, 1, 2].map((item) => <div className="rounded-[2rem] border border-white/70 bg-white p-8 text-center shadow-xl shadow-black/[0.04] dark:border-white/10 dark:bg-zinc-900/80">)}
-          </div>
-        ) : error ? (
+  {loading? (
+  <div className="space-y-3" aria-label="Đang tải feed">
+    {[0, 1, 2].map((item) => <div key={item} className="h-52 rounded-[2rem] bg-white motion-safe:animate-pulse dark:bg-zinc-900" />)}
+  </div>
+) : error? (
           <div className="rounded-[2rem] border border-red-200 bg-white/82 p-8 text-center shadow-xl shadow-red-500/5 dark:border-red-500/20 dark:bg-zinc-900/80">
             <FiInbox className="mx-auto h-9 w-9 text-red-500" />
             <h2 className="mt-4 text-xl font-black">Feed đang gián đoạn</h2>
