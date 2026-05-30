@@ -222,7 +222,7 @@ export default function SearchPage() {
     <>
       <Toaster richColors position="top-center" />
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 pb-24">
-        <div className="sticky top-0 z-50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800">
+<div className="sticky top-0 z-50 bg-white dark:bg-zinc-900">
           <div className="max-w-2xl mx-auto px-4 py-3">
             <div className="relative mb-3">
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
