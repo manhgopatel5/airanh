@@ -228,7 +228,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
 >
   <FiMoreHorizontal />
 </button>
-              )}
+              
             </div>
           </div>
 
