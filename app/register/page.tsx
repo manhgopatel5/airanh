@@ -3,18 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FcGoogle } from "react-icons/fc";
-import { FiAlertCircle, FiCheck, FiEye, FiEyeOff, FiLock, FiMail, FiSend, FiUser } from "react-icons/fi";
+import { FiAlertCircle, FiCheck, FiEye, FiEyeOff, FiLock, FiMail, FiUser } from "react-icons/fi";
 import {
-  browserLocalPersistence,
   createUserWithEmailAndPassword,
-  GoogleAuthProvider,
-  isSignInWithEmailLink,
   sendEmailVerification,
-  sendSignInLinkToEmail,
-  setPersistence,
-  signInWithEmailLink,
-  signInWithPopup,
   updateProfile,
 } from "firebase/auth";
 import { motion } from "framer-motion";
@@ -51,9 +43,6 @@ export default function Register() {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [acceptPrivacy, setAcceptPrivacy] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [magicLoading, setMagicLoading] = useState(false);
-  const [magicLinkSent, setMagicLinkSent] = useState(false);
 
   useEffect(() => {
     const nextAuth = getFirebaseAuth();
@@ -68,25 +57,6 @@ export default function Register() {
       router.replace(redirectTo);
     }
   }, [authLoading, redirectTo, router, user, userData]);
-
-  useEffect(() => {
-    if (!auth) return;
-    if (isSignInWithEmailLink(auth, window.location.href)) {
-      const email = localStorage.getItem("emailForSignIn") || form.email;
-      if (!email) {
-        setErrors({ submit: "Nhập email rồi gửi lại link để xác nhận thiết bị này." });
-        return;
-      }
-      signInWithEmailLink(auth, email, window.location.href)
-      .then(() => {
-          localStorage.removeItem("emailForSignIn");
-          localStorage.setItem("last_email", email);
-          toast.success("Đăng nhập thành công");
-          router.replace(redirectTo);
-        })
-      .catch(() => setErrors({ submit: "Link không hợp lệ hoặc đã hết hạn" }));
-    }
-  }, [auth, form.email, redirectTo, router]);
 
   const strength = passwordScore(form.password);
 
@@ -124,51 +94,6 @@ export default function Register() {
     setErrors(next);
     return Object.keys(next).length === 0;
   }, [acceptPrivacy, acceptTerms, form, validateField]);
-
-  const handleGoogleSignup = async () => {
-    if (!auth) return;
-    try {
-      setGoogleLoading(true);
-      setErrors({});
-      await setPersistence(auth, browserLocalPersistence);
-      const provider = new GoogleAuthProvider();
-      provider.addScope("email");
-      provider.addScope("profile");
-      provider.setCustomParameters({ prompt: "select_account" });
-      await signInWithPopup(auth, provider);
-      toast.success("Đăng nhập thành công");
-      router.replace(redirectTo);
-    } catch (err: any) {
-      if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") return;
-      setErrors({ submit: err.code === "auth/popup-blocked"? "Popup bị chặn. Cho phép popup và thử lại." : "Đăng nhập Google thất bại" });
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
-
-  const handleMagicLink = async () => {
-    if (!auth) return;
-    if (!form.email ||!emailRegex.test(form.email)) {
-      setErrors({ email: "Nhập email hợp lệ trước" });
-      return;
-    }
-    try {
-      setMagicLoading(true);
-      setErrors({});
-      await sendSignInLinkToEmail(auth, form.email, {
-        url: `${window.location.origin}/register?redirect=${encodeURIComponent(redirectTo)}`,
-        handleCodeInApp: true,
-      });
-      localStorage.setItem("emailForSignIn", form.email);
-      localStorage.setItem("last_email", form.email);
-      setMagicLinkSent(true);
-      toast.success("Đã gửi link đăng nhập qua email");
-    } catch {
-      setErrors({ submit: "Gửi link thất bại. Thử lại sau." });
-    } finally {
-      setMagicLoading(false);
-    }
-  };
 
   const handleRegister = async (event?: React.FormEvent) => {
     event?.preventDefault();
@@ -231,12 +156,6 @@ export default function Register() {
               <FiAlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               {errors.submit}
             </motion.div>
-          )}
-
-          {magicLinkSent && (
-            <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-200">
-              Link đăng nhập đã được gửi. Kiểm tra hộp thư và thư mục Spam.
-            </div>
           )}
 
           <div className="space-y-1.5">
@@ -304,23 +223,6 @@ export default function Register() {
             {loading? "Đang tạo tài khoản..." : <><FiCheck className="h-5 w-5" /> Tạo tài khoản</>}
           </button>
         </form>
-
-        <div className="my-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.16em] text-zinc-400">
-          <span className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
-          hoặc
-          <span className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
-        </div>
-
-        <div className="grid gap-3">
-          <button type="button" onClick={handleGoogleSignup} disabled={googleLoading} className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-zinc-200 bg-white text-base font-black text-zinc-800 shadow-sm transition active:scale-[0.98] disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
-            <FcGoogle className="h-5 w-5" />
-            {googleLoading? "Đang mở Google..." : "Tiếp tục với Google"}
-          </button>
-          <button type="button" onClick={handleMagicLink} disabled={magicLoading} className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-zinc-200 bg-white text-base font-black text-zinc-700 transition active:scale-[0.98] disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
-            <FiSend className="h-5 w-5" />
-            {magicLoading? "Đang gửi link..." : "Gửi link đăng nhập"}
-          </button>
-        </div>
 
         <p className="mt-8 text-center text-sm font-semibold text-zinc-600 dark:text-zinc-400">
           Đã có tài khoản?{" "}
