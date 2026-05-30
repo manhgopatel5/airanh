@@ -209,15 +209,11 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-10 dark:bg-zinc-950">
+    <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
       <div className="mx-auto w-full max-w-md">
-        <div className="mb-8">
+        <div className="mb-10">
           <HuhaLogo />
         </div>
-
-        <h1 className="mb-6 text-center text-3xl font-black text-zinc-900 dark:text-white">
-          Đăng nhập
-        </h1>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <input type="text" tabIndex={-1} autoComplete="off" className="hidden" value={form.honeypot} onChange={(e) => setField("honeypot", e.target.value)} />
