@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FiArrowLeft, FiFileText, FiPhone, FiMail, FiUser, FiAlertTriangle, FiBriefcase } from "react-icons/fi";
+import { FiArrowLeft, FiFileText, FiPhone, FiMail, FiUser, FiAlertTriangle, FiBriefcase, FiAward } from "react-icons/fi";
 import { motion } from "framer-motion";
 import HuhaLogo from "@/components/brand/HuhaLogo";
 
@@ -135,7 +135,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="mb-2 flex items-center gap-2 text-base font-black text-zinc-900 dark:text-white">
-                <FiGavel className="text-[#0A84FF]" /> 8. Luật áp dụng & Giải quyết tranh chấp
+                <FiAward className="text-[#0A84FF]" /> 8. Luật áp dụng & Giải quyết tranh chấp
               </h2>
               <p>
                 Điều khoản này điều chỉnh bởi <b>pháp luật Việt Nam</b>. Mọi tranh chấp ưu tiên giải quyết qua thương lượng. 
