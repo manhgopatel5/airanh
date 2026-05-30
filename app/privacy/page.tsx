@@ -27,11 +27,15 @@ export default function PrivacyPage() {
               <FiArrowLeft size={20} />
             </button>
 
+            <div className="mb-4">
+              <HuhaLogo />
+            </div>
+
             <div className="flex flex-col items-center text-center">
               <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] shadow-lg shadow-[#0A84FF]/25">
                 <FiShield className="text-white" size={28} />
               </div>
-              <h1 className="text-2xl font-black text-zinc-900 dark:text-white">Chính sách bảo mật Huha</h1>
+              <h1 className="text-2xl font-black text-zinc-900 dark:text-white">Chính sách bảo mật</h1>
               <p className="mt-1 text-sm font-bold text-zinc-500 dark:text-zinc-400">
                 Phiên bản {version} | Cập nhật: {lastUpdated}
               </p>
@@ -105,10 +109,10 @@ export default function PrivacyPage() {
             <section>
               <h2 className="mb-2 text-base font-black text-zinc-900 dark:text-white">3. Mục đích sử dụng</h2>
               <ul className="space-y-2">
-                <li className="flex gap-2"><FiCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#34C759]" /><span><b>Cung cấp dịch vụ:</b> Đăng nhập, tạo task, sync đa thiết bị, thông báo</span></li>
-                <li className="flex gap-2"><FiCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#34C759]" /><span><b>Bảo mật:</b> Phát hiện đăng nhập lạ, chống DDOS, rate limit 60s/email</span></li>
-                <li className="flex gap-2"><FiCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#34C759]" /><span><b>Cải thiện sản phẩm:</b> Phân tích ẩn danh để tối ưu UX, không định danh cá nhân</span></li>
-                <li className="flex gap-2"><FiCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#34C759]" /><span><b>Pháp lý:</b> Lưu log theo NĐ 72/2013, cung cấp cho cơ quan nhà nước khi có lệnh</span></li>
+                <li className="flex gap-2"><span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-[#34C759]" /><span><b>Cung cấp dịch vụ:</b> Đăng nhập, tạo task, sync đa thiết bị, thông báo</span></li>
+                <li className="flex gap-2"><span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-[#34C759]" /><span><b>Bảo mật:</b> Phát hiện đăng nhập lạ, chống DDOS, rate limit 60s/email</span></li>
+                <li className="flex gap-2"><span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-[#34C759]" /><span><b>Cải thiện sản phẩm:</b> Phân tích ẩn danh để tối ưu UX, không định danh cá nhân</span></li>
+                <li className="flex gap-2"><span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-[#34C759]" /><span><b>Pháp lý:</b> Lưu log theo NĐ 72/2013, cung cấp cho cơ quan nhà nước khi có lệnh</span></li>
               </ul>
             </section>
 
