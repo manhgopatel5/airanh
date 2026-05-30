@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -47,7 +47,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
   const { user } = useAuth();
-
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
 
   const [isSaved, setIsSaved] = useState(false);
   const [liked, setLiked] = useState(false);
@@ -80,7 +80,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
   const derived = useMemo(() => {
     const maxSlots = task.type === "task" ? task.totalSlots ?? 0 : task.maxParticipants ?? task.totalSlots ?? 0;
     const currentCount = task.type === "task" ? task.joined ?? 0 : task.currentParticipants ?? 0;
-
+    const progress = maxSlots > 0 ? Math.min(100, Math.round((currentCount / maxSlots) * 100)) : 0;
     const created = task.createdAt ? new Date(task.createdAt) : new Date();
     const dueRaw = task.type === "task" ? task.deadline : task.eventDate;
     const due = dueRaw ? new Date(dueRaw).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }) : "Linh hoạt";
@@ -90,40 +90,17 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
     return {
       maxSlots,
       currentCount,
-      
+      progress,
       due,
       price,
       timeAgo: formatDistanceToNow(created, { addSuffix: true, locale: vi }),
     };
-}, [
-  task.type,
-  task.totalSlots,
-  task.maxParticipants,
-  task.currentParticipants,
-  task.joined,
-  task.createdAt,
-  task.deadline,
-  task.eventDate,
-  task.price,
-  task.costAmount,
-  task.costType,
-  task.budgetType,
-]);
+  }, [task]);
 
   if (!task?.id || !task?.title || !task?.type || !task?.status) return null;
 
   const isOwner = user?.uid === task.userId;
-const avatarUrl = useMemo(() => {
-  return (
-    task.userAvatar ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      task.userName || "AIR"
-    )}&background=0A84FF&color=fff&bold=true&size=96`
-  );
-}, [
-  task.userAvatar,
-  task.userName,
-]);
+  const avatarUrl = task.userAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(task.userName || "AIR")}&background=0A84FF&color=fff&bold=true&size=96`;
 
   const goToTask = useCallback(() => {
     vibrate();
@@ -134,11 +111,11 @@ const avatarUrl = useMemo(() => {
     if (!user) return router.push("/login");
     vibrate(10);
     const newLiked = !liked;
-const oldLikes = likes;
+    const oldLikes = task.likes || [];
     setLiked(newLiked);
     onTaskUpdate?.(task.id, {
       likes: newLiked ? [...oldLikes, user.uid] : oldLikes.filter((id) => id !== user.uid),
-      likeCount: likeCount + (newLiked ? 1 : -1),
+      likeCount: (task.likeCount || 0) + (newLiked ? 1 : -1),
     });
     try {
       const token = await user.getIdToken();
@@ -152,15 +129,7 @@ const oldLikes = likes;
       onTaskUpdate?.(task.id, { likes: oldLikes, likeCount: task.likeCount });
       toast.error("Không thể cập nhật lượt thích");
     }
-  }, [
-  user,
-  liked,
-  taskId,
-  likes,
-  likeCount,
-  router,
-  onTaskUpdate
-]);
+  }, [user, liked, task, router, onTaskUpdate]);
 
   const handleSave = useCallback(async () => {
     if (!user) return router.push("/login");
@@ -168,7 +137,7 @@ const oldLikes = likes;
     vibrate(10);
     setSaving(true);
     const newSaved = !isSaved;
-const oldSavedBy = savedBy;
+    const oldSavedBy = task.savedBy || [];
     setIsSaved(newSaved);
     onTaskUpdate?.(task.id, { savedBy: newSaved ? [...oldSavedBy, user.uid] : oldSavedBy.filter((id) => id !== user.uid) });
     try {
@@ -186,7 +155,7 @@ const oldSavedBy = savedBy;
     } finally {
       setSaving(false);
     }
-  }, [user, isSaved, saving, task.id, router, onTaskUpdate]);
+  }, [user, isSaved, saving, task, router, onTaskUpdate]);
 
   const handleDelete = useCallback(async () => {
     if (!isOwner) return;
@@ -207,23 +176,14 @@ const oldSavedBy = savedBy;
   }, [isOwner, task.id, onDelete, user]);
 
   return (
-   <motion.article
-  initial={
-    reduceMotion
-      ? false
-      : { opacity: 0, y: 18 }
-  }
-  animate={{
-    opacity: 1,
-    y: 0,
-  }}
-  whileTap={{
-    scale: 0.99,
-  }}
+    <motion.article
+      initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      {...(reduceMotion ? {} : { whileHover: { y: -2 } })}
       transition={{ duration: 0.22 }}
       className="group"
     >
-<div className="relative overflow-hidden rounded-[2rem] border border-zinc-200/70 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.03] transition-all duration-300 active:scale-[0.992] dark:border-white/10 dark:bg-zinc-950 dark:shadow-black/30" style={cardStyle}>
+<div className="relative overflow-hidden rounded-[2rem] border border-zinc-200/70 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.03] transition-all duration-300 active:scale-[0.992] dark:border-white/10 dark:bg-zinc-950 dark:shadow-black/30" style={{ boxShadow: `inset 0 3px 0 0 ${accent}, 0 18px 50px rgba(15,23,42,0.07)` }}>
 
 
         <div className="relative p-4 pb-3">
@@ -254,7 +214,7 @@ const oldSavedBy = savedBy;
 </button>
 
 <button
-
+  ref={menuBtnRef}
   type="button"
   aria-label="Mở menu"
   onClick={(e) => {
