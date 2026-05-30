@@ -3,6 +3,7 @@ import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { nanoid } from 'nanoid';
 
+
 const generateSearchKeywords = (name: string, userId: string, username?: string): string[] => {
   const keywords = new Set<string>();
   const nameLower = name.toLowerCase().trim();
