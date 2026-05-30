@@ -20,11 +20,10 @@ import {
 } from "firebase/auth";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import AuthShell from "@/components/auth/AuthShell";
-import { getSafeRedirect } from "@/components/auth/authRoutes";
 import InstallPrompt from "@/components/InstallPrompt";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
+import { getSafeRedirect } from "@/components/auth/authRoutes";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -198,109 +197,124 @@ export default function Login() {
 
   if (authLoading) {
     return (
-      <AuthShell title="Đang chuẩn bị AIR" description="Kiểm tra phiên đăng nhập và đồng bộ hồ sơ của bạn.">
-        <div className="space-y-3" role="status" aria-label="Đang tải">
-          <div className="h-12 rounded-2xl bg-zinc-100 motion-safe:animate-pulse dark:bg-zinc-800" />
-          <div className="h-12 rounded-2xl bg-zinc-100 motion-safe:animate-pulse dark:bg-zinc-800" />
-          <div className="h-12 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-700" />
+      <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
+        <div className="mx-auto w-full max-w-md space-y-4">
+          <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
+          <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
+          <div className="h-14 rounded-2xl bg-zinc-300 motion-safe:animate-pulse dark:bg-zinc-700" />
         </div>
-      </AuthShell>
+      </div>
     );
   }
 
   return (
-    <AuthShell
-      title="Đăng nhập"
-      description="Vào AIR để nhận task, lưu cơ hội và quản lý việc của bạn nhanh hơn."
-      footer={
-        <>
-          Chưa có tài khoản? <Link href="/register" className="font-bold text-sky-600 dark:text-sky-300">Tạo tài khoản</Link>
-        </>
-      }
-    >
-      <form onSubmit={handleLogin} className="space-y-4">
-        <input type="text" tabIndex={-1} autoComplete="off" className="hidden" value={form.honeypot} onChange={(e) => setField("honeypot", e.target.value)} />
-
-        {errors.submit && (
-          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-3 py-3 text-sm font-semibold text-red-600 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300">
-            <FiAlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            {errors.submit}
-          </motion.div>
-        )}
-
-        {magicLinkSent && (
-          <div className="rounded-2xl border border-sky-200 bg-sky-50 px-3 py-3 text-sm font-semibold text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-200">
-            Link đăng nhập đã được gửi. Kiểm tra hộp thư và thư mục Spam.
+    <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-8 dark:bg-zinc-950">
+      <div className="mx-auto w-full max-w-md">
+        {/* Header giống app */}
+        <div className="mb-8 flex items-center gap-3">
+          <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[#0A84FF] text-xl font-black text-white">
+            A
+            <span className="absolute -right-0.5 -top-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-[#34C759]" />
           </div>
-        )}
-
-        <label className="block space-y-2">
-          <span className="text-sm font-bold text-zinc-700 dark:text-zinc-200">Email</span>
-          <span className="relative block">
-            <FiMail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-            <input
-              ref={emailRef}
-              type="email"
-              autoComplete="email"
-              placeholder="you@example.com"
-              value={form.email}
-              onChange={(e) => setField("email", e.target.value)}
-              className={`h-12 w-full rounded-2xl border bg-white pl-11 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:ring-4 dark:bg-zinc-900 dark:text-white ${errors.email ? "border-red-400 focus:ring-red-500/10" : "border-zinc-200 focus:border-sky-500 focus:ring-sky-500/10 dark:border-zinc-700"}`}
-            />
-          </span>
-          {errors.email && <span className="text-xs font-semibold text-red-500">{errors.email}</span>}
-        </label>
-
-        <label className="block space-y-2">
-          <span className="text-sm font-bold text-zinc-700 dark:text-zinc-200">Mật khẩu</span>
-          <span className="relative block">
-            <FiLock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-            <input
-              type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
-              placeholder="Nhập mật khẩu"
-              value={form.password}
-              onChange={(e) => setField("password", e.target.value)}
-              className={`h-12 w-full rounded-2xl border bg-white pl-11 pr-12 text-base font-semibold text-zinc-900 outline-none transition focus:ring-4 dark:bg-zinc-900 dark:text-white ${errors.password ? "border-red-400 focus:ring-red-500/10" : "border-zinc-200 focus:border-sky-500 focus:ring-sky-500/10 dark:border-zinc-700"}`}
-            />
-            <button type="button" aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"} onClick={() => setShowPassword((v) => !v)} className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-zinc-400 active:scale-95">
-              {showPassword ? <FiEyeOff /> : <FiEye />}
-            </button>
-          </span>
-          {errors.password && <span className="text-xs font-semibold text-red-500">{errors.password}</span>}
-        </label>
-
-        <div className="flex items-center justify-between gap-3 text-sm">
-          <label className="inline-flex items-center gap-2 font-semibold text-zinc-600 dark:text-zinc-300">
-            <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="h-4 w-4 rounded border-zinc-300 text-sky-600 focus:ring-sky-500" />
-            Ghi nhớ
-          </label>
-          <Link href="/forgot-password" className="font-bold text-sky-600 dark:text-sky-300">Quên mật khẩu?</Link>
+          <div>
+            <div className="text-lg font-black text-[#0A84FF]">AIR</div>
+            <div className="text-sm font-bold text-zinc-500 dark:text-zinc-400">Kết nối việc nhanh</div>
+          </div>
         </div>
 
-        <button type="submit" disabled={loading} className="flex h-12 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] text-sm font-black text-white shadow-xl shadow-sky-500/25 transition active:scale-[0.98] disabled:opacity-60">
-          {loading ? "Đang đăng nhập..." : "Đăng nhập"}
-        </button>
-      </form>
+        <h1 className="mb-6 text-3xl font-black text-zinc-900 dark:text-white">Đăng nhập</h1>
 
-      <div className="my-5 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.16em] text-zinc-400">
-        <span className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
-        hoặc
-        <span className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
+        <form onSubmit={handleLogin} className="space-y-4">
+          <input type="text" tabIndex={-1} autoComplete="off" className="hidden" value={form.honeypot} onChange={(e) => setField("honeypot", e.target.value)} />
+
+          {errors.submit && (
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300">
+              <FiAlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              {errors.submit}
+            </motion.div>
+          )}
+
+          {magicLinkSent && (
+            <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-200">
+              Link đăng nhập đã được gửi. Kiểm tra hộp thư và thư mục Spam.
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-zinc-700 dark:text-zinc-200">Email</label>
+            <div className="relative">
+              <FiMail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+              <input
+                ref={emailRef}
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                value={form.email}
+                onChange={(e) => setField("email", e.target.value)}
+                className={`h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${errors.email ? "border-red-400 focus:border-red-500" : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"}`}
+              />
+            </div>
+            {errors.email && <span className="text-xs font-semibold text-red-500">{errors.email}</span>}
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-zinc-700 dark:text-zinc-200">Mật khẩu</label>
+            <div className="relative">
+              <FiLock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+              <input
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                placeholder="Nhập mật khẩu"
+                value={form.password}
+                onChange={(e) => setField("password", e.target.value)}
+                className={`h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-12 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${errors.password ? "border-red-400 focus:border-red-500" : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"}`}
+              />
+              <button type="button" aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"} onClick={() => setShowPassword((v) => !v)} className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-zinc-400 active:scale-95">
+                {showPassword ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
+              </button>
+            </div>
+            {errors.password && <span className="text-xs font-semibold text-red-500">{errors.password}</span>}
+          </div>
+
+          <div className="flex items-center justify-between gap-3 pt-1 text-sm">
+            <label className="inline-flex items-center gap-2 font-semibold text-zinc-600 dark:text-zinc-300">
+              <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="h-4 w-4 rounded border-zinc-300 text-[#0A84FF] focus:ring-[#0A84FF]" />
+              Ghi nhớ
+            </label>
+            <Link href="/forgot-password" className="font-bold text-[#0A84FF]">Quên mật khẩu?</Link>
+          </div>
+
+          <button type="submit" disabled={loading} className="flex h-14 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] text-base font-black text-white shadow-lg shadow-[#0A84FF]/25 transition active:scale-[0.98] disabled:opacity-60">
+            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+          </button>
+        </form>
+
+        <div className="my-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.16em] text-zinc-400">
+          <span className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
+          hoặc
+          <span className="h-px flex-1 bg-zinc-200 dark:bg-zinc-800" />
+        </div>
+
+        <div className="grid gap-3">
+          <button type="button" onClick={handleGoogleLogin} disabled={googleLoading} className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-zinc-200 bg-white text-base font-black text-zinc-800 shadow-sm transition active:scale-[0.98] disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
+            <FcGoogle className="h-5 w-5" />
+            {googleLoading ? "Đang mở Google..." : "Tiếp tục với Google"}
+          </button>
+          <button type="button" onClick={handleMagicLink} disabled={magicLoading} className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-zinc-200 bg-white text-base font-black text-zinc-700 transition active:scale-[0.98] disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
+            <FiSend className="h-5 w-5" />
+            {magicLoading ? "Đang gửi link..." : "Gửi link đăng nhập"}
+          </button>
+        </div>
+
+        <p className="mt-8 text-center text-sm font-semibold text-zinc-600 dark:text-zinc-400">
+          Chưa có tài khoản?{" "}
+          <Link href="/register" className="font-black text-[#0A84FF]">
+            Tạo tài khoản
+          </Link>
+        </p>
+
+        <InstallPrompt />
       </div>
-
-      <div className="grid gap-3">
-        <button type="button" onClick={handleGoogleLogin} disabled={googleLoading} className="flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-zinc-200 bg-white text-sm font-black text-zinc-800 shadow-sm transition active:scale-[0.98] disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
-          <FcGoogle className="h-5 w-5" />
-          {googleLoading ? "Đang mở Google..." : "Tiếp tục với Google"}
-        </button>
-        <button type="button" onClick={handleMagicLink} disabled={magicLoading} className="flex h-12 w-full items-center justify-center gap-3 rounded-2xl bg-zinc-100 text-sm font-black text-zinc-700 transition active:scale-[0.98] disabled:opacity-60 dark:bg-zinc-800 dark:text-zinc-200">
-          <FiSend className="h-4 w-4" />
-          {magicLoading ? "Đang gửi link..." : "Gửi link đăng nhập"}
-        </button>
-      </div>
-
-      <InstallPrompt />
-    </AuthShell>
+    </div>
   );
 }
