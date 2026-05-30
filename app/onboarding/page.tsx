@@ -7,7 +7,7 @@ import { updateProfile } from "firebase/auth";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { FiUser, FiCamera, FiFileText, FiTag, FiCheck, FiArrowRight, FiSkipForward } from "react-icons/fi";
-import AuthShell from "@/components/auth/AuthShell";
+
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import HuhaLogo from "@/components/brand/HuhaLogo";
