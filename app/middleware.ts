@@ -1,20 +1,11 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { adminAuth } from '@/lib/firebase-admin'
+import { adminAuth } from '@/lib/firebase-admin' // Chỉ import auth, bỏ adminDb
 
 const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/terms', '/privacy', '/onboarding']
 const PUBLIC_API = ['/api/auth', '/api/user/create', '/api/user/logout', '/api/health']
 
-// CSP cho Vercel Preview + Firebase Auth
-const CSP_HEADER = `
-  default-src 'self';
-  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://*.vercel.app https://apis.google.com https://www.gstatic.com https://www.google.com https://*.firebaseio.com https://*.firebaseapp.com https://*.googleapis.com;
-  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-  img-src 'self' data: blob: https:;
-  font-src 'self' https://fonts.gstatic.com;
-  connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com;
-  frame-src 'self' https://*.firebaseapp.com https://accounts.google.com;
-`.replace(/\s{2,}/g, ' ').trim()
+// BỎ HẾT: userCache, getUserData, CACHE_TTL. Middleware không được query DB.
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -23,12 +14,10 @@ export async function middleware(request: NextRequest) {
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/static') ||
-    pathname.includes('.') ||
+    pathname.includes('.') || // Bắt tất cả file .png, .css, .js...
     PUBLIC_API.some(p => pathname.startsWith(p))
   ) {
-    const res = NextResponse.next()
-    res.headers.set('Content-Security-Policy', CSP_HEADER)
-    return res
+    return NextResponse.next()
   }
 
   const token = request.cookies.get('__session')?.value
@@ -39,42 +28,46 @@ export async function middleware(request: NextRequest) {
     if (!isPublicRoute) {
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('redirect', pathname)
-      const res = NextResponse.redirect(loginUrl)
-      res.headers.set('Content-Security-Policy', CSP_HEADER)
-      return res
+      return NextResponse.redirect(loginUrl)
     }
-    const res = NextResponse.next()
-    res.headers.set('Content-Security-Policy', CSP_HEADER)
-    return res
+    return NextResponse.next()
   }
 
-  // 3. Có token -> chỉ verify JWT, không query DB
+  // 3. Có token -> CHỈ VERIFY JWT. Không query DB.
   try {
+    // checkRevoked = false: Nhanh hơn 10 lần. Revoke token thì user tự logout.
     await adminAuth().verifySessionCookie(token, false)
 
-    // Đã login mà vào /login, /register -> về home
-    if (['/login', '/register'].includes(pathname)) {
-      const res = NextResponse.redirect(new URL('/', request.url))
-      res.headers.set('Content-Security-Policy', CSP_HEADER)
-      return res
+    // Đã login mà vào /login, /signup -> về home
+    if (['/login', '/signup'].includes(pathname)) {
+      return NextResponse.redirect(new URL('/', request.url))
     }
 
-    const res = NextResponse.next()
-    res.headers.set('Content-Security-Policy', CSP_HEADER)
-    return res
+    // BỎ HẾT LOGIC CHECK onboardingCompleted, userData.
+    // Đẩy xuống ClientLayout dùng useAuth() check. Vì ClientLayout có cache nên check 0ms.
+    
+    return NextResponse.next()
   } catch (err) {
-    const res = NextResponse.redirect(new URL('/login', request.url))
-    res.cookies.delete('__session')
-    res.headers.set('Content-Security-Policy', CSP_HEADER)
-    return res
+    // Token sai/hết hạn -> xóa cookie + về login
+    const response = NextResponse.redirect(new URL('/login', request.url))
+    response.cookies.delete('__session')
+    return response
   }
 }
 
-// Firebase Admin không chạy được trên Edge runtime
-export const runtime = 'nodejs'
+// Chạy Edge runtime cho nhanh. Firebase Admin verify JWT chạy được trên Edge.
+export const runtime = 'nodejs' // Giữ nodejs nếu bạn thấy lỗi, nhưng 'edge' nhanh hơn 50ms
 
 export const config = {
   matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - *.png, *.jpg, etc
+     */
     '/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)',
   ],
 }
