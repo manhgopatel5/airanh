@@ -6,8 +6,10 @@ import { FieldValue } from "firebase-admin/firestore";
 
 export async function applyToTask(taskId: string, userId: string) {
   const db = adminDb();
+  if (!db) throw new Error('Database not available');
+
   const taskRef = db.collection("tasks").doc(taskId);
-  const appRef = db.collection("applications").doc(`${taskId}_${userId}`); // ID cố định
+  const appRef = db.collection("applications").doc(`${taskId}_${userId}`);
 
   await db.runTransaction(async (tx) => {
     const [taskSnap, userSnap, appSnap] = await Promise.all([
@@ -25,7 +27,6 @@ export async function applyToTask(taskId: string, userId: string) {
     const taskData = taskSnap.data()!;
     const userData = userSnap.data()!;
 
-    // Check slot trong transaction để tránh race
     const currentApplied = taskData.appliedCount || 0;
     const totalSlots = taskData.totalSlots || 1;
     if (currentApplied >= totalSlots) throw new Error("Task is full");
@@ -54,6 +55,8 @@ export async function applyToTask(taskId: string, userId: string) {
 
 export async function cancelToTask(taskId: string, userId: string) {
   const db = adminDb();
+  if (!db) throw new Error('Database not available');
+
   const taskRef = db.collection("tasks").doc(taskId);
   const appRef = db.collection("applications").doc(`${taskId}_${userId}`);
 
@@ -71,7 +74,6 @@ export async function cancelToTask(taskId: string, userId: string) {
       throw new Error("Cannot cancel this application");
     }
 
-    // Chỉ giảm count nếu app đang active
     tx.update(taskRef, {
       applicants: FieldValue.arrayRemove(userId),
       appliedCount: FieldValue.increment(-1),
