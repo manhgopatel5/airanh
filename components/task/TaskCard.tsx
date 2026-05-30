@@ -184,7 +184,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
       className="group"
     >
       <div className="relative overflow-hidden rounded-[2rem] border border-zinc-200/70 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.03] transition-all duration-300 active:scale-[0.992] dark:border-white/10 dark:bg-zinc-950 dark:shadow-black/30">
-
+<div className="relative overflow-hidden rounded-[2rem] border border-zinc-200/70 border-t-4 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.07)] ring-1 ring-black/[0.03] transition-all duration-300 active:scale-[0.992] dark:border-white/10 dark:bg-zinc-950 dark:shadow-black/30" style={{ borderTopColor: accent }}>
         <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full opacity-10 blur-3xl" style={{ background: accent }} />
 
         <div className="relative p-4 pb-3">
