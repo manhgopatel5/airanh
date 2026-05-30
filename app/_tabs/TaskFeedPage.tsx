@@ -168,7 +168,7 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
 
   return (
 <div className="min-h-dvh bg-white dark:bg-zinc-950 text-zinc-950 dark:text-white">
-<div className="sticky top-0 z-40 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+<div className="sticky top-0 z-40 bg-white dark:bg-zinc-950">
         <div className="mx-auto max-w-[680px] px-4 pt-3 pb-3">
           <div className="relative rounded-[1.35rem] bg-zinc-100/80 p-1.5 ring-1 ring-black/5 dark:bg-zinc-900/90 dark:ring-white/10">
             <motion.div className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-[1rem] bg-gradient-to-r ${gradient} shadow-lg`} animate={{ x: isTaskMode ? 0 : "100%" }} transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 360, damping: 34 }} />
