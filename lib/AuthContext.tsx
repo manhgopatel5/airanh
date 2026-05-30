@@ -100,7 +100,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<AppUser | null>(() => getCachedUser());
-  const [loading, setLoading] = useState(() =>!getCachedUser());
+  // FIX 1: Luôn loading = true ban đầu, để onAuthStateChanged quyết định
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const userDataUnsub = useRef<(() => void) | null>(null);
@@ -158,7 +159,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      // FIX 1: TẮT LOADING NGAY KHI CÓ USER, KHÔNG CHỜ GÌ CẢ
+      // FIX 2: Có user là tắt loading luôn, không phụ thuộc cache
       setLoading(false);
 
       const cached = getCachedUser();
@@ -186,7 +187,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             } else {
               createUserProfile(firebaseUser);
             }
-            // FIX 2: BỎ setLoading(false) ở đây, đã set ở trên rồi
           },
           (err) => {
             console.error("Snapshot error:", err);
