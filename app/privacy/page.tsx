@@ -13,36 +13,33 @@ export default function PrivacyPage() {
   return (
     <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-8 dark:bg-zinc-950">
       <div className="mx-auto w-full max-w-2xl">
+        <button
+          onClick={() => router.back()}
+          className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 transition active:scale-95 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
+        >
+          <FiArrowLeft size={20} />
+        </button>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="rounded-3xl bg-white shadow-xl dark:bg-zinc-900"
         >
-          <div className="sticky top-0 z-10 rounded-t-3xl bg-white/80 px-6 pb-4 pt-5 backdrop-blur-xl dark:bg-zinc-900/80">
-            <button
-              onClick={() => router.back()}
-              className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 transition active:scale-95 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
-            >
-              <FiArrowLeft size={20} />
-            </button>
-
-            <div className="mb-4">
-              <HuhaLogo />
-            </div>
-
-            <div className="flex flex-col items-center text-center">
-              <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] shadow-lg shadow-[#0A84FF]/25">
-                <FiShield className="text-white" size={28} />
-              </div>
-              <h1 className="text-2xl font-black text-zinc-900 dark:text-white">Chính sách bảo mật</h1>
-              <p className="mt-1 text-sm font-bold text-zinc-500 dark:text-zinc-400">
-                Phiên bản {version} | Cập nhật: {lastUpdated}
-              </p>
-            </div>
+          <div className="mb-8">
+            <HuhaLogo />
           </div>
 
-          <div className="space-y-6 px-6 pb-8 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+          <div className="mb-8 flex flex-col items-center text-center">
+            <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] shadow-lg shadow-[#0A84FF]/25">
+              <FiShield className="text-white" size={28} />
+            </div>
+            <h1 className="text-2xl font-black text-zinc-900 dark:text-white">Chính sách bảo mật</h1>
+            <p className="mt-1 text-sm font-bold text-zinc-500 dark:text-zinc-400">
+              Phiên bản {version} | Cập nhật: {lastUpdated}
+            </p>
+          </div>
+
+          <div className="space-y-6 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
             <section className="rounded-2xl bg-[#0A84FF]/5 p-4 dark:bg-[#0A84FF]/10">
               <p className="text-zinc-800 dark:text-zinc-200">
                 Huha cam kết bảo vệ dữ liệu cá nhân của bạn. Chính sách này tuân thủ Nghị định 13/2023/NĐ-CP của Việt Nam và GDPR của EU.
