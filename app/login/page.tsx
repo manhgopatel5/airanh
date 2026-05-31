@@ -54,22 +54,23 @@ function LoginContent() {
     setRedirectTo(getSafeRedirect(searchParams.get("redirect")) || "/");
   }, [searchParams]);
 
+  // Fix: Ưu tiên check verify trước mọi thứ khác
   useEffect(() => {
     if (!mounted || authLoading) return;
     
-    if (user &&!user.emailVerified) {
-      router.replace("/verify-email");
-      return;
-    }
-
-    if (user && userData?.onboardingCompleted) {
-      router.replace(redirectTo);
-      return;
-    }
-
-    if (user && userData &&!userData.onboardingCompleted) {
-      router.replace("/onboarding");
-      return;
+    if (user) {
+      if (!user.emailVerified) {
+        router.replace("/verify-email");
+        return;
+      }
+      if (userData?.onboardingCompleted) {
+        router.replace(redirectTo);
+        return;
+      }
+      if (userData && !userData.onboardingCompleted) {
+        router.replace("/onboarding");
+        return;
+      }
     }
   }, [mounted, authLoading, redirectTo, router, user, userData]);
 
@@ -152,7 +153,15 @@ function LoginContent() {
       await setPersistence(auth, remember? browserLocalPersistence : browserSessionPersistence);
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
-      await signInWithPopup(auth, provider);
+      const res = await signInWithPopup(auth, provider);
+      
+      // Fix: Google luôn verify sẵn, nhưng vẫn check cho chắc
+      if (!res.user.emailVerified) {
+        await sendEmailVerification(res.user).catch(() => {});
+        router.replace("/verify-email");
+        return;
+      }
+      
       localStorage.setItem("last_email", auth.currentUser?.email || "");
       toast.success("Đăng nhập thành công");
       router.replace(redirectTo);
@@ -189,6 +198,7 @@ function LoginContent() {
       await setPersistence(auth, remember? browserLocalPersistence : browserSessionPersistence);
       const res = await signInWithEmailAndPassword(auth, form.email, form.password);
 
+      // Fix: Chưa verify thì auto gửi mail + redirect
       if (!res.user.emailVerified) {
         await sendEmailVerification(res.user).catch(() => {});
         localStorage.setItem("last_email", form.email);
@@ -230,9 +240,10 @@ function LoginContent() {
     );
   }
 
+  // Fix: Đã verify rồi thì không render form login
   if (user?.emailVerified && userData?.onboardingCompleted) return null;
+  if (user && !user.emailVerified) return null; // Để useEffect redirect
 
-  // Fix: Dùng isValid
   const isValid = form.email && form.password &&!errors.email &&!errors.password;
 
   return (
