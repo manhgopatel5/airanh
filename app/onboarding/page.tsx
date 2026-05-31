@@ -11,16 +11,18 @@ import HuhaLogo from "@/components/brand/HuhaLogo";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { getSafeRedirect } from "@/components/auth/authRoutes";
-import { cn } from "@/lib/utils";
+
+// Fallback nếu chưa có cn()
+const cn = (...classes: (string | boolean | undefined)[]) => classes.filter(Boolean).join(" ");
 
 const generateUsername = (name: string) => {
   return name
-   .toLowerCase()
-   .normalize("NFD")
-   .replace(/[\u0300-\u036f]/g, "")
-   .replace(/\s+/g, "")
-   .replace(/[^a-z0-9]/g, "")
-   .slice(0, 20) || "user";
+  .toLowerCase()
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .replace(/\s+/g, "")
+  .replace(/[^a-z0-9]/g, "")
+  .slice(0, 20) || "user";
 };
 
 const sanitizeDisplayName = (name: string, fallback: string) => {
@@ -108,7 +110,7 @@ export default function OnboardingPage() {
           searchKeywords: [
             lowerName,
             lowerName.replace(/\s+/g, ""),
-           ...lowerName.split(" ").filter((word) => word.length >= 2),
+          ...lowerName.split(" ").filter((word) => word.length >= 2),
             userId.toLowerCase(),
             username.toLowerCase(),
           ],
@@ -129,7 +131,8 @@ export default function OnboardingPage() {
     }
   };
 
-  if (authLoading) {
+  // Fix 1: Không return null nữa, show loading để chờ redirect
+  if (authLoading ||!user || userData?.onboardingCompleted) {
     return (
       <div className="min-h-dvh bg-gradient-to-br from-sky-50 via-white to-blue-50 px-5 py-8 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
         <div className="mx-auto w-full max-w-md space-y-4">
@@ -141,21 +144,17 @@ export default function OnboardingPage() {
     );
   }
 
-  if (!user || userData?.onboardingCompleted) return null;
-
   const isValid = displayName.trim().length >= 2 &&!error;
   const avatarPreview = user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName || 'A')}&background=0A84FF&color=fff&bold=true`;
 
   return (
     <div className="relative min-h-dvh w-full overflow-hidden bg-gradient-to-br from-sky-50 via-white to-blue-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
-      {/* Decorative blur blobs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-sky-400/20 blur-3xl" />
         <div className="absolute -bottom-40 -right-20 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl" />
       </div>
 
       <div className="relative mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-10 pt-8">
-        {/* Header: HuhaLogo + Bảo mật */}
         <div className="flex items-center justify-between">
           <HuhaLogo />
           <div className="flex items-center gap-1.5 rounded-full border border-zinc-200/60 bg-white/60 px-3 py-1.5 text-xs font-bold text-zinc-600 backdrop-blur-xl dark:border-zinc-700/60 dark:bg-zinc-800/60 dark:text-zinc-300">
@@ -164,7 +163,6 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        {/* Main card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -198,7 +196,6 @@ export default function OnboardingPage() {
                 )}
               </AnimatePresence>
 
-              {/* Avatar preview */}
               <div className="flex items-center gap-3 rounded-2xl bg-zinc-50/80 p-3 dark:bg-zinc-800/60">
                 <img
                   src={avatarPreview}
@@ -215,7 +212,6 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
-              {/* Input */}
               <div className="space-y-2">
                 <label className="text-sm font-bold text-zinc-700 dark:text-zinc-200">
                   Tên hiển thị
@@ -233,7 +229,7 @@ export default function OnboardingPage() {
                       "h-14 w-full rounded-2xl border-2 bg-white px-4 text-base font-bold text-zinc-900 outline-none transition-all dark:bg-zinc-900 dark:text-white",
                       "placeholder:text-zinc-400 dark:placeholder:text-zinc-600",
                       error
-                       ? "border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
+                      ? "border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
                         : "border-zinc-200 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-zinc-700"
                     )}
                   />
@@ -259,7 +255,6 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
-              {/* CTA */}
               <motion.button
                 type="submit"
                 whileTap={{ scale: isValid? 0.98 : 1 }}
