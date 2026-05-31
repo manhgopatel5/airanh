@@ -1,8 +1,8 @@
 "use client";
 
-export const dynamic = 'force-dynamic'; // Quan trọng: tắt prerender để không crash useSearchParams
+export const dynamic = 'force-dynamic';
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { updateProfile } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
@@ -16,12 +16,12 @@ import { getSafeRedirect } from "@/components/auth/authRoutes";
 
 const generateUsername = (name: string) => {
   return name
-   .toLowerCase()
-   .normalize("NFD")
-   .replace(/[\u0300-\u036f]/g, "")
-   .replace(/\s+/g, "")
-   .replace(/[^a-z0-9]/g, "")
-   .slice(0, 20) || "user";
+.toLowerCase()
+.normalize("NFD")
+.replace(/[\u0300-\u036f]/g, "")
+.replace(/\s+/g, "")
+.replace(/[^a-z0-9]/g, "")
+.slice(0, 20) || "user";
 };
 
 const sanitizeDisplayName = (name: string, fallback: string) => {
@@ -30,41 +30,42 @@ const sanitizeDisplayName = (name: string, fallback: string) => {
   return trimmed;
 };
 
-export default function OnboardingPage() {
-  const { user, userData, loading: authLoading, refreshToken } = useAuth();
+function OnboardingContent() {
+  const { user, userData, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
   
-  // Fix 1: Luôn có fallback "/" nếu getSafeRedirect return null/undefined
   const redirectTo = getSafeRedirect(searchParams.get("redirect")) || "/";
 
   const [displayName, setDisplayName] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Fix 2: Đợi auth load xong mới xử lý redirect
-    if (authLoading) return;
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || authLoading) return;
+
+    if (user &&!user.emailVerified) {
+      toast.error("Vui lòng xác thực email trước");
+      router.replace("/verify-email");
+      return;
+    }
 
     if (!user) {
       router.replace("/login");
       return;
     }
 
-    // Fix 3: Nếu đã onboard rồi thì đá ra luôn
     if (userData?.onboardingCompleted) {
       router.replace(redirectTo);
       return;
     }
-
-    // Fix 4: Check emailVerified nếu app bắt buộc verify
-    if (user &&!user.emailVerified) {
-      toast.error("Vui lòng xác thực email trước");
-      router.replace("/verify-email");
-      return;
-    }
-  }, [authLoading, redirectTo, router, user, userData]);
+  }, [mounted, authLoading, redirectTo, router, user, userData]);
 
   useEffect(() => {
     if (user &&!displayName) {
@@ -135,7 +136,7 @@ export default function OnboardingPage() {
           searchKeywords: [
             lowerName,
             lowerName.replace(/\s+/g, ""),
-           ...lowerName.split(" ").filter((word) => word.length >= 2),
+       ...lowerName.split(" ").filter((word) => word.length >= 2),
             userId.toLowerCase(),
             username.toLowerCase(),
           ],
@@ -144,11 +145,15 @@ export default function OnboardingPage() {
         }),
       ]);
 
-      await refreshToken();
       toast.success(`Chào mừng, ${trimmed}!`);
       router.replace(redirectTo);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Onboarding error:", err);
+      if (err.code === 'auth/user-token-expired') {
+        toast.error("Phiên hết hạn, vui lòng đăng nhập lại");
+        router.replace("/login");
+        return;
+      }
       setError("Không thể lưu. Thử lại sau.");
       toast.error("Có lỗi xảy ra");
     } finally {
@@ -156,8 +161,7 @@ export default function OnboardingPage() {
     }
   };
 
-  // Fix 5: Show loading khi authLoading hoặc userData chưa có
-  if (authLoading ||!user || userData === undefined) {
+  if (!mounted || authLoading ||!user || userData === undefined) {
     return (
       <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
         <div className="mx-auto w-full max-w-md space-y-4">
@@ -169,7 +173,6 @@ export default function OnboardingPage() {
     );
   }
 
-  // Đã onboard rồi thì không render gì, useEffect sẽ redirect
   if (userData?.onboardingCompleted) return null;
 
   const isValid = displayName.trim().length >= 2 &&!error;
@@ -216,7 +219,7 @@ export default function OnboardingPage() {
                 disabled={saving}
                 className={`h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${
                   error
-                   ? "border-red-400 focus:border-red-500"
+               ? "border-red-400 focus:border-red-500"
                     : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"
                 }`}
               />
@@ -251,5 +254,21 @@ export default function OnboardingPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
+        <div className="mx-auto w-full max-w-md space-y-4">
+          <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
+          <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
+          <div className="h-14 rounded-2xl bg-zinc-300 motion-safe:animate-pulse dark:bg-zinc-700" />
+        </div>
+      </div>
+    }>
+      <OnboardingContent />
+    </Suspense>
   );
 }
