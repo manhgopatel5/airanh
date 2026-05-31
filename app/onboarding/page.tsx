@@ -31,7 +31,7 @@ const sanitizeDisplayName = (name: string, fallback: string) => {
 };
 
 function OnboardingContent() {
-  const { user, userData, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
 
