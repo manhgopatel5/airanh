@@ -54,7 +54,7 @@ function LoginContent() {
     setRedirectTo(getSafeRedirect(searchParams.get("redirect")) || "/");
   }, [searchParams]);
 
-  // Fix: Ưu tiên check verify trước mọi thứ khác
+  // Fix 1: Ưu tiên check verify. Nếu đã login + chưa verify thì đá luôn, không render form
   useEffect(() => {
     if (!mounted || authLoading) return;
     
@@ -155,7 +155,6 @@ function LoginContent() {
       provider.setCustomParameters({ prompt: "select_account" });
       const res = await signInWithPopup(auth, provider);
       
-      // Fix: Google luôn verify sẵn, nhưng vẫn check cho chắc
       if (!res.user.emailVerified) {
         await sendEmailVerification(res.user).catch(() => {});
         router.replace("/verify-email");
@@ -198,17 +197,25 @@ function LoginContent() {
       await setPersistence(auth, remember? browserLocalPersistence : browserSessionPersistence);
       const res = await signInWithEmailAndPassword(auth, form.email, form.password);
 
-      // Fix: Chưa verify thì auto gửi mail + redirect
+      // Fix 2: Chưa verify thì auto gửi mail + redirect, không báo lỗi
       if (!res.user.emailVerified) {
-        await sendEmailVerification(res.user).catch(() => {});
+        // Fix 3: Chỉ gửi nếu chưa gửi trong 60s qua
+        const lastSent = localStorage.getItem("last_verify_sent");
+        if (!lastSent || Date.now() - Number(lastSent) > 60000) {
+          await sendEmailVerification(res.user).catch(() => {});
+          localStorage.setItem("last_verify_sent", Date.now().toString());
+          toast.warning("Tài khoản chưa xác thực. Đã gửi lại email xác thực");
+        } else {
+          toast.warning("Tài khoản chưa xác thực. Vui lòng kiểm tra email");
+        }
         localStorage.setItem("last_email", form.email);
-        toast.warning("Tài khoản chưa xác thực. Đã gửi lại email xác thực");
         router.replace("/verify-email");
         return;
       }
 
       failedAttempts.current = 0;
       localStorage.removeItem("login_fail_time");
+      localStorage.removeItem("last_verify_sent");
       localStorage.setItem("last_email", form.email);
       toast.success("Đăng nhập thành công");
       router.replace(redirectTo);
@@ -228,6 +235,7 @@ function LoginContent() {
     }
   };
 
+  // Fix 4: Loading hoặc đã login thì không render form
   if (!mounted || authLoading) {
     return (
       <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
@@ -240,9 +248,8 @@ function LoginContent() {
     );
   }
 
-  // Fix: Đã verify rồi thì không render form login
-  if (user?.emailVerified && userData?.onboardingCompleted) return null;
-  if (user && !user.emailVerified) return null; // Để useEffect redirect
+  // Fix 5: Đã login rồi thì không render gì, useEffect sẽ redirect
+  if (user) return null;
 
   const isValid = form.email && form.password &&!errors.email &&!errors.password;
 
