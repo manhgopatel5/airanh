@@ -55,7 +55,7 @@ function LoginContent() {
   }, [searchParams]);
 
   // Fix: Chỉ redirect nếu user đã login + đang ở /login
-  useEffect(() => {
+useEffect(() => {
   if (!mounted || authLoading) return;
   if (pathname !== "/login") return;
   
@@ -65,10 +65,10 @@ function LoginContent() {
       return;
     }
     
-    // Quan trọng: Đợi userData load xong
-    if (userData === undefined) return;
+    // Fix: Check userData tồn tại trước
+    if (!userData) return;
     
-    if (userData?.onboardingCompleted) {
+    if (userData.onboardingCompleted) {
       window.location.href = redirectTo;
       return;
     }
