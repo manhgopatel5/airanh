@@ -1,43 +1,52 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation"; // Thay useRouter
+import { usePathname, useSearchParams } from "next/navigation";
 import { reload, sendEmailVerification, signOut } from "firebase/auth";
 import { FiCheckCircle, FiLogOut, FiMail, FiRefreshCw, FiSend } from "react-icons/fi";
 import { toast } from "sonner";
 import AuthShell from "@/components/auth/AuthShell";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
+import { getSafeRedirect } from "@/components/auth/authRoutes";
 
 export default function VerifyEmailPage() {
   const auth = getFirebaseAuth();
-  const pathname = usePathname(); // Thêm dòng này
-  const { user, loading } = useAuth();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { user, userData, loading } = useAuth();
   const [sending, setSending] = useState(false);
   const [checking, setChecking] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [loggingOut, setLoggingOut] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  const redirectTo = getSafeRedirect(searchParams.get("redirect")) || "/";
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Fix 1: Chỉ redirect nếu đang ở /verify-email + thêm guard pathname
+  // Fix: Chỉ redirect nếu chưa verify + đang ở /verify-email
   useEffect(() => {
     if (!mounted || loading) return;
-    if (pathname!== "/verify-email") return; // Guard chống loop
+    if (pathname!== "/verify-email") return;
 
     if (!user) {
       window.location.href = "/login";
       return;
     }
 
+    // Đã verify rồi thì vào thẳng app luôn, không ở lại trang này
     if (user.emailVerified) {
-      window.location.href = "/";
+      if (userData?.onboardingCompleted) {
+        window.location.href = redirectTo;
+      } else {
+        window.location.href = "/onboarding";
+      }
       return;
     }
-  }, [mounted, loading, user, pathname]);
+  }, [mounted, loading, user, userData, pathname, redirectTo]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -59,6 +68,7 @@ export default function VerifyEmailPage() {
     }
   };
 
+  // Fix: Check xong verify thành công → vào thẳng app
   const handleCheck = async () => {
     if (!auth.currentUser || checking) return;
     try {
@@ -66,7 +76,12 @@ export default function VerifyEmailPage() {
       await reload(auth.currentUser);
       if (auth.currentUser.emailVerified) {
         toast.success("Xác thực thành công");
-        window.location.href = "/";
+        // Vào thẳng app, không về /login
+        if (userData?.onboardingCompleted) {
+          window.location.href = redirectTo;
+        } else {
+          window.location.href = "/onboarding";
+        }
       } else {
         toast.error("Email chưa được xác thực");
       }
