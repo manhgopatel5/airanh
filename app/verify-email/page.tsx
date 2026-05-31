@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { reload, sendEmailVerification, signOut } from "firebase/auth";
 import { FiCheckCircle, FiLogOut, FiMail, FiRefreshCw, FiSend } from "react-icons/fi";
 import { toast } from "sonner";
@@ -12,9 +12,8 @@ import { getSafeRedirect } from "@/components/auth/authRoutes";
 
 export default function VerifyEmailPage() {
   const auth = getFirebaseAuth();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user, userData, loading } = useAuth();
+  const { user, loading } = useAuth(); // Xoá userData
   const [sending, setSending] = useState(false);
   const [checking, setChecking] = useState(false);
   const [cooldown, setCooldown] = useState(0);
@@ -26,30 +25,6 @@ export default function VerifyEmailPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // Fix: Chỉ redirect nếu chưa verify + đang ở /verify-email
-// Fix: Chỉ redirect nếu đang ở /verify-email
-useEffect(() => {
-  if (!mounted || loading) return;
-  if (pathname!== "/verify-email") return;
-
-  if (!user) {
-    window.location.href = "/login";
-    return;
-  }
-
-  // Fix: Check userData tồn tại trước
-  if (!userData) return;
-
-  if (user.emailVerified) {
-    if (userData.onboardingCompleted) {
-      window.location.href = redirectTo;
-    } else {
-      window.location.href = "/onboarding";
-    }
-    return;
-  }
-}, [mounted, loading, user, userData, pathname, redirectTo]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -71,7 +46,6 @@ useEffect(() => {
     }
   };
 
-  // Fix: Check xong verify thành công → vào thẳng app
   const handleCheck = async () => {
     if (!auth.currentUser || checking) return;
     try {
@@ -79,12 +53,7 @@ useEffect(() => {
       await reload(auth.currentUser);
       if (auth.currentUser.emailVerified) {
         toast.success("Xác thực thành công");
-        // Vào thẳng app, không về /login
-        if (userData?.onboardingCompleted) {
-          window.location.href = redirectTo;
-        } else {
-          window.location.href = "/onboarding";
-        }
+        // Xoá redirect - để middleware xử lý sau
       } else {
         toast.error("Email chưa được xác thực");
       }
@@ -100,7 +69,6 @@ useEffect(() => {
       setLoggingOut(true);
       await signOut(auth);
       toast.success("Đã đăng xuất");
-      window.location.href = "/login";
     } catch {
       toast.error("Đăng xuất thất bại");
     } finally {
@@ -108,7 +76,7 @@ useEffect(() => {
     }
   };
 
-  if (!mounted || loading ||!user) {
+  if (!mounted || loading) {
     return (
       <AuthShell title="Đang kiểm tra email" description="AIR đang xác nhận trạng thái tài khoản của bạn." icon={<FiMail className="h-6 w-6" />}>
         <div className="space-y-3" role="status" aria-label="Đang tải">
@@ -128,7 +96,7 @@ useEffect(() => {
     >
       <div className="mb-5 rounded-2xl bg-zinc-50 px-4 py-3 text-center ring-1 ring-black/5 dark:bg-zinc-900/70 dark:ring-white/10">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-400">Email tài khoản</p>
-        <p className="mt-1 break-all text-sm font-black text-sky-600 dark:text-sky-300">{user.email}</p>
+        <p className="mt-1 break-all text-sm font-black text-sky-600 dark:text-sky-300">{user?.email}</p>
       </div>
 
       <div className="space-y-3">
