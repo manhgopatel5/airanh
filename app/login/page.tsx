@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation"; // Xóa useRouter
+import { useSearchParams, usePathname } from "next/navigation"; // Thêm usePathname
 import Link from "next/link";
 import { FcGoogle } from "react-icons/fc";
 import { FiAlertCircle, FiEye, FiEyeOff, FiLock, FiMail, FiSend } from "react-icons/fi";
@@ -31,8 +31,8 @@ import { getSafeRedirect } from "@/components/auth/authRoutes";
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function LoginContent() {
-  // Xóa: const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname(); // Thêm dòng này
   const { user, userData, loading: authLoading } = useAuth();
   const authRef = useRef<Auth | null>(null);
   const emailRef = useRef<HTMLInputElement>(null);
@@ -54,8 +54,10 @@ function LoginContent() {
     setRedirectTo(getSafeRedirect(searchParams.get("redirect")) || "/");
   }, [searchParams]);
 
+  // Fix: Chỉ redirect nếu user đã login + đang ở /login
   useEffect(() => {
     if (!mounted || authLoading) return;
+    if (pathname !== "/login") return; // Không redirect nếu không ở /login
     
     if (user) {
       if (!user.emailVerified) {
@@ -71,7 +73,7 @@ function LoginContent() {
         return;
       }
     }
-  }, [mounted, authLoading, redirectTo, user, userData]);
+  }, [mounted, authLoading, redirectTo, user, userData, pathname]);
 
   useEffect(() => {
     const auth = getFirebaseAuth();
