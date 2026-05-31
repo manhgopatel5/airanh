@@ -28,25 +28,28 @@ export default function VerifyEmailPage() {
   }, []);
 
   // Fix: Chỉ redirect nếu chưa verify + đang ở /verify-email
-  useEffect(() => {
-    if (!mounted || loading) return;
-    if (pathname!== "/verify-email") return;
+// Fix: Chỉ redirect nếu đang ở /verify-email
+useEffect(() => {
+  if (!mounted || loading) return;
+  if (pathname!== "/verify-email") return;
 
-    if (!user) {
-      window.location.href = "/login";
-      return;
-    }
+  if (!user) {
+    window.location.href = "/login";
+    return;
+  }
 
-    // Đã verify rồi thì vào thẳng app luôn, không ở lại trang này
-    if (user.emailVerified) {
-      if (userData?.onboardingCompleted) {
-        window.location.href = redirectTo;
-      } else {
-        window.location.href = "/onboarding";
-      }
-      return;
+  // Quan trọng: Đợi userData load xong mới quyết định
+  if (userData === undefined) return;
+
+  if (user.emailVerified) {
+    if (userData?.onboardingCompleted) {
+      window.location.href = redirectTo;
+    } else {
+      window.location.href = "/onboarding";
     }
-  }, [mounted, loading, user, userData, pathname, redirectTo]);
+    return;
+  }
+}, [mounted, loading, user, userData, pathname, redirectTo]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
