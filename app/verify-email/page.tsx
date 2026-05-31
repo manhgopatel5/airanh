@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { reload, sendEmailVerification, signOut } from "firebase/auth";
 import { motion } from "framer-motion";
-import { FiCheckCircle, FiLogOut, FiMail, FiRefreshCw, FiSend } from "react-icons/fi";
+import { FiCheckCircle, FiLogOut, FiRefreshCw, FiSend } from "react-icons/fi";
 import { toast } from "sonner";
 import HuhaLogo from "@/components/brand/HuhaLogo";
 import { getFirebaseAuth } from "@/lib/firebase";
