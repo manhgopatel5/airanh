@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { updateProfile } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
@@ -12,17 +12,16 @@ import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { getSafeRedirect } from "@/components/auth/authRoutes";
 
-// Fallback nếu chưa có cn()
 const cn = (...classes: (string | boolean | undefined)[]) => classes.filter(Boolean).join(" ");
 
 const generateUsername = (name: string) => {
   return name
-  .toLowerCase()
-  .normalize("NFD")
-  .replace(/[\u0300-\u036f]/g, "")
-  .replace(/\s+/g, "")
-  .replace(/[^a-z0-9]/g, "")
-  .slice(0, 20) || "user";
+ .toLowerCase()
+ .normalize("NFD")
+ .replace(/[\u0300-\u036f]/g, "")
+ .replace(/\s+/g, "")
+ .replace(/[^a-z0-9]/g, "")
+ .slice(0, 20) || "user";
 };
 
 const sanitizeDisplayName = (name: string, fallback: string) => {
@@ -31,7 +30,7 @@ const sanitizeDisplayName = (name: string, fallback: string) => {
   return trimmed;
 };
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const { user, userData, loading: authLoading, refreshToken } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -110,7 +109,7 @@ export default function OnboardingPage() {
           searchKeywords: [
             lowerName,
             lowerName.replace(/\s+/g, ""),
-          ...lowerName.split(" ").filter((word) => word.length >= 2),
+           ...lowerName.split(" ").filter((word) => word.length >= 2),
             userId.toLowerCase(),
             username.toLowerCase(),
           ],
@@ -131,7 +130,6 @@ export default function OnboardingPage() {
     }
   };
 
-  // Fix 1: Không return null nữa, show loading để chờ redirect
   if (authLoading ||!user || userData?.onboardingCompleted) {
     return (
       <div className="min-h-dvh bg-gradient-to-br from-sky-50 via-white to-blue-50 px-5 py-8 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
@@ -168,7 +166,7 @@ export default function OnboardingPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mt-8 flex-1"
         >
-          <div className="rounded-[28px] border border-white/60 bg-white/70 p-6 shadow-2xl shadow-zinc-900/5 backdrop-blur-2xl dark:border-zinc-700/50 dark:bg-zinc-900/70">
+          <div className="rounded-3xl border border-white/60 bg-white/70 p-6 shadow-2xl shadow-zinc-900/5 backdrop-blur-2xl dark:border-zinc-700/50 dark:bg-zinc-900/70">
             <div className="flex items-start gap-4">
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-sky-100 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400">
                 <FiUser className="h-6 w-6" />
@@ -229,7 +227,7 @@ export default function OnboardingPage() {
                       "h-14 w-full rounded-2xl border-2 bg-white px-4 text-base font-bold text-zinc-900 outline-none transition-all dark:bg-zinc-900 dark:text-white",
                       "placeholder:text-zinc-400 dark:placeholder:text-zinc-600",
                       error
-                      ? "border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
+                       ? "border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
                         : "border-zinc-200 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-zinc-700"
                     )}
                   />
@@ -280,5 +278,15 @@ export default function OnboardingPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-dvh bg-gradient-to-br from-sky-50 via-white to-blue-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950" />
+    }>
+      <OnboardingContent />
+    </Suspense>
   );
 }
