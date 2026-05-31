@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useSearchParams, usePathname } from "next/navigation"; // Thêm usePathname
+import { useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import { FcGoogle } from "react-icons/fc";
 import { FiAlertCircle, FiEye, FiEyeOff, FiLock, FiMail, FiSend } from "react-icons/fi";
@@ -32,7 +32,7 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function LoginContent() {
   const searchParams = useSearchParams();
-  const pathname = usePathname(); // Thêm dòng này
+  const pathname = usePathname();
   const { user, userData, loading: authLoading } = useAuth();
   const authRef = useRef<Auth | null>(null);
   const emailRef = useRef<HTMLInputElement>(null);
@@ -54,30 +54,28 @@ function LoginContent() {
     setRedirectTo(getSafeRedirect(searchParams.get("redirect")) || "/");
   }, [searchParams]);
 
-  // Fix: Chỉ redirect nếu user đã login + đang ở /login
-useEffect(() => {
-  if (!mounted || authLoading) return;
-  if (pathname !== "/login") return;
-  
-  if (user) {
-    if (!user.emailVerified) {
-      window.location.href = "/verify-email";
-      return;
-    }
+  useEffect(() => {
+    if (!mounted || authLoading) return;
+    if (pathname !== "/login") return;
     
-    // Fix: Check userData tồn tại trước
-    if (!userData) return;
-    
-    if (userData.onboardingCompleted) {
-      window.location.href = redirectTo;
-      return;
+    if (user) {
+      if (!user.emailVerified) {
+        window.location.href = "/verify-email";
+        return;
+      }
+      
+      if (!userData) return;
+      
+      if (userData.onboardingCompleted) {
+        window.location.href = redirectTo;
+        return;
+      }
+      if (!userData.onboardingCompleted) {
+        window.location.href = "/onboarding";
+        return;
+      }
     }
-    if (!userData.onboardingCompleted) {
-      window.location.href = "/onboarding";
-      return;
-    }
-  }
-}, [mounted, authLoading, redirectTo, user, userData, pathname]);
+  }, [mounted, authLoading, redirectTo, user, userData, pathname]);
 
   useEffect(() => {
     const auth = getFirebaseAuth();
@@ -124,7 +122,7 @@ useEffect(() => {
   const handleMagicLink = async () => {
     const auth = authRef.current;
     if (!auth) return;
-    if (!form.email ||!emailRegex.test(form.email)) {
+    if (!form.email || !emailRegex.test(form.email)) {
       setErrors({ email: "Nhập email hợp lệ trước" });
       emailRef.current?.focus();
       return;
@@ -155,7 +153,7 @@ useEffect(() => {
     try {
       setGoogleLoading(true);
       setErrors({});
-      await setPersistence(auth, remember? browserLocalPersistence : browserSessionPersistence);
+      await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
       const res = await signInWithPopup(auth, provider);
@@ -172,10 +170,10 @@ useEffect(() => {
     } catch (err: any) {
       if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") return;
       const message = err.code === "auth/popup-blocked"
-      ? "Popup bị chặn. Cho phép popup và thử lại."
+        ? "Popup bị chặn. Cho phép popup và thử lại."
         : err.code === "auth/unauthorized-domain"
         ? "Domain chưa được xác thực trên Firebase."
-          : "Đăng nhập Google thất bại";
+        : "Đăng nhập Google thất bại";
       setErrors({ submit: message });
     } finally {
       setGoogleLoading(false);
@@ -199,7 +197,7 @@ useEffect(() => {
     try {
       setLoading(true);
       setErrors({});
-      await setPersistence(auth, remember? browserLocalPersistence : browserSessionPersistence);
+      await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
       const res = await signInWithEmailAndPassword(auth, form.email, form.password);
 
       if (!res.user.emailVerified) {
@@ -247,20 +245,13 @@ useEffect(() => {
     );
   }
 
-  const isValid = form.email && form.password &&!errors.email &&!errors.password;
+  const isValid = form.email && form.password && !errors.email && !errors.password;
 
   return (
     <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
       <div className="mx-auto w-full max-w-md">
         <div className="mb-10">
           <HuhaLogo />
-        </div>
-
-        <div className="mb-8">
-          <h1 className="text-2xl font-black text-zinc-900 dark:text-white">Đăng nhập</h1>
-          <p className="mt-2 text-sm font-semibold text-zinc-600 dark:text-zinc-400">
-            Chào mừng trở lại huha
-          </p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
@@ -290,7 +281,7 @@ useEffect(() => {
                 placeholder="Email của bạn"
                 value={form.email}
                 onChange={(e) => setField("email", e.target.value)}
-                className={`h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${errors.email? "border-red-400 focus:border-red-500" : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"}`}
+                className={`h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${errors.email ? "border-red-400 focus:border-red-500" : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"}`}
               />
             </div>
             {errors.email && <span className="text-xs font-semibold text-red-500">{errors.email}</span>}
@@ -301,15 +292,15 @@ useEffect(() => {
             <div className="relative">
               <FiLock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
               <input
-                type={showPassword? "text" : "password"}
+                type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
                 placeholder="Nhập mật khẩu"
                 value={form.password}
                 onChange={(e) => setField("password", e.target.value)}
-                className={`h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-12 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${errors.password? "border-red-400 focus:border-red-500" : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"}`}
+                className={`h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-12 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${errors.password ? "border-red-400 focus:border-red-500" : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"}`}
               />
-              <button type="button" aria-label={showPassword? "Ẩn mật khẩu" : "Hiện mật khẩu"} onClick={() => setShowPassword((v) =>!v)} className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-zinc-400 active:scale-95">
-                {showPassword? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
+              <button type="button" aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"} onClick={() => setShowPassword((v) => !v)} className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-zinc-400 active:scale-95">
+                {showPassword ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
               </button>
             </div>
             {errors.password && <span className="text-xs font-semibold text-red-500">{errors.password}</span>}
@@ -323,8 +314,8 @@ useEffect(() => {
             <Link href="/forgot-password" className="font-bold text-[#0A84FF]">Quên mật khẩu?</Link>
           </div>
 
-          <button type="submit" disabled={loading ||!isValid} className="flex h-14 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] text-base font-black text-white shadow-lg shadow-[#0A84FF]/25 transition active:scale-[0.98] disabled:opacity-60">
-            {loading? "Đang đăng nhập..." : "Đăng nhập"}
+          <button type="submit" disabled={loading || !isValid} className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] text-base font-black text-white shadow-lg shadow-[#0A84FF]/25 transition active:scale-[0.98] disabled:opacity-60">
+            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
         </form>
 
@@ -337,11 +328,11 @@ useEffect(() => {
         <div className="grid gap-3">
           <button type="button" onClick={handleGoogleLogin} disabled={googleLoading} className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-zinc-200 bg-white text-base font-black text-zinc-800 shadow-sm transition active:scale-[0.98] disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
             <FcGoogle className="h-5 w-5" />
-            {googleLoading? "Đang mở Google..." : "Tiếp tục với Google"}
+            {googleLoading ? "Đang mở Google..." : "Tiếp tục với Google"}
           </button>
           <button type="button" onClick={handleMagicLink} disabled={magicLoading} className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-zinc-200 bg-white text-base font-black text-zinc-700 transition active:scale-[0.98] disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
             <FiSend className="h-5 w-5" />
-            {magicLoading? "Đang gửi link..." : "Gửi link đăng nhập"}
+            {magicLoading ? "Đang gửi link..." : "Gửi link đăng nhập"}
           </button>
         </div>
 
