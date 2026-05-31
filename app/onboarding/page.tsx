@@ -62,14 +62,14 @@ useEffect(() => {
     return;
   }
 
-  // Quan trọng: Đợi userData load xong
-  if (userData === undefined) return;
+  // Fix: Check userData tồn tại trước
+  if (!userData) return;
 
-  if (userData?.onboardingCompleted) {
+  if (userData.onboardingCompleted) {
     window.location.href = redirectTo;
     return;
   }
-}, [mounted, authLoading, redirectTo, user, userData, pathname]);
+}, [mounted, authLoading, redirectTo, user, userData, pathname]); redirectTo, user, userData, pathname]);
 
   useEffect(() => {
     if (user &&!displayName) {
