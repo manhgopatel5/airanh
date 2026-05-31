@@ -35,7 +35,7 @@ function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
-  
+
   const redirectTo = getSafeRedirect(searchParams.get("redirect")) || "/";
 
   const [displayName, setDisplayName] = useState("");
@@ -47,25 +47,25 @@ function OnboardingContent() {
     setMounted(true);
   }, []);
 
+  // Fix 1: Dùng window.location.href, không toast
   useEffect(() => {
     if (!mounted || authLoading) return;
 
     if (user &&!user.emailVerified) {
-      toast.error("Vui lòng xác thực email trước");
-      router.replace("/verify-email");
+      window.location.href = "/verify-email";
       return;
     }
 
     if (!user) {
-      router.replace("/login");
+      window.location.href = "/login";
       return;
     }
 
     if (userData?.onboardingCompleted) {
-      router.replace(redirectTo);
+      window.location.href = redirectTo;
       return;
     }
-  }, [mounted, authLoading, redirectTo, router, user, userData]);
+  }, [mounted, authLoading, redirectTo, user, userData]);
 
   useEffect(() => {
     if (user &&!displayName) {
@@ -105,7 +105,7 @@ function OnboardingContent() {
     }
     if (!currentUser) {
       toast.error("Phiên đăng nhập hết hạn");
-      router.push("/login");
+      window.location.href = "/login";
       return;
     }
 
@@ -136,7 +136,7 @@ function OnboardingContent() {
           searchKeywords: [
             lowerName,
             lowerName.replace(/\s+/g, ""),
-       ...lowerName.split(" ").filter((word) => word.length >= 2),
+      ...lowerName.split(" ").filter((word) => word.length >= 2),
             userId.toLowerCase(),
             username.toLowerCase(),
           ],
@@ -146,12 +146,12 @@ function OnboardingContent() {
       ]);
 
       toast.success(`Chào mừng, ${trimmed}!`);
-      router.replace(redirectTo);
+      window.location.href = redirectTo;
     } catch (err: any) {
       console.error("Onboarding error:", err);
       if (err.code === 'auth/user-token-expired') {
         toast.error("Phiên hết hạn, vui lòng đăng nhập lại");
-        router.replace("/login");
+        window.location.href = "/login";
         return;
       }
       setError("Không thể lưu. Thử lại sau.");
@@ -161,6 +161,7 @@ function OnboardingContent() {
     }
   };
 
+  // Fix 2: Luôn hiện skeleton khi chưa sẵn sàng, không return null
   if (!mounted || authLoading ||!user || userData === undefined) {
     return (
       <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
@@ -172,8 +173,6 @@ function OnboardingContent() {
       </div>
     );
   }
-
-  if (userData?.onboardingCompleted) return null;
 
   const isValid = displayName.trim().length >= 2 &&!error;
 
@@ -219,7 +218,7 @@ function OnboardingContent() {
                 disabled={saving}
                 className={`h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${
                   error
-               ? "border-red-400 focus:border-red-500"
+              ? "border-red-400 focus:border-red-500"
                     : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"
                 }`}
               />
