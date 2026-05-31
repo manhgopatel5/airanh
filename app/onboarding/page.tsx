@@ -161,7 +161,7 @@ export default function OnboardingPage() {
         <div className="mb-8">
           <h1 className="text-2xl font-black text-zinc-900 dark:text-white">Hoàn tất hồ sơ</h1>
           <p className="mt-2 text-sm font-semibold text-zinc-600 dark:text-zinc-400">
-            Chọn tên hiển thị để mọi người nhận ra bạn trong AIR.
+            Chọn tên hiển thị để mọi người nhận ra bạn trong huha.
           </p>
         </div>
 
@@ -216,7 +216,7 @@ export default function OnboardingPage() {
               "Đang lưu..."
             ) : (
               <>
-                <span>Bắt đầu với AIR</span>
+                <span>Bắt đầu với haha</span>
                 <FiArrowRight className="h-5 w-5" />
               </>
             )}
