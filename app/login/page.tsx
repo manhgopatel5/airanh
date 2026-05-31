@@ -54,7 +54,7 @@ function LoginContent() {
     setRedirectTo(getSafeRedirect(searchParams.get("redirect")) || "/");
   }, [searchParams]);
 
-  // Fix 1: Ưu tiên check verify. Nếu đã login + chưa verify thì đá luôn, không render form
+  // Fix: Chỉ redirect, không return null để tránh màn trắng
   useEffect(() => {
     if (!mounted || authLoading) return;
     
@@ -197,16 +197,11 @@ function LoginContent() {
       await setPersistence(auth, remember? browserLocalPersistence : browserSessionPersistence);
       const res = await signInWithEmailAndPassword(auth, form.email, form.password);
 
-      // Fix 2: Chưa verify thì auto gửi mail + redirect, không báo lỗi
       if (!res.user.emailVerified) {
-        // Fix 3: Chỉ gửi nếu chưa gửi trong 60s qua
         const lastSent = localStorage.getItem("last_verify_sent");
         if (!lastSent || Date.now() - Number(lastSent) > 60000) {
           await sendEmailVerification(res.user).catch(() => {});
           localStorage.setItem("last_verify_sent", Date.now().toString());
-          toast.warning("Tài khoản chưa xác thực. Đã gửi lại email xác thực");
-        } else {
-          toast.warning("Tài khoản chưa xác thực. Vui lòng kiểm tra email");
         }
         localStorage.setItem("last_email", form.email);
         router.replace("/verify-email");
@@ -235,7 +230,7 @@ function LoginContent() {
     }
   };
 
-  // Fix 4: Loading hoặc đã login thì không render form
+  // Fix: Chỉ loading skeleton, không return null khi user tồn tại
   if (!mounted || authLoading) {
     return (
       <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
@@ -247,9 +242,6 @@ function LoginContent() {
       </div>
     );
   }
-
-  // Fix 5: Đã login rồi thì không render gì, useEffect sẽ redirect
-  if (user) return null;
 
   const isValid = form.email && form.password &&!errors.email &&!errors.password;
 
