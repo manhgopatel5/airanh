@@ -117,4 +117,3 @@ export default function VerifyEmailPage() {
     </AuthShell>
   );
 }
- nâng cấp và đồng bộ trang này luôn
