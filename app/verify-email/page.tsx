@@ -38,11 +38,11 @@ useEffect(() => {
     return;
   }
 
-  // Quan trọng: Đợi userData load xong mới quyết định
-  if (userData === undefined) return;
+  // Fix: Check userData tồn tại trước
+  if (!userData) return;
 
   if (user.emailVerified) {
-    if (userData?.onboardingCompleted) {
+    if (userData.onboardingCompleted) {
       window.location.href = redirectTo;
     } else {
       window.location.href = "/onboarding";
