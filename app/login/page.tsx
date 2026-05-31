@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation"; // Xóa useRouter
 import Link from "next/link";
 import { FcGoogle } from "react-icons/fc";
 import { FiAlertCircle, FiEye, FiEyeOff, FiLock, FiMail, FiSend } from "react-icons/fi";
@@ -31,7 +31,7 @@ import { getSafeRedirect } from "@/components/auth/authRoutes";
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function LoginContent() {
-  const router = useRouter();
+  // Xóa: const router = useRouter();
   const searchParams = useSearchParams();
   const { user, userData, loading: authLoading } = useAuth();
   const authRef = useRef<Auth | null>(null);
@@ -54,7 +54,6 @@ function LoginContent() {
     setRedirectTo(getSafeRedirect(searchParams.get("redirect")) || "/");
   }, [searchParams]);
 
-  // Fix: Dùng window.location.href để ép redirect, không bị màn trắng
   useEffect(() => {
     if (!mounted || authLoading) return;
     
@@ -197,7 +196,6 @@ function LoginContent() {
       await setPersistence(auth, remember? browserLocalPersistence : browserSessionPersistence);
       const res = await signInWithEmailAndPassword(auth, form.email, form.password);
 
-      // Fix: Chưa verify thì gửi mail + redirect ngay, không toast lỗi
       if (!res.user.emailVerified) {
         const lastSent = localStorage.getItem("last_verify_sent");
         if (!lastSent || Date.now() - Number(lastSent) > 60000) {
@@ -231,7 +229,6 @@ function LoginContent() {
     }
   };
 
-  // Fix: Luôn render skeleton khi loading hoặc đã login để tránh màn trắng
   if (!mounted || authLoading || user) {
     return (
       <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
