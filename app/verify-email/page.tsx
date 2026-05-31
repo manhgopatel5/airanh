@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic'; // BẮT BUỘC: tắt prerender vì dùng useSearchParams
+
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { updateProfile } from "firebase/auth";
@@ -14,12 +16,12 @@ import { getSafeRedirect } from "@/components/auth/authRoutes";
 
 const generateUsername = (name: string) => {
   return name
-   .toLowerCase()
-   .normalize("NFD")
-   .replace(/[\u0300-\u036f]/g, "")
-   .replace(/\s+/g, "")
-   .replace(/[^a-z0-9]/g, "")
-   .slice(0, 20) || "user";
+  .toLowerCase()
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .replace(/\s+/g, "")
+  .replace(/[^a-z0-9]/g, "")
+  .slice(0, 20) || "user";
 };
 
 const sanitizeDisplayName = (name: string, fallback: string) => {
@@ -34,31 +36,32 @@ export default function OnboardingForm() {
   const searchParams = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
   
-  // Fix 1: Luôn có default redirect, không bao giờ undefined
   const redirectTo = getSafeRedirect(searchParams.get("redirect")) || "/";
 
   const [displayName, setDisplayName] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [isRedirecting, setIsRedirecting] = useState(false); // Fix: chặn render khi đang redirect
 
   useEffect(() => {
-    if (authLoading) return; // Fix 2: Đợi auth load xong mới check
+    if (authLoading) return;
 
     if (!user) {
+      setIsRedirecting(true);
       router.replace("/login");
       return;
     }
 
-    // Nếu đã onboarding rồi thì đá ra
     if (userData?.onboardingCompleted) {
+      setIsRedirecting(true);
       router.replace(redirectTo);
       return;
     }
 
-    // Fix 3: Check emailVerified nếu app của bạn yêu cầu
     if (user &&!user.emailVerified) {
+      setIsRedirecting(true);
       toast.error("Vui lòng xác thực email trước");
-      router.replace("/verify-email"); // hoặc /login
+      router.replace("/verify-email");
       return;
     }
   }, [authLoading, redirectTo, router, user, userData]);
@@ -132,7 +135,7 @@ export default function OnboardingForm() {
           searchKeywords: [
             lowerName,
             lowerName.replace(/\s+/g, ""),
-           ...lowerName.split(" ").filter((word) => word.length >= 2),
+          ...lowerName.split(" ").filter((word) => word.length >= 2),
             userId.toLowerCase(),
             username.toLowerCase(),
           ],
@@ -143,6 +146,7 @@ export default function OnboardingForm() {
 
       await refreshToken();
       toast.success(`Chào mừng, ${trimmed}!`);
+      setIsRedirecting(true);
       router.replace(redirectTo);
     } catch (err) {
       console.error("Onboarding error:", err);
@@ -153,8 +157,8 @@ export default function OnboardingForm() {
     }
   };
 
-  // Fix 4: Show loading khi authLoading hoặc chưa có userData
-  if (authLoading ||!user || userData === undefined) {
+  // Fix: Show loading khi authLoading, chưa có user, userData undefined, hoặc đang redirect
+  if (authLoading ||!user || userData === undefined || isRedirecting) {
     return (
       <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
         <div className="mx-auto w-full max-w-md space-y-4">
@@ -166,14 +170,86 @@ export default function OnboardingForm() {
     );
   }
 
-  // Đã onboard rồi thì không render gì, useEffect sẽ redirect
   if (userData?.onboardingCompleted) return null;
 
   const isValid = displayName.trim().length >= 2 &&!error;
 
   return (
     <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
-      {/*... giữ nguyên phần JSX còn lại... */}
+      <div className="mx-auto w-full max-w-md">
+        <div className="mb-10">
+          <HuhaLogo />
+        </div>
+
+        <div className="mb-8">
+          <h1 className="text-2xl font-black text-zinc-900 dark:text-white">Hoàn tất hồ sơ</h1>
+          <p className="mt-2 text-sm font-semibold text-zinc-600 dark:text-zinc-400">
+            Chọn tên hiển thị để mọi người nhận ra bạn trong huha.
+          </p>
+        </div>
+
+        <form onSubmit={handleSave} className="space-y-4">
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300"
+            >
+              <FiAlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              {error}
+            </motion.div>
+          )}
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-zinc-700 dark:text-zinc-200">
+              Tên hiển thị
+            </label>
+            <div className="relative">
+              <FiUser className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={displayName}
+                onChange={handleChange}
+                placeholder="VD: Nguyễn Văn A"
+                maxLength={50}
+                disabled={saving}
+                className={`h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${
+                  error
+                  ? "border-red-400 focus:border-red-500"
+                    : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"
+                }`}
+              />
+            </div>
+            <div className="flex items-center justify-between text-xs font-semibold">
+              <span className="text-zinc-500 dark:text-zinc-400">
+                Tên thật giúp tăng độ tin cậy khi nhận task
+              </span>
+              <span className="text-zinc-400">{displayName.length}/50</span>
+            </div>
+          </div>
+
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            type="submit"
+            disabled={saving ||!isValid}
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] text-base font-black text-white shadow-lg shadow-[#0A84FF]/25 transition disabled:opacity-60"
+          >
+            {saving? (
+              "Đang lưu..."
+            ) : (
+              <>
+                <span>Bắt đầu với huha</span>
+                <FiArrowRight className="h-5 w-5" />
+              </>
+            )}
+          </motion.button>
+        </form>
+
+        <p className="mt-8 text-center text-sm font-semibold text-zinc-600 dark:text-zinc-400">
+          Bạn có thể đổi tên sau trong Cài đặt
+        </p>
+      </div>
     </div>
   );
 }
