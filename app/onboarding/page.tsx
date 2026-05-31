@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic'; // Quan trọng: tắt prerender để không crash useSearchParams
+
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { updateProfile } from "firebase/auth";
@@ -16,7 +18,7 @@ const generateUsername = (name: string) => {
   return name
    .toLowerCase()
    .normalize("NFD")
-   .replace(/[\u0300-\u036f]/g, "") // Fix: regex chuẩn để bỏ dấu tiếng Việt
+   .replace(/[\u0300-\u036f]/g, "")
    .replace(/\s+/g, "")
    .replace(/[^a-z0-9]/g, "")
    .slice(0, 20) || "user";
@@ -33,15 +35,35 @@ export default function OnboardingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
-  const redirectTo = getSafeRedirect(searchParams.get("redirect"));
+  
+  // Fix 1: Luôn có fallback "/" nếu getSafeRedirect return null/undefined
+  const redirectTo = getSafeRedirect(searchParams.get("redirect")) || "/";
 
   const [displayName, setDisplayName] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!authLoading &&!user) router.replace("/login");
-    if (!authLoading && userData?.onboardingCompleted) router.replace(redirectTo);
+    // Fix 2: Đợi auth load xong mới xử lý redirect
+    if (authLoading) return;
+
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+
+    // Fix 3: Nếu đã onboard rồi thì đá ra luôn
+    if (userData?.onboardingCompleted) {
+      router.replace(redirectTo);
+      return;
+    }
+
+    // Fix 4: Check emailVerified nếu app bắt buộc verify
+    if (user &&!user.emailVerified) {
+      toast.error("Vui lòng xác thực email trước");
+      router.replace("/verify-email");
+      return;
+    }
   }, [authLoading, redirectTo, router, user, userData]);
 
   useEffect(() => {
@@ -49,7 +71,6 @@ export default function OnboardingPage() {
       const fallback = user.email?.split("@")[0] || `User${user.uid.slice(0, 4)}`;
       setDisplayName(sanitizeDisplayName(user.displayName || "", fallback));
     }
-    // Delay focus để tránh conflict animation trên mobile
     const timer = window.setTimeout(() => inputRef.current?.focus(), 120);
     return () => clearTimeout(timer);
   }, [displayName, user]);
@@ -125,7 +146,7 @@ export default function OnboardingPage() {
 
       await refreshToken();
       toast.success(`Chào mừng, ${trimmed}!`);
-      router.replace(redirectTo); // Bỏ router.refresh() vì không cần
+      router.replace(redirectTo);
     } catch (err) {
       console.error("Onboarding error:", err);
       setError("Không thể lưu. Thử lại sau.");
@@ -135,7 +156,8 @@ export default function OnboardingPage() {
     }
   };
 
-  if (authLoading) {
+  // Fix 5: Show loading khi authLoading hoặc userData chưa có
+  if (authLoading ||!user || userData === undefined) {
     return (
       <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
         <div className="mx-auto w-full max-w-md space-y-4">
@@ -147,7 +169,8 @@ export default function OnboardingPage() {
     );
   }
 
-  if (!user || userData?.onboardingCompleted) return null;
+  // Đã onboard rồi thì không render gì, useEffect sẽ redirect
+  if (userData?.onboardingCompleted) return null;
 
   const isValid = displayName.trim().length >= 2 &&!error;
 
@@ -216,7 +239,7 @@ export default function OnboardingPage() {
               "Đang lưu..."
             ) : (
               <>
-                <span>Bắt đầu với haha</span>
+                <span>Bắt đầu với huha</span>
                 <FiArrowRight className="h-5 w-5" />
               </>
             )}
