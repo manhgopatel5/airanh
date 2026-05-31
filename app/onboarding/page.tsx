@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useSearchParams, usePathname } from "next/navigation"; // Thêm usePathname
+import { useSearchParams } from "next/navigation";
 import { updateProfile } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { motion } from "framer-motion";
@@ -33,7 +33,6 @@ const sanitizeDisplayName = (name: string, fallback: string) => {
 function OnboardingContent() {
   const { user, userData, loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
-  const pathname = usePathname(); // Thêm dòng này
   const inputRef = useRef<HTMLInputElement>(null);
 
   const redirectTo = getSafeRedirect(searchParams.get("redirect")) || "/";
@@ -46,30 +45,6 @@ function OnboardingContent() {
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // Fix: Chỉ redirect nếu đang ở /onboarding, tránh loop
-useEffect(() => {
-  if (!mounted || authLoading) return;
-  if (pathname!== "/onboarding") return;
-
-  if (user &&!user.emailVerified) {
-    window.location.href = "/verify-email";
-    return;
-  }
-
-  if (!user) {
-    window.location.href = "/login";
-    return;
-  }
-
-  // Fix: Check userData tồn tại trước
-  if (!userData) return;
-
-  if (userData.onboardingCompleted) {
-    window.location.href = redirectTo;
-    return;
-  }
-}, [mounted, authLoading, redirectTo, user, userData, pathname]); 
 
   useEffect(() => {
     if (user &&!displayName) {
@@ -109,7 +84,6 @@ useEffect(() => {
     }
     if (!currentUser) {
       toast.error("Phiên đăng nhập hết hạn");
-      window.location.href = "/login";
       return;
     }
 
@@ -140,7 +114,7 @@ useEffect(() => {
           searchKeywords: [
             lowerName,
             lowerName.replace(/\s+/g, ""),
-    ...lowerName.split(" ").filter((word) => word.length >= 2),
+   ...lowerName.split(" ").filter((word) => word.length >= 2),
             userId.toLowerCase(),
             username.toLowerCase(),
           ],
@@ -155,7 +129,6 @@ useEffect(() => {
       console.error("Onboarding error:", err);
       if (err.code === 'auth/user-token-expired') {
         toast.error("Phiên hết hạn, vui lòng đăng nhập lại");
-        window.location.href = "/login";
         return;
       }
       setError("Không thể lưu. Thử lại sau.");
@@ -165,7 +138,7 @@ useEffect(() => {
     }
   };
 
-  if (!mounted || authLoading ||!user || userData === undefined) {
+  if (!mounted || authLoading) {
     return (
       <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
         <div className="mx-auto w-full max-w-md space-y-4">
@@ -221,7 +194,7 @@ useEffect(() => {
                 disabled={saving}
                 className={`h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${
                   error
-            ? "border-red-400 focus:border-red-500"
+           ? "border-red-400 focus:border-red-500"
                     : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"
                 }`}
               />
