@@ -69,7 +69,7 @@ useEffect(() => {
     window.location.href = redirectTo;
     return;
   }
-}, [mounted, authLoading, redirectTo, user, userData, pathname]); redirectTo, user, userData, pathname]);
+}, [mounted, authLoading, redirectTo, user, userData, pathname]); 
 
   useEffect(() => {
     if (user &&!displayName) {
