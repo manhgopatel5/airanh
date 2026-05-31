@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation"; // Xóa useRouter
+import { useSearchParams, usePathname } from "next/navigation"; // Thêm usePathname
 import { updateProfile } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { motion } from "framer-motion";
@@ -32,8 +32,8 @@ const sanitizeDisplayName = (name: string, fallback: string) => {
 
 function OnboardingContent() {
   const { user, userData, loading: authLoading } = useAuth();
-  // Xóa: const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname(); // Thêm dòng này
   const inputRef = useRef<HTMLInputElement>(null);
 
   const redirectTo = getSafeRedirect(searchParams.get("redirect")) || "/";
@@ -47,9 +47,10 @@ function OnboardingContent() {
     setMounted(true);
   }, []);
 
-  // Fix: Dùng window.location.href thay router.replace
+  // Fix: Chỉ redirect nếu đang ở /onboarding, tránh loop
   useEffect(() => {
     if (!mounted || authLoading) return;
+    if (pathname!== "/onboarding") return; // Thêm guard này
 
     if (user &&!user.emailVerified) {
       window.location.href = "/verify-email";
@@ -65,7 +66,7 @@ function OnboardingContent() {
       window.location.href = redirectTo;
       return;
     }
-  }, [mounted, authLoading, redirectTo, user, userData]);
+  }, [mounted, authLoading, redirectTo, user, userData, pathname]);
 
   useEffect(() => {
     if (user &&!displayName) {
@@ -136,7 +137,7 @@ function OnboardingContent() {
           searchKeywords: [
             lowerName,
             lowerName.replace(/\s+/g, ""),
-     ...lowerName.split(" ").filter((word) => word.length >= 2),
+    ...lowerName.split(" ").filter((word) => word.length >= 2),
             userId.toLowerCase(),
             username.toLowerCase(),
           ],
@@ -217,7 +218,7 @@ function OnboardingContent() {
                 disabled={saving}
                 className={`h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${
                   error
-             ? "border-red-400 focus:border-red-500"
+            ? "border-red-400 focus:border-red-500"
                     : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"
                 }`}
               />
