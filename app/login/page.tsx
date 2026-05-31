@@ -54,25 +54,25 @@ function LoginContent() {
     setRedirectTo(getSafeRedirect(searchParams.get("redirect")) || "/");
   }, [searchParams]);
 
-  // Fix: Chỉ redirect, không return null để tránh màn trắng
+  // Fix: Dùng window.location.href để ép redirect, không bị màn trắng
   useEffect(() => {
     if (!mounted || authLoading) return;
     
     if (user) {
       if (!user.emailVerified) {
-        router.replace("/verify-email");
+        window.location.href = "/verify-email";
         return;
       }
       if (userData?.onboardingCompleted) {
-        router.replace(redirectTo);
+        window.location.href = redirectTo;
         return;
       }
       if (userData && !userData.onboardingCompleted) {
-        router.replace("/onboarding");
+        window.location.href = "/onboarding";
         return;
       }
     }
-  }, [mounted, authLoading, redirectTo, router, user, userData]);
+  }, [mounted, authLoading, redirectTo, user, userData]);
 
   useEffect(() => {
     const auth = getFirebaseAuth();
@@ -91,14 +91,14 @@ function LoginContent() {
             localStorage.removeItem("emailForSignIn");
             localStorage.setItem("last_email", email);
             toast.success("Đăng nhập thành công");
-            router.replace(redirectTo);
+            window.location.href = redirectTo;
           })
         .catch(() => setErrors({ submit: "Link đăng nhập không hợp lệ hoặc đã hết hạn" }));
       }
     }
 
     window.setTimeout(() => emailRef.current?.focus(), 120);
-  }, [redirectTo, router]);
+  }, [redirectTo]);
 
   const setField = (field: "email" | "password" | "honeypot", value: string) => {
     setForm((prev) => ({...prev, [field]: value }));
@@ -157,13 +157,13 @@ function LoginContent() {
       
       if (!res.user.emailVerified) {
         await sendEmailVerification(res.user).catch(() => {});
-        router.replace("/verify-email");
+        window.location.href = "/verify-email";
         return;
       }
       
       localStorage.setItem("last_email", auth.currentUser?.email || "");
       toast.success("Đăng nhập thành công");
-      router.replace(redirectTo);
+      window.location.href = redirectTo;
     } catch (err: any) {
       if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") return;
       const message = err.code === "auth/popup-blocked"
@@ -197,6 +197,7 @@ function LoginContent() {
       await setPersistence(auth, remember? browserLocalPersistence : browserSessionPersistence);
       const res = await signInWithEmailAndPassword(auth, form.email, form.password);
 
+      // Fix: Chưa verify thì gửi mail + redirect ngay, không toast lỗi
       if (!res.user.emailVerified) {
         const lastSent = localStorage.getItem("last_verify_sent");
         if (!lastSent || Date.now() - Number(lastSent) > 60000) {
@@ -204,7 +205,7 @@ function LoginContent() {
           localStorage.setItem("last_verify_sent", Date.now().toString());
         }
         localStorage.setItem("last_email", form.email);
-        router.replace("/verify-email");
+        window.location.href = "/verify-email";
         return;
       }
 
@@ -213,7 +214,7 @@ function LoginContent() {
       localStorage.removeItem("last_verify_sent");
       localStorage.setItem("last_email", form.email);
       toast.success("Đăng nhập thành công");
-      router.replace(redirectTo);
+      window.location.href = redirectTo;
     } catch (err: any) {
       failedAttempts.current += 1;
       localStorage.setItem("login_fail_time", Date.now().toString());
@@ -230,8 +231,8 @@ function LoginContent() {
     }
   };
 
-  // Fix: Chỉ loading skeleton, không return null khi user tồn tại
-  if (!mounted || authLoading) {
+  // Fix: Luôn render skeleton khi loading hoặc đã login để tránh màn trắng
+  if (!mounted || authLoading || user) {
     return (
       <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
         <div className="mx-auto w-full max-w-md space-y-4">
