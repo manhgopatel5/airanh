@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation"; // Xóa useRouter
 import { updateProfile } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { motion } from "framer-motion";
@@ -32,7 +32,7 @@ const sanitizeDisplayName = (name: string, fallback: string) => {
 
 function OnboardingContent() {
   const { user, userData, loading: authLoading } = useAuth();
-  const router = useRouter();
+  // Xóa: const router = useRouter();
   const searchParams = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -47,7 +47,7 @@ function OnboardingContent() {
     setMounted(true);
   }, []);
 
-  // Fix 1: Dùng window.location.href, không toast
+  // Fix: Dùng window.location.href thay router.replace
   useEffect(() => {
     if (!mounted || authLoading) return;
 
@@ -136,7 +136,7 @@ function OnboardingContent() {
           searchKeywords: [
             lowerName,
             lowerName.replace(/\s+/g, ""),
-      ...lowerName.split(" ").filter((word) => word.length >= 2),
+     ...lowerName.split(" ").filter((word) => word.length >= 2),
             userId.toLowerCase(),
             username.toLowerCase(),
           ],
@@ -161,7 +161,6 @@ function OnboardingContent() {
     }
   };
 
-  // Fix 2: Luôn hiện skeleton khi chưa sẵn sàng, không return null
   if (!mounted || authLoading ||!user || userData === undefined) {
     return (
       <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
@@ -218,7 +217,7 @@ function OnboardingContent() {
                 disabled={saving}
                 className={`h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${
                   error
-              ? "border-red-400 focus:border-red-500"
+             ? "border-red-400 focus:border-red-500"
                     : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"
                 }`}
               />
