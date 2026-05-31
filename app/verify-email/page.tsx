@@ -1,26 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { reload, sendEmailVerification, signOut } from "firebase/auth";
 import { FiCheckCircle, FiLogOut, FiMail, FiRefreshCw, FiSend } from "react-icons/fi";
 import { toast } from "sonner";
 import AuthShell from "@/components/auth/AuthShell";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
-// Xoá dòng này: import { getSafeRedirect } from "@/components/auth/authRoutes";
 
 export default function VerifyEmailPage() {
   const auth = getFirebaseAuth();
-  const searchParams = useSearchParams();
   const { user, loading } = useAuth();
   const [sending, setSending] = useState(false);
   const [checking, setChecking] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [loggingOut, setLoggingOut] = useState(false);
   const [mounted, setMounted] = useState(false);
-
-  // Xoá dòng này: const redirectTo = getSafeRedirect(searchParams.get("redirect")) || "/";
 
   useEffect(() => {
     setMounted(true);
