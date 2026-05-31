@@ -56,24 +56,28 @@ function LoginContent() {
 
   // Fix: Chỉ redirect nếu user đã login + đang ở /login
   useEffect(() => {
-    if (!mounted || authLoading) return;
-    if (pathname !== "/login") return; // Không redirect nếu không ở /login
-    
-    if (user) {
-      if (!user.emailVerified) {
-        window.location.href = "/verify-email";
-        return;
-      }
-      if (userData?.onboardingCompleted) {
-        window.location.href = redirectTo;
-        return;
-      }
-      if (userData && !userData.onboardingCompleted) {
-        window.location.href = "/onboarding";
-        return;
-      }
+  if (!mounted || authLoading) return;
+  if (pathname !== "/login") return;
+  
+  if (user) {
+    if (!user.emailVerified) {
+      window.location.href = "/verify-email";
+      return;
     }
-  }, [mounted, authLoading, redirectTo, user, userData, pathname]);
+    
+    // Quan trọng: Đợi userData load xong
+    if (userData === undefined) return;
+    
+    if (userData?.onboardingCompleted) {
+      window.location.href = redirectTo;
+      return;
+    }
+    if (!userData.onboardingCompleted) {
+      window.location.href = "/onboarding";
+      return;
+    }
+  }
+}, [mounted, authLoading, redirectTo, user, userData, pathname]);
 
   useEffect(() => {
     const auth = getFirebaseAuth();
@@ -255,7 +259,7 @@ function LoginContent() {
         <div className="mb-8">
           <h1 className="text-2xl font-black text-zinc-900 dark:text-white">Đăng nhập</h1>
           <p className="mt-2 text-sm font-semibold text-zinc-600 dark:text-zinc-400">
-            Chào mừng trở lại AIR
+            Chào mừng trở lại huha
           </p>
         </div>
 
