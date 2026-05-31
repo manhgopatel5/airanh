@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+export const dynamic = 'force-dynamic';
+
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FcGoogle } from "react-icons/fc";
 import { FiAlertCircle, FiEye, FiEyeOff, FiLock, FiMail, FiSend } from "react-icons/fi";
@@ -24,18 +25,19 @@ import HuhaLogo from "@/components/brand/HuhaLogo";
 import InstallPrompt from "@/components/InstallPrompt";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
-import { getSafeRedirect } from "@/components/auth/authRoutes";
+import { getSafeRedirect } from "@/components/authRoutes";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export default function Login() {
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, userData, loading: authLoading } = useAuth();
   const authRef = useRef<Auth | null>(null);
   const emailRef = useRef<HTMLInputElement>(null);
-  const redirectTo = getSafeRedirect(searchParams.get("redirect"));
-
+  
+  const [redirectTo, setRedirectTo] = useState("/");
+  const [mounted, setMounted] = useState(false);
   const [form, setForm] = useState({ email: "", password: "", honeypot: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
@@ -47,10 +49,28 @@ export default function Login() {
   const failedAttempts = useRef(0);
 
   useEffect(() => {
-    if (!authLoading && user?.emailVerified && userData) {
-      router.replace(redirectTo);
+    setMounted(true);
+    setRedirectTo(getSafeRedirect(searchParams.get("redirect")) || "/");
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!mounted || authLoading) return;
+    
+    if (user &&!user.emailVerified) {
+      router.replace("/verify-email");
+      return;
     }
-  }, [authLoading, redirectTo, router, user, userData]);
+
+    if (user && userData?.onboardingCompleted) {
+      router.replace(redirectTo);
+      return;
+    }
+
+    if (user && userData &&!userData.onboardingCompleted) {
+      router.replace("/onboarding");
+      return;
+    }
+  }, [mounted, authLoading, redirectTo, router, user, userData]);
 
   useEffect(() => {
     const auth = getFirebaseAuth();
@@ -65,13 +85,13 @@ export default function Login() {
         setErrors({ submit: "Nhập email rồi gửi lại link đăng nhập để xác nhận thiết bị này." });
       } else {
         signInWithEmailLink(auth, email, window.location.href)
-         .then(() => {
+        .then(() => {
             localStorage.removeItem("emailForSignIn");
             localStorage.setItem("last_email", email);
             toast.success("Đăng nhập thành công");
             router.replace(redirectTo);
           })
-         .catch(() => setErrors({ submit: "Link đăng nhập không hợp lệ hoặc đã hết hạn" }));
+        .catch(() => setErrors({ submit: "Link đăng nhập không hợp lệ hoặc đã hết hạn" }));
       }
     }
 
@@ -138,9 +158,9 @@ export default function Login() {
     } catch (err: any) {
       if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") return;
       const message = err.code === "auth/popup-blocked"
-       ? "Popup bị chặn. Cho phép popup và thử lại."
+      ? "Popup bị chặn. Cho phép popup và thử lại."
         : err.code === "auth/unauthorized-domain"
-         ? "Domain chưa được xác thực trên Firebase."
+        ? "Domain chưa được xác thực trên Firebase."
           : "Đăng nhập Google thất bại";
       setErrors({ submit: message });
     } finally {
@@ -168,9 +188,11 @@ export default function Login() {
       await setPersistence(auth, remember? browserLocalPersistence : browserSessionPersistence);
       const res = await signInWithEmailAndPassword(auth, form.email, form.password);
 
+      // Fix: Chưa verify thì tự gửi mail + đá qua /verify-email
       if (!res.user.emailVerified) {
         await sendEmailVerification(res.user).catch(() => {});
-        toast.warning("Vui lòng xác thực email trước");
+        localStorage.setItem("last_email", form.email);
+        toast.warning("Tài khoản chưa xác thực. Đã gửi lại email xác thực");
         router.replace("/verify-email");
         return;
       }
@@ -196,7 +218,7 @@ export default function Login() {
     }
   };
 
-  if (authLoading) {
+  if (!mounted || authLoading) {
     return (
       <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
         <div className="mx-auto w-full max-w-md space-y-4">
@@ -208,11 +230,22 @@ export default function Login() {
     );
   }
 
+  if (user?.emailVerified && userData?.onboardingCompleted) return null;
+
+  const isValid = form.email && form.password &&!errors.email &&!errors.password;
+
   return (
     <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
       <div className="mx-auto w-full max-w-md">
         <div className="mb-10">
           <HuhaLogo />
+        </div>
+
+        <div className="mb-8">
+          <h1 className="text-2xl font-black text-zinc-900 dark:text-white">Đăng nhập</h1>
+          <p className="mt-2 text-sm font-semibold text-zinc-600 dark:text-zinc-400">
+            Chào mừng trở lại AIR
+          </p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
@@ -307,5 +340,21 @@ export default function Login() {
         <InstallPrompt />
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
+        <div className="mx-auto w-full max-w-md space-y-4">
+          <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
+          <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
+          <div className="h-14 rounded-2xl bg-zinc-300 motion-safe:animate-pulse dark:bg-zinc-700" />
+        </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }
