@@ -48,25 +48,28 @@ function OnboardingContent() {
   }, []);
 
   // Fix: Chỉ redirect nếu đang ở /onboarding, tránh loop
-  useEffect(() => {
-    if (!mounted || authLoading) return;
-    if (pathname!== "/onboarding") return; // Thêm guard này
+useEffect(() => {
+  if (!mounted || authLoading) return;
+  if (pathname!== "/onboarding") return;
 
-    if (user &&!user.emailVerified) {
-      window.location.href = "/verify-email";
-      return;
-    }
+  if (user &&!user.emailVerified) {
+    window.location.href = "/verify-email";
+    return;
+  }
 
-    if (!user) {
-      window.location.href = "/login";
-      return;
-    }
+  if (!user) {
+    window.location.href = "/login";
+    return;
+  }
 
-    if (userData?.onboardingCompleted) {
-      window.location.href = redirectTo;
-      return;
-    }
-  }, [mounted, authLoading, redirectTo, user, userData, pathname]);
+  // Quan trọng: Đợi userData load xong
+  if (userData === undefined) return;
+
+  if (userData?.onboardingCompleted) {
+    window.location.href = redirectTo;
+    return;
+  }
+}, [mounted, authLoading, redirectTo, user, userData, pathname]);
 
   useEffect(() => {
     if (user &&!displayName) {
