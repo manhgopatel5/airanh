@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from "react";
 import { reload, sendEmailVerification, signOut } from "firebase/auth";
 import { FiCheckCircle, FiLogOut, FiMail, FiRefreshCw, FiSend } from "react-icons/fi";
@@ -70,7 +72,19 @@ export default function VerifyEmailPage() {
     }
   };
 
-  if (!mounted || loading) {
+  // Fix: Tách riêng!mounted và!user để tránh hydration mismatch
+  if (!mounted) {
+    return (
+      <AuthShell title="Đang kiểm tra email" description="AIR đang xác nhận trạng thái tài khoản của bạn." icon={<FiMail className="h-6 w-6" />}>
+        <div className="space-y-3" role="status" aria-label="Đang tải">
+          <div className="h-12 rounded-2xl bg-zinc-100 motion-safe:animate-pulse dark:bg-zinc-800" />
+          <div className="h-12 rounded-2xl bg-zinc-100 motion-safe:animate-pulse dark:bg-zinc-800" />
+        </div>
+      </AuthShell>
+    );
+  }
+
+  if (loading ||!user) {
     return (
       <AuthShell title="Đang kiểm tra email" description="AIR đang xác nhận trạng thái tài khoản của bạn." icon={<FiMail className="h-6 w-6" />}>
         <div className="space-y-3" role="status" aria-label="Đang tải">
@@ -90,7 +104,7 @@ export default function VerifyEmailPage() {
     >
       <div className="mb-5 rounded-2xl bg-zinc-50 px-4 py-3 text-center ring-1 ring-black/5 dark:bg-zinc-900/70 dark:ring-white/10">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-400">Email tài khoản</p>
-        <p className="mt-1 break-all text-sm font-black text-sky-600 dark:text-sky-300">{user?.email}</p>
+        <p className="mt-1 break-all text-sm font-black text-sky-600 dark:text-sky-300">{user.email}</p>
       </div>
 
       <div className="space-y-3">
