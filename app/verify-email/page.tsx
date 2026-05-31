@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { updateProfile } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
@@ -16,12 +16,12 @@ import { getSafeRedirect } from "@/components/auth/authRoutes";
 
 const generateUsername = (name: string) => {
   return name
- .toLowerCase()
- .normalize("NFD")
- .replace(/[\u0300-\u036f]/g, "")
- .replace(/\s+/g, "")
- .replace(/[^a-z0-9]/g, "")
- .slice(0, 20) || "user";
+.toLowerCase()
+.normalize("NFD")
+.replace(/[\u0300-\u036f]/g, "")
+.replace(/\s+/g, "")
+.replace(/[^a-z0-9]/g, "")
+.slice(0, 20) || "user";
 };
 
 const sanitizeDisplayName = (name: string, fallback: string) => {
@@ -30,7 +30,7 @@ const sanitizeDisplayName = (name: string, fallback: string) => {
   return trimmed;
 };
 
-export default function OnboardingForm() {
+function OnboardingContent() {
   const { user, userData, loading: authLoading, refreshToken } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -41,32 +41,32 @@ export default function OnboardingForm() {
   const [displayName, setDisplayName] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Fix: Chỉ chạy sau khi client mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
-    if (authLoading) return;
+    if (!mounted || authLoading) return;
 
-    // Fix: Check user tồn tại trước, nhưng chưa verify thì đá về /verify-email
     if (user &&!user.emailVerified) {
-      setIsRedirecting(true);
       toast.error("Vui lòng xác thực email trước");
       router.replace("/verify-email");
       return;
     }
 
-    // Chỉ đá về login khi thực sự không có user
     if (!user) {
-      setIsRedirecting(true);
       router.replace("/login");
       return;
     }
 
     if (userData?.onboardingCompleted) {
-      setIsRedirecting(true);
       router.replace(redirectTo);
       return;
     }
-  }, [authLoading, redirectTo, router, user, userData]);
+  }, [mounted, authLoading, redirectTo, router, user, userData]);
 
   useEffect(() => {
     if (user &&!displayName) {
@@ -137,7 +137,7 @@ export default function OnboardingForm() {
           searchKeywords: [
             lowerName,
             lowerName.replace(/\s+/g, ""),
-         ...lowerName.split(" ").filter((word) => word.length >= 2),
+        ...lowerName.split(" ").filter((word) => word.length >= 2),
             userId.toLowerCase(),
             username.toLowerCase(),
           ],
@@ -148,7 +148,6 @@ export default function OnboardingForm() {
 
       await refreshToken();
       toast.success(`Chào mừng, ${trimmed}!`);
-      setIsRedirecting(true);
       router.replace(redirectTo);
     } catch (err) {
       console.error("Onboarding error:", err);
@@ -159,7 +158,8 @@ export default function OnboardingForm() {
     }
   };
 
-  if (authLoading ||!user || userData === undefined || isRedirecting) {
+  // Fix: Không render gì cho đến khi mounted + auth xong
+  if (!mounted || authLoading ||!user || userData === undefined) {
     return (
       <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
         <div className="mx-auto w-full max-w-md space-y-4">
@@ -217,7 +217,7 @@ export default function OnboardingForm() {
                 disabled={saving}
                 className={`h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${
                   error
-                 ? "border-red-400 focus:border-red-500"
+                ? "border-red-400 focus:border-red-500"
                     : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"
                 }`}
               />
@@ -252,5 +252,21 @@ export default function OnboardingForm() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
+        <div className="mx-auto w-full max-w-md space-y-4">
+          <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
+          <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
+          <div className="h-14 rounded-2xl bg-zinc-300 motion-safe:animate-pulse dark:bg-zinc-700" />
+        </div>
+      </div>
+    }>
+      <OnboardingContent />
+    </Suspense>
   );
 }
