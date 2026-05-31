@@ -8,19 +8,19 @@ import { toast } from "sonner";
 import AuthShell from "@/components/auth/AuthShell";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
-import { getSafeRedirect } from "@/components/auth/authRoutes";
+// Xoá dòng này: import { getSafeRedirect } from "@/components/auth/authRoutes";
 
 export default function VerifyEmailPage() {
   const auth = getFirebaseAuth();
   const searchParams = useSearchParams();
-  const { user, loading } = useAuth(); // Xoá userData
+  const { user, loading } = useAuth();
   const [sending, setSending] = useState(false);
   const [checking, setChecking] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [loggingOut, setLoggingOut] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  const redirectTo = getSafeRedirect(searchParams.get("redirect")) || "/";
+  // Xoá dòng này: const redirectTo = getSafeRedirect(searchParams.get("redirect")) || "/";
 
   useEffect(() => {
     setMounted(true);
@@ -53,7 +53,6 @@ export default function VerifyEmailPage() {
       await reload(auth.currentUser);
       if (auth.currentUser.emailVerified) {
         toast.success("Xác thực thành công");
-        // Xoá redirect - để middleware xử lý sau
       } else {
         toast.error("Email chưa được xác thực");
       }
