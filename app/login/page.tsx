@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { FcGoogle } from "react-icons/fc";
 import { FiAlertCircle, FiEye, FiEyeOff, FiLock, FiMail, FiSend } from "react-icons/fi";
 import {
@@ -188,7 +189,6 @@ function LoginContent() {
       await setPersistence(auth, remember? browserLocalPersistence : browserSessionPersistence);
       const res = await signInWithEmailAndPassword(auth, form.email, form.password);
 
-      // Fix: Chưa verify thì tự gửi mail + đá qua /verify-email
       if (!res.user.emailVerified) {
         await sendEmailVerification(res.user).catch(() => {});
         localStorage.setItem("last_email", form.email);
@@ -232,6 +232,7 @@ function LoginContent() {
 
   if (user?.emailVerified && userData?.onboardingCompleted) return null;
 
+  // Fix: Dùng isValid
   const isValid = form.email && form.password &&!errors.email &&!errors.password;
 
   return (
@@ -308,7 +309,7 @@ function LoginContent() {
             <Link href="/forgot-password" className="font-bold text-[#0A84FF]">Quên mật khẩu?</Link>
           </div>
 
-          <button type="submit" disabled={loading} className="flex h-14 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] text-base font-black text-white shadow-lg shadow-[#0A84FF]/25 transition active:scale-[0.98] disabled:opacity-60">
+          <button type="submit" disabled={loading ||!isValid} className="flex h-14 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] text-base font-black text-white shadow-lg shadow-[#0A84FF]/25 transition active:scale-[0.98] disabled:opacity-60">
             {loading? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
         </form>
