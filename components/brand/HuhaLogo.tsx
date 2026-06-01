@@ -31,8 +31,8 @@ export default function HuhaLogo({
         <h1
           className="
             relative
-            text-
-            sm:text-
+            text-[48px]
+            sm:text-[56px]
             font-bold
             leading-none
             tracking-[0.02em]
@@ -72,48 +72,6 @@ export default function HuhaLogo({
           >
             ha
           </span>
-
-          {/* Signature node - nhỏ lại */}
-          <span
-            className="
-              absolute
-              left-[50.5%]
-              top-[58%]
-              h-2
-              w-2
-              sm:h-2.5
-              sm:w-2.5
-              -translate-x-1/2
-              -translate-y-1/2
-            "
-          >
-            <span
-              className="
-                absolute
-                inset-0
-                animate-ping
-                rounded-full
-                bg-gradient-to-r
-                from-[#0A84FF]
-                to-[#34C759]
-                opacity-60
-              "
-            />
-            <span
-              className="
-                relative
-                block
-                h-full
-                w-full
-                rounded-full
-                bg-gradient-to-r
-                from-[#0A84FF]
-                to-[#34C759]
-                shadow-md
-                shadow-cyan-500/40
-              "
-            />
-          </span>
         </h1>
       </div>
 
@@ -123,8 +81,8 @@ export default function HuhaLogo({
 
           <p
             className="
-              text-
-              sm:text-
+              text-[10px]
+              sm:text-[11px]
               font-semibold
               uppercase
               tracking-[0.3em]
