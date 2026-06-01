@@ -5,14 +5,14 @@ import { defineString } from "firebase-functions/params";
 import * as functions from "firebase-functions/v1";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
-import { getAuth, UserRecord } from "firebase-admin/auth";
+import {  UserRecord } from "firebase-admin/auth";
 import { FirestoreEvent, QueryDocumentSnapshot } from "firebase-functions/v2/firestore";
 import { Resend } from "resend";
 import * as crypto from "crypto";
 
 initializeApp();
 const db = getFirestore();
-const auth = getAuth();
+
 const resendApiKey = defineString("RESEND_API_KEY");
 
 // 0. GỬI MAIL XÁC THỰC BẰNG RESEND - DÙNG CUSTOM TOKEN, NÉ RATE LIMIT
