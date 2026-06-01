@@ -1,23 +1,24 @@
 import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import * as functionsV1 from "firebase-functions"; // Thêm dòng này
+import * as functions from "firebase-functions";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
 import { FirestoreEvent, QueryDocumentSnapshot } from "firebase-functions/v2/firestore";
 import { Resend } from "resend";
+import { UserRecord } from "firebase-admin/auth"; // Thêm dòng này
 
 initializeApp();
 const db = getFirestore();
 const auth = getAuth();
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// 0. GỬI MAIL XÁC THỰC BẰNG RESEND - DÙNG V1 VÌ V2 CHƯA CÓ
-export const sendVerificationEmail = functionsV1
+// 0. GỬI MAIL XÁC THỰC BẰNG RESEND - FIX LỖI TYPE
+export const sendVerificationEmail = functions
   .region("asia-southeast1")
   .auth.user()
-  .onCreate(async (user) => {
+  .onCreate(async (user: UserRecord) => { // Thêm type UserRecord vào đây
     if (!user.email || user.emailVerified) return;
 
     try {
@@ -25,7 +26,7 @@ export const sendVerificationEmail = functionsV1
         url: "https://huha.online",
       });
 
-      const { error } = await resend.emails.send({
+      const { data, error } = await resend.emails.send({
         from: "Huha <admin@huha.online>",
         to: [user.email],
         subject: "Xác thực tài khoản Huha của bạn",
@@ -38,15 +39,8 @@ export const sendVerificationEmail = functionsV1
               <div style="padding: 40px 32px; color: #1d1d1f;">
                 <h2 style="font-size: 22px; font-weight: 800; margin: 0 0 16px;">Chào ${user.displayName || "bạn"},</h2>
                 <p style="font-size: 16px; line-height: 1.6; color: #515154; margin: 0 0 16px;">Cảm ơn bạn đã tạo tài khoản Huha. Chỉ còn 1 bước nữa để bắt đầu.</p>
-                <p style="font-size: 16px; line-height: 1.6; color: #515154; margin: 0 0 16px;">Bấm nút bên dưới để xác thực địa chỉ email của bạn:</p>
                 <a href="${link}" style="display: inline-block; padding: 16px 32px; background: #0A84FF; color: #fff; text-decoration: none; border-radius: 12px; font-weight: 900; font-size: 16px; margin: 24px 0;">Xác thực email</a>
-                <p style="font-size: 14px; line-height: 1.6; color: #515154; margin: 24px 0 8px;">Hoặc copy link này vào trình duyệt:</p>
-                <p style="word-break: break-all; font-size: 12px; color: #86868b; margin: 0;">${link}</p>
-                <p style="font-size: 14px; line-height: 1.6; color: #515154; margin: 32px 0 0;">Nếu bạn không đăng ký Huha, hãy bỏ qua email này.</p>
-              </div>
-              <div style="padding: 24px; text-align: center; font-size: 12px; color: #86868b; background: #f5f5f7;">
-                © 2026 Huha. All rights reserved.<br>
-                Liên hệ: admin@huha.online
+                <p style="word-break: break-all; font-size: 12px; color: #86868b; margin: 24px 0 0;">${link}</p>
               </div>
             </div>
           </div>
@@ -57,11 +51,13 @@ export const sendVerificationEmail = functionsV1
         console.error("Resend error:", error);
         return;
       }
-      console.log("Verification email sent to:", user.email);
+      console.log("Verification email sent to:", user.email, "id:", data?.id);
     } catch (err) {
       console.error("sendVerificationEmail error:", err);
     }
   });
+
+
 
 // 1. Khi có lời mời kết bạn mới → tạo thông báo cho người nhận
 export const onFriendRequestCreated = onDocumentCreated(
