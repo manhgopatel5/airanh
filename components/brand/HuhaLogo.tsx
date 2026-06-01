@@ -1,6 +1,4 @@
 // components/brand/HuhaLogo.tsx
-import { cn } from "@/lib/utils"; // optional: nếu bạn dùng shadcn
-
 export default function HuhaLogo({
   className = "",
   showTagline = true,
@@ -9,9 +7,9 @@ export default function HuhaLogo({
   showTagline?: boolean;
 }) {
   return (
-    <div className={cn("flex flex-col items-center", className)}>
+    <div className={`flex flex-col items-center ${className}`}>
       <div className="relative">
-        {/* Glow phía sau - mềm hơn */}
+        {/* Glow phía sau */}
         <div
           className="
             absolute
@@ -33,10 +31,10 @@ export default function HuhaLogo({
         <h1
           className="
             relative
-            text-[58px]
+            text-
             font-bold
             leading-none
-            tracking-[-0.04em]
+            tracking-[0.02em]
             select-none
           "
           style={{
@@ -74,12 +72,12 @@ export default function HuhaLogo({
             ha
           </span>
 
-          {/* Signature node - có pulse */}
+          {/* Signature node - căn giữa chuẩn u và h */}
           <span
             className="
               absolute
-              left-[50%]
-              top-[56%]
+              left-[50.5%]
+              top-[58%]
               h-3
               w-3
               -translate-x-1/2
@@ -114,38 +112,15 @@ export default function HuhaLogo({
             />
           </span>
         </h1>
-
-        {/* Underline bo cong theo chữ */}
-        <svg
-          className="absolute -bottom-1 left-1/2 -translate-x-1/2"
-          width="120"
-          height="8"
-          viewBox="0 0 120 8"
-          fill="none"
-        >
-          <path
-            d="M2 4C20 6.5 40 7 60 4C80 1 100 1.5 118 4"
-            stroke="url(#logo-gradient)"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          />
-          <defs>
-            <linearGradient id="logo-gradient" x1="0" y1="0" x2="120" y2="0">
-              <stop offset="0%" stopColor="#0A84FF" />
-              <stop offset="50%" stopColor="#00D4AA" />
-              <stop offset="100%" stopColor="#34C759" />
-            </linearGradient>
-          </defs>
-        </svg>
       </div>
 
       {showTagline && (
-        <div className="mt-4 flex items-center gap-2.5">
+        <div className="mt-3 flex items-center gap-2.5">
           <div className="h-px w-6 rounded-full bg-gradient-to-r from-transparent to-[#0A84FF]" />
 
           <p
             className="
-              text-[10px]
+              text-
               font-semibold
               uppercase
               tracking-[0.3em]
