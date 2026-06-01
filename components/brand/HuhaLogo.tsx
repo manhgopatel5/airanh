@@ -15,8 +15,8 @@ export default function HuhaLogo({
             absolute
             left-1/2
             top-[55%]
-            h-12
-            w-40
+            h-16
+            w-48
             -translate-x-1/2
             -translate-y-1/2
             rounded-full
@@ -31,14 +31,15 @@ export default function HuhaLogo({
         <h1
           className="
             relative
-            text-
+            text-[48px]
+            sm:text-[56px]
             font-bold
             leading-none
             tracking-[0.02em]
             select-none
           "
           style={{
-            fontFamily: "'Comfortaa', 'Quicksand', 'Nunito', sans-serif",
+            fontFamily: "var(--font-logo)",
             textShadow: "0 4px 20px rgba(10, 132, 255, 0.15)",
           }}
         >
@@ -78,8 +79,10 @@ export default function HuhaLogo({
               absolute
               left-[50.5%]
               top-[58%]
-              h-3
-              w-3
+              h-3.5
+              w-3.5
+              sm:h-4
+              sm:w-4
               -translate-x-1/2
               -translate-y-1/2
             "
@@ -100,8 +103,8 @@ export default function HuhaLogo({
               className="
                 relative
                 block
-                h-3
-                w-3
+                h-full
+                w-full
                 rounded-full
                 bg-gradient-to-r
                 from-[#0A84FF]
@@ -120,7 +123,8 @@ export default function HuhaLogo({
 
           <p
             className="
-              text-
+              text-[10px]
+              sm:text-[11px]
               font-semibold
               uppercase
               tracking-[0.3em]
