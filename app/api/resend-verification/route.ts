@@ -3,6 +3,7 @@ import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { initializeApp, getApps } from "firebase-admin/app";
 import { Resend } from "resend";
+
 import * as crypto from "crypto";
 
 if (!getApps().length) initializeApp();
