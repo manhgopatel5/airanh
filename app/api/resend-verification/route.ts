@@ -5,13 +5,12 @@ import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { Resend } from "resend";
 import * as crypto from "crypto";
 
-// Fix 1: Init Firebase Admin với service account
 if (!getApps().length) {
   initializeApp({
     credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      projectId: process.env.FIREBASE_PROJECT_ID!,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, '\n'),
     }),
   });
 }
@@ -20,12 +19,8 @@ const db = getFirestore();
 
 export async function POST(req: NextRequest) {
   try {
-    // Fix 2: Check env trước khi chạy
     if (!process.env.RESEND_API_KEY) {
       throw new Error("Missing RESEND_API_KEY");
-    }
-    if (!process.env.FIREBASE_PROJECT_ID) {
-      throw new Error("Missing FIREBASE_PROJECT_ID");
     }
 
     const token = req.headers.get("Authorization")?.split("Bearer ")[1];
@@ -52,7 +47,7 @@ export async function POST(req: NextRequest) {
 
     const resend = new Resend(process.env.RESEND_API_KEY);
     const { data, error } = await resend.emails.send({
-      from: "Huha <onboarding@resend.dev>", // Fix 3: Dùng domain resend để test, khỏi verify domain
+      from: "Huha <onboarding@resend.dev>",
       to: [user.email],
       subject: "Xác thực tài khoản Huha",
       html: `<a href="${link}">Bấm để xác thực</a><p>Link: ${link}</p>`,
