@@ -34,6 +34,14 @@ export default function VerifyEmailPage() {
 
   useEffect(() => {
     if (!mounted || loading) return;
+
+    // Nếu vừa logout chủ động thì cho ở lại trang này, không redirect
+    const manualLogout = sessionStorage.getItem("manual_logout");
+    if (manualLogout) {
+      sessionStorage.removeItem("manual_logout");
+      return;
+    }
+
     if (!user) {
       router.replace("/login");
       return;
@@ -79,6 +87,9 @@ export default function VerifyEmailPage() {
   const handleLogout = async () => {
     try {
       setLoggingOut(true);
+      // Đánh dấu là logout chủ động để không bị auto redirect
+      sessionStorage.setItem("manual_logout", "1");
+
       await signOut(auth);
       // Xóa hết localStorage liên quan auth
       localStorage.removeItem("last_email");
@@ -90,18 +101,56 @@ export default function VerifyEmailPage() {
       router.replace("/login");
     } catch {
       toast.error("Đăng xuất thất bại");
+      sessionStorage.removeItem("manual_logout");
     } finally {
       setLoggingOut(false);
     }
   };
 
-  if (!mounted || loading ||!user || user.emailVerified) {
+  if (!mounted || loading) {
     return (
       <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
         <div className="mx-auto w-full max-w-md space-y-4">
           <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
           <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
           <div className="h-14 rounded-2xl bg-zinc-300 motion-safe:animate-pulse dark:bg-zinc-700" />
+        </div>
+      </div>
+    );
+  }
+
+  // Nếu không có user thì vẫn render UI để user có thể bấm đăng xuất
+  // Chứ không redirect ngay
+  if (!user) {
+    return (
+      <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
+        <div className="mx-auto w-full max-w-md">
+          <div className="mb-10">
+            <HuhaLogo />
+          </div>
+          <div className="mb-6 text-center">
+            <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-400">
+              Bạn đã đăng xuất. Vui lòng đăng nhập lại.
+            </p>
+          </div>
+          <button
+            onClick={() => router.replace("/login")}
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] text-base font-black text-white shadow-lg shadow-[#0A84FF]/25 transition active:scale-[0.98]"
+          >
+            Về trang đăng nhập
+          </button>
+          <InstallPrompt />
+        </div>
+      </div>
+    );
+  }
+
+  if (user.emailVerified) {
+    return (
+      <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
+        <div className="mx-auto w-full max-w-md space-y-4">
+          <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
+          <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
         </div>
       </div>
     );
