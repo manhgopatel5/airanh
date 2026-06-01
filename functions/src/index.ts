@@ -5,23 +5,25 @@ import { defineString } from "firebase-functions/params";
 import * as functions from "firebase-functions/v1";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
-import { getAuth } from "firebase-admin/auth";
+import { getAuth, UserRecord } from "firebase-admin/auth";
 import { FirestoreEvent, QueryDocumentSnapshot } from "firebase-functions/v2/firestore";
 import { Resend } from "resend";
-import { UserRecord } from "firebase-admin/auth"; // Thêm dòng này
 
 initializeApp();
 const db = getFirestore();
 const auth = getAuth();
 const resendApiKey = defineString("RESEND_API_KEY");
-const resend = new Resend(resendApiKey.value());
+// XÓA DÒNG NÀY: const resend = new Resend(resendApiKey.value());
 
-// 0. GỬI MAIL XÁC THỰC BẰNG RESEND - FIX LỖI TYPE
+// 0. GỬI MAIL XÁC THỰC BẰNG RESEND - FIX LỖI DEPLOY
 export const sendVerificationEmail = functions
   .region("asia-southeast1")
   .auth.user()
-  .onCreate(async (user: UserRecord) => { // Thêm type UserRecord vào đây
+  .onCreate(async (user: UserRecord) => {
     if (!user.email || user.emailVerified) return;
+
+    // Tạo Resend BÊN TRONG function để không bị gọi lúc deploy
+    const resend = new Resend(resendApiKey.value());
 
     try {
       const link = await auth.generateEmailVerificationLink(user.email, {
@@ -58,8 +60,6 @@ export const sendVerificationEmail = functions
       console.error("sendVerificationEmail error:", err);
     }
   });
-
-
 
 // 1. Khi có lời mời kết bạn mới → tạo thông báo cho người nhận
 export const onFriendRequestCreated = onDocumentCreated(
