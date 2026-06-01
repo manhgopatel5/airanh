@@ -1,54 +1,57 @@
 // components/brand/HuhaLogo.tsx
+import { cn } from "@/lib/utils"; // optional: nếu bạn dùng shadcn
 
 export default function HuhaLogo({
   className = "",
+  showTagline = true,
 }: {
   className?: string;
+  showTagline?: boolean;
 }) {
   return (
-    <div className={`flex flex-col items-center ${className}`}>
+    <div className={cn("flex flex-col items-center", className)}>
       <div className="relative">
-
-        {/* Connection Flow */}
+        {/* Glow phía sau - mềm hơn */}
         <div
           className="
             absolute
-            left-[46%]
-            top-[52%]
-            h-[10px]
-            w-[42px]
+            left-1/2
+            top-[55%]
+            h-12
+            w-40
             -translate-x-1/2
             -translate-y-1/2
             rounded-full
             bg-gradient-to-r
-            from-[#0A84FF]
-            via-[#3B9EFF]
-            to-[#34C759]
-            opacity-20
-            blur-[8px]
+            from-[#0A84FF]/30
+            via-[#00D4AA]/20
+            to-[#34C759]/30
+            blur-2xl
           "
         />
 
         <h1
           className="
             relative
-            text-[54px]
-            font-black
+            text-[58px]
+            font-bold
             leading-none
-            tracking-[-0.09em]
+            tracking-[-0.04em]
             select-none
           "
           style={{
-            fontFamily:
-              "'Fredoka','Baloo 2','Nunito',sans-serif",
+            fontFamily: "'Comfortaa', 'Quicksand', 'Nunito', sans-serif",
+            textShadow: "0 4px 20px rgba(10, 132, 255, 0.15)",
           }}
         >
+          {/* hu - xanh dương bo tròn */}
           <span
             className="
-              bg-gradient-to-r
+              bg-gradient-to-br
               from-[#0A84FF]
               via-[#2F8DFF]
-              to-[#56A8FF]
+              via-[#00C4FF]
+              to-[#00D4AA]
               bg-clip-text
               text-transparent
             "
@@ -56,12 +59,14 @@ export default function HuhaLogo({
             hu
           </span>
 
+          {/* ha - xanh lá bo tròn */}
           <span
             className="
-              bg-gradient-to-r
-              from-[#56D76A]
+              bg-gradient-to-bl
+              from-[#00D4AA]
+              via-[#34D399]
               via-[#34C759]
-              to-[#16A34A]
+              to-[#22C55E]
               bg-clip-text
               text-transparent
             "
@@ -69,42 +74,91 @@ export default function HuhaLogo({
             ha
           </span>
 
-          {/* Signature node */}
+          {/* Signature node - có pulse */}
           <span
             className="
               absolute
-              left-[49.8%]
-              top-[53%]
-              h-2.5
-              w-2.5
+              left-[50%]
+              top-[56%]
+              h-3
+              w-3
               -translate-x-1/2
               -translate-y-1/2
-              rounded-full
-              bg-gradient-to-r
-              from-[#0A84FF]
-              to-[#34C759]
             "
-          />
+          >
+            <span
+              className="
+                absolute
+                inset-0
+                animate-ping
+                rounded-full
+                bg-gradient-to-r
+                from-[#0A84FF]
+                to-[#34C759]
+                opacity-75
+              "
+            />
+            <span
+              className="
+                relative
+                block
+                h-3
+                w-3
+                rounded-full
+                bg-gradient-to-r
+                from-[#0A84FF]
+                to-[#34C759]
+                shadow-lg
+                shadow-cyan-500/50
+              "
+            />
+          </span>
         </h1>
-      </div>
 
-      <div className="mt-1.5 flex items-center gap-3">
-        <div className="h-[2px] w-8 rounded-full bg-[#0A84FF]" />
-
-        <p
-          className="
-            text-[11px]
-            font-bold
-            uppercase
-            tracking-[0.22em]
-            text-zinc-500
-          "
+        {/* Underline bo cong theo chữ */}
+        <svg
+          className="absolute -bottom-1 left-1/2 -translate-x-1/2"
+          width="120"
+          height="8"
+          viewBox="0 0 120 8"
+          fill="none"
         >
-          Kết nối không giới hạn
-        </p>
-
-        <div className="h-[2px] w-8 rounded-full bg-[#34C759]" />
+          <path
+            d="M2 4C20 6.5 40 7 60 4C80 1 100 1.5 118 4"
+            stroke="url(#logo-gradient)"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          />
+          <defs>
+            <linearGradient id="logo-gradient" x1="0" y1="0" x2="120" y2="0">
+              <stop offset="0%" stopColor="#0A84FF" />
+              <stop offset="50%" stopColor="#00D4AA" />
+              <stop offset="100%" stopColor="#34C759" />
+            </linearGradient>
+          </defs>
+        </svg>
       </div>
+
+      {showTagline && (
+        <div className="mt-4 flex items-center gap-2.5">
+          <div className="h-px w-6 rounded-full bg-gradient-to-r from-transparent to-[#0A84FF]" />
+
+          <p
+            className="
+              text-[10px]
+              font-semibold
+              uppercase
+              tracking-[0.3em]
+              text-zinc-400
+            "
+            style={{ fontFamily: "'Quicksand', sans-serif" }}
+          >
+            Kết nối không giới hạn
+          </p>
+
+          <div className="h-px w-6 rounded-full bg-gradient-to-l from-transparent to-[#34C759]" />
+        </div>
+      )}
     </div>
   );
 }
