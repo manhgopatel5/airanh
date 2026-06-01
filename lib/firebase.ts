@@ -58,6 +58,9 @@ function initFirebase() {
       rtdb = getDatabase(app);
     }
 
+    // Set ngôn ngữ email sang tiếng Việt
+    auth.languageCode = 'vi'; // <<< THÊM DÒNG NÀY
+
     // Lưu login
     setPersistence(auth, browserLocalPersistence).catch((err) => 
       console.error("Auth persistence failed:", err)
