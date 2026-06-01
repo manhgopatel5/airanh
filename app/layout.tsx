@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Be_Vietnam_Pro } from "next/font/google";
+import { Be_Vietnam_Pro, Comfortaa } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
 import { AuthProvider } from "@/lib/AuthContext";
@@ -10,7 +10,14 @@ const beVietnamPro = Be_Vietnam_Pro({
   subsets: ['latin', 'vietnamese'],
   weight: ['300', '400', '500', '600', '700', '800', '900'],
   display: "swap",
-  variable: "--font-sans", // QUAN TRỌNG: phải là --font-sans để khớp tailwind
+  variable: "--font-sans", // Font chính cho toàn site
+});
+
+const comfortaa = Comfortaa({
+  subsets: ['latin', 'vietnamese'],
+  weight: ['700'],
+  display: "swap",
+  variable: "--font-logo", // Font riêng cho logo
 });
 
 export const metadata: Metadata = {
@@ -115,7 +122,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi" className={cn("h-full", beVietnamPro.variable)} suppressHydrationWarning>
+    <html 
+      lang="vi" 
+      className={cn("h-full", beVietnamPro.variable, comfortaa.variable)} 
+      suppressHydrationWarning
+    >
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
