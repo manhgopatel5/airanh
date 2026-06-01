@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { reload, sendEmailVerification, signOut } from "firebase/auth";
+import { reload, signOut } from "firebase/auth";
 import { FiCheckCircle, FiLogOut, FiMail, FiRefreshCw, FiSend } from "react-icons/fi";
 import { toast } from "sonner";
 import HuhaLogo from "@/components/brand/HuhaLogo";
@@ -32,17 +32,23 @@ export default function VerifyEmailPage() {
     return () => window.clearTimeout(timer);
   }, [cooldown]);
 
-  // XÓA HẾT AUTO REDIRECT - CHỈ REDIRECT KHI BẤM NÚT
-
   const handleResend = async () => {
     if (!auth.currentUser || sending || cooldown > 0) return;
     try {
       setSending(true);
-      await sendEmailVerification(auth.currentUser);
+      // Gọi function để gửi lại mail qua Resend
+      const idToken = await auth.currentUser.getIdToken();
+      const res = await fetch('/api/resend-verification', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${idToken}` }
+      });
+
+      if (!res.ok) throw new Error('Send failed');
+
       toast.success("Đã gửi email xác thực");
       setCooldown(60);
     } catch (err: any) {
-      toast.error(err.code === "auth/too-many-requests"? "Gửi quá nhiều lần. Thử lại sau" : "Gửi email thất bại");
+      toast.error("Gửi email thất bại. Thử lại sau 1 phút");
     } finally {
       setSending(false);
     }
@@ -70,12 +76,7 @@ export default function VerifyEmailPage() {
     try {
       setLoggingOut(true);
       await signOut(auth);
-      // Xóa hết localStorage liên quan auth
-      localStorage.removeItem("last_email");
-      localStorage.removeItem("last_verify_sent");
-      localStorage.removeItem("login_fail_time");
-      localStorage.removeItem("last_register_attempt");
-      localStorage.removeItem("emailForSignIn");
+      localStorage.clear();
       toast.success("Đã đăng xuất");
       router.replace("/login");
     } catch {
@@ -97,14 +98,11 @@ export default function VerifyEmailPage() {
     );
   }
 
-  // Nếu không có user thì hiển thị UI cho đăng nhập lại, KHÔNG redirect
   if (!user) {
     return (
       <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
         <div className="mx-auto w-full max-w-md">
-          <div className="mb-10">
-            <HuhaLogo />
-          </div>
+          <div className="mb-10"><HuhaLogo /></div>
           <div className="mb-6 text-center">
             <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-400">
               Bạn chưa đăng nhập hoặc đã đăng xuất.
@@ -122,14 +120,11 @@ export default function VerifyEmailPage() {
     );
   }
 
-  // Nếu đã verify thì hiển thị nút về trang chủ, KHÔNG auto redirect
   if (user.emailVerified) {
     return (
       <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
         <div className="mx-auto w-full max-w-md">
-          <div className="mb-10">
-            <HuhaLogo />
-          </div>
+          <div className="mb-10"><HuhaLogo /></div>
           <div className="mb-6 text-center">
             <div className="mb-4 flex justify-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-500/10 dark:text-green-400">
@@ -156,9 +151,7 @@ export default function VerifyEmailPage() {
   return (
     <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
       <div className="mx-auto w-full max-w-md">
-        <div className="mb-10">
-          <HuhaLogo />
-        </div>
+        <div className="mb-10"><HuhaLogo /></div>
 
         <div className="mb-6">
           <div className="mb-2 flex items-center gap-2">
@@ -207,7 +200,7 @@ export default function VerifyEmailPage() {
         </div>
 
         <p className="mt-6 text-center text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-          Không thấy email? Kiểm tra thư mục Spam hoặc gửi lại sau ít giây.
+          Không thấy email? Kiểm tra thư mục Spam hoặc Quảng cáo.
         </p>
 
         <InstallPrompt />
