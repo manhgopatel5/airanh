@@ -9,30 +9,11 @@ export default function HuhaLogo({
   return (
     <div className={`flex flex-col items-center ${className}`}>
       <div className="relative">
-        {/* Glow phía sau */}
-        <div
-          className="
-            absolute
-            left-1/2
-            top-[55%]
-            h-16
-            w-48
-            -translate-x-1/2
-            -translate-y-1/2
-            rounded-full
-            bg-gradient-to-r
-            from-[#0A84FF]/30
-            via-[#00D4AA]/20
-            to-[#34C759]/30
-            blur-2xl
-          "
-        />
-
         <h1
           className="
             relative
-            text-[48px]
-            sm:text-[56px]
+            text-
+            sm:text-
             font-bold
             leading-none
             tracking-[0.02em]
@@ -40,7 +21,6 @@ export default function HuhaLogo({
           "
           style={{
             fontFamily: "var(--font-logo)",
-            textShadow: "0 4px 20px rgba(10, 132, 255, 0.15)",
           }}
         >
           {/* hu - xanh dương bo tròn */}
@@ -81,8 +61,8 @@ export default function HuhaLogo({
 
           <p
             className="
-              text-[10px]
-              sm:text-[11px]
+              text-
+              sm:text-
               font-semibold
               uppercase
               tracking-[0.3em]
