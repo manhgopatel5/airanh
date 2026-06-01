@@ -1,12 +1,72 @@
 import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onUserCreate } from "firebase-functions/v2/auth";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
+import { getAuth } from "firebase-admin/auth";
 import { FirestoreEvent, QueryDocumentSnapshot } from "firebase-functions/v2/firestore";
-import { onSchedule } from "firebase-functions/v2/scheduler";
+import { Resend } from "resend";
 
 initializeApp();
 const db = getFirestore();
+const auth = getAuth();
+
+// Dùng process.env cho chuẩn v2. Tạo file functions/.env chứa RESEND_API_KEY=re_2RBYHLSS_GJE4GJ6Mg9NP
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// 0. GỬI MAIL XÁC THỰC BẰNG RESEND KHI USER ĐĂNG KÝ
+export const sendVerificationEmail = onUserCreate(
+  { region: "asia-southeast1" },
+  async (event) => {
+    const user = event.data;
+    if (!user.email || user.emailVerified) return;
+
+    try {
+      // 1. Tạo link verify từ Firebase
+      const link = await auth.generateEmailVerificationLink(user.email, {
+        url: "https://huha.online", // Redirect về đâu sau khi bấm
+      });
+
+      // 2. Gửi bằng Resend
+      const { error } = await resend.emails.send({
+        from: "Huha <noreply@huha.online>", // Phải verify domain trên Resend trước
+        to: [user.email],
+        subject: "Xác thực tài khoản Huha của bạn",
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f7; margin: 0; padding: 24px;">
+            <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden;">
+              <div style="background: linear-gradient(135deg, #0A84FF 0%, #0051D5 100%); padding: 48px 24px; text-align: center;">
+                <h1 style="color: #fff; margin: 0; font-size: 32px; font-weight: 900; letter-spacing: -0.5px;">Huha</h1>
+              </div>
+              <div style="padding: 40px 32px; color: #1d1d1f;">
+                <h2 style="font-size: 22px; font-weight: 800; margin: 0 0 16px;">Chào ${user.displayName || "bạn"},</h2>
+                <p style="font-size: 16px; line-height: 1.6; color: #515154; margin: 0 0 16px;">Cảm ơn bạn đã tạo tài khoản Huha. Chỉ còn 1 bước nữa để bắt đầu.</p>
+                <p style="font-size: 16px; line-height: 1.6; color: #515154; margin: 0 0 16px;">Bấm nút bên dưới để xác thực địa chỉ email của bạn:</p>
+                <a href="${link}" style="display: inline-block; padding: 16px 32px; background: #0A84FF; color: #fff; text-decoration: none; border-radius: 12px; font-weight: 900; font-size: 16px; margin: 24px 0;">Xác thực email</a>
+                <p style="font-size: 14px; line-height: 1.6; color: #515154; margin: 24px 0 8px;">Hoặc copy link này vào trình duyệt:</p>
+                <p style="word-break: break-all; font-size: 12px; color: #86868b; margin: 0;">${link}</p>
+                <p style="font-size: 14px; line-height: 1.6; color: #515154; margin: 32px 0 0;">Nếu bạn không đăng ký Huha, hãy bỏ qua email này.</p>
+              </div>
+              <div style="padding: 24px; text-align: center; font-size: 12px; color: #86868b; background: #f5f5f7;">
+                © 2026 Huha. All rights reserved.<br>
+                Bạn nhận được email này vì đã đăng ký tài khoản tại huha.online
+              </div>
+            </div>
+          </div>
+        `,
+      });
+
+      if (error) {
+        console.error("Resend error:", error);
+        return;
+      }
+      console.log("Verification email sent to:", user.email);
+    } catch (err) {
+      console.error("sendVerificationEmail error:", err);
+    }
+  }
+);
 
 // 1. Khi có lời mời kết bạn mới → tạo thông báo cho người nhận
 export const onFriendRequestCreated = onDocumentCreated(
@@ -87,7 +147,7 @@ export const acceptFriendRequest = onCall(
     if (!uid) throw new HttpsError("unauthenticated", "Chưa đăng nhập");
 
     const { fromUid, notifId } = request.data;
-    if (!fromUid ||!notifId) {
+    if (!fromUid || !notifId) {
       throw new HttpsError("invalid-argument", "Thiếu fromUid hoặc notifId");
     }
 
@@ -258,10 +318,10 @@ export const cleanupExpiredTasks = onSchedule(
     );
 
     const expiredTasks = await db
-     .collection("tasks")
-     .where("deadline", "<", sevenDaysAgo)
-     .limit(500)
-     .get();
+      .collection("tasks")
+      .where("deadline", "<", sevenDaysAgo)
+      .limit(500)
+      .get();
 
     if (expiredTasks.empty) {
       console.log("No expired tasks to delete");
@@ -290,7 +350,7 @@ export const onUserProfileUpdate = onDocumentUpdated(
     const after = event.data?.after.data();
     const userId = event.params.userId;
 
-    if (!before ||!after) return;
+    if (!before || !after) return;
 
     // Chỉ sync khi displayName, photoURL hoặc verified đổi
     if (
@@ -305,9 +365,9 @@ export const onUserProfileUpdate = onDocumentUpdated(
     console.log(`User ${userId} đổi profile, bắt đầu sync tasks...`);
 
     const tasksSnap = await db
-     .collection("tasks")
-     .where("userId", "==", userId)
-     .get();
+      .collection("tasks")
+      .where("userId", "==", userId)
+      .get();
 
     if (tasksSnap.empty) {
       console.log(`User ${userId} không có task nào`);
