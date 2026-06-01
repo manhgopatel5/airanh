@@ -8,28 +8,45 @@ import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getAuth, UserRecord } from "firebase-admin/auth";
 import { FirestoreEvent, QueryDocumentSnapshot } from "firebase-functions/v2/firestore";
 import { Resend } from "resend";
+import * as crypto from "crypto";
 
 initializeApp();
 const db = getFirestore();
 const auth = getAuth();
 const resendApiKey = defineString("RESEND_API_KEY");
-// XÓA DÒNG NÀY: const resend = new Resend(resendApiKey.value());
 
-// 0. GỬI MAIL XÁC THỰC BẰNG RESEND - FIX LỖI DEPLOY
+// 0. GỬI MAIL XÁC THỰC BẰNG RESEND - DÙNG CUSTOM TOKEN, NÉ RATE LIMIT
 export const sendVerificationEmail = functions
-  .region("asia-southeast1")
-  .auth.user()
-  .onCreate(async (user: UserRecord) => {
-    if (!user.email || user.emailVerified) return;
-
-    // Tạo Resend BÊN TRONG function để không bị gọi lúc deploy
-    const resend = new Resend(resendApiKey.value());
+ .region("asia-southeast1")
+ .runWith({ secrets: ["RESEND_API_KEY"] })
+ .auth.user()
+ .onCreate(async (user: UserRecord) => {
+    if (!user.email || user.emailVerified) {
+      console.log("Skip:", user.email, "verified:", user.emailVerified);
+      return;
+    }
 
     try {
-      const link = await auth.generateEmailVerificationLink(user.email, {
-        url: "https://huha.online",
+      // 1. Tạo token ngẫu nhiên, hết hạn sau 24h
+      const token = crypto.randomBytes(32).toString("hex");
+      const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
+
+      // 2. Lưu vào Firestore để verify sau
+      await db.collection("emailVerifications").doc(token).set({
+        uid: user.uid,
+        email: user.email,
+        expiresAt,
+        used: false,
+        createdAt: FieldValue.serverTimestamp(),
       });
 
+      console.log("Token created for:", user.email);
+
+      // 3. Link verify của riêng bạn
+      const link = `https://huha.online/api/verify-email?token=${token}`;
+
+      // 4. Gửi qua Resend
+      const resend = new Resend(resendApiKey.value());
       const { data, error } = await resend.emails.send({
         from: "Huha <admin@huha.online>",
         to: [user.email],
@@ -44,7 +61,8 @@ export const sendVerificationEmail = functions
                 <h2 style="font-size: 22px; font-weight: 800; margin: 0 0 16px;">Chào ${user.displayName || "bạn"},</h2>
                 <p style="font-size: 16px; line-height: 1.6; color: #515154; margin: 0 0 16px;">Cảm ơn bạn đã tạo tài khoản Huha. Chỉ còn 1 bước nữa để bắt đầu.</p>
                 <a href="${link}" style="display: inline-block; padding: 16px 32px; background: #0A84FF; color: #fff; text-decoration: none; border-radius: 12px; font-weight: 900; font-size: 16px; margin: 24px 0;">Xác thực email</a>
-                <p style="word-break: break-all; font-size: 12px; color: #86868b; margin: 24px 0 0;">${link}</p>
+                <p style="font-size: 14px; line-height: 1.6; color: #86868b; margin: 24px 0 0;">Link hết hạn sau 24 giờ. Nếu không phải bạn tạo tài khoản, hãy bỏ qua email này.</p>
+                <p style="word-break: break-all; font-size: 12px; color: #86868b; margin: 16px 0 0;">${link}</p>
               </div>
             </div>
           </div>
@@ -140,7 +158,7 @@ export const acceptFriendRequest = onCall(
     if (!uid) throw new HttpsError("unauthenticated", "Chưa đăng nhập");
 
     const { fromUid, notifId } = request.data;
-    if (!fromUid || !notifId) {
+    if (!fromUid ||!notifId) {
       throw new HttpsError("invalid-argument", "Thiếu fromUid hoặc notifId");
     }
 
@@ -311,10 +329,10 @@ export const cleanupExpiredTasks = onSchedule(
     );
 
     const expiredTasks = await db
-      .collection("tasks")
-      .where("deadline", "<", sevenDaysAgo)
-      .limit(500)
-      .get();
+     .collection("tasks")
+     .where("deadline", "<", sevenDaysAgo)
+     .limit(500)
+     .get();
 
     if (expiredTasks.empty) {
       console.log("No expired tasks to delete");
@@ -343,7 +361,7 @@ export const onUserProfileUpdate = onDocumentUpdated(
     const after = event.data?.after.data();
     const userId = event.params.userId;
 
-    if (!before || !after) return;
+    if (!before ||!after) return;
 
     if (
       before.displayName === after.displayName &&
@@ -357,9 +375,9 @@ export const onUserProfileUpdate = onDocumentUpdated(
     console.log(`User ${userId} đổi profile, bắt đầu sync tasks...`);
 
     const tasksSnap = await db
-      .collection("tasks")
-      .where("userId", "==", userId)
-      .get();
+     .collection("tasks")
+     .where("userId", "==", userId)
+     .get();
 
     if (tasksSnap.empty) {
       console.log(`User ${userId} không có task nào`);
