@@ -12,8 +12,8 @@ export default function HuhaLogo({
         <h1
           className="
             relative
-            text-
-            sm:text-
+            text-[48px]
+            sm:text-[56px]
             font-bold
             leading-none
             tracking-[0.02em]
@@ -56,16 +56,15 @@ export default function HuhaLogo({
       </div>
 
       {showTagline && (
-        <div className="mt-3 flex items-center gap-2.5">
-          <div className="h-px w-6 rounded-full bg-gradient-to-r from-transparent to-[#0A84FF]" />
+        <div className="mt-2 flex items-center gap-2">
+          <div className="h-px w-4 rounded-full bg-gradient-to-r from-transparent to-[#0A84FF]" />
 
           <p
             className="
-              text-
-              sm:text-
+              text-[9px]
               font-semibold
               uppercase
-              tracking-[0.3em]
+              tracking-[0.25em]
               text-zinc-400
             "
             style={{ fontFamily: "'Quicksand', sans-serif" }}
@@ -73,7 +72,7 @@ export default function HuhaLogo({
             Kết nối không giới hạn
           </p>
 
-          <div className="h-px w-6 rounded-full bg-gradient-to-l from-transparent to-[#34C759]" />
+          <div className="h-px w-4 rounded-full bg-gradient-to-l from-transparent to-[#34C759]" />
         </div>
       )}
     </div>
