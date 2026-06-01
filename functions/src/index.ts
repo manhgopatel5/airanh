@@ -1,7 +1,7 @@
 import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { onUserCreate } from "firebase-functions/v2/auth";
 import { onSchedule } from "firebase-functions/v2/scheduler";
+import * as functionsV1 from "firebase-functions"; // Thêm dòng này
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
@@ -11,26 +11,22 @@ import { Resend } from "resend";
 initializeApp();
 const db = getFirestore();
 const auth = getAuth();
-
-// Dùng process.env cho chuẩn v2. Tạo file functions/.env chứa RESEND_API_KEY=re_2RBYHLSS_GJE4GJ6Mg9NP
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// 0. GỬI MAIL XÁC THỰC BẰNG RESEND KHI USER ĐĂNG KÝ
-export const sendVerificationEmail = onUserCreate(
-  { region: "asia-southeast1" },
-  async (event) => {
-    const user = event.data;
+// 0. GỬI MAIL XÁC THỰC BẰNG RESEND - DÙNG V1 VÌ V2 CHƯA CÓ
+export const sendVerificationEmail = functionsV1
+  .region("asia-southeast1")
+  .auth.user()
+  .onCreate(async (user) => {
     if (!user.email || user.emailVerified) return;
 
     try {
-      // 1. Tạo link verify từ Firebase
       const link = await auth.generateEmailVerificationLink(user.email, {
-        url: "https://huha.online", // Redirect về đâu sau khi bấm
+        url: "https://huha.online",
       });
 
-      // 2. Gửi bằng Resend
       const { error } = await resend.emails.send({
-        from: "Huha <noreply@huha.online>", // Phải verify domain trên Resend trước
+        from: "Huha <admin@huha.online>",
         to: [user.email],
         subject: "Xác thực tài khoản Huha của bạn",
         html: `
@@ -50,7 +46,7 @@ export const sendVerificationEmail = onUserCreate(
               </div>
               <div style="padding: 24px; text-align: center; font-size: 12px; color: #86868b; background: #f5f5f7;">
                 © 2026 Huha. All rights reserved.<br>
-                Bạn nhận được email này vì đã đăng ký tài khoản tại huha.online
+                Liên hệ: admin@huha.online
               </div>
             </div>
           </div>
@@ -65,8 +61,7 @@ export const sendVerificationEmail = onUserCreate(
     } catch (err) {
       console.error("sendVerificationEmail error:", err);
     }
-  }
-);
+  });
 
 // 1. Khi có lời mời kết bạn mới → tạo thông báo cho người nhận
 export const onFriendRequestCreated = onDocumentCreated(
@@ -352,7 +347,6 @@ export const onUserProfileUpdate = onDocumentUpdated(
 
     if (!before || !after) return;
 
-    // Chỉ sync khi displayName, photoURL hoặc verified đổi
     if (
       before.displayName === after.displayName &&
       before.photoURL === after.photoURL &&
@@ -374,7 +368,6 @@ export const onUserProfileUpdate = onDocumentUpdated(
       return;
     }
 
-    // Batch 500 docs/lần
     const batch = db.batch();
     let count = 0;
 
