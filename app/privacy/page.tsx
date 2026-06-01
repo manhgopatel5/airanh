@@ -1,31 +1,22 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { FiArrowLeft, FiShield, FiPhone, FiMail, FiUser, FiLock, FiGlobe, FiDatabase } from "react-icons/fi";
+import { FiShield, FiPhone, FiMail, FiUser, FiLock, FiGlobe, FiDatabase } from "react-icons/fi";
 import { motion } from "framer-motion";
 import HuhaLogo from "@/components/brand/HuhaLogo";
 
 export default function PrivacyPage() {
-  const router = useRouter();
   const lastUpdated = "31/05/2026";
   const version = "3.0";
 
   return (
     <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-8 dark:bg-zinc-950">
       <div className="mx-auto w-full max-w-2xl">
-        <button
-          onClick={() => router.back()}
-          className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 transition active:scale-95 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
-        >
-          <FiArrowLeft size={20} />
-        </button>
-
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="mb-8">
+          <div className="mb-8 pt-4">
             <HuhaLogo />
           </div>
 
@@ -42,7 +33,7 @@ export default function PrivacyPage() {
           <div className="space-y-6 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
             <section className="rounded-2xl bg-[#0A84FF]/5 p-4 dark:bg-[#0A84FF]/10">
               <p className="text-zinc-800 dark:text-zinc-200">
-                Huha cam kết bảo vệ dữ liệu cá nhân của bạn. Chính sách này tuân thủ Nghị định 13/2023/NĐ-CP của Việt Nam và GDPR của EU.
+                huha cam kết bảo vệ dữ liệu cá nhân của bạn. Chính sách này tuân thủ Nghị định 13/2023/NĐ-CP của Việt Nam và GDPR của EU.
               </p>
             </section>
 
@@ -51,7 +42,7 @@ export default function PrivacyPage() {
                 <FiGlobe className="text-[#0A84FF]" /> 1. Phạm vi áp dụng
               </h2>
               <p>
-                Chính sách áp dụng cho toàn bộ dịch vụ Huha: ứng dụng mobile, website huha.vn, API và các dịch vụ liên quan. 
+                Chính sách áp dụng cho toàn bộ dịch vụ huha: ứng dụng mobile, website huha.online, API và các dịch vụ liên quan. 
                 Khi bạn tạo tài khoản là đã đồng ý với chính sách này.
               </p>
             </section>
@@ -186,14 +177,14 @@ export default function PrivacyPage() {
                   <b>Quyền hạn chế xử lý:</b> Tắt "Cho phép phân tích ẩn danh" trong Cài đặt
                 </div>
                 <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
-                  <b>Quyền khiếu nại:</b> Gửi Cục An toàn thông tin - Bộ TTTT nếu Huha vi phạm
+                  <b>Quyền khiếu nại:</b> Gửi Cục An toàn thông tin - Bộ TTTT nếu huha vi phạm
                 </div>
               </div>
             </section>
 
             <section>
               <h2 className="mb-2 text-base font-black text-zinc-900 dark:text-white">8. Cookie & LocalStorage</h2>
-              <p>Huha chỉ dùng:</p>
+              <p>huha chỉ dùng:</p>
               <ul className="mt-1 space-y-1">
                 <li>• <b>Cookie bắt buộc:</b> `session` để duy trì đăng nhập. Không có cookie quảng cáo</li>
                 <li>• <b>LocalStorage:</b> `last_email`, `theme`, `remember` để UX mượt hơn</li>
@@ -212,7 +203,7 @@ export default function PrivacyPage() {
             <section>
               <h2 className="mb-2 text-base font-black text-zinc-900 dark:text-white">10. Trẻ em</h2>
               <p>
-                Huha dành cho người từ 13 tuổi theo COPPA và luật VN. Chúng tôi không cố ý thu thập dữ liệu trẻ dưới 13. 
+                huha dành cho người từ 13 tuổi theo COPPA và luật VN. Chúng tôi không cố ý thu thập dữ liệu trẻ dưới 13. 
                 Nếu phụ huynh phát hiện, mail DPO để xóa ngay trong 24h.
               </p>
             </section>
@@ -223,9 +214,9 @@ export default function PrivacyPage() {
                 11. Liên hệ DPO - Kiểm soát viên dữ liệu
               </h2>
               <div className="space-y-2.5 text-zinc-800 dark:text-zinc-200">
-                <p><b>Đơn vị kiểm soát:</b> Nguyễn Quốc Mạnh - Huha</p>
+                <p><b>Đơn vị kiểm soát:</b> Nguyễn Quốc Mạnh - huha</p>
                 <p className="flex items-center gap-2"><FiPhone className="text-[#0A84FF]" size={16} /><b>Hotline:</b> 0359872122 (8h-22h)</p>
-                <p className="flex items-center gap-2"><FiMail className="text-[#0A84FF]" size={16} /><b>Email DPO:</b> Manhgopatel5@gmail.com</p>
+                <p className="flex items-center gap-2"><FiMail className="text-[#0A84FF]" size={16} /><b>Email DPO:</b> admin@huha.online</p>
                 <p><b>Địa chỉ:</b> TP. Hồ Chí Minh, Việt Nam</p>
                 <div className="mt-3 rounded-lg bg-white/60 p-2 text-xs dark:bg-zinc-900/60">
                   <b>Thời gian phản hồi:</b> 72h làm việc cho yêu cầu xóa/sửa. 30 ngày cho yêu cầu phức tạp theo NĐ 13.
@@ -234,7 +225,7 @@ export default function PrivacyPage() {
             </section>
 
             <section className="text-xs text-zinc-500 dark:text-zinc-500">
-              <p><b>Thay đổi chính sách:</b> Khi cập nhật, chúng tôi thông báo qua email + banner trong app 30 ngày trước khi áp dụng. Tiếp tục dùng Huha = đồng ý phiên bản mới.</p>
+              <p><b>Thay đổi chính sách:</b> Khi cập nhật, chúng tôi thông báo qua email + banner trong app 30 ngày trước khi áp dụng. Tiếp tục dùng huha = đồng ý phiên bản mới.</p>
               <p className="mt-2"><b>Hiệu lực:</b> Từ {lastUpdated}. Thay thế mọi phiên bản trước.</p>
             </section>
           </div>
