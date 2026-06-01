@@ -14,7 +14,7 @@ initializeApp();
 const db = getFirestore();
 const auth = getAuth();
 const resendApiKey = defineString("RESEND_API_KEY");
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(resendApiKey.value());
 
 // 0. GỬI MAIL XÁC THỰC BẰNG RESEND - FIX LỖI TYPE
 export const sendVerificationEmail = functions
