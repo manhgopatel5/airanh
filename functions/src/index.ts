@@ -1,6 +1,7 @@
 import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
+import { defineString } from "firebase-functions/params";
 import * as functions from "firebase-functions/v1";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
@@ -12,6 +13,7 @@ import { UserRecord } from "firebase-admin/auth"; // Thêm dòng này
 initializeApp();
 const db = getFirestore();
 const auth = getAuth();
+const resendApiKey = defineString("RESEND_API_KEY");
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // 0. GỬI MAIL XÁC THỰC BẰNG RESEND - FIX LỖI TYPE
