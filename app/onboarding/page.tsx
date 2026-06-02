@@ -591,7 +591,13 @@ function OnboardingContent() {
 
 export default function OnboardingPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
-        <div className="mx-auto w-full max-w-md space-y-4">
-          <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800
+ <Suspense fallback={
+  <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
+    <div className="mx-auto w-full max-w-md space-y-4">
+      <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
+      <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
+    </div>
+  </div>
+}>
+  <OnboardingContent />
+</Suspense>
