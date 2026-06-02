@@ -114,15 +114,13 @@ export default function Register() {
       const userCred = await createUserWithEmailAndPassword(auth, form.email, form.password);
       await updateProfile(userCred.user, { displayName: form.name.trim() });
       
-      // 2. Gọi API của bạn để gửi mail Resend thay vì sendEmailVerification
+      // 2. Gọi API gửi mail qua Resend
       const idToken = await userCred.user.getIdToken();
       const res = await fetch('/api/send-verification', {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${idToken}` 
-        },
-        body: JSON.stringify({ email: form.email })
+        }
       });
 
       if (!res.ok) throw new Error('Send mail failed');
