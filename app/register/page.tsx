@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FiAlertCircle, FiCheck, FiEye, FiEyeOff, FiLock, FiMail, FiUser } from "react-icons/fi";
 import {
   createUserWithEmailAndPassword,
-  sendEmailVerification,
   updateProfile,
 } from "firebase/auth";
 import { motion } from "framer-motion";
@@ -110,9 +109,24 @@ export default function Register() {
       setLoading(true);
       setErrors({});
       localStorage.setItem("last_register_attempt", Date.now().toString());
+      
+      // 1. Tạo user Firebase
       const userCred = await createUserWithEmailAndPassword(auth, form.email, form.password);
       await updateProfile(userCred.user, { displayName: form.name.trim() });
-      await sendEmailVerification(userCred.user);
+      
+      // 2. Gọi API của bạn để gửi mail Resend thay vì sendEmailVerification
+      const idToken = await userCred.user.getIdToken();
+      const res = await fetch('/api/send-verification', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}` 
+        },
+        body: JSON.stringify({ email: form.email })
+      });
+
+      if (!res.ok) throw new Error('Send mail failed');
+
       localStorage.setItem("last_email", form.email);
       toast.success("Đăng ký thành công. Kiểm tra email để xác thực.");
       router.replace("/verify-email");
