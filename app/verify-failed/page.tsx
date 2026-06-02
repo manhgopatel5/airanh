@@ -66,6 +66,7 @@ function VerifyFailedContent() {
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-400">
               <FiXCircle className="h-8 w-8" />
             </div>
+          </div>
           <h1 className="text-2xl font-black text-zinc-900 dark:text-white">
             {content.title}
           </h1>
