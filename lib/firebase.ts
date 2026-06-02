@@ -50,6 +50,9 @@ if (typeof window !== "undefined") {
 
 export const db = firestoreDb;
 export const firebaseApp = app;
+
+// Getter functions
+export const getFirebaseApp = () => app;
 export const getFirebaseAuth = () => auth;
 export const getFirebaseDB = () => firestoreDb;
 export const getFirebaseStorage = () => storage;
