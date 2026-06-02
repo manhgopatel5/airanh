@@ -8,13 +8,21 @@ const PUBLIC_ROUTES = [
   '/forgot-password', 
   '/reset-password', 
   '/verify-email',
-  '/verify-success',   // thêm
-  '/verify-failed',    // thêm
+  '/verify-success',   // Bắt buộc thêm
+  '/verify-failed',    // Bắt buộc thêm
   '/terms', 
   '/privacy', 
   '/onboarding'
 ]
-const PUBLIC_API = ['/api/auth', '/api/user/create', '/api/user/logout', '/api/health']
+
+const PUBLIC_API = [
+  '/api/auth', 
+  '/api/user/create', 
+  '/api/user/logout', 
+  '/api/health',
+  '/api/verify-email',        // Thêm để link verify chạy được
+  '/api/resend-verification'  // Thêm để gửi lại mail
+]
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -42,18 +50,26 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // 3. Có token -> CHỈ VERIFY JWT
+  // 3. Có token -> VERIFY JWT
   try {
-    await adminAuth().verifySessionCookie(token, false)
+    const decodedToken = await adminAuth().verifySessionCookie(token, false)
 
     // Đã login mà vào /login, /register -> về home
     if (['/login', '/register'].includes(pathname)) {
       return NextResponse.redirect(new URL('/', request.url))
     }
     
+    // Quan trọng: Không check onboarding ở đây
+    // Để /verify-success tự xử lý redirect sau khi login
     return NextResponse.next()
+    
   } catch (err) {
     // Token sai/hết hạn -> xóa cookie + về login
+    // Nhưng nếu đang ở /verify-success thì cho qua để auto login bằng customToken
+    if (pathname.startsWith('/verify-success')) {
+      return NextResponse.next()
+    }
+    
     const response = NextResponse.redirect(new URL('/login', request.url))
     response.cookies.delete('__session')
     return response
@@ -64,6 +80,6 @@ export const runtime = 'nodejs' // Firebase Admin bắt buộc nodejs
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)',
   ],
 }
