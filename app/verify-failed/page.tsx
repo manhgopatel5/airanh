@@ -1,26 +1,49 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { FiXCircle } from "react-icons/fi";
+import { FiXCircle, FiRefreshCw, FiArrowLeft } from "react-icons/fi";
 import HuhaLogo from "@/components/brand/HuhaLogo";
 
-export default function VerifyFailed() {
+function VerifyFailedContent() {
   const params = useSearchParams();
   const router = useRouter();
   const reason = params.get("reason");
 
-  const getMessage = () => {
+  const getContent = () => {
     switch (reason) {
       case "expired":
-        return "Link xác thực đã hết hạn. Vui lòng yêu cầu gửi lại email.";
+        return {
+          title: "Link đã hết hạn",
+          message: "Link xác thực chỉ có hiệu lực 24 giờ. Vui lòng yêu cầu gửi lại email mới.",
+          buttonText: "Gửi lại email xác thực",
+          buttonIcon: <FiRefreshCw className="h-5 w-5" />
+        };
       case "invalid":
-        return "Link không hợp lệ hoặc đã bị xóa.";
+        return {
+          title: "Link không hợp lệ", 
+          message: "Link này đã được sử dụng hoặc không tồn tại. Thử gửi lại email xác thực.",
+          buttonText: "Quay lại trang xác thực",
+          buttonIcon: <FiArrowLeft className="h-5 w-5" />
+        };
       case "error":
-        return "Có lỗi xảy ra. Vui lòng thử lại sau.";
+        return {
+          title: "Có lỗi xảy ra",
+          message: "Không thể xác thực email lúc này. Vui lòng thử lại sau ít phút.",
+          buttonText: "Thử lại",
+          buttonIcon: <FiRefreshCw className="h-5 w-5" />
+        };
       default:
-        return "Link xác thực không hợp lệ.";
+        return {
+          title: "Xác thực thất bại",
+          message: "Link xác thực không hợp lệ hoặc đã hết hạn.",
+          buttonText: "Quay lại trang xác thực", 
+          buttonIcon: <FiArrowLeft className="h-5 w-5" />
+        };
     }
   };
+
+  const content = getContent();
 
   return (
     <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
@@ -32,18 +55,43 @@ export default function VerifyFailed() {
               <FiXCircle className="h-8 w-8" />
             </div>
           </div>
-          <h1 className="text-2xl font-black text-zinc-900 dark:text-white">Xác thực thất bại</h1>
+          <h1 className="text-2xl font-black text-zinc-900 dark:text-white">
+            {content.title}
+          </h1>
           <p className="mt-2 text-sm font-semibold text-zinc-600 dark:text-zinc-400">
-            {getMessage()}
+            {content.message}
           </p>
         </div>
         <button
           onClick={() => router.replace("/verify-email")}
           className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] text-base font-black text-white shadow-lg shadow-[#0A84FF]/25 transition active:scale-[0.98]"
         >
-          Quay lại trang xác thực
+          {content.buttonIcon}
+          {content.buttonText}
+        </button>
+        
+        <button
+          onClick={() => router.replace("/login")}
+          className="mt-3 flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white text-base font-black text-zinc-700 transition active:scale-[0.98] dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
+        >
+          Về trang đăng nhập
         </button>
       </div>
     </div>
+  );
+}
+
+export default function VerifyFailed() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
+        <div className="mx-auto w-full max-w-md space-y-4">
+          <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
+          <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
+        </div>
+      </div>
+    }>
+      <VerifyFailedContent />
+    </Suspense>
   );
 }
