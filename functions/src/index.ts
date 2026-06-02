@@ -63,7 +63,7 @@ export const sendVerificationEmail = onUserCreate(
       console.log("Token created for:", user.email);
 
       // 3. Link verify của riêng bạn
-      const link = `https://huha.online/api/verify-email?token=${token}`;
+      const link = `https://huha.online/verify-email?token=${token}`;
 
       // 4. Gửi qua Resend
       const resend = new Resend(resendApiKey.value());
