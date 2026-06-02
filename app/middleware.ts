@@ -21,7 +21,7 @@ const PUBLIC_API = [
   '/api/user/logout', 
   '/api/health',
   '/api/verify-email',
-  '/api/resend-verification'
+  '/api/send-verification' // Đổi từ /api/resend-verification
 ]
 
 export async function middleware(request: NextRequest) {
