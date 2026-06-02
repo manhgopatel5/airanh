@@ -39,41 +39,22 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(new URL("/verify-failed?reason=expired", req.url));
     }
 
-    const user = await auth.getUser(data.uid);
-    
     // Update emailVerified ở cả Auth + Firestore
-    if (!user.emailVerified) {
-      await auth.updateUser(data.uid, { emailVerified: true });
-      await db.collection("users").doc(data.uid).update({ 
-        emailVerified: true,
-        updatedAt: new Date()
-      });
-    }
+    await auth.updateUser(data.uid, { emailVerified: true });
+    await db.collection("users").doc(data.uid).update({ 
+      emailVerified: true,
+      updatedAt: new Date()
+    });
+    
+    // Tạo customToken để client auto login
+    const customToken = await auth.createCustomToken(data.uid);
     
     // Xóa token verify
     await docRef.delete();
 
-    // Tạo SESSION COOKIE thay vì customToken
-    const idToken = await auth.createCustomToken(data.uid);
-    const expiresIn = 60 * 60 * 24 * 14 * 1000; // 14 ngày
-    const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
-
-    // Redirect về /verify-success + set cookie
-    const redirectUrl = new URL("/verify-success", req.url);
-    if (user.emailVerified) {
-      redirectUrl.searchParams.set("status", "already");
-    }
-    
-    const response = NextResponse.redirect(redirectUrl);
-    response.cookies.set("__session", sessionCookie, {
-      maxAge: 60 * 60 * 24 * 14,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-    });
-    
-    return response;
+    // Redirect sang /verify-success kèm customToken
+    // Không set cookie ở đây vì chưa có ID token
+    return NextResponse.redirect(new URL(`/verify-success?token=${customToken}`, req.url));
     
   } catch (error) {
     console.error("Verify error:", error);
