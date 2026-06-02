@@ -17,14 +17,14 @@ const db = getFirestore();
 const auth = getAuth();
 
 export async function GET(req: NextRequest) {
-  const token = req.nextUrl.searchParams.get("token");
+  const verifyToken = req.nextUrl.searchParams.get("token");
   
-  if (!token) {
+  if (!verifyToken) {
     return NextResponse.redirect(new URL("/verify-failed?reason=invalid", req.url));
   }
 
   try {
-    const docRef = db.collection("emailVerifications").doc(token);
+    const docRef = db.collection("emailVerifications").doc(verifyToken);
     const doc = await docRef.get();
 
     if (!doc.exists) {
@@ -32,6 +32,11 @@ export async function GET(req: NextRequest) {
     }
 
     const data = doc.data()!;
+
+    // Check đã dùng
+    if (data.used) {
+      return NextResponse.redirect(new URL("/verify-failed?reason=used", req.url));
+    }
 
     // Check hết hạn
     if (Date.now() > data.expiresAt) {
@@ -41,20 +46,24 @@ export async function GET(req: NextRequest) {
 
     // Update emailVerified ở cả Auth + Firestore
     await auth.updateUser(data.uid, { emailVerified: true });
-    await db.collection("users").doc(data.uid).update({ 
-      emailVerified: true,
-      updatedAt: new Date()
-    });
+    
+    const userRef = db.collection("users").doc(data.uid);
+    const userDoc = await userRef.get();
+    if (userDoc.exists) {
+      await userRef.update({ 
+        emailVerified: true,
+        updatedAt: new Date()
+      });
+    }
     
     // Tạo customToken để client auto login
     const customToken = await auth.createCustomToken(data.uid);
     
-    // Xóa token verify
-    await docRef.delete();
+    // Đánh dấu đã dùng thay vì xóa để debug
+    await docRef.update({ used: true, usedAt: Date.now() });
 
-    // Redirect sang /verify-success kèm customToken
-    // Không set cookie ở đây vì chưa có ID token
-    return NextResponse.redirect(new URL(`/verify-success?token=${customToken}`, req.url));
+    // FIX: Đổi tên param thành customToken để /verify-success phân biệt được
+    return NextResponse.redirect(new URL(`/verify-success?customToken=${customToken}`, req.url));
     
   } catch (error) {
     console.error("Verify error:", error);
