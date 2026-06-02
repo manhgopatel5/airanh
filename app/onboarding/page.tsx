@@ -600,4 +600,6 @@ export default function OnboardingPage() {
   </div>
 }>
   <OnboardingContent />
-</Suspense>
+  </Suspense>
+);
+}
