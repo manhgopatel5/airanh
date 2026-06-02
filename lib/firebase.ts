@@ -17,7 +17,7 @@ import {
 } from "firebase/storage";
 import {
   getDatabase,
-  Database,
+  
 } from "firebase/database";
 
 const firebaseConfig: FirebaseOptions = {
