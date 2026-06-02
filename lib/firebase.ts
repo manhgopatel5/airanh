@@ -9,7 +9,7 @@ import {
 } from "firebase/auth";
 import {
   getFirestore,
-  Firestore,
+  
 } from "firebase/firestore";
 import {
   getStorage,
