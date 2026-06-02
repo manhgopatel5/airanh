@@ -3,12 +3,12 @@
 export const dynamic = 'force-dynamic';
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { updateProfile } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { FiAlertCircle, FiArrowRight, FiUser } from "react-icons/fi";
+import { FiAlertCircle, FiArrowRight, FiUser, FiMail, FiHome } from "react-icons/fi";
 import HuhaLogo from "@/components/brand/HuhaLogo";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
@@ -33,6 +33,7 @@ const sanitizeDisplayName = (name: string, fallback: string) => {
 function OnboardingContent() {
   const { user, loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const redirectTo = getSafeRedirect(searchParams.get("redirect")) || "/";
@@ -41,6 +42,7 @@ function OnboardingContent() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [completed, setCompleted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -114,17 +116,18 @@ function OnboardingContent() {
           searchKeywords: [
             lowerName,
             lowerName.replace(/\s+/g, ""),
-   ...lowerName.split(" ").filter((word) => word.length >= 2),
+  ...lowerName.split(" ").filter((word) => word.length >= 2),
             userId.toLowerCase(),
             username.toLowerCase(),
           ],
           onboardingCompleted: true,
+          onboarded: true,
           updatedAt: serverTimestamp(),
         }),
       ]);
 
       toast.success(`Chào mừng, ${trimmed}!`);
-      window.location.href = redirectTo;
+      setCompleted(true); // Không redirect, hiện nút
     } catch (err: any) {
       console.error("Onboarding error:", err);
       if (err.code === 'auth/user-token-expired') {
@@ -145,6 +148,73 @@ function OnboardingContent() {
           <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
           <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
           <div className="h-14 rounded-2xl bg-zinc-300 motion-safe:animate-pulse dark:bg-zinc-700" />
+        </div>
+      </div>
+    );
+  }
+
+  // Guard: Chưa login thì về /login
+  if (!user) {
+    router.replace("/login");
+    return null;
+  }
+
+  // Guard: Chưa xác thực email thì về /verify-email
+  if (!user.emailVerified) {
+    return (
+      <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
+        <div className="mx-auto w-full max-w-md">
+          <div className="mb-10"><HuhaLogo /></div>
+          <div className="mb-6 text-center">
+            <div className="mb-4 flex justify-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
+                <FiMail className="h-8 w-8" />
+              </div>
+            </div>
+            <h1 className="text-2xl font-black text-zinc-900 dark:text-white">
+              Cần xác thực email
+            </h1>
+            <p className="mt-2 text-sm font-semibold text-zinc-600 dark:text-zinc-400">
+              Vui lòng xác thực email {user.email} trước khi hoàn tất hồ sơ
+            </p>
+          </div>
+          <button
+            onClick={() => router.replace("/verify-email")}
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] text-base font-black text-white shadow-lg shadow-[#0A84FF]/25 transition active:scale-[0.98]"
+          >
+            Đi xác thực email
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Hoàn tất onboarding
+  if (completed) {
+    return (
+      <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
+        <div className="mx-auto w-full max-w-md">
+          <div className="mb-10"><HuhaLogo /></div>
+          <div className="mb-6 text-center">
+            <div className="mb-4 flex justify-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-500/10 dark:text-green-400">
+                <FiUser className="h-8 w-8" />
+              </div>
+            </div>
+            <h1 className="text-2xl font-black text-zinc-900 dark:text-white">
+              Hoàn tất hồ sơ!
+            </h1>
+            <p className="mt-2 text-sm font-semibold text-zinc-600 dark:text-zinc-400">
+              Hồ sơ của bạn đã sẵn sàng. Bắt đầu khám phá Huha ngay
+            </p>
+          </div>
+          <button
+            onClick={() => router.replace(redirectTo)}
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] text-base font-black text-white shadow-lg shadow-[#0A84FF]/25 transition active:scale-[0.98]"
+          >
+            <FiHome className="h-5 w-5" />
+            Vào trang chủ
+          </button>
         </div>
       </div>
     );
@@ -194,7 +264,7 @@ function OnboardingContent() {
                 disabled={saving}
                 className={`h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${
                   error
-           ? "border-red-400 focus:border-red-500"
+          ? "border-red-400 focus:border-red-500"
                     : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"
                 }`}
               />
