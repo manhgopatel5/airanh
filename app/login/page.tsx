@@ -25,7 +25,7 @@ import HuhaLogo from "@/components/brand/HuhaLogo";
 import InstallPrompt from "@/components/InstallPrompt";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
-import { getSafeRedirect } from "@/components/authRoutes";
+import { getSafeRedirect } from "@/components/auth/authRoutes";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
