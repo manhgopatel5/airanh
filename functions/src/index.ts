@@ -2,14 +2,13 @@ import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/fire
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { defineString } from "firebase-functions/params";
+import { onUserCreate } from "firebase-functions/v2/auth";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getAuth, UserRecord } from "firebase-admin/auth";
 import { FirestoreEvent, QueryDocumentSnapshot } from "firebase-functions/v2/firestore";
 import { Resend } from "resend";
 import * as crypto from "crypto";
-import { auth } from "firebase-functions/v1"; // Chỉ dùng cho onCreate user
-import { onUserCreate } from "firebase-functions/v2/auth";
 
 initializeApp();
 const db = getFirestore();
@@ -33,11 +32,11 @@ export const sendVerificationEmail = onUserCreate(
     try {
       // Rate limit: check xem user này gửi mail trong 60s chưa
       const recentMail = await db
-      .collection("emailVerifications")
-      .where("uid", "==", user.uid)
-      .orderBy("createdAt", "desc")
-      .limit(1)
-      .get();
+    .collection("emailVerifications")
+    .where("uid", "==", user.uid)
+    .orderBy("createdAt", "desc")
+    .limit(1)
+    .get();
 
       const lastDoc = recentMail.docs[0];
       if (lastDoc) {
@@ -85,8 +84,21 @@ export const sendVerificationEmail = onUserCreate(
               <td align="center">
                 <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:20px; overflow:hidden; max-width:560px; width:100%;">
                   <tr>
-                    <td style="background: linear-gradient(135deg, #0A84FF 0%, #0051D5 100%); padding: 48px 24px; text-align: center;">
-                      <h1 style="color: #fff; margin: 0; font-size: 32px; font-weight: 900; letter-spacing: -0.5px;">Huha</h1>
+                    <td style="background: #ffffff; padding: 48px 24px 32px; text-align: center; border-bottom: 1px solid #e5e5ea;">
+                      <h1 style="margin: 0; font-size: 48px; font-weight: 900; line-height: 1; letter-spacing: 0.02em;">
+                        <span style="color: #0A84FF;">hu</span><span style="color: #34C759;">ha</span>
+                      </h1>
+                      <table cellpadding="0" cellspacing="0" style="margin: 12px auto 0;">
+                        <tr>
+                          <td style="width: 16px; height: 1px; background: #0A84FF;"></td>
+                          <td style="padding: 0 8px;">
+                            <p style="margin: 0; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.25em; color: #8e8e93;">
+                              Kết nối không giới hạn
+                            </p>
+                          </td>
+                          <td style="width: 16px; height: 1px; background: #34C759;"></td>
+                        </tr>
+                      </table>
                     </td>
                   </tr>
                   <tr>
@@ -130,11 +142,12 @@ export const sendVerificationEmail = onUserCreate(
 
       if (error) {
         console.error("Resend error:", error);
-        return;
+        throw new Error(error.message);
       }
       console.log("Verification email sent to:", user.email, "id:", data?.id);
     } catch (err) {
       console.error("sendVerificationEmail error:", err);
+      throw err;
     }
   }
 );
@@ -389,10 +402,10 @@ export const cleanupExpiredTasks = onSchedule(
     );
 
     const expiredTasks = await db
-   .collection("tasks")
-   .where("deadline", "<", sevenDaysAgo)
-   .limit(500)
-   .get();
+ .collection("tasks")
+ .where("deadline", "<", sevenDaysAgo)
+ .limit(500)
+ .get();
 
     if (expiredTasks.empty) {
       console.log("No expired tasks to delete");
@@ -435,9 +448,9 @@ export const onUserProfileUpdate = onDocumentUpdated(
     console.log(`User ${userId} đổi profile, bắt đầu sync tasks...`);
 
     const tasksSnap = await db
-   .collection("tasks")
-   .where("userId", "==", userId)
-   .get();
+ .collection("tasks")
+ .where("userId", "==", userId)
+ .get();
 
     if (tasksSnap.empty) {
       console.log(`User ${userId} không có task nào`);
