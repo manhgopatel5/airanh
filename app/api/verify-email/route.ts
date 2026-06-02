@@ -33,22 +33,35 @@ export async function GET(req: NextRequest) {
 
     const data = doc.data()!;
 
+    // Check hết hạn
     if (Date.now() > data.expiresAt) {
       await docRef.delete();
       return NextResponse.redirect(new URL("/verify-failed?reason=expired", req.url));
     }
 
-    // 1. Update user thành verified
-    await auth.updateUser(data.uid, { emailVerified: true });
+    // Lấy user để check đã verified chưa
+    const user = await auth.getUser(data.uid);
     
-    // 2. Tạo customToken để auto login
+    // Nếu đã verified rồi thì tạo token login luôn, không cần update
+    if (!user.emailVerified) {
+      await auth.updateUser(data.uid, { emailVerified: true });
+    }
+    
+    // Tạo customToken để auto login
     const customToken = await auth.createCustomToken(data.uid);
     
-    // 3. Xóa token verify
+    // Xóa token verify
     await docRef.delete();
 
-    // 4. Redirect kèm customToken
-    return NextResponse.redirect(new URL(`/verify-success?token=${customToken}`, req.url));
+    // Redirect sang /verify-success kèm customToken
+    const redirectUrl = new URL(`/verify-success?token=${customToken}`, req.url);
+    
+    // Nếu đã verified trước đó thì thêm param để hiện UI khác
+    if (user.emailVerified) {
+      redirectUrl.searchParams.set("status", "already");
+    }
+    
+    return NextResponse.redirect(redirectUrl);
     
   } catch (error) {
     console.error("Verify error:", error);
