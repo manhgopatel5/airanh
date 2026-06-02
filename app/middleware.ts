@@ -8,8 +8,8 @@ const PUBLIC_ROUTES = [
   '/forgot-password', 
   '/reset-password', 
   '/verify-email',
-  '/verify-success',   // Bắt buộc thêm
-  '/verify-failed',    // Bắt buộc thêm
+  '/verify-success',
+  '/verify-failed',
   '/terms', 
   '/privacy', 
   '/onboarding'
@@ -20,8 +20,8 @@ const PUBLIC_API = [
   '/api/user/create', 
   '/api/user/logout', 
   '/api/health',
-  '/api/verify-email',        // Thêm để link verify chạy được
-  '/api/resend-verification'  // Thêm để gửi lại mail
+  '/api/verify-email',
+  '/api/resend-verification'
 ]
 
 export async function middleware(request: NextRequest) {
@@ -50,7 +50,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // 3. Có token -> VERIFY JWT
+  // 3. Có token -> VERIFY JWT + CHECK EMAIL VERIFIED
   try {
     const decodedToken = await adminAuth().verifySessionCookie(token, false)
 
@@ -58,11 +58,13 @@ export async function middleware(request: NextRequest) {
     if (['/login', '/register'].includes(pathname)) {
       return NextResponse.redirect(new URL('/', request.url))
     }
+
+    // Chặn chưa xác thực email - chỉ áp dụng cho route không public
+    if (!decodedToken.email_verified && !isPublicRoute) {
+      return NextResponse.redirect(new URL('/verify-email', request.url))
+    }
     
-    // Quan trọng: Không check onboarding ở đây
-    // Để /verify-success tự xử lý redirect sau khi login
     return NextResponse.next()
-    
   } catch (err) {
     // Token sai/hết hạn -> xóa cookie + về login
     // Nhưng nếu đang ở /verify-success thì cho qua để auto login bằng customToken
@@ -76,10 +78,10 @@ export async function middleware(request: NextRequest) {
   }
 }
 
-export const runtime = 'nodejs' // Firebase Admin bắt buộc nodejs
+export const runtime = 'nodejs'
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)',
   ],
 }
