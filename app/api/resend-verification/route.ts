@@ -46,12 +46,12 @@ export async function POST(req: NextRequest) {
     const link = `https://huha.online/api/verify-email?token=${verifyToken}`;
 
     const resend = new Resend(process.env.RESEND_API_KEY);
-    const { data, error } = await resend.emails.send({
-      from: "Huha <onboarding@resend.dev>",
-      to: [user.email],
-      subject: "Xác thực tài khoản Huha",
-      html: `<a href="${link}">Bấm để xác thực</a><p>Link: ${link}</p>`,
-    });
+   const { data, error } = await resend.emails.send({
+  from: "Huha <admin@huha.online>", // Bắt buộc dùng domain đã verify
+  to: [user.email],
+  subject: "Xác thực tài khoản Huha",
+  html: `<a href="${link}">Bấm để xác thực</a>`,
+});
 
     if (error) {
       console.error("Resend error:", error);
