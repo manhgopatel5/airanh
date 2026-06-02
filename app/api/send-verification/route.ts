@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
@@ -33,22 +34,6 @@ export async function POST(req: NextRequest) {
     if (!user.email) throw new Error("No email");
     if (user.emailVerified) throw new Error("Already verified");
 
-    // Rate limit: check 60s
-    const recentMail = await db
-     .collection("emailVerifications")
-     .where("uid", "==", user.uid)
-     .orderBy("createdAt", "desc")
-     .limit(1)
-     .get();
-
-    const lastDoc = recentMail.docs[0];
-    if (lastDoc) {
-      const lastTime = lastDoc.data().createdAt;
-      if (Date.now() - lastTime < 60 * 1000) {
-        return NextResponse.json({ error: "Rate limit: wait 60s" }, { status: 429 });
-      }
-    }
-
     const verifyToken = crypto.randomBytes(32).toString("hex");
     const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
 
@@ -60,29 +45,28 @@ export async function POST(req: NextRequest) {
       createdAt: Date.now(),
     });
 
-    // QUAN TRỌNG: Encode token để tránh ký tự lạ làm gãy link
-    const link = `https://huha.online/verify-success?token=${encodeURIComponent(verifyToken)}`;
+    // Đổi link sang page thay vì API để không bị chặn "Mở bằng"
+    const link = `https://huha.online/verify-success?token=${verifyToken}`;
 
     const { data, error } = await resend.emails.send({
-      from: "Huha <admin@huha.online>", // Đổi thành noreply cho đỡ vào spam
+      from: "Huha <admin@huha.online>", // Đổi thành noreply
       to: [user.email],
-      subject: "Xác thực tài khoản Huha",
+      subject: "Xác thực email Huha", // Bỏ "Kết nối không giới hạn" cho ngắn
       html: `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="x-apple-disable-message-reformatting">
       </head>
       <body style="margin:0; padding:0; background-color:#f5f5f7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f5f5f7; padding: 40px 0;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f7; padding: 40px 0;">
           <tr>
             <td align="center">
-              <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color:#ffffff; border-radius:12px; overflow:hidden; max-width:560px; width:100%;">
+              <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:12px; overflow:hidden; max-width:560px; width:100%;">
                 <tr>
                   <td style="background: #0A84FF; padding: 40px 24px; text-align: center;">
-                    <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: 900; line-height: 1;">Huha</h1>
+                    <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: 900;">Huha</h1>
                   </td>
                 </tr>
                 <tr>
@@ -91,22 +75,22 @@ export async function POST(req: NextRequest) {
                     <p style="font-size: 16px; line-height: 1.6; color: #515154; margin: 0 0 24px;">
                       Cảm ơn bạn đã tạo tài khoản Huha. Bấm nút bên dưới để xác thực email và kích hoạt tài khoản.
                     </p>
-
-                    <!-- CHỈ CÓ NÚT, KHÔNG IN LINK TEXT -->
-                    <table cellpadding="0" cellspacing="0" border="0" style="margin: 32px 0;">
+                    <table cellpadding="0" cellspacing="0" style="margin: 32px 0;">
                       <tr>
-                        <td align="center" bgcolor="#0A84FF" style="border-radius:8px;">
-                          <a href="${link}" target="_blank" style="display:inline-block; padding:16px 32px; font-size:16px; font-weight:700; color:#ffffff; text-decoration:none; mso-padding-alt:0;">
+                        <td align="center" style="border-radius:8px; background-color:#0A84FF;">
+                          <a href="${link}" target="_blank" style="display:inline-block; padding:16px 32px; font-size:16px; font-weight:700; color:#ffffff; text-decoration:none;">
                             Xác thực email
                           </a>
                         </td>
                       </tr>
                     </table>
-
+                    <p style="font-size: 14px; line-height: 1.6; color: #86868b; margin: 24px 0 0;">
+                      Nút không hoạt động? Copy link này:<br>
+                      <a href="${link}" style="color:#0A84FF; word-break:break-all;">${link}</a>
+                    </p>
                     <p style="font-size: 14px; line-height: 1.6; color: #86868b; margin: 24px 0 0;">
                       Link hết hạn sau 24 giờ. Nếu không phải bạn đăng ký, hãy bỏ qua email này.
                     </p>
-                    <!-- ĐÃ XÓA: Link copy backup để tránh sheet "Mở bằng" -->
                   </td>
                 </tr>
                 <tr>
