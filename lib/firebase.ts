@@ -5,7 +5,7 @@ import {
   getAuth,
   setPersistence,
   browserLocalPersistence,
-  Auth,
+  
 } from "firebase/auth";
 import {
   getFirestore,
