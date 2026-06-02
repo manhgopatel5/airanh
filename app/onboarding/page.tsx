@@ -8,23 +8,27 @@ import { updateProfile } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { 
-  FiAlertCircle, FiArrowRight, FiUser, FiMail, FiHome, 
-  FiMapPin, FiCalendar, FiPhone, FiUsers 
+import {
+  FiAlertCircle, FiArrowRight, FiUser, FiMail, FiHome,
+  FiMapPin, FiCalendar, FiPhone, FiUsers
 } from "react-icons/fi";
 import HuhaLogo from "@/components/brand/HuhaLogo";
 import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import { getSafeRedirect } from "@/components/auth/authRoutes";
 
+type Province = { id: number; name: string; code: string };
+type District = { id: number; name: string; code: string };
+type Ward = { id: string; name: string };
+
 const generateUsername = (name: string) => {
   return name
-  .toLowerCase()
-  .normalize("NFD")
-  .replace(/[\u0300-\u036f]/g, "")
-  .replace(/\s+/g, "")
-  .replace(/[^a-z0-9]/g, "")
-  .slice(0, 20) || "user";
+.toLowerCase()
+.normalize("NFD")
+.replace(/[\u0300-\u036f]/g, "")
+.replace(/\s+/g, "")
+.replace(/[^a-z0-9]/g, "")
+.slice(0, 20) || "user";
 };
 
 function OnboardingContent() {
@@ -40,8 +44,17 @@ function OnboardingContent() {
     phone: "",
     birthDate: "",
     gender: "",
-    address: "",
   });
+
+  // Địa chỉ GHN
+  const [provinces, setProvinces] = useState<Province[]>([]);
+  const [districts, setDistricts] = useState<District[]>([]);
+  const [wards, setWards] = useState<Ward[]>([]);
+  const [selectedProvince, setSelectedProvince] = useState("");
+  const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [selectedWard, setSelectedWard] = useState("");
+  const [streetAddress, setStreetAddress] = useState("");
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -49,17 +62,58 @@ function OnboardingContent() {
 
   useEffect(() => {
     setMounted(true);
+    // Load provinces
+    fetch("/api/address/province")
+     .then(res => res.json())
+     .then(setProvinces)
+     .catch(() => toast.error("Không tải được danh sách tỉnh"));
   }, []);
+
+  // Load districts khi chọn province
+  useEffect(() => {
+    if (!selectedProvince) {
+      setDistricts([]);
+      setWards([]);
+      setSelectedDistrict("");
+      setSelectedWard("");
+      return;
+    }
+    fetch("/api/address/district", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provinceId: Number(selectedProvince) }),
+    })
+     .then(res => res.json())
+     .then(setDistricts)
+     .catch(() => toast.error("Không tải được quận/huyện"));
+  }, [selectedProvince]);
+
+  // Load wards khi chọn district
+  useEffect(() => {
+    if (!selectedDistrict) {
+      setWards([]);
+      setSelectedWard("");
+      return;
+    }
+    fetch("/api/address/ward", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ districtId: Number(selectedDistrict) }),
+    })
+     .then(res => res.json())
+     .then(setWards)
+     .catch(() => toast.error("Không tải được phường/xã"));
+  }, [selectedDistrict]);
 
   // Guard: Chưa login hoặc đã onboarded
   useEffect(() => {
     if (authLoading) return;
-    
+
     if (!user) {
       router.replace("/login");
       return;
     }
-    
+
     const db = getFirebaseDB();
     getDoc(doc(db, "users", user.uid)).then((snap) => {
       if (snap.data()?.onboarded) {
@@ -80,23 +134,26 @@ function OnboardingContent() {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (form.displayName.trim().length < 2) newErrors.displayName = "Tên tối thiểu 2 ký tự";
     if (form.displayName.trim().length > 50) newErrors.displayName = "Tên tối đa 50 ký tự";
     if (!/^[\p{L}\s0-9]+$/u.test(form.displayName.trim())) newErrors.displayName = "Tên chỉ chứa chữ, số và khoảng trắng";
-    
+
     if (!/^0\d{9,10}$/.test(form.phone)) newErrors.phone = "SĐT phải có 10-11 số, bắt đầu bằng 0";
-    
+
     if (!form.birthDate) newErrors.birthDate = "Chọn ngày sinh";
     else {
       const age = new Date().getFullYear() - new Date(form.birthDate).getFullYear();
       if (age < 13) newErrors.birthDate = "Bạn phải từ 13 tuổi trở lên";
       if (age > 100) newErrors.birthDate = "Ngày sinh không hợp lệ";
     }
-    
+
     if (!form.gender) newErrors.gender = "Chọn giới tính";
-    if (form.address.trim().length < 5) newErrors.address = "Địa chỉ tối thiểu 5 ký tự";
-    
+    if (!selectedProvince) newErrors.province = "Chọn tỉnh/thành";
+    if (!selectedDistrict) newErrors.district = "Chọn quận/huyện";
+    if (!selectedWard) newErrors.ward = "Chọn phường/xã";
+    if (streetAddress.trim().length < 5) newErrors.streetAddress = "Địa chỉ tối thiểu 5 ký tự";
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -111,7 +168,7 @@ function OnboardingContent() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    
+
     const auth = getFirebaseAuth();
     const currentUser = auth.currentUser;
     if (!currentUser) {
@@ -135,6 +192,11 @@ function OnboardingContent() {
         oldData?.photoURL ||
         `https://ui-avatars.com/api/?name=${encodeURIComponent(trimmed)}&background=0A84FF&color=fff&bold=true`;
 
+      const provinceName = provinces.find(p => p.id === Number(selectedProvince))?.name || "";
+      const districtName = districts.find(d => d.id === Number(selectedDistrict))?.name || "";
+      const wardName = wards.find(w => w.id === selectedWard)?.name || "";
+      const fullAddress = `${streetAddress.trim()}, ${wardName}, ${districtName}, ${provinceName}`;
+
       await Promise.all([
         updateProfile(currentUser, { displayName: trimmed, photoURL: avatar }),
         updateDoc(userRef, {
@@ -146,11 +208,20 @@ function OnboardingContent() {
           phone: form.phone,
           birthDate: form.birthDate,
           gender: form.gender,
-          address: form.address.trim(),
+          address: fullAddress,
+          addressDetails: {
+            provinceId: Number(selectedProvince),
+            provinceName,
+            districtId: Number(selectedDistrict),
+            districtName,
+            wardId: selectedWard,
+            wardName,
+            street: streetAddress.trim(),
+          },
           searchKeywords: [
             lowerName,
             lowerName.replace(/\s+/g, ""),
-          ...lowerName.split(" ").filter((word) => word.length >= 2),
+        ...lowerName.split(" ").filter((word) => word.length >= 2),
             userId.toLowerCase(),
             username.toLowerCase(),
             form.phone,
@@ -185,7 +256,9 @@ function OnboardingContent() {
 
   if (!user) return null;
 
-  if (!user.emailVerified) {
+  const emailVerified = getFirebaseAuth().currentUser?.emailVerified || user.emailVerified;
+
+  if (!emailVerified) {
     return (
       <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
         <div className="mx-auto w-full max-w-md">
@@ -246,7 +319,13 @@ function OnboardingContent() {
 
   const inputClass = (field: string) => `h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${
     errors[field]
-    ? "border-red-400 focus:border-red-500"
+  ? "border-red-400 focus:border-red-500"
+      : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"
+  }`;
+
+  const selectClass = (field: string) => `h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${
+    errors[field]
+  ? "border-red-400 focus:border-red-500"
       : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"
   }`;
 
@@ -263,7 +342,6 @@ function OnboardingContent() {
         </div>
 
         <form onSubmit={handleSave} className="space-y-4">
-          {/* Tên hiển thị */}
           <div className="space-y-1.5">
             <label className="text-sm font-bold text-zinc-700 dark:text-zinc-200">Tên hiển thị *</label>
             <div className="relative">
@@ -286,7 +364,6 @@ function OnboardingContent() {
             )}
           </div>
 
-          {/* SĐT */}
           <div className="space-y-1.5">
             <label className="text-sm font-bold text-zinc-700 dark:text-zinc-200">Số điện thoại *</label>
             <div className="relative">
@@ -308,7 +385,6 @@ function OnboardingContent() {
             )}
           </div>
 
-          {/* Ngày sinh */}
           <div className="space-y-1.5">
             <label className="text-sm font-bold text-zinc-700 dark:text-zinc-200">Ngày sinh *</label>
             <div className="relative">
@@ -329,7 +405,6 @@ function OnboardingContent() {
             )}
           </div>
 
-          {/* Giới tính */}
           <div className="space-y-1.5">
             <label className="text-sm font-bold text-zinc-700 dark:text-zinc-200">Giới tính *</label>
             <div className="relative">
@@ -338,7 +413,7 @@ function OnboardingContent() {
                 value={form.gender}
                 onChange={(e) => handleChange("gender", e.target.value)}
                 disabled={saving}
-                className={inputClass("gender")}
+                className={selectClass("gender")}
               >
                 <option value="">Chọn giới tính</option>
                 <option value="male">Nam</option>
@@ -353,27 +428,108 @@ function OnboardingContent() {
             )}
           </div>
 
-          {/* Địa chỉ */}
+          {/* Địa chỉ GHN */}
           <div className="space-y-1.5">
-            <label className="text-sm font-bold text-zinc-700 dark:text-zinc-200">Địa chỉ *</label>
+            <label className="text-sm font-bold text-zinc-700 dark:text-zinc-200">Tỉnh/Thành phố *</label>
+            <div className="relative">
+              <FiMapPin className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+              <select
+                value={selectedProvince}
+                onChange={(e) => {
+                  setSelectedProvince(e.target.value);
+                  setErrors(prev => ({...prev, province: "" }));
+                }}
+                disabled={saving}
+                className={selectClass("province")}
+              >
+                <option value="">Chọn tỉnh/thành</option>
+                {provinces.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+            {errors.province && (
+              <p className="flex items-center gap-1 text-xs font-semibold text-red-600 dark:text-red-400">
+                <FiAlertCircle className="h-3 w-3" />{errors.province}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-zinc-700 dark:text-zinc-200">Quận/Huyện *</label>
+            <div className="relative">
+              <FiMapPin className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+              <select
+                value={selectedDistrict}
+                onChange={(e) => {
+                  setSelectedDistrict(e.target.value);
+                  setErrors(prev => ({...prev, district: "" }));
+                }}
+                disabled={saving ||!selectedProvince}
+                className={selectClass("district")}
+              >
+                <option value="">Chọn quận/huyện</option>
+                {districts.map(d => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
+            </div>
+            {errors.district && (
+              <p className="flex items-center gap-1 text-xs font-semibold text-red-600 dark:text-red-400">
+                <FiAlertCircle className="h-3 w-3" />{errors.district}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-zinc-700 dark:text-zinc-200">Phường/Xã *</label>
+            <div className="relative">
+              <FiMapPin className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+              <select
+                value={selectedWard}
+                onChange={(e) => {
+                  setSelectedWard(e.target.value);
+                  setErrors(prev => ({...prev, ward: "" }));
+                }}
+                disabled={saving ||!selectedDistrict}
+                className={selectClass("ward")}
+              >
+                <option value="">Chọn phường/xã</option>
+                {wards.map(w => (
+                  <option key={w.id} value={w.id}>{w.name}</option>
+                ))}
+              </select>
+            </div>
+            {errors.ward && (
+              <p className="flex items-center gap-1 text-xs font-semibold text-red-600 dark:text-red-400">
+                <FiAlertCircle className="h-3 w-3" />{errors.ward}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-zinc-700 dark:text-zinc-200">Số nhà, tên đường *</label>
             <div className="relative">
               <FiMapPin className="absolute left-4 top-4 h-5 w-5 text-zinc-400" />
               <textarea
-                value={form.address}
-                onChange={(e) => handleChange("address", e.target.value)}
-                placeholder="VD: 123 Đường ABC, Quận 1, TP.HCM"
-                rows={3}
+                value={streetAddress}
+                onChange={(e) => {
+                  setStreetAddress(e.target.value);
+                  setErrors(prev => ({...prev, streetAddress: "" }));
+                }}
+                placeholder="VD: 123 Đường ABC"
+                rows={2}
                 disabled={saving}
                 className={`w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 py-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${
-                  errors.address
-                  ? "border-red-400 focus:border-red-500"
+                  errors.streetAddress
+                ? "border-red-400 focus:border-red-500"
                     : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"
                 }`}
               />
             </div>
-            {errors.address && (
+            {errors.streetAddress && (
               <p className="flex items-center gap-1 text-xs font-semibold text-red-600 dark:text-red-400">
-                <FiAlertCircle className="h-3 w-3" />{errors.address}
+                <FiAlertCircle className="h-3 w-3" />{errors.streetAddress}
               </p>
             )}
           </div>
