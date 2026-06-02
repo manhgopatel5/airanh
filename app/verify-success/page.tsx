@@ -13,7 +13,7 @@ export default function VerifySuccess() {
   const params = useSearchParams();
   const router = useRouter();
   const auth = getFirebaseAuth();
-  const customToken = params.get("token");
+  const customToken = params.get("customToken"); // FIX 1: Đổi từ "token" sang "customToken"
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [needsOnboarding, setNeedsOnboarding] = useState(true);
 
@@ -27,6 +27,10 @@ export default function VerifySuccess() {
       try {
         // 1. Sign in bằng customToken
         const userCred = await signInWithCustomToken(auth, customToken);
+        
+        // FIX 2: Reload để lấy emailVerified = true
+        await userCred.user.reload();
+        
         const idToken = await userCred.user.getIdToken(true);
         
         // 2. Set session cookie cho middleware
@@ -81,7 +85,6 @@ export default function VerifySuccess() {
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-500/10 dark:text-green-400">
                   <FiCheckCircle className="h-8 w-8" />
                 </div>
-              </div>
               <h1 className="text-2xl font-black text-zinc-900 dark:text-white">
                 Xác thực thành công!
               </h1>
