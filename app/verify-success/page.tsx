@@ -1,44 +1,65 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FiCheckCircle, FiLoader, FiArrowRight, FiHome } from "react-icons/fi";
+import { signInWithCustomToken } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { getFirebaseDB } from "@/lib/firebase";
+import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import HuhaLogo from "@/components/brand/HuhaLogo";
-import { useAuth } from "@/lib/AuthContext";
+import { toast } from "sonner";
 
 export default function VerifySuccess() {
+  const params = useSearchParams();
   const router = useRouter();
-  const { user, loading } = useAuth();
+  const auth = getFirebaseAuth();
+  const customToken = params.get("token");
+  const [loggingIn, setLoggingIn] = useState(true);
+  const [loginSuccess, setLoginSuccess] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
-  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    if (loading) return;
-    
-    if (!user) {
-      setChecking(false);
+    if (!customToken) {
+      setLoggingIn(false);
       return;
     }
 
-    const checkOnboarding = async () => {
+    const autoLogin = async () => {
       try {
+        // 1. Sign in bằng customToken
+        const userCred = await signInWithCustomToken(auth, customToken);
+        const idToken = await userCred.user.getIdToken();
+        
+        // 2. Gọi API để set session cookie cho middleware
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ idToken }),
+        });
+
+        if (!res.ok) throw new Error("Set cookie failed");
+        
+        // 3. Check onboarding
         const db = getFirebaseDB();
-        const userDoc = await getDoc(doc(db, "users", user.uid));
+        const userDoc = await getDoc(doc(db, "users", userCred.user.uid));
         const onboarded = userDoc.data()?.onboarded || false;
+        
         setNeedsOnboarding(!onboarded);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setChecking(false);
+        setLoginSuccess(true);
+        setLoggingIn(false);
+        toast.success("Xác thực thành công");
+        
+      } catch (error) {
+        console.error(error);
+        toast.error("Auto login thất bại");
+        setLoggingIn(false);
       }
     };
 
-    checkOnboarding();
-  }, [user, loading]);
+    autoLogin();
+  }, [customToken, auth]);
 
-  if (loading || checking) {
+  if (loggingIn) {
     return (
       <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
         <div className="mx-auto w-full max-w-md text-center">
@@ -47,12 +68,15 @@ export default function VerifySuccess() {
           <h1 className="mt-6 text-2xl font-black text-zinc-900 dark:text-white">
             Đang xử lý...
           </h1>
+          <p className="mt-2 text-sm font-semibold text-zinc-600 dark:text-zinc-400">
+            Xác thực thành công, đang đăng nhập
+          </p>
         </div>
       </div>
     );
   }
 
-  if (user) {
+  if (loginSuccess) {
     return (
       <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
         <div className="mx-auto w-full max-w-md">
