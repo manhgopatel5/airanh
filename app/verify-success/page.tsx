@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FiCheckCircle, FiLoader, FiArrowRight, FiHome } from "react-icons/fi";
 import { doc, getDoc } from "firebase/firestore";
-import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
+import { getFirebaseDB } from "@/lib/firebase";
 import HuhaLogo from "@/components/brand/HuhaLogo";
 import { useAuth } from "@/lib/AuthContext";
 
