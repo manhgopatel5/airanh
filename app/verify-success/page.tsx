@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FiCheckCircle, FiLoader, FiArrowRight, FiHome } from "react-icons/fi";
 import { doc, getDoc } from "firebase/firestore";
@@ -9,7 +9,6 @@ import HuhaLogo from "@/components/brand/HuhaLogo";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function VerifySuccess() {
-  const params = useSearchParams();
   const router = useRouter();
   const { user, loading } = useAuth();
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
@@ -53,7 +52,6 @@ export default function VerifySuccess() {
     );
   }
 
-  // Có user = đã auto login bằng session cookie
   if (user) {
     return (
       <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
@@ -95,7 +93,6 @@ export default function VerifySuccess() {
     );
   }
 
-  // Không có user = lỗi cookie
   return (
     <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
       <div className="mx-auto w-full max-w-md">
