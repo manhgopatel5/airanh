@@ -33,11 +33,6 @@ export async function GET(req: NextRequest) {
 
     const data = doc.data()!;
 
-    // Check đã dùng rồi
-    if (data.used) {
-      return NextResponse.redirect(new URL("/verify-success?status=already", req.url));
-    }
-
     // Check hết hạn thì xóa luôn
     if (Date.now() > data.expiresAt) {
       await docRef.delete();
@@ -47,13 +42,9 @@ export async function GET(req: NextRequest) {
     // Update user thành verified
     await auth.updateUser(data.uid, { emailVerified: true });
     
-    // Đánh dấu token đã dùng
-    await docRef.update({ 
-      used: true, 
-      usedAt: Date.now() 
-    });
+    // Xóa token luôn, không cần lưu used
+    await docRef.delete();
 
-    // Redirect về trang success thay vì /login
     return NextResponse.redirect(new URL("/verify-success", req.url));
     
   } catch (error) {
