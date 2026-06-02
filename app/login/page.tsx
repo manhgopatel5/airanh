@@ -12,7 +12,6 @@ import {
   browserSessionPersistence,
   GoogleAuthProvider,
   isSignInWithEmailLink,
-  sendEmailVerification,
   sendSignInLinkToEmail,
   setPersistence,
   signInWithEmailAndPassword,
@@ -26,7 +25,7 @@ import HuhaLogo from "@/components/brand/HuhaLogo";
 import InstallPrompt from "@/components/InstallPrompt";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
-import { getSafeRedirect } from "@/components/auth/authRoutes";
+import { getSafeRedirect } from "@/components/authRoutes";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -49,20 +48,20 @@ function LoginContent() {
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const failedAttempts = useRef(0);
 
-+ // Helper gọi API gửi mail Resend
-+ const triggerCustomVerificationEmail = async (auth: Auth) => {
-+ const lastSent = localStorage.getItem("last_verify_sent");
-+ if (lastSent && Date.now() - Number(lastSent) < 60000) return; // chặn spam 1 phút
-+
-+ const idToken = await auth.currentUser?.getIdToken();
-+ if (!idToken) return;
-+
-+ await fetch('/api/send-verification', {
-+ method: 'POST',
-+ headers: { Authorization: `Bearer ${idToken}` }
-+ });
-+ localStorage.setItem("last_verify_sent", Date.now().toString());
-+ };
+  // Helper gọi API gửi mail Resend
+  const triggerCustomVerificationEmail = async (auth: Auth) => {
+    const lastSent = localStorage.getItem("last_verify_sent");
+    if (lastSent && Date.now() - Number(lastSent) < 60000) return;
+
+    const idToken = await auth.currentUser?.getIdToken();
+    if (!idToken) return;
+
+    await fetch('/api/send-verification', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${idToken}` }
+    });
+    localStorage.setItem("last_verify_sent", Date.now().toString());
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -105,13 +104,13 @@ function LoginContent() {
         setErrors({ submit: "Nhập email rồi gửi lại link đăng nhập để xác nhận thiết bị này." });
       } else {
         signInWithEmailLink(auth, email, window.location.href)
-       .then(() => {
+         .then(() => {
             localStorage.removeItem("emailForSignIn");
             localStorage.setItem("last_email", email);
             toast.success("Đăng nhập thành công");
             window.location.href = redirectTo;
           })
-       .catch(() => setErrors({ submit: "Link đăng nhập không hợp lệ hoặc đã hết hạn" }));
+         .catch(() => setErrors({ submit: "Link đăng nhập không hợp lệ hoặc đã hết hạn" }));
       }
     }
 
@@ -174,8 +173,7 @@ function LoginContent() {
       const res = await signInWithPopup(auth, provider);
 
       if (!res.user.emailVerified) {
-- await sendEmailVerification(res.user).catch(() => {});
-+ await triggerCustomVerificationEmail(auth); // Gửi mail Resend
+        await triggerCustomVerificationEmail(auth);
         window.location.href = "/verify-email";
         return;
       }
@@ -188,8 +186,8 @@ function LoginContent() {
       const message = err.code === "auth/popup-blocked"
        ? "Popup bị chặn. Cho phép popup và thử lại."
         : err.code === "auth/unauthorized-domain"
-       ? "Domain chưa được xác thực trên Firebase."
-        : "Đăng nhập Google thất bại";
+         ? "Domain chưa được xác thực trên Firebase."
+          : "Đăng nhập Google thất bại";
       setErrors({ submit: message });
     } finally {
       setGoogleLoading(false);
@@ -217,12 +215,7 @@ function LoginContent() {
       const res = await signInWithEmailAndPassword(auth, form.email, form.password);
 
       if (!res.user.emailVerified) {
-- const lastSent = localStorage.getItem("last_verify_sent");
-- if (!lastSent || Date.now() - Number(lastSent) > 60000) {
-- await sendEmailVerification(res.user).catch(() => {});
-- localStorage.setItem("last_verify_sent", Date.now().toString());
-- }
-+ await triggerCustomVerificationEmail(auth); // Gửi mail Resend
+        await triggerCustomVerificationEmail(auth);
         localStorage.setItem("last_email", form.email);
         window.location.href = "/verify-email";
         return;
