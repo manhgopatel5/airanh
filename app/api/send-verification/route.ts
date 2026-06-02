@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Đổi link sang page thay vì API để không bị chặn "Mở bằng"
-    const link = `https://huha.online/verify-success?token=${verifyToken}`;
+const link = `https://huha.online/api/verify-email?token=${verifyToken}`;
 
     const { data, error } = await resend.emails.send({
       from: "Huha <admin@huha.online>", // Đổi thành noreply
