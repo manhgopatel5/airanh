@@ -12,7 +12,7 @@ import {
   browserSessionPersistence,
   GoogleAuthProvider,
   isSignInWithEmailLink,
-- sendEmailVerification,
+  sendEmailVerification,
   sendSignInLinkToEmail,
   setPersistence,
   signInWithEmailAndPassword,
