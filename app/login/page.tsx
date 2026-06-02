@@ -12,7 +12,7 @@ import {
   browserSessionPersistence,
   GoogleAuthProvider,
   isSignInWithEmailLink,
-  sendEmailVerification,
+- sendEmailVerification,
   sendSignInLinkToEmail,
   setPersistence,
   signInWithEmailAndPassword,
@@ -36,7 +36,7 @@ function LoginContent() {
   const { user, userData, loading: authLoading } = useAuth();
   const authRef = useRef<Auth | null>(null);
   const emailRef = useRef<HTMLInputElement>(null);
-  
+
   const [redirectTo, setRedirectTo] = useState("/");
   const [mounted, setMounted] = useState(false);
   const [form, setForm] = useState({ email: "", password: "", honeypot: "" });
@@ -49,6 +49,21 @@ function LoginContent() {
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const failedAttempts = useRef(0);
 
++ // Helper gọi API gửi mail Resend
++ const triggerCustomVerificationEmail = async (auth: Auth) => {
++ const lastSent = localStorage.getItem("last_verify_sent");
++ if (lastSent && Date.now() - Number(lastSent) < 60000) return; // chặn spam 1 phút
++
++ const idToken = await auth.currentUser?.getIdToken();
++ if (!idToken) return;
++
++ await fetch('/api/send-verification', {
++ method: 'POST',
++ headers: { Authorization: `Bearer ${idToken}` }
++ });
++ localStorage.setItem("last_verify_sent", Date.now().toString());
++ };
+
   useEffect(() => {
     setMounted(true);
     setRedirectTo(getSafeRedirect(searchParams.get("redirect")) || "/");
@@ -56,16 +71,16 @@ function LoginContent() {
 
   useEffect(() => {
     if (!mounted || authLoading) return;
-    if (pathname !== "/login") return;
-    
+    if (pathname!== "/login") return;
+
     if (user) {
       if (!user.emailVerified) {
         window.location.href = "/verify-email";
         return;
       }
-      
+
       if (!userData) return;
-      
+
       if (userData.onboardingCompleted) {
         window.location.href = redirectTo;
         return;
@@ -90,13 +105,13 @@ function LoginContent() {
         setErrors({ submit: "Nhập email rồi gửi lại link đăng nhập để xác nhận thiết bị này." });
       } else {
         signInWithEmailLink(auth, email, window.location.href)
-        .then(() => {
+       .then(() => {
             localStorage.removeItem("emailForSignIn");
             localStorage.setItem("last_email", email);
             toast.success("Đăng nhập thành công");
             window.location.href = redirectTo;
           })
-        .catch(() => setErrors({ submit: "Link đăng nhập không hợp lệ hoặc đã hết hạn" }));
+       .catch(() => setErrors({ submit: "Link đăng nhập không hợp lệ hoặc đã hết hạn" }));
       }
     }
 
@@ -122,7 +137,7 @@ function LoginContent() {
   const handleMagicLink = async () => {
     const auth = authRef.current;
     if (!auth) return;
-    if (!form.email || !emailRegex.test(form.email)) {
+    if (!form.email ||!emailRegex.test(form.email)) {
       setErrors({ email: "Nhập email hợp lệ trước" });
       emailRef.current?.focus();
       return;
@@ -153,26 +168,27 @@ function LoginContent() {
     try {
       setGoogleLoading(true);
       setErrors({});
-      await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
+      await setPersistence(auth, remember? browserLocalPersistence : browserSessionPersistence);
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
       const res = await signInWithPopup(auth, provider);
-      
+
       if (!res.user.emailVerified) {
-        await sendEmailVerification(res.user).catch(() => {});
+- await sendEmailVerification(res.user).catch(() => {});
++ await triggerCustomVerificationEmail(auth); // Gửi mail Resend
         window.location.href = "/verify-email";
         return;
       }
-      
+
       localStorage.setItem("last_email", auth.currentUser?.email || "");
       toast.success("Đăng nhập thành công");
       window.location.href = redirectTo;
     } catch (err: any) {
       if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") return;
       const message = err.code === "auth/popup-blocked"
-        ? "Popup bị chặn. Cho phép popup và thử lại."
+       ? "Popup bị chặn. Cho phép popup và thử lại."
         : err.code === "auth/unauthorized-domain"
-        ? "Domain chưa được xác thực trên Firebase."
+       ? "Domain chưa được xác thực trên Firebase."
         : "Đăng nhập Google thất bại";
       setErrors({ submit: message });
     } finally {
@@ -197,15 +213,16 @@ function LoginContent() {
     try {
       setLoading(true);
       setErrors({});
-      await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
+      await setPersistence(auth, remember? browserLocalPersistence : browserSessionPersistence);
       const res = await signInWithEmailAndPassword(auth, form.email, form.password);
 
       if (!res.user.emailVerified) {
-        const lastSent = localStorage.getItem("last_verify_sent");
-        if (!lastSent || Date.now() - Number(lastSent) > 60000) {
-          await sendEmailVerification(res.user).catch(() => {});
-          localStorage.setItem("last_verify_sent", Date.now().toString());
-        }
+- const lastSent = localStorage.getItem("last_verify_sent");
+- if (!lastSent || Date.now() - Number(lastSent) > 60000) {
+- await sendEmailVerification(res.user).catch(() => {});
+- localStorage.setItem("last_verify_sent", Date.now().toString());
+- }
++ await triggerCustomVerificationEmail(auth); // Gửi mail Resend
         localStorage.setItem("last_email", form.email);
         window.location.href = "/verify-email";
         return;
@@ -245,7 +262,7 @@ function LoginContent() {
     );
   }
 
-  const isValid = form.email && form.password && !errors.email && !errors.password;
+  const isValid = form.email && form.password &&!errors.email &&!errors.password;
 
   return (
     <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
@@ -281,7 +298,7 @@ function LoginContent() {
                 placeholder="Email của bạn"
                 value={form.email}
                 onChange={(e) => setField("email", e.target.value)}
-                className={`h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${errors.email ? "border-red-400 focus:border-red-500" : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"}`}
+                className={`h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${errors.email? "border-red-400 focus:border-red-500" : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"}`}
               />
             </div>
             {errors.email && <span className="text-xs font-semibold text-red-500">{errors.email}</span>}
@@ -292,15 +309,15 @@ function LoginContent() {
             <div className="relative">
               <FiLock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
               <input
-                type={showPassword ? "text" : "password"}
+                type={showPassword? "text" : "password"}
                 autoComplete="current-password"
                 placeholder="Nhập mật khẩu"
                 value={form.password}
                 onChange={(e) => setField("password", e.target.value)}
-                className={`h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-12 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${errors.password ? "border-red-400 focus:border-red-500" : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"}`}
+                className={`h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-12 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${errors.password? "border-red-400 focus:border-red-500" : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"}`}
               />
-              <button type="button" aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"} onClick={() => setShowPassword((v) => !v)} className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-zinc-400 active:scale-95">
-                {showPassword ? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
+              <button type="button" aria-label={showPassword? "Ẩn mật khẩu" : "Hiện mật khẩu"} onClick={() => setShowPassword((v) =>!v)} className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-zinc-400 active:scale-95">
+                {showPassword? <FiEyeOff className="h-5 w-5" /> : <FiEye className="h-5 w-5" />}
               </button>
             </div>
             {errors.password && <span className="text-xs font-semibold text-red-500">{errors.password}</span>}
@@ -314,8 +331,8 @@ function LoginContent() {
             <Link href="/forgot-password" className="font-bold text-[#0A84FF]">Quên mật khẩu?</Link>
           </div>
 
-          <button type="submit" disabled={loading || !isValid} className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] text-base font-black text-white shadow-lg shadow-[#0A84FF]/25 transition active:scale-[0.98] disabled:opacity-60">
-            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+          <button type="submit" disabled={loading ||!isValid} className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] text-base font-black text-white shadow-lg shadow-[#0A84FF]/25 transition active:scale-[0.98] disabled:opacity-60">
+            {loading? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
         </form>
 
@@ -328,11 +345,11 @@ function LoginContent() {
         <div className="grid gap-3">
           <button type="button" onClick={handleGoogleLogin} disabled={googleLoading} className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-zinc-200 bg-white text-base font-black text-zinc-800 shadow-sm transition active:scale-[0.98] disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
             <FcGoogle className="h-5 w-5" />
-            {googleLoading ? "Đang mở Google..." : "Tiếp tục với Google"}
+            {googleLoading? "Đang mở Google..." : "Tiếp tục với Google"}
           </button>
           <button type="button" onClick={handleMagicLink} disabled={magicLoading} className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-zinc-200 bg-white text-base font-black text-zinc-700 transition active:scale-[0.98] disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
             <FiSend className="h-5 w-5" />
-            {magicLoading ? "Đang gửi link..." : "Gửi link đăng nhập"}
+            {magicLoading? "Đang gửi link..." : "Gửi link đăng nhập"}
           </button>
         </div>
 
