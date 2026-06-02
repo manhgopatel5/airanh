@@ -13,7 +13,7 @@ import {
 } from "firebase/firestore";
 import {
   getStorage,
-  FirebaseStorage,
+  
 } from "firebase/storage";
 import {
   getDatabase,
