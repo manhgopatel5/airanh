@@ -1,156 +1,14 @@
 import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { defineString } from "firebase-functions/params";
-import { onUserCreate } from "firebase-functions/v2/auth";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
-import { getAuth, UserRecord } from "firebase-admin/auth";
 import { FirestoreEvent, QueryDocumentSnapshot } from "firebase-functions/v2/firestore";
-import { Resend } from "resend";
-import * as crypto from "crypto";
 
 initializeApp();
 const db = getFirestore();
 
-const resendApiKey = defineString("RESEND_API_KEY");
-
-// 0. GỬI MAIL XÁC THỰC BẰNG RESEND - CHUẨN V2
-export const sendVerificationEmail = onUserCreate(
-  {
-    region: "asia-southeast1",
-    secrets: [resendApiKey],
-    memory: "256MiB",
-  },
-  async (event) => {
-    const user = event.data;
-    if (!user.email || user.emailVerified) {
-      console.log("Skip:", user.email, "verified:", user.emailVerified);
-      return;
-    }
-
-    try {
-      // Rate limit: check xem user này gửi mail trong 60s chưa
-      const recentMail = await db
-    .collection("emailVerifications")
-    .where("uid", "==", user.uid)
-    .orderBy("createdAt", "desc")
-    .limit(1)
-    .get();
-
-      const lastDoc = recentMail.docs[0];
-      if (lastDoc) {
-        const lastTime = lastDoc.createTime.toMillis();
-        if (Date.now() - lastTime < 60 * 1000) {
-          console.log("Rate limit: skip send for", user.email);
-          return;
-        }
-      }
-
-      // 1. Tạo token ngẫu nhiên, hết hạn sau 24h
-      const token = crypto.randomBytes(32).toString("hex");
-      const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
-
-      // 2. Lưu vào Firestore để verify sau
-      await db.collection("emailVerifications").doc(token).set({
-        uid: user.uid,
-        email: user.email,
-        expiresAt,
-        used: false,
-        createdAt: FieldValue.serverTimestamp(),
-      });
-
-      console.log("Token created for:", user.email);
-
-      // 3. Link verify của riêng bạn
-      const link = `https://huha.online/api/verify-email?token=${token}`;
-
-      // 4. Gửi qua Resend
-      const resend = new Resend(resendApiKey.value());
-      const { data, error } = await resend.emails.send({
-        from: "Huha <admin@huha.online>",
-        to: [user.email],
-        subject: "Xác thực tài khoản Huha của bạn",
-        html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body style="margin:0; padding:0; background-color:#f5f5f7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-          <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f7; padding: 40px 0;">
-            <tr>
-              <td align="center">
-                <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:20px; overflow:hidden; max-width:560px; width:100%;">
-                  <tr>
-                    <td style="background: #ffffff; padding: 48px 24px 32px; text-align: center; border-bottom: 1px solid #e5e5ea;">
-                      <h1 style="margin: 0; font-size: 48px; font-weight: 900; line-height: 1; letter-spacing: 0.02em;">
-                        <span style="color: #0A84FF;">hu</span><span style="color: #34C759;">ha</span>
-                      </h1>
-                      <table cellpadding="0" cellspacing="0" style="margin: 12px auto 0;">
-                        <tr>
-                          <td style="width: 16px; height: 1px; background: #0A84FF;"></td>
-                          <td style="padding: 0 8px;">
-                            <p style="margin: 0; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.25em; color: #8e8e93;">
-                              Kết nối không giới hạn
-                            </p>
-                          </td>
-                          <td style="width: 16px; height: 1px; background: #34C759;"></td>
-                        </tr>
-                      </table>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 40px 32px; color: #1d1d1f;">
-                      <h2 style="font-size: 22px; font-weight: 800; margin: 0 0 16px;">Chào ${user.displayName || "bạn"},</h2>
-                      <p style="font-size: 16px; line-height: 1.6; color: #515154; margin: 0 0 16px;">
-                        Cảm ơn bạn đã tạo tài khoản Huha. Chỉ còn 1 bước nữa để bắt đầu.
-                      </p>
-                      <table cellpadding="0" cellspacing="0" style="margin: 32px 0;">
-                        <tr>
-                          <td align="center" style="border-radius:12px; background-color:#0A84FF;">
-                            <a href="${link}" target="_blank" style="display:inline-block; padding:16px 32px; font-size:16px; font-weight:900; color:#ffffff; text-decoration:none;">
-                              Xác thực email
-                            </a>
-                          </td>
-                        </tr>
-                      </table>
-                      <p style="font-size: 14px; line-height: 1.6; color: #86868b; margin: 24px 0 0;">
-                        Link hết hạn sau 24 giờ. Nếu không phải bạn tạo tài khoản, hãy bỏ qua email này.
-                      </p>
-                      <p style="word-break: break-all; font-size: 12px; color: #86868b; margin: 16px 0 0;">${link}</p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 24px 32px; background-color:#fafafa; border-top:1px solid #e5e5ea; text-align:center;">
-                      <p style="margin:0; font-size:12px; color:#8e8e93;">
-                        © 2026 Huha. Mọi quyền được bảo lưu.<br>
-                        <a href="https://huha.online" style="color:#8e8e93; text-decoration:none;">huha.online</a>
-                      </p>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        </body>
-        </html>
-        `,
-        text: `Chào ${user.displayName || "bạn"},\n\nXác thực tài khoản Huha tại link: ${link}\n\nLink hết hạn sau 24h. Nếu bạn không đăng ký, hãy bỏ qua email này.`,
-      });
-
-      if (error) {
-        console.error("Resend error:", error);
-        throw new Error(error.message);
-      }
-      console.log("Verification email sent to:", user.email, "id:", data?.id);
-    } catch (err) {
-      console.error("sendVerificationEmail error:", err);
-      throw err;
-    }
-  }
-);
+// ĐÃ XÓA: sendVerificationEmail - đây là thằng gửi mail /api/verify-email
 
 // 1. Khi có lời mời kết bạn mới → tạo thông báo cho người nhận
 export const onFriendRequestCreated = onDocumentCreated(
@@ -402,10 +260,10 @@ export const cleanupExpiredTasks = onSchedule(
     );
 
     const expiredTasks = await db
- .collection("tasks")
- .where("deadline", "<", sevenDaysAgo)
- .limit(500)
- .get();
+    .collection("tasks")
+    .where("deadline", "<", sevenDaysAgo)
+    .limit(500)
+    .get();
 
     if (expiredTasks.empty) {
       console.log("No expired tasks to delete");
@@ -448,9 +306,9 @@ export const onUserProfileUpdate = onDocumentUpdated(
     console.log(`User ${userId} đổi profile, bắt đầu sync tasks...`);
 
     const tasksSnap = await db
- .collection("tasks")
- .where("userId", "==", userId)
- .get();
+    .collection("tasks")
+    .where("userId", "==", userId)
+    .get();
 
     if (tasksSnap.empty) {
       console.log(`User ${userId} không có task nào`);
