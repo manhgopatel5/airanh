@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import {
   updateEmail,
-  sendEmailVerification,
   EmailAuthProvider,
   reauthenticateWithCredential,
 } from "firebase/auth";
@@ -59,11 +58,26 @@ export default function ChangeEmailPage() {
     setLoading(true);
 
     try {
+      // 1. Reauth
       const credential = EmailAuthProvider.credential(user.email, password);
       await reauthenticateWithCredential(user, credential);
+      
+      // 2. Update email trên Auth
       await updateEmail(user, newEmail);
-      await sendEmailVerification(user);
+      
+      // 3. Gọi API custom để gửi mail xác thực - XÓA sendEmailVerification
+      const res = await fetch('/api/auth/send-verification-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          uid: user.uid, 
+          email: newEmail 
+        })
+      });
 
+      if (!res.ok) throw new Error('Gửi mail thất bại');
+
+      // 4. Update Firestore
       await updateDoc(doc(db, "users", user.uid), {
         email: newEmail,
         emailVerified: false,
