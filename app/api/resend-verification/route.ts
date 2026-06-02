@@ -33,23 +33,24 @@ export async function POST(req: NextRequest) {
     if (!user.email) throw new Error("No email");
     if (user.emailVerified) return NextResponse.json({ error: "Already verified" }, { status: 400 });
 
-    // Rate limit: 1 phút gửi 1 lần
-    const lastSent = await db
-     .collection("emailVerifications")
-     .where("uid", "==", user.uid)
-     .orderBy("createdAt", "desc")
-     .limit(1)
-     .get();
+// Rate limit: 1 phút gửi 1 lần
+const lastSent = await db
+.collection("emailVerifications")
+.where("uid", "==", user.uid)
+.orderBy("createdAt", "desc")
+.limit(1)
+.get();
 
-    if (!lastSent.empty) {
-      const lastTime = lastSent.docs[0].data().createdAt;
-      if (Date.now() - lastTime < 60 * 1000) {
-        return NextResponse.json(
-          { error: "Vui lòng đợi 1 phút trước khi gửi lại" },
-          { status: 429 }
-        );
-      }
-    }
+const lastDoc = lastSent.docs[0];
+if (lastDoc) {
+  const lastTime = lastDoc.data().createdAt;
+  if (Date.now() - lastTime < 60 * 1000) {
+    return NextResponse.json(
+      { error: "Vui lòng đợi 1 phút trước khi gửi lại" },
+      { status: 429 }
+    );
+  }
+}
 
     const verifyToken = crypto.randomBytes(32).toString("hex");
     const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24h
