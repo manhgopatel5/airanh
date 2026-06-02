@@ -36,9 +36,8 @@ export default function VerifyEmailPage() {
     if (!auth.currentUser || sending || cooldown > 0) return;
     try {
       setSending(true);
-      // Gọi function để gửi lại mail qua Resend
       const idToken = await auth.currentUser.getIdToken();
-      const res = await fetch('/api/resend-verification', {
+      const res = await fetch('/api/send-verification', {
         method: 'POST',
         headers: { Authorization: `Bearer ${idToken}` }
       });
