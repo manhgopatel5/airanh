@@ -1,6 +1,6 @@
 "use client";
 
-import { initializeApp, getApps, getApp, FirebaseApp, FirebaseOptions } from "firebase/app";
+import { initializeApp, getApps, getApp, FirebaseOptions } from "firebase/app";
 import {
   getAuth,
   setPersistence,
