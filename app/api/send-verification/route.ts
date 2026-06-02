@@ -16,7 +16,7 @@ if (!getApps().length) {
 }
 
 const db = getFirestore();
-const resend = new Resend(process.env.RESEND_API_KEY!); // Đưa ra ngoài
+const resend = new Resend(process.env.RESEND_API_KEY!);
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,12 +44,13 @@ export async function POST(req: NextRequest) {
       createdAt: Date.now(),
     });
 
-    const link = `https://huha.online/api/verify-email?token=${verifyToken}`;
+    // Đổi link sang page thay vì API để không bị chặn "Mở bằng"
+    const link = `https://huha.online/verify-success?token=${verifyToken}`;
 
     const { data, error } = await resend.emails.send({
-      from: "Huha <admin@huha.online>", // Đổi từ admin@ thành noreply@
+      from: "Huha <admin@huha.online>", // Đổi thành noreply
       to: [user.email],
-      subject: "Xác thực email Huha - Kết nối không giới hạn", // Đổi subject cho ngắn gọn
+      subject: "Xác thực email Huha", // Bỏ "Kết nối không giới hạn" cho ngắn
       html: `
       <!DOCTYPE html>
       <html>
