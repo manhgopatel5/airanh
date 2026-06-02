@@ -59,14 +59,32 @@ function OnboardingContent() {
   const [saving, setSaving] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [loadingProvince, setLoadingProvince] = useState(true);
 
   useEffect(() => {
     setMounted(true);
-    // Load provinces
+    // FIX: Load provinces với check lỗi chi tiết
     fetch("/api/address/province")
-     .then(res => res.json())
-     .then(setProvinces)
-     .catch(() => toast.error("Không tải được danh sách tỉnh"));
+   .then(async (res) => {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Unknown" }));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      return res.json();
+    })
+   .then((data) => {
+      if (Array.isArray(data)) {
+        setProvinces(data);
+        console.log("Loaded provinces:", data.length);
+      } else {
+        throw new Error("Invalid data format");
+      }
+    })
+   .catch((err) => {
+      console.error("Province load error:", err);
+      toast.error("Không tải được danh sách tỉnh");
+    })
+   .finally(() => setLoadingProvince(false));
   }, []);
 
   // Load districts khi chọn province
@@ -83,9 +101,15 @@ function OnboardingContent() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ provinceId: Number(selectedProvince) }),
     })
-     .then(res => res.json())
-     .then(setDistricts)
-     .catch(() => toast.error("Không tải được quận/huyện"));
+   .then(async (res) => {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Unknown" }));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      return res.json();
+    })
+   .then(setDistricts)
+   .catch(() => toast.error("Không tải được quận/huyện"));
   }, [selectedProvince]);
 
   // Load wards khi chọn district
@@ -100,9 +124,15 @@ function OnboardingContent() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ districtId: Number(selectedDistrict) }),
     })
-     .then(res => res.json())
-     .then(setWards)
-     .catch(() => toast.error("Không tải được phường/xã"));
+   .then(async (res) => {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Unknown" }));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      return res.json();
+    })
+   .then(setWards)
+   .catch(() => toast.error("Không tải được phường/xã"));
   }, [selectedDistrict]);
 
   // Guard: Chưa login hoặc đã onboarded
@@ -221,7 +251,7 @@ function OnboardingContent() {
           searchKeywords: [
             lowerName,
             lowerName.replace(/\s+/g, ""),
-        ...lowerName.split(" ").filter((word) => word.length >= 2),
+      ...lowerName.split(" ").filter((word) => word.length >= 2),
             userId.toLowerCase(),
             username.toLowerCase(),
             form.phone,
@@ -319,13 +349,13 @@ function OnboardingContent() {
 
   const inputClass = (field: string) => `h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${
     errors[field]
-  ? "border-red-400 focus:border-red-500"
+? "border-red-400 focus:border-red-500"
       : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"
   }`;
 
   const selectClass = (field: string) => `h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${
     errors[field]
-  ? "border-red-400 focus:border-red-500"
+? "border-red-400 focus:border-red-500"
       : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"
   }`;
 
@@ -439,10 +469,10 @@ function OnboardingContent() {
                   setSelectedProvince(e.target.value);
                   setErrors(prev => ({...prev, province: "" }));
                 }}
-                disabled={saving}
+                disabled={saving || loadingProvince}
                 className={selectClass("province")}
               >
-                <option value="">Chọn tỉnh/thành</option>
+                <option value="">{loadingProvince? "Đang tải..." : "Chọn tỉnh/thành"}</option>
                 {provinces.map(p => (
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
@@ -522,7 +552,7 @@ function OnboardingContent() {
                 disabled={saving}
                 className={`w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 py-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${
                   errors.streetAddress
-                ? "border-red-400 focus:border-red-500"
+               ? "border-red-400 focus:border-red-500"
                     : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"
                 }`}
               />
@@ -564,12 +594,4 @@ export default function OnboardingPage() {
     <Suspense fallback={
       <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
         <div className="mx-auto w-full max-w-md space-y-4">
-          <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
-          <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
-        </div>
-      </div>
-    }>
-      <OnboardingContent />
-    </Suspense>
-  );
-}
+          <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800
