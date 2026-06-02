@@ -15,24 +15,22 @@ export async function POST(req: NextRequest) {
     const uid = decoded.uid;
     const email = decoded.email!;
 
-    // Check đã verify chưa
     if (decoded.email_verified) {
       return NextResponse.json({ error: 'Email already verified' }, { status: 400 });
     }
 
-    // 1. Tạo token
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = Date.now() + 10 * 60 * 1000;
 
-    // 2. Lưu vào Firestore
-    await adminDb.collection('emailVerifications').doc(token).set({
+    // Sửa chỗ này: gọi adminDb() trước
+    const db = adminDb();
+    await db.collection('emailVerifications').doc(token).set({
       uid,
       email,
       createdAt: Date.now(),
       expiresAt,
     });
 
-    // 3. Gửi mail Resend
     const verifyUrl = `https://huha.online/api/verify-email?token=${token}`;
     
     await resend.emails.send({
