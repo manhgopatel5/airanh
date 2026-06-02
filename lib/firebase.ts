@@ -38,7 +38,7 @@ const firebaseConfig: FirebaseOptions = {
 
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
-let db: Firestore | null = null;
+let firestoreDb: Firestore | null = null;
 let storage: FirebaseStorage | null = null;
 let rtdb: Database | null = null;
 
@@ -51,7 +51,7 @@ function initFirebase() {
     app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
     auth = getAuth(app);
-    db = getFirestore(app);
+    firestoreDb = getFirestore(app);
     storage = getStorage(app);
     
     if (firebaseConfig.databaseURL) {
@@ -59,7 +59,7 @@ function initFirebase() {
     }
 
     // Set ngôn ngữ email sang tiếng Việt
-    auth.languageCode = 'vi'; // <<< THÊM DÒNG NÀY
+    auth.languageCode = 'vi';
 
     // Lưu login
     setPersistence(auth, browserLocalPersistence).catch((err) => 
@@ -67,6 +67,15 @@ function initFirebase() {
     );
   }
 }
+
+// Init ngay khi import
+initFirebase();
+
+/* ================= EXPORTS ================= */
+
+// Export trực tiếp để dùng trong Server Component
+export const db = firestoreDb;
+export const firebaseApp = app;
 
 /* ================= GETTERS ================= */
 
@@ -84,8 +93,8 @@ export function getFirebaseAuth(): Auth {
 
 export function getFirebaseDB(): Firestore {
   initFirebase();
-  if (!db) throw new Error("Firestore not initialized");
-  return db;
+  if (!firestoreDb) throw new Error("Firestore not initialized");
+  return firestoreDb;
 }
 
 export function getFirebaseStorage(): FirebaseStorage {
