@@ -56,10 +56,7 @@ function LoginContent() {
     const idToken = await auth.currentUser?.getIdToken();
     if (!idToken) return;
 
-    await fetch('/api/send-verification', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${idToken}` }
-    });
+    
     localStorage.setItem("last_verify_sent", Date.now().toString());
   };
 
