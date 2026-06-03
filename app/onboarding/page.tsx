@@ -9,7 +9,7 @@ import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
-  FiAlertCircle, FiArrowRight, FiUser, FiHome,
+  FiAlertCircle, FiArrowRight, FiUser,
   FiMapPin, FiCalendar, FiPhone, FiUsers
 } from "react-icons/fi";
 import HuhaLogo from "@/components/brand/HuhaLogo";
