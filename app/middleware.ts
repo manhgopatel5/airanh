@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { adminAuth } from '@/lib/firebase-admin'
+import { getFirestore } from 'firebase-admin/firestore'
 
 const PUBLIC_ROUTES = [
   '/login', 
@@ -21,7 +22,7 @@ const PUBLIC_API = [
   '/api/user/logout', 
   '/api/health',
   '/api/verify-email',
-  '/api/send-verification' // Đổi từ /api/resend-verification
+  '/api/send-verification'
 ]
 
 export async function middleware(request: NextRequest) {
@@ -50,7 +51,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // 3. Có token -> VERIFY JWT + CHECK EMAIL VERIFIED
+  // 3. Có token -> VERIFY JWT + CHECK EMAIL VERIFIED + CHECK ONBOARDED
   try {
     const decodedToken = await adminAuth().verifySessionCookie(token, false)
 
@@ -62,6 +63,23 @@ export async function middleware(request: NextRequest) {
     // Chặn chưa xác thực email - chỉ áp dụng cho route không public
     if (!decodedToken.email_verified && !isPublicRoute) {
       return NextResponse.redirect(new URL('/verify-email', request.url))
+    }
+
+    // FIX: Check đã onboarding chưa
+    if (decodedToken.email_verified && !isPublicRoute) {
+      const db = getFirestore();
+      const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+      const hasOnboarded = userDoc.exists && userDoc.data()?.onboarded === true;
+
+      // Chưa onboard + không ở /onboarding → đẩy về /onboarding
+      if (!hasOnboarded && pathname !== '/onboarding') {
+        return NextResponse.redirect(new URL('/onboarding', request.url))
+      }
+
+      // Đã onboard + đang ở /onboarding → đẩy về /
+      if (hasOnboarded && pathname === '/onboarding') {
+        return NextResponse.redirect(new URL('/', request.url))
+      }
     }
     
     return NextResponse.next()
