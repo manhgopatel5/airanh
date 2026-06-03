@@ -135,22 +135,11 @@ fetch("/api/location/province")
    .catch(() => toast.error("Không tải được phường/xã"));
   }, [selectedDistrict]);
 
-  // Guard: Chưa login hoặc đã onboarded
-  useEffect(() => {
-    if (authLoading) return;
-
-    if (!user) {
-      router.replace("/login");
-      return;
-    }
-
-    const db = getFirebaseDB();
-    getDoc(doc(db, "users", user.uid)).then((snap) => {
-      if (snap.data()?.onboarded) {
-        router.replace(redirectTo);
-      }
-    });
-  }, [user, authLoading, router, redirectTo]);
+// Guard: Chưa login thì về /login
+useEffect(() => {
+  if (authLoading) return;
+  if (!user) router.replace("/login");
+}, [user, authLoading, router]);
 
   useEffect(() => {
     if (user &&!form.displayName) {
@@ -286,36 +275,7 @@ fetch("/api/location/province")
 
   if (!user) return null;
 
-  const emailVerified = getFirebaseAuth().currentUser?.emailVerified || user.emailVerified;
-
-  if (!emailVerified) {
-    return (
-      <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
-        <div className="mx-auto w-full max-w-md">
-          <div className="mb-10"><HuhaLogo /></div>
-          <div className="mb-6 text-center">
-            <div className="mb-4 flex justify-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
-                <FiMail className="h-8 w-8" />
-              </div>
-            </div>
-            <h1 className="text-2xl font-black text-zinc-900 dark:text-white">
-              Cần xác thực email
-            </h1>
-            <p className="mt-2 text-sm font-semibold text-zinc-600 dark:text-zinc-400">
-              Vui lòng xác thực email {user.email} trước khi hoàn tất hồ sơ
-            </p>
-          </div>
-          <button
-            onClick={() => router.replace("/verify-email")}
-            className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] text-base font-black text-white shadow-lg shadow-[#0A84FF]/25 transition active:scale-[0.98]"
-          >
-            Đi xác thực email
-          </button>
-        </div>
-      </div>
-    );
-  }
+ 
 
   if (completed) {
     return (
