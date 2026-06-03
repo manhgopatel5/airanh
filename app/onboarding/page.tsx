@@ -23,12 +23,12 @@ type Ward = { id: string; name: string };
 
 const generateUsername = (name: string) => {
   return name
-.toLowerCase()
-.normalize("NFD")
-.replace(/[\u0300-\u036f]/g, "")
-.replace(/\s+/g, "")
-.replace(/[^a-z0-9]/g, "")
-.slice(0, 20) || "user";
+   .toLowerCase()
+   .normalize("NFD")
+   .replace(/[\u0300-\u036f]/g, "")
+   .replace(/\s+/g, "")
+   .replace(/[^a-z0-9]/g, "")
+   .slice(0, 20) || "user";
 };
 
 function OnboardingContent() {
@@ -58,33 +58,31 @@ function OnboardingContent() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [completed, setCompleted] = useState(false);
   const [loadingProvince, setLoadingProvince] = useState(true);
 
   useEffect(() => {
     setMounted(true);
-    // FIX: Load provinces với check lỗi chi tiết
-fetch("/api/location/province")
-   .then(async (res) => {
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Unknown" }));
-        throw new Error(err.error || `HTTP ${res.status}`);
-      }
-      return res.json();
-    })
-   .then((data) => {
-      if (Array.isArray(data)) {
-        setProvinces(data);
-        console.log("Loaded provinces:", data.length);
-      } else {
-        throw new Error("Invalid data format");
-      }
-    })
-   .catch((err) => {
-      console.error("Province load error:", err);
-      toast.error("Không tải được danh sách tỉnh");
-    })
-   .finally(() => setLoadingProvince(false));
+    fetch("/api/location/province")
+     .then(async (res) => {
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: "Unknown" }));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+        return res.json();
+      })
+     .then((data) => {
+        if (Array.isArray(data)) {
+          setProvinces(data);
+          console.log("Loaded provinces:", data.length);
+        } else {
+          throw new Error("Invalid data format");
+        }
+      })
+     .catch((err) => {
+        console.error("Province load error:", err);
+        toast.error("Không tải được danh sách tỉnh");
+      })
+     .finally(() => setLoadingProvince(false));
   }, []);
 
   // Load districts khi chọn province
@@ -96,20 +94,20 @@ fetch("/api/location/province")
       setSelectedWard("");
       return;
     }
- fetch("/api/location/district", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ provinceId: Number(selectedProvince) }),
-})
-   .then(async (res) => {
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Unknown" }));
-        throw new Error(err.error || `HTTP ${res.status}`);
-      }
-      return res.json();
+    fetch("/api/location/district", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provinceId: Number(selectedProvince) }),
     })
-   .then(setDistricts)
-   .catch(() => toast.error("Không tải được quận/huyện"));
+     .then(async (res) => {
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: "Unknown" }));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+        return res.json();
+      })
+     .then(setDistricts)
+     .catch(() => toast.error("Không tải được quận/huyện"));
   }, [selectedProvince]);
 
   // Load wards khi chọn district
@@ -119,27 +117,27 @@ fetch("/api/location/province")
       setSelectedWard("");
       return;
     }
-  fetch("/api/location/ward", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ districtId: Number(selectedDistrict) }),
-})
-   .then(async (res) => {
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Unknown" }));
-        throw new Error(err.error || `HTTP ${res.status}`);
-      }
-      return res.json();
+    fetch("/api/location/ward", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ districtId: Number(selectedDistrict) }),
     })
-   .then(setWards)
-   .catch(() => toast.error("Không tải được phường/xã"));
+     .then(async (res) => {
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: "Unknown" }));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+        return res.json();
+      })
+     .then(setWards)
+     .catch(() => toast.error("Không tải được phường/xã"));
   }, [selectedDistrict]);
 
-// Guard: Chưa login thì về /login
-useEffect(() => {
-  if (authLoading) return;
-  if (!user) router.replace("/login");
-}, [user, authLoading, router]);
+  // Guard: Chưa login thì về /login
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) router.replace("/login");
+  }, [user, authLoading, router]);
 
   useEffect(() => {
     if (user &&!form.displayName) {
@@ -240,19 +238,26 @@ useEffect(() => {
           searchKeywords: [
             lowerName,
             lowerName.replace(/\s+/g, ""),
-      ...lowerName.split(" ").filter((word) => word.length >= 2),
+           ...lowerName.split(" ").filter((word) => word.length >= 2),
             userId.toLowerCase(),
             username.toLowerCase(),
             form.phone,
           ],
           onboardingCompleted: true,
           onboarded: true,
+          emailVerified: true,
           updatedAt: serverTimestamp(),
         }),
       ]);
 
+      // FIX: Reload user để lấy emailVerified: true mới nhất từ server
+      await currentUser.reload();
+
       toast.success(`Chào mừng, ${trimmed}!`);
-      setCompleted(true);
+
+      // FIX: Redirect thẳng về home, không qua màn completed
+      router.replace(redirectTo);
+
     } catch (err: any) {
       console.error("Onboarding error:", err);
       toast.error("Có lỗi xảy ra, thử lại sau");
@@ -275,51 +280,15 @@ useEffect(() => {
 
   if (!user) return null;
 
- 
-
-  if (completed) {
-    return (
-      <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
-        <div className="mx-auto w-full max-w-md">
-          <div className="mb-10"><HuhaLogo /></div>
-          <div className="mb-6 text-center">
-            <div className="mb-4 flex justify-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-500/10 dark:text-green-400">
-                <FiUser className="h-8 w-8" />
-              </div>
-            </div>
-            <h1 className="text-2xl font-black text-zinc-900 dark:text-white">
-              Hoàn tất hồ sơ!
-            </h1>
-            <p className="mt-2 text-sm font-semibold text-zinc-600 dark:text-zinc-400">
-              Hồ sơ của bạn đã sẵn sàng. Bắt đầu khám phá Huha ngay
-            </p>
-          </div>
- <button
-  onClick={async () => {
-    const auth = getFirebaseAuth();
-    await auth.currentUser?.reload(); // <-- Bắt Firebase cập nhật emailVerified
-    router.replace(redirectTo);
-  }}
-  className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] text-base font-black text-white shadow-lg shadow-[#0A84FF]/25 transition active:scale-[0.98]"
->
-  <FiHome className="h-5 w-5" />
-  Vào trang chủ
-</button>
-        </div>
-      </div>
-    );
-  }
-
   const inputClass = (field: string) => `h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${
     errors[field]
-? "border-red-400 focus:border-red-500"
+     ? "border-red-400 focus:border-red-500"
       : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"
   }`;
 
   const selectClass = (field: string) => `h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${
     errors[field]
-? "border-red-400 focus:border-red-500"
+     ? "border-red-400 focus:border-red-500"
       : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"
   }`;
 
@@ -516,7 +485,7 @@ useEffect(() => {
                 disabled={saving}
                 className={`w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 py-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${
                   errors.streetAddress
-               ? "border-red-400 focus:border-red-500"
+                   ? "border-red-400 focus:border-red-500"
                     : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"
                 }`}
               />
@@ -555,15 +524,15 @@ useEffect(() => {
 
 export default function OnboardingPage() {
   return (
- <Suspense fallback={
-  <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
-    <div className="mx-auto w-full max-w-md space-y-4">
-      <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
-      <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
-    </div>
-  </div>
-}>
-  <OnboardingContent />
-  </Suspense>
-);
+    <Suspense fallback={
+      <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
+        <div className="mx-auto w-full max-w-md space-y-4">
+          <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
+          <div className="h-14 rounded-2xl bg-zinc-200 motion-safe:animate-pulse dark:bg-zinc-800" />
+        </div>
+      </div>
+    }>
+      <OnboardingContent />
+    </Suspense>
+  );
 }
