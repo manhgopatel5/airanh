@@ -1,61 +1,24 @@
 import { NextResponse } from "next/server";
 
-export const revalidate = 604800; // 7 ngày
-
-type Province = {
-  id: number;
-  name: string;
-  code: string;
-};
+export const revalidate = 86400; // 24h
 
 export async function GET() {
   try {
-    const token = process.env.GHN_TOKEN;
-    if (!token) {
-      console.error("GHN_TOKEN missing");
-      return NextResponse.json({ error: "Server config error" }, { status: 500 });
-    }
-
-    const res = await fetch(
-      "https://online-gateway.ghn.vn/shiip/public-api/master-data/province",
-      {
-        headers: { Token: token },
-        signal: AbortSignal.timeout(8000),
-      }
-    );
-
-    if (!res.ok) {
-      console.error("GHN HTTP Error:", res.status);
-      return NextResponse.json({ error: "GHN API error" }, { status: 502 });
-    }
-
-    const data = await res.json();
-    console.log("GHN PROVINCE:", { code: data.code, count: data.data?.length });
-
-    if (data.code !== 200) {
-      return NextResponse.json({ error: data.message || "GHN error" }, { status: 400 });
-    }
-
-    const provinces: Province[] = (data.data || [])
-      .map((p: any) => ({
-        id: p.ProvinceID,
-        name: p.ProvinceName,
-        code: p.Code,
-      }))
-      .sort((a: Province, b: Province) =>
-        a.name.localeCompare(b.name, "vi")
-      );
-
-    return NextResponse.json(provinces, {
-      headers: {
-        "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=259200",
-      },
+    const res = await fetch("https://provinces.open-api.vn/api/p/", {
+      signal: AbortSignal.timeout(5000),
     });
+
+    if (!res.ok) throw new Error("API error");
+    
+    const data = await res.json();
+    const provinces = data.map((p: any) => ({
+      id: p.code,
+      name: p.name,
+      code: p.codename,
+    }));
+
+    return NextResponse.json(provinces);
   } catch (err: any) {
-    if (err.name === "TimeoutError") {
-      console.error("GHN TIMEOUT");
-      return NextResponse.json({ error: "GHN timeout" }, { status: 504 });
-    }
     console.error("PROVINCE ERROR:", err);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
