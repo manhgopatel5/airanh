@@ -64,7 +64,7 @@ function OnboardingContent() {
   useEffect(() => {
     setMounted(true);
     // FIX: Load provinces với check lỗi chi tiết
-    fetch("/api/address/province")
+fetch("/api/location/province")
    .then(async (res) => {
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Unknown" }));
@@ -96,11 +96,11 @@ function OnboardingContent() {
       setSelectedWard("");
       return;
     }
-    fetch("/api/address/district", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ provinceId: Number(selectedProvince) }),
-    })
+ fetch("/api/location/district", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ provinceId: Number(selectedProvince) }),
+})
    .then(async (res) => {
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Unknown" }));
@@ -119,11 +119,11 @@ function OnboardingContent() {
       setSelectedWard("");
       return;
     }
-    fetch("/api/address/ward", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ districtId: Number(selectedDistrict) }),
-    })
+  fetch("/api/location/ward", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ districtId: Number(selectedDistrict) }),
+})
    .then(async (res) => {
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Unknown" }));
