@@ -60,16 +60,12 @@ export async function GET(req: NextRequest) {
     const customToken = await auth.createCustomToken(data.uid);
     await docRef.update({ used: true, usedAt: Date.now() });
 
-    // ↓↓ XÓA DÒNG NÀY ↓↓↓
-    // return NextResponse.redirect(`https://huha.online/verify-success?customToken=${customToken}`);
-    
-    // ↓↓↓ THAY BẰNG 4 DÒNG NÀY ↓↓↓
-    const hasOnboarded = userDoc.exists && userDoc.data()?.onboarded === true;
-    const redirectPath = hasOnboarded ? '/' : '/onboarding';
-    return NextResponse.redirect(`https://huha.online/verify-success?customToken=${customToken}&redirect=${redirectPath}`);
+    // SỬA: Dùng domain tuyệt đối để Android/iOS bắt được
+    return NextResponse.redirect(`https://huha.online/verify-success?customToken=${customToken}`);
     
   } catch (error) {
     console.error("Verify error:", error);
+    // SỬA: Dùng domain tuyệt đối
     return NextResponse.redirect("https://huha.online/verify-failed?reason=error");
   }
-}
+} 
