@@ -1,49 +1,51 @@
 {
-  "name": "AIR - Nền tảng việc làm tự do",
-  "short_name": "AIR",
-  "description": "Kết nối người cần việc và người tìm việc nhanh chóng, an toàn",
+  "name": "Huha - Kết nối không giới hạn",
+  "short_name": "Huha",
+  "description": "Kết nối không giới hạn, tìm việc và tìm bạn nhanh chóng",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#3b82f6",
+  "theme_color": "#0A84FF",
   "orientation": "portrait",
   "scope": "/",
   "lang": "vi",
   "categories": ["business", "productivity", "social"],
+  "prefer_related_applications": false,
+  "handle_links": "preferred",
 
   "icons": [
     {
-      "src": "/icon-192.PNG",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-256.PNG",
+      "src": "/icon-256.png",
       "sizes": "256x256", 
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-384.PNG",
+      "src": "/icon-384.png",
       "sizes": "384x384",
       "type": "image/png", 
       "purpose": "any"
     },
     {
-      "src": "/icon-512.PNG",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-maskable-192.PNG",
+      "src": "/icon-maskable-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/icon-maskable-512.PNG", 
+      "src": "/icon-maskable-512.png", 
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -52,13 +54,13 @@
 
   "screenshots": [
     {
-      "src": "/screenshot-1.PNG",
+      "src": "/screenshot-1.png",
       "sizes": "540x720",
       "type": "image/png",
       "form_factor": "narrow"
     },
     {
-      "src": "/screenshot-2.PNG", 
+      "src": "/screenshot-2.png", 
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide"
@@ -67,26 +69,26 @@
 
   "shortcuts": [
     {
-      "name": "Tạo công việc",
-      "short_name": "Tạo",
-      "description": "Đăng công việc mới",
+      "name": "Tạo bài đăng",
+      "short_name": "Đăng bài",
+      "description": "Tạo bài đăng kết nối mới",
       "url": "/create",
       "icons": [
         {
-          "src": "/icon-create.PNG",
+          "src": "/icon-create.png",
           "sizes": "96x96",
           "type": "image/png"
         }
       ]
     },
     {
-      "name": "Tìm việc", 
-      "short_name": "Tìm",
-      "description": "Tìm kiếm công việc",
+      "name": "Khám phá", 
+      "short_name": "Khám phá",
+      "description": "Tìm kiếm kết nối",
       "url": "/search",
       "icons": [
         {
-          "src": "/icon-search.PNG",
+          "src": "/icon-search.png",
           "sizes": "96x96", 
           "type": "image/png"
         }
