@@ -51,7 +51,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // 3. Có token -> VERIFY JWT + CHECK EMAIL VERIFIED + CHECK ONBOARDED
+  // 3. Có token -> VERIFY JWT + CHECK FIRESTORE
   try {
     const decodedToken = await adminAuth().verifySessionCookie(token, false)
 
@@ -60,23 +60,24 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/', request.url))
     }
 
-    // Chặn chưa xác thực email - chỉ áp dụng cho route không public
-    if (!decodedToken.email_verified && !isPublicRoute) {
-      return NextResponse.redirect(new URL('/verify-email', request.url))
-    }
-
-    // FIX: Check đã onboarding chưa
-    if (decodedToken.email_verified && !isPublicRoute) {
+    // FIX: Check emailVerified + onboarded từ Firestore, không dùng token.email_verified
+    if (!isPublicRoute) {
       const db = getFirestore();
       const userDoc = await db.collection('users').doc(decodedToken.uid).get();
-      const hasOnboarded = userDoc.exists && userDoc.data()?.onboarded === true;
-
-      // Chưa onboard + không ở /onboarding → đẩy về /onboarding
-      if (!hasOnboarded && pathname !== '/onboarding') {
+      const userData = userDoc.data();
+      
+      // Chưa verify email trong DB → về /verify-email
+      if (!userData?.emailVerified && pathname !== '/verify-email') {
+        return NextResponse.redirect(new URL('/verify-email', request.url))
+      }
+      
+      // Đã verify + chưa onboard → về /onboarding
+      const hasOnboarded = userData?.onboarded === true;
+      if (userData?.emailVerified && !hasOnboarded && pathname !== '/onboarding') {
         return NextResponse.redirect(new URL('/onboarding', request.url))
       }
 
-      // Đã onboard + đang ở /onboarding → đẩy về /
+      // Đã onboard + đang ở /onboarding → về /
       if (hasOnboarded && pathname === '/onboarding') {
         return NextResponse.redirect(new URL('/', request.url))
       }
