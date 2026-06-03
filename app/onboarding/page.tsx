@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { updateProfile } from "firebase/auth";
+import { updateProfile, getIdToken } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -23,12 +23,12 @@ type Ward = { id: string; name: string };
 
 const generateUsername = (name: string) => {
   return name
-   .toLowerCase()
-   .normalize("NFD")
-   .replace(/[\u0300-\u036f]/g, "")
-   .replace(/\s+/g, "")
-   .replace(/[^a-z0-9]/g, "")
-   .slice(0, 20) || "user";
+  .toLowerCase()
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .replace(/\s+/g, "")
+  .replace(/[^a-z0-9]/g, "")
+  .slice(0, 20) || "user";
 };
 
 function OnboardingContent() {
@@ -63,14 +63,14 @@ function OnboardingContent() {
   useEffect(() => {
     setMounted(true);
     fetch("/api/location/province")
-     .then(async (res) => {
+    .then(async (res) => {
         if (!res.ok) {
           const err = await res.json().catch(() => ({ error: "Unknown" }));
           throw new Error(err.error || `HTTP ${res.status}`);
         }
         return res.json();
       })
-     .then((data) => {
+    .then((data) => {
         if (Array.isArray(data)) {
           setProvinces(data);
           console.log("Loaded provinces:", data.length);
@@ -78,11 +78,11 @@ function OnboardingContent() {
           throw new Error("Invalid data format");
         }
       })
-     .catch((err) => {
+    .catch((err) => {
         console.error("Province load error:", err);
         toast.error("Không tải được danh sách tỉnh");
       })
-     .finally(() => setLoadingProvince(false));
+    .finally(() => setLoadingProvince(false));
   }, []);
 
   // Load districts khi chọn province
@@ -99,15 +99,15 @@ function OnboardingContent() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ provinceId: Number(selectedProvince) }),
     })
-     .then(async (res) => {
+    .then(async (res) => {
         if (!res.ok) {
           const err = await res.json().catch(() => ({ error: "Unknown" }));
           throw new Error(err.error || `HTTP ${res.status}`);
         }
         return res.json();
       })
-     .then(setDistricts)
-     .catch(() => toast.error("Không tải được quận/huyện"));
+    .then(setDistricts)
+    .catch(() => toast.error("Không tải được quận/huyện"));
   }, [selectedProvince]);
 
   // Load wards khi chọn district
@@ -122,15 +122,15 @@ function OnboardingContent() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ districtId: Number(selectedDistrict) }),
     })
-     .then(async (res) => {
+    .then(async (res) => {
         if (!res.ok) {
           const err = await res.json().catch(() => ({ error: "Unknown" }));
           throw new Error(err.error || `HTTP ${res.status}`);
         }
         return res.json();
       })
-     .then(setWards)
-     .catch(() => toast.error("Không tải được phường/xã"));
+    .then(setWards)
+    .catch(() => toast.error("Không tải được phường/xã"));
   }, [selectedDistrict]);
 
   // Guard: Chưa login thì về /login
@@ -238,7 +238,7 @@ function OnboardingContent() {
           searchKeywords: [
             lowerName,
             lowerName.replace(/\s+/g, ""),
-           ...lowerName.split(" ").filter((word) => word.length >= 2),
+          ...lowerName.split(" ").filter((word) => word.length >= 2),
             userId.toLowerCase(),
             username.toLowerCase(),
             form.phone,
@@ -250,13 +250,21 @@ function OnboardingContent() {
         }),
       ]);
 
-      // FIX: Reload user để lấy emailVerified: true mới nhất từ server
+      // FIX 1: Reload user để lấy emailVerified: true mới nhất
       await currentUser.reload();
+
+      // FIX 2: Tạo lại session cookie với token mới có email_verified: true
+      const idToken = await getIdToken(currentUser, true); // force refresh
+      await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
 
       toast.success(`Chào mừng, ${trimmed}!`);
 
-      // FIX: Redirect thẳng về home, không qua màn completed
-      router.replace(redirectTo);
+      // FIX 3: Reload page để middleware đọc cookie mới
+      window.location.href = redirectTo;
 
     } catch (err: any) {
       console.error("Onboarding error:", err);
@@ -282,13 +290,13 @@ function OnboardingContent() {
 
   const inputClass = (field: string) => `h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${
     errors[field]
-     ? "border-red-400 focus:border-red-500"
+    ? "border-red-400 focus:border-red-500"
       : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"
   }`;
 
   const selectClass = (field: string) => `h-14 w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${
     errors[field]
-     ? "border-red-400 focus:border-red-500"
+    ? "border-red-400 focus:border-red-500"
       : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"
   }`;
 
@@ -485,7 +493,7 @@ function OnboardingContent() {
                 disabled={saving}
                 className={`w-full rounded-2xl border bg-zinc-50 pl-12 pr-4 py-4 text-base font-semibold text-zinc-900 outline-none transition focus:bg-white dark:bg-zinc-900 dark:text-white ${
                   errors.streetAddress
-                   ? "border-red-400 focus:border-red-500"
+                  ? "border-red-400 focus:border-red-500"
                     : "border-zinc-200 focus:border-[#0A84FF] dark:border-zinc-800"
                 }`}
               />
