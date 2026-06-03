@@ -20,7 +20,8 @@ export async function GET(req: NextRequest) {
   const verifyToken = req.nextUrl.searchParams.get("token");
   
   if (!verifyToken) {
-    return NextResponse.redirect(new URL("/verify-failed?reason=invalid", req.url));
+    // SỬA: Dùng domain tuyệt đối
+    return NextResponse.redirect("https://huha.online/verify-failed?reason=invalid");
   }
 
   try {
@@ -28,23 +29,23 @@ export async function GET(req: NextRequest) {
     const doc = await docRef.get();
 
     if (!doc.exists) {
-      return NextResponse.redirect(new URL("/verify-failed?reason=invalid", req.url));
+      // SỬA: Dùng domain tuyệt đối
+      return NextResponse.redirect("https://huha.online/verify-failed?reason=invalid");
     }
 
     const data = doc.data()!;
 
-    // Check đã dùng
     if (data.used) {
-      return NextResponse.redirect(new URL("/verify-failed?reason=used", req.url));
+      // SỬA: Dùng domain tuyệt đối
+      return NextResponse.redirect("https://huha.online/verify-failed?reason=used");
     }
 
-    // Check hết hạn
     if (Date.now() > data.expiresAt) {
       await docRef.delete();
-      return NextResponse.redirect(new URL("/verify-failed?reason=expired", req.url));
+      // SỬA: Dùng domain tuyệt đối
+      return NextResponse.redirect("https://huha.online/verify-failed?reason=expired");
     }
 
-    // Update emailVerified ở cả Auth + Firestore
     await auth.updateUser(data.uid, { emailVerified: true });
     
     const userRef = db.collection("users").doc(data.uid);
@@ -56,17 +57,15 @@ export async function GET(req: NextRequest) {
       });
     }
     
-    // Tạo customToken để client auto login
     const customToken = await auth.createCustomToken(data.uid);
-    
-    // Đánh dấu đã dùng thay vì xóa để debug
     await docRef.update({ used: true, usedAt: Date.now() });
 
-    // FIX: Đổi tên param thành customToken để /verify-success phân biệt được
-    return NextResponse.redirect(new URL(`/verify-success?customToken=${customToken}`, req.url));
+    // SỬA: Dùng domain tuyệt đối để Android/iOS bắt được
+    return NextResponse.redirect(`https://huha.online/verify-success?customToken=${customToken}`);
     
   } catch (error) {
     console.error("Verify error:", error);
-    return NextResponse.redirect(new URL("/verify-failed?reason=error", req.url));
+    // SỬA: Dùng domain tuyệt đối
+    return NextResponse.redirect("https://huha.online/verify-failed?reason=error");
   }
 }
