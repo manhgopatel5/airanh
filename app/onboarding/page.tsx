@@ -295,13 +295,17 @@ useEffect(() => {
               Hồ sơ của bạn đã sẵn sàng. Bắt đầu khám phá Huha ngay
             </p>
           </div>
-          <button
-            onClick={() => router.replace(redirectTo)}
-            className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] text-base font-black text-white shadow-lg shadow-[#0A84FF]/25 transition active:scale-[0.98]"
-          >
-            <FiHome className="h-5 w-5" />
-            Vào trang chủ
-          </button>
+ <button
+  onClick={async () => {
+    const auth = getFirebaseAuth();
+    await auth.currentUser?.reload(); // <-- Bắt Firebase cập nhật emailVerified
+    router.replace(redirectTo);
+  }}
+  className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] text-base font-black text-white shadow-lg shadow-[#0A84FF]/25 transition active:scale-[0.98]"
+>
+  <FiHome className="h-5 w-5" />
+  Vào trang chủ
+</button>
         </div>
       </div>
     );
