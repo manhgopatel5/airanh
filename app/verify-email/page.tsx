@@ -5,11 +5,12 @@ export const dynamic = 'force-dynamic';
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { reload, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import { FiCheckCircle, FiLogOut, FiMail, FiRefreshCw, FiSend } from "react-icons/fi";
 import { toast } from "sonner";
 import HuhaLogo from "@/components/brand/HuhaLogo";
 import InstallPrompt from "@/components/InstallPrompt";
-import { getFirebaseAuth } from "@/lib/firebase";
+import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function VerifyEmailPage() {
@@ -54,22 +55,34 @@ export default function VerifyEmailPage() {
   };
 
   const handleCheck = async () => {
-  if (!auth.currentUser || checking) return;
-  try {
-    setChecking(true);
-    await reload(auth.currentUser);
-    if (auth.currentUser.emailVerified) {
-      toast.success("Xác thực thành công");
-      router.replace("/onboarding"); // <-- Sửa ở đây
-    } else {
-      toast.error("Email chưa được xác thực");
+    if (!auth.currentUser || checking) return;
+    try {
+      setChecking(true);
+      // FIX 1: Reload để lấy emailVerified mới nhất từ server
+      await reload(auth.currentUser);
+
+      if (auth.currentUser.emailVerified) {
+        toast.success("Xác thực thành công");
+
+        // FIX 2: Check Firestore xem đã onboarding chưa
+        const db = getFirebaseDB();
+        const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+        const hasOnboarded = userDoc.exists() && userDoc.data()?.onboarded === true;
+
+        if (hasOnboarded) {
+          router.replace("/"); // Đã onboard → về home
+        } else {
+          router.replace("/onboarding"); // Chưa onboard → vào onboarding
+        }
+      } else {
+        toast.error("Email chưa được xác thực");
+      }
+    } catch {
+      toast.error("Kiểm tra thất bại");
+    } finally {
+      setChecking(false);
     }
-  } catch {
-    toast.error("Kiểm tra thất bại");
-  } finally {
-    setChecking(false);
-  }
-};
+  };
 
   const handleLogout = async () => {
     try {
