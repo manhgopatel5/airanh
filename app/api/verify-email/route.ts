@@ -20,7 +20,6 @@ export async function GET(req: NextRequest) {
   const verifyToken = req.nextUrl.searchParams.get("token");
   
   if (!verifyToken) {
-    // SỬA: Dùng domain tuyệt đối
     return NextResponse.redirect("https://huha.online/verify-failed?reason=invalid");
   }
 
@@ -29,20 +28,17 @@ export async function GET(req: NextRequest) {
     const doc = await docRef.get();
 
     if (!doc.exists) {
-      // SỬA: Dùng domain tuyệt đối
       return NextResponse.redirect("https://huha.online/verify-failed?reason=invalid");
     }
 
     const data = doc.data()!;
 
     if (data.used) {
-      // SỬA: Dùng domain tuyệt đối
       return NextResponse.redirect("https://huha.online/verify-failed?reason=used");
     }
 
     if (Date.now() > data.expiresAt) {
       await docRef.delete();
-      // SỬA: Dùng domain tuyệt đối
       return NextResponse.redirect("https://huha.online/verify-failed?reason=expired");
     }
 
@@ -60,12 +56,13 @@ export async function GET(req: NextRequest) {
     const customToken = await auth.createCustomToken(data.uid);
     await docRef.update({ used: true, usedAt: Date.now() });
 
-    // SỬA: Dùng domain tuyệt đối để Android/iOS bắt được
-    return NextResponse.redirect(`https://huha.online/verify-success?customToken=${customToken}`);
+    // ↓↓↓ CHỈ SỬA 3 DÒNG NÀY ↓↓↓
+    const hasOnboarded = userDoc.exists && userDoc.data()?.onboarded === true;
+    const redirectPath = hasOnboarded ? '/' : '/onboarding';
+    return NextResponse.redirect(`https://huha.online/verify-success?customToken=${customToken}&redirect=${redirectPath}`);
     
   } catch (error) {
     console.error("Verify error:", error);
-    // SỬA: Dùng domain tuyệt đối
     return NextResponse.redirect("https://huha.online/verify-failed?reason=error");
   }
-} 
+}
