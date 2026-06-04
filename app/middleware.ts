@@ -4,22 +4,22 @@ import { adminAuth } from '@/lib/firebase-admin'
 import { getFirestore } from 'firebase-admin/firestore'
 
 const PUBLIC_ROUTES = [
-  '/login', 
-  '/register', 
-  '/forgot-password', 
-  '/reset-password', 
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
   '/verify-email',
   '/verify-success',
   '/verify-failed',
-  '/terms', 
-  '/privacy', 
+  '/terms',
+  '/privacy',
   '/onboarding'
 ]
 
 const PUBLIC_API = [
-  '/api/auth', 
-  '/api/user/create', 
-  '/api/user/logout', 
+  '/api/auth',
+  '/api/user/create',
+  '/api/user/logout',
   '/api/health',
   '/api/verify-email',
   '/api/send-verification'
@@ -32,7 +32,7 @@ export async function middleware(request: NextRequest) {
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/static') ||
-    pathname.includes('.') || 
+    pathname.includes('.') ||
     PUBLIC_API.some(p => pathname.startsWith(p))
   ) {
     return NextResponse.next()
@@ -60,20 +60,32 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/', request.url))
     }
 
-    // FIX: Check emailVerified + onboarded từ Firestore, không dùng token.email_verified
+    // FIX: Check Firestore, nhưng phải guard doc.exists
     if (!isPublicRoute) {
       const db = getFirestore();
       const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+
+      // FIX: Nếu doc chưa có → cho qua, để /onboarding tạo
+      if (!userDoc.exists) {
+        if (pathname!== '/onboarding') {
+          return NextResponse.redirect(new URL('/onboarding', request.url))
+        }
+        return NextResponse.next()
+      }
+
       const userData = userDoc.data();
-      
-      // Chưa verify email trong DB → về /verify-email
-      if (!userData?.emailVerified && pathname !== '/verify-email') {
+
+      // FIX: Check undefined, không dùng!userData?.emailVerified
+      const isVerified = userData?.emailVerified === true;
+      const hasOnboarded = userData?.onboarded === true;
+
+      // Chưa verify + không ở /verify-email → về /verify-email
+      if (!isVerified && pathname!== '/verify-email') {
         return NextResponse.redirect(new URL('/verify-email', request.url))
       }
-      
-      // Đã verify + chưa onboard → về /onboarding
-      const hasOnboarded = userData?.onboarded === true;
-      if (userData?.emailVerified && !hasOnboarded && pathname !== '/onboarding') {
+
+      // Đã verify + chưa onboard + không ở /onboarding → về /onboarding
+      if (isVerified &&!hasOnboarded && pathname!== '/onboarding') {
         return NextResponse.redirect(new URL('/onboarding', request.url))
       }
 
@@ -82,15 +94,15 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/', request.url))
       }
     }
-    
+
     return NextResponse.next()
   } catch (err) {
-    // Token sai/hết hạn -> xóa cookie + về login
-    // Nhưng nếu đang ở /verify-success thì cho qua để auto login bằng customToken
+    console.error('[Middleware] Session error:', err);
+
     if (pathname.startsWith('/verify-success')) {
       return NextResponse.next()
     }
-    
+
     const response = NextResponse.redirect(new URL('/login', request.url))
     response.cookies.delete('__session')
     return response
