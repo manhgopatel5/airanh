@@ -15,15 +15,15 @@ function VerifyFailedContent() {
       case "expired":
         return {
           title: "Link đã hết hạn",
-          message: "Link xác thực chỉ có hiệu lực 24 giờ. Vui lòng yêu cầu gửi lại email mới.",
-          buttonText: "Gửi lại email xác thực",
-          buttonIcon: <FiRefreshCw className="h-5 w-5" />,
-          buttonAction: "/verify-email"
+          message: "Link xác thực chỉ có hiệu lực 24 giờ. Vui lòng đăng nhập để gửi lại email mới.",
+          buttonText: "Về trang đăng nhập",
+          buttonIcon: <FiLogIn className="h-5 w-5" />,
+          buttonAction: "/login" // FIX: Về login chứ không về /verify-email
         };
       case "used":
         return {
           title: "Link đã được sử dụng",
-          message: "Tài khoản của bạn đã được xác thực rồi. Hãy đăng nhập để tiếp tục vào Huha.",
+          message: "Tài khoản của bạn đã được xác thực rồi. Hãy đăng nhập để tiếp tục.",
           buttonText: "Đăng nhập",
           buttonIcon: <FiLogIn className="h-5 w-5" />,
           buttonAction: "/login"
@@ -31,26 +31,26 @@ function VerifyFailedContent() {
       case "invalid":
         return {
           title: "Link không hợp lệ", 
-          message: "Link này không tồn tại. Thử gửi lại email xác thực.",
-          buttonText: "Quay lại trang xác thực",
-          buttonIcon: <FiArrowLeft className="h-5 w-5" />,
-          buttonAction: "/verify-email"
+          message: "Link này không tồn tại. Vui lòng đăng nhập để gửi lại email xác thực.",
+          buttonText: "Về trang đăng nhập",
+          buttonIcon: <FiLogIn className="h-5 w-5" />,
+          buttonAction: "/login" // FIX: Về login chứ không về /verify-email
         };
       case "error":
         return {
           title: "Có lỗi xảy ra",
-          message: "Không thể xác thực email lúc này. Vui lòng thử lại sau ít phút.",
-          buttonText: "Thử lại",
-          buttonIcon: <FiRefreshCw className="h-5 w-5" />,
-          buttonAction: "/verify-email"
+          message: "Không thể xác thực email lúc này. Vui lòng đăng nhập và thử lại.",
+          buttonText: "Về trang đăng nhập",
+          buttonIcon: <FiLogIn className="h-5 w-5" />,
+          buttonAction: "/login" // FIX: Về login chứ không về /verify-email
         };
       default:
         return {
           title: "Xác thực thất bại",
           message: "Link xác thực không hợp lệ hoặc đã hết hạn.",
-          buttonText: "Quay lại trang xác thực", 
-          buttonIcon: <FiArrowLeft className="h-5 w-5" />,
-          buttonAction: "/verify-email"
+          buttonText: "Về trang đăng nhập", 
+          buttonIcon: <FiLogIn className="h-5 w-5" />,
+          buttonAction: "/login"
         };
     }
   };
@@ -82,14 +82,7 @@ function VerifyFailedContent() {
           {content.buttonText}
         </button>
         
-        {reason !== "used" && (
-          <button
-            onClick={() => router.replace("/login")}
-            className="mt-3 flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white text-base font-black text-zinc-700 transition active:scale-[0.98] dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
-          >
-            Về trang đăng nhập
-          </button>
-        )}
+        {/* Bỏ nút phụ "Về trang đăng nhập" vì nút chính đã là login rồi */}
       </div>
     </div>
   );
