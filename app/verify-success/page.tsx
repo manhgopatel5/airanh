@@ -30,7 +30,8 @@ export default function VerifySuccess() {
         
         const idToken = await userCred.user.getIdToken(true);
         
-        const res = await fetch("/api/auth/login", {
+        // FIX 1: Đổi endpoint cho khớp middleware
+        const res = await fetch("/api/auth", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ idToken }),
@@ -38,9 +39,12 @@ export default function VerifySuccess() {
 
         if (!res.ok) throw new Error("Set cookie failed");
         
+        // FIX 2: Đợi 150ms cho cookie propagate
+        await new Promise(r => setTimeout(r, 150));
+        
         const db = getFirebaseDB();
         const userDoc = await getDoc(doc(db, "users", userCred.user.uid));
-        const onboarded = userDoc.data()?.onboarded || false;
+        const onboarded = userDoc.data()?.onboarded === true; // FIX: check === true
         setNeedsOnboarding(!onboarded);
         
         setStatus("success");
