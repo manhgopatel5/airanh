@@ -32,7 +32,7 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function LoginContent() {
   const searchParams = useSearchParams();
 
-  const { user, userData, loading: authLoading } = useAuth();
+const { loading: authLoading } = useAuth();
   const authRef = useRef<Auth | null>(null);
   const emailRef = useRef<HTMLInputElement>(null);
 
