@@ -45,21 +45,19 @@ export async function GET(req: NextRequest) {
     await auth.updateUser(data.uid, { emailVerified: true });
     
     const userRef = db.collection("users").doc(data.uid);
-    
-    // FIX: Update trước, get sau
-    await userRef.set({ 
-      emailVerified: true,
-      updatedAt: new Date()
-    }, { merge: true });
-    
-    // Get lại doc mới nhất để check onboarded
     const userDoc = await userRef.get();
+    if (userDoc.exists) {
+      await userRef.update({ 
+        emailVerified: true,
+        updatedAt: new Date()
+      });
+    }
     
     const customToken = await auth.createCustomToken(data.uid);
     await docRef.update({ used: true, usedAt: Date.now() });
 
-    // Giờ check onboarded trên data mới
-    const hasOnboarded = userDoc.data()?.onboarded === true;
+    // ↓↓↓ CHỈ SỬA 3 DÒNG NÀY ↓↓↓
+    const hasOnboarded = userDoc.exists && userDoc.data()?.onboarded === true;
     const redirectPath = hasOnboarded ? '/' : '/onboarding';
     return NextResponse.redirect(`https://huha.online/verify-success?customToken=${customToken}&redirect=${redirectPath}`);
     
