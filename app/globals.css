@@ -8,7 +8,7 @@
 
 @layer base {
   :root {
-    --font-sans: var(--font-sans); /* QUAN TRỌNG: nhận từ layout.tsx */
+    --font-sans: var(--font-sans);
     --color-primary: 59 130 246;
     --color-primary-dark: 37 99 235;
     --header-height: 60px;
@@ -20,6 +20,13 @@
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
     color-scheme: light dark;
+    
+    /* FIX: Thêm biến safe area */
+    --safe-top: env(safe-area-inset-top);
+    --safe-bottom: env(safe-area-inset-bottom);
+    --safe-left: env(safe-area-inset-left);
+    --safe-right: env(safe-area-inset-right);
+    
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -102,12 +109,42 @@
   html {
     font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
     @apply font-sans;
+    /* FIX: Bỏ height: -webkit-fill-available + overflow: hidden */
+    min-height: 100%;
+    overscroll-behavior: none;
   }
-}
 
-/* ================= BASE ================= */
+  .dark html {
+    background-color: #000000;
+  }
 
-@layer base {
+  html,
+  body {
+    /* FIX: Bỏ height: 100% + overflow: hidden */
+    min-height: 100%;
+    @apply bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'tnum' 1;
+    overscroll-behavior: none;
+  }
+
+  body {
+    margin: 0;
+    /* FIX: Bỏ fixed + height + overflow: hidden */
+    width: 100%;
+    /* FIX: Tự động padding cho PWA status bar */
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+    padding-left: var(--safe-left);
+    padding-right: var(--safe-right);
+  }
+
+  #__next {
+    min-height: 100%;
+    /* FIX: Bỏ overflow: hidden */
+  }
+
     * {
     -webkit-tap-highlight-color: transparent;
   }
@@ -130,41 +167,6 @@
   button,
   a {
     touch-action: manipulation;
-  }
-
-  html {
-    height: -webkit-fill-available;
-    overflow: hidden;
-  }
-
-  .dark html {
-    background-color: #000000;
-  }
-
-  html,
-  body {
-    height: 100%;
-    @apply bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    font-feature-settings: 'tnum' 1;
-    overscroll-behavior: none;
-  }
-
-  body {
-    margin: 0;
-    height: 100vh;
-    height: -webkit-fill-available;
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
-    top: 0;
-    left: 0;
-  }
-
-  #__next {
-    height: 100%;
-    overflow: hidden;
   }
 
   input,
