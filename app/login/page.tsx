@@ -137,7 +137,7 @@ const { loading: authLoading } = useAuth();
       await setPersistence(auth, remember? browserLocalPersistence : browserSessionPersistence);
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
-      const res = await signInWithPopup(auth, provider);
+await signInWithPopup(auth, provider);
 
       // FIX 4: Không check emailVerified ở đây. Để middleware redirect về /verify-email
       localStorage.setItem("last_email", auth.currentUser?.email || "");
