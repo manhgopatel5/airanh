@@ -5,12 +5,11 @@ export const dynamic = 'force-dynamic';
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { reload, signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
 import { FiCheckCircle, FiLogOut, FiMail, FiRefreshCw, FiSend } from "react-icons/fi";
 import { toast } from "sonner";
 import HuhaLogo from "@/components/brand/HuhaLogo";
 import InstallPrompt from "@/components/InstallPrompt";
-import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
+import { getFirebaseAuth } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function VerifyEmailPage() {
@@ -32,6 +31,17 @@ export default function VerifyEmailPage() {
     const timer = window.setTimeout(() => setCooldown((value) => value - 1), 1000);
     return () => window.clearTimeout(timer);
   }, [cooldown]);
+
+  // FIX 1: Nếu đã verify thì tự logout + về login. Không cho ở lại trang này.
+  useEffect(() => {
+    if (user?.emailVerified) {
+      toast.success("Email đã xác thực. Vui lòng đăng nhập lại.");
+      signOut(auth).then(() => {
+        localStorage.clear();
+        router.replace("/login");
+      });
+    }
+  }, [user, auth, router]);
 
   const handleResend = async () => {
     if (!auth.currentUser || sending || cooldown > 0) return;
@@ -58,24 +68,16 @@ export default function VerifyEmailPage() {
     if (!auth.currentUser || checking) return;
     try {
       setChecking(true);
-      // FIX 1: Reload để lấy emailVerified mới nhất từ server
       await reload(auth.currentUser);
 
       if (auth.currentUser.emailVerified) {
-        toast.success("Xác thực thành công");
-
-        // FIX 2: Check Firestore xem đã onboarding chưa
-        const db = getFirebaseDB();
-        const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
-        const hasOnboarded = userDoc.exists() && userDoc.data()?.onboarded === true;
-
-        if (hasOnboarded) {
-          router.replace("/"); // Đã onboard → về home
-        } else {
-          router.replace("/onboarding"); // Chưa onboard → vào onboarding
-        }
+        toast.success("Xác thực thành công. Đang chuyển về đăng nhập...");
+        // FIX 2: Verify xong là logout bắt login lại, không tự vào app
+        await signOut(auth);
+        localStorage.clear();
+        router.replace("/login");
       } else {
-        toast.error("Email chưa được xác thực");
+        toast.error("Email chưa được xác thực. Kiểm tra hộp thư và bấm link.");
       }
     } catch {
       toast.error("Kiểm tra thất bại");
@@ -132,33 +134,8 @@ export default function VerifyEmailPage() {
     );
   }
 
-  if (user.emailVerified) {
-    return (
-      <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
-        <div className="mx-auto w-full max-w-md">
-          <div className="mb-10"><HuhaLogo /></div>
-          <div className="mb-6 text-center">
-            <div className="mb-4 flex justify-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-500/10 dark:text-green-400">
-                <FiCheckCircle className="h-8 w-8" />
-              </div>
-            </div>
-            <h1 className="text-2xl font-black text-zinc-900 dark:text-white">Đã xác thực</h1>
-            <p className="mt-2 text-sm font-semibold text-zinc-600 dark:text-zinc-400">
-              Email {user.email} đã được xác thực thành công.
-            </p>
-          </div>
-          <button
-            onClick={() => router.replace("/")}
-            className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0A84FF] to-[#0051D5] text-base font-black text-white shadow-lg shadow-[#0A84FF]/25 transition active:scale-[0.98]"
-          >
-            Vào trang chủ
-          </button>
-          <InstallPrompt />
-        </div>
-      </div>
-    );
-  }
+  // FIX 3: Nếu user.emailVerified = true thì useEffect ở trên đã đá về /login rồi
+  // Tới được đây chắc chắn là chưa verify. Không redirect gì cả.
 
   return (
     <div className="min-h-dvh bg-zinc-50 px-5 pb-10 pt-12 dark:bg-zinc-950">
@@ -173,7 +150,7 @@ export default function VerifyEmailPage() {
             <h1 className="text-2xl font-black text-zinc-900 dark:text-white">Xác thực email</h1>
           </div>
           <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-400">
-            Chúng tôi đã gửi link xác thực tới email của bạn. Xác thực xong rồi quay lại bấm kiểm tra.
+            Tài khoản chưa được kích hoạt. Bấm link trong email để xác thực, sau đó bấm "Tôi đã xác thực" để đăng nhập lại.
           </p>
         </div>
 
@@ -207,7 +184,7 @@ export default function VerifyEmailPage() {
             className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white text-base font-black text-zinc-500 transition active:scale-[0.98] hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-red-500/10 dark:hover:text-red-300"
           >
             <FiLogOut className="h-5 w-5" />
-            {loggingOut? "Đang đăng xuất..." : "Đăng xuất và dùng tài khoản khác"}
+            {loggingOut? "Đang đăng xuất..." : "Đăng nhập tài khoản khác"}
           </button>
         </div>
 
