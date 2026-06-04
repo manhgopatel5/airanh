@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useSearchParams, usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FcGoogle } from "react-icons/fc";
 import { FiAlertCircle, FiEye, FiEyeOff, FiLock, FiMail, FiSend } from "react-icons/fi";
@@ -31,7 +31,7 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function LoginContent() {
   const searchParams = useSearchParams();
-  const pathname = usePathname();
+
   const { user, userData, loading: authLoading } = useAuth();
   const authRef = useRef<Auth | null>(null);
   const emailRef = useRef<HTMLInputElement>(null);
