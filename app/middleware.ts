@@ -60,7 +60,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/', request.url))
     }
 
-    // FIX: Check emailVerified + onboarded từ Firestore, không dùng token.email_verified
+    // Check emailVerified + onboarded từ Firestore
     if (!isPublicRoute) {
       const db = getFirestore();
       const userDoc = await db.collection('users').doc(decodedToken.uid).get();
@@ -85,12 +85,7 @@ export async function middleware(request: NextRequest) {
     
     return NextResponse.next()
   } catch (err) {
-    // Token sai/hết hạn -> xóa cookie + về login
-    // Nhưng nếu đang ở /verify-success thì cho qua để auto login bằng customToken
-    if (pathname.startsWith('/verify-success')) {
-      return NextResponse.next()
-    }
-    
+    // FIX: Token sai/hết hạn -> xóa cookie + về login. Không có ngoại lệ.
     const response = NextResponse.redirect(new URL('/login', request.url))
     response.cookies.delete('__session')
     return response
