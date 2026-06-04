@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { FiXCircle, FiRefreshCw, FiArrowLeft, FiLogIn } from "react-icons/fi";
+import { FiXCircle, FiArrowLeft, FiLogIn } from "react-icons/fi";
 import HuhaLogo from "@/components/brand/HuhaLogo";
 
 function VerifyFailedContent() {
