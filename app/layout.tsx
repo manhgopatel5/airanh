@@ -3,21 +3,20 @@ import { Be_Vietnam_Pro, Comfortaa } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
 import { AuthProvider } from "@/lib/AuthContext";
-import EmailGuard from "@/components/EmailGuard";
 import { cn } from "@/lib/utils";
 
 const beVietnamPro = Be_Vietnam_Pro({
   subsets: ['latin', 'vietnamese'],
   weight: ['300', '400', '500', '600', '700', '800', '900'],
   display: "swap",
-  variable: "--font-sans", // Font chính cho toàn site
+  variable: "--font-sans",
 });
 
 const comfortaa = Comfortaa({
   subsets: ['latin', 'vietnamese'],
   weight: ['700'],
   display: "swap",
-  variable: "--font-logo", // Font riêng cho logo
+  variable: "--font-logo",
 });
 
 export const metadata: Metadata = {
@@ -137,9 +136,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="h-full w-full fixed overflow-hidden bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight font-sans">
         <AuthProvider>
           <ClientLayout>
-            <EmailGuard>
-              {children}
-            </EmailGuard>
+            {children}
           </ClientLayout>
         </AuthProvider>
       </body>
