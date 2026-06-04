@@ -48,46 +48,16 @@ function LoginContent() {
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const failedAttempts = useRef(0);
 
-  // Helper gọi API gửi mail Resend
-  const triggerCustomVerificationEmail = async (auth: Auth) => {
-    const lastSent = localStorage.getItem("last_verify_sent");
-    if (lastSent && Date.now() - Number(lastSent) < 60000) return;
-
-    const idToken = await auth.currentUser?.getIdToken();
-    if (!idToken) return;
-
-    
-    localStorage.setItem("last_verify_sent", Date.now().toString());
-  };
+  // FIX 1: XÓA triggerCustomVerificationEmail - không dùng nữa
+  // Gửi mail giờ do /api/send-verification lo
 
   useEffect(() => {
     setMounted(true);
     setRedirectTo(getSafeRedirect(searchParams.get("redirect")) || "/");
   }, [searchParams]);
 
-  useEffect(() => {
-    if (!mounted || authLoading) return;
-    if (pathname!== "/login") return;
-
-    if (user) {
-      if (!user.emailVerified) {
-        window.location.href = "/verify-email";
-        return;
-      }
-
-      if (!userData) return;
-
-      if (userData.onboardingCompleted) {
-        window.location.href = redirectTo;
-        return;
-      }
-      if (!userData.onboardingCompleted) {
-        window.location.href = "/onboarding";
-        return;
-      }
-    }
-  }, [mounted, authLoading, redirectTo, user, userData, pathname]);
-
+  // FIX 2: XÓA useEffect redirect. Để middleware lo.
+  // Chỉ giữ lại check magic link
   useEffect(() => {
     const auth = getFirebaseAuth();
     authRef.current = auth;
@@ -105,14 +75,14 @@ function LoginContent() {
             localStorage.removeItem("emailForSignIn");
             localStorage.setItem("last_email", email);
             toast.success("Đăng nhập thành công");
-            window.location.href = redirectTo;
+            window.location.reload(); // FIX 3: reload để middleware check lại
           })
          .catch(() => setErrors({ submit: "Link đăng nhập không hợp lệ hoặc đã hết hạn" }));
       }
     }
 
     window.setTimeout(() => emailRef.current?.focus(), 120);
-  }, [redirectTo]);
+  }, []);
 
   const setField = (field: "email" | "password" | "honeypot", value: string) => {
     setForm((prev) => ({...prev, [field]: value }));
@@ -169,15 +139,10 @@ function LoginContent() {
       provider.setCustomParameters({ prompt: "select_account" });
       const res = await signInWithPopup(auth, provider);
 
-      if (!res.user.emailVerified) {
-        await triggerCustomVerificationEmail(auth);
-        window.location.href = "/verify-email";
-        return;
-      }
-
+      // FIX 4: Không check emailVerified ở đây. Để middleware redirect về /verify-email
       localStorage.setItem("last_email", auth.currentUser?.email || "");
       toast.success("Đăng nhập thành công");
-      window.location.href = redirectTo;
+      window.location.reload(); // Reload để middleware check
     } catch (err: any) {
       if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") return;
       const message = err.code === "auth/popup-blocked"
@@ -209,21 +174,14 @@ function LoginContent() {
       setLoading(true);
       setErrors({});
       await setPersistence(auth, remember? browserLocalPersistence : browserSessionPersistence);
-      const res = await signInWithEmailAndPassword(auth, form.email, form.password);
+      await signInWithEmailAndPassword(auth, form.email, form.password);
 
-      if (!res.user.emailVerified) {
-        await triggerCustomVerificationEmail(auth);
-        localStorage.setItem("last_email", form.email);
-        window.location.href = "/verify-email";
-        return;
-      }
-
+      // FIX 5: Không check emailVerified ở đây. Để middleware redirect
       failedAttempts.current = 0;
       localStorage.removeItem("login_fail_time");
-      localStorage.removeItem("last_verify_sent");
       localStorage.setItem("last_email", form.email);
       toast.success("Đăng nhập thành công");
-      window.location.href = redirectTo;
+      window.location.reload(); // Reload để middleware check
     } catch (err: any) {
       failedAttempts.current += 1;
       localStorage.setItem("login_fail_time", Date.now().toString());
@@ -240,7 +198,8 @@ function LoginContent() {
     }
   };
 
-  if (!mounted || authLoading || user) {
+  // FIX 6: Bỏ check user trong loading. Middleware đã chặn rồi.
+  if (!mounted || authLoading) {
     return (
       <div className="min-h-dvh bg-zinc-50 px-5 py-8 dark:bg-zinc-950">
         <div className="mx-auto w-full max-w-md space-y-4">
