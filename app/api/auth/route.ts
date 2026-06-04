@@ -22,19 +22,20 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // 5 ngày
     const expiresIn = 60 * 60 * 24 * 5 * 1000;
     const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
     
     const response = NextResponse.json({ status: 'success' });
     
-    // FIX: PWA bắt buộc sameSite: 'none' + secure: true
+    // FIX: Dev dùng lax, Prod dùng none
+    const isProd = process.env.NODE_ENV === 'production';
+    
     response.cookies.set('__session', sessionCookie, {
-      maxAge: expiresIn / 1000, // maxAge tính bằng giây
+      maxAge: expiresIn / 1000,
       httpOnly: true,
-      secure: true,
+      secure: isProd, // Chỉ bật secure khi production https
       path: '/',
-      sameSite: 'none',
+      sameSite: isProd ? 'none' : 'lax', // localhost dùng lax
     });
     
     return response;
@@ -44,7 +45,6 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Optional: Xóa cookie khi logout
 export async function DELETE() {
   const response = NextResponse.json({ status: 'success' });
   response.cookies.delete('__session');
