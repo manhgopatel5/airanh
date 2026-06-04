@@ -10,14 +10,14 @@ const beVietnamPro = Be_Vietnam_Pro({
   subsets: ['latin', 'vietnamese'],
   weight: ['300', '400', '500', '600', '700', '800', '900'],
   display: "swap",
-  variable: "--font-sans", // Font chính cho toàn site
+  variable: "--font-sans",
 });
 
 const comfortaa = Comfortaa({
   subsets: ['latin', 'vietnamese'],
   weight: ['700'],
   display: "swap",
-  variable: "--font-logo", // Font riêng cho logo
+  variable: "--font-logo",
 });
 
 export const metadata: Metadata = {
@@ -34,11 +34,7 @@ export const metadata: Metadata = {
   applicationName: "AIR",
   referrer: "origin-when-cross-origin",
   formatDetection: { telephone: false, email: false, address: false },
-
-  alternates: {
-    canonical: "/",
-  },
-
+  alternates: { canonical: "/" },
   icons: {
     icon: [
       { url: "/favicon-16.PNG", sizes: "16x16", type: "image/png" },
@@ -47,9 +43,7 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-icon-180.PNG", sizes: "180x180", type: "image/png" }],
     shortcut: "/favicon.ico",
   },
-
   manifest: "/manifest.json",
-
   openGraph: {
     type: "website",
     locale: "vi_VN",
@@ -57,16 +51,8 @@ export const metadata: Metadata = {
     siteName: "AIR",
     title: "AIR - Nền tảng việc làm tự do",
     description: "Kết nối người cần việc và người tìm việc nhanh chóng, an toàn",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "AIR",
-      },
-    ],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "AIR" }],
   },
-
   twitter: {
     card: "summary_large_image",
     title: "AIR - Nền tảng việc làm tự do",
@@ -74,7 +60,6 @@ export const metadata: Metadata = {
     images: ["/og-image.png"],
     creator: "@airanh",
   },
-
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -92,7 +77,6 @@ export const metadata: Metadata = {
       { url: "/splash-1536x2048.PNG", media: "(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)" },
     ],
   },
-
   robots: {
     index: true,
     follow: true,
@@ -111,7 +95,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  viewportFit: "cover",
+  viewportFit: "cover", // Quan trọng
   interactiveWidget: 'resizes-content',
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
@@ -130,11 +114,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-        <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
       </head>
-      <body className="h-full w-full fixed overflow-hidden bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight font-sans">
+      {/* ↓↓ SỬA DÒNG NÀY: Bỏ fixed overflow-hidden */}
+      <body className="min-h-full w-full bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight font-sans">
         <AuthProvider>
           <ClientLayout>
             <EmailGuard>
