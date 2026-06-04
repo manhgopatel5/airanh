@@ -53,13 +53,11 @@ export async function GET(req: NextRequest) {
       });
     }
     
-    const customToken = await auth.createCustomToken(data.uid);
+    // ĐÁNH DẤU TOKEN ĐÃ DÙNG
     await docRef.update({ used: true, usedAt: Date.now() });
 
-    // ↓↓↓ CHỈ SỬA 3 DÒNG NÀY ↓↓↓
-    const hasOnboarded = userDoc.exists && userDoc.data()?.onboarded === true;
-    const redirectPath = hasOnboarded ? '/' : '/onboarding';
-    return NextResponse.redirect(`https://huha.online/verify-success?customToken=${customToken}&redirect=${redirectPath}`);
+    // ↓↓↓ SỬA: KHÔNG TẠO customToken, KHÔNG AUTO LOGIN ↓↓↓
+    return NextResponse.redirect(`https://huha.online/verify-success`);
     
   } catch (error) {
     console.error("Verify error:", error);
