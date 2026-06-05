@@ -485,8 +485,16 @@ export default function BottomNav() {
         </AnimatePresence>
 
         {/* FIX 1: Bỏ pb-safe ở wrapper, để bottom: 0 */}
-        <div className="fixed bottom-0 inset-x-0 z-[70] pointer-events-none flex flex-col items-center justify-end">
-          <div ref={menuRef} className="w-full max-w-[480px] px-4 flex flex-col items-center gap-3">
+<div
+  className="fixed inset-x-0 z-[70] pointer-events-none flex flex-col items-center justify-end"
+  style={{
+    bottom: "max(env(safe-area-inset-bottom), 0px)",
+  }}
+>
+<div
+  ref={menuRef}
+  className="w-full max-w-[480px] px-2 flex flex-col items-center gap-2"
+>
 
             <FloatingMenu isOpen={isOpen} onSelect={handleSelectCreate} onClose={() => setIsOpen(false)} />
 
@@ -501,10 +509,10 @@ export default function BottomNav() {
                 repeat: Infinity,
                 ease: "easeInOut"
               }}
-              style={{
-                paddingBottom: 'env(safe-area-inset-bottom)'
-              }}
-              className="w-full pointer-events-auto relative rounded-t- border border-white/40 dark:border-zinc-800/50 bg-white/55 dark:bg-zinc-900/55 backdrop-blur- backdrop-saturate-200 shadow-[0_20px_80px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.55)] overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/40 before:to-white/5 dark:before:from-white/5 dark:before:to-transparent before:pointer-events-none"
+     style={{
+  paddingBottom: "max(env(safe-area-inset-bottom), 8px)",
+}}
+              className="w-full pointer-events-auto relative rounded-t-3xl border border-white/40 dark:border-zinc-800/50 bg-white/55 dark:bg-zinc-900/55 backdrop-blur- backdrop-saturate-200 shadow-[0_20px_80px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.55)] overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/40 before:to-white/5 dark:before:from-white/5 dark:before:to-transparent before:pointer-events-none"
             >
               <motion.div
                 className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
@@ -513,7 +521,7 @@ export default function BottomNav() {
               />
 
               {/* FIX 3: Thêm pt-3 để có khoảng thở */}
-              <div className="flex items-center justify-between h-16 px-2 relative pt-3">
+<div className="flex items-center justify-between h-14 px-2 relative">
                 <div className="flex-1 grid grid-cols-2 h-full">
                   {leftItems.map((item) => (
                     <MagneticNavItem
