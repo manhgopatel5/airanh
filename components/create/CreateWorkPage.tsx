@@ -152,7 +152,7 @@ const [loadingProvinces, setLoadingProvinces] = useState(true);
 
 // Load provinces
 useEffect(() => {
-  fetch("/api/provinces", {
+fetch("/api/location/province", {
     headers: { "Content-Type": "application/json" },
     cache: "force-cache" // Dùng cache 24h từ route.ts
   })
@@ -178,7 +178,7 @@ useEffect(() => {
     setWards([]);
     return;
   }
-  fetch("/api/districts", {
+fetch("/api/location/district", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ provinceId: form.location.provinceId }),
@@ -194,7 +194,7 @@ useEffect(() => {
     setWards([]);
     return;
   }
-  fetch("/api/wards", {
+  fetch("/api/location/ward", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ districtId: form.location.districtId }),
@@ -365,7 +365,7 @@ useEffect(() => {
         }
 
         // Load districts của tỉnh đó
-        const dRes = await fetch("/api/districts", {
+        const dRes = await fetch("/api/location/district", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ provinceId: province.id }),
@@ -389,7 +389,7 @@ useEffect(() => {
 
         // Load wards nếu có district
         if (district?.id) {
-          const wRes = await fetch("/api/wards", {
+          const wRes = await fetch("/api/location/ward", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ districtId: district.id }),
