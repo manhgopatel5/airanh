@@ -20,13 +20,13 @@
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
     color-scheme: light dark;
-    
-    /* FIX: Thêm biến safe area */
+
+    /* Safe area */
     --safe-top: env(safe-area-inset-top);
     --safe-bottom: env(safe-area-inset-bottom);
     --safe-left: env(safe-area-inset-left);
     --safe-right: env(safe-area-inset-right);
-    
+
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -61,7 +61,7 @@
     --sidebar-ring: oklch(0.708 0 0);
   }
 
-  .dark {
+ .dark {
     --color-primary: 96 165 250;
     --color-primary-dark: 59 130 246;
     --background: oklch(0.145 0 0);
@@ -96,31 +96,32 @@
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
   }
-  
-  .theme {
+
+ .theme {
     --font-heading: var(--font-sans);
     --font-sans: var(--font-sans);
   }
-  
+
     * {
     @apply border-border;
   }
-  
+
+  /* FIX: Bỏ fixed, bỏ overflow hidden */
   html {
     font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
     @apply font-sans;
-    /* FIX: Bỏ height: -webkit-fill-available + overflow: hidden */
     min-height: 100%;
     overscroll-behavior: none;
+    /* FIX: Thêm để iOS không bị bounce */
+    -webkit-text-size-adjust: 100%;
   }
 
-  .dark html {
+ .dark html {
     background-color: #000000;
   }
 
   html,
   body {
-    /* FIX: Bỏ height: 100% + overflow: hidden */
     min-height: 100%;
     @apply bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100;
     -webkit-font-smoothing: antialiased;
@@ -129,20 +130,15 @@
     overscroll-behavior: none;
   }
 
+  /* FIX: Bỏ padding safe-area khỏi body */
   body {
     margin: 0;
-    /* FIX: Bỏ fixed + height + overflow: hidden */
     width: 100%;
-    /* FIX: Tự động padding cho PWA status bar */
-    padding-top: var(--safe-top);
-    padding-bottom: var(--safe-bottom);
-    padding-left: var(--safe-left);
-    padding-right: var(--safe-right);
+    /* Không padding ở đây nữa */
   }
 
   #__next {
     min-height: 100%;
-    /* FIX: Bỏ overflow: hidden */
   }
 
     * {
@@ -177,9 +173,9 @@
     color: theme('colors.gray.900');
   }
 
-  .dark input,
-  .dark textarea,
-  .dark select {
+ .dark input,
+ .dark textarea,
+ .dark select {
     background-color: theme('colors.zinc.900');
     color: theme('colors.gray.100');
   }
@@ -206,7 +202,7 @@
     scrollbar-color: rgb(209 213 219) transparent;
   }
 
-  .dark * {
+ .dark * {
     scrollbar-color: rgb(63 63 70) transparent;
   }
 
@@ -220,10 +216,10 @@
     *,
     *::before,
     *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      scroll-behavior: auto !important;
-      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms!important;
+      animation-iteration-count: 1!important;
+      scroll-behavior: auto!important;
+      transition-duration: 0.01ms!important;
     }
   }
 }
@@ -239,7 +235,7 @@
 }
 
 @supports (height: 100dvh) {
-  .chat-container {
+ .chat-container {
     height: 100dvh;
   }
 }
@@ -273,7 +269,7 @@
 /* ================= COMPONENTS ================= */
 
 @layer components {
-  .input {
+ .input {
     @apply w-full px-4 py-3 rounded-2xl border border-gray-200 dark:border-zinc-700;
     @apply bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100;
     @apply placeholder:text-gray-400 dark:placeholder:text-zinc-500;
@@ -281,26 +277,26 @@
     @apply transition-all duration-200;
   }
 
-  .btn {
+ .btn {
     @apply bg-gradient-to-r from-blue-500 to-indigo-600 text-white;
     @apply px-6 py-3 rounded-2xl font-semibold text-sm;
     @apply shadow-lg shadow-blue-500/30 active:scale-[0.98];
     @apply transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
-  .btn-secondary {
+ .btn-secondary {
     @apply bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100;
     @apply px-6 py-3 rounded-2xl font-semibold text-sm;
     @apply active:scale-[0.98] transition-all duration-200;
   }
 
-  .card {
+ .card {
     @apply bg-white dark:bg-zinc-900 rounded-3xl;
     @apply border border-gray-100 dark:border-zinc-800;
     @apply p-4;
   }
 
-  .glass {
+ .glass {
     @apply bg-white dark:bg-zinc-900 backdrop-blur-xl;
     @apply border border-gray-100/50 dark:border-zinc-800/50;
   }
@@ -309,59 +305,78 @@
 /* ================= TOAST FIX ================= */
 
 [data-sonner-toaster] {
-  top: calc(env(safe-area-inset-top) + 8px) !important;
+  top: calc(env(safe-area-inset-top) + 8px)!important;
 }
 
 [data-sonner-toast] {
-  background-color: #ffffff !important;
+  background-color: #ffffff!important;
 }
 
 .dark [data-sonner-toast] {
-  background-color: #18181b !important;
+  background-color: #18181b!important;
 }
 
 [data-radix-toast-viewport] {
-  top: calc(env(safe-area-inset-top) + 8px) !important;
+  top: calc(env(safe-area-inset-top) + 8px)!important;
 }
 
 .go2072408551 {
-  top: calc(env(safe-area-inset-top) + 8px) !important;
+  top: calc(env(safe-area-inset-top) + 8px)!important;
 }
 
 /* ================= UTILITIES ================= */
 
 @layer utilities {
-  .safe-top {
+ .safe-top {
     padding-top: env(safe-area-inset-top);
   }
 
-  .safe-bottom {
+ .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  .pb-safe {
+ .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  .text-gradient {
+ .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* FIX: Utility cho bottom nav */
+ .bottom-nav-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+ .h-screen-safe {
+    height: 100vh;
+  }
+
+  @supports (height: 100dvh) {
+   .h-screen-safe {
+      height: 100dvh;
+    }
+  }
+
+ .text-gradient {
     @apply bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent;
   }
 
-  .no-scrollbar::-webkit-scrollbar {
+ .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
 
-  .no-scrollbar {
+ .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
 
-  .no-tap-highlight {
+ .no-tap-highlight {
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
   }
 
-  .animate-in {
+ .animate-in {
     will-change: transform, opacity;
     animation: slideIn 0.3s ease-out;
   }
@@ -390,13 +405,13 @@
     }
 
     @keyframes shimmer {
-      100% { 
-        transform: translateX(100%); 
+      100% {
+        transform: translateX(100%);
       }
     }
   }
 
-  .slide-in-from-bottom {
+ .slide-in-from-bottom {
     will-change: transform, opacity;
     animation: slideFromBottom 0.3s ease-out;
   }
@@ -405,7 +420,7 @@
 /* ================= MODAL OPEN - HIDE BOTTOM NAV ================= */
 
 body.modal-open nav,
-body.modal-open .fixed.bottom-0,
+body.modal-open.fixed.bottom-0,
 body.modal-open [class*="bottom-0"] {
-  display: none !important;
+  display: none!important;
 }
