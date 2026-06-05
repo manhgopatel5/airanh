@@ -268,7 +268,10 @@ const themes = {
     <div className="relative w-full">
   <div className="relative">
 <motion.div
-  className="relative bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl transition-colors duration-300 pb-1" // <-- ĐỔI THÀNH pb-1
+  className="relative bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl transition-colors duration-300"
+  style={{
+    paddingBottom: "env(safe-area-inset-bottom)",
+  }}
   whileHover={{ y: -3 }}
   transition={{ duration: 0.3 }}
 >
@@ -276,7 +279,7 @@ const themes = {
 
 
 
-<div className="relative flex items-center justify-between h-16 px-5 pb-safe">
+<div className="relative flex items-center justify-between h-16 px-5">
               {tabs.map((tab) => {
                 const isActive = currentTab === tab.key;
                 const isCreate = tab.key === "create";
