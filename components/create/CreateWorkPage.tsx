@@ -163,7 +163,7 @@ useEffect(() => {
   }
 
   navigator.permissions.query({ name: 'geolocation' }).then((result) => {
-    setPermissionState(result.state);
+    
     
     if (result.state === 'granted') {
       requestGPS(); // Đã bật rồi thì lấy luôn, không hiện modal
@@ -178,16 +178,8 @@ useEffect(() => {
     setHasCheckedGps(false);
   }
 }, );
-  const [permissionState, setPermissionState] = useState<'prompt' | 'granted' | 'denied'>('prompt');
 
-// Check quyền GPS lúc mount
-useEffect(() => {
-  if (!navigator.permissions) return;
-  navigator.permissions.query({ name: 'geolocation' }).then((result) => {
-    setPermissionState(result.state);
-    result.onchange = () => setPermissionState(result.state);
-  });
-}, []);
+
 
 
 const [loadingProvinces, setLoadingProvinces] = useState(true);
@@ -281,7 +273,7 @@ const requestGPS = useCallback(() => {
         lat: pos.coords.latitude,
         lng: pos.coords.longitude
       });
-      setPermissionState('granted');
+      
       
       setLocating(false);
       setShowGpsExplain(false);
@@ -291,7 +283,7 @@ const requestGPS = useCallback(() => {
       console.warn("GPS error:", err);
       
       setLocating(false);
-      setPermissionState('denied');
+      
     },
     { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
   );
