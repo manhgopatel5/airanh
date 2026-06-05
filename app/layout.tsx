@@ -110,7 +110,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  viewportFit: "cover", // ← Đã có, đúng
+  viewportFit: "cover",
   interactiveWidget: 'resizes-content',
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
@@ -123,18 +123,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html 
       lang="vi" 
-      className={cn("h-full", beVietnamPro.variable, comfortaa.variable)} 
+      className={cn(beVietnamPro.variable, comfortaa.variable)} 
       suppressHydrationWarning
     >
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-        <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
       </head>
-      {/* FIX: Bỏ fixed overflow-hidden, dùng min-h-screen */}
-      <body className="min-h-screen w-full bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight font-sans">
+      <body className="bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight font-sans">
         <AuthProvider>
           <ClientLayout>
             {children}
