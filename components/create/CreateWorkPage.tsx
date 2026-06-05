@@ -134,7 +134,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [locating, setLocating] = useState(false);
-  const [gpsDenied, setGpsDenied] = useState(false);
+
   const [showPreview, setShowPreview] = useState(false);
   const [placeSuggestions, setPlaceSuggestions] = useState<string[]>([]);
 
@@ -268,12 +268,12 @@ useEffect(() => {
 const requestGPS = useCallback(() => {
   if (!navigator.geolocation) {
     toast.error("Thiết bị không hỗ trợ GPS");
-    setGpsDenied(true);
+    
     return;
   }
 
   setLocating(true);
-  setGpsDenied(false);
+  
 
   navigator.geolocation.getCurrentPosition(
     (pos) => {
@@ -282,14 +282,14 @@ const requestGPS = useCallback(() => {
         lng: pos.coords.longitude
       });
       setPermissionState('granted');
-      setGpsDenied(false);
+      
       setLocating(false);
       setShowGpsExplain(false);
       toast.success("Đã lấy vị trí");
     },
     (err) => {
       console.warn("GPS error:", err);
-      setGpsDenied(true);
+      
       setLocating(false);
       setPermissionState('denied');
     },
@@ -949,7 +949,7 @@ const requestGPS = useCallback(() => {
   open={showGpsExplain}
   onClose={() => {
     setShowGpsExplain(false);
-    setGpsDenied(true);
+    
   }}
   onRetry={() => {
     setShowGpsExplain(false);
