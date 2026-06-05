@@ -7,8 +7,8 @@ import { Timestamp } from "firebase/firestore";
 import { mutate } from "swr";
 import {
   FiArrowLeft,
-  FiClock,  // thêm nếu chưa có
-  FiTag, 
+  FiClock,
+  FiTag,
   FiCheck,
   FiDollarSign,
   FiEye,
@@ -25,9 +25,19 @@ import { createPlan, createTask } from "@/lib/task";
 import { useAuth } from "@/lib/AuthContext";
 
 type Mode = "task" | "plan";
+
+type Province = { id: number; name: string; code: string };
+type District = { id: number; name: string; code: string };
+type Ward = { id: number; name: string };
+
 type LocationState = {
   address: string;
-  city: string;
+  provinceId: number | null;
+  provinceName: string;
+  districtId: number | null;
+  districtName: string;
+  wardId: number | null;
+  wardName: string;
   lat?: number;
   lng?: number;
 };
@@ -38,7 +48,6 @@ type FormState = {
   category: string;
   tags: string;
   visibility: "public" | "friends" | "private";
-  remote: boolean;
   location: LocationState;
   price: number;
   budgetType: "fixed" | "hourly" | "negotiable";
@@ -54,7 +63,7 @@ type FormState = {
   requireApproval: boolean;
 };
 
-type FormErrors = Partial<Record<keyof FormState, string>>;
+type FormErrors = Partial<Record<keyof FormState | "location.address" | "location.provinceId", string>>;
 
 const CATEGORY_TASKS = [
   { id: "delivery", label: "Giao hàng", icon: "🚚", suggestPrice: 70000 },
@@ -84,25 +93,21 @@ const defaultDateTime = (hoursFromNow: number) => {
   return date.toISOString().slice(0, 16);
 };
 
-const getDefaultCity = () => {
-  try {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (tz.includes("Ho_Chi_Minh")) return "Hồ Chí Minh";
-    if (tz.includes("Bangkok")) return "Hà Nội";
-    return "";
-  } catch {
-    return "";
-  }
-};
-
 const initialForm = (mode: Mode): FormState => ({
   title: "",
   description: "",
   category: mode === "task"? "delivery" : "cafe",
   tags: "",
   visibility: "public",
-  remote: false,
-  location: { address: "", city: getDefaultCity() },
+  location: {
+    address: "",
+    provinceId: null,
+    provinceName: "",
+    districtId: null,
+    districtName: "",
+    wardId: null,
+    wardName: ""
+  },
   price: mode === "task"? 50000 : 0,
   budgetType: "fixed",
   totalSlots: 1,
@@ -131,13 +136,56 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const [showPreview, setShowPreview] = useState(false);
   const [placeSuggestions, setPlaceSuggestions] = useState<string[]>([]);
 
+  const [provinces, setProvinces] = useState<Province[]>([]);
+  const [districts, setDistricts] = useState<District[]>([]);
+  const [wards, setWards] = useState<Ward[]>([]);
+
   const debounceRef = useRef<NodeJS.Timeout>();
 
   const isTask = mode === "task";
   const accent = isTask? "#0A84FF" : "#30D158";
   const gradient = isTask? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
   const categories = isTask? CATEGORY_TASKS : CATEGORY_PLANS;
-  const draftKey = `create_${mode}_draft_v4`;
+  const draftKey = `create_${mode}_draft_v5`;
+
+  // Load provinces
+  useEffect(() => {
+    fetch("/api/provinces")
+     .then((r) => r.json())
+     .then(setProvinces)
+     .catch(() => toast.error("Không tải được danh sách tỉnh"));
+  }, []);
+
+  // Load districts khi chọn tỉnh
+  useEffect(() => {
+    if (!form.location.provinceId) {
+      setDistricts([]);
+      setWards([]);
+      return;
+    }
+    fetch("/api/districts", {
+      method: "POST",
+      body: JSON.stringify({ provinceId: form.location.provinceId }),
+    })
+     .then((r) => r.json())
+     .then(setDistricts)
+     .catch(() => setDistricts([]));
+  }, [form.location.provinceId]);
+
+  // Load wards khi chọn huyện
+  useEffect(() => {
+    if (!form.location.districtId) {
+      setWards([]);
+      return;
+    }
+    fetch("/api/wards", {
+      method: "POST",
+      body: JSON.stringify({ districtId: form.location.districtId }),
+    })
+     .then((r) => r.json())
+     .then(setWards)
+     .catch(() => setWards([]));
+  }, [form.location.districtId]);
 
   // Auto-save draft
   useEffect(() => {
@@ -179,7 +227,8 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
         if (value.trim().length < 20) return "Tối thiểu 20 ký tự";
         return "";
       case "location":
-        if (!form.remote &&!value.address.trim()) return "Nhập địa chỉ hoặc bật làm từ xa";
+        if (!value.address.trim()) return "Nhập địa chỉ cụ thể";
+        if (!value.provinceId) return "Chọn tỉnh/thành phố";
         return "";
       case "price":
         if (isTask && form.budgetType!== "negotiable" && value <= 0) return "Nhập số tiền hợp lệ";
@@ -203,7 +252,8 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
       newErrors.description = validateField("description", form.description);
     }
     if (stepIdx === 1) {
-      newErrors.location = validateField("location", form.location);
+      newErrors["location.address"] =!form.location.address.trim()? "Nhập địa chỉ cụ thể" : "";
+      newErrors["location.provinceId"] =!form.location.provinceId? "Chọn tỉnh/thành phố" : "";
     }
     if (stepIdx === 2) {
       if (isTask) {
@@ -232,7 +282,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const updateLocation = (patch: Partial<LocationState>) => {
     setForm((prev) => ({...prev, location: {...prev.location,...patch } }));
     if (touched.location) {
-      setErrors((prev) => ({...prev, location: validateField("location", {...form.location,...patch }) }));
+      setErrors((prev) => ({...prev, "location.address": validateField("location", {...form.location,...patch }) }));
     }
   };
 
@@ -248,8 +298,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
     } catch {
       setPlaceSuggestions([]);
     }
-  }, []); // <-- thiếu dấu này
-
+  }, []);
 
   const handleAddressChange = (value: string) => {
     updateLocation({ address: value });
@@ -271,15 +320,54 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
         try {
           const res = await fetch(`/api/places/geocode?lat=${lat}&lng=${lng}`);
           const data = await res.json().catch(() => null);
-          const address = data?.results?.[0]?.formatted_address || "Vị trí hiện tại";
-          const city = data?.results?.[0]?.address_components?.find?.((c: any) =>
-            c.types?.includes("administrative_area_level_1")
-          )?.long_name || form.location.city;
-          updateLocation({ address, city });
+          const result = data?.results?.[0];
+          if (!result) throw new Error("No result");
+
+          const components = result.address_components || [];
+          const getComp = (type: string) => components.find((c: any) => c.types?.includes(type))?.long_name || "";
+
+          const address = result.formatted_address || "Vị trí hiện tại";
+          const provinceName = getComp("administrative_area_level_1");
+          const districtName = getComp("administrative_area_level_2");
+          const wardName = getComp("sublocality_level_1") || getComp("sublocality") || getComp("neighborhood");
+
+          const province = provinces.find(p => p.name === provinceName);
+
+          updateLocation({
+            address,
+            provinceName,
+            provinceId: province?.id || null,
+            districtName,
+            wardName,
+          });
+
+          // Auto load district/ward nếu có province
+          if (province?.id) {
+            const dRes = await fetch("/api/districts", {
+              method: "POST",
+              body: JSON.stringify({ provinceId: province.id }),
+            });
+            const districts = await dRes.json();
+            setDistricts(districts);
+            const district = districts.find((d: District) => d.name === districtName);
+            if (district) {
+              updateLocation({ districtId: district.id, districtName });
+              const wRes = await fetch("/api/wards", {
+                method: "POST",
+                body: JSON.stringify({ districtId: district.id }),
+              });
+              const wards = await wRes.json();
+              setWards(wards);
+              const ward = wards.find((w: Ward) => w.name === wardName);
+              if (ward) updateLocation({ wardId: ward.id, wardName });
+            }
+          }
+
+          toast.success("Đã thêm vị trí");
         } catch {
           updateLocation({ address: "Vị trí hiện tại" });
+          toast.error("Chỉ lấy được tọa độ, vui lòng chọn tỉnh/huyện");
         }
-        toast.success("Đã thêm vị trí");
         setLocating(false);
       },
       () => {
@@ -288,7 +376,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
       },
       { enableHighAccuracy: true, timeout: 8000 }
     );
-  }, [form.location.city]);
+  }, [provinces]);
 
   const handleCategoryChange = (catId: string) => {
     update("category", catId);
@@ -320,9 +408,11 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
 
     setSaving(true);
     try {
-      const location = form.remote? undefined : {
+      const location = {
         address: form.location.address.trim(),
-        city: form.location.city.trim(),
+        city: form.location.provinceName, // Dùng tên tỉnh đầy đủ
+       ...(form.location.districtName && { district: form.location.districtName }),
+       ...(form.location.wardName && { ward: form.location.wardName }),
        ...(form.location.lat!== undefined && { lat: form.location.lat }),
        ...(form.location.lng!== undefined && { lng: form.location.lng }),
       };
@@ -343,7 +433,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
           tags: form.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
           requirements: form.requirements,
           location,
-          isRemote: form.remote,
+          isRemote: false, // Bỏ remote
           deadline: Timestamp.fromDate(deadline),
           startDate: Timestamp.now(),
           urgency: form.durationHours <= 8? "urgent" : "flexible",
@@ -453,7 +543,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
                     rows={5}
                     maxLength={5000}
                     placeholder="Viết rõ mong đợi, tiêu chí, cách phối hợp..."
-                    className="input-base min-h-[120px] resize-none"
+                    className="input-base min-h resize-none"
                   />
                   <p className="text-xs text-zinc-400">{form.description.length}/5000</p>
                 </Field>
@@ -490,66 +580,110 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
           {step === 1 && (
             <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <Panel>
-                <div className="flex items-center justify-between rounded-xl bg-zinc-100 p-4 dark:bg-zinc-900">
-                  <div>
-                    <p className="font-bold">Làm từ xa</p>
-                    <p className="text-sm text-zinc-500">Không cần địa điểm cụ thể</p>
-                  </div>
-                  <button
-                    onClick={() => update("remote",!form.remote)}
-                    className={`h-7 w-12 rounded-full p-1 transition ${form.remote? `bg-gradient-to-r ${gradient}` : "bg-zinc-300 dark:bg-zinc-700"}`}
-                    aria-label="Toggle remote"
+                <button
+                  onClick={useCurrentLocation}
+                  disabled={locating}
+                  className={`flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r ${gradient} text-sm font-bold text-white disabled:opacity-60`}
+                >
+                  <FiNavigation /> {locating? "Đang lấy vị trí..." : "Dùng vị trí hiện tại"}
+                </button>
+
+                <Field label="Tỉnh/Thành phố" required error={errors["location.provinceId"]}>
+                  <select
+                    value={form.location.provinceId || ""}
+                    onChange={(e) => {
+                      const id = Number(e.target.value);
+                      const p = provinces.find(p => p.id === id);
+                      updateLocation({
+                        provinceId: id,
+                        provinceName: p?.name || "",
+                        districtId: null,
+                        districtName: "",
+                        wardId: null,
+                        wardName: ""
+                      });
+                    }}
+                    className="input-base"
                   >
-                    <span className={`block h-5 w-5 rounded-full bg-white transition ${form.remote? "translate-x-5" : "translate-x-0"}`} />
-                  </button>
-                </div>
-                {!form.remote && (
-                  <>
-                    <button
-                      onClick={useCurrentLocation}
-                      disabled={locating}
-                      className={`flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r ${gradient} text-sm font-bold text-white disabled:opacity-60`}
+                    <option value="">Chọn tỉnh/thành phố</option>
+                    {provinces.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </Field>
+
+                {form.location.provinceId && (
+                  <Field label="Quận/Huyện">
+                    <select
+                      value={form.location.districtId || ""}
+                      onChange={(e) => {
+                        const id = Number(e.target.value);
+                        const d = districts.find(d => d.id === id);
+                        updateLocation({
+                          districtId: id,
+                          districtName: d?.name || "",
+                          wardId: null,
+                          wardName: ""
+                        });
+                      }}
+                      className="input-base"
                     >
-                      <FiNavigation /> {locating? "Đang lấy vị trí..." : "Dùng vị trí hiện tại"}
-                    </button>
-                    <Field label="Địa chỉ" required error={errors.location}>
-                      <div className="relative">
-                        <input
-                          value={form.location.address}
-                          onChange={(e) => handleAddressChange(e.target.value)}
-                          onBlur={() => blur("location")}
-                          placeholder="Tên địa điểm, số nhà, đường..."
-                          className="input-base"
-                        />
-                        {placeSuggestions.length > 0 && (
-                          <div className="absolute top-full z-10 mt-1 w-full rounded-xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
-                            {placeSuggestions.map((s, i) => (
-                              <button
-                                key={i}
-                                onClick={() => { updateLocation({ address: s }); setPlaceSuggestions([]); }}
-                                className="w-full px-4 py-3 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 first:rounded-t-xl last:rounded-b-xl"
-                              >
-                                {s}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                      <option value="">Chọn quận/huyện</option>
+                      {districts.map((d) => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                  </Field>
+                )}
+
+                {form.location.districtId && (
+                  <Field label="Phường/Xã">
+                    <select
+                      value={form.location.wardId || ""}
+                      onChange={(e) => {
+                        const id = Number(e.target.value);
+                        const w = wards.find(w => w.id === id);
+                        updateLocation({ wardId: id, wardName: w?.name || "" });
+                      }}
+                      className="input-base"
+                    >
+                      <option value="">Chọn phường/xã</option>
+                      {wards.map((w) => (
+                        <option key={w.id} value={w.id}>{w.name}</option>
+                      ))}
+                    </select>
+                  </Field>
+                )}
+
+                <Field label="Địa chỉ cụ thể" required error={errors["location.address"]}>
+                  <div className="relative">
+                    <input
+                      value={form.location.address}
+                      onChange={(e) => handleAddressChange(e.target.value)}
+                      onBlur={() => blur("location")}
+                      placeholder="Tên đường, số nhà..."
+                      className="input-base"
+                    />
+                    {placeSuggestions.length > 0 && (
+                      <div className="absolute top-full z-10 mt-1 w-full rounded-xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+                        {placeSuggestions.map((s, i) => (
+                          <button
+                            key={i}
+                            onClick={() => { updateLocation({ address: s }); setPlaceSuggestions([]); }}
+                            className="w-full px-4 py-3 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 first:rounded-t-xl last:rounded-b-xl"
+                          >
+                            {s}
+                          </button>
+                        ))}
                       </div>
-                    </Field>
-                    <Field label="Thành phố">
-                      <input
-                        value={form.location.city}
-                        onChange={(e) => updateLocation({ city: e.target.value })}
-                        placeholder="Hồ Chí Minh, Hà Nội..."
-                        className="input-base"
-                      />
-                    </Field>
-                    {form.location.lat && form.location.lng && (
-                      <p className="rounded-xl bg-zinc-100 px-4 py-3 text-sm font-medium text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
-                        GPS: {form.location.lat.toFixed(5)}, {form.location.lng.toFixed(5)}
-                      </p>
                     )}
-                  </>
+                  </div>
+                </Field>
+
+                {form.location.lat && form.location.lng && (
+                  <p className="rounded-xl bg-zinc-100 px-4 py-3 text-sm font-medium text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
+                    GPS: {form.location.lat.toFixed(5)}, {form.location.lng.toFixed(5)}
+                  </p>
                 )}
               </Panel>
             </motion.div>
@@ -757,7 +891,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
 
       <AnimatePresence>
         {showPreview && (
-          <motion.div
+                <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -787,7 +921,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
       </AnimatePresence>
 
       <style jsx global>{`
-       .input-base {
+      .input-base {
           width: 100%;
           min-height: 48px;
           border-radius: 0.75rem;
@@ -798,16 +932,16 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
           outline: none;
           transition: all 0.2s;
         }
-       .dark.input-base {
+      .dark.input-base {
           border-color: rgb(39 39 42);
           background: rgb(24 24 27);
           color: white;
         }
-       .input-base:focus {
+      .input-base:focus {
           box-shadow: 0 0 0 3px ${accent}20;
           border-color: ${accent};
         }
-       .input-base:disabled {
+      .input-base:disabled {
           opacity: 0.5;
           cursor: not-allowed;
         }
@@ -820,11 +954,11 @@ function Panel({ children }: { children: React.ReactNode }) {
   return <div className="space-y-5 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">{children}</div>;
 }
 
-function Field({ label, required, error, children }: { 
-  label: string; 
-  required?: boolean; 
-  error?: string | undefined; // <-- thêm | undefined
-  children: React.ReactNode 
+function Field({ label, required, error, children }: {
+  label: string;
+  required?: boolean;
+  error?: string | undefined;
+  children: React.ReactNode
 }) {
   return (
     <label className="block space-y-2">
@@ -877,6 +1011,13 @@ function PreviewCard({ mode, form }: { mode: Mode; form: FormState }) {
     });
   };
 
+  const fullAddress = [
+    form.location.address,
+    form.location.wardName,
+    form.location.districtName,
+    form.location.provinceName
+  ].filter(Boolean).join(", ");
+
   return (
     <div className="rounded-2xl bg-zinc-50 p-5 ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
       <div className="mb-4 flex items-start justify-between gap-3">
@@ -919,8 +1060,8 @@ function PreviewCard({ mode, form }: { mode: Mode; form: FormState }) {
             <FiMapPin className="text-sm" />
             <span className="text-xs font-bold">Địa điểm</span>
           </div>
-          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 line-clamp-1">
-            {form.remote? "Làm từ xa" : form.location.address || form.location.city || "Chưa có"}
+          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 line-clamp-2">
+            {fullAddress || "Chưa có"}
           </p>
         </div>
 
