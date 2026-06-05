@@ -297,7 +297,7 @@ const MagneticNavItem = React.memo(({
         <motion.div
           animate={
             active
-           ? {
+          ? {
                   rotate: [0, -6, 6, 0]
                 }
               : {}
@@ -307,9 +307,9 @@ const MagneticNavItem = React.memo(({
           }}
         >
           <item.Icon
-            className={`w-[23px] h-[23px] transition-colors duration-300 ${
+            className={`w- h- transition-colors duration-300 ${
               active
-             ? activeColorClass
+            ? activeColorClass
                 : "text-zinc-400 dark:text-zinc-500"
             }`}
             strokeWidth={active? 2.7 : 2.2}
@@ -338,9 +338,9 @@ const MagneticNavItem = React.memo(({
           scale: active? 1.04 : 1
         }}
         transition={SPRING}
-        className={`relative z-10 text-[11px] mt-1.5 tracking-tight transition-all duration-300 ${
+        className={`relative z-10 text- mt-1.5 tracking-tight transition-all duration-300 ${
           active
-         ? `${activeColorClass} font-bold`
+        ? `${activeColorClass} font-bold`
             : "text-zinc-400 dark:text-zinc-500 font-semibold"
         }`}
       >
@@ -484,13 +484,13 @@ export default function BottomNav() {
           )}
         </AnimatePresence>
 
-        {/* FIX 1: Bỏ pb-safe ở wrapper */}
+        {/* FIX 1: Bỏ pb-safe ở wrapper, để bottom: 0 */}
         <div className="fixed bottom-0 inset-x-0 z-[70] pointer-events-none flex flex-col items-center justify-end">
           <div ref={menuRef} className="w-full max-w-[480px] px-4 flex flex-col items-center gap-3">
 
             <FloatingMenu isOpen={isOpen} onSelect={handleSelectCreate} onClose={() => setIsOpen(false)} />
 
-            {/* FIX 2: Thêm pb-safe + rounded-t-[32px] vào đây */}
+            {/* FIX 2: Dùng style paddingBottom thay vì pb-safe, rounded-t- thay vì rounded- */}
             <motion.div
               layout
               animate={{
@@ -501,7 +501,10 @@ export default function BottomNav() {
                 repeat: Infinity,
                 ease: "easeInOut"
               }}
-              className="w-full pointer-events-auto relative rounded-t-[32px] pb-safe border border-white/40 dark:border-zinc-800/50 bg-white/55 dark:bg-zinc-900/55 backdrop-blur-[40px] backdrop-saturate-200 shadow-[0_20px_80px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.55)] overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/40 before:to-white/5 dark:before:from-white/5 dark:before:to-transparent before:pointer-events-none"
+              style={{
+                paddingBottom: 'env(safe-area-inset-bottom)'
+              }}
+              className="w-full pointer-events-auto relative rounded-t- border border-white/40 dark:border-zinc-800/50 bg-white/55 dark:bg-zinc-900/55 backdrop-blur- backdrop-saturate-200 shadow-[0_20px_80px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.55)] overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/40 before:to-white/5 dark:before:from-white/5 dark:before:to-transparent before:pointer-events-none"
             >
               <motion.div
                 className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
@@ -590,7 +593,7 @@ export default function BottomNav() {
                       transition={SPRING_BOUNCY}
                       className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-2xl transition-all duration-500 ${dynamicGlow} relative overflow-hidden ${
                         isOpen
-                      ? "bg-zinc-900 dark:bg-zinc-800 shadow-zinc-950/20"
+                     ? "bg-zinc-900 dark:bg-zinc-800 shadow-zinc-950/20"
                           : `${activeBgClass} shadow-lg`
                       }`}
                     >
