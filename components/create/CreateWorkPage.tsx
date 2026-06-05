@@ -152,10 +152,10 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const [showGpsExplain, setShowGpsExplain] = useState(false);
 const [hasCheckedGps, setHasCheckedGps] = useState(false);
 
-// Check quyền GPS khi vào step Địa điểm
+// Vào step 1: check quyền, chỉ hiện modal nếu chưa có GPS
 useEffect(() => {
   if (step!== 1 || hasCheckedGps || form.location.lat) return;
-  
+
   if (!navigator.permissions) {
     setShowGpsExplain(true);
     setHasCheckedGps(true);
@@ -166,16 +166,18 @@ useEffect(() => {
     setPermissionState(result.state);
     
     if (result.state === 'granted') {
-      requestGPS();
-    } else if (result.state === 'prompt') {
-      setShowGpsExplain(true);
+      requestGPS(); // Đã bật rồi thì lấy luôn, không hiện modal
     } else {
-      setGpsDenied(true);
-      setShowGpsExplain(true);
+      setShowGpsExplain(true); // Chưa bật/đã block → hiện modal giải thích
     }
     setHasCheckedGps(true);
   });
 }, [step, form.location.lat, hasCheckedGps]);
+useEffect(() => {
+  if (step!== 1) {
+    setHasCheckedGps(false);
+  }
+}, );
   const [permissionState, setPermissionState] = useState<'prompt' | 'granted' | 'denied'>('prompt');
 
 // Check quyền GPS lúc mount
@@ -187,36 +189,7 @@ useEffect(() => {
   });
 }, []);
 
-const requestGPS = useCallback(() => {
-  if (!navigator.geolocation) {
-    toast.error("Thiết bị không hỗ trợ GPS");
-    setGpsDenied(true);
-    return;
-  }
 
-  setLocating(true);
-  setGpsDenied(false);
-
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      updateLocation({ 
-        lat: pos.coords.latitude, 
-        lng: pos.coords.longitude 
-      });
-      setPermissionState('granted');
-      setGpsDenied(false);
-      setLocating(false);
-      setShowGpsExplain(false); // Đóng modal
-    },
-    (err) => {
-      console.warn("GPS error:", err);
-      setGpsDenied(true);
-      setLocating(false);
-      setShowGpsExplain(true); // Hiện lại modal nếu fail
-    },
-    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-  );
-}, []);
 const [loadingProvinces, setLoadingProvinces] = useState(true);
 
 // Load provinces
@@ -292,11 +265,39 @@ useEffect(() => {
     return () => clearTimeout(timer);
   }, [draftKey, form]);
 
+const requestGPS = useCallback(() => {
+  if (!navigator.geolocation) {
+    toast.error("Thiết bị không hỗ trợ GPS");
+    setGpsDenied(true);
+    return;
+  }
+
+  setLocating(true);
+  setGpsDenied(false);
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      updateLocation({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude
+      });
+      setPermissionState('granted');
+      setGpsDenied(false);
+      setLocating(false);
+      setShowGpsExplain(false);
+      toast.success("Đã lấy vị trí");
+    },
+    (err) => {
+      console.warn("GPS error:", err);
+      setGpsDenied(true);
+      setLocating(false);
+      setPermissionState('denied');
+    },
+    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+  );
+}, []);
 // Auto request GPS khi vào step Địa điểm
-useEffect(() => {
-  if (step !== 1 || form.location.lat) return;
-  requestGPS();
-}, [step, form.location.lat, requestGPS]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -601,41 +602,11 @@ useEffect(() => {
           {step === 1 && (
             <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <Panel>
-{gpsDenied && permissionState === 'denied' && (
-  <div className="space-y-3 rounded-xl bg-red-50 p-4 dark:bg-red-950/30">
-    <div className="flex items-start gap-2 text-sm font-bold text-red-600 dark:text-red-400">
-      <FiAlertCircle className="mt-0.5 flex-shrink-0" />
-      <div>
-        <p>Bạn đã tắt quyền truy cập vị trí.</p>
-        <p className="mt-1 text-xs font-normal">
-          iOS: Cài đặt → Safari → Vị trí → Cho phép<br/>
-          Android: Chrome → ⚙️ → Quyền → Vị trí → Cho phép
-        </p>
-      </div>
-    </div>
-    <button
-      onClick={requestGPS}
-      disabled={locating}
-      className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-red-600 text-sm font-bold text-white active:scale-95 disabled:opacity-60"
-    >
-      <FiNavigation /> {locating ? "Đang thử lại..." : "Thử lại"}
-    </button>
-  </div>
-)}
-
-{gpsDenied && permissionState === 'prompt' && (
-  <div className="space-y-3 rounded-xl bg-amber-50 p-4 dark:bg-amber-950/30">
-    <div className="flex items-start gap-2 text-sm font-bold text-amber-600 dark:text-amber-400">
-      <FiAlertCircle className="mt-0.5 flex-shrink-0" />
-      <span>Cần bật GPS để tạo task/plan gần bạn.</span>
-    </div>
-    <button
-      onClick={requestGPS}
-      disabled={locating}
-      className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-amber-600 text-sm font-bold text-white active:scale-95 disabled:opacity-60"
-    >
-      <FiNavigation /> {locating ? "Đang xin quyền..." : "Bật GPS"}
-    </button>
+{form.location.lat && form.location.lng && (
+  <div className="rounded-xl bg-green-50 px-4 py-3 dark:bg-green-950/30">
+    <p className="flex items-center gap-2 text-sm font-bold text-green-700 dark:text-green-400">
+      <FiCheck /> Đã định vị: {form.location.lat.toFixed(5)}, {form.location.lng.toFixed(5)}
+    </p>
   </div>
 )}
 
