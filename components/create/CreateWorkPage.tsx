@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Timestamp } from "firebase/firestore";
 import { mutate } from "swr";
-import { GpsRequiredModal } from "@/components/GpsRequiredModal";
+import GpsRequiredModal from "@/components/GpsRequiredModal";
 import {
   FiArrowLeft,
   FiClock,
