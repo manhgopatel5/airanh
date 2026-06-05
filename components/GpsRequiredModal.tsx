@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { FiNavigation, FiShield, FiMapPin, FiX, FiSmartphone } from "react-icons/fi";
+import { FiNavigation, FiShield, FiMapPin, FiSmartphone } from "react-icons/fi";
 
 function GpsRequiredModal({ 
   open, 
