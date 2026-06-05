@@ -10,7 +10,6 @@ import {
   FiBookmark,
   FiCheckCircle,
   FiClock,
-  FiDollarSign,
   FiEdit2,
   FiEye,
   FiMapPin,
@@ -21,6 +20,7 @@ import {
   FiUsers,
 } from "react-icons/fi";
 import { HiHeart, HiOutlineHeart } from "react-icons/hi2";
+import { TbCurrencyDong } from "react-icons/tb";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
 import { type FeedTask } from "@/types/task";
@@ -93,6 +93,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
       due,
       price,
       timeAgo: formatDistanceToNow(created, { addSuffix: true, locale: vi }),
+      province: task.location?.city || task.location?.province || "",
     };
   }, [task]);
 
@@ -180,7 +181,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
       animate={{ opacity: 1, y: 0 }}
       {...(reduceMotion? {} : { whileHover: { y: -2 } })}
       transition={{ duration: 0.22 }}
-      className="group w-full max-w-sm mx-auto" // Thu nhỏ chiều ngang
+      className="group w-full max-w-sm mx-auto"
     >
       <div
         className="relative overflow-hidden rounded-2xl border border-zinc-200/70 bg-white shadow-lg ring-1 ring-black/[0.03] transition-all duration-300 active:scale-[0.992] dark:border-white/10 dark:bg-zinc-950 dark:shadow-black/30"
@@ -197,13 +198,6 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
                 <p className="truncate text-sm font-bold text-zinc-950 dark:text-white">{task.userName || "AIR user"}</p>
                 <div className="mt-0.5 flex min-w-0 items-center gap-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">
                   <span className="truncate">{derived.timeAgo}</span>
-                  {task.location?.city && (
-                    <>
-                      <span>•</span>
-                      <FiMapPin className="h-3 w-3 shrink-0" />
-                      <span className="truncate">{task.location.city}</span>
-                    </>
-                  )}
                 </div>
               </div>
             </div>
@@ -233,27 +227,32 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
 
           <button type="button" onClick={goToTask} className="block w-full text-left">
             <h3 className="text-base font-bold leading-snug tracking-tight text-zinc-950 dark:text-white line-clamp-2">{task.title}</h3>
-            {/* Đã bỏ mô tả ở đây */}
           </button>
 
           <div className="mt-3 flex flex-wrap gap-2">
-            <div className="flex-1 min-w-[80px] rounded-xl bg-zinc-50 p-2 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
-              <div className="flex items-center gap-1 text-[11px] font-semibold text-zinc-400"><FiDollarSign className="h-3 w-3" /> Giá</div>
+            <div className="flex-1 min-w-[90px] rounded-xl bg-zinc-50 p-2 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
+              <div className="flex items-center gap-1 text-[11px] font-semibold text-zinc-400">
+                <TbCurrencyDong className="h-3.5 w-3.5" /> Giá trị
+              </div>
               <p className="mt-0.5 truncate text-xs font-bold text-zinc-950 dark:text-white">{derived.price}</p>
             </div>
-            <div className="flex-1 min-w-[70px] rounded-xl bg-zinc-50 p-2 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
-              <div className="flex items-center gap-1 text-[11px] font-semibold text-zinc-400"><FiClock className="h-3 w-3" /> Hạn</div>
+            <div className="flex-1 min-w-[90px] rounded-xl bg-zinc-50 p-2 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
+              <div className="flex items-center gap-1 text-[11px] font-semibold text-zinc-400">
+                <FiClock className="h-3 w-3" /> Hạn chót
+              </div>
               <p className="mt-0.5 text-xs font-bold text-zinc-950 dark:text-white">{derived.due}</p>
             </div>
-            <div className="flex-1 min-w-[60px] rounded-xl bg-zinc-50 p-2 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
-              <div className="flex items-center gap-1 text-[11px] font-semibold text-zinc-400"><FiUsers className="h-3 w-3" /> Slot</div>
+            <div className="flex-1 min-w-[90px] rounded-xl bg-zinc-50 p-2 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
+              <div className="flex items-center gap-1 text-[11px] font-semibold text-zinc-400">
+                <FiUsers className="h-3 w-3" /> Số người
+              </div>
               <p className="mt-0.5 text-xs font-bold text-zinc-950 dark:text-white">{derived.maxSlots? `${derived.currentCount}/${derived.maxSlots}` : "Mở"}</p>
             </div>
           </div>
         </div>
 
         <div className="flex items-center justify-between px-2 py-1.5 border-t border-zinc-100 dark:border-zinc-800/50">
-          <div className="flex items-center">
+          <div className="flex items-center min-w-0">
             <button type="button" aria-label={liked? "Bỏ thích" : "Thích"} onClick={(e) => { e.stopPropagation(); handleLike(); }} className="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-zinc-700 transition active:scale-95 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-900">
               {liked? <HiHeart className="h-4 w-4 text-red-500" /> : <HiOutlineHeart className="h-4 w-4" />}
               {task.likeCount || 0}
@@ -265,8 +264,14 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
             <button type="button" aria-label="Chia sẻ" onClick={(e) => { e.stopPropagation(); vibrate(8); onShare?.(task); }} className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-600 transition active:scale-95 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-900">
               <FiShare2 className="h-4 w-4" />
             </button>
+            {derived.province && (
+              <div className="ml-1 flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 max-w-[100px]">
+                <FiMapPin className="h-3 w-3 shrink-0" />
+                <span className="truncate">{derived.province}</span>
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-1 pr-2 text-[11px] font-semibold text-zinc-400">
+          <div className="flex items-center gap-1 pr-2 text-[11px] font-semibold text-zinc-400 shrink-0">
             <FiEye className="h-3 w-3" /> {task.viewCount || 0}
           </div>
         </div>
