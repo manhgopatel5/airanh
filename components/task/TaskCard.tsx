@@ -304,28 +304,28 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
             <h3 className="text-base font-bold leading-snug tracking-tight text-zinc-950 dark:text-white line-clamp-2">{task.title}</h3>
           </button>
 
-          <div className="mt-3 grid grid-cols-3 gap-1">
-            <div className="rounded-lg bg-zinc-50 p-1 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
-              <div className="flex items-center gap-1 text- font-semibold text-zinc-400">
-                <TbCurrencyDong className="h-2 w-2" /> Giá trị
-              </div>
-              <p className="mt-0 truncate text-[11px] font-bold text-zinc-950 dark:text-white">{derived.price}</p>
-            </div>
-            <div className="rounded-lg bg-zinc-50 p-1 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
-              <div className="flex items-center gap-1 text- font-semibold text-zinc-400">
-                <FiClock className="h-2 w-2" /> Hạn chót
-              </div>
-              <p className="mt-0 text-[11px] font-bold text-zinc-950 dark:text-white">{derived.due}</p>
-            </div>
-            <div className={cn("rounded-lg bg-zinc-50 p-1 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5", derived.isFull && "ring-red-500/20 bg-red-50 dark:bg-red-950/20")}>
-              <div className="flex items-center gap-1 text- font-semibold text-zinc-400">
-                <FiUsers className="h-2 w-2" /> Số người
-              </div>
-              <p className={cn("mt-0 text-[11px] font-bold text-zinc-950 dark:text-white", derived.isFull && "text-red-600 dark:text-red-400")}>
-                {derived.maxSlots? `${derived.currentCount}/${derived.maxSlots}` : "Mở"}
-              </p>
-            </div>
-          </div>
+         <div className="mt-3 grid grid-cols-3 gap-1">
+  <div className="rounded-lg bg-zinc-50 p-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
+    <div className="flex items-center gap-0.5 text-[10px] font-semibold text-zinc-400">
+      <TbCurrencyDong className="h-2 w-2" /> Giá trị
+    </div>
+    <p className="mt-0 truncate text-[10px] font-bold leading-tight text-zinc-950 dark:text-white">{derived.price}</p>
+  </div>
+  <div className="rounded-lg bg-zinc-50 p-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
+    <div className="flex items-center gap-0.5 text-[10px] font-semibold text-zinc-400">
+      <FiClock className="h-2 w-2" /> Hạn chót
+    </div>
+    <p className="mt-0 text-[10px] font-bold leading-tight text-zinc-950 dark:text-white">{derived.due}</p>
+  </div>
+  <div className={cn("rounded-lg bg-zinc-50 p-1 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5", derived.isFull && "ring-red-500/20 bg-red-50 dark:bg-red-950/20")}>
+    <div className="flex items-center gap-0.5 text-[10px] font-semibold text-zinc-400">
+      <FiUsers className="h-2 w-2" /> Số người
+    </div>
+    <p className={cn("mt-0 text-[10px] font-bold leading-tight text-zinc-950 dark:text-white", derived.isFull && "text-red-600 dark:text-red-400")}>
+      {derived.maxSlots? `${derived.currentCount}/${derived.maxSlots}` : "Mở"}
+    </p>
+  </div>
+</div>
         </div>
 
         <div className="flex items-center justify-between px-2 py-1.5">
