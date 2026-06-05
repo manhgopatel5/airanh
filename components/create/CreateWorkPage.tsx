@@ -328,18 +328,32 @@ useEffect(() => {
     toast.error("Thiết bị không hỗ trợ định vị");
     return;
   }
-  
-  if (loadingProvinces) {
-    toast.error("Đang tải danh sách tỉnh, thử lại sau 1s");
-    return;
+
+  setLocating(true);
+
+  // Nếu provinces chưa load thì fetch lại
+  let currentProvinces = provinces;
+  if (currentProvinces.length === 0) {
+    try {
+      const res = await fetch("/api/location/province", {
+        headers: { "Content-Type": "application/json" },
+        cache: "force-cache"
+      });
+      currentProvinces = await res.json();
+      setProvinces(currentProvinces);
+    } catch {
+      toast.error("Không tải được danh sách tỉnh");
+      setLocating(false);
+      return;
+    }
   }
-  
-  if (provinces.length === 0) {
-    toast.error("Không có danh sách tỉnh, kiểm tra API");
+
+  if (currentProvinces.length === 0) {
+    toast.error("Danh sách tỉnh rỗng, kiểm tra API");
+    setLocating(false);
     return;
   }
 
-  setLocating(true);
   navigator.geolocation.getCurrentPosition(
     async (pos) => {
       const lat = pos.coords.latitude;
@@ -352,35 +366,35 @@ useEffect(() => {
         );
         const data = await res.json();
 
-        // Lấy địa chỉ chi tiết hơn
         const address = [
-          data.streetNumber,
-          data.street,
           data.locality,
-        ].filter(Boolean).join(", ") || data.locality || "Vị trí hiện tại";
-
+          data.city,
+          data.principalSubdivision
+        ].filter(Boolean).join(", ") || "Vị trí hiện tại";
+        
         const provinceName = data.principalSubdivision || "";
         const districtName = data.locality || data.city || "";
         const wardName = data.localityInfo?.administrative?.find((a: any) => a.adminLevel === 8)?.name || "";
 
-        // Hàm normalize: bỏ tiền tố, lowercase, bỏ dấu
+        // Hàm normalize: bỏ dấu + tiền tố
         const normalize = (str: string) => str.toLowerCase()
-          .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // bỏ dấu
-          .replace(/^(tinh|thanh pho|quan|huyen|phuong|xa|thi xa|thi tran)\s+/i, "")
-          .trim();
+         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+         .replace(/^(tinh|thanh pho|quan|huyen|phuong|xa|thi xa|thi tran)\s+/i, "")
+         .trim();
 
         const nProvinceName = normalize(provinceName);
 
-        // Match tỉnh: ưu tiên exact, sau đó includes
-        let province = provinces.find(p => normalize(p.name) === nProvinceName);
+        // Match tỉnh: exact trước, includes sau
+        let province = currentProvinces.find(p => normalize(p.name) === nProvinceName);
         if (!province) {
-          province = provinces.find(p => 
+          province = currentProvinces.find(p => 
             normalize(p.name).includes(nProvinceName) || 
             nProvinceName.includes(normalize(p.name))
           );
         }
 
         if (!province) {
+          console.log("Geocode province:", provinceName, "Available:", currentProvinces.map(p => p.name));
           updateLocation({ address });
           toast.error(`Không tìm thấy tỉnh "${provinceName}", vui lòng chọn thủ công`);
           setLocating(false);
@@ -451,7 +465,7 @@ useEffect(() => {
     },
     { enableHighAccuracy: true, timeout: 10000 }
   );
-}, [provinces, loadingProvinces]);
+}, [provinces]);
   const handleCategoryChange = (catId: string) => {
     update("category", catId);
     if (isTask) {
@@ -654,13 +668,13 @@ useEffect(() => {
           {step === 1 && (
             <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <Panel>
-                <button
-                  onClick={useCurrentLocation}
-                  disabled={locating}
-                  className={`flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r ${gradient} text-sm font-bold text-white disabled:opacity-60`}
-                >
-                  <FiNavigation /> {locating? "Đang lấy vị trí..." : "Dùng vị trí hiện tại"}
-                </button>
+         <button
+  onClick={useCurrentLocation}
+  disabled={locating || loadingProvinces}
+  className={`flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r ${gradient} text-sm font-bold text-white disabled:opacity-60`}
+>
+  <FiNavigation /> {locating? "Đang lấy vị trí..." : loadingProvinces? "Đang tải tỉnh..." : "Dùng vị trí hiện tại"}
+</button>
 
              <Field label="Tỉnh/Thành phố" required error={errors["location.provinceId"]}>
   <select
