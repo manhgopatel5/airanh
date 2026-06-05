@@ -167,7 +167,7 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
   const modeNoun = isTaskMode ? "task" : "plan";
 
   return (
-<div className="min-h-dvh bg-white dark:bg-zinc-950 text-zinc-950 dark:text-white">
+<div className="bg-white dark:bg-zinc-950 text-zinc-950 dark:text-white">
 <div className="sticky top-0 z-40 bg-white dark:bg-zinc-950">
         <div className="mx-auto max-w-[680px] px-4 pt-3 pb-3">
           <div className="relative rounded-[1.35rem] bg-zinc-100/80 p-1.5 ring-1 ring-black/5 dark:bg-zinc-900/90 dark:ring-white/10">
@@ -218,7 +218,7 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
 
         {refreshing && <div className="flex justify-center py-6"><FiRefreshCw className="motion-safe:animate-spin" style={{ color: accent }} size={24} /></div>}
         {shareTask && <ShareTaskModal task={shareTask} onClose={() => setShareTask(null)} />}
-        <div className="h-8" />
+<div className="h-2" />
       </div>
     </div>
   );
