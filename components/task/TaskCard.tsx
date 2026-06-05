@@ -4,7 +4,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, useId } from "
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { vi } from "date-fns/locale";
 import {
   FiBookmark,
@@ -24,7 +24,8 @@ import { TbCurrencyDong } from "react-icons/tb";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
 import { type FeedTask } from "@/types/task";
-import { cn } from "@/lib/utils"; // Tailwind merge helper, nếu không có thì bỏ cn()
+import { cn } from "@/lib/utils";
+import { useProvinces } from "@/lib/provinces"; // Hook đã cache
 
 type Props = {
   task: FeedTask;
@@ -45,12 +46,28 @@ const vibrate = (ms: number | number[] = 8) => {
   if (typeof navigator!== "undefined" && "vibrate" in navigator) navigator.vibrate(ms);
 };
 
+// Map O(1) từ city -> province name, build 1 lần
+const useProvinceMap = () => {
+  const provinces = useProvinces();
+  return useMemo(() => {
+    const map = new Map<string, string>();
+    provinces.forEach((p) => {
+      const short = p.name.replace("Thành phố ", "").replace("Tỉnh ", "");
+      map.set(short, p.name);
+      map.set(p.name, p.name);
+      map.set(p.code, p.name); // "ho-chi-minh" -> "Thành phố Hồ Chí Minh"
+    });
+    return map;
+  }, [provinces]);
+};
+
 function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: Props) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
   const { user } = useAuth();
   const menuBtnRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
+  const provinceMap = useProvinceMap(); // O(1) lookup, không fetch
 
   const [isSaved, setIsSaved] = useState(false);
   const [liked, setLiked] = useState(false);
@@ -68,26 +85,30 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
     setLiked(!!user?.uid &&!!task.likes?.includes(user.uid));
   }, [user?.uid, task?.savedBy, task?.likes, task?.id]);
 
-  // Focus trap + ESC + click outside cho menu
   useEffect(() => {
     if (!showMenu) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setShowMenu(false);
-    };
+    const handleKey = (e: KeyboardEvent) => e.key === "Escape" && setShowMenu(false);
     const handleClick = (e: MouseEvent) => {
       if (menuBtnRef.current &&!menuBtnRef.current.contains(e.target as Node)) {
         setShowMenu(false);
       }
     };
+    let resizeTimer: NodeJS.Timeout;
+    const handleResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => setShowMenu(false), 150);
+    };
+
     window.addEventListener("keydown", handleKey);
     window.addEventListener("mousedown", handleClick);
     window.addEventListener("scroll", () => setShowMenu(false), true);
-    window.addEventListener("resize", () => setShowMenu(false));
+    window.addEventListener("resize", handleResize);
     return () => {
+      clearTimeout(resizeTimer);
       window.removeEventListener("keydown", handleKey);
       window.removeEventListener("mousedown", handleClick);
       window.removeEventListener("scroll", () => setShowMenu(false), true);
-      window.removeEventListener("resize", () => setShowMenu(false));
+      window.removeEventListener("resize", handleResize);
     };
   }, [showMenu]);
 
@@ -96,29 +117,35 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
     const currentCount = task.type === "task"? task.joined?? 0 : task.currentParticipants?? 0;
     const created = task.createdAt? new Date(task.createdAt) : new Date();
     const dueRaw = task.type === "task"? task.deadline : task.eventDate;
-    const due = dueRaw? new Date(dueRaw).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }) : "Linh hoạt";
+    const due = dueRaw
+? format(new Date(dueRaw), "EEE dd/MM", { locale: vi })
+      : "Linh hoạt";
     const price =
       task.type === "task"
-       ? task.price && task.price > 0
-         ? `${task.price.toLocaleString("vi-VN")} VNĐ${task.budgetType === "hourly"? "/h" : ""}`
+  ? task.price && task.price > 0
+    ? `${task.price.toLocaleString("vi-VN")} VNĐ${task.budgetType === "hourly"? "/h" : ""}`
           : "Thỏa thuận"
         : task.costType === "free"
-       ? "Miễn phí"
+  ? "Miễn phí"
         : task.costType === "share"
-       ? "Chia đều"
+  ? "Chia đều"
         : task.costAmount
-       ? `${task.costAmount.toLocaleString("vi-VN")} VNĐ`
+  ? `${task.costAmount.toLocaleString("vi-VN")} VNĐ`
         : "Linh hoạt";
+
+    const cityKey = task.location?.city || "";
+    const provinceName = provinceMap.get(cityKey) || cityKey || "Chưa rõ";
+
     return {
       maxSlots,
       currentCount,
       due,
       price,
       timeAgo: formatDistanceToNow(created, { addSuffix: true, locale: vi }),
-      locationName: task.location?.city || "Chưa rõ",
+      provinceName,
       isFull: maxSlots > 0 && currentCount >= maxSlots,
     };
-  }, [task]);
+  }, [task, provinceMap]);
 
   if (!task?.id ||!task?.title ||!task?.type ||!task?.status) return null;
 
@@ -139,7 +166,6 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
     const oldLikes = task.likes || [];
     const oldCount = task.likeCount || 0;
 
-    // Optimistic
     setLiked(newLiked);
     onTaskUpdate?.(task.id, {
       likes: newLiked? [...oldLikes, user.uid] : oldLikes.filter((id) => id!== user.uid),
@@ -154,7 +180,6 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
       });
       if (!res.ok) throw new Error("like failed");
     } catch {
-      // Rollback
       setLiked(!newLiked);
       onTaskUpdate?.(task.id, { likes: oldLikes, likeCount: oldCount });
       toast.error("Không thể cập nhật lượt thích");
@@ -213,12 +238,16 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
     const menuWidth = 188;
-    const menuHeight = 120; // ước lượng
+    const menuHeight = 120;
     const x = Math.min(Math.max(8, rect.right - menuWidth), window.innerWidth - menuWidth - 8);
-    const y = rect.bottom + 8 + menuHeight > window.innerHeight? rect.top - menuHeight - 8 : rect.bottom + 8; // flip lên nếu chạm đáy
+    const y = rect.bottom + 8 + menuHeight > window.innerHeight? rect.top - menuHeight - 8 : rect.bottom + 8;
     setMenuPos({ x, y });
     setShowMenu((v) =>!v);
   }, []);
+
+  const ringClass = isTaskTheme
+? "focus-visible:ring-[#0A84FF]"
+    : "focus-visible:ring-[#30D158]";
 
   return (
     <motion.article
@@ -235,7 +264,11 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
         <div className="relative p-3 pb-2">
           <div className="mb-3 flex items-start justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2.5">
-              <button type="button" onClick={goToTask} className="relative shrink-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2" style={{ focusVisible: { ringColor: accent } }}>
+              <button
+                type="button"
+                onClick={goToTask}
+                className={cn("relative shrink-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2", ringClass)}
+              >
                 <img src={avatarUrl} alt={task.userName || "Avatar"} loading="lazy" decoding="async" className="h-10 w-10 rounded-xl object-cover ring-2 ring-white shadow-md dark:ring-zinc-950" />
                 {task.userVerified && <FiCheckCircle className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-white text-[#0A84FF] dark:bg-zinc-950" />}
               </button>
@@ -249,62 +282,53 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
               </div>
             </div>
 
-            <div className="flex shrink-0 items-center gap-0.5">
-              <button
-                type="button"
-                aria-label={isSaved? "Bỏ lưu" : "Lưu"}
-                aria-pressed={isSaved}
-                onClick={(e) => { e.stopPropagation(); handleSave(); }}
-                disabled={saving}
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-zinc-500 transition active:scale-95 disabled:opacity-50 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-400 dark:hover:bg-zinc-900"
-              >
-                <FiBookmark className={cn("h-4 w-4", isSaved && "fill-current")} style={{ color: isSaved? accent : undefined }} />
-              </button>
-
-              <button
-                ref={menuBtnRef}
-                type="button"
-                aria-label="Mở menu"
-                aria-expanded={showMenu}
-                aria-haspopup="menu"
-                aria-controls={showMenu? menuId : undefined}
-                onClick={openMenu}
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-zinc-500 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-400 dark:hover:bg-zinc-900"
-              >
-                <FiMoreHorizontal className="h-4 w-4" />
-              </button>
-            </div>
+            {isOwner && (
+              <div className="flex shrink-0 items-center gap-0.5">
+                <button
+                  ref={menuBtnRef}
+                  type="button"
+                  aria-label="Mở menu"
+                  aria-expanded={showMenu}
+                  aria-haspopup="menu"
+                  aria-controls={showMenu? menuId : undefined}
+                  onClick={openMenu}
+                  className={cn("flex h-9 w-9 items-center justify-center rounded-xl text-zinc-500 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-400 dark:hover:bg-zinc-900", ringClass)}
+                >
+                  <FiMoreHorizontal className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
 
-          <button type="button" onClick={goToTask} className="block w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 rounded-lg">
+          <button type="button" onClick={goToTask} className={cn("block w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 rounded-lg", ringClass)}>
             <h3 className="text-base font-bold leading-snug tracking-tight text-zinc-950 dark:text-white line-clamp-2">{task.title}</h3>
           </button>
 
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            <div className="rounded-xl bg-zinc-50 p-2 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
+          <div className="mt-3 grid grid-cols-3 gap-1.5">
+            <div className="rounded-lg bg-zinc-50 p-1.5 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
               <div className="flex items-center gap-1 text- font-semibold text-zinc-400">
-                <TbCurrencyDong className="h-3.5 w-3.5" /> Giá trị
+                <TbCurrencyDong className="h-2.5 w-2.5" /> Giá trị
               </div>
-              <p className="mt-0.5 truncate text-xs font-bold text-zinc-950 dark:text-white">{derived.price}</p>
+              <p className="mt-0 truncate text-xs font-bold text-zinc-950 dark:text-white">{derived.price}</p>
             </div>
-            <div className="rounded-xl bg-zinc-50 p-2 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
+            <div className="rounded-lg bg-zinc-50 p-1.5 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
               <div className="flex items-center gap-1 text- font-semibold text-zinc-400">
-                <FiClock className="h-3 w-3" /> Hạn chót
+                <FiClock className="h-2.5 w-2.5" /> Hạn chót
               </div>
-              <p className="mt-0.5 text-xs font-bold text-zinc-950 dark:text-white">{derived.due}</p>
+              <p className="mt-0 text-xs font-bold text-zinc-950 dark:text-white">{derived.due}</p>
             </div>
-            <div className={cn("rounded-xl bg-zinc-50 p-2 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5", derived.isFull && "ring-red-500/20 bg-red-50 dark:bg-red-950/20")}>
+            <div className={cn("rounded-lg bg-zinc-50 p-1.5 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5", derived.isFull && "ring-red-500/20 bg-red-50 dark:bg-red-950/20")}>
               <div className="flex items-center gap-1 text- font-semibold text-zinc-400">
-                <FiUsers className="h-3 w-3" /> Số người
+                <FiUsers className="h-2.5 w-2.5" /> Số người
               </div>
-              <p className={cn("mt-0.5 text-xs font-bold text-zinc-950 dark:text-white", derived.isFull && "text-red-600 dark:text-red-400")}>
+              <p className={cn("mt-0 text-xs font-bold text-zinc-950 dark:text-white", derived.isFull && "text-red-600 dark:text-red-400")}>
                 {derived.maxSlots? `${derived.currentCount}/${derived.maxSlots}` : "Mở"}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-between px-2 py-1.5 border-t border-zinc-100 dark:border-zinc-800/50">
+        <div className="flex items-center justify-between px-2 py-1.5">
           <div className="flex items-center min-w-0">
             <button
               type="button"
@@ -312,60 +336,63 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
               aria-pressed={liked}
               onClick={(e) => { e.stopPropagation(); handleLike(); }}
               disabled={liking}
-              className="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-zinc-700 transition active:scale-95 hover:bg-zinc-100 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900"
+              className={cn("flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-zinc-700 transition active:scale-95 hover:bg-zinc-100 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}
             >
               {liked? <HiHeart className="h-4 w-4 text-red-500" /> : <HiOutlineHeart className="h-4 w-4" />}
               {task.likeCount || 0}
             </button>
-            <button type="button" aria-label="Bình luận" onClick={goToTask} className="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-zinc-700 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900">
+            <button type="button" aria-label="Bình luận" onClick={goToTask} className={cn("flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-zinc-700 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}>
               <FiMessageCircle className="h-4 w-4" />
               {task.commentCount || 0}
             </button>
-            <button type="button" aria-label="Chia sẻ" onClick={(e) => { e.stopPropagation(); vibrate(8); onShare?.(task); }} className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-600 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900">
+            <button type="button" aria-label="Chia sẻ" onClick={(e) => { e.stopPropagation(); vibrate(8); onShare?.(task); }} className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-zinc-600 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}>
               <FiShare2 className="h-4 w-4" />
             </button>
-            {derived.locationName && (
-              <div title={derived.locationName} className="ml-1 flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 max-w-[90px]">
+            {derived.provinceName && (
+              <div title={derived.provinceName} className="ml-1 flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 max-w-">
                 <FiMapPin className="h-3 w-3 shrink-0" />
-                <span className="truncate">{derived.locationName}</span>
+                <span className="truncate">{derived.provinceName}</span>
               </div>
             )}
           </div>
-          <div className="flex items-center gap-1 pr-2 text- font-semibold text-zinc-400 shrink-0">
-            <FiEye className="h-3 w-3" /> {task.viewCount || 0}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              aria-label={isSaved? "Bỏ lưu" : "Lưu"}
+              aria-pressed={isSaved}
+              onClick={(e) => { e.stopPropagation(); handleSave(); }}
+              disabled={saving}
+              className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-zinc-500 transition active:scale-95 disabled:opacity-50 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-400 dark:hover:bg-zinc-900", ringClass)}
+            >
+              <FiBookmark className={cn("h-4 w-4", isSaved && "fill-current")} style={{ color: isSaved? accent : undefined }} />
+            </button>
+            <div className="flex items-center gap-1 pr-1 text- font-semibold text-zinc-400">
+              <FiEye className="h-3 w-3" /> {task.viewCount || 0}
+            </div>
           </div>
         </div>
       </div>
 
       <AnimatePresence>
-        {showMenu && (
+        {showMenu && isOwner && (
           <Portal>
             <div className="fixed inset-0 z-50" onClick={() => setShowMenu(false)} />
             <motion.div
               id={menuId}
               role="menu"
-              initial={{ opacity: 0, scale: 0.96, y: -8 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: -8 }}
+              initial={reduceMotion? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -8 }}
+              animate={reduceMotion? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
+              exit={reduceMotion? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -8 }}
               transition={{ duration: 0.15 }}
               className="fixed z-50 w-[188px] overflow-hidden rounded-2xl border border-zinc-200 bg-white/95 py-2 shadow-2xl shadow-black/15 backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-950/95"
               style={{ top: `${menuPos.y}px`, left: `${menuPos.x}px` }}
             >
-              {isOwner && (
-                <>
-                  <button role="menuitem" type="button" onClick={(e) => { e.stopPropagation(); setShowMenu(false); router.push(`/task/${task.id}/edit`); }} className="flex min-h-11 w-full items-center gap-3 px-4 text-sm font-bold text-zinc-800 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-900 dark:focus-visible:bg-zinc-900">
-                    <FiEdit2 /> Sửa mục này
-                  </button>
-                  <button role="menuitem" type="button" onClick={(e) => { e.stopPropagation(); setShowMenu(false); handleDelete(); }} className="flex min-h-11 w-full items-center gap-3 px-4 text-sm font-bold text-red-500 transition hover:bg-red-50 focus-visible:outline-none focus-visible:bg-red-50 dark:hover:bg-red-500/10 dark:focus-visible:bg-red-500/10">
-                    <FiTrash2 /> Xóa
-                  </button>
-                </>
-              )}
-              {!isOwner && (
-                <button role="menuitem" type="button" onClick={(e) => { e.stopPropagation(); setShowMenu(false); toast.info("Tính năng báo cáo sắp ra mắt"); }} className="flex min-h-11 w-full items-center gap-3 px-4 text-sm font-bold text-zinc-800 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-900 dark:focus-visible:bg-zinc-900">
-                  Báo cáo
-                </button>
-              )}
+              <button role="menuitem" type="button" onClick={(e) => { e.stopPropagation(); setShowMenu(false); router.push(`/task/${task.id}/edit`); }} className="flex min-h-11 w-full items-center gap-3 px-4 text-sm font-bold text-zinc-800 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-900 dark:focus-visible:bg-zinc-900">
+                <FiEdit2 /> Sửa mục này
+              </button>
+              <button role="menuitem" type="button" onClick={(e) => { e.stopPropagation(); setShowMenu(false); handleDelete(); }} className="flex min-h-11 w-full items-center gap-3 px-4 text-sm font-bold text-red-500 transition hover:bg-red-50 focus-visible:outline-none focus-visible:bg-red-50 dark:hover:bg-red-500/10 dark:focus-visible:bg-red-500/10">
+                <FiTrash2 /> Xóa
+              </button>
             </motion.div>
           </Portal>
         )}
@@ -374,7 +401,6 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
   );
 }
 
-// Skeleton loading
 export const TaskCardSkeleton = memo(() => (
   <div className="w-full max-w-sm mx-auto animate-pulse">
     <div className="rounded-2xl border border-zinc-200/70 bg-white p-3 dark:border-white/10 dark:bg-zinc-950">
@@ -386,10 +412,10 @@ export const TaskCardSkeleton = memo(() => (
         </div>
       </div>
       <div className="h-4 w-3/4 rounded bg-zinc-200 dark:bg-zinc-800 mb-3" />
-      <div className="grid grid-cols-3 gap-2">
-        <div className="h-14 rounded-xl bg-zinc-100 dark:bg-zinc-900/50" />
-        <div className="h-14 rounded-xl bg-zinc-100 dark:bg-zinc-900/50" />
-        <div className="h-14 rounded-xl bg-zinc-100 dark:bg-zinc-900/50" />
+      <div className="grid grid-cols-3 gap-1.5">
+        <div className="h-12 rounded-lg bg-zinc-100 dark:bg-zinc-900/50" />
+        <div className="h-12 rounded-lg bg-zinc-100 dark:bg-zinc-900/50" />
+        <div className="h-12 rounded-lg bg-zinc-100 dark:bg-zinc-900/50" />
       </div>
     </div>
   </div>
