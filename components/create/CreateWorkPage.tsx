@@ -974,19 +974,19 @@ useEffect(() => {
           </motion.div>
         )}
       </AnimatePresence>
-  <GpsRequiredModal
-        open={showGpsExplain}
-        onAllow={() => {
-          setShowGpsExplain(false);
-          requestGPS();
-        }}
-        onSkip={() => {
-          setShowGpsExplain(false);
-          setGpsDenied(true);
-        }}
-        loading={locating}
-        mode={mode}
-      />
+ <GpsRequiredModal
+  open={showGpsExplain}
+  onClose={() => {
+    setShowGpsExplain(false);
+    setGpsDenied(true);
+  }}
+  onRetry={() => {
+    setShowGpsExplain(false);
+    requestGPS();
+  }}
+  loading={locating}
+  mode={mode}
+/>
       <style jsx global>{`
       .input-base {
           width: 100%;
