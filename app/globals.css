@@ -106,7 +106,6 @@
     @apply border-border;
   }
 
-  /* FIX: Bỏ min-height, để browser tự tính */
   html {
     font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
     @apply font-sans;
@@ -127,13 +126,10 @@
     overscroll-behavior: none;
   }
 
-  /* FIX: Bỏ hết padding, height */
   body {
     margin: 0;
     width: 100%;
   }
-
-  /* FIX: Bỏ #__next luôn, không cần */
 
     * {
     -webkit-tap-highlight-color: transparent;
@@ -325,6 +321,16 @@
 
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* FIX: PWA standalone mode */
+  @media (display-mode: standalone) {
+    .pb-safe {
+      padding-bottom: 0px;
+    }
+    .pt-safe {
+      padding-top: 0px;
+    }
   }
 
   .pt-safe {
