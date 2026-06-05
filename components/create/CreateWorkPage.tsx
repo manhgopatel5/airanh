@@ -148,7 +148,18 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const gradient = isTask? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
   const categories = isTask? CATEGORY_TASKS : CATEGORY_PLANS;
   const draftKey = `create_${mode}_draft_v5`;
-  const requestGPS = useCallback(() => {
+  const [permissionState, setPermissionState] = useState<'prompt' | 'granted' | 'denied'>('prompt');
+
+// Check quyền GPS lúc mount
+useEffect(() => {
+  if (!navigator.permissions) return;
+  navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+    setPermissionState(result.state);
+    result.onchange = () => setPermissionState(result.state);
+  });
+}, []);
+
+const requestGPS = useCallback(() => {
   if (!navigator.geolocation) {
     toast.error("Thiết bị không hỗ trợ GPS");
     setGpsDenied(true);
@@ -156,20 +167,28 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   }
 
   setLocating(true);
+  setGpsDenied(false);
+
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       updateLocation({ 
         lat: pos.coords.latitude, 
         lng: pos.coords.longitude 
       });
+      setPermissionState('granted');
       setGpsDenied(false);
       setLocating(false);
+      toast.success("Đã lấy vị trí");
     },
     (err) => {
       console.warn("GPS error:", err);
       setGpsDenied(true);
       setLocating(false);
-      toast.error("Bạn cần bật GPS để tạo task/plan");
+      if (err.code === 1) { // PERMISSION_DENIED
+        toast.error("Bạn đã chặn quyền vị trí. Vào Cài đặt trình duyệt để bật lại");
+      } else {
+        toast.error("Không thể lấy vị trí. Thử lại sau");
+      }
     },
     { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
   );
@@ -558,26 +577,41 @@ useEffect(() => {
           {step === 1 && (
             <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <Panel>
-{gpsDenied && (
+{gpsDenied && permissionState === 'denied' && (
   <div className="space-y-3 rounded-xl bg-red-50 p-4 dark:bg-red-950/30">
     <div className="flex items-start gap-2 text-sm font-bold text-red-600 dark:text-red-400">
       <FiAlertCircle className="mt-0.5 flex-shrink-0" />
-      <span>Bạn đã tắt quyền truy cập vị trí. Bật GPS để tạo task/plan.</span>
+      <div>
+        <p>Bạn đã tắt quyền truy cập vị trí.</p>
+        <p className="mt-1 text-xs font-normal">
+          iOS: Cài đặt → Safari → Vị trí → Cho phép<br/>
+          Android: Chrome → ⚙️ → Quyền → Vị trí → Cho phép
+        </p>
+      </div>
     </div>
     <button
       onClick={requestGPS}
       disabled={locating}
       className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-red-600 text-sm font-bold text-white active:scale-95 disabled:opacity-60"
     >
-      <FiNavigation /> {locating ? "Đang xin quyền..." : "Bật lại GPS"}
+      <FiNavigation /> {locating ? "Đang thử lại..." : "Thử lại"}
     </button>
   </div>
 )}
 
-{!gpsDenied && !form.location.lat && (
-  <div className="flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700 dark:bg-blue-950/30 dark:text-blue-400">
-    <FiNavigation className="flex-shrink-0" />
-    Đang lấy vị trí để sắp xếp gần bạn...
+{gpsDenied && permissionState === 'prompt' && (
+  <div className="space-y-3 rounded-xl bg-amber-50 p-4 dark:bg-amber-950/30">
+    <div className="flex items-start gap-2 text-sm font-bold text-amber-600 dark:text-amber-400">
+      <FiAlertCircle className="mt-0.5 flex-shrink-0" />
+      <span>Cần bật GPS để tạo task/plan gần bạn.</span>
+    </div>
+    <button
+      onClick={requestGPS}
+      disabled={locating}
+      className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-amber-600 text-sm font-bold text-white active:scale-95 disabled:opacity-60"
+    >
+      <FiNavigation /> {locating ? "Đang xin quyền..." : "Bật GPS"}
+    </button>
   </div>
 )}
 
