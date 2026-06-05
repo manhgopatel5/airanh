@@ -79,21 +79,19 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
   const derived = useMemo(() => {
     const maxSlots = task.type === "task"? task.totalSlots?? 0 : task.maxParticipants?? task.totalSlots?? 0;
     const currentCount = task.type === "task"? task.joined?? 0 : task.currentParticipants?? 0;
-    const progress = maxSlots > 0? Math.min(100, Math.round((currentCount / maxSlots) * 100)) : 0;
     const created = task.createdAt? new Date(task.createdAt) : new Date();
     const dueRaw = task.type === "task"? task.deadline : task.eventDate;
     const due = dueRaw? new Date(dueRaw).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }) : "Linh hoạt";
     const price = task.type === "task"
-     ? task.price && task.price > 0? `${task.price.toLocaleString("vi-VN")} VNĐ${task.budgetType === "hourly"? "/h" : ""}` : "Thỏa thuận"
+    ? task.price && task.price > 0? `${task.price.toLocaleString("vi-VN")} VNĐ${task.budgetType === "hourly"? "/h" : ""}` : "Thỏa thuận"
       : task.costType === "free"? "Miễn phí" : task.costType === "share"? "Chia đều" : task.costAmount? `${task.costAmount.toLocaleString("vi-VN")} VNĐ` : "Linh hoạt";
     return {
       maxSlots,
       currentCount,
-      progress,
       due,
       price,
       timeAgo: formatDistanceToNow(created, { addSuffix: true, locale: vi }),
-      province: task.location?.city || task.location?.province || "",
+      locationName: task.location?.city || "", // Chỉ dùng city, type không có province
     };
   }, [task]);
 
@@ -230,20 +228,20 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
           </button>
 
           <div className="mt-3 flex flex-wrap gap-2">
-            <div className="flex-1 min-w-[90px] rounded-xl bg-zinc-50 p-2 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
-              <div className="flex items-center gap-1 text-[11px] font-semibold text-zinc-400">
+            <div className="flex-1 min-w- rounded-xl bg-zinc-50 p-2 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
+              <div className="flex items-center gap-1 text- font-semibold text-zinc-400">
                 <TbCurrencyDong className="h-3.5 w-3.5" /> Giá trị
               </div>
               <p className="mt-0.5 truncate text-xs font-bold text-zinc-950 dark:text-white">{derived.price}</p>
             </div>
-            <div className="flex-1 min-w-[90px] rounded-xl bg-zinc-50 p-2 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
-              <div className="flex items-center gap-1 text-[11px] font-semibold text-zinc-400">
+            <div className="flex-1 min-w- rounded-xl bg-zinc-50 p-2 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
+              <div className="flex items-center gap-1 text- font-semibold text-zinc-400">
                 <FiClock className="h-3 w-3" /> Hạn chót
               </div>
               <p className="mt-0.5 text-xs font-bold text-zinc-950 dark:text-white">{derived.due}</p>
             </div>
-            <div className="flex-1 min-w-[90px] rounded-xl bg-zinc-50 p-2 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
-              <div className="flex items-center gap-1 text-[11px] font-semibold text-zinc-400">
+            <div className="flex-1 min-w- rounded-xl bg-zinc-50 p-2 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
+              <div className="flex items-center gap-1 text- font-semibold text-zinc-400">
                 <FiUsers className="h-3 w-3" /> Số người
               </div>
               <p className="mt-0.5 text-xs font-bold text-zinc-950 dark:text-white">{derived.maxSlots? `${derived.currentCount}/${derived.maxSlots}` : "Mở"}</p>
@@ -264,14 +262,14 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate }: Props) {
             <button type="button" aria-label="Chia sẻ" onClick={(e) => { e.stopPropagation(); vibrate(8); onShare?.(task); }} className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-600 transition active:scale-95 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-900">
               <FiShare2 className="h-4 w-4" />
             </button>
-            {derived.province && (
+            {derived.locationName && (
               <div className="ml-1 flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 max-w-[100px]">
                 <FiMapPin className="h-3 w-3 shrink-0" />
-                <span className="truncate">{derived.province}</span>
+                <span className="truncate">{derived.locationName}</span>
               </div>
             )}
           </div>
-          <div className="flex items-center gap-1 pr-2 text-[11px] font-semibold text-zinc-400 shrink-0">
+          <div className="flex items-center gap-1 pr-2 text- font-semibold text-zinc-400 shrink-0">
             <FiEye className="h-3 w-3" /> {task.viewCount || 0}
           </div>
         </div>
