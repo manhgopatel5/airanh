@@ -25,7 +25,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
 import { type FeedTask } from "@/types/task";
 import { cn } from "@/lib/utils";
-import { useProvinces } from "@/lib/provinces"; // Hook đã cache
+import { useProvinces } from "@/lib/provinces"; // Hook đã cache ở layout
 
 type Props = {
   task: FeedTask;
@@ -46,7 +46,7 @@ const vibrate = (ms: number | number[] = 8) => {
   if (typeof navigator!== "undefined" && "vibrate" in navigator) navigator.vibrate(ms);
 };
 
-// Map O(1) từ city -> province name, build 1 lần
+// Map city -> province name, O(1)
 const useProvinceMap = () => {
   const provinces = useProvinces();
   return useMemo(() => {
@@ -55,7 +55,7 @@ const useProvinceMap = () => {
       const short = p.name.replace("Thành phố ", "").replace("Tỉnh ", "");
       map.set(short, p.name);
       map.set(p.name, p.name);
-      map.set(p.code, p.name); // "ho-chi-minh" -> "Thành phố Hồ Chí Minh"
+      map.set(p.code, p.name);
     });
     return map;
   }, [provinces]);
@@ -67,7 +67,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
   const { user } = useAuth();
   const menuBtnRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
-  const provinceMap = useProvinceMap(); // O(1) lookup, không fetch
+  const provinceMap = useProvinceMap();
 
   const [isSaved, setIsSaved] = useState(false);
   const [liked, setLiked] = useState(false);
@@ -122,15 +122,15 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
       : "Linh hoạt";
     const price =
       task.type === "task"
-  ? task.price && task.price > 0
-    ? `${task.price.toLocaleString("vi-VN")} VNĐ${task.budgetType === "hourly"? "/h" : ""}`
+ ? task.price && task.price > 0
+   ? `${task.price.toLocaleString("vi-VN")} VNĐ${task.budgetType === "hourly"? "/h" : ""}`
           : "Thỏa thuận"
         : task.costType === "free"
-  ? "Miễn phí"
+ ? "Miễn phí"
         : task.costType === "share"
-  ? "Chia đều"
+ ? "Chia đều"
         : task.costAmount
-  ? `${task.costAmount.toLocaleString("vi-VN")} VNĐ`
+ ? `${task.costAmount.toLocaleString("vi-VN")} VNĐ`
         : "Linh hoạt";
 
     const cityKey = task.location?.city || "";
@@ -304,24 +304,24 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
             <h3 className="text-base font-bold leading-snug tracking-tight text-zinc-950 dark:text-white line-clamp-2">{task.title}</h3>
           </button>
 
-          <div className="mt-3 grid grid-cols-3 gap-1.5">
-            <div className="rounded-lg bg-zinc-50 p-1.5 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
+          <div className="mt-3 grid grid-cols-3 gap-1">
+            <div className="rounded-lg bg-zinc-50 p-1 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
               <div className="flex items-center gap-1 text- font-semibold text-zinc-400">
-                <TbCurrencyDong className="h-2.5 w-2.5" /> Giá trị
+                <TbCurrencyDong className="h-2 w-2" /> Giá trị
               </div>
-              <p className="mt-0 truncate text-xs font-bold text-zinc-950 dark:text-white">{derived.price}</p>
+              <p className="mt-0 truncate text-[11px] font-bold text-zinc-950 dark:text-white">{derived.price}</p>
             </div>
-            <div className="rounded-lg bg-zinc-50 p-1.5 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
+            <div className="rounded-lg bg-zinc-50 p-1 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
               <div className="flex items-center gap-1 text- font-semibold text-zinc-400">
-                <FiClock className="h-2.5 w-2.5" /> Hạn chót
+                <FiClock className="h-2 w-2" /> Hạn chót
               </div>
-              <p className="mt-0 text-xs font-bold text-zinc-950 dark:text-white">{derived.due}</p>
+              <p className="mt-0 text-[11px] font-bold text-zinc-950 dark:text-white">{derived.due}</p>
             </div>
-            <div className={cn("rounded-lg bg-zinc-50 p-1.5 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5", derived.isFull && "ring-red-500/20 bg-red-50 dark:bg-red-950/20")}>
+            <div className={cn("rounded-lg bg-zinc-50 p-1 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5", derived.isFull && "ring-red-500/20 bg-red-50 dark:bg-red-950/20")}>
               <div className="flex items-center gap-1 text- font-semibold text-zinc-400">
-                <FiUsers className="h-2.5 w-2.5" /> Số người
+                <FiUsers className="h-2 w-2" /> Số người
               </div>
-              <p className={cn("mt-0 text-xs font-bold text-zinc-950 dark:text-white", derived.isFull && "text-red-600 dark:text-red-400")}>
+              <p className={cn("mt-0 text-[11px] font-bold text-zinc-950 dark:text-white", derived.isFull && "text-red-600 dark:text-red-400")}>
                 {derived.maxSlots? `${derived.currentCount}/${derived.maxSlots}` : "Mở"}
               </p>
             </div>
@@ -348,14 +348,6 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
             <button type="button" aria-label="Chia sẻ" onClick={(e) => { e.stopPropagation(); vibrate(8); onShare?.(task); }} className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-zinc-600 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}>
               <FiShare2 className="h-4 w-4" />
             </button>
-            {derived.provinceName && (
-              <div title={derived.provinceName} className="ml-1 flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 max-w-">
-                <FiMapPin className="h-3 w-3 shrink-0" />
-                <span className="truncate">{derived.provinceName}</span>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
             <button
               type="button"
               aria-label={isSaved? "Bỏ lưu" : "Lưu"}
@@ -366,6 +358,14 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
             >
               <FiBookmark className={cn("h-4 w-4", isSaved && "fill-current")} style={{ color: isSaved? accent : undefined }} />
             </button>
+          </div>
+          <div className="flex items-center gap-2">
+            {derived.provinceName && (
+              <div title={derived.provinceName} className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400 max-w-">
+                <FiMapPin className="h-3 w-3 shrink-0" />
+                <span className="truncate">{derived.provinceName}</span>
+              </div>
+            )}
             <div className="flex items-center gap-1 pr-1 text- font-semibold text-zinc-400">
               <FiEye className="h-3 w-3" /> {task.viewCount || 0}
             </div>
@@ -403,7 +403,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
 
 export const TaskCardSkeleton = memo(() => (
   <div className="w-full max-w-sm mx-auto animate-pulse">
-    <div className="rounded-2xl border border-zinc-200/70 bg-white p-3 dark:border-white/10 dark:bg-zinc-950">
+    <div className="rounded-2xl border-zinc-200/70 bg-white p-3 dark:border-white/10 dark:bg-zinc-950">
       <div className="mb-3 flex items-center gap-2.5">
         <div className="h-10 w-10 rounded-xl bg-zinc-200 dark:bg-zinc-800" />
         <div className="flex-1 space-y-2">
@@ -412,7 +412,7 @@ export const TaskCardSkeleton = memo(() => (
         </div>
       </div>
       <div className="h-4 w-3/4 rounded bg-zinc-200 dark:bg-zinc-800 mb-3" />
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid grid-cols-3 gap-1">
         <div className="h-12 rounded-lg bg-zinc-100 dark:bg-zinc-900/50" />
         <div className="h-12 rounded-lg bg-zinc-100 dark:bg-zinc-900/50" />
         <div className="h-12 rounded-lg bg-zinc-100 dark:bg-zinc-900/50" />
