@@ -133,6 +133,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [gpsDenied, setGpsDenied] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [placeSuggestions, setPlaceSuggestions] = useState<string[]>([]);
 
@@ -147,7 +148,32 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const gradient = isTask? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
   const categories = isTask? CATEGORY_TASKS : CATEGORY_PLANS;
   const draftKey = `create_${mode}_draft_v5`;
+  const requestGPS = useCallback(() => {
+  if (!navigator.geolocation) {
+    toast.error("Thiết bị không hỗ trợ GPS");
+    setGpsDenied(true);
+    return;
+  }
 
+  setLocating(true);
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      updateLocation({ 
+        lat: pos.coords.latitude, 
+        lng: pos.coords.longitude 
+      });
+      setGpsDenied(false);
+      setLocating(false);
+    },
+    (err) => {
+      console.warn("GPS error:", err);
+      setGpsDenied(true);
+      setLocating(false);
+      toast.error("Bạn cần bật GPS để tạo task/plan");
+    },
+    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+  );
+}, []);
 const [loadingProvinces, setLoadingProvinces] = useState(true);
 
 // Load provinces
@@ -223,6 +249,11 @@ useEffect(() => {
     return () => clearTimeout(timer);
   }, [draftKey, form]);
 
+// Auto request GPS khi vào step Địa điểm
+useEffect(() => {
+  if (step !== 1 || form.location.lat) return;
+  requestGPS();
+}, [step, form.location.lat, requestGPS]);
   // Keyboard shortcuts
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -244,9 +275,10 @@ useEffect(() => {
         if (value.trim().length < 20) return "Tối thiểu 20 ký tự";
         return "";
       case "location":
-        if (!value.address.trim()) return "Nhập địa chỉ cụ thể";
-        if (!value.provinceId) return "Chọn tỉnh/thành phố";
-        return "";
+  if (!value.address.trim()) return "Nhập địa chỉ cụ thể";
+  if (!value.provinceId) return "Chọn tỉnh/thành phố";
+  if (!value.lat || !value.lng) return "Vui lòng bật GPS để định vị";
+  return "";
       case "price":
         if (isTask && form.budgetType!== "negotiable" && value <= 0) return "Nhập số tiền hợp lệ";
         return "";
@@ -323,149 +355,7 @@ useEffect(() => {
     debounceRef.current = setTimeout(() => searchPlaces(value), 400);
   };
 
-  const useCurrentLocation = useCallback(async () => {
-  if (!navigator.geolocation) {
-    toast.error("Thiết bị không hỗ trợ định vị");
-    return;
-  }
 
-  setLocating(true);
-
-  // Nếu provinces chưa load thì fetch lại
-  let currentProvinces = provinces;
-  if (currentProvinces.length === 0) {
-    try {
-      const res = await fetch("/api/location/province", {
-        headers: { "Content-Type": "application/json" },
-        cache: "force-cache"
-      });
-      currentProvinces = await res.json();
-      setProvinces(currentProvinces);
-    } catch {
-      toast.error("Không tải được danh sách tỉnh");
-      setLocating(false);
-      return;
-    }
-  }
-
-  if (currentProvinces.length === 0) {
-    toast.error("Danh sách tỉnh rỗng, kiểm tra API");
-    setLocating(false);
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-      updateLocation({ lat, lng });
-
-      try {
-        const res = await fetch(
-          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=vi`
-        );
-        const data = await res.json();
-
-        const address = [
-          data.locality,
-          data.city,
-          data.principalSubdivision
-        ].filter(Boolean).join(", ") || "Vị trí hiện tại";
-        
-        const provinceName = data.principalSubdivision || "";
-        const districtName = data.locality || data.city || "";
-        const wardName = data.localityInfo?.administrative?.find((a: any) => a.adminLevel === 8)?.name || "";
-
-        // Hàm normalize: bỏ dấu + tiền tố
-        const normalize = (str: string) => str.toLowerCase()
-         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-         .replace(/^(tinh|thanh pho|quan|huyen|phuong|xa|thi xa|thi tran)\s+/i, "")
-         .trim();
-
-        const nProvinceName = normalize(provinceName);
-
-        // Match tỉnh: exact trước, includes sau
-        let province = currentProvinces.find(p => normalize(p.name) === nProvinceName);
-        if (!province) {
-          province = currentProvinces.find(p => 
-            normalize(p.name).includes(nProvinceName) || 
-            nProvinceName.includes(normalize(p.name))
-          );
-        }
-
-        if (!province) {
-          console.log("Geocode province:", provinceName, "Available:", currentProvinces.map(p => p.name));
-          updateLocation({ address });
-          toast.error(`Không tìm thấy tỉnh "${provinceName}", vui lòng chọn thủ công`);
-          setLocating(false);
-          return;
-        }
-
-        // Load districts
-        const dRes = await fetch("/api/location/district", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ provinceId: province.id }),
-        });
-        const districtsData = await dRes.json();
-        setDistricts(districtsData);
-
-        // Match huyện
-        const nDistrictName = normalize(districtName);
-        let district = districtsData.find((d: District) => normalize(d.name) === nDistrictName);
-        if (!district) {
-          district = districtsData.find((d: District) => 
-            normalize(d.name).includes(nDistrictName) || 
-            nDistrictName.includes(normalize(d.name))
-          );
-        }
-
-        updateLocation({
-          address,
-          provinceId: province.id,
-          provinceName: province.name,
-          districtId: district?.id || null,
-          districtName: district?.name || districtName,
-          wardName,
-        });
-
-        // Load wards nếu có district
-        if (district?.id) {
-          const wRes = await fetch("/api/location/ward", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ districtId: district.id }),
-          });
-          const wardsData = await wRes.json();
-          setWards(wardsData);
-
-          const nWardName = normalize(wardName);
-          let ward = wardsData.find((w: Ward) => normalize(w.name) === nWardName);
-          if (!ward) {
-            ward = wardsData.find((w: Ward) => 
-              normalize(w.name).includes(nWardName) || 
-              nWardName.includes(normalize(w.name))
-            );
-          }
-          if (ward) updateLocation({ wardId: ward.id, wardName: ward.name });
-        }
-
-        toast.success("Đã thêm vị trí");
-      } catch (err) {
-        console.error("Geocode error:", err);
-        updateLocation({ address: "Vị trí hiện tại" });
-        toast.error("Chỉ lấy được tọa độ, vui lòng chọn tỉnh/huyện");
-      }
-      setLocating(false);
-    },
-    (err) => {
-      console.error("Geolocation error:", err);
-      toast.error("Không thể lấy vị trí. Kiểm tra quyền truy cập");
-      setLocating(false);
-    },
-    { enableHighAccuracy: true, timeout: 10000 }
-  );
-}, [provinces]);
   const handleCategoryChange = (catId: string) => {
     update("category", catId);
     if (isTask) {
@@ -668,13 +558,28 @@ useEffect(() => {
           {step === 1 && (
             <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <Panel>
-         <button
-  onClick={useCurrentLocation}
-  disabled={locating || loadingProvinces}
-  className={`flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r ${gradient} text-sm font-bold text-white disabled:opacity-60`}
->
-  <FiNavigation /> {locating? "Đang lấy vị trí..." : loadingProvinces? "Đang tải tỉnh..." : "Dùng vị trí hiện tại"}
-</button>
+{gpsDenied && (
+  <div className="space-y-3 rounded-xl bg-red-50 p-4 dark:bg-red-950/30">
+    <div className="flex items-start gap-2 text-sm font-bold text-red-600 dark:text-red-400">
+      <FiAlertCircle className="mt-0.5 flex-shrink-0" />
+      <span>Bạn đã tắt quyền truy cập vị trí. Bật GPS để tạo task/plan.</span>
+    </div>
+    <button
+      onClick={requestGPS}
+      disabled={locating}
+      className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-red-600 text-sm font-bold text-white active:scale-95 disabled:opacity-60"
+    >
+      <FiNavigation /> {locating ? "Đang xin quyền..." : "Bật lại GPS"}
+    </button>
+  </div>
+)}
+
+{!gpsDenied && !form.location.lat && (
+  <div className="flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700 dark:bg-blue-950/30 dark:text-blue-400">
+    <FiNavigation className="flex-shrink-0" />
+    Đang lấy vị trí để sắp xếp gần bạn...
+  </div>
+)}
 
              <Field label="Tỉnh/Thành phố" required error={errors["location.provinceId"]}>
   <select
