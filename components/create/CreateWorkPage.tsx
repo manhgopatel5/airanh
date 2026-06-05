@@ -148,13 +148,22 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const categories = isTask? CATEGORY_TASKS : CATEGORY_PLANS;
   const draftKey = `create_${mode}_draft_v5`;
 
-  // Load provinces
-  useEffect(() => {
-    fetch("/api/provinces")
-     .then((r) => r.json())
-     .then(setProvinces)
-     .catch(() => toast.error("Không tải được danh sách tỉnh"));
-  }, []);
+const [loadingProvinces, setLoadingProvinces] = useState(true);
+
+// Load provinces
+useEffect(() => {
+  setLoadingProvinces(true);
+  fetch("/api/provinces")
+   .then((r) => r.json())
+   .then((data) => {
+      setProvinces(data);
+      setLoadingProvinces(false);
+    })
+   .catch(() => {
+      toast.error("Không tải được danh sách tỉnh");
+      setLoadingProvinces(false);
+    });
+}, []);
 
   // Load districts khi chọn tỉnh
   useEffect(() => {
@@ -307,76 +316,92 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   };
 
   const useCurrentLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      toast.error("Thiết bị không hỗ trợ định vị");
-      return;
-    }
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        updateLocation({ lat, lng });
-        try {
-          const res = await fetch(`/api/places/geocode?lat=${lat}&lng=${lng}`);
-          const data = await res.json().catch(() => null);
-          const result = data?.results?.[0];
-          if (!result) throw new Error("No result");
+  if (!navigator.geolocation) {
+    toast.error("Thiết bị không hỗ trợ định vị");
+    return;
+  }
+  setLocating(true);
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      updateLocation({ lat, lng });
 
-          const components = result.address_components || [];
-          const getComp = (type: string) => components.find((c: any) => c.types?.includes(type))?.long_name || "";
+      try {
+        // Dùng Google Geocode hoặc BigDataCloud free
+        const res = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=vi`
+        );
+        const data = await res.json();
 
-          const address = result.formatted_address || "Vị trí hiện tại";
-          const provinceName = getComp("administrative_area_level_1");
-          const districtName = getComp("administrative_area_level_2");
-          const wardName = getComp("sublocality_level_1") || getComp("sublocality") || getComp("neighborhood");
+        const address = data.locality || data.city || "Vị trí hiện tại";
+        const provinceName = data.principalSubdivision || "";
+        const districtName = data.locality || data.city || "";
+        const wardName = data.localityInfo?.administrative?.find((a: any) => a.adminLevel === 8)?.name || "";
 
-          const province = provinces.find(p => p.name === provinceName);
+        // Map tên → id từ provinces đã load
+        const province = provinces.find(p =>
+          p.name.toLowerCase().includes(provinceName.toLowerCase()) ||
+          provinceName.toLowerCase().includes(p.name.toLowerCase().replace("Thành phố ", "").replace("Tỉnh ", ""))
+        );
 
-          updateLocation({
-            address,
-            provinceName,
-            provinceId: province?.id || null,
-            districtName,
-            wardName,
+        updateLocation({
+          address,
+          provinceName,
+          provinceId: province?.id || null,
+          districtName,
+          wardName,
+        });
+
+        // Auto load district/ward nếu match được province
+        if (province?.id) {
+          const dRes = await fetch("/api/districts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ provinceId: province.id }),
           });
+          const districtsData = await dRes.json();
+          setDistricts(districtsData);
 
-          // Auto load district/ward nếu có province
-          if (province?.id) {
-            const dRes = await fetch("/api/districts", {
+          const district = districtsData.find((d: District) =>
+            d.name.toLowerCase().includes(districtName.toLowerCase()) ||
+            districtName.toLowerCase().includes(d.name.toLowerCase().replace("Quận ", "").replace("Huyện ", ""))
+          );
+
+          if (district) {
+            updateLocation({ districtId: district.id, districtName: district.name });
+
+            const wRes = await fetch("/api/wards", {
               method: "POST",
-              body: JSON.stringify({ provinceId: province.id }),
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ districtId: district.id }),
             });
-            const districts = await dRes.json();
-            setDistricts(districts);
-            const district = districts.find((d: District) => d.name === districtName);
-            if (district) {
-              updateLocation({ districtId: district.id, districtName });
-              const wRes = await fetch("/api/wards", {
-                method: "POST",
-                body: JSON.stringify({ districtId: district.id }),
-              });
-              const wards = await wRes.json();
-              setWards(wards);
-              const ward = wards.find((w: Ward) => w.name === wardName);
-              if (ward) updateLocation({ wardId: ward.id, wardName });
-            }
-          }
+            const wardsData = await wRes.json();
+            setWards(wardsData);
 
-          toast.success("Đã thêm vị trí");
-        } catch {
-          updateLocation({ address: "Vị trí hiện tại" });
-          toast.error("Chỉ lấy được tọa độ, vui lòng chọn tỉnh/huyện");
+            const ward = wardsData.find((w: Ward) =>
+              w.name.toLowerCase().includes(wardName.toLowerCase()) ||
+              wardName.toLowerCase().includes(w.name.toLowerCase().replace("Phường ", "").replace("Xã ", ""))
+            );
+            if (ward) updateLocation({ wardId: ward.id, wardName: ward.name });
+          }
         }
-        setLocating(false);
-      },
-      () => {
-        toast.error("Không thể lấy vị trí");
-        setLocating(false);
-      },
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
-  }, [provinces]);
+
+        toast.success("Đã thêm vị trí");
+      } catch (err) {
+        console.error(err);
+        updateLocation({ address: "Vị trí hiện tại" });
+        toast.error("Chỉ lấy được tọa độ, vui lòng chọn tỉnh/huyện");
+      }
+      setLocating(false);
+    },
+    () => {
+      toast.error("Không thể lấy vị trí");
+      setLocating(false);
+    },
+    { enableHighAccuracy: true, timeout: 8000 }
+  );
+}, [provinces]);
 
   const handleCategoryChange = (catId: string) => {
     update("category", catId);
@@ -588,29 +613,32 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
                   <FiNavigation /> {locating? "Đang lấy vị trí..." : "Dùng vị trí hiện tại"}
                 </button>
 
-                <Field label="Tỉnh/Thành phố" required error={errors["location.provinceId"]}>
-                  <select
-                    value={form.location.provinceId || ""}
-                    onChange={(e) => {
-                      const id = Number(e.target.value);
-                      const p = provinces.find(p => p.id === id);
-                      updateLocation({
-                        provinceId: id,
-                        provinceName: p?.name || "",
-                        districtId: null,
-                        districtName: "",
-                        wardId: null,
-                        wardName: ""
-                      });
-                    }}
-                    className="input-base"
-                  >
-                    <option value="">Chọn tỉnh/thành phố</option>
-                    {provinces.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
-                </Field>
+             <Field label="Tỉnh/Thành phố" required error={errors["location.provinceId"]}>
+  <select
+    value={form.location.provinceId || ""}
+    onChange={(e) => {
+      const id = Number(e.target.value);
+      const p = provinces.find(p => p.id === id);
+      updateLocation({
+        provinceId: id,
+        provinceName: p?.name || "",
+        districtId: null,
+        districtName: "",
+        wardId: null,
+        wardName: ""
+      });
+    }}
+    className="input-base"
+    disabled={loadingProvinces}
+  >
+    <option value="">
+      {loadingProvinces? "Đang tải..." : "Chọn tỉnh/thành phố"}
+    </option>
+    {provinces.map((p) => (
+      <option key={p.id} value={p.id}>{p.name}</option>
+    ))}
+  </select>
+</Field>
 
                 {form.location.provinceId && (
                   <Field label="Quận/Huyện">
