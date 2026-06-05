@@ -46,7 +46,7 @@ const SPRING_BOUNCY = {
 };
 
 /* ==========================================================================
-   FLOATING MENU 
+   FLOATING MENU
    ========================================================================== */
 const FloatingMenu = React.memo(({
   isOpen,
@@ -94,7 +94,7 @@ const FloatingMenu = React.memo(({
           }}
           className="w-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-3xl rounded-3xl p-3 border border-zinc-200/40 dark:border-zinc-800/40 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] pointer-events-auto flex flex-col gap-1.5 select-none"
         >
-          <div 
+          <div
             onPointerDown={(e) => dragControls.start(e)}
             className="w-full flex justify-center pt-1 pb-2 cursor-grab active:cursor-grabbing touch-none"
           >
@@ -107,14 +107,14 @@ const FloatingMenu = React.memo(({
 
           <motion.button
             initial={{ opacity: 0, x: -10 }}
-            animate={{ 
-              opacity: 1, 
+            animate={{
+              opacity: 1,
               x: 0,
               transition: {...SPRING, delay: 0.05 }
             }}
             exit={{ opacity: 0, x: -5, transition: { duration: 0.1 } }}
-            whileHover={{ 
-              scale: 1.02, 
+            whileHover={{
+              scale: 1.02,
               x: 4,
               backgroundColor: "rgba(0,0,0,0.03)",
             }}
@@ -128,7 +128,7 @@ const FloatingMenu = React.memo(({
               whileHover={{ x: "100%" }}
               transition={{ duration: 0.6, ease: "easeInOut" }}
             />
-            
+
             <div className="w-11 h-11 rounded-2xl bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 relative">
               <Sparkles className="w-5 h-5" strokeWidth={2.5} />
               <motion.div
@@ -145,14 +145,14 @@ const FloatingMenu = React.memo(({
 
           <motion.button
             initial={{ opacity: 0, x: -10 }}
-            animate={{ 
-              opacity: 1, 
+            animate={{
+              opacity: 1,
               x: 0,
               transition: {...SPRING, delay: 0.1 }
             }}
             exit={{ opacity: 0, x: -5, transition: { duration: 0.1 } }}
-            whileHover={{ 
-              scale: 1.02, 
+            whileHover={{
+              scale: 1.02,
               x: 4,
               backgroundColor: "rgba(0,0,0,0.03)",
             }}
@@ -166,7 +166,7 @@ const FloatingMenu = React.memo(({
               whileHover={{ x: "100%" }}
               transition={{ duration: 0.6, ease: "easeInOut" }}
             />
-            
+
             <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 relative">
               <CalendarRange className="w-5 h-5" strokeWidth={2.5} />
               <motion.div
@@ -186,7 +186,6 @@ const FloatingMenu = React.memo(({
   );
 });
 FloatingMenu.displayName = "FloatingMenu";
-
 
 /* ==========================================================================
    MAGNETIC NAV ITEM
@@ -289,8 +288,8 @@ const MagneticNavItem = React.memo(({
       {/* icon */}
       <motion.div
         animate={{
-          y: active ? -2 : 0,
-          scale: active ? 1.12 : 1
+          y: active? -2 : 0,
+          scale: active? 1.12 : 1
         }}
         transition={SPRING}
         className="relative z-10"
@@ -298,7 +297,7 @@ const MagneticNavItem = React.memo(({
         <motion.div
           animate={
             active
-              ? {
+             ? {
                   rotate: [0, -6, 6, 0]
                 }
               : {}
@@ -310,10 +309,10 @@ const MagneticNavItem = React.memo(({
           <item.Icon
             className={`w-[23px] h-[23px] transition-colors duration-300 ${
               active
-                ? activeColorClass
+               ? activeColorClass
                 : "text-zinc-400 dark:text-zinc-500"
             }`}
-            strokeWidth={active ? 2.7 : 2.2}
+            strokeWidth={active? 2.7 : 2.2}
           />
         </motion.div>
 
@@ -335,13 +334,13 @@ const MagneticNavItem = React.memo(({
       {/* text */}
       <motion.span
         animate={{
-          y: active ? -1 : 0,
-          scale: active ? 1.04 : 1
+          y: active? -1 : 0,
+          scale: active? 1.04 : 1
         }}
         transition={SPRING}
         className={`relative z-10 text-[11px] mt-1.5 tracking-tight transition-all duration-300 ${
           active
-            ? `${activeColorClass} font-bold`
+           ? `${activeColorClass} font-bold`
             : "text-zinc-400 dark:text-zinc-500 font-semibold"
         }`}
       >
@@ -375,9 +374,8 @@ const MagneticNavItem = React.memo(({
 });
 MagneticNavItem.displayName = "MagneticNavItem";
 
-
 /* ==========================================================================
-   MAIN: BOTTOM NAV - Portal Fix
+   MAIN: BOTTOM NAV - Chuẩn Big Tech
    ========================================================================== */
 export default function BottomNav() {
   const router = useRouter();
@@ -431,12 +429,11 @@ export default function BottomNav() {
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
       document.addEventListener("touchstart", handleClickOutside);
-      const originalStyle = window.getComputedStyle(document.body).overflow;
-      document.body.style.overflow = "hidden";
+      document.body.classList.add("modal-open");
       return () => {
         document.removeEventListener("mousedown", handleClickOutside);
         document.removeEventListener("touchstart", handleClickOutside);
-        document.body.style.overflow = originalStyle;
+        document.body.classList.remove("modal-open");
       };
     }
   }, [isOpen]);
@@ -487,24 +484,25 @@ export default function BottomNav() {
           )}
         </AnimatePresence>
 
-<div className="fixed bottom-0 inset-x-0 z-[70] pointer-events-none flex flex-col items-center justify-end">
-  <div ref={menuRef} className="w-full max-w-[480px] px-4 pb-safe flex flex-col items-center gap-3">
+        {/* FIX: Dùng pb-safe thay vì max(12px,env()) */}
+        <div className="fixed bottom-0 inset-x-0 z-[70] pointer-events-none flex flex-col items-center justify-end">
+          <div ref={menuRef} className="w-full max-w-[480px] px-4 pb-safe flex flex-col items-center gap-3">
 
             <FloatingMenu isOpen={isOpen} onSelect={handleSelectCreate} onClose={() => setIsOpen(false)} />
 
-        <motion.div 
-  layout
-  animate={{
-    y: [0, -2, 0]
-  }}
-  transition={{
-    duration: 4,
-    repeat: Infinity,
-    ease: "easeInOut"
-  }}
+            <motion.div
+              layout
+              animate={{
+                y: [0, -2, 0]
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
               className="w-full pointer-events-auto relative rounded-[32px] border border-white/40 dark:border-zinc-800/50 bg-white/55 dark:bg-zinc-900/55 backdrop-blur-[40px] backdrop-saturate-200 shadow-[0_20px_80px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.55)] overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/40 before:to-white/5 dark:before:from-white/5 dark:before:to-transparent before:pointer-events-none"
-              >
-<motion.div
+            >
+              <motion.div
                 className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
                 animate={{ x: ["-100%", "100%"] }}
                 transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
@@ -550,16 +548,16 @@ export default function BottomNav() {
                             <motion.span
                               key={delay}
                               initial={{ scale: 0.8, opacity: 0 }}
-                              animate={{ 
-                                scale: [1, 1.6, 1.6], 
-                                opacity: [0.7, 0, 0] 
+                              animate={{
+                                scale: [1, 1.6, 1.6],
+                                opacity: [0.7, 0, 0]
                               }}
                               exit={{ opacity: 0 }}
-                              transition={{ 
-                                repeat: Infinity, 
-                                duration: 2, 
+                              transition={{
+                                repeat: Infinity,
+                                duration: 2,
                                 delay,
-                                ease: "easeOut" 
+                                ease: "easeOut"
                               }}
                               className={`absolute inset-0 rounded-full ${activeBgClass}`}
                             />
@@ -589,22 +587,22 @@ export default function BottomNav() {
                       whileTap={{ scale: 0.85 }}
                       transition={SPRING_BOUNCY}
                       className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-2xl transition-all duration-500 ${dynamicGlow} relative overflow-hidden ${
-   isOpen 
-                      ? "bg-zinc-900 dark:bg-zinc-800 shadow-zinc-950/20" 
+                        isOpen
+                         ? "bg-zinc-900 dark:bg-zinc-800 shadow-zinc-950/20"
                           : `${activeBgClass} shadow-lg`
                       }`}
                     >
-<motion.div
-  className="absolute inset-0 bg-gradient-to-tr from-white/40 via-white/10 to-transparent"
-  animate={{
-    rotate: [0, 360]
-  }}
-  transition={{
-    duration: 8,
-    repeat: Infinity,
-    ease: "linear"
-  }}
-/>
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-tr from-white/40 via-white/10 to-transparent"
+                        animate={{
+                          rotate: [0, 360]
+                        }}
+                        transition={{
+                          duration: 8,
+                          repeat: Infinity,
+                          ease: "linear"
+                        }}
+                      />
                       <Plus className="w-6 h-6" strokeWidth={3.5} />
                       <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-white/20 to-transparent" />
                     </motion.div>
