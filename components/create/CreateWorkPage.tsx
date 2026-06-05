@@ -14,7 +14,7 @@ import {
   FiDollarSign,
   FiEye,
   FiMapPin,
-  FiNavigation,
+  
   FiShield,
   FiUsers,
   FiX,
