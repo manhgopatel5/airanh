@@ -323,13 +323,19 @@ useEffect(() => {
     debounceRef.current = setTimeout(() => searchPlaces(value), 400);
   };
 
-  const useCurrentLocation = useCallback(() => {
+  const useCurrentLocation = useCallback(async () => {
   if (!navigator.geolocation) {
     toast.error("Thiết bị không hỗ trợ định vị");
     return;
   }
+  
+  if (loadingProvinces) {
+    toast.error("Đang tải danh sách tỉnh, thử lại sau 1s");
+    return;
+  }
+  
   if (provinces.length === 0) {
-    toast.error("Chưa tải xong danh sách tỉnh, thử lại sau 2s");
+    toast.error("Không có danh sách tỉnh, kiểm tra API");
     return;
   }
 
@@ -346,25 +352,42 @@ useEffect(() => {
         );
         const data = await res.json();
 
-        const address = data.locality || data.city || "Vị trí hiện tại";
+        // Lấy địa chỉ chi tiết hơn
+        const address = [
+          data.streetNumber,
+          data.street,
+          data.locality,
+        ].filter(Boolean).join(", ") || data.locality || "Vị trí hiện tại";
+
         const provinceName = data.principalSubdivision || "";
         const districtName = data.locality || data.city || "";
         const wardName = data.localityInfo?.administrative?.find((a: any) => a.adminLevel === 8)?.name || "";
 
-        // Match tên → id
-        const province = provinces.find(p =>
-          p.name.toLowerCase().includes(provinceName.toLowerCase()) ||
-          provinceName.toLowerCase().includes(p.name.toLowerCase().replace("tỉnh ", "").replace("thành phố ", ""))
-        );
+        // Hàm normalize: bỏ tiền tố, lowercase, bỏ dấu
+        const normalize = (str: string) => str.toLowerCase()
+          .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // bỏ dấu
+          .replace(/^(tinh|thanh pho|quan|huyen|phuong|xa|thi xa|thi tran)\s+/i, "")
+          .trim();
+
+        const nProvinceName = normalize(provinceName);
+
+        // Match tỉnh: ưu tiên exact, sau đó includes
+        let province = provinces.find(p => normalize(p.name) === nProvinceName);
+        if (!province) {
+          province = provinces.find(p => 
+            normalize(p.name).includes(nProvinceName) || 
+            nProvinceName.includes(normalize(p.name))
+          );
+        }
 
         if (!province) {
           updateLocation({ address });
-          toast.error("Không tìm thấy tỉnh, vui lòng chọn thủ công");
+          toast.error(`Không tìm thấy tỉnh "${provinceName}", vui lòng chọn thủ công`);
           setLocating(false);
           return;
         }
 
-        // Load districts của tỉnh đó
+        // Load districts
         const dRes = await fetch("/api/location/district", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -373,10 +396,15 @@ useEffect(() => {
         const districtsData = await dRes.json();
         setDistricts(districtsData);
 
-        const district = districtsData.find((d: District) =>
-          d.name.toLowerCase().includes(districtName.toLowerCase()) ||
-          districtName.toLowerCase().includes(d.name.toLowerCase().replace("quận ", "").replace("huyện ", ""))
-        );
+        // Match huyện
+        const nDistrictName = normalize(districtName);
+        let district = districtsData.find((d: District) => normalize(d.name) === nDistrictName);
+        if (!district) {
+          district = districtsData.find((d: District) => 
+            normalize(d.name).includes(nDistrictName) || 
+            nDistrictName.includes(normalize(d.name))
+          );
+        }
 
         updateLocation({
           address,
@@ -397,28 +425,33 @@ useEffect(() => {
           const wardsData = await wRes.json();
           setWards(wardsData);
 
-          const ward = wardsData.find((w: Ward) =>
-            w.name.toLowerCase().includes(wardName.toLowerCase()) ||
-            wardName.toLowerCase().includes(w.name.toLowerCase().replace("phường ", "").replace("xã ", ""))
-          );
+          const nWardName = normalize(wardName);
+          let ward = wardsData.find((w: Ward) => normalize(w.name) === nWardName);
+          if (!ward) {
+            ward = wardsData.find((w: Ward) => 
+              normalize(w.name).includes(nWardName) || 
+              nWardName.includes(normalize(w.name))
+            );
+          }
           if (ward) updateLocation({ wardId: ward.id, wardName: ward.name });
         }
 
         toast.success("Đã thêm vị trí");
       } catch (err) {
-        console.error(err);
+        console.error("Geocode error:", err);
         updateLocation({ address: "Vị trí hiện tại" });
         toast.error("Chỉ lấy được tọa độ, vui lòng chọn tỉnh/huyện");
       }
       setLocating(false);
     },
-    () => {
-      toast.error("Không thể lấy vị trí");
+    (err) => {
+      console.error("Geolocation error:", err);
+      toast.error("Không thể lấy vị trí. Kiểm tra quyền truy cập");
       setLocating(false);
     },
-    { enableHighAccuracy: true, timeout: 8000 }
+    { enableHighAccuracy: true, timeout: 10000 }
   );
-}, [provinces]);
+}, [provinces, loadingProvinces]);
   const handleCategoryChange = (catId: string) => {
     update("category", catId);
     if (isTask) {
