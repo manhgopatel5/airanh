@@ -110,7 +110,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  viewportFit: "cover",
+  viewportFit: "cover", // ← Đã có, đúng
   interactiveWidget: 'resizes-content',
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
@@ -133,7 +133,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
       </head>
-      <body className="h-full w-full fixed overflow-hidden bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight font-sans">
+      {/* FIX: Bỏ fixed overflow-hidden, dùng min-h-screen */}
+      <body className="min-h-screen w-full bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight font-sans">
         <AuthProvider>
           <ClientLayout>
             {children}
