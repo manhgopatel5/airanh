@@ -487,8 +487,8 @@ export default function BottomNav() {
           )}
         </AnimatePresence>
 
-        <div className="fixed bottom-0 inset-x-0 z-[70] pointer-events-none flex flex-col items-center justify-end">
-          <div ref={menuRef} className="w-full max-w-[480px] px-4 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center gap-3">
+<div className="fixed bottom-0 inset-x-0 z-[70] pointer-events-none flex flex-col items-center justify-end">
+  <div ref={menuRef} className="w-full max-w-[480px] px-4 pb-safe flex flex-col items-center gap-3">
 
             <FloatingMenu isOpen={isOpen} onSelect={handleSelectCreate} onClose={() => setIsOpen(false)} />
 
