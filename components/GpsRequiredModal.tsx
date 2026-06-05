@@ -1,22 +1,26 @@
+"use client";
+
 import { motion, AnimatePresence } from "framer-motion";
 import { FiNavigation, FiShield, FiMapPin, FiSmartphone } from "react-icons/fi";
 
-function GpsRequiredModal({ 
-  open, 
-  onClose, 
-  onRetry, 
+type Mode = "task" | "plan"; // Thêm type này
+
+export default function GpsRequiredModal({
+  open,
+  onClose,
+  onRetry,
   loading,
-  mode 
-}: { 
-  open: boolean; 
-  onClose: () => void; 
-  onRetry: () => void; 
+  mode
+}: {
+  open: boolean;
+  onClose: () => void;
+  onRetry: () => void;
   loading: boolean;
   mode: Mode;
 }) {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isTask = mode === "task";
-  
+
   return (
     <AnimatePresence>
       {open && (
@@ -34,12 +38,10 @@ function GpsRequiredModal({
             className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-900"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Icon */}
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0A84FF] to-[#0051D5]">
               <FiNavigation className="text-3xl text-white" />
             </div>
 
-            {/* Title */}
             <h2 className="text-center text-2xl font-black text-zinc-900 dark:text-white">
               Bật GPS để {isTask? "tạo Task" : "tạo Plan"}
             </h2>
@@ -47,7 +49,6 @@ function GpsRequiredModal({
               Chúng tôi cần vị trí của bạn để hiển thị {isTask? "công việc" : "sự kiện"} gần nhất và giúp người khác tìm thấy bạn dễ dàng hơn.
             </p>
 
-            {/* Benefits */}
             <div className="mt-6 space-y-3">
               <div className="flex items-start gap-3 rounded-xl bg-zinc-50 p-3 dark:bg-zinc-800">
                 <FiMapPin className="mt-0.5 flex-shrink-0 text-lg text-[#0A84FF]" />
@@ -65,7 +66,6 @@ function GpsRequiredModal({
               </div>
             </div>
 
-            {/* Steps */}
             <div className="mt-6 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
               <p className="mb-3 flex items-center gap-2 text-sm font-bold text-zinc-900 dark:text-white">
                 <FiSmartphone /> Cách bật trên {isIOS? "iPhone" : "Android"}:
@@ -87,7 +87,6 @@ function GpsRequiredModal({
               </ol>
             </div>
 
-            {/* Actions */}
             <div className="mt-6 flex gap-3">
               <button
                 onClick={onClose}
