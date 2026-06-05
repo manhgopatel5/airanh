@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Timestamp } from "firebase/firestore";
 import { mutate } from "swr";
+import { GpsRequiredModal } from "@/components/GpsRequiredModal";
 import {
   FiArrowLeft,
   FiClock,
@@ -148,6 +149,33 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const gradient = isTask? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
   const categories = isTask? CATEGORY_TASKS : CATEGORY_PLANS;
   const draftKey = `create_${mode}_draft_v5`;
+  const [showGpsExplain, setShowGpsExplain] = useState(false);
+const [hasCheckedGps, setHasCheckedGps] = useState(false);
+
+// Check quyền GPS khi vào step Địa điểm
+useEffect(() => {
+  if (step!== 1 || hasCheckedGps || form.location.lat) return;
+  
+  if (!navigator.permissions) {
+    setShowGpsExplain(true);
+    setHasCheckedGps(true);
+    return;
+  }
+
+  navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+    setPermissionState(result.state);
+    
+    if (result.state === 'granted') {
+      requestGPS();
+    } else if (result.state === 'prompt') {
+      setShowGpsExplain(true);
+    } else {
+      setGpsDenied(true);
+      setShowGpsExplain(true);
+    }
+    setHasCheckedGps(true);
+  });
+}, [step, form.location.lat, hasCheckedGps]);
   const [permissionState, setPermissionState] = useState<'prompt' | 'granted' | 'denied'>('prompt');
 
 // Check quyền GPS lúc mount
@@ -178,17 +206,13 @@ const requestGPS = useCallback(() => {
       setPermissionState('granted');
       setGpsDenied(false);
       setLocating(false);
-      toast.success("Đã lấy vị trí");
+      setShowGpsExplain(false); // Đóng modal
     },
     (err) => {
       console.warn("GPS error:", err);
       setGpsDenied(true);
       setLocating(false);
-      if (err.code === 1) { // PERMISSION_DENIED
-        toast.error("Bạn đã chặn quyền vị trí. Vào Cài đặt trình duyệt để bật lại");
-      } else {
-        toast.error("Không thể lấy vị trí. Thử lại sau");
-      }
+      setShowGpsExplain(true); // Hiện lại modal nếu fail
     },
     { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
   );
@@ -950,7 +974,19 @@ useEffect(() => {
           </motion.div>
         )}
       </AnimatePresence>
-
+  <GpsRequiredModal
+        open={showGpsExplain}
+        onAllow={() => {
+          setShowGpsExplain(false);
+          requestGPS();
+        }}
+        onSkip={() => {
+          setShowGpsExplain(false);
+          setGpsDenied(true);
+        }}
+        loading={locating}
+        mode={mode}
+      />
       <style jsx global>{`
       .input-base {
           width: 100%;
