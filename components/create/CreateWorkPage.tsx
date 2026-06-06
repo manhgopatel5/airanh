@@ -779,23 +779,26 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
                     </span>
                   </div>
                 </Field>
-        <Field label="Danh mục" required icon={FiTag}>
+<Field label="Danh mục" required icon={FiTag}>
   <Select
-    value={categories.find(c => c.id === form.category)}
+    value={categories.find(c => c.id === form.category) || null}
     onChange={(opt) => handleCategoryChange(opt?.id || "")}
     options={categories}
-getOptionLabel={(opt) => opt ? `${opt.icon} ${opt.label}` : ''}
-getOptionValue={(opt) => opt?.id || ''}
+    getOptionLabel={(opt) => opt ? `${opt.icon} ${opt.label}` : ''}
+    getOptionValue={(opt) => opt?.id || ''}
     placeholder="Tìm danh mục..."
     isSearchable
     isClearable={false}
     classNamePrefix="react-select"
-    formatOptionLabel={(opt) => (
-      <div className="flex items-center gap-2">
-        <span className="text-xl">{opt.icon}</span>
-        <span className="font-bold">{opt.label}</span>
-      </div>
-    )}
+    formatOptionLabel={(opt) => {
+      if (!opt) return null;
+      return (
+        <div className="flex items-center gap-2">
+          <span className="text-xl">{opt.icon}</span>
+          <span className="font-bold">{opt.label}</span>
+        </div>
+      );
+    }}
     styles={{
       control: (base, state) => ({
         ...base,
