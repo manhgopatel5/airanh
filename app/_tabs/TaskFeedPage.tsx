@@ -171,73 +171,82 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
   return (
     <div className="bg-white dark:bg-zinc-950 text-zinc-950 dark:text-white">
       <div className="sticky top-0 z-40 bg-white dark:bg-zinc-950">
-    <div className="mx-auto max-w-[680px] px-4 pt-3 pb-3">
-  {/* TOGGLE TASK/PLAN - BẢN HOÀN HẢO */}
-  <div className="relative h-14 rounded-[1.5rem] bg-zinc-100/80 ring-1 ring-black/5 dark:bg-zinc-900/90 dark:ring-white/10 overflow-hidden shadow-inner">
-    {/* LỚP NỀN GRADIENT TRÀN FULL */}
+ <div className="mx-auto max-w-[680px] px-4 pt-3 pb-3">
+  {/* TOGGLE TASK/PLAN - LIQUID STYLE 56/44 */}
+  <div className="relative h-14 rounded-[1.6rem] bg-zinc-100/90 ring-1 ring-black/5 dark:bg-zinc-900/90 dark:ring-white/10 overflow-hidden shadow-[inset_0_2px_8px_rgba(0,0,0,0.04)]">
+
+    {/* BACKGROUND SLIDER - 56% KHI ACTIVE */}
     <motion.div
-      className="absolute inset-0"
+      className="absolute top-0 bottom-0 rounded-[1.6rem] shadow-xl"
       initial={false}
       animate={{
+        left: isTaskMode? "0%" : "44%",
+        width: "56%",
         background: isTaskMode
-         ? "linear-gradient(135deg, #0A84FF 0%, #0066CC 50%, #0051D5 100%)"
-          : "linear-gradient(135deg, #30D158 0%, #28B34A 50%, #248A3D 100%)"
+        ? "linear-gradient(135deg, #0A84FF 0%, #0066CC 40%, #0051D5 100%)"
+          : "linear-gradient(135deg, #30D158 0%, #28B34A 40%, #248A3D 100%)"
       }}
-      transition={{ duration: 0.5, ease: "easeInOut" }}
-    />
+      transition={{
+        type: "spring",
+        stiffness: 280,
+        damping: 32,
+        mass: 0.8
+      }}
+    >
+      {/* INNER GLOW */}
+      <div className="absolute inset-0 rounded-[1.6rem] bg-gradient-to-b from-white/25 to-transparent" />
 
-    {/* SHINE SWEEP KHI ĐỔI TAB */}
+      {/* BLOB EDGE EFFECT */}
+      <motion.div
+        className="absolute top-1/2 -translate-y-1/2 w-8 h-8 rounded-full blur-md"
+        animate={{
+          left: isTaskMode? "calc(100% - 16px)" : "-16px",
+          background: isTaskMode? "#0A84FF" : "#30D158"
+        }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      />
+    </motion.div>
+
+    {/* SHINE SWEEP */}
     <AnimatePresence mode="wait">
       <motion.div
         key={isTaskMode? 'task' : 'plan'}
-        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12"
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12"
         initial={{ x: '-100%' }}
         animate={{ x: '200%' }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
+        transition={{ duration: 0.9, ease: [0.4, 0, 0.2, 1] }}
       />
     </AnimatePresence>
 
-    {/* GLOW EFFECT THEO TAB */}
-    <motion.div
-      className="absolute inset-0 blur-2xl opacity-60"
-      animate={{
-        background: isTaskMode
-         ? "radial-gradient(60% 80% at 25% 50%, #0A84FF 0%, transparent 100%)"
-          : "radial-gradient(60% 80% at 75% 50%, #30D158 0%, transparent 100%)"
-      }}
-      transition={{ duration: 0.6, ease: "easeInOut" }}
-    />
-
     {/* NÚT BẤM */}
-    <div className="relative grid grid-cols-2 h-full">
+    <div className="relative grid grid-cols-[56fr_44fr] h-full">
       <motion.button
         type="button"
-        whileTap={{ scale: 0.94 }}
-        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.92 }}
         aria-pressed={isTaskMode}
         onClick={() => switchMode("task")}
-        className={`relative flex items-center justify-center gap-2 text-sm font-black transition-all duration-300 ${
+        className={`relative flex items-center justify-center gap-2 text-[15px] font-black transition-colors duration-300 ${
           isTaskMode
-           ? "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]"
-            : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+          ? "text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
+            : "text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
         }`}
       >
         <motion.div
           animate={{
-            rotate: isTaskMode? [0, -15, 15, -10, 0] : 0,
-            scale: isTaskMode? [1, 1.2, 1] : 1
+            rotate: isTaskMode? [0, -20, 15, -10, 0] : 0,
+            scale: isTaskMode? [1, 1.3, 1.1, 1.25, 1] : 1
           }}
-          transition={{ duration: 0.6, ease: "easeInOut" }}
+          transition={{ duration: 0.7, ease: "easeInOut" }}
         >
-          <HiBolt size={20} />
+          <HiBolt size={22} />
         </motion.div>
         <span className="relative">
           Task
           {isTaskMode && (
             <motion.div
-              layoutId="activeIndicator"
-              className="absolute -bottom-1 left-0 right-0 h-0.5 bg-white rounded-full"
-              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+              layoutId="activeGlow"
+              className="absolute -inset-x-2 -inset-y-1 bg-white/20 rounded-lg blur-sm -z-10"
+              transition={{ type: "spring", stiffness: 400, damping: 35 }}
             />
           )}
         </span>
@@ -245,32 +254,31 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
 
       <motion.button
         type="button"
-        whileTap={{ scale: 0.94 }}
-        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.92 }}
         aria-pressed={!isTaskMode}
         onClick={() => switchMode("plan")}
-        className={`relative flex items-center justify-center gap-2 text-sm font-black transition-all duration-300 ${
-         !isTaskMode
-           ? "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]"
-            : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+        className={`relative flex items-center justify-center gap-2 text-[15px] font-black transition-colors duration-300 ${
+        !isTaskMode
+          ? "text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
+            : "text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
         }`}
       >
         <motion.div
           animate={{
-            rotate:!isTaskMode? [0, -15, 15, -10, 0] : 0,
-            scale:!isTaskMode? [1, 1.2, 1] : 1
+            rotate:!isTaskMode? [0, -20, 15, -10, 0] : 0,
+            scale:!isTaskMode? [1, 1.3, 1.1, 1.25, 1] : 1
           }}
-          transition={{ duration: 0.6, ease: "easeInOut" }}
+          transition={{ duration: 0.7, ease: "easeInOut" }}
         >
-          <HiCalendarDays size={20} />
+          <HiCalendarDays size={22} />
         </motion.div>
         <span className="relative">
           Plan
           {!isTaskMode && (
             <motion.div
-              layoutId="activeIndicator"
-              className="absolute -bottom-1 left-0 right-0 h-0.5 bg-white rounded-full"
-              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+              layoutId="activeGlow"
+              className="absolute -inset-x-2 -inset-y-1 bg-white/20 rounded-lg blur-sm -z-10"
+              transition={{ type: "spring", stiffness: 400, damping: 35 }}
             />
           )}
         </span>
@@ -278,7 +286,6 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
     </div>
   </div>
 
-  {/* SEARCH BAR */}
   <CustomFilterBar
     currentFilter={activeTab}
     onChangeFilter={setActiveTab}
