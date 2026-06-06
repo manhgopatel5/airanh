@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Timestamp } from "firebase/firestore";
 import { mutate } from "swr";
+import Select from 'react-select';
+import TaskCard from "@/components/task/TaskCard"; // đường dẫn đúng của bạn
 import GpsRequiredModal from "@/components/GpsRequiredModal";
 import {
   FiArrowLeft,
@@ -69,24 +71,48 @@ type FormState = {
 type FormErrors = Partial<Record<keyof FormState | "location.address" | "location.provinceId", string>>;
 
 const CATEGORY_TASKS = [
-  { id: "delivery", label: "Giao hàng", icon: "🚚", suggestPrice: 70000, color: "from-blue-500 to-cyan-500" },
-  { id: "shopping", label: "Mua hộ", icon: "🛒", suggestPrice: 50000, color: "from-orange-500 to-amber-500" },
-  { id: "tutor", label: "Gia sư", icon: "📚", suggestPrice: 200000, color: "from-purple-500 to-pink-500" },
-  { id: "design", label: "Thiết kế", icon: "🎨", suggestPrice: 300000, color: "from-rose-500 to-red-500" },
-  { id: "dev", label: "Lập trình", icon: "💻", suggestPrice: 500000, color: "from-indigo-500 to-blue-500" },
-  { id: "marketing", label: "Marketing", icon: "📢", suggestPrice: 250000, color: "from-teal-500 to-emerald-500" },
-  { id: "repair", label: "Sửa chữa", icon: "🔧", suggestPrice: 150000, color: "from-yellow-500 to-orange-500" },
-  { id: "other", label: "Khác", icon: "📌", suggestPrice: 100000, color: "from-zinc-500 to-zinc-600" },
+  { id: "delivery", label: "Giao hàng", icon: "🚚", suggestPrice: 50000, color: "from-blue-500 to-cyan-500" },
+  { id: "shopping", label: "Mua hộ đồ", icon: "🛒", suggestPrice: 40000, color: "from-orange-500 to-amber-500" },
+  { id: "food_delivery", label: "Mua đồ ăn", icon: "🍜", suggestPrice: 30000, color: "from-red-500 to-orange-500" },
+  { id: "queue", label: "Xếp hàng hộ", icon: "🧍", suggestPrice: 60000, color: "from-purple-500 to-pink-500" },
+  { id: "pickup", label: "Đón/Đưa", icon: "🚗", suggestPrice: 80000, color: "from-indigo-500 to-blue-500" },
+  { id: "cleaning", label: "Dọn nhà", icon: "🧹", suggestPrice: 150000, color: "from-cyan-500 to-teal-500" },
+  { id: "laundry", label: "Giặt ủi", icon: "👕", suggestPrice: 50000, color: "from-sky-500 to-blue-500" },
+  { id: "repair_home", label: "Sửa đồ gia dụng", icon: "🔧", suggestPrice: 100000, color: "from-yellow-500 to-orange-500" },
+  { id: "pet_care", label: "Chăm thú cưng", icon: "🐕", suggestPrice: 70000, color: "from-amber-500 to-orange-500" },
+  { id: "babysit", label: "Trông trẻ", icon: "👶", suggestPrice: 120000, color: "from-pink-500 to-rose-500" },
+  { id: "elderly_care", label: "Chăm người già", icon: "👴", suggestPrice: 150000, color: "from-slate-500 to-zinc-600" },
+  { id: "cooking", label: "Nấu ăn hộ", icon: "👨‍🍳", suggestPrice: 100000, color: "from-orange-600 to-red-600" },
+  { id: "move", label: "Chuyển nhà", icon: "📦", suggestPrice: 300000, color: "from-emerald-500 to-teal-500" },
+  { id: "garden", label: "Làm vườn", icon: "🌱", suggestPrice: 120000, color: "from-green-500 to-emerald-500" },
+  { id: "tutor", label: "Gia sư", icon: "📚", suggestPrice: 150000, color: "from-violet-500 to-purple-500" },
+  { id: "errand", label: "Chạy việc vặt", icon: "🏃", suggestPrice: 50000, color: "from-teal-500 to-emerald-500" },
+  { id: "document", label: "Làm giấy tờ", icon: "📄", suggestPrice: 200000, color: "from-blue-600 to-indigo-600" },
+  { id: "tech_help", label: "Sửa máy tính/đt", icon: "💻", suggestPrice: 100000, color: "from-indigo-500 to-purple-500" },
+  { id: "install", label: "Lắp đặt", icon: "🔨", suggestPrice: 150000, color: "from-yellow-600 to-amber-600" },
+  { id: "other", label: "Khác", icon: "📌", suggestPrice: 80000, color: "from-zinc-500 to-zinc-600" },
 ];
 
 const CATEGORY_PLANS = [
   { id: "cafe", label: "Cafe", icon: "☕", color: "from-amber-600 to-orange-600" },
   { id: "food", label: "Ăn uống", icon: "🍜", color: "from-red-500 to-orange-500" },
   { id: "sport", label: "Thể thao", icon: "🏃", color: "from-emerald-500 to-teal-500" },
-  { id: "work", label: "Công việc", icon: "💼", color: "from-blue-600 to-indigo-600" },
-  { id: "study", label: "Học", icon: "📚", color: "from-purple-500 to-violet-500" },
+  { id: "badminton", label: "Cầu lông", icon: "🏸", color: "from-green-500 to-lime-500" },
+  { id: "football", label: "Bóng đá", icon: "⚽", color: "from-green-600 to-emerald-600" },
+  { id: "gym", label: "Gym", icon: "💪", color: "from-slate-600 to-zinc-700" },
+  { id: "yoga", label: "Yoga", icon: "🧘", color: "from-purple-400 to-pink-400" },
+  { id: "study", label: "Học nhóm", icon: "📚", color: "from-purple-500 to-violet-500" },
+  { id: "work", label: "Làm việc chung", icon: "💼", color: "from-blue-600 to-indigo-600" },
   { id: "travel", label: "Đi chơi", icon: "🏖️", color: "from-cyan-500 to-blue-500" },
-  { id: "art", label: "Nghệ thuật", icon: "🎨", color: "from-pink-500 to-rose-500" },
+  { id: "picnic", label: "Picnic", icon: "🧺", color: "from-lime-500 to-green-500" },
+  { id: "movie", label: "Xem phim", icon: "🎬", color: "from-red-600 to-pink-600" },
+  { id: "karaoke", label: "Karaoke", icon: "🎤", color: "from-pink-500 to-rose-500" },
+  { id: "music", label: "Âm nhạc", icon: "🎵", color: "from-violet-500 to-purple-500" },
+  { id: "game", label: "Boardgame", icon: "🎲", color: "from-indigo-500 to-purple-500" },
+  { id: "shopping", label: "Mua sắm", icon: "🛍️", color: "from-rose-500 to-pink-500" },
+  { id: "pet", label: "Dắt thú cưng", icon: "🐕", color: "from-amber-500 to-orange-500" },
+  { id: "volunteer", label: "Tình nguyện", icon: "❤️", color: "from-red-500 to-rose-500" },
+  { id: "networking", label: "Kết nối", icon: "🤝", color: "from-blue-500 to-cyan-500" },
   { id: "other", label: "Khác", icon: "📌", color: "from-zinc-500 to-zinc-600" },
 ];
 
@@ -126,6 +152,141 @@ const initialForm = (mode: Mode): FormState => ({
 });
 
 const toTimestamp = (value: string) => Timestamp.fromDate(new Date(value));
+function TagsInput({ 
+  value, 
+  onChange, 
+  placeholder 
+}: { 
+  value: string; 
+  onChange: (val: string) => void; 
+  placeholder: string;
+}) {
+  const [inputValue, setInputValue] = useState("");
+  const accent = mode === "task"? "#0A84FF" : "#30D158";
+
+  const tags = value.split(",").map(t => t.trim()).filter(Boolean);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === " " || e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      const newTag = inputValue.trim().replace(/^#/, "");
+      if (newTag &&!tags.includes(newTag)) {
+        const newTags = [...tags, newTag].join(", ");
+        onChange(newTags);
+      }
+      setInputValue("");
+    }
+    if (e.key === "Backspace" &&!inputValue && tags.length > 0) {
+      const newTags = tags.slice(0, -1).join(", ");
+      onChange(newTags);
+    }
+  };
+
+  const removeTag = (idx: number) => {
+    const newTags = tags.filter((_, i) => i!== idx).join(", ");
+    onChange(newTags);
+  };
+
+  return (
+    <div className="min-h-[52px] w-full rounded-2xl border-2 border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950 focus-within:border-[#0A84FF] focus-within:ring-4 focus-within:ring-[#0A84FF]/20 transition-all">
+      <div className="flex flex-wrap gap-2">
+        {tags.map((tag, idx) => (
+          <motion.span
+            key={idx}
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            exit={{ scale: 0 }}
+            className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-bold text-white shadow-lg"
+            style={{ background: `linear-gradient(135deg, ${accent}, ${accent}dd)` }}
+          >
+            #{tag}
+            <button
+              type="button"
+              onClick={() => removeTag(idx)}
+              className="ml-0.5 hover:scale-110 transition-transform"
+            >
+              <FiX className="text-xs" />
+            </button>
+          </motion.span>
+        ))}
+        <input
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={tags.length === 0? placeholder : ""}
+          className="flex-1 min-w-[120px] bg-transparent outline-none text-sm font-bold text-zinc-900 dark:text-white placeholder:text-zinc-400 placeholder:font-medium"
+        />
+      </div>
+    </div>
+  );
+}
+function BulletTextarea({ 
+  value, 
+  onChange, 
+  placeholder 
+}: { 
+  value: string; 
+  onChange: (val: string) => void; 
+  placeholder: string;
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const textarea = e.currentTarget;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newValue = value.substring(0, start) + "\n- " + value.substring(end);
+      
+      onChange(newValue);
+      
+      // Đặt cursor sau "- "
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + 3;
+      }, 0);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    let val = e.target.value;
+    
+    // Nếu rỗng thì thêm "- " 
+    if (val.length === 1 && val !== "-") {
+      val = "- " + val;
+    }
+    // Nếu xóa hết thì để trống
+    else if (val === "- " || val === "-") {
+      val = "";
+    }
+    // Nếu paste nhiều dòng, thêm "- " cho dòng chưa có
+    else if (val.includes("\n")) {
+      val = val.split("\n").map(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return "";
+        return trimmed.startsWith("-") ? trimmed : `- ${trimmed}`;
+      }).join("\n");
+    }
+    // Nếu bắt đầu gõ mà chưa có "- "
+    else if (val && !val.startsWith("- ")) {
+      val = "- " + val;
+    }
+    
+    onChange(val);
+  };
+
+  return (
+    <textarea
+      ref={textareaRef}
+      value={value}
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
+      rows={3}
+      className="input-premium resize-none"
+      placeholder={placeholder}
+    />
+  );
+}
 
 export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const router = useRouter();
@@ -147,6 +308,51 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const debounceRef = useRef<NodeJS.Timeout>();
 
   const isTask = mode === "task";
+  const previewTask = useMemo(() => ({
+  id: "preview",
+  type: mode,
+  status: "active",
+  title: form.title || "Tiêu đề mẫu",
+  description: form.description || "Mô tả sẽ hiển thị ở đây",
+  userId: user?.uid || "preview",
+  userName: user?.displayName || "Bạn",
+  userAvatar: user?.photoURL || "",
+  userVerified: false,
+  createdAt: new Date().toISOString(),
+  category: form.category,
+  tags: form.tags.split(",").map(t => t.trim()).filter(Boolean),
+  visibility: form.visibility,
+  location: {
+    city: form.location.provinceName,
+    district: form.location.districtName,
+    ward: form.location.wardName,
+    address: form.location.address,
+    lat: form.location.lat,
+    lng: form.location.lng,
+  },
+  // Task fields
+  price: form.price,
+  budgetType: form.budgetType,
+  totalSlots: form.totalSlots,
+  joined: 0,
+  deadline: new Date(Date.now() + form.durationHours * 60 * 60 * 1000).toISOString(),
+  requirements: form.requirements,
+  // Plan fields  
+  eventDate: form.eventDate,
+  endDate: form.endDate,
+  maxParticipants: form.maxParticipants,
+  currentParticipants: 0,
+  costType: form.costType,
+  costAmount: form.costAmount,
+  allowInvite: form.allowInvite,
+  requireApproval: form.requireApproval,
+  // Stats
+  likeCount: 0,
+  commentCount: 0,
+  viewCount: 0,
+  likes: [],
+  savedBy: [],
+} as FeedTask), [form, mode, user]);
   const accent = isTask ? "#0A84FF" : "#30D158";
   const gradient = isTask ? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
   const categories = isTask ? CATEGORY_TASKS : CATEGORY_PLANS;
@@ -487,7 +693,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
               <FiArrowLeft className="text-lg" />
             </button>
             <div className="text-center">
-              <h1 className="text-lg font-black">Tạo {isTask ? "Task" : "Plan"}</h1>
+              <h1 className="text-lg font-black">Tạo {isTask ? "Công việc" : "Sự kiện"}</h1>
               <p className="text-xs text-zinc-500">Bước {step + 1} / 4</p>
             </div>
             <button
@@ -568,37 +774,96 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
                     </span>
                   </div>
                 </Field>
-                <Field label="Danh mục" icon={FiTag}>
-                  <div className="grid grid-cols-4 gap-2">
-                    {categories.map((cat) => (
-                      <motion.button
-                        key={cat.id}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => handleCategoryChange(cat.id)}
-                        className={`relative overflow-hidden rounded-2xl p-4 text-xs font-bold transition-all ${
-                          form.category === cat.id
-                            ? "text-white shadow-xl"
-                            : "bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300"
-                        }`}
-                        style={{
-                          background: form.category === cat.id ? `linear-gradient(135deg, ${cat.color.replace('from-', '').replace('to-', ', ')})` : undefined,
-                        }}
-                      >
-                        <span className="block text-3xl mb-2">{cat.icon}</span>
-                        {cat.label}
-                      </motion.button>
-                    ))}
-                  </div>
-                </Field>
-                <Field label="Tags" icon={FiTag}>
-                  <input
-                    value={form.tags}
-                    onChange={(e) => update("tags", e.target.value)}
-                    placeholder="urgent, online, thiết kế"
-                    className="input-premium"
-                  />
-                  <p className="text-xs text-zinc-400">Phân cách bằng dấu phẩy</p>
-                </Field>
+        <Field label="Danh mục" required icon={FiTag}>
+  <Select
+    value={categories.find(c => c.id === form.category)}
+    onChange={(opt) => handleCategoryChange(opt?.id || "")}
+    options={categories}
+    getOptionLabel={(opt) => `${opt.icon} ${opt.label}`}
+    getOptionValue={(opt) => opt.id}
+    placeholder="Tìm danh mục..."
+    isSearchable
+    isClearable={false}
+    classNamePrefix="react-select"
+    formatOptionLabel={(opt) => (
+      <div className="flex items-center gap-2">
+        <span className="text-xl">{opt.icon}</span>
+        <span className="font-bold">{opt.label}</span>
+      </div>
+    )}
+    styles={{
+      control: (base, state) => ({
+        ...base,
+        minHeight: '52px',
+        borderRadius: '1rem',
+        border: `2px solid ${state.isFocused ? accent : 'rgb(228 228 231)'}`,
+        boxShadow: state.isFocused ? `0 0 0 4px ${accent}20` : 'none',
+        background: 'white',
+        fontWeight: 700,
+        fontSize: '0.9375rem',
+        '&:hover': { borderColor: accent },
+      }),
+      menu: (base) => ({
+        ...base,
+        borderRadius: '1rem',
+        overflow: 'hidden',
+        boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
+        zIndex: 50,
+      }),
+      option: (base, state) => ({
+        ...base,
+        padding: '12px 16px',
+        fontWeight: 700,
+        background: state.isSelected 
+          ? `linear-gradient(135deg, ${accent}, ${accent}dd)` 
+          : state.isFocused 
+          ? `${accent}15` 
+          : 'transparent',
+        color: state.isSelected ? 'white' : 'inherit',
+        cursor: 'pointer',
+        '&:active': { background: accent },
+      }),
+      singleValue: (base) => ({
+        ...base,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+      }),
+      input: (base) => ({
+        ...base,
+        fontWeight: 700,
+      }),
+    }}
+    theme={(theme) => ({
+      ...theme,
+      colors: {
+        ...theme.colors,
+        primary: accent,
+        primary25: `${accent}15`,
+        primary50: `${accent}30`,
+      },
+    })}
+  />
+  <div className="flex items-center justify-between text-xs mt-1">
+    <span className="text-zinc-400">
+      {categories.find(c => c.id === form.category)?.label}
+    </span>
+    {isTask && (
+      <span className="font-bold text-zinc-500">
+        Gợi ý: {new Intl.NumberFormat("vi-VN").format(categories.find(c => c.id === form.category)?.suggestPrice || 0)}đ
+      </span>
+    )}
+  </div>
+</Field>
+
+<Field label="Tags" icon={FiTag}>
+  <TagsInput
+    value={form.tags}
+    onChange={(val) => update("tags", val)}
+    placeholder={isTask? "gõ tag rồi ấn Space" : "gõ tag rồi ấn Space"}
+  />
+  <p className="text-xs text-zinc-400">Ấn Space hoặc Enter để thêm tag</p>
+</Field>
               </Card>
             </StepContent>
           )}
@@ -783,15 +1048,13 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
                         </div>
                       </Field>
                     </div>
-                    <Field label="Yêu cầu đặc biệt" icon={FiShield}>
-                      <textarea
-                        value={form.requirements}
-                        onChange={(e) => update("requirements", e.target.value)}
-                        rows={3}
-                        className="input-premium resize-none"
-                        placeholder="Kỹ năng, giấy tờ, lưu ý..."
-                      />
-                    </Field>
+            <Field label="Yêu cầu đặc biệt" icon={FiShield}>
+  <BulletTextarea
+    value={form.requirements}
+    onChange={(val) => update("requirements", val)}
+    placeholder="- Kỹ năng cần có&#10;- Giấy tờ yêu cầu&#10;- Lưu ý khác..."
+  />
+</Field>
                   </>
                 ) : (
                   <>
@@ -912,10 +1175,14 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
                     icon={FiUsers}
                   />
                 )}
-                <div className="pt-4">
-                  <h3 className="mb-3 text-sm font-bold text-zinc-700 dark:text-zinc-200">Xem trước</h3>
-                  <PreviewCard mode={mode} form={form} />
-                </div>
+            <div className="pt-4">
+  <h3 className="mb-3 text-sm font-bold text-zinc-700 dark:text-zinc-200">Xem trước</h3>
+  <TaskCard 
+    task={previewTask} 
+    theme={mode} 
+    className="pointer-events-none" 
+  />
+</div>
               </Card>
             </StepContent>
           )}
@@ -984,9 +1251,13 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
                   <FiX className="text-lg" />
                 </button>
               </div>
-              <div className="p-5">
-                <PreviewCard mode={mode} form={form} />
-              </div>
+        <div className="p-5">
+  <TaskCard 
+    task={previewTask} 
+    theme={mode} 
+    className="pointer-events-none" 
+  />
+</div>
             </motion.div>
           </motion.div>
         )}
@@ -1003,7 +1274,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
         mode={mode}
       />
 
-      <style jsx global>{`
+           <style jsx global>{`
        .input-premium {
           width: 100%;
           min-height: 52px;
@@ -1033,6 +1304,29 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
        .input-premium::placeholder {
           color: rgb(161 161 170);
           font-weight: 500;
+        }
+        
+        /* React Select Dark Mode */
+        .dark .react-select__control {
+          background: rgb(24 24 27) !important;
+          border-color: rgb(39 39 42) !important;
+        }
+        .dark .react-select__menu {
+          background: rgb(24 24 27) !important;
+          border: 1px solid rgb(39 39 42);
+        }
+        .dark .react-select__option {
+          background: rgb(24 24 27) !important;
+          color: white !important;
+        }
+        .dark .react-select__option--is-focused {
+          background: ${accent}30 !important;
+        }
+        .dark .react-select__single-value {
+          color: white !important;
+        }
+        .dark .react-select__input-container {
+          color: white !important;
         }
       `}</style>
     </div>
@@ -1121,131 +1415,3 @@ function Toggle({ label, description, checked, onChange, icon: Icon }: {
   );
 }
 
-function PreviewCard({ mode, form }: { mode: Mode; form: FormState }) {
-  const isTask = mode === "task";
-  const accent = isTask? "#0A84FF" : "#30D158";
-
-  const formatPrice = (price: number) => {
-    if (price === 0) return "Thỏa thuận";
-    return new Intl.NumberFormat("vi-VN").format(price) + "đ";
-  };
-
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "";
-    const d = new Date(dateStr);
-    return d.toLocaleString("vi-VN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  };
-
-  const fullAddress = [
-    form.location.address,
-    form.location.wardName,
-    form.location.districtName,
-    form.location.provinceName
-  ].filter(Boolean).join(", ");
-
-  return (
-    <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-50 to-white p-6 ring-1 ring-zinc-200 dark:from-zinc-900 dark:to-zinc-950 dark:ring-zinc-800">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span
-            className="rounded-xl px-3 py-1.5 text-xs font-black text-white shadow-lg"
-            style={{ background: `linear-gradient(135deg, ${accent}, ${accent}dd)` }}
-          >
-            {isTask? "⚡ TASK" : "🎯 PLAN"}
-          </span>
-          <span className="flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-zinc-600 shadow-sm dark:bg-zinc-900 dark:text-zinc-300">
-            {form.visibility === "public"? <FiEye /> : <FiShield />}
-            {form.visibility === "public"? "Công khai" : form.visibility === "friends"? "Bạn bè" : "Riêng tư"}
-          </span>
-        </div>
-      </div>
-
-      <h3 className="text-2xl font-black leading-tight text-zinc-900 dark:text-white">
-        {form.title || "Tiêu đề sẽ hiển thị ở đây"}
-      </h3>
-
-      <p className="mt-3 line-clamp-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-        {form.description || "Mô tả chi tiết giúp người khác hiểu rõ hơn về yêu cầu của bạn."}
-      </p>
-
-      {form.tags && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {form.tags.split(",").map((tag, i) => tag.trim() && (
-            <span key={i} className="flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-zinc-600 shadow-sm dark:bg-zinc-950 dark:text-zinc-400">
-              <FiTag className="text-[10px]" />
-              {tag.trim()}
-            </span>
-          ))}
-        </div>
-      )}
-
-      <div className="mt-5 grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-white p-4 shadow-sm dark:bg-zinc-950">
-          <div className="mb-2 flex items-center gap-2 text-zinc-500">
-            <FiMapPin className="text-base" />
-            <span className="text-xs font-bold">Địa điểm</span>
-          </div>
-          <p className="text-sm font-black text-zinc-900 dark:text-zinc-100 line-clamp-2">
-            {fullAddress || "Chưa có"}
-          </p>
-        </div>
-
-        <div className="rounded-2xl bg-white p-4 shadow-sm dark:bg-zinc-950">
-          <div className="mb-2 flex items-center gap-2 text-zinc-500">
-            <FiUsers className="text-base" />
-            <span className="text-xs font-bold">Số người</span>
-          </div>
-          <p className="text-sm font-black text-zinc-900 dark:text-zinc-100">
-            {isTask? form.totalSlots : form.maxParticipants} người
-          </p>
-        </div>
-
-        {isTask? (
-          <div className="rounded-2xl bg-white p-4 shadow-sm dark:bg-zinc-950">
-            <div className="mb-2 flex items-center gap-2 text-zinc-500">
-              <FiDollarSign className="text-base" />
-              <span className="text-xs font-bold">Ngân sách</span>
-            </div>
-            <p className="text-sm font-black text-zinc-900 dark:text-zinc-100">
-              {form.budgetType === "negotiable"? "Thỏa thuận" : formatPrice(form.price)}
-              {form.budgetType === "hourly" && "/giờ"}
-            </p>
-          </div>
-        ) : (
-          <div className="rounded-2xl bg-white p-4 shadow-sm dark:bg-zinc-950">
-            <div className="mb-2 flex items-center gap-2 text-zinc-500">
-              <FiDollarSign className="text-base" />
-              <span className="text-xs font-bold">Chi phí</span>
-            </div>
-            <p className="text-sm font-black text-zinc-900 dark:text-zinc-100">
-              {form.costType === "free"? "Miễn phí" : form.costType === "share"? "Chia đều" : form.costType === "host"? "Chủ bao" : formatPrice(form.costAmount)}
-            </p>
-          </div>
-        )}
-
-        <div className="rounded-2xl bg-white p-4 shadow-sm dark:bg-zinc-950">
-          <div className="mb-2 flex items-center gap-2 text-zinc-500">
-            <FiClock className="text-base" />
-            <span className="text-xs font-bold">{isTask? "Hạn" : "Thời gian"}</span>
-          </div>
-          <p className="text-sm font-black text-zinc-900 dark:text-zinc-100 line-clamp-1">
-            {isTask? `${form.durationHours} giờ` : formatDate(form.eventDate) || "Chưa đặt"}
-          </p>
-        </div>
-      </div>
-
-      {form.requireApproval && (
-        <div className="mt-4 flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3 text-sm font-bold text-amber-700 dark:from-amber-950/30 dark:to-orange-950/30 dark:text-amber-400">
-          <FiShield className="text-lg" />
-          Cần duyệt trước khi tham gia
-        </div>
-      )}
-    </div>
-  );
-}
