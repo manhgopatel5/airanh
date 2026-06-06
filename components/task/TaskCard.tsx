@@ -25,7 +25,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
 import { type FeedTask } from "@/types/task";
 import { cn } from "@/lib/utils";
-import { useProvinces } from "@/lib/provinces"; // Hook đã cache ở layout
+import { useProvinces } from "@/lib/provinces";
 
 type Props = {
   task: FeedTask;
@@ -46,7 +46,6 @@ const vibrate = (ms: number | number[] = 8) => {
   if (typeof navigator!== "undefined" && "vibrate" in navigator) navigator.vibrate(ms);
 };
 
-// Map city -> province name, O(1)
 const useProvinceMap = () => {
   const provinces = useProvinces();
   return useMemo(() => {
@@ -118,19 +117,19 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
     const created = task.createdAt? new Date(task.createdAt) : new Date();
     const dueRaw = task.type === "task"? task.deadline : task.eventDate;
     const due = dueRaw
-? format(new Date(dueRaw), "EEE dd/MM", { locale: vi })
+     ? format(new Date(dueRaw), "EEE dd/MM", { locale: vi })
       : "Linh hoạt";
     const price =
       task.type === "task"
- ? task.price && task.price > 0
-   ? `${task.price.toLocaleString("vi-VN")} VNĐ${task.budgetType === "hourly"? "/h" : ""}`
+       ? task.price && task.price > 0
+         ? `${task.price.toLocaleString("vi-VN")} VNĐ${task.budgetType === "hourly"? "/h" : ""}`
           : "Thỏa thuận"
         : task.costType === "free"
- ? "Miễn phí"
+       ? "Miễn phí"
         : task.costType === "share"
- ? "Chia đều"
+       ? "Chia đều"
         : task.costAmount
- ? `${task.costAmount.toLocaleString("vi-VN")} VNĐ`
+       ? `${task.costAmount.toLocaleString("vi-VN")} VNĐ`
         : "Linh hoạt";
 
     const cityKey = task.location?.city || "";
@@ -246,129 +245,143 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
   }, []);
 
   const ringClass = isTaskTheme
-? "focus-visible:ring-[#0A84FF]"
+   ? "focus-visible:ring-[#0A84FF]"
     : "focus-visible:ring-[#30D158]";
 
   return (
     <motion.article
       initial={reduceMotion? false : { opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
-      {...(reduceMotion? {} : { whileHover: { y: -2 } })}
+      {...(reduceMotion? {} : { whileHover: { y: -3 } })}
       transition={{ duration: 0.22 }}
       className={cn("group w-full max-w-sm mx-auto", className)}
     >
-      <div
-        className="relative overflow-hidden rounded-2xl border border-zinc-200/70 bg-white shadow-lg ring-1 ring-black/[0.03] transition-all duration-300 active:scale-[0.992] dark:border-white/10 dark:bg-zinc-950 dark:shadow-black/30"
-        style={{ boxShadow: `inset 0 2px 0 0 ${accent}, 0 8px 24px rgba(15,23,42,0.06)` }}
-      >
-        <div className="relative p-3 pb-2">
-          <div className="mb-3 flex items-start justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <button
-                type="button"
-                onClick={goToTask}
-                className={cn("relative shrink-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2", ringClass)}
-              >
-                <img src={avatarUrl} alt={task.userName || "Avatar"} loading="lazy" decoding="async" className="h-10 w-10 rounded-xl object-cover ring-2 ring-white shadow-md dark:ring-zinc-950" />
-                {task.userVerified && <FiCheckCircle className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-white text-[#0A84FF] dark:bg-zinc-950" />}
-              </button>
-              <div className="min-w-0">
-                <button type="button" onClick={goToTask} className="block text-left">
-                  <p className="truncate text-sm font-bold text-zinc-950 hover:underline dark:text-white">{task.userName || "AIR user"}</p>
-                </button>
-                <div className="mt-0.5 flex min-w-0 items-center gap-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                  <span className="truncate">{derived.timeAgo}</span>
-                </div>
-              </div>
-            </div>
-
-            {isOwner && (
-              <div className="flex shrink-0 items-center gap-0.5">
-                <button
-                  ref={menuBtnRef}
-                  type="button"
-                  aria-label="Mở menu"
-                  aria-expanded={showMenu}
-                  aria-haspopup="menu"
-                  aria-controls={showMenu? menuId : undefined}
-                  onClick={openMenu}
-                  className={cn("flex h-9 w-9 items-center justify-center rounded-xl text-zinc-500 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-400 dark:hover:bg-zinc-900", ringClass)}
-                >
-                  <FiMoreHorizontal className="h-4 w-4" />
-                </button>
-              </div>
-            )}
-          </div>
-
-          <button type="button" onClick={goToTask} className={cn("block w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 rounded-lg", ringClass)}>
-            <h3 className="text-base font-bold leading-snug tracking-tight text-zinc-950 dark:text-white line-clamp-2">{task.title}</h3>
-          </button>
-
-       <div className="mt-3 grid grid-cols-3 gap-1">
-  <div className="rounded-lg bg-zinc-50 p-1 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
-    <div className="flex items-center gap-0.5 text-xs font-semibold text-zinc-400">
-      <TbCurrencyDong className="h-2 w-2" /> Giá trị
-    </div>
-    <p className="mt-0 truncate text-xs font-bold leading-tight text-zinc-950 dark:text-white">{derived.price}</p>
-  </div>
-  <div className="rounded-lg bg-zinc-50 p-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
-    <div className="flex items-center gap-0.5 text-xs font-semibold text-zinc-400">
-      <FiClock className="h-2 w-2" /> Hạn chót
-    </div>
-    <p className="mt-0 text-xs font-bold leading-tight text-zinc-950 dark:text-white">{derived.due}</p>
-  </div>
-  <div className={cn("rounded-lg bg-zinc-50 p-1 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5", derived.isFull && "ring-red-500/20 bg-red-50 dark:bg-red-950/20")}>
-    <div className="flex items-center gap-0.5 text-xs font-semibold text-zinc-400">
-      <FiUsers className="h-2 w-2" /> Số người
-    </div>
-    <p className={cn("mt-0 text-xs font-bold leading-tight text-zinc-950 dark:text-white", derived.isFull && "text-red-600 dark:text-red-400")}>
-      {derived.maxSlots? `${derived.currentCount}/${derived.maxSlots}` : "Mở"}
-    </p>
-  </div>
-</div>
+      <div className="relative">
+        {/* VIỀN MÀU CHẠY 4 CẠNH */}
+        <div
+          className="absolute inset-0 rounded-2xl p-[2px]"
+          style={{
+            background: `linear-gradient(135deg, ${accent} 0%, ${accent}99 50%, ${accent} 100%)`,
+          }}
+        >
+          <div className="h-full w-full rounded-2xl bg-white dark:bg-zinc-950" />
         </div>
 
-        <div className="flex items-center justify-between px-2 py-1.5">
-          <div className="flex items-center min-w-0">
-            <button
-              type="button"
-              aria-label={liked? "Bỏ thích" : "Thích"}
-              aria-pressed={liked}
-              onClick={(e) => { e.stopPropagation(); handleLike(); }}
-              disabled={liking}
-              className={cn("flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-zinc-700 transition active:scale-95 hover:bg-zinc-100 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}
-            >
-              {liked? <HiHeart className="h-4 w-4 text-red-500" /> : <HiOutlineHeart className="h-4 w-4" />}
-              {task.likeCount || 0}
-            </button>
-            <button type="button" aria-label="Bình luận" onClick={goToTask} className={cn("flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-zinc-700 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}>
-              <FiMessageCircle className="h-4 w-4" />
-              {task.commentCount || 0}
-            </button>
-            <button type="button" aria-label="Chia sẻ" onClick={(e) => { e.stopPropagation(); vibrate(8); onShare?.(task); }} className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-zinc-600 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}>
-              <FiShare2 className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              aria-label={isSaved? "Bỏ lưu" : "Lưu"}
-              aria-pressed={isSaved}
-              onClick={(e) => { e.stopPropagation(); handleSave(); }}
-              disabled={saving}
-              className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-zinc-500 transition active:scale-95 disabled:opacity-50 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-400 dark:hover:bg-zinc-900", ringClass)}
-            >
-              <FiBookmark className={cn("h-4 w-4", isSaved && "fill-current")} style={{ color: isSaved? accent : undefined }} />
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
-            {derived.provinceName && (
-              <div title={derived.provinceName} className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400 max-w-">
-                <FiMapPin className="h-3 w-3 shrink-0" />
-                <span className="truncate">{derived.provinceName}</span>
+        {/* CARD CHÍNH NỔI LÊN */}
+        <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-zinc-950 shadow-xl shadow-black/[0.08] dark:shadow-black/40 transition-all duration-300 active:scale-[0.992] hover:shadow-2xl">
+          {/* INNER HIGHLIGHT GIỐNG TASK/PLAN */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-transparent to-black/[0.02] pointer-events-none" />
+          <div className="absolute inset-[1px] rounded-2xl ring-1 ring-inset ring-white/40 dark:ring-white/5 pointer-events-none" />
+
+          <div className="relative p-3 pb-2">
+            <div className="mb-3 flex items-start justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={goToTask}
+                  className={cn("relative shrink-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2", ringClass)}
+                >
+                  <img src={avatarUrl} alt={task.userName || "Avatar"} loading="lazy" decoding="async" className="h-10 w-10 rounded-xl object-cover ring-2 ring-white shadow-md dark:ring-zinc-950" />
+                  {task.userVerified && <FiCheckCircle className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-white text-[#0A84FF] dark:bg-zinc-950" />}
+                </button>
+                <div className="min-w-0">
+                  <button type="button" onClick={goToTask} className="block text-left">
+                    <p className="truncate text-sm font-bold text-zinc-950 hover:underline dark:text-white">{task.userName || "AIR user"}</p>
+                  </button>
+                  <div className="mt-0.5 flex min-w-0 items-center gap-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                    <span className="truncate">{derived.timeAgo}</span>
+                  </div>
+                </div>
               </div>
-            )}
-        <div className="flex items-center gap-1 pr-1 text-xs font-semibold text-zinc-400">
-  <FiEye className="h-3 w-3" /> {task.viewCount || 0}
-</div>
+
+              {isOwner && (
+                <div className="flex shrink-0 items-center gap-0.5">
+                  <button
+                    ref={menuBtnRef}
+                    type="button"
+                    aria-label="Mở menu"
+                    aria-expanded={showMenu}
+                    aria-haspopup="menu"
+                    aria-controls={showMenu? menuId : undefined}
+                    onClick={openMenu}
+                    className={cn("flex h-9 w-9 items-center justify-center rounded-xl text-zinc-500 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-400 dark:hover:bg-zinc-900", ringClass)}
+                  >
+                    <FiMoreHorizontal className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <button type="button" onClick={goToTask} className={cn("block w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 rounded-lg", ringClass)}>
+              <h3 className="text-base font-bold leading-snug tracking-tight text-zinc-950 dark:text-white line-clamp-2">{task.title}</h3>
+            </button>
+
+            <div className="mt-3 grid grid-cols-3 gap-1.5">
+              <div className="rounded-xl bg-zinc-50/80 p-1.5 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
+                <div className="flex items-center gap-0.5 text-[10px] font-semibold text-zinc-400">
+                  <TbCurrencyDong className="h-2.5 w-2.5" /> Giá trị
+                </div>
+                <p className="mt-0.5 truncate text-xs font-bold leading-tight text-zinc-950 dark:text-white">{derived.price}</p>
+              </div>
+              <div className="rounded-xl bg-zinc-50/80 p-1.5 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
+                <div className="flex items-center gap-0.5 text-[10px] font-semibold text-zinc-400">
+                  <FiClock className="h-2.5 w-2.5" /> Hạn chót
+                </div>
+                <p className="mt-0.5 text-xs font-bold leading-tight text-zinc-950 dark:text-white">{derived.due}</p>
+              </div>
+              <div className={cn("rounded-xl bg-zinc-50/80 p-1.5 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5", derived.isFull && "ring-red-500/20 bg-red-50 dark:bg-red-950/20")}>
+                <div className="flex items-center gap-0.5 text-[10px] font-semibold text-zinc-400">
+                  <FiUsers className="h-2.5 w-2.5" /> Số người
+                </div>
+                <p className={cn("mt-0.5 text-xs font-bold leading-tight text-zinc-950 dark:text-white", derived.isFull && "text-red-600 dark:text-red-400")}>
+                  {derived.maxSlots? `${derived.currentCount}/${derived.maxSlots}` : "Mở"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between px-2 py-1.5">
+            <div className="flex items-center min-w-0">
+              <button
+                type="button"
+                aria-label={liked? "Bỏ thích" : "Thích"}
+                aria-pressed={liked}
+                onClick={(e) => { e.stopPropagation(); handleLike(); }}
+                disabled={liking}
+                className={cn("flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-zinc-700 transition active:scale-95 hover:bg-zinc-100 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}
+              >
+                {liked? <HiHeart className="h-4 w-4 text-red-500" /> : <HiOutlineHeart className="h-4 w-4" />}
+                {task.likeCount || 0}
+              </button>
+              <button type="button" aria-label="Bình luận" onClick={goToTask} className={cn("flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-zinc-700 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}>
+                <FiMessageCircle className="h-4 w-4" />
+                {task.commentCount || 0}
+              </button>
+              <button type="button" aria-label="Chia sẻ" onClick={(e) => { e.stopPropagation(); vibrate(8); onShare?.(task); }} className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-zinc-600 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}>
+                <FiShare2 className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                aria-label={isSaved? "Bỏ lưu" : "Lưu"}
+                aria-pressed={isSaved}
+                onClick={(e) => { e.stopPropagation(); handleSave(); }}
+                disabled={saving}
+                className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-zinc-500 transition active:scale-95 disabled:opacity-50 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-400 dark:hover:bg-zinc-900", ringClass)}
+              >
+                <FiBookmark className={cn("h-4 w-4", isSaved && "fill-current")} style={{ color: isSaved? accent : undefined }} />
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              {derived.provinceName && (
+                <div title={derived.provinceName} className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                  <FiMapPin className="h-3 w-3 shrink-0" />
+                  <span className="truncate max-w-20">{derived.provinceName}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-1 pr-1 text-xs font-semibold text-zinc-400">
+                <FiEye className="h-3 w-3" /> {task.viewCount || 0}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -403,7 +416,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
 
 export const TaskCardSkeleton = memo(() => (
   <div className="w-full max-w-sm mx-auto animate-pulse">
-    <div className="rounded-2xl border-zinc-200/70 bg-white p-3 dark:border-white/10 dark:bg-zinc-950">
+    <div className="rounded-2xl border-zinc-200/70 bg-white p-3 dark:border-white/10 dark:bg-zinc-950 shadow-xl shadow-black/[0.08]">
       <div className="mb-3 flex items-center gap-2.5">
         <div className="h-10 w-10 rounded-xl bg-zinc-200 dark:bg-zinc-800" />
         <div className="flex-1 space-y-2">
@@ -412,10 +425,10 @@ export const TaskCardSkeleton = memo(() => (
         </div>
       </div>
       <div className="h-4 w-3/4 rounded bg-zinc-200 dark:bg-zinc-800 mb-3" />
-      <div className="grid grid-cols-3 gap-1">
-        <div className="h-12 rounded-lg bg-zinc-100 dark:bg-zinc-900/50" />
-        <div className="h-12 rounded-lg bg-zinc-100 dark:bg-zinc-900/50" />
-        <div className="h-12 rounded-lg bg-zinc-100 dark:bg-zinc-900/50" />
+      <div className="grid grid-cols-3 gap-1.5">
+        <div className="h-12 rounded-xl bg-zinc-100 dark:bg-zinc-900/50" />
+        <div className="h-12 rounded-xl bg-zinc-100 dark:bg-zinc-900/50" />
+        <div className="h-12 rounded-xl bg-zinc-100 dark:bg-zinc-900/50" />
       </div>
     </div>
   </div>
