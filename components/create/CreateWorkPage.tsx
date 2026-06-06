@@ -153,20 +153,19 @@ const initialForm = (mode: Mode): FormState => ({
 });
 
 const toTimestamp = (value: string) => Timestamp.fromDate(new Date(value));
-function TagsInput({ 
-  value, 
-  onChange, 
+function TagsInput({
+  value,
+  onChange,
   placeholder,
-  mode 
-}: { 
-  value: string; 
-  onChange: (val: string) => void; 
+  mode
+}: {
+  value: string;
+  onChange: (val: string) => void;
   placeholder: string;
   mode: Mode;
 }) {
   const [inputValue, setInputValue] = useState("");
   const accent = mode === "task"? "#0A84FF" : "#30D158";
-
   const tags = value.split(",").map(t => t.trim()).filter(Boolean);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -191,8 +190,8 @@ function TagsInput({
   };
 
   return (
-    <div className="min-h-[52px] w-full rounded-2xl border-2 border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950 focus-within:border-[#0A84FF] focus-within:ring-4 focus-within:ring-[#0A84FF]/20 transition-all">
-      <div className="flex flex-wrap gap-2">
+    <div className="input-premium flex min-h-[52px] items-center gap-2!p-2">
+      <div className="flex flex-1 flex-wrap gap-2">
         {tags.map((tag, idx) => (
           <motion.span
             key={idx}
@@ -217,7 +216,7 @@ function TagsInput({
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={tags.length === 0? placeholder : ""}
-          className="flex-1 min-w-[120px] bg-transparent outline-none text-sm font-bold text-zinc-900 dark:text-white placeholder:text-zinc-400 placeholder:font-medium"
+          className="flex-1 min-w-[120px] border-0 bg-transparent p-0 outline-none text-sm font-bold text-zinc-900 dark:text-white placeholder:text-zinc-400 placeholder:font-medium focus:ring-0"
         />
       </div>
     </div>
@@ -681,7 +680,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
     { label: "Nội dung", icon: FiZap },
     { label: "Địa điểm", icon: FiMapPin },
     { label: isTask ? "Ngân sách" : "Thời gian", icon: isTask ? FiDollarSign : FiCalendar },
-    { label: "Xuất bản", icon: FiCheck },
+    { label: "Đăng bài", icon: FiCheck },
   ];
 
   return (
@@ -780,80 +779,125 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
                   </div>
                 </Field>
 <Field label="Danh mục" required icon={FiTag}>
-  <Select
-    value={categories.find(c => c.id === form.category) || null}
-    onChange={(opt) => handleCategoryChange(opt?.id || "")}
-    options={categories}
-    getOptionLabel={(opt) => opt ? `${opt.icon} ${opt.label}` : ''}
-    getOptionValue={(opt) => opt?.id || ''}
-    placeholder="Tìm danh mục..."
-    isSearchable
-    isClearable={false}
-    classNamePrefix="react-select"
-    formatOptionLabel={(opt) => {
-      if (!opt) return null;
-      return (
-        <div className="flex items-center gap-2">
-          <span className="text-xl">{opt.icon}</span>
-          <span className="font-bold">{opt.label}</span>
-        </div>
-      );
-    }}
-    styles={{
-      control: (base, state) => ({
-        ...base,
-        minHeight: '52px',
-        borderRadius: '1rem',
-        border: `2px solid ${state.isFocused ? accent : 'rgb(228 228 231)'}`,
-        boxShadow: state.isFocused ? `0 0 0 4px ${accent}20` : 'none',
-        background: 'white',
-        fontWeight: 700,
-        fontSize: '0.9375rem',
-        '&:hover': { borderColor: accent },
-      }),
-      menu: (base) => ({
-        ...base,
-        borderRadius: '1rem',
-        overflow: 'hidden',
-        boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
-        zIndex: 50,
-      }),
-      option: (base, state) => ({
-        ...base,
-        padding: '12px 16px',
-        fontWeight: 700,
-        background: state.isSelected 
-          ? `linear-gradient(135deg, ${accent}, ${accent}dd)` 
-          : state.isFocused 
-          ? `${accent}15` 
-          : 'transparent',
-        color: state.isSelected ? 'white' : 'inherit',
-        cursor: 'pointer',
-        '&:active': { background: accent },
-      }),
-      singleValue: (base) => ({
-        ...base,
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-      }),
-      input: (base) => ({
-        ...base,
-        fontWeight: 700,
-      }),
-    }}
-    theme={(theme) => ({
-      ...theme,
-      colors: {
-        ...theme.colors,
-        primary: accent,
-        primary25: `${accent}15`,
-        primary50: `${accent}30`,
-      },
-    })}
-  />
-  <div className="flex items-center justify-between text-xs mt-1">
-    <span className="text-zinc-400">
+  <div className="input-premium!p-0 group">
+    <Select
+      value={categories.find(c => c.id === form.category) || null}
+      onChange={(opt) => handleCategoryChange(opt?.id || "")}
+      options={categories}
+      getOptionLabel={(opt) => opt? `${opt.icon} ${opt.label}` : ''}
+      getOptionValue={(opt) => opt?.id || ''}
+      placeholder="Tìm danh mục..."
+      isSearchable
+      isClearable={false}
+      classNamePrefix="react-select"
+      formatOptionLabel={(opt) => {
+        if (!opt) return null;
+        return (
+          <div className="flex items-center gap-2">
+            <span className="text-xl">{opt.icon}</span>
+            <span className="font-bold">{opt.label}</span>
+          </div>
+        );
+      }}
+      components={{
+        DropdownIndicator: ({ innerProps }) => (
+          <div {...innerProps} className="pr-3 text-zinc-400 transition-colors group-focus-within:text-[#0A84FF]">
+            <FiTag className="text-lg" />
+          </div>
+        ),
+        IndicatorSeparator: () => null,
+      }}
+      styles={{
+        control: (base) => ({
+         ...base,
+          minHeight: '48px',
+          border: '0!important',
+          boxShadow: 'none!important',
+          background: 'transparent',
+          fontWeight: 700,
+          fontSize: '0.9375rem',
+          cursor: 'text',
+        }),
+        menu: (base) => ({
+         ...base,
+          borderRadius: '1.25rem',
+          overflow: 'hidden',
+          boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.25)',
+          zIndex: 50,
+          marginTop: '8px',
+          border: '2px solid rgb(228 228 231)',
+        }),
+        menuList: (base) => ({
+         ...base,
+          padding: '8px',
+          '::-webkit-scrollbar': {
+            width: '6px',
+          },
+          '::-webkit-scrollbar-track': {
+            background: 'transparent',
+          },
+          '::-webkit-scrollbar-thumb': {
+            background: 'rgb(212 212 216)',
+            borderRadius: '10px',
+          },
+        }),
+        option: (base, state) => ({
+         ...base,
+          padding: '12px 16px',
+          fontWeight: 700,
+          borderRadius: '0.75rem',
+          margin: '2px 0',
+          background: state.isSelected
+           ? `linear-gradient(135deg, ${accent}, ${accent}dd)`
+            : state.isFocused
+           ? `${accent}15`
+            : 'transparent',
+          color: state.isSelected? 'white' : 'inherit',
+          cursor: 'pointer',
+          transition: 'all 0.15s',
+          '&:active': { background: accent },
+        }),
+        singleValue: (base) => ({
+         ...base,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          margin: 0,
+        }),
+        input: (base) => ({
+         ...base,
+          fontWeight: 700,
+          margin: 0,
+          padding: 0,
+          color: 'inherit',
+        }),
+        valueContainer: (base) => ({
+         ...base,
+          padding: '0 1.25rem',
+        }),
+        indicatorsContainer: (base) => ({
+         ...base,
+          paddingRight: '0.5rem',
+        }),
+        placeholder: (base) => ({
+         ...base,
+          color: 'rgb(161 161 170)',
+          fontWeight: 500,
+        }),
+      }}
+      theme={(theme) => ({
+       ...theme,
+        colors: {
+         ...theme.colors,
+          primary: accent,
+          primary25: `${accent}15`,
+          primary50: `${accent}30`,
+        },
+      })}
+    />
+  </div>
+  <div className="flex items-center justify-between text-xs mt-1.5">
+    <span className="text-zinc-400 font-medium">
       {categories.find(c => c.id === form.category)?.label}
     </span>
     {isTask && (
@@ -1228,7 +1272,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
               disabled={saving}
               className={`flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r ${gradient} font-black text-white shadow-xl transition-all hover:shadow-2xl disabled:opacity-60`}
             >
-              <FiCheck className="text-xl" /> {saving? "Đang xuất bản..." : `Xuất bản ${isTask? "Task" : "Plan"}`}
+              <FiCheck className="text-xl" /> {saving? "Đang xuất bản..." : `Đăng ${isTask? "Công việc" : "Sự kiện"}`}
             </motion.button>
           )}
         </div>
