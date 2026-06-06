@@ -171,66 +171,207 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
   return (
     <div className="bg-white dark:bg-zinc-950 text-zinc-950 dark:text-white">
       <div className="sticky top-0 z-40 bg-white dark:bg-zinc-950">
-        <div className="mx-auto max-w-[680px] px-4 pt-3 pb-3">
-          <div className="relative rounded-[1.35rem] bg-zinc-100/80 p-1.5 ring-1 ring-black/5 dark:bg-zinc-900/90 dark:ring-white/10">
-            <motion.div className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded- bg-gradient-to-r ${gradient} shadow-lg`} animate={{ x: isTaskMode? 0 : "100%" }} transition={reduceMotion? { duration: 0 } : { type: "spring", stiffness: 360, damping: 34 }} />
-            <div className="relative grid grid-cols-2 gap-1">
-              <button type="button" aria-pressed={isTaskMode} onClick={() => switchMode("task")} className={`flex h-11 items-center justify-center gap-2 rounded-2xl text-sm font-black ${isTaskMode? "text-white" : "text-zinc-500"}`}><HiBolt /> Task</button>
-              <button type="button" aria-pressed={!isTaskMode} onClick={() => switchMode("plan")} className={`flex h-11 items-center justify-center gap-2 rounded-2xl text-sm font-black ${!isTaskMode? "text-white" : "text-zinc-500"}`}><HiCalendarDays /> Plan</button>
-            </div>
-          </div>
+    <div className="mx-auto max-w-[680px] px-4 pt-3 pb-3">
+  {/* TOGGLE TASK/PLAN - BẢN HOÀN HẢO */}
+  <div className="relative h-14 rounded-[1.5rem] bg-zinc-100/80 ring-1 ring-black/5 dark:bg-zinc-900/90 dark:ring-white/10 overflow-hidden shadow-inner">
+    {/* LỚP NỀN GRADIENT TRÀN FULL */}
+    <motion.div
+      className="absolute inset-0"
+      initial={false}
+      animate={{
+        background: isTaskMode
+         ? "linear-gradient(135deg, #0A84FF 0%, #0066CC 50%, #0051D5 100%)"
+          : "linear-gradient(135deg, #30D158 0%, #28B34A 50%, #248A3D 100%)"
+      }}
+      transition={{ duration: 0.5, ease: "easeInOut" }}
+    />
 
-          {/* SỬA: TRUYỀN THÊM PROP ĐỂ MỞ MODAL */}
-          <CustomFilterBar
-            currentFilter={activeTab}
-            onChangeFilter={setActiveTab}
-            searchQueries={searchQueries}
-            onSearchChange={handleSearchChange}
-            onOpenSearch={() => setShowSearchModal(true)}
-            showSearchModal={showSearchModal}
-            onCloseSearch={() => setShowSearchModal(false)}
-          />
-        </div>
-      </div>
+    {/* SHINE SWEEP KHI ĐỔI TAB */}
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={isTaskMode? 'task' : 'plan'}
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12"
+        initial={{ x: '-100%' }}
+        animate={{ x: '200%' }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+      />
+    </AnimatePresence>
 
-      <div className="mx-auto max-w-[680px] px-4 pt-4">
-        {loading? (
-          <div className="space-y-3" aria-label="Đang tải feed">
-            {[0, 1, 2].map((item) => <div key={item} className="h-52 rounded- bg-white motion-safe:animate-pulse dark:bg-zinc-900" />)}
-          </div>
-        ) : error? (
-          <div className="rounded- border border-red-200 bg-white/82 p-8 text-center shadow-xl shadow-red-500/5 dark:border-red-500/20 dark:bg-zinc-900/80">
-            <FiInbox className="mx-auto h-9 w-9 text-red-500" />
-            <h2 className="mt-4 text-xl font-black">Feed đang gián đoạn</h2>
-            <p className="mt-2 text-sm text-zinc-500">Thử tải lại để đồng bộ dữ liệu mới nhất.</p>
-            <button type="button" onClick={handleRefresh} className="mt-5 h-11 rounded-2xl bg-zinc-950 px-5 text-sm font-bold text-white dark:bg-white dark:text-zinc-950">Tải lại</button>
-          </div>
-        ) : filteredTasks.length === 0? (
-          <div className="rounded- border border-white/70 bg-white/82 p-8 text-center shadow-xl shadow-black/[0.04] dark:border-white/10 dark:bg-zinc-900/80">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-zinc-100 text-zinc-400 dark:bg-zinc-800"><FiSearch className="h-7 w-7" /></div>
-            <h2 className="mt-5 text-xl font-black">Chưa có {modeNoun} phù hợp</h2>
-            <p className="mx-auto mt-2 max-w-[320px] text-sm leading-6 text-zinc-500">{activeTab === "nearby" &&!userLocation? "Bật định vị để khám phá cơ hội quanh bạn." : "Thử đổi bộ lọc, tìm từ khóa khác hoặc tạo mục mới để bắt đầu."}</p>
-            <div className="mt-5 flex justify-center gap-2">
-              {activeTab === "nearby" &&!userLocation && <button type="button" onClick={requestLocation} className={`h-11 rounded-2xl bg-gradient-to-r ${gradient} px-5 text-sm font-black text-white`}>Bật định vị</button>}
-              <button type="button" onClick={handleRefresh} className="h-11 rounded-2xl bg-zinc-100 px-5 text-sm font-black text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">Tải lại</button>
-            </div>
-          </div>
-        ) : (
-          <AnimatePresence mode="popLayout">
-            <motion.div key={`${mode}-${activeTab}`} initial={reduceMotion? false : { opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-              {filteredTasks.map((task, idx) => (
-                <motion.div key={task.id} initial={reduceMotion? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: reduceMotion? 0 : Math.min(idx * 0.02, 0.14) }} layout={!reduceMotion}>
-                  <TaskCard task={task} theme={mode} onDelete={handleDelete} onShare={handleShare} onTaskUpdate={handleTaskUpdate} />
-                </motion.div>
-              ))}
-            </motion.div>
-          </AnimatePresence>
-        )}
+    {/* GLOW EFFECT THEO TAB */}
+    <motion.div
+      className="absolute inset-0 blur-2xl opacity-60"
+      animate={{
+        background: isTaskMode
+         ? "radial-gradient(60% 80% at 25% 50%, #0A84FF 0%, transparent 100%)"
+          : "radial-gradient(60% 80% at 75% 50%, #30D158 0%, transparent 100%)"
+      }}
+      transition={{ duration: 0.6, ease: "easeInOut" }}
+    />
 
-        {refreshing && <div className="flex justify-center py-6"><FiRefreshCw className="motion-safe:animate-spin" style={{ color: accent }} size={24} /></div>}
-        {shareTask && <ShareTaskModal task={shareTask} onClose={() => setShareTask(null)} />}
-        <div className="h-2" />
-      </div>
+    {/* NÚT BẤM */}
+    <div className="relative grid grid-cols-2 h-full">
+      <motion.button
+        type="button"
+        whileTap={{ scale: 0.94 }}
+        whileHover={{ scale: 1.02 }}
+        aria-pressed={isTaskMode}
+        onClick={() => switchMode("task")}
+        className={`relative flex items-center justify-center gap-2 text-sm font-black transition-all duration-300 ${
+          isTaskMode
+           ? "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]"
+            : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+        }`}
+      >
+        <motion.div
+          animate={{
+            rotate: isTaskMode? [0, -15, 15, -10, 0] : 0,
+            scale: isTaskMode? [1, 1.2, 1] : 1
+          }}
+          transition={{ duration: 0.6, ease: "easeInOut" }}
+        >
+          <HiBolt size={20} />
+        </motion.div>
+        <span className="relative">
+          Task
+          {isTaskMode && (
+            <motion.div
+              layoutId="activeIndicator"
+              className="absolute -bottom-1 left-0 right-0 h-0.5 bg-white rounded-full"
+              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            />
+          )}
+        </span>
+      </motion.button>
+
+      <motion.button
+        type="button"
+        whileTap={{ scale: 0.94 }}
+        whileHover={{ scale: 1.02 }}
+        aria-pressed={!isTaskMode}
+        onClick={() => switchMode("plan")}
+        className={`relative flex items-center justify-center gap-2 text-sm font-black transition-all duration-300 ${
+         !isTaskMode
+           ? "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]"
+            : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+        }`}
+      >
+        <motion.div
+          animate={{
+            rotate:!isTaskMode? [0, -15, 15, -10, 0] : 0,
+            scale:!isTaskMode? [1, 1.2, 1] : 1
+          }}
+          transition={{ duration: 0.6, ease: "easeInOut" }}
+        >
+          <HiCalendarDays size={20} />
+        </motion.div>
+        <span className="relative">
+          Plan
+          {!isTaskMode && (
+            <motion.div
+              layoutId="activeIndicator"
+              className="absolute -bottom-1 left-0 right-0 h-0.5 bg-white rounded-full"
+              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            />
+          )}
+        </span>
+      </motion.button>
     </div>
-  );
+  </div>
+
+  {/* SEARCH BAR */}
+  <CustomFilterBar
+    currentFilter={activeTab}
+    onChangeFilter={setActiveTab}
+    searchQueries={searchQueries}
+    onSearchChange={handleSearchChange}
+    onOpenSearch={() => setShowSearchModal(true)}
+    showSearchModal={showSearchModal}
+    onCloseSearch={() => setShowSearchModal(false)}
+  />
+</div>
+</div>
+
+<div className="mx-auto max-w-[680px] px-4 pt-4">
+  {loading? (
+    <div className="space-y-3" aria-label="Đang tải feed">
+      {[0, 1, 2].map((item) => (
+        <div key={item} className="h-52 rounded-[2rem] bg-white motion-safe:animate-pulse dark:bg-zinc-900" />
+      ))}
+    </div>
+  ) : error? (
+    <div className="rounded-[2rem] border border-red-200 bg-white/82 p-8 text-center shadow-xl shadow-red-500/5 dark:border-red-500/20 dark:bg-zinc-900/80">
+      <FiInbox className="mx-auto h-9 w-9 text-red-500" />
+      <h2 className="mt-4 text-xl font-black">Feed đang gián đoạn</h2>
+      <p className="mt-2 text-sm text-zinc-500">Thử tải lại để đồng bộ dữ liệu mới nhất.</p>
+      <button type="button" onClick={handleRefresh} className="mt-5 h-11 rounded-2xl bg-zinc-950 px-5 text-sm font-bold text-white dark:bg-white dark:text-zinc-950">Tải lại</button>
+    </div>
+  ) : filteredTasks.length === 0? (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-[2rem] border border-white/70 bg-white/82 p-8 text-center shadow-xl shadow-black/[0.04] dark:border-white/10 dark:bg-zinc-900/80"
+    >
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-zinc-100 text-zinc-400 dark:bg-zinc-800">
+        <FiSearch className="h-7 w-7" />
+      </div>
+      <h2 className="mt-5 text-xl font-black">Chưa có {modeNoun} phù hợp</h2>
+      <p className="mx-auto mt-2 max-w-[320px] text-sm leading-6 text-zinc-500">
+        {activeTab === "nearby" &&!userLocation? "Bật định vị để khám phá cơ hội quanh bạn." : "Thử đổi bộ lọc, tìm từ khóa khác hoặc tạo mục mới để bắt đầu."}
+      </p>
+      <div className="mt-5 flex justify-center gap-2">
+        {activeTab === "nearby" &&!userLocation && (
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            type="button"
+            onClick={requestLocation}
+            className={`h-11 rounded-2xl bg-gradient-to-r ${gradient} px-5 text-sm font-black text-white shadow-lg`}
+          >
+            Bật định vị
+          </motion.button>
+        )}
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          type="button"
+          onClick={handleRefresh}
+          className="h-11 rounded-2xl bg-zinc-100 px-5 text-sm font-black text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+        >
+          Tải lại
+        </motion.button>
+      </div>
+    </motion.div>
+  ) : (
+    <AnimatePresence mode="popLayout">
+      <motion.div key={`${mode}-${activeTab}`} initial={reduceMotion? false : { opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+        {filteredTasks.map((task, idx) => (
+          <motion.div
+            key={task.id}
+            initial={reduceMotion? false : { opacity: 0, y: 18, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{
+              delay: reduceMotion? 0 : Math.min(idx * 0.03, 0.2),
+              type: "spring",
+              stiffness: 300,
+              damping: 25
+            }}
+            layout={!reduceMotion}
+          >
+            <TaskCard task={task} theme={mode} onDelete={handleDelete} onShare={handleShare} onTaskUpdate={handleTaskUpdate} />
+          </motion.div>
+        ))}
+      </motion.div>
+    </AnimatePresence>
+  )}
+
+  {refreshing && (
+    <div className="flex justify-center py-6">
+      <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
+        <FiRefreshCw style={{ color: accent }} size={24} />
+      </motion.div>
+    </div>
+  )}
+  {shareTask && <ShareTaskModal task={shareTask} onClose={() => setShareTask(null)} />}
+  <div className="h-2" />
+</div>
+</div>
+);
 }
