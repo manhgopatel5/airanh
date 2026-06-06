@@ -15,20 +15,20 @@ import {
 } from "framer-motion";
 import { useAppStore } from "@/store/app";
 import {
-  Home,
-  MessageSquare,
-  ClipboardList,
-  User,
-  Plus,
-  Sparkles,
-  CalendarRange
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+  GoHome,
+  GoHomeFill,
+  GoInbox,
+  GoTelescope,
+  GoTelescopeFill,
+} from "react-icons/go";
+import { RiRobot2Fill, RiRobot2Line } from "react-icons/ri";
+import type { IconType } from "react-icons";
 
 interface NavItem {
   path: string;
   label: string;
-  Icon: LucideIcon;
+  Icon: IconType;
+  ActiveIcon: IconType;
 }
 
 const SPRING = {
@@ -90,7 +90,7 @@ const FloatingMenu = React.memo(({
             y: 15,
             scale: 0.97,
             filter: "blur(4px)",
-            transition: { duration: 0.15, ease: [0.4, 0, 1, 1] }
+            transition: { duration: 0.15, ease: [0.4, 0, 1] }
           }}
           className="w-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-3xl rounded-3xl p-3 border border-zinc-200/40 dark:border-zinc-800/40 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] pointer-events-auto flex flex-col gap-1.5 select-none"
         >
@@ -122,20 +122,8 @@ const FloatingMenu = React.memo(({
             onClick={() => onSelect("task")}
             className="w-full flex items-center gap-4 p-3 rounded-2xl transition-colors duration-200 text-left group relative overflow-hidden"
           >
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-blue-500/0"
-              initial={{ x: "-100%" }}
-              whileHover={{ x: "100%" }}
-              transition={{ duration: 0.6, ease: "easeInOut" }}
-            />
-
             <div className="w-11 h-11 rounded-2xl bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 relative">
               <Sparkles className="w-5 h-5" strokeWidth={2.5} />
-              <motion.div
-                className="absolute inset-0 rounded-2xl bg-blue-500/20 blur-xl"
-                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
             </div>
             <div className="flex-1 relative">
               <h4 className="font-black text-zinc-900 dark:text-zinc-100 text-sm tracking-tight">Nhiệm vụ mới</h4>
@@ -160,20 +148,8 @@ const FloatingMenu = React.memo(({
             onClick={() => onSelect("plan")}
             className="w-full flex items-center gap-4 p-3 rounded-2xl transition-colors duration-200 text-left group relative overflow-hidden"
           >
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/5 to-emerald-500/0"
-              initial={{ x: "-100%" }}
-              whileHover={{ x: "100%" }}
-              transition={{ duration: 0.6, ease: "easeInOut" }}
-            />
-
             <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 relative">
               <CalendarRange className="w-5 h-5" strokeWidth={2.5} />
-              <motion.div
-                className="absolute inset-0 rounded-2xl bg-emerald-500/20 blur-xl"
-                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
-              />
             </div>
             <div className="flex-1 relative">
               <h4 className="font-black text-zinc-900 dark:text-zinc-100 text-sm tracking-tight">Kế hoạch dài hạn</h4>
@@ -188,20 +164,16 @@ const FloatingMenu = React.memo(({
 FloatingMenu.displayName = "FloatingMenu";
 
 /* ==========================================================================
-   MAGNETIC NAV ITEM - ĐÃ FIX DÙNG activeBgClass + activeColorClass
+   NAV ITEM - GITHUB STYLE: NỀN XÁM, KHÔNG MÀU XANH
    ========================================================================== */
-const MagneticNavItem = React.memo(({
+const NavItem = React.memo(({
   item,
   active,
   onClick,
-  activeColorClass,
-  activeBgClass
 }: {
   item: NavItem;
   active: boolean;
   onClick: () => void;
-  activeColorClass: string;
-  activeBgClass: string;
 }) => {
   const ref = useRef<HTMLButtonElement>(null);
 
@@ -220,33 +192,21 @@ const MagneticNavItem = React.memo(({
     mass: 0.5
   });
 
-  const rotateX = useTransform(springY, [-20, 20], [12, -12]);
-  const rotateY = useTransform(springX, [-20, 20], [-12, 12]);
-
-  const glowOpacity = useTransform(
-    springX,
-    [-20, 0, 20],
-    [0.4, 0.8, 0.4]
-  );
-
   const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!ref.current) return;
-
     const rect = ref.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-
-    const moveX = (e.clientX - centerX) * 0.28;
-    const moveY = (e.clientY - centerY) * 0.28;
-
-    x.set(moveX);
-    y.set(moveY);
+    x.set((e.clientX - centerX) * 0.2);
+    y.set((e.clientY - centerY) * 0.2);
   };
 
   const handleMouseLeave = () => {
     x.set(0);
     y.set(0);
   };
+
+  const Icon = active? item.ActiveIcon : item.Icon;
 
   return (
     <motion.button
@@ -257,120 +217,43 @@ const MagneticNavItem = React.memo(({
       style={{
         x: springX,
         y: springY,
-        rotateX,
-        rotateY,
-        transformStyle: "preserve-3d"
       }}
-      whileTap={{ scale: 0.88 }}
-      className="relative flex-1 flex flex-col items-center justify-center h-full pt-1.5 pb-2 outline-none select-none touch-manipulation"
+      whileTap={{ scale: 0.9 }}
+      className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 px-1 outline-none select-none touch-manipulation"
     >
-      {/* NỀN ACTIVE - FIX: DÙNG activeBgClass */}
+      {/* NỀN ACTIVE - XÁM NHƯ GITHUB */}
       {active && (
         <motion.div
-          layoutId="nav-active-bg"
+          layoutId="nav-active-pill"
           transition={SPRING}
-          className={`absolute inset-x-1 top-0.5 bottom-0.5 rounded-xl ${activeBgClass}`}
-        >
-          <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-white/30 via-transparent to-black/10" />
-          <div className="absolute inset-[1px] rounded-xl ring-1 ring-inset ring-white/25" />
-        </motion.div>
-      )}
-
-      {/* GLOW */}
-      {active && (
-        <motion.div
-          layoutId="nav-glow"
-          style={{ opacity: glowOpacity }}
-          className={`absolute inset-x-2 top-1 bottom-1 rounded-xl blur-2xl ${activeBgClass}`}
+          className="absolute inset-0 rounded-full bg-zinc-900/10 dark:bg-white/15"
         />
       )}
 
-      {/* ICON - FIX: DÙNG activeColorClass */}
-      <motion.div
-        animate={{
-          y: active? -1 : 0,
-          scale: active? 1.1 : 1
-        }}
-        transition={SPRING}
-        className="relative z-10"
-      >
-        <motion.div
-          animate={
-            active
-        ? { rotate: [0, -6, 6, 0] }
-              : {}
-          }
-          transition={{ duration: 0.5 }}
-        >
-          <item.Icon
-            className={`w-5 h-5 transition-colors duration-300 ${
-              active
-               ? activeColorClass
-                : "text-zinc-400 dark:text-zinc-500"
-            }`}
-            strokeWidth={active? 2.7 : 2.2}
-          />
-        </motion.div>
-
-        {active && (
-          <motion.div
-            className={`absolute inset-0 ${activeColorClass} blur-xl`}
-            animate={{
-              opacity: [0.3, 0.7, 0.3],
-              scale: [1, 1.4, 1]
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity
-            }}
-          />
-        )}
-      </motion.div>
-
-      {/* LABEL - FIX: DÙNG activeColorClass */}
-      <motion.span
-        animate={{
-          y: active? -1 : 0,
-          scale: active? 1.02 : 1
-        }}
-        transition={SPRING}
-        className={`relative z-10 text-[11px] mt-0.5 tracking-tight transition-all duration-300 ${
+      <Icon
+        className={`w-6 h-6 transition-colors ${
           active
-           ? `${activeColorClass} font-bold`
-            : "text-zinc-400 dark:text-zinc-500 font-semibold"
+           ? "text-zinc-900 dark:text-white"
+            : "text-zinc-400 dark:text-zinc-500"
+        }`}
+      />
+      
+      <span
+        className={`text-xs transition-all ${
+          active
+           ? "text-[#0A84FF] font-bold"
+            : "text-zinc-500 dark:text-zinc-400 font-medium"
         }`}
       >
         {item.label}
-      </motion.span>
-
-      {/* DOT */}
-      {active && (
-        <>
-          <motion.div
-            layoutId="bottom-dot"
-            transition={SPRING}
-            className="absolute bottom-0.5 w-1 h-1 rounded-full bg-white"
-          />
-          <motion.div
-            className="absolute bottom-0.5 w-1 h-1 rounded-full bg-white"
-            animate={{
-              scale: [1, 2.2, 1],
-              opacity: [0.5, 0, 0.5]
-            }}
-            transition={{
-              duration: 1.8,
-              repeat: Infinity
-            }}
-          />
-        </>
-      )}
+      </span>
     </motion.button>
   );
 });
-MagneticNavItem.displayName = "MagneticNavItem";
+NavItem.displayName = "NavItem";
 
 /* ==========================================================================
-   MAIN: BOTTOM NAV
+   MAIN: BOTTOM NAV - GITHUB MOBILE STYLE
    ========================================================================== */
 export default function BottomNav() {
   const router = useRouter();
@@ -382,25 +265,20 @@ export default function BottomNav() {
   const mode = useAppStore((s) => s.mode);
   const isPlanMode = mode === "plan";
 
-  const plusX = useMotionValue(0);
-  const plusY = useMotionValue(0);
-  const plusSpringX = useSpring(plusX, SPRING);
-  const plusSpringY = useSpring(plusY, SPRING);
-
   const leftItems: NavItem[] = useMemo(() => [
-    { path: "/", label: "Home", Icon: Home },
-    { path: "/messages", label: "Messages", Icon: MessageSquare },
+    { path: "/", label: "Home", Icon: GoHome, ActiveIcon: GoHomeFill },
+    { path: "/inbox", label: "Inbox", Icon: GoInbox, ActiveIcon: GoInbox },
   ], []);
 
   const rightItems: NavItem[] = useMemo(() => [
-    { path: "/tasks", label: "Tasks", Icon: ClipboardList },
-    { path: "/profile", label: "Profile", Icon: User },
+    { path: "/explore", label: "Explore", Icon: GoTelescope, ActiveIcon: GoTelescopeFill },
+    { path: "/copilot", label: "Copilot", Icon: RiRobot2Line, ActiveIcon: RiRobot2Fill },
   ], []);
 
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    const targets = ["/", "/messages", "/tasks", "/profile", "/create/task", "/create/plan"];
+    const targets = ["/", "/inbox", "/explore", "/copilot", "/create/task", "/create/plan"];
     targets.forEach((p) => router.prefetch(p));
   }, [router]);
 
@@ -458,9 +336,7 @@ export default function BottomNav() {
     [pathname]
   );
 
-  const activeColorClass = isPlanMode? "text-emerald-500" : "text-blue-600";
   const activeBgClass = isPlanMode? "bg-emerald-500" : "bg-blue-600";
-  const dynamicGlow = isPlanMode? "shadow-emerald-500/30" : "shadow-blue-600/30";
 
   if (!mounted) return null;
 
@@ -487,137 +363,65 @@ export default function BottomNav() {
         >
           <div
             ref={menuRef}
-            className="w-full max-w-[500px] px-3 flex flex-col items-center gap-2"
+            className="w-full max-w-[500px] px-4 flex flex-col items-center gap-2"
             style={{
-              paddingBottom: "max(env(safe-area-inset-bottom), 8px)",
+              paddingBottom: "max(env(safe-area-inset-bottom), 12px)",
             }}
           >
             <FloatingMenu isOpen={isOpen} onSelect={handleSelectCreate} onClose={() => setIsOpen(false)} />
 
+            {/* GITHUB STYLE: PILL XÁM NHẠT, BO TRÒN NHIỀU */}
             <motion.div
               layout
-              animate={{ y: [0, -2, 0] }}
-              transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-              className="w-full pointer-events-auto relative rounded-[28px] border border-white/40 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl backdrop-saturate-200 shadow-[0_20px_60px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.55)] overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/40 before:to-white/5 dark:before:from-white/5 dark:before:to-transparent before:pointer-events-none"
+              className="w-full pointer-events-auto relative rounded-full border-zinc-200/60 dark:border-zinc-800/60 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden"
             >
-              <motion.div
-                className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
-                animate={{ x: ["-100%", "100%"] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              />
-
-              <div className="flex items-center justify-between h-[60px] px-1.5 relative pt-2">
+              <div className="flex items-center justify-between h-[64px] px-2 relative">
                 <div className="flex-1 grid grid-cols-2 h-full">
                   {leftItems.map((item) => (
-                    <MagneticNavItem
+                    <NavItem
                       key={item.path}
                       item={item}
                       active={checkActive(item.path)}
                       onClick={() => handleNavigation(item.path)}
-                      activeColorClass={activeColorClass}
-                      activeBgClass={activeBgClass}
                     />
                   ))}
                 </div>
 
-                <div className="w-[76px] flex justify-center h-full items-center relative -mt-4">
+                {/* NÚT + GIỮA */}
+                <div className="w-[72px] flex justify-center h-full items-center relative">
                   <motion.button
                     data-plus-button
                     onClick={() => {
                       navigator.vibrate?.(12);
                       setIsOpen(!isOpen);
                     }}
-                    onMouseMove={(e) => {
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      plusX.set((e.clientX - rect.left - rect.width / 2) * 0.2);
-                      plusY.set((e.clientY - rect.top - rect.height / 2) * 0.2);
-                    }}
-                    onMouseLeave={() => {
-                      plusX.set(0);
-                      plusY.set(0);
-                    }}
-                    style={{ x: plusSpringX, y: plusSpringY }}
-                    className="outline-none select-none touch-manipulation z-10 p-2 relative group"
+                    whileTap={{ scale: 0.9 }}
+                    className="outline-none select-none touch-manipulation z-10 relative"
                   >
-                    <AnimatePresence>
-                      {!isOpen && (
-                        <>
-                          {[0, 0.4, 0.8].map((delay) => (
-                            <motion.span
-                              key={delay}
-                              initial={{ scale: 0.8, opacity: 0 }}
-                              animate={{
-                                scale: [1, 1.6, 1.6],
-                                opacity: [0.7, 0, 0]
-                              }}
-                              exit={{ opacity: 0 }}
-                              transition={{
-                                repeat: Infinity,
-                                duration: 2,
-                                delay,
-                                ease: "easeOut"
-                              }}
-                              className={`absolute inset-0 rounded-full ${activeBgClass}`}
-                            />
-                          ))}
-                        </>
-                      )}
-                    </AnimatePresence>
-
-                    <motion.div
-                      className={`absolute inset-0 rounded-full ${activeBgClass} blur-2xl opacity-60`}
-                      animate={{
-                        scale: isOpen? 0.8 : [1, 1.2, 1],
-                        opacity: isOpen? 0.3 : [0.6, 0.8, 0.6]
-                      }}
-                      transition={{
-                        scale: { duration: 2, repeat: Infinity },
-                        opacity: { duration: 2, repeat: Infinity }
-                      }}
-                    />
-
                     <motion.div
                       animate={{
                         rotate: isOpen? 135 : 0,
-                        scale: isOpen? 0.88 : 1
                       }}
-                      whileHover={{ scale: isOpen? 0.88 : 1.08 }}
-                      whileTap={{ scale: 0.85 }}
                       transition={SPRING_BOUNCY}
-                      className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-2xl transition-all duration-500 ${dynamicGlow} relative overflow-hidden ${
+                      className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg relative overflow-hidden ${
                         isOpen
-                   ? "bg-zinc-900 dark:bg-zinc-800 shadow-zinc-950/20"
-                          : `${activeBgClass} shadow-lg`
+                    ? "bg-zinc-900 dark:bg-zinc-800"
+                          : `${activeBgClass}`
                       }`}
                     >
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-tr from-white/40 via-white/10 to-transparent"
-                        animate={{ rotate: [0, 360] }}
-                        transition={{
-                          duration: 8,
-                          repeat: Infinity,
-                          ease: "linear"
-                        }}
-                      />
-                      <Plus className="w-6 h-6" strokeWidth={3.5} />
-                      <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-white/20 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-white/10 to-transparent" />
+                      <Plus className="w-6 h-6 text-white relative z-10" strokeWidth={3} />
                     </motion.div>
                   </motion.button>
                 </div>
 
                 <div className="flex-1 grid grid-cols-2 h-full">
                   {rightItems.map((item) => (
-                    <MagneticNavItem
+                    <NavItem
                       key={item.path}
                       item={item}
                       active={checkActive(item.path)}
                       onClick={() => handleNavigation(item.path)}
-                      activeColorClass={activeColorClass}
-                      activeBgClass={activeBgClass}
                     />
                   ))}
                 </div>
