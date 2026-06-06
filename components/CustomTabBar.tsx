@@ -22,7 +22,7 @@ interface CustomTabBarProps {
 }
 
 const IconHome = ({ active }: { active: boolean }) => (
-  <motion.svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+  <motion.svg width="24" height="24" viewBox="0 0 28 28" fill="none">
     <motion.path
       d="M4 12L14 4L24 12V23C24 23.5523 23.5523 24 23 24H5C4.44772 24 4 23.5523 4 23V12Z"
       stroke="currentColor"
@@ -64,7 +64,7 @@ const IconHome = ({ active }: { active: boolean }) => (
 );
 
 const IconMessages = ({ active }: { active: boolean }) => (
-  <motion.svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+  <motion.svg width="24" height="24" viewBox="0 0 28 28" fill="none">
     <motion.path
       d="M4 6C4 4.89543 4.89543 4 6 4H22C23.1046 4 24 4.89543 24 6V16C24 17.1046 23.1046 18 22 18H9L4 22V6Z"
       stroke="currentColor"
@@ -99,7 +99,7 @@ const IconMessages = ({ active }: { active: boolean }) => (
 );
 
 const IconTasks = ({ active }: { active: boolean }) => (
-  <motion.svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+  <motion.svg width="24" height="24" viewBox="0 0 28 28" fill="none">
     <motion.rect
       x="5"
       y="4"
@@ -147,7 +147,7 @@ const IconTasks = ({ active }: { active: boolean }) => (
 );
 
 const IconProfile = ({ active }: { active: boolean }) => (
-  <motion.svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+  <motion.svg width="24" height="24" viewBox="0 0 28 28" fill="none">
     <motion.circle
       cx="14"
       cy="10"
@@ -199,19 +199,25 @@ export default function CustomTabBar({
   unreadCount = 0,
   isMenuOpen,
 }: CustomTabBarProps) {
-  const mode = useAppStore((s) => s.mode) || "task";
   const [mounted, setMounted] = useState(false);
+  const mode = useAppStore((s) => s.mode) || "task";
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const themes = {
-    task: "from-[#0A84FF] via-[#0A84FF] to-[#0051D5]",
-    plan: "from-[#30D158] via-[#30D158] to-[#248A3D]",
+  const themeColors = {
+    task: {
+      gradient: "from-[#0A84FF] via-[#0A84FF] to-[#0051D5]",
+      labelActive: "text-[#0A84FF]",
+    },
+    plan: {
+      gradient: "from-[#30D158] via-[#30D158] to-[#248A3D]",
+      labelActive: "text-[#30D158]",
+    },
   };
 
-  const currentTheme = themes;
+  const currentTheme = themeColors;
 
   const handleTabClick = (key: string) => {
     if (key === "create") {
@@ -232,6 +238,7 @@ export default function CustomTabBar({
       data-tab-bar
     >
       <div className="relative w-full px-4" style={{ paddingBottom: "max(env(safe-area-inset-bottom), 12px)" }}>
+        {/* GITHUB PILL CONTAINER */}
         <motion.div
           className="relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-full border border-zinc-200/60 dark:border-zinc-800/60 shadow-[0_8px_32px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden"
           whileHover={{ y: -3 }}
@@ -245,7 +252,7 @@ export default function CustomTabBar({
 
               if (isCreate) {
                 return (
-                  <div key={tab.key} className="relative w- flex justify-center">
+                  <div key={tab.key} className="relative flex justify-center">
                     <motion.button
                       whileTap={{ scale: 0.9 }}
                       onTouchStart={() => haptics.light()}
@@ -253,7 +260,7 @@ export default function CustomTabBar({
                       className="relative"
                     >
                       <motion.div
-                        className={`relative w-14 h-14 rounded-full bg-gradient-to-br ${currentTheme} flex items-center justify-center shadow-lg`}
+                        className={`relative w-14 h-14 rounded-full bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center shadow-lg`}
                         animate={{ rotate: isMenuOpen? 135 : 0 }}
                         transition={{ type: "spring", stiffness: 300, damping: 20 }}
                       >
@@ -273,6 +280,7 @@ export default function CustomTabBar({
                   onClick={() => handleTabClick(tab.key)}
                   className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 px-1"
                 >
+                  {/* NỀN ACTIVE XÁM NHƯ GITHUB */}
                   {isActive && (
                     <motion.div
                       layoutId="nav-active-pill"
@@ -306,7 +314,7 @@ export default function CustomTabBar({
                   <span
                     className={`text-xs transition-all relative z-10 ${
                       isActive
-                       ? "text-[#0A84FF] font-bold"
+                       ? `${currentTheme.labelActive} font-bold`
                         : "text-zinc-500 dark:text-zinc-400 font-medium"
                     }`}
                   >
