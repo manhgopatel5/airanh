@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, ArrowLeft } from "lucide-react";
+import { Search, X, ArrowLeft, Flame, SlidersHorizontal, TrendingUp, Clock, DollarSign } from "lucide-react";
 import { useAppStore } from "@/store/app";
 import React, { useState, useEffect, useRef } from "react";
 
@@ -11,6 +11,7 @@ const haptics = {
 };
 
 type FilterTab = "hot" | "nearby" | "friends" | "new";
+type SortBy = "views" | "recent" | "price_asc" | "price_desc";
 
 interface CustomFilterBarProps {
   currentFilter: FilterTab;
@@ -21,6 +22,60 @@ interface CustomFilterBarProps {
   showSearchModal: boolean;
   onCloseSearch: () => void;
 }
+
+const CATEGORY_TASKS = [
+  { id: "doing", label: "Việc gấp", icon: "⚡️", color: "#0A84FF", suggestPrice: 50000 },
+  { id: "skill", label: "Kỹ năng", icon: "🎓", color: "#5E5CE6", suggestPrice: 100000 },
+  { id: "shopping", label: "Mua hộ", icon: "🛍️", color: "#FF9F0A", suggestPrice: 30000 },
+  { id: "help", label: "Giúp đỡ", icon: "🤝", color: "#30D158", suggestPrice: 0 },
+  { id: "moving", label: "Chuyển đồ", icon: "🚚", color: "#FF375F", suggestPrice: 150000 },
+  { id: "cleaning", label: "Dọn dẹp", icon: "🧹", color: "#64D2FF", suggestPrice: 80000 },
+  { id: "repair", label: "Sửa chữa", icon: "🔧", color: "#BF5AF2", suggestPrice: 120000 },
+  { id: "tutoring", label: "Gia sư", icon: "📚", color: "#0A84FF", suggestPrice: 200000 },
+  { id: "photography", label: "Chụp ảnh", icon: "📸", color: "#FF9F0A", suggestPrice: 300000 },
+  { id: "design", label: "Thiết kế", icon: "🎨", color: "#BF5AF2", suggestPrice: 500000 },
+  { id: "cooking", label: "Nấu ăn", icon: "🍳", color: "#FF375F", suggestPrice: 100000 },
+  { id: "petcare", label: "Chăm thú cưng", icon: "🐕", color: "#30D158", suggestPrice: 70000 },
+  { id: "babysit", label: "Trông trẻ", icon: "👶", color: "#64D2FF", suggestPrice: 150000 },
+  { id: "elderly", label: "Chăm người già", icon: "👴", color: "#5E5CE6", suggestPrice: 180000 },
+  { id: "event", label: "Sự kiện", icon: "🎉", color: "#FF9F0A", suggestPrice: 400000 },
+  { id: "marketing", label: "Marketing", icon: "📢", color: "#0A84FF", suggestPrice: 600000 },
+  { id: "writing", label: "Viết lách", icon: "✍️", color: "#BF5AF2", suggestPrice: 250000 },
+  { id: "translate", label: "Dịch thuật", icon: "🌐", color: "#64D2FF", suggestPrice: 150000 },
+  { id: "consulting", label: "Tư vấn", icon: "💼", color: "#30D158", suggestPrice: 350000 },
+  { id: "other", label: "Khác", icon: "📋", color: "#8E8E93", suggestPrice: 50000 },
+] as const;
+
+const CATEGORY_PLANS = [
+  { id: "coffee", label: "Cà phê", icon: "☕", color: "#8B4513", suggestPrice: 0 },
+  { id: "meal", label: "Ăn uống", icon: "🍜", color: "#FF6347", suggestPrice: 0 },
+  { id: "sport", label: "Thể thao", icon: "⚽", color: "#30D158", suggestPrice: 0 },
+  { id: "party", label: "Tiệc tùng", icon: "🎉", color: "#FF9F0A", suggestPrice: 0 },
+  { id: "movie", label: "Xem phim", icon: "🎬", color: "#BF5AF2", suggestPrice: 0 },
+  { id: "music", label: "Âm nhạc", icon: "🎵", color: "#FF375F", suggestPrice: 0 },
+  { id: "travel", label: "Du lịch", icon: "✈️", color: "#0A84FF", suggestPrice: 0 },
+  { id: "game", label: "Game", icon: "🎮", color: "#5E5CE6", suggestPrice: 0 },
+  { id: "study", label: "Học nhóm", icon: "📚", color: "#64D2FF", suggestPrice: 0 },
+  { id: "volunteer", label: "Tình nguyện", icon: "❤️", color: "#FF375F", suggestPrice: 0 },
+  { id: "hiking", label: "Leo núi", icon: "⛰️", color: "#30D158", suggestPrice: 0 },
+  { id: "camping", label: "Cắm trại", icon: "🏕️", color: "#FF9F0A", suggestPrice: 0 },
+  { id: "beach", label: "Đi biển", icon: "🏖️", color: "#0A84FF", suggestPrice: 0 },
+  { id: "karaoke", label: "Karaoke", icon: "🎤", color: "#BF5AF2", suggestPrice: 0 },
+  { id: "boardgame", label: "Board game", icon: "🎲", color: "#5E5CE6", suggestPrice: 0 },
+  { id: "picnic", label: "Dã ngoại", icon: "🧺", color: "#30D158", suggestPrice: 0 },
+  { id: "workshop", label: "Workshop", icon: "🔨", color: "#FF9F0A", suggestPrice: 0 },
+  { id: "networking", label: "Kết nối", icon: "🤝", color: "#0A84FF", suggestPrice: 0 },
+  { id: "clubbing", label: "Club", icon: "🪩", color: "#BF5AF2", suggestPrice: 0 },
+  { id: "other", label: "Khác", icon: "📋", color: "#8E8E93", suggestPrice: 0 },
+] as const;
+
+const PRICE_RANGES = [
+  { id: "free", label: "Miễn phí", min: 0, max: 0 },
+  { id: "lt50", label: "< 50K", min: 1, max: 50000 },
+  { id: "50-200", label: "50K - 200K", min: 50000, max: 200000 },
+  { id: "200-500", label: "200K - 500K", min: 200000, max: 500000 },
+  { id: "gt500", label: "> 500K", min: 500000, max: Infinity },
+];
 
 const TaskIcons = {
   Hot: ({ isActive }: { isActive: boolean }) => (
@@ -37,12 +92,10 @@ const TaskIcons = {
       )}
     </svg>
   ),
-
   Nearby: ({ isActive }: { isActive: boolean }) => {
     const [angle, setAngle] = useState(0);
     const [wobble, setWobble] = useState(0);
     const animationRef = React.useRef<number>();
-
     useEffect(() => {
       if (!isActive) {
         if (animationRef.current) cancelAnimationFrame(animationRef.current);
@@ -64,7 +117,6 @@ const TaskIcons = {
         if (animationRef.current) cancelAnimationFrame(animationRef.current);
       };
     }, [isActive]);
-
     return (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <defs>
@@ -111,7 +163,6 @@ const TaskIcons = {
       </svg>
     );
   },
-
   Friends: ({ isActive }: { isActive: boolean }) => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <motion.circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="2" animate={isActive? { y: [0, -4, 0], scale: [1, 1.15, 1] } : {}} transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 1.2 }} />
@@ -120,7 +171,6 @@ const TaskIcons = {
       <motion.path d="M13 21V17C13 14.7909 14.7909 13 17 13H19C21.2091 13 23 14.7909 23 17V21" stroke="currentColor" strokeWidth="2" animate={isActive? { pathLength: [0.6, 1, 0.6], pathOffset: [0, 0.3, 0] } : {}} transition={{ duration: 2.5, delay: 0.3, repeat: Infinity }} />
     </svg>
   ),
-
   New: ({ isActive }: { isActive: boolean }) => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <defs><linearGradient id="hbTaskNew" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#0A84FF" /><stop offset="100%" stopColor="#00D9FF" /></linearGradient></defs>
@@ -140,7 +190,6 @@ const PlanIcons = {
       <path d="M0 24H24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
   ),
-
   Nearby: ({ isActive }: { isActive: boolean }) => {
     const targetAngle = 45;
     const scanDuration = 2.5;
@@ -167,7 +216,6 @@ const PlanIcons = {
       </svg>
     );
   },
-
   Friends: ({ isActive }: { isActive: boolean }) => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <motion.path d="M12 21C12 21 4 13.5 4 8.5C4 5.5 6.5 3 9.5 3C11.1 3 12 3.8 12 3.8C12 3.8 12.9 3 14.5 3C17.5 3 20 5.5 20 8.5C20 13.5 12 21 12 21Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill={isActive? "#FF3B30" : "none"} initial={{ scale: 1 }} animate={{ scale: isActive? [1, 1.2, 1] : 1 }} transition={{ duration: 0.7, repeat: Infinity, ease: "easeInOut", repeatDelay: 0.3 }} style={{ transformOrigin: "12px 12px", transformBox: "fill-box" }} />
@@ -180,7 +228,6 @@ const PlanIcons = {
       ))}
     </svg>
   ),
-
   New: ({ isActive }: { isActive: boolean }) => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <motion.g animate={isActive? { y: [0, -6, 0] } : {}} transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }} style={{ originX: "50%", originY: "50%" }}>
@@ -204,6 +251,10 @@ export default function CustomFilterBar({
 }: CustomFilterBarProps) {
   const mode = useAppStore((s) => s.mode) || "task";
   const modalRef = useRef<HTMLDivElement>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [priceRange, setPriceRange] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<SortBy>("views");
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const themes = {
     task: { bg: "#0A84FF", bgGradient: "linear-gradient(135deg, #0A84FF 0%, #0051D5 100%)", accent: "#00D9FF", secondary: "#5AC8FA" },
@@ -211,11 +262,19 @@ export default function CustomFilterBar({
   };
   const currentTheme = themes[mode];
   const IconSet = mode === "task"? TaskIcons : PlanIcons;
+  const CATEGORIES = mode === "task"? CATEGORY_TASKS : CATEGORY_PLANS;
 
   const filters = [
     { key: "hot", label: "Hot", Icon: IconSet.Hot },
     { key: "nearby", label: "Gần bạn", Icon: IconSet.Nearby },
     { key: "new", label: "Mới", Icon: IconSet.New },
+  ];
+
+  const sortOptions = [
+    { id: "views", label: "Phổ biến nhất", icon: TrendingUp },
+    { id: "recent", label: "Mới nhất", icon: Clock },
+    { id: "price_asc", label: "Giá tăng dần", icon: DollarSign },
+    { id: "price_desc", label: "Giá giảm dần", icon: DollarSign },
   ];
 
   useEffect(() => {
@@ -235,23 +294,37 @@ export default function CustomFilterBar({
     onChangeFilter(key);
   };
 
+  const toggleCategory = (id: string) => {
+    haptics.light();
+    setSelectedCategories(prev =>
+      prev.includes(id)? prev.filter(c => c!== id) : [...prev, id]
+    );
+  };
+
+  const resetFilters = () => {
+    haptics.light();
+    setSelectedCategories([]);
+    setPriceRange("all");
+    setSortBy("views");
+  };
+
+  const activeFilterCount = selectedCategories.length + (priceRange!== "all"? 1 : 0) + (sortBy!== "views"? 1 : 0);
+
   return (
     <>
- <div className="mt-3">
-  <button
-    onClick={onOpenSearch}
-    className="relative w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-black/[0.08] dark:ring-white/10 text-left outline-none hover:ring-black/[0.12] dark:hover:ring-white/15 transition-all shadow-sm hover:shadow-md active:scale-[0.99] active:shadow-sm"
-  >
-    {/* INNER HIGHLIGHT GIỐNG TASK/PLAN */}
-    <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/40 via-transparent to-black/[0.03] pointer-events-none" />
-    <div className="absolute inset-[1px] rounded-2xl ring-1 ring-inset ring-white/30 pointer-events-none" />
-
-    <span className="relative text-zinc-400 font-semibold">Tìm kiếm nâng cao...</span>
-    <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-      <Search size={18} className="text-zinc-400" />
-    </div>
-  </button>
-</div>
+      <div className="mt-3">
+        <button
+          onClick={onOpenSearch}
+          className="relative w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-black/[0.08] dark:ring-white/10 text-left outline-none hover:ring-black/[0.12] dark:hover:ring-white/15 transition-all shadow-sm hover:shadow-md active:scale-[0.99] active:shadow-sm"
+        >
+          <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/40 via-transparent to-black/[0.03] pointer-events-none" />
+          <div className="absolute inset-[1px] rounded-2xl ring-1 ring-inset ring-white/30 pointer-events-none" />
+          <span className="relative text-zinc-400 font-semibold">Tìm kiếm nâng cao...</span>
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
+            <Search size={18} className="text-zinc-400" />
+          </div>
+        </button>
+      </div>
 
       <AnimatePresence>
         {showSearchModal && (
@@ -259,20 +332,27 @@ export default function CustomFilterBar({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center pt-20"
+            className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center pt-20 px-4"
           >
             <motion.div
               ref={modalRef}
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -20, opacity: 0 }}
-              className="bg-white dark:bg-zinc-900 w-full max-w-[680px] mx-4 rounded-3xl p-4 shadow-2xl"
+              className="bg-white dark:bg-zinc-900 w-full max-w-[680px] rounded- p-4 shadow-2xl max-h-[85vh] overflow-y-auto"
             >
-              <div className="flex items-center gap-3 mb-4">
-                <button onClick={onCloseSearch} className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800">
-                  <ArrowLeft size={20} />
-                </button>
-                <h2 className="text-lg font-black">Tìm kiếm nâng cao</h2>
+              <div className="flex items-center justify-between mb-4 sticky top-0 bg-white dark:bg-zinc-900 pb-2 z-10">
+                <div className="flex items-center gap-3">
+                  <button onClick={onCloseSearch} className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                    <ArrowLeft size={20} />
+                  </button>
+                  <h2 className="text-lg font-black">Tìm kiếm nâng cao</h2>
+                </div>
+                {activeFilterCount > 0 && (
+                  <button onClick={resetFilters} className="text-xs font-bold text-[#0A84FF] hover:opacity-70">
+                    Xóa bộ lọc ({activeFilterCount})
+                  </button>
+                )}
               </div>
 
               <div className="grid grid-cols-3 gap-2 mb-4">
@@ -297,34 +377,11 @@ export default function CustomFilterBar({
                 })}
               </div>
 
-         <div className="relative h-11">
-  <input
-    value={searchQueries[currentFilter] || ""}
-    onChange={(e) => onSearchChange(currentFilter, e.target.value)}
-    placeholder={`Tìm ${filters.find(f => f.key === currentFilter)?.label.toLowerCase()}...`}
-    className="w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-black/[0.08] dark:ring-white/10 outline-none focus:ring-2 focus:ring-[#0A84FF]/40 dark:focus:ring-[#0A84FF]/50 font-semibold text-base text-zinc-900 dark:text-zinc-100 transition-all placeholder:text-zinc-400 shadow-sm focus:shadow-md"
-  />
-  {/* INNER HIGHLIGHT */}
-  <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/40 via-transparent to-black/[0.03] pointer-events-none" />
-  <div className="absolute inset-[1px] rounded-2xl ring-1 ring-inset ring-white/30 pointer-events-none" />
-
-  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 z-10">
-    {searchQueries[currentFilter]? (
-      <button
-        onClick={() => onSearchChange(currentFilter, "")}
-        className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-      >
-        <X size={18} className="text-zinc-500" />
-      </button>
-    ) : (
-      <Search size={18} className="text-zinc-400" />
-    )}
-  </div>
-</div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
-  );
-}
+              <div className="relative h-11 mb-4">
+                <input
+                  value={searchQueries[currentFilter] || ""}
+                  onChange={(e) => onSearchChange(currentFilter, e.target.value)}
+                  placeholder={`Tìm ${filters.find(f => f.key === currentFilter)?.label.toLowerCase()}...`}
+                  className="w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-black/[0.08] dark:ring-white/10 outline-none focus:ring-2 focus:ring-[#0A84FF]/40 dark:focus:ring-[#0A84FF]/50 font-semibold text-base text-zinc-900 dark:text-zinc-100 transition-all placeholder:text-zinc-400 shadow-sm focus:shadow-md"
+                />
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/40 via-transparent to-black/[0.03] pointer-events-none" />
