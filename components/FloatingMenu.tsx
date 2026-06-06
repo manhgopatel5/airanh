@@ -68,53 +68,51 @@ export default function FloatingMenu({ isOpen, onSelect, onClose }: FloatingMenu
               }}
               className="w-full max-w-[480px] pointer-events-auto"
             >
-              <div className="grid grid-cols-2 gap-3.5">
+              <div className="grid grid-cols-2 gap-4">
                 {/* TASK CARD */}
                 <motion.button
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0, transition: {...SPRING, delay: 0.05 } }}
                   whileTap={{ scale: 0.96 }}
-                  whileHover={{ scale: 1.03, y: -2 }}
+                  whileHover={{ scale: 1.02 }}
                   onClick={() => handleSelect("task")}
-                  className="group relative flex flex-col items-center gap-4 p-6 rounded- overflow-hidden transition-all select-none backdrop-blur-2xl"
+                  className="group relative flex flex-col items-center gap-4 p-6 overflow-hidden transition-all select-none"
                   style={{
                     WebkitTapHighlightColor: 'transparent',
-                    background: `linear-gradient(135deg, ${THEME.task.primary}25, ${THEME.task.primary}12)`,
+                    borderRadius: '32px',
+                    background: '#FFFFFF',
+                    border: `2px solid ${THEME.task.primary}40`,
                     boxShadow: `
-                      0 20px 40px -12px ${THEME.task.primary}50,
-                      0 8px 16px -8px rgba(0,0,0,0.3),
-                      inset 0 1px 0 0 rgba(255,255,255,0.15),
-                      inset 0 -1px 0 0 rgba(0,0,0,0.1)
-                    `,
-                    border: `1px solid ${THEME.task.primary}30`
+                      0 12px 24px -8px rgba(0,0,0,0.15),
+                      0 4px 8px -4px rgba(0,0,0,0.1),
+                      inset 0 1px 0 0 rgba(255,255,255,0.8),
+                      inset 0 -1px 0 0 rgba(0,0,0,0.05)
+                    `
                   }}
                 >
-                  <div className="absolute inset-0 bg-white/85 dark:bg-zinc-900/85 rounded-" />
-
                   <motion.div
-                    className="absolute inset-0 rounded- opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    className="relative z-10 w-16 h-16 flex items-center justify-center"
                     style={{
-                      background: `radial-gradient(circle at 50% 0%, ${THEME.task.primary}20, transparent 70%)`
-                    }}
-                  />
-
-                  <motion.div
-                    className="relative z-10 w-16 h-16 rounded-2xl flex items-center justify-center"
-                    style={{
+                      borderRadius: '20px',
                       background: `linear-gradient(135deg, ${THEME.task.primary}, ${THEME.task.primaryDark})`,
-                      boxShadow: `0 8px 16px -4px ${THEME.task.primary}60, inset 0 1px 0 0 rgba(255,255,255,0.3)`
+                      boxShadow: `0 8px 16px -4px ${THEME.task.primary}80, inset 0 1px 0 0 rgba(255,255,255,0.3)`
                     }}
                     whileHover={{ rotate: [0, -5, 5, 0], transition: { duration: 0.4 } }}
                   >
-                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/10 to-white/20" />
-                    <Zap className="w-8 h-8 text-white relative z-10 drop-shadow-lg" strokeWidth={2.5} fill="white" />
+                    <div
+                      className="absolute inset-0 rounded-[20px]"
+                      style={{
+                        background: 'linear-gradient(to bottom, rgba(255,255,255,0.2), transparent)'
+                      }}
+                    />
+                    <Zap className="w-8 h-8 text-white relative z-10" strokeWidth={2.5} fill="white" />
                   </motion.div>
 
                   <div className="relative z-10 text-center">
-                    <h4 className="font-black text-zinc-900 dark:text-zinc-100 text-base tracking-tight leading-tight drop-shadow-sm">
+                    <h4 className="font-black text-zinc-900 text-base tracking-tight leading-tight">
                       Hỗ trợ tức thì
                     </h4>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400 font-bold mt-1.5 leading-tight">
+                    <p className="text-xs text-zinc-600 font-semibold mt-1.5 leading-tight">
                       Đăng việc nhanh,<br/>có người nhận ngay
                     </p>
                   </div>
@@ -125,47 +123,45 @@ export default function FloatingMenu({ isOpen, onSelect, onClose }: FloatingMenu
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0, transition: {...SPRING, delay: 0.1 } }}
                   whileTap={{ scale: 0.96 }}
-                  whileHover={{ scale: 1.03, y: -2 }}
+                  whileHover={{ scale: 1.02 }}
                   onClick={() => handleSelect("plan")}
-                  className="group relative flex flex-col items-center gap-4 p-6 rounded- overflow-hidden transition-all select-none backdrop-blur-2xl"
+                  className="group relative flex flex-col items-center gap-4 p-6 overflow-hidden transition-all select-none"
                   style={{
                     WebkitTapHighlightColor: 'transparent',
-                    background: `linear-gradient(135deg, ${THEME.plan.primary}25, ${THEME.plan.primary}12)`,
+                    borderRadius: '32px',
+                    background: '#FFFFFF',
+                    border: `2px solid ${THEME.plan.primary}40`,
                     boxShadow: `
-                      0 20px 40px -12px ${THEME.plan.primary}50,
-                      0 8px 16px -8px rgba(0,0,0,0.3),
-                      inset 0 1px 0 0 rgba(255,255,255,0.15),
-                      inset 0 -1px 0 0 rgba(0,0,0,0.1)
-                    `,
-                    border: `1px solid ${THEME.plan.primary}30`
+                      0 12px 24px -8px rgba(0,0,0,0.15),
+                      0 4px 8px -4px rgba(0,0,0,0.1),
+                      inset 0 1px 0 0 rgba(255,255,0.8),
+                      inset 0 -1px 0 0 rgba(0,0,0,0.05)
+                    `
                   }}
                 >
-                  <div className="absolute inset-0 bg-white/85 dark:bg-zinc-900/85 rounded-" />
-
                   <motion.div
-                    className="absolute inset-0 rounded- opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    className="relative z-10 w-16 h-16 flex items-center justify-center"
                     style={{
-                      background: `radial-gradient(circle at 50% 0%, ${THEME.plan.primary}20, transparent 70%)`
-                    }}
-                  />
-
-                  <motion.div
-                    className="relative z-10 w-16 h-16 rounded-2xl flex items-center justify-center"
-                    style={{
+                      borderRadius: '20px',
                       background: `linear-gradient(135deg, ${THEME.plan.primary}, ${THEME.plan.primaryDark})`,
-                      boxShadow: `0 8px 16px -4px ${THEME.plan.primary}60, inset 0 1px 0 0 rgba(255,255,255,0.3)`
+                      boxShadow: `0 8px 16px -4px ${THEME.plan.primary}80, inset 0 1px 0 0 rgba(255,255,255,0.3)`
                     }}
                     whileHover={{ rotate: [0, 5, -5, 0], transition: { duration: 0.4 } }}
                   >
-                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/10 to-white/20" />
-                    <Users className="w-8 h-8 text-white relative z-10 drop-shadow-lg" strokeWidth={2.5} />
+                    <div
+                      className="absolute inset-0 rounded-[20px]"
+                      style={{
+                        background: 'linear-gradient(to bottom, rgba(255,255,255,0.2), transparent)'
+                      }}
+                    />
+                    <Users className="w-8 h-8 text-white relative z-10" strokeWidth={2.5} />
                   </motion.div>
 
                   <div className="relative z-10 text-center">
-                    <h4 className="font-black text-zinc-900 dark:text-zinc-100 text-base tracking-tight leading-tight drop-shadow-sm">
+                    <h4 className="font-black text-zinc-900 text-base tracking-tight leading-tight">
                       Cùng chung sở thích
                     </h4>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400 font-bold mt-1.5 leading-tight">
+                    <p className="text-xs text-zinc-600 font-semibold mt-1.5 leading-tight">
                       Gặp gỡ những người<br/>cùng đam mê
                     </p>
                   </div>
