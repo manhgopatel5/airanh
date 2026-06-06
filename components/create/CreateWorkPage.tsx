@@ -594,11 +594,10 @@ const requestGPS = useCallback(() => {
           {step === 1 && (
             <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <Panel>
-{form.location.lat && form.location.lng && (
-  <div className="rounded-xl bg-green-50 px-4 py-3 dark:bg-green-950/30">
-    <p className="flex items-center gap-2 text-sm font-bold text-green-700 dark:text-green-400">
-      <FiCheck /> Đã định vị: {form.location.lat.toFixed(5)}, {form.location.lng.toFixed(5)}
-    </p>
+{!form.location.lat && !form.location.lng && (
+  <div className="flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700 dark:bg-amber-950/30 dark:text-amber-400">
+    <FiMapPin className="flex-shrink-0" />
+    Vui lòng chọn địa điểm để tiếp tục
   </div>
 )}
 
@@ -673,30 +672,7 @@ const requestGPS = useCallback(() => {
                   </Field>
                 )}
 
-                <Field label="Địa chỉ cụ thể" required error={errors["location.address"]}>
-                  <div className="relative">
-                    <input
-                      value={form.location.address}
-                      onChange={(e) => handleAddressChange(e.target.value)}
-                      onBlur={() => blur("location")}
-                      placeholder="Tên đường, số nhà..."
-                      className="input-base"
-                    />
-                    {placeSuggestions.length > 0 && (
-                      <div className="absolute top-full z-10 mt-1 w-full rounded-xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
-                        {placeSuggestions.map((s, i) => (
-                          <button
-                            key={i}
-                            onClick={() => { updateLocation({ address: s }); setPlaceSuggestions([]); }}
-                            className="w-full px-4 py-3 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 first:rounded-t-xl last:rounded-b-xl"
-                          >
-                            {s}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </Field>
+           
 
         <Field label="Địa chỉ cụ thể" required error={errors["location.address"]}>
   <div className="relative">
@@ -723,12 +699,7 @@ const requestGPS = useCallback(() => {
   </div>
 </Field>
 
-{!form.location.lat && !form.location.lng && (
-  <p className="flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700 dark:bg-amber-950/30 dark:text-amber-400">
-    <FiMapPin className="flex-shrink-0" />
-    Vui lòng chọn địa điểm để tiếp tục
-  </p>
-)}
+
               </Panel>
             </motion.div>
           )}
