@@ -209,10 +209,9 @@ export default function CustomFilterBar({
     task: { bg: "#0A84FF", bgGradient: "linear-gradient(135deg, #0A84FF 0%, #0051D5 100%)", accent: "#00D9FF", secondary: "#5AC8FA" },
     plan: { bg: "#30D158", bgGradient: "linear-gradient(135deg, #30D158 0%, #248A3D 100%)", accent: "#FFD60A", secondary: "#FF9F0A" },
   };
-const currentTheme = themes[mode]; 
+  const currentTheme = themes[mode];
   const IconSet = mode === "task"? TaskIcons : PlanIcons;
 
-  // QUAN TRỌNG: CHỈ HIỆN 3 NÚT, BỎ FRIENDS KHỎI UI NHƯNG GIỮ TRONG CODE
   const filters = [
     { key: "hot", label: "Hot", Icon: IconSet.Hot },
     { key: "nearby", label: "Gần bạn", Icon: IconSet.Nearby },
@@ -238,20 +237,18 @@ const currentTheme = themes[mode];
 
   return (
     <>
-      {/* Ô SEARCH Ở HOME - CHỈ 1 NÚT */}
-    <div className="mt-3">
-  <button
-    onClick={onOpenSearch}
-    className="relative w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-black/[0.08] dark:ring-white/10 text-left outline-none hover:ring-black/[0.12] dark:hover:ring-white/15 transition-all"
-  >
-    <span className="text-zinc-400 font-semibold">Tìm kiếm nâng cao...</span>
-    <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-      <Search size={18} className="text-zinc-400" />
-    </div>
-  </button>
-</div>
+      <div className="mt-3">
+        <button
+          onClick={onOpenSearch}
+          className="relative w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-black/[0.08] dark:ring-white/10 text-left outline-none hover:ring-black/[0.12] dark:hover:ring-white/15 transition-all"
+        >
+          <span className="text-zinc-400 font-semibold">Tìm kiếm nâng cao...</span>
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
+            <Search size={18} className="text-zinc-400" />
+          </div>
+        </button>
+      </div>
 
-      {/* MODAL SEARCH - TỰ ĐỘNG DÙNG ICON TASK HOẶC PLAN */}
       <AnimatePresence>
         {showSearchModal && (
           <motion.div
@@ -296,27 +293,26 @@ const currentTheme = themes[mode];
                 })}
               </div>
 
-        <div className="relative h-11">
-  <input
-    value={searchQueries[currentFilter] || ""}
-    onChange={(e) => onSearchChange(currentFilter, e.target.value)}
-    placeholder={`Tìm ${filters.find(f => f.key === currentFilter)?.label.toLowerCase()}...`}
-    className="w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-black/[0.08] dark:ring-white/10 outline-none focus:ring-2 focus:ring-[#0A84FF]/40 dark:focus:ring-[#0A84FF]/50 font-semibold text-base text-zinc-900 dark:text-zinc-100 transition-all placeholder:text-zinc-400"
-    autoFocus
-  />
-  <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-    {searchQueries[currentFilter]? (
-      <button
-        onClick={() => onSearchChange(currentFilter, "")}
-        className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-      >
-        <X size={18} className="text-zinc-500" />
-      </button>
-    ) : (
-      <Search size={18} className="text-zinc-400" />
-    )}
-  </div>
-</div>
+              <div className="relative h-11">
+                <input
+                  value={searchQueries[currentFilter] || ""}
+                  onChange={(e) => onSearchChange(currentFilter, e.target.value)}
+                  placeholder={`Tìm ${filters.find(f => f.key === currentFilter)?.label.toLowerCase()}...`}
+                  className="w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-black/[0.08] dark:ring-white/10 outline-none focus:ring-2 focus:ring-[#0A84FF]/40 dark:focus:ring-[#0A84FF]/50 font-semibold text-base text-zinc-900 dark:text-zinc-100 transition-all placeholder:text-zinc-400"
+                  autoFocus
+                />
+                <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                  {searchQueries[currentFilter]? (
+                    <button
+                      onClick={() => onSearchChange(currentFilter, "")}
+                      className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                    >
+                      <X size={18} className="text-zinc-500" />
+                    </button>
+                  ) : (
+                    <Search size={18} className="text-zinc-400" />
+                  )}
+                </div>
               </div>
             </motion.div>
           </motion.div>
