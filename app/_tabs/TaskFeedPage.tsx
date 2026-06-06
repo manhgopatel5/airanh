@@ -24,7 +24,7 @@ type TaskWithLocation = FeedTask & {
 };
 
 const hasLocation = (task: FeedTask): task is TaskWithLocation => {
-  return task.location?.lat != null && task.location?.lng != null;
+  return task.location?.lat!= null && task.location?.lng!= null;
 };
 
 const fetcher = async (url: string) => {
@@ -34,7 +34,7 @@ const fetcher = async (url: string) => {
 };
 
 const vibrate = (pattern: number | number[] = 6) => {
-  if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(pattern);
+  if (typeof navigator!== "undefined" && "vibrate" in navigator) navigator.vibrate(pattern);
 };
 
 interface TaskFeedPageProps {
@@ -49,10 +49,12 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [searchQueries, setSearchQueries] = useState<Record<TabId, string>>({ hot: "", nearby: "", friends: "", new: "" });
+  // THÊM STATE NÀY
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const isTaskMode = mode === "task";
-  const accent = isTaskMode ? "#0A84FF" : "#30D158";
-  const gradient = isTaskMode ? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
+  const accent = isTaskMode? "#0A84FF" : "#30D158";
+  const gradient = isTaskMode? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
 
   const swrOptions = {
     revalidateIfStale: false,
@@ -69,7 +71,7 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
     "/api/jobs?type=task&limit=12",
     fetcher,
     {
-      ...swrOptions,
+     ...swrOptions,
       fallbackData: initialJobs,
       revalidateOnMount: initialJobs.length === 0,
     }
@@ -79,13 +81,13 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
     "/api/jobs?type=plan&limit=12",
     fetcher,
     {
-      ...swrOptions,
+     ...swrOptions,
       fallbackData: initialPlans,
       revalidateOnMount: initialPlans.length === 0,
     }
   );
 
-  const activeFeed = mode === "task" ? taskFeed : planFeed;
+  const activeFeed = mode === "task"? taskFeed : planFeed;
   const tasks = activeFeed.data || [];
   const error = activeFeed.error;
   const isLoading = activeFeed.isLoading;
@@ -104,22 +106,22 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
         toast.success("Đã xác định vị trí");
       },
       (err) => {
-        toast.error(err.code === 1 ? "Bạn đã chặn quyền truy cập vị trí" : "Không thể lấy vị trí. Thử lại sau");
+        toast.error(err.code === 1? "Bạn đã chặn quyền truy cập vị trí" : "Không thể lấy vị trí. Thử lại sau");
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   }, []);
 
   useEffect(() => {
-    if (activeTab === "nearby" && !userLocation) requestLocation();
+    if (activeTab === "nearby" &&!userLocation) requestLocation();
   }, [activeTab, requestLocation, userLocation]);
 
   const handleSearchChange = useCallback((filter: TabId, query: string) => {
-    setSearchQueries((prev) => ({ ...prev, [filter]: query }));
+    setSearchQueries((prev) => ({...prev, [filter]: query }));
   }, []);
 
   const filteredTasks = useMemo(() => {
-    let result = tasks.filter((task) => !task.banned && !task.hidden && task.type === mode);
+    let result = tasks.filter((task) =>!task.banned &&!task.hidden && task.type === mode);
     const query = searchQueries[activeTab]?.trim().toLowerCase();
     if (query) {
       result = result.filter((task) => `${task.title} ${task.description || ""} ${task.category || ""}`.toLowerCase().includes(query));
@@ -129,7 +131,7 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
       result = [...result].sort((a, b) => (b.likeCount || 0) + (b.commentCount || 0) - ((a.likeCount || 0) + (a.commentCount || 0)));
     }
     if (activeTab === "new") {
-      result = [...result].sort((a, b) => (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0));
+      result = [...result].sort((a, b) => (b.createdAt? new Date(b.createdAt).getTime() : 0) - (a.createdAt? new Date(a.createdAt).getTime() : 0));
     }
     if (activeTab === "nearby" && userLocation) {
       result = result.filter(hasLocation).sort((a, b) => geofire.distanceBetween([userLocation.lat, userLocation.lng], [a.location.lat, a.location.lng]) - geofire.distanceBetween([userLocation.lat, userLocation.lng], [b.location.lat, b.location.lng]));
@@ -144,11 +146,11 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
   }, [mutate]);
 
   const handleTaskUpdate = useCallback((taskId: string, updates: Partial<FeedTask>) => {
-    mutate((current: FeedTask[] = []) => current.map((item) => item.id === taskId ? ({ ...item, ...updates } as FeedTask) : item), { revalidate: false });
+    mutate((current: FeedTask[] = []) => current.map((item) => item.id === taskId? ({...item,...updates } as FeedTask) : item), { revalidate: false });
   }, [mutate]);
 
   const handleDelete = useCallback((id: string) => {
-    mutate((current: FeedTask[] = []) => current.filter((item) => item.id !== id), { revalidate: false });
+    mutate((current: FeedTask[] = []) => current.filter((item) => item.id!== id), { revalidate: false });
   }, [mutate]);
 
   const handleShare = useCallback((task: FeedTask) => {
@@ -163,52 +165,60 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
   };
 
   const loading = isLoading && tasks.length === 0;
-  const refreshing = isValidating && !loading;
-  const modeNoun = isTaskMode ? "task" : "plan";
+  const refreshing = isValidating &&!loading;
+  const modeNoun = isTaskMode? "task" : "plan";
 
   return (
-<div className="bg-white dark:bg-zinc-950 text-zinc-950 dark:text-white">
-<div className="sticky top-0 z-40 bg-white dark:bg-zinc-950">
+    <div className="bg-white dark:bg-zinc-950 text-zinc-950 dark:text-white">
+      <div className="sticky top-0 z-40 bg-white dark:bg-zinc-950">
         <div className="mx-auto max-w-[680px] px-4 pt-3 pb-3">
           <div className="relative rounded-[1.35rem] bg-zinc-100/80 p-1.5 ring-1 ring-black/5 dark:bg-zinc-900/90 dark:ring-white/10">
-            <motion.div className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-[1rem] bg-gradient-to-r ${gradient} shadow-lg`} animate={{ x: isTaskMode ? 0 : "100%" }} transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 360, damping: 34 }} />
+            <motion.div className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-[1rem] bg-gradient-to-r ${gradient} shadow-lg`} animate={{ x: isTaskMode? 0 : "100%" }} transition={reduceMotion? { duration: 0 } : { type: "spring", stiffness: 360, damping: 34 }} />
             <div className="relative grid grid-cols-2 gap-1">
-              <button type="button" aria-pressed={isTaskMode} onClick={() => switchMode("task")} className={`flex h-11 items-center justify-center gap-2 rounded-2xl text-sm font-black ${isTaskMode ? "text-white" : "text-zinc-500"}`}><HiBolt /> Task</button>
-              <button type="button" aria-pressed={!isTaskMode} onClick={() => switchMode("plan")} className={`flex h-11 items-center justify-center gap-2 rounded-2xl text-sm font-black ${!isTaskMode ? "text-white" : "text-zinc-500"}`}><HiCalendarDays /> Plan</button>
+              <button type="button" aria-pressed={isTaskMode} onClick={() => switchMode("task")} className={`flex h-11 items-center justify-center gap-2 rounded-2xl text-sm font-black ${isTaskMode? "text-white" : "text-zinc-500"}`}><HiBolt /> Task</button>
+              <button type="button" aria-pressed={!isTaskMode} onClick={() => switchMode("plan")} className={`flex h-11 items-center justify-center gap-2 rounded-2xl text-sm font-black ${!isTaskMode? "text-white" : "text-zinc-500"}`}><HiCalendarDays /> Plan</button>
             </div>
           </div>
 
-          <CustomFilterBar currentFilter={activeTab} onChangeFilter={setActiveTab} searchQueries={searchQueries} onSearchChange={handleSearchChange} />
+          {/* SỬA CHỖ NÀY: TRUYỀN THÊM 2 PROPS */}
+          <CustomFilterBar
+            currentFilter={activeTab}
+            onChangeFilter={setActiveTab}
+            searchQueries={searchQueries}
+            onSearchChange={handleSearchChange}
+            isSearchFocused={isSearchFocused}
+            setIsSearchFocused={setIsSearchFocused}
+          />
         </div>
       </div>
 
       <div className="mx-auto max-w-[680px] px-4 pt-4">
-  {loading? (
-  <div className="space-y-3" aria-label="Đang tải feed">
-    {[0, 1, 2].map((item) => <div key={item} className="h-52 rounded-[2rem] bg-white motion-safe:animate-pulse dark:bg-zinc-900" />)}
-  </div>
-) : error? (
+        {loading? (
+          <div className="space-y-3" aria-label="Đang tải feed">
+            {[0, 1, 2].map((item) => <div key={item} className="h-52 rounded-[2rem] bg-white motion-safe:animate-pulse dark:bg-zinc-900" />)}
+          </div>
+        ) : error? (
           <div className="rounded-[2rem] border border-red-200 bg-white/82 p-8 text-center shadow-xl shadow-red-500/5 dark:border-red-500/20 dark:bg-zinc-900/80">
             <FiInbox className="mx-auto h-9 w-9 text-red-500" />
             <h2 className="mt-4 text-xl font-black">Feed đang gián đoạn</h2>
             <p className="mt-2 text-sm text-zinc-500">Thử tải lại để đồng bộ dữ liệu mới nhất.</p>
             <button type="button" onClick={handleRefresh} className="mt-5 h-11 rounded-2xl bg-zinc-950 px-5 text-sm font-bold text-white dark:bg-white dark:text-zinc-950">Tải lại</button>
           </div>
-        ) : filteredTasks.length === 0 ? (
+        ) : filteredTasks.length === 0? (
           <div className="rounded-[2rem] border border-white/70 bg-white/82 p-8 text-center shadow-xl shadow-black/[0.04] dark:border-white/10 dark:bg-zinc-900/80">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-zinc-100 text-zinc-400 dark:bg-zinc-800"><FiSearch className="h-7 w-7" /></div>
             <h2 className="mt-5 text-xl font-black">Chưa có {modeNoun} phù hợp</h2>
-            <p className="mx-auto mt-2 max-w-[320px] text-sm leading-6 text-zinc-500">{activeTab === "nearby" && !userLocation ? "Bật định vị để khám phá cơ hội quanh bạn." : "Thử đổi bộ lọc, tìm từ khóa khác hoặc tạo mục mới để bắt đầu."}</p>
+            <p className="mx-auto mt-2 max-w-[320px] text-sm leading-6 text-zinc-500">{activeTab === "nearby" &&!userLocation? "Bật định vị để khám phá cơ hội quanh bạn." : "Thử đổi bộ lọc, tìm từ khóa khác hoặc tạo mục mới để bắt đầu."}</p>
             <div className="mt-5 flex justify-center gap-2">
-              {activeTab === "nearby" && !userLocation && <button type="button" onClick={requestLocation} className={`h-11 rounded-2xl bg-gradient-to-r ${gradient} px-5 text-sm font-black text-white`}>Bật định vị</button>}
+              {activeTab === "nearby" &&!userLocation && <button type="button" onClick={requestLocation} className={`h-11 rounded-2xl bg-gradient-to-r ${gradient} px-5 text-sm font-black text-white`}>Bật định vị</button>}
               <button type="button" onClick={handleRefresh} className="h-11 rounded-2xl bg-zinc-100 px-5 text-sm font-black text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">Tải lại</button>
             </div>
           </div>
         ) : (
           <AnimatePresence mode="popLayout">
-            <motion.div key={`${mode}-${activeTab}`} initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+            <motion.div key={`${mode}-${activeTab}`} initial={reduceMotion? false : { opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
               {filteredTasks.map((task, idx) => (
-                <motion.div key={task.id} initial={reduceMotion ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: reduceMotion ? 0 : Math.min(idx * 0.02, 0.14) }} layout={!reduceMotion}>
+                <motion.div key={task.id} initial={reduceMotion? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: reduceMotion? 0 : Math.min(idx * 0.02, 0.14) }} layout={!reduceMotion}>
                   <TaskCard task={task} theme={mode} onDelete={handleDelete} onShare={handleShare} onTaskUpdate={handleTaskUpdate} />
                 </motion.div>
               ))}
@@ -218,7 +228,7 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
 
         {refreshing && <div className="flex justify-center py-6"><FiRefreshCw className="motion-safe:animate-spin" style={{ color: accent }} size={24} /></div>}
         {shareTask && <ShareTaskModal task={shareTask} onClose={() => setShareTask(null)} />}
-<div className="h-2" />
+        <div className="h-2" />
       </div>
     </div>
   );
