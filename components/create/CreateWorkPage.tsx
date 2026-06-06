@@ -708,7 +708,8 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
             </button>
           </div>
 
-       {/* Progress Steps */}
+
+   {/* Progress Steps */}
 <div className="flex items-center justify-center">
   {steps.map((s, i) => (
     <div key={i} className="flex items-center">
@@ -745,6 +746,8 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
     </div>
   ))}
 </div>
+        </div>
+      </div>
 
       {/* Main Content */}
       <main className="mx-auto max-w-2xl px-4 py-6 pb-32">
