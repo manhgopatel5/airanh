@@ -117,19 +117,19 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
     const created = task.createdAt? new Date(task.createdAt) : new Date();
     const dueRaw = task.type === "task"? task.deadline : task.eventDate;
     const due = dueRaw
-     ? format(new Date(dueRaw), "EEE dd/MM", { locale: vi })
+    ? format(new Date(dueRaw), "EEE dd/MM", { locale: vi })
       : "Linh hoạt";
     const price =
       task.type === "task"
-       ? task.price && task.price > 0
-         ? `${task.price.toLocaleString("vi-VN")} VNĐ${task.budgetType === "hourly"? "/h" : ""}`
+      ? task.price && task.price > 0
+        ? `${task.price.toLocaleString("vi-VN")} VNĐ${task.budgetType === "hourly"? "/h" : ""}`
           : "Thỏa thuận"
         : task.costType === "free"
-       ? "Miễn phí"
+      ? "Miễn phí"
         : task.costType === "share"
-       ? "Chia đều"
+      ? "Chia đều"
         : task.costAmount
-       ? `${task.costAmount.toLocaleString("vi-VN")} VNĐ`
+      ? `${task.costAmount.toLocaleString("vi-VN")} VNĐ`
         : "Linh hoạt";
 
     const cityKey = task.location?.city || "";
@@ -245,7 +245,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
   }, []);
 
   const ringClass = isTaskTheme
-   ? "focus-visible:ring-[#0A84FF]"
+  ? "focus-visible:ring-[#0A84FF]"
     : "focus-visible:ring-[#30D158]";
 
   return (
@@ -257,19 +257,17 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
       className={cn("group w-full max-w-sm mx-auto", className)}
     >
       <div className="relative">
-        {/* VIỀN MÀU CHẠY 4 CẠNH */}
+        {/* VIỀN MÀU 4 CẠNH - LUÔN HIỆN */}
         <div
-          className="absolute inset-0 rounded-2xl p-[2px]"
+          className="absolute -inset-[1.5px] rounded-2xl"
           style={{
-            background: `linear-gradient(135deg, ${accent} 0%, ${accent}99 50%, ${accent} 100%)`,
+            background: accent,
           }}
-        >
-          <div className="h-full w-full rounded-2xl bg-white dark:bg-zinc-950" />
-        </div>
+        />
 
-        {/* CARD CHÍNH NỔI LÊN */}
+        {/* CARD CHÍNH */}
         <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-zinc-950 shadow-xl shadow-black/[0.08] dark:shadow-black/40 transition-all duration-300 active:scale-[0.992] hover:shadow-2xl">
-          {/* INNER HIGHLIGHT GIỐNG TASK/PLAN */}
+          {/* INNER HIGHLIGHT */}
           <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-transparent to-black/[0.02] pointer-events-none" />
           <div className="absolute inset-[1px] rounded-2xl ring-1 ring-inset ring-white/40 dark:ring-white/5 pointer-events-none" />
 
@@ -318,19 +316,19 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
 
             <div className="mt-3 grid grid-cols-3 gap-1.5">
               <div className="rounded-xl bg-zinc-50/80 p-1.5 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
-                <div className="flex items-center gap-0.5 text-[10px] font-semibold text-zinc-400">
+                <div className="flex items-center gap-0.5 text- font-semibold text-zinc-400">
                   <TbCurrencyDong className="h-2.5 w-2.5" /> Giá trị
                 </div>
                 <p className="mt-0.5 truncate text-xs font-bold leading-tight text-zinc-950 dark:text-white">{derived.price}</p>
               </div>
               <div className="rounded-xl bg-zinc-50/80 p-1.5 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
-                <div className="flex items-center gap-0.5 text-[10px] font-semibold text-zinc-400">
+                <div className="flex items-center gap-0.5 text- font-semibold text-zinc-400">
                   <FiClock className="h-2.5 w-2.5" /> Hạn chót
                 </div>
                 <p className="mt-0.5 text-xs font-bold leading-tight text-zinc-950 dark:text-white">{derived.due}</p>
               </div>
               <div className={cn("rounded-xl bg-zinc-50/80 p-1.5 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5", derived.isFull && "ring-red-500/20 bg-red-50 dark:bg-red-950/20")}>
-                <div className="flex items-center gap-0.5 text-[10px] font-semibold text-zinc-400">
+                <div className="flex items-center gap-0.5 text- font-semibold text-zinc-400">
                   <FiUsers className="h-2.5 w-2.5" /> Số người
                 </div>
                 <p className={cn("mt-0.5 text-xs font-bold leading-tight text-zinc-950 dark:text-white", derived.isFull && "text-red-600 dark:text-red-400")}>
