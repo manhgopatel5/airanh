@@ -266,15 +266,14 @@ export default function CustomTabBar({
                       onClick={() => handleTabClick(tab.key)}
                       className="relative"
                     >
-                      <motion.div
-                        className={`relative w-14 h-14 rounded-full bg-gradient-to-br ${currentTheme} flex items-center justify-center shadow-lg`}
-                        animate={{ rotate: isMenuOpen? 45 : 0 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-white/10 to-transparent" />
-                        <IconCreate isOpen={isMenuOpen} />
-                      </motion.div>
-                    </motion.button>
+                     <motion.div
+  className={`relative w-14 h-14 rounded-full bg-gradient-to-br ${currentTheme} flex items-center justify-center shadow-lg`}
+  animate={{ rotate: isMenuOpen? 135 : 0 }}
+  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+>
+  <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-white/10 to-transparent rounded-full" />
+  <Plus className="w-6 h-6 text-white relative z-10" strokeWidth={3} />
+</motion.div>
                   </div>
                 );
               }
