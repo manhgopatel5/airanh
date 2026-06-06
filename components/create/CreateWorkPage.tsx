@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Timestamp } from "firebase/firestore";
 import { mutate } from "swr";
 import Select from 'react-select';
+import { type FeedTask } from "@/types/task";
 import TaskCard from "@/components/task/TaskCard"; // đường dẫn đúng của bạn
 import GpsRequiredModal from "@/components/GpsRequiredModal";
 import {
