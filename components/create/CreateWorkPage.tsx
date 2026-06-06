@@ -20,7 +20,7 @@ import {
   FiChevronRight,
   FiAlertCircle,
   FiZap,
-  FiImage,
+  
   FiCalendar,
   FiHash,
 } from "react-icons/fi";
