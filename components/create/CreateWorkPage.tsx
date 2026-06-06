@@ -369,17 +369,17 @@ useEffect(() => {
     headers: { "Content-Type": "application/json" },
     cache: "force-cache"
   })
-   .then(async (r) => {
+  .then(async (r) => {
       if (!r.ok) throw new Error("API error");
       return r.json();
     })
-   .then((data) => {
+  .then((data) => {
       if (isMounted) {
         setProvinces(Array.isArray(data)? data : []);
         setLoadingProvinces(false);
       }
     })
-   .catch(() => {
+  .catch(() => {
       if (isMounted) {
         toast.error("Không tải được danh sách tỉnh");
         setProvinces([]);
@@ -407,8 +407,8 @@ useEffect(() => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ provinceId: form.location.provinceId }),
   })
-   .then((r) => r.json())
-   .then((data) => {
+  .then((r) => r.json())
+  .then((data) => {
       if (!isMounted) return;
       setDistricts(data);
       // Chỉ reset district nếu district hiện tại không thuộc province mới
@@ -421,7 +421,7 @@ useEffect(() => {
         });
       }
     })
-   .catch(() => {
+  .catch(() => {
       if (isMounted) setDistricts([]);
     });
 
@@ -444,8 +444,8 @@ useEffect(() => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ districtId: form.location.districtId }),
   })
-   .then((r) => r.json())
-   .then((data) => {
+  .then((r) => r.json())
+  .then((data) => {
       if (!isMounted) return;
       setWards(data);
       // Chỉ reset ward nếu ward hiện tại không thuộc district mới
@@ -453,7 +453,7 @@ useEffect(() => {
         updateLocation({ wardId: null, wardName: "" });
       }
     })
-   .catch(() => {
+  .catch(() => {
       if (isMounted) setWards([]);
     });
 
@@ -483,30 +483,6 @@ useEffect(() => {
   return () => clearTimeout(timer);
 }, [draftKey, form]);
 
-// GPS check
-useEffect(() => {
-  if (step!== 1 || hasCheckedGps || form.location.lat) return;
-  if (!navigator.permissions) {
-    setShowGpsExplain(true);
-    setHasCheckedGps(true);
-    return;
-  }
-  navigator.permissions.query({ name: 'geolocation' }).then((result) => {
-    if (result.state === 'granted') {
-      requestGPS();
-    } else {
-      setShowGpsExplain(true);
-    }
-    setHasCheckedGps(true);
-  });
-}, [step, form.location.lat, hasCheckedGps, requestGPS]);
-
-useEffect(() => {
-  if (step!== 1) {
-    setHasCheckedGps(false);
-  }
-}, [step]);
-
 const requestGPS = useCallback(() => {
   if (!navigator.geolocation) {
     toast.error("Thiết bị không hỗ trợ GPS");
@@ -530,6 +506,30 @@ const requestGPS = useCallback(() => {
     { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
   );
 }, []); // Bỏ updateLocation khỏi deps để tránh re-create
+
+// GPS check - đưa xuống sau requestGPS
+useEffect(() => {
+  if (step!== 1 || hasCheckedGps || form.location.lat) return;
+  if (!navigator.permissions) {
+    setShowGpsExplain(true);
+    setHasCheckedGps(true);
+    return;
+  }
+  navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+    if (result.state === 'granted') {
+      requestGPS();
+    } else {
+      setShowGpsExplain(true);
+    }
+    setHasCheckedGps(true);
+  });
+}, [step, form.location.lat, hasCheckedGps, requestGPS]);
+
+useEffect(() => {
+  if (step!== 1) {
+    setHasCheckedGps(false);
+  }
+}, [step]);
 
   const validateField = (key: keyof FormState, value: any): string => {
     switch (key) {
