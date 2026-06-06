@@ -795,12 +795,14 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
             ? "border-transparent shadow-xl ring-4"
             : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
         }`}
-        style={{
-          background: form.category === cat.id 
-            ? `linear-gradient(135deg, ${cat.color}, ${cat.color}dd)` 
-            : undefined,
-          '--tw-ring-color': form.category === cat.id ? `${cat.color}20` : undefined,
-        } as React.CSSProperties}
+        {...(form.category === cat.id
+          ? {
+              style: {
+                background: `linear-gradient(135deg, ${cat.color}, ${cat.color}dd)`,
+                '--tw-ring-color': `${cat.color}20`,
+              } as React.CSSProperties,
+            }
+          : {})}
       >
         {form.category === cat.id && (
           <motion.div
