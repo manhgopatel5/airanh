@@ -2,13 +2,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Zap, Users } from "lucide-react";
 
-const SPRING = {
-  type: "spring" as const,
-  stiffness: 550,
-  damping: 32,
-  mass: 0.8
-};
-
 const SPRING_BOUNCY = {
   type: "spring" as const,
   stiffness: 400,
@@ -40,13 +33,15 @@ export default function FloatingMenu({ isOpen, onSelect, onClose }: FloatingMenu
   };
 
   return (
-    <AnimatePresence mode="wait">
+    // 1. Bỏ mode="wait"
+    <AnimatePresence>
       {isOpen && (
         <>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }} // Thêm duration cố định
             onClick={onClose}
             className="fixed inset-0 bg-black/20 dark:bg-black/40 backdrop-blur-md z-40"
           />
@@ -69,10 +64,8 @@ export default function FloatingMenu({ isOpen, onSelect, onClose }: FloatingMenu
               className="w-full max-w-[480px] pointer-events-auto"
             >
               <div className="grid grid-cols-2 gap-4">
-                {/* TASK CARD */}
+                {/* TASK CARD - Bỏ initial/animate */}
                 <motion.button
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0, transition: {...SPRING, delay: 0.05 } }}
                   whileTap={{ scale: 0.96 }}
                   whileHover={{ scale: 1.02 }}
                   onClick={() => handleSelect("task")}
@@ -118,10 +111,8 @@ export default function FloatingMenu({ isOpen, onSelect, onClose }: FloatingMenu
                   </div>
                 </motion.button>
 
-                {/* PLAN CARD */}
+                {/* PLAN CARD - Bỏ initial/animate */}
                 <motion.button
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0, transition: {...SPRING, delay: 0.1 } }}
                   whileTap={{ scale: 0.96 }}
                   whileHover={{ scale: 1.02 }}
                   onClick={() => handleSelect("plan")}
