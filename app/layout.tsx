@@ -4,7 +4,7 @@ import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
 import { AuthProvider } from "@/lib/AuthContext";
 import { cn } from "@/lib/utils";
-import { getProvinces } from "@/lib/provinces"; // Thêm dòng này
+import { getProvinces } from "@/lib/provinces";
 
 const beVietnamPro = Be_Vietnam_Pro({
   subsets: ['latin', 'vietnamese'],
@@ -115,13 +115,12 @@ export const viewport: Viewport = {
   interactiveWidget: 'resizes-content',
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
   ],
   colorScheme: "light dark",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  // Prefetch provinces ở server - cache 24h, client sẽ hit cache ngay
   await getProvinces();
 
   return (
@@ -130,8 +129,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       className={cn(beVietnamPro.variable, comfortaa.variable)} 
       suppressHydrationWarning
     >
-      {/* Bỏ <head> preconnect vì next/font đã tự tối ưu */}
-      <body className="bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased overscroll-none tracking-tight font-sans">
+      <body className="min-h-screen bg-white dark:bg-zinc-950 text-gray-900 dark:text-gray-100 antialiased tracking-tight font-sans">
         <AuthProvider>
           <ClientLayout>
             {children}
