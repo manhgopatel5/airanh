@@ -783,140 +783,51 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
                   </div>
                 </Field>
 <Field label="Danh mục" required icon={FiTag}>
-  <div className="input-premium !p-0 focus-within:ring-4" style={{ 
-    '--tw-ring-color': `${accent}20` 
-  } as React.CSSProperties}>
-    <Select
-      value={categories.find(c => c.id === form.category) || null}
-      onChange={(opt) => handleCategoryChange(opt?.id || "")}
-      options={categories}
-      getOptionLabel={(opt) => opt ? `${opt.icon} ${opt.label}` : ''}
-      getOptionValue={(opt) => opt?.id || ''}
-      placeholder="Tìm danh mục..."
-      isSearchable
-      isClearable={false}
-      classNamePrefix="react-select"
-      formatOptionLabel={(opt) => {
-        if (!opt) return null;
-        return (
-          <div className="flex items-center gap-2">
-            <span className="text-xl">{opt.icon}</span>
-            <span className="font-bold">{opt.label}</span>
-          </div>
-        );
-      }}
-      components={{
-        DropdownIndicator: () => (
-          <div className="pr-3 text-zinc-400">
-            <FiTag className="text-lg" />
-          </div>
-        ),
-        IndicatorSeparator: () => null,
-      }}
-      styles={{
-        control: (base) => ({
-          ...base,
-          minHeight: '52px',
-          border: '0 !important',
-          borderColor: 'transparent !important',
-          boxShadow: 'none !important',
-          background: 'transparent',
-          fontWeight: 700,
-          fontSize: '0.9375rem',
-          cursor: 'text',
-          outline: 'none !important',
-          '&:hover': {
-            border: '0 !important',
-            borderColor: 'transparent !important',
-          },
-        }),
-        menu: (base) => ({
-          ...base,
-          borderRadius: '1.25rem',
-          overflow: 'hidden',
-          boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.25)',
-          zIndex: 50,
-          marginTop: '8px',
-          border: '2px solid rgb(228 228 231)',
-        }),
-        menuList: (base) => ({
-          ...base,
-          padding: '8px',
-          '::-webkit-scrollbar': {
-            width: '6px',
-          },
-          '::-webkit-scrollbar-track': {
-            background: 'transparent',
-          },
-          '::-webkit-scrollbar-thumb': {
-            background: 'rgb(212 212 216)',
-            borderRadius: '10px',
-          },
-        }),
-        option: (base, state) => ({
-          ...base,
-          padding: '12px 16px',
-          fontWeight: 700,
-          borderRadius: '0.75rem',
-          margin: '2px 0',
-          background: state.isSelected
-            ? `linear-gradient(135deg, ${accent}, ${accent}dd)`
-            : state.isFocused
-            ? `${accent}15`
-            : 'transparent',
-          color: state.isSelected ? 'white' : 'inherit',
-          cursor: 'pointer',
-          transition: 'all 0.15s',
-          '&:active': { background: accent },
-        }),
-        singleValue: (base) => ({
-          ...base,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          margin: 0,
-        }),
-        input: (base) => ({
-          ...base,
-          fontWeight: 700,
-          margin: 0,
-          padding: 0,
-          color: 'inherit',
-          outline: 'none !important',
-          boxShadow: 'none !important',
-          caretColor: accent,
-          border: '0 !important',
-          borderWidth: '0 !important',
-          WebkitAppearance: 'none',
-          appearance: 'none',
-        }),
-        valueContainer: (base) => ({
-          ...base,
-          padding: '0 1.25rem',
-        }),
-        placeholder: (base) => ({
-          ...base,
-          color: 'rgb(161 161 170)',
-          fontWeight: 500,
-        }),
-      }}
-      theme={(theme) => ({
-        ...theme,
-        colors: {
-          ...theme.colors,
-          primary: accent,
-          primary25: `${accent}15`,
-          primary50: `${accent}30`,
-        },
-      })}
-    />
+  <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4">
+    {categories.map((cat) => (
+      <motion.button
+        key={cat.id}
+        type="button"
+        whileTap={{ scale: 0.95 }}
+        onClick={() => handleCategoryChange(cat.id)}
+        className={`relative flex flex-col items-center gap-2 rounded-2xl border-2 p-3 transition-all active:scale-95 ${
+          form.category === cat.id
+            ? "border-transparent shadow-xl ring-4"
+            : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
+        }`}
+        style={{
+          background: form.category === cat.id 
+            ? `linear-gradient(135deg, ${cat.color}, ${cat.color}dd)` 
+            : undefined,
+          '--tw-ring-color': form.category === cat.id ? `${cat.color}20` : undefined,
+        } as React.CSSProperties}
+      >
+        {form.category === cat.id && (
+          <motion.div
+            layoutId="category-check"
+            className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-lg ring-2 ring-white"
+          >
+            <FiCheck className="text-sm" style={{ color: cat.color }} />
+          </motion.div>
+        )}
+        <span className="text-3xl drop-shadow-sm">{cat.icon}</span>
+        <span className={`text-xs font-black leading-tight text-center ${
+          form.category === cat.id 
+            ? "text-white drop-shadow-sm" 
+            : "text-zinc-700 dark:text-zinc-200"
+        }`}>
+          {cat.label}
+        </span>
+      </motion.button>
+    ))}
   </div>
-  <div className="flex items-center justify-between text-xs mt-1.5">
+  
+  <div className="flex items-center justify-between text-xs mt-2">
     <span className="text-zinc-400 font-medium">
       {categories.find(c => c.id === form.category)?.label}
     </span>
     {isTask && (
-      <span className="font-bold text-zinc-500">
+      <span className="font-bold" style={{ color: accent }}>
         Gợi ý: {new Intl.NumberFormat("vi-VN").format(categories.find(c => c.id === form.category)?.suggestPrice || 0)}đ
       </span>
     )}
