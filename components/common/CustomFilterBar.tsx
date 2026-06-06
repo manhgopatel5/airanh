@@ -368,7 +368,7 @@ export default function CustomFilterBar({
                       onClick={() => handleClick(filter.key as FilterTab)}
                       className="relative w-full"
                     >
-                      {isActive && <div className="absolute inset-0 rounded-2xl" style={{ background: currentTheme.bgGradient }} />}
+                      {isActive && <div className="absolute inset-0 rounded-2xl" style={{ background: themes[mode].bgGradient }} />}
                       <div className={`relative h-12 rounded-2xl flex items-center justify-center gap-1.5 font-bold overflow-hidden px-2 ${isActive? "text-white" : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400"}`}>
                         <Icon isActive={isActive} />
                         <span className="text-xs whitespace-nowrap">{filter.label}</span>
@@ -430,7 +430,7 @@ export default function CustomFilterBar({
                                ? "text-white"
                                 : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                             }`}
-                            style={isActive? { background: currentTheme.bgGradient } : {}}
+                            style={isActive? { background: themes[mode].bgGradient } : {}}
                           >
                             <Icon size={16} />
                             {opt.label}
@@ -457,7 +457,7 @@ export default function CustomFilterBar({
                                  ? "text-white"
                                   : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                               }`}
-                              style={isActive? { background: currentTheme.bgGradient } : {}}
+                              style={isActive? { background: themes[mode].bgGradient } : {}}
                             >
                               {range.label}
                             </motion.button>
@@ -544,7 +544,7 @@ export default function CustomFilterBar({
                     onCloseSearch();
                   }}
                   className="flex-1 h-11 rounded-2xl text-white font-black text-sm shadow-lg"
-                  style={{ background: currentTheme.bgGradient }}
+                  style={{ background: themes[mode].bgGradient }}
                 >
                   Áp dụng ({activeFilterCount})
                 </motion.button>
