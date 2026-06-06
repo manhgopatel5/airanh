@@ -1,6 +1,6 @@
 "use client";
 import { motion, AnimatePresence, useMotionValue, useTransform, useDragControls } from "framer-motion";
-import { CalendarRange, Zap, Users } from "lucide-react";
+import {  Zap, Users } from "lucide-react";
 
 const SPRING = {
   type: "spring" as const,
