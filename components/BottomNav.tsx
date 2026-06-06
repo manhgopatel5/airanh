@@ -188,7 +188,7 @@ const FloatingMenu = React.memo(({
 FloatingMenu.displayName = "FloatingMenu";
 
 /* ==========================================================================
-   MAGNETIC NAV ITEM
+   MAGNETIC NAV ITEM - GitHub Style
    ========================================================================== */
 const MagneticNavItem = React.memo(({
   item,
@@ -233,7 +233,6 @@ const MagneticNavItem = React.memo(({
     if (!ref.current) return;
 
     const rect = ref.current.getBoundingClientRect();
-
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
 
@@ -262,34 +261,35 @@ const MagneticNavItem = React.memo(({
         rotateY,
         transformStyle: "preserve-3d"
       }}
-      whileTap={{
-        scale: 0.88
-      }}
-      className="relative flex-1 flex flex-col items-center justify-center h-full pt-1 pb-3.5 outline-none select-none touch-manipulation"
+      whileTap={{ scale: 0.88 }}
+      className="relative flex-1 flex flex-col items-center justify-center h-full pt-1.5 pb-2 outline-none select-none touch-manipulation"
     >
-      {/* glass bg */}
+      {/* NỀN ACTIVE KIỂU GITHUB */}
       {active && (
         <motion.div
           layoutId="nav-active-bg"
           transition={SPRING}
-          className="absolute inset-x-2 top-1 bottom-1 rounded-2xl bg-white/70 dark:bg-zinc-800/60 backdrop-blur-2xl border border-white/40 dark:border-zinc-700/40"
-        />
+          className="absolute inset-x-1 top-0.5 bottom-0.5 rounded-xl bg-[#0A84FF]"
+        >
+          <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-white/30 via-transparent to-black/10" />
+          <div className="absolute inset-[1px] rounded-xl ring-1 ring-inset ring-white/25" />
+        </motion.div>
       )}
 
-      {/* glow */}
+      {/* GLOW */}
       {active && (
         <motion.div
           layoutId="nav-glow"
           style={{ opacity: glowOpacity }}
-          className={`absolute inset-x-3 top-2 bottom-2 rounded-2xl blur-2xl ${activeBgClass}`}
+          className={`absolute inset-x-2 top-1 bottom-1 rounded-xl blur-2xl ${activeBgClass}`}
         />
       )}
 
-      {/* icon */}
+      {/* ICON */}
       <motion.div
         animate={{
-          y: active? -2 : 0,
-          scale: active? 1.12 : 1
+          y: active? -1 : 0,
+          scale: active? 1.1 : 1
         }}
         transition={SPRING}
         className="relative z-10"
@@ -297,19 +297,15 @@ const MagneticNavItem = React.memo(({
         <motion.div
           animate={
             active
-          ? {
-                  rotate: [0, -6, 6, 0]
-                }
+         ? { rotate: [0, -6, 6, 0] }
               : {}
           }
-          transition={{
-            duration: 0.5
-          }}
+          transition={{ duration: 0.5 }}
         >
           <item.Icon
-            className={`w- h- transition-colors duration-300 ${
+            className={`w-5 h-5 transition-colors duration-300 ${
               active
-            ? activeColorClass
+           ? "text-white"
                 : "text-zinc-400 dark:text-zinc-500"
             }`}
             strokeWidth={active? 2.7 : 2.2}
@@ -318,7 +314,7 @@ const MagneticNavItem = React.memo(({
 
         {active && (
           <motion.div
-            className={`absolute inset-0 ${activeColorClass} blur-xl`}
+            className="absolute inset-0 text-white blur-xl"
             animate={{
               opacity: [0.3, 0.7, 0.3],
               scale: [1, 1.4, 1]
@@ -331,33 +327,32 @@ const MagneticNavItem = React.memo(({
         )}
       </motion.div>
 
-      {/* text */}
+      {/* LABEL */}
       <motion.span
         animate={{
           y: active? -1 : 0,
-          scale: active? 1.04 : 1
+          scale: active? 1.02 : 1
         }}
         transition={SPRING}
-        className={`relative z-10 text- mt-1.5 tracking-tight transition-all duration-300 ${
+        className={`relative z-10 text-[11px] mt-0.5 tracking-tight transition-all duration-300 ${
           active
-        ? `${activeColorClass} font-bold`
+       ? "text-white font-bold"
             : "text-zinc-400 dark:text-zinc-500 font-semibold"
         }`}
       >
         {item.label}
       </motion.span>
 
-      {/* bottom dot */}
+      {/* DOT */}
       {active && (
         <>
           <motion.div
             layoutId="bottom-dot"
             transition={SPRING}
-            className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${activeBgClass}`}
+            className="absolute bottom-0.5 w-1 h-1 rounded-full bg-white"
           />
-
           <motion.div
-            className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${activeBgClass}`}
+            className="absolute bottom-0.5 w-1 h-1 rounded-full bg-white"
             animate={{
               scale: [1, 2.2, 1],
               opacity: [0.5, 0, 0.5]
@@ -375,7 +370,7 @@ const MagneticNavItem = React.memo(({
 MagneticNavItem.displayName = "MagneticNavItem";
 
 /* ==========================================================================
-   MAIN: BOTTOM NAV - Chuẩn Big Tech
+   MAIN: BOTTOM NAV - GitHub Mobile Style
    ========================================================================== */
 export default function BottomNav() {
   const router = useRouter();
@@ -484,35 +479,31 @@ export default function BottomNav() {
           )}
         </AnimatePresence>
 
-        {/* FIX 1: Bỏ pb-safe ở wrapper, để bottom: 0 */}
-<div
-  className="fixed inset-x-0 z-[70] pointer-events-none flex flex-col items-center justify-end"
-  style={{
-    bottom: "max(env(safe-area-inset-bottom), 0px)",
-  }}
->
-<div
-  ref={menuRef}
-  className="w-full max-w-[480px] px-2 flex flex-col items-center gap-2"
->
-
+        <div
+          className="fixed inset-x-0 z-[70] pointer-events-none flex flex-col items-center justify-end"
+          style={{
+            bottom: 0,
+          }}
+        >
+          <div
+            ref={menuRef}
+            className="w-full max-w-[500px] px-3 flex flex-col items-center gap-2"
+            style={{
+              paddingBottom: "max(env(safe-area-inset-bottom), 8px)",
+            }}
+          >
             <FloatingMenu isOpen={isOpen} onSelect={handleSelectCreate} onClose={() => setIsOpen(false)} />
 
-            {/* FIX 2: Dùng style paddingBottom thay vì pb-safe, rounded-t- thay vì rounded- */}
+            {/* GITHUB STYLE PILL */}
             <motion.div
               layout
-              animate={{
-                y: [0, -2, 0]
-              }}
+              animate={{ y: [0, -2, 0] }}
               transition={{
                 duration: 4,
                 repeat: Infinity,
                 ease: "easeInOut"
               }}
-     style={{
-  paddingBottom: "max(env(safe-area-inset-bottom), 8px)",
-}}
-              className="w-full pointer-events-auto relative rounded-t-3xl border border-white/40 dark:border-zinc-800/50 bg-white/55 dark:bg-zinc-900/55 backdrop-blur- backdrop-saturate-200 shadow-[0_20px_80px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.55)] overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/40 before:to-white/5 dark:before:from-white/5 dark:before:to-transparent before:pointer-events-none"
+              className="w-full pointer-events-auto relative rounded-[28px] border border-white/40 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl backdrop-saturate-200 shadow-[0_20px_60px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.55)] overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/40 before:to-white/5 dark:before:from-white/5 dark:before:to-transparent before:pointer-events-none"
             >
               <motion.div
                 className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
@@ -520,8 +511,7 @@ export default function BottomNav() {
                 transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
               />
 
-              {/* FIX 3: Thêm pt-3 để có khoảng thở */}
-<div className="flex items-center justify-between h-14 px-2 relative">
+              <div className="flex items-center justify-between h-[60px] px-1.5 relative pt-2">
                 <div className="flex-1 grid grid-cols-2 h-full">
                   {leftItems.map((item) => (
                     <MagneticNavItem
@@ -535,7 +525,7 @@ export default function BottomNav() {
                   ))}
                 </div>
 
-                <div className="w-20 flex justify-center h-full items-center relative">
+                <div className="w-[76px] flex justify-center h-full items-center relative -mt-4">
                   <motion.button
                     data-plus-button
                     onClick={() => {
@@ -601,15 +591,13 @@ export default function BottomNav() {
                       transition={SPRING_BOUNCY}
                       className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-2xl transition-all duration-500 ${dynamicGlow} relative overflow-hidden ${
                         isOpen
-                     ? "bg-zinc-900 dark:bg-zinc-800 shadow-zinc-950/20"
+                    ? "bg-zinc-900 dark:bg-zinc-800 shadow-zinc-950/20"
                           : `${activeBgClass} shadow-lg`
                       }`}
                     >
                       <motion.div
                         className="absolute inset-0 bg-gradient-to-tr from-white/40 via-white/10 to-transparent"
-                        animate={{
-                          rotate: [0, 360]
-                        }}
+                        animate={{ rotate: [0, 360] }}
                         transition={{
                           duration: 8,
                           repeat: Infinity,
