@@ -234,94 +234,96 @@ export default function CustomTabBar({
       initial={{ y: 120, opacity: 0 }}
       animate={mounted? { y: 0, opacity: 1 } : { y: 120, opacity: 0 }}
       transition={{ type: "spring", stiffness: 400, damping: 40 }}
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50"
+      className="fixed bottom-0 left-0 right-0 z-50"
       data-tab-bar
     >
-      <motion.div
-        className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl rounded-full border border-zinc-200/60 dark:border-zinc-800/60 shadow-[0_8px_32px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden px-2"
-        whileHover={{ y: -3 }}
-        transition={{ duration: 0.3 }}
-      >
-        <div className="relative flex items-center justify-between h-14 gap-1">
-          {tabs.map((tab) => {
-            const isActive = currentTab === tab.key;
-            const isCreate = tab.key === "create";
-            const IconComponent = tab.icon;
+      <div className="relative w-full px-4" style={{ paddingBottom: "max(env(safe-area-inset-bottom), 12px)" }}>
+        <motion.div
+          className="relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-full border border-zinc-200/60 dark:border-zinc-800/60 shadow-[0_8px_32px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden"
+          whileHover={{ y: -3 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="relative flex items-center justify-between h-16 px-2">
+            {tabs.map((tab) => {
+              const isActive = currentTab === tab.key;
+              const isCreate = tab.key === "create";
+              const IconComponent = tab.icon;
 
-            if (isCreate) {
-              return (
-                <div key={tab.key} className="relative flex justify-center px-1">
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    onTouchStart={() => haptics.light()}
-                    onClick={() => handleTabClick(tab.key)}
-                    className="relative"
-                  >
-                    <motion.div
-                      className={`relative w-12 h-12 rounded-full bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center shadow-lg`}
-                      animate={{ rotate: isMenuOpen? 135 : 0 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              if (isCreate) {
+                return (
+                  <div key={tab.key} className="relative flex justify-center">
+                    <motion.button
+                      whileTap={{ scale: 0.9 }}
+                      onTouchStart={() => haptics.light()}
+                      onClick={() => handleTabClick(tab.key)}
+                      className="relative"
                     >
-                      <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-white/10 to-transparent rounded-full" />
-                      <Plus className="w-5 h-5 text-white relative z-10" strokeWidth={3} />
+                      <motion.div
+                        className={`relative w-14 h-14 rounded-full bg-gradient-to-br ${currentTheme.gradient} flex items-center justify-center shadow-lg`}
+                        animate={{ rotate: isMenuOpen? 135 : 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-white/10 to-transparent rounded-full" />
+                        <Plus className="w-6 h-6 text-white relative z-10" strokeWidth={3} />
+                      </motion.div>
+                    </motion.button>
+                  </div>
+                );
+              }
+
+              return (
+                <motion.button
+                  key={tab.key}
+                  whileTap={{ scale: 0.9 }}
+                  onTouchStart={() => haptics.light()}
+                  onClick={() => handleTabClick(tab.key)}
+                  className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 px-1"
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="nav-active-pill"
+                      transition={{ type: "spring", stiffness: 550, damping: 32 }}
+                      className="absolute inset-0 rounded-full bg-zinc-900/10 dark:bg-white/15"
+                    />
+                  )}
+
+                  {tab.key === "messages" && unreadCount > 0 && (
+                    <motion.div
+                      initial={{ scale: 0, rotate: -180 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      className="absolute -top-1 -right-1 z-20 min-w-[22px] h-[22px] bg-gradient-to-br from-red-500 to-red-600 rounded-full px-[6px] flex items-center justify-center shadow-lg"
+                    >
+                      <span className="text-[10px] font-black text-white">
+                        {unreadCount > 9? "9+" : unreadCount}
+                      </span>
                     </motion.div>
-                  </motion.button>
-                </div>
-              );
-            }
+                  )}
 
-            return (
-              <motion.button
-                key={tab.key}
-                whileTap={{ scale: 0.9 }}
-                onTouchStart={() => haptics.light()}
-                onClick={() => handleTabClick(tab.key)}
-                className="relative flex flex-col items-center justify-center gap-0.5 py-2 px-3"
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="nav-active-pill"
-                    transition={{ type: "spring", stiffness: 550, damping: 32 }}
-                    className="absolute inset-0 rounded-full bg-zinc-900/10 dark:bg-white/15"
-                  />
-                )}
-
-                {tab.key === "messages" && unreadCount > 0 && (
-                  <motion.div
-                    initial={{ scale: 0, rotate: -180 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    className="absolute -top-0.5 -right-0.5 z-20 min-w-[20px] h-5 bg-gradient-to-br from-red-500 to-red-600 rounded-full px-[5px] flex items-center justify-center shadow-lg"
+                  <div
+                    className={`relative z-10 ${
+                      isActive
+                      ? "text-zinc-900 dark:text-white"
+                        : "text-zinc-400 dark:text-zinc-500"
+                    }`}
                   >
-                    <span className="text-[9px] font-black text-white">
-                      {unreadCount > 9? "9+" : unreadCount}
-                    </span>
-                  </motion.div>
-                )}
+                    <IconComponent active={isActive} />
+                  </div>
 
-                <div
-                  className={`relative z-10 ${
-                    isActive
-                    ? "text-zinc-900 dark:text-white"
-                      : "text-zinc-400 dark:text-zinc-500"
-                  }`}
-                >
-                  <IconComponent active={isActive} />
-                </div>
-
-                <span
-                  className={`text-xs transition-all relative z-10 ${
-                    isActive
-                    ? `${currentTheme.labelActive} font-bold`
-                      : "text-zinc-500 dark:text-zinc-400 font-medium"
-                  }`}
-                >
-                  {tab.label}
-                </span>
-              </motion.button>
-            );
-          })}
-        </div>
-      </motion.div>
+                  <span
+                    className={`text-xs transition-all relative z-10 ${
+                      isActive
+                      ? `${currentTheme.labelActive} font-bold`
+                        : "text-zinc-500 dark:text-zinc-400 font-medium"
+                    }`}
+                  >
+                    {tab.label}
+                  </span>
+                </motion.button>
+              );
+            })}
+          </div>
+        </motion.div>
+      </div>
     </motion.div>
   );
 }
