@@ -237,7 +237,7 @@ export default function CustomTabBar({
       className="fixed bottom-0 left-0 right-0 z-50"
       data-tab-bar
     >
-      <div className="relative w-full px-4" style={{ paddingBottom: "max(env(safe-area-inset-bottom), 12px)" }}>
+<div className="relative w-full px-4 pb-safe">
         <motion.div
           className="relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-full border border-zinc-200/60 dark:border-zinc-800/60 shadow-[0_8px_32px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden"
           whileHover={{ y: -3 }}
