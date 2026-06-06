@@ -262,6 +262,7 @@ export default function CustomFilterBar({
     plan: { bg: "#30D158", bgGradient: "linear-gradient(135deg, #30D158 0%, #248A3D 100%)", accent: "#FFD60A", secondary: "#FF9F0A" },
   };
   const currentTheme = themes[mode];
+
   const IconSet = mode === "task"? TaskIcons : PlanIcons;
   const CATEGORIES = mode === "task"? CATEGORY_TASKS : CATEGORY_PLANS;
 
@@ -368,7 +369,7 @@ export default function CustomFilterBar({
                       onClick={() => handleClick(filter.key as FilterTab)}
                       className="relative w-full"
                     >
-                      {isActive && <div className="absolute inset-0 rounded-2xl" style={{ background: themes[mode].bgGradient }} />}
+                      {isActive && <div className="absolute inset-0 rounded-2xl" style={{ background: currentTheme.bgGradient }} />}
                       <div className={`relative h-12 rounded-2xl flex items-center justify-center gap-1.5 font-bold overflow-hidden px-2 ${isActive? "text-white" : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400"}`}>
                         <Icon isActive={isActive} />
                         <span className="text-xs whitespace-nowrap">{filter.label}</span>
@@ -430,7 +431,7 @@ export default function CustomFilterBar({
                                ? "text-white"
                                 : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                             }`}
-                            style={isActive? { background: themes[mode].bgGradient } : {}}
+                            style={isActive? { background: currentTheme.bgGradient } : {}}
                           >
                             <Icon size={16} />
                             {opt.label}
@@ -457,7 +458,7 @@ export default function CustomFilterBar({
                                  ? "text-white"
                                   : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                               }`}
-                              style={isActive? { background: themes[mode].bgGradient } : {}}
+                              style={isActive? { background: currentTheme.bgGradient } : {}}
                             >
                               {range.label}
                             </motion.button>
@@ -544,7 +545,7 @@ export default function CustomFilterBar({
                     onCloseSearch();
                   }}
                   className="flex-1 h-11 rounded-2xl text-white font-black text-sm shadow-lg"
-                  style={{ background: themes[mode].bgGradient }}
+                  style={{ background: currentTheme.bgGradient }}
                 >
                   Áp dụng ({activeFilterCount})
                 </motion.button>
