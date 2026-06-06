@@ -710,25 +710,25 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
 
 
    {/* Progress Steps */}
-<div className="flex items-center justify-center">
+<div className="flex items-center justify-center px-4 overflow-hidden">
   {steps.map((s, i) => (
     <div key={i} className="flex items-center">
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-1.5">
         <motion.div
           initial={false}
           animate={{
-            scale: i === step ? 1.1 : 1,
+            scale: i === step ? 1.05 : 1,
           }}
-          className="relative z-10 flex h-12 w-12 items-center justify-center rounded-2xl font-bold text-white shadow-lg transition-all"
+          className="relative z-10 flex h-10 w-10 items-center justify-center rounded-xl font-bold text-white shadow-lg transition-all"
           style={{
             background: i <= step 
               ? `linear-gradient(135deg, ${accent}, ${accent}dd)` 
               : 'rgb(228 228 231)',
           }}
         >
-          {i < step ? <FiCheck className="text-xl" /> : <s.icon className="text-xl" />}
+          {i < step ? <FiCheck className="text-lg" /> : <s.icon className="text-lg" />}
         </motion.div>
-        <span className={`text-xs font-bold transition-colors ${
+        <span className={`text-[10px] font-bold transition-colors text-center max-w-[60px] leading-tight ${
           i <= step ? "text-zinc-900 dark:text-white" : "text-zinc-400"
         }`}>
           {s.label}
@@ -737,7 +737,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
       
       {i < steps.length - 1 && (
         <div 
-          className="h-0.5 w-16 mx-3 -mt-6 transition-colors"
+          className="h-0.5 w-6 mx-1.5 -mt-5 transition-colors"
           style={{
             background: i < step ? accent : 'rgb(228 228 231)',
           }}
@@ -814,16 +814,21 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
         IndicatorSeparator: () => null,
       }}
       styles={{
-        control: (base) => ({
+        control: (base, state) => ({
           ...base,
           minHeight: '52px',
           border: '0 !important',
+          borderColor: 'transparent !important',
           boxShadow: 'none !important',
           background: 'transparent',
           fontWeight: 700,
           fontSize: '0.9375rem',
           cursor: 'text',
           outline: 'none !important',
+          '&:hover': {
+            border: '0 !important',
+            borderColor: 'transparent !important',
+          },
         }),
         menu: (base) => ({
           ...base,
@@ -880,6 +885,10 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
           outline: 'none !important',
           boxShadow: 'none !important',
           caretColor: accent,
+          border: '0 !important',
+          borderWidth: '0 !important',
+          WebkitAppearance: 'none',
+          appearance: 'none',
         }),
         valueContainer: (base) => ({
           ...base,
@@ -913,7 +922,6 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
     )}
   </div>
 </Field>
-
 <Field label="Tags" icon={FiTag}>
   <TagsInput
     value={form.tags}
