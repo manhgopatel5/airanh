@@ -22,7 +22,7 @@ import {
   GoTelescopeFill,
 } from "react-icons/go";
 import { RiRobot2Fill, RiRobot2Line } from "react-icons/ri";
-import { Sparkles, CalendarRange } from "lucide-react"; // THÊM DÒNG NÀY
+import { Sparkles, Plus, CalendarRange } from "lucide-react"; // THÊM DÒNG NÀY
 import type { IconType } from "react-icons";
 
 interface NavItem {
