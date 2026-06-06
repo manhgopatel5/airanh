@@ -237,17 +237,21 @@ export default function CustomFilterBar({
 
   return (
     <>
-      <div className="mt-3">
-        <button
-          onClick={onOpenSearch}
-          className="relative w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-black/[0.08] dark:ring-white/10 text-left outline-none hover:ring-black/[0.12] dark:hover:ring-white/15 transition-all"
-        >
-          <span className="text-zinc-400 font-semibold">Tìm kiếm nâng cao...</span>
-          <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-            <Search size={18} className="text-zinc-400" />
-          </div>
-        </button>
-      </div>
+ <div className="mt-3">
+  <button
+    onClick={onOpenSearch}
+    className="relative w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-black/[0.08] dark:ring-white/10 text-left outline-none hover:ring-black/[0.12] dark:hover:ring-white/15 transition-all shadow-sm hover:shadow-md active:scale-[0.99] active:shadow-sm"
+  >
+    {/* INNER HIGHLIGHT GIỐNG TASK/PLAN */}
+    <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/40 via-transparent to-black/[0.03] pointer-events-none" />
+    <div className="absolute inset-[1px] rounded-2xl ring-1 ring-inset ring-white/30 pointer-events-none" />
+
+    <span className="relative text-zinc-400 font-semibold">Tìm kiếm nâng cao...</span>
+    <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
+      <Search size={18} className="text-zinc-400" />
+    </div>
+  </button>
+</div>
 
       <AnimatePresence>
         {showSearchModal && (
@@ -293,27 +297,30 @@ export default function CustomFilterBar({
                 })}
               </div>
 
-              <div className="relative h-11">
-                <input
-                  value={searchQueries[currentFilter] || ""}
-                  onChange={(e) => onSearchChange(currentFilter, e.target.value)}
-                  placeholder={`Tìm ${filters.find(f => f.key === currentFilter)?.label.toLowerCase()}...`}
-                  className="w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-black/[0.08] dark:ring-white/10 outline-none focus:ring-2 focus:ring-[#0A84FF]/40 dark:focus:ring-[#0A84FF]/50 font-semibold text-base text-zinc-900 dark:text-zinc-100 transition-all placeholder:text-zinc-400"
-                  autoFocus
-                />
-                <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-                  {searchQueries[currentFilter]? (
-                    <button
-                      onClick={() => onSearchChange(currentFilter, "")}
-                      className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                    >
-                      <X size={18} className="text-zinc-500" />
-                    </button>
-                  ) : (
-                    <Search size={18} className="text-zinc-400" />
-                  )}
-                </div>
-              </div>
+         <div className="relative h-11">
+  <input
+    value={searchQueries[currentFilter] || ""}
+    onChange={(e) => onSearchChange(currentFilter, e.target.value)}
+    placeholder={`Tìm ${filters.find(f => f.key === currentFilter)?.label.toLowerCase()}...`}
+    className="w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-black/[0.08] dark:ring-white/10 outline-none focus:ring-2 focus:ring-[#0A84FF]/40 dark:focus:ring-[#0A84FF]/50 font-semibold text-base text-zinc-900 dark:text-zinc-100 transition-all placeholder:text-zinc-400 shadow-sm focus:shadow-md"
+  />
+  {/* INNER HIGHLIGHT */}
+  <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/40 via-transparent to-black/[0.03] pointer-events-none" />
+  <div className="absolute inset-[1px] rounded-2xl ring-1 ring-inset ring-white/30 pointer-events-none" />
+
+  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 z-10">
+    {searchQueries[currentFilter]? (
+      <button
+        onClick={() => onSearchChange(currentFilter, "")}
+        className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+      >
+        <X size={18} className="text-zinc-500" />
+      </button>
+    ) : (
+      <Search size={18} className="text-zinc-400" />
+    )}
+  </div>
+</div>
             </motion.div>
           </motion.div>
         )}
