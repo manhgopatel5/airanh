@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, ArrowLeft, Flame, SlidersHorizontal, TrendingUp, Clock, DollarSign } from "lucide-react";
+import { Search, X, ArrowLeft, Flame, SlidersHorizontal, TrendingUp, Clock, DollarSign, Check } from "lucide-react";
 import { useAppStore } from "@/store/app";
 import React, { useState, useEffect, useRef } from "react";
 
@@ -70,6 +70,7 @@ const CATEGORY_PLANS = [
 ] as const;
 
 const PRICE_RANGES = [
+  { id: "all", label: "Tất cả", min: 0, max: Infinity },
   { id: "free", label: "Miễn phí", min: 0, max: 0 },
   { id: "lt50", label: "< 50K", min: 1, max: 50000 },
   { id: "50-200", label: "50K - 200K", min: 50000, max: 200000 },
@@ -260,7 +261,7 @@ export default function CustomFilterBar({
     task: { bg: "#0A84FF", bgGradient: "linear-gradient(135deg, #0A84FF 0%, #0051D5 100%)", accent: "#00D9FF", secondary: "#5AC8FA" },
     plan: { bg: "#30D158", bgGradient: "linear-gradient(135deg, #30D158 0%, #248A3D 100%)", accent: "#FFD60A", secondary: "#FF9F0A" },
   };
-  const currentTheme = themes[mode];
+  const currentTheme = themes;
   const IconSet = mode === "task"? TaskIcons : PlanIcons;
   const CATEGORIES = mode === "task"? CATEGORY_TASKS : CATEGORY_PLANS;
 
@@ -339,7 +340,7 @@ export default function CustomFilterBar({
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -20, opacity: 0 }}
-              className="bg-white dark:bg-zinc-900 w-full max-w-[680px] rounded- p-4 shadow-2xl max-h-[85vh] overflow-y-auto"
+              className="bg-white dark:bg-zinc-900 w-full max-w-[680px] rounded- p-4 shadow-2xl max-h-[80vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between mb-4 sticky top-0 bg-white dark:bg-zinc-900 pb-2 z-10">
                 <div className="flex items-center gap-3">
@@ -385,3 +386,173 @@ export default function CustomFilterBar({
                   className="w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-black/[0.08] dark:ring-white/10 outline-none focus:ring-2 focus:ring-[#0A84FF]/40 dark:focus:ring-[#0A84FF]/50 font-semibold text-base text-zinc-900 dark:text-zinc-100 transition-all placeholder:text-zinc-400 shadow-sm focus:shadow-md"
                 />
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/40 via-transparent to-black/[0.03] pointer-events-none" />
+                <div className="absolute inset-[1px] rounded-2xl ring-1 ring-inset ring-white/30 pointer-events-none" />
+                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 z-10">
+                  {searchQueries[currentFilter]? (
+                    <button
+                      onClick={() => onSearchChange(currentFilter, "")}
+                      className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                    >
+                      <X size={18} className="text-zinc-500" />
+                    </button>
+                  ) : (
+                    <Search size={18} className="text-zinc-400" />
+                  )}
+                </div>
+              </div>
+
+              {/* HOT FILTER - NÂNG CẤP */}
+              {currentFilter === "hot" && (
+                <div className="space-y-4">
+                  {/* Sort By */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-xs font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Sắp xếp theo</h3>
+                      <button
+                        onClick={() => setShowAdvanced(!showAdvanced)}
+                        className="flex items-center gap-1 text-xs font-bold text-[#0A84FF] hover:opacity-70"
+                      >
+                        <SlidersHorizontal size={14} />
+                        {showAdvanced? "Ẩn" : "Nâng cao"}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {sortOptions.map((opt) => {
+                        const Icon = opt.icon;
+                        const isActive = sortBy === opt.id;
+                        return (
+                          <motion.button
+                            key={opt.id}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => { haptics.light(); setSortBy(opt.id as SortBy); }}
+                            className={`relative h-10 rounded-xl flex items-center justify-center gap-2 font-bold text-xs transition-all ${
+                              isActive
+                               ? "text-white"
+                                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+                            }`}
+                            style={isActive? { background: currentTheme.bgGradient } : {}}
+                          >
+                            <Icon size={16} />
+                            {opt.label}
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Price Range - chỉ hiện cho task */}
+                  {mode === "task" && (
+                    <div>
+                      <h3 className="text-xs font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">Khoảng giá</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {PRICE_RANGES.map((range) => {
+                          const isActive = priceRange === range.id;
+                          return (
+                            <motion.button
+                              key={range.id}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => { haptics.light(); setPriceRange(range.id); }}
+                              className={`px-3 h-9 rounded-xl font-bold text-xs transition-all ${
+                                isActive
+                                 ? "text-white"
+                                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+                              }`}
+                              style={isActive? { background: currentTheme.bgGradient } : {}}
+                            >
+                              {range.label}
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Categories */}
+                  <div>
+                    <h3 className="text-xs font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
+                      Danh mục {selectedCategories.length > 0 && `(${selectedCategories.length})`}
+                    </h3>
+                    <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto pr-1">
+                      {CATEGORIES.map((cat) => {
+                        const isActive = selectedCategories.includes(cat.id);
+                        return (
+                          <motion.button
+                            key={cat.id}
+                            whileTap={{ scale: 0.92 }}
+                            onClick={() => toggleCategory(cat.id)}
+                            className={`relative h-20 rounded-2xl flex flex-col items-center justify-center gap-1 p-2 transition-all ${
+                              isActive
+                               ? "ring-2 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900"
+                                : "bg-zinc-100 dark:bg-zinc-800"
+                            }`}
+                            style={isActive? {
+                              background: `linear-gradient(135deg, ${cat.color}20, ${cat.color}10)`,
+                              borderColor: cat.color,
+                              borderWidth: '2px'
+                            } : {}}
+                          >
+                            <span className="text-2xl">{cat.icon}</span>
+                            <span className={`text-[10px] font-bold leading-tight text-center ${isActive? "text-zinc-900 dark:text-zinc-100" : "text-zinc-600 dark:text-zinc-400"}`}>
+                              {cat.label}
+                            </span>
+                            {isActive && (
+                              <div className="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: cat.color }}>
+                                <Check size={10} className="text-white" strokeWidth={3} />
+                              </div>
+                            )}
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Trending Tags */}
+                  <div>
+                    <h3 className="text-xs font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                      <Flame size={14} className="text-[#FF9500]" />
+                      Đang thịnh hành
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {["🔥 Việc gấp", "💰 Lương cao", "⭐ Uy tín", "📍 Gần đây", "⚡️ Nhận ngay"].map((tag) => (
+                        <motion.button
+                          key={tag}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => { haptics.light(); onSearchChange(currentFilter, tag.split(" ")[1]); }}
+                          className="px-3 h-8 rounded-xl bg-gradient-to-r from-[#FF9500]/10 to-[#FFD60A]/10 text-[#FF9500] dark:text-[#FFD60A] font-bold text-xs hover:from-[#FF9500]/20 hover:to-[#FFD60A]/20 transition-all"
+                        >
+                          {tag}
+                        </motion.button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Footer Actions */}
+              <div className="flex gap-2 mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  onClick={onCloseSearch}
+                  className="flex-1 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-black text-sm hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                >
+                  Hủy
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => {
+                    haptics.medium();
+                    onCloseSearch();
+                  }}
+                  className="flex-1 h-11 rounded-2xl text-white font-black text-sm shadow-lg"
+                  style={{ background: currentTheme.bgGradient }}
+                >
+                  Áp dụng ({activeFilterCount})
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
