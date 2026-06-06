@@ -708,42 +708,43 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
             </button>
           </div>
 
-          {/* Progress Steps */}
-          <div className="flex items-center justify-between">
-            {steps.map((s, i) => (
-              <div key={i} className="flex flex-col items-center gap-2 flex-1">
-                <div className="relative flex w-full items-center">
-                  {i > 0 && (
-                    <div className={`absolute right-1/2 h-0.5 w-full -translate-y-1/2 ${
-                      i <= step ? "bg-gradient-to-r " + gradient : "bg-zinc-200 dark:bg-zinc-800"
-                    }`} />
-                  )}
-                  <motion.div
-                    initial={false}
-                    animate={{
-                      scale: i === step ? 1.1 : 1,
-                      backgroundColor: i <= step ? accent : "rgb(228 228 231)",
-                    }}
-                    className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-2xl font-bold text-white shadow-lg transition-all ${
-                      i <= step ? "shadow-xl" : ""
-                    }`}
-                    style={{
-                      background: i <= step ? `linear-gradient(135deg, ${accent}, ${accent}dd)` : undefined,
-                    }}
-                  >
-                    {i < step ? <FiCheck className="text-lg" /> : <s.icon className="text-lg" />}
-                  </motion.div>
-                </div>
-                <span className={`text-xs font-bold transition-colors ${
-                  i <= step ? "text-zinc-900 dark:text-white" : "text-zinc-400"
-                }`}>
-                  {s.label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+       {/* Progress Steps */}
+<div className="flex items-center justify-center">
+  {steps.map((s, i) => (
+    <div key={i} className="flex items-center">
+      <div className="flex flex-col items-center gap-2">
+        <motion.div
+          initial={false}
+          animate={{
+            scale: i === step ? 1.1 : 1,
+          }}
+          className="relative z-10 flex h-12 w-12 items-center justify-center rounded-2xl font-bold text-white shadow-lg transition-all"
+          style={{
+            background: i <= step 
+              ? `linear-gradient(135deg, ${accent}, ${accent}dd)` 
+              : 'rgb(228 228 231)',
+          }}
+        >
+          {i < step ? <FiCheck className="text-xl" /> : <s.icon className="text-xl" />}
+        </motion.div>
+        <span className={`text-xs font-bold transition-colors ${
+          i <= step ? "text-zinc-900 dark:text-white" : "text-zinc-400"
+        }`}>
+          {s.label}
+        </span>
       </div>
+      
+      {i < steps.length - 1 && (
+        <div 
+          className="h-0.5 w-16 mx-3 -mt-6 transition-colors"
+          style={{
+            background: i < step ? accent : 'rgb(228 228 231)',
+          }}
+        />
+      )}
+    </div>
+  ))}
+</div>
 
       {/* Main Content */}
       <main className="mx-auto max-w-2xl px-4 py-6 pb-32">
