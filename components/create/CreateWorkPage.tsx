@@ -14,19 +14,21 @@ import {
   FiDollarSign,
   FiEye,
   FiMapPin,
-  
   FiShield,
   FiUsers,
   FiX,
   FiChevronRight,
   FiAlertCircle,
+  FiZap,
+  FiImage,
+  FiCalendar,
+  FiHash,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import { createPlan, createTask } from "@/lib/task";
 import { useAuth } from "@/lib/AuthContext";
 
 type Mode = "task" | "plan";
-
 type Province = { id: number; name: string; code: string };
 type District = { id: number; name: string; code: string };
 type Ward = { id: number; name: string };
@@ -67,25 +69,25 @@ type FormState = {
 type FormErrors = Partial<Record<keyof FormState | "location.address" | "location.provinceId", string>>;
 
 const CATEGORY_TASKS = [
-  { id: "delivery", label: "Giao hàng", icon: "🚚", suggestPrice: 70000 },
-  { id: "shopping", label: "Mua hộ", icon: "🛒", suggestPrice: 50000 },
-  { id: "tutor", label: "Gia sư", icon: "📚", suggestPrice: 200000 },
-  { id: "design", label: "Thiết kế", icon: "🎨", suggestPrice: 300000 },
-  { id: "dev", label: "Lập trình", icon: "💻", suggestPrice: 500000 },
-  { id: "marketing", label: "Marketing", icon: "📢", suggestPrice: 250000 },
-  { id: "repair", label: "Sửa chữa", icon: "🔧", suggestPrice: 150000 },
-  { id: "other", label: "Khác", icon: "📌", suggestPrice: 100000 },
+  { id: "delivery", label: "Giao hàng", icon: "🚚", suggestPrice: 70000, color: "from-blue-500 to-cyan-500" },
+  { id: "shopping", label: "Mua hộ", icon: "🛒", suggestPrice: 50000, color: "from-orange-500 to-amber-500" },
+  { id: "tutor", label: "Gia sư", icon: "📚", suggestPrice: 200000, color: "from-purple-500 to-pink-500" },
+  { id: "design", label: "Thiết kế", icon: "🎨", suggestPrice: 300000, color: "from-rose-500 to-red-500" },
+  { id: "dev", label: "Lập trình", icon: "💻", suggestPrice: 500000, color: "from-indigo-500 to-blue-500" },
+  { id: "marketing", label: "Marketing", icon: "📢", suggestPrice: 250000, color: "from-teal-500 to-emerald-500" },
+  { id: "repair", label: "Sửa chữa", icon: "🔧", suggestPrice: 150000, color: "from-yellow-500 to-orange-500" },
+  { id: "other", label: "Khác", icon: "📌", suggestPrice: 100000, color: "from-zinc-500 to-zinc-600" },
 ];
 
 const CATEGORY_PLANS = [
-  { id: "cafe", label: "Cafe", icon: "☕" },
-  { id: "food", label: "Ăn uống", icon: "🍜" },
-  { id: "sport", label: "Thể thao", icon: "🏃" },
-  { id: "work", label: "Công việc", icon: "💼" },
-  { id: "study", label: "Học", icon: "📚" },
-  { id: "travel", label: "Đi chơi", icon: "🏖️" },
-  { id: "art", label: "Nghệ thuật", icon: "🎨" },
-  { id: "other", label: "Khác", icon: "📌" },
+  { id: "cafe", label: "Cafe", icon: "☕", color: "from-amber-600 to-orange-600" },
+  { id: "food", label: "Ăn uống", icon: "🍜", color: "from-red-500 to-orange-500" },
+  { id: "sport", label: "Thể thao", icon: "🏃", color: "from-emerald-500 to-teal-500" },
+  { id: "work", label: "Công việc", icon: "💼", color: "from-blue-600 to-indigo-600" },
+  { id: "study", label: "Học", icon: "📚", color: "from-purple-500 to-violet-500" },
+  { id: "travel", label: "Đi chơi", icon: "🏖️", color: "from-cyan-500 to-blue-500" },
+  { id: "art", label: "Nghệ thuật", icon: "🎨", color: "from-pink-500 to-rose-500" },
+  { id: "other", label: "Khác", icon: "📌", color: "from-zinc-500 to-zinc-600" },
 ];
 
 const defaultDateTime = (hoursFromNow: number) => {
@@ -97,7 +99,7 @@ const defaultDateTime = (hoursFromNow: number) => {
 const initialForm = (mode: Mode): FormState => ({
   title: "",
   description: "",
-  category: mode === "task"? "delivery" : "cafe",
+  category: mode === "task" ? "delivery" : "cafe",
   tags: "",
   visibility: "public",
   location: {
@@ -109,15 +111,15 @@ const initialForm = (mode: Mode): FormState => ({
     wardId: null,
     wardName: ""
   },
-  price: mode === "task"? 50000 : 0,
+  price: mode === "task" ? 50000 : 0,
   budgetType: "fixed",
   totalSlots: 1,
   durationHours: 24,
   requirements: "",
-  eventDate: defaultDateTime(mode === "task"? 24 : 48),
+  eventDate: defaultDateTime(mode === "task" ? 24 : 48),
   endDate: "",
   maxParticipants: 4,
-  costType: mode === "task"? "host" : "share",
+  costType: mode === "task" ? "host" : "share",
   costAmount: 0,
   allowInvite: true,
   requireApproval: false,
@@ -134,109 +136,75 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [locating, setLocating] = useState(false);
-
   const [showPreview, setShowPreview] = useState(false);
   const [placeSuggestions, setPlaceSuggestions] = useState<string[]>([]);
-
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
-
+  const [loadingProvinces, setLoadingProvinces] = useState(true);
+  const [showGpsExplain, setShowGpsExplain] = useState(false);
+  const [hasCheckedGps, setHasCheckedGps] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout>();
 
   const isTask = mode === "task";
-  const accent = isTask? "#0A84FF" : "#30D158";
-  const gradient = isTask? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
-  const categories = isTask? CATEGORY_TASKS : CATEGORY_PLANS;
-  const draftKey = `create_${mode}_draft_v5`;
-  const [showGpsExplain, setShowGpsExplain] = useState(false);
-const [hasCheckedGps, setHasCheckedGps] = useState(false);
+  const accent = isTask ? "#0A84FF" : "#30D158";
+  const gradient = isTask ? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
+  const categories = isTask ? CATEGORY_TASKS : CATEGORY_PLANS;
+  const draftKey = `create_${mode}_draft_v6`;
 
-// Vào step 1: check quyền, chỉ hiện modal nếu chưa có GPS
-useEffect(() => {
-  if (step!== 1 || hasCheckedGps || form.location.lat) return;
+  // Load provinces
+  useEffect(() => {
+    fetch("/api/location/province", {
+      headers: { "Content-Type": "application/json" },
+      cache: "force-cache"
+    })
+      .then(async (r) => {
+        if (!r.ok) throw new Error("API error");
+        return r.json();
+      })
+      .then((data) => {
+        setProvinces(Array.isArray(data) ? data : []);
+        setLoadingProvinces(false);
+      })
+      .catch(() => {
+        toast.error("Không tải được danh sách tỉnh");
+        setProvinces([]);
+        setLoadingProvinces(false);
+      });
+  }, []);
 
-  if (!navigator.permissions) {
-    setShowGpsExplain(true);
-    setHasCheckedGps(true);
-    return;
-  }
-
-  navigator.permissions.query({ name: 'geolocation' }).then((result) => {
-    
-    
-    if (result.state === 'granted') {
-      requestGPS(); // Đã bật rồi thì lấy luôn, không hiện modal
-    } else {
-      setShowGpsExplain(true); // Chưa bật/đã block → hiện modal giải thích
+  // Load districts
+  useEffect(() => {
+    if (!form.location.provinceId) {
+      setDistricts([]);
+      setWards([]);
+      return;
     }
-    setHasCheckedGps(true);
-  });
-}, [step, form.location.lat, hasCheckedGps]);
-useEffect(() => {
-  if (step!== 1) {
-    setHasCheckedGps(false);
-  }
-}, );
-
-
-
-
-const [loadingProvinces, setLoadingProvinces] = useState(true);
-
-// Load provinces
-useEffect(() => {
-fetch("/api/location/province", {
-    headers: { "Content-Type": "application/json" },
-    cache: "force-cache" // Dùng cache 24h từ route.ts
-  })
-  .then(async (r) => {
-      if (!r.ok) throw new Error("API error");
-      return r.json();
+    fetch("/api/location/district", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provinceId: form.location.provinceId }),
     })
-  .then((data) => {
-      setProvinces(Array.isArray(data)? data : []);
-      setLoadingProvinces(false);
+      .then((r) => r.json())
+      .then(setDistricts)
+      .catch(() => setDistricts([]));
+  }, [form.location.provinceId]);
+
+  // Load wards
+  useEffect(() => {
+    if (!form.location.districtId) {
+      setWards([]);
+      return;
+    }
+    fetch("/api/location/ward", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ districtId: form.location.districtId }),
     })
-  .catch(() => {
-      toast.error("Không tải được danh sách tỉnh");
-      setProvinces([]);
-      setLoadingProvinces(false);
-    });
-}, []);
-
- // Load districts khi chọn tỉnh
-useEffect(() => {
-  if (!form.location.provinceId) {
-    setDistricts([]);
-    setWards([]);
-    return;
-  }
-fetch("/api/location/district", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ provinceId: form.location.provinceId }),
-  })
-  .then((r) => r.json())
-  .then(setDistricts)
-  .catch(() => setDistricts([]));
-}, [form.location.provinceId]);
-
-// Load wards khi chọn huyện
-useEffect(() => {
-  if (!form.location.districtId) {
-    setWards([]);
-    return;
-  }
-  fetch("/api/location/ward", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ districtId: form.location.districtId }),
-  })
-  .then((r) => r.json())
-  .then(setWards)
-  .catch(() => setWards([]));
-}, [form.location.districtId]);
+      .then((r) => r.json())
+      .then(setWards)
+      .catch(() => setWards([]));
+  }, [form.location.districtId]);
 
   // Auto-save draft
   useEffect(() => {
@@ -244,7 +212,7 @@ useEffect(() => {
     if (!saved) return;
     try {
       const parsed = JSON.parse(saved);
-      setForm({...initialForm(mode),...parsed });
+      setForm({ ...initialForm(mode), ...parsed });
     } catch {
       localStorage.removeItem(draftKey);
     }
@@ -257,48 +225,53 @@ useEffect(() => {
     return () => clearTimeout(timer);
   }, [draftKey, form]);
 
-const requestGPS = useCallback(() => {
-  if (!navigator.geolocation) {
-    toast.error("Thiết bị không hỗ trợ GPS");
-    
-    return;
-  }
-
-  setLocating(true);
-  
-
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      updateLocation({
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude
-      });
-      
-      
-      setLocating(false);
-      setShowGpsExplain(false);
-      toast.success("Đã lấy vị trí");
-    },
-    (err) => {
-      console.warn("GPS error:", err);
-      
-      setLocating(false);
-      
-    },
-    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-  );
-}, []);
-// Auto request GPS khi vào step Địa điểm
-
-  // Keyboard shortcuts
+  // GPS check
   useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && showPreview) setShowPreview(false);
-      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleNext();
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [showPreview, step]);
+    if (step !== 1 || hasCheckedGps || form.location.lat) return;
+    if (!navigator.permissions) {
+      setShowGpsExplain(true);
+      setHasCheckedGps(true);
+      return;
+    }
+    navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+      if (result.state === 'granted') {
+        requestGPS();
+      } else {
+        setShowGpsExplain(true);
+      }
+      setHasCheckedGps(true);
+    });
+  }, [step, form.location.lat, hasCheckedGps]);
+
+  useEffect(() => {
+    if (step !== 1) {
+      setHasCheckedGps(false);
+    }
+  }, [step]);
+
+  const requestGPS = useCallback(() => {
+    if (!navigator.geolocation) {
+      toast.error("Thiết bị không hỗ trợ GPS");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        updateLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude
+        });
+        setLocating(false);
+        setShowGpsExplain(false);
+        toast.success("Đã lấy vị trí");
+      },
+      (err) => {
+        console.warn("GPS error:", err);
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+    );
+  }, []);
 
   const validateField = (key: keyof FormState, value: any): string => {
     switch (key) {
@@ -311,15 +284,14 @@ const requestGPS = useCallback(() => {
         if (value.trim().length < 20) return "Tối thiểu 20 ký tự";
         return "";
       case "location":
-  if (!value.address.trim()) return "Nhập địa chỉ cụ thể";
-  if (!value.provinceId) return "Chọn tỉnh/thành phố";
-  if (!value.lat || !value.lng) return "Vui lòng bật GPS để định vị";
-  return "";
+        if (!value.address.trim()) return "Nhập địa chỉ cụ thể";
+        if (!value.provinceId) return "Chọn tỉnh/thành phố";
+        return "";
       case "price":
-        if (isTask && form.budgetType!== "negotiable" && value <= 0) return "Nhập số tiền hợp lệ";
+        if (isTask && form.budgetType !== "negotiable" && value <= 0) return "Nhập số tiền hợp lệ";
         return "";
       case "eventDate":
-        if (!isTask &&!value) return "Chọn thời gian bắt đầu";
+        if (!isTask && !value) return "Chọn thời gian bắt đầu";
         if (!isTask && new Date(value) < new Date()) return "Thời gian phải ở tương lai";
         return "";
       case "maxParticipants":
@@ -337,8 +309,8 @@ const requestGPS = useCallback(() => {
       newErrors.description = validateField("description", form.description);
     }
     if (stepIdx === 1) {
-      newErrors["location.address"] =!form.location.address.trim()? "Nhập địa chỉ cụ thể" : "";
-      newErrors["location.provinceId"] =!form.location.provinceId? "Chọn tỉnh/thành phố" : "";
+      newErrors["location.address"] = !form.location.address.trim() ? "Nhập địa chỉ cụ thể" : "";
+      newErrors["location.provinceId"] = !form.location.provinceId ? "Chọn tỉnh/thành phố" : "";
     }
     if (stepIdx === 2) {
       if (isTask) {
@@ -349,25 +321,25 @@ const requestGPS = useCallback(() => {
       }
     }
     setErrors(newErrors);
-    return!Object.values(newErrors).some(Boolean);
+    return !Object.values(newErrors).some(Boolean);
   };
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
-    setForm((prev) => ({...prev, [key]: value }));
+    setForm((prev) => ({ ...prev, [key]: value }));
     if (touched[key]) {
-      setErrors((prev) => ({...prev, [key]: validateField(key, value) }));
+      setErrors((prev) => ({ ...prev, [key]: validateField(key, value) }));
     }
   };
 
   const blur = (key: keyof FormState) => {
-    setTouched((prev) => ({...prev, [key]: true }));
-    setErrors((prev) => ({...prev, [key]: validateField(key, form[key]) }));
+    setTouched((prev) => ({ ...prev, [key]: true }));
+    setErrors((prev) => ({ ...prev, [key]: validateField(key, form[key]) }));
   };
 
   const updateLocation = (patch: Partial<LocationState>) => {
-    setForm((prev) => ({...prev, location: {...prev.location,...patch } }));
+    setForm((prev) => ({ ...prev, location: { ...prev.location, ...patch } }));
     if (touched.location) {
-      setErrors((prev) => ({...prev, "location.address": validateField("location", {...form.location,...patch }) }));
+      setErrors((prev) => ({ ...prev, "location.address": validateField("location", { ...form.location, ...patch }) }));
     }
   };
 
@@ -391,7 +363,6 @@ const requestGPS = useCallback(() => {
     debounceRef.current = setTimeout(() => searchPlaces(value), 400);
   };
 
-
   const handleCategoryChange = (catId: string) => {
     update("category", catId);
     if (isTask) {
@@ -405,6 +376,7 @@ const requestGPS = useCallback(() => {
   const handleNext = () => {
     if (validateStep(step)) {
       setStep((s) => Math.min(s + 1, 3));
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
       toast.error("Vui lòng kiểm tra lại thông tin");
     }
@@ -424,11 +396,11 @@ const requestGPS = useCallback(() => {
     try {
       const location = {
         address: form.location.address.trim(),
-        city: form.location.provinceName, // Dùng tên tỉnh đầy đủ
-       ...(form.location.districtName && { district: form.location.districtName }),
-       ...(form.location.wardName && { ward: form.location.wardName }),
-       ...(form.location.lat!== undefined && { lat: form.location.lat }),
-       ...(form.location.lng!== undefined && { lng: form.location.lng }),
+        city: form.location.provinceName,
+        ...(form.location.districtName && { district: form.location.districtName }),
+        ...(form.location.wardName && { ward: form.location.wardName }),
+        ...(form.location.lat !== undefined && { lat: form.location.lat }),
+        ...(form.location.lng !== undefined && { lng: form.location.lng }),
       };
 
       if (isTask) {
@@ -438,7 +410,7 @@ const requestGPS = useCallback(() => {
           type: "task",
           title: form.title,
           description: form.description,
-          price: form.budgetType === "negotiable"? 0 : form.price,
+          price: form.budgetType === "negotiable" ? 0 : form.price,
           currency: "VND",
           budgetType: form.budgetType,
           totalSlots: form.totalSlots,
@@ -447,10 +419,10 @@ const requestGPS = useCallback(() => {
           tags: form.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
           requirements: form.requirements,
           location,
-          isRemote: false, // Bỏ remote
+          isRemote: false,
           deadline: Timestamp.fromDate(deadline),
           startDate: Timestamp.now(),
-          urgency: form.durationHours <= 8? "urgent" : "flexible",
+          urgency: form.durationHours <= 8 ? "urgent" : "flexible",
           needApproval: form.requireApproval,
         }, user as any);
         await mutate("/api/jobs?type=task&limit=12");
@@ -464,18 +436,18 @@ const requestGPS = useCallback(() => {
           description: form.description,
           category: form.category,
           eventDate: toTimestamp(form.eventDate),
-         ...(form.endDate && { endDate: toTimestamp(form.endDate) }),
+          ...(form.endDate && { endDate: toTimestamp(form.endDate) }),
           maxParticipants: form.maxParticipants,
           totalSlots: form.maxParticipants,
           costType: form.costType,
-         ...(form.costType!== "free" && { costAmount: form.costAmount }),
-          costDescription: form.costType === "share"? "Chia đều chi phí" : "",
+          ...(form.costType !== "free" && { costAmount: form.costAmount }),
+          costDescription: form.costType === "share" ? "Chia đều chi phí" : "",
           visibility: form.visibility,
           tags: form.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
           location,
           allowInvite: form.allowInvite,
           requireApproval: form.requireApproval,
-          autoAccept:!form.requireApproval,
+          autoAccept: !form.requireApproval,
         }, user as any);
         await mutate("/api/jobs?type=plan&limit=12");
         toast.success("Đã tạo plan thành công");
@@ -494,62 +466,92 @@ const requestGPS = useCallback(() => {
     return <div className="min-h-dvh bg-white dark:bg-zinc-950" />;
   }
 
-  const steps = ["Nội dung", "Địa điểm", isTask? "Ngân sách" : "Thời gian", "Xuất bản"];
+  const steps = [
+    { label: "Nội dung", icon: FiZap },
+    { label: "Địa điểm", icon: FiMapPin },
+    { label: isTask ? "Ngân sách" : "Thời gian", icon: isTask ? FiDollarSign : FiCalendar },
+    { label: "Xuất bản", icon: FiCheck },
+  ];
 
   return (
-    <div className="min-h-dvh bg-zinc-50 text-zinc-950 dark:bg-zinc-950 dark:text-white">
-      <div className="sticky top-0 z-40 border-b border-zinc-200/60 bg-white/80 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/80">
-        <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
-          <button
-            onClick={() => router.back()}
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 active:scale-95 dark:bg-zinc-900 dark:text-zinc-200"
-            aria-label="Quay lại"
-          >
-            <FiArrowLeft />
-          </button>
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-lg font-black">Tạo {isTask? "Task" : "Plan"}</h1>
-            <p className="text-xs text-zinc-500">Bước {step + 1}/4</p>
+    <div className="min-h-dvh bg-gradient-to-br from-zinc-50 via-white to-zinc-50 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900">
+      {/* Header với Progress */}
+      <div className="sticky top-0 z-40 border-b border-zinc-200/60 bg-white/90 backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-950/90">
+        <div className="mx-auto max-w-2xl px-4 py-4">
+          <div className="mb-4 flex items-center justify-between">
+            <button
+              onClick={() => step > 0 ? setStep((s) => s - 1) : router.back()}
+              className="flex h-10 w-10 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-700 transition-all hover:bg-zinc-200 active:scale-95 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+              aria-label="Quay lại"
+            >
+              <FiArrowLeft className="text-lg" />
+            </button>
+            <div className="text-center">
+              <h1 className="text-lg font-black">Tạo {isTask ? "Task" : "Plan"}</h1>
+              <p className="text-xs text-zinc-500">Bước {step + 1} / 4</p>
+            </div>
+            <button
+              onClick={() => setShowPreview(true)}
+              className="flex h-10 items-center gap-2 rounded-2xl bg-zinc-100 px-4 text-sm font-bold text-zinc-700 transition-all hover:bg-zinc-200 active:scale-95 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+            >
+              <FiEye /> Preview
+            </button>
           </div>
-          <button
-            onClick={() => setShowPreview(true)}
-            className="flex h-10 items-center gap-2 rounded-xl bg-zinc-100 px-3 text-sm font-bold text-zinc-700 active:scale-95 dark:bg-zinc-900 dark:text-zinc-200"
-          >
-            <FiEye /> Preview
-          </button>
-        </div>
-        <div className="mx-auto max-w-2xl px-4 pb-3">
-          <div className="flex gap-1">
-            {steps.map((_, i) => (
-              <div key={i} className="h-1 flex-1 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
-                <motion.div
-                  className={`h-full bg-gradient-to-r ${gradient}`}
-                  initial={false}
-                  animate={{ width: i <= step? "100%" : "0%" }}
-                  transition={{ duration: 0.3 }}
-                />
+
+          {/* Progress Steps */}
+          <div className="flex items-center justify-between">
+            {steps.map((s, i) => (
+              <div key={i} className="flex flex-col items-center gap-2 flex-1">
+                <div className="relative flex w-full items-center">
+                  {i > 0 && (
+                    <div className={`absolute right-1/2 h-0.5 w-full -translate-y-1/2 ${
+                      i <= step ? "bg-gradient-to-r " + gradient : "bg-zinc-200 dark:bg-zinc-800"
+                    }`} />
+                  )}
+                  <motion.div
+                    initial={false}
+                    animate={{
+                      scale: i === step ? 1.1 : 1,
+                      backgroundColor: i <= step ? accent : "rgb(228 228 231)",
+                    }}
+                    className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-2xl font-bold text-white shadow-lg transition-all ${
+                      i <= step ? "shadow-xl" : ""
+                    }`}
+                    style={{
+                      background: i <= step ? `linear-gradient(135deg, ${accent}, ${accent}dd)` : undefined,
+                    }}
+                  >
+                    {i < step ? <FiCheck className="text-lg" /> : <s.icon className="text-lg" />}
+                  </motion.div>
+                </div>
+                <span className={`text-xs font-bold transition-colors ${
+                  i <= step ? "text-zinc-900 dark:text-white" : "text-zinc-400"
+                }`}>
+                  {s.label}
+                </span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      <main className="mx-auto max-w-2xl px-4 py-6 pb-28">
+      {/* Main Content */}
+      <main className="mx-auto max-w-2xl px-4 py-6 pb-32">
         <AnimatePresence mode="wait">
           {step === 0 && (
-            <motion.div key="step0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <Panel>
-                <Field label="Tiêu đề" required error={errors.title}>
+            <StepContent key="step0">
+              <Card>
+                <Field label="Tiêu đề" required error={errors.title} icon={FiZap}>
                   <input
                     value={form.title}
                     onChange={(e) => update("title", e.target.value)}
                     onBlur={() => blur("title")}
-                    placeholder={isTask? "VD: Giao tài liệu trong 2h" : "VD: Cafe làm việc cuối tuần"}
-                    className="input-base"
+                    placeholder={isTask ? "VD: Giao tài liệu trong 2h" : "VD: Cafe làm việc cuối tuần"}
+                    className="input-premium"
                     autoFocus
                   />
                 </Field>
-                <Field label="Mô tả chi tiết" required error={errors.description}>
+                <Field label="Mô tả chi tiết" required error={errors.description} icon={FiHash}>
                   <textarea
                     value={form.description}
                     onChange={(e) => update("description", e.target.value)}
@@ -557,80 +559,87 @@ const requestGPS = useCallback(() => {
                     rows={5}
                     maxLength={5000}
                     placeholder="Viết rõ mong đợi, tiêu chí, cách phối hợp..."
-                    className="input-base min-h resize-none"
+                    className="input-premium resize-none"
                   />
-                  <p className="text-xs text-zinc-400">{form.description.length}/5000</p>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-zinc-400">Tối thiểu 20 ký tự</span>
+                    <span className={`font-bold ${form.description.length > 4500 ? "text-amber-500" : "text-zinc-400"}`}>
+                      {form.description.length}/5000
+                    </span>
+                  </div>
                 </Field>
-                <Field label="Danh mục">
+                <Field label="Danh mục" icon={FiTag}>
                   <div className="grid grid-cols-4 gap-2">
                     {categories.map((cat) => (
-                      <button
+                      <motion.button
                         key={cat.id}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => handleCategoryChange(cat.id)}
-                        className={`rounded-xl p-3 text-xs font-bold transition active:scale-95 ${
+                        className={`relative overflow-hidden rounded-2xl p-4 text-xs font-bold transition-all ${
                           form.category === cat.id
-                           ? `bg-gradient-to-br ${gradient} text-white shadow-lg`
+                            ? "text-white shadow-xl"
                             : "bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300"
                         }`}
+                        style={{
+                          background: form.category === cat.id ? `linear-gradient(135deg, ${cat.color.replace('from-', '').replace('to-', ', ')})` : undefined,
+                        }}
                       >
-                        <span className="block text-2xl mb-1">{cat.icon}</span>
+                        <span className="block text-3xl mb-2">{cat.icon}</span>
                         {cat.label}
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 </Field>
-                <Field label="Tags">
+                <Field label="Tags" icon={FiTag}>
                   <input
                     value={form.tags}
                     onChange={(e) => update("tags", e.target.value)}
                     placeholder="urgent, online, thiết kế"
-                    className="input-base"
+                    className="input-premium"
                   />
+                  <p className="text-xs text-zinc-400">Phân cách bằng dấu phẩy</p>
                 </Field>
-              </Panel>
-            </motion.div>
+              </Card>
+            </StepContent>
           )}
 
           {step === 1 && (
-            <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <Panel>
-{!form.location.lat && !form.location.lng && (
-  <div className="flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700 dark:bg-amber-950/30 dark:text-amber-400">
-    <FiMapPin className="flex-shrink-0" />
-    Vui lòng chọn địa điểm để tiếp tục
-  </div>
-)}
+            <StepContent key="step1">
+              <Card>
+                {!form.location.lat && !form.location.lng && (
+                  <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 p-4 text-sm font-bold text-amber-700 dark:from-amber-950/30 dark:to-orange-950/30 dark:text-amber-400">
+                    <FiMapPin className="flex-shrink-0 text-lg" />
+                    Vui lòng chọn địa điểm để tiếp tục
+                  </div>
+                )}
 
-             <Field label="Tỉnh/Thành phố" required error={errors["location.provinceId"]}>
-  <select
-    value={form.location.provinceId || ""}
-    onChange={(e) => {
-      const id = Number(e.target.value);
-      const p = provinces.find(p => p.id === id);
-      updateLocation({
-        provinceId: id,
-        provinceName: p?.name || "",
-        districtId: null,
-        districtName: "",
-        wardId: null,
-        wardName: ""
-      });
-    }}
-
-    className="input-base"
-    disabled={loadingProvinces}
-  >
-    <option value="">
-      {loadingProvinces? "Đang tải..." : "Chọn tỉnh/thành phố"}
-    </option>
-    {provinces.map((p) => (
-      <option key={p.id} value={p.id}>{p.name}</option>
-    ))}
-  </select>
-</Field>
+                <Field label="Tỉnh/Thành phố" required error={errors["location.provinceId"]} icon={FiMapPin}>
+                  <select
+                    value={form.location.provinceId || ""}
+                    onChange={(e) => {
+                      const id = Number(e.target.value);
+                      const p = provinces.find(p => p.id === id);
+                      updateLocation({
+                        provinceId: id,
+                        provinceName: p?.name || "",
+                        districtId: null,
+                        districtName: "",
+                        wardId: null,
+                        wardName: ""
+                      });
+                    }}
+                    className="input-premium"
+                    disabled={loadingProvinces}
+                  >
+                    <option value="">{loadingProvinces ? "Đang tải..." : "Chọn tỉnh/thành phố"}</option>
+                    {provinces.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </Field>
 
                 {form.location.provinceId && (
-                  <Field label="Quận/Huyện">
+                  <Field label="Quận/Huyện" icon={FiMapPin}>
                     <select
                       value={form.location.districtId || ""}
                       onChange={(e) => {
@@ -643,7 +652,7 @@ const requestGPS = useCallback(() => {
                           wardName: ""
                         });
                       }}
-                      className="input-base"
+                      className="input-premium"
                     >
                       <option value="">Chọn quận/huyện</option>
                       {districts.map((d) => (
@@ -654,7 +663,7 @@ const requestGPS = useCallback(() => {
                 )}
 
                 {form.location.districtId && (
-                  <Field label="Phường/Xã">
+                  <Field label="Phường/Xã" icon={FiMapPin}>
                     <select
                       value={form.location.wardId || ""}
                       onChange={(e) => {
@@ -662,7 +671,7 @@ const requestGPS = useCallback(() => {
                         const w = wards.find(w => w.id === id);
                         updateLocation({ wardId: id, wardName: w?.name || "" });
                       }}
-                      className="input-base"
+                      className="input-premium"
                     >
                       <option value="">Chọn phường/xã</option>
                       {wards.map((w) => (
@@ -672,101 +681,114 @@ const requestGPS = useCallback(() => {
                   </Field>
                 )}
 
-           
-
-        <Field label="Địa chỉ cụ thể" required error={errors["location.address"]}>
-  <div className="relative">
-    <input
-      value={form.location.address}
-      onChange={(e) => handleAddressChange(e.target.value)}
-      onBlur={() => blur("location")}
-      placeholder="Tên đường, số nhà..."
-      className="input-base"
-    />
-    {placeSuggestions.length > 0 && (
-      <div className="absolute top-full z-10 mt-1 w-full rounded-xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
-        {placeSuggestions.map((s, i) => (
-          <button
-            key={i}
-            onClick={() => { updateLocation({ address: s }); setPlaceSuggestions([]); }}
-            className="w-full px-4 py-3 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 first:rounded-t-xl last:rounded-b-xl"
-          >
-            {s}
-          </button>
-        ))}
-      </div>
-    )}
-  </div>
-</Field>
-
-
-              </Panel>
-            </motion.div>
-          )}
-
-          {step === 2 && (
-            <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <Panel>
-                {isTask? (
-                  <>
-                    <Field label="Loại ngân sách">
-                      <div className="grid grid-cols-3 gap-2">
-                        {["fixed", "hourly", "negotiable"].map((type) => (
+                <Field label="Địa chỉ cụ thể" required error={errors["location.address"]} icon={FiMapPin}>
+                  <div className="relative">
+                    <input
+                      value={form.location.address}
+                      onChange={(e) => handleAddressChange(e.target.value)}
+                      onBlur={() => blur("location")}
+                      placeholder="Tên đường, số nhà..."
+                      className="input-premium"
+                    />
+                    {placeSuggestions.length > 0 && (
+                      <div className="absolute top-full z-10 mt-2 w-full overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
+                        {placeSuggestions.map((s, i) => (
                           <button
-                            key={type}
-                            onClick={() => update("budgetType", type as FormState["budgetType"])}
-                            className={`rounded-xl px-3 py-3 text-sm font-bold ${
-                              form.budgetType === type
-                               ? `bg-gradient-to-r ${gradient} text-white`
-                                : "bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300"
-                            }`}
+                            key={i}
+                            onClick={() => { updateLocation({ address: s }); setPlaceSuggestions([]); }}
+                            className="w-full border-b border-zinc-100 px-4 py-3 text-left text-sm font-medium hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800 last:border-0"
                           >
-                            {type === "fixed"? "Cố định" : type === "hourly"? "Theo giờ" : "Thỏa thuận"}
+                            {s}
                           </button>
                         ))}
                       </div>
+                    )}
+                  </div>
+                </Field>
+              </Card>
+            </StepContent>
+          )}
+
+          {step === 2 && (
+            <StepContent key="step2">
+              <Card>
+                {isTask ? (
+                  <>
+                    <Field label="Loại ngân sách" icon={FiDollarSign}>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { id: "fixed", label: "Cố định", icon: "💰" },
+                          { id: "hourly", label: "Theo giờ", icon: "⏱️" },
+                          { id: "negotiable", label: "Thỏa thuận", icon: "🤝" },
+                        ].map((type) => (
+                          <motion.button
+                            key={type.id}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => update("budgetType", type.id as FormState["budgetType"])}
+                            className={`rounded-2xl p-4 text-sm font-bold transition-all ${
+                              form.budgetType === type.id
+                                ? `bg-gradient-to-br ${gradient} text-white shadow-xl`
+                                : "bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300"
+                            }`}
+                          >
+                            <span className="block text-2xl mb-1">{type.icon}</span>
+                            {type.label}
+                          </motion.button>
+                        ))}
+                      </div>
                     </Field>
-                    <Field label="Ngân sách" error={errors.price}>
-                      <input
-                        type="number"
-                        value={form.price}
-                        disabled={form.budgetType === "negotiable"}
-                        onChange={(e) => update("price", Number(e.target.value) || 0)}
-                        onBlur={() => blur("price")}
-                        className="input-base"
-                        placeholder="0"
-                      />
-                      {form.budgetType === "negotiable" && <p className="text-xs text-zinc-400">Thương lượng trực tiếp với người nhận</p>}
+                    <Field label="Ngân sách" error={errors.price} icon={FiDollarSign}>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={form.price}
+                          disabled={form.budgetType === "negotiable"}
+                          onChange={(e) => update("price", Number(e.target.value) || 0)}
+                          onBlur={() => blur("price")}
+                          className="input-premium pr-16"
+                          placeholder="0"
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-zinc-400">
+                          VNĐ
+                        </span>
+                      </div>
+                      {form.budgetType === "negotiable" && (
+                        <p className="flex items-center gap-2 text-xs text-zinc-400">
+                          <FiAlertCircle /> Thương lượng trực tiếp với người nhận
+                        </p>
+                      )}
                     </Field>
                     <div className="grid grid-cols-2 gap-3">
-                      <Field label="Số người">
+                      <Field label="Số người" icon={FiUsers}>
                         <input
                           type="number"
                           min={1}
                           value={form.totalSlots}
                           onChange={(e) => update("totalSlots", Number(e.target.value) || 1)}
-                          className="input-base"
+                          className="input-premium"
                         />
                       </Field>
-                      <Field label="Hoàn thành trong">
-                        <div className="flex gap-2">
+                      <Field label="Hoàn thành trong" icon={FiClock}>
+                        <div className="relative">
                           <input
                             type="number"
                             min={1}
                             value={form.durationHours}
                             onChange={(e) => update("durationHours", Number(e.target.value) || 1)}
-                            className="input-base"
+                            className="input-premium pr-12"
                           />
-                          <span className="flex items-center text-sm font-bold text-zinc-500">giờ</span>
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-zinc-400">
+                            giờ
+                          </span>
                         </div>
                       </Field>
                     </div>
-                    <Field label="Yêu cầu đặc biệt">
+                    <Field label="Yêu cầu đặc biệt" icon={FiShield}>
                       <textarea
                         value={form.requirements}
                         onChange={(e) => update("requirements", e.target.value)}
                         rows={3}
-                        className="input-base resize-none"
+                        className="input-premium resize-none"
                         placeholder="Kỹ năng, giấy tờ, lưu ý..."
                       />
                     </Field>
@@ -774,244 +796,326 @@ const requestGPS = useCallback(() => {
                 ) : (
                   <>
                     <div className="grid grid-cols-2 gap-3">
-                      <Field label="Bắt đầu" required error={errors.eventDate}>
+                      <Field label="Bắt đầu" required error={errors.eventDate} icon={FiCalendar}>
                         <input
                           type="datetime-local"
                           value={form.eventDate}
                           onChange={(e) => update("eventDate", e.target.value)}
                           onBlur={() => blur("eventDate")}
-                          className="input-base"
+                          className="input-premium"
                         />
                       </Field>
-                      <Field label="Kết thúc">
+                      <Field label="Kết thúc" icon={FiCalendar}>
                         <input
                           type="datetime-local"
                           value={form.endDate}
                           onChange={(e) => update("endDate", e.target.value)}
-                          className="input-base"
+                          className="input-premium"
                         />
                       </Field>
                     </div>
-                    <Field label="Số người tối đa" error={errors.maxParticipants}>
+                    <Field label="Số người tối đa" error={errors.maxParticipants} icon={FiUsers}>
                       <input
                         type="number"
                         min={2}
                         value={form.maxParticipants}
                         onChange={(e) => update("maxParticipants", Number(e.target.value) || 2)}
                         onBlur={() => blur("maxParticipants")}
-                        className="input-base"
+                        className="input-premium"
                       />
                     </Field>
-                    <Field label="Chi phí">
+                    <Field label="Chi phí" icon={FiDollarSign}>
                       <div className="grid grid-cols-4 gap-2">
-                        {["free", "share", "host", "ticket"].map((type) => (
-                          <button
-                            key={type}
-                            onClick={() => update("costType", type as FormState["costType"])}
-                            className={`rounded-xl px-2 py-3 text-xs font-bold ${
-                              form.costType === type
-                               ? `bg-gradient-to-r ${gradient} text-white`
+                        {[
+                          { id: "free", label: "Free", icon: "🎁" },
+                          { id: "share", label: "Chia đều", icon: "🤝" },
+                          { id: "host", label: "Chủ bao", icon: "💝" },
+                          { id: "ticket", label: "Bán vé", icon: "🎫" },
+                        ].map((type) => (
+                          <motion.button
+                            key={type.id}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => update("costType", type.id as FormState["costType"])}
+                            className={`rounded-2xl p-3 text-xs font-bold transition-all ${
+                              form.costType === type.id
+                                ? `bg-gradient-to-br ${gradient} text-white shadow-xl`
                                 : "bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300"
                             }`}
                           >
-                            {type === "free"? "Free" : type === "share"? "Chia đều" : type === "host"? "Chủ bao" : "Bán vé"}
-                          </button>
+                            <span className="block text-2xl mb-1">{type.icon}</span>
+                            {type.label}
+                          </motion.button>
                         ))}
                       </div>
                     </Field>
-                    {form.costType!== "free" && (
-                      <Field label="Chi phí dự kiến">
-                        <input
-                          type="number"
-                          value={form.costAmount}
-                          onChange={(e) => update("costAmount", Number(e.target.value) || 0)}
-                          className="input-base"
-                          placeholder="0"
-                        />
+                    {form.costType !== "free" && (
+                      <Field label="Chi phí dự kiến" icon={FiDollarSign}>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={form.costAmount}
+                            onChange={(e) => update("costAmount", Number(e.target.value) || 0)}
+                            className="input-premium pr-16"
+                            placeholder="0"
+                          />
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-zinc-400">
+                            VNĐ
+                          </span>
+                        </div>
                       </Field>
                     )}
                   </>
                 )}
-              </Panel>
-            </motion.div>
+              </Card>
+            </StepContent>
           )}
 
           {step === 3 && (
-            <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <Panel>
-                <Field label="Ai có thể xem">
+            <StepContent key="step3">
+              <Card>
+                <Field label="Ai có thể xem" icon={FiEye}>
                   <div className="grid grid-cols-3 gap-2">
-                    {["public", "friends", "private"].map((v) => (
-                      <button
-                        key={v}
-                        onClick={() => update("visibility", v as FormState["visibility"])}
-                        className={`rounded-xl px-3 py-3 text-sm font-bold ${
-                          form.visibility === v
-                           ? `bg-gradient-to-r ${gradient} text-white`
+                    {[
+                      { id: "public", label: "Công khai", icon: "🌍" },
+                      { id: "friends", label: "Bạn bè", icon: "👥" },
+                      { id: "private", label: "Riêng tư", icon: "🔒" },
+                    ].map((v) => (
+                      <motion.button
+                        key={v.id}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => update("visibility", v.id as FormState["visibility"])}
+                        className={`rounded-2xl p-4 text-sm font-bold transition-all ${
+                          form.visibility === v.id
+                           ? `bg-gradient-to-br ${gradient} text-white shadow-xl`
                             : "bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300"
                         }`}
                       >
-                        {v === "public"? "Công khai" : v === "friends"? "Bạn bè" : "Riêng tư"}
-                      </button>
+                        <span className="block text-2xl mb-1">{v.icon}</span>
+                        {v.label}
+                      </motion.button>
                     ))}
                   </div>
                 </Field>
                 <Toggle
                   label="Cần duyệt người tham gia"
+                  description="Bạn sẽ xem xét trước khi ai đó tham gia"
                   checked={form.requireApproval}
                   onChange={(value) => update("requireApproval", value)}
+                  icon={FiShield}
                 />
                 {!isTask && (
                   <Toggle
                     label="Cho phép mời thêm người"
+                    description="Người tham gia có thể mời bạn bè"
                     checked={form.allowInvite}
                     onChange={(value) => update("allowInvite", value)}
+                    icon={FiUsers}
                   />
                 )}
-                <PreviewCard mode={mode} form={form} />
-              </Panel>
-            </motion.div>
+                <div className="pt-4">
+                  <h3 className="mb-3 text-sm font-bold text-zinc-700 dark:text-zinc-200">Xem trước</h3>
+                  <PreviewCard mode={mode} form={form} />
+                </div>
+              </Card>
+            </StepContent>
           )}
         </AnimatePresence>
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 border-t border-zinc-200 bg-white/80 p-4 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/80">
+      {/* Bottom Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 border-t border-zinc-200/60 bg-white/90 p-4 backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-950/90">
         <div className="mx-auto flex max-w-2xl gap-3">
           {step > 0 && (
-            <button
-              onClick={() => setStep((s) => s - 1)}
-              className="h-12 rounded-xl bg-zinc-100 px-6 font-bold text-zinc-700 active:scale-95 dark:bg-zinc-900 dark:text-zinc-200"
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                setStep((s) => s - 1);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className="h-14 rounded-2xl bg-zinc-100 px-8 font-black text-zinc-700 transition-all hover:bg-zinc-200 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
             >
               Quay lại
-            </button>
+            </motion.button>
           )}
           {step < 3? (
-            <button
+            <motion.button
+              whileTap={{ scale: 0.95 }}
               onClick={handleNext}
-              className={`flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r ${gradient} font-bold text-white shadow-lg active:scale-95`}
+              className={`flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r ${gradient} font-black text-white shadow-xl transition-all hover:shadow-2xl`}
             >
-              Tiếp tục <FiChevronRight />
-            </button>
+              Tiếp tục <FiChevronRight className="text-xl" />
+            </motion.button>
           ) : (
-            <button
+            <motion.button
+              whileTap={{ scale: 0.95 }}
               onClick={handleSubmit}
               disabled={saving}
-              className={`flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r ${gradient} font-bold text-white shadow-lg disabled:opacity-60 active:scale-95`}
+              className={`flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r ${gradient} font-black text-white shadow-xl transition-all hover:shadow-2xl disabled:opacity-60`}
             >
-              <FiCheck /> {saving? "Đang xuất bản..." : `Xuất bản ${isTask? "Task" : "Plan"}`}
-            </button>
+              <FiCheck className="text-xl" /> {saving? "Đang xuất bản..." : `Xuất bản ${isTask? "Task" : "Plan"}`}
+            </motion.button>
           )}
         </div>
       </div>
 
+      {/* Preview Modal */}
       <AnimatePresence>
         {showPreview && (
-                <motion.div
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end bg-black/40 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-end bg-black/60 p-4 backdrop-blur-md"
             onClick={() => setShowPreview(false)}
           >
             <motion.div
               initial={{ y: 100 }}
               animate={{ y: 0 }}
               exit={{ y: 100 }}
-              className="mx-auto w-full max-w-lg rounded-3xl bg-white p-5 dark:bg-zinc-950"
+              className="mx-auto w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-zinc-950"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center justify-between border-b border-zinc-200 p-5 dark:border-zinc-800">
                 <h2 className="text-xl font-black">Preview</h2>
                 <button
                   onClick={() => setShowPreview(false)}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-900"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-100 transition-all hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800"
                 >
-                  <FiX />
+                  <FiX className="text-lg" />
                 </button>
               </div>
-              <PreviewCard mode={mode} form={form} />
+              <div className="p-5">
+                <PreviewCard mode={mode} form={form} />
+              </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
- <GpsRequiredModal
-  open={showGpsExplain}
-  onClose={() => {
-    setShowGpsExplain(false);
-    
-  }}
-  onRetry={() => {
-    setShowGpsExplain(false);
-    requestGPS();
-  }}
-  loading={locating}
-  mode={mode}
-/>
+
+      <GpsRequiredModal
+        open={showGpsExplain}
+        onClose={() => setShowGpsExplain(false)}
+        onRetry={() => {
+          setShowGpsExplain(false);
+          requestGPS();
+        }}
+        loading={locating}
+        mode={mode}
+      />
+
       <style jsx global>{`
-      .input-base {
+       .input-premium {
           width: 100%;
-          min-height: 48px;
-          border-radius: 0.75rem;
-          border: 1px solid rgb(228 228 231);
+          min-height: 52px;
+          border-radius: 1rem;
+          border: 2px solid rgb(228 228 231);
           background: white;
-          padding: 0.75rem 1rem;
-          font-weight: 600;
+          padding: 0.875rem 1.25rem;
+          font-weight: 700;
+          font-size: 0.9375rem;
           outline: none;
           transition: all 0.2s;
         }
-      .dark.input-base {
+       .dark.input-premium {
           border-color: rgb(39 39 42);
           background: rgb(24 24 27);
           color: white;
         }
-      .input-base:focus {
-          box-shadow: 0 0 0 3px ${accent}20;
+       .input-premium:focus {
+          box-shadow: 0 0 0 4px ${accent}20;
           border-color: ${accent};
+          transform: translateY(-1px);
         }
-      .input-base:disabled {
+       .input-premium:disabled {
           opacity: 0.5;
           cursor: not-allowed;
+        }
+       .input-premium::placeholder {
+          color: rgb(161 161 170);
+          font-weight: 500;
         }
       `}</style>
     </div>
   );
 }
 
-function Panel({ children }: { children: React.ReactNode }) {
-  return <div className="space-y-5 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">{children}</div>;
+function StepContent({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+    >
+      {children}
+    </motion.div>
+  );
 }
 
-function Field({ label, required, error, children }: {
+function Card({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="space-y-5 rounded-3xl bg-white p-6 shadow-xl shadow-zinc-200/50 ring-1 ring-zinc-200/50 dark:bg-zinc-900 dark:shadow-black/20 dark:ring-zinc-800">
+      {children}
+    </div>
+  );
+}
+
+function Field({ label, required, error, icon: Icon, children }: {
   label: string;
   required?: boolean;
   error?: string | undefined;
+  icon?: any;
   children: React.ReactNode
 }) {
   return (
-    <label className="block space-y-2">
-      <span className="text-sm font-bold text-zinc-700 dark:text-zinc-200">
-        {label}{required && <span className="text-red-500"> *</span>}
+    <label className="block space-y-2.5">
+      <span className="flex items-center gap-2 text-sm font-black text-zinc-700 dark:text-zinc-200">
+        {Icon && <Icon className="text-base" />}
+        {label}{required && <span className="text-red-500">*</span>}
       </span>
       {children}
       {error && (
-        <p className="flex items-center gap-1 text-xs font-medium text-red-500">
+        <motion.p
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-1.5 text-xs font-bold text-red-500"
+        >
           <FiAlertCircle /> {error}
-        </p>
+        </motion.p>
       )}
     </label>
   );
 }
 
-function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
+function Toggle({ label, description, checked, onChange, icon: Icon }: { 
+  label: string; 
+  description?: string;
+  checked: boolean; 
+  onChange: (value: boolean) => void;
+  icon?: any;
+}) {
   return (
-    <div className="flex items-center justify-between rounded-xl bg-zinc-100 p-4 dark:bg-zinc-900">
-      <p className="font-bold">{label}</p>
+    <div className="flex items-center justify-between rounded-2xl bg-zinc-100 p-4 dark:bg-zinc-900">
+      <div className="flex items-start gap-3">
+        {Icon && <Icon className="mt-0.5 text-xl text-zinc-400" />}
+        <div>
+          <p className="font-black text-zinc-900 dark:text-zinc-100">{label}</p>
+          {description && <p className="mt-0.5 text-xs text-zinc-500">{description}</p>}
+        </div>
+      </div>
       <button
         onClick={() => onChange(!checked)}
-        className={`h-7 w-12 rounded-full p-1 transition ${checked? "bg-[#0A84FF]" : "bg-zinc-300 dark:bg-zinc-700"}`}
+        className={`relative h-8 w-14 rounded-full p-1 transition-all ${
+          checked? "bg-gradient-to-r from-[#0A84FF] to-[#0051D5]" : "bg-zinc-300 dark:bg-zinc-700"
+        }`}
         aria-label={label}
       >
-        <span className={`block h-5 w-5 rounded-full bg-white transition ${checked? "translate-x-5" : "translate-x-0"}`} />
+        <motion.span
+          layout
+          className="block h-6 w-6 rounded-full bg-white shadow-lg"
+          animate={{ x: checked? 24 : 0 }}
+          transition={{ type: "spring", stiffness: 500, damping: 30 }}
+        />
       </button>
     </div>
   );
@@ -1046,34 +1150,34 @@ function PreviewCard({ mode, form }: { mode: Mode; form: FormState }) {
   ].filter(Boolean).join(", ");
 
   return (
-    <div className="rounded-2xl bg-zinc-50 p-5 ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800">
+    <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-50 to-white p-6 ring-1 ring-zinc-200 dark:from-zinc-900 dark:to-zinc-950 dark:ring-zinc-800">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
           <span
-            className="rounded-lg px-2.5 py-1 text-xs font-black text-white"
-            style={{ backgroundColor: accent }}
+            className="rounded-xl px-3 py-1.5 text-xs font-black text-white shadow-lg"
+            style={{ background: `linear-gradient(135deg, ${accent}, ${accent}dd)` }}
           >
-            {isTask? "TASK" : "PLAN"}
+            {isTask? "⚡ TASK" : "🎯 PLAN"}
           </span>
-          <span className="flex items-center gap-1 text-xs font-bold text-zinc-500">
+          <span className="flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-zinc-600 shadow-sm dark:bg-zinc-900 dark:text-zinc-300">
             {form.visibility === "public"? <FiEye /> : <FiShield />}
             {form.visibility === "public"? "Công khai" : form.visibility === "friends"? "Bạn bè" : "Riêng tư"}
           </span>
         </div>
       </div>
 
-      <h3 className="text-xl font-black leading-tight">
+      <h3 className="text-2xl font-black leading-tight text-zinc-900 dark:text-white">
         {form.title || "Tiêu đề sẽ hiển thị ở đây"}
       </h3>
 
-      <p className="mt-2 line-clamp-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+      <p className="mt-3 line-clamp-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
         {form.description || "Mô tả chi tiết giúp người khác hiểu rõ hơn về yêu cầu của bạn."}
       </p>
 
       {form.tags && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        <div className="mt-4 flex flex-wrap gap-2">
           {form.tags.split(",").map((tag, i) => tag.trim() && (
-            <span key={i} className="flex items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-xs font-bold text-zinc-600 dark:bg-zinc-950 dark:text-zinc-400">
+            <span key={i} className="flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-zinc-600 shadow-sm dark:bg-zinc-950 dark:text-zinc-400">
               <FiTag className="text-[10px]" />
               {tag.trim()}
             </span>
@@ -1081,64 +1185,64 @@ function PreviewCard({ mode, form }: { mode: Mode; form: FormState }) {
         </div>
       )}
 
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <div className="rounded-xl bg-white p-3 dark:bg-zinc-950">
-          <div className="flex items-center gap-2 text-zinc-500 mb-1">
-            <FiMapPin className="text-sm" />
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <div className="rounded-2xl bg-white p-4 shadow-sm dark:bg-zinc-950">
+          <div className="mb-2 flex items-center gap-2 text-zinc-500">
+            <FiMapPin className="text-base" />
             <span className="text-xs font-bold">Địa điểm</span>
           </div>
-          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 line-clamp-2">
+          <p className="text-sm font-black text-zinc-900 dark:text-zinc-100 line-clamp-2">
             {fullAddress || "Chưa có"}
           </p>
         </div>
 
-        <div className="rounded-xl bg-white p-3 dark:bg-zinc-950">
-          <div className="flex items-center gap-2 text-zinc-500 mb-1">
-            <FiUsers className="text-sm" />
+        <div className="rounded-2xl bg-white p-4 shadow-sm dark:bg-zinc-950">
+          <div className="mb-2 flex items-center gap-2 text-zinc-500">
+            <FiUsers className="text-base" />
             <span className="text-xs font-bold">Số người</span>
           </div>
-          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+          <p className="text-sm font-black text-zinc-900 dark:text-zinc-100">
             {isTask? form.totalSlots : form.maxParticipants} người
           </p>
         </div>
 
         {isTask? (
-          <div className="rounded-xl bg-white p-3 dark:bg-zinc-950">
-            <div className="flex items-center gap-2 text-zinc-500 mb-1">
-              <FiDollarSign className="text-sm" />
+          <div className="rounded-2xl bg-white p-4 shadow-sm dark:bg-zinc-950">
+            <div className="mb-2 flex items-center gap-2 text-zinc-500">
+              <FiDollarSign className="text-base" />
               <span className="text-xs font-bold">Ngân sách</span>
             </div>
-            <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+            <p className="text-sm font-black text-zinc-900 dark:text-zinc-100">
               {form.budgetType === "negotiable"? "Thỏa thuận" : formatPrice(form.price)}
               {form.budgetType === "hourly" && "/giờ"}
             </p>
           </div>
         ) : (
-          <div className="rounded-xl bg-white p-3 dark:bg-zinc-950">
-            <div className="flex items-center gap-2 text-zinc-500 mb-1">
-              <FiDollarSign className="text-sm" />
+          <div className="rounded-2xl bg-white p-4 shadow-sm dark:bg-zinc-950">
+            <div className="mb-2 flex items-center gap-2 text-zinc-500">
+              <FiDollarSign className="text-base" />
               <span className="text-xs font-bold">Chi phí</span>
             </div>
-            <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+            <p className="text-sm font-black text-zinc-900 dark:text-zinc-100">
               {form.costType === "free"? "Miễn phí" : form.costType === "share"? "Chia đều" : form.costType === "host"? "Chủ bao" : formatPrice(form.costAmount)}
             </p>
           </div>
         )}
 
-        <div className="rounded-xl bg-white p-3 dark:bg-zinc-950">
-          <div className="flex items-center gap-2 text-zinc-500 mb-1">
-            <FiClock className="text-sm" />
+        <div className="rounded-2xl bg-white p-4 shadow-sm dark:bg-zinc-950">
+          <div className="mb-2 flex items-center gap-2 text-zinc-500">
+            <FiClock className="text-base" />
             <span className="text-xs font-bold">{isTask? "Hạn" : "Thời gian"}</span>
           </div>
-          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 line-clamp-1">
+          <p className="text-sm font-black text-zinc-900 dark:text-zinc-100 line-clamp-1">
             {isTask? `${form.durationHours} giờ` : formatDate(form.eventDate) || "Chưa đặt"}
           </p>
         </div>
       </div>
 
       {form.requireApproval && (
-        <div className="mt-3 flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700 dark:bg-amber-950/30 dark:text-amber-400">
-          <FiShield />
+        <div className="mt-4 flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3 text-sm font-bold text-amber-700 dark:from-amber-950/30 dark:to-orange-950/30 dark:text-amber-400">
+          <FiShield className="text-lg" />
           Cần duyệt trước khi tham gia
         </div>
       )}
