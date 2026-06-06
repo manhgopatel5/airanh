@@ -783,12 +783,14 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
                   </div>
                 </Field>
 <Field label="Danh mục" required icon={FiTag}>
-  <div className="input-premium!p-0 group">
+  <div className="input-premium !p-0 focus-within:ring-4" style={{ 
+    '--tw-ring-color': `${accent}20` 
+  } as React.CSSProperties}>
     <Select
       value={categories.find(c => c.id === form.category) || null}
       onChange={(opt) => handleCategoryChange(opt?.id || "")}
       options={categories}
-      getOptionLabel={(opt) => opt? `${opt.icon} ${opt.label}` : ''}
+      getOptionLabel={(opt) => opt ? `${opt.icon} ${opt.label}` : ''}
       getOptionValue={(opt) => opt?.id || ''}
       placeholder="Tìm danh mục..."
       isSearchable
@@ -804,8 +806,8 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
         );
       }}
       components={{
-        DropdownIndicator: ({ innerProps }) => (
-          <div {...innerProps} className="pr-3 text-zinc-400 transition-colors group-focus-within:text-[#0A84FF]">
+        DropdownIndicator: () => (
+          <div className="pr-3 text-zinc-400">
             <FiTag className="text-lg" />
           </div>
         ),
@@ -813,17 +815,18 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
       }}
       styles={{
         control: (base) => ({
-         ...base,
-          minHeight: '48px',
-          border: '0!important',
-          boxShadow: 'none!important',
+          ...base,
+          minHeight: '52px',
+          border: '0 !important',
+          boxShadow: 'none !important',
           background: 'transparent',
           fontWeight: 700,
           fontSize: '0.9375rem',
           cursor: 'text',
+          outline: 'none !important',
         }),
         menu: (base) => ({
-         ...base,
+          ...base,
           borderRadius: '1.25rem',
           overflow: 'hidden',
           boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.25)',
@@ -832,7 +835,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
           border: '2px solid rgb(228 228 231)',
         }),
         menuList: (base) => ({
-         ...base,
+          ...base,
           padding: '8px',
           '::-webkit-scrollbar': {
             width: '6px',
@@ -846,53 +849,52 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
           },
         }),
         option: (base, state) => ({
-         ...base,
+          ...base,
           padding: '12px 16px',
           fontWeight: 700,
           borderRadius: '0.75rem',
           margin: '2px 0',
           background: state.isSelected
-           ? `linear-gradient(135deg, ${accent}, ${accent}dd)`
+            ? `linear-gradient(135deg, ${accent}, ${accent}dd)`
             : state.isFocused
-           ? `${accent}15`
+            ? `${accent}15`
             : 'transparent',
-          color: state.isSelected? 'white' : 'inherit',
+          color: state.isSelected ? 'white' : 'inherit',
           cursor: 'pointer',
           transition: 'all 0.15s',
           '&:active': { background: accent },
         }),
         singleValue: (base) => ({
-         ...base,
+          ...base,
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
           margin: 0,
         }),
         input: (base) => ({
-         ...base,
+          ...base,
           fontWeight: 700,
           margin: 0,
           padding: 0,
           color: 'inherit',
+          outline: 'none !important',
+          boxShadow: 'none !important',
+          caretColor: accent,
         }),
         valueContainer: (base) => ({
-         ...base,
+          ...base,
           padding: '0 1.25rem',
         }),
-        indicatorsContainer: (base) => ({
-         ...base,
-          paddingRight: '0.5rem',
-        }),
         placeholder: (base) => ({
-         ...base,
+          ...base,
           color: 'rgb(161 161 170)',
           fontWeight: 500,
         }),
       }}
       theme={(theme) => ({
-       ...theme,
+        ...theme,
         colors: {
-         ...theme.colors,
+          ...theme.colors,
           primary: accent,
           primary25: `${accent}15`,
           primary50: `${accent}30`,
