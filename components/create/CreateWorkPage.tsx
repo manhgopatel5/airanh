@@ -784,8 +784,8 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
     value={categories.find(c => c.id === form.category)}
     onChange={(opt) => handleCategoryChange(opt?.id || "")}
     options={categories}
-    getOptionLabel={(opt) => `${opt.icon} ${opt.label}`}
-    getOptionValue={(opt) => opt.id}
+getOptionLabel={(opt) => opt ? `${opt.icon} ${opt.label}` : ''}
+getOptionValue={(opt) => opt?.id || ''}
     placeholder="Tìm danh mục..."
     isSearchable
     isClearable={false}
