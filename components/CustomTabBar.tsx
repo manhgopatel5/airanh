@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useAppStore } from "@/store/app";
 import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
+
 const haptics = {
   light: () => navigator?.vibrate?.(8),
   medium: () => navigator?.vibrate?.([10, 20, 10]),
@@ -183,24 +184,10 @@ const IconProfile = ({ active }: { active: boolean }) => (
   </motion.svg>
 );
 
-const IconCreate = ({ isOpen }: { isOpen: boolean }) => (
-  <motion.svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-    <motion.path
-      d="M16 8V24M8 16H24"
-      stroke="white"
-      strokeWidth="3"
-      strokeLinecap="round"
-      initial={false}
-      animate={{ rotate: isOpen? 45 : 0 }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-    />
-  </motion.svg>
-);
-
 const tabs = [
   { key: "home", label: "Home", icon: IconHome },
   { key: "messages", label: "Inbox", icon: IconMessages },
-  { key: "create", label: "", icon: IconCreate },
+  { key: "create", label: "", icon: Plus },
   { key: "tasks", label: "Tasks", icon: IconTasks },
   { key: "profile", label: "Profile", icon: IconProfile },
 ];
@@ -224,7 +211,7 @@ export default function CustomTabBar({
     plan: "from-[#30D158] via-[#30D158] to-[#248A3D]",
   };
 
-  const currentTheme = themes[mode];
+  const currentTheme = themes;
 
   const handleTabClick = (key: string) => {
     if (key === "create") {
@@ -245,7 +232,6 @@ export default function CustomTabBar({
       data-tab-bar
     >
       <div className="relative w-full px-4" style={{ paddingBottom: "max(env(safe-area-inset-bottom), 12px)" }}>
-        {/* GITHUB STYLE: PILL XÁM TRÒN */}
         <motion.div
           className="relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-full border border-zinc-200/60 dark:border-zinc-800/60 shadow-[0_8px_32px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden"
           whileHover={{ y: -3 }}
@@ -259,21 +245,22 @@ export default function CustomTabBar({
 
               if (isCreate) {
                 return (
-                  <div key={tab.key} className="relative w-[72px] flex justify-center">
+                  <div key={tab.key} className="relative w- flex justify-center">
                     <motion.button
                       whileTap={{ scale: 0.9 }}
                       onTouchStart={() => haptics.light()}
                       onClick={() => handleTabClick(tab.key)}
                       className="relative"
                     >
-                     <motion.div
-  className={`relative w-14 h-14 rounded-full bg-gradient-to-br ${currentTheme} flex items-center justify-center shadow-lg`}
-  animate={{ rotate: isMenuOpen? 135 : 0 }}
-  transition={{ type: "spring", stiffness: 300, damping: 20 }}
->
-  <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-white/10 to-transparent rounded-full" />
-  <Plus className="w-6 h-6 text-white relative z-10" strokeWidth={3} />
-</motion.div>
+                      <motion.div
+                        className={`relative w-14 h-14 rounded-full bg-gradient-to-br ${currentTheme} flex items-center justify-center shadow-lg`}
+                        animate={{ rotate: isMenuOpen? 135 : 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-white/10 to-transparent rounded-full" />
+                        <Plus className="w-6 h-6 text-white relative z-10" strokeWidth={3} />
+                      </motion.div>
+                    </motion.button>
                   </div>
                 );
               }
@@ -286,7 +273,6 @@ export default function CustomTabBar({
                   onClick={() => handleTabClick(tab.key)}
                   className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 px-1"
                 >
-                  {/* NỀN ACTIVE XÁM NHƯ GITHUB */}
                   {isActive && (
                     <motion.div
                       layoutId="nav-active-pill"
@@ -299,9 +285,9 @@ export default function CustomTabBar({
                     <motion.div
                       initial={{ scale: 0, rotate: -180 }}
                       animate={{ scale: 1, rotate: 0 }}
-                      className="absolute -top-1 -right-1 z-20 min-w-[22px] h-[22px] bg-gradient-to-br from-red-500 to-red-600 rounded-full px-[6px] flex items-center justify-center shadow-lg"
+                      className="absolute -top-1 -right-1 z-20 min-w- h- bg-gradient-to-br from-red-500 to-red-600 rounded-full px-[6px] flex items-center justify-center shadow-lg"
                     >
-                      <span className="text-[10px] font-black text-white">
+                      <span className="text- font-black text-white">
                         {unreadCount > 9? "9+" : unreadCount}
                       </span>
                     </motion.div>
