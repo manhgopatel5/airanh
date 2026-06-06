@@ -261,7 +261,7 @@ export default function CustomFilterBar({
     task: { bg: "#0A84FF", bgGradient: "linear-gradient(135deg, #0A84FF 0%, #0051D5 100%)", accent: "#00D9FF", secondary: "#5AC8FA" },
     plan: { bg: "#30D158", bgGradient: "linear-gradient(135deg, #30D158 0%, #248A3D 100%)", accent: "#FFD60A", secondary: "#FF9F0A" },
   };
-  const currentTheme = themes;
+  const currentTheme = themes[mode];
   const IconSet = mode === "task"? TaskIcons : PlanIcons;
   const CATEGORIES = mode === "task"? CATEGORY_TASKS : CATEGORY_PLANS;
 
