@@ -126,7 +126,7 @@ const defaultDateTime = (hoursFromNow: number) => {
 const initialForm = (mode: Mode): FormState => ({
   title: "",
   description: "",
-  category: mode === "task" ? "delivery" : "cafe",
+  category: mode === "task"? CATEGORY_TASKS[0].id : CATEGORY_PLANS[0].id, // sửa đây
   tags: "",
   visibility: "public",
   location: {
@@ -138,20 +138,19 @@ const initialForm = (mode: Mode): FormState => ({
     wardId: null,
     wardName: ""
   },
-  price: mode === "task" ? 50000 : 0,
+  price: mode === "task"? 50000 : 0,
   budgetType: "fixed",
   totalSlots: 1,
   durationHours: 24,
   requirements: "",
-  eventDate: defaultDateTime(mode === "task" ? 24 : 48),
+  eventDate: defaultDateTime(mode === "task"? 24 : 48),
   endDate: "",
   maxParticipants: 4,
-  costType: mode === "task" ? "host" : "share",
+  costType: mode === "task"? "host" : "share",
   costAmount: 0,
   allowInvite: true,
   requireApproval: false,
 });
-
 const toTimestamp = (value: string) => Timestamp.fromDate(new Date(value));
 function TagsInput({
   value,
@@ -362,126 +361,175 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const categories = isTask ? CATEGORY_TASKS : CATEGORY_PLANS;
   const draftKey = `create_${mode}_draft_v6`;
 
-  // Load provinces
-  useEffect(() => {
-    fetch("/api/location/province", {
-      headers: { "Content-Type": "application/json" },
-      cache: "force-cache"
+// Load provinces - chỉ chạy 1 lần, tránh race condition
+useEffect(() => {
+  let isMounted = true;
+
+  fetch("/api/location/province", {
+    headers: { "Content-Type": "application/json" },
+    cache: "force-cache"
+  })
+   .then(async (r) => {
+      if (!r.ok) throw new Error("API error");
+      return r.json();
     })
-      .then(async (r) => {
-        if (!r.ok) throw new Error("API error");
-        return r.json();
-      })
-      .then((data) => {
-        setProvinces(Array.isArray(data) ? data : []);
+   .then((data) => {
+      if (isMounted) {
+        setProvinces(Array.isArray(data)? data : []);
         setLoadingProvinces(false);
-      })
-      .catch(() => {
+      }
+    })
+   .catch(() => {
+      if (isMounted) {
         toast.error("Không tải được danh sách tỉnh");
         setProvinces([]);
         setLoadingProvinces(false);
-      });
-  }, []);
-
-  // Load districts
-  useEffect(() => {
-    if (!form.location.provinceId) {
-      setDistricts([]);
-      setWards([]);
-      return;
-    }
-    fetch("/api/location/district", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ provinceId: form.location.provinceId }),
-    })
-      .then((r) => r.json())
-      .then(setDistricts)
-      .catch(() => setDistricts([]));
-  }, [form.location.provinceId]);
-
-  // Load wards
-  useEffect(() => {
-    if (!form.location.districtId) {
-      setWards([]);
-      return;
-    }
-    fetch("/api/location/ward", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ districtId: form.location.districtId }),
-    })
-      .then((r) => r.json())
-      .then(setWards)
-      .catch(() => setWards([]));
-  }, [form.location.districtId]);
-
-  // Auto-save draft
-  useEffect(() => {
-    const saved = localStorage.getItem(draftKey);
-    if (!saved) return;
-    try {
-      const parsed = JSON.parse(saved);
-      setForm({ ...initialForm(mode), ...parsed });
-    } catch {
-      localStorage.removeItem(draftKey);
-    }
-  }, [draftKey, mode]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      localStorage.setItem(draftKey, JSON.stringify(form));
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [draftKey, form]);
-
-  // GPS check
-  useEffect(() => {
-    if (step !== 1 || hasCheckedGps || form.location.lat) return;
-    if (!navigator.permissions) {
-      setShowGpsExplain(true);
-      setHasCheckedGps(true);
-      return;
-    }
-    navigator.permissions.query({ name: 'geolocation' }).then((result) => {
-      if (result.state === 'granted') {
-        requestGPS();
-      } else {
-        setShowGpsExplain(true);
       }
-      setHasCheckedGps(true);
     });
-  }, [step, form.location.lat, hasCheckedGps]);
 
-  useEffect(() => {
-    if (step !== 1) {
-      setHasCheckedGps(false);
-    }
-  }, [step]);
+  return () => {
+    isMounted = false;
+  };
+}, []); // Chỉ chạy 1 lần khi mount
 
-  const requestGPS = useCallback(() => {
-    if (!navigator.geolocation) {
-      toast.error("Thiết bị không hỗ trợ GPS");
-      return;
-    }
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
+// Load districts - không reset nếu district hiện tại vẫn hợp lệ
+useEffect(() => {
+  if (!form.location.provinceId) {
+    setDistricts([]);
+    setWards([]);
+    return;
+  }
+
+  let isMounted = true;
+
+  fetch("/api/location/district", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ provinceId: form.location.provinceId }),
+  })
+   .then((r) => r.json())
+   .then((data) => {
+      if (!isMounted) return;
+      setDistricts(data);
+      // Chỉ reset district nếu district hiện tại không thuộc province mới
+      if (form.location.districtId &&!data.find((d: District) => d.id === form.location.districtId)) {
         updateLocation({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude
+          districtId: null,
+          districtName: "",
+          wardId: null,
+          wardName: ""
         });
-        setLocating(false);
-        setShowGpsExplain(false);
-        toast.success("Đã lấy vị trí");
-      },
-      (err) => {
-        console.warn("GPS error:", err);
-        setLocating(false);
-      },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-    );
-  }, []);
+      }
+    })
+   .catch(() => {
+      if (isMounted) setDistricts([]);
+    });
+
+  return () => {
+    isMounted = false;
+  };
+}, [form.location.provinceId]); // Chỉ depend vào provinceId
+
+// Load wards - không reset nếu ward hiện tại vẫn hợp lệ
+useEffect(() => {
+  if (!form.location.districtId) {
+    setWards([]);
+    return;
+  }
+
+  let isMounted = true;
+
+  fetch("/api/location/ward", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ districtId: form.location.districtId }),
+  })
+   .then((r) => r.json())
+   .then((data) => {
+      if (!isMounted) return;
+      setWards(data);
+      // Chỉ reset ward nếu ward hiện tại không thuộc district mới
+      if (form.location.wardId &&!data.find((w: Ward) => w.id === form.location.wardId)) {
+        updateLocation({ wardId: null, wardName: "" });
+      }
+    })
+   .catch(() => {
+      if (isMounted) setWards([]);
+    });
+
+  return () => {
+    isMounted = false;
+  };
+}, [form.location.districtId]); // Chỉ depend vào districtId
+
+// Auto-save draft - chỉ load 1 lần khi mount
+useEffect(() => {
+  const saved = localStorage.getItem(draftKey);
+  if (!saved) return;
+  try {
+    const parsed = JSON.parse(saved);
+    // Merge với initialForm để có default field mới
+    setForm((prev) => ({...initialForm(mode),...prev,...parsed }));
+  } catch {
+    localStorage.removeItem(draftKey);
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [draftKey]); // Bỏ mode khỏi deps để không reset khi đổi mode
+
+useEffect(() => {
+  const timer = setTimeout(() => {
+    localStorage.setItem(draftKey, JSON.stringify(form));
+  }, 500);
+  return () => clearTimeout(timer);
+}, [draftKey, form]);
+
+// GPS check
+useEffect(() => {
+  if (step!== 1 || hasCheckedGps || form.location.lat) return;
+  if (!navigator.permissions) {
+    setShowGpsExplain(true);
+    setHasCheckedGps(true);
+    return;
+  }
+  navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+    if (result.state === 'granted') {
+      requestGPS();
+    } else {
+      setShowGpsExplain(true);
+    }
+    setHasCheckedGps(true);
+  });
+}, [step, form.location.lat, hasCheckedGps, requestGPS]);
+
+useEffect(() => {
+  if (step!== 1) {
+    setHasCheckedGps(false);
+  }
+}, [step]);
+
+const requestGPS = useCallback(() => {
+  if (!navigator.geolocation) {
+    toast.error("Thiết bị không hỗ trợ GPS");
+    return;
+  }
+  setLocating(true);
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      updateLocation({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude
+      });
+      setLocating(false);
+      setShowGpsExplain(false);
+      toast.success("Đã lấy vị trí");
+    },
+    (err) => {
+      console.warn("GPS error:", err);
+      setLocating(false);
+    },
+    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+  );
+}, []); // Bỏ updateLocation khỏi deps để tránh re-create
 
   const validateField = (key: keyof FormState, value: any): string => {
     switch (key) {
@@ -573,15 +621,17 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
     debounceRef.current = setTimeout(() => searchPlaces(value), 400);
   };
 
-  const handleCategoryChange = (catId: string) => {
-    update("category", catId);
-    if (isTask) {
-      const cat = CATEGORY_TASKS.find((c) => c.id === catId);
-      if (cat && form.price === initialForm(mode).price) {
-        update("price", cat.suggestPrice);
-      }
+const handleCategoryChange = (catId: string) => {
+  update("category", catId);
+  if (isTask) {
+    const cat = CATEGORY_TASKS.find((c) => c.id === catId);
+    // Chỉ set giá khi price đang là default
+    const defaultPrice = initialForm(mode).price;
+    if (cat && form.price === defaultPrice) {
+      update("price", cat.suggestPrice);
     }
-  };
+  }
+};
 
   const handleNext = () => {
     if (validateStep(step)) {
