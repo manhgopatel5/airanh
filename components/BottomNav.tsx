@@ -188,7 +188,7 @@ const FloatingMenu = React.memo(({
 FloatingMenu.displayName = "FloatingMenu";
 
 /* ==========================================================================
-   MAGNETIC NAV ITEM - GitHub Style
+   MAGNETIC NAV ITEM - ĐÃ FIX DÙNG activeBgClass + activeColorClass
    ========================================================================== */
 const MagneticNavItem = React.memo(({
   item,
@@ -264,12 +264,12 @@ const MagneticNavItem = React.memo(({
       whileTap={{ scale: 0.88 }}
       className="relative flex-1 flex flex-col items-center justify-center h-full pt-1.5 pb-2 outline-none select-none touch-manipulation"
     >
-      {/* NỀN ACTIVE KIỂU GITHUB */}
+      {/* NỀN ACTIVE - FIX: DÙNG activeBgClass */}
       {active && (
         <motion.div
           layoutId="nav-active-bg"
           transition={SPRING}
-          className="absolute inset-x-1 top-0.5 bottom-0.5 rounded-xl bg-[#0A84FF]"
+          className={`absolute inset-x-1 top-0.5 bottom-0.5 rounded-xl ${activeBgClass}`}
         >
           <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-white/30 via-transparent to-black/10" />
           <div className="absolute inset-[1px] rounded-xl ring-1 ring-inset ring-white/25" />
@@ -285,7 +285,7 @@ const MagneticNavItem = React.memo(({
         />
       )}
 
-      {/* ICON */}
+      {/* ICON - FIX: DÙNG activeColorClass */}
       <motion.div
         animate={{
           y: active? -1 : 0,
@@ -297,24 +297,24 @@ const MagneticNavItem = React.memo(({
         <motion.div
           animate={
             active
-         ? { rotate: [0, -6, 6, 0] }
+        ? { rotate: [0, -6, 6, 0] }
               : {}
           }
           transition={{ duration: 0.5 }}
         >
-  <item.Icon
-  className={`w-5 h-5 transition-colors duration-300 ${
-    active
-      ? activeColorClass  // Dùng đây
-      : "text-zinc-400 dark:text-zinc-500"
-  }`}
-  strokeWidth={active? 2.7 : 2.2}
-/>
+          <item.Icon
+            className={`w-5 h-5 transition-colors duration-300 ${
+              active
+               ? activeColorClass
+                : "text-zinc-400 dark:text-zinc-500"
+            }`}
+            strokeWidth={active? 2.7 : 2.2}
+          />
         </motion.div>
 
         {active && (
           <motion.div
-            className="absolute inset-0 text-white blur-xl"
+            className={`absolute inset-0 ${activeColorClass} blur-xl`}
             animate={{
               opacity: [0.3, 0.7, 0.3],
               scale: [1, 1.4, 1]
@@ -327,21 +327,21 @@ const MagneticNavItem = React.memo(({
         )}
       </motion.div>
 
-      {/* LABEL */}
-<motion.span
-  animate={{
-    y: active? -1 : 0,
-    scale: active? 1.02 : 1
-  }}
-  transition={SPRING}
-  className={`relative z-10 text- mt-0.5 tracking-tight transition-all duration-300 ${
-    active
-      ? `${activeColorClass} font-bold`  // Dùng đây
-      : "text-zinc-400 dark:text-zinc-500 font-semibold"
-  }`}
->
-  {item.label}
-</motion.span>
+      {/* LABEL - FIX: DÙNG activeColorClass */}
+      <motion.span
+        animate={{
+          y: active? -1 : 0,
+          scale: active? 1.02 : 1
+        }}
+        transition={SPRING}
+        className={`relative z-10 text-[11px] mt-0.5 tracking-tight transition-all duration-300 ${
+          active
+           ? `${activeColorClass} font-bold`
+            : "text-zinc-400 dark:text-zinc-500 font-semibold"
+        }`}
+      >
+        {item.label}
+      </motion.span>
 
       {/* DOT */}
       {active && (
@@ -370,7 +370,7 @@ const MagneticNavItem = React.memo(({
 MagneticNavItem.displayName = "MagneticNavItem";
 
 /* ==========================================================================
-   MAIN: BOTTOM NAV - GitHub Mobile Style
+   MAIN: BOTTOM NAV
    ========================================================================== */
 export default function BottomNav() {
   const router = useRouter();
@@ -494,7 +494,6 @@ export default function BottomNav() {
           >
             <FloatingMenu isOpen={isOpen} onSelect={handleSelectCreate} onClose={() => setIsOpen(false)} />
 
-            {/* GITHUB STYLE PILL */}
             <motion.div
               layout
               animate={{ y: [0, -2, 0] }}
@@ -591,7 +590,7 @@ export default function BottomNav() {
                       transition={SPRING_BOUNCY}
                       className={`w-14 h-14 rounded-full flex items-center justify-center text-white shadow-2xl transition-all duration-500 ${dynamicGlow} relative overflow-hidden ${
                         isOpen
-                    ? "bg-zinc-900 dark:bg-zinc-800 shadow-zinc-950/20"
+                   ? "bg-zinc-900 dark:bg-zinc-800 shadow-zinc-950/20"
                           : `${activeBgClass} shadow-lg`
                       }`}
                     >
