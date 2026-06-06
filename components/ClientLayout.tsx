@@ -49,9 +49,9 @@ export default function ClientLayout({ children }: Props) {
     <div className="h-dvh flex flex-col bg-white dark:bg-zinc-950 font-sans">
       {user && <FCMProvider userId={user.uid} />}
 
-      <main className="flex-1 overflow-y-auto pb-[calc(56px+env(safe-area-inset-bottom)+16px)]">
-        {children}
-      </main>
+  <main className="flex-1 overflow-y-auto pt-[env(safe-area-inset-top)] pb-[calc(56px+env(safe-area-inset-bottom)+16px)]">
+  {children}
+</main>
 
       <Toaster
         richColors
