@@ -514,16 +514,16 @@ export default function CustomFilterBar({
                       Đang thịnh hành
                     </h3>
                     <div className="flex flex-wrap gap-2">
-                      {["🔥 Việc gấp", "💰 Lương cao", "⭐ Uy tín", "📍 Gần đây", "⚡️ Nhận ngay"].map((tag) => (
-                        <motion.button
-                          key={tag}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => { haptics.light(); onSearchChange(currentFilter, tag.split(" ")[1]); }}
-                          className="px-3 h-8 rounded-xl bg-gradient-to-r from-[#FF9500]/10 to-[#FFD60A]/10 text-[#FF9500] dark:text-[#FFD60A] font-bold text-xs hover:from-[#FF9500]/20 hover:to-[#FFD60A]/20 transition-all"
-                        >
-                          {tag}
-                        </motion.button>
-                      ))}
+                   {["#viecgap", "#luongcao", "#uytin", "#ganday", "#nhannngay"].map((tag) => (
+  <motion.button
+    key={tag}
+    whileTap={{ scale: 0.95 }}
+    onClick={() => { haptics.light(); onSearchChange(currentFilter, tag); }}
+    className="px-3 h-8 rounded-xl bg-gradient-to-r from-[#FF9500]/10 to-[#FFD60A]/10 text-[#FF9500] dark:text-[#FFD60A] font-bold text-xs hover:from-[#FF9500]/20 hover:to-[#FFD60A]/20 transition-all"
+  >
+    {tag}
+  </motion.button>
+))}
                     </div>
                   </div>
                 </div>
