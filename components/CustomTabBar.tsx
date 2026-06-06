@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { useAppStore } from "@/store/app";
 import { useState, useEffect } from "react";
-
+import { Plus } from "lucide-react";
 const haptics = {
   light: () => navigator?.vibrate?.(8),
   medium: () => navigator?.vibrate?.([10, 20, 10]),
