@@ -217,7 +217,7 @@ export default function CustomTabBar({
     },
   };
 
-  const currentTheme = themeColors;
+  const currentTheme = themeColors[mode];
 
   const handleTabClick = (key: string) => {
     if (key === "create") {
@@ -238,7 +238,6 @@ export default function CustomTabBar({
       data-tab-bar
     >
       <div className="relative w-full px-4" style={{ paddingBottom: "max(env(safe-area-inset-bottom), 12px)" }}>
-        {/* GITHUB PILL CONTAINER */}
         <motion.div
           className="relative bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-full border border-zinc-200/60 dark:border-zinc-800/60 shadow-[0_8px_32px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden"
           whileHover={{ y: -3 }}
@@ -280,7 +279,6 @@ export default function CustomTabBar({
                   onClick={() => handleTabClick(tab.key)}
                   className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 px-1"
                 >
-                  {/* NỀN ACTIVE XÁM NHƯ GITHUB */}
                   {isActive && (
                     <motion.div
                       layoutId="nav-active-pill"
@@ -293,9 +291,9 @@ export default function CustomTabBar({
                     <motion.div
                       initial={{ scale: 0, rotate: -180 }}
                       animate={{ scale: 1, rotate: 0 }}
-                      className="absolute -top-1 -right-1 z-20 min-w- h- bg-gradient-to-br from-red-500 to-red-600 rounded-full px-[6px] flex items-center justify-center shadow-lg"
+                      className="absolute -top-1 -right-1 z-20 min-w-[22px] h-[22px] bg-gradient-to-br from-red-500 to-red-600 rounded-full px-[6px] flex items-center justify-center shadow-lg"
                     >
-                      <span className="text- font-black text-white">
+                      <span className="text-[10px] font-black text-white">
                         {unreadCount > 9? "9+" : unreadCount}
                       </span>
                     </motion.div>
@@ -304,7 +302,7 @@ export default function CustomTabBar({
                   <div
                     className={`relative z-10 ${
                       isActive
-                       ? "text-zinc-900 dark:text-white"
+                      ? "text-zinc-900 dark:text-white"
                         : "text-zinc-400 dark:text-zinc-500"
                     }`}
                   >
@@ -314,7 +312,7 @@ export default function CustomTabBar({
                   <span
                     className={`text-xs transition-all relative z-10 ${
                       isActive
-                       ? `${currentTheme.labelActive} font-bold`
+                      ? `${currentTheme.labelActive} font-bold`
                         : "text-zinc-500 dark:text-zinc-400 font-medium"
                     }`}
                   >
