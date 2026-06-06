@@ -234,11 +234,11 @@ export default function CustomTabBar({
       initial={{ y: 120, opacity: 0 }}
       animate={mounted? { y: 0, opacity: 1 } : { y: 120, opacity: 0 }}
       transition={{ type: "spring", stiffness: 400, damping: 40 }}
-      className="fixed bottom-0 left-1/2 -translate-x-1/2 z-50 pb-[max(env(safe-area-inset-bottom),12px)]"
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50"
       data-tab-bar
     >
       <motion.div
-        className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-full border border-zinc-200/60 dark:border-zinc-800/60 shadow-[0_8px_32px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden px-2"
+        className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl rounded-full border border-zinc-200/60 dark:border-zinc-800/60 shadow-[0_8px_32px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden px-2"
         whileHover={{ y: -3 }}
         transition={{ duration: 0.3 }}
       >
@@ -301,7 +301,7 @@ export default function CustomTabBar({
                 <div
                   className={`relative z-10 ${
                     isActive
-                     ? "text-zinc-900 dark:text-white"
+                    ? "text-zinc-900 dark:text-white"
                       : "text-zinc-400 dark:text-zinc-500"
                   }`}
                 >
@@ -311,7 +311,7 @@ export default function CustomTabBar({
                 <span
                   className={`text-xs transition-all relative z-10 ${
                     isActive
-                     ? `${currentTheme.labelActive} font-bold`
+                    ? `${currentTheme.labelActive} font-bold`
                       : "text-zinc-500 dark:text-zinc-400 font-medium"
                   }`}
                 >
