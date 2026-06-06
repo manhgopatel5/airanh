@@ -23,7 +23,7 @@ export default function ClientLayout({ children }: Props) {
 
   useEffect(() => {
     if (loading) return;
-    
+
     if (!user &&!isPublic) {
       router.replace("/login");
       return;
@@ -46,10 +46,10 @@ export default function ClientLayout({ children }: Props) {
   }, [user, userData, loading, isPublic, pathname, router]);
 
   return (
-    <div className="h-dvh flex flex-col bg-gray-50 dark:bg-zinc-950 font-sans">
+    <div className="h-dvh flex flex-col bg-white dark:bg-zinc-950 font-sans">
       {user && <FCMProvider userId={user.uid} />}
 
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto pb-[calc(56px+env(safe-area-inset-bottom)+16px)]">
         {children}
       </main>
 
