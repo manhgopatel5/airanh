@@ -279,13 +279,7 @@ export default function CustomTabBar({
                   onClick={() => handleTabClick(tab.key)}
                   className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 px-1"
                 >
-                  {isActive && (
-                    <motion.div
-                      layoutId="nav-active-pill"
-                      transition={{ type: "spring", stiffness: 550, damping: 32 }}
-                      className="absolute inset-0 rounded-full bg-zinc-900/10 dark:bg-white/15"
-                    />
-                  )}
+             
 
                   {tab.key === "messages" && unreadCount > 0 && (
                     <motion.div
