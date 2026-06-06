@@ -302,14 +302,14 @@ const MagneticNavItem = React.memo(({
           }
           transition={{ duration: 0.5 }}
         >
-          <item.Icon
-            className={`w-5 h-5 transition-colors duration-300 ${
-              active
-           ? "text-white"
-                : "text-zinc-400 dark:text-zinc-500"
-            }`}
-            strokeWidth={active? 2.7 : 2.2}
-          />
+  <item.Icon
+  className={`w-5 h-5 transition-colors duration-300 ${
+    active
+      ? activeColorClass  // Dùng đây
+      : "text-zinc-400 dark:text-zinc-500"
+  }`}
+  strokeWidth={active? 2.7 : 2.2}
+/>
         </motion.div>
 
         {active && (
@@ -328,20 +328,20 @@ const MagneticNavItem = React.memo(({
       </motion.div>
 
       {/* LABEL */}
-      <motion.span
-        animate={{
-          y: active? -1 : 0,
-          scale: active? 1.02 : 1
-        }}
-        transition={SPRING}
-        className={`relative z-10 text-[11px] mt-0.5 tracking-tight transition-all duration-300 ${
-          active
-       ? "text-white font-bold"
-            : "text-zinc-400 dark:text-zinc-500 font-semibold"
-        }`}
-      >
-        {item.label}
-      </motion.span>
+<motion.span
+  animate={{
+    y: active? -1 : 0,
+    scale: active? 1.02 : 1
+  }}
+  transition={SPRING}
+  className={`relative z-10 text- mt-0.5 tracking-tight transition-all duration-300 ${
+    active
+      ? `${activeColorClass} font-bold`  // Dùng đây
+      : "text-zinc-400 dark:text-zinc-500 font-semibold"
+  }`}
+>
+  {item.label}
+</motion.span>
 
       {/* DOT */}
       {active && (
