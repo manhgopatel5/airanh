@@ -49,8 +49,8 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [searchQueries, setSearchQueries] = useState<Record<TabId, string>>({ hot: "", nearby: "", friends: "", new: "" });
-  // THÊM STATE NÀY
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  // THÊM STATE NÀY ĐỂ MỞ SEARCH MODAL
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
   const isTaskMode = mode === "task";
   const accent = isTaskMode? "#0A84FF" : "#30D158";
@@ -71,7 +71,7 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
     "/api/jobs?type=task&limit=12",
     fetcher,
     {
-     ...swrOptions,
+    ...swrOptions,
       fallbackData: initialJobs,
       revalidateOnMount: initialJobs.length === 0,
     }
@@ -81,7 +81,7 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
     "/api/jobs?type=plan&limit=12",
     fetcher,
     {
-     ...swrOptions,
+    ...swrOptions,
       fallbackData: initialPlans,
       revalidateOnMount: initialPlans.length === 0,
     }
@@ -173,21 +173,22 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
       <div className="sticky top-0 z-40 bg-white dark:bg-zinc-950">
         <div className="mx-auto max-w-[680px] px-4 pt-3 pb-3">
           <div className="relative rounded-[1.35rem] bg-zinc-100/80 p-1.5 ring-1 ring-black/5 dark:bg-zinc-900/90 dark:ring-white/10">
-            <motion.div className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-[1rem] bg-gradient-to-r ${gradient} shadow-lg`} animate={{ x: isTaskMode? 0 : "100%" }} transition={reduceMotion? { duration: 0 } : { type: "spring", stiffness: 360, damping: 34 }} />
+            <motion.div className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded- bg-gradient-to-r ${gradient} shadow-lg`} animate={{ x: isTaskMode? 0 : "100%" }} transition={reduceMotion? { duration: 0 } : { type: "spring", stiffness: 360, damping: 34 }} />
             <div className="relative grid grid-cols-2 gap-1">
               <button type="button" aria-pressed={isTaskMode} onClick={() => switchMode("task")} className={`flex h-11 items-center justify-center gap-2 rounded-2xl text-sm font-black ${isTaskMode? "text-white" : "text-zinc-500"}`}><HiBolt /> Task</button>
               <button type="button" aria-pressed={!isTaskMode} onClick={() => switchMode("plan")} className={`flex h-11 items-center justify-center gap-2 rounded-2xl text-sm font-black ${!isTaskMode? "text-white" : "text-zinc-500"}`}><HiCalendarDays /> Plan</button>
             </div>
           </div>
 
-          {/* SỬA CHỖ NÀY: TRUYỀN THÊM 2 PROPS */}
+          {/* SỬA: TRUYỀN THÊM PROP ĐỂ MỞ MODAL */}
           <CustomFilterBar
             currentFilter={activeTab}
             onChangeFilter={setActiveTab}
             searchQueries={searchQueries}
             onSearchChange={handleSearchChange}
-            isSearchFocused={isSearchFocused}
-            setIsSearchFocused={setIsSearchFocused}
+            onOpenSearch={() => setShowSearchModal(true)}
+            showSearchModal={showSearchModal}
+            onCloseSearch={() => setShowSearchModal(false)}
           />
         </div>
       </div>
@@ -195,17 +196,17 @@ export default function TaskFeedPage({ initialJobs = [], initialPlans = [] }: Ta
       <div className="mx-auto max-w-[680px] px-4 pt-4">
         {loading? (
           <div className="space-y-3" aria-label="Đang tải feed">
-            {[0, 1, 2].map((item) => <div key={item} className="h-52 rounded-[2rem] bg-white motion-safe:animate-pulse dark:bg-zinc-900" />)}
+            {[0, 1, 2].map((item) => <div key={item} className="h-52 rounded- bg-white motion-safe:animate-pulse dark:bg-zinc-900" />)}
           </div>
         ) : error? (
-          <div className="rounded-[2rem] border border-red-200 bg-white/82 p-8 text-center shadow-xl shadow-red-500/5 dark:border-red-500/20 dark:bg-zinc-900/80">
+          <div className="rounded- border border-red-200 bg-white/82 p-8 text-center shadow-xl shadow-red-500/5 dark:border-red-500/20 dark:bg-zinc-900/80">
             <FiInbox className="mx-auto h-9 w-9 text-red-500" />
             <h2 className="mt-4 text-xl font-black">Feed đang gián đoạn</h2>
             <p className="mt-2 text-sm text-zinc-500">Thử tải lại để đồng bộ dữ liệu mới nhất.</p>
             <button type="button" onClick={handleRefresh} className="mt-5 h-11 rounded-2xl bg-zinc-950 px-5 text-sm font-bold text-white dark:bg-white dark:text-zinc-950">Tải lại</button>
           </div>
         ) : filteredTasks.length === 0? (
-          <div className="rounded-[2rem] border border-white/70 bg-white/82 p-8 text-center shadow-xl shadow-black/[0.04] dark:border-white/10 dark:bg-zinc-900/80">
+          <div className="rounded- border border-white/70 bg-white/82 p-8 text-center shadow-xl shadow-black/[0.04] dark:border-white/10 dark:bg-zinc-900/80">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-zinc-100 text-zinc-400 dark:bg-zinc-800"><FiSearch className="h-7 w-7" /></div>
             <h2 className="mt-5 text-xl font-black">Chưa có {modeNoun} phù hợp</h2>
             <p className="mx-auto mt-2 max-w-[320px] text-sm leading-6 text-zinc-500">{activeTab === "nearby" &&!userLocation? "Bật định vị để khám phá cơ hội quanh bạn." : "Thử đổi bộ lọc, tìm từ khóa khác hoặc tạo mục mới để bắt đầu."}</p>
