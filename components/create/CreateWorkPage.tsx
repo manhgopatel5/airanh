@@ -333,14 +333,12 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
     lat: form.location.lat,
     lng: form.location.lng,
   },
-  // Task fields
   price: form.price,
   budgetType: form.budgetType,
   totalSlots: form.totalSlots,
   joined: 0,
   deadline: new Date(Date.now() + form.durationHours * 60 * 60 * 1000).toISOString(),
   requirements: form.requirements,
-  // Plan fields  
   eventDate: form.eventDate,
   endDate: form.endDate,
   maxParticipants: form.maxParticipants,
@@ -349,13 +347,17 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   costAmount: form.costAmount,
   allowInvite: form.allowInvite,
   requireApproval: form.requireApproval,
-  // Stats
   likeCount: 0,
   commentCount: 0,
   viewCount: 0,
   likes: [],
   savedBy: [],
-} as FeedTask), [form, mode, user]);
+  // Thêm mấy field FeedTask bắt buộc
+  slug: "preview",
+  shortId: "preview",
+  images: [],
+  milestones: [],
+} as any), [form, mode, user]);
   const accent = isTask ? "#0A84FF" : "#30D158";
   const gradient = isTask ? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
   const categories = isTask ? CATEGORY_TASKS : CATEGORY_PLANS;
