@@ -155,11 +155,13 @@ const toTimestamp = (value: string) => Timestamp.fromDate(new Date(value));
 function TagsInput({ 
   value, 
   onChange, 
-  placeholder 
+  placeholder,
+  mode 
 }: { 
   value: string; 
   onChange: (val: string) => void; 
   placeholder: string;
+  mode: Mode;
 }) {
   const [inputValue, setInputValue] = useState("");
   const accent = mode === "task"? "#0A84FF" : "#30D158";
@@ -861,6 +863,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
     value={form.tags}
     onChange={(val) => update("tags", val)}
     placeholder={isTask? "gõ tag rồi ấn Space" : "gõ tag rồi ấn Space"}
+    mode={mode}
   />
   <p className="text-xs text-zinc-400">Ấn Space hoặc Enter để thêm tag</p>
 </Field>
