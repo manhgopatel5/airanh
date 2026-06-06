@@ -814,7 +814,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
         IndicatorSeparator: () => null,
       }}
       styles={{
-        control: (base, state) => ({
+        control: (base) => ({
           ...base,
           minHeight: '52px',
           border: '0 !important',
