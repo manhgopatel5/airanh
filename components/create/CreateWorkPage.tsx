@@ -784,44 +784,47 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
                 </Field>
 <Field label="Danh mục" required icon={FiTag}>
   <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4">
-    {categories.map((cat) => (
-      <motion.button
-        key={cat.id}
-        type="button"
-        whileTap={{ scale: 0.95 }}
-        onClick={() => handleCategoryChange(cat.id)}
-        className={`relative flex flex-col items-center gap-2 rounded-2xl border-2 p-3 transition-all active:scale-95 ${
-          form.category === cat.id
-            ? "border-transparent shadow-xl ring-4"
-            : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
-        }`}
-        {...(form.category === cat.id
-          ? {
-              style: {
-                background: `linear-gradient(135deg, ${cat.color}, ${cat.color}dd)`,
-                '--tw-ring-color': `${cat.color}20`,
-              } as React.CSSProperties,
-            }
-          : {})}
-      >
-        {form.category === cat.id && (
+    {categories.map((cat) => {
+      const isSelected = form.category === cat.id;
+      
+      return isSelected ? (
+        <motion.button
+          key={cat.id}
+          type="button"
+          whileTap={{ scale: 0.95 }}
+          onClick={() => handleCategoryChange(cat.id)}
+          className="relative flex flex-col items-center gap-2 rounded-2xl border-2 border-transparent p-3 shadow-xl ring-4 transition-all active:scale-95"
+          style={{
+            background: `linear-gradient(135deg, ${cat.color}, ${cat.color}dd)`,
+            '--tw-ring-color': `${cat.color}20`,
+          } as any}
+        >
           <motion.div
             layoutId="category-check"
             className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-lg ring-2 ring-white"
           >
             <FiCheck className="text-sm" style={{ color: cat.color }} />
           </motion.div>
-        )}
-        <span className="text-3xl drop-shadow-sm">{cat.icon}</span>
-        <span className={`text-xs font-black leading-tight text-center ${
-          form.category === cat.id 
-            ? "text-white drop-shadow-sm" 
-            : "text-zinc-700 dark:text-zinc-200"
-        }`}>
-          {cat.label}
-        </span>
-      </motion.button>
-    ))}
+          <span className="text-3xl drop-shadow-sm">{cat.icon}</span>
+          <span className="text-xs font-black leading-tight text-center text-white drop-shadow-sm">
+            {cat.label}
+          </span>
+        </motion.button>
+      ) : (
+        <motion.button
+          key={cat.id}
+          type="button"
+          whileTap={{ scale: 0.95 }}
+          onClick={() => handleCategoryChange(cat.id)}
+          className="relative flex flex-col items-center gap-2 rounded-2xl border-2 border-zinc-200 bg-white p-3 transition-all hover:border-zinc-300 hover:shadow-md active:scale-95 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
+        >
+          <span className="text-3xl drop-shadow-sm">{cat.icon}</span>
+          <span className="text-xs font-black leading-tight text-center text-zinc-700 dark:text-zinc-200">
+            {cat.label}
+          </span>
+        </motion.button>
+      );
+    })}
   </div>
   
   <div className="flex items-center justify-between text-xs mt-2">
