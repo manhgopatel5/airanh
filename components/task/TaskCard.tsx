@@ -254,7 +254,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
       animate={{ opacity: 1, y: 0 }}
       {...(reduceMotion? {} : { whileHover: { y: -3 } })}
       transition={{ duration: 0.22 }}
-      className={cn("group w-full max-w-sm mx-auto", className)}
+      className={cn("group w-full", className)}
     >
       <div className="relative">
         {/* VIỀN MÀU 4 CẠNH - LUÔN HIỆN */}
