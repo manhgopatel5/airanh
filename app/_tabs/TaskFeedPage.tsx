@@ -280,12 +280,7 @@ const handleApplyFilters = useCallback(async (newFilters: any) => {
   currentFilter={activeTab}
   onChangeFilter={setActiveTab}
   searchQueries={searchQueries}
-  onSearchChange={(tab, query) => {
-    // Chỉ update text, không fetch
-    setSearchQueries(prev => ({...prev, [tab]: query }));
-    // XÓA 2 dòng này:
-    // setFilters(prev => ({...prev, query}));
-    // setHasSearched(true);
+  
   }}
   onOpenSearch={() => setShowSearchModal(true)}
   showSearchModal={showSearchModal}
