@@ -76,7 +76,6 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   const accent = isTaskMode? "#0A84FF" : "#30D158";
   const gradient = isTaskMode? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
 
-  // RESET KHI ĐỔI MODE
   useEffect(() => {
     setAllTasks(mode === "task"? initialJobs : initialPlans);
     setCursor(null);
@@ -86,7 +85,6 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   }, [mode, initialJobs, initialPlans]);
 
   const apiUrl = useMemo(() => {
-    // CHỈ FETCH KHI ĐÃ SEARCH/FILTER HOẶC LOAD MORE
     const isDefaultFilter = filters.query === '' && filters.categories.length === 0 && filters.priceRange === 'all';
     if (!hasSearched && isDefaultFilter && cursor === null) return null;
     
@@ -170,7 +168,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   }, [activeTab]);
 
   const filteredTasks = useMemo(() => {
-    let result = tasks.filter((task) =>!task.banned &&!task.hidden && task.type === mode);
+    let result = tasks.filter((task) =>!task.banned &&!task.hidden); // BỎ task.type === mode
 
     if (activeTab === "nearby" && userLocation) {
       result = result.filter(hasLocation).sort((a, b) =>
@@ -179,7 +177,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
       );
     }
     return result;
-  }, [activeTab, mode, tasks, userLocation]);
+  }, [activeTab, tasks, userLocation]); // BỎ mode
 
   const handleRefresh = useCallback(() => {
     vibrate(10);
