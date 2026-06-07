@@ -72,6 +72,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   const accent = isTaskMode? "#0A84FF" : "#30D158";
   const gradient = isTaskMode? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
 
+  // FIX 1: Reset khi đổi mode
   useEffect(() => {
     setCursor(null);
     setHasSearched(false);
@@ -79,9 +80,15 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     setActiveTab("hot");
   }, [mode]);
 
+  // FIX 2: Chỉ return null khi chưa search VÀ không có filter nào
   const apiUrl = useMemo(() => {
-    const isDefaultFilter = filters.query === '' && filters.categories.length === 0 && filters.priceRange === 'all' && activeTab === 'hot';
-    if (!hasSearched && isDefaultFilter && cursor === null) return null;
+    const hasActiveFilter = 
+      filters.query!== '' || 
+      filters.categories.length > 0 || 
+      filters.priceRange!== 'all' || 
+      activeTab!== 'hot';
+
+    if (!hasSearched &&!hasActiveFilter && cursor === null) return null;
     
     const params = new URLSearchParams({
       type: mode,
@@ -121,7 +128,6 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     }
   );
 
-  // FIX: Dùng data từ SWR trực tiếp, không cần allTasks state
   const tasks = data?.tasks?? (mode === "task"? initialJobs : initialPlans);
   const nextCursor = data?.nextCursor || null;
 
@@ -150,6 +156,10 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   const handleApplyFilters = useCallback((newFilters: any) => {
     setHasSearched(true);
     setCursor(null);
+    // FIX 3: Set activeTab trước filters để apiUrl tính đúng
+    if (newFilters.tab && newFilters.tab!== activeTab) {
+      setActiveTab(newFilters.tab);
+    }
     setFilters({
       categories: newFilters.categories || [],
       priceRange: newFilters.priceRange || 'all',
@@ -157,9 +167,6 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
       query: newFilters.query || '',
     });
     setSearchQueries(prev => ({...prev, [newFilters.tab]: newFilters.query || '' }));
-    if (newFilters.tab && newFilters.tab!== activeTab) {
-      setActiveTab(newFilters.tab);
-    }
   }, [activeTab]);
 
   const filteredTasks = useMemo(() => {
@@ -189,7 +196,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     mutate(current => {
       if (!current) return current;
       return {
-       ...current,
+     ...current,
         tasks: current.tasks.map(item => item.id === taskId? ({...item,...updates } as FeedTask) : item)
       };
     }, false);
@@ -199,7 +206,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     mutate(current => {
       if (!current) return current;
       return {
-       ...current,
+     ...current,
         tasks: current.tasks.filter(item => item.id!== id)
       };
     }, false);
@@ -235,7 +242,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
                 left: isTaskMode? "0%" : "44%",
                 width: "56%",
                 background: isTaskMode
-            ? "linear-gradient(135deg, #0A84FF 0%, #0066CC 50%, #0051D5 100%)"
+           ? "linear-gradient(135deg, #0A84FF 0%, #0066CC 50%, #0051D5 100%)"
                   : "linear-gradient(135deg, #30D158 0%, #28B34A 50%, #248A3D 100%)"
               }}
               transition={{ type: "spring", stiffness: 340, damping: 38, mass: 0.6 }}
@@ -264,7 +271,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
                 aria-pressed={!isTaskMode}
                 onClick={() => switchMode("plan")}
                 className={`relative flex items-center justify-center gap-2 text- font-black transition-colors duration-200 ${
-            !isTaskMode? "text-white" : "text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+           !isTaskMode? "text-white" : "text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
                 }`}
               >
                 <HiCalendarDays size={22} />
