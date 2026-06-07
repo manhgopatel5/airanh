@@ -18,7 +18,11 @@ export async function GET(request: NextRequest) {
   const type = (searchParams.get('type') as 'task' | 'plan') || 'task';
   const limit = parseInt(searchParams.get('limit') || '20');
   const sortBy = (searchParams.get('sortBy') as any) || 'new';
-  const cursor = searchParams.get('cursor')? parseInt(searchParams.get('cursor')) : undefined;
+  
+  // FIX: Check null trước khi parseInt
+  const cursorParam = searchParams.get('cursor');
+  const cursor = cursorParam? parseInt(cursorParam) : undefined;
+  
   const categories = searchParams.get('categories')?.split(',').filter(Boolean);
   const priceRange = searchParams.get('priceRange');
   const query = searchParams.get('query');
@@ -81,7 +85,7 @@ export async function POST(request: Request) {
     const price = Number(body.price) || 0;
 
     const taskData = {
-   ...body,
+  ...body,
       // Ghi đè field hệ thống
       userId: decoded.uid,
       userName: decoded.name || 'User',
@@ -94,7 +98,7 @@ export async function POST(request: Request) {
       status: 'open',
       banned: false,
       hidden: false,
-      visibility: 'public', // THÊM MẶC ĐỊNH
+      visibility: 'public',
       
       // Metric cho search/sort
       viewCount: 0,
@@ -102,18 +106,18 @@ export async function POST(request: Request) {
       commentCount: 0,
       likes: [],
       savedBy: [],
-      hotScore: 0, // Cloud Function sẽ update sau
+      hotScore: 0,
       
       // Chuẩn hóa dữ liệu
       title: body.title.trim(),
       description: body.description.trim(),
       price: price,
-      priceRange: getPriceRange(price), // Để filter nhanh
+      priceRange: getPriceRange(price),
       tags: Array.isArray(body.tags)? body.tags : [],
       images: Array.isArray(body.images)? body.images : [],
       
       // Task riêng
-   ...(isTask && {
+  ...(isTask && {
         totalSlots: Number(body.totalSlots) || 1,
         joined: 0,
         budgetType: body.budgetType || 'fixed',
@@ -125,7 +129,7 @@ export async function POST(request: Request) {
       }),
       
       // Plan riêng
-   ...(!isTask && {
+  ...(!isTask && {
         eventDate: body.eventDate? new Date(body.eventDate) : null,
         endDate: body.endDate? new Date(body.endDate) : null,
         maxParticipants: Number(body.maxParticipants) || 4,
@@ -139,7 +143,7 @@ export async function POST(request: Request) {
       }),
 
       // Geo data cho tab "Gần bạn" sau này
-   ...(body.location?.lat && body.location?.lng && {
+  ...(body.location?.lat && body.location?.lng && {
         location: {
           lat: body.location.lat,
           lng: body.location.lng,
@@ -150,7 +154,7 @@ export async function POST(request: Request) {
     const docRef = await adminDb().collection('tasks').add(taskData);
 
     // Xóa cache ISR
-    revalidatePath('/'); // Trang chủ
+    revalidatePath('/');
 
     return NextResponse.json({
       success: true,
