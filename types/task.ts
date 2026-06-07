@@ -336,6 +336,7 @@ export type FeedTask = (TaskListItem | PlanListItem) & {
   endDate?: string | null;
   startDate?: string | null;
   applicationDeadline?: string | null;
+  visibility?: 'public' | 'private' | 'friends'
   shortId?: string;
 };
 
