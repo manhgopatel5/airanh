@@ -8,8 +8,6 @@ import { FirestoreEvent, QueryDocumentSnapshot } from "firebase-functions/v2/fir
 initializeApp();
 const db = getFirestore();
 
-// ĐÃ XÓA: sendVerificationEmail - đây là thằng gửi mail /api/verify-email
-
 // 1. Khi có lời mời kết bạn mới → tạo thông báo cho người nhận
 export const onFriendRequestCreated = onDocumentCreated(
   {
@@ -260,10 +258,10 @@ export const cleanupExpiredTasks = onSchedule(
     );
 
     const expiredTasks = await db
-    .collection("tasks")
-    .where("deadline", "<", sevenDaysAgo)
-    .limit(500)
-    .get();
+  .collection("tasks")
+  .where("deadline", "<", sevenDaysAgo)
+  .limit(500)
+  .get();
 
     if (expiredTasks.empty) {
       console.log("No expired tasks to delete");
@@ -306,9 +304,9 @@ export const onUserProfileUpdate = onDocumentUpdated(
     console.log(`User ${userId} đổi profile, bắt đầu sync tasks...`);
 
     const tasksSnap = await db
-    .collection("tasks")
-    .where("userId", "==", userId)
-    .get();
+  .collection("tasks")
+  .where("userId", "==", userId)
+  .get();
 
     if (tasksSnap.empty) {
       console.log(`User ${userId} không có task nào`);
@@ -335,5 +333,64 @@ export const onUserProfileUpdate = onDocumentUpdated(
 
     if (count > 0) await batch.commit();
     console.log(`Đã sync ${tasksSnap.size} tasks cho user ${userId}`);
+  }
+);
+
+// 7. THÊM MỚI: Update hotScore cho tab Hot - chạy 15 phút/lần
+export const updateHotScore = onSchedule(
+  {
+    schedule: "every 15 minutes",
+    timeZone: "Asia/Ho_Chi_Minh",
+    region: "asia-southeast1",
+    memory: "256MiB",
+  },
+  async () => {
+    const now = Date.now();
+    const snap = await db.collection("tasks")
+    .where("status", "in", ["open", "pending", "full", "doing", "in_progress"])
+    .where("banned", "!=", true)
+    .where("hidden", "!=", true)
+    .limit(5000) // Tránh quá 500 writes/batch
+    .get();
+
+    if (snap.empty) {
+      console.log("No active tasks to update hotScore");
+      return;
+    }
+
+    const batch = db.batch();
+    let batchCount = 0;
+    let totalUpdated = 0;
+
+    snap.docs.forEach((doc) => {
+      const d = doc.data();
+      const createdAt = d.createdAt?.toMillis() || now;
+      const ageHours = (now - createdAt) / 3600000;
+      
+      let score = 0;
+      if (d.type === 'task') {
+        // Task: view + like + comment, càng mới càng hot
+        score = (d.viewCount * 0.5 + d.likeCount * 2 + d.commentCount * 3) / Math.pow(ageHours + 2, 1.5);
+      } else {
+        // Plan: tỷ lệ join cao + sắp diễn ra
+        const joinRate = (d.currentParticipants || 0) / (d.maxParticipants || 1);
+        const eventTime = d.eventDate?.toMillis() || now;
+        const hoursToEvent = Math.max((eventTime - now) / 3600000, 1);
+        score = (joinRate * 100) / hoursToEvent;
+      }
+
+      batch.update(doc.ref, { hotScore: score });
+      batchCount++;
+      totalUpdated++;
+
+      // Commit mỗi 400 để an toàn, Firestore limit 500
+      if (batchCount === 400) {
+        batch.commit();
+        batchCount = 0;
+      }
+    });
+
+    if (batchCount > 0) await batch.commit();
+    console.log(`Updated hotScore for ${totalUpdated} tasks`);
   }
 );
