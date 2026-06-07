@@ -26,7 +26,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { type FeedTask } from "@/types/task";
 import { cn } from "@/lib/utils";
 import { useProvinces } from "@/lib/useProvinces";
-import type { Province } from "@/lib/provinces";
+
 
 type Props = {
   task: FeedTask;
@@ -52,7 +52,7 @@ const useProvinceMap = () => {
   return useMemo(() => {
     const map = new Map<string, string>();
     provinces.forEach((p) => {
-      const short = p.name.replace("Thành phố ", "").replace("Tỉnh ", "");
+const short = p.name.replace("Thành phố ", "").replace("Tỉnh ", "");
       map.set(short, p.name);
       map.set(p.name, p.name);
       map.set(p.code, p.name);
