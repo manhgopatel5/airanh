@@ -17,7 +17,7 @@ interface CustomFilterBarProps {
   currentFilter: FilterTab;
   onChangeFilter: (filter: FilterTab) => void;
   searchQueries: Record<FilterTab, string>;
-  onSearchChange: (filter: FilterTab, query: string) => void;
+
   onOpenSearch: () => void;
   showSearchModal: boolean;
   onCloseSearch: () => void;
@@ -226,7 +226,7 @@ export default function CustomFilterBar({
   currentFilter,
   onChangeFilter,
   searchQueries,
-  onSearchChange,
+  
   onOpenSearch,
   showSearchModal,
   onCloseSearch,
