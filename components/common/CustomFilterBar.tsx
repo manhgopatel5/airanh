@@ -10,7 +10,7 @@ const haptics = {
   medium: () => navigator?.vibrate?.([8, 15, 8]),
 };
 
-type FilterTab = "hot" | "nearby" | "friends" | "new";
+type FilterTab = "hot" | "nearby" | "new"; 
 type SortBy = "views" | "recent" | "price_asc" | "price_desc";
 
 interface CustomFilterBarProps {
