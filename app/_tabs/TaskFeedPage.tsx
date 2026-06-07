@@ -17,9 +17,9 @@ import TaskCard from "@/components/task/TaskCard";
 import { useAppStore } from "@/store/app";
 import type { FeedTask } from "@/types/task";
 
-type TabId = "hot" | "nearby" | "friends" | "new";
+type TabId = "hot" | "nearby" | "new"; // XÓA "friends"
 type SortBy = "views" | "recent" | "price_asc" | "price_desc";
-type FilterTab = "hot" | "nearby" | "friends" | "new";
+type FilterTab = "hot" | "nearby" | "new"; // XÓA "friends"
 
 type TaskWithLocation = FeedTask & {
   location: { lat: number; lng: number };
@@ -57,7 +57,7 @@ export default function TaskFeedPage() {
   const [searchQueries, setSearchQueries] = useState<Record<FilterTab, string>>({
     hot: '',
     nearby: '',
-    friends: '',
+    
     new: ''
   });
 
