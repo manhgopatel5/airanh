@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, ArrowLeft, Flame, SlidersHorizontal, TrendingUp, Clock, DollarSign, Check } from "lucide-react";
 import { useAppStore } from "@/store/app";
 import React, { useState, useEffect, useRef } from "react";
-
+import { useDebouncedCallback } from "use-debounce";
 const haptics = {
   light: () => navigator?.vibrate?.(5),
   medium: () => navigator?.vibrate?.([8, 15, 8]),
@@ -21,6 +21,7 @@ interface CustomFilterBarProps {
   onOpenSearch: () => void;
   showSearchModal: boolean;
   onCloseSearch: () => void;
+  onApplyFilters: (filters: any) => void; 
 }
 
 const CATEGORY_TASKS = [
@@ -249,6 +250,7 @@ export default function CustomFilterBar({
   onOpenSearch,
   showSearchModal,
   onCloseSearch,
+  onApplyFilters, // THÊM DÒNG NÀY
 }: CustomFilterBarProps) {
   const mode = useAppStore((s) => s.mode) || "task";
   const modalRef = useRef<HTMLDivElement>(null);
@@ -256,6 +258,28 @@ export default function CustomFilterBar({
   const [priceRange, setPriceRange] = useState<string>("all");
   const [sortBy, setSortBy] = useState<SortBy>("views");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [localQuery, setLocalQuery] = useState(""); // THÊM DÒNG NÀY
+
+  // THÊM DEBOUNCE
+  const debouncedSearch = useDebouncedCallback((query: string) => {
+    onSearchChange(currentFilter, query);
+  }, 300);
+
+  useEffect(() => {
+    setLocalQuery(searchQueries[currentFilter] || "");
+  }, [currentFilter, searchQueries]);
+
+  const handleApply = () => {
+    haptics.medium();
+    onApplyFilters({
+      tab: currentFilter,
+      categories: selectedCategories,
+      priceRange,
+      sortBy,
+      query: localQuery,
+    });
+    onCloseSearch();
+  };
 
   const themes = {
     task: { bg: "#0A84FF", bgGradient: "linear-gradient(135deg, #0A84FF 0%, #0051D5 100%)", accent: "#00D9FF", secondary: "#5AC8FA" },
@@ -380,26 +404,33 @@ export default function CustomFilterBar({
               </div>
 
               <div className="relative h-11 mb-4">
-                <input
-                  value={searchQueries[currentFilter] || ""}
-                  onChange={(e) => onSearchChange(currentFilter, e.target.value)}
-                  placeholder={`Tìm ${filters.find(f => f.key === currentFilter)?.label.toLowerCase()}...`}
-                  className="w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-black/[0.08] dark:ring-white/10 outline-none focus:ring-2 focus:ring-[#0A84FF]/40 dark:focus:ring-[#0A84FF]/50 font-semibold text-base text-zinc-900 dark:text-zinc-100 transition-all placeholder:text-zinc-400 shadow-sm focus:shadow-md"
-                />
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/40 via-transparent to-black/[0.03] pointer-events-none" />
-                <div className="absolute inset-[1px] rounded-2xl ring-1 ring-inset ring-white/30 pointer-events-none" />
-                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 z-10">
-                  {searchQueries[currentFilter]? (
-                    <button
-                      onClick={() => onSearchChange(currentFilter, "")}
-                      className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                    >
-                      <X size={18} className="text-zinc-500" />
-                    </button>
-                  ) : (
-                    <Search size={18} className="text-zinc-400" />
-                  )}
-                </div>
+            <input
+  value={localQuery} // ĐỔI THÀNH localQuery
+  onChange={(e) => {
+    const val = e.target.value;
+    setLocalQuery(val); // Update UI ngay
+    debouncedSearch(val); // Call API sau 300ms
+  }}
+  placeholder={`Tìm ${filters.find(f => f.key === currentFilter)?.label.toLowerCase()}...`}
+  className="w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-black/[0.08] dark:ring-white/10 outline-none focus:ring-2 focus:ring-[#0A84FF]/40 dark:focus:ring-[#0A84FF]/50 font-semibold text-base text-zinc-900 dark:text-zinc-100 transition-all placeholder:text-zinc-400 shadow-sm focus:shadow-md"
+/>
+<div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/40 via-transparent to-black/[0.03] pointer-events-none" />
+<div className="absolute inset-[1px] rounded-2xl ring-1 ring-inset ring-white/30 pointer-events-none" />
+<div className="absolute right-2.5 top-1/2 -translate-y-1/2 z-10">
+  {localQuery? ( // ĐỔI THÀNH localQuery
+    <button
+      onClick={() => {
+        setLocalQuery("");
+        onSearchChange(currentFilter, "");
+      }}
+      className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+    >
+      <X size={18} className="text-zinc-500" />
+    </button>
+  ) : (
+    <Search size={18} className="text-zinc-400" />
+  )}
+</div>
               </div>
 
               {/* HOT FILTER - NÂNG CẤP */}
@@ -538,17 +569,14 @@ export default function CustomFilterBar({
                 >
                   Hủy
                 </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.96 }}
-                  onClick={() => {
-                    haptics.medium();
-                    onCloseSearch();
-                  }}
-                  className="flex-1 h-11 rounded-2xl text-white font-black text-sm shadow-lg"
-                  style={{ background: currentTheme.bgGradient }}
-                >
-                  Áp dụng ({activeFilterCount})
-                </motion.button>
+            <motion.button
+  whileTap={{ scale: 0.96 }}
+  onClick={handleApply} // ĐỔI THÀNH handleApply
+  className="flex-1 h-11 rounded-2xl text-white font-black text-sm shadow-lg"
+  style={{ background: currentTheme.bgGradient }}
+>
+  Áp dụng ({activeFilterCount})
+</motion.button>
               </div>
             </motion.div>
           </motion.div>
