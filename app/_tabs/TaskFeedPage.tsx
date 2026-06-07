@@ -17,9 +17,9 @@ import TaskCard from "@/components/task/TaskCard";
 import { useAppStore } from "@/store/app";
 import type { FeedTask } from "@/types/task";
 
-type TabId = "hot" | "nearby" | "new"; // XÓA "friends"
+type TabId = "hot" | "nearby" | "new";
 type SortBy = "views" | "recent" | "price_asc" | "price_desc";
-type FilterTab = "hot" | "nearby" | "new"; // XÓA "friends"
+type FilterTab = "hot" | "nearby" | "new";
 
 type TaskWithLocation = FeedTask & {
   location: { lat: number; lng: number };
@@ -39,7 +39,13 @@ const vibrate = (pattern: number | number[] = 6) => {
   if (typeof navigator!== "undefined" && "vibrate" in navigator) navigator.vibrate(pattern);
 };
 
-export default function TaskFeedPage() {
+// THÊM PROPS
+type TaskFeedPageProps = {
+  initialJobs: FeedTask[]
+  initialPlans: FeedTask[]
+}
+
+export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPageProps) {
   const reduceMotion = useReducedMotion();
   const { mode = "task", setMode } = useAppStore();
   const [activeTab, setActiveTab] = useState<TabId>("hot");
@@ -57,16 +63,25 @@ export default function TaskFeedPage() {
   const [searchQueries, setSearchQueries] = useState<Record<FilterTab, string>>({
     hot: '',
     nearby: '',
-    
     new: ''
   });
 
   const [cursor, setCursor] = useState<number | null>(null);
-  const [allTasks, setAllTasks] = useState<FeedTask[]>([]);
+  
+  // DÙNG INITIAL DATA
+  const [allTasks, setAllTasks] = useState<FeedTask[]>(
+    mode === "task"? initialJobs : initialPlans
+  );
 
   const isTaskMode = mode === "task";
   const accent = isTaskMode? "#0A84FF" : "#30D158";
   const gradient = isTaskMode? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
+
+  // RESET KHI ĐỔI MODE
+  useEffect(() => {
+    setAllTasks(mode === "task"? initialJobs : initialPlans);
+    setCursor(null);
+  }, [mode, initialJobs, initialPlans]);
 
   const apiUrl = useMemo(() => {
     const params = new URLSearchParams({
@@ -84,7 +99,7 @@ export default function TaskFeedPage() {
   }, [mode, activeTab, filters, cursor]);
 
   const { data, error, isLoading, isValidating, mutate } = useSWR<{ tasks: FeedTask[], nextCursor: number | null }>(
-    apiUrl,
+    cursor? apiUrl : null, // Chỉ fetch khi load more
     fetcher,
     {
       revalidateIfStale: false,
