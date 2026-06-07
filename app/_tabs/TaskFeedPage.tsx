@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import * as geofire from "geofire-common";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import {
   FiInbox,
   FiRefreshCw,
@@ -46,6 +46,7 @@ type TaskFeedPageProps = {
 
 export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPageProps) {
   const reduceMotion = useReducedMotion();
+  const { mutate: globalMutate } = useSWRConfig();
   const { mode = "task", setMode } = useAppStore();
   const [activeTab, setActiveTab] = useState<TabId>("hot");
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
@@ -72,7 +73,6 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   const accent = isTaskMode? "#0A84FF" : "#30D158";
   const gradient = isTaskMode? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
 
-  // FIX 1: Reset khi đổi mode
   useEffect(() => {
     setCursor(null);
     setHasSearched(false);
@@ -80,15 +80,9 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     setActiveTab("hot");
   }, [mode]);
 
-  // FIX 2: Chỉ return null khi chưa search VÀ không có filter nào
   const apiUrl = useMemo(() => {
-    const hasActiveFilter = 
-      filters.query!== '' || 
-      filters.categories.length > 0 || 
-      filters.priceRange!== 'all' || 
-      activeTab!== 'hot';
-
-    if (!hasSearched &&!hasActiveFilter && cursor === null) return null;
+    // FIX 1: Luôn tạo URL nếu đã search, bất kể filter default hay không
+    if (!hasSearched && cursor === null) return null;
     
     const params = new URLSearchParams({
       type: mode,
@@ -116,7 +110,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
       revalidateIfStale: false,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      dedupingInterval: 300000,
+      dedupingInterval: 0, // FIX 2: Tắt deduping để fetch ngay khi đổi filter
       keepPreviousData: false,
       refreshInterval: 0,
       shouldRetryOnError: false,
@@ -153,21 +147,25 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     if (activeTab === "nearby" &&!userLocation) requestLocation();
   }, [activeTab, requestLocation, userLocation]);
 
-  const handleApplyFilters = useCallback((newFilters: any) => {
-    setHasSearched(true);
-    setCursor(null);
-    // FIX 3: Set activeTab trước filters để apiUrl tính đúng
-    if (newFilters.tab && newFilters.tab!== activeTab) {
-      setActiveTab(newFilters.tab);
-    }
-    setFilters({
+  const handleApplyFilters = useCallback(async (newFilters: any) => {
+    // FIX 3: Set state xong thì force mutate luôn
+    const newTab = newFilters.tab || activeTab;
+    const newFilterState = {
       categories: newFilters.categories || [],
       priceRange: newFilters.priceRange || 'all',
       sortBy: newFilters.sortBy || 'views',
       query: newFilters.query || '',
-    });
-    setSearchQueries(prev => ({...prev, [newFilters.tab]: newFilters.query || '' }));
-  }, [activeTab]);
+    };
+    
+    setActiveTab(newTab);
+    setFilters(newFilterState);
+    setSearchQueries(prev => ({...prev, [newTab]: newFilters.query || '' }));
+    setCursor(null);
+    setHasSearched(true);
+    
+    // Force revalidate ngay
+    setTimeout(() => mutate(), 0);
+  }, [activeTab, mutate]);
 
   const filteredTasks = useMemo(() => {
     let result = tasks.filter((task) =>!task.banned &&!task.hidden);
@@ -196,7 +194,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     mutate(current => {
       if (!current) return current;
       return {
-     ...current,
+    ...current,
         tasks: current.tasks.map(item => item.id === taskId? ({...item,...updates } as FeedTask) : item)
       };
     }, false);
@@ -206,7 +204,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     mutate(current => {
       if (!current) return current;
       return {
-     ...current,
+    ...current,
         tasks: current.tasks.filter(item => item.id!== id)
       };
     }, false);
@@ -242,7 +240,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
                 left: isTaskMode? "0%" : "44%",
                 width: "56%",
                 background: isTaskMode
-           ? "linear-gradient(135deg, #0A84FF 0%, #0066CC 50%, #0051D5 100%)"
+          ? "linear-gradient(135deg, #0A84FF 0%, #0066CC 50%, #0051D5 100%)"
                   : "linear-gradient(135deg, #30D158 0%, #28B34A 50%, #248A3D 100%)"
               }}
               transition={{ type: "spring", stiffness: 340, damping: 38, mass: 0.6 }}
@@ -271,7 +269,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
                 aria-pressed={!isTaskMode}
                 onClick={() => switchMode("plan")}
                 className={`relative flex items-center justify-center gap-2 text- font-black transition-colors duration-200 ${
-           !isTaskMode? "text-white" : "text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+          !isTaskMode? "text-white" : "text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
                 }`}
               >
                 <HiCalendarDays size={22} />
