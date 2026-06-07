@@ -26,12 +26,12 @@ export default async function HomePage() {
   // Prefetch cả Task và Plan để chuyển mode tức thì trên Home.
   // API public đã cache CDN, nên 2 query này được amortize theo revalidate thay vì mỗi lần bấm tab.
   try {
-    const [jobs, plans] = await Promise.all([
-      getJobsFromFirebaseAdmin('task', 12),
-      getJobsFromFirebaseAdmin('plan', 12),
-    ])
-    initialJobs = jobs
-    initialPlans = plans
+    const [jobsData, plansData] = await Promise.all([
+  getJobsFromFirebaseAdmin('task'),
+  getJobsFromFirebaseAdmin('plan'),
+])
+initialJobs = jobsData.tasks // Lấy .tasks vì giờ nó trả về object
+initialPlans = plansData.tasks
   } catch (error) {
     console.error('Failed to prefetch feeds:', error)
     initialJobs = []
