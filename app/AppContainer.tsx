@@ -4,14 +4,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import dynamic from 'next/dynamic';
 
-
 import { useAppStore } from "@/store/app";
 import { AnimatePresence, motion } from "framer-motion";
 
 import CustomTabBar from "@/components/CustomTabBar";
 import { useTabBarHeight } from "@/hooks/useTabBarHeight";
 import JobSkeleton from "@/components/JobSkeleton";
-
+import type { FeedTask } from "@/types/task";
 
 const TaskFeedPage = dynamic(() => import('./_tabs/TaskFeedPage'), {
   loading: () => <JobSkeleton count={5} />,
@@ -37,10 +36,13 @@ const FloatingMenu = dynamic(() => import('@/components/FloatingMenu'), {
 
 type MainTab = "home" | "messages" | "tasks" | "profile" | "plans";
 
+// THÊM TYPE PROPS
+type AppContainerProps = {
+  initialJobs: FeedTask[]
+  initialPlans: FeedTask[]
+}
 
-
-
-export default function AppContainer() { // BỎ {}
+export default function AppContainer({ initialJobs, initialPlans }: AppContainerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const unreadCount = useAppStore((s) => s.unreadCount);
@@ -52,9 +54,6 @@ export default function AppContainer() { // BỎ {}
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const tabBarHeight = useTabBarHeight();
-
-  // Public feeds are prefetched and kept warm so Task/Plan switching is instant.
-  
 
   useEffect(() => setMounted(true), []);
 
@@ -106,26 +105,27 @@ export default function AppContainer() { // BỎ {}
   }, [router]);
 
   const renderCurrentTab = () => {
-  switch (currentMainTab) {
-    case "home":
-    case "plans":
-      return <TaskFeedPage /> // BỎ initialJobs, initialPlans
-    case "messages":
-      return <ChatClient />
-    case "tasks":
-      return <TasksPage />
-    case "profile":
-      return <ProfileTabContent />
-    default:
-      return <TaskFeedPage />
+    switch (currentMainTab) {
+      case "home":
+      case "plans":
+        // TRUYỀN INITIAL DATA XUỐNG
+        return <TaskFeedPage initialJobs={initialJobs} initialPlans={initialPlans} />
+      case "messages":
+        return <ChatClient />
+      case "tasks":
+        return <TasksPage />
+      case "profile":
+        return <ProfileTabContent />
+      default:
+        return <TaskFeedPage initialJobs={initialJobs} initialPlans={initialPlans} />
+    }
   }
-}
 
   return (
     <div className="h-dvh flex flex-col font-sans bg-white dark:bg-zinc-950 relative">
       <div
         className="flex-1 w-full max-w-2xl mx-auto overflow-y-auto [-webkit-overflow-scrolling:touch] overscroll-y-contain"
-style={{ paddingBottom: tabBarHeight }}
+        style={{ paddingBottom: tabBarHeight }}
       >
         {renderCurrentTab()}
       </div>
@@ -134,14 +134,14 @@ style={{ paddingBottom: tabBarHeight }}
         <>
           <AnimatePresence>
             {isMenuOpen && (
-          <motion.div
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  exit={{ opacity: 0 }}
-  transition={{ duration: 0.2 }}
-  className="fixed inset-0 z-60 bg-white/60 dark:bg-zinc-950/40 backdrop-blur-sm"
-  onClick={() => setIsMenuOpen(false)}
-/>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 z-60 bg-white/60 dark:bg-zinc-950/40 backdrop-blur-sm"
+                onClick={() => setIsMenuOpen(false)}
+              />
             )}
           </AnimatePresence>
 
@@ -157,23 +157,23 @@ style={{ paddingBottom: tabBarHeight }}
             </div>
           </div>
 
-   <CustomTabBar
-  currentTab={currentMainTab === "plans"? "home" : currentMainTab as "home" | "messages" | "tasks" | "profile"}
-  onChangeTab={handleChangeTab}
-  unreadCount={unreadCount}
-  isMenuOpen={isMenuOpen}
-  onCreateClick={() => {
-    navigator.vibrate?.([15, 35, 15]);
-    setIsMenuOpen(true);
-  }}
-/>
+          <CustomTabBar
+            currentTab={currentMainTab === "plans"? "home" : currentMainTab as "home" | "messages" | "tasks" | "profile"}
+            onChangeTab={handleChangeTab}
+            unreadCount={unreadCount}
+            isMenuOpen={isMenuOpen}
+            onCreateClick={() => {
+              navigator.vibrate?.([15, 35, 15]);
+              setIsMenuOpen(true);
+            }}
+          />
         </>,
         document.body
       )}
 
       <style jsx global>{`
-  .scrollbar-hide::-webkit-scrollbar{display:none}
-  .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
+       .scrollbar-hide::-webkit-scrollbar{display:none}
+       .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
         html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
         body{overscroll-behavior-y:contain}
       `}</style>
