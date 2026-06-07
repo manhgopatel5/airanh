@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import * as geofire from "geofire-common";
 import useSWR from "swr";
-
 import {
   FiInbox,
   FiRefreshCw,
@@ -18,8 +17,9 @@ import TaskCard from "@/components/task/TaskCard";
 import { useAppStore } from "@/store/app";
 import type { FeedTask } from "@/types/task";
 
-type TabId = "hot" | "nearby" | "new";
+type TabId = "hot" | "nearby" | "friends" | "new";
 type SortBy = "views" | "recent" | "price_asc" | "price_desc";
+type FilterTab = "hot" | "nearby" | "friends" | "new";
 
 type TaskWithLocation = FeedTask & {
   location: { lat: number; lng: number };
@@ -46,15 +46,21 @@ export default function TaskFeedPage() {
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showSearchModal, setShowSearchModal] = useState(false);
-  
-  // State filter mới
+
   const [filters, setFilters] = useState({
     categories: [] as string[],
     priceRange: 'all',
     sortBy: 'views' as SortBy,
     query: '',
   });
-  
+
+  const [searchQueries, setSearchQueries] = useState<Record<FilterTab, string>>({
+    hot: '',
+    nearby: '',
+    friends: '',
+    new: ''
+  });
+
   const [cursor, setCursor] = useState<number | null>(null);
   const [allTasks, setAllTasks] = useState<FeedTask[]>([]);
 
@@ -62,19 +68,18 @@ export default function TaskFeedPage() {
   const accent = isTaskMode? "#0A84FF" : "#30D158";
   const gradient = isTaskMode? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
 
-  // Build API URL theo filter
   const apiUrl = useMemo(() => {
     const params = new URLSearchParams({
       type: mode,
       limit: '20',
-      sortBy: activeTab === 'hot' ? 'hot' : activeTab === 'new' ? 'new' : filters.sortBy,
+      sortBy: activeTab === 'hot'? 'hot' : activeTab === 'new'? 'new' : filters.sortBy,
     });
-    
+
     if (filters.categories.length > 0) params.set('categories', filters.categories.join(','));
-    if (filters.priceRange !== 'all') params.set('priceRange', filters.priceRange);
+    if (filters.priceRange!== 'all') params.set('priceRange', filters.priceRange);
     if (filters.query) params.set('query', filters.query);
     if (cursor) params.set('cursor', cursor.toString());
-    
+
     return `/api/tasks?${params.toString()}`;
   }, [mode, activeTab, filters, cursor]);
 
@@ -122,7 +127,6 @@ export default function TaskFeedPage() {
     if (activeTab === "nearby" &&!userLocation) requestLocation();
   }, [activeTab, requestLocation, userLocation]);
 
-  // Nhận filter từ CustomFilterBar
   const handleApplyFilters = useCallback((newFilters: any) => {
     setCursor(null);
     setAllTasks([]);
@@ -132,17 +136,18 @@ export default function TaskFeedPage() {
       sortBy: newFilters.sortBy || 'views',
       query: newFilters.query || '',
     });
-    if (newFilters.tab && newFilters.tab !== activeTab) {
+    setSearchQueries(prev => ({...prev, [newFilters.tab]: newFilters.query || '' }));
+    if (newFilters.tab && newFilters.tab!== activeTab) {
       setActiveTab(newFilters.tab);
     }
   }, [activeTab]);
 
   const filteredTasks = useMemo(() => {
     let result = tasks.filter((task) =>!task.banned &&!task.hidden && task.type === mode);
-    
+
     if (activeTab === "nearby" && userLocation) {
-      result = result.filter(hasLocation).sort((a, b) => 
-        geofire.distanceBetween([userLocation.lat, userLocation.lng], [a.location.lat, a.location.lng]) - 
+      result = result.filter(hasLocation).sort((a, b) =>
+        geofire.distanceBetween([userLocation.lat, userLocation.lng], [a.location.lat, a.location.lng]) -
         geofire.distanceBetween([userLocation.lat, userLocation.lng], [b.location.lat, b.location.lng])
       );
     }
@@ -189,7 +194,6 @@ export default function TaskFeedPage() {
     <div className="bg-white dark:bg-zinc-950 text-zinc-950 dark:text-white">
       <div className="sticky top-0 z-40 bg-white dark:bg-zinc-950">
         <div className="mx-auto max-w-[680px] px-4 pt-3 pb-3">
-          {/* TOGGLE TASK/PLAN */}
           <div className="relative h-14 rounded-[1.6rem] bg-white dark:bg-zinc-900 ring-1 ring-black/[0.08] dark:ring-white/10 overflow-hidden shadow-sm">
             <motion.div
               className="absolute top-0 bottom-0 rounded-[1.6rem]"
@@ -198,7 +202,7 @@ export default function TaskFeedPage() {
                 left: isTaskMode? "0%" : "44%",
                 width: "56%",
                 background: isTaskMode
-              ? "linear-gradient(135deg, #0A84FF 0%, #0066CC 50%, #0051D5 100%)"
+             ? "linear-gradient(135deg, #0A84FF 0%, #0066CC 50%, #0051D5 100%)"
                   : "linear-gradient(135deg, #30D158 0%, #28B34A 50%, #248A3D 100%)"
               }}
               transition={{ type: "spring", stiffness: 340, damping: 38, mass: 0.6 }}
@@ -227,7 +231,7 @@ export default function TaskFeedPage() {
                 aria-pressed={!isTaskMode}
                 onClick={() => switchMode("plan")}
                 className={`relative flex items-center justify-center gap-2 text- font-black transition-colors duration-200 ${
-              !isTaskMode? "text-white" : "text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+             !isTaskMode? "text-white" : "text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
                 }`}
               >
                 <HiCalendarDays size={22} />
@@ -239,8 +243,11 @@ export default function TaskFeedPage() {
           <CustomFilterBar
             currentFilter={activeTab}
             onChangeFilter={setActiveTab}
-            searchQueries={{ [activeTab]: filters.query }}
-            onSearchChange={(tab, query) => setFilters(prev => ({...prev, query}))}
+            searchQueries={searchQueries}
+            onSearchChange={(tab, query) => {
+              setSearchQueries(prev => ({...prev, [tab]: query }));
+              setFilters(prev => ({...prev, query}));
+            }}
             onOpenSearch={() => setShowSearchModal(true)}
             showSearchModal={showSearchModal}
             onCloseSearch={() => setShowSearchModal(false)}
@@ -253,11 +260,11 @@ export default function TaskFeedPage() {
         {loading? (
           <div className="space-y-3" aria-label="Đang tải feed">
             {[0, 1, 2].map((item) => (
-              <div key={item} className="h-52 rounded-[2rem] bg-white motion-safe:animate-pulse dark:bg-zinc-900" />
+              <div key={item} className="h-52 rounded- bg-white motion-safe:animate-pulse dark:bg-zinc-900" />
             ))}
           </div>
         ) : error? (
-          <div className="rounded-[2rem] border border-red-200 bg-white/82 p-8 text-center shadow-xl shadow-red-500/5 dark:border-red-500/20 dark:bg-zinc-900/80">
+          <div className="rounded- border border-red-200 bg-white/82 p-8 text-center shadow-xl shadow-red-500/5 dark:border-red-500/20 dark:bg-zinc-900/80">
             <FiInbox className="mx-auto h-9 w-9 text-red-500" />
             <h2 className="mt-4 text-xl font-black">Feed đang gián đoạn</h2>
             <p className="mt-2 text-sm text-zinc-500">Thử tải lại để đồng bộ dữ liệu mới nhất.</p>
@@ -267,7 +274,7 @@ export default function TaskFeedPage() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-[2rem] border border-white/70 bg-white/82 p-8 text-center shadow-xl shadow-black/[0.04] dark:border-white/10 dark:bg-zinc-900/80"
+            className="rounded- border border-white/70 bg-white/82 p-8 text-center shadow-xl shadow-black/[0.04] dark:border-white/10 dark:bg-zinc-900/80"
           >
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-zinc-100 text-zinc-400 dark:bg-zinc-800">
               <FiSearch className="h-7 w-7" />
@@ -320,7 +327,7 @@ export default function TaskFeedPage() {
           </AnimatePresence>
         )}
 
-        {nextCursor && !loading && (
+        {nextCursor &&!loading && (
           <motion.button
             whileTap={{ scale: 0.96 }}
             onClick={handleLoadMore}
