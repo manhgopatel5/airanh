@@ -25,7 +25,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
 import { type FeedTask } from "@/types/task";
 import { cn } from "@/lib/utils";
-import { useProvinces } from "@/lib/provinces";
+import { useProvinces } from "@/lib/useProvinces";
+import type { Province } from "@/lib/provinces";
 
 type Props = {
   task: FeedTask;
