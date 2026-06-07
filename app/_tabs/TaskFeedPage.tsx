@@ -281,7 +281,7 @@ const handleApplyFilters = useCallback(async (newFilters: any) => {
   onChangeFilter={setActiveTab}
   searchQueries={searchQueries}
   
-  }}
+  
   onOpenSearch={() => setShowSearchModal(true)}
   showSearchModal={showSearchModal}
   onCloseSearch={() => setShowSearchModal(false)}
