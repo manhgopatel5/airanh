@@ -23,20 +23,54 @@ export async function GET(request: NextRequest) {
   const categoriesParam = searchParams.get('categories');
   const categories = categoriesParam? categoriesParam.split(',').filter(Boolean) : undefined;
   
+  // FIX: Map priceRange string -> min/max
   const priceRangeParam = searchParams.get('priceRange');
-  const priceRange = priceRangeParam && priceRangeParam!== 'all'? parseInt(priceRangeParam) : undefined;
+  let minPrice: number | undefined;
+  let maxPrice: number | undefined;
+
+  if (priceRangeParam && priceRangeParam!== 'all') {
+    switch (priceRangeParam) {
+      case 'free':
+        minPrice = 0;
+        maxPrice = 0;
+        break;
+      case 'lt50': // < 50K
+        minPrice = 0;
+        maxPrice = 49999;
+        break;
+      case '50-200': // 50K - 200K
+        minPrice = 50000;
+        maxPrice = 200000;
+        break;
+      case '200-500': // 200K - 500K
+        minPrice = 200000;
+        maxPrice = 500000;
+        break;
+      case 'gt500': // > 500K
+        minPrice = 500001;
+        maxPrice = undefined;
+        break;
+      default:
+        // Nếu truyền số trực tiếp thì vẫn hỗ trợ
+        const parsed = parseInt(priceRangeParam);
+        if (!isNaN(parsed)) {
+          minPrice = parsed;
+          maxPrice = parsed;
+        }
+    }
+  }
   
   const query = searchParams.get('query') || undefined;
 
   try {
-    // FIX: Chỉ truyền prop khi có value, không truyền undefined
     const data = await getJobsFromFirebaseAdmin({
       type,
       limitCount: limit,
       sortBy,
-    ...(categories && { categories }),
-    ...(priceRange!== undefined && { priceRange }),
-    ...(cursor!== undefined && { cursor }),
+     ...(categories && { categories }),
+     ...(minPrice!== undefined && { minPrice }),
+     ...(maxPrice!== undefined && { maxPrice }),
+     ...(cursor!== undefined && { cursor }),
     });
 
     let tasks = data.tasks;
@@ -84,7 +118,7 @@ export async function POST(request: Request) {
     const price = Number(body.price) || 0;
 
     const taskData = {
-...body,
+     ...body,
       userId: decoded.uid,
       userName: decoded.name || 'User',
       userAvatar: decoded.picture || '',
@@ -107,7 +141,7 @@ export async function POST(request: Request) {
       priceRange: getPriceRange(price),
       tags: Array.isArray(body.tags)? body.tags : [],
       images: Array.isArray(body.images)? body.images : [],
-...(isTask && {
+     ...(isTask && {
         totalSlots: Number(body.totalSlots) || 1,
         joined: 0,
         budgetType: body.budgetType || 'fixed',
@@ -117,7 +151,7 @@ export async function POST(request: Request) {
         urgency: body.urgency || 'flexible',
         needApproval: body.needApproval || false,
       }),
-...(!isTask && {
+     ...(!isTask && {
         eventDate: body.eventDate? new Date(body.eventDate) : null,
         endDate: body.endDate? new Date(body.endDate) : null,
         maxParticipants: Number(body.maxParticipants) || 4,
@@ -129,7 +163,7 @@ export async function POST(request: Request) {
         requireApproval: body.requireApproval || false,
         autoAccept:!body.requireApproval,
       }),
-...(body.location?.lat && body.location?.lng && {
+     ...(body.location?.lat && body.location?.lng && {
         location: {
           lat: body.location.lat,
           lng: body.location.lng,
