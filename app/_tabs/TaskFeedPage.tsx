@@ -67,22 +67,17 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   });
 
   const [cursor, setCursor] = useState<number | null>(null);
-  
-  const [allTasks, setAllTasks] = useState<FeedTask[]>(
-    mode === "task"? initialJobs : initialPlans
-  );
 
   const isTaskMode = mode === "task";
   const accent = isTaskMode? "#0A84FF" : "#30D158";
   const gradient = isTaskMode? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
 
   useEffect(() => {
-    setAllTasks(mode === "task"? initialJobs : initialPlans);
     setCursor(null);
     setHasSearched(false);
     setFilters({ categories: [], priceRange: 'all', sortBy: 'views', query: '' });
     setActiveTab("hot");
-  }, [mode, initialJobs, initialPlans]);
+  }, [mode]);
 
   const apiUrl = useMemo(() => {
     const isDefaultFilter = filters.query === '' && filters.categories.length === 0 && filters.priceRange === 'all' && activeTab === 'hot';
@@ -115,17 +110,9 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       dedupingInterval: 300000,
-      keepPreviousData: false, // FIX 1: Tắt keepPreviousData để không giữ data cũ
+      keepPreviousData: false,
       refreshInterval: 0,
       shouldRetryOnError: false,
-      // FIX 2: Luôn set allTasks khi search lần đầu
-      onSuccess: (newData) => {
-        if (cursor === null) {
-          setAllTasks(newData.tasks); // Kể cả [] cũng set
-        } else {
-          setAllTasks(prev => [...prev,...newData.tasks]);
-        }
-      },
       onError: (err: any) => {
         if (hasSearched) {
           toast.error(err?.message || "Không tải được feed", { id: "feed-load-error" });
@@ -134,12 +121,8 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     }
   );
 
-  // FIX 3: Dùng data từ SWR nếu đã search, không thì dùng initial
-  const tasks = useMemo(() => {
-    if (!hasSearched) return mode === "task" ? initialJobs : initialPlans;
-    return data?.tasks ?? [];
-  }, [hasSearched, data?.tasks, initialJobs, initialPlans, mode]);
-
+  // FIX: Dùng data từ SWR trực tiếp, không cần allTasks state
+  const tasks = data?.tasks?? (mode === "task"? initialJobs : initialPlans);
   const nextCursor = data?.nextCursor || null;
 
   const requestLocation = useCallback(() => {
@@ -203,12 +186,24 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   }, [nextCursor]);
 
   const handleTaskUpdate = useCallback((taskId: string, updates: Partial<FeedTask>) => {
-    setAllTasks(prev => prev.map(item => item.id === taskId? ({...item,...updates } as FeedTask) : item));
-  }, []);
+    mutate(current => {
+      if (!current) return current;
+      return {
+       ...current,
+        tasks: current.tasks.map(item => item.id === taskId? ({...item,...updates } as FeedTask) : item)
+      };
+    }, false);
+  }, [mutate]);
 
   const handleDelete = useCallback((id: string) => {
-    setAllTasks(prev => prev.filter(item => item.id!== id));
-  }, []);
+    mutate(current => {
+      if (!current) return current;
+      return {
+       ...current,
+        tasks: current.tasks.filter(item => item.id!== id)
+      };
+    }, false);
+  }, [mutate]);
 
   const handleShare = useCallback((task: FeedTask) => {
     vibrate(5);
@@ -240,7 +235,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
                 left: isTaskMode? "0%" : "44%",
                 width: "56%",
                 background: isTaskMode
-             ? "linear-gradient(135deg, #0A84FF 0%, #0066CC 50%, #0051D5 100%)"
+            ? "linear-gradient(135deg, #0A84FF 0%, #0066CC 50%, #0051D5 100%)"
                   : "linear-gradient(135deg, #30D158 0%, #28B34A 50%, #248A3D 100%)"
               }}
               transition={{ type: "spring", stiffness: 340, damping: 38, mass: 0.6 }}
@@ -269,7 +264,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
                 aria-pressed={!isTaskMode}
                 onClick={() => switchMode("plan")}
                 className={`relative flex items-center justify-center gap-2 text- font-black transition-colors duration-200 ${
-             !isTaskMode? "text-white" : "text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+            !isTaskMode? "text-white" : "text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
                 }`}
               >
                 <HiCalendarDays size={22} />
