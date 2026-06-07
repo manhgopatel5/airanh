@@ -39,7 +39,6 @@ const vibrate = (pattern: number | number[] = 6) => {
   if (typeof navigator!== "undefined" && "vibrate" in navigator) navigator.vibrate(pattern);
 };
 
-// THÊM PROPS
 type TaskFeedPageProps = {
   initialJobs: FeedTask[]
   initialPlans: FeedTask[]
@@ -52,6 +51,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const [filters, setFilters] = useState({
     categories: [] as string[],
@@ -68,7 +68,6 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
 
   const [cursor, setCursor] = useState<number | null>(null);
   
-  // DÙNG INITIAL DATA
   const [allTasks, setAllTasks] = useState<FeedTask[]>(
     mode === "task"? initialJobs : initialPlans
   );
@@ -81,9 +80,16 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   useEffect(() => {
     setAllTasks(mode === "task"? initialJobs : initialPlans);
     setCursor(null);
+    setHasSearched(false);
+    setFilters({ categories: [], priceRange: 'all', sortBy: 'views', query: '' });
+    setActiveTab("hot");
   }, [mode, initialJobs, initialPlans]);
 
   const apiUrl = useMemo(() => {
+    // CHỈ FETCH KHI ĐÃ SEARCH/FILTER HOẶC LOAD MORE
+    const isDefaultFilter = filters.query === '' && filters.categories.length === 0 && filters.priceRange === 'all';
+    if (!hasSearched && isDefaultFilter && cursor === null) return null;
+    
     const params = new URLSearchParams({
       type: mode,
       limit: '20',
@@ -96,12 +102,17 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     if (cursor) params.set('cursor', cursor.toString());
 
     return `/api/tasks?${params.toString()}`;
-  }, [mode, activeTab, filters, cursor]);
+  }, [mode, activeTab, filters, cursor, hasSearched]);
 
   const { data, error, isLoading, isValidating, mutate } = useSWR<{ tasks: FeedTask[], nextCursor: number | null }>(
-    cursor? apiUrl : null, // Chỉ fetch khi load more
+    apiUrl,
     fetcher,
     {
+      fallbackData: { 
+        tasks: mode === "task"? initialJobs : initialPlans, 
+        nextCursor: null 
+      },
+      revalidateOnMount: false,
       revalidateIfStale: false,
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
@@ -143,6 +154,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   }, [activeTab, requestLocation, userLocation]);
 
   const handleApplyFilters = useCallback((newFilters: any) => {
+    setHasSearched(true);
     setCursor(null);
     setAllTasks([]);
     setFilters({
@@ -173,6 +185,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     vibrate(10);
     setCursor(null);
     setAllTasks([]);
+    setHasSearched(true);
     mutate();
   }, [mutate]);
 
@@ -198,10 +211,11 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     vibrate([10, 20, 10]);
     setCursor(null);
     setAllTasks([]);
+    setHasSearched(false);
     setMode(nextMode);
   };
 
-  const loading = isLoading && tasks.length === 0;
+  const loading = isLoading && tasks.length === 0 && hasSearched;
   const refreshing = isValidating &&!loading;
   const modeNoun = isTaskMode? "task" : "plan";
 
@@ -262,6 +276,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
             onSearchChange={(tab, query) => {
               setSearchQueries(prev => ({...prev, [tab]: query }));
               setFilters(prev => ({...prev, query}));
+              setHasSearched(true);
             }}
             onOpenSearch={() => setShowSearchModal(true)}
             showSearchModal={showSearchModal}
