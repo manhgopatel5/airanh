@@ -4,6 +4,7 @@ import { getFirestore, Firestore, FieldValue, Timestamp, Query } from "firebase-
 import { getAuth, Auth } from "firebase-admin/auth";
 import type { FeedTask, TaskListItem } from "@/types/task";
 
+
 /* ================= SERVICE ACCOUNT ================= */
 const requiredEnvs = [
   "FIREBASE_PROJECT_ID",
