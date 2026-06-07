@@ -85,7 +85,8 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   }, [mode, initialJobs, initialPlans]);
 
   const apiUrl = useMemo(() => {
-    const isDefaultFilter = filters.query === '' && filters.categories.length === 0 && filters.priceRange === 'all';
+    const isDefaultFilter = filters.query === '' && filters.categories.length === 0 && filters.priceRange === 'all' && activeTab === 'hot';
+    // FIX 1: Chưa search + chưa load more thì không gọi API
     if (!hasSearched && isDefaultFilter && cursor === null) return null;
     
     const params = new URLSearchParams({
@@ -103,26 +104,31 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   }, [mode, activeTab, filters, cursor, hasSearched]);
 
   const { data, error, isLoading, isValidating, mutate } = useSWR<{ tasks: FeedTask[], nextCursor: number | null }>(
-    apiUrl,
+    apiUrl, // null thì SWR không fetch
     fetcher,
     {
       fallbackData: { 
         tasks: mode === "task"? initialJobs : initialPlans, 
         nextCursor: null 
       },
-      revalidateOnMount: false,
+      revalidateOnMount: false, // FIX 2: Tắt fetch lúc mount
       revalidateIfStale: false,
       revalidateOnFocus: false,
-      revalidateOnReconnect: true,
+      revalidateOnReconnect: false,
       dedupingInterval: 300000,
       keepPreviousData: true,
       refreshInterval: 0,
       shouldRetryOnError: false,
       onSuccess: (newData) => {
-        if (cursor === null) setAllTasks(newData.tasks);
-        else setAllTasks(prev => [...prev,...newData.tasks]);
+        // Chỉ update khi đã search hoặc load more
+        if (cursor === null && hasSearched) setAllTasks(newData.tasks);
+        else if (cursor !== null) setAllTasks(prev => [...prev,...newData.tasks]);
       },
-      onError: (err: any) => toast.error(err?.message || "Không tải được feed", { id: "feed-load-error" }),
+      onError: (err: any) => {
+        if (hasSearched) { // Chỉ toast khi user search
+          toast.error(err?.message || "Không tải được feed", { id: "feed-load-error" });
+        }
+      },
     }
   );
 
@@ -168,7 +174,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   }, [activeTab]);
 
   const filteredTasks = useMemo(() => {
-    let result = tasks.filter((task) =>!task.banned &&!task.hidden); // BỎ task.type === mode
+    let result = tasks.filter((task) =>!task.banned &&!task.hidden);
 
     if (activeTab === "nearby" && userLocation) {
       result = result.filter(hasLocation).sort((a, b) =>
@@ -177,13 +183,12 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
       );
     }
     return result;
-  }, [activeTab, tasks, userLocation]); // BỎ mode
+  }, [activeTab, tasks, userLocation]);
 
   const handleRefresh = useCallback(() => {
     vibrate(10);
     setCursor(null);
-    setAllTasks([]);
-    setHasSearched(true);
+    setHasSearched(true); // Bật để fetch lại
     mutate();
   }, [mutate]);
 
@@ -213,8 +218,10 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     setMode(nextMode);
   };
 
-  const loading = isLoading && tasks.length === 0 && hasSearched;
-  const refreshing = isValidating &&!loading;
+  // FIX 3: Chỉ hiện loading/error khi đã search
+  const loading = isLoading && hasSearched;
+  const refreshing = isValidating && hasSearched;
+  const showError = error && hasSearched; // Chỉ hiện lỗi khi search
   const modeNoun = isTaskMode? "task" : "plan";
 
   return (
@@ -291,7 +298,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
               <div key={item} className="h-52 rounded- bg-white motion-safe:animate-pulse dark:bg-zinc-900" />
             ))}
           </div>
-        ) : error? (
+        ) : showError? (
           <div className="rounded- border border-red-200 bg-white/82 p-8 text-center shadow-xl shadow-red-500/5 dark:border-red-500/20 dark:bg-zinc-900/80">
             <FiInbox className="mx-auto h-9 w-9 text-red-500" />
             <h2 className="mt-4 text-xl font-black">Feed đang gián đoạn</h2>
