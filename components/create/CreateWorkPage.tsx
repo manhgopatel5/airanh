@@ -685,7 +685,7 @@ const handleCategoryChange = (catId: string) => {
           urgency: form.durationHours <= 8 ? "urgent" : "flexible",
           needApproval: form.requireApproval,
         }, user as any);
-        await mutate("/api/jobs?type=task&limit=12");
+await mutate("/api/tasks?type=task&limit=20");
         toast.success("Đã tạo task thành công");
         localStorage.removeItem(draftKey);
         router.replace("/?tab=home");
@@ -709,7 +709,7 @@ const handleCategoryChange = (catId: string) => {
           requireApproval: form.requireApproval,
           autoAccept: !form.requireApproval,
         }, user as any);
-        await mutate("/api/jobs?type=plan&limit=12");
+await mutate("/api/tasks?type=plan&limit=20");
         toast.success("Đã tạo plan thành công");
         localStorage.removeItem(draftKey);
         router.replace("/?tab=plans");
