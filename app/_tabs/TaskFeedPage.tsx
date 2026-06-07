@@ -86,7 +86,6 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
 
   const apiUrl = useMemo(() => {
     const isDefaultFilter = filters.query === '' && filters.categories.length === 0 && filters.priceRange === 'all' && activeTab === 'hot';
-    // FIX 1: Chưa search + chưa load more thì không gọi API
     if (!hasSearched && isDefaultFilter && cursor === null) return null;
     
     const params = new URLSearchParams({
@@ -104,35 +103,43 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   }, [mode, activeTab, filters, cursor, hasSearched]);
 
   const { data, error, isLoading, isValidating, mutate } = useSWR<{ tasks: FeedTask[], nextCursor: number | null }>(
-    apiUrl, // null thì SWR không fetch
+    apiUrl,
     fetcher,
     {
       fallbackData: { 
         tasks: mode === "task"? initialJobs : initialPlans, 
         nextCursor: null 
       },
-      revalidateOnMount: false, // FIX 2: Tắt fetch lúc mount
+      revalidateOnMount: false,
       revalidateIfStale: false,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       dedupingInterval: 300000,
-      keepPreviousData: true,
+      keepPreviousData: false, // FIX 1: Tắt keepPreviousData để không giữ data cũ
       refreshInterval: 0,
       shouldRetryOnError: false,
+      // FIX 2: Luôn set allTasks khi search lần đầu
       onSuccess: (newData) => {
-        // Chỉ update khi đã search hoặc load more
-        if (cursor === null && hasSearched) setAllTasks(newData.tasks);
-        else if (cursor !== null) setAllTasks(prev => [...prev,...newData.tasks]);
+        if (cursor === null) {
+          setAllTasks(newData.tasks); // Kể cả [] cũng set
+        } else {
+          setAllTasks(prev => [...prev,...newData.tasks]);
+        }
       },
       onError: (err: any) => {
-        if (hasSearched) { // Chỉ toast khi user search
+        if (hasSearched) {
           toast.error(err?.message || "Không tải được feed", { id: "feed-load-error" });
         }
       },
     }
   );
 
-  const tasks = allTasks;
+  // FIX 3: Dùng data từ SWR nếu đã search, không thì dùng initial
+  const tasks = useMemo(() => {
+    if (!hasSearched) return mode === "task" ? initialJobs : initialPlans;
+    return data?.tasks ?? [];
+  }, [hasSearched, data?.tasks, initialJobs, initialPlans, mode]);
+
   const nextCursor = data?.nextCursor || null;
 
   const requestLocation = useCallback(() => {
@@ -160,7 +167,6 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   const handleApplyFilters = useCallback((newFilters: any) => {
     setHasSearched(true);
     setCursor(null);
-    
     setFilters({
       categories: newFilters.categories || [],
       priceRange: newFilters.priceRange || 'all',
@@ -188,7 +194,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   const handleRefresh = useCallback(() => {
     vibrate(10);
     setCursor(null);
-    setHasSearched(true); // Bật để fetch lại
+    setHasSearched(true);
     mutate();
   }, [mutate]);
 
@@ -213,15 +219,13 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     if (nextMode === mode) return;
     vibrate([10, 20, 10]);
     setCursor(null);
-    setAllTasks([]);
     setHasSearched(false);
     setMode(nextMode);
   };
 
-  // FIX 3: Chỉ hiện loading/error khi đã search
   const loading = isLoading && hasSearched;
   const refreshing = isValidating && hasSearched;
-  const showError = error && hasSearched; // Chỉ hiện lỗi khi search
+  const showError = error && hasSearched;
   const modeNoun = isTaskMode? "task" : "plan";
 
   return (
