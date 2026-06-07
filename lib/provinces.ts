@@ -1,5 +1,5 @@
 // lib/provinces.ts
-type Province = { id: number; name: string; code: string };
+export type Province = { id: number; name: string; code: string };
 
 let cache: Province[] | null = null;
 let promise: Promise<Province[]> | null = null;
@@ -8,23 +8,24 @@ export const getProvinces = async (): Promise<Province[]> => {
   if (cache) return cache;
   if (promise) return promise;
 
-  promise = fetch("/api/location/provinces", { next: { revalidate: 86400 } }) // ISR 24h
-  .then((r) => r.json())
-  .then((data) => {
+  // Dùng absolute URL cho server fetch
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  
+  promise = fetch(`${baseUrl}/api/location/provinces`, { 
+    next: { revalidate: 86400 } // ISR 24h
+  })
+    .then((r) => {
+      if (!r.ok) throw new Error('Failed to fetch');
+      return r.json();
+    })
+    .then((data) => {
       cache = data;
       return data;
     })
-  .catch(() => []);
+    .catch(() => {
+      promise = null;
+      return [];
+    });
 
   return promise;
-};
-
-// Dùng SWR cho client cache + dedupe
-
-export const useProvinces = () => {
-  const { data } = useSWR<Province[]>("/api/provinces", getProvinces, {
-    revalidateOnFocus: false,
-    dedupingInterval: 86400000, // 24h
-  });
-  return data || [];
 };
