@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, ArrowLeft, Flame, SlidersHorizontal, TrendingUp, Clock, DollarSign, Check } from "lucide-react";
 import { useAppStore } from "@/store/app";
 import React, { useState, useEffect, useRef } from "react";
-import { useDebouncedCallback } from "use-debounce";
+
 const haptics = {
   light: () => navigator?.vibrate?.(5),
   medium: () => navigator?.vibrate?.([8, 15, 8]),
@@ -165,14 +165,6 @@ const TaskIcons = {
       </svg>
     );
   },
-  Friends: ({ isActive }: { isActive: boolean }) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <motion.circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="2" animate={isActive? { y: [0, -4, 0], scale: [1, 1.15, 1] } : {}} transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 1.2 }} />
-      <motion.circle cx="16" cy="8" r="3" stroke="currentColor" strokeWidth="2" animate={isActive? { y: [0, -4, 0], scale: [1, 1.15, 1] } : {}} transition={{ duration: 0.6, delay: 0.2, repeat: Infinity, repeatDelay: 1.2 }} />
-      <motion.path d="M5 21V17C5 14.7909 6.79086 13 9 13H11C13.2091 13 15 14.7909 15 17V21" stroke="currentColor" strokeWidth="2" animate={isActive? { pathLength: [0.6, 1, 0.6], pathOffset: [0, 0.3, 0] } : {}} transition={{ duration: 2.5, repeat: Infinity }} />
-      <motion.path d="M13 21V17C13 14.7909 14.7909 13 17 13H19C21.2091 13 23 14.7909 23 17V21" stroke="currentColor" strokeWidth="2" animate={isActive? { pathLength: [0.6, 1, 0.6], pathOffset: [0, 0.3, 0] } : {}} transition={{ duration: 2.5, delay: 0.3, repeat: Infinity }} />
-    </svg>
-  ),
   New: ({ isActive }: { isActive: boolean }) => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <defs><linearGradient id="hbTaskNew" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#0A84FF" /><stop offset="100%" stopColor="#00D9FF" /></linearGradient></defs>
@@ -211,25 +203,13 @@ const PlanIcons = {
         <motion.circle cx="12" cy="12" r="2" fill={isActive? "#FF3B30" : "currentColor"} animate={isActive? { scale: [1, 1.4, 1], opacity: [1, 0.5, 1] } : {}} transition={{ duration: 1, repeat: Infinity }} />
         {isActive && (
           <motion.g>
-            <motion.circle cx={12 + Math.cos((targetAngle - 90) * Math.PI / 180) * 7} cy={12 + Math.sin((targetAngle - 90) * Math.PI / 180) * 7} r="2" fill="#0A84FF" initial={{ scale: 0, opacity: 0 }} animate={{ scale: [0, 0, 1.6, 1, 0], opacity: [0, 0, 1, 1, 0] }} transition={{ duration: scanDuration, repeat: Infinity, times: [0, triggerTime - 0.01, triggerTime, triggerTime + 0.15, triggerTime + 0.25], ease: "easeOut" }} />
+            <motion.circle cx={12 + Math.cos((targetAngle - 90) * Math.PI / 180) * 7} cy={12 + Math.sin((targetAngle - 90) * Math.PI / 180) * 7} r="2" fill="#0A84FF" initial={{ scale: 0, opacity: 0 }} animate={{ scale: [0, 0, 1.6, 1, 0], opacity: [0, 0, 1, 0] }} transition={{ duration: scanDuration, repeat: Infinity, times: [0, triggerTime - 0.01, triggerTime, triggerTime + 0.15, triggerTime + 0.25], ease: "easeOut" }} />
             <motion.circle cx={12 + Math.cos((targetAngle - 90) * Math.PI / 180) * 7} cy={12 + Math.sin((targetAngle - 90) * Math.PI / 180) * 7} r="2" stroke="#0A84FF" strokeWidth="1.5" fill="none" initial={{ scale: 1, opacity: 0 }} animate={{ scale: [1, 1, 3.5], opacity: [0, 0, 0.7, 0] }} transition={{ duration: scanDuration, repeat: Infinity, times: [0, triggerTime, triggerTime + 0.05, triggerTime + 0.4], ease: "easeOut" }} />
           </motion.g>
         )}
       </svg>
     );
   },
-  Friends: ({ isActive }: { isActive: boolean }) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <motion.path d="M12 21C12 21 4 13.5 4 8.5C4 5.5 6.5 3 9.5 3C11.1 3 12 3.8 12 3.8C12 3.8 12.9 3 14.5 3C17.5 3 20 5.5 20 8.5C20 13.5 12 21 12 21Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill={isActive? "#FF3B30" : "none"} initial={{ scale: 1 }} animate={{ scale: isActive? [1, 1.2, 1] : 1 }} transition={{ duration: 0.7, repeat: Infinity, ease: "easeInOut", repeatDelay: 0.3 }} style={{ transformOrigin: "12px 12px", transformBox: "fill-box" }} />
-      {isActive && [
-        { x: 8, y: 8, delay: 0 },
-        { x: 16, y: 8, delay: 0.15 },
-        { x: 12, y: 5, delay: 0.3 },
-      ].map((p, i) => (
-        <motion.circle key={i} cx={p.x} cy={p.y} r="1" fill="#FF3B30" initial={{ scale: 0, opacity: 0 }} animate={{ y: [0, -8, -14], opacity: [0, 1, 0], scale: [0, 1.1, 0] }} transition={{ duration: 1.2, repeat: Infinity, delay: p.delay, ease: "easeOut" }} />
-      ))}
-    </svg>
-  ),
   New: ({ isActive }: { isActive: boolean }) => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <motion.g animate={isActive? { y: [0, -6, 0] } : {}} transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }} style={{ originX: "50%", originY: "50%" }}>
@@ -250,7 +230,7 @@ export default function CustomFilterBar({
   onOpenSearch,
   showSearchModal,
   onCloseSearch,
-  onApplyFilters, // THÊM DÒNG NÀY
+  onApplyFilters,
 }: CustomFilterBarProps) {
   const mode = useAppStore((s) => s.mode) || "task";
   const modalRef = useRef<HTMLDivElement>(null);
@@ -258,16 +238,11 @@ export default function CustomFilterBar({
   const [priceRange, setPriceRange] = useState<string>("all");
   const [sortBy, setSortBy] = useState<SortBy>("views");
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [localQuery, setLocalQuery] = useState(""); // THÊM DÒNG NÀY
-
-  // THÊM DEBOUNCE
-  const debouncedSearch = useDebouncedCallback((query: string) => {
-    onSearchChange(currentFilter, query);
-  }, 300);
+  const [localQuery, setLocalQuery] = useState("");
 
   useEffect(() => {
     setLocalQuery(searchQueries[currentFilter] || "");
-  }, [currentFilter, searchQueries]);
+  }, [currentFilter, searchQueries, showSearchModal]);
 
   const handleApply = () => {
     haptics.medium();
@@ -332,9 +307,10 @@ export default function CustomFilterBar({
     setSelectedCategories([]);
     setPriceRange("all");
     setSortBy("views");
+    setLocalQuery("");
   };
 
-  const activeFilterCount = selectedCategories.length + (priceRange!== "all"? 1 : 0) + (sortBy!== "views"? 1 : 0);
+  const activeFilterCount = selectedCategories.length + (priceRange!== "all"? 1 : 0) + (sortBy!== "views"? 1 : 0) + (localQuery? 1 : 0);
 
   return (
     <>
@@ -404,39 +380,31 @@ export default function CustomFilterBar({
               </div>
 
               <div className="relative h-11 mb-4">
-            <input
-  value={localQuery} // ĐỔI THÀNH localQuery
-  onChange={(e) => {
-    const val = e.target.value;
-    setLocalQuery(val); // Update UI ngay
-    debouncedSearch(val); // Call API sau 300ms
-  }}
-  placeholder={`Tìm ${filters.find(f => f.key === currentFilter)?.label.toLowerCase()}...`}
-  className="w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-black/[0.08] dark:ring-white/10 outline-none focus:ring-2 focus:ring-[#0A84FF]/40 dark:focus:ring-[#0A84FF]/50 font-semibold text-base text-zinc-900 dark:text-zinc-100 transition-all placeholder:text-zinc-400 shadow-sm focus:shadow-md"
-/>
-<div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/40 via-transparent to-black/[0.03] pointer-events-none" />
-<div className="absolute inset-[1px] rounded-2xl ring-1 ring-inset ring-white/30 pointer-events-none" />
-<div className="absolute right-2.5 top-1/2 -translate-y-1/2 z-10">
-  {localQuery? ( // ĐỔI THÀNH localQuery
-    <button
-      onClick={() => {
-        setLocalQuery("");
-        onSearchChange(currentFilter, "");
-      }}
-      className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-    >
-      <X size={18} className="text-zinc-500" />
-    </button>
-  ) : (
-    <Search size={18} className="text-zinc-400" />
-  )}
-</div>
+                <input
+                  value={localQuery}
+                  onChange={(e) => setLocalQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleApply()}
+                  placeholder={`Tìm ${filters.find(f => f.key === currentFilter)?.label.toLowerCase()}...`}
+                  className="w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-black/[0.08] dark:ring-white/10 outline-none focus:ring-2 focus:ring-[#0A84FF]/40 dark:focus:ring-[#0A84FF]/50 font-semibold text-base text-zinc-900 dark:text-zinc-100 transition-all placeholder:text-zinc-400 shadow-sm focus:shadow-md"
+                />
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/40 via-transparent to-black/[0.03] pointer-events-none" />
+                <div className="absolute inset-[1px] rounded-2xl ring-1 ring-inset ring-white/30 pointer-events-none" />
+                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 z-10">
+                  {localQuery? (
+                    <button
+                      onClick={() => setLocalQuery("")}
+                      className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                    >
+                      <X size={18} className="text-zinc-500" />
+                    </button>
+                  ) : (
+                    <Search size={18} className="text-zinc-400" />
+                  )}
+                </div>
               </div>
 
-              {/* HOT FILTER - NÂNG CẤP */}
               {currentFilter === "hot" && (
                 <div className="space-y-4">
-                  {/* Sort By */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-xs font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Sắp xếp theo</h3>
@@ -456,8 +424,7 @@ export default function CustomFilterBar({
                           <motion.button
                             key={opt.id}
                             whileTap={{ scale: 0.95 }}
-                            onClick={() => { haptics.light(); setSortBy(opt.id as SortBy); }}
-                            className={`relative h-10 rounded-xl flex items-center justify-center gap-2 font-bold text-xs transition-all ${
+                                                     className={`relative h-10 rounded-xl flex items-center justify-center gap-2 font-bold text-xs transition-all ${
                               isActive
                                ? "text-white"
                                 : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
@@ -472,7 +439,6 @@ export default function CustomFilterBar({
                     </div>
                   </div>
 
-                  {/* Price Range - chỉ hiện cho task */}
                   {mode === "task" && (
                     <div>
                       <h3 className="text-xs font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">Khoảng giá</h3>
@@ -499,7 +465,6 @@ export default function CustomFilterBar({
                     </div>
                   )}
 
-                  {/* Categories */}
                   <div>
                     <h3 className="text-xs font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
                       Danh mục {selectedCategories.length > 0 && `(${selectedCategories.length})`}
@@ -538,29 +503,27 @@ export default function CustomFilterBar({
                     </div>
                   </div>
 
-                  {/* Trending Tags */}
                   <div>
                     <h3 className="text-xs font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2 flex items-center gap-1">
                       <Flame size={14} className="text-[#FF9500]" />
                       Đang thịnh hành
                     </h3>
                     <div className="flex flex-wrap gap-2">
-                   {["#viecgap", "#luongcao", "#uytin", "#ganday", "#nhannngay"].map((tag) => (
-  <motion.button
-    key={tag}
-    whileTap={{ scale: 0.95 }}
-    onClick={() => { haptics.light(); onSearchChange(currentFilter, tag); }}
-    className="px-3 h-8 rounded-xl bg-gradient-to-r from-[#FF9500]/10 to-[#FFD60A]/10 text-[#FF9500] dark:text-[#FFD60A] font-bold text-xs hover:from-[#FF9500]/20 hover:to-[#FFD60A]/20 transition-all"
-  >
-    {tag}
-  </motion.button>
-))}
+                      {["#viecgap", "#luongcao", "#uytin", "#ganday", "#nhannngay"].map((tag) => (
+                        <motion.button
+                          key={tag}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => { haptics.light(); setLocalQuery(tag); }}
+                          className="px-3 h-8 rounded-xl bg-gradient-to-r from-[#FF9500]/10 to-[#FFD60A]/10 text-[#FF9500] dark:text-[#FFD60A] font-bold text-xs hover:from-[#FF9500]/20 hover:to-[#FFD60A]/20 transition-all"
+                        >
+                          {tag}
+                        </motion.button>
+                      ))}
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Footer Actions */}
               <div className="flex gap-2 mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-800">
                 <motion.button
                   whileTap={{ scale: 0.96 }}
@@ -569,14 +532,14 @@ export default function CustomFilterBar({
                 >
                   Hủy
                 </motion.button>
-            <motion.button
-  whileTap={{ scale: 0.96 }}
-  onClick={handleApply} // ĐỔI THÀNH handleApply
-  className="flex-1 h-11 rounded-2xl text-white font-black text-sm shadow-lg"
-  style={{ background: currentTheme.bgGradient }}
->
-  Áp dụng ({activeFilterCount})
-</motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  onClick={handleApply}
+                  className="flex-1 h-11 rounded-2xl text-white font-black text-sm shadow-lg"
+                  style={{ background: currentTheme.bgGradient }}
+                >
+                  Áp dụng ({activeFilterCount})
+                </motion.button>
               </div>
             </motion.div>
           </motion.div>
