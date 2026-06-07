@@ -160,7 +160,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   const handleApplyFilters = useCallback((newFilters: any) => {
     setHasSearched(true);
     setCursor(null);
-    setAllTasks([]);
+    
     setFilters({
       categories: newFilters.categories || [],
       priceRange: newFilters.priceRange || 'all',
