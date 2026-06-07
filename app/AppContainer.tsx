@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import dynamic from 'next/dynamic';
-import useSWR from 'swr';
+
 
 import { useAppStore } from "@/store/app";
 import { AnimatePresence, motion } from "framer-motion";
@@ -11,7 +11,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import CustomTabBar from "@/components/CustomTabBar";
 import { useTabBarHeight } from "@/hooks/useTabBarHeight";
 import JobSkeleton from "@/components/JobSkeleton";
-import type { FeedTask } from '@/types/task';
+
 
 const TaskFeedPage = dynamic(() => import('./_tabs/TaskFeedPage'), {
   loading: () => <JobSkeleton count={5} />,
@@ -37,14 +37,10 @@ const FloatingMenu = dynamic(() => import('@/components/FloatingMenu'), {
 
 type MainTab = "home" | "messages" | "tasks" | "profile" | "plans";
 
-interface AppContainerProps {
-  initialJobs?: FeedTask[];
-  initialPlans?: FeedTask[];
-}
 
-const fetcher = (url: string) => fetch(url).then(r => r.json());
 
-export default function AppContainer({ initialJobs = [], initialPlans = [] }: AppContainerProps) {
+
+export default function AppContainer() { // BỎ {}
   const router = useRouter();
   const searchParams = useSearchParams();
   const unreadCount = useAppStore((s) => s.unreadCount);
@@ -58,33 +54,7 @@ export default function AppContainer({ initialJobs = [], initialPlans = [] }: Ap
   const tabBarHeight = useTabBarHeight();
 
   // Public feeds are prefetched and kept warm so Task/Plan switching is instant.
-  const { data: jobs } = useSWR<FeedTask[]>(
-    '/api/jobs?type=task&limit=12',
-    fetcher,
-    {
-      fallbackData: initialJobs,
-      revalidateOnMount: false,
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: true,
-      dedupingInterval: 300000,
-      keepPreviousData: true,
-    }
-  );
-
-  const { data: plans } = useSWR<FeedTask[]>(
-    '/api/jobs?type=plan&limit=12',
-    fetcher,
-    {
-      fallbackData: initialPlans,
-      revalidateOnMount: false,
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: true,
-      dedupingInterval: 300000,
-      keepPreviousData: true,
-    }
-  );
+  
 
   useEffect(() => setMounted(true), []);
 
@@ -136,20 +106,20 @@ export default function AppContainer({ initialJobs = [], initialPlans = [] }: Ap
   }, [router]);
 
   const renderCurrentTab = () => {
-    switch (currentMainTab) {
-      case "home":
-      case "plans":
-        return <TaskFeedPage initialJobs={jobs || initialJobs} initialPlans={plans || initialPlans} />
-      case "messages":
-        return <ChatClient />
-      case "tasks":
-        return <TasksPage />
-      case "profile":
-        return <ProfileTabContent />
-      default:
-        return <TaskFeedPage initialJobs={jobs || initialJobs} initialPlans={plans || initialPlans} />
-    }
+  switch (currentMainTab) {
+    case "home":
+    case "plans":
+      return <TaskFeedPage /> // BỎ initialJobs, initialPlans
+    case "messages":
+      return <ChatClient />
+    case "tasks":
+      return <TasksPage />
+    case "profile":
+      return <ProfileTabContent />
+    default:
+      return <TaskFeedPage />
   }
+}
 
   return (
     <div className="h-dvh flex flex-col font-sans bg-white dark:bg-zinc-950 relative">
