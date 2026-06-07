@@ -8,7 +8,7 @@ export const getProvinces = async (): Promise<Province[]> => {
   if (cache) return cache;
   if (promise) return promise;
 
-  promise = fetch("/api/provinces", { next: { revalidate: 86400 } }) // ISR 24h
+  promise = fetch("/api/location/provinces", { next: { revalidate: 86400 } }) // ISR 24h
   .then((r) => r.json())
   .then((data) => {
       cache = data;
@@ -20,7 +20,7 @@ export const getProvinces = async (): Promise<Province[]> => {
 };
 
 // Dùng SWR cho client cache + dedupe
-import useSWR from 'swr';
+
 export const useProvinces = () => {
   const { data } = useSWR<Province[]>("/api/provinces", getProvinces, {
     revalidateOnFocus: false,
