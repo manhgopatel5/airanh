@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import * as geofire from "geofire-common";
-import useSWR, { useSWRConfig } from "swr";
+import useSWR from "swr";
 import {
   FiInbox,
   FiRefreshCw,
