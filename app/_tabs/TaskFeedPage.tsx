@@ -147,25 +147,22 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     if (activeTab === "nearby" &&!userLocation) requestLocation();
   }, [activeTab, requestLocation, userLocation]);
 
-  const handleApplyFilters = useCallback(async (newFilters: any) => {
-    // FIX 3: Set state xong thì force mutate luôn
-    const newTab = newFilters.tab || activeTab;
-    const newFilterState = {
-      categories: newFilters.categories || [],
-      priceRange: newFilters.priceRange || 'all',
-      sortBy: newFilters.sortBy || 'views',
-      query: newFilters.query || '',
-    };
-    
-    setActiveTab(newTab);
-    setFilters(newFilterState);
-    setSearchQueries(prev => ({...prev, [newTab]: newFilters.query || '' }));
-    setCursor(null);
-    setHasSearched(true);
-    
-    // Force revalidate ngay
-    setTimeout(() => mutate(), 0);
-  }, [activeTab, mutate]);
+// 2. Chỉ khi bấm "Áp dụng" mới fetch
+const handleApplyFilters = useCallback(async (newFilters: any) => {
+  const newTab = newFilters.tab || activeTab;
+  const newFilterState = {
+    categories: newFilters.categories || [],
+    priceRange: newFilters.priceRange || 'all',
+    sortBy: newFilters.sortBy || 'views',
+    query: newFilters.query || '',
+  };
+  
+  setActiveTab(newTab);
+  setFilters(newFilterState);
+  setSearchQueries(prev => ({...prev, [newTab]: newFilters.query || '' }));
+  setCursor(null);
+  setHasSearched(true); // Chỉ set ở đây
+}, [activeTab]);
 
   const filteredTasks = useMemo(() => {
     let result = tasks.filter((task) =>!task.banned &&!task.hidden);
@@ -278,20 +275,23 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
             </div>
           </div>
 
-          <CustomFilterBar
-            currentFilter={activeTab}
-            onChangeFilter={setActiveTab}
-            searchQueries={searchQueries}
-            onSearchChange={(tab, query) => {
-              setSearchQueries(prev => ({...prev, [tab]: query }));
-              setFilters(prev => ({...prev, query}));
-              setHasSearched(true);
-            }}
-            onOpenSearch={() => setShowSearchModal(true)}
-            showSearchModal={showSearchModal}
-            onCloseSearch={() => setShowSearchModal(false)}
-            onApplyFilters={handleApplyFilters}
-          />
+
+<CustomFilterBar
+  currentFilter={activeTab}
+  onChangeFilter={setActiveTab}
+  searchQueries={searchQueries}
+  onSearchChange={(tab, query) => {
+    // Chỉ update text, không fetch
+    setSearchQueries(prev => ({...prev, [tab]: query }));
+    // XÓA 2 dòng này:
+    // setFilters(prev => ({...prev, query}));
+    // setHasSearched(true);
+  }}
+  onOpenSearch={() => setShowSearchModal(true)}
+  showSearchModal={showSearchModal}
+  onCloseSearch={() => setShowSearchModal(false)}
+  onApplyFilters={handleApplyFilters}
+/>
         </div>
       </div>
 
