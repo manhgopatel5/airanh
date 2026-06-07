@@ -27,10 +27,10 @@ export default async function HomePage() {
   // API public đã cache CDN, nên 2 query này được amortize theo revalidate thay vì mỗi lần bấm tab.
   try {
     const [jobsData, plansData] = await Promise.all([
-  getJobsFromFirebaseAdmin('task'),
-  getJobsFromFirebaseAdmin('plan'),
+  getJobsFromFirebaseAdmin({ type: 'task' }),
+  getJobsFromFirebaseAdmin({ type: 'plan' }),
 ])
-initialJobs = jobsData.tasks // Lấy .tasks vì giờ nó trả về object
+initialJobs = jobsData.tasks
 initialPlans = plansData.tasks
   } catch (error) {
     console.error('Failed to prefetch feeds:', error)
