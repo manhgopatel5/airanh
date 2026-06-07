@@ -46,7 +46,7 @@ type TaskFeedPageProps = {
 
 export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPageProps) {
   const reduceMotion = useReducedMotion();
-  const { mutate: globalMutate } = useSWRConfig();
+
   const { mode = "task", setMode } = useAppStore();
   const [activeTab, setActiveTab] = useState<TabId>("hot");
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
