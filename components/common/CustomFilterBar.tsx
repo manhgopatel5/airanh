@@ -184,7 +184,7 @@ export default function CustomFilterBar({
     setSortBy("new");
     setDeadlineRange("all");
     setProvinceId(null);
-    setWardId(null);
+    setDistrictId(null);
     setLocalQuery("");
   };
 
