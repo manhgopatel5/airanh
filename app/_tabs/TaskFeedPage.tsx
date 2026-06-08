@@ -35,7 +35,8 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
 
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
   const [showSearchModal, setShowSearchModal] = useState(false);
-  const [cursor, setCursor] = useState<number | null>(null);
+  // FIX 1: cursor là string docId
+  const [cursor, setCursor] = useState<string | null>(null);
 
   const [filters, setFilters] = useState({
     categories: [] as string[],
@@ -64,12 +65,14 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     if (filters.categories.length > 0) params.set('categories', filters.categories.join(','));
     if (filters.priceRange!== 'all') params.set('priceRange', filters.priceRange);
     if (filters.query) params.set('query', filters.query);
-    if (cursor) params.set('cursor', cursor.toString());
+    // FIX 2: cursor là string, không toString()
+    if (cursor) params.set('cursor', cursor);
 
     return `/api/tasks?${params.toString()}`;
   }, [mode, filters, cursor]);
 
-  const { data, error, isLoading, isValidating, mutate } = useSWR<{ tasks: FeedTask[], nextCursor: number | null }>(
+  // FIX 3: nextCursor là string
+  const { data, error, isLoading, isValidating, mutate } = useSWR<{ tasks: FeedTask[], nextCursor: string | null }>(
     apiUrl,
     fetcher,
     {
@@ -116,7 +119,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     mutate(current => {
       if (!current) return current;
       return {
-   ...current,
+  ...current,
         tasks: current.tasks.map(item => item.id === taskId? ({...item,...updates } as FeedTask) : item)
       };
     }, false);
@@ -126,7 +129,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     mutate(current => {
       if (!current) return current;
       return {
-   ...current,
+  ...current,
         tasks: current.tasks.filter(item => item.id!== id)
       };
     }, false);
@@ -186,7 +189,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
                 aria-pressed={!isTaskMode}
                 onClick={() => switchMode("plan")}
                 className={`relative flex items-center justify-center gap-2 text- font-black transition-colors duration-200 ${
-         !isTaskMode? "text-white" : "text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+        !isTaskMode? "text-white" : "text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
                 }`}
               >
                 <HiCalendarDays size={22} />
