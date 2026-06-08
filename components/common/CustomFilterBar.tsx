@@ -120,7 +120,7 @@ export default function CustomFilterBar({
       bgGradient: "linear-gradient(135deg, #30D158 0%, #248A3D 100%)",
     },
   };
-  const currentTheme = themes;
+const currentTheme = themes[mode];
   const CATEGORIES = mode === "task"? CATEGORY_TASKS : CATEGORY_PLANS;
 
   const sortOptions = [
