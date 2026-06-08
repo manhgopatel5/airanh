@@ -1,10 +1,11 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, ArrowLeft, ArrowUp, ArrowDown, Star, Clock, Check, ChevronDown } from "lucide-react";
+import { Search, X, ArrowLeft, ArrowUp, ArrowDown, Star, Clock, Check, ChevronDown, MapPin } from "lucide-react";
 import { useAppStore } from "@/store/app";
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useProvinces } from "@/lib/useProvinces";
 
 const haptics = {
   light: () => navigator?.vibrate?.(5),
@@ -83,15 +84,6 @@ const DEADLINE_RANGES = [
   { id: "month", label: "Tháng này" },
 ];
 
-const PROVINCES = [
-  { id: "all", label: "Toàn quốc" },
-  { id: "hcm", label: "TP. Hồ Chí Minh", wards: ["Quận 1", "Quận 3", "Quận 7", "Bình Thạnh", "Thủ Đức", "Gò Vấp", "Tân Bình", "Phú Nhuận"] },
-  { id: "hanoi", label: "Hà Nội", wards: ["Ba Đình", "Hoàn Kiếm", "Cầu Giấy", "Đống Đa", "Hai Bà Trưng", "Thanh Xuân", "Hà Đông"] },
-  { id: "danang", label: "Đà Nẵng", wards: ["Hải Châu", "Thanh Khê", "Sơn Trà", "Ngũ Hành Sơn", "Liên Chiểu"] },
-  { id: "cantho", label: "Cần Thơ", wards: ["Ninh Kiều", "Bình Thủy", "Cái Răng", "Ô Môn"] },
-  { id: "haiphong", label: "Hải Phòng", wards: ["Hồng Bàng", "Lê Chân", "Ngô Quyền", "Kiến An"] },
-];
-
 export default function CustomFilterBar({
   onOpenSearch,
   showSearchModal,
@@ -109,9 +101,12 @@ export default function CustomFilterBar({
   const [showDeadlineList, setShowDeadlineList] = useState(false);
   const [showLocationList, setShowLocationList] = useState(false);
   const [deadlineRange, setDeadlineRange] = useState<string>("all");
-  const [province, setProvince] = useState<string>("all");
-  const [ward, setWard] = useState<string>("");
+  const [provinceId, setProvinceId] = useState<number | null>(null);
+  const [wardId, setWardId] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [districts, setDistricts] = useState<any[]>([]);
+  const [wards, setWards] = useState<any[]>([]);
+  const provinces = useProvinces();
   const themes = {
     task: {
       bg: "#0A84FF",
@@ -126,9 +121,9 @@ export default function CustomFilterBar({
       secondary: "#FF9F0A"
     },
   };
-const currentTheme = themes[mode];
+  const currentTheme = themes[mode];
   const CATEGORIES = mode === "task"? CATEGORY_TASKS : CATEGORY_PLANS;
-  const currentProvince = PROVINCES.find(p => p.id === province);
+  const currentProvince = provinces.find(p => p.id === provinceId);
 
   const sortOptions = [
     { id: "new", label: "Mới nhất", icon: Clock },
@@ -148,6 +143,40 @@ const currentTheme = themes[mode];
     }
   }, [showSearchModal]);
 
+  useEffect(() => {
+    if (!provinceId) {
+      setDistricts([]);
+      setWards([]);
+      return;
+    }
+    fetch("/api/location/district", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provinceId }),
+    })
+   .then(r => r.json())
+   .then(data => {
+      setDistricts(data);
+      setWardId(null);
+    })
+   .catch(() => setDistricts([]));
+  }, [provinceId]);
+
+  useEffect(() => {
+    if (!wardId) {
+      setWards([]);
+      return;
+    }
+    fetch("/api/location/ward", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ districtId: wardId }),
+    })
+   .then(r => r.json())
+   .then(data => setWards(data))
+   .catch(() => setWards([]));
+  }, [wardId]);
+
   const toggleCategory = (id: string) => {
     haptics.light();
     setSelectedCategories(prev =>
@@ -161,26 +190,32 @@ const currentTheme = themes[mode];
     setPriceRange("all");
     setSortBy("new");
     setDeadlineRange("all");
-    setProvince("all");
-    setWard("");
+    setProvinceId(null);
+    setWardId(null);
     setLocalQuery("");
   };
 
   const handleApply = () => {
     haptics.medium();
+    const province = provinces.find(p => p.id === provinceId);
+    const district = districts.find(d => d.id === wardId);
+    const ward = wards.find(w => w.id === wardId);
     onApplyFilters({
       categories: selectedCategories,
       priceRange,
       deadlineRange,
-      province: province === "all"? "" : province,
-      ward,
+      province: province?.code || "",
+      provinceName: province?.name || "",
+      district: district?.code || "",
+      districtName: district?.name || "",
+      ward: ward?.name || "",
       sortBy,
       query: localQuery,
     });
     onCloseSearch();
   };
 
-  const activeFilterCount = selectedCategories.length + (priceRange!== "all"? 1 : 0) + (deadlineRange!== "all"? 1 : 0) + (province!== "all"? 1 : 0) + (sortBy!== "new"? 1 : 0) + (localQuery? 1 : 0);
+  const activeFilterCount = selectedCategories.length + (priceRange!== "all"? 1 : 0) + (deadlineRange!== "all"? 1 : 0) + (provinceId!== null? 1 : 0) + (sortBy!== "new"? 1 : 0) + (localQuery? 1 : 0);
 
   const modalContent = (
     <AnimatePresence>
@@ -200,7 +235,7 @@ const currentTheme = themes[mode];
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className="absolute inset-0 bg-white dark:bg-zinc-950 flex flex-col"
+            className="absolute inset-0 bg-white dark:bg-zinc-950 flex-col"
             style={{ paddingTop: "env(safe-area-inset-top)" }}
           >
             {/* Header */}
@@ -269,7 +304,7 @@ const currentTheme = themes[mode];
                         }}
                         className={`relative h-12 rounded-[20px] flex items-center justify-center gap-2 font-serif font-semibold text-[14px] transition-all ${
                           isActive
-                   ? "text-white shadow-lg"
+                  ? "text-white shadow-lg"
                             : "bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300"
                         }`}
                         style={isActive? {
@@ -374,8 +409,8 @@ const currentTheme = themes[mode];
                   <div className="text-left">
                     <div className="text-xs text-zinc-500 dark:text-zinc-500 font-serif">Chọn tỉnh/thành phố</div>
                     <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-serif mt-0.5">
-                      {PROVINCES.find(p => p.id === province)?.label || "Toàn quốc"}
-                      {ward && ` - ${ward}`}
+                      {currentProvince?.name || "Toàn quốc"}
+                      {wardId && ` - ${wards.find(w => w.id === wardId)?.name}`}
                     </div>
                   </div>
                   <div style={{ transform: showLocationList? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
@@ -388,16 +423,40 @@ const currentTheme = themes[mode];
                     <div className="mt-3 space-y-3 pb-2">
                       <div className="space-y-2">
                         <div className="text-xs font-bold text-zinc-500 dark:text-zinc-400 px-1">Tỉnh/Thành phố</div>
-                        {PROVINCES.map((prov) => {
-                          const isActive = province === prov.id;
+                        <button
+                          onClick={() => {
+                            haptics.light();
+                            setProvinceId(null);
+                            setWardId(null);
+                            setShowLocationList(false);
+                          }}
+                          className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
+                          style={{
+                            border: provinceId === null? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
+                          }}
+                        >
+                          <div className="flex-1 text-left">
+                            <div className={`text-sm font-serif font-bold ${
+                              provinceId === null? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
+                            }`}>
+                              Toàn quốc
+                            </div>
+                          </div>
+                          {provinceId === null && (
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: currentTheme.bg }}>
+                              <Check size={12} className="text-white" strokeWidth={3.5} />
+                            </div>
+                          )}
+                        </button>
+                        {provinces.map((prov) => {
+                          const isActive = provinceId === prov.id;
                           return (
                             <button
                               key={prov.id}
                               onClick={() => {
                                 haptics.light();
-                                setProvince(prov.id);
-                                setWard("");
-                                if (prov.id === "all") setShowLocationList(false);
+                                setProvinceId(prov.id);
+                                setWardId(null);
                               }}
                               className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
                               style={{
@@ -408,15 +467,10 @@ const currentTheme = themes[mode];
                                 <div className={`text-sm font-serif font-bold ${
                                   isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
                                 }`}>
-                                  {prov.label}
+                                  {prov.name}
                                 </div>
-                              </div>
-
                               {isActive && (
-                                <div
-                                  className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                                  style={{ background: currentTheme.bg }}
-                                >
+                                <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: currentTheme.bg }}>
                                   <Check size={12} className="text-white" strokeWidth={3.5} />
                                 </div>
                               )}
@@ -425,18 +479,18 @@ const currentTheme = themes[mode];
                         })}
                       </div>
 
-                      {currentProvince && currentProvince.id!== "all" && (
+                      {districts.length > 0 && (
                         <div className="space-y-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
-                          <div className="text-xs font-bold text-zinc-500 dark:text-zinc-400 px-1">Phường/Xã</div>
+                          <div className="text-xs font-bold text-zinc-500 dark:text-zinc-400 px-1">Quận/Huyện</div>
                           <div className="max-h-48 overflow-y-auto space-y-2">
-{currentProvince?.wards?.map((w) => {
-                              const isActive = ward === w;
+                            {districts.map((d) => {
+                              const isActive = wardId === d.id;
                               return (
                                 <button
-                                  key={w}
+                                  key={d.id}
                                   onClick={() => {
                                     haptics.light();
-                                    setWard(w);
+                                    setWardId(d.id);
                                     setShowLocationList(false);
                                   }}
                                   className="relative w-full h-12 rounded-[16px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
@@ -448,15 +502,11 @@ const currentTheme = themes[mode];
                                     <div className={`text-sm font-serif font-bold ${
                                       isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
                                     }`}>
-                                      {w}
+                                      {d.name}
                                     </div>
                                   </div>
-
                                   {isActive && (
-                                    <div
-                                      className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                                      style={{ background: currentTheme.bg }}
-                                    >
+                                    <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: currentTheme.bg }}>
                                       <Check size={12} className="text-white" strokeWidth={3.5} />
                                     </div>
                                   )}
@@ -502,15 +552,15 @@ const currentTheme = themes[mode];
                     <div className="text-xs text-zinc-500 dark:text-zinc-500 font-serif">Chọn danh mục</div>
                     <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-serif mt-0.5">
                       {selectedCategories.length === 0
-              ? "Tất cả"
+             ? "Tất cả"
                         : `Đã chọn ${selectedCategories.length} danh mục`}
                     </div>
                     {selectedCategories.length > 0 && (
                       <div className="text-xs text-zinc-500 dark:text-zinc-500 mt-0.5 font-serif">
                         {CATEGORIES.filter(c => selectedCategories.includes(c.id))
-                .slice(0, 2)
-                .map(c => c.label)
-                .join(', ')}
+               .slice(0, 2)
+               .map(c => c.label)
+               .join(', ')}
                         {selectedCategories.length > 2 && ` +${selectedCategories.length - 2}`}
                       </div>
                     )}
