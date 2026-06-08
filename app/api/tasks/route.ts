@@ -23,6 +23,9 @@ export async function GET(request: NextRequest) {
   const categories = categoriesParam? categoriesParam.split(',').filter(Boolean) : undefined;
   const deadlineRange = searchParams.get('deadlineRange') || 'all';
   const priceRangeParam = searchParams.get('priceRange');
+  const provinceId = searchParams.get('provinceId');
+  const districtId = searchParams.get('districtId');
+
   let minPrice: number | undefined;
   let maxPrice: number | undefined;
 
@@ -59,21 +62,21 @@ export async function GET(request: NextRequest) {
 
   const query = searchParams.get('query') || undefined;
 
-  console.log('>>> API PARAMS:', { type, sortBy, priceRangeParam, minPrice, maxPrice, categories, query, cursor, deadlineRange });
+  console.log('>>> API PARAMS:', { type, sortBy, priceRangeParam, minPrice, maxPrice, categories, query, cursor, deadlineRange, provinceId, districtId });
 
   try {
     const data = await getJobsFromFirebaseAdmin({
       type,
       limitCount: limit,
       sortBy,
-     ...(categories && { categories }),
-     ...(minPrice!== undefined && { minPrice }),
-     ...(maxPrice!== undefined && { maxPrice }),
-     ...(cursor && { cursor }),
+    ...(categories && { categories }),
+    ...(minPrice!== undefined && { minPrice }),
+    ...(maxPrice!== undefined && { maxPrice }),
+    ...(cursor && { cursor }),
     });
 
     let tasks = data.tasks;
-    
+
     if (query) {
       const q = query.toLowerCase();
       tasks = tasks.filter(t =>
@@ -83,41 +86,48 @@ export async function GET(request: NextRequest) {
       );
     }
 
- // Lọc theo thời hạn còn lại
-if (deadlineRange!== 'all') {
-  const now = Date.now();
-  let deadlineTimestamp = Infinity;
-  
-  switch(deadlineRange) {
-    case "1h":
-      deadlineTimestamp = now + 60 * 60 * 1000;
-      break;
-    case "today":
-      deadlineTimestamp = new Date().setHours(23, 59, 999);
-      break;
-    case "3days":
-      deadlineTimestamp = now + 3 * 24 * 60 * 60 * 1000;
-      break;
-    case "week":
-      deadlineTimestamp = now + 7 * 24 * 60 * 60 * 1000;
-      break;
-    case "month":
-      deadlineTimestamp = now + 30 * 24 * 60 * 60 * 1000;
-      break;
-  }
-  
-  tasks = tasks.filter(task => {
-    if (!task.deadline) return false;
-    
-    // FIX: check type trước khi gọi toDate()
-    const deadlineValue = task.deadline as any;
-    const taskDeadline = deadlineValue?.toDate 
-      ? deadlineValue.toDate().getTime() 
-      : new Date(deadlineValue).getTime();
-      
-    return taskDeadline >= now && taskDeadline <= deadlineTimestamp;
-  });
-}
+    // Lọc theo tỉnh/huyện
+    if (provinceId) {
+      tasks = tasks.filter(t => t.provinceId === Number(provinceId));
+    }
+    if (districtId) {
+      tasks = tasks.filter(t => t.districtId === Number(districtId));
+    }
+
+    // Lọc theo thời hạn còn lại
+    if (deadlineRange!== 'all') {
+      const now = Date.now();
+      let deadlineTimestamp = Infinity;
+
+      switch(deadlineRange) {
+        case "1h":
+          deadlineTimestamp = now + 60 * 60 * 1000;
+          break;
+        case "today":
+          deadlineTimestamp = new Date().setHours(23, 59, 999);
+          break;
+        case "3days":
+          deadlineTimestamp = now + 3 * 24 * 60 * 60 * 1000;
+          break;
+        case "week":
+          deadlineTimestamp = now + 7 * 24 * 60 * 60 * 1000;
+          break;
+        case "month":
+          deadlineTimestamp = now + 30 * 24 * 60 * 60 * 1000;
+          break;
+      }
+
+      tasks = tasks.filter(task => {
+        if (!task.deadline) return false;
+
+        const deadlineValue = task.deadline as any;
+        const taskDeadline = deadlineValue?.toDate
+         ? deadlineValue.toDate().getTime()
+          : new Date(deadlineValue).getTime();
+
+        return taskDeadline >= now && taskDeadline <= deadlineTimestamp;
+      });
+    }
 
     return NextResponse.json({ tasks, nextCursor: data.nextCursor });
   } catch (error) {
@@ -154,7 +164,7 @@ export async function POST(request: Request) {
     const price = Number(body.price) || 0;
 
     const taskData = {
-     ...body,
+    ...body,
       userId: decoded.uid,
       userName: decoded.name || 'User',
       userAvatar: decoded.picture || '',
@@ -177,7 +187,11 @@ export async function POST(request: Request) {
       priceRange: getPriceRange(price),
       tags: Array.isArray(body.tags)? body.tags : [],
       images: Array.isArray(body.images)? body.images : [],
-     ...(isTask && {
+      provinceId: body.provinceId? Number(body.provinceId) : null,
+      districtId: body.districtId? Number(body.districtId) : null,
+      provinceName: body.provinceName || '',
+      districtName: body.districtName || '',
+    ...(isTask && {
         totalSlots: Number(body.totalSlots) || 1,
         joined: 0,
         budgetType: body.budgetType || 'fixed',
@@ -187,7 +201,7 @@ export async function POST(request: Request) {
         urgency: body.urgency || 'flexible',
         needApproval: body.needApproval || false,
       }),
-     ...(!isTask && {
+    ...(!isTask && {
         eventDate: body.eventDate? new Date(body.eventDate) : null,
         endDate: body.endDate? new Date(body.endDate) : null,
         maxParticipants: Number(body.maxParticipants) || 4,
@@ -199,7 +213,7 @@ export async function POST(request: Request) {
         requireApproval: body.requireApproval || false,
         autoAccept:!body.requireApproval,
       }),
-     ...(body.location?.lat && body.location?.lng && {
+    ...(body.location?.lat && body.location?.lng && {
         location: {
           lat: body.location.lat,
           lng: body.location.lng,
