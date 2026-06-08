@@ -25,12 +25,12 @@ export type PlanStatus = "draft" | "open" | "in_progress" | "completed" | "cance
 export type User = {
   uid: string;
   email?: string | null;
-  displayName?: string | null; // Đổi từ displayName? -> đúng rồi
-  photoURL?: string | null; // Đổi từ photoURL? -> đúng rồi
+  displayName?: string | null;
+  photoURL?: string | null;
   role?: "admin" | "user";
   shortId?: string;
   username?: string;
-  verified?: boolean; // Thêm
+  verified?: boolean;
   onboardingCompleted: boolean;
 };
 
@@ -50,8 +50,8 @@ export type BaseItem = {
   
   // Owner - DENORMALIZED SNAPSHOT
   userId: string;
-  userName: string; // Snapshot: lấy từ users.displayName lúc tạo
-  userAvatar: string | null; // Snapshot: lấy từ users.photoURL lúc tạo
+  userName: string;
+  userAvatar: string | null;
   userVerified?: boolean; 
   userShortId?: string;
   userUsername?: string;
@@ -79,6 +79,10 @@ export type BaseItem = {
     lat?: number; 
     lng?: number; 
   };
+  provinceId?: number | null;
+  districtId?: number | null;
+  provinceName?: string;
+  districtName?: string;
 
   // Search
   searchKeywords: string[];
@@ -135,8 +139,8 @@ export type PlanMilestone = {
 
 export type PlanParticipant = {
   userId: string;
-  userName: string; // Snapshot từ users.displayName
-  userAvatar: string | null; // Snapshot từ users.photoURL
+  userName: string;
+  userAvatar: string | null;
   role: PlanParticipantRole;
   joinedAt: Timestamp;
   permissions: {
@@ -197,6 +201,10 @@ export type CreateTaskInput = {
   attachments?: string[];
   requirements?: string;
   location?: BaseItem["location"];
+  provinceId?: number | null;
+  districtId?: number | null;
+  provinceName?: string;
+  districtName?: string;
   isRemote?: boolean;
   applicationDeadline?: Timestamp | null;
   deadline?: Timestamp | null;
@@ -233,6 +241,10 @@ export type CreatePlanInput = {
   images?: string[];
   attachments?: string[];
   location?: BaseItem["location"];
+  provinceId?: number | null;
+  districtId?: number | null;
+  provinceName?: string;
+  districtName?: string;
   milestones?: Omit<PlanMilestone, "id" | "completedAt" | "order">[];
   featured?: boolean;
 };
@@ -269,6 +281,10 @@ export type TaskListItem = Pick<
   | "likeCount"
   | "commentCount"
   | "location"
+  | "provinceId"
+  | "districtId"
+  | "provinceName"
+  | "districtName"
   | "isRemote"
   | "likes"
   | "budgetType"
@@ -306,6 +322,10 @@ export type PlanListItem = Pick<
   | "likeCount"
   | "commentCount"
   | "location"
+  | "provinceId"
+  | "districtId"
+  | "provinceName"
+  | "districtName"
   | "likes"
   | "userId"
   | "description"
@@ -344,8 +364,8 @@ export type FeedTask = (TaskListItem | PlanListItem) & {
 export type TaskParticipant = {
   taskId: string;
   userId: string;
-  userName: string; // Snapshot từ users.displayName
-  userAvatar: string | null; // Snapshot từ users.photoURL
+  userName: string;
+  userAvatar: string | null;
   joinedAt: Timestamp;
   status: "joined" | "left" | "kicked" | "completed";
   note?: string;
@@ -356,8 +376,8 @@ export type TaskComment = {
   id: string;
   taskId: string;
   userId: string;
-  userName: string; // Snapshot từ users.displayName
-  userAvatar: string | null; // Snapshot từ users.photoURL
+  userName: string;
+  userAvatar: string | null;
   text: string; 
   createdAt: Timestamp;
   taskOwnerId?: string;
@@ -396,7 +416,7 @@ export const generateTaskSearchKeywords = ({
     location?.city,
     location?.country,
     location?.address,
-   ...tags,
+  ...tags,
   ]
     .filter(Boolean)
     .join(" ")
