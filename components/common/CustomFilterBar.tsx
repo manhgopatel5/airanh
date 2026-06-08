@@ -302,75 +302,150 @@ export default function CustomFilterBar({
                   </div>
                 )}
 
-     {/* Categories */}
+ {/* Categories */}
 <div>
-  <h3 className="text- font-bold text-zinc-500 dark:text-zinc-500 uppercase tracking-wide mb-3 px-1 flex items-center justify-between">
+  <h3 className="text-[13px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3.5 px-1 flex items-center justify-between">
     <span>Danh mục</span>
-    {selectedCategories.length > 0 && (
-      <motion.span 
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        className="text- px-2.5 py-1 rounded-full font-black"
-        style={{ background: currentTheme.bg, color: 'white' }}
-      >
-        {selectedCategories.length}
-      </motion.span>
-    )}
+    <AnimatePresence>
+      {selectedCategories.length > 0 && (
+        <motion.span
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0, opacity: 0 }}
+          className="text-[11px] px-3 py-1.5 rounded-full font-black shadow-lg"
+          style={{
+            background: currentTheme.bgGradient,
+            color: 'white',
+            boxShadow: `0 4px 12px ${currentTheme.glow}`
+          }}
+        >
+          {selectedCategories.length}
+        </motion.span>
+      )}
+    </AnimatePresence>
   </h3>
-  
-  <div className="grid grid-cols-2 gap-2.5">
+
+  <div className="grid grid-cols-2 gap-3">
     {CATEGORIES.map((cat, idx) => {
       const isActive = selectedCategories.includes(cat.id);
       return (
         <motion.button
           key={cat.id}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: idx * 0.02 }}
-          whileTap={{ scale: 0.94 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            delay: idx * 0.025,
+            type: "spring",
+            stiffness: 400,
+            damping: 25
+          }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.96 }}
           onClick={() => toggleCategory(cat.id)}
-          className={`relative h-20 rounded- flex flex-col items-center justify-center gap-1.5 px-3 py-2 transition-all overflow-hidden ${
-            isActive
-             ? "shadow-lg"
-              : "bg-zinc-100/70 dark:bg-zinc-900/70 hover:bg-zinc-100 dark:hover:bg-zinc-900"
-          }`}
-          style={isActive? {
-            background: `linear-gradient(135deg, ${cat.color}15, ${cat.color}08)`,
-            boxShadow: `0 6px 20px ${cat.color}30, inset 0 0 0 2px ${cat.color}`
-          } : {}}
+          className="relative h-[88px] rounded-[28px] flex flex-col items-center justify-center gap-2 px-3 py-3 transition-all overflow-hidden group"
+          style={{
+            background: isActive
+             ? `linear-gradient(135deg, ${cat.color}18, ${cat.color}08)`
+              : 'rgba(142, 142, 147, 0.08)',
+            boxShadow: isActive
+             ? `0 8px 28px ${cat.color}35, inset 0 0 0 2px ${cat.color}, inset 0 1px 0 0 rgba(255,255,255,0.2)`
+              : '0 1px 3px rgba(0,0,0,0.04), inset 0 0 0 1px rgba(0,0,0,0.04)',
+          }}
         >
-          {/* Icon */}
-          <div 
-            className="relative w-9 h-9 rounded-2xl flex items-center justify-center"
+          {/* Glass highlight overlay */}
+          <div className="absolute inset-0 rounded-[28px] bg-gradient-to-b from-white/50 via-white/10 to-transparent dark:from-white/10 dark:via-transparent pointer-events-none" />
+
+          {/* Icon Container */}
+          <motion.div
+            className="relative w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm"
+            animate={{
+              scale: isActive? 1.1 : 1,
+              rotate: isActive? [0, -5, 5, 0] : 0
+            }}
+            transition={{ duration: 0.4 }}
             style={{
-              background: isActive 
-                ? `linear-gradient(135deg, ${cat.color}25, ${cat.color}15)`
-                : 'rgba(0,0,0,0.04)',
+              background: isActive
+               ? `linear-gradient(135deg, ${cat.color}30, ${cat.color}20)`
+                : 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6))',
+              boxShadow: isActive
+               ? `0 4px 12px ${cat.color}40, inset 0 1px 0 0 rgba(255,255,255,0.3)`
+                : '0 2px 6px rgba(0,0,0,0.06), inset 0 1px 0 0 rgba(255,255,255,0.8)',
             }}
           >
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/40 to-transparent" />
-            <span className="text- relative">{cat.icon}</span>
-          </div>
-
-          {/* Label */}
-          <span className={`text- font-bold leading-tight text-center ${isActive? "text-zinc-900 dark:text-zinc-100" : "text-zinc-600 dark:text-zinc-400"}`}>
-            {cat.label}
-          </span>
-
-          {/* Checkmark */}
-          <AnimatePresence>
+            <span className="text-[24px] relative z-10">{cat.icon}</span>
             {isActive && (
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                exit={{ scale: 0 }}
-                className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center shadow-md"
-                style={{ background: cat.color }}
+                className="absolute inset-0 rounded-2xl"
+                style={{
+                  background: `radial-gradient(circle at 50% 0%, ${cat.color}40, transparent 70%)`
+                }}
+              />
+            )}
+          </motion.div>
+
+          {/* Label */}
+          <span className={`text-[11px] font-bold leading-tight text-center transition-colors ${
+            isActive
+             ? "text-zinc-900 dark:text-white"
+              : "text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-200"
+          }`}>
+            {cat.label}
+          </span>
+
+          {/* Active Pulse Ring */}
+          <AnimatePresence>
+            {isActive && (
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                className="absolute inset-0 rounded-[28px]"
+                style={{
+                  border: `2px solid ${cat.color}`,
+                  boxShadow: `0 0 0 4px ${cat.color}20`
+                }}
+              />
+            )}
+          </AnimatePresence>
+
+          {/* Checkmark Badge */}
+          <AnimatePresence>
+            {isActive && (
+              <motion.div
+                initial={{ scale: 0, rotate: -90 }}
+                animate={{ scale: 1, rotate: 0 }}
+                exit={{ scale: 0, rotate: 90 }}
+                transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                className="absolute top-2 right-2 w-[22px] h-[22px] rounded-full flex items-center justify-center shadow-lg z-20"
+                style={{
+                  background: `linear-gradient(135deg, ${cat.color}, ${cat.color}dd)`,
+                  boxShadow: `0 2px 8px ${cat.color}60, inset 0 1px 0 0 rgba(255,255,255,0.3)`
+                }}
               >
-                <Check size={12} className="text-white" strokeWidth={3.5} />
+                <Check size={13} className="text-white" strokeWidth={4} />
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Shimmer effect on active */}
+          {isActive && (
+            <motion.div
+              className="absolute inset-0 rounded-[28px] pointer-events-none"
+              initial={{ x: "-100%" }}
+              animate={{ x: "200%" }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                repeatDelay: 2,
+                ease: "easeInOut"
+              }}
+              style={{
+                background: `linear-gradient(90deg, transparent, ${cat.color}15, transparent)`,
+              }}
+            />
+          )}
         </motion.button>
       );
     })}
