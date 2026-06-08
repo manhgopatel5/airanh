@@ -184,9 +184,8 @@ export async function getJobsFromFirebaseAdmin(
       // Fallback: bỏ sort phức tạp
       let fallbackQuery: Query = db.collection('tasks')
       .where('type', '==', type)
-      .where('status', 'in', allowedStatuses)
-      .where('banned', '==', false)
-      .where('hidden', '==', false);
+      .where('status', 'in', allowedStatuses);
+     
 
       if (categories && categories.length > 0) {
         fallbackQuery = fallbackQuery.where('category', 'in', categories.slice(0, 10));
