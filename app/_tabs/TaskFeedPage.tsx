@@ -41,6 +41,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   const [filters, setFilters] = useState({
     categories: [] as string[],
     priceRange: 'all',
+    deadlineRange: 'all',
     sortBy: 'new' as SortBy,
     query: '',
   });
@@ -52,7 +53,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   // Reset khi đổi Task/Plan
   useEffect(() => {
     setCursor(null);
-    setFilters({ categories: [], priceRange: 'all', sortBy: 'new', query: '' });
+setFilters({ categories: [], priceRange: 'all', deadlineRange: 'all', sortBy: 'new', query: '' });
   }, [mode]);
 
   const apiUrl = useMemo(() => {
@@ -64,6 +65,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
 
     if (filters.categories.length > 0) params.set('categories', filters.categories.join(','));
     if (filters.priceRange!== 'all') params.set('priceRange', filters.priceRange);
+    if (filters.deadlineRange!== 'all') params.set('deadlineRange', filters.deadlineRange);
     if (filters.query) params.set('query', filters.query);
     // FIX 2: cursor là string, không toString()
     if (cursor) params.set('cursor', cursor);
@@ -95,6 +97,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     setFilters({
       categories: newFilters.categories || [],
       priceRange: newFilters.priceRange || 'all',
+      deadlineRange: newFilters.deadlineRange || 'all',
       sortBy: newFilters.sortBy || 'new',
       query: newFilters.query || '',
     });
