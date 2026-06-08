@@ -107,23 +107,17 @@ useEffect(() => {
 
   return `/api/tasks?${params.toString()}`;
 }, [mode, activeTab, filters, cursor, hasSearched]);
-  const { data, error, isLoading, isValidating, mutate } = useSWR<{ tasks: FeedTask[], nextCursor: number | null }>(
-  apiUrl, // FIX: apiUrl có thể null để disable SWR, TS strict cho phép
+ const { data, error, isLoading, isValidating, mutate } = useSWR<{ tasks: FeedTask[], nextCursor: number | null }>(
+  apiUrl,
   fetcher,
   {
-    // FIX: Luôn có fallbackData, không dùng undefined
-    fallbackData: hasSearched 
-      ? undefined 
-      : { 
-          tasks: mode === "task"? initialJobs : initialPlans, 
-          nextCursor: null 
-        },
+    // FIX: Bỏ fallbackData, dùng initialData cho SSR
+    keepPreviousData: true,
     revalidateOnMount: true,
     revalidateIfStale: false,
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     dedupingInterval: 0,
-    keepPreviousData: false,
     refreshInterval: 0,
     shouldRetryOnError: false,
     onError: (err: any) => {
@@ -134,8 +128,9 @@ useEffect(() => {
   }
 );
 
-  const tasks = data?.tasks?? (mode === "task"? initialJobs : initialPlans);
-  const nextCursor = data?.nextCursor || null;
+// THÊM DÒNG NÀY: Lấy data từ initial nếu chưa fetch
+const tasks = data?.tasks ?? (hasSearched ? [] : mode === "task" ? initialJobs : initialPlans);
+const nextCursor = data?.nextCursor ?? null;
 
   const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
