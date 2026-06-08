@@ -16,14 +16,13 @@ export async function GET(request: NextRequest) {
   const type = (searchParams.get('type') as 'task' | 'plan') || 'task';
   const limit = parseInt(searchParams.get('limit') || '20');
   const sortBy = (searchParams.get('sortBy') as any) || 'new';
-  
-  const cursorParam = searchParams.get('cursor');
-  const cursor = cursorParam? parseInt(cursorParam) : undefined;
-  
+
+  // FIX: cursor là string docId, không parseInt
+  const cursor = searchParams.get('cursor') || undefined;
+
   const categoriesParam = searchParams.get('categories');
   const categories = categoriesParam? categoriesParam.split(',').filter(Boolean) : undefined;
-  
-  // FIX: Map priceRange string -> min/max
+
   const priceRangeParam = searchParams.get('priceRange');
   let minPrice: number | undefined;
   let maxPrice: number | undefined;
@@ -34,24 +33,23 @@ export async function GET(request: NextRequest) {
         minPrice = 0;
         maxPrice = 0;
         break;
-      case 'lt50': // < 50K
+      case 'lt50':
         minPrice = 0;
         maxPrice = 49999;
         break;
-      case '50-200': // 50K - 200K
+      case '50-200':
         minPrice = 50000;
         maxPrice = 200000;
         break;
-      case '200-500': // 200K - 500K
+      case '200-500':
         minPrice = 200000;
         maxPrice = 500000;
         break;
-      case 'gt500': // > 500K
+      case 'gt500':
         minPrice = 500001;
         maxPrice = undefined;
         break;
       default:
-        // Nếu truyền số trực tiếp thì vẫn hỗ trợ
         const parsed = parseInt(priceRangeParam);
         if (!isNaN(parsed)) {
           minPrice = parsed;
@@ -59,25 +57,27 @@ export async function GET(request: NextRequest) {
         }
     }
   }
-  
+
   const query = searchParams.get('query') || undefined;
+
+  console.log('>>> API PARAMS:', { type, sortBy, priceRangeParam, minPrice, maxPrice, categories, query, cursor });
 
   try {
     const data = await getJobsFromFirebaseAdmin({
       type,
       limitCount: limit,
       sortBy,
-     ...(categories && { categories }),
-     ...(minPrice!== undefined && { minPrice }),
-     ...(maxPrice!== undefined && { maxPrice }),
-     ...(cursor!== undefined && { cursor }),
+   ...(categories && { categories }),
+   ...(minPrice!== undefined && { minPrice }),
+   ...(maxPrice!== undefined && { maxPrice }),
+   ...(cursor && { cursor }), // FIX: cursor string
     });
 
     let tasks = data.tasks;
     if (query) {
       const q = query.toLowerCase();
-      tasks = tasks.filter(t => 
-        t.title.toLowerCase().includes(q) || 
+      tasks = tasks.filter(t =>
+        t.title.toLowerCase().includes(q) ||
         t.description.toLowerCase().includes(q) ||
         t.tags?.some(tag => tag.toLowerCase().includes(q))
       );
@@ -118,7 +118,7 @@ export async function POST(request: Request) {
     const price = Number(body.price) || 0;
 
     const taskData = {
-     ...body,
+   ...body,
       userId: decoded.uid,
       userName: decoded.name || 'User',
       userAvatar: decoded.picture || '',
@@ -141,7 +141,7 @@ export async function POST(request: Request) {
       priceRange: getPriceRange(price),
       tags: Array.isArray(body.tags)? body.tags : [],
       images: Array.isArray(body.images)? body.images : [],
-     ...(isTask && {
+   ...(isTask && {
         totalSlots: Number(body.totalSlots) || 1,
         joined: 0,
         budgetType: body.budgetType || 'fixed',
@@ -151,7 +151,7 @@ export async function POST(request: Request) {
         urgency: body.urgency || 'flexible',
         needApproval: body.needApproval || false,
       }),
-     ...(!isTask && {
+   ...(!isTask && {
         eventDate: body.eventDate? new Date(body.eventDate) : null,
         endDate: body.endDate? new Date(body.endDate) : null,
         maxParticipants: Number(body.maxParticipants) || 4,
@@ -163,7 +163,7 @@ export async function POST(request: Request) {
         requireApproval: body.requireApproval || false,
         autoAccept:!body.requireApproval,
       }),
-     ...(body.location?.lat && body.location?.lng && {
+   ...(body.location?.lat && body.location?.lng && {
         location: {
           lat: body.location.lat,
           lng: body.location.lng,
