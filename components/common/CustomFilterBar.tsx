@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, ArrowLeft, Flame, TrendingUp, Clock, DollarSign, Check } from "lucide-react";
+import { Search, X, ArrowLeft, Flame, TrendingUp, Clock, DollarSign, Check, ChevronDown } from "lucide-react";
 import { useAppStore } from "@/store/app";
 import React, { useState, useEffect, useRef } from "react";
 
@@ -86,7 +86,7 @@ export default function CustomFilterBar({
   const [priceRange, setPriceRange] = useState<string>("all");
   const [sortBy, setSortBy] = useState<SortBy>("new");
   const [localQuery, setLocalQuery] = useState("");
-
+  const [showCategoryList, setShowCategoryList] = useState(false);
   const themes = {
     task: {
       bg: "#0A84FF",
@@ -302,9 +302,9 @@ export default function CustomFilterBar({
                   </div>
                 )}
 
- {/* Categories */}
+{/* Categories */}
 <div>
-  <h3 className="text-[13px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3.5 px-1 flex items-center justify-between">
+  <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3.5 px-1 flex items-center justify-between">
     <span>Danh mục</span>
     <AnimatePresence>
       {selectedCategories.length > 0 && (
@@ -312,7 +312,7 @@ export default function CustomFilterBar({
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0, opacity: 0 }}
-          className="text-[11px] px-3 py-1.5 rounded-full font-black shadow-lg"
+          className="text-xs px-3 py-1.5 rounded-full font-black shadow-lg"
           style={{
             background: currentTheme.bgGradient,
             color: 'white',
@@ -325,131 +325,110 @@ export default function CustomFilterBar({
     </AnimatePresence>
   </h3>
 
-  <div className="grid grid-cols-2 gap-3">
-    {CATEGORIES.map((cat, idx) => {
-      const isActive = selectedCategories.includes(cat.id);
-      return (
-        <motion.button
-          key={cat.id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            delay: idx * 0.025,
-            type: "spring",
-            stiffness: 400,
-            damping: 25
-          }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.96 }}
-          onClick={() => toggleCategory(cat.id)}
-          className="relative h-[88px] rounded-[28px] flex flex-col items-center justify-center gap-2 px-3 py-3 transition-all overflow-hidden group"
-          style={{
-            background: isActive
-             ? `linear-gradient(135deg, ${cat.color}18, ${cat.color}08)`
-              : 'rgba(142, 142, 147, 0.08)',
-            boxShadow: isActive
-             ? `0 8px 28px ${cat.color}35, inset 0 0 0 2px ${cat.color}, inset 0 1px 0 0 rgba(255,255,255,0.2)`
-              : '0 1px 3px rgba(0,0,0,0.04), inset 0 0 0 1px rgba(0,0,0,0.04)',
-          }}
-        >
-          {/* Glass highlight overlay */}
-          <div className="absolute inset-0 rounded-[28px] bg-gradient-to-b from-white/50 via-white/10 to-transparent dark:from-white/10 dark:via-transparent pointer-events-none" />
+  {/* Trigger Button */}
+  <motion.button
+    whileTap={{ scale: 0.98 }}
+    onClick={() => {
+      haptics.light();
+      setShowCategoryList(!showCategoryList);
+    }}
+    className="w-full h-14 px-4 rounded-2xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-between transition-all"
+    style={{
+      boxShadow: showCategoryList ? `0 0 0 2px ${currentTheme.bg}40` : 'none'
+    }}
+  >
+    <div className="flex items-center gap-3">
+      <div className="w-9 h-9 rounded-xl bg-white/80 dark:bg-zinc-800 flex items-center justify-center">
+        <span className="text-lg">📋</span>
+      </div>
+      <div className="text-left">
+        <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+          {selectedCategories.length === 0 
+            ? "Chọn danh mục" 
+            : `Đã chọn ${selectedCategories.length} danh mục`}
+        </div>
+        {selectedCategories.length > 0 && (
+          <div className="text-xs text-zinc-500 dark:text-zinc-500 mt-0.5">
+            {CATEGORIES.filter(c => selectedCategories.includes(c.id))
+              .slice(0, 2)
+              .map(c => c.label)
+              .join(', ')}
+            {selectedCategories.length > 2 && ` +${selectedCategories.length - 2}`}
+          </div>
+        )}
+      </div>
+    </div>
+    <motion.div
+      animate={{ rotate: showCategoryList ? 180 : 0 }}
+      transition={{ duration: 0.2 }}
+    >
+      <ChevronDown size={20} className="text-zinc-400" strokeWidth={2.5} />
+    </motion.div>
+  </motion.button>
 
-          {/* Icon Container */}
-          <motion.div
-            className="relative w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm"
-            animate={{
-              scale: isActive? 1.1 : 1,
-              rotate: isActive? [0, -5, 5, 0] : 0
-            }}
-            transition={{ duration: 0.4 }}
-            style={{
-              background: isActive
-               ? `linear-gradient(135deg, ${cat.color}30, ${cat.color}20)`
-                : 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6))',
-              boxShadow: isActive
-               ? `0 4px 12px ${cat.color}40, inset 0 1px 0 0 rgba(255,255,255,0.3)`
-                : '0 2px 6px rgba(0,0,0,0.06), inset 0 1px 0 0 rgba(255,255,255,0.8)',
-            }}
-          >
-            <span className="text-[24px] relative z-10">{cat.icon}</span>
-            {isActive && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="absolute inset-0 rounded-2xl"
+  {/* Collapsible List */}
+  <AnimatePresence>
+    {showCategoryList && (
+      <motion.div
+        initial={{ height: 0, opacity: 0 }}
+        animate={{ height: "auto", opacity: 1 }}
+        exit={{ height: 0, opacity: 0 }}
+        transition={{ duration: 0.25 }}
+        className="overflow-hidden"
+      >
+        <div className="mt-3 space-y-2 max-h-96 pb-2 overflow-y-auto">
+          {CATEGORIES.map((cat, idx) => {
+            const isActive = selectedCategories.includes(cat.id);
+            return (
+              <motion.button
+                key={cat.id}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => toggleCategory(cat.id)}
+                className="relative w-full h-14 rounded-2xl flex items-center gap-3 px-3.5 transition-all overflow-hidden"
                 style={{
-                  background: `radial-gradient(circle at 50% 0%, ${cat.color}40, transparent 70%)`
-                }}
-              />
-            )}
-          </motion.div>
-
-          {/* Label */}
-          <span className={`text-[11px] font-bold leading-tight text-center transition-colors ${
-            isActive
-             ? "text-zinc-900 dark:text-white"
-              : "text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-200"
-          }`}>
-            {cat.label}
-          </span>
-
-          {/* Active Pulse Ring */}
-          <AnimatePresence>
-            {isActive && (
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                className="absolute inset-0 rounded-[28px]"
-                style={{
-                  border: `2px solid ${cat.color}`,
-                  boxShadow: `0 0 0 4px ${cat.color}20`
-                }}
-              />
-            )}
-          </AnimatePresence>
-
-          {/* Checkmark Badge */}
-          <AnimatePresence>
-            {isActive && (
-              <motion.div
-                initial={{ scale: 0, rotate: -90 }}
-                animate={{ scale: 1, rotate: 0 }}
-                exit={{ scale: 0, rotate: 90 }}
-                transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                className="absolute top-2 right-2 w-[22px] h-[22px] rounded-full flex items-center justify-center shadow-lg z-20"
-                style={{
-                  background: `linear-gradient(135deg, ${cat.color}, ${cat.color}dd)`,
-                  boxShadow: `0 2px 8px ${cat.color}60, inset 0 1px 0 0 rgba(255,255,255,0.3)`
+                  background: isActive
+                   ? `linear-gradient(135deg, ${cat.color}15, ${cat.color}08)`
+                    : 'rgba(142, 142, 147, 0.06)',
+                  boxShadow: isActive
+                   ? `inset 0 0 0 1.5px ${cat.color}`
+                    : 'inset 0 0 0 1px rgba(0,0,0,0.04)',
                 }}
               >
-                <Check size={13} className="text-white" strokeWidth={4} />
-              </motion.div>
-            )}
-          </AnimatePresence>
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{
+                    background: isActive ? `${cat.color}25` : 'rgba(255,255,255,0.8)',
+                  }}
+                >
+                  <span className="text-lg">{cat.icon}</span>
+                </div>
 
-          {/* Shimmer effect on active */}
-          {isActive && (
-            <motion.div
-              className="absolute inset-0 rounded-[28px] pointer-events-none"
-              initial={{ x: "-100%" }}
-              animate={{ x: "200%" }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                repeatDelay: 2,
-                ease: "easeInOut"
-              }}
-              style={{
-                background: `linear-gradient(90deg, transparent, ${cat.color}15, transparent)`,
-              }}
-            />
-          )}
-        </motion.button>
-      );
-    })}
-  </div>
+                <div className="flex-1 text-left">
+                  <div className={`text-sm font-bold ${
+                    isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
+                  }`}>
+                    {cat.label}
+                  </div>
+                </div>
+
+                {isActive && (
+                  <div
+                    className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{ background: cat.color }}
+                  >
+                    <Check size={12} className="text-white" strokeWidth={3.5} />
+                  </div>
+                )}
+              </motion.button>
+            );
+          })}
+        </div>
+      </motion.div>
+    )}
+  </AnimatePresence>
 </div>
                 {/* Trending Tags */}
                 <div>
