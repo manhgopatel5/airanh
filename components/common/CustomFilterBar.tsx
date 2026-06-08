@@ -429,7 +429,7 @@ const currentTheme = themes[mode];
                         <div className="space-y-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
                           <div className="text-xs font-bold text-zinc-500 dark:text-zinc-400 px-1">Phường/Xã</div>
                           <div className="max-h-48 overflow-y-auto space-y-2">
-                            {currentProvince.wards.map((w) => {
+{currentProvince?.wards?.map((w) => {
                               const isActive = ward === w;
                               return (
                                 <button
