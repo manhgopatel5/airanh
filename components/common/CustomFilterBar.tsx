@@ -384,7 +384,7 @@ export default function CustomFilterBar({
                 </div>
               )}
 
-              {/* Location */}
+                      {/* Location */}
               <div>
                 <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3.5 px-1 font-serif">
                   Vị trí
@@ -394,7 +394,7 @@ export default function CustomFilterBar({
                     haptics.light();
                     setShowLocationList(!showLocationList);
                   }}
-                  className="w-full h-14 px-4 rounded-[28px] bg-white dark:bg-zinc-900 flex items-center justify-between transition-all"
+                  className="w-full h-14 px-4 rounded- bg-white dark:bg-zinc-900 flex items-center justify-between transition-all"
                   style={{
                     border: `2px solid ${currentTheme.bg}`,
                   }}
@@ -403,7 +403,7 @@ export default function CustomFilterBar({
                     <div className="text-xs text-zinc-500 dark:text-zinc-500 font-serif">Chọn tỉnh/thành phố</div>
                     <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-serif mt-0.5">
                       {currentProvince?.name || "Toàn quốc"}
-                      {wardId && ` - ${wards.find(w => w.id === wardId)?.name}`}
+                      {districtId && ` - ${districts.find(d => d.id === districtId)?.name}`}
                     </div>
                   </div>
                   <div style={{ transform: showLocationList? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
@@ -420,10 +420,10 @@ export default function CustomFilterBar({
                           onClick={() => {
                             haptics.light();
                             setProvinceId(null);
-                            setWardId(null);
+                            setDistrictId(null);
                             setShowLocationList(false);
                           }}
-                          className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
+                          className="relative w-full h-14 rounded- flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
                           style={{
                             border: provinceId === null? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
                           }}
@@ -434,43 +434,42 @@ export default function CustomFilterBar({
                             }`}>
                               Toàn quốc
                             </div>
-                          </div>
                           {provinceId === null && (
                             <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: currentTheme.bg }}>
                               <Check size={12} className="text-white" strokeWidth={3.5} />
                             </div>
                           )}
                         </button>
-                   {provinces.map((prov) => {
-  const isActive = provinceId === prov.id;
-  return (
-    <button
-      key={prov.id}
-      onClick={() => {
-        haptics.light();
-        setProvinceId(prov.id);
-        setWardId(null);
-      }}
-      className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
-      style={{
-        border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
-      }}
-    >
-      <div className="flex-1 text-left">
-        <div className={`text-sm font-serif font-bold ${
-          isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
-        }`}>
-          {prov.name}
-        </div>
-      </div>
-      {isActive && (
-        <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: currentTheme.bg }}>
-          <Check size={12} className="text-white" strokeWidth={3.5} />
-        </div>
-      )}
-    </button>
-  );
-})}
+                        {provinces.map((prov) => {
+                          const isActive = provinceId === prov.id;
+                          return (
+                            <button
+                              key={prov.id}
+                              onClick={() => {
+                                haptics.light();
+                                setProvinceId(prov.id);
+                                setDistrictId(null);
+                              }}
+                              className="relative w-full h-14 rounded- flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
+                              style={{
+                                border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
+                              }}
+                            >
+                              <div className="flex-1 text-left">
+                                <div className={`text-sm font-serif font-bold ${
+                                  isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
+                                }`}>
+                                  {prov.name}
+                                </div>
+                              </div>
+                              {isActive && (
+                                <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: currentTheme.bg }}>
+                                  <Check size={12} className="text-white" strokeWidth={3.5} />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
 
                       {districts.length > 0 && (
@@ -478,16 +477,16 @@ export default function CustomFilterBar({
                           <div className="text-xs font-bold text-zinc-500 dark:text-zinc-400 px-1">Quận/Huyện</div>
                           <div className="max-h-48 overflow-y-auto space-y-2">
                             {districts.map((d) => {
-                              const isActive = wardId === d.id;
+                              const isActive = districtId === d.id;
                               return (
                                 <button
                                   key={d.id}
                                   onClick={() => {
                                     haptics.light();
-                                    setWardId(d.id);
+                                    setDistrictId(d.id);
                                     setShowLocationList(false);
                                   }}
-                                  className="relative w-full h-12 rounded-[16px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
+                                  className="relative w-full h-12 rounded- flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
                                   style={{
                                     border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
                                   }}
