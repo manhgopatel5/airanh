@@ -1,18 +1,17 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, ArrowLeft, ArrowUp, ArrowDown, Star, Clock, Check, ChevronDown } from "lucide-react";
+import { Search, X, ArrowLeft, ArrowUp, ArrowDown, Star, Clock, Check, MapPin, Navigation } from "lucide-react";
 import { useAppStore } from "@/store/app";
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-
 
 const haptics = {
   light: () => navigator?.vibrate?.(5),
   medium: () => navigator?.vibrate?.([8, 15, 8]),
 };
 
-type SortBy = "new" | "views" | "price_asc" | "price_desc";
+type SortBy = "new" | "views" | "price_asc" | "price_desc" | "distance";
 
 interface CustomFilterBarProps {
   onOpenSearch: () => void;
@@ -75,6 +74,7 @@ const PRICE_RANGES = [
   { id: "200-500", label: "200,000 - 500,000 VNĐ", min: 200000, max: 500000 },
   { id: "gt500", label: "Lớn hơn 500,000 VNĐ", min: 500000, max: Infinity },
 ];
+
 const DEADLINE_RANGES = [
   { id: "all", label: "Tất cả" },
   { id: "1h", label: "Trong 1 giờ" },
@@ -83,6 +83,8 @@ const DEADLINE_RANGES = [
   { id: "week", label: "Tuần này" },
   { id: "month", label: "Tháng này" },
 ];
+
+const RADIUS_MARKS = [1, 2, 5, 10, 20, 50]; // km
 
 export default function CustomFilterBar({
   onOpenSearch,
@@ -99,13 +101,12 @@ export default function CustomFilterBar({
   const [showCategoryList, setShowCategoryList] = useState(false);
   const [showPriceList, setShowPriceList] = useState(false);
   const [showDeadlineList, setShowDeadlineList] = useState(false);
-  const [showLocationList, setShowLocationList] = useState(false);
   const [deadlineRange, setDeadlineRange] = useState<string>("all");
-  const [provinceId, setProvinceId] = useState<number | null>(null);
-  const [districtId, setDistrictId] = useState<number | null>(null);
+  const [radius, setRadius] = useState<number>(0); // 0 = Toàn quốc
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locating, setLocating] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [provinces, setProvinces] = useState<any[]>([]);
-  const [districts, setDistricts] = useState<any[]>([]);
+
   const themes = {
     task: {
       bg: "#0A84FF",
@@ -122,25 +123,17 @@ export default function CustomFilterBar({
   };
   const currentTheme = themes[mode];
   const CATEGORIES = mode === "task"? CATEGORY_TASKS : CATEGORY_PLANS;
-  const currentProvince = provinces.find(p => p.id === provinceId);
 
   const sortOptions = [
     { id: "new", label: "Mới nhất", icon: Clock },
     { id: "views", label: "Phổ biến", icon: Star },
-   { id: "price_asc", label: "Giá tăng", icon: ArrowUp },
-   { id: "price_desc", label: "Giá giảm", icon: ArrowDown },
+    { id: "price_asc", label: "Giá tăng", icon: ArrowUp },
+    { id: "price_desc", label: "Giá giảm", icon: ArrowDown },
+    { id: "distance", label: "Gần nhất", icon: Navigation },
   ];
 
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-
-    useEffect(() => {
-    fetch("/api/location/province")
-   .then(r => r.json())
-   .then(data => setProvinces(Array.isArray(data)? data : []))
-   .catch(() => setProvinces([]));
   }, []);
 
   useEffect(() => {
@@ -150,25 +143,25 @@ export default function CustomFilterBar({
     }
   }, [showSearchModal]);
 
-  useEffect(() => {
-    if (!provinceId) {
-      setDistricts([]);
+  const requestLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Thiết bị không hỗ trợ GPS");
       return;
     }
-    fetch("/api/location/district", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ provinceId }),
-    })
-  .then(r => r.json())
-  .then(data => {
-      setDistricts(data);
-      setDistrictId(null);
-    })
-  .catch(() => setDistricts([]));
-  }, [provinceId]);
-
-  
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocating(false);
+        haptics.light();
+      },
+      () => {
+        setLocating(false);
+        toast.error("Không lấy được vị trí. Cho phép GPS để lọc gần bạn.");
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
 
   const toggleCategory = (id: string) => {
     haptics.light();
@@ -183,30 +176,31 @@ export default function CustomFilterBar({
     setPriceRange("all");
     setSortBy("new");
     setDeadlineRange("all");
-    setProvinceId(null);
-    setDistrictId(null);
+    setRadius(0);
     setLocalQuery("");
   };
 
-    const handleApply = () => {
+  const handleApply = () => {
     haptics.medium();
-    const province = provinces.find(p => p.id === provinceId);
-    const district = districts.find(d => d.id === districtId);
     onApplyFilters({
       categories: selectedCategories,
       priceRange,
       deadlineRange,
-      provinceId: provinceId || null,
-      districtId: districtId || null,
-      provinceName: province?.name || "",
-      districtName: district?.name || "",
+      radius: radius > 0? radius : null,
+      lat: radius > 0? userLocation?.lat : null,
+      lng: radius > 0? userLocation?.lng : null,
       sortBy,
       query: localQuery,
     });
     onCloseSearch();
   };
 
-  const activeFilterCount = selectedCategories.length + (priceRange!== "all"? 1 : 0) + (deadlineRange!== "all"? 1 : 0) + (provinceId!== null? 1 : 0) + (sortBy!== "new"? 1 : 0) + (localQuery? 1 : 0);
+  const activeFilterCount = selectedCategories.length + 
+    (priceRange!== "all"? 1 : 0) + 
+    (deadlineRange!== "all"? 1 : 0) + 
+    (radius > 0? 1 : 0) + 
+    (sortBy!== "new"? 1 : 0) + 
+    (localQuery? 1 : 0);
 
   const modalContent = (
     <AnimatePresence>
@@ -226,7 +220,7 @@ export default function CustomFilterBar({
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-className="absolute inset-0 bg-white dark:bg-zinc-950 flex flex-col h-full"
+            className="absolute inset-0 bg-white dark:bg-zinc-950 flex flex-col h-full"
             style={{ paddingTop: "env(safe-area-inset-top)" }}
           >
             {/* Header */}
@@ -259,9 +253,7 @@ className="absolute inset-0 bg-white dark:bg-zinc-950 flex flex-col h-full"
                   onKeyDown={(e) => e.key === 'Enter' && handleApply()}
                   placeholder="Tìm kiếm..."
                   className="w-full h-14 pl-12 pr-12 rounded-[28px] bg-white dark:bg-zinc-900 outline-none font-serif font-bold text-[16px] text-zinc-900 dark:text-zinc-100 transition-all placeholder:text-zinc-400"
-                  style={{
-                    border: `2px solid ${currentTheme.bg}`
-                  }}
+                  style={{ border: `2px solid ${currentTheme.bg}` }}
                 />
                 <div className="absolute left-4 top-1/2 -translate-y-1/2">
                   <Search size={20} style={{ color: currentTheme.bg }} strokeWidth={2.5} />
@@ -286,23 +278,25 @@ className="absolute inset-0 bg-white dark:bg-zinc-950 flex flex-col h-full"
                   {sortOptions.map((opt) => {
                     const Icon = opt.icon;
                     const isActive = sortBy === opt.id;
+                    const disabled = opt.id === "distance" &&!userLocation;
                     return (
                       <button
                         key={opt.id}
                         onClick={() => {
+                          if (disabled) {
+                            requestLocation();
+                            return;
+                          }
                           haptics.light();
                           setSortBy(opt.id as SortBy);
                         }}
+                        disabled={disabled}
                         className={`relative h-12 rounded-[20px] flex items-center justify-center gap-2 font-serif font-semibold text-[14px] transition-all ${
                           isActive
-                  ? "text-white shadow-lg"
+                           ? "text-white shadow-lg"
                             : "bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300"
-                        }`}
-                        style={isActive? {
-                          background: currentTheme.bgGradient,
-                        } : {
-                          border: '2px solid rgba(0,0,0,0.06)'
-                        }}
+                        } ${disabled? "opacity-40" : ""}`}
+                        style={isActive? { background: currentTheme.bgGradient } : { border: '2px solid rgba(0,0,0,0.06)' }}
                       >
                         {Icon && <Icon size={18} strokeWidth={2.5} />}
                         {opt.label}
@@ -312,369 +306,195 @@ className="absolute inset-0 bg-white dark:bg-zinc-950 flex flex-col h-full"
                 </div>
               </div>
 
+              {/* Distance Slider */}
+              <div>
+                <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3.5 px-1 font-serif flex items-center justify-between">
+                  <span>Khoảng cách</span>
+                  {radius > 0 && (
+                    <span className="text-[13px] font-black" style={{ color: currentTheme.bg }}>
+                      {radius}km
+                    </span>
+                  )}
+                </h3>
+                
+                {!userLocation? (
+                  <button
+                    onClick={requestLocation}
+                    disabled={locating}
+                    className="w-full h-14 px-4 rounded-[28px] bg-white dark:bg-zinc-900 flex items-center justify-center gap-2 transition-all font-serif font-bold"
+                    style={{ border: `2px solid ${currentTheme.bg}` }}
+                  >
+                    <MapPin size={20} strokeWidth={2.5} style={{ color: currentTheme.bg }} />
+                    <span className="text-zinc-900 dark:text-zinc-100">
+                      {locating? "Đang lấy vị trí..." : "Cho phép vị trí để lọc gần bạn"}
+                    </span>
+                  </button>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="px-2">
+                      <input
+                        type="range"
+                        min="0"
+                        max="50"
+                        step="1"
+                        value={radius}
+                        onChange={(e) => {
+                          haptics.light();
+                          setRadius(Number(e.target.value));
+                        }}
+                        className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                        style={{
+                          background: `linear-gradient(to right, ${currentTheme.bg} 0%, ${currentTheme.bg} ${(radius/50)*100}%, rgb(228 228 231) ${(radius/50)*100}%, rgb(228 228 231) 100%)`,
+                        }}
+                      />
+                    </div>
+                    <div className="flex justify-between px-2">
+                      <span className="text-xs font-bold text-zinc-500">Toàn quốc</span>
+                      <div className="flex gap-2">
+                        {RADIUS_MARKS.map((km) => (
+                          <button
+                            key={km}
+                            onClick={() => {
+                              haptics.light();
+                              setRadius(km);
+                            }}
+                            className={`text-xs font-bold px-2 py-1 rounded-lg transition-all ${
+                              radius === km
+                               ? "text-white"
+                                : "text-zinc-500 bg-zinc-100 dark:bg-zinc-900"
+                            }`}
+                            style={radius === km? { background: currentTheme.bg } : {}}
+                          >
+                            {km}km
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Price Range - Task mode only */}
               {mode === "task" && (
                 <div>
                   <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3.5 px-1 font-serif">
                     Khoảng giá
                   </h3>
-                  <button
-                    onClick={() => {
-                      haptics.light();
-                      setShowPriceList(!showPriceList);
-                    }}
-                    className="w-full h-14 px-4 rounded-[28px] bg-white dark:bg-zinc-900 flex items-center justify-between transition-all"
-                    style={{
-                      border: `2px solid ${currentTheme.bg}`,
-                    }}
-                  >
-                    <div className="text-left">
-                      <div className="text-xs text-zinc-500 dark:text-zinc-500 font-serif">Chọn khoảng giá</div>
-                      <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-serif mt-0.5">
-                        {PRICE_RANGES.find(p => p.id === priceRange)?.label || "Tất cả"}
-                      </div>
-                    </div>
-                    <div style={{ transform: showPriceList? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-                      <ChevronDown size={20} className="text-zinc-400" strokeWidth={2.5} />
-                    </div>
-                  </button>
-
-                  {showPriceList && (
-                    <div className="overflow-hidden">
-                      <div className="mt-3 space-y-2 pb-2">
-                        {PRICE_RANGES.map((range) => {
-                          const isActive = priceRange === range.id;
-                          return (
-                            <button
-                              key={range.id}
-                              onClick={() => {
-                                haptics.light();
-                                setPriceRange(range.id);
-                                setShowPriceList(false);
-                              }}
-                              className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
-                              style={{
-                                border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
-                              }}
-                            >
-                              <div className="flex-1 text-left">
-                                <div className={`text-sm font-serif font-bold ${
-                                  isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
-                                }`}>
-                                  {range.label}
-                                </div>
-                              </div>
-
-                              {isActive && (
-                                <div
-                                  className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                                  style={{ background: currentTheme.bg }}
-                                >
-                                  <Check size={12} className="text-white" strokeWidth={3.5} />
-                                </div>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+                  <div className="space-y-2">
+                    {PRICE_RANGES.map((range) => {
+                      const isActive = priceRange === range.id;
+                      return (
+                        <button
+                          key={range.id}
+                          onClick={() => {
+                            haptics.light();
+                            setPriceRange(range.id);
+                          }}
+                          className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
+                          style={{
+                            border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
+                          }}
+                        >
+                          <div className="flex-1 text-left">
+                            <div className={`text-sm font-serif font-bold ${
+                              isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
+                            }`}>
+                              {range.label}
+                            </div>
+                          </div>
+                          {isActive && (
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: currentTheme.bg }}>
+                              <Check size={12} className="text-white" strokeWidth={3.5} />
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
-
-                      {/* Location */}
-              <div>
-                <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3.5 px-1 font-serif">
-                  Vị trí
-                </h3>
-                <button
-                  onClick={() => {
-                    haptics.light();
-                    setShowLocationList(!showLocationList);
-                  }}
-                  className="w-full h-14 px-4 rounded- bg-white dark:bg-zinc-900 flex items-center justify-between transition-all"
-                  style={{
-                    border: `2px solid ${currentTheme.bg}`,
-                  }}
-                >
-                  <div className="text-left">
-                    <div className="text-xs text-zinc-500 dark:text-zinc-500 font-serif">Chọn tỉnh/thành phố</div>
-                    <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-serif mt-0.5">
-                      {currentProvince?.name || "Toàn quốc"}
-                      {districtId && ` - ${districts.find(d => d.id === districtId)?.name}`}
-                    </div>
-                  </div>
-                  <div style={{ transform: showLocationList? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-                    <ChevronDown size={20} className="text-zinc-400" strokeWidth={2.5} />
-                  </div>
-                </button>
-
-                {showLocationList && (
-                  <div className="overflow-hidden">
-                    <div className="mt-3 space-y-3 pb-2">
-                      <div className="space-y-2">
-                        <div className="text-xs font-bold text-zinc-500 dark:text-zinc-400 px-1">Tỉnh/Thành phố</div>
-                                               <button
-                            onClick={() => {
-                              haptics.light();
-                              setProvinceId(null);
-                              setDistrictId(null);
-                              setShowLocationList(false);
-                            }}
-                            className="relative w-full h-14 rounded- flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
-                            style={{
-                              border: provinceId === null? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
-                            }}
-                          >
-                            <div className="flex-1 text-left">
-                              <div className={`text-sm font-serif font-bold ${
-                                provinceId === null? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
-                              }`}>
-                                Toàn quốc
-                              </div>
-+                           </div>
-                            {provinceId === null && (
-                              <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: currentTheme.bg }}>
-                                <Check size={12} className="text-white" strokeWidth={3.5} />
-                              </div>
-                            )}
-                          </button>
-                        {provinces.map((prov) => {
-                          const isActive = provinceId === prov.id;
-                          return (
-                            <button
-                              key={prov.id}
-                              onClick={() => {
-                                haptics.light();
-                                setProvinceId(prov.id);
-                                setDistrictId(null);
-                              }}
-                              className="relative w-full h-14 rounded- flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
-                              style={{
-                                border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
-                              }}
-                            >
-                              <div className="flex-1 text-left">
-                                <div className={`text-sm font-serif font-bold ${
-                                  isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
-                                }`}>
-                                  {prov.name}
-                                </div>
-                              </div>
-                              {isActive && (
-                                <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: currentTheme.bg }}>
-                                  <Check size={12} className="text-white" strokeWidth={3.5} />
-                                </div>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {districts.length > 0 && (
-                        <div className="space-y-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
-                          <div className="text-xs font-bold text-zinc-500 dark:text-zinc-400 px-1">Quận/Huyện</div>
-                          <div className="max-h-48 overflow-y-auto space-y-2">
-                            {districts.map((d) => {
-                              const isActive = districtId === d.id;
-                              return (
-                                <button
-                                  key={d.id}
-                                  onClick={() => {
-                                    haptics.light();
-                                    setDistrictId(d.id);
-                                    setShowLocationList(false);
-                                  }}
-                                  className="relative w-full h-12 rounded- flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
-                                  style={{
-                                    border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
-                                  }}
-                                >
-                                  <div className="flex-1 text-left">
-                                    <div className={`text-sm font-serif font-bold ${
-                                      isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
-                                    }`}>
-                                      {d.name}
-                                    </div>
-                                  </div>
-                                  {isActive && (
-                                    <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: currentTheme.bg }}>
-                                      <Check size={12} className="text-white" strokeWidth={3.5} />
-                                    </div>
-                                  )}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
 
               {/* Categories */}
               <div>
                 <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3.5 px-1 flex items-center justify-between font-serif">
                   <span>Danh mục</span>
                   {selectedCategories.length > 0 && (
-                    <span
-                      className="text-xs px-3 py-1.5 rounded-full font-black shadow-lg"
-                      style={{
-                        background: currentTheme.bgGradient,
-                        color: 'white',
-                      }}
-                    >
+                    <span className="text-xs px-3 py-1.5 rounded-full font-black shadow-lg" style={{ background: currentTheme.bgGradient, color: 'white' }}>
                       {selectedCategories.length}
                     </span>
                   )}
                 </h3>
-
-                <button
-                  onClick={() => {
-                    haptics.light();
-                    setShowCategoryList(!showCategoryList);
-                  }}
-                  className="w-full h-14 px-4 rounded-[28px] bg-white dark:bg-zinc-900 flex items-center justify-between transition-all"
-                  style={{
-                    border: `2px solid ${currentTheme.bg}`,
-                  }}
-                >
-                  <div className="text-left">
-                    <div className="text-xs text-zinc-500 dark:text-zinc-500 font-serif">Chọn danh mục</div>
-                    <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-serif mt-0.5">
-                      {selectedCategories.length === 0
-             ? "Tất cả"
-                        : `Đã chọn ${selectedCategories.length} danh mục`}
-                    </div>
-                    {selectedCategories.length > 0 && (
-                      <div className="text-xs text-zinc-500 dark:text-zinc-500 mt-0.5 font-serif">
-                        {CATEGORIES.filter(c => selectedCategories.includes(c.id))
-               .slice(0, 2)
-               .map(c => c.label)
-               .join(', ')}
-                        {selectedCategories.length > 2 && ` +${selectedCategories.length - 2}`}
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ transform: showCategoryList? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-                    <ChevronDown size={20} className="text-zinc-400" strokeWidth={2.5} />
-                  </div>
-                </button>
-
-                {showCategoryList && (
-                  <div className="overflow-hidden">
-                    <div className="mt-3 space-y-2 max-h-96 pb-2 overflow-y-auto">
-                      {CATEGORIES.map((cat) => {
-                        const isActive = selectedCategories.includes(cat.id);
-                        return (
-                          <button
-                            key={cat.id}
-                            onClick={() => toggleCategory(cat.id)}
-                            className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
-                            style={{
-                              border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
-                            }}
-                          >
-                            <div className="flex-1 text-left">
-                              <div className={`text-sm font-serif font-bold ${
-                                isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
-                              }`}>
-                                {cat.label}
-                              </div>
-                            </div>
-
-                            {isActive && (
-                              <div
-                                className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                                style={{ background: currentTheme.bg }}
-                              >
-                                <Check size={12} className="text-white" strokeWidth={3.5} />
-                              </div>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                <div className="space-y-2 max-h-80 overflow-y-auto">
+                  {CATEGORIES.map((cat) => {
+                    const isActive = selectedCategories.includes(cat.id);
+                    return (
+                      <button
+                        key={cat.id}
+                        onClick={() => toggleCategory(cat.id)}
+                        className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
+                        style={{
+                          border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
+                        }}
+                      >
+                        <div className="flex-1 text-left">
+                          <div className={`text-sm font-serif font-bold ${
+                            isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
+                          }`}>
+                            {cat.label}
+                          </div>
+                        </div>
+                        {isActive && (
+                          <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: currentTheme.bg }}>
+                            <Check size={12} className="text-white" strokeWidth={3.5} />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              {/* Deadline Range */}
+              {/* Deadline */}
               <div>
                 <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3.5 px-1 font-serif">
                   Thời hạn còn lại
                 </h3>
-
-                <button
-                  onClick={() => {
-                    haptics.light();
-                    setShowDeadlineList(!showDeadlineList);
-                  }}
-                  className="w-full h-14 px-4 rounded-[28px] bg-white dark:bg-zinc-900 flex items-center justify-between transition-all"
-                  style={{
-                    border: `2px solid ${currentTheme.bg}`,
-                  }}
-                >
-                  <div className="text-left">
-                    <div className="text-xs text-zinc-500 dark:text-zinc-500 font-serif">Chọn thời hạn</div>
-                    <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-serif mt-0.5">
-                      {DEADLINE_RANGES.find(d => d.id === deadlineRange)?.label || "Tất cả"}
-                    </div>
-                  </div>
-                  <div style={{ transform: showDeadlineList? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-                    <ChevronDown size={20} className="text-zinc-400" strokeWidth={2.5} />
-                  </div>
-                </button>
-
-                {showDeadlineList && (
-                  <div className="overflow-hidden">
-                    <div className="mt-3 space-y-2 pb-2">
-                      {DEADLINE_RANGES.map((deadline) => {
-                        const isActive = deadlineRange === deadline.id;
-                        return (
-                          <button
-                            key={deadline.id}
-                            onClick={() => {
-                              haptics.light();
-                              setDeadlineRange(deadline.id);
-                              setShowDeadlineList(false);
-                            }}
-                            className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
-                            style={{
-                              border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
-                            }}
-                          >
-                            <div className="flex-1 text-left">
-                              <div className={`text-sm font-serif font-bold ${
-                                isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
-                              }`}>
-                                {deadline.label}
-                              </div>
-                            </div>
-
-                            {isActive && (
-                              <div
-                                className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                                style={{ background: currentTheme.bg }}
-                              >
-                                <Check size={12} className="text-white" strokeWidth={3.5} />
-                              </div>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  {DEADLINE_RANGES.map((deadline) => {
+                    const isActive = deadlineRange === deadline.id;
+                    return (
+                      <button
+                        key={deadline.id}
+                        onClick={() => {
+                          haptics.light();
+                          setDeadlineRange(deadline.id);
+                        }}
+                        className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
+                        style={{
+                          border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
+                        }}
+                      >
+                        <div className="flex-1 text-left">
+                          <div className={`text-sm font-serif font-bold ${
+                            isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
+                          }`}>
+                            {deadline.label}
+                          </div>
+                        </div>
+                        {isActive && (
+                          <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: currentTheme.bg }}>
+                            <Check size={12} className="text-white" strokeWidth={3.5} />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
             {/* Footer Actions */}
-            <div
-              className="absolute bottom-0 left-0 right-0 px-4 pt-4 pb-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl z-[1000000]"
-              style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
-            >
+            <div className="absolute bottom-0 left-0 right-0 px-4 pt-4 pb-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl z-[1000000]" style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
               <div className="flex gap-3">
                 <button
                   onClick={onCloseSearch}
@@ -686,9 +506,7 @@ className="absolute inset-0 bg-white dark:bg-zinc-950 flex flex-col h-full"
                 <button
                   onClick={handleApply}
                   className="flex-1 h-14 rounded-[28px] text-white font-serif font-bold text-[15px] relative overflow-hidden"
-                  style={{
-                    background: currentTheme.bgGradient,
-                  }}
+                  style={{ background: currentTheme.bgGradient }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
                   <span className="relative">
@@ -709,9 +527,7 @@ className="absolute inset-0 bg-white dark:bg-zinc-950 flex flex-col h-full"
         <button
           onClick={onOpenSearch}
           className="relative w-full h-12 px-4 pr-11 rounded-[28px] bg-zinc-100/80 dark:bg-zinc-800/80 backdrop-blur-xl text-left outline-none transition-all shadow-sm hover:shadow-md active:shadow-sm group"
-          style={{
-            border: `2px solid ${currentTheme.bg}`,
-          }}
+          style={{ border: `2px solid ${currentTheme.bg}` }}
         >
           <span className="relative text-zinc-500 dark:text-zinc-400 font-serif font-semibold text-[15px]">Tìm kiếm nâng cao...</span>
           <div className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 dark:bg-zinc-700/80 flex items-center justify-center">
@@ -719,7 +535,6 @@ className="absolute inset-0 bg-white dark:bg-zinc-950 flex flex-col h-full"
           </div>
         </button>
       </div>
-
       {mounted && createPortal(modalContent, document.body)}
     </>
   );
