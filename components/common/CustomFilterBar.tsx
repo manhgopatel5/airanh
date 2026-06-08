@@ -204,7 +204,7 @@ export default function CustomFilterBar({
   <motion.button
     whileTap={{ scale: 0.95 }}
     onClick={resetFilters}
-    className="text-[13px] font-bold text-[#0A84FF] px-3.5 h-9 rounded-full bg-white dark:bg-zinc-900 transition-all font-serif"
+    className="text-[13px] font-bold text-[#0A84FF] px-3.5 h-9 rounded-[28px] bg-white dark:bg-zinc-900 transition-all font-serif"
     style={{ border: '2px solid #0A84FF' }}
   >
     Xóa
@@ -245,7 +245,7 @@ export default function CustomFilterBar({
               </div>
 
               {/* Content */}
-              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-8">
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-4">
                 {/* Sort */}
                 <div>
                   <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3 px-1 font-serif">Sắp xếp</h3>
@@ -263,7 +263,7 @@ export default function CustomFilterBar({
                           }}
                           className={`relative h-12 rounded-[20px] flex items-center justify-center gap-2 font-serif font-semibold text-[14px] transition-all ${
                             isActive
-                            ? "text-white shadow-lg"
+                           ? "text-white shadow-lg"
                               : "bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300"
                           }`}
                           style={isActive? {
@@ -298,7 +298,7 @@ export default function CustomFilterBar({
                       className="w-full h-14 px-4 rounded-[28px] bg-white dark:bg-zinc-900 flex items-center justify-between transition-all"
                       style={{
                         border: `2px solid ${currentTheme.bg}`,
-                        
+
                       }}
                     >
                       <div className="text-left">
@@ -404,22 +404,22 @@ export default function CustomFilterBar({
                     className="w-full h-14 px-4 rounded-[28px] bg-white dark:bg-zinc-900 flex items-center justify-between transition-all"
                     style={{
                       border: `2px solid ${currentTheme.bg}`,
-                      
+
                     }}
                   >
                     <div className="text-left">
                       <div className="text-xs text-zinc-500 dark:text-zinc-500 font-serif">Chọn danh mục</div>
                       <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-serif mt-0.5">
                         {selectedCategories.length === 0
-                         ? "Tất cả"
+                        ? "Tất cả"
                           : `Đã chọn ${selectedCategories.length} danh mục`}
                       </div>
                       {selectedCategories.length > 0 && (
                         <div className="text-xs text-zinc-500 dark:text-zinc-500 mt-0.5 font-serif">
                           {CATEGORIES.filter(c => selectedCategories.includes(c.id))
-                           .slice(0, 2)
-                           .map(c => c.label)
-                           .join(', ')}
+                          .slice(0, 2)
+                          .map(c => c.label)
+                          .join(', ')}
                           {selectedCategories.length > 2 && ` +${selectedCategories.length - 2}`}
                         </div>
                       )}
@@ -504,13 +504,12 @@ export default function CustomFilterBar({
                   </div>
                 </div>
 
-
-             {/* Actions - Thay cho Footer */}
-                <div className="flex gap-3 pt-4">
+             {/* Actions - Nằm cuối content */}
+                <div className="flex gap-3 pt-6">
                   <motion.button
                     whileTap={{ scale: 0.96 }}
                     onClick={onCloseSearch}
-                    className="h-14 rounded- bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 font-serif font-bold text- px-6 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
+                    className="h-14 rounded-[28px] bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 font-serif font-bold text-[15px] px-6 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
                     style={{ border: '2px solid rgba(0,0,0,0.06)' }}
                   >
                     Hủy
@@ -518,7 +517,7 @@ export default function CustomFilterBar({
                   <motion.button
                     whileTap={{ scale: 0.96 }}
                     onClick={handleApply}
-                    className="flex-1 h-14 rounded- text-white font-serif font-bold text- relative overflow-hidden"
+                    className="flex-1 h-14 rounded-[28px] text-white font-serif font-bold text-[15px] relative overflow-hidden"
                     style={{
                       background: currentTheme.bgGradient,
                     }}
