@@ -83,37 +83,41 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Lọc theo thời hạn còn lại
-    if (deadlineRange!== 'all') {
-      const now = Date.now();
-      let deadlineTimestamp = Infinity;
+ // Lọc theo thời hạn còn lại
+if (deadlineRange!== 'all') {
+  const now = Date.now();
+  let deadlineTimestamp = Infinity;
+  
+  switch(deadlineRange) {
+    case "1h":
+      deadlineTimestamp = now + 60 * 60 * 1000;
+      break;
+    case "today":
+      deadlineTimestamp = new Date().setHours(23, 59, 999);
+      break;
+    case "3days":
+      deadlineTimestamp = now + 3 * 24 * 60 * 60 * 1000;
+      break;
+    case "week":
+      deadlineTimestamp = now + 7 * 24 * 60 * 60 * 1000;
+      break;
+    case "month":
+      deadlineTimestamp = now + 30 * 24 * 60 * 60 * 1000;
+      break;
+  }
+  
+  tasks = tasks.filter(task => {
+    if (!task.deadline) return false;
+    
+    // FIX: check type trước khi gọi toDate()
+    const deadlineValue = task.deadline as any;
+    const taskDeadline = deadlineValue?.toDate 
+      ? deadlineValue.toDate().getTime() 
+      : new Date(deadlineValue).getTime();
       
-      switch(deadlineRange) {
-        case "1h":
-          deadlineTimestamp = now + 60 * 60 * 1000;
-          break;
-        case "today":
-          deadlineTimestamp = new Date().setHours(23, 59, 59, 999);
-          break;
-        case "3days":
-          deadlineTimestamp = now + 3 * 24 * 60 * 60 * 1000;
-          break;
-        case "week":
-          deadlineTimestamp = now + 7 * 24 * 60 * 60 * 1000;
-          break;
-        case "month":
-          deadlineTimestamp = now + 30 * 24 * 60 * 60 * 1000;
-          break;
-      }
-      
-      tasks = tasks.filter(task => {
-        if (!task.deadline) return false;
-        const taskDeadline = task.deadline.toDate 
-         ? task.deadline.toDate().getTime() 
-          : new Date(task.deadline).getTime();
-        return taskDeadline >= now && taskDeadline <= deadlineTimestamp;
-      });
-    }
+    return taskDeadline >= now && taskDeadline <= deadlineTimestamp;
+  });
+}
 
     return NextResponse.json({ tasks, nextCursor: data.nextCursor });
   } catch (error) {
