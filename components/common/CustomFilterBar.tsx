@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, ArrowLeft, ArrowUp, ArrowDown, Star, Clock, Check, ChevronDown } from "lucide-react";
+import { Search, X, ArrowLeft, ArrowUp, ArrowDown, Star, Clock, Check, ChevronDown, MapPin } from "lucide-react";
 import { useAppStore } from "@/store/app";
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
@@ -82,6 +82,16 @@ const DEADLINE_RANGES = [
   { id: "week", label: "Tuần này" },
   { id: "month", label: "Tháng này" },
 ];
+
+const PROVINCES = [
+  { id: "all", label: "Toàn quốc" },
+  { id: "hcm", label: "TP. Hồ Chí Minh", wards: ["Quận 1", "Quận 3", "Quận 7", "Bình Thạnh", "Thủ Đức", "Gò Vấp", "Tân Bình", "Phú Nhuận"] },
+  { id: "hanoi", label: "Hà Nội", wards: ["Ba Đình", "Hoàn Kiếm", "Cầu Giấy", "Đống Đa", "Hai Bà Trưng", "Thanh Xuân", "Hà Đông"] },
+  { id: "danang", label: "Đà Nẵng", wards: ["Hải Châu", "Thanh Khê", "Sơn Trà", "Ngũ Hành Sơn", "Liên Chiểu"] },
+  { id: "cantho", label: "Cần Thơ", wards: ["Ninh Kiều", "Bình Thủy", "Cái Răng", "Ô Môn"] },
+  { id: "haiphong", label: "Hải Phòng", wards: ["Hồng Bàng", "Lê Chân", "Ngô Quyền", "Kiến An"] },
+];
+
 export default function CustomFilterBar({
   onOpenSearch,
   showSearchModal,
@@ -97,7 +107,10 @@ export default function CustomFilterBar({
   const [showCategoryList, setShowCategoryList] = useState(false);
   const [showPriceList, setShowPriceList] = useState(false);
   const [showDeadlineList, setShowDeadlineList] = useState(false);
+  const [showLocationList, setShowLocationList] = useState(false);
   const [deadlineRange, setDeadlineRange] = useState<string>("all");
+  const [province, setProvince] = useState<string>("all");
+  const [ward, setWard] = useState<string>("");
   const [mounted, setMounted] = useState(false);
   const themes = {
     task: {
@@ -113,8 +126,9 @@ export default function CustomFilterBar({
       secondary: "#FF9F0A"
     },
   };
-  const currentTheme = themes[mode];
+  const currentTheme = themes;
   const CATEGORIES = mode === "task"? CATEGORY_TASKS : CATEGORY_PLANS;
+  const currentProvince = PROVINCES.find(p => p.id === province);
 
   const sortOptions = [
     { id: "new", label: "Mới nhất", icon: Clock },
@@ -147,6 +161,8 @@ export default function CustomFilterBar({
     setPriceRange("all");
     setSortBy("new");
     setDeadlineRange("all");
+    setProvince("all");
+    setWard("");
     setLocalQuery("");
   };
 
@@ -156,13 +172,15 @@ export default function CustomFilterBar({
       categories: selectedCategories,
       priceRange,
       deadlineRange,
+      province: province === "all"? "" : province,
+      ward,
       sortBy,
       query: localQuery,
     });
     onCloseSearch();
   };
 
-  const activeFilterCount = selectedCategories.length + (priceRange!== "all"? 1 : 0) + (deadlineRange!== "all"? 1 : 0) + (sortBy!== "new"? 1 : 0) + (localQuery? 1 : 0);
+  const activeFilterCount = selectedCategories.length + (priceRange!== "all"? 1 : 0) + (deadlineRange!== "all"? 1 : 0) + (province!== "all"? 1 : 0) + (sortBy!== "new"? 1 : 0) + (localQuery? 1 : 0);
 
   const modalContent = (
     <AnimatePresence>
@@ -188,23 +206,21 @@ export default function CustomFilterBar({
             {/* Header */}
             <div className="flex-shrink-0 px-4 pt-2 pb-3 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50">
               <div className="flex items-center justify-between gap-3 mb-3">
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
+                <button
                   onClick={onCloseSearch}
                   className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center"
                 >
                   <ArrowLeft size={20} strokeWidth={2.5} />
-                </motion.button>
+                </button>
                 <h2 className="text-[17px] font-bold flex-1 text-center font-serif">Tìm kiếm nâng cao</h2>
                 {activeFilterCount > 0 && (
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
+                  <button
                     onClick={resetFilters}
                     className="text-[13px] font-bold text-[#0A84FF] px-3.5 h-9 rounded-[28px] bg-white dark:bg-zinc-900 transition-all font-serif"
                     style={{ border: '2px solid #0A84FF' }}
                   >
                     Xóa
-                  </motion.button>
+                  </button>
                 )}
                 {activeFilterCount === 0 && <div className="w-9" />}
               </div>
@@ -224,19 +240,14 @@ export default function CustomFilterBar({
                 <div className="absolute left-4 top-1/2 -translate-y-1/2">
                   <Search size={20} style={{ color: currentTheme.bg }} strokeWidth={2.5} />
                 </div>
-                <AnimatePresence>
-                  {localQuery && (
-                    <motion.button
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      onClick={() => setLocalQuery("")}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center"
-                    >
-                      <X size={16} strokeWidth={2.5} className="text-zinc-600 dark:text-zinc-400" />
-                    </motion.button>
-                  )}
-                </AnimatePresence>
+                {localQuery && (
+                  <button
+                    onClick={() => setLocalQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center"
+                  >
+                    <X size={16} strokeWidth={2.5} className="text-zinc-600 dark:text-zinc-400" />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -250,16 +261,15 @@ export default function CustomFilterBar({
                     const Icon = opt.icon;
                     const isActive = sortBy === opt.id;
                     return (
-                      <motion.button
+                      <button
                         key={opt.id}
-                        whileTap={{ scale: 0.96 }}
                         onClick={() => {
                           haptics.light();
                           setSortBy(opt.id as SortBy);
                         }}
                         className={`relative h-12 rounded-[20px] flex items-center justify-center gap-2 font-serif font-semibold text-[14px] transition-all ${
                           isActive
-                    ? "text-white shadow-lg"
+                   ? "text-white shadow-lg"
                             : "bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300"
                         }`}
                         style={isActive? {
@@ -270,7 +280,7 @@ export default function CustomFilterBar({
                       >
                         {Icon && <Icon size={18} strokeWidth={2.5} />}
                         {opt.label}
-                      </motion.button>
+                      </button>
                     );
                   })}
                 </div>
@@ -282,8 +292,7 @@ export default function CustomFilterBar({
                   <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3.5 px-1 font-serif">
                     Khoảng giá
                   </h3>
-                  <motion.button
-                    whileTap={{ scale: 0.98 }}
+                  <button
                     onClick={() => {
                       haptics.light();
                       setShowPriceList(!showPriceList);
@@ -299,93 +308,187 @@ export default function CustomFilterBar({
                         {PRICE_RANGES.find(p => p.id === priceRange)?.label || "Tất cả"}
                       </div>
                     </div>
-                    <motion.div
-                      animate={{ rotate: showPriceList? 180 : 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
+                    <div style={{ transform: showPriceList? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
                       <ChevronDown size={20} className="text-zinc-400" strokeWidth={2.5} />
-                    </motion.div>
-                  </motion.button>
+                    </div>
+                  </button>
 
-                  <AnimatePresence>
-                    {showPriceList && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.25 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="mt-3 space-y-2 pb-2">
-                          {PRICE_RANGES.map((range, idx) => {
-                            const isActive = priceRange === range.id;
-                            return (
-                              <motion.button
-                                key={range.id}
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: idx * 0.03 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => {
-                                  haptics.light();
-                                  setPriceRange(range.id);
-                                  setShowPriceList(false);
-                                }}
-                                className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
-                                style={{
-                                  border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
-                                }}
-                              >
-                                <div className="flex-1 text-left">
-                                  <div className={`text-sm font-serif font-bold ${
-                                    isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
-                                  }`}>
-                                    {range.label}
-                                  </div>
+                  {showPriceList && (
+                    <div className="overflow-hidden">
+                      <div className="mt-3 space-y-2 pb-2">
+                        {PRICE_RANGES.map((range) => {
+                          const isActive = priceRange === range.id;
+                          return (
+                            <button
+                              key={range.id}
+                              onClick={() => {
+                                haptics.light();
+                                setPriceRange(range.id);
+                                setShowPriceList(false);
+                              }}
+                              className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
+                              style={{
+                                border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
+                              }}
+                            >
+                              <div className="flex-1 text-left">
+                                <div className={`text-sm font-serif font-bold ${
+                                  isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
+                                }`}>
+                                  {range.label}
                                 </div>
+                              </div>
 
-                                {isActive && (
-                                  <div
-                                    className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                                    style={{ background: currentTheme.bg }}
-                                  >
-                                    <Check size={12} className="text-white" strokeWidth={3.5} />
-                                  </div>
-                                )}
-                              </motion.button>
-                            );
-                          })}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                              {isActive && (
+                                <div
+                                  className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                                  style={{ background: currentTheme.bg }}
+                                >
+                                  <Check size={12} className="text-white" strokeWidth={3.5} />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
+
+              {/* Location */}
+              <div>
+                <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3.5 px-1 font-serif">
+                  Vị trí
+                </h3>
+                <button
+                  onClick={() => {
+                    haptics.light();
+                    setShowLocationList(!showLocationList);
+                  }}
+                  className="w-full h-14 px-4 rounded-[28px] bg-white dark:bg-zinc-900 flex items-center justify-between transition-all"
+                  style={{
+                    border: `2px solid ${currentTheme.bg}`,
+                  }}
+                >
+                  <div className="text-left">
+                    <div className="text-xs text-zinc-500 dark:text-zinc-500 font-serif">Chọn tỉnh/thành phố</div>
+                    <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-serif mt-0.5">
+                      {PROVINCES.find(p => p.id === province)?.label || "Toàn quốc"}
+                      {ward && ` - ${ward}`}
+                    </div>
+                  </div>
+                  <div style={{ transform: showLocationList? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+                    <ChevronDown size={20} className="text-zinc-400" strokeWidth={2.5} />
+                  </div>
+                </button>
+
+                {showLocationList && (
+                  <div className="overflow-hidden">
+                    <div className="mt-3 space-y-3 pb-2">
+                      <div className="space-y-2">
+                        <div className="text-xs font-bold text-zinc-500 dark:text-zinc-400 px-1">Tỉnh/Thành phố</div>
+                        {PROVINCES.map((prov) => {
+                          const isActive = province === prov.id;
+                          return (
+                            <button
+                              key={prov.id}
+                              onClick={() => {
+                                haptics.light();
+                                setProvince(prov.id);
+                                setWard("");
+                                if (prov.id === "all") setShowLocationList(false);
+                              }}
+                              className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
+                              style={{
+                                border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
+                              }}
+                            >
+                              <div className="flex-1 text-left">
+                                <div className={`text-sm font-serif font-bold ${
+                                  isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
+                                }`}>
+                                  {prov.label}
+                                </div>
+                              </div>
+
+                              {isActive && (
+                                <div
+                                  className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                                  style={{ background: currentTheme.bg }}
+                                >
+                                  <Check size={12} className="text-white" strokeWidth={3.5} />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {currentProvince && currentProvince.id!== "all" && (
+                        <div className="space-y-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+                          <div className="text-xs font-bold text-zinc-500 dark:text-zinc-400 px-1">Phường/Xã</div>
+                          <div className="max-h-48 overflow-y-auto space-y-2">
+                            {currentProvince.wards.map((w) => {
+                              const isActive = ward === w;
+                              return (
+                                <button
+                                  key={w}
+                                  onClick={() => {
+                                    haptics.light();
+                                    setWard(w);
+                                    setShowLocationList(false);
+                                  }}
+                                  className="relative w-full h-12 rounded-[16px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
+                                  style={{
+                                    border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
+                                  }}
+                                >
+                                  <div className="flex-1 text-left">
+                                    <div className={`text-sm font-serif font-bold ${
+                                      isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
+                                    }`}>
+                                      {w}
+                                    </div>
+                                  </div>
+
+                                  {isActive && (
+                                    <div
+                                      className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                                      style={{ background: currentTheme.bg }}
+                                    >
+                                      <Check size={12} className="text-white" strokeWidth={3.5} />
+                                    </div>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Categories */}
               <div>
                 <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3.5 px-1 flex items-center justify-between font-serif">
                   <span>Danh mục</span>
-                  <AnimatePresence>
-                    {selectedCategories.length > 0 && (
-                      <motion.span
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        className="text-xs px-3 py-1.5 rounded-full font-black shadow-lg"
-                        style={{
-                          background: currentTheme.bgGradient,
-                          color: 'white',
-                        }}
-                      >
-                        {selectedCategories.length}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
+                  {selectedCategories.length > 0 && (
+                    <span
+                      className="text-xs px-3 py-1.5 rounded-full font-black shadow-lg"
+                      style={{
+                        background: currentTheme.bgGradient,
+                        color: 'white',
+                      }}
+                    >
+                      {selectedCategories.length}
+                    </span>
+                  )}
                 </h3>
 
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
+                <button
                   onClick={() => {
                     haptics.light();
                     setShowCategoryList(!showCategoryList);
@@ -399,75 +502,60 @@ export default function CustomFilterBar({
                     <div className="text-xs text-zinc-500 dark:text-zinc-500 font-serif">Chọn danh mục</div>
                     <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-serif mt-0.5">
                       {selectedCategories.length === 0
-                ? "Tất cả"
+              ? "Tất cả"
                         : `Đã chọn ${selectedCategories.length} danh mục`}
                     </div>
                     {selectedCategories.length > 0 && (
                       <div className="text-xs text-zinc-500 dark:text-zinc-500 mt-0.5 font-serif">
                         {CATEGORIES.filter(c => selectedCategories.includes(c.id))
-                  .slice(0, 2)
-                  .map(c => c.label)
-                  .join(', ')}
+                .slice(0, 2)
+                .map(c => c.label)
+                .join(', ')}
                         {selectedCategories.length > 2 && ` +${selectedCategories.length - 2}`}
                       </div>
                     )}
                   </div>
-                  <motion.div
-                    animate={{ rotate: showCategoryList? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
+                  <div style={{ transform: showCategoryList? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
                     <ChevronDown size={20} className="text-zinc-400" strokeWidth={2.5} />
-                  </motion.div>
-                </motion.button>
+                  </div>
+                </button>
 
-                <AnimatePresence>
-                  {showCategoryList && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.25 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="mt-3 space-y-2 max-h-96 pb-2 overflow-y-auto">
-                        {CATEGORIES.map((cat, idx) => {
-                          const isActive = selectedCategories.includes(cat.id);
-                          return (
-                            <motion.button
-                              key={cat.id}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: idx * 0.02 }}
-                              whileTap={{ scale: 0.98 }}
-                              onClick={() => toggleCategory(cat.id)}
-                              className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
-                              style={{
-                                border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
-                              }}
-                            >
-                              <div className="flex-1 text-left">
-                                <div className={`text-sm font-serif font-bold ${
-                                  isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
-                                }`}>
-                                  {cat.label}
-                                </div>
+                {showCategoryList && (
+                  <div className="overflow-hidden">
+                    <div className="mt-3 space-y-2 max-h-96 pb-2 overflow-y-auto">
+                      {CATEGORIES.map((cat) => {
+                        const isActive = selectedCategories.includes(cat.id);
+                        return (
+                          <button
+                            key={cat.id}
+                            onClick={() => toggleCategory(cat.id)}
+                            className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
+                            style={{
+                              border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
+                            }}
+                          >
+                            <div className="flex-1 text-left">
+                              <div className={`text-sm font-serif font-bold ${
+                                isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
+                              }`}>
+                                {cat.label}
                               </div>
+                            </div>
 
-                              {isActive && (
-                                <div
-                                  className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                                  style={{ background: currentTheme.bg }}
-                                >
-                                  <Check size={12} className="text-white" strokeWidth={3.5} />
-                                </div>
-                              )}
-                            </motion.button>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                            {isActive && (
+                              <div
+                                className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                                style={{ background: currentTheme.bg }}
+                              >
+                                <Check size={12} className="text-white" strokeWidth={3.5} />
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Deadline Range */}
@@ -476,8 +564,7 @@ export default function CustomFilterBar({
                   Thời hạn còn lại
                 </h3>
 
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
+                <button
                   onClick={() => {
                     haptics.light();
                     setShowDeadlineList(!showDeadlineList);
@@ -493,66 +580,51 @@ export default function CustomFilterBar({
                       {DEADLINE_RANGES.find(d => d.id === deadlineRange)?.label || "Tất cả"}
                     </div>
                   </div>
-                  <motion.div
-                    animate={{ rotate: showDeadlineList? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
+                  <div style={{ transform: showDeadlineList? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
                     <ChevronDown size={20} className="text-zinc-400" strokeWidth={2.5} />
-                  </motion.div>
-                </motion.button>
+                  </div>
+                </button>
 
-                <AnimatePresence>
-                  {showDeadlineList && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.25 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="mt-3 space-y-2 pb-2">
-                        {DEADLINE_RANGES.map((deadline, idx) => {
-                          const isActive = deadlineRange === deadline.id;
-                          return (
-                            <motion.button
-                              key={deadline.id}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: idx * 0.03 }}
-                              whileTap={{ scale: 0.98 }}
-                              onClick={() => {
-                                haptics.light();
-                                setDeadlineRange(deadline.id);
-                                setShowDeadlineList(false);
-                              }}
-                              className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
-                              style={{
-                                border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
-                              }}
-                            >
-                              <div className="flex-1 text-left">
-                                <div className={`text-sm font-serif font-bold ${
-                                  isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
-                                }`}>
-                                  {deadline.label}
-                                </div>
+                {showDeadlineList && (
+                  <div className="overflow-hidden">
+                    <div className="mt-3 space-y-2 pb-2">
+                      {DEADLINE_RANGES.map((deadline) => {
+                        const isActive = deadlineRange === deadline.id;
+                        return (
+                          <button
+                            key={deadline.id}
+                            onClick={() => {
+                              haptics.light();
+                              setDeadlineRange(deadline.id);
+                              setShowDeadlineList(false);
+                            }}
+                            className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
+                            style={{
+                              border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
+                            }}
+                          >
+                            <div className="flex-1 text-left">
+                              <div className={`text-sm font-serif font-bold ${
+                                isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
+                              }`}>
+                                {deadline.label}
                               </div>
+                            </div>
 
-                              {isActive && (
-                                <div
-                                  className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                                  style={{ background: currentTheme.bg }}
-                                >
-                                  <Check size={12} className="text-white" strokeWidth={3.5} />
-                                </div>
-                              )}
-                            </motion.button>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                            {isActive && (
+                              <div
+                                className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                                style={{ background: currentTheme.bg }}
+                              >
+                                <Check size={12} className="text-white" strokeWidth={3.5} />
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -562,16 +634,14 @@ export default function CustomFilterBar({
               style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
             >
               <div className="flex gap-3">
-                <motion.button
-                  whileTap={{ scale: 0.96 }}
+                <button
                   onClick={onCloseSearch}
                   className="h-14 rounded-[28px] bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 font-serif font-bold text-[15px] px-6 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
                   style={{ border: '2px solid rgba(0,0,0,0.06)' }}
                 >
                   Hủy
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.96 }}
+                </button>
+                <button
                   onClick={handleApply}
                   className="flex-1 h-14 rounded-[28px] text-white font-serif font-bold text-[15px] relative overflow-hidden"
                   style={{
@@ -582,7 +652,7 @@ export default function CustomFilterBar({
                   <span className="relative">
                     Áp dụng {activeFilterCount > 0 && `(${activeFilterCount})`}
                   </span>
-                </motion.button>
+                </button>
               </div>
             </div>
           </motion.div>
@@ -594,8 +664,7 @@ export default function CustomFilterBar({
   return (
     <>
       <div className="mt-3">
-        <motion.button
-          whileTap={{ scale: 0.98 }}
+        <button
           onClick={onOpenSearch}
           className="relative w-full h-12 px-4 pr-11 rounded-[28px] bg-zinc-100/80 dark:bg-zinc-800/80 backdrop-blur-xl text-left outline-none transition-all shadow-sm hover:shadow-md active:shadow-sm group"
           style={{
@@ -606,7 +675,7 @@ export default function CustomFilterBar({
           <div className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 dark:bg-zinc-700/80 flex items-center justify-center">
             <Search size={16} className="text-zinc-500 dark:text-zinc-400" strokeWidth={2.5} />
           </div>
-        </motion.button>
+        </button>
       </div>
 
       {mounted && createPortal(modalContent, document.body)}
