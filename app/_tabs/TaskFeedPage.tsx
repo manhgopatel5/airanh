@@ -1,14 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import * as geofire from "geofire-common";
 import useSWR from "swr";
-import {
-  FiInbox,
-  FiRefreshCw,
-  FiSearch,
-} from "react-icons/fi";
+import { FiInbox, FiRefreshCw, FiSearch } from "react-icons/fi";
 import { HiBolt, HiCalendarDays } from "react-icons/hi2";
 import { toast } from "sonner";
 import ShareTaskModal from "@/components/ShareTaskModal";
@@ -17,17 +12,7 @@ import TaskCard from "@/components/task/TaskCard";
 import { useAppStore } from "@/store/app";
 import type { FeedTask } from "@/types/task";
 
-type TabId = "hot" | "nearby" | "new";
-type SortBy = "views" | "new" | "price_asc" | "price_desc"; // FIX: 'recent' -> 'new'
-type FilterTab = "hot" | "nearby" | "new";
-
-type TaskWithLocation = FeedTask & {
-  location: { lat: number; lng: number };
-};
-
-const hasLocation = (task: FeedTask): task is TaskWithLocation => {
-  return task.location?.lat!= null && task.location?.lng!= null;
-};
+type SortBy = "new" | "views" | "price_asc" | "price_desc";
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
@@ -46,136 +31,80 @@ type TaskFeedPageProps = {
 
 export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPageProps) {
   const reduceMotion = useReducedMotion();
-
   const { mode = "task", setMode } = useAppStore();
-  const [activeTab, setActiveTab] = useState<TabId>("hot");
+
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showSearchModal, setShowSearchModal] = useState(false);
-const [hasSearched, setHasSearched] = useState(true); // FIX: true thay vì false
+  const [cursor, setCursor] = useState<number | null>(null);
 
   const [filters, setFilters] = useState({
-  categories: [] as string[],
-  priceRange: 'all',
-  sortBy: 'new' as SortBy, // FIX: 'new' thay vì 'views'
-  query: '',
-});
-
-  const [searchQueries, setSearchQueries] = useState<Record<FilterTab, string>>({
-    hot: '',
-    nearby: '',
-    new: ''
+    categories: [] as string[],
+    priceRange: 'all',
+    sortBy: 'new' as SortBy,
+    query: '',
   });
-
-  const [cursor, setCursor] = useState<number | null>(null);
 
   const isTaskMode = mode === "task";
   const accent = isTaskMode? "#0A84FF" : "#30D158";
   const gradient = isTaskMode? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
 
+  // Reset khi đổi Task/Plan
   useEffect(() => {
     setCursor(null);
-    setHasSearched(false);
-    setFilters({ categories: [], priceRange: 'all', sortBy: 'views', query: '' });
-    setActiveTab("hot");
+    setFilters({ categories: [], priceRange: 'all', sortBy: 'new', query: '' });
   }, [mode]);
 
-useEffect(() => {
-  if (activeTab === 'hot') setFilters(prev => ({...prev, sortBy: 'views' }));
-  if (activeTab === 'new') setFilters(prev => ({...prev, sortBy: 'new' })); // FIX: 'recent' -> 'new'
-}, [activeTab]);
+  const apiUrl = useMemo(() => {
+    const params = new URLSearchParams({
+      type: mode,
+      limit: '20',
+      sortBy: filters.sortBy,
+    });
 
-const apiUrl = useMemo(() => {
-  const params = new URLSearchParams({
-    type: mode,
-    limit: '20',
-    sortBy: filters.sortBy,
-  });
+    if (filters.categories.length > 0) params.set('categories', filters.categories.join(','));
+    if (filters.priceRange!== 'all') params.set('priceRange', filters.priceRange);
+    if (filters.query) params.set('query', filters.query);
+    if (cursor) params.set('cursor', cursor.toString());
 
-  if (filters.categories.length > 0) params.set('categories', filters.categories.join(','));
-  if (filters.priceRange!== 'all') params.set('priceRange', filters.priceRange);
-  if (filters.query) params.set('query', filters.query);
-  if (cursor) params.set('cursor', cursor.toString());
+    return `/api/tasks?${params.toString()}`;
+  }, [mode, filters, cursor]);
 
-  return `/api/tasks?${params.toString()}`; // FIX: Luôn return URL, không check hasSearched
-}, [mode, filters, cursor]); // FIX: Bỏ hasSearched khỏi deps
- const { data, error, isLoading, isValidating, mutate } = useSWR<{ tasks: FeedTask[], nextCursor: number | null }>(
-  apiUrl,
-  fetcher,
-  {
-    // FIX: Bỏ fallbackData, để SWR tự fetch
-    keepPreviousData: true, // Giữ data cũ khi load trang mới
-    revalidateOnMount: true,
-    revalidateIfStale: false,
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    dedupingInterval: 0,
-    refreshInterval: 0,
-    shouldRetryOnError: false,
-    onError: (err: any) => {
-      toast.error(err?.message || "Không tải được feed", { id: "feed-load-error" });
-    },
-  }
-);
-
-// FIX: Dùng data hoặc initial nếu data chưa có
-const tasks = data?.tasks?? (mode === "task"? initialJobs : initialPlans);
-const nextCursor = data?.nextCursor?? null;
-  const requestLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      toast.error("Thiết bị không hỗ trợ định vị GPS");
-      return;
+  const { data, error, isLoading, isValidating, mutate } = useSWR<{ tasks: FeedTask[], nextCursor: number | null }>(
+    apiUrl,
+    fetcher,
+    {
+      keepPreviousData: true,
+      revalidateOnMount: true,
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 0,
+      onError: (err: any) => {
+        toast.error(err?.message || "Không tải được feed", { id: "feed-load-error" });
+      },
     }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        vibrate([10, 20, 10]);
-        toast.success("Đã xác định vị trí");
-      },
-      (err) => {
-        toast.error(err.code === 1? "Bạn đã chặn quyền truy cập vị trí" : "Không thể lấy vị trí. Thử lại sau");
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
+  );
+
+  const tasks = data?.tasks?? (mode === "task"? initialJobs : initialPlans);
+  const nextCursor = data?.nextCursor?? null;
+
+  const handleApplyFilters = useCallback((newFilters: any) => {
+    setFilters({
+      categories: newFilters.categories || [],
+      priceRange: newFilters.priceRange || 'all',
+      sortBy: newFilters.sortBy || 'new',
+      query: newFilters.query || '',
+    });
+    setCursor(null);
   }, []);
 
-  useEffect(() => {
-    if (activeTab === "nearby" &&!userLocation) requestLocation();
-  }, [activeTab, requestLocation, userLocation]);
-
-// 2. Chỉ khi bấm "Áp dụng" mới fetch
-const handleApplyFilters = useCallback(async (newFilters: any) => {
-  const newTab = newFilters.tab || activeTab;
-  const newFilterState = {
-    categories: newFilters.categories || [],
-    priceRange: newFilters.priceRange || 'all',
-    sortBy: newFilters.sortBy || 'new',
-    query: newFilters.query || '',
-  };
-
-  setActiveTab(newTab);
-  setFilters(newFilterState);
-  setSearchQueries(prev => ({...prev, [newTab]: newFilters.query || '' }));
-  setCursor(null);
-  // FIX: Bỏ setHasSearched(true) vì luôn true rồi
-}, [activeTab]);
-
   const filteredTasks = useMemo(() => {
-    let result = tasks.filter((task) =>!task.banned &&!task.hidden);
-
-    if (activeTab === "nearby" && userLocation) {
-      result = result.filter(hasLocation).sort((a, b) =>
-        geofire.distanceBetween([userLocation.lat, userLocation.lng], [a.location.lat, a.location.lng]) -
-        geofire.distanceBetween([userLocation.lat, userLocation.lng], [b.location.lat, b.location.lng])
-      );
-    }
-    return result;
-  }, [activeTab, tasks, userLocation]);
+    return tasks.filter((task) =>!task.banned &&!task.hidden);
+  }, [tasks]);
 
   const handleRefresh = useCallback(() => {
     vibrate(10);
     setCursor(null);
-    setHasSearched(true);
     mutate();
   }, [mutate]);
 
@@ -187,7 +116,7 @@ const handleApplyFilters = useCallback(async (newFilters: any) => {
     mutate(current => {
       if (!current) return current;
       return {
-    ...current,
+   ...current,
         tasks: current.tasks.map(item => item.id === taskId? ({...item,...updates } as FeedTask) : item)
       };
     }, false);
@@ -197,7 +126,7 @@ const handleApplyFilters = useCallback(async (newFilters: any) => {
     mutate(current => {
       if (!current) return current;
       return {
-    ...current,
+   ...current,
         tasks: current.tasks.filter(item => item.id!== id)
       };
     }, false);
@@ -211,14 +140,12 @@ const handleApplyFilters = useCallback(async (newFilters: any) => {
   const switchMode = (nextMode: "task" | "plan") => {
     if (nextMode === mode) return;
     vibrate([10, 20, 10]);
-    setCursor(null);
-    setHasSearched(false);
     setMode(nextMode);
   };
 
-  const loading = isLoading && hasSearched;
-  const refreshing = isValidating && hasSearched;
-  const showError = error && hasSearched;
+  const loading = isLoading;
+  const refreshing = isValidating;
+  const showError =!!error;
   const modeNoun = isTaskMode? "task" : "plan";
 
   return (
@@ -233,7 +160,7 @@ const handleApplyFilters = useCallback(async (newFilters: any) => {
                 left: isTaskMode? "0%" : "44%",
                 width: "56%",
                 background: isTaskMode
-          ? "linear-gradient(135deg, #0A84FF 0%, #0066CC 50%, #0051D5 100%)"
+         ? "linear-gradient(135deg, #0A84FF 0%, #0066CC 50%, #0051D5 100%)"
                   : "linear-gradient(135deg, #30D158 0%, #28B34A 50%, #248A3D 100%)"
               }}
               transition={{ type: "spring", stiffness: 340, damping: 38, mass: 0.6 }}
@@ -262,7 +189,7 @@ const handleApplyFilters = useCallback(async (newFilters: any) => {
                 aria-pressed={!isTaskMode}
                 onClick={() => switchMode("plan")}
                 className={`relative flex items-center justify-center gap-2 text- font-black transition-colors duration-200 ${
-          !isTaskMode? "text-white" : "text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+         !isTaskMode? "text-white" : "text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
                 }`}
               >
                 <HiCalendarDays size={22} />
@@ -271,18 +198,12 @@ const handleApplyFilters = useCallback(async (newFilters: any) => {
             </div>
           </div>
 
-
-<CustomFilterBar
-  currentFilter={activeTab}
-  onChangeFilter={setActiveTab}
-  searchQueries={searchQueries}
-  
-  
-  onOpenSearch={() => setShowSearchModal(true)}
-  showSearchModal={showSearchModal}
-  onCloseSearch={() => setShowSearchModal(false)}
-  onApplyFilters={handleApplyFilters}
-/>
+          <CustomFilterBar
+            onOpenSearch={() => setShowSearchModal(true)}
+            showSearchModal={showSearchModal}
+            onCloseSearch={() => setShowSearchModal(false)}
+            onApplyFilters={handleApplyFilters}
+          />
         </div>
       </div>
 
@@ -311,19 +232,9 @@ const handleApplyFilters = useCallback(async (newFilters: any) => {
             </div>
             <h2 className="mt-5 text-xl font-black">Chưa có {modeNoun} phù hợp</h2>
             <p className="mx-auto mt-2 max-w-[320px] text-sm leading-6 text-zinc-500">
-              {activeTab === "nearby" &&!userLocation? "Bật định vị để khám phá cơ hội quanh bạn." : "Thử đổi bộ lọc, tìm từ khóa khác hoặc tạo mục mới để bắt đầu."}
+              Thử đổi bộ lọc, tìm từ khóa khác hoặc tạo mục mới để bắt đầu.
             </p>
             <div className="mt-5 flex justify-center gap-2">
-              {activeTab === "nearby" &&!userLocation && (
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  type="button"
-                  onClick={requestLocation}
-                  className={`h-11 rounded-2xl bg-gradient-to-r ${gradient} px-5 text-sm font-black text-white shadow-lg`}
-                >
-                  Bật định vị
-                </motion.button>
-              )}
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 type="button"
@@ -336,7 +247,7 @@ const handleApplyFilters = useCallback(async (newFilters: any) => {
           </motion.div>
         ) : (
           <AnimatePresence mode="popLayout">
-            <motion.div key={`${mode}-${activeTab}`} initial={reduceMotion? false : { opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+            <motion.div key={mode} initial={reduceMotion? false : { opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
               {filteredTasks.map((task, idx) => (
                 <motion.div
                   key={task.id}
