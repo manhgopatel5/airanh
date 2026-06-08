@@ -1,10 +1,11 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, ArrowLeft, ArrowUp, ArrowDown, Star, Clock, Check, MapPin, Navigation } from "lucide-react";
+import { Search, X, ArrowLeft, ArrowUp, ArrowDown, Star, Clock, Check, MapPin, Navigation, ChevronDown } from "lucide-react";
 import { useAppStore } from "@/store/app";
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 
 const haptics = {
   light: () => navigator?.vibrate?.(5),
@@ -21,49 +22,49 @@ interface CustomFilterBarProps {
 }
 
 const CATEGORY_TASKS = [
-  { id: "doing", label: "Việc gấp", suggestPrice: 50000 },
-  { id: "skill", label: "Kỹ năng", suggestPrice: 100000 },
-  { id: "shopping", label: "Mua hộ", suggestPrice: 30000 },
-  { id: "help", label: "Giúp đỡ", suggestPrice: 0 },
-  { id: "moving", label: "Chuyển đồ", suggestPrice: 150000 },
-  { id: "cleaning", label: "Dọn dẹp", suggestPrice: 80000 },
-  { id: "repair", label: "Sửa chữa", suggestPrice: 120000 },
-  { id: "tutoring", label: "Gia sư", suggestPrice: 200000 },
-  { id: "photography", label: "Chụp ảnh", suggestPrice: 300000 },
-  { id: "design", label: "Thiết kế", suggestPrice: 500000 },
-  { id: "cooking", label: "Nấu ăn", suggestPrice: 100000 },
-  { id: "petcare", label: "Chăm thú cưng", suggestPrice: 70000 },
-  { id: "babysit", label: "Trông trẻ", suggestPrice: 150000 },
-  { id: "elderly", label: "Chăm người già", suggestPrice: 180000 },
-  { id: "event", label: "Sự kiện", suggestPrice: 400000 },
-  { id: "marketing", label: "Marketing", suggestPrice: 600000 },
-  { id: "writing", label: "Viết lách", suggestPrice: 250000 },
-  { id: "translate", label: "Dịch thuật", suggestPrice: 150000 },
-  { id: "consulting", label: "Tư vấn", suggestPrice: 350000 },
-  { id: "other", label: "Khác", suggestPrice: 50000 },
+  { id: "doing", label: "Việc gấp" },
+  { id: "skill", label: "Kỹ năng" },
+  { id: "shopping", label: "Mua hộ" },
+  { id: "help", label: "Giúp đỡ" },
+  { id: "moving", label: "Chuyển đồ" },
+  { id: "cleaning", label: "Dọn dẹp" },
+  { id: "repair", label: "Sửa chữa" },
+  { id: "tutoring", label: "Gia sư" },
+  { id: "photography", label: "Chụp ảnh" },
+  { id: "design", label: "Thiết kế" },
+  { id: "cooking", label: "Nấu ăn" },
+  { id: "petcare", label: "Chăm thú cưng" },
+  { id: "babysit", label: "Trông trẻ" },
+  { id: "elderly", label: "Chăm người già" },
+  { id: "event", label: "Sự kiện" },
+  { id: "marketing", label: "Marketing" },
+  { id: "writing", label: "Viết lách" },
+  { id: "translate", label: "Dịch thuật" },
+  { id: "consulting", label: "Tư vấn" },
+  { id: "other", label: "Khác" },
 ] as const;
 
 const CATEGORY_PLANS = [
-  { id: "coffee", label: "Cà phê", suggestPrice: 0 },
-  { id: "meal", label: "Ăn uống", suggestPrice: 0 },
-  { id: "sport", label: "Thể thao", suggestPrice: 0 },
-  { id: "party", label: "Tiệc tùng", suggestPrice: 0 },
-  { id: "movie", label: "Xem phim", suggestPrice: 0 },
-  { id: "music", label: "Âm nhạc", suggestPrice: 0 },
-  { id: "travel", label: "Du lịch", suggestPrice: 0 },
-  { id: "game", label: "Game", suggestPrice: 0 },
-  { id: "study", label: "Học nhóm", suggestPrice: 0 },
-  { id: "volunteer", label: "Tình nguyện", suggestPrice: 0 },
-  { id: "hiking", label: "Leo núi", suggestPrice: 0 },
-  { id: "camping", label: "Cắm trại", suggestPrice: 0 },
-  { id: "beach", label: "Đi biển", suggestPrice: 0 },
-  { id: "karaoke", label: "Karaoke", suggestPrice: 0 },
-  { id: "boardgame", label: "Board game", suggestPrice: 0 },
-  { id: "picnic", label: "Dã ngoại", suggestPrice: 0 },
-  { id: "workshop", label: "Workshop", suggestPrice: 0 },
-  { id: "networking", label: "Kết nối", suggestPrice: 0 },
-  { id: "clubbing", label: "Club", suggestPrice: 0 },
-  { id: "other", label: "Khác", suggestPrice: 0 },
+  { id: "coffee", label: "Cà phê" },
+  { id: "meal", label: "Ăn uống" },
+  { id: "sport", label: "Thể thao" },
+  { id: "party", label: "Tiệc tùng" },
+  { id: "movie", label: "Xem phim" },
+  { id: "music", label: "Âm nhạc" },
+  { id: "travel", label: "Du lịch" },
+  { id: "game", label: "Game" },
+  { id: "study", label: "Học nhóm" },
+  { id: "volunteer", label: "Tình nguyện" },
+  { id: "hiking", label: "Leo núi" },
+  { id: "camping", label: "Cắm trại" },
+  { id: "beach", label: "Đi biển" },
+  { id: "karaoke", label: "Karaoke" },
+  { id: "boardgame", label: "Board game" },
+  { id: "picnic", label: "Dã ngoại" },
+  { id: "workshop", label: "Workshop" },
+  { id: "networking", label: "Kết nối" },
+  { id: "clubbing", label: "Club" },
+  { id: "other", label: "Khác" },
 ] as const;
 
 const PRICE_RANGES = [
@@ -84,7 +85,7 @@ const DEADLINE_RANGES = [
   { id: "month", label: "Tháng này" },
 ];
 
-const RADIUS_MARKS = [1, 2, 5, 10, 20, 50]; // km
+const RADIUS_MARKS = [1, 2, 5, 10, 20, 50];
 
 export default function CustomFilterBar({
   onOpenSearch,
@@ -98,30 +99,28 @@ export default function CustomFilterBar({
   const [priceRange, setPriceRange] = useState<string>("all");
   const [sortBy, setSortBy] = useState<SortBy>("new");
   const [localQuery, setLocalQuery] = useState("");
-  const [showCategoryList, setShowCategoryList] = useState(false);
-  const [showPriceList, setShowPriceList] = useState(false);
-  const [showDeadlineList, setShowDeadlineList] = useState(false);
   const [deadlineRange, setDeadlineRange] = useState<string>("all");
-  const [radius, setRadius] = useState<number>(0); // 0 = Toàn quốc
+  const [radius, setRadius] = useState<number>(0);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const [mounted, setMounted] = useState(false);
+  
+  // Dropdown states
+  const [showPriceList, setShowPriceList] = useState(false);
+  const [showCategoryList, setShowCategoryList] = useState(false);
+  const [showDeadlineList, setShowDeadlineList] = useState(false);
 
   const themes = {
     task: {
       bg: "#0A84FF",
       bgGradient: "linear-gradient(135deg, #0A84FF 0%, #0066CC 100%)",
-      accent: "#00D9FF",
-      secondary: "#5AC8FA"
     },
     plan: {
       bg: "#30D158",
       bgGradient: "linear-gradient(135deg, #30D158 0%, #248A3D 100%)",
-      accent: "#FFD60A",
-      secondary: "#FF9F0A"
     },
   };
-  const currentTheme = themes[mode];
+  const currentTheme = themes;
   const CATEGORIES = mode === "task"? CATEGORY_TASKS : CATEGORY_PLANS;
 
   const sortOptions = [
@@ -152,6 +151,7 @@ export default function CustomFilterBar({
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        if (radius === 0) setRadius(5);
         setLocating(false);
         haptics.light();
       },
@@ -201,6 +201,14 @@ export default function CustomFilterBar({
     (radius > 0? 1 : 0) + 
     (sortBy!== "new"? 1 : 0) + 
     (localQuery? 1 : 0);
+
+  const currentPriceLabel = PRICE_RANGES.find(p => p.id === priceRange)?.label || "Tất cả";
+  const currentDeadlineLabel = DEADLINE_RANGES.find(d => d.id === deadlineRange)?.label || "Tất cả";
+  const categoryLabel = selectedCategories.length === 0 
+ ? "Tất cả" 
+    : selectedCategories.length === 1 
+ ? CATEGORIES.find(c => c.id === selectedCategories[0])?.label 
+    : `Đã chọn ${selectedCategories.length}`;
 
   const modalContent = (
     <AnimatePresence>
@@ -271,9 +279,9 @@ export default function CustomFilterBar({
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-32">
-              {/* Sort */}
+              {/* SẮP XẾP */}
               <div>
-                <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3 px-1 font-serif">Sắp xếp</h3>
+                <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3 px-1 font-serif">SẮP XẾP</h3>
                 <div className="grid grid-cols-2 gap-2.5">
                   {sortOptions.map((opt) => {
                     const Icon = opt.icon;
@@ -293,7 +301,7 @@ export default function CustomFilterBar({
                         disabled={disabled}
                         className={`relative h-12 rounded-[20px] flex items-center justify-center gap-2 font-serif font-semibold text-[14px] transition-all ${
                           isActive
-                           ? "text-white shadow-lg"
+                         ? "text-white shadow-lg"
                             : "bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300"
                         } ${disabled? "opacity-40" : ""}`}
                         style={isActive? { background: currentTheme.bgGradient } : { border: '2px solid rgba(0,0,0,0.06)' }}
@@ -306,10 +314,10 @@ export default function CustomFilterBar({
                 </div>
               </div>
 
-              {/* Distance Slider */}
+              {/* KHOẢNG CÁCH - THAY CHO TỈNH/TP */}
               <div>
                 <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3.5 px-1 font-serif flex items-center justify-between">
-                  <span>Khoảng cách</span>
+                  <span>KHOẢNG CÁCH</span>
                   {radius > 0 && (
                     <span className="text-[13px] font-black" style={{ color: currentTheme.bg }}>
                       {radius}km
@@ -360,7 +368,7 @@ export default function CustomFilterBar({
                             }}
                             className={`text-xs font-bold px-2 py-1 rounded-lg transition-all ${
                               radius === km
-                               ? "text-white"
+                             ? "text-white"
                                 : "text-zinc-500 bg-zinc-100 dark:bg-zinc-900"
                             }`}
                             style={radius === km? { background: currentTheme.bg } : {}}
@@ -374,122 +382,209 @@ export default function CustomFilterBar({
                 )}
               </div>
 
-              {/* Price Range - Task mode only */}
+              {/* KHOẢNG GIÁ */}
               {mode === "task" && (
                 <div>
                   <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3.5 px-1 font-serif">
-                    Khoảng giá
+                    KHOẢNG GIÁ
                   </h3>
-                  <div className="space-y-2">
-                    {PRICE_RANGES.map((range) => {
-                      const isActive = priceRange === range.id;
-                      return (
-                        <button
-                          key={range.id}
-                          onClick={() => {
-                            haptics.light();
-                            setPriceRange(range.id);
-                          }}
-                          className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
-                          style={{
-                            border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
-                          }}
-                        >
-                          <div className="flex-1 text-left">
-                            <div className={`text-sm font-serif font-bold ${
-                              isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
-                            }`}>
-                              {range.label}
-                            </div>
-                          </div>
-                          {isActive && (
-                            <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: currentTheme.bg }}>
-                              <Check size={12} className="text-white" strokeWidth={3.5} />
-                            </div>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <button
+                    onClick={() => setShowPriceList(!showPriceList)}
+                    className="w-full h-14 px-4 rounded-[28px] bg-white dark:bg-zinc-900 flex items-center justify-between transition-all"
+                    style={{ border: `2px solid ${currentTheme.bg}` }}
+                  >
+                    <div className="text-left">
+                      <div className="text-xs text-zinc-500 dark:text-zinc-500 font-serif">Chọn khoảng giá</div>
+                      <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-serif mt-0.5">
+                        {currentPriceLabel}
+                      </div>
+                    </div>
+                    <ChevronDown 
+                      size={20} 
+                      className="text-zinc-400 transition-transform" 
+                      strokeWidth={2.5}
+                      style={{ transform: showPriceList? 'rotate(180deg)' : 'rotate(0deg)' }}
+                    />
+                  </button>
+                  
+                  <AnimatePresence>
+                    {showPriceList && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-3 space-y-2 pb-2">
+                          {PRICE_RANGES.map((range) => {
+                            const isActive = priceRange === range.id;
+                            return (
+                              <button
+                                key={range.id}
+                                onClick={() => {
+                                  haptics.light();
+                                  setPriceRange(range.id);
+                                  setShowPriceList(false);
+                                }}
+                                className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
+                                style={{
+                                  border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
+                                }}
+                              >
+                                <div className="flex-1 text-left">
+                                  <div className={`text-sm font-serif font-bold ${
+                                    isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
+                                  }`}>
+                                    {range.label}
+                                  </div>
+                                </div>
+                                {isActive && (
+                                  <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: currentTheme.bg }}>
+                                    <Check size={12} className="text-white" strokeWidth={3.5} />
+                                  </div>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               )}
 
-              {/* Categories */}
-              <div>
-                <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3.5 px-1 flex items-center justify-between font-serif">
-                  <span>Danh mục</span>
-                  {selectedCategories.length > 0 && (
-                    <span className="text-xs px-3 py-1.5 rounded-full font-black shadow-lg" style={{ background: currentTheme.bgGradient, color: 'white' }}>
-                      {selectedCategories.length}
-                    </span>
-                  )}
-                </h3>
-                <div className="space-y-2 max-h-80 overflow-y-auto">
-                  {CATEGORIES.map((cat) => {
-                    const isActive = selectedCategories.includes(cat.id);
-                    return (
-                      <button
-                        key={cat.id}
-                        onClick={() => toggleCategory(cat.id)}
-                        className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
-                        style={{
-                          border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
-                        }}
-                      >
-                        <div className="flex-1 text-left">
-                          <div className={`text-sm font-serif font-bold ${
-                            isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
-                          }`}>
-                            {cat.label}
-                          </div>
-                        </div>
-                        {isActive && (
-                          <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: currentTheme.bg }}>
-                            <Check size={12} className="text-white" strokeWidth={3.5} />
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Deadline */}
+              {/* DANH MỤC */}
               <div>
                 <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3.5 px-1 font-serif">
-                  Thời hạn còn lại
+                  DANH MỤC
                 </h3>
-                <div className="space-y-2">
-                  {DEADLINE_RANGES.map((deadline) => {
-                    const isActive = deadlineRange === deadline.id;
-                    return (
-                      <button
-                        key={deadline.id}
-                        onClick={() => {
-                          haptics.light();
-                          setDeadlineRange(deadline.id);
-                        }}
-                        className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
-                        style={{
-                          border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
-                        }}
-                      >
-                        <div className="flex-1 text-left">
-                          <div className={`text-sm font-serif font-bold ${
-                            isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
-                          }`}>
-                            {deadline.label}
-                          </div>
-                        </div>
-                        {isActive && (
-                          <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: currentTheme.bg }}>
-                            <Check size={12} className="text-white" strokeWidth={3.5} />
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+                <button
+                  onClick={() => setShowCategoryList(!showCategoryList)}
+                  className="w-full h-14 px-4 rounded-[28px] bg-white dark:bg-zinc-900 flex items-center justify-between transition-all"
+                  style={{ border: `2px solid ${currentTheme.bg}` }}
+                >
+                  <div className="text-left">
+                    <div className="text-xs text-zinc-500 dark:text-zinc-500 font-serif">Chọn danh mục</div>
+                    <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-serif mt-0.5">
+                      {categoryLabel}
+                    </div>
+                  </div>
+                  <ChevronDown 
+                    size={20} 
+                    className="text-zinc-400 transition-transform" 
+                    strokeWidth={2.5}
+                    style={{ transform: showCategoryList? 'rotate(180deg)' : 'rotate(0deg)' }}
+                  />
+                </button>
+                
+                <AnimatePresence>
+                  {showCategoryList && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-3 space-y-2 max-h-80 overflow-y-auto pb-2">
+                        {CATEGORIES.map((cat) => {
+                          const isActive = selectedCategories.includes(cat.id);
+                          return (
+                            <button
+                              key={cat.id}
+                              onClick={() => toggleCategory(cat.id)}
+                              className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
+                              style={{
+                                border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
+                              }}
+                            >
+                              <div className="flex-1 text-left">
+                                <div className={`text-sm font-serif font-bold ${
+                                  isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
+                                }`}>
+                                  {cat.label}
+                                </div>
+                              </div>
+                              {isActive && (
+                                <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: currentTheme.bg }}>
+                                  <Check size={12} className="text-white" strokeWidth={3.5} />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* THỜI HẠN CÒN LẠI */}
+              <div>
+                <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3.5 px-1 font-serif">
+                  THỜI HẠN CÒN LẠI
+                </h3>
+                <button
+                  onClick={() => setShowDeadlineList(!showDeadlineList)}
+                  className="w-full h-14 px-4 rounded-[28px] bg-white dark:bg-zinc-900 flex items-center justify-between transition-all"
+                  style={{ border: `2px solid ${currentTheme.bg}` }}
+                >
+                  <div className="text-left">
+                    <div className="text-xs text-zinc-500 dark:text-zinc-500 font-serif">Chọn thời hạn</div>
+                    <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-serif mt-0.5">
+                      {currentDeadlineLabel}
+                    </div>
+                  </div>
+                  <ChevronDown 
+                    size={20} 
+                    className="text-zinc-400 transition-transform" 
+                    strokeWidth={2.5}
+                    style={{ transform: showDeadlineList? 'rotate(180deg)' : 'rotate(0deg)' }}
+                  />
+                </button>
+                
+                <AnimatePresence>
+                  {showDeadlineList && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-3 space-y-2 pb-2">
+                        {DEADLINE_RANGES.map((deadline) => {
+                          const isActive = deadlineRange === deadline.id;
+                          return (
+                            <button
+                              key={deadline.id}
+                              onClick={() => {
+                                haptics.light();
+                                setDeadlineRange(deadline.id);
+                                setShowDeadlineList(false);
+                              }}
+                              className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
+                              style={{
+                                border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
+                              }}
+                            >
+                              <div className="flex-1 text-left">
+                                <div className={`text-sm font-serif font-bold ${
+                                  isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
+                                }`}>
+                                  {deadline.label}
+                                </div>
+                              </div>
+                              {isActive && (
+                                <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: currentTheme.bg }}>
+                                  <Check size={12} className="text-white" strokeWidth={3.5} />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
 
