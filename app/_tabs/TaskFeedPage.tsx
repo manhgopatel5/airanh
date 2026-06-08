@@ -108,14 +108,17 @@ useEffect(() => {
   return `/api/tasks?${params.toString()}`;
 }, [mode, activeTab, filters, cursor, hasSearched]);
   const { data, error, isLoading, isValidating, mutate } = useSWR<{ tasks: FeedTask[], nextCursor: number | null }>(
-  apiUrl,
+  apiUrl, // FIX: apiUrl có thể null để disable SWR, TS strict cho phép
   fetcher,
   {
-    fallbackData: hasSearched? undefined : { // FIX: Chỉ dùng fallback khi chưa search
-      tasks: mode === "task"? initialJobs : initialPlans,
-      nextCursor: null
-    },
-    revalidateOnMount: true, // FIX: Đổi thành true
+    // FIX: Luôn có fallbackData, không dùng undefined
+    fallbackData: hasSearched 
+      ? undefined 
+      : { 
+          tasks: mode === "task"? initialJobs : initialPlans, 
+          nextCursor: null 
+        },
+    revalidateOnMount: true,
     revalidateIfStale: false,
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
