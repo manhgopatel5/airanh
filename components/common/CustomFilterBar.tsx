@@ -503,7 +503,7 @@ export default function CustomFilterBar({
                     ))}
                   </div>
                 </div>
-              </div>
+
 
              {/* Actions - Thay cho Footer */}
                 <div className="flex gap-3 pt-4">
