@@ -416,27 +416,31 @@ export default function CustomFilterBar({
                         {showAdvanced? "Ẩn" : "Nâng cao"}
                       </button>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      {sortOptions.map((opt) => {
-                        const Icon = opt.icon;
-                        const isActive = sortBy === opt.id;
-                        return (
-                          <motion.button
-                            key={opt.id}
-                            whileTap={{ scale: 0.95 }}
-                                                     className={`relative h-10 rounded-xl flex items-center justify-center gap-2 font-bold text-xs transition-all ${
-                              isActive
-                               ? "text-white"
-                                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
-                            }`}
-                            style={isActive? { background: currentTheme.bgGradient } : {}}
-                          >
-                            <Icon size={16} />
-                            {opt.label}
-                          </motion.button>
-                        );
-                      })}
-                    </div>
+              <div className="grid grid-cols-2 gap-2">
+  {sortOptions.map((opt) => {
+    const Icon = opt.icon;
+    const isActive = sortBy === opt.id;
+    return (
+      <motion.button
+        key={opt.id}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => { // THÊM DÒNG NÀY
+          haptics.light();
+          setSortBy(opt.id as SortBy);
+        }}
+        className={`relative h-10 rounded-xl flex items-center justify-center gap-2 font-bold text-xs transition-all ${
+          isActive
+           ? "text-white"
+            : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+        }`}
+        style={isActive? { background: currentTheme.bgGradient } : {}}
+      >
+        <Icon size={16} />
+        {opt.label}
+      </motion.button>
+    );
+  })}
+</div>
                   </div>
 
                   {mode === "task" && (
