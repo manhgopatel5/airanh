@@ -95,8 +95,8 @@ export default function CustomFilterBar({
   const [localQuery, setLocalQuery] = useState("");
   const [showCategoryList, setShowCategoryList] = useState(false);
   const [showPriceList, setShowPriceList] = useState(false);
-const [showDeadlineList, setShowDeadlineList] = useState(false);
-const [deadlineRange, setDeadlineRange] = useState<string>("all");
+  const [showDeadlineList, setShowDeadlineList] = useState(false);
+  const [deadlineRange, setDeadlineRange] = useState<string>("all");
   const themes = {
     task: {
       bg: "#0A84FF",
@@ -111,7 +111,7 @@ const [deadlineRange, setDeadlineRange] = useState<string>("all");
       secondary: "#FF9F0A"
     },
   };
-const currentTheme = themes[mode];
+  const currentTheme = themes[mode];
   const CATEGORIES = mode === "task"? CATEGORY_TASKS : CATEGORY_PLANS;
 
   const sortOptions = [
@@ -156,7 +156,7 @@ const currentTheme = themes[mode];
     onCloseSearch();
   };
 
-const activeFilterCount = selectedCategories.length + (priceRange!== "all"? 1 : 0) + (deadlineRange!== "all"? 1 : 0) + (sortBy!== "new"? 1 : 0) + (localQuery? 1 : 0);
+  const activeFilterCount = selectedCategories.length + (priceRange!== "all"? 1 : 0) + (deadlineRange!== "all"? 1 : 0) + (sortBy!== "new"? 1 : 0) + (localQuery? 1 : 0);
 
   return (
     <>
@@ -169,7 +169,7 @@ const activeFilterCount = selectedCategories.length + (priceRange!== "all"? 1 : 
             border: `2px solid ${currentTheme.bg}`,
           }}
         >
-          <span className="relative text-zinc-500 dark:text-zinc-400 font-serif font-semibold text-">Tìm kiếm nâng cao...</span>
+          <span className="relative text-zinc-500 dark:text-zinc-400 font-serif font-semibold text-[15px]">Tìm kiếm nâng cao...</span>
           <div className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 dark:bg-zinc-700/80 flex items-center justify-center">
             <Search size={16} className="text-zinc-500 dark:text-zinc-400" strokeWidth={2.5} />
           </div>
@@ -183,7 +183,7 @@ const activeFilterCount = selectedCategories.length + (priceRange!== "all"? 1 : 
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-className="fixed inset-0 z-[99999] bg-black/30 backdrop-blur-md"
+            className="fixed inset-0 z-[99999] bg-black/30 backdrop-blur-md"
             onClick={onCloseSearch}
           >
             <motion.div
@@ -206,49 +206,49 @@ className="fixed inset-0 z-[99999] bg-black/30 backdrop-blur-md"
                   >
                     <ArrowLeft size={20} strokeWidth={2.5} />
                   </motion.button>
-                  <h2 className="text- font-bold flex-1 text-center font-serif">Tìm kiếm nâng cao</h2>
-          {activeFilterCount > 0 && (
-  <motion.button
-    whileTap={{ scale: 0.95 }}
-    onClick={resetFilters}
-    className="text- font-bold text-[#0A84FF] px-3.5 h-9 rounded-[28px] bg-white dark:bg-zinc-900 transition-all font-serif"
-    style={{ border: '2px solid #0A84FF' }}
-  >
-    Xóa
-  </motion.button>
-)}
+                  <h2 className="text-[17px] font-bold flex-1 text-center font-serif">Tìm kiếm nâng cao</h2>
+                  {activeFilterCount > 0 && (
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={resetFilters}
+                      className="text-[13px] font-bold text-[#0A84FF] px-3.5 h-9 rounded-[28px] bg-white dark:bg-zinc-900 transition-all font-serif"
+                      style={{ border: '2px solid #0A84FF' }}
+                    >
+                      Xóa
+                    </motion.button>
+                  )}
                   {activeFilterCount === 0 && <div className="w-9" />}
                 </div>
 
-          {/* Search Input */}
-<div className="relative">
-  <input
-    value={localQuery}
-    onChange={(e) => setLocalQuery(e.target.value)}
-    onKeyDown={(e) => e.key === 'Enter' && handleApply()}
-    placeholder="Tìm kiếm..."
-    className="w-full h-14 pl-12 pr-12 rounded-[28px] bg-white dark:bg-zinc-900 outline-none font-serif font-bold text- text-zinc-900 dark:text-zinc-100 transition-all placeholder:text-zinc-400"
-    style={{
-      border: `2px solid ${currentTheme.bg}`
-    }}
-  />
-  <div className="absolute left-4 top-1/2 -translate-y-1/2">
-    <Search size={20} style={{ color: currentTheme.bg }} strokeWidth={2.5} />
-  </div>
-  <AnimatePresence>
-    {localQuery && (
-      <motion.button
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        exit={{ scale: 0 }}
-        onClick={() => setLocalQuery("")}
-        className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center"
-      >
-        <X size={16} strokeWidth={2.5} className="text-zinc-600 dark:text-zinc-400" />
-      </motion.button>
-    )}
-  </AnimatePresence>
-</div>
+                {/* Search Input */}
+                <div className="relative">
+                  <input
+                    value={localQuery}
+                    onChange={(e) => setLocalQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleApply()}
+                    placeholder="Tìm kiếm..."
+                    className="w-full h-14 pl-12 pr-12 rounded-[28px] bg-white dark:bg-zinc-900 outline-none font-serif font-bold text-[16px] text-zinc-900 dark:text-zinc-100 transition-all placeholder:text-zinc-400"
+                    style={{
+                      border: `2px solid ${currentTheme.bg}`
+                    }}
+                  />
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                    <Search size={20} style={{ color: currentTheme.bg }} strokeWidth={2.5} />
+                  </div>
+                  <AnimatePresence>
+                    {localQuery && (
+                      <motion.button
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        onClick={() => setLocalQuery("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center"
+                      >
+                        <X size={16} strokeWidth={2.5} className="text-zinc-600 dark:text-zinc-400" />
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
 
               {/* Content */}
@@ -268,9 +268,9 @@ className="fixed inset-0 z-[99999] bg-black/30 backdrop-blur-md"
                             haptics.light();
                             setSortBy(opt.id as SortBy);
                           }}
-                          className={`relative h-12 rounded-[20px] flex items-center justify-center gap-2 font-serif font-semibold text- transition-all ${
+                          className={`relative h-12 rounded-[20px] flex items-center justify-center gap-2 font-serif font-semibold text-[14px] transition-all ${
                             isActive
-                         ? "text-white shadow-lg"
+                        ? "text-white shadow-lg"
                               : "bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300"
                           }`}
                           style={isActive? {
@@ -410,15 +410,15 @@ className="fixed inset-0 z-[99999] bg-black/30 backdrop-blur-md"
                       <div className="text-xs text-zinc-500 dark:text-zinc-500 font-serif">Chọn danh mục</div>
                       <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-serif mt-0.5">
                         {selectedCategories.length === 0
-                     ? "Tất cả"
+                    ? "Tất cả"
                           : `Đã chọn ${selectedCategories.length} danh mục`}
                       </div>
                       {selectedCategories.length > 0 && (
                         <div className="text-xs text-zinc-500 dark:text-zinc-500 mt-0.5 font-serif">
                           {CATEGORIES.filter(c => selectedCategories.includes(c.id))
-                       .slice(0, 2)
-                       .map(c => c.label)
-                       .join(', ')}
+                      .slice(0, 2)
+                      .map(c => c.label)
+                      .join(', ')}
                           {selectedCategories.length > 2 && ` +${selectedCategories.length - 2}`}
                         </div>
                       )}
@@ -480,101 +480,103 @@ className="fixed inset-0 z-[99999] bg-black/30 backdrop-blur-md"
                     )}
                   </AnimatePresence>
                 </div>
-              </div>
-{/* Deadline Range */}
-<div>
-  <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3.5 px-1 font-serif">
-    Thời hạn còn lại
-  </h3>
 
-  <motion.button
-    whileTap={{ scale: 0.98 }}
-    onClick={() => {
-      haptics.light();
-      setShowDeadlineList(!showDeadlineList);
-    }}
-    className="w-full h-14 px-4 rounded-[28px] bg-white dark:bg-zinc-900 flex items-center justify-between transition-all"
-    style={{
-      border: `2px solid ${currentTheme.bg}`,
-    }}
-  >
-    <div className="text-left">
-      <div className="text-xs text-zinc-500 dark:text-zinc-500 font-serif">Chọn thời hạn</div>
-      <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-serif mt-0.5">
-        {DEADLINE_RANGES.find(d => d.id === deadlineRange)?.label || "Tất cả"}
-      </div>
-    </div>
-    <motion.div
-      animate={{ rotate: showDeadlineList? 180 : 0 }}
-      transition={{ duration: 0.2 }}
-    >
-      <ChevronDown size={20} className="text-zinc-400" strokeWidth={2.5} />
-    </motion.div>
-  </motion.button>
+                {/* Deadline Range */}
+                <div>
+                  <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3.5 px-1 font-serif">
+                    Thời hạn còn lại
+                  </h3>
 
-  <AnimatePresence>
-    {showDeadlineList && (
-      <motion.div
-        initial={{ height: 0, opacity: 0 }}
-        animate={{ height: "auto", opacity: 1 }}
-        exit={{ height: 0, opacity: 0 }}
-        transition={{ duration: 0.25 }}
-        className="overflow-hidden"
-      >
-        <div className="mt-3 space-y-2 pb-2">
-          {DEADLINE_RANGES.map((deadline, idx) => {
-            const isActive = deadlineRange === deadline.id;
-            return (
-              <motion.button
-                key={deadline.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.03 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  haptics.light();
-                  setDeadlineRange(deadline.id);
-                  setShowDeadlineList(false);
-                }}
-                className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
-                style={{
-                  border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
-                }}
-              >
-                <div className="flex-1 text-left">
-                  <div className={`text-sm font-serif font-bold ${
-                    isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
-                  }`}>
-                    {deadline.label}
-                  </div>
-                </div>
-
-                {isActive && (
-                  <div
-                    className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{ background: currentTheme.bg }}
+                  <motion.button
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      haptics.light();
+                      setShowDeadlineList(!showDeadlineList);
+                    }}
+                    className="w-full h-14 px-4 rounded-[28px] bg-white dark:bg-zinc-900 flex items-center justify-between transition-all"
+                    style={{
+                      border: `2px solid ${currentTheme.bg}`,
+                    }}
                   >
-                    <Check size={12} className="text-white" strokeWidth={3.5} />
-                  </div>
-                )}
-              </motion.button>
-            );
-          })}
-        </div>
-      </motion.div>
-    )}
-  </AnimatePresence>
-</div>
+                    <div className="text-left">
+                      <div className="text-xs text-zinc-500 dark:text-zinc-500 font-serif">Chọn thời hạn</div>
+                      <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-serif mt-0.5">
+                        {DEADLINE_RANGES.find(d => d.id === deadlineRange)?.label || "Tất cả"}
+                      </div>
+                    </div>
+                    <motion.div
+                      animate={{ rotate: showDeadlineList? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ChevronDown size={20} className="text-zinc-400" strokeWidth={2.5} />
+                    </motion.div>
+                  </motion.button>
+
+                  <AnimatePresence>
+                    {showDeadlineList && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-3 space-y-2 pb-2">
+                          {DEADLINE_RANGES.map((deadline, idx) => {
+                            const isActive = deadlineRange === deadline.id;
+                            return (
+                              <motion.button
+                                key={deadline.id}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.03 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => {
+                                  haptics.light();
+                                  setDeadlineRange(deadline.id);
+                                  setShowDeadlineList(false);
+                                }}
+                                className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
+                                style={{
+                                  border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
+                                }}
+                              >
+                                <div className="flex-1 text-left">
+                                  <div className={`text-sm font-serif font-bold ${
+                                    isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
+                                  }`}>
+                                    {deadline.label}
+                                  </div>
+                                </div>
+
+                                {isActive && (
+                                  <div
+                                    className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                                    style={{ background: currentTheme.bg }}
+                                  >
+                                    <Check size={12} className="text-white" strokeWidth={3.5} />
+                                  </div>
+                                )}
+                              </motion.button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+
               {/* Footer Actions - Fixed đè lên thanh Home/Inbox */}
               <div
-className="absolute bottom-0 left-0 right-0 px-4 pt-4 pb-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl z-[100000]"
+                className="absolute bottom-0 left-0 right-0 px-4 pt-4 pb-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl z-[100000]"
                 style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
               >
                 <div className="flex gap-3">
                   <motion.button
                     whileTap={{ scale: 0.96 }}
                     onClick={onCloseSearch}
-                    className="h-14 rounded-[28px] bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 font-serif font-bold text- px-6 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
+                    className="h-14 rounded-[28px] bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 font-serif font-bold text-[15px] px-6 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
                     style={{ border: '2px solid rgba(0,0,0,0.06)' }}
                   >
                     Hủy
@@ -582,7 +584,7 @@ className="absolute bottom-0 left-0 right-0 px-4 pt-4 pb-4 bg-white/95 dark:bg-z
                   <motion.button
                     whileTap={{ scale: 0.96 }}
                     onClick={handleApply}
-                    className="flex-1 h-14 rounded-[28px] text-white font-serif font-bold text- relative overflow-hidden"
+                    className="flex-1 h-14 rounded-[28px] text-white font-serif font-bold text-[15px] relative overflow-hidden"
                     style={{
                       background: currentTheme.bgGradient,
                     }}
