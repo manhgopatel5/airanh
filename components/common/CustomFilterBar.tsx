@@ -191,8 +191,7 @@ export default function CustomFilterBar({
   const handleApply = () => {
     haptics.medium();
     const province = provinces.find(p => p.id === provinceId);
-    const district = districts.find(d => d.id === wardId);
-    const ward = wards.find(w => w.id === wardId);
+    const district = districts.find(d => d.id === districtId);
     onApplyFilters({
       categories: selectedCategories,
       priceRange,
@@ -201,7 +200,7 @@ export default function CustomFilterBar({
       provinceName: province?.name || "",
       district: district?.code || "",
       districtName: district?.name || "",
-      ward: ward?.name || "",
+      
       sortBy,
       query: localQuery,
     });
