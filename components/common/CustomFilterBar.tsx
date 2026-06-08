@@ -188,7 +188,7 @@ export default function CustomFilterBar({
     setLocalQuery("");
   };
 
-  const handleApply = () => {
+    const handleApply = () => {
     haptics.medium();
     const province = provinces.find(p => p.id === provinceId);
     const district = districts.find(d => d.id === districtId);
@@ -196,11 +196,10 @@ export default function CustomFilterBar({
       categories: selectedCategories,
       priceRange,
       deadlineRange,
-      province: province?.code || "",
+      provinceId: provinceId || null,
+      districtId: districtId || null,
       provinceName: province?.name || "",
-      district: district?.code || "",
       districtName: district?.name || "",
-      
       sortBy,
       query: localQuery,
     });
