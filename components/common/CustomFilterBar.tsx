@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, ArrowLeft, Flame, TrendingUp, Clock, Check, ChevronDown } from "lucide-react";
+import { Search, X, ArrowLeft, Flame, ArrowUp, ArrowDown, Star, Clock, Check, ChevronDown } from "lucide-react";
 import { useAppStore } from "@/store/app";
 import React, { useState, useEffect, useRef } from "react";
 
@@ -110,9 +110,9 @@ export default function CustomFilterBar({
 
   const sortOptions = [
     { id: "new", label: "Mới nhất", icon: Clock },
-    { id: "views", label: "Phổ biến", icon: TrendingUp },
-    { id: "price_asc", label: "Giá tăng", icon: TrendingUp },
-    { id: "price_desc", label: "Giá giảm", icon: TrendingUp },
+    { id: "views", label: "Phổ biến", icon: Star },
+   { id: "price_asc", label: "Giá tăng", icon: ArrowUp },
+   { id: "price_desc", label: "Giá giảm", icon: ArrowDown },
   ];
 
   useEffect(() => {
