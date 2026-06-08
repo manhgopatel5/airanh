@@ -271,12 +271,12 @@ export default function CustomFilterBar({
     { key: "new", label: "Mới", Icon: IconSet.New },
   ];
 
-  const sortOptions = [
-    { id: "views", label: "Phổ biến nhất", icon: TrendingUp },
-    { id: "recent", label: "Mới nhất", icon: Clock },
-    { id: "price_asc", label: "Giá tăng dần", icon: DollarSign },
-    { id: "price_desc", label: "Giá giảm dần", icon: DollarSign },
-  ];
+const sortOptions = [
+  { id: "views", label: "Phổ biến nhất", icon: TrendingUp },
+  { id: "new", label: "Mới nhất", icon: Clock }, // FIX: 'recent' -> 'new'
+  { id: "price_asc", label: "Giá tăng dần", icon: DollarSign },
+  { id: "price_desc", label: "Giá giảm dần", icon: DollarSign },
+];
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
