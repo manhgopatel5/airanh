@@ -302,7 +302,7 @@ export default function CustomFilterBar({
                   </div>
                 )}
 
-         {/* Categories */}
+     {/* Categories */}
 <div>
   <h3 className="text- font-bold text-zinc-500 dark:text-zinc-500 uppercase tracking-wide mb-3 px-1 flex items-center justify-between">
     <span>Danh mục</span>
@@ -318,30 +318,30 @@ export default function CustomFilterBar({
     )}
   </h3>
   
-  <div className="space-y-2">
+  <div className="grid grid-cols-2 gap-2.5">
     {CATEGORIES.map((cat, idx) => {
       const isActive = selectedCategories.includes(cat.id);
       return (
         <motion.button
           key={cat.id}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: idx * 0.03 }}
-          whileTap={{ scale: 0.98 }}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: idx * 0.02 }}
+          whileTap={{ scale: 0.94 }}
           onClick={() => toggleCategory(cat.id)}
-          className={`relative w-full h-16 rounded- flex items-center gap-3.5 px-4 transition-all overflow-hidden ${
+          className={`relative h-20 rounded- flex flex-col items-center justify-center gap-1.5 px-3 py-2 transition-all overflow-hidden ${
             isActive
              ? "shadow-lg"
-              : "bg-zinc-100/60 dark:bg-zinc-900/60 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+              : "bg-zinc-100/70 dark:bg-zinc-900/70 hover:bg-zinc-100 dark:hover:bg-zinc-900"
           }`}
           style={isActive? {
-            background: `linear-gradient(135deg, ${cat.color}12, ${cat.color}06)`,
-            boxShadow: `0 4px 20px ${cat.color}25, inset 0 0 0 1.5px ${cat.color}40`
+            background: `linear-gradient(135deg, ${cat.color}15, ${cat.color}08)`,
+            boxShadow: `0 6px 20px ${cat.color}30, inset 0 0 0 2px ${cat.color}`
           } : {}}
         >
-          {/* Icon Container với glass effect */}
+          {/* Icon */}
           <div 
-            className="relative w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
+            className="relative w-9 h-9 rounded-2xl flex items-center justify-center"
             style={{
               background: isActive 
                 ? `linear-gradient(135deg, ${cat.color}25, ${cat.color}15)`
@@ -352,46 +352,25 @@ export default function CustomFilterBar({
             <span className="text- relative">{cat.icon}</span>
           </div>
 
-          {/* Label + Meta */}
-          <div className="flex-1 text-left">
-            <div className={`text- font-bold ${isActive? "text-zinc-900 dark:text-zinc-100" : "text-zinc-700 dark:text-zinc-300"}`}>
-              {cat.label}
-            </div>
-            {mode === "task" && cat.suggestPrice > 0 && (
-              <div className="text- font-medium text-zinc-500 dark:text-zinc-500 mt-0.5">
-                Từ {cat.suggestPrice.toLocaleString('vi-VN')}đ
-              </div>
-            )}
-          </div>
+          {/* Label */}
+          <span className={`text- font-bold leading-tight text-center ${isActive? "text-zinc-900 dark:text-zinc-100" : "text-zinc-600 dark:text-zinc-400"}`}>
+            {cat.label}
+          </span>
 
           {/* Checkmark */}
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             {isActive && (
               <motion.div
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                exit={{ scale: 0, rotate: 180 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ 
-                  background: cat.color,
-                  boxShadow: `0 2px 8px ${cat.color}50`
-                }}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+                className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center shadow-md"
+                style={{ background: cat.color }}
               >
-                <Check size={14} className="text-white" strokeWidth={3.5} />
+                <Check size={12} className="text-white" strokeWidth={3.5} />
               </motion.div>
             )}
           </AnimatePresence>
-
-          {/* Active indicator bar */}
-          {isActive && (
-            <motion.div
-              layoutId="activeCategory"
-              className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full"
-              style={{ background: cat.color }}
-              transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            />
-          )}
         </motion.button>
       );
     })}
