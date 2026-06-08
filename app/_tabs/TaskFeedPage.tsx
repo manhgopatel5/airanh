@@ -82,7 +82,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
 
 useEffect(() => {
   if (activeTab === 'hot') setFilters(prev => ({...prev, sortBy: 'views' }));
-  if (activeTab === 'new') setFilters(prev => ({...prev, sortBy: 'recent' }));
+  if (activeTab === 'new') setFilters(prev => ({...prev, sortBy: 'new' })); // FIX: 'recent' -> 'new'
 }, [activeTab]);
 
 const apiUrl = useMemo(() => {
