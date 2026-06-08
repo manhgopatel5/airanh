@@ -103,11 +103,10 @@ export default function CustomFilterBar({
   const [showLocationList, setShowLocationList] = useState(false);
   const [deadlineRange, setDeadlineRange] = useState<string>("all");
   const [provinceId, setProvinceId] = useState<number | null>(null);
-  const [wardId, setWardId] = useState<number | null>(null);
+  const [districtId, setDistrictId] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [provinces, setProvinces] = useState<any[]>([]);
   const [districts, setDistricts] = useState<any[]>([]);
-  const [wards, setWards] = useState<any[]>([]);
-  const provinces = useProvinces();
   const themes = {
     task: {
       bg: "#0A84FF",
@@ -137,6 +136,14 @@ export default function CustomFilterBar({
     setMounted(true);
   }, []);
 
+
+    useEffect(() => {
+    fetch("/api/location/province")
+   .then(r => r.json())
+   .then(data => setProvinces(Array.isArray(data)? data : []))
+   .catch(() => setProvinces([]));
+  }, []);
+
   useEffect(() => {
     if (showSearchModal) {
       document.body.style.overflow = "hidden";
@@ -147,7 +154,6 @@ export default function CustomFilterBar({
   useEffect(() => {
     if (!provinceId) {
       setDistricts([]);
-      setWards([]);
       return;
     }
     fetch("/api/location/district", {
@@ -155,28 +161,15 @@ export default function CustomFilterBar({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ provinceId }),
     })
-   .then(r => r.json())
-   .then(data => {
+  .then(r => r.json())
+  .then(data => {
       setDistricts(data);
-      setWardId(null);
+      setDistrictId(null);
     })
-   .catch(() => setDistricts([]));
+  .catch(() => setDistricts([]));
   }, [provinceId]);
 
-  useEffect(() => {
-    if (!wardId) {
-      setWards([]);
-      return;
-    }
-    fetch("/api/location/ward", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ districtId: wardId }),
-    })
-   .then(r => r.json())
-   .then(data => setWards(data))
-   .catch(() => setWards([]));
-  }, [wardId]);
+  
 
   const toggleCategory = (id: string) => {
     haptics.light();
