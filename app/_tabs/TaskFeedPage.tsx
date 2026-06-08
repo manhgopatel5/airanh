@@ -18,7 +18,7 @@ import { useAppStore } from "@/store/app";
 import type { FeedTask } from "@/types/task";
 
 type TabId = "hot" | "nearby" | "new";
-type SortBy = "views" | "recent" | "price_asc" | "price_desc";
+type SortBy = "views" | "new" | "price_asc" | "price_desc"; // FIX: 'recent' -> 'new'
 type FilterTab = "hot" | "nearby" | "new";
 
 type TaskWithLocation = FeedTask & {
@@ -55,11 +55,11 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   const [hasSearched, setHasSearched] = useState(false);
 
   const [filters, setFilters] = useState({
-    categories: [] as string[],
-    priceRange: 'all',
-    sortBy: 'views' as SortBy,
-    query: '',
-  });
+  categories: [] as string[],
+  priceRange: 'all',
+  sortBy: 'new' as SortBy, // FIX: 'new' thay vì 'views'
+  query: '',
+});
 
   const [searchQueries, setSearchQueries] = useState<Record<FilterTab, string>>({
     hot: '',
@@ -85,20 +85,17 @@ useEffect(() => {
   if (activeTab === 'new') setFilters(prev => ({...prev, sortBy: 'recent' }));
 }, [activeTab]);
 
-  const apiUrl = useMemo(() => {
-  if (!hasSearched && cursor === null) return null;
+const apiUrl = useMemo(() => {
+  // FIX: Bỏ check hasSearched, luôn tạo URL nếu có filter hoặc cursor
+  if (cursor === null &&!hasSearched && filters.categories.length === 0 && filters.priceRange === 'all' &&!filters.query) {
+    return null; // Chỉ null khi chưa search gì cả
+  }
 
   const params = new URLSearchParams({
     type: mode,
     limit: '20',
-    sortBy: filters.sortBy, // FIX: Dùng luôn filters.sortBy, bỏ logic activeTab
+    sortBy: filters.sortBy,
   });
-
-  // Chỉ override khi sortBy vẫn là default 'views' và tab là hot/new
-  if (filters.sortBy === 'views') {
-    if (activeTab === 'hot') params.set('sortBy', 'hot');
-    if (activeTab === 'new') params.set('sortBy', 'new');
-  }
 
   if (filters.categories.length > 0) params.set('categories', filters.categories.join(','));
   if (filters.priceRange!== 'all') params.set('priceRange', filters.priceRange);
@@ -106,7 +103,7 @@ useEffect(() => {
   if (cursor) params.set('cursor', cursor.toString());
 
   return `/api/tasks?${params.toString()}`;
-}, [mode, activeTab, filters, cursor, hasSearched]);
+}, [mode, filters, cursor, hasSearched]);
  const { data, error, isLoading, isValidating, mutate } = useSWR<{ tasks: FeedTask[], nextCursor: number | null }>(
   apiUrl,
   fetcher,
@@ -160,16 +157,19 @@ const handleApplyFilters = useCallback(async (newFilters: any) => {
   const newFilterState = {
     categories: newFilters.categories || [],
     priceRange: newFilters.priceRange || 'all',
-    sortBy: newFilters.sortBy || 'views',
+    sortBy: newFilters.sortBy || 'new', // FIX: default 'new'
     query: newFilters.query || '',
   };
-  
+
   setActiveTab(newTab);
   setFilters(newFilterState);
   setSearchQueries(prev => ({...prev, [newTab]: newFilters.query || '' }));
   setCursor(null);
-  setHasSearched(true); // Chỉ set ở đây
-}, [activeTab]);
+  setHasSearched(true); // FIX: QUAN TRỌNG - PHẢI CÓ DÒNG NÀY
+
+  // Force mutate để gọi API ngay
+  mutate();
+}, [activeTab, mutate]);
 
   const filteredTasks = useMemo(() => {
     let result = tasks.filter((task) =>!task.banned &&!task.hidden);
