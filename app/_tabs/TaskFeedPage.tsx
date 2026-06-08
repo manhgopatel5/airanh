@@ -80,47 +80,56 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     setActiveTab("hot");
   }, [mode]);
 
+useEffect(() => {
+  if (activeTab === 'hot') setFilters(prev => ({...prev, sortBy: 'views' }));
+  if (activeTab === 'new') setFilters(prev => ({...prev, sortBy: 'recent' }));
+}, [activeTab]);
+
   const apiUrl = useMemo(() => {
-    // FIX 1: Luôn tạo URL nếu đã search, bất kể filter default hay không
-    if (!hasSearched && cursor === null) return null;
-    
-    const params = new URLSearchParams({
-      type: mode,
-      limit: '20',
-      sortBy: activeTab === 'hot'? 'hot' : activeTab === 'new'? 'new' : filters.sortBy,
-    });
+  if (!hasSearched && cursor === null) return null;
 
-    if (filters.categories.length > 0) params.set('categories', filters.categories.join(','));
-    if (filters.priceRange!== 'all') params.set('priceRange', filters.priceRange);
-    if (filters.query) params.set('query', filters.query);
-    if (cursor) params.set('cursor', cursor.toString());
+  const params = new URLSearchParams({
+    type: mode,
+    limit: '20',
+    sortBy: filters.sortBy, // FIX: Dùng luôn filters.sortBy, bỏ logic activeTab
+  });
 
-    return `/api/tasks?${params.toString()}`;
-  }, [mode, activeTab, filters, cursor, hasSearched]);
+  // Chỉ override khi sortBy vẫn là default 'views' và tab là hot/new
+  if (filters.sortBy === 'views') {
+    if (activeTab === 'hot') params.set('sortBy', 'hot');
+    if (activeTab === 'new') params.set('sortBy', 'new');
+  }
 
+  if (filters.categories.length > 0) params.set('categories', filters.categories.join(','));
+  if (filters.priceRange!== 'all') params.set('priceRange', filters.priceRange);
+  if (filters.query) params.set('query', filters.query);
+  if (cursor) params.set('cursor', cursor.toString());
+
+  return `/api/tasks?${params.toString()}`;
+}, [mode, activeTab, filters, cursor, hasSearched]);
   const { data, error, isLoading, isValidating, mutate } = useSWR<{ tasks: FeedTask[], nextCursor: number | null }>(
-    apiUrl,
-    fetcher,
-    {
-      fallbackData: { 
-        tasks: mode === "task"? initialJobs : initialPlans, 
-        nextCursor: null 
-      },
-      revalidateOnMount: false,
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 0, // FIX 2: Tắt deduping để fetch ngay khi đổi filter
-      keepPreviousData: false,
-      refreshInterval: 0,
-      shouldRetryOnError: false,
-      onError: (err: any) => {
-        if (hasSearched) {
-          toast.error(err?.message || "Không tải được feed", { id: "feed-load-error" });
-        }
-      },
-    }
-  );
+  apiUrl,
+  fetcher,
+  {
+    fallbackData: hasSearched? undefined : { // FIX: Chỉ dùng fallback khi chưa search
+      tasks: mode === "task"? initialJobs : initialPlans,
+      nextCursor: null
+    },
+    revalidateOnMount: true, // FIX: Đổi thành true
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    dedupingInterval: 0,
+    keepPreviousData: false,
+    refreshInterval: 0,
+    shouldRetryOnError: false,
+    onError: (err: any) => {
+      if (hasSearched) {
+        toast.error(err?.message || "Không tải được feed", { id: "feed-load-error" });
+      }
+    },
+  }
+);
 
   const tasks = data?.tasks?? (mode === "task"? initialJobs : initialPlans);
   const nextCursor = data?.nextCursor || null;
