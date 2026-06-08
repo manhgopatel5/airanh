@@ -112,9 +112,8 @@ export async function getJobsFromFirebaseAdmin(
 
   let query: Query = db.collection('tasks')
   .where('type', '==', type)
-  .where('status', 'in', allowedStatuses)
-  .where('banned', '==', false)
-  .where('hidden', '==', false);
+  .where('status', 'in', allowedStatuses);
+
 
   // Filter category
   if (categories && categories.length > 0) {
