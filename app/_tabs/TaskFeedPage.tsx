@@ -52,7 +52,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   const [shareTask, setShareTask] = useState<FeedTask | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showSearchModal, setShowSearchModal] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
+const [hasSearched, setHasSearched] = useState(true); // FIX: true thay vì false
 
   const [filters, setFilters] = useState({
   categories: [] as string[],
@@ -86,11 +86,6 @@ useEffect(() => {
 }, [activeTab]);
 
 const apiUrl = useMemo(() => {
-  // FIX: Bỏ check hasSearched, luôn tạo URL nếu có filter hoặc cursor
-  if (cursor === null &&!hasSearched && filters.categories.length === 0 && filters.priceRange === 'all' &&!filters.query) {
-    return null; // Chỉ null khi chưa search gì cả
-  }
-
   const params = new URLSearchParams({
     type: mode,
     limit: '20',
@@ -102,14 +97,14 @@ const apiUrl = useMemo(() => {
   if (filters.query) params.set('query', filters.query);
   if (cursor) params.set('cursor', cursor.toString());
 
-  return `/api/tasks?${params.toString()}`;
-}, [mode, filters, cursor, hasSearched]);
+  return `/api/tasks?${params.toString()}`; // FIX: Luôn return URL, không check hasSearched
+}, [mode, filters, cursor]); // FIX: Bỏ hasSearched khỏi deps
  const { data, error, isLoading, isValidating, mutate } = useSWR<{ tasks: FeedTask[], nextCursor: number | null }>(
   apiUrl,
   fetcher,
   {
-    // FIX: Bỏ fallbackData, dùng initialData cho SSR
-    keepPreviousData: true,
+    // FIX: Bỏ fallbackData, để SWR tự fetch
+    keepPreviousData: true, // Giữ data cũ khi load trang mới
     revalidateOnMount: true,
     revalidateIfStale: false,
     revalidateOnFocus: false,
@@ -118,17 +113,14 @@ const apiUrl = useMemo(() => {
     refreshInterval: 0,
     shouldRetryOnError: false,
     onError: (err: any) => {
-      if (hasSearched) {
-        toast.error(err?.message || "Không tải được feed", { id: "feed-load-error" });
-      }
+      toast.error(err?.message || "Không tải được feed", { id: "feed-load-error" });
     },
   }
 );
 
-// THÊM DÒNG NÀY: Lấy data từ initial nếu chưa fetch
-const tasks = data?.tasks ?? (hasSearched ? [] : mode === "task" ? initialJobs : initialPlans);
-const nextCursor = data?.nextCursor ?? null;
-
+// FIX: Dùng data hoặc initial nếu data chưa có
+const tasks = data?.tasks?? (mode === "task"? initialJobs : initialPlans);
+const nextCursor = data?.nextCursor?? null;
   const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
       toast.error("Thiết bị không hỗ trợ định vị GPS");
@@ -157,7 +149,7 @@ const handleApplyFilters = useCallback(async (newFilters: any) => {
   const newFilterState = {
     categories: newFilters.categories || [],
     priceRange: newFilters.priceRange || 'all',
-    sortBy: newFilters.sortBy || 'new', // FIX: default 'new'
+    sortBy: newFilters.sortBy || 'new',
     query: newFilters.query || '',
   };
 
@@ -165,11 +157,8 @@ const handleApplyFilters = useCallback(async (newFilters: any) => {
   setFilters(newFilterState);
   setSearchQueries(prev => ({...prev, [newTab]: newFilters.query || '' }));
   setCursor(null);
-  setHasSearched(true); // FIX: QUAN TRỌNG - PHẢI CÓ DÒNG NÀY
-
-  // Force mutate để gọi API ngay
-  mutate();
-}, [activeTab, mutate]);
+  // FIX: Bỏ setHasSearched(true) vì luôn true rồi
+}, [activeTab]);
 
   const filteredTasks = useMemo(() => {
     let result = tasks.filter((task) =>!task.banned &&!task.hidden);
