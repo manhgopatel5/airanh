@@ -183,7 +183,7 @@ export default function CustomFilterBar({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[99999] bg-black/30 backdrop-blur-md"
+            className="fixed inset-0 z-[999999] bg-black/30 backdrop-blur-md"
             onClick={onCloseSearch}
           >
             <motion.div
@@ -569,7 +569,7 @@ export default function CustomFilterBar({
 
               {/* Footer Actions - Fixed đè lên thanh Home/Inbox */}
               <div
-                className="absolute bottom-0 left-0 right-0 px-4 pt-4 pb-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl z-[100000]"
+                className="absolute bottom-0 left-0 right-0 px-4 pt-4 pb-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl z-[1000000]"
                 style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
               >
                 <div className="flex gap-3">
