@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, ArrowLeft, Flame, ArrowUp, ArrowDown, Star, Clock, Check, ChevronDown } from "lucide-react";
+import { Search, X, ArrowLeft, ArrowUp, ArrowDown, Star, Clock, Check, ChevronDown } from "lucide-react";
 import { useAppStore } from "@/store/app";
 import React, { useState, useEffect, useRef } from "react";
 
@@ -95,17 +95,15 @@ export default function CustomFilterBar({
       bgGradient: "linear-gradient(135deg, #0A84FF 0%, #0066CC 100%)",
       accent: "#00D9FF",
       secondary: "#5AC8FA"
-
     },
     plan: {
       bg: "#30D158",
       bgGradient: "linear-gradient(135deg, #30D158 0%, #248A3D 100%)",
       accent: "#FFD60A",
       secondary: "#FF9F0A"
-
     },
   };
-  const currentTheme = themes[mode];
+  const currentTheme = themes;
   const CATEGORIES = mode === "task"? CATEGORY_TASKS : CATEGORY_PLANS;
 
   const sortOptions = [
@@ -159,10 +157,9 @@ export default function CustomFilterBar({
           className="relative w-full h-12 px-4 pr-11 rounded-[28px] bg-zinc-100/80 dark:bg-zinc-800/80 backdrop-blur-xl text-left outline-none transition-all shadow-sm hover:shadow-md active:shadow-sm group"
           style={{
             border: `2px solid ${currentTheme.bg}`,
-
           }}
         >
-          <span className="relative text-zinc-500 dark:text-zinc-400 font-serif font-semibold text-[15px]">Tìm kiếm nâng cao...</span>
+          <span className="relative text-zinc-500 dark:text-zinc-400 font-serif font-semibold text-">Tìm kiếm nâng cao...</span>
           <div className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 dark:bg-zinc-700/80 flex items-center justify-center">
             <Search size={16} className="text-zinc-500 dark:text-zinc-400" strokeWidth={2.5} />
           </div>
@@ -176,7 +173,7 @@ export default function CustomFilterBar({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[9999] bg-black/30 backdrop-blur-md"
+            className="fixed inset-0 z- bg-black/30 backdrop-blur-md"
             onClick={onCloseSearch}
           >
             <motion.div
@@ -199,12 +196,12 @@ export default function CustomFilterBar({
                   >
                     <ArrowLeft size={20} strokeWidth={2.5} />
                   </motion.button>
-                  <h2 className="text-[17px] font-bold flex-1 text-center font-serif">Tìm kiếm nâng cao</h2>
+                  <h2 className="text- font-bold flex-1 text-center font-serif">Tìm kiếm nâng cao</h2>
           {activeFilterCount > 0 && (
   <motion.button
     whileTap={{ scale: 0.95 }}
     onClick={resetFilters}
-    className="text-[13px] font-bold text-[#0A84FF] px-3.5 h-9 rounded-[28px] bg-white dark:bg-zinc-900 transition-all font-serif"
+    className="text- font-bold text-[#0A84FF] px-3.5 h-9 rounded-[28px] bg-white dark:bg-zinc-900 transition-all font-serif"
     style={{ border: '2px solid #0A84FF' }}
   >
     Xóa
@@ -220,7 +217,7 @@ export default function CustomFilterBar({
     onChange={(e) => setLocalQuery(e.target.value)}
     onKeyDown={(e) => e.key === 'Enter' && handleApply()}
     placeholder="Tìm kiếm..."
-    className="w-full h-14 pl-12 pr-12 rounded-[28px] bg-white dark:bg-zinc-900 outline-none font-serif font-bold text-[16px] text-zinc-900 dark:text-zinc-100 transition-all placeholder:text-zinc-400"
+    className="w-full h-14 pl-12 pr-12 rounded-[28px] bg-white dark:bg-zinc-900 outline-none font-serif font-bold text- text-zinc-900 dark:text-zinc-100 transition-all placeholder:text-zinc-400"
     style={{
       border: `2px solid ${currentTheme.bg}`
     }}
@@ -245,7 +242,7 @@ export default function CustomFilterBar({
               </div>
 
               {/* Content */}
-              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-4">
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-32">
                 {/* Sort */}
                 <div>
                   <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3 px-1 font-serif">Sắp xếp</h3>
@@ -261,19 +258,18 @@ export default function CustomFilterBar({
                             haptics.light();
                             setSortBy(opt.id as SortBy);
                           }}
-                          className={`relative h-12 rounded-[20px] flex items-center justify-center gap-2 font-serif font-semibold text-[14px] transition-all ${
+                          className={`relative h-12 rounded-[20px] flex items-center justify-center gap-2 font-serif font-semibold text- transition-all ${
                             isActive
-                           ? "text-white shadow-lg"
+                         ? "text-white shadow-lg"
                               : "bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300"
                           }`}
                           style={isActive? {
                             background: currentTheme.bgGradient,
-
                           } : {
                             border: '2px solid rgba(0,0,0,0.06)'
                           }}
                         >
-                          <Icon size={18} strokeWidth={2.5} />
+                          {Icon && <Icon size={18} strokeWidth={2.5} />}
                           {opt.label}
                         </motion.button>
                       );
@@ -287,8 +283,6 @@ export default function CustomFilterBar({
                     <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-3.5 px-1 font-serif">
                       Khoảng giá
                     </h3>
-
-                    {/* Trigger Button - Khung nổi */}
                     <motion.button
                       whileTap={{ scale: 0.98 }}
                       onClick={() => {
@@ -298,7 +292,6 @@ export default function CustomFilterBar({
                       className="w-full h-14 px-4 rounded-[28px] bg-white dark:bg-zinc-900 flex items-center justify-between transition-all"
                       style={{
                         border: `2px solid ${currentTheme.bg}`,
-
                       }}
                     >
                       <div className="text-left">
@@ -315,7 +308,6 @@ export default function CustomFilterBar({
                       </motion.div>
                     </motion.button>
 
-                    {/* Collapsible List */}
                     <AnimatePresence>
                       {showPriceList && (
                         <motion.div
@@ -385,7 +377,6 @@ export default function CustomFilterBar({
                           style={{
                             background: currentTheme.bgGradient,
                             color: 'white',
-
                           }}
                         >
                           {selectedCategories.length}
@@ -394,7 +385,6 @@ export default function CustomFilterBar({
                     </AnimatePresence>
                   </h3>
 
-                  {/* Trigger Button - Khung nổi */}
                   <motion.button
                     whileTap={{ scale: 0.98 }}
                     onClick={() => {
@@ -404,22 +394,21 @@ export default function CustomFilterBar({
                     className="w-full h-14 px-4 rounded-[28px] bg-white dark:bg-zinc-900 flex items-center justify-between transition-all"
                     style={{
                       border: `2px solid ${currentTheme.bg}`,
-
                     }}
                   >
                     <div className="text-left">
                       <div className="text-xs text-zinc-500 dark:text-zinc-500 font-serif">Chọn danh mục</div>
                       <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-serif mt-0.5">
                         {selectedCategories.length === 0
-                        ? "Tất cả"
+                     ? "Tất cả"
                           : `Đã chọn ${selectedCategories.length} danh mục`}
                       </div>
                       {selectedCategories.length > 0 && (
                         <div className="text-xs text-zinc-500 dark:text-zinc-500 mt-0.5 font-serif">
                           {CATEGORIES.filter(c => selectedCategories.includes(c.id))
-                          .slice(0, 2)
-                          .map(c => c.label)
-                          .join(', ')}
+                       .slice(0, 2)
+                       .map(c => c.label)
+                       .join(', ')}
                           {selectedCategories.length > 2 && ` +${selectedCategories.length - 2}`}
                         </div>
                       )}
@@ -432,7 +421,6 @@ export default function CustomFilterBar({
                     </motion.div>
                   </motion.button>
 
-                  {/* Collapsible List */}
                   <AnimatePresence>
                     {showCategoryList && (
                       <motion.div
@@ -482,34 +470,18 @@ export default function CustomFilterBar({
                     )}
                   </AnimatePresence>
                 </div>
+              </div>
 
-                {/* Trending Tags */}
-                <div>
-                  <h3 className="text-[13px] font-bold text-zinc-500 dark:text-zinc-500 uppercase tracking-wide mb-3 px-1 flex items-center gap-1.5 font-serif">
-                    <Flame size={16} className="text-[#FF9500]" fill="#FF9500" />
-                    Thịnh hành
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {["#viecgap", "#luongcao", "#uytin", "#ganday", "#nhannngay"].map((tag) => (
-                      <motion.button
-                        key={tag}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => { haptics.light(); setLocalQuery(tag); }}
-                        className="px-4 h-9 rounded-[20px] bg-gradient-to-br from-[#FF9500]/15 to-[#FFD60A]/10 text-[#FF9500] dark:text-[#FFD60A] font-serif font-semibold text-[13px] hover:from-[#FF9500]/25 hover:to-[#FFD60A]/20 transition-all"
-                        style={{ border: '2px solid rgba(255, 149, 0, 0.2)' }}
-                      >
-                        {tag}
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-
-             {/* Actions - Nằm cuối content */}
-                <div className="flex gap-3 pt-6">
+              {/* Footer Actions - Fixed đè lên thanh Home/Inbox */}
+              <div
+                className="absolute bottom-0 left-0 right-0 px-4 pt-4 pb-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl"
+                style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
+              >
+                <div className="flex gap-3">
                   <motion.button
                     whileTap={{ scale: 0.96 }}
                     onClick={onCloseSearch}
-                    className="h-14 rounded-[28px] bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 font-serif font-bold text-[15px] px-6 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
+                    className="h-14 rounded-[28px] bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 font-serif font-bold text- px-6 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
                     style={{ border: '2px solid rgba(0,0,0,0.06)' }}
                   >
                     Hủy
@@ -517,7 +489,7 @@ export default function CustomFilterBar({
                   <motion.button
                     whileTap={{ scale: 0.96 }}
                     onClick={handleApply}
-                    className="flex-1 h-14 rounded-[28px] text-white font-serif font-bold text-[15px] relative overflow-hidden"
+                    className="flex-1 h-14 rounded-[28px] text-white font-serif font-bold text- relative overflow-hidden"
                     style={{
                       background: currentTheme.bgGradient,
                     }}
