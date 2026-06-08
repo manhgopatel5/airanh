@@ -66,12 +66,12 @@ const CATEGORY_PLANS = [
 ] as const;
 
 const PRICE_RANGES = [
-  { id: "all", label: "Tất cả", min: 0, max: Infinity },
-  { id: "free", label: "Giúp đỡ miễn phí", min: 0, max: 0 },
-  { id: "lt50", label: "Nhỏ hơn 50,000 VNĐ", min: 1, max: 50000 },
-  { id: "50-200", label: "50,000 - 200,000 VNĐ", min: 50000, max: 200000 },
-  { id: "200-500", label: "200,000 - 500,000 VNĐ", min: 200000, max: 500000 },
-  { id: "gt500", label: "Lớn hơn 500,000 VNĐ", min: 500000, max: Infinity },
+  { id: "all", label: "Tất cả", icon: "✨", min: 0, max: Infinity },
+  { id: "free", label: "Giúp đỡ miễn phí", icon: "🎁", min: 0, max: 0 },
+  { id: "lt50", label: "Nhỏ hơn 50,000 VNĐ", icon: "🪙", min: 1, max: 50000 },
+  { id: "50-200", label: "50,000 - 200,000 VNĐ", icon: "💳", min: 50000, max: 200000 },
+  { id: "200-500", label: "200,000 - 500,000 VNĐ", icon: "💴", min: 200000, max: 500000 },
+  { id: "gt500", label: "Lớn hơn 500,000 VNĐ", icon: "🏦", min: 500000, max: Infinity },
 ];
 
 export default function CustomFilterBar({
@@ -280,35 +280,36 @@ export default function CustomFilterBar({
       <span>Khoảng giá</span>
     </h3>
 
-    {/* Trigger Button */}
-    <motion.button
-      whileTap={{ scale: 0.98 }}
-      onClick={() => {
-        haptics.light();
-        setShowPriceList(!showPriceList);
-      }}
-      className="w-full h-14 px-4 rounded-2xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-between transition-all"
-      style={{
-        boxShadow: showPriceList ? `0 0 0 2px ${currentTheme.bg}40` : 'none'
-      }}
-    >
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-white/80 dark:bg-zinc-800 flex items-center justify-center">
-          <DollarSign size={20} className="text-[#30D158]" strokeWidth={2.5} />
-        </div>
-        <div className="text-left">
-          <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
-            {PRICE_RANGES.find(p => p.id === priceRange)?.label || "Tất cả"}
-          </div>
-        </div>
+ {/* Trigger Button */}
+<motion.button
+  whileTap={{ scale: 0.98 }}
+  onClick={() => {
+    haptics.light();
+    setShowPriceList(!showPriceList);
+  }}
+  className="w-full h-14 px-4 rounded-2xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-between transition-all"
+  style={{
+    boxShadow: showPriceList ? `0 0 0 2px ${currentTheme.bg}40` : 'none'
+  }}
+>
+  <div className="flex items-center gap-3">
+    <div className="w-9 h-9 rounded-xl bg-white/80 dark:bg-zinc-800 flex items-center justify-center">
+      <span className="text-lg">{PRICE_RANGES.find(p => p.id === priceRange)?.icon || "💵"}</span>
+    </div>
+    <div className="text-left">
+      <div className="text-xs text-zinc-500 dark:text-zinc-500">Chọn khoảng giá</div>
+      <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+        {PRICE_RANGES.find(p => p.id === priceRange)?.label || "Tất cả"}
       </div>
-      <motion.div
-        animate={{ rotate: showPriceList ? 180 : 0 }}
-        transition={{ duration: 0.2 }}
-      >
-        <ChevronDown size={20} className="text-zinc-400" strokeWidth={2.5} />
-      </motion.div>
-    </motion.button>
+    </div>
+  </div>
+  <motion.div
+    animate={{ rotate: showPriceList ? 180 : 0 }}
+    transition={{ duration: 0.2 }}
+  >
+    <ChevronDown size={20} className="text-zinc-400" strokeWidth={2.5} />
+  </motion.div>
+</motion.button>
 
     {/* Collapsible List */}
     <AnimatePresence>
@@ -321,64 +322,58 @@ export default function CustomFilterBar({
           className="overflow-hidden"
         >
           <div className="mt-3 space-y-2 pb-2">
-            {PRICE_RANGES.map((range, idx) => {
-              const isActive = priceRange === range.id;
-              return (
-                <motion.button
-                  key={range.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.03 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    haptics.light();
-                    setPriceRange(range.id);
-                    setShowPriceList(false);
-                  }}
-                  className="relative w-full h-14 rounded-2xl flex items-center gap-3 px-3.5 transition-all overflow-hidden"
-                  style={{
-                    background: isActive
-                     ? `linear-gradient(135deg, ${currentTheme.bg}15, ${currentTheme.bg}08)`
-                      : 'rgba(142, 142, 147, 0.06)',
-                    boxShadow: isActive
-                     ? `inset 0 0 0 1.5px ${currentTheme.bg}`
-                      : 'inset 0 0 0 1px rgba(0,0,0,0.04)',
-                  }}
-                >
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{
-                      background: isActive ? `${currentTheme.bg}25` : 'rgba(255,255,255,0.8)',
-                    }}
-                  >
-                    <DollarSign size={20} className={isActive ? "text-white" : "text-zinc-400"} strokeWidth={2.5} />
-                  </div>
+        {PRICE_RANGES.map((range, idx) => {
+  const isActive = priceRange === range.id;
+  return (
+    <motion.button
+      key={range.id}
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: idx * 0.03 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={() => {
+        haptics.light();
+        setPriceRange(range.id);
+        setShowPriceList(false);
+      }}
+      className="relative w-full h-14 rounded-2xl flex items-center gap-3 px-3.5 transition-all overflow-hidden"
+      style={{
+        background: isActive
+         ? `linear-gradient(135deg, ${currentTheme.bg}15, ${currentTheme.bg}08)`
+          : 'rgba(142, 142, 147, 0.06)',
+        boxShadow: isActive
+         ? `inset 0 0 0 1.5px ${currentTheme.bg}`
+          : 'inset 0 0 0 1px rgba(0,0,0,0.04)',
+      }}
+    >
+      <div
+        className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+        style={{
+          background: isActive ? `${currentTheme.bg}25` : 'rgba(255,255,255,0.8)',
+        }}
+      >
+        <span className="text-lg">{range.icon}</span>
+      </div>
 
-                  <div className="flex-1 text-left">
-                    <div className={`text-sm font-bold ${
-                      isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
-                    }`}>
-                      {range.label}
-                    </div>
-                  </div>
+      <div className="flex-1 text-left">
+        <div className={`text-sm font-bold ${
+          isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
+        }`}>
+          {range.label}
+        </div>
+      </div>
 
-                  {isActive && (
-                    <div
-                      className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{ background: currentTheme.bg }}
-                    >
-                      <Check size={12} className="text-white" strokeWidth={3.5} />
-                    </div>
-                  )}
-                </motion.button>
-              );
-            })}
-          </div>
-        </motion.div>
+      {isActive && (
+        <div
+          className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{ background: currentTheme.bg }}
+        >
+          <Check size={12} className="text-white" strokeWidth={3.5} />
+        </div>
       )}
-    </AnimatePresence>
-  </div>
-)}
+    </motion.button>
+  );
+})}
 
 {/* Categories */}
 <div>
