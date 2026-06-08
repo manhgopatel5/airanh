@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, ArrowLeft, Flame, SlidersHorizontal, TrendingUp, Clock, DollarSign, Check } from "lucide-react";
+import { Search, X, ArrowLeft, Flame, TrendingUp, Clock, DollarSign, Check } from "lucide-react";
 import { useAppStore } from "@/store/app";
 import React, { useState, useEffect, useRef } from "react";
 
