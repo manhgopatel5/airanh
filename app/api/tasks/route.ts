@@ -17,12 +17,11 @@ export async function GET(request: NextRequest) {
   const limit = parseInt(searchParams.get('limit') || '20');
   const sortBy = (searchParams.get('sortBy') as any) || 'new';
 
-  // FIX: cursor là string docId, không parseInt
   const cursor = searchParams.get('cursor') || undefined;
 
   const categoriesParam = searchParams.get('categories');
   const categories = categoriesParam? categoriesParam.split(',').filter(Boolean) : undefined;
-
+  const deadlineRange = searchParams.get('deadlineRange') || 'all';
   const priceRangeParam = searchParams.get('priceRange');
   let minPrice: number | undefined;
   let maxPrice: number | undefined;
@@ -60,20 +59,21 @@ export async function GET(request: NextRequest) {
 
   const query = searchParams.get('query') || undefined;
 
-  console.log('>>> API PARAMS:', { type, sortBy, priceRangeParam, minPrice, maxPrice, categories, query, cursor });
+  console.log('>>> API PARAMS:', { type, sortBy, priceRangeParam, minPrice, maxPrice, categories, query, cursor, deadlineRange });
 
   try {
     const data = await getJobsFromFirebaseAdmin({
       type,
       limitCount: limit,
       sortBy,
-   ...(categories && { categories }),
-   ...(minPrice!== undefined && { minPrice }),
-   ...(maxPrice!== undefined && { maxPrice }),
-   ...(cursor && { cursor }), // FIX: cursor string
+     ...(categories && { categories }),
+     ...(minPrice!== undefined && { minPrice }),
+     ...(maxPrice!== undefined && { maxPrice }),
+     ...(cursor && { cursor }),
     });
 
     let tasks = data.tasks;
+    
     if (query) {
       const q = query.toLowerCase();
       tasks = tasks.filter(t =>
@@ -81,6 +81,38 @@ export async function GET(request: NextRequest) {
         t.description.toLowerCase().includes(q) ||
         t.tags?.some(tag => tag.toLowerCase().includes(q))
       );
+    }
+
+    // Lọc theo thời hạn còn lại
+    if (deadlineRange!== 'all') {
+      const now = Date.now();
+      let deadlineTimestamp = Infinity;
+      
+      switch(deadlineRange) {
+        case "1h":
+          deadlineTimestamp = now + 60 * 60 * 1000;
+          break;
+        case "today":
+          deadlineTimestamp = new Date().setHours(23, 59, 59, 999);
+          break;
+        case "3days":
+          deadlineTimestamp = now + 3 * 24 * 60 * 60 * 1000;
+          break;
+        case "week":
+          deadlineTimestamp = now + 7 * 24 * 60 * 60 * 1000;
+          break;
+        case "month":
+          deadlineTimestamp = now + 30 * 24 * 60 * 60 * 1000;
+          break;
+      }
+      
+      tasks = tasks.filter(task => {
+        if (!task.deadline) return false;
+        const taskDeadline = task.deadline.toDate 
+         ? task.deadline.toDate().getTime() 
+          : new Date(task.deadline).getTime();
+        return taskDeadline >= now && taskDeadline <= deadlineTimestamp;
+      });
     }
 
     return NextResponse.json({ tasks, nextCursor: data.nextCursor });
@@ -118,7 +150,7 @@ export async function POST(request: Request) {
     const price = Number(body.price) || 0;
 
     const taskData = {
-   ...body,
+     ...body,
       userId: decoded.uid,
       userName: decoded.name || 'User',
       userAvatar: decoded.picture || '',
@@ -141,7 +173,7 @@ export async function POST(request: Request) {
       priceRange: getPriceRange(price),
       tags: Array.isArray(body.tags)? body.tags : [],
       images: Array.isArray(body.images)? body.images : [],
-   ...(isTask && {
+     ...(isTask && {
         totalSlots: Number(body.totalSlots) || 1,
         joined: 0,
         budgetType: body.budgetType || 'fixed',
@@ -151,7 +183,7 @@ export async function POST(request: Request) {
         urgency: body.urgency || 'flexible',
         needApproval: body.needApproval || false,
       }),
-   ...(!isTask && {
+     ...(!isTask && {
         eventDate: body.eventDate? new Date(body.eventDate) : null,
         endDate: body.endDate? new Date(body.endDate) : null,
         maxParticipants: Number(body.maxParticipants) || 4,
@@ -163,7 +195,7 @@ export async function POST(request: Request) {
         requireApproval: body.requireApproval || false,
         autoAccept:!body.requireApproval,
       }),
-   ...(body.location?.lat && body.location?.lng && {
+     ...(body.location?.lat && body.location?.lng && {
         location: {
           lat: body.location.lat,
           lng: body.location.lng,
