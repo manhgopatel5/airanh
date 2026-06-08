@@ -126,7 +126,7 @@ export default function CustomFilterBar({
       secondary: "#FF9F0A"
     },
   };
-  const currentTheme = themes;
+const currentTheme = themes[mode];
   const CATEGORIES = mode === "task"? CATEGORY_TASKS : CATEGORY_PLANS;
   const currentProvince = PROVINCES.find(p => p.id === province);
 
