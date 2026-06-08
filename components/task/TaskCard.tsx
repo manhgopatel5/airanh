@@ -134,7 +134,8 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
         : "Linh hoạt";
 
     const cityKey = task.location?.city || "";
-    const provinceName = provinceMap.get(cityKey) || cityKey || "Chưa rõ";
+const rawProvinceName = provinceMap.get(cityKey) || cityKey || "Chưa rõ";
+const provinceName = rawProvinceName.replace(/^(Thành phố|Tỉnh|TP\.|T\.)\s*/i, "").trim();
 
     return {
       maxSlots,
