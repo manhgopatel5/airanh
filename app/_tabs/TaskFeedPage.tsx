@@ -153,18 +153,18 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
       <div className="sticky top-0 z-40 bg-white dark:bg-zinc-950">
         <div className="mx-auto max-w-[680px] px-4 pt-3 pb-3">
           <div className="relative h-14 rounded-[1.6rem] bg-white dark:bg-zinc-900 ring-1 ring-black/[0.08] dark:ring-white/10 overflow-hidden shadow-sm">
-            <motion.div
-              className="absolute top-0 bottom-0 rounded-[1.6rem]"
-              initial={false}
-              animate={{
-                left: isTaskMode? "0%" : "44%",
-                width: "56%",
-                background: isTaskMode
-         ? "linear-gradient(135deg, #0A84FF 0%, #0066CC 50%, #0051D5 100%)"
-                  : "linear-gradient(135deg, #30D158 0%, #28B34A 50%, #248A3D 100%)"
-              }}
-              transition={{ type: "spring", stiffness: 340, damping: 38, mass: 0.6 }}
-            >
+         <motion.div
+  className="absolute top-0 bottom-0 rounded-[1.6rem]"
+  initial={false}
+  animate={{
+    left: isTaskMode? "0%" : "44%",
+    width: "56%",
+    background: isTaskMode
+      ? "linear-gradient(135deg, #0A84FF 0%, #0066CC 50%, #0051D5 100%)"
+      : "linear-gradient(135deg, #30D158 0%, #28B34A 50%, #248A3D 100%)"
+  }}
+  transition={{ type: "spring", stiffness: 340, damping: 38, mass: 0.6 }}
+>
               <div className="absolute inset-0 rounded-[1.6rem] bg-gradient-to-b from-white/30 via-white/5 to-black/10" />
               <div className="absolute inset-[1px] rounded-[1.5rem] ring-1 ring-inset ring-white/25" />
             </motion.div>
