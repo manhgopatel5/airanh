@@ -88,30 +88,37 @@ export default function CustomFilterBar({
   const [localQuery, setLocalQuery] = useState("");
 
   const themes = {
-    task: { bg: "#0A84FF", bgGradient: "linear-gradient(135deg, #0A84FF 0%, #0051D5 100%)", accent: "#00D9FF", secondary: "#5AC8FA" },
-    plan: { bg: "#30D158", bgGradient: "linear-gradient(135deg, #30D158 0%, #248A3D 100%)", accent: "#FFD60A", secondary: "#FF9F0A" },
+    task: {
+      bg: "#0A84FF",
+      bgGradient: "linear-gradient(135deg, #0A84FF 0%, #0066CC 100%)",
+      accent: "#00D9FF",
+      secondary: "#5AC8FA",
+      glow: "rgba(10, 132, 255, 0.3)"
+    },
+    plan: {
+      bg: "#30D158",
+      bgGradient: "linear-gradient(135deg, #30D158 0%, #248A3D 100%)",
+      accent: "#FFD60A",
+      secondary: "#FF9F0A",
+      glow: "rgba(48, 209, 88, 0.3)"
+    },
   };
   const currentTheme = themes[mode];
   const CATEGORIES = mode === "task"? CATEGORY_TASKS : CATEGORY_PLANS;
 
   const sortOptions = [
     { id: "new", label: "Mới nhất", icon: Clock },
-    { id: "views", label: "Phổ biến nhất", icon: TrendingUp },
-    { id: "price_asc", label: "Giá tăng dần", icon: DollarSign },
-    { id: "price_desc", label: "Giá giảm dần", icon: DollarSign },
+    { id: "views", label: "Phổ biến", icon: TrendingUp },
+    { id: "price_asc", label: "Giá tăng", icon: DollarSign },
+    { id: "price_desc", label: "Giá giảm", icon: DollarSign },
   ];
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (modalRef.current &&!modalRef.current.contains(event.target as Node)) {
-        onCloseSearch();
-      }
-    }
     if (showSearchModal) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = "unset"; };
     }
-  }, [showSearchModal, onCloseSearch]);
+  }, [showSearchModal]);
 
   const toggleCategory = (id: string) => {
     haptics.light();
@@ -144,17 +151,18 @@ export default function CustomFilterBar({
   return (
     <>
       <div className="mt-3">
-        <button
+        <motion.button
+          whileTap={{ scale: 0.98 }}
           onClick={onOpenSearch}
-          className="relative w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-black/[0.08] dark:ring-white/10 text-left outline-none hover:ring-black/[0.12] dark:hover:ring-white/15 transition-all shadow-sm hover:shadow-md active:scale-[0.99] active:shadow-sm"
+          className="relative w-full h-12 px-4 pr-11 rounded-[20px] bg-zinc-100/80 dark:bg-zinc-800/80 backdrop-blur-xl text-left outline-none transition-all shadow-sm hover:shadow-md active:shadow-sm group"
         >
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/40 via-transparent to-black/[0.03] pointer-events-none" />
-          <div className="absolute inset-[1px] rounded-2xl ring-1 ring-inset ring-white/30 pointer-events-none" />
-          <span className="relative text-zinc-400 font-semibold">Tìm kiếm nâng cao...</span>
-          <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-            <Search size={18} className="text-zinc-400" />
+          <div className="absolute inset-0 rounded-[20px] bg-gradient-to-b from-white/60 via-white/20 to-transparent dark:from-white/10 dark:via-white/5 pointer-events-none" />
+          <div className="absolute inset-[1px] rounded-[20px] ring-1 ring-inset ring-black/[0.04] dark:ring-white/10 pointer-events-none" />
+          <span className="relative text-zinc-400 dark:text-zinc-500 font-medium text-[15px]">Tìm kiếm nâng cao...</span>
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/80 dark:bg-zinc-700/80 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Search size={16} className="text-zinc-500 dark:text-zinc-400" strokeWidth={2.5} />
           </div>
-        </button>
+        </motion.button>
       </div>
 
       <AnimatePresence>
@@ -163,76 +171,100 @@ export default function CustomFilterBar({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center pt-20 px-4"
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[9999] bg-black/30 backdrop-blur-md"
+            onClick={onCloseSearch}
           >
             <motion.div
               ref={modalRef}
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -20, opacity: 0 }}
-              className="bg-white dark:bg-zinc-900 w-full max-w-[680px] rounded- p-4 shadow-2xl max-h-[80vh] overflow-y-auto"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="absolute inset-0 bg-white dark:bg-zinc-950 flex flex-col"
+              style={{ paddingTop: "env(safe-area-inset-top)" }}
             >
-              <div className="flex items-center justify-between mb-4 sticky top-0 bg-white dark:bg-zinc-900 pb-2 z-10">
-                <div className="flex items-center gap-3">
-                  <button onClick={onCloseSearch} className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800">
-                    <ArrowLeft size={20} />
-                  </button>
-                  <h2 className="text-lg font-black">Tìm kiếm nâng cao</h2>
-                </div>
-                {activeFilterCount > 0 && (
-                  <button onClick={resetFilters} className="text-xs font-bold text-[#0A84FF] hover:opacity-70">
-                    Xóa bộ lọc ({activeFilterCount})
-                  </button>
-                )}
-              </div>
-
-              <div className="relative h-11 mb-4">
-                <input
-                  value={localQuery}
-                  onChange={(e) => setLocalQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleApply()}
-                  placeholder="Tìm kiếm..."
-                  className="w-full h-11 px-4 pr-10 rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-black/[0.08] dark:ring-white/10 outline-none focus:ring-2 focus:ring-[#0A84FF]/40 dark:focus:ring-[#0A84FF]/50 font-semibold text-base text-zinc-900 dark:text-zinc-100 transition-all placeholder:text-zinc-400 shadow-sm focus:shadow-md"
-                />
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/40 via-transparent to-black/[0.03] pointer-events-none" />
-                <div className="absolute inset-[1px] rounded-2xl ring-1 ring-inset ring-white/30 pointer-events-none" />
-                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 z-10">
-                  {localQuery? (
-                    <button
-                      onClick={() => setLocalQuery("")}
-                      className="p-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              {/* Header */}
+              <div className="flex-shrink-0 px-4 pt-2 pb-3 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={onCloseSearch}
+                    className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center"
+                  >
+                    <ArrowLeft size={20} strokeWidth={2.5} />
+                  </motion.button>
+                  <h2 className="text-[17px] font-bold flex-1 text-center">Tìm kiếm nâng cao</h2>
+                  {activeFilterCount > 0 && (
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={resetFilters}
+                      className="text-[13px] font-bold text-[#0A84FF] px-3 py-1.5 rounded-full bg-[#0A84FF]/10"
                     >
-                      <X size={18} className="text-zinc-500" />
-                    </button>
-                  ) : (
-                    <Search size={18} className="text-zinc-400" />
+                      Xóa
+                    </motion.button>
                   )}
+                  {activeFilterCount === 0 && <div className="w-9" />}
+                </div>
+
+                {/* Search Input */}
+                <div className="relative">
+                  <input
+                    value={localQuery}
+                    onChange={(e) => setLocalQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleApply()}
+                    placeholder="Tìm kiếm..."
+                    className="w-full h-12 pl-11 pr-11 rounded-2xl bg-zinc-100 dark:bg-zinc-900 outline-none focus:ring-2 ring-offset-0 font-medium text-[16px] text-zinc-900 dark:text-zinc-100 transition-all placeholder:text-zinc-400"
+                    style={{ boxShadow: localQuery? `0 0 0 2px ${currentTheme.bg}40` : 'none' }}
+                  />
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2">
+                    <Search size={20} className="text-zinc-400" strokeWidth={2.5} />
+                  </div>
+                  <AnimatePresence>
+                    {localQuery && (
+                      <motion.button
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        onClick={() => setLocalQuery("")}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center"
+                      >
+                        <X size={16} strokeWidth={2.5} className="text-zinc-600 dark:text-zinc-400" />
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
 
-              <div className="space-y-4">
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 pb-32">
+                {/* Sort */}
                 <div>
-                  <h3 className="text-xs font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">Sắp xếp theo</h3>
-                  <div className="grid grid-cols-2 gap-2">
+                  <h3 className="text-[13px] font-bold text-zinc-500 dark:text-zinc-500 uppercase tracking-wide mb-3 px-1">Sắp xếp</h3>
+                  <div className="grid grid-cols-2 gap-2.5">
                     {sortOptions.map((opt) => {
                       const Icon = opt.icon;
                       const isActive = sortBy === opt.id;
                       return (
                         <motion.button
                           key={opt.id}
-                          whileTap={{ scale: 0.95 }}
+                          whileTap={{ scale: 0.96 }}
                           onClick={() => {
                             haptics.light();
                             setSortBy(opt.id as SortBy);
                           }}
-                          className={`relative h-10 rounded-xl flex items-center justify-center gap-2 font-bold text-xs transition-all ${
+                          className={`relative h-12 rounded-2xl flex items-center justify-center gap-2 font-semibold text-[14px] transition-all ${
                             isActive
-                           ? "text-white"
-                              : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+                             ? "text-white shadow-lg"
+                              : "bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300"
                           }`}
-                          style={isActive? { background: currentTheme.bgGradient } : {}}
+                          style={isActive? {
+                            background: currentTheme.bgGradient,
+                            boxShadow: `0 8px 24px ${currentTheme.glow}`
+                          } : {}}
                         >
-                          <Icon size={16} />
+                          <Icon size={18} strokeWidth={2.5} />
                           {opt.label}
                         </motion.button>
                       );
@@ -240,9 +272,10 @@ export default function CustomFilterBar({
                   </div>
                 </div>
 
+                {/* Price Range - Task mode only */}
                 {mode === "task" && (
                   <div>
-                    <h3 className="text-xs font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">Khoảng giá</h3>
+                    <h3 className="text-[13px] font-bold text-zinc-500 dark:text-zinc-500 uppercase tracking-wide mb-3 px-1">Khoảng giá</h3>
                     <div className="flex flex-wrap gap-2">
                       {PRICE_RANGES.map((range) => {
                         const isActive = priceRange === range.id;
@@ -251,12 +284,15 @@ export default function CustomFilterBar({
                             key={range.id}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => { haptics.light(); setPriceRange(range.id); }}
-                            className={`px-3 h-9 rounded-xl font-bold text-xs transition-all ${
+                            className={`px-4 h-10 rounded-2xl font-semibold text-[14px] transition-all ${
                               isActive
-                             ? "text-white"
-                                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+                               ? "text-white shadow-lg"
+                                : "bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300"
                             }`}
-                            style={isActive? { background: currentTheme.bgGradient } : {}}
+                            style={isActive? {
+                              background: currentTheme.bgGradient,
+                              boxShadow: `0 4px 16px ${currentTheme.glow}`
+                            } : {}}
                           >
                             {range.label}
                           </motion.button>
@@ -266,48 +302,62 @@ export default function CustomFilterBar({
                   </div>
                 )}
 
+                {/* Categories */}
                 <div>
-                  <h3 className="text-xs font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
-                    Danh mục {selectedCategories.length > 0 && `(${selectedCategories.length})`}
+                  <h3 className="text-[13px] font-bold text-zinc-500 dark:text-zinc-500 uppercase tracking-wide mb-3 px-1 flex items-center justify-between">
+                    <span>Danh mục</span>
+                    {selectedCategories.length > 0 && (
+                      <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: currentTheme.bg, color: 'white' }}>
+                        {selectedCategories.length}
+                      </span>
+                    )}
                   </h3>
-                  <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto pr-1">
+                  <div className="grid grid-cols-3 gap-2.5">
                     {CATEGORIES.map((cat) => {
                       const isActive = selectedCategories.includes(cat.id);
                       return (
                         <motion.button
                           key={cat.id}
-                          whileTap={{ scale: 0.92 }}
+                          whileTap={{ scale: 0.94 }}
                           onClick={() => toggleCategory(cat.id)}
-                          className={`relative h-20 rounded-2xl flex flex-col items-center justify-center gap-1 p-2 transition-all ${
+                          className={`relative h-[88px] rounded-3xl flex flex-col items-center justify-center gap-1.5 p-2 transition-all ${
                             isActive
-                           ? "ring-2 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900"
-                              : "bg-zinc-100 dark:bg-zinc-800"
+                             ? "shadow-xl"
+                              : "bg-zinc-100 dark:bg-zinc-900"
                           }`}
                           style={isActive? {
-                            background: `linear-gradient(135deg, ${cat.color}20, ${cat.color}10)`,
-                            borderColor: cat.color,
-                            borderWidth: '2px'
+                            background: `linear-gradient(135deg, ${cat.color}15, ${cat.color}08)`,
+                            boxShadow: `0 8px 24px ${cat.color}30, inset 0 0 0 2px ${cat.color}`
                           } : {}}
                         >
-                          <span className="text-2xl">{cat.icon}</span>
-                          <span className={`text-[10px] font-bold leading-tight text-center ${isActive? "text-zinc-900 dark:text-zinc-100" : "text-zinc-600 dark:text-zinc-400"}`}>
+                          <span className="text-[28px]">{cat.icon}</span>
+                          <span className={`text-[11px] font-bold leading-tight text-center px-1 ${isActive? "text-zinc-900 dark:text-zinc-100" : "text-zinc-600 dark:text-zinc-400"}`}>
                             {cat.label}
                           </span>
-                          {isActive && (
-                            <div className="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: cat.color }}>
-                              <Check size={10} className="text-white" strokeWidth={3} />
-                            </div>
-                          )}
+                          <AnimatePresence>
+                            {isActive && (
+                              <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                exit={{ scale: 0 }}
+                                className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center shadow-lg"
+                                style={{ background: cat.color }}
+                              >
+                                <Check size={12} className="text-white" strokeWidth={3.5} />
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </motion.button>
                       );
                     })}
                   </div>
                 </div>
 
+                {/* Trending Tags */}
                 <div>
-                  <h3 className="text-xs font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <Flame size={14} className="text-[#FF9500]" />
-                    Đang thịnh hành
+                  <h3 className="text-[13px] font-bold text-zinc-500 dark:text-zinc-500 uppercase tracking-wide mb-3 px-1 flex items-center gap-1.5">
+                    <Flame size={16} className="text-[#FF9500]" fill="#FF9500" />
+                    Thịnh hành
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {["#viecgap", "#luongcao", "#uytin", "#ganday", "#nhannngay"].map((tag) => (
@@ -315,7 +365,7 @@ export default function CustomFilterBar({
                         key={tag}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => { haptics.light(); setLocalQuery(tag); }}
-                        className="px-3 h-8 rounded-xl bg-gradient-to-r from-[#FF9500]/10 to-[#FFD60A]/10 text-[#FF9500] dark:text-[#FFD60A] font-bold text-xs hover:from-[#FF9500]/20 hover:to-[#FFD60A]/20 transition-all"
+                        className="px-4 h-9 rounded-2xl bg-gradient-to-br from-[#FF9500]/15 to-[#FFD60A]/10 text-[#FF9500] dark:text-[#FFD60A] font-semibold text-[13px] hover:from-[#FF9500]/25 hover:to-[#FFD60A]/20 transition-all border border-[#FF9500]/20"
                       >
                         {tag}
                       </motion.button>
@@ -324,22 +374,34 @@ export default function CustomFilterBar({
                 </div>
               </div>
 
-              <div className="flex gap-2 mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-                <motion.button
-                  whileTap={{ scale: 0.96 }}
-                  onClick={onCloseSearch}
-                  className="flex-1 h-11 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-black text-sm hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-                >
-                  Hủy
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.96 }}
-                  onClick={handleApply}
-                  className="flex-1 h-11 rounded-2xl text-white font-black text-sm shadow-lg"
-                  style={{ background: currentTheme.bgGradient }}
-                >
-                  Áp dụng ({activeFilterCount})
-                </motion.button>
+              {/* Footer Actions */}
+              <div
+                className="absolute bottom-0 left-0 right-0 px-4 pt-4 pb-4 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border-t border-zinc-200/50 dark:border-zinc-800/50"
+                style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
+              >
+                <div className="flex gap-3">
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    onClick={onCloseSearch}
+                    className="h-14 rounded-2xl bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 font-bold text-[15px] px-6 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
+                  >
+                    Hủy
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    onClick={handleApply}
+                    className="flex-1 h-14 rounded-2xl text-white font-bold text-[15px] shadow-xl relative overflow-hidden"
+                    style={{
+                      background: currentTheme.bgGradient,
+                      boxShadow: `0 12px 32px ${currentTheme.glow}`
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+                    <span className="relative">
+                      Áp dụng {activeFilterCount > 0 && `(${activeFilterCount})`}
+                    </span>
+                  </motion.button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
