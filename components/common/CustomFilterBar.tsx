@@ -7,6 +7,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useProvinces } from "@/lib/useProvinces";
 
+
 const haptics = {
   light: () => navigator?.vibrate?.(5),
   medium: () => navigator?.vibrate?.([8, 15, 8]),
