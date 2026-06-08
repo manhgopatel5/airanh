@@ -449,35 +449,36 @@ export default function CustomFilterBar({
                             </div>
                           )}
                         </button>
-                        {provinces.map((prov) => {
-                          const isActive = provinceId === prov.id;
-                          return (
-                            <button
-                              key={prov.id}
-                              onClick={() => {
-                                haptics.light();
-                                setProvinceId(prov.id);
-                                setWardId(null);
-                              }}
-                              className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
-                              style={{
-                                border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
-                              }}
-                            >
-                              <div className="flex-1 text-left">
-                                <div className={`text-sm font-serif font-bold ${
-                                  isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
-                                }`}>
-                                  {prov.name}
-                                </div>
-                              {isActive && (
-                                <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: currentTheme.bg }}>
-                                  <Check size={12} className="text-white" strokeWidth={3.5} />
-                                </div>
-                              )}
-                            </button>
-                          );
-                        })}
+                   {provinces.map((prov) => {
+  const isActive = provinceId === prov.id;
+  return (
+    <button
+      key={prov.id}
+      onClick={() => {
+        haptics.light();
+        setProvinceId(prov.id);
+        setWardId(null);
+      }}
+      className="relative w-full h-14 rounded-[20px] flex items-center px-4 transition-all overflow-hidden bg-zinc-100/60 dark:bg-zinc-900/60"
+      style={{
+        border: isActive? `2px solid ${currentTheme.bg}` : '1px solid rgba(0,0,0,0.04)',
+      }}
+    >
+      <div className="flex-1 text-left">
+        <div className={`text-sm font-serif font-bold ${
+          isActive? "text-zinc-900 dark:text-white" : "text-zinc-700 dark:text-zinc-300"
+        }`}>
+          {prov.name}
+        </div>
+      </div>
+      {isActive && (
+        <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: currentTheme.bg }}>
+          <Check size={12} className="text-white" strokeWidth={3.5} />
+        </div>
+      )}
+    </button>
+  );
+})}
                       </div>
 
                       {districts.length > 0 && (
