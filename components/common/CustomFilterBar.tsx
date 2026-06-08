@@ -227,7 +227,7 @@ export default function CustomFilterBar({
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className="absolute inset-0 bg-white dark:bg-zinc-950 flex-col"
+className="absolute inset-0 bg-white dark:bg-zinc-950 flex flex-col h-full"
             style={{ paddingTop: "env(safe-area-inset-top)" }}
           >
             {/* Header */}
