@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import useSWR from "swr";
 import { FiInbox, FiRefreshCw, FiSearch } from "react-icons/fi";
