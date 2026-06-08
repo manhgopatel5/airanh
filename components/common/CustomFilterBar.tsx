@@ -5,7 +5,7 @@ import { Search, X, ArrowLeft, ArrowUp, ArrowDown, Star, Clock, Check, ChevronDo
 import { useAppStore } from "@/store/app";
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { useProvinces } from "@/lib/useProvinces";
+
 
 const haptics = {
   light: () => navigator?.vibrate?.(5),
