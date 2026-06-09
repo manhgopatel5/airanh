@@ -35,7 +35,7 @@ function getFirebaseAdmin() {
     try {
       app = initializeApp({
         credential: cert(getServiceAccount()),
-    ...(process.env.FIREBASE_DATABASE_URL && {
+       ...(process.env.FIREBASE_DATABASE_URL && {
           databaseURL: process.env.FIREBASE_DATABASE_URL,
         }),
       });
@@ -95,10 +95,6 @@ export async function getJobsFromFirebaseAdmin(
 
   const { db } = getFirebaseAdmin();
 
-  const allowedStatuses = type === 'plan'
-? ['open', 'pending', 'full', 'doing', 'in_progress']
-    : ['open', 'pending', 'full', 'doing'];
-
   const selectedFields = [
     'slug', 'shortId', 'title', 'description', 'type', 'status', 'visibility',
     'userId', 'userName', 'userAvatar', 'userShortId', 'userUsername', 'userVerified',
@@ -110,17 +106,20 @@ export async function getJobsFromFirebaseAdmin(
     'costType', 'costAmount', 'costDescription', 'milestones'
   ];
 
-let query: Query = db.collection('tasks')
-  .where('type', '==', type)
-  .where('status', 'in', allowedStatuses)  // BỎ ĐIỀU KIỆN if (!category)
+  // FIX 1: Dùng == thay vì 'in' để match index type+status+price
+  let query: Query = db.collection('tasks')
+   .where('type', '==', type)
+   .where('status', '==', 'open'); // Chỉ lấy task open
+
+  // FIX 2: Bỏ where banned/hidden khỏi query vì chưa có index
+  // Sẽ filter lại bằng code ở dưới
 
   // Filter category
   if (category) {
     query = query.where('category', '==', category);
   }
 
-  // Filter price
-  const hasPriceFilter = minPrice!== undefined || maxPrice!== undefined;
+  // Filter price - chỉ cho task
   if (type === 'task') {
     if (minPrice!== undefined) {
       query = query.where('price', '>=', minPrice);
@@ -130,30 +129,17 @@ let query: Query = db.collection('tasks')
     }
   }
 
-  // Logic orderBy đúng với Firestore
-  if (hasPriceFilter) {
-    if (sortBy === 'price_desc') {
-      query = query.orderBy('price', 'desc');
-    } else {
-      query = query.orderBy('price', 'asc');
-    }
-    if (sortBy === 'new') {
-      query = query.orderBy('createdAt', 'desc');
-    } else if (sortBy === 'views') {
-      query = query.orderBy('viewCount', 'desc');
-    }
+  // FIX 3: orderBy đơn giản, không lồng nhau
+  if (sortBy === 'hot') {
+    query = query.orderBy('hotScore', 'desc');
+  } else if (sortBy === 'views') {
+    query = query.orderBy('viewCount', 'desc');
+  } else if (sortBy === 'price_asc') {
+    query = query.orderBy('price', 'asc');
+  } else if (sortBy === 'price_desc') {
+    query = query.orderBy('price', 'desc');
   } else {
-    if (sortBy === 'hot') {
-      query = query.orderBy('hotScore', 'desc');
-    } else if (sortBy === 'views') {
-      query = query.orderBy('viewCount', 'desc');
-    } else if (sortBy === 'price_asc') {
-      query = query.orderBy('price', 'asc');
-    } else if (sortBy === 'price_desc') {
-      query = query.orderBy('price', 'desc');
-    } else {
-      query = query.orderBy('createdAt', 'desc');
-    }
+    query = query.orderBy('createdAt', 'desc');
   }
 
   // Pagination
@@ -173,28 +159,14 @@ let query: Query = db.collection('tasks')
     console.error('Firestore query error:', error?.code, error?.message);
     if (error?.code === 9 || error?.code === 'FAILED_PRECONDITION') {
       console.warn('Index missing. Create index for:', {
-        type, hasPriceFilter, sortBy, category:!!category
+        type, sortBy, category:!!category, minPrice, maxPrice
       });
-      // Fallback
-      let fallbackQuery: Query = db.collection('tasks').where('type', '==', type);
-
-      if (!category) {
-        fallbackQuery = fallbackQuery.where('status', 'in', allowedStatuses);
-      }
-      if (category) {
-        fallbackQuery = fallbackQuery.where('category', '==', category);
-      }
-      if (minPrice!== undefined) fallbackQuery = fallbackQuery.where('price', '>=', minPrice);
-      if (maxPrice!== undefined) fallbackQuery = fallbackQuery.where('price', '<=', maxPrice);
-
-      fallbackQuery = fallbackQuery.orderBy('createdAt', 'desc').limit(limitCount);
-      snap = await fallbackQuery.select(...selectedFields).get();
-    } else {
       throw error;
     }
+    throw error;
   }
 
-  console.log('>>> Firestore docs:', snap.size, 'sortBy:', sortBy, 'category:', category, 'priceFilter:', hasPriceFilter);
+  console.log('>>> Firestore docs:', snap.size, 'sortBy:', sortBy, 'category:', category);
 
   const tasks = snap.docs.map(doc => {
     const d = doc.data();
@@ -210,16 +182,16 @@ let query: Query = db.collection('tasks')
       userId: d.userId || "",
       userName: d.userName || "",
       userAvatar: d.userAvatar || "",
-  ...(d.userVerified!== undefined && { userVerified: d.userVerified }),
-  ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
-  ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
+     ...(d.userVerified!== undefined && { userVerified: d.userVerified }),
+     ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
+     ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
       price: d.price?? 0,
       currency: d.currency || "VND",
       totalSlots: d.totalSlots?? d.maxParticipants?? 0,
       joined: d.joined?? 0,
       budgetType: d.budgetType || "fixed",
-  ...(d.paymentMethod!== undefined && { paymentMethod: d.paymentMethod }),
-  ...(d.isRemote!== undefined && { isRemote: d.isRemote }),
+     ...(d.paymentMethod!== undefined && { paymentMethod: d.paymentMethod }),
+     ...(d.isRemote!== undefined && { isRemote: d.isRemote }),
       category: d.category || "",
       tags: Array.isArray(d.tags)? d.tags : [],
       images: Array.isArray(d.images)? d.images : [],
@@ -227,36 +199,36 @@ let query: Query = db.collection('tasks')
       likeCount: d.likeCount?? 0,
       commentCount: d.commentCount?? 0,
       likes: [],
-  ...(d.location!== undefined && { location: d.location }),
+     ...(d.location!== undefined && { location: d.location }),
       savedBy: [],
       applicants: [],
       banned: d.banned === true,
       hidden: d.hidden === true,
-  ...(d.appliedCount!== undefined && { appliedCount: d.appliedCount }),
-  ...(d.maxParticipants!== undefined && { maxParticipants: d.maxParticipants }),
-  ...(d.currentParticipants!== undefined && { currentParticipants: d.currentParticipants }),
-  ...(d.costType!== undefined && { costType: d.costType }),
-  ...(d.costAmount!== undefined && { costAmount: d.costAmount }),
-  ...(d.costDescription!== undefined && { costDescription: d.costDescription }),
-  ...(d.milestones!== undefined && { milestones: d.milestones }),
+     ...(d.appliedCount!== undefined && { appliedCount: d.appliedCount }),
+     ...(d.maxParticipants!== undefined && { maxParticipants: d.maxParticipants }),
+     ...(d.currentParticipants!== undefined && { currentParticipants: d.currentParticipants }),
+     ...(d.costType!== undefined && { costType: d.costType }),
+     ...(d.costAmount!== undefined && { costAmount: d.costAmount }),
+     ...(d.costDescription!== undefined && { costDescription: d.costDescription }),
+     ...(d.milestones!== undefined && { milestones: d.milestones }),
       createdAt: tsToString(d.createdAt),
-  ...(d.updatedAt && { updatedAt: tsToString(d.updatedAt) }),
-  ...(d.deadline && { deadline: tsToString(d.deadline) }),
-  ...(d.startDate && { startDate: tsToString(d.startDate) }),
-  ...(d.applicationDeadline && { applicationDeadline: tsToString(d.applicationDeadline) }),
-  ...(d.eventDate && { eventDate: tsToString(d.eventDate) }),
-  ...(d.endDate && { endDate: tsToString(d.endDate) }),
+     ...(d.updatedAt && { updatedAt: tsToString(d.updatedAt) }),
+     ...(d.deadline && { deadline: tsToString(d.deadline) }),
+     ...(d.startDate && { startDate: tsToString(d.startDate) }),
+     ...(d.applicationDeadline && { applicationDeadline: tsToString(d.applicationDeadline) }),
+     ...(d.eventDate && { eventDate: tsToString(d.eventDate) }),
+     ...(d.endDate && { endDate: tsToString(d.endDate) }),
     };
 
     return taskData as FeedTask;
   }).filter((task) => 
-    task.visibility !== 'private' && 
-    task.banned !== true && 
-    task.hidden !== true
+    task.visibility!== 'private' && 
+    task.banned!== true && 
+    task.hidden!== true
   );
 
   const lastDoc = snap.docs[snap.docs.length - 1];
-  const nextCursor = lastDoc ? lastDoc.id : null;
+  const nextCursor = lastDoc? lastDoc.id : null;
 
   return { tasks, nextCursor };
 }
@@ -317,7 +289,7 @@ export async function sendNotification(
       notification: {
         icon: "ic_notification",
         color: "#3B82F6",
-    ...(priority === "high" && { sound: "default" }),
+       ...(priority === "high" && { sound: "default" }),
       },
     },
     apns: {
@@ -325,7 +297,7 @@ export async function sendNotification(
       payload: {
         aps: {
           badge: 1,
-      ...(priority === "high" && { sound: "default" }),
+         ...(priority === "high" && { sound: "default" }),
           "content-available": 1,
         },
       },
