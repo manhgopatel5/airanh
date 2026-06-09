@@ -322,7 +322,10 @@ const { data: provinces = [], isLoading: loadingProvinces, error: provinceError 
   }
 );
 
-const { data: districts = [] } = useSWR<District[]>(
+const { 
+  data: districts = [], 
+  isLoading: loadingDistricts  // THÊM LẠI DÒNG NÀY
+} = useSWR<District[]>(
   form.location.provinceId ? ["/api/location/district", form.location.provinceId] : null,
   ([url, id]) => fetch(url, {
     method: "POST",
@@ -343,7 +346,10 @@ const { data: districts = [] } = useSWR<District[]>(
   }
 );
 
-const { data: wards = [] } = useSWR<Ward[]>(
+const { 
+  data: wards = [],
+  isLoading: loadingWards  // THÊM LẠI DÒNG NÀY
+} = useSWR<Ward[]>(
   form.location.districtId ? ["/api/location/ward", form.location.districtId] : null,
   ([url, id]) => fetch(url, {
     method: "POST",
@@ -363,7 +369,6 @@ const { data: wards = [] } = useSWR<Ward[]>(
     dedupingInterval: 60000,
   }
 );
-// Reset district/ward khi province thay đổi
 useEffect(() => {
   if (!form.location.provinceId) {
     updateLocation({
