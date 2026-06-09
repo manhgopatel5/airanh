@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Timestamp } from "firebase/firestore";
-import { mutate } from "swr";
+import { useSWRConfig } from "swr";
 import useSWRImmutable from 'swr/immutable';
 
 import TaskCard from "@/components/task/TaskCard"; // đường dẫn đúng của bạn
@@ -298,6 +298,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   }, []);
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { mutate } = useSWRConfig(); 
   const [form, setForm] = useState<FormState>(() => initialForm(mode));
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState<Partial<Record<keyof FormState, boolean>>>({});
