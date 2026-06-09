@@ -35,7 +35,7 @@ function getFirebaseAdmin() {
     try {
       app = initializeApp({
         credential: cert(getServiceAccount()),
-      ...(process.env.FIREBASE_DATABASE_URL && {
+     ...(process.env.FIREBASE_DATABASE_URL && {
           databaseURL: process.env.FIREBASE_DATABASE_URL,
         }),
       });
@@ -74,10 +74,10 @@ export type GetJobsOptions = {
   type?: 'task' | 'plan';
   limitCount?: number;
   sortBy?: 'hot' | 'new' | 'views' | 'price_asc' | 'price_desc';
-  categories?: string[];
+  category?: string; // CHANGED: categories -> category
   minPrice?: number;
   maxPrice?: number;
-  cursor?: string; // FIX: dùng doc ID thay vì timestamp
+  cursor?: string;
 };
 
 export async function getJobsFromFirebaseAdmin(
@@ -87,7 +87,7 @@ export async function getJobsFromFirebaseAdmin(
     type = 'task',
     limitCount = 10,
     sortBy = 'new',
-    categories,
+    category, // CHANGED
     minPrice,
     maxPrice,
     cursor
@@ -96,7 +96,7 @@ export async function getJobsFromFirebaseAdmin(
   const { db } = getFirebaseAdmin();
 
   const allowedStatuses = type === 'plan'
-  ? ['open', 'pending', 'full', 'doing', 'in_progress']
+ ? ['open', 'pending', 'full', 'doing', 'in_progress']
     : ['open', 'pending', 'full', 'doing'];
 
   const selectedFields = [
@@ -111,13 +111,12 @@ export async function getJobsFromFirebaseAdmin(
   ];
 
   let query: Query = db.collection('tasks')
-  .where('type', '==', type)
-  .where('status', 'in', allowedStatuses);
+ .where('type', '==', type)
+ .where('status', 'in', allowedStatuses);
 
-
-  // Filter category
-  if (categories && categories.length > 0) {
-    query = query.where('category', 'in', categories.slice(0, 10));
+  // CHANGED: Filter category - dùng '==' thay vì 'in'
+  if (category) {
+    query = query.where('category', '==', category);
   }
 
   // Filter price
@@ -178,16 +177,16 @@ export async function getJobsFromFirebaseAdmin(
     console.error('Firestore query error:', error?.code, error?.message);
     if (error?.code === 9 || error?.code === 'FAILED_PRECONDITION') {
       console.warn('Index missing. Create index for:', {
-        type, hasPriceFilter, sortBy, categories:!!categories
+        type, hasPriceFilter, sortBy, category:!!category
       });
       // Fallback: bỏ sort phức tạp
       let fallbackQuery: Query = db.collection('tasks')
-      .where('type', '==', type)
-      .where('status', 'in', allowedStatuses);
-     
+     .where('type', '==', type)
+     .where('status', 'in', allowedStatuses);
 
-      if (categories && categories.length > 0) {
-        fallbackQuery = fallbackQuery.where('category', 'in', categories.slice(0, 10));
+      // CHANGED: categories -> category
+      if (category) {
+        fallbackQuery = fallbackQuery.where('category', '==', category);
       }
       if (minPrice!== undefined) fallbackQuery = fallbackQuery.where('price', '>=', minPrice);
       if (maxPrice!== undefined) fallbackQuery = fallbackQuery.where('price', '<=', maxPrice);
@@ -215,16 +214,16 @@ export async function getJobsFromFirebaseAdmin(
       userId: d.userId || "",
       userName: d.userName || "",
       userAvatar: d.userAvatar || "",
-    ...(d.userVerified!== undefined && { userVerified: d.userVerified }),
-    ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
-    ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
+   ...(d.userVerified!== undefined && { userVerified: d.userVerified }),
+   ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
+   ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
       price: d.price?? 0,
       currency: d.currency || "VND",
       totalSlots: d.totalSlots?? d.maxParticipants?? 0,
       joined: d.joined?? 0,
       budgetType: d.budgetType || "fixed",
-    ...(d.paymentMethod!== undefined && { paymentMethod: d.paymentMethod }),
-    ...(d.isRemote!== undefined && { isRemote: d.isRemote }),
+   ...(d.paymentMethod!== undefined && { paymentMethod: d.paymentMethod }),
+   ...(d.isRemote!== undefined && { isRemote: d.isRemote }),
       category: d.category || "",
       tags: Array.isArray(d.tags)? d.tags : [],
       images: Array.isArray(d.images)? d.images : [],
@@ -232,32 +231,32 @@ export async function getJobsFromFirebaseAdmin(
       likeCount: d.likeCount?? 0,
       commentCount: d.commentCount?? 0,
       likes: [],
-    ...(d.location!== undefined && { location: d.location }),
+   ...(d.location!== undefined && { location: d.location }),
       savedBy: [],
       applicants: [],
       banned: d.banned === true,
       hidden: d.hidden === true,
-    ...(d.appliedCount!== undefined && { appliedCount: d.appliedCount }),
-    ...(d.maxParticipants!== undefined && { maxParticipants: d.maxParticipants }),
-    ...(d.currentParticipants!== undefined && { currentParticipants: d.currentParticipants }),
-    ...(d.costType!== undefined && { costType: d.costType }),
-    ...(d.costAmount!== undefined && { costAmount: d.costAmount }),
-    ...(d.costDescription!== undefined && { costDescription: d.costDescription }),
-    ...(d.milestones!== undefined && { milestones: d.milestones }),
+   ...(d.appliedCount!== undefined && { appliedCount: d.appliedCount }),
+   ...(d.maxParticipants!== undefined && { maxParticipants: d.maxParticipants }),
+   ...(d.currentParticipants!== undefined && { currentParticipants: d.currentParticipants }),
+   ...(d.costType!== undefined && { costType: d.costType }),
+   ...(d.costAmount!== undefined && { costAmount: d.costAmount }),
+   ...(d.costDescription!== undefined && { costDescription: d.costDescription }),
+   ...(d.milestones!== undefined && { milestones: d.milestones }),
       createdAt: tsToString(d.createdAt),
-    ...(d.updatedAt && { updatedAt: tsToString(d.updatedAt) }),
-    ...(d.deadline && { deadline: tsToString(d.deadline) }),
-    ...(d.startDate && { startDate: tsToString(d.startDate) }),
-    ...(d.applicationDeadline && { applicationDeadline: tsToString(d.applicationDeadline) }),
-    ...(d.eventDate && { eventDate: tsToString(d.eventDate) }),
-    ...(d.endDate && { endDate: tsToString(d.endDate) }),
+   ...(d.updatedAt && { updatedAt: tsToString(d.updatedAt) }),
+   ...(d.deadline && { deadline: tsToString(d.deadline) }),
+   ...(d.startDate && { startDate: tsToString(d.startDate) }),
+   ...(d.applicationDeadline && { applicationDeadline: tsToString(d.applicationDeadline) }),
+   ...(d.eventDate && { eventDate: tsToString(d.eventDate) }),
+   ...(d.endDate && { endDate: tsToString(d.endDate) }),
     };
 
     return taskData as FeedTask;
   }).filter((task) => task.banned!== true && task.hidden!== true && task.visibility!== 'private');
 
   const lastDoc = snap.docs[snap.docs.length - 1];
-  const nextCursor = lastDoc? lastDoc.id : null; // FIX: dùng doc ID
+  const nextCursor = lastDoc? lastDoc.id : null;
 
   return { tasks, nextCursor };
 }
@@ -318,7 +317,7 @@ export async function sendNotification(
       notification: {
         icon: "ic_notification",
         color: "#3B82F6",
-      ...(priority === "high" && { sound: "default" }),
+     ...(priority === "high" && { sound: "default" }),
       },
     },
     apns: {
@@ -326,7 +325,7 @@ export async function sendNotification(
       payload: {
         aps: {
           badge: 1,
-        ...(priority === "high" && { sound: "default" }),
+       ...(priority === "high" && { sound: "default" }),
           "content-available": 1,
         },
       },
