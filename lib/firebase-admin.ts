@@ -35,7 +35,7 @@ function getFirebaseAdmin() {
     try {
       app = initializeApp({
         credential: cert(getServiceAccount()),
-     ...(process.env.FIREBASE_DATABASE_URL && {
+    ...(process.env.FIREBASE_DATABASE_URL && {
           databaseURL: process.env.FIREBASE_DATABASE_URL,
         }),
       });
@@ -74,7 +74,7 @@ export type GetJobsOptions = {
   type?: 'task' | 'plan';
   limitCount?: number;
   sortBy?: 'hot' | 'new' | 'views' | 'price_asc' | 'price_desc';
-  category?: string; // CHANGED: categories -> category
+  category?: string;
   minPrice?: number;
   maxPrice?: number;
   cursor?: string;
@@ -87,7 +87,7 @@ export async function getJobsFromFirebaseAdmin(
     type = 'task',
     limitCount = 10,
     sortBy = 'new',
-    category, // CHANGED
+    category,
     minPrice,
     maxPrice,
     cursor
@@ -96,7 +96,7 @@ export async function getJobsFromFirebaseAdmin(
   const { db } = getFirebaseAdmin();
 
   const allowedStatuses = type === 'plan'
- ? ['open', 'pending', 'full', 'doing', 'in_progress']
+? ['open', 'pending', 'full', 'doing', 'in_progress']
     : ['open', 'pending', 'full', 'doing'];
 
   const selectedFields = [
@@ -110,11 +110,15 @@ export async function getJobsFromFirebaseAdmin(
     'costType', 'costAmount', 'costDescription', 'milestones'
   ];
 
-  let query: Query = db.collection('tasks')
- .where('type', '==', type)
- .where('status', 'in', allowedStatuses);
+  // CHANGED: Bỏ where('status', 'in') để tránh lỗi index khi có category
+  let query: Query = db.collection('tasks').where('type', '==', type);
 
-  // CHANGED: Filter category - dùng '==' thay vì 'in'
+  // CHANGED: Chỉ filter status khi KHÔNG có category
+  if (!category) {
+    query = query.where('status', 'in', allowedStatuses);
+  }
+
+  // Filter category
   if (category) {
     query = query.where('category', '==', category);
   }
@@ -130,23 +134,19 @@ export async function getJobsFromFirebaseAdmin(
     }
   }
 
-  // FIX: Logic orderBy đúng với Firestore
-  // Rule: Nếu có range filter trên field X thì orderBy đầu tiên phải là X
+  // Logic orderBy đúng với Firestore
   if (hasPriceFilter) {
-    // Có filter price -> bắt buộc orderBy price trước
     if (sortBy === 'price_desc') {
       query = query.orderBy('price', 'desc');
     } else {
-      query = query.orderBy('price', 'asc'); // default khi có price filter
+      query = query.orderBy('price', 'asc');
     }
-    // Secondary sort để ổn định
     if (sortBy === 'new') {
       query = query.orderBy('createdAt', 'desc');
     } else if (sortBy === 'views') {
       query = query.orderBy('viewCount', 'desc');
     }
   } else {
-    // Không có filter price -> sort tự do
     if (sortBy === 'hot') {
       query = query.orderBy('hotScore', 'desc');
     } else if (sortBy === 'views') {
@@ -156,7 +156,7 @@ export async function getJobsFromFirebaseAdmin(
     } else if (sortBy === 'price_desc') {
       query = query.orderBy('price', 'desc');
     } else {
-      query = query.orderBy('createdAt', 'desc'); // new
+      query = query.orderBy('createdAt', 'desc');
     }
   }
 
@@ -179,12 +179,12 @@ export async function getJobsFromFirebaseAdmin(
       console.warn('Index missing. Create index for:', {
         type, hasPriceFilter, sortBy, category:!!category
       });
-      // Fallback: bỏ sort phức tạp
-      let fallbackQuery: Query = db.collection('tasks')
-     .where('type', '==', type)
-     .where('status', 'in', allowedStatuses);
+      // Fallback
+      let fallbackQuery: Query = db.collection('tasks').where('type', '==', type);
 
-      // CHANGED: categories -> category
+      if (!category) {
+        fallbackQuery = fallbackQuery.where('status', 'in', allowedStatuses);
+      }
       if (category) {
         fallbackQuery = fallbackQuery.where('category', '==', category);
       }
@@ -198,7 +198,7 @@ export async function getJobsFromFirebaseAdmin(
     }
   }
 
-  console.log('>>> Firestore docs:', snap.size, 'sortBy:', sortBy, 'priceFilter:', hasPriceFilter);
+  console.log('>>> Firestore docs:', snap.size, 'sortBy:', sortBy, 'category:', category, 'priceFilter:', hasPriceFilter);
 
   const tasks = snap.docs.map(doc => {
     const d = doc.data();
@@ -214,16 +214,16 @@ export async function getJobsFromFirebaseAdmin(
       userId: d.userId || "",
       userName: d.userName || "",
       userAvatar: d.userAvatar || "",
-   ...(d.userVerified!== undefined && { userVerified: d.userVerified }),
-   ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
-   ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
+  ...(d.userVerified!== undefined && { userVerified: d.userVerified }),
+  ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
+  ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
       price: d.price?? 0,
       currency: d.currency || "VND",
       totalSlots: d.totalSlots?? d.maxParticipants?? 0,
       joined: d.joined?? 0,
       budgetType: d.budgetType || "fixed",
-   ...(d.paymentMethod!== undefined && { paymentMethod: d.paymentMethod }),
-   ...(d.isRemote!== undefined && { isRemote: d.isRemote }),
+  ...(d.paymentMethod!== undefined && { paymentMethod: d.paymentMethod }),
+  ...(d.isRemote!== undefined && { isRemote: d.isRemote }),
       category: d.category || "",
       tags: Array.isArray(d.tags)? d.tags : [],
       images: Array.isArray(d.images)? d.images : [],
@@ -231,29 +231,35 @@ export async function getJobsFromFirebaseAdmin(
       likeCount: d.likeCount?? 0,
       commentCount: d.commentCount?? 0,
       likes: [],
-   ...(d.location!== undefined && { location: d.location }),
+  ...(d.location!== undefined && { location: d.location }),
       savedBy: [],
       applicants: [],
       banned: d.banned === true,
       hidden: d.hidden === true,
-   ...(d.appliedCount!== undefined && { appliedCount: d.appliedCount }),
-   ...(d.maxParticipants!== undefined && { maxParticipants: d.maxParticipants }),
-   ...(d.currentParticipants!== undefined && { currentParticipants: d.currentParticipants }),
-   ...(d.costType!== undefined && { costType: d.costType }),
-   ...(d.costAmount!== undefined && { costAmount: d.costAmount }),
-   ...(d.costDescription!== undefined && { costDescription: d.costDescription }),
-   ...(d.milestones!== undefined && { milestones: d.milestones }),
+  ...(d.appliedCount!== undefined && { appliedCount: d.appliedCount }),
+  ...(d.maxParticipants!== undefined && { maxParticipants: d.maxParticipants }),
+  ...(d.currentParticipants!== undefined && { currentParticipants: d.currentParticipants }),
+  ...(d.costType!== undefined && { costType: d.costType }),
+  ...(d.costAmount!== undefined && { costAmount: d.costAmount }),
+  ...(d.costDescription!== undefined && { costDescription: d.costDescription }),
+  ...(d.milestones!== undefined && { milestones: d.milestones }),
       createdAt: tsToString(d.createdAt),
-   ...(d.updatedAt && { updatedAt: tsToString(d.updatedAt) }),
-   ...(d.deadline && { deadline: tsToString(d.deadline) }),
-   ...(d.startDate && { startDate: tsToString(d.startDate) }),
-   ...(d.applicationDeadline && { applicationDeadline: tsToString(d.applicationDeadline) }),
-   ...(d.eventDate && { eventDate: tsToString(d.eventDate) }),
-   ...(d.endDate && { endDate: tsToString(d.endDate) }),
+  ...(d.updatedAt && { updatedAt: tsToString(d.updatedAt) }),
+  ...(d.deadline && { deadline: tsToString(d.deadline) }),
+  ...(d.startDate && { startDate: tsToString(d.startDate) }),
+  ...(d.applicationDeadline && { applicationDeadline: tsToString(d.applicationDeadline) }),
+  ...(d.eventDate && { eventDate: tsToString(d.eventDate) }),
+  ...(d.endDate && { endDate: tsToString(d.endDate) }),
     };
 
     return taskData as FeedTask;
-  }).filter((task) => task.banned!== true && task.hidden!== true && task.visibility!== 'private');
+  }).filter((task) =>
+    // CHANGED: Filter status bằng code khi có category
+    allowedStatuses.includes(task.status) &&
+    task.banned!== true &&
+    task.hidden!== true &&
+    task.visibility!== 'private'
+  );
 
   const lastDoc = snap.docs[snap.docs.length - 1];
   const nextCursor = lastDoc? lastDoc.id : null;
@@ -317,7 +323,7 @@ export async function sendNotification(
       notification: {
         icon: "ic_notification",
         color: "#3B82F6",
-     ...(priority === "high" && { sound: "default" }),
+    ...(priority === "high" && { sound: "default" }),
       },
     },
     apns: {
@@ -325,7 +331,7 @@ export async function sendNotification(
       payload: {
         aps: {
           badge: 1,
-       ...(priority === "high" && { sound: "default" }),
+      ...(priority === "high" && { sound: "default" }),
           "content-available": 1,
         },
       },
