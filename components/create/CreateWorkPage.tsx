@@ -701,13 +701,20 @@ await mutate("/api/tasks?type=plan&limit=20");
       <div className="sticky top-0 z-40 border-b border-zinc-200/60 bg-white/90 backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-950/90">
         <div className="mx-auto max-w-2xl px-4 py-4">
           <div className="mb-4 flex items-center justify-between">
-            <button
-              onClick={() => step > 0 ? setStep((s) => s - 1) : router.back()}
-              className="flex h-10 w-10 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-700 transition-all hover:bg-zinc-200 active:scale-95 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
-              aria-label="Quay lại"
-            >
-              <FiArrowLeft className="text-lg" />
-            </button>
+ <button
+  onClick={() => {
+    if (step > 0) {
+      setStep((s) => s - 1);
+    } else {
+      localStorage.removeItem(draftKey); // Xóa draft trước khi thoát
+      router.back();
+    }
+  }}
+  className="flex h-10 w-10 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-700 transition-all hover:bg-zinc-200 active:scale-95 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+  aria-label="Quay lại"
+>
+  <FiArrowLeft className="text-lg" />
+</button>
             <div className="text-center">
               <h1 className="text-lg font-black">Tạo {isTask ? "Công việc" : "Sự kiện"}</h1>
               <p className="text-xs text-zinc-500">Bước {step + 1} / 4</p>
