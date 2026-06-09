@@ -89,6 +89,8 @@ export type BaseItem = {
   commentCount: number;
   shareCount: number;
   bookmarkCount: number;
+  hotScore?: number; // THÊM DÒNG NÀY
+  priceRange?: string; // THÊM DÒNG NÀY
 
   // Relations
   applicants?: string[];
@@ -268,6 +270,8 @@ export type TaskListItem = Pick<
   | "viewCount"
   | "likeCount"
   | "commentCount"
+  | "hotScore" // THÊM DÒNG NÀY
+  | "priceRange" // THÊM DÒNG NÀY
   | "location"
   | "isRemote"
   | "likes"
@@ -305,6 +309,8 @@ export type PlanListItem = Pick<
   | "viewCount"
   | "likeCount"
   | "commentCount"
+  | "hotScore" // THÊM DÒNG NÀY
+  | "priceRange" // THÊM DÒNG NÀY
   | "location"
   | "likes"
   | "userId"
@@ -338,6 +344,8 @@ export type FeedTask = (TaskListItem | PlanListItem) & {
   applicationDeadline?: string | null;
   visibility?: 'public' | 'private' | 'friends'
   shortId?: string;
+  hotScore?: number; // THÊM DÒNG NÀY
+  priceRange?: string; // THÊM DÒNG NÀY
 };
 
 /* ================= PARTICIPANT ================= */
@@ -396,7 +404,7 @@ export const generateTaskSearchKeywords = ({
     location?.city,
     location?.country,
     location?.address,
-   ...tags,
+  ...tags,
   ]
     .filter(Boolean)
     .join(" ")
