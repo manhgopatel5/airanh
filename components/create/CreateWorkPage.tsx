@@ -477,10 +477,11 @@ useEffect(() => {
 }, [draftKey]); // Bỏ mode khỏi deps để không reset khi đổi mode
 
 useEffect(() => {
-  return () => {
-    localStorage.removeItem(draftKey);
-  };
-}, [draftKey]);
+  const timer = setTimeout(() => {
+    localStorage.setItem(draftKey, JSON.stringify(form));
+  }, 500);
+  return () => clearTimeout(timer);
+}, [draftKey, form]);
 
 const requestGPS = useCallback(() => {
   if (!navigator.geolocation) {
