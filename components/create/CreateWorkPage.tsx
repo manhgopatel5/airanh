@@ -477,27 +477,10 @@ useEffect(() => {
 }, [draftKey]); // Bỏ mode khỏi deps để không reset khi đổi mode
 
 useEffect(() => {
-  const timer = setTimeout(() => {
-    const draft = {
-      ...form,
-      location: {
-        address: "",
-        provinceId: null,
-        provinceName: "",
-        districtId: null,
-        districtName: "",
-        wardId: null,
-        wardName: "",
-        lat: undefined,
-        lng: undefined,
-      },
-    };
-
-    localStorage.setItem(draftKey, JSON.stringify(draft));
-  }, 500);
-
-  return () => clearTimeout(timer);
-}, [draftKey, form]);
+  return () => {
+    localStorage.removeItem(draftKey);
+  };
+}, [draftKey]);
 
 const requestGPS = useCallback(() => {
   if (!navigator.geolocation) {
