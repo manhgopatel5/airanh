@@ -339,7 +339,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
                   <button type="button" onClick={goToTask} className="block text-left">
                     <p className="truncate text-sm font-bold text-zinc-950 hover:underline dark:text-white">{task.userName || "AIR user"}</p>
                   </button>
-                  <div className="mt-0.5 flex min-w-0 items-center gap-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                  <div className="mt-0.5 flex min-w-0 items-center gap-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
                     <span className="truncate">{derived.timeAgo}</span>
                   </div>
                 </div>
@@ -369,22 +369,22 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
 
          <div className="mt-3 grid grid-cols-3 gap-1.5">
   <div className="rounded-xl bg-zinc-50/80 p-1.5 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
-    <div className="flex items-center gap-0.5 text-[10px] font-semibold text-zinc-400">
+    <div className="flex items-center gap-0.5 text-[10px] font-bold text-zinc-400">
       <TbCurrencyDong className="h-2.5 w-2.5" /> Giá trị
     </div>
-    <p className="mt-0.5 truncate text-xs font-bold leading-tight text-zinc-950 dark:text-white">{derived.price}</p>
+    <p className="mt-0.5 truncate text-sm font-bold leading-tight text-zinc-950 dark:text-white">{derived.price}</p>
   </div>
   <div className="rounded-xl bg-zinc-50/80 p-1.5 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
-    <div className="flex items-center gap-0.5 text-[10px] font-semibold text-zinc-400">
+    <div className="flex items-center gap-0.5 text-[10px] font-bold text-zinc-400">
       <FiClock className="h-2.5 w-2.5" /> Hạn chót
     </div>
-    <p className="mt-0.5 text-xs font-bold leading-tight text-zinc-950 dark:text-white">{derived.due}</p>
+    <p className="mt-0.5 text-sm font-bold leading-tight text-zinc-950 dark:text-white">{derived.due}</p>
   </div>
   <div className={cn("rounded-xl bg-zinc-50/80 p-1.5 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5", derived.isFull && "ring-red-500/20 bg-red-50 dark:bg-red-950/20")}>
-    <div className="flex items-center gap-0.5 text-[10px] font-semibold text-zinc-400">
+    <div className="flex items-center gap-0.5 text-[10px] font-bold text-zinc-400">
       <FiUsers className="h-2.5 w-2.5" /> Số người
     </div>
-    <p className={cn("mt-0.5 text-xs font-bold leading-tight text-zinc-950 dark:text-white", derived.isFull && "text-red-600 dark:text-red-400")}>
+    <p className={cn("mt-0.5 text-sm font-bold leading-tight text-zinc-950 dark:text-white", derived.isFull && "text-red-600 dark:text-red-400")}>
       {derived.maxSlots? `${derived.currentCount}/${derived.maxSlots}` : "Mở"}
     </p>
   </div>
@@ -398,12 +398,12 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
                 aria-pressed={liked}
                 onClick={(e) => { e.stopPropagation(); handleLike(); }}
                 disabled={liking}
-                className={cn("flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-zinc-700 transition active:scale-95 hover:bg-zinc-100 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}
+                className={cn("flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold text-zinc-700 transition active:scale-95 hover:bg-zinc-100 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}
               >
                 {liked? <HiHeart className="h-4 w-4 text-red-500" /> : <HiOutlineHeart className="h-4 w-4" />}
                 {task.likeCount || 0}
               </button>
-              <button type="button" aria-label="Bình luận" onClick={goToTask} className={cn("flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-zinc-700 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}>
+              <button type="button" aria-label="Bình luận" onClick={goToTask} className={cn("flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold text-zinc-700 transition active:scale-95 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 dark:text-zinc-300 dark:hover:bg-zinc-900", ringClass)}>
                 <FiMessageCircle className="h-4 w-4" />
                 {task.commentCount || 0}
               </button>
@@ -424,7 +424,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
 <div className="flex items-center gap-2">
   {derived.categoryLabel && (
     <div 
-      className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold text-white shadow-sm"
+      className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-bold text-white shadow-sm"
       style={{ background: `linear-gradient(135deg, ${derived.categoryColor}, ${derived.categoryColor}dd)` }}
     >
       <span className="text-sm leading-none">{derived.categoryIcon}</span>
@@ -432,12 +432,12 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
     </div>
   )}
   {derived.provinceName && (
-    <div title={derived.provinceName} className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+    <div title={derived.provinceName} className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-bold text-zinc-500 dark:text-zinc-400">
       <FiMapPin className="h-3 w-3 shrink-0" />
       <span className="truncate max-w-20">{derived.provinceName}</span>
     </div>
   )}
-  <div className="flex items-center gap-1 pr-1 text-xs font-semibold text-zinc-400">
+  <div className="flex items-center gap-1 pr-1 text-sm font-bold text-zinc-400">
     <FiEye className="h-3 w-3" /> {task.viewCount || 0}
   </div>
 </div>
