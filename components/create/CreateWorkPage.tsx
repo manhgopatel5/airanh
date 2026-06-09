@@ -375,22 +375,28 @@ useEffect(() => {
     })
   .then((data) => {
       if (isMounted) {
-        setProvinces(Array.isArray(data)? data : []);
-        setLoadingProvinces(false);
+        setProvinces(Array.isArray(data) ? data : []);
       }
     })
   .catch(() => {
       if (isMounted) {
         toast.error("Không tải được danh sách tỉnh");
-        setProvinces([]);
-        setLoadingProvinces(false);
+        // Fallback data để UI không chết
+        setProvinces([
+          { id: 1, name: "Hà Nội", code: "HN" },
+          { id: 79, name: "TP. Hồ Chí Minh", code: "SG" },
+          { id: 48, name: "Đà Nẵng", code: "DN" },
+        ]);
       }
-    });
+    })
+  .finally(() => {
+      if (isMounted) setLoadingProvinces(false); // <-- LUÔN CHẠY
+  });
 
   return () => {
     isMounted = false;
   };
-}, []); // Chỉ chạy 1 lần khi mount
+}, []);
 
 // Load districts - không reset nếu district hiện tại vẫn hợp lệ
 useEffect(() => {
@@ -911,30 +917,35 @@ await mutate("/api/tasks?type=plan&limit=20");
                   </div>
                 )}
 
-                <Field label="Tỉnh/Thành phố" required error={errors["location.provinceId"]} icon={FiMapPin}>
-                  <select
-                    value={form.location.provinceId || ""}
-                    onChange={(e) => {
-                      const id = Number(e.target.value);
-                      const p = provinces.find(p => p.id === id);
-                      updateLocation({
-                        provinceId: id,
-                        provinceName: p?.name || "",
-                        districtId: null,
-                        districtName: "",
-                        wardId: null,
-                        wardName: ""
-                      });
-                    }}
-                    className="input-premium"
-                    disabled={loadingProvinces}
-                  >
-                    <option value="">{loadingProvinces ? "Đang tải..." : "Chọn tỉnh/thành phố"}</option>
-                    {provinces.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
-                </Field>
+              <Field label="Tỉnh/Thành phố" required error={errors["location.provinceId"]} icon={FiMapPin}>
+  <select
+    value={form.location.provinceId || ""}
+    onChange={(e) => {
+      const id = Number(e.target.value);
+      const p = provinces.find(p => p.id === id);
+      updateLocation({
+        provinceId: id,
+        provinceName: p?.name || "",
+        districtId: null,
+        districtName: "",
+        wardId: null,
+        wardName: ""
+      });
+    }}
+    className="input-premium"
+  >
+    <option value="">
+      {loadingProvinces 
+        ? "Đang tải..." 
+        : provinces.length === 0 
+          ? "Không tải được - thử lại" 
+          : "Chọn tỉnh/thành phố"}
+    </option>
+    {provinces.map((p) => (
+      <option key={p.id} value={p.id}>{p.name}</option>
+    ))}
+  </select>
+</Field>
 
                 {form.location.provinceId && (
                   <Field label="Quận/Huyện" icon={FiMapPin}>
