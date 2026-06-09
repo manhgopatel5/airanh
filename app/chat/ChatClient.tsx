@@ -1060,58 +1060,59 @@ const getNotificationIcon = (type: string) => {
                     <button onClick={handleClearAllNotifications} className="text-[12px] text-[#ff3b30] font-medium">Xóa tất cả</button>
                   </div>
                 </div>
-                {groupedNotifications.today.length > 0 && (
-                  <div>
-                    <div className="px-4 pt-3 pb-1"><p className="text-[12px] font-medium text-[#8e8e93] dark:text-zinc-500 uppercase tracking-wider">Hôm nay</p></div>
-                    <div className="divide-y divide-gray-100 dark:divide-zinc-900">
-                      {groupedNotifications.today.map((notif) => (
-                        <div key={notif.id} className={`px-4 py-3 flex items-start gap-3 ${!notif.read? "bg-[#0a84ff]/[0.04] dark:bg-[#0a84ff]/[0.08]" : ""} hover:bg-gray-50 dark:hover:bg-zinc-900/50 transition-colors`}>
-                          <div className="relative flex-shrink-0 mt-0.5">
-                            <img src={notif.fromAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(notif.fromName)}&background=random`} alt={notif.fromName} className="w-12 h-12 rounded-full object-cover" />
-                            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white dark:bg-black rounded-full flex items-center justify-center border-2 border-white dark:border-black">
-                              {getNotificationIcon(notif.type)}
-                            </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[15px] leading-[20px]"><span className="font-[550]">{notif.fromName}</span> <span className="text-[#3a3a3c] dark:text-zinc-300">{notif.message}</span></p>
-                            <p className="text-[13px] text-[#8e8e93] mt-0.5">{formatNotifTime(notif.createdAt)}</p>
-                            {notif.type === "friend_request" &&!notif.read && (
-                              <div className="flex items-center gap-2 mt-2.5">
-                                <button onClick={() => handleAcceptFriendRequest(notif)} className={`h-7 px-4 ${primaryBg} ${primaryHover} text-white rounded-full text-[13px] font-medium`}>Chấp nhận</button>
-                                <button onClick={() => handleDeclineFriendRequest(notif)} className="h-7 px-4 bg-[#f2f2f7] dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-full text-[13px] font-medium">Từ chối</button>
-                              </div>
-                            )}
-                            {(notif.type === "group_invite" || notif.type === "mention") && notif.chatId && (
-                              <button onClick={() => { handleMarkNotificationRead(notif.id); router.push(`/chat/${notif.chatId}`); }} className={`mt-2.5 h-7 px-4 ${primaryBg} ${primaryHover} text-white rounded-full text-[13px] font-medium`}>Xem</button>
-                            )}
-                          </div>
-                          {!notif.read && <div className="w-2 h-2 bg-[#0a84ff] rounded-full flex-shrink-0 mt-2" />}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {groupedNotifications.earlier.length > 0 && (
-                  <div>
-                    <div className="px-4 pt-4 pb-1"><p className="text-[12px] font-medium text-[#8e8e93] dark:text-zinc-500 uppercase tracking-wider">Trước đó</p></div>
-                    <div className="divide-y divide-gray-100 dark:divide-zinc-900">
-                      {groupedNotifications.earlier.map((notif) => (
-                        <div key={notif.id} className={`px-4 py-3 flex items-start gap-3 ${!notif.read? "bg-[#0a84ff]/[0.04] dark:bg-[#0a84ff]/[0.08]" : "opacity-70"} hover:bg-gray-50 dark:hover:bg-zinc-900/50 transition-colors`}>
-                          <div className="relative flex-shrink-0 mt-0.5">
-                            <img src={notif.fromAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(notif.fromName)}&background=random`} alt={notif.fromName} className="w-12 h-12 rounded-full object-cover" />
-                            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white dark:bg-black rounded-full flex items-center justify-center border-2 border-white dark:border-black">
-                              {getNotificationIcon(notif.type)}
-                            </div>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[15px] leading-[20px]"><span className="font-[550]">{notif.fromName}</span> <span className="text-[#3a3a3c] dark:text-zinc-300">{notif.message}</span></p>
-                            <p className="text-[13px] text-[#8e8e93] mt-0.5">{formatNotifTime(notif.createdAt)}</p>
-                          </div>
-                          {!notif.read && <div className="w-2 h-2 bg-[#0a84ff] rounded-full flex-shrink-0 mt-2" />}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+         {groupedNotifications.today.length > 0 && (
+  <div>
+    <div className="px-4 pt-3 pb-1"><p className="text-[12px] font-medium text-[#8e8e93] dark:text-zinc-500 uppercase tracking-wider">Hôm nay</p></div>
+    <div className="divide-y divide-gray-100 dark:divide-zinc-900">
+      {groupedNotifications.today.map((notif) => (
+        <div key={notif.id} className={`px-4 py-3 flex items-start gap-3 ${!notif.read? "bg-[#0a84ff]/[0.04] dark:bg-[#0a84ff]/[0.08]" : ""} hover:bg-gray-50 dark:hover:bg-zinc-900/50 transition-colors`}>
+          <div className="relative flex-shrink-0 mt-0.5">
+            <img src={notif.fromAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(notif.fromName)}&background=random`} alt={notif.fromName} className="w-12 h-12 rounded-full object-cover" />
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white dark:bg-black rounded-full flex items-center justify-center border-2 border-white dark:border-black">
+              {getNotificationIcon(notif.type)}
+            </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[15px] leading-[20px]"><span className="font-[550]">{notif.fromName}</span> <span className="text-[#3a3a3c] dark:text-zinc-300">{notif.message}</span></p>
+            <p className="text-[13px] text-[#8e8e93] mt-0.5">{formatNotifTime(notif.createdAt)}</p>
+            {notif.type === "friend_request" &&!notif.read && (
+              <div className="flex items-center gap-2 mt-2.5">
+                <button onClick={() => handleAcceptFriendRequest(notif)} className={`h-7 px-4 ${primaryBg} ${primaryHover} text-white rounded-full text-[13px] font-medium`}>Chấp nhận</button>
+                <button onClick={() => handleDeclineFriendRequest(notif)} className="h-7 px-4 bg-[#f2f2f7] dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-full text-[13px] font-medium">Từ chối</button>
+              </div>
+            )}
+            {(notif.type === "group_invite" || notif.type === "mention") && notif.chatId && (
+              <button onClick={() => { handleMarkNotificationRead(notif.id); router.push(`/chat/${notif.chatId}`); }} className={`mt-2.5 h-7 px-4 ${primaryBg} ${primaryHover} text-white rounded-full text-[13px] font-medium`}>Xem</button>
+            )}
+          </div>
+          {!notif.read && <div className="w-2 h-2 bg-[#0a84ff] rounded-full flex-shrink-0 mt-2" />}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+{groupedNotifications.earlier.length > 0 && (
+  <div>
+    <div className="px-4 pt-4 pb-1"><p className="text-[12px] font-medium text-[#8e8e93] dark:text-zinc-500 uppercase tracking-wider">Trước đó</p></div>
+    <div className="divide-y divide-gray-100 dark:divide-zinc-900">
+      {groupedNotifications.earlier.map((notif) => (
+        <div key={notif.id} className={`px-4 py-3 flex items-start gap-3 ${!notif.read? "bg-[#0a84ff]/[0.04] dark:bg-[#0a84ff]/[0.08]" : "opacity-70"} hover:bg-gray-50 dark:hover:bg-zinc-900/50 transition-colors`}>
+          <div className="relative flex-shrink-0 mt-0.5">
+            <img src={notif.fromAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(notif.fromName)}&background=random`} alt={notif.fromName} className="w-12 h-12 rounded-full object-cover" />
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white dark:bg-black rounded-full flex items-center justify-center border-2 border-white dark:border-black">
+              {getNotificationIcon(notif.type)}
+            </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[15px] leading-[20px]"><span className="font-[550]">{notif.fromName}</span> <span className="text-[#3a3a3c] dark:text-zinc-300">{notif.message}</span></p>
+            <p className="text-[13px] text-[#8e8e93] mt-0.5">{formatNotifTime(notif.createdAt)}</p>
+          </div>
+          {!notif.read && <div className="w-2 h-2 bg-[#0a84ff] rounded-full flex-shrink-0 mt-2" />}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
               </div>
             )
           ) : activeTab === "friends"? (
