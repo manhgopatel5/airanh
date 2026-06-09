@@ -32,9 +32,7 @@ import { createPlan, createTask } from "@/lib/task";
 import { useAuth } from "@/lib/AuthContext";
 
 type Mode = "task" | "plan";
-type Province = { id: number; name: string; code: string };
-type District = { id: number; name: string; code: string };
-type Ward = { id: number; name: string };
+
 
 type LocationState = {
   address: string;
