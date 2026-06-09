@@ -150,17 +150,17 @@ const toggleCategory = (id: string) => {
     setLocalQuery("");
   };
 
-  const handleApply = () => {
-    haptics.medium();
-    onApplyFilters({
-      categories: selectedCategories,
-      priceRange,
-      deadlineRange,
-      sortBy,
-      query: localQuery,
-    });
-    onCloseSearch();
-  };
+const handleApply = () => {
+  haptics.medium();
+  onApplyFilters({
+    category: selectedCategories[0] || undefined, // gửi "cooking" hoặc undefined
+    priceRange,
+    deadlineRange,
+    sortBy,
+    query: localQuery,
+  });
+  onCloseSearch();
+};
 
   const activeFilterCount = selectedCategories.length + (priceRange!== "all"? 1 : 0) + (deadlineRange!== "all"? 1 : 0) + (sortBy!== "new"? 1 : 0) + (localQuery? 1 : 0);
 
