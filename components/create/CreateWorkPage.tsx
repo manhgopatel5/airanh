@@ -319,9 +319,15 @@ const fetcher = (url: string) => fetch(url).then(async r => {
 });
 
 // Tỉnh - cache vĩnh viễn
-const { data: provinces = [], isLoading: loadingProvinces, error: provinceError } = useSWRImmutable<Province[]>(
+const { 
+  data: provinces = [], 
+  isLoading: loadingProvinces, 
+  error: provinceError,
+  mutate: retryProvinces // thêm dòng này
+} = useSWRImmutable<Province[]>(
   "/api/location/province",
-  fetcher
+  fetcher,
+  { shouldRetryOnError: false, fallbackData: [] }
 );
 
 // Huyện - cache theo provinceId
@@ -463,9 +469,9 @@ useEffect(() => {
         if (value.trim().length < 20) return "Tối thiểu 20 ký tự";
         return "";
       case "location":
-        if (!value.address.trim()) return "Nhập địa chỉ cụ thể";
-        if (!value.provinceId) return "Chọn tỉnh/thành phố";
-        return "";
+  if (!value.address.trim()) return "Nhập địa chỉ cụ thể";
+  if (!value.provinceId && !value.provinceName.trim()) return "Chọn hoặc nhập tỉnh/thành phố";
+  return "";
       case "price":
         if (isTask && form.budgetType !== "negotiable" && value <= 0) return "Nhập số tiền hợp lệ";
         return "";
@@ -833,45 +839,61 @@ await mutate("/api/tasks?type=plan&limit=20");
   <StepContent key="step1">
     <Card>
 <Field label="Tỉnh/Thành phố" required error={errors["location.provinceId"]} icon={FiMapPin}>
-  <select
-    value={form.location.provinceId || ""}
-    onChange={(e) => {
-      const id = Number(e.target.value);
-      const p = provinces.find(p => p.id === id);
-      updateLocation({
-        provinceId: id || null,
-        provinceName: p?.name || "",
-        districtId: null,
-        districtName: "",
-        wardId: null,
-        wardName: ""
-      });
-    }}
-    className="input-premium"
-    disabled={loadingProvinces}
-  >
-    <option value="">
-      {loadingProvinces 
-        ? "Đang tải 63 tỉnh/thành..." 
-        : provinces.length === 0
-          ? "Không có dữ liệu"
-          : "Chọn tỉnh/thành phố"}
-    </option>
-    {provinces.map((p) => (
-      <option key={p.id} value={p.id}>{p.name}</option>
-    ))}
-  </select>
-  {provinceError && provinces.length === 0 && (
-    <p className="flex items-center gap-1.5 text-xs font-bold text-red-500">
-      <FiAlertCircle /> Không tải được danh sách tỉnh. 
-      <button 
-        type="button"
-        onClick={() => mutate("/api/location/province")} 
-        className="underline hover:text-red-600"
-      >
-        Thử lại
-      </button>
-    </p>
+  {provinceError ? (
+    <div className="space-y-3">
+      <div className="input-premium flex items-center justify-between bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900">
+        <span className="text-sm font-bold text-red-600 dark:text-red-400 flex items-center gap-2">
+          <FiAlertCircle /> Không tải được danh sách tỉnh
+        </span>
+        <button
+          type="button"
+          onClick={() => retryProvinces()}
+          className="text-xs font-black px-3 py-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 active:scale-95"
+        >
+          Thử lại
+        </button>
+      </div>
+      <input
+        type="text"
+        value={form.location.provinceName}
+        onChange={(e) => updateLocation({ 
+          provinceName: e.target.value,
+          provinceId: null
+        })}
+        placeholder="Nhập tên tỉnh/thành phố..."
+        className="input-premium"
+      />
+      <p className="text-xs text-zinc-400">Tạm nhập tay do lỗi mạng</p>
+    </div>
+  ) : (
+    <select
+      value={form.location.provinceId || ""}
+      onChange={(e) => {
+        const id = Number(e.target.value);
+        const p = provinces.find(p => p.id === id);
+        updateLocation({
+          provinceId: id || null,
+          provinceName: p?.name || "",
+          districtId: null,
+          districtName: "",
+          wardId: null,
+          wardName: ""
+        });
+      }}
+      className="input-premium"
+      disabled={loadingProvinces}
+    >
+      <option value="">
+        {loadingProvinces 
+          ? "Đang tải 63 tỉnh/thành..." 
+          : provinces.length === 0
+            ? "Không có dữ liệu"
+            : "Chọn tỉnh/thành phố"}
+      </option>
+      {provinces.map((p) => (
+        <option key={p.id} value={p.id}>{p.name}</option>
+      ))}
+    </select>
   )}
 </Field>
 
