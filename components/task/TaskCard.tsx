@@ -12,7 +12,7 @@ import {
   FiClock,
   FiEdit2,
   FiEye,
-  FiTag, 
+  
   FiMapPin,
   FiMessageCircle,
   FiMoreHorizontal,
