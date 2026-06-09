@@ -42,8 +42,6 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
     categories: [] as string[],
     priceRange: 'all',
     deadlineRange: 'all',
-    provinceId: null as number | null,
-    districtId: null as number | null,
     sortBy: 'new' as SortBy,
     query: '',
   });
@@ -55,7 +53,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   // Reset khi đổi Task/Plan
   useEffect(() => {
     setCursor(null);
-setFilters({ categories: [], priceRange: 'all', deadlineRange: 'all', sortBy: 'new', query: '', provinceId: null, districtId: null });
+setFilters({ categories: [], priceRange: 'all', deadlineRange: 'all', sortBy: 'new', query: '' });
   }, [mode]);
 
   const apiUrl = useMemo(() => {
@@ -69,8 +67,6 @@ setFilters({ categories: [], priceRange: 'all', deadlineRange: 'all', sortBy: 'n
     if (filters.priceRange!== 'all') params.set('priceRange', filters.priceRange);
     if (filters.deadlineRange!== 'all') params.set('deadlineRange', filters.deadlineRange);
     if (filters.query) params.set('query', filters.query);
-    if (filters.provinceId) params.set('provinceId', filters.provinceId.toString());
-    if (filters.districtId) params.set('districtId', filters.districtId.toString());
     // FIX 2: cursor là string, không toString()
     if (cursor) params.set('cursor', cursor);
 
@@ -104,8 +100,6 @@ setFilters({ categories: [], priceRange: 'all', deadlineRange: 'all', sortBy: 'n
       deadlineRange: newFilters.deadlineRange || 'all',
       sortBy: newFilters.sortBy || 'new',
       query: newFilters.query || '',
-      provinceId: newFilters.provinceId || null,
-      districtId: newFilters.districtId || null,
     });
     setCursor(null);
   }, []);
