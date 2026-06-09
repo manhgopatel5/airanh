@@ -8,7 +8,7 @@ import { mutate } from "swr";
 
 
 import TaskCard from "@/components/task/TaskCard"; // đường dẫn đúng của bạn
-import GpsRequiredModal from "@/components/GpsRequiredModal";
+
 import {
   FiArrowLeft,
   FiClock,
@@ -297,15 +297,15 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const [touched, setTouched] = useState<Partial<Record<keyof FormState, boolean>>>({});
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
-  const [locating, setLocating] = useState(false);
+
   const [showPreview, setShowPreview] = useState(false);
   const [placeSuggestions, setPlaceSuggestions] = useState<string[]>([]);
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
   const [loadingProvinces, setLoadingProvinces] = useState(true);
-  const [showGpsExplain, setShowGpsExplain] = useState(false);
-  const [hasCheckedGps, setHasCheckedGps] = useState(false);
+
+
   const debounceRef = useRef<NodeJS.Timeout>();
 
   const isTask = mode === "task";
@@ -489,53 +489,9 @@ useEffect(() => {
   return () => clearTimeout(timer);
 }, [draftKey, form]);
 
-const requestGPS = useCallback(() => {
-  if (!navigator.geolocation) {
-    toast.error("Thiết bị không hỗ trợ GPS");
-    return;
-  }
-  setLocating(true);
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      updateLocation({
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude
-      });
-      setLocating(false);
-      setShowGpsExplain(false);
-      toast.success("Đã lấy vị trí");
-    },
-    (err) => {
-      console.warn("GPS error:", err);
-      setLocating(false);
-    },
-    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-  );
-}, []); // Bỏ updateLocation khỏi deps để tránh re-create
 
-// GPS check - đưa xuống sau requestGPS
-useEffect(() => {
-  if (step!== 1 || hasCheckedGps || form.location.lat) return;
-  if (!navigator.permissions) {
-    setShowGpsExplain(true);
-    setHasCheckedGps(true);
-    return;
-  }
-  navigator.permissions.query({ name: 'geolocation' }).then((result) => {
-    if (result.state === 'granted') {
-      requestGPS();
-    } else {
-      setShowGpsExplain(true);
-    }
-    setHasCheckedGps(true);
-  });
-}, [step, form.location.lat, hasCheckedGps, requestGPS]);
 
-useEffect(() => {
-  if (step!== 1) {
-    setHasCheckedGps(false);
-  }
-}, [step]);
+
 
   const validateField = (key: keyof FormState, value: any): string => {
     switch (key) {
@@ -910,12 +866,7 @@ await mutate("/api/tasks?type=plan&limit=20");
     {step === 1 && (
   <StepContent key="step1">
     <Card>
-      {!form.location.lat && !form.location.lng && (
-        <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 p-4 text-sm font-bold text-amber-700 dark:from-amber-950/30 dark:to-orange-950/30 dark:text-amber-400">
-          <FiMapPin className="flex-shrink-0 text-lg" />
-          Vui lòng chọn địa điểm để tiếp tục
-        </div>
-      )}
+
 
       <Field label="Tỉnh/Thành phố" required error={errors["location.provinceId"]} icon={FiMapPin}>
         <select
@@ -1313,16 +1264,7 @@ await mutate("/api/tasks?type=plan&limit=20");
         )}
       </AnimatePresence>
 
-      <GpsRequiredModal
-        open={showGpsExplain}
-        onClose={() => setShowGpsExplain(false)}
-        onRetry={() => {
-          setShowGpsExplain(false);
-          requestGPS();
-        }}
-        loading={locating}
-        mode={mode}
-      />
+
 
            <style jsx global>{`
        .input-premium {
