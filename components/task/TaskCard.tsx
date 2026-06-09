@@ -389,7 +389,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
     </p>
   </div>
 </div>
-
+</div>
           <div className="flex items-center justify-between px-2 py-1.5">
             <div className="flex items-center min-w-0">
               <button
