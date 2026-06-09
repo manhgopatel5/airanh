@@ -1,42 +1,26 @@
 import { NextResponse } from "next/server";
 
-export const dynamic = 'force-dynamic'; // THÊM DÒNG NÀY
-export const revalidate = 0; // ĐỔI THÀNH 0
+// XÓA DÒNG NÀY: export const dynamic = 'force-dynamic';
+// XÓA DÒNG NÀY: export const revalidate = 0;
+
+// Cache 1 năm. Tỉnh không đổi
+export const revalidate = 31536000;
 
 export async function GET() {
-  try {
-    const res = await fetch("https://provinces.open-api.vn/api/p/", {
-      signal: AbortSignal.timeout(5000),
-      cache: 'no-store', // THÊM DÒNG NÀY
-    });
+  const res = await fetch("https://provinces.open-api.vn/api/p/", {
+    // Bỏ AbortSignal.timeout đi, nó hay lỗi trên Vercel
+    headers: { 'User-Agent': 'Mozilla/5.0' },
+    next: { revalidate: 31536000 } // Cache fetch 1 năm
+  });
 
-    if (!res.ok) throw new Error("API error");
-    
-    const data = await res.json();
-    const provinces = data.map((p: any) => ({
-      id: p.code,
-      name: p.name,
-      code: p.codename,
-    }));
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  
+  const data = await res.json();
+  const provinces = data.map((p: any) => ({
+    id: Number(p.code),
+    name: p.name,
+    code: p.codename,
+  }));
 
-    return NextResponse.json(provinces, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Cache-Control': 'no-store, max-age=0', // THÊM DÒNG NÀY
-      },
-    });
-  } catch (err: any) {
-    console.error("PROVINCE ERROR:", err);
-    return NextResponse.json(
-      { error: "Internal error" }, 
-      { 
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Cache-Control': 'no-store, max-age=0',
-        },
-      }
-    );
-  }
+  return NextResponse.json(provinces);
 }
