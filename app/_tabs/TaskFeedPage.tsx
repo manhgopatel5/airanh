@@ -259,49 +259,50 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
               Tải lại ngay
             </motion.button>
           </motion.div>
-        ) : filteredTasks.length === 0? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex min-h-[60vh] flex-col items-center justify-center gap-5 py-20"
-          >
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full blur-2xl" style={{ background: `${accent}20` }} />
-              <div
-                className="relative flex h-20 w-20 items-center justify-center rounded-3xl shadow-xl"
-                style={{ background: gradient }}
-              >
-                <FiSearch className="h-9 w-9 text-white" />
-              </div>
-            <div className="text-center space-y-2 max-w-xs">
-              <h2 className="text-xl font-black text-zinc-900 dark:text-white">
-                Chưa có {modeNoun} phù hợp
-              </h2>
-              <p className="text-sm font-semibold text-zinc-500 leading-relaxed">
-                Thử đổi bộ lọc, tìm từ khóa khác hoặc tạo mục mới để bắt đầu.
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <motion.button
-                whileTap={{ scale: 0.96 }}
-                type="button"
-                onClick={handleRefresh}
-                className="h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 px-6 text-base font-bold text-zinc-700 dark:text-zinc-200"
-              >
-                Tải lại
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.96 }}
-                type="button"
-                onClick={() => setShowSearchModal(true)}
-                className="h-12 rounded-2xl px-6 text-base font-bold text-white shadow-lg"
-                style={{ background: gradient }}
-              >
-                Tìm kiếm
-              </motion.button>
-            </div>
-          </motion.div>
-        ) : (
+     ) : filteredTasks.length === 0? (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.9 }}
+    animate={{ opacity: 1, scale: 1 }}
+    className="flex min-h-[60vh] flex-col items-center justify-center gap-5 py-20"
+  >
+    <div className="relative">
+      <div className="absolute inset-0 rounded-full blur-2xl" style={{ background: `${accent}20` }} />
+      <div
+        className="relative flex h-20 w-20 items-center justify-center rounded-3xl shadow-xl"
+        style={{ background: gradient }}
+      >
+        <FiSearch className="h-9 w-9 text-white" />
+      </div>
+    </div>
+    <div className="text-center space-y-2 max-w-xs">
+      <h2 className="text-xl font-black text-zinc-900 dark:text-white">
+        Chưa có {modeNoun} phù hợp
+      </h2>
+      <p className="text-sm font-semibold text-zinc-500 leading-relaxed">
+        Thử đổi bộ lọc, tìm từ khóa khác hoặc tạo mục mới để bắt đầu.
+      </p>
+    </div>
+    <div className="flex gap-2">
+      <motion.button
+        whileTap={{ scale: 0.96 }}
+        type="button"
+        onClick={handleRefresh}
+        className="h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 px-6 text-base font-bold text-zinc-700 dark:text-zinc-200"
+      >
+        Tải lại
+      </motion.button>
+      <motion.button
+        whileTap={{ scale: 0.96 }}
+        type="button"
+        onClick={() => setShowSearchModal(true)}
+        className="h-12 rounded-2xl px-6 text-base font-bold text-white shadow-lg"
+        style={{ background: gradient }}
+      >
+        Tìm kiếm
+      </motion.button>
+    </div>
+  </motion.div>
+) : (
           <AnimatePresence mode="popLayout">
             <motion.div key={mode} initial={reduceMotion? false : { opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
               {filteredTasks.map((task, idx) => (
