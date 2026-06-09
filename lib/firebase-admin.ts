@@ -110,13 +110,9 @@ export async function getJobsFromFirebaseAdmin(
     'costType', 'costAmount', 'costDescription', 'milestones'
   ];
 
-  // CHANGED: Bỏ where('status', 'in') để tránh lỗi index khi có category
-  let query: Query = db.collection('tasks').where('type', '==', type);
-
-  // CHANGED: Chỉ filter status khi KHÔNG có category
-  if (!category) {
-    query = query.where('status', 'in', allowedStatuses);
-  }
+let query: Query = db.collection('tasks')
+  .where('type', '==', type)
+  .where('status', 'in', allowedStatuses)  // BỎ ĐIỀU KIỆN if (!category)
 
   // Filter category
   if (category) {
@@ -253,16 +249,14 @@ export async function getJobsFromFirebaseAdmin(
     };
 
     return taskData as FeedTask;
-  }).filter((task) =>
-    // CHANGED: Filter status bằng code khi có category
-    allowedStatuses.includes(task.status) &&
-    task.banned!== true &&
-    task.hidden!== true &&
-    task.visibility!== 'private'
+  }).filter((task) => 
+    task.visibility !== 'private' && 
+    task.banned !== true && 
+    task.hidden !== true
   );
 
   const lastDoc = snap.docs[snap.docs.length - 1];
-  const nextCursor = lastDoc? lastDoc.id : null;
+  const nextCursor = lastDoc ? lastDoc.id : null;
 
   return { tasks, nextCursor };
 }
