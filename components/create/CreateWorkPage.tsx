@@ -907,116 +907,122 @@ await mutate("/api/tasks?type=plan&limit=20");
             </StepContent>
           )}
 
-          {step === 1 && (
-            <StepContent key="step1">
-              <Card>
-                {!form.location.lat && !form.location.lng && (
-                  <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 p-4 text-sm font-bold text-amber-700 dark:from-amber-950/30 dark:to-orange-950/30 dark:text-amber-400">
-                    <FiMapPin className="flex-shrink-0 text-lg" />
-                    Vui lòng chọn địa điểm để tiếp tục
-                  </div>
-                )}
+    {step === 1 && (
+  <StepContent key="step1">
+    <Card>
+      {!form.location.lat && !form.location.lng && (
+        <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 p-4 text-sm font-bold text-amber-700 dark:from-amber-950/30 dark:to-orange-950/30 dark:text-amber-400">
+          <FiMapPin className="flex-shrink-0 text-lg" />
+          Vui lòng chọn địa điểm để tiếp tục
+        </div>
+      )}
 
-              <Field label="Tỉnh/Thành phố" required error={errors["location.provinceId"]} icon={FiMapPin}>
-  <select
-    value={form.location.provinceId || ""}
-    onChange={(e) => {
-      const id = Number(e.target.value);
-      const p = provinces.find(p => p.id === id);
-      updateLocation({
-        provinceId: id,
-        provinceName: p?.name || "",
-        districtId: null,
-        districtName: "",
-        wardId: null,
-        wardName: ""
-      });
-    }}
-    className="input-premium"
-  >
-    <option value="">
-      {loadingProvinces 
-        ? "Đang tải..." 
-        : provinces.length === 0 
-          ? "Không tải được - thử lại" 
-          : "Chọn tỉnh/thành phố"}
-    </option>
-    {provinces.map((p) => (
-      <option key={p.id} value={p.id}>{p.name}</option>
-    ))}
-  </select>
-</Field>
+      <Field label="Tỉnh/Thành phố" required error={errors["location.provinceId"]} icon={FiMapPin}>
+        <select
+          value={form.location.provinceId || ""}
+          onChange={(e) => {
+            const id = Number(e.target.value);
+            const p = provinces.find(p => p.id === id);
+            updateLocation({
+              provinceId: id,
+              provinceName: p?.name || "",
+              districtId: null,
+              districtName: "",
+              wardId: null,
+              wardName: ""
+            });
+          }}
+          className="input-premium"
+        >
+          <option value="">
+            {loadingProvinces 
+              ? "Đang tải..." 
+              : provinces.length === 0 
+                ? "Không tải được - reload trang" 
+                : "Chọn tỉnh/thành phố"}
+          </option>
+          {provinces.map((p) => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </select>
+      </Field>
 
-                {form.location.provinceId && (
-                  <Field label="Quận/Huyện" icon={FiMapPin}>
-                    <select
-                      value={form.location.districtId || ""}
-                      onChange={(e) => {
-                        const id = Number(e.target.value);
-                        const d = districts.find(d => d.id === id);
-                        updateLocation({
-                          districtId: id,
-                          districtName: d?.name || "",
-                          wardId: null,
-                          wardName: ""
-                        });
-                      }}
-                      className="input-premium"
-                    >
-                      <option value="">Chọn quận/huyện</option>
-                      {districts.map((d) => (
-                        <option key={d.id} value={d.id}>{d.name}</option>
-                      ))}
-                    </select>
-                  </Field>
-                )}
+      <Field label="Quận/Huyện" icon={FiMapPin}>
+        <select
+          value={form.location.districtId || ""}
+          onChange={(e) => {
+            const id = Number(e.target.value);
+            const d = districts.find(d => d.id === id);
+            updateLocation({
+              districtId: id,
+              districtName: d?.name || "",
+              wardId: null,
+              wardName: ""
+            });
+          }}
+          className="input-premium"
+          disabled={!form.location.provinceId}
+        >
+          <option value="">
+            {!form.location.provinceId 
+              ? "Chọn tỉnh trước" 
+              : "Chọn quận/huyện"}
+          </option>
+          {districts.map((d) => (
+            <option key={d.id} value={d.id}>{d.name}</option>
+          ))}
+        </select>
+      </Field>
 
-                {form.location.districtId && (
-                  <Field label="Phường/Xã" icon={FiMapPin}>
-                    <select
-                      value={form.location.wardId || ""}
-                      onChange={(e) => {
-                        const id = Number(e.target.value);
-                        const w = wards.find(w => w.id === id);
-                        updateLocation({ wardId: id, wardName: w?.name || "" });
-                      }}
-                      className="input-premium"
-                    >
-                      <option value="">Chọn phường/xã</option>
-                      {wards.map((w) => (
-                        <option key={w.id} value={w.id}>{w.name}</option>
-                      ))}
-                    </select>
-                  </Field>
-                )}
+      <Field label="Phường/Xã" icon={FiMapPin}>
+        <select
+          value={form.location.wardId || ""}
+          onChange={(e) => {
+            const id = Number(e.target.value);
+            const w = wards.find(w => w.id === id);
+            updateLocation({ wardId: id, wardName: w?.name || "" });
+          }}
+          className="input-premium"
+          disabled={!form.location.districtId}
+        >
+          <option value="">
+            {!form.location.districtId 
+              ? "Chọn quận trước" 
+              : "Chọn phường/xã"}
+          </option>
+          {wards.map((w) => (
+            <option key={w.id} value={w.id}>{w.name}</option>
+          ))}
+        </select>
+      </Field>
 
-                <Field label="Địa chỉ cụ thể" required error={errors["location.address"]} icon={FiMapPin}>
-                  <div className="relative">
-                    <input
-                      value={form.location.address}
-                      onChange={(e) => handleAddressChange(e.target.value)}
-                      onBlur={() => blur("location")}
-                      placeholder="Tên đường, số nhà..."
-                      className="input-premium"
-                    />
-                    {placeSuggestions.length > 0 && (
-                      <div className="absolute top-full z-10 mt-2 w-full overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
-                        {placeSuggestions.map((s, i) => (
-                          <button
-                            key={i}
-                            onClick={() => { updateLocation({ address: s }); setPlaceSuggestions([]); }}
-                            className="w-full border-b border-zinc-100 px-4 py-3 text-left text-sm font-medium hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800 last:border-0"
-                          >
-                            {s}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </Field>
-              </Card>
-            </StepContent>
+      <Field label="Địa chỉ cụ thể" required error={errors["location.address"]} icon={FiMapPin}>
+        <div className="relative">
+          <input
+            value={form.location.address}
+            onChange={(e) => handleAddressChange(e.target.value)}
+            onBlur={() => blur("location")}
+            placeholder="Tên đường, số nhà..."
+            className="input-premium"
+          />
+          {placeSuggestions.length > 0 && (
+            <div className="absolute top-full z-10 mt-2 w-full overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
+              {placeSuggestions.map((s, i) => (
+                <button
+                  key={i}
+                  onClick={() => { updateLocation({ address: s }); setPlaceSuggestions([]); }}
+                  className="w-full border-b border-zinc-100 px-4 py-3 text-left text-sm font-medium hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800 last:border-0"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
           )}
+        </div>
+      </Field>
+    </Card>
+  </StepContent>
+)}
 
           {step === 2 && (
             <StepContent key="step2">
