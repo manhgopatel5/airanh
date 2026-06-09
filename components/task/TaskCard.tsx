@@ -151,7 +151,7 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
     const cityKey = task.location?.city || "";
 const rawProvinceName = provinceMap.get(cityKey) || cityKey || "Chưa rõ";
 const provinceName = rawProvinceName.replace(/^(Thành phố|Tỉnh|TP\.|T\.)\s*/i, "").trim();
-
+const categoryLabel = CATEGORY_MAP[task.category as keyof typeof CATEGORY_MAP] || task.category; 
     return {
       maxSlots,
       currentCount,
