@@ -299,7 +299,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   }, []);
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const { mutate } = useSWRConfig(); 
+
   const [form, setForm] = useState<FormState>(() => initialForm(mode));
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState<Partial<Record<keyof FormState, boolean>>>({});
