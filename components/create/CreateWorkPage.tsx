@@ -322,8 +322,8 @@ const { data: provinces = [], isLoading: loadingProvinces, error: provinceError 
 
 const { 
   data: districts = [], 
-  isLoading: loadingDistricts,
-  error: districtError 
+  isLoading: loadingDistricts
+  // XÓA error: districtError 
 } = useSWR(
   form.location.provinceId ? ["/api/location/district", form.location.provinceId] : null,
   ([url, id]) => fetch(url, {
@@ -347,8 +347,8 @@ const {
 
 const { 
   data: wards = [], 
-  isLoading: loadingWards,
-  error: wardError 
+  isLoading: loadingWards
+  // XÓA error: wardError 
 } = useSWR(
   form.location.districtId ? ["/api/location/ward", form.location.districtId] : null,
   ([url, id]) => fetch(url, {
