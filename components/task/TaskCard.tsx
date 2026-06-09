@@ -364,24 +364,24 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
             </div>
 
             <button type="button" onClick={goToTask} className={cn("block w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 rounded-lg", ringClass)}>
-              <h3 className="text-base font-bold leading-snug tracking-tight text-zinc-950 dark:text-white line-clamp-2">{task.title}</h3>
+              <h3 className="text-lg font-bold leading-snug tracking-tight text-zinc-950 dark:text-white line-clamp-2">{task.title}</h3>
             </button>
 
          <div className="mt-3 grid grid-cols-3 gap-1.5">
   <div className="rounded-xl bg-zinc-50/80 p-1.5 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
-    <div className="flex items-center gap-0.5 text-[10px] font-bold text-zinc-400">
+    <div className="flex items-center gap-0.5 text-sm font-bold text-zinc-400">
       <TbCurrencyDong className="h-2.5 w-2.5" /> Giá trị
     </div>
     <p className="mt-0.5 truncate text-sm font-bold leading-tight text-zinc-950 dark:text-white">{derived.price}</p>
   </div>
   <div className="rounded-xl bg-zinc-50/80 p-1.5 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5">
-    <div className="flex items-center gap-0.5 text-[10px] font-bold text-zinc-400">
+    <div className="flex items-center gap-0.5 text-sm font-bold text-zinc-400">
       <FiClock className="h-2.5 w-2.5" /> Hạn chót
     </div>
     <p className="mt-0.5 text-sm font-bold leading-tight text-zinc-950 dark:text-white">{derived.due}</p>
   </div>
   <div className={cn("rounded-xl bg-zinc-50/80 p-1.5 ring-1 ring-black/[0.03] dark:bg-zinc-900/50 dark:ring-white/5", derived.isFull && "ring-red-500/20 bg-red-50 dark:bg-red-950/20")}>
-    <div className="flex items-center gap-0.5 text-[10px] font-bold text-zinc-400">
+    <div className="flex items-center gap-0.5 text-sm font-bold text-zinc-400">
       <FiUsers className="h-2.5 w-2.5" /> Số người
     </div>
     <p className={cn("mt-0.5 text-sm font-bold leading-tight text-zinc-950 dark:text-white", derived.isFull && "text-red-600 dark:text-red-400")}>
