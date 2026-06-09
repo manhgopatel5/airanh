@@ -478,8 +478,24 @@ useEffect(() => {
 
 useEffect(() => {
   const timer = setTimeout(() => {
-    localStorage.setItem(draftKey, JSON.stringify(form));
+    const draft = {
+      ...form,
+      location: {
+        address: "",
+        provinceId: null,
+        provinceName: "",
+        districtId: null,
+        districtName: "",
+        wardId: null,
+        wardName: "",
+        lat: undefined,
+        lng: undefined,
+      },
+    };
+
+    localStorage.setItem(draftKey, JSON.stringify(draft));
   }, 500);
+
   return () => clearTimeout(timer);
 }, [draftKey, form]);
 
