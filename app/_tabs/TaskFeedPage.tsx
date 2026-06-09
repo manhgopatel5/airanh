@@ -38,13 +38,13 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   // FIX 1: cursor là string docId
   const [cursor, setCursor] = useState<string | null>(null);
 
-  const [filters, setFilters] = useState({
-    categories: [] as string[],
-    priceRange: 'all',
-    deadlineRange: 'all',
-    sortBy: 'new' as SortBy,
-    query: '',
-  });
+const [filters, setFilters] = useState({
+  category: undefined as string | undefined, // Đổi từ categories[] sang category
+  priceRange: 'all',
+  deadlineRange: 'all',
+  sortBy: 'new' as SortBy,
+  query: '',
+});
 
   const isTaskMode = mode === "task";
   const accent = isTaskMode? "#0A84FF" : "#30D158";
@@ -53,7 +53,7 @@ export default function TaskFeedPage({ initialJobs, initialPlans }: TaskFeedPage
   // Reset khi đổi Task/Plan
   useEffect(() => {
     setCursor(null);
-setFilters({ categories: [], priceRange: 'all', deadlineRange: 'all', sortBy: 'new', query: '' });
+setFilters({ category: undefined, priceRange: 'all', deadlineRange: 'all', sortBy: 'new', query: '' });
   }, [mode]);
 
   const apiUrl = useMemo(() => {
@@ -63,7 +63,7 @@ setFilters({ categories: [], priceRange: 'all', deadlineRange: 'all', sortBy: 'n
       sortBy: filters.sortBy,
     });
 
-    if (filters.categories.length > 0) params.set('categories', filters.categories.join(','));
+if (filters.category) params.set('category', filters.category);
     if (filters.priceRange!== 'all') params.set('priceRange', filters.priceRange);
     if (filters.deadlineRange!== 'all') params.set('deadlineRange', filters.deadlineRange);
     if (filters.query) params.set('query', filters.query);
@@ -95,7 +95,7 @@ setFilters({ categories: [], priceRange: 'all', deadlineRange: 'all', sortBy: 'n
 
   const handleApplyFilters = useCallback((newFilters: any) => {
     setFilters({
-      categories: newFilters.categories || [],
+category: newFilters.category || undefined, 
       priceRange: newFilters.priceRange || 'all',
       deadlineRange: newFilters.deadlineRange || 'all',
       sortBy: newFilters.sortBy || 'new',
