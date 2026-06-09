@@ -922,27 +922,27 @@ await mutate("/api/tasks?type=plan&limit=20");
       </Field>
 
       <Field label="Phường/Xã" icon={FiMapPin}>
-        <select
-          value={form.location.wardId || ""}
-          onChange={(e) => {
-            const id = Number(e.target.value);
-            const w = wards.find(w => w.id === id);
-            updateLocation({ wardId: id, wardName: w?.name || "" });
-          }}
-          className="input-premium"
-          disabled={!form.location.districtId}
-        >
-          <option value="">
-            {!form.location.districtId 
-              ? "Chọn quận trước" 
-              : wards.length === 0
-                ? "Đang tải..."
-                : "Chọn phường/xã"}
-          </option>
-          {wards.map((w) => (
-            <option key={w.id} value={w.id}>{w.name}</option>
-          ))}
-        </select>
+     <select
+  value={form.location.wardId || ""}
+  onChange={(e) => {
+    const id = Number(e.target.value);
+    const w = wards.find(w => w.id === id);
+    updateLocation({ wardId: id, wardName: w?.name || "" });
+  }}
+  className="input-premium"
+  disabled={!form.location.districtId}
+>
+  <option value="">
+    {!form.location.districtId 
+      ? "Chọn quận trước" 
+      : loadingWards
+        ? "Đang tải..."
+        : "Chọn phường/xã"}
+  </option>
+  {wards.map((w) => (
+    <option key={w.id} value={w.id}>{w.name}</option>
+  ))}
+</select>
       </Field>
 
       <Field label="Địa chỉ cụ thể" required error={errors["location.address"]} icon={FiMapPin}>
