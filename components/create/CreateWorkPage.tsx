@@ -361,38 +361,31 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const categories = isTask ? CATEGORY_TASKS : CATEGORY_PLANS;
   const draftKey = `create_${mode}_draft_v6`;
 
-// Load provinces - chỉ chạy 1 lần, tránh race condition
+// Load provinces - chỉ chạy 1 lần
 useEffect(() => {
   let isMounted = true;
+  setLoadingProvinces(true);
 
-  fetch("/api/location/province", {
-    headers: { "Content-Type": "application/json" },
-    cache: "force-cache"
-  })
-  .then(async (r) => {
-      if (!r.ok) throw new Error("API error");
-      return r.json();
+  fetch("/api/location/province")
+    .then(async (r) => {
+      if (!r.ok) return [];
+      const data = await r.json();
+      return Array.isArray(data) ? data : [];
     })
-  .then((data) => {
-      if (isMounted) {
-        setProvinces(Array.isArray(data)? data : []);
-        setLoadingProvinces(false);
-      }
+    .then((data) => {
+      if (isMounted) setProvinces(data);
     })
-  .catch(() => {
-      if (isMounted) {
-        toast.error("Không tải được danh sách tỉnh");
-        setProvinces([]);
-        setLoadingProvinces(false);
-      }
+    .catch(() => {
+      if (isMounted) setProvinces([]);
+    })
+    .finally(() => {
+      if (isMounted) setLoadingProvinces(false);
     });
 
-  return () => {
-    isMounted = false;
-  };
-}, []); // Chỉ chạy 1 lần khi mount
+  return () => { isMounted = false };
+}, []);
 
-// Load districts - không reset nếu district hiện tại vẫn hợp lệ
+// Load districts
 useEffect(() => {
   if (!form.location.provinceId) {
     setDistricts([]);
@@ -407,12 +400,14 @@ useEffect(() => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ provinceId: form.location.provinceId }),
   })
-  .then((r) => r.json())
-  .then((data) => {
+    .then((r) => r.ok ? r.json() : [])
+    .then((data) => {
       if (!isMounted) return;
-      setDistricts(data);
-      // Chỉ reset district nếu district hiện tại không thuộc province mới
-      if (form.location.districtId &&!data.find((d: District) => d.id === form.location.districtId)) {
+      const districts = Array.isArray(data) ? data : [];
+      setDistricts(districts);
+      
+      // Reset nếu district cũ không thuộc province mới
+      if (form.location.districtId && !districts.find((d: District) => d.id === form.location.districtId)) {
         updateLocation({
           districtId: null,
           districtName: "",
@@ -421,16 +416,14 @@ useEffect(() => {
         });
       }
     })
-  .catch(() => {
+    .catch(() => {
       if (isMounted) setDistricts([]);
     });
 
-  return () => {
-    isMounted = false;
-  };
-}, [form.location.provinceId]); // Chỉ depend vào provinceId
+  return () => { isMounted = false };
+}, [form.location.provinceId]);
 
-// Load wards - không reset nếu ward hiện tại vẫn hợp lệ
+// Load wards
 useEffect(() => {
   if (!form.location.districtId) {
     setWards([]);
@@ -444,24 +437,23 @@ useEffect(() => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ districtId: form.location.districtId }),
   })
-  .then((r) => r.json())
-  .then((data) => {
+    .then((r) => r.ok ? r.json() : [])
+    .then((data) => {
       if (!isMounted) return;
-      setWards(data);
-      // Chỉ reset ward nếu ward hiện tại không thuộc district mới
-      if (form.location.wardId &&!data.find((w: Ward) => w.id === form.location.wardId)) {
+      const wards = Array.isArray(data) ? data : [];
+      setWards(wards);
+      
+      // Reset nếu ward cũ không thuộc district mới
+      if (form.location.wardId && !wards.find((w: Ward) => w.id === form.location.wardId)) {
         updateLocation({ wardId: null, wardName: "" });
       }
     })
-  .catch(() => {
+    .catch(() => {
       if (isMounted) setWards([]);
     });
 
-  return () => {
-    isMounted = false;
-  };
-}, [form.location.districtId]); // Chỉ depend vào districtId
-
+  return () => { isMounted = false };
+}, [form.location.districtId]);
 // Auto-save draft - chỉ load 1 lần khi mount
 useEffect(() => {
   const saved = localStorage.getItem(draftKey);
@@ -526,9 +518,7 @@ useEffect(() => {
 }, [step, form.location.lat, hasCheckedGps, requestGPS]);
 
 useEffect(() => {
-  if (step!== 1) {
-    setHasCheckedGps(false);
-  }
+  if (step!== 1) setHasCheckedGps(false);
 }, [step]);
 
   const validateField = (key: keyof FormState, value: any): string => {
@@ -904,12 +894,19 @@ await mutate("/api/tasks?type=plan&limit=20");
           {step === 1 && (
             <StepContent key="step1">
               <Card>
-                {!form.location.lat && !form.location.lng && (
-                  <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 p-4 text-sm font-bold text-amber-700 dark:from-amber-950/30 dark:to-orange-950/30 dark:text-amber-400">
-                    <FiMapPin className="flex-shrink-0 text-lg" />
-                    Vui lòng chọn địa điểm để tiếp tục
-                  </div>
-                )}
+           {provinces.length === 0 && !loadingProvinces && (
+  <div className="flex items-center gap-3 rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-700 dark:bg-red-950/30 dark:text-red-400">
+    <FiAlertCircle className="flex-shrink-0 text-lg" />
+    Không tải được danh sách tỉnh. Vui lòng reload trang.
+  </div>
+)}
+
+{loadingProvinces && (
+  <div className="flex items-center gap-3 rounded-2xl bg-blue-50 p-4 text-sm font-bold text-blue-700 dark:bg-blue-950/30 dark:text-blue-400">
+    <FiClock className="flex-shrink-0 text-lg animate-spin" />
+    Đang tải danh sách tỉnh...
+  </div>
+)}
 
                 <Field label="Tỉnh/Thành phố" required error={errors["location.provinceId"]} icon={FiMapPin}>
                   <select
