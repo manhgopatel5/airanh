@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   const cursor = searchParams.get('cursor') || undefined;
 
   // CHANGED: chỉ lấy 1 category đầu tiên thay vì array
-  const category = searchParams.get('categories')?.split(',')[0] || undefined;
+const category = searchParams.get('category') || undefined;
 
   const deadlineRange = searchParams.get('deadlineRange') || 'all';
   const priceRangeParam = searchParams.get('priceRange');
