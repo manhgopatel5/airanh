@@ -501,6 +501,7 @@ const requestGPS = useCallback(() => {
 }, []); // Bỏ updateLocation khỏi deps để tránh re-create
 
 // GPS check - đưa xuống sau requestGPS
+// CŨ
 useEffect(() => {
   if (step!== 1 || hasCheckedGps || form.location.lat) return;
   if (!navigator.permissions) {
@@ -518,9 +519,33 @@ useEffect(() => {
   });
 }, [step, form.location.lat, hasCheckedGps, requestGPS]);
 
+// MỚI - Thêm check để không chạy lại khi modal đang mở
 useEffect(() => {
-  if (step!== 1) setHasCheckedGps(false);
-}, [step]);
+  if (step !== 1 || hasCheckedGps || form.location.lat || showGpsExplain) return;
+  
+  const checkGPS = async () => {
+    if (!navigator.permissions) {
+      setShowGpsExplain(true);
+      setHasCheckedGps(true);
+      return;
+    }
+    
+    try {
+      const result = await navigator.permissions.query({ name: 'geolocation' });
+      if (result.state === 'granted') {
+        requestGPS();
+      } else {
+        setShowGpsExplain(true);
+      }
+    } catch {
+      setShowGpsExplain(true);
+    } finally {
+      setHasCheckedGps(true);
+    }
+  };
+  
+  checkGPS();
+}, [step, form.location.lat, hasCheckedGps, showGpsExplain, requestGPS]);
 
   const validateField = (key: keyof FormState, value: any): string => {
     switch (key) {
