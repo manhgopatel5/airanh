@@ -17,9 +17,22 @@ export async function GET() {
       code: p.codename,
     }));
 
-    return NextResponse.json(provinces);
+    return NextResponse.json(provinces, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8', // THÊM DÒNG NÀY
+      },
+    });
   } catch (err: any) {
     console.error("PROVINCE ERROR:", err);
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal error" }, 
+      { 
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8', // THÊM DÒNG NÀY
+        },
+      }
+    );
   }
 }
