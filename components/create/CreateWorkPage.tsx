@@ -1,6 +1,5 @@
  "use client";
 
-
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -362,31 +361,38 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const categories = isTask ? CATEGORY_TASKS : CATEGORY_PLANS;
   const draftKey = `create_${mode}_draft_v6`;
 
-// Load provinces - chỉ chạy 1 lần
+// Load provinces - chỉ chạy 1 lần, tránh race condition
 useEffect(() => {
   let isMounted = true;
-  setLoadingProvinces(true);
 
-  fetch("/api/location/province")
-    .then(async (r) => {
-      if (!r.ok) return [];
-      const data = await r.json();
-      return Array.isArray(data) ? data : [];
+  fetch("/api/location/province", {
+    headers: { "Content-Type": "application/json" },
+    cache: "force-cache"
+  })
+  .then(async (r) => {
+      if (!r.ok) throw new Error("API error");
+      return r.json();
     })
-    .then((data) => {
-      if (isMounted) setProvinces(data);
+  .then((data) => {
+      if (isMounted) {
+        setProvinces(Array.isArray(data)? data : []);
+        setLoadingProvinces(false);
+      }
     })
-    .catch(() => {
-      if (isMounted) setProvinces([]);
-    })
-    .finally(() => {
-      if (isMounted) setLoadingProvinces(false);
+  .catch(() => {
+      if (isMounted) {
+        toast.error("Không tải được danh sách tỉnh");
+        setProvinces([]);
+        setLoadingProvinces(false);
+      }
     });
 
-  return () => { isMounted = false };
-}, []);
+  return () => {
+    isMounted = false;
+  };
+}, []); // Chỉ chạy 1 lần khi mount
 
-// Load districts
+// Load districts - không reset nếu district hiện tại vẫn hợp lệ
 useEffect(() => {
   if (!form.location.provinceId) {
     setDistricts([]);
@@ -401,14 +407,12 @@ useEffect(() => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ provinceId: form.location.provinceId }),
   })
-    .then((r) => r.ok ? r.json() : [])
-    .then((data) => {
+  .then((r) => r.json())
+  .then((data) => {
       if (!isMounted) return;
-      const districts = Array.isArray(data) ? data : [];
-      setDistricts(districts);
-      
-      // Reset nếu district cũ không thuộc province mới
-      if (form.location.districtId && !districts.find((d: District) => d.id === form.location.districtId)) {
+      setDistricts(data);
+      // Chỉ reset district nếu district hiện tại không thuộc province mới
+      if (form.location.districtId &&!data.find((d: District) => d.id === form.location.districtId)) {
         updateLocation({
           districtId: null,
           districtName: "",
@@ -417,14 +421,16 @@ useEffect(() => {
         });
       }
     })
-    .catch(() => {
+  .catch(() => {
       if (isMounted) setDistricts([]);
     });
 
-  return () => { isMounted = false };
-}, [form.location.provinceId]);
+  return () => {
+    isMounted = false;
+  };
+}, [form.location.provinceId]); // Chỉ depend vào provinceId
 
-// Load wards
+// Load wards - không reset nếu ward hiện tại vẫn hợp lệ
 useEffect(() => {
   if (!form.location.districtId) {
     setWards([]);
@@ -438,23 +444,24 @@ useEffect(() => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ districtId: form.location.districtId }),
   })
-    .then((r) => r.ok ? r.json() : [])
-    .then((data) => {
+  .then((r) => r.json())
+  .then((data) => {
       if (!isMounted) return;
-      const wards = Array.isArray(data) ? data : [];
-      setWards(wards);
-      
-      // Reset nếu ward cũ không thuộc district mới
-      if (form.location.wardId && !wards.find((w: Ward) => w.id === form.location.wardId)) {
+      setWards(data);
+      // Chỉ reset ward nếu ward hiện tại không thuộc district mới
+      if (form.location.wardId &&!data.find((w: Ward) => w.id === form.location.wardId)) {
         updateLocation({ wardId: null, wardName: "" });
       }
     })
-    .catch(() => {
+  .catch(() => {
       if (isMounted) setWards([]);
     });
 
-  return () => { isMounted = false };
-}, [form.location.districtId]);
+  return () => {
+    isMounted = false;
+  };
+}, [form.location.districtId]); // Chỉ depend vào districtId
+
 // Auto-save draft - chỉ load 1 lần khi mount
 useEffect(() => {
   const saved = localStorage.getItem(draftKey);
@@ -501,7 +508,6 @@ const requestGPS = useCallback(() => {
 }, []); // Bỏ updateLocation khỏi deps để tránh re-create
 
 // GPS check - đưa xuống sau requestGPS
-// CŨ
 useEffect(() => {
   if (step!== 1 || hasCheckedGps || form.location.lat) return;
   if (!navigator.permissions) {
@@ -519,33 +525,11 @@ useEffect(() => {
   });
 }, [step, form.location.lat, hasCheckedGps, requestGPS]);
 
-// MỚI - Thêm check để không chạy lại khi modal đang mở
 useEffect(() => {
-  if (step !== 1 || hasCheckedGps || form.location.lat || showGpsExplain) return;
-  
-  const checkGPS = async () => {
-    if (!navigator.permissions) {
-      setShowGpsExplain(true);
-      setHasCheckedGps(true);
-      return;
-    }
-    
-    try {
-      const result = await navigator.permissions.query({ name: 'geolocation' });
-      if (result.state === 'granted') {
-        requestGPS();
-      } else {
-        setShowGpsExplain(true);
-      }
-    } catch {
-      setShowGpsExplain(true);
-    } finally {
-      setHasCheckedGps(true);
-    }
-  };
-  
-  checkGPS();
-}, [step, form.location.lat, hasCheckedGps, showGpsExplain, requestGPS]);
+  if (step!== 1) {
+    setHasCheckedGps(false);
+  }
+}, [step]);
 
   const validateField = (key: keyof FormState, value: any): string => {
     switch (key) {
@@ -917,122 +901,111 @@ await mutate("/api/tasks?type=plan&limit=20");
             </StepContent>
           )}
 
-{step === 1 && (
-  <StepContent key="step1">
-    <Card>
-      {provinces.length === 0 && !loadingProvinces && (
-        <div className="flex items-center gap-3 rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-700 dark:bg-red-950/30 dark:text-red-400">
-          <FiAlertCircle className="flex-shrink-0 text-lg" />
-          Không tải được danh sách tỉnh. Vui lòng reload trang.
-        </div>
-      )}
+          {step === 1 && (
+            <StepContent key="step1">
+              <Card>
+                {!form.location.lat && !form.location.lng && (
+                  <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 p-4 text-sm font-bold text-amber-700 dark:from-amber-950/30 dark:to-orange-950/30 dark:text-amber-400">
+                    <FiMapPin className="flex-shrink-0 text-lg" />
+                    Vui lòng chọn địa điểm để tiếp tục
+                  </div>
+                )}
 
-      {loadingProvinces && (
-        <div className="flex items-center gap-3 rounded-2xl bg-blue-50 p-4 text-sm font-bold text-blue-700 dark:bg-blue-950/30 dark:text-blue-400">
-          <FiClock className="flex-shrink-0 text-lg animate-spin" />
-          Đang tải danh sách tỉnh...
-        </div>
-      )}
+                <Field label="Tỉnh/Thành phố" required error={errors["location.provinceId"]} icon={FiMapPin}>
+                  <select
+                    value={form.location.provinceId || ""}
+                    onChange={(e) => {
+                      const id = Number(e.target.value);
+                      const p = provinces.find(p => p.id === id);
+                      updateLocation({
+                        provinceId: id,
+                        provinceName: p?.name || "",
+                        districtId: null,
+                        districtName: "",
+                        wardId: null,
+                        wardName: ""
+                      });
+                    }}
+                    className="input-premium"
+                    disabled={loadingProvinces}
+                  >
+                    <option value="">{loadingProvinces ? "Đang tải..." : "Chọn tỉnh/thành phố"}</option>
+                    {provinces.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </Field>
 
-      <Field label="Tỉnh/Thành phố" required error={errors["location.provinceId"]} icon={FiMapPin}>
-        <select
-          value={form.location.provinceId || ""}
-          onChange={(e) => {
-            const id = Number(e.target.value);
-            const p = provinces.find(p => p.id === id);
-            updateLocation({
-              provinceId: id || null,
-              provinceName: p?.name || "",
-              districtId: null,
-              districtName: "",
-              wardId: null,
-              wardName: ""
-            });
-          }}
-          className="input-premium"
-          disabled={loadingProvinces}
-        >
-          <option value="">{loadingProvinces ? "Đang tải..." : "Chọn tỉnh/thành phố"}</option>
-          {(provinces || []).map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
-      </Field>
+                {form.location.provinceId && (
+                  <Field label="Quận/Huyện" icon={FiMapPin}>
+                    <select
+                      value={form.location.districtId || ""}
+                      onChange={(e) => {
+                        const id = Number(e.target.value);
+                        const d = districts.find(d => d.id === id);
+                        updateLocation({
+                          districtId: id,
+                          districtName: d?.name || "",
+                          wardId: null,
+                          wardName: ""
+                        });
+                      }}
+                      className="input-premium"
+                    >
+                      <option value="">Chọn quận/huyện</option>
+                      {districts.map((d) => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                  </Field>
+                )}
 
-      {form.location.provinceId && (
-        <Field label="Quận/Huyện" icon={FiMapPin}>
-          <select
-            value={form.location.districtId || ""}
-            onChange={(e) => {
-              const id = Number(e.target.value);
-              const d = districts.find(d => d.id === id);
-              updateLocation({
-                districtId: id || null,
-                districtName: d?.name || "",
-                wardId: null,
-                wardName: ""
-              });
-            }}
-            className="input-premium"
-          >
-            <option value="">Chọn quận/huyện</option>
-            {(districts || []).map((d) => (
-              <option key={d.id} value={d.id}>{d.name}</option>
-            ))}
-          </select>
-        </Field>
-      )}
+                {form.location.districtId && (
+                  <Field label="Phường/Xã" icon={FiMapPin}>
+                    <select
+                      value={form.location.wardId || ""}
+                      onChange={(e) => {
+                        const id = Number(e.target.value);
+                        const w = wards.find(w => w.id === id);
+                        updateLocation({ wardId: id, wardName: w?.name || "" });
+                      }}
+                      className="input-premium"
+                    >
+                      <option value="">Chọn phường/xã</option>
+                      {wards.map((w) => (
+                        <option key={w.id} value={w.id}>{w.name}</option>
+                      ))}
+                    </select>
+                  </Field>
+                )}
 
-      {form.location.districtId && (
-        <Field label="Phường/Xã" icon={FiMapPin}>
-          <select
-            value={form.location.wardId || ""}
-            onChange={(e) => {
-              const id = Number(e.target.value);
-              const w = wards.find(w => w.id === id);
-              updateLocation({ 
-                wardId: id || null, 
-                wardName: w?.name || "" 
-              });
-            }}
-            className="input-premium"
-          >
-            <option value="">Chọn phường/xã</option>
-            {(wards || []).map((w) => (
-              <option key={w.id} value={w.id}>{w.name}</option>
-            ))}
-          </select>
-        </Field>
-      )}
-
-      <Field label="Địa chỉ cụ thể" required error={errors["location.address"]} icon={FiMapPin}>
-        <div className="relative">
-          <input
-            value={form.location.address}
-            onChange={(e) => handleAddressChange(e.target.value)}
-            onBlur={() => blur("location")}
-            placeholder="Tên đường, số nhà..."
-            className="input-premium"
-          />
-          {placeSuggestions.length > 0 && (
-            <div className="absolute top-full z-10 mt-2 w-full overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
-              {placeSuggestions.map((s, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => { updateLocation({ address: s }); setPlaceSuggestions([]); }}
-                  className="w-full border-b border-zinc-100 px-4 py-3 text-left text-sm font-medium hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800 last:border-0"
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
+                <Field label="Địa chỉ cụ thể" required error={errors["location.address"]} icon={FiMapPin}>
+                  <div className="relative">
+                    <input
+                      value={form.location.address}
+                      onChange={(e) => handleAddressChange(e.target.value)}
+                      onBlur={() => blur("location")}
+                      placeholder="Tên đường, số nhà..."
+                      className="input-premium"
+                    />
+                    {placeSuggestions.length > 0 && (
+                      <div className="absolute top-full z-10 mt-2 w-full overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
+                        {placeSuggestions.map((s, i) => (
+                          <button
+                            key={i}
+                            onClick={() => { updateLocation({ address: s }); setPlaceSuggestions([]); }}
+                            className="w-full border-b border-zinc-100 px-4 py-3 text-left text-sm font-medium hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800 last:border-0"
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </Field>
+              </Card>
+            </StepContent>
           )}
-        </div>
-      </Field>
-    </Card>
-  </StepContent>
-)}
 
           {step === 2 && (
             <StepContent key="step2">
