@@ -32,7 +32,9 @@ import { createPlan, createTask } from "@/lib/task";
 import { useAuth } from "@/lib/AuthContext";
 
 type Mode = "task" | "plan";
-
+type Province = { id: number; name: string; code: string };
+type District = { id: number; name: string; code: string };
+type Ward = { id: number; name: string };
 
 type LocationState = {
   address: string;
@@ -307,7 +309,7 @@ const fetcher = (url: string) => fetch(url, { cache: 'no-store' }).then(r => {
   return r.json();
 });
 
-const { data: provinces = [], isLoading: loadingProvinces, error: provinceError } = useSWR(
+const { data: provinces = [], isLoading: loadingProvinces, error: provinceError } = useSWR<Province[]>(
   "/api/location/province",
   fetcher,
   {
@@ -316,14 +318,11 @@ const { data: provinces = [], isLoading: loadingProvinces, error: provinceError 
     shouldRetryOnError: true,
     errorRetryCount: 3,
     errorRetryInterval: 1000,
-    dedupingInterval: 60000, // Cache 1 phút
+    dedupingInterval: 60000,
   }
 );
 
-const { 
-  data: districts = [], 
-  // XÓA isLoading: loadingDistricts
-} = useSWR(
+const { data: districts = [] } = useSWR<District[]>(
   form.location.provinceId ? ["/api/location/district", form.location.provinceId] : null,
   ([url, id]) => fetch(url, {
     method: "POST",
@@ -344,10 +343,7 @@ const {
   }
 );
 
-const { 
-  data: wards = []
-  // XÓA isLoading: loadingWards
-} = useSWR(
+const { data: wards = [] } = useSWR<Ward[]>(
   form.location.districtId ? ["/api/location/ward", form.location.districtId] : null,
   ([url, id]) => fetch(url, {
     method: "POST",
