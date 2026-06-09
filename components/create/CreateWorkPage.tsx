@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Timestamp } from "firebase/firestore";
 import { mutate } from "swr";
-import useSWR from "swr"; 
+import useSWRImmutable from 'swr/immutable';
 
 import TaskCard from "@/components/task/TaskCard"; // đường dẫn đúng của bạn
 
@@ -290,6 +290,12 @@ function BulletTextarea({
 }
 
 export default function CreateWorkPage({ mode }: { mode: Mode }) {
+  const { mutate } = useSWRConfig();
+  
+  useEffect(() => {
+    // Xóa cache SWR cũ khi mount
+    mutate("/api/location/province", undefined, { revalidate: true });
+  }, []);
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [form, setForm] = useState<FormState>(() => initialForm(mode));
@@ -304,22 +310,16 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
 
   const debounceRef = useRef<NodeJS.Timeout>();
 // SWR thay useEffect - không bao giờ trắng
-const fetcher = (url: string) => fetch(url, { cache: 'no-store' }).then(r => {
-  if (!r.ok) throw new Error('API error');
-  return r.json();
+
+
+const fetcher = (url: string) => fetch(url).then(async r => {
+  const data = await r.json();
+  return Array.isArray(data) ? data : []; // Luôn trả array
 });
 
-const { data: provinces = [], isLoading: loadingProvinces, error: provinceError } = useSWR<Province[]>(
+const { data: provinces = [], isLoading: loadingProvinces, error: provinceError } = useSWRImmutable<Province[]>(
   "/api/location/province",
-  fetcher,
-  {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    shouldRetryOnError: true,
-    errorRetryCount: 3,
-    errorRetryInterval: 1000,
-    dedupingInterval: 60000,
-  }
+  fetcher
 );
 
 const { 
@@ -848,49 +848,48 @@ await mutate("/api/tasks?type=plan&limit=20");
  {step === 1 && (
   <StepContent key="step1">
     <Card>
-      <Field label="Tỉnh/Thành phố" required error={errors["location.provinceId"]} icon={FiMapPin}>
-        <select
-          value={form.location.provinceId || ""}
-          onChange={(e) => {
-            const id = Number(e.target.value);
-            const p = provinces.find(p => p.id === id);
-            updateLocation({
-              provinceId: id,
-              provinceName: p?.name || "",
-              districtId: null,
-              districtName: "",
-              wardId: null,
-              wardName: ""
-            });
-          }}
-          className="input-premium"
-        >
-          <option value="">
-            {loadingProvinces 
-              ? "Đang tải 63 tỉnh/thành..." 
-              : provinceError
-                ? "Lỗi tải dữ liệu"
-                : provinces.length === 0
-                  ? "Không có dữ liệu"
-                  : "Chọn tỉnh/thành phố"}
-          </option>
-          {provinces.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
-        {provinceError && (
-          <p className="flex items-center gap-1.5 text-xs font-bold text-red-500">
-            <FiAlertCircle /> Không tải được danh sách tỉnh. 
-            <button 
-              type="button"
-              onClick={() => mutate("/api/location/province")} 
-              className="underline hover:text-red-600"
-            >
-              Thử lại
-            </button>
-          </p>
-        )}
-      </Field>
+<Field label="Tỉnh/Thành phố" required error={errors["location.provinceId"]} icon={FiMapPin}>
+  <select
+    value={form.location.provinceId || ""}
+    onChange={(e) => {
+      const id = Number(e.target.value);
+      const p = provinces.find(p => p.id === id);
+      updateLocation({
+        provinceId: id || null,
+        provinceName: p?.name || "",
+        districtId: null,
+        districtName: "",
+        wardId: null,
+        wardName: ""
+      });
+    }}
+    className="input-premium"
+    disabled={loadingProvinces}
+  >
+    <option value="">
+      {loadingProvinces 
+        ? "Đang tải 63 tỉnh/thành..." 
+        : provinces.length === 0
+          ? "Không có dữ liệu"
+          : "Chọn tỉnh/thành phố"}
+    </option>
+    {provinces.map((p) => (
+      <option key={p.id} value={p.id}>{p.name}</option>
+    ))}
+  </select>
+  {provinceError && provinces.length === 0 && (
+    <p className="flex items-center gap-1.5 text-xs font-bold text-red-500">
+      <FiAlertCircle /> Không tải được danh sách tỉnh. 
+      <button 
+        type="button"
+        onClick={() => mutate("/api/location/province")} 
+        className="underline hover:text-red-600"
+      >
+        Thử lại
+      </button>
+    </p>
+  )}
+</Field>
 
       <Field label="Quận/Huyện" icon={FiMapPin}>
         <select
