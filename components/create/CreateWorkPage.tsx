@@ -361,27 +361,28 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const categories = isTask ? CATEGORY_TASKS : CATEGORY_PLANS;
   const draftKey = `create_${mode}_draft_v6`;
 
-// Load provinces - chỉ chạy 1 lần, tránh race condition
+// Load provinces - bỏ cache, luôn fetch mới
 useEffect(() => {
   let isMounted = true;
+  setLoadingProvinces(true);
 
   fetch("/api/location/province", {
     headers: { "Content-Type": "application/json" },
-    cache: "force-cache"
+    cache: "no-store", // ĐỔI THÀNH no-store
   })
   .then(async (r) => {
-      if (!r.ok) throw new Error("API error");
+      if (!r.ok) throw new Error(`API error: ${r.status}`);
       return r.json();
     })
   .then((data) => {
       if (isMounted) {
-        setProvinces(Array.isArray(data) ? data : []);
+        setProvinces(Array.isArray(data) && data.length > 0 ? data : []);
       }
     })
-  .catch(() => {
+  .catch((err) => {
+      console.error("Fetch province lỗi:", err);
       if (isMounted) {
         toast.error("Không tải được danh sách tỉnh");
-        // Fallback data để UI không chết
         setProvinces([
           { id: 1, name: "Hà Nội", code: "HN" },
           { id: 79, name: "TP. Hồ Chí Minh", code: "SG" },
@@ -390,7 +391,7 @@ useEffect(() => {
       }
     })
   .finally(() => {
-      if (isMounted) setLoadingProvinces(false); // <-- LUÔN CHẠY
+      if (isMounted) setLoadingProvinces(false);
   });
 
   return () => {
@@ -398,7 +399,7 @@ useEffect(() => {
   };
 }, []);
 
-// Load districts - không reset nếu district hiện tại vẫn hợp lệ
+// Load districts - thêm cache no-store
 useEffect(() => {
   if (!form.location.provinceId) {
     setDistricts([]);
@@ -412,13 +413,17 @@ useEffect(() => {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ provinceId: form.location.provinceId }),
+    cache: "no-store", // THÊM DÒNG NÀY
   })
-  .then((r) => r.json())
+  .then((r) => {
+      if (!r.ok) throw new Error(`API error: ${r.status}`);
+      return r.json();
+    })
   .then((data) => {
       if (!isMounted) return;
-      setDistricts(data);
-      // Chỉ reset district nếu district hiện tại không thuộc province mới
-      if (form.location.districtId &&!data.find((d: District) => d.id === form.location.districtId)) {
+      const districtsData = Array.isArray(data) ? data : [];
+      setDistricts(districtsData);
+      if (form.location.districtId && !districtsData.find((d: District) => d.id === form.location.districtId)) {
         updateLocation({
           districtId: null,
           districtName: "",
@@ -427,16 +432,17 @@ useEffect(() => {
         });
       }
     })
-  .catch(() => {
+  .catch((err) => {
+      console.error("Fetch district lỗi:", err);
       if (isMounted) setDistricts([]);
     });
 
   return () => {
     isMounted = false;
   };
-}, [form.location.provinceId]); // Chỉ depend vào provinceId
+}, [form.location.provinceId]);
 
-// Load wards - không reset nếu ward hiện tại vẫn hợp lệ
+// Load wards - thêm cache no-store
 useEffect(() => {
   if (!form.location.districtId) {
     setWards([]);
@@ -449,25 +455,29 @@ useEffect(() => {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ districtId: form.location.districtId }),
+    cache: "no-store", // THÊM DÒNG NÀY
   })
-  .then((r) => r.json())
+  .then((r) => {
+      if (!r.ok) throw new Error(`API error: ${r.status}`);
+      return r.json();
+    })
   .then((data) => {
       if (!isMounted) return;
-      setWards(data);
-      // Chỉ reset ward nếu ward hiện tại không thuộc district mới
-      if (form.location.wardId &&!data.find((w: Ward) => w.id === form.location.wardId)) {
+      const wardsData = Array.isArray(data) ? data : [];
+      setWards(wardsData);
+      if (form.location.wardId && !wardsData.find((w: Ward) => w.id === form.location.wardId)) {
         updateLocation({ wardId: null, wardName: "" });
       }
     })
-  .catch(() => {
+  .catch((err) => {
+      console.error("Fetch ward lỗi:", err);
       if (isMounted) setWards([]);
     });
 
   return () => {
     isMounted = false;
   };
-}, [form.location.districtId]); // Chỉ depend vào districtId
-
+}, [form.location.districtId]);
 // Auto-save draft - chỉ load 1 lần khi mount
 useEffect(() => {
   const saved = localStorage.getItem(draftKey);
