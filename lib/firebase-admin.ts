@@ -35,7 +35,7 @@ function getFirebaseAdmin() {
     try {
       app = initializeApp({
         credential: cert(getServiceAccount()),
-       ...(process.env.FIREBASE_DATABASE_URL && {
+      ...(process.env.FIREBASE_DATABASE_URL && {
           databaseURL: process.env.FIREBASE_DATABASE_URL,
         }),
       });
@@ -106,20 +106,18 @@ export async function getJobsFromFirebaseAdmin(
     'costType', 'costAmount', 'costDescription', 'milestones'
   ];
 
-  // FIX 1: Dùng == thay vì 'in' để match index type+status+price
+  // FIX: Chỉ dùng '==' để khớp index type+status+price
   let query: Query = db.collection('tasks')
-   .where('type', '==', type)
-   .where('status', '==', 'open'); // Chỉ lấy task open
-
-  // FIX 2: Bỏ where banned/hidden khỏi query vì chưa có index
-  // Sẽ filter lại bằng code ở dưới
+  .where('type', '==', type)
+  .where('status', '==', 'open');
 
   // Filter category
   if (category) {
     query = query.where('category', '==', category);
   }
 
-  // Filter price - chỉ cho task
+  // FIX: Nếu có filter price thì orderBy đầu tiên PHẢI là price
+  const hasPriceFilter = minPrice!== undefined || maxPrice!== undefined;
   if (type === 'task') {
     if (minPrice!== undefined) {
       query = query.where('price', '>=', minPrice);
@@ -129,17 +127,29 @@ export async function getJobsFromFirebaseAdmin(
     }
   }
 
-  // FIX 3: orderBy đơn giản, không lồng nhau
-  if (sortBy === 'hot') {
-    query = query.orderBy('hotScore', 'desc');
-  } else if (sortBy === 'views') {
-    query = query.orderBy('viewCount', 'desc');
-  } else if (sortBy === 'price_asc') {
-    query = query.orderBy('price', 'asc');
-  } else if (sortBy === 'price_desc') {
-    query = query.orderBy('price', 'desc');
+  // FIX: Logic orderBy - Firestore yêu cầu orderBy field đầu tiên phải là field dùng trong range filter
+  if (hasPriceFilter) {
+    // Khi filter giá thì bắt buộc orderBy price trước
+    if (sortBy === 'price_desc') {
+      query = query.orderBy('price', 'desc');
+    } else {
+      query = query.orderBy('price', 'asc');
+    }
+    // Không thể orderBy field khác sau price vì sẽ lỗi index
+    // Sort createdAt/views sẽ làm ở client sau khi fetch
   } else {
-    query = query.orderBy('createdAt', 'desc');
+    // Không filter giá thì orderBy bình thường
+    if (sortBy === 'hot') {
+      query = query.orderBy('hotScore', 'desc');
+    } else if (sortBy === 'views') {
+      query = query.orderBy('viewCount', 'desc');
+    } else if (sortBy === 'price_asc') {
+      query = query.orderBy('price', 'asc');
+    } else if (sortBy === 'price_desc') {
+      query = query.orderBy('price', 'desc');
+    } else {
+      query = query.orderBy('createdAt', 'desc');
+    }
   }
 
   // Pagination
@@ -168,7 +178,7 @@ export async function getJobsFromFirebaseAdmin(
 
   console.log('>>> Firestore docs:', snap.size, 'sortBy:', sortBy, 'category:', category);
 
-  const tasks = snap.docs.map(doc => {
+  let tasks = snap.docs.map(doc => {
     const d = doc.data();
     const taskData: TaskListItem = {
       id: doc.id,
@@ -182,16 +192,16 @@ export async function getJobsFromFirebaseAdmin(
       userId: d.userId || "",
       userName: d.userName || "",
       userAvatar: d.userAvatar || "",
-     ...(d.userVerified!== undefined && { userVerified: d.userVerified }),
-     ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
-     ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
+    ...(d.userVerified!== undefined && { userVerified: d.userVerified }),
+    ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
+    ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
       price: d.price?? 0,
       currency: d.currency || "VND",
       totalSlots: d.totalSlots?? d.maxParticipants?? 0,
       joined: d.joined?? 0,
       budgetType: d.budgetType || "fixed",
-     ...(d.paymentMethod!== undefined && { paymentMethod: d.paymentMethod }),
-     ...(d.isRemote!== undefined && { isRemote: d.isRemote }),
+    ...(d.paymentMethod!== undefined && { paymentMethod: d.paymentMethod }),
+    ...(d.isRemote!== undefined && { isRemote: d.isRemote }),
       category: d.category || "",
       tags: Array.isArray(d.tags)? d.tags : [],
       images: Array.isArray(d.images)? d.images : [],
@@ -199,25 +209,25 @@ export async function getJobsFromFirebaseAdmin(
       likeCount: d.likeCount?? 0,
       commentCount: d.commentCount?? 0,
       likes: [],
-     ...(d.location!== undefined && { location: d.location }),
+    ...(d.location!== undefined && { location: d.location }),
       savedBy: [],
       applicants: [],
       banned: d.banned === true,
       hidden: d.hidden === true,
-     ...(d.appliedCount!== undefined && { appliedCount: d.appliedCount }),
-     ...(d.maxParticipants!== undefined && { maxParticipants: d.maxParticipants }),
-     ...(d.currentParticipants!== undefined && { currentParticipants: d.currentParticipants }),
-     ...(d.costType!== undefined && { costType: d.costType }),
-     ...(d.costAmount!== undefined && { costAmount: d.costAmount }),
-     ...(d.costDescription!== undefined && { costDescription: d.costDescription }),
-     ...(d.milestones!== undefined && { milestones: d.milestones }),
+    ...(d.appliedCount!== undefined && { appliedCount: d.appliedCount }),
+    ...(d.maxParticipants!== undefined && { maxParticipants: d.maxParticipants }),
+    ...(d.currentParticipants!== undefined && { currentParticipants: d.currentParticipants }),
+    ...(d.costType!== undefined && { costType: d.costType }),
+    ...(d.costAmount!== undefined && { costAmount: d.costAmount }),
+    ...(d.costDescription!== undefined && { costDescription: d.costDescription }),
+    ...(d.milestones!== undefined && { milestones: d.milestones }),
       createdAt: tsToString(d.createdAt),
-     ...(d.updatedAt && { updatedAt: tsToString(d.updatedAt) }),
-     ...(d.deadline && { deadline: tsToString(d.deadline) }),
-     ...(d.startDate && { startDate: tsToString(d.startDate) }),
-     ...(d.applicationDeadline && { applicationDeadline: tsToString(d.applicationDeadline) }),
-     ...(d.eventDate && { eventDate: tsToString(d.eventDate) }),
-     ...(d.endDate && { endDate: tsToString(d.endDate) }),
+    ...(d.updatedAt && { updatedAt: tsToString(d.updatedAt) }),
+    ...(d.deadline && { deadline: tsToString(d.deadline) }),
+    ...(d.startDate && { startDate: tsToString(d.startDate) }),
+    ...(d.applicationDeadline && { applicationDeadline: tsToString(d.applicationDeadline) }),
+    ...(d.eventDate && { eventDate: tsToString(d.eventDate) }),
+    ...(d.endDate && { endDate: tsToString(d.endDate) }),
     };
 
     return taskData as FeedTask;
@@ -226,6 +236,17 @@ export async function getJobsFromFirebaseAdmin(
     task.banned!== true && 
     task.hidden!== true
   );
+
+  // FIX: Sort lại ở client nếu có filter giá + sortBy không phải price
+  if (hasPriceFilter && sortBy === 'new') {
+    tasks = tasks.sort((a, b) => 
+      new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
+  } else if (hasPriceFilter && sortBy === 'views') {
+    tasks = tasks.sort((a, b) => b.viewCount - a.viewCount);
+  } else if (hasPriceFilter && sortBy === 'hot') {
+    tasks = tasks.sort((a, b) => (b.hotScore || 0) - (a.hotScore || 0));
+  }
 
   const lastDoc = snap.docs[snap.docs.length - 1];
   const nextCursor = lastDoc? lastDoc.id : null;
@@ -289,7 +310,7 @@ export async function sendNotification(
       notification: {
         icon: "ic_notification",
         color: "#3B82F6",
-       ...(priority === "high" && { sound: "default" }),
+      ...(priority === "high" && { sound: "default" }),
       },
     },
     apns: {
@@ -297,7 +318,7 @@ export async function sendNotification(
       payload: {
         aps: {
           badge: 1,
-         ...(priority === "high" && { sound: "default" }),
+        ...(priority === "high" && { sound: "default" }),
           "content-available": 1,
         },
       },
