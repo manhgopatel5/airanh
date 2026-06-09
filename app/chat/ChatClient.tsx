@@ -46,7 +46,7 @@ import {
 import { RiAddLine, RiPushpinFill } from "react-icons/ri";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ScanLine, Crown, Gift, Wallet, Percent } from "lucide-react";
+import { ScanLine, Crown, Vote, Wallet, Percent } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { format, isToday, isYesterday, formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -169,6 +169,10 @@ export default function ChatClient() {
   const [selected, setSelected] = useState<string[]>([]);
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [showScanQR, setShowScanQR] = useState<boolean>(false);
+  const [showPoll, setShowPoll] = useState<boolean>(false);
+const [pollQuestion, setPollQuestion] = useState<string>("");
+const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
+const [creatingPoll, setCreatingPoll] = useState<boolean>(false);
   const [scanMode, setScanMode] = useState<"camera" | "upload">("camera");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -784,6 +788,58 @@ updatedAt: serverTimestamp(), lastMessage: `${user.displayName || "Bạn"} đã 
   }
 }, [user, groupName, selected, db, router, createNotification]);
 
+const handleCreatePoll = useCallback(async (targetChatId?: string): Promise<void> => {
+  if (!user?.uid) return;
+  const q = pollQuestion.trim();
+  const opts = pollOptions.map(o => o.trim()).filter(o => o);
+  
+  if (!q) { toast.error("Nhập câu hỏi"); return; }
+  if (opts.length < 2) { toast.error("Cần ít nhất 2 lựa chọn"); return; }
+
+  setCreatingPoll(true);
+  try {
+    // Nếu đang trong chat thì gửi vào chat đó, không thì chọn chat đầu tiên
+    const chatId = targetChatId || items.find(i => !i.isGroup)?.chatId;
+    if (!chatId) throw new Error("Chọn cuộc trò chuyện để gửi bình chọn");
+
+    const pollRef = doc(collection(db, "chats", chatId, "polls"));
+    await setDoc(pollRef, {
+      question: q,
+      options: opts.map(text => ({ text, votes: [] })),
+      createdBy: user.uid,
+      createdByName: user.displayName || "Bạn",
+      createdAt: serverTimestamp(),
+      expiresAt: Timestamp.fromDate(new Date(Date.now() + 24 * 60 * 60 * 1000)), // 24h
+      isActive: true,
+    });
+
+    // Gửi message báo có poll
+    const msgRef = doc(collection(db, "chats", chatId, "messages"));
+    await setDoc(msgRef, {
+      type: "poll",
+      pollId: pollRef.id,
+      text: `📊 ${q}`,
+      senderId: user.uid,
+      createdAt: serverTimestamp(),
+    });
+
+    await updateDoc(doc(db, "chats", chatId), {
+      lastMessage: `📊 Bình chọn: ${q}`,
+      lastSenderId: user.uid,
+      updatedAt: serverTimestamp(),
+    });
+
+    toast.success("Đã tạo bình chọn");
+    setShowPoll(false);
+    setPollQuestion("");
+    setPollOptions(["", ""]);
+    router.push(`/chat/${chatId}`);
+  } catch (error: any) {
+    toast.error(error.message || "Lỗi tạo bình chọn");
+  } finally {
+    setCreatingPoll(false);
+  }
+}, [user, pollQuestion, pollOptions, items, db, router]);
 const handleTogglePin = useCallback((chatId: string): void => {
   const newPinned = pinned.includes(chatId)? pinned.filter((id) => id!== chatId) : [...pinned, chatId];
   savePinned(newPinned);
@@ -951,7 +1007,7 @@ const getNotificationIcon = (type: string) => {
                 { label: "Bạn bè", icon: FiUsers, color: "bg-sky-500", onClick: () => setActiveTab("friends") },
                 { label: "Nhóm", icon: FiUsers, color: "bg-purple-500", onClick: () => setActiveTab("group") },
                 { label: "Thông báo", icon: FiBell, color: "bg-red-500", onClick: () => setActiveTab("notifications") },
-                { label: "VIP", icon: Crown, color: "bg-amber-500", onClick: () => toast.info("Tính năng VIP sắp ra mắt") },
+{ label: "Bình chọn", icon: Vote, color: "bg-gradient-to-br from-indigo-500 to-purple-500", onClick: () => setShowPoll(true) },
                 { label: "Ưu đãi", icon: Percent, color: "bg-pink-500", onClick: () => toast.info("Chưa có ưu đãi") },
                 { label: "Quỹ chung", icon: Wallet, color: "bg-orange-500", onClick: () => toast.info("Sắp ra mắt") },
               ].map((item) => (
@@ -1370,6 +1426,83 @@ const getNotificationIcon = (type: string) => {
             </div>
           </div>
         )}
+{showPoll && (
+  <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
+    <div className="absolute inset-0 bg-black/40 backdrop-blur-2xl" onClick={() => setShowPoll(false)} />
+    <div className="relative w-full sm:max-w- bg-white dark:bg-zinc-900 rounded-t- sm:rounded- shadow-2xl max-h- flex flex-col animate-in slide-in-from-bottom duration-300">
+      <div className="w- h- bg-black/15 dark:bg-white/15 rounded-full mx-auto mt-2.5 sm:hidden" />
+      <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-black/5 dark:border-white/5">
+        <h2 className="text- font-semibold">Tạo bình chọn</h2>
+        <button onClick={() => setShowPoll(false)} className="w-7 h-7 -mr-1 flex items-center justify-center text-[#8e8e93]">
+          <FiX size={22} />
+        </button>
+      </div>
+      
+      <div className="flex-1 overflow-auto p-5 space-y-4">
+        <div>
+          <label className="text- font-medium text-[#8e8e93] mb-2 block">Câu hỏi</label>
+          <input
+            type="text"
+            value={pollQuestion}
+            onChange={(e) => setPollQuestion(e.target.value)}
+            placeholder="Vd: Đi ăn ở đâu tối nay?"
+            className={`w-full h- px-4 bg-zinc-100 dark:bg-zinc-800 rounded-xl text- outline-none ${primaryBorder} focus:ring-4 ${primaryRing}`}
+            maxLength={100}
+          />
+        </div>
+
+        <div>
+          <label className="text- font-medium text-[#8e8e93] mb-2 block">Lựa chọn</label>
+          <div className="space-y-2">
+            {pollOptions.map((opt, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={opt}
+                  onChange={(e) => {
+                    const newOpts = [...pollOptions];
+                    newOpts[idx] = e.target.value;
+                    setPollOptions(newOpts);
+                  }}
+                  placeholder={`Lựa chọn ${idx + 1}`}
+                  className="flex-1 h- px-4 bg-zinc-100 dark:bg-zinc-800 rounded-xl text- outline-none focus:ring-2 focus:ring-[#0a84ff]/20"
+                  maxLength={50}
+                />
+                {pollOptions.length > 2 && (
+                  <button
+                    onClick={() => setPollOptions(pollOptions.filter((_, i) => i !== idx))}
+                    className="w-9 h-9 flex items-center justify-center text-red-500"
+                  >
+                    <FiX size={18} />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+          {pollOptions.length < 6 && (
+            <button
+              onClick={() => setPollOptions([...pollOptions, ""])}
+              className={`mt-2 text- ${primaryText} font-medium flex items-center gap-1`}
+            >
+              <RiAddLine size={18} /> Thêm lựa chọn
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="p-4 border-t border-black/5 dark:border-white/5">
+        <button
+          onClick={() => handleCreatePoll()}
+          disabled={creatingPoll || !pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2}
+          className={`w-full h- ${primaryBg} ${primaryHover} ${primaryActive} disabled:opacity-40 text-white rounded-xl text- font-[550] transition-all active:scale-[0.98] flex items-center justify-center gap-2`}
+        >
+          {creatingPoll && <FiLoader className="animate-spin" size={18} />}
+          {creatingPoll ? "Đang tạo..." : "Tạo bình chọn"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       </div>
       <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}body{overscroll-behavior-y:contain}`}</style>
     </>
