@@ -11,7 +11,7 @@ export const getProvinces = async (): Promise<Province[]> => {
   // Dùng absolute URL cho server fetch
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
   
-  promise = fetch(`${baseUrl}/api/location/provinces`, { 
+  promise = fetch(`${baseUrl}/api/location/province`, { 
     next: { revalidate: 86400 } // ISR 24h
   })
     .then((r) => {
