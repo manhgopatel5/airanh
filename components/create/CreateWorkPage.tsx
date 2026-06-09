@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Timestamp } from "firebase/firestore";
 import { mutate } from "swr";
-
+import useSWR from "swr"; 
 
 import TaskCard from "@/components/task/TaskCard"; // đường dẫn đúng của bạn
 
@@ -300,14 +300,98 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
 
   const [showPreview, setShowPreview] = useState(false);
   const [placeSuggestions, setPlaceSuggestions] = useState<string[]>([]);
-  const [provinces, setProvinces] = useState<Province[]>([]);
-  const [districts, setDistricts] = useState<District[]>([]);
-  const [wards, setWards] = useState<Ward[]>([]);
-  const [loadingProvinces, setLoadingProvinces] = useState(true);
 
 
   const debounceRef = useRef<NodeJS.Timeout>();
+// SWR thay useEffect - không bao giờ trắng
+const fetcher = (url: string) => fetch(url, { cache: 'no-store' }).then(r => {
+  if (!r.ok) throw new Error('API error');
+  return r.json();
+});
 
+const { data: provinces = [], isLoading: loadingProvinces, error: provinceError } = useSWR(
+  "/api/location/province",
+  fetcher,
+  {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    shouldRetryOnError: true,
+    errorRetryCount: 3,
+    errorRetryInterval: 1000,
+    dedupingInterval: 60000, // Cache 1 phút
+  }
+);
+
+const { 
+  data: districts = [], 
+  isLoading: loadingDistricts,
+  error: districtError 
+} = useSWR(
+  form.location.provinceId ? ["/api/location/district", form.location.provinceId] : null,
+  ([url, id]) => fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ provinceId: id }),
+    cache: 'no-store'
+  }).then(r => {
+    if (!r.ok) throw new Error('API error');
+    return r.json();
+  }),
+  { 
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    shouldRetryOnError: true,
+    errorRetryCount: 3,
+    errorRetryInterval: 1000,
+    dedupingInterval: 60000,
+  }
+);
+
+const { 
+  data: wards = [], 
+  isLoading: loadingWards,
+  error: wardError 
+} = useSWR(
+  form.location.districtId ? ["/api/location/ward", form.location.districtId] : null,
+  ([url, id]) => fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ districtId: id }),
+    cache: 'no-store'
+  }).then(r => {
+    if (!r.ok) throw new Error('API error');
+    return r.json();
+  }),
+  { 
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    shouldRetryOnError: true,
+    errorRetryCount: 3,
+    errorRetryInterval: 1000,
+    dedupingInterval: 60000,
+  }
+);
+// Reset district/ward khi province thay đổi
+useEffect(() => {
+  if (!form.location.provinceId) {
+    updateLocation({
+      districtId: null,
+      districtName: "",
+      wardId: null,
+      wardName: ""
+    });
+  }
+}, [form.location.provinceId]);
+
+// Reset ward khi district thay đổi  
+useEffect(() => {
+  if (!form.location.districtId) {
+    updateLocation({
+      wardId: null,
+      wardName: ""
+    });
+  }
+}, [form.location.districtId]);
   const isTask = mode === "task";
   const previewTask = useMemo(() => ({
   id: "preview",
@@ -361,123 +445,7 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const categories = isTask ? CATEGORY_TASKS : CATEGORY_PLANS;
   const draftKey = `create_${mode}_draft_v6`;
 
-// Load provinces - bỏ cache, luôn fetch mới
-useEffect(() => {
-  let isMounted = true;
-  setLoadingProvinces(true);
 
-  fetch("/api/location/province", {
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store", // ĐỔI THÀNH no-store
-  })
-  .then(async (r) => {
-      if (!r.ok) throw new Error(`API error: ${r.status}`);
-      return r.json();
-    })
-  .then((data) => {
-      if (isMounted) {
-        setProvinces(Array.isArray(data) && data.length > 0 ? data : []);
-      }
-    })
-  .catch((err) => {
-      console.error("Fetch province lỗi:", err);
-      if (isMounted) {
-        toast.error("Không tải được danh sách tỉnh");
-        setProvinces([
-          { id: 1, name: "Hà Nội", code: "HN" },
-          { id: 79, name: "TP. Hồ Chí Minh", code: "SG" },
-          { id: 48, name: "Đà Nẵng", code: "DN" },
-        ]);
-      }
-    })
-  .finally(() => {
-      if (isMounted) setLoadingProvinces(false);
-  });
-
-  return () => {
-    isMounted = false;
-  };
-}, []);
-
-// Load districts - thêm cache no-store
-useEffect(() => {
-  if (!form.location.provinceId) {
-    setDistricts([]);
-    setWards([]);
-    return;
-  }
-
-  let isMounted = true;
-
-  fetch("/api/location/district", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ provinceId: form.location.provinceId }),
-    cache: "no-store", // THÊM DÒNG NÀY
-  })
-  .then((r) => {
-      if (!r.ok) throw new Error(`API error: ${r.status}`);
-      return r.json();
-    })
-  .then((data) => {
-      if (!isMounted) return;
-      const districtsData = Array.isArray(data) ? data : [];
-      setDistricts(districtsData);
-      if (form.location.districtId && !districtsData.find((d: District) => d.id === form.location.districtId)) {
-        updateLocation({
-          districtId: null,
-          districtName: "",
-          wardId: null,
-          wardName: ""
-        });
-      }
-    })
-  .catch((err) => {
-      console.error("Fetch district lỗi:", err);
-      if (isMounted) setDistricts([]);
-    });
-
-  return () => {
-    isMounted = false;
-  };
-}, [form.location.provinceId]);
-
-// Load wards - thêm cache no-store
-useEffect(() => {
-  if (!form.location.districtId) {
-    setWards([]);
-    return;
-  }
-
-  let isMounted = true;
-
-  fetch("/api/location/ward", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ districtId: form.location.districtId }),
-    cache: "no-store", // THÊM DÒNG NÀY
-  })
-  .then((r) => {
-      if (!r.ok) throw new Error(`API error: ${r.status}`);
-      return r.json();
-    })
-  .then((data) => {
-      if (!isMounted) return;
-      const wardsData = Array.isArray(data) ? data : [];
-      setWards(wardsData);
-      if (form.location.wardId && !wardsData.find((w: Ward) => w.id === form.location.wardId)) {
-        updateLocation({ wardId: null, wardName: "" });
-      }
-    })
-  .catch((err) => {
-      console.error("Fetch ward lỗi:", err);
-      if (isMounted) setWards([]);
-    });
-
-  return () => {
-    isMounted = false;
-  };
-}, [form.location.districtId]);
 // Auto-save draft - chỉ load 1 lần khi mount
 useEffect(() => {
   const saved = localStorage.getItem(draftKey);
@@ -880,11 +848,9 @@ await mutate("/api/tasks?type=plan&limit=20");
             </StepContent>
           )}
 
-    {step === 1 && (
+ {step === 1 && (
   <StepContent key="step1">
     <Card>
-
-
       <Field label="Tỉnh/Thành phố" required error={errors["location.provinceId"]} icon={FiMapPin}>
         <select
           value={form.location.provinceId || ""}
@@ -904,15 +870,29 @@ await mutate("/api/tasks?type=plan&limit=20");
         >
           <option value="">
             {loadingProvinces 
-              ? "Đang tải..." 
-              : provinces.length === 0 
-                ? "Không tải được - reload trang" 
-                : "Chọn tỉnh/thành phố"}
+              ? "Đang tải 63 tỉnh/thành..." 
+              : provinceError
+                ? "Lỗi tải dữ liệu"
+                : provinces.length === 0
+                  ? "Không có dữ liệu"
+                  : "Chọn tỉnh/thành phố"}
           </option>
           {provinces.map((p) => (
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
         </select>
+        {provinceError && (
+          <p className="flex items-center gap-1.5 text-xs font-bold text-red-500">
+            <FiAlertCircle /> Không tải được danh sách tỉnh. 
+            <button 
+              type="button"
+              onClick={() => mutate("/api/location/province")} 
+              className="underline hover:text-red-600"
+            >
+              Thử lại
+            </button>
+          </p>
+        )}
       </Field>
 
       <Field label="Quận/Huyện" icon={FiMapPin}>
@@ -931,11 +911,13 @@ await mutate("/api/tasks?type=plan&limit=20");
           className="input-premium"
           disabled={!form.location.provinceId}
         >
-          <option value="">
-            {!form.location.provinceId 
-              ? "Chọn tỉnh trước" 
-              : "Chọn quận/huyện"}
-          </option>
+  <option value="">
+  {!form.location.provinceId 
+    ? "Chọn tỉnh trước" 
+    : loadingDistricts
+      ? "Đang tải..." 
+      : "Chọn quận/huyện"}
+</option>
           {districts.map((d) => (
             <option key={d.id} value={d.id}>{d.name}</option>
           ))}
@@ -956,7 +938,9 @@ await mutate("/api/tasks?type=plan&limit=20");
           <option value="">
             {!form.location.districtId 
               ? "Chọn quận trước" 
-              : "Chọn phường/xã"}
+              : wards.length === 0
+                ? "Đang tải..."
+                : "Chọn phường/xã"}
           </option>
           {wards.map((w) => (
             <option key={w.id} value={w.id}>{w.name}</option>
@@ -978,6 +962,7 @@ await mutate("/api/tasks?type=plan&limit=20");
               {placeSuggestions.map((s, i) => (
                 <button
                   key={i}
+                  type="button"
                   onClick={() => { updateLocation({ address: s }); setPlaceSuggestions([]); }}
                   className="w-full border-b border-zinc-100 px-4 py-3 text-left text-sm font-medium hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800 last:border-0"
                 >
