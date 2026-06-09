@@ -310,67 +310,47 @@ export default function CreateWorkPage({ mode }: { mode: Mode }) {
   const [placeSuggestions, setPlaceSuggestions] = useState<string[]>([]);
 
 
-  const debounceRef = useRef<NodeJS.Timeout>();
-// SWR thay useEffect - không bao giờ trắng
+const debounceRef = useRef<NodeJS.Timeout>();
 
-
+// Fetcher chung: luôn trả array, không bao giờ crash
 const fetcher = (url: string) => fetch(url).then(async r => {
   const data = await r.json();
-  return Array.isArray(data) ? data : []; // Luôn trả array
+  return Array.isArray(data) ? data : [];
 });
 
+// Tỉnh - cache vĩnh viễn
 const { data: provinces = [], isLoading: loadingProvinces, error: provinceError } = useSWRImmutable<Province[]>(
   "/api/location/province",
   fetcher
 );
 
+// Huyện - cache theo provinceId
 const { 
   data: districts = [], 
-  isLoading: loadingDistricts  // THÊM LẠI DÒNG NÀY
-} = useSWR<District[]>(
+  isLoading: loadingDistricts
+} = useSWRImmutable<District[]>(
   form.location.provinceId ? ["/api/location/district", form.location.provinceId] : null,
   ([url, id]) => fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ provinceId: id }),
-    cache: 'no-store'
-  }).then(r => {
-    if (!r.ok) throw new Error('API error');
-    return r.json();
-  }),
-  { 
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    shouldRetryOnError: true,
-    errorRetryCount: 3,
-    errorRetryInterval: 1000,
-    dedupingInterval: 60000,
-  }
+  }).then(r => r.json()).then(data => Array.isArray(data) ? data : []),
 );
 
+// Xã - cache theo districtId
 const { 
   data: wards = [],
-  isLoading: loadingWards  // THÊM LẠI DÒNG NÀY
-} = useSWR<Ward[]>(
+  isLoading: loadingWards
+} = useSWRImmutable<Ward[]>(
   form.location.districtId ? ["/api/location/ward", form.location.districtId] : null,
   ([url, id]) => fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ districtId: id }),
-    cache: 'no-store'
-  }).then(r => {
-    if (!r.ok) throw new Error('API error');
-    return r.json();
-  }),
-  { 
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    shouldRetryOnError: true,
-    errorRetryCount: 3,
-    errorRetryInterval: 1000,
-    dedupingInterval: 60000,
-  }
+  }).then(r => r.json()).then(data => Array.isArray(data) ? data : []),
 );
+
+// Reset district/ward khi province thay đổi
 useEffect(() => {
   if (!form.location.provinceId) {
     updateLocation({
@@ -391,8 +371,9 @@ useEffect(() => {
     });
   }
 }, [form.location.districtId]);
-  const isTask = mode === "task";
-  const previewTask = useMemo(() => ({
+
+const isTask = mode === "task";
+const previewTask = useMemo(() => ({
   id: "preview",
   type: mode,
   status: "active",
@@ -439,10 +420,11 @@ useEffect(() => {
   images: [],
   milestones: [],
 } as any), [form, mode, user]);
-  const accent = isTask ? "#0A84FF" : "#30D158";
-  const gradient = isTask ? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
-  const categories = isTask ? CATEGORY_TASKS : CATEGORY_PLANS;
-  const draftKey = `create_${mode}_draft_v6`;
+
+const accent = isTask ? "#0A84FF" : "#30D158";
+const gradient = isTask ? "from-[#0A84FF] to-[#0051D5]" : "from-[#30D158] to-[#248A3D]";
+const categories = isTask ? CATEGORY_TASKS : CATEGORY_PLANS;
+const draftKey = `create_${mode}_draft_v6`;
 
 
 // Auto-save draft - chỉ load 1 lần khi mount
