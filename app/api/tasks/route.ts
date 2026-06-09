@@ -19,8 +19,9 @@ export async function GET(request: NextRequest) {
 
   const cursor = searchParams.get('cursor') || undefined;
 
-  const categoriesParam = searchParams.get('categories');
-  const categories = categoriesParam? categoriesParam.split(',').filter(Boolean) : undefined;
+  // CHANGED: chỉ lấy 1 category đầu tiên thay vì array
+  const category = searchParams.get('categories')?.split(',')[0] || undefined;
+
   const deadlineRange = searchParams.get('deadlineRange') || 'all';
   const priceRangeParam = searchParams.get('priceRange');
   let minPrice: number | undefined;
@@ -59,21 +60,22 @@ export async function GET(request: NextRequest) {
 
   const query = searchParams.get('query') || undefined;
 
-  console.log('>>> API PARAMS:', { type, sortBy, priceRangeParam, minPrice, maxPrice, categories, query, cursor, deadlineRange });
+  console.log('>>> API PARAMS:', { type, sortBy, priceRangeParam, minPrice, maxPrice, category, query, cursor, deadlineRange });
 
   try {
     const data = await getJobsFromFirebaseAdmin({
       type,
       limitCount: limit,
       sortBy,
-     ...(categories && { categories }),
-     ...(minPrice!== undefined && { minPrice }),
-     ...(maxPrice!== undefined && { maxPrice }),
-     ...(cursor && { cursor }),
+     // CHANGED: categories -> category
+    ...(category && { category }),
+    ...(minPrice!== undefined && { minPrice }),
+    ...(maxPrice!== undefined && { maxPrice }),
+    ...(cursor && { cursor }),
     });
 
     let tasks = data.tasks;
-    
+
     if (query) {
       const q = query.toLowerCase();
       tasks = tasks.filter(t =>
@@ -87,7 +89,7 @@ export async function GET(request: NextRequest) {
 if (deadlineRange!== 'all') {
   const now = Date.now();
   let deadlineTimestamp = Infinity;
-  
+
   switch(deadlineRange) {
     case "1h":
       deadlineTimestamp = now + 60 * 60 * 1000;
@@ -105,16 +107,16 @@ if (deadlineRange!== 'all') {
       deadlineTimestamp = now + 30 * 24 * 60 * 60 * 1000;
       break;
   }
-  
+
   tasks = tasks.filter(task => {
     if (!task.deadline) return false;
-    
+
     // FIX: check type trước khi gọi toDate()
     const deadlineValue = task.deadline as any;
-    const taskDeadline = deadlineValue?.toDate 
-      ? deadlineValue.toDate().getTime() 
+    const taskDeadline = deadlineValue?.toDate
+     ? deadlineValue.toDate().getTime()
       : new Date(deadlineValue).getTime();
-      
+
     return taskDeadline >= now && taskDeadline <= deadlineTimestamp;
   });
 }
@@ -154,7 +156,7 @@ export async function POST(request: Request) {
     const price = Number(body.price) || 0;
 
     const taskData = {
-     ...body,
+    ...body,
       userId: decoded.uid,
       userName: decoded.name || 'User',
       userAvatar: decoded.picture || '',
@@ -177,7 +179,7 @@ export async function POST(request: Request) {
       priceRange: getPriceRange(price),
       tags: Array.isArray(body.tags)? body.tags : [],
       images: Array.isArray(body.images)? body.images : [],
-     ...(isTask && {
+    ...(isTask && {
         totalSlots: Number(body.totalSlots) || 1,
         joined: 0,
         budgetType: body.budgetType || 'fixed',
@@ -187,7 +189,7 @@ export async function POST(request: Request) {
         urgency: body.urgency || 'flexible',
         needApproval: body.needApproval || false,
       }),
-     ...(!isTask && {
+    ...(!isTask && {
         eventDate: body.eventDate? new Date(body.eventDate) : null,
         endDate: body.endDate? new Date(body.endDate) : null,
         maxParticipants: Number(body.maxParticipants) || 4,
@@ -199,7 +201,7 @@ export async function POST(request: Request) {
         requireApproval: body.requireApproval || false,
         autoAccept:!body.requireApproval,
       }),
-     ...(body.location?.lat && body.location?.lng && {
+    ...(body.location?.lat && body.location?.lng && {
         location: {
           lat: body.location.lat,
           lng: body.location.lng,
