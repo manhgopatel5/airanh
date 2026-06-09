@@ -12,6 +12,7 @@ import {
   FiClock,
   FiEdit2,
   FiEye,
+  FiTag, 
   FiMapPin,
   FiMessageCircle,
   FiMoreHorizontal,
@@ -60,7 +61,21 @@ const short = p.name.replace("Thành phố ", "").replace("Tỉnh ", "");
     return map;
   }, [provinces]);
 };
-
+const CATEGORY_MAP = {
+  // Task
+  doing: "Việc gấp", skill: "Kỹ năng", shopping: "Mua hộ", help: "Giúp đỡ",
+  moving: "Chuyển đồ", cleaning: "Dọn dẹp", repair: "Sửa chữa", tutoring: "Gia sư",
+  photography: "Chụp ảnh", design: "Thiết kế", cooking: "Nấu ăn", petcare: "Chăm thú cưng",
+  babysit: "Trông trẻ", elderly: "Chăm người già", event: "Sự kiện", marketing: "Marketing",
+  writing: "Viết lách", translate: "Dịch thuật", consulting: "Tư vấn",
+  // Plan  
+  coffee: "Cà phê", meal: "Ăn uống", sport: "Thể thao", party: "Tiệc tùng",
+  movie: "Xem phim", music: "Âm nhạc", travel: "Du lịch", game: "Game",
+  study: "Học nhóm", volunteer: "Tình nguyện", hiking: "Leo núi", camping: "Cắm trại",
+  beach: "Đi biển", karaoke: "Karaoke", boardgame: "Board game", picnic: "Dã ngoại",
+  workshop: "Workshop", networking: "Kết nối", clubbing: "Club",
+  other: "Khác"
+} as const;
 function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: Props) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
@@ -144,6 +159,7 @@ const provinceName = rawProvinceName.replace(/^(Thành phố|Tỉnh|TP\.|T\.)\s*
       price,
       timeAgo: formatDistanceToNow(created, { addSuffix: true, locale: vi }),
       provinceName,
+      categoryLabel, 
       isFull: maxSlots > 0 && currentCount >= maxSlots,
     };
   }, [task, provinceMap]);
@@ -371,17 +387,23 @@ const provinceName = rawProvinceName.replace(/^(Thành phố|Tỉnh|TP\.|T\.)\s*
                 <FiBookmark className={cn("h-4 w-4", isSaved && "fill-current")} style={{ color: isSaved? accent : undefined }} />
               </button>
             </div>
-            <div className="flex items-center gap-2">
-              {derived.provinceName && (
-                <div title={derived.provinceName} className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                  <FiMapPin className="h-3 w-3 shrink-0" />
-                  <span className="truncate max-w-20">{derived.provinceName}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-1 pr-1 text-xs font-semibold text-zinc-400">
-                <FiEye className="h-3 w-3" /> {task.viewCount || 0}
-              </div>
-            </div>
+  <div className="flex items-center gap-2">
+  {derived.categoryLabel && (
+    <div className="flex items-center gap-1 rounded-lg bg-zinc-100 px-2 py-1 text-xs font-bold dark:bg-zinc-900" style={{ color: accent }}>
+      <FiTag className="h-3 w-3 shrink-0" />
+      <span className="truncate max-w-16">{derived.categoryLabel}</span>
+    </div>
+  )}
+  {derived.provinceName && (
+    <div title={derived.provinceName} className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+      <FiMapPin className="h-3 w-3 shrink-0" />
+      <span className="truncate max-w-20">{derived.provinceName}</span>
+    </div>
+  )}
+  <div className="flex items-center gap-1 pr-1 text-xs font-semibold text-zinc-400">
+    <FiEye className="h-3 w-3" /> {task.viewCount || 0}
+  </div>
+</div>
           </div>
         </div>
       </div>
