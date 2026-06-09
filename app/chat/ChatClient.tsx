@@ -7,7 +7,6 @@ import { motion } from "framer-motion";
 import { getFirebaseDB } from "@/lib/firebase";
 import { getAuth } from "firebase/auth";
 import { getApp } from "firebase/app";
-
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { useAppStore } from "@/store/app";
 import {
@@ -22,7 +21,6 @@ import {
   limit,
   updateDoc,
   arrayRemove,
-  
   Timestamp,
   Unsubscribe,
   QuerySnapshot,
@@ -48,8 +46,7 @@ import {
 import { RiAddLine, RiPushpinFill } from "react-icons/ri";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ScanLine } from "lucide-react";
-
+import { ScanLine, Crown, Gift, Wallet, Percent } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { format, isToday, isYesterday, formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -70,8 +67,8 @@ type ChatItem = {
   isTyping?: boolean;
   isGroup: boolean;
   members?: string[];
-blockedUsers?: string[];
-deletedFor?: string[];
+  blockedUsers?: string[];
+  deletedFor?: string[];
 };
 
 type FriendItem = {
@@ -119,43 +116,42 @@ export default function ChatClient() {
   const db = getFirebaseDB();
   const router = useRouter();
   const unsubRef = useRef<Unsubscribe | null>(null);
-  
+
   const mode = useAppStore((s) => s.mode);
   const isPlan = mode === "plan";
-  
-  const primaryBg = isPlan ? "bg-green-500" : "bg-[#0a84ff]";
-  const primaryHover = isPlan ? "hover:bg-green-600" : "hover:bg-[#007aff]";
-  const primaryActive = isPlan ? "active:bg-green-700" : "active:bg-[#0051d5]";
-  const primaryText = isPlan ? "text-green-600 dark:text-green-400" : "text-[#0a84ff]";
-  const primaryRing = isPlan ? "focus:ring-green-500/20" : "focus:ring-[#0a84ff]/20";
-  const primaryBorder = isPlan ? "focus:border-green-500" : "focus:border-[#0a84ff]";
-  const primaryBgSolid = isPlan ? "bg-green-500" : "bg-[#0a84ff]";
+
+  const primaryBg = isPlan? "bg-green-500" : "bg-[#0a84ff]";
+  const primaryHover = isPlan? "hover:bg-green-600" : "hover:bg-[#007aff]";
+  const primaryActive = isPlan? "active:bg-green-700" : "active:bg-[#0051d5]";
+  const primaryText = isPlan? "text-green-600 dark:text-green-400" : "text-[#0a84ff]";
+  const primaryRing = isPlan? "focus:ring-green-500/20" : "focus:ring-[#0a84ff]/20";
+  const primaryBorder = isPlan? "focus:border-green-500" : "focus:border-[#0a84ff]";
+  const primaryBgSolid = isPlan? "bg-green-500" : "bg-[#0a84ff]";
   const [longPressChatId, setLongPressChatId] = useState<string | null>(null);
-const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
-const handleLongPressStart = (chatId: string) => {
-  longPressTimer.current = setTimeout(() => {
-    setLongPressChatId(chatId);
-    if ("vibrate" in navigator) navigator.vibrate(15);
-  }, 500); // giữ 500ms
-};
+  const handleLongPressStart = (chatId: string) => {
+    longPressTimer.current = setTimeout(() => {
+      setLongPressChatId(chatId);
+      if ("vibrate" in navigator) navigator.vibrate(15);
+    }, 500);
+  };
 
-const handleLongPressEnd = () => {
-  if (longPressTimer.current) {
-    clearTimeout(longPressTimer.current);
-    longPressTimer.current = null;
-  }
-};
+  const handleLongPressEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
 
+  useEffect(() => {
+    const handleClick = () => setLongPressChatId(null);
+    if (longPressChatId) {
+      document.addEventListener("click", handleClick);
+      return () => document.removeEventListener("click", handleClick);
+    }
+  }, [longPressChatId]);
 
-// Đóng khi click ra ngoài
-useEffect(() => {
-  const handleClick = () => setLongPressChatId(null);
-  if (longPressChatId) {
-    document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
-  }
-}, [longPressChatId]);
   const [items, setItems] = useState<ChatItem[]>([]);
   const [friends, setFriends] = useState<FriendItem[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -173,9 +169,9 @@ useEffect(() => {
   const [selected, setSelected] = useState<string[]>([]);
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [showScanQR, setShowScanQR] = useState<boolean>(false);
-const [scanMode, setScanMode] = useState<"camera" | "upload">("camera");
-const fileInputRef = useRef<HTMLInputElement>(null);
-const scannerRef = useRef<Html5Qrcode | null>(null);
+  const [scanMode, setScanMode] = useState<"camera" | "upload">("camera");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(search), DEBOUNCE_DELAY);
@@ -211,24 +207,23 @@ const scannerRef = useRef<Html5Qrcode | null>(null);
     try {
       setPinned(values);
       localStorage.setItem(PINNED_KEY, JSON.stringify(values));
-      if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(10);
+      if (typeof navigator!== "undefined" && "vibrate" in navigator) navigator.vibrate(10);
     } catch (error) {
       console.error("Failed to save pinned chats:", error);
     }
   }, []);
 
-  // Load notifications
   useEffect(() => {
     if (!user?.uid) return;
-    
+
     setNotifLoading(true);
     const notifRef = collection(db, "notifications", user.uid, "items");
     const q = query(notifRef, orderBy("createdAt", "desc"), limit(50));
-    
+
     const unsub = onSnapshot(q, (snapshot) => {
       const notifs: NotificationItem[] = [];
       snapshot.forEach((doc) => {
-        notifs.push({ id: doc.id, ...doc.data() } as NotificationItem);
+        notifs.push({ id: doc.id,...doc.data() } as NotificationItem);
       });
       setNotifications(notifs);
       setNotifLoading(false);
@@ -240,58 +235,36 @@ const scannerRef = useRef<Html5Qrcode | null>(null);
     return () => unsub();
   }, [user?.uid, db]);
 
-  // Load friends
-useEffect(() => {
-  if (!user?.uid || activeTab !== "friends") return;
+  useEffect(() => {
+    if (!user?.uid || activeTab!== "friends") return;
 
-  setFriendsLoading(true);
+    setFriendsLoading(true);
+    const timeout = setTimeout(() => setFriendsLoading(false), 800);
 
-  const timeout = setTimeout(() => {
-    setFriendsLoading(false);
-  }, 800);
+    const friendsRef = collection(db, "users", user.uid, "friends");
+    const q = query(friendsRef);
 
-  const friendsRef = collection(db, "users", user.uid, "friends");
-  const q = query(friendsRef);
-
-  const unsub = onSnapshot(
-    q,
-    async (snapshot) => {
+    const unsub = onSnapshot(q, async (snapshot) => {
       clearTimeout(timeout);
       try {
-const activeFriendIds = snapshot.docs
-  .filter(d => d.data()?.status !== "removed")
-  .map(d => d.id);
+        const activeFriendIds = snapshot.docs.filter(d => d.data()?.status!== "removed").map(d => d.id);
+        const friendsData: FriendItem[] = [];
+        const allIds = [...new Set([...activeFriendIds])];
 
-const friendsData: FriendItem[] = [];
+        if (allIds.length === 0) {
+          setFriends([]);
+          setFriendsLoading(false);
+          return;
+        }
 
-
-
-
-
-
-
-const allIds = [...new Set([
-  ...activeFriendIds
-])];
-
-if (allIds.length === 0) {
-  setFriends([]);
-  setFriendsLoading(false);
-  return;
-}
-
-const chunks: string[][] = [];
-
-for (let i = 0; i < allIds.length; i += BATCH_SIZE) {
-  chunks.push(allIds.slice(i, i + BATCH_SIZE));
-}
-
+        const chunks: string[][] = [];
+        for (let i = 0; i < allIds.length; i += BATCH_SIZE) {
+          chunks.push(allIds.slice(i, i + BATCH_SIZE));
+        }
 
         await Promise.all(
           chunks.map(async (chunk) => {
             const userDocs = await Promise.all(chunk.map(id => getDoc(doc(db, "users", id))));
-            // ĐÃ XÓA getDoc chats ở đây
-
             userDocs.forEach((userDoc) => {
               if (userDoc.exists()) {
                 const data = userDoc.data();
@@ -304,9 +277,7 @@ for (let i = 0; i < allIds.length; i += BATCH_SIZE) {
                   isOnline: Boolean(data.isOnline),
                   lastSeen: data.lastSeen,
                   mutualFriends: data.mutualFriends || 0,
-                  isDeletedByThem: Boolean(
-  snapshot.docs.find(d => d.id === userDoc.id)?.data()?.removedBy
-),
+                  isDeletedByThem: Boolean(snapshot.docs.find(d => d.id === userDoc.id)?.data()?.removedBy),
                 });
               }
             });
@@ -314,7 +285,7 @@ for (let i = 0; i < allIds.length; i += BATCH_SIZE) {
         );
 
         friendsData.sort((a, b) => {
-          if (a.isOnline !== b.isOnline) return b.isOnline ? 1 : -1;
+          if (a.isOnline!== b.isOnline) return b.isOnline? 1 : -1;
           return a.name.localeCompare(b.name);
         });
 
@@ -325,24 +296,21 @@ for (let i = 0; i < allIds.length; i += BATCH_SIZE) {
       } finally {
         setFriendsLoading(false);
       }
-    },
-    (error) => {
+    }, (error) => {
       clearTimeout(timeout);
       console.error("Friends listener error:", error);
       setFriends([]);
       setFriendsLoading(false);
-    }
-  );
+    });
 
-  return () => {
-    clearTimeout(timeout);
-    unsub();
-  };
-}, [user?.uid, activeTab, db]);
+    return () => {
+      clearTimeout(timeout);
+      unsub();
+    };
+  }, [user?.uid, activeTab, db]);
 
-  // Load chats
   useEffect(() => {
-    if (authLoading || !user?.uid) return;
+    if (authLoading ||!user?.uid) return;
     let retryCount = 0;
     let isMounted = true;
 
@@ -361,7 +329,7 @@ for (let i = 0; i < allIds.length; i += BATCH_SIZE) {
             if (isGroupChat) {
               rawChats.push({ id: document.id, c: chatData, isGroup: true });
             } else {
-              const otherUserId = chatData.members?.find((memberId: string) => memberId !== user.uid);
+              const otherUserId = chatData.members?.find((memberId: string) => memberId!== user.uid);
               if (otherUserId) userIdsToFetch.add(otherUserId);
               rawChats.push({ id: document.id, c: chatData, other: otherUserId, isGroup: false });
             }
@@ -378,91 +346,87 @@ for (let i = 0; i < allIds.length; i += BATCH_SIZE) {
             }));
           }
 
-     const chatList: ChatItem[] = rawChats.map((raw) => {
-  const chatData = raw.c;
-  if (raw.isGroup) {
-    return {
-      uid: raw.id, chatId: raw.id, name: chatData.groupName || "Nhóm", username: "",
-      avatar: chatData.groupAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(chatData.groupName || "N")}&background=${isPlan ? "22c55e" : "0a84ff"}&color=fff&bold=true`,
-      userId: "", 
-      lastMessage: typeof chatData.lastMessage === 'string' 
-        ? chatData.lastMessage 
-        : chatData.lastMessage?.text || "", // ← Fix: handle object cũ
-      lastSenderId: chatData.lastSenderId || chatData.lastMessage?.senderId, 
-      lastSenderName: chatData.lastSenderName,
-      updatedAt: chatData.updatedAt, unreadCount: chatData.unread?.[user.uid] || 0,
-      isTyping: Object.entries(chatData.typing || {}).some(([userId, isTyping]) => userId !== user.uid && Boolean(isTyping)),
-      isGroup: true, members: chatData.members || [], isOnline: false,
-      blockedUsers: chatData.blockedUsers || [],
-      deletedFor: chatData.deletedFor || [],
+          const chatList: ChatItem[] = rawChats.map((raw) => {
+            const chatData = raw.c;
+            if (raw.isGroup) {
+              return {
+                uid: raw.id, chatId: raw.id, name: chatData.groupName || "Nhóm", username: "",
+                avatar: chatData.groupAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(chatData.groupName || "N")}&background=${isPlan? "22c55e" : "0a84ff"}&color=fff&bold=true`,
+                userId: "",
+                lastMessage: typeof chatData.lastMessage === 'string'? chatData.lastMessage : chatData.lastMessage?.text || "",
+                lastSenderId: chatData.lastSenderId || chatData.lastMessage?.senderId,
+                lastSenderName: chatData.lastSenderName,
+                updatedAt: chatData.updatedAt, unreadCount: chatData.unread?.[user.uid] || 0,
+                isTyping: Object.entries(chatData.typing || {}).some(([userId, isTyping]) => userId!== user.uid && Boolean(isTyping)),
+                isGroup: true, members: chatData.members || [], isOnline: false,
+                blockedUsers: chatData.blockedUsers || [],
+                deletedFor: chatData.deletedFor || [],
+              };
+            } else {
+              const userData = usersMap[raw.other || ""] || {};
+              return {
+                uid: raw.other || "", chatId: raw.id, name: userData.name || "User", username: userData.username || "",
+                avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || "U")}&background=random`,
+                userId: userData.userId || "",
+                lastMessage: typeof chatData.lastMessage === 'string'? chatData.lastMessage : chatData.lastMessage?.text || "",
+                lastSenderId: chatData.lastSenderId || chatData.lastMessage?.senderId,
+                lastSenderName: "",
+                updatedAt: chatData.updatedAt, isOnline: Boolean(userData.isOnline), unreadCount: chatData.unread?.[user.uid] || 0,
+                isTyping: Boolean(raw.other && chatData.typing?.[raw.other]), isGroup: false,
+                blockedUsers: chatData.blockedUsers || [],
+                deletedFor: chatData.deletedFor || [],
+              };
+            }
+          });
+
+          const visibleChats = chatList.filter(chat =>!chat.deletedFor?.includes(user.uid));
+          const pinnedChats = JSON.parse(localStorage.getItem(PINNED_KEY) || "[]");
+          visibleChats.sort((a, b) => {
+            const aIsPinned = pinnedChats.includes(a.chatId)? 1 : 0;
+            const bIsPinned = pinnedChats.includes(b.chatId)? 1 : 0;
+            if (aIsPinned!== bIsPinned) return bIsPinned - aIsPinned;
+            const aTime = a.updatedAt?.seconds || 0;
+            const bTime = b.updatedAt?.seconds || 0;
+            return bTime - aTime;
+          });
+
+          if (isMounted) setItems(visibleChats);
+        } catch (error) {
+          console.error("Error processing chats:", error);
+          if (isMounted) toast.error("Lỗi tải danh sách chat");
+        } finally {
+          if (isMounted) setLoading(false);
+        }
+      }, (error) => {
+        console.error("Realtime listener error:", error);
+        if (!isMounted) return;
+        if (retryCount < MAX_RETRIES && error.code!== "permission-denied") {
+          retryCount++;
+          const delay = RETRY_DELAY * retryCount;
+          setTimeout(() => { if (isMounted) setupListener(); }, delay);
+        } else if (error.code!== "permission-denied") {
+          toast.error("Không thể kết nối realtime");
+        }
+        setLoading(false);
+      });
+
+      unsubRef.current = unsubscribe;
+      return unsubscribe;
     };
-  } else {
-    const userData = usersMap[raw.other || ""] || {};
-    return {
-      uid: raw.other || "", chatId: raw.id, name: userData.name || "User", username: userData.username || "",
-      avatar: userData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || "U")}&background=random`,
-      userId: userData.userId || "", 
-      lastMessage: typeof chatData.lastMessage === 'string' 
-        ? chatData.lastMessage 
-        : chatData.lastMessage?.text || "", // ← Fix: handle object cũ
-      lastSenderId: chatData.lastSenderId || chatData.lastMessage?.senderId, 
-      lastSenderName: "",
-      updatedAt: chatData.updatedAt, isOnline: Boolean(userData.isOnline), unreadCount: chatData.unread?.[user.uid] || 0,
-      isTyping: Boolean(raw.other && chatData.typing?.[raw.other]), isGroup: false,
-      blockedUsers: chatData.blockedUsers || [],
-      deletedFor: chatData.deletedFor || [],
+
+    const unsubscribe = setupListener();
+    return () => { 
+      isMounted = false; 
+      if (unsubscribe) unsubscribe(); 
+      if (unsubRef.current) unsubRef.current();
     };
-  }
-});
-
-// Lọc chat đã bị user xóa
-const visibleChats = chatList.filter(chat => 
-  !chat.deletedFor?.includes(user.uid)
-);
-
-const pinnedChats = JSON.parse(localStorage.getItem(PINNED_KEY) || "[]");
-visibleChats.sort((a, b) => {
-  const aIsPinned = pinnedChats.includes(a.chatId) ? 1 : 0;
-  const bIsPinned = pinnedChats.includes(b.chatId) ? 1 : 0;
-  if (aIsPinned !== bIsPinned) return bIsPinned - aIsPinned;
-  const aTime = a.updatedAt?.seconds || 0;
-  const bTime = b.updatedAt?.seconds || 0;
-  return bTime - aTime;
-});
-
-if (isMounted) setItems(visibleChats);
-} catch (error) {
-  console.error("Error processing chats:", error);
-  if (isMounted) toast.error("Lỗi tải danh sách chat");
-} finally {
-  if (isMounted) setLoading(false);
-}
-}, (error) => {
-  console.error("Realtime listener error:", error);
-  if (!isMounted) return;
-  if (retryCount < MAX_RETRIES && error.code !== "permission-denied") {
-    retryCount++;
-    const delay = RETRY_DELAY * retryCount;
-    setTimeout(() => { if (isMounted) setupListener(); }, delay);
-  } else if (error.code !== "permission-denied") {
-    toast.error("Không thể kết nối realtime");
-  }
-  setLoading(false);
-});
-
-unsubRef.current = unsubscribe;
-return unsubscribe;
-};
-
-const unsubscribe = setupListener();
-return () => { isMounted = false; if (unsubscribe) unsubscribe(); };
-}, [user?.uid, authLoading, db, isPlan]);
+  }, [user?.uid, authLoading, db, mode]); // đổi isPlan -> mode
 
   const createNotification = useCallback(async (targetUid: string, notif: Omit<NotificationItem, "id" | "createdAt" | "read">) => {
     try {
       const notifRef = doc(collection(db, "notifications", targetUid, "items"));
       await setDoc(notifRef, {
-        ...notif,
+       ...notif,
         read: false,
         createdAt: serverTimestamp(),
       });
@@ -471,22 +435,20 @@ return () => { isMounted = false; if (unsubscribe) unsubscribe(); };
     }
   }, [db]);
 
-const stopScan = async (closeModal = true) => {
-  try {
-    if (scannerRef.current) {
-      if (scannerRef.current.isScanning) {
-        await scannerRef.current.stop();
+  const stopScan = async (closeModal = true) => {
+    try {
+      if (scannerRef.current) {
+        if (scannerRef.current.isScanning) {
+          await scannerRef.current.stop();
+        }
+        await scannerRef.current.clear();
+        scannerRef.current = null;
       }
-      await scannerRef.current.clear();
-      scannerRef.current = null;
+    } catch {}
+    if (closeModal) {
+      setShowScanQR(false);
     }
-  } catch {}
-
-  if (closeModal) {
-    setShowScanQR(false);
-  }
-};
-
+  };
 const handleScanFromFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (!file) return;
@@ -539,28 +501,28 @@ useEffect(() => {
       await html5QrCode.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
-(decodedText) => {
-  if ("vibrate" in navigator) navigator.vibrate(10);
-  let userId = "";
+        (decodedText) => {
+          if ("vibrate" in navigator) navigator.vibrate(10);
+          let userId = "";
 
-  if (decodedText.includes("/u/")) {
-    userId = decodedText.split("/u/")[1] || "";
-  } else if (decodedText.startsWith("@")) {
-    userId = decodedText.slice(1);
-  } else {
-    userId = decodedText.trim();
-  }
+          if (decodedText.includes("/u/")) {
+            userId = decodedText.split("/u/")[1] || "";
+          } else if (decodedText.startsWith("@")) {
+            userId = decodedText.slice(1);
+          } else {
+            userId = decodedText.trim();
+          }
 
-  if (userId) {
-    setSearch(userId);
-    setAddMode("friend");
-    setShowAdd(true);
-    stopScan();
-    toast.success("Đã quét QR");
-  } else {
-    toast.error("Mã QR không hợp lệ");
-  }
-},
+          if (userId) {
+            setSearch(userId);
+            setAddMode("friend");
+            setShowAdd(true);
+            stopScan();
+            toast.success("Đã quét QR");
+          } else {
+            toast.error("Mã QR không hợp lệ");
+          }
+        },
         () => {}
       );
     } catch {
@@ -570,10 +532,11 @@ useEffect(() => {
   };
 
   startScan();
-return () => {
-  stopScan(false);
-};
+  return () => {
+    stopScan(false);
+  };
 }, [showScanQR, scanMode]);
+
 const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<void> => {
   event?.preventDefault();
   setAdding(true);
@@ -610,8 +573,6 @@ const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<voi
     }
 
     const requestId = `${currentUser.uid}_${targetUserId}`;
-
-    // BỎ HẾT getDoc check, cứ setDoc thẳng. Rules sẽ chặn nếu trùng
     await setDoc(doc(db, "friendRequests", requestId), {
       from: currentUser.uid,
       to: targetUserId,
@@ -634,13 +595,12 @@ const handleAddFriend = useCallback(async (event?: React.FormEvent): Promise<voi
   }
 }, [search, db]);
 
-
 const handleAcceptFriendRequest = useCallback(async (notif: NotificationItem) => {
   if (!user?.uid) return;
   setAdding(true);
 
   try {
-    const functions = getFunctions(getApp(), "asia-southeast1"); // THÊM asia-southeast1
+    const functions = getFunctions(getApp(), "asia-southeast1");
     const acceptFn = httpsCallable(functions, 'acceptFriendRequest');
 
     const result = await acceptFn({
@@ -674,14 +634,9 @@ const handleDeclineFriendRequest = useCallback(async (notif: NotificationItem) =
 
   try {
     const batch = writeBatch(db);
-
-    // 1. Xóa notification
     batch.delete(doc(db, "notifications", currentUser.uid, "items", notif.id));
-
-    // 2. Xóa friendRequest
     const requestId = `${notif.fromUid}_${currentUser.uid}`;
     batch.delete(doc(db, "friendRequests", requestId));
-
     await batch.commit();
     toast.success("Đã từ chối lời mời");
   } catch (error) {
@@ -690,45 +645,45 @@ const handleDeclineFriendRequest = useCallback(async (notif: NotificationItem) =
   }
 }, [db]);
 
-  const handleMarkNotificationRead = useCallback(async (notifId: string) => {
-    if (!user?.uid) return;
-    try {
-      await updateDoc(doc(db, "notifications", user.uid, "items", notifId), {
-        read: true
-      });
-    } catch (error) {
-      console.error("Mark read error:", error);
-    }
-  }, [user?.uid, db]);
+const handleMarkNotificationRead = useCallback(async (notifId: string) => {
+  if (!user?.uid) return;
+  try {
+    await updateDoc(doc(db, "notifications", user.uid, "items", notifId), {
+      read: true
+    });
+  } catch (error) {
+    console.error("Mark read error:", error);
+  }
+}, [user?.uid, db]);
 
-  const handleMarkAllRead = useCallback(async () => {
-    if (!user?.uid) return;
-    try {
-      const batch = writeBatch(db);
-      notifications.filter(n => !n.read).forEach(notif => {
-        batch.update(doc(db, "notifications", user.uid, "items", notif.id), { read: true });
-      });
-      await batch.commit();
-      toast.success("Đã đánh dấu tất cả");
-    } catch (error) {
-      console.error("Mark all read error:", error);
-    }
-  }, [user?.uid, db, notifications]);
+const handleMarkAllRead = useCallback(async () => {
+  if (!user?.uid) return;
+  try {
+    const batch = writeBatch(db);
+    notifications.filter(n =>!n.read).forEach(notif => {
+      batch.update(doc(db, "notifications", user.uid, "items", notif.id), { read: true });
+    });
+    await batch.commit();
+    toast.success("Đã đánh dấu tất cả");
+  } catch (error) {
+    console.error("Mark all read error:", error);
+  }
+}, [user?.uid, db, notifications]);
 
-  const handleClearAllNotifications = useCallback(async () => {
-    if (!user?.uid) return;
-    if (!confirm("Xóa tất cả thông báo?")) return;
-    try {
-      const batch = writeBatch(db);
-      notifications.forEach(notif => {
-        batch.delete(doc(db, "notifications", user.uid, "items", notif.id));
-      });
-      await batch.commit();
-      toast.success("Đã xóa tất cả");
-    } catch (error) {
-      console.error("Clear all error:", error);
-    }
-  }, [user?.uid, db, notifications]);
+const handleClearAllNotifications = useCallback(async () => {
+  if (!user?.uid) return;
+  if (!confirm("Xóa tất cả thông báo?")) return;
+  try {
+    const batch = writeBatch(db);
+    notifications.forEach(notif => {
+      batch.delete(doc(db, "notifications", user.uid, "items", notif.id));
+    });
+    await batch.commit();
+    toast.success("Đã xóa tất cả");
+  } catch (error) {
+    console.error("Clear all error:", error);
+  }
+}, [user?.uid, db, notifications]);
 
 const handleStartChatWithFriend = useCallback(async (friendId: string) => {
   const auth = getAuth();
@@ -738,8 +693,6 @@ const handleStartChatWithFriend = useCallback(async (friendId: string) => {
 
   const chatId = [currentUser.uid, friendId].sort().join("_");
 
-  // XÓA getDoc check blockedUsers
-
   const [currentUserDoc, friendDoc] = await Promise.all([
     getDoc(doc(db, "users", currentUser.uid)),
     getDoc(doc(db, "users", friendId))
@@ -748,7 +701,6 @@ const handleStartChatWithFriend = useCallback(async (friendId: string) => {
   const currentData = currentUserDoc.data();
   const friendData = friendDoc.data();
 
-  // setDoc merge sẽ tạo nếu chưa có, update nếu có rồi
   await setDoc(doc(db, "chats", chatId), {
     members: [currentUser.uid, friendId],
     isGroup: false,
@@ -779,10 +731,10 @@ const handleRemoveFriend = useCallback(async (friendId: string, friendName: stri
   try {
     const functions = getFunctions(getApp(), "asia-southeast1");
     const unfriend = httpsCallable(functions, 'unfriend');
-    
+
     await unfriend({ friendUid: friendId });
     toast.success("Đã hủy kết bạn");
-    
+
   } catch (error: any) {
     console.error("Remove friend error:", error);
     toast.error(`Lỗi: ${error.message || "Không thể xóa"}`);
@@ -791,66 +743,66 @@ const handleRemoveFriend = useCallback(async (friendId: string, friendName: stri
   }
 }, [user?.uid]);
 
-  const handleCreateGroup = useCallback(async (): Promise<void> => {
-    if (!user) { toast.error("Chưa đăng nhập"); return; }
-    const trimmedName = groupName.trim();
-    if (!trimmedName) { toast.error("Vui lòng nhập tên nhóm"); return; }
-    if (selected.length < 1) { toast.error("Vui lòng chọn ít nhất 1 thành viên"); return; }
-    if (trimmedName.length > 50) { toast.error("Tên nhóm tối đa 50 ký tự"); return; }
-    setAdding(true);
-    try {
-      const groupRef = doc(collection(db, "chats"));
-      const groupData = { members: [user.uid, ...selected], isGroup: true, groupName: trimmedName, admins: [user.uid], createdAt: serverTimestamp(),
+const handleCreateGroup = useCallback(async (): Promise<void> => {
+  if (!user) { toast.error("Chưa đăng nhập"); return; }
+  const trimmedName = groupName.trim();
+  if (!trimmedName) { toast.error("Vui lòng nhập tên nhóm"); return; }
+  if (selected.length < 1) { toast.error("Vui lòng chọn ít nhất 1 thành viên"); return; }
+  if (trimmedName.length > 50) { toast.error("Tên nhóm tối đa 50 ký tự"); return; }
+  setAdding(true);
+  try {
+    const groupRef = doc(collection(db, "chats"));
+    const groupData = { members: [user.uid,...selected], isGroup: true, groupName: trimmedName, admins: [user.uid], createdAt: serverTimestamp(),
 updatedAt: serverTimestamp(), lastMessage: `${user.displayName || "Bạn"} đã tạo nhóm`, lastSenderName: "Hệ thống" };
-      await setDoc(groupRef, groupData);
-      
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      const userData = userDoc.data();
-      await Promise.all(selected.map(memberId => 
-        createNotification(memberId, {
-          type: "group_invite",
-          fromUid: user.uid,
-          fromName: userData?.name || "Người dùng",
-          fromAvatar: userData?.avatar || "",
-          title: "Mời vào nhóm",
-          message: `đã thêm bạn vào nhóm "${trimmedName}"`,
-          groupId: groupRef.id,
-          chatId: groupRef.id,
-        })
-      ));
-      
-      toast.success("Đã tạo nhóm thành công");
-      router.push(`/chat/${groupRef.id}`);
-      setShowAdd(false);
-      setGroupName("");
-      setSelected([]);
-    } catch (error: any) {
-      console.error("Create group error:", error);
-      toast.error(`Lỗi tạo nhóm: ${error.message || "Vui lòng thử lại"}`);
-    } finally {
-      setAdding(false);
-    }
-  }, [user, groupName, selected, db, router, createNotification]);
+    await setDoc(groupRef, groupData);
 
-  const handleTogglePin = useCallback((chatId: string): void => {
-    const newPinned = pinned.includes(chatId) ? pinned.filter((id) => id !== chatId) : [...pinned, chatId];
-    savePinned(newPinned);
-    toast.success(newPinned.includes(chatId) ? "Đã ghim cuộc trò chuyện" : "Đã bỏ ghim");
-  }, [pinned, savePinned]);
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    const userData = userDoc.data();
+    await Promise.all(selected.map(memberId =>
+      createNotification(memberId, {
+        type: "group_invite",
+        fromUid: user.uid,
+        fromName: userData?.name || "Người dùng",
+        fromAvatar: userData?.avatar || "",
+        title: "Mời vào nhóm",
+        message: `đã thêm bạn vào nhóm "${trimmedName}"`,
+        groupId: groupRef.id,
+        chatId: groupRef.id,
+      })
+    ));
 
-  const handleDeleteChat = useCallback(async (chat: ChatItem): Promise<void> => {
+    toast.success("Đã tạo nhóm thành công");
+    router.push(`/chat/${groupRef.id}`);
+    setShowAdd(false);
+    setGroupName("");
+    setSelected([]);
+  } catch (error: any) {
+    console.error("Create group error:", error);
+    toast.error(`Lỗi tạo nhóm: ${error.message || "Vui lòng thử lại"}`);
+  } finally {
+    setAdding(false);
+  }
+}, [user, groupName, selected, db, router, createNotification]);
+
+const handleTogglePin = useCallback((chatId: string): void => {
+  const newPinned = pinned.includes(chatId)? pinned.filter((id) => id!== chatId) : [...pinned, chatId];
+  savePinned(newPinned);
+  toast.success(newPinned.includes(chatId)? "Đã ghim cuộc trò chuyện" : "Đã bỏ ghim");
+}, [pinned, savePinned]);
+
+const handleDeleteChat = useCallback(async (chat: ChatItem): Promise<void> => {
   if (!user?.uid) { toast.error("Chưa đăng nhập"); return; }
-  const confirmMessage = chat.isGroup ? `Bạn có chắc muốn rời nhóm "${chat.name}"?` : `Xóa cuộc trò chuyện với ${chat.name}?`;
+  const confirmMessage = chat.isGroup? `Bạn có chắc muốn rời nhóm "${chat.name}"?` : `Xóa cuộc trò chuyện với ${chat.name}?`;
   if (!window.confirm(confirmMessage)) return;
   try {
     if (chat.isGroup) {
       await updateDoc(doc(db, "chats", chat.chatId), { members: arrayRemove(user.uid), updatedAt: new Date() });
       toast.success("Đã rời nhóm");
     } else {
-      await updateDoc(doc(db, "chats", chat.chatId), { 
+      await updateDoc(doc(db, "chats", chat.chatId), {
         deletedFor: arrayUnion(user.uid),
-        updatedAt: new Date() 
-      }); // SỬA: updateDoc thay vì deleteDoc
+        updatedAt: new Date()
+      });
       toast.success("Đã xóa cuộc trò chuyện");
     }
   } catch (error: any) {
@@ -859,40 +811,39 @@ updatedAt: serverTimestamp(), lastMessage: `${user.displayName || "Bạn"} đã 
   }
 }, [user?.uid, db]);
 
-  const formatMessageTime = useCallback((timestamp?: Timestamp): string => {
-    if (!timestamp?.toDate) return "";
-    const date = timestamp.toDate();
-    if (isToday(date)) return format(date, "HH:mm");
-    if (isYesterday(date)) return "Hôm qua";
-    return format(date, "dd/MM");
-  }, []);
+const formatMessageTime = useCallback((timestamp?: Timestamp): string => {
+  if (!timestamp?.toDate) return "";
+  const date = timestamp.toDate();
+  if (isToday(date)) return format(date, "HH:mm");
+  if (isYesterday(date)) return "Hôm qua";
+  return format(date, "dd/MM");
+}, []);
 
-  const formatLastSeen = useCallback((timestamp?: Timestamp): string => {
-    if (!timestamp?.toDate) return "Lâu rồi";
-    const date = timestamp.toDate();
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-    
-    if (diffMins < 1) return "Vừa xong";
-    if (diffMins < 60) return `${diffMins} phút trước`;
-    if (diffHours < 24) return `${diffHours} giờ trước`;
-    if (diffDays < 7) return `${diffDays} ngày trước`;
-    return format(date, "dd/MM/yyyy");
-  }, []);
+const formatLastSeen = useCallback((timestamp?: Timestamp): string => {
+  if (!timestamp?.toDate) return "Lâu rồi";
+  const date = timestamp.toDate();
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
 
-  const formatNotifTime = useCallback((timestamp?: Timestamp): string => {
-    if (!timestamp?.toDate) return "";
-    return formatDistanceToNow(timestamp.toDate(), { addSuffix: true, locale: vi });
-  }, []);
+  if (diffMins < 1) return "Vừa xong";
+  if (diffMins < 60) return `${diffMins} phút trước`;
+  if (diffHours < 24) return `${diffHours} giờ trước`;
+  if (diffDays < 7) return `${diffDays} ngày trước`;
+  return format(date, "dd/MM/yyyy");
+}, []);
+
+const formatNotifTime = useCallback((timestamp?: Timestamp): string => {
+  if (!timestamp?.toDate) return "";
+  return formatDistanceToNow(timestamp.toDate(), { addSuffix: true, locale: vi });
+}, []);
 
 const filteredChats = useMemo(() => {
   const query = debounced.toLowerCase().trim();
   let filtered = items;
-  
-  
+
   if (query) {
     filtered = filtered.filter((item) => {
       const nameMatch = item.name.toLowerCase().includes(query);
@@ -906,42 +857,41 @@ const filteredChats = useMemo(() => {
   return filtered;
 }, [items, debounced, activeTab, user?.uid]);
 
-  const filteredFriends = useMemo(() => {
-    const query = debounced.toLowerCase().trim();
-    if (!query) return friends;
-    return friends.filter(f => 
-      f.name.toLowerCase().includes(query) || 
-      f.username.toLowerCase().includes(query) ||
-      f.userId.toLowerCase().includes(query)
-    );
-  }, [friends, debounced]);
+const filteredFriends = useMemo(() => {
+  const query = debounced.toLowerCase().trim();
+  if (!query) return friends;
+  return friends.filter(f =>
+    f.name.toLowerCase().includes(query) ||
+    f.username.toLowerCase().includes(query) ||
+    f.userId.toLowerCase().includes(query)
+  );
+}, [friends, debounced]);
 
-  const { pinnedChats, normalChats } = useMemo(() => {
-    const pinnedList = filteredChats.filter((chat) => pinned.includes(chat.chatId));
-    const normalList = filteredChats.filter((chat) => !pinned.includes(chat.chatId));
-    return { pinnedChats: pinnedList, normalChats: normalList };
-  }, [filteredChats, pinned]);
+const { pinnedChats, normalChats } = useMemo(() => {
+  const pinnedList = filteredChats.filter((chat) => pinned.includes(chat.chatId));
+  const normalList = filteredChats.filter((chat) =>!pinned.includes(chat.chatId));
+  return { pinnedChats: pinnedList, normalChats: normalList };
+}, [filteredChats, pinned]);
 
-  const friendsForGroup = useMemo(() => items.filter((item) => !item.isGroup), [items]);
-  
-  const unreadNotifications = useMemo(() => notifications.filter(n => !n.read).length, [notifications]);
+const friendsForGroup = useMemo(() => friends, [friends]);
 
-  const groupedNotifications = useMemo(() => {
-    const today: NotificationItem[] = [];
-    const earlier: NotificationItem[] = [];
-    
-    notifications.forEach(notif => {
-      if (notif.createdAt?.toDate && isToday(notif.createdAt.toDate())) {
-        today.push(notif);
-      } else {
-        earlier.push(notif);
-      }
-    });
-    
-    return { today, earlier };
-  }, [notifications]);
+const unreadNotifications = useMemo(() => notifications.filter(n =>!n.read).length, [notifications]);
 
-  const getNotificationIcon = (type: string) => {
+const groupedNotifications = useMemo(() => {
+  const today: NotificationItem[] = [];
+  const earlier: NotificationItem[] = [];
+
+  notifications.forEach(notif => {
+    if (notif.createdAt?.toDate && isToday(notif.createdAt.toDate())) {
+      today.push(notif);
+    } else {
+      earlier.push(notif);
+    }
+  });
+
+  return { today, earlier };
+}, [notifications]);
+const getNotificationIcon = (type: string) => {
     switch (type) {
       case "friend_request": return <FiUserPlus className="text-[#0a84ff]" size={18} />;
       case "friend_accepted": return <FiCheck className="text-[#30d158]" size={18} />;
@@ -965,202 +915,135 @@ const filteredChats = useMemo(() => {
 
   return (
     <>
-<div className="min-h-dvh bg-gradient-to-b from-[#F7FAFF] via-white to-[#F5F7FB] text-zinc-950 dark:from-[#05070A] dark:via-zinc-950 dark:to-[#0F172A] dark:text-white">
-<section className="mx-auto max-w-[680px] px-4 pt-4">
-  <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/82 p-5 shadow-2xl shadow-black/[0.05] ring-1 ring-black/[0.03] backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-950/72 dark:ring-white/10">
-    <div className={`absolute -right-12 -top-16 h-44 w-44 rounded-full ${isPlan? "bg-emerald-400" : "bg-sky-400"} opacity-15 blur-3xl`} />
+      <div className="min-h-dvh bg-gradient-to-b from-[#F7FAFF] via-white to-[#F5F7FB] text-zinc-950 dark:from-[#05070A] dark:via-zinc-950 dark:to-[#0F172A] dark:text-white">
+        <section className="mx-auto max-w-[680px] px-4 pt-4">
+          <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/82 p-5 shadow-2xl shadow-black/[0.05] ring-1 ring-black/[0.03] backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-950/72 dark:ring-white/10">
+            <div className={`absolute -right-12 -top-16 h-44 w-44 rounded-full ${isPlan? "bg-emerald-400" : "bg-sky-400"} opacity-15 blur-3xl`} />
 
-    {/* Bỏ h1 và icon FiMessageSquare ở đây */}
-
-    <div className="relative grid grid-cols-4 gap-2">
-      {[
-        { label: "Chat", value: items.length, icon: FiMessageSquare },
-{ label: "Chưa đọc", value: items.reduce((sum, item) => sum + (item.unreadCount || 0), 0), icon: FiBell },
-        { label: "Bạn bè", value: friends.length || items.filter((item) =>!item.isGroup).length, icon: FiUsers },
-        { label: "Thông báo", value: unreadNotifications, icon: FiInbox },
-      ].map(({ label, value, icon: Icon }) => (
-        <button
-          key={label}
-          type="button"
-          onClick={() => label === "Bạn bè"? setActiveTab("friends") : label === "Thông báo"? setActiveTab("notifications") : label === "Chưa đọc"? setActiveTab("unread") : setActiveTab("all")}
-          className="rounded-2xl bg-zinc-50/90 p-3 text-left ring-1 ring-black/5 active:scale-[0.98] dark:bg-zinc-900/70 dark:ring-white/10"
-        >
-          <Icon className={`h-4 w-4 ${primaryText}`} />
-          <p className="mt-2 text-lg font-black">{value}</p>
-          <p className="text-[11px] font-bold text-zinc-400">{label}</p>
-        </button>
-      ))}
-    </div>
-  </div>
-</section>
-
-  <div className="sticky top-0 z-40 mt-3 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50">
-
-    <div className="px-4 pt-3 pb-3">
-
-      {/* Search */}
-      <div className="flex items-center gap-2 mb-3">
-
-        <div className="relative flex-1">
-          <FiSearch
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none"
-            size={18}
-          />
-
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={
-              activeTab === "friends"
-                ? "Tìm bạn bè"
-                : activeTab === "notifications"
-                ? "Tìm thông báo"
-                : "Tìm kiếm"
-            }
-            className={`
-              w-full
-              h-9
-              pl-10
-              pr-3
-              rounded-xl
-              bg-zinc-100
-              dark:bg-zinc-800
-              outline-none
-              text-sm
-              border-0
-              transition-all
-              focus:ring-2
-              ${primaryRing}
-              placeholder:text-zinc-400
-            `}
-            autoComplete="off"
-            autoCorrect="off"
-          />
-        </div>
-
-        <button
-          onClick={() => setShowAdd(true)}
-          className={`
-            w-9
-            h-9
-            rounded-xl
-            flex
-            items-center
-            justify-center
-            text-white
-            active:scale-95
-            transition-all
-            shadow-[0_8px_30px_rgba(10,132,255,0.25)]
-            ${primaryBg}
-            ${primaryHover}
-            ${primaryActive}
-          `}
-          aria-label="Tạo mới"
-        >
-          <RiAddLine size={20} />
-        </button>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide flex-1">
-
-        {[
-          { key: "all", label: "Tất cả" },
-          { key: "friends", label: "Bạn bè" },
-          {
-            key: "notifications",
-            label: "Thông báo",
-            badge: unreadNotifications
-          },
-          { key: "unread", label: "Chưa đọc" },
-          { key: "group", label: "Nhóm" }
-        ].map((tab) => {
-          const active = activeTab === tab.key;
-
-          return (
-            <motion.button
-  key={tab.key}
-  whileTap={{ scale: 0.95 }}
-  onClick={() => setActiveTab(tab.key as any)}
-  className={`
-    px-4
-    h-9
-    rounded-full
-    text-sm
-    font-semibold
-    whitespace-nowrap
-    transition-all
-    flex
-    items-center
-    gap-1.5
-    flex-shrink-0
-    ${
-      active
-        ? mode === "plan"
-          ? "bg-[#30D158] text-white"
-          : "bg-[#0A84FF] text-white"
-        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
-    }
-  `}
->
-  {tab.label}
-
-  {tab.badge ? (
-    <span
-      className={`
-        min-w-[18px]
-        h-[18px]
-        px-1
-        rounded-full
-        flex
-        items-center
-        justify-center
-        text-[11px]
-        leading-none
-        font-bold
-        ${
-          active
-            ? "bg-white/20 text-white"
-            : "bg-[#ff3b30] text-white"
-        }
-      `}
-    >
-      {tab.badge > 99 ? "99+" : tab.badge}
-    </span>
-  ) : null}
-</motion.button>
-          );
-        })}
-
-        {!isOnline && (
-          <div className="px-3 h-9 rounded-full bg-orange-100 dark:bg-orange-500/10 flex items-center gap-1.5 flex-shrink-0">
-            <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
-
-            <span className="text-xs font-semibold text-orange-500">
-              Offline
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
-  </div>
-
-  <div className="pb-24">
-  {activeTab === "notifications"? (
-    notifLoading? (
-      <div className="px-4 pt-4 space-y-3">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-3 py-3 animate-pulse">
-            <div className="w-12 h-12 bg-gray-200 dark:bg-zinc-800 rounded-full" />
-            <div className="flex-1 space-y-2">
-              <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4" />
-              <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
+            <div className="relative grid grid-cols-4 gap-2">
+              {[
+                { label: "Chat", value: items.length, icon: FiMessageSquare },
+                { label: "Chưa đọc", value: items.reduce((sum, item) => sum + (item.unreadCount || 0), 0), icon: FiBell },
+                { label: "Bạn bè", value: friends.length || items.filter((item) =>!item.isGroup).length, icon: FiUsers },
+                { label: "Thông báo", value: unreadNotifications, icon: FiInbox },
+              ].map(({ label, value, icon: Icon }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => label === "Bạn bè"? setActiveTab("friends") : label === "Thông báo"? setActiveTab("notifications") : label === "Chưa đọc"? setActiveTab("unread") : setActiveTab("all")}
+                  className="rounded-2xl bg-zinc-50/90 p-3 text-left ring-1 ring-black/5 active:scale-[0.98] dark:bg-zinc-900/70 dark:ring-white/10"
+                >
+                  <Icon className={`h-4 w-4 ${primaryText}`} />
+                  <p className="mt-2 text-lg font-black">{value}</p>
+                  <p className="text-[11px] font-bold text-zinc-400">{label}</p>
+                </button>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
-    ) : notifications.length === 0? (
+        </section>
+
+        <div className="sticky top-0 z-40 mt-3 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50">
+          <div className="px-4 pt-3 pb-3">
+            {/* Hàng icon chức năng mới */}
+            <div className="flex items-center gap-3 mb-3 overflow-x-auto scrollbar-hide pb-1">
+              {[
+                { label: "Mời bạn bè", icon: FiUserPlus, color: "bg-blue-500", onClick: () => setShowAdd(true) },
+                { label: "Bạn bè", icon: FiUsers, color: "bg-sky-500", onClick: () => setActiveTab("friends") },
+                { label: "Nhóm", icon: FiUsers, color: "bg-purple-500", onClick: () => setActiveTab("group") },
+                { label: "Thông báo", icon: FiBell, color: "bg-red-500", onClick: () => setActiveTab("notifications") },
+                { label: "VIP", icon: Crown, color: "bg-amber-500", onClick: () => toast.info("Tính năng VIP sắp ra mắt") },
+                { label: "Ưu đãi", icon: Percent, color: "bg-pink-500", onClick: () => toast.info("Chưa có ưu đãi") },
+                { label: "Quỹ chung", icon: Wallet, color: "bg-orange-500", onClick: () => toast.info("Sắp ra mắt") },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  onClick={item.onClick}
+                  className="flex flex-col items-center gap-1 flex-shrink-0 active:scale-95 transition-transform"
+                >
+                  <div className={`w-12 h-12 ${item.color} rounded-2xl flex items-center justify-center shadow-lg`}>
+                    <item.icon className="text-white" size={20} strokeWidth={2.5} />
+                  </div>
+                  <span className="text-[11px] font-medium text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
+                    {item.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Search + Nút + */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className="relative flex-1">
+                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={18} />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={activeTab === "friends"? "Tìm bạn bè" : activeTab === "notifications"? "Tìm thông báo" : "Tìm kiếm"}
+                  className={`w-full h-9 pl-10 pr-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 outline-none text-sm border-0 transition-all focus:ring-2 ${primaryRing} placeholder:text-zinc-400`}
+                  autoComplete="off"
+                  autoCorrect="off"
+                />
+              </div>
+              <button
+                onClick={() => setShowAdd(true)}
+                className={`w-9 h-9 rounded-xl flex items-center justify-center text-white active:scale-95 transition-all shadow-[0_8px_30px_rgba(10,132,255,0.25)] ${primaryBg} ${primaryHover} ${primaryActive}`}
+                aria-label="Tạo mới"
+              >
+                <RiAddLine size={20} />
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide flex-1">
+              {[
+                { key: "all", label: "Tất cả" },
+                { key: "friends", label: "Bạn bè" },
+                { key: "notifications", label: "Thông báo", badge: unreadNotifications },
+                { key: "unread", label: "Chưa đọc" },
+                { key: "group", label: "Nhóm" }
+              ].map((tab) => {
+                const active = activeTab === tab.key;
+                return (
+                  <motion.button
+                    key={tab.key}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setActiveTab(tab.key as any)}
+                    className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 flex-shrink-0 ${active? mode === "plan"? "bg-[#30D158] text-white" : "bg-[#0A84FF] text-white" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"}`}
+                  >
+                    {tab.label}
+                    {tab.badge? (
+                      <span className={`min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center text-[11px] leading-none font-bold ${active? "bg-white/20 text-white" : "bg-[#ff3b30] text-white"}`}>
+                        {tab.badge > 99? "99+" : tab.badge}
+                      </span>
+                    ) : null}
+                  </motion.button>
+                );
+              })}
+              {!isOnline && (
+                <div className="px-3 h-9 rounded-full bg-orange-100 dark:bg-orange-500/10 flex items-center gap-1.5 flex-shrink-0">
+                  <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+                  <span className="text-xs font-semibold text-orange-500">Offline</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="pb-24">
+          {activeTab === "notifications"? (
+            notifLoading? (
+              <div className="px-4 pt-4 space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 py-3 animate-pulse">
+                    <div className="w-12 h-12 bg-gray-200 dark:bg-zinc-800 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4" />
+                      <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : notifications.length === 0? (
               <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
                 <div className="w-[72px] h-[72px] bg-[#f2f2f7] dark:bg-zinc-900 rounded-[20px] flex items-center justify-center mb-4">
                   <FiBell className="text-gray-400" size={30} strokeWidth={1.5} />
@@ -1177,23 +1060,21 @@ const filteredChats = useMemo(() => {
                     <button onClick={handleClearAllNotifications} className="text-[12px] text-[#ff3b30] font-medium">Xóa tất cả</button>
                   </div>
                 </div>
-                
                 {groupedNotifications.today.length > 0 && (
                   <div>
                     <div className="px-4 pt-3 pb-1"><p className="text-[12px] font-medium text-[#8e8e93] dark:text-zinc-500 uppercase tracking-wider">Hôm nay</p></div>
                     <div className="divide-y divide-gray-100 dark:divide-zinc-900">
                       {groupedNotifications.today.map((notif) => (
-                        <div key={notif.id} className={`px-4 py-3 flex items-start gap-3 ${!notif.read ? "bg-[#0a84ff]/[0.04] dark:bg-[#0a84ff]/[0.08]" : ""} hover:bg-gray-50 dark:hover:bg-zinc-900/50 transition-colors`}>
+                        <div key={notif.id} className={`px-4 py-3 flex items-start gap-3 ${!notif.read? "bg-[#0a84ff]/[0.04] dark:bg-[#0a84ff]/[0.08]" : ""} hover:bg-gray-50 dark:hover:bg-zinc-900/50 transition-colors`}>
                           <div className="relative flex-shrink-0 mt-0.5">
                             <img src={notif.fromAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(notif.fromName)}&background=random`} alt={notif.fromName} className="w-12 h-12 rounded-full object-cover" />
                             <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white dark:bg-black rounded-full flex items-center justify-center border-2 border-white dark:border-black">
                               {getNotificationIcon(notif.type)}
                             </div>
-                          </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-[15px] leading-[20px]"><span className="font-[550]">{notif.fromName}</span> <span className="text-[#3a3a3c] dark:text-zinc-300">{notif.message}</span></p>
                             <p className="text-[13px] text-[#8e8e93] mt-0.5">{formatNotifTime(notif.createdAt)}</p>
-                            {notif.type === "friend_request" && !notif.read && (
+                            {notif.type === "friend_request" &&!notif.read && (
                               <div className="flex items-center gap-2 mt-2.5">
                                 <button onClick={() => handleAcceptFriendRequest(notif)} className={`h-7 px-4 ${primaryBg} ${primaryHover} text-white rounded-full text-[13px] font-medium`}>Chấp nhận</button>
                                 <button onClick={() => handleDeclineFriendRequest(notif)} className="h-7 px-4 bg-[#f2f2f7] dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-full text-[13px] font-medium">Từ chối</button>
@@ -1209,13 +1090,12 @@ const filteredChats = useMemo(() => {
                     </div>
                   </div>
                 )}
-
                 {groupedNotifications.earlier.length > 0 && (
                   <div>
                     <div className="px-4 pt-4 pb-1"><p className="text-[12px] font-medium text-[#8e8e93] dark:text-zinc-500 uppercase tracking-wider">Trước đó</p></div>
                     <div className="divide-y divide-gray-100 dark:divide-zinc-900">
                       {groupedNotifications.earlier.map((notif) => (
-                        <div key={notif.id} className={`px-4 py-3 flex items-start gap-3 ${!notif.read ? "bg-[#0a84ff]/[0.04] dark:bg-[#0a84ff]/[0.08]" : "opacity-70"} hover:bg-gray-50 dark:hover:bg-zinc-900/50 transition-colors`}>
+                        <div key={notif.id} className={`px-4 py-3 flex items-start gap-3 ${!notif.read? "bg-[#0a84ff]/[0.04] dark:bg-[#0a84ff]/[0.08]" : "opacity-70"} hover:bg-gray-50 dark:hover:bg-zinc-900/50 transition-colors`}>
                           <div className="relative flex-shrink-0 mt-0.5">
                             <img src={notif.fromAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(notif.fromName)}&background=random`} alt={notif.fromName} className="w-12 h-12 rounded-full object-cover" />
                             <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white dark:bg-black rounded-full flex items-center justify-center border-2 border-white dark:border-black">
@@ -1234,8 +1114,8 @@ const filteredChats = useMemo(() => {
                 )}
               </div>
             )
-          ) : activeTab === "friends" ? (
-            friendsLoading ? (
+          ) : activeTab === "friends"? (
+            friendsLoading? (
               <div className="px-4 pt-4 space-y-3">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="flex items-center gap-3 py-3 animate-pulse">
@@ -1247,74 +1127,59 @@ const filteredChats = useMemo(() => {
                   </div>
                 ))}
               </div>
-            ) : filteredFriends.length === 0 ? (
+            ) : filteredFriends.length === 0? (
               <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
                 <div className="w-[72px] h-[72px] bg-[#f2f2f7] dark:bg-zinc-900 rounded-[20px] flex items-center justify-center mb-4">
                   <FiUsers className="text-gray-400" size={30} strokeWidth={1.5} />
                 </div>
-               <h3 className="text-[20px] font-semibold mb-1.5">{search ? "Không tìm thấy" : "Chưa có bạn"}</h3>
-<p className="text-[15px] text-[#8e8e93] dark:text-zinc-500 max-w-[280px] leading-[20px]">{search ? "Thử tìm với từ khóa khác" : "Mời kết bạn để bắt đầu trò chuyện cùng nhau"}</p>
-{!search && (
-  <button onClick={() => setShowAdd(true)} className={`mt-6 px-6 h-[40px] ${primaryBg} ${primaryHover} ${primaryActive} text-white rounded-full text-[15px] font-medium shadow-sm active:scale-95 transition-all flex items-center gap-2`}>
-    <FiUserPlus size={18} />
-    Kết bạn ngay
-  </button>
-)}
-</div>
-) : (
-<div className="divide-y divide-gray-100 dark:divide-zinc-900">
-  <div className="px-4 py-2.5 bg-gray-50/80 dark:bg-zinc-950/50 backdrop-blur-sm sticky top-[104px] z-10">
-    <p className="text-[12px] text-[#8e8e93] dark:text-zinc-500 font-medium">
-      <span className="inline-flex items-center gap-1">
-        <span className="w-2 h-2 bg-[#30d158] rounded-full animate-pulse" />
-        {filteredFriends.filter(f => f.isOnline).length} đang hoạt động
-      </span>
-      <span className="mx-1.5">•</span>
-      {filteredFriends.length} bạn bè
-    </p>
-  </div>
-{filteredFriends.map((friend) => {
-  return (
-    <div
-  key={friend.uid}
-  className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-900/50 active:bg-gray-100 dark:active:bg-zinc-800 transition-colors"
->
-      <div className="relative flex-shrink-0">
-        <img src={friend.avatar} alt={friend.name} className="w-[52px] h-[52px] rounded-full object-cover" />
-        {friend.isOnline && <div className="absolute bottom-0 right-0 w-[14px] h-[14px] bg-[#30d158] rounded-full border-[2.5px] border-white dark:border-black" />}
-      </div>
-      <div className="flex-1 min-w-0 pr-2">
-        <div className="flex items-baseline gap-2">
-          <p className="text-[16px] font-[550] truncate">{friend.name}</p>
-          {friend.isDeletedByThem && (
-            <span className="text-[12px] text-red-500 font-medium flex-shrink-0">• Đã xóa</span>
-          )}
-          {friend.isOnline && <span className="text-[11px] text-[#30d158] font-medium">• Online</span>}
-        </div>
-        <p className="text-[13px] text-[#8e8e93] truncate">@{friend.username || friend.userId} • {friend.isOnline? "Đang hoạt động" : formatLastSeen(friend.lastSeen)}</p>
-      </div>
-      <div className="flex items-center gap-1.5">
-        <button
-          onClick={() => handleStartChatWithFriend(friend.uid)}
-          className={`w-8 h-8 ${primaryBg} ${primaryHover} rounded-full flex items-center justify-center active:scale-90 transition-all`}
-          title="Nhắn tin"
-        >
-          <FiMessageSquare className="text-white" size={14} />
-        </button>
-        <button
-          onClick={() => handleRemoveFriend(friend.uid, friend.name)}
-          className="w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center active:scale-90 transition-all"
-          title="Xóa bạn"
-        >
-          <FiUserX className="text-white" size={14} />
-        </button>
-      </div>
-    </div>
-  );
-})}
+                <h3 className="text-[20px] font-semibold mb-1.5">{search? "Không tìm thấy" : "Chưa có bạn"}</h3>
+                <p className="text-[15px] text-[#8e8e93] dark:text-zinc-500 max-w-[280px] leading-[20px]">{search? "Thử tìm với từ khóa khác" : "Mời kết bạn để bắt đầu trò chuyện cùng nhau"}</p>
+                {!search && (
+                  <button onClick={() => setShowAdd(true)} className={`mt-6 px-6 h-[40px] ${primaryBg} ${primaryHover} ${primaryActive} text-white rounded-full text-[15px] font-medium shadow-sm active:scale-95 transition-all flex items-center gap-2`}>
+                    <FiUserPlus size={18} />
+                    Kết bạn ngay
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100 dark:divide-zinc-900">
+                <div className="px-4 py-2.5 bg-gray-50/80 dark:bg-zinc-950/50 backdrop-blur-sm sticky top-[104px] z-10">
+                  <p className="text-[12px] text-[#8e8e93] dark:text-zinc-500 font-medium">
+                    <span className="inline-flex items-center gap-1">
+                      <span className="w-2 h-2 bg-[#30d158] rounded-full animate-pulse" />
+                      {filteredFriends.filter(f => f.isOnline).length} đang hoạt động
+                    </span>
+                    <span className="mx-1.5">•</span>
+                    {filteredFriends.length} bạn bè
+                  </p>
+                </div>
+                {filteredFriends.map((friend) => (
+                  <div key={friend.uid} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-900/50 active:bg-gray-100 dark:active:bg-zinc-800 transition-colors">
+                    <div className="relative flex-shrink-0">
+                      <img src={friend.avatar} alt={friend.name} className="w-[52px] h-[52px] rounded-full object-cover" />
+                      {friend.isOnline && <div className="absolute bottom-0 right-0 w-[14px] h-[14px] bg-[#30d158] rounded-full border-[2.5px] border-white dark:border-black" />}
+                    </div>
+                    <div className="flex-1 min-w-0 pr-2">
+                      <div className="flex items-baseline gap-2">
+                        <p className="text-[16px] font-[550] truncate">{friend.name}</p>
+                        {friend.isDeletedByThem && <span className="text-[12px] text-red-500 font-medium flex-shrink-0">• Đã xóa</span>}
+                        {friend.isOnline && <span className="text-[11px] text-[#30d158] font-medium">• Online</span>}
+                      </div>
+                      <p className="text-[13px] text-[#8e8e93] truncate">@{friend.username || friend.userId} • {friend.isOnline? "Đang hoạt động" : formatLastSeen(friend.lastSeen)}</p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button onClick={() => handleStartChatWithFriend(friend.uid)} className={`w-8 h-8 ${primaryBg} ${primaryHover} rounded-full flex items-center justify-center active:scale-90 transition-all`} title="Nhắn tin">
+                        <FiMessageSquare className="text-white" size={14} />
+                      </button>
+                      <button onClick={() => handleRemoveFriend(friend.uid, friend.name)} className="w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center active:scale-90 transition-all" title="Xóa bạn">
+                        <FiUserX className="text-white" size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )
-          ) : loading ? (
+          ) : loading? (
             <div className="px-4 pt-4 space-y-0">
               {Array.from({ length: 8 }).map((_, index) => (
                 <div key={index} className="flex items-center gap-3 py-3 animate-pulse">
@@ -1326,114 +1191,81 @@ const filteredChats = useMemo(() => {
                 </div>
               ))}
             </div>
-          ) : filteredChats.length === 0 ? (
+          ) : filteredChats.length === 0? (
             <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
               <div className="w-[72px] h-[72px] bg-[#f2f2f7] dark:bg-zinc-900 rounded-[20px] flex items-center justify-center mb-4 shadow-sm">
                 <FiMessageSquare className="text-gray-400" size={30} strokeWidth={1.5} />
               </div>
-              <h3 className="text-[20px] font-semibold tracking-tight text-gray-900 dark:text-white mb-1.5">{activeTab === "unread" ? "Không có tin chưa đọc" : activeTab === "group" ? "Chưa có nhóm" : "Chưa có tin nhắn"}</h3>
-              <p className="text-[15px] leading-[20px] text-[#8e8e93] dark:text-zinc-500 max-w-[280px]">{activeTab === "all" ? "Nhấn + để bắt đầu trò chuyện" : "Các cuộc trò chuyện sẽ hiện ở đây"}</p>
+              <h3 className="text-[20px] font-semibold tracking-tight text-gray-900 dark:text-white mb-1.5">{activeTab === "unread"? "Không có tin chưa đọc" : activeTab === "group"? "Chưa có nhóm" : "Chưa có tin nhắn"}</h3>
+              <p className="text-[15px] leading-[20px] text-[#8e8e93] dark:text-zinc-500 max-w-[280px]">{activeTab === "all"? "Nhấn + để bắt đầu trò chuyện" : "Các cuộc trò chuyện sẽ hiện ở đây"}</p>
               {activeTab === "all" && <button onClick={() => setShowAdd(true)} className={`mt-6 px-5 h-[36px] ${primaryBg} ${primaryHover} ${primaryActive} text-white rounded-full text-[14px] font-medium shadow-sm active:scale-95 transition-all duration-150`}>Tạo mới</button>}
             </div>
           ) : (
             <div>
               {pinnedChats.length > 0 && <div className="px-4 pt-3 pb-1"><p className="text-[12px] font-medium text-[#8e8e93] dark:text-zinc-500 uppercase tracking-wider">Đã ghim</p></div>}
               <div className="bg-white dark:bg-black divide-y divide-gray-100 dark:divide-zinc-900">
-                {[...pinnedChats, ...normalChats].map((chat) => (
+                {[...pinnedChats,...normalChats].map((chat) => (
                   <div key={chat.chatId} className="group relative">
-                 <Link
-  href={`/chat/${chat.chatId}`}
-  className="flex items-center gap-3 px-4 py-[10px] active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors duration-150 select-none"
-  onPointerDown={() => handleLongPressStart(chat.chatId)}
-  onPointerUp={handleLongPressEnd}
-  onPointerLeave={handleLongPressEnd}
-  onContextMenu={(e) => e.preventDefault()}
->
-  <div className="relative flex-shrink-0">
-    <img
-      src={chat.avatar}
-      alt={chat.name}
-      className="w-[52px] h-[52px] rounded-full object-cover bg-gray-100 dark:bg-zinc-800"
-      loading="lazy"
-    />
-    {chat.isOnline &&!chat.isGroup && (
-      <div className="absolute bottom-0 right-0 w-[14px] h-[14px] bg-[#30d158] rounded-full border-[2.5px] border-white dark:border-black" />
-    )}
-  </div>
-  <div className="flex-1 min-w-0 py-1">
-    <div className="flex items-baseline justify-between gap-2 mb-0.5">
-      <div className="flex items-center gap-1.5 min-w-0">
-        <p className="text-[16px] leading-[22px] font-[550] text-black dark:text-white truncate">
-          {chat.name}
-        </p>
-        {pinned.includes(chat.chatId) && (
-          <RiPushpinFill size={12} className="text-[#8e8e93] dark:text-zinc-500 flex-shrink-0" />
-        )}
-      </div>
-
-      <div className="flex items-center gap-1.5 flex-shrink-0">
-        {longPressChatId === chat.chatId? (
-          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                handleTogglePin(chat.chatId);
-                setLongPressChatId(null);
-              }}
-              className="h-6 px-2.5 bg-white dark:bg-zinc-800 rounded-md text-[12px] font-medium text-[#0a84ff] shadow-sm ring-1 ring-black/5 dark:ring-white/10 active:scale-95 transition-all"
-            >
-              {pinned.includes(chat.chatId)? "Bỏ ghim" : "Ghim"}
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                handleDeleteChat(chat);
-                setLongPressChatId(null);
-              }}
-              className="h-6 px-2.5 bg-white dark:bg-zinc-800 rounded-md text-[12px] font-medium text-[#ff3b30] shadow-sm ring-1 ring-black/5 dark:ring-white/10 active:scale-95 transition-all"
-            >
-              Xóa
-            </button>
-          </div>
-        ) : (
-          <>
-            <span className="text-[13px] leading-[18px] text-[#8e8e93] dark:text-zinc-500 tabular-nums">
-              {formatMessageTime(chat.updatedAt)}
-            </span>
-            {chat.unreadCount? (
-              <span className={`min-w-[20px] h-5 px-1.5 ${primaryBgSolid} rounded-full flex items-center justify-center`}>
-                <span className="text-[12px] leading-none font-medium text-white">
-                  {chat.unreadCount > 99? "99+" : chat.unreadCount}
-                </span>
-              </span>
-            ) : null}
-          </>
-        )}
-      </div>
-    </div>
-    <div className="flex items-center gap-1">
-      {chat.isTyping? (
-        <div className="flex items-center gap-1.5">
-          <div className="flex gap-0.5">
-            <span className={`w-1 h-1 ${primaryBgSolid} rounded-full animate-bounce [animation-delay:-0.3s]`} />
-            <span className={`w-1 h-1 ${primaryBgSolid} rounded-full animate-bounce [animation-delay:-0.15s]`} />
-            <span className={`w-1 h-1 ${primaryBgSolid} rounded-full animate-bounce`} />
-          </div>
-          <span className={`text-[14px] leading-[19px] ${primaryText} italic`}>đang nhập</span>
-        </div>
-      ) : (
-        <p className="text-[14px] leading-[19px] text-[#8e8e93] dark:text-zinc-500 truncate">
-          {chat.isGroup && chat.lastSenderName && chat.lastSenderId!== user?.uid? `${chat.lastSenderName}: ` : ""}
-          {chat.lastSenderId === user?.uid? "Bạn: " : ""}
-          {chat.lastMessage || "Bắt đầu trò chuyện"}
-        </p>
-      )}
-    </div>
-  </div>
-</Link>
-                   
+                    <Link
+                      href={`/chat/${chat.chatId}`}
+                      className="flex items-center gap-3 px-4 py-[10px] active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors duration-150 select-none"
+                      onPointerDown={() => handleLongPressStart(chat.chatId)}
+                      onPointerUp={handleLongPressEnd}
+                      onPointerLeave={handleLongPressEnd}
+                      onContextMenu={(e) => e.preventDefault()}
+                    >
+                      <div className="relative flex-shrink-0">
+                        <img src={chat.avatar} alt={chat.name} className="w-[52px] h-[52px] rounded-full object-cover bg-gray-100 dark:bg-zinc-800" loading="lazy" />
+                        {chat.isOnline &&!chat.isGroup && <div className="absolute bottom-0 right-0 w-[14px] h-[14px] bg-[#30d158] rounded-full border-[2.5px] border-white dark:border-black" />}
+                      </div>
+                      <div className="flex-1 min-w-0 py-1">
+                        <div className="flex items-baseline justify-between gap-2 mb-0.5">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <p className="text-[16px] leading-[22px] font-[550] text-black dark:text-white truncate">{chat.name}</p>
+                            {pinned.includes(chat.chatId) && <RiPushpinFill size={12} className="text-[#8e8e93] dark:text-zinc-500 flex-shrink-0" />}
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            {longPressChatId === chat.chatId? (
+                              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                <button onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleTogglePin(chat.chatId); setLongPressChatId(null); }} className="h-6 px-2.5 bg-white dark:bg-zinc-800 rounded-md text-[12px] font-medium text-[#0a84ff] shadow-sm ring-1 ring-black/5 dark:ring-white/10 active:scale-95 transition-all">
+                                  {pinned.includes(chat.chatId)? "Bỏ ghim" : "Ghim"}
+                                </button>
+                                <button onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDeleteChat(chat); setLongPressChatId(null); }} className="h-6 px-2.5 bg-white dark:bg-zinc-800 rounded-md text-[12px] font-medium text-[#ff3b30] shadow-sm ring-1 ring-black/5 dark:ring-white/10 active:scale-95 transition-all">
+                                  Xóa
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <span className="text-[13px] leading-[18px] text-[#8e8e93] dark:text-zinc-500 tabular-nums">{formatMessageTime(chat.updatedAt)}</span>
+                                {chat.unreadCount? (
+                                  <span className={`min-w-[20px] h-5 px-1.5 ${primaryBgSolid} rounded-full flex items-center justify-center`}>
+                                    <span className="text-[12px] leading-none font-medium text-white">{chat.unreadCount > 99? "99+" : chat.unreadCount}</span>
+                                  </span>
+                                ) : null}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {chat.isTyping? (
+                            <div className="flex items-center gap-1.5">
+                              <div className="flex gap-0.5">
+                                <span className={`w-1 h-1 ${primaryBgSolid} rounded-full animate-bounce [animation-delay:-0.3s]`} />
+                                <span className={`w-1 h-1 ${primaryBgSolid} rounded-full animate-bounce [animation-delay:-0.15s]`} />
+                                <span className={`w-1 h-1 ${primaryBgSolid} rounded-full animate-bounce`} />
+                              </div>
+                              <span className={`text-[14px] leading-[19px] ${primaryText} italic`}>đang nhập</span>
+                            </div>
+                          ) : (
+                            <p className="text-[14px] leading-[19px] text-[#8e8e93] dark:text-zinc-500 truncate">
+                              {chat.isGroup && chat.lastSenderName && chat.lastSenderId!== user?.uid? `${chat.lastSenderName}: ` : ""}
+                              {chat.lastSenderId === user?.uid? "Bạn: " : ""}
+                              {chat.lastMessage || "Bắt đầu trò chuyện"}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
                   </div>
                 ))}
               </div>
@@ -1453,49 +1285,35 @@ const filteredChats = useMemo(() => {
               <div className="px-4 pb-3 flex-shrink-0">
                 <div className="grid grid-cols-2 gap-1 p-1 bg-black/[0.04] dark:bg-white/[0.06] rounded-[10px]">
                   {[{ id: "friend", label: "Thêm bạn", icon: FiUserPlus }, { id: "group", label: "Tạo nhóm", icon: FiUsers }].map((tab) => (
-                    <button key={tab.id} onClick={() => setAddMode(tab.id as any)} className={`h-[30px] rounded-[7px] text-[14px] font-[550] flex items-center justify-center gap-1.5 transition-all duration-200 ${addMode === tab.id ? "bg-white dark:bg-zinc-800 shadow-sm text-black dark:text-white" : "text-[#8e8e93] dark:text-zinc-500"}`}>
+                    <button key={tab.id} onClick={() => setAddMode(tab.id as any)} className={`h-[30px] rounded-[7px] text-[14px] font-[550] flex items-center justify-center gap-1.5 transition-all duration-200 ${addMode === tab.id? "bg-white dark:bg-zinc-800 shadow-sm text-black dark:text-white" : "text-[#8e8e93] dark:text-zinc-500"}`}>
                       <tab.icon size={15} />{tab.label}
                     </button>
                   ))}
                 </div>
               </div>
-             <div className="flex-1 overflow-hidden flex flex-col min-h-0 px-5 pb-5">
+              <div className="flex-1 overflow-hidden flex flex-col min-h-0 px-5 pb-5">
                 {addMode === "friend"? (
                   <div className="space-y-3">
                     <div className="grid grid-cols-3 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => { setShowScanQR(true); setScanMode("camera"); }}
-                        className="h-[44px] bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded-[12px] text-[14px] font-[550] flex items-center justify-center gap-1.5 active:scale-95 transition"
-                      >
+                      <button type="button" onClick={() => { setShowScanQR(true); setScanMode("camera"); }} className="h-[44px] bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded-[12px] text-[14px] font-[550] flex items-center justify-center gap-1.5 active:scale-95 transition">
                         <ScanLine size={18} /> Quét
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="h-[44px] bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded-[12px] text-[14px] font-[550] flex items-center justify-center gap-1.5 active:scale-95 transition"
-                      >
+                      <button type="button" onClick={() => fileInputRef.current?.click()} className="h-[44px] bg-white dark:bg-zinc-800 border-black/10 dark:border-white/10 rounded-[12px] text-[14px] font-[550] flex items-center justify-center gap-1.5 active:scale-95 transition">
                         <FiUpload size={18} /> Ảnh QR
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setAddMode("friend")}
-                        className="h-[44px] bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded-[12px] text-[14px] font-[550] flex items-center justify-center gap-1.5 active:scale-95 transition"
-                      >
+                      <button type="button" onClick={() => setAddMode("friend")} className="h-[44px] bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded-[12px] text-[14px] font-[550] flex items-center justify-center gap-1.5 active:scale-95 transition">
                         <FiUserPlus size={18} /> Thủ công
                       </button>
                     </div>
-
                     <form onSubmit={handleAddFriend} className="space-y-3">
                       <div className="relative">
                         <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8e8e93] pointer-events-none" size={18} />
-                        <input type="search" inputMode="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="ID hoặc @username" className={`w-full h-[44px] pl-10 pr-3.5 bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded-[12px] text-[16px] outline-none ${primaryBorder} focus:ring-4 ${primaryRing} transition-all`} autoFocus autoComplete="off" autoCorrect="off" spellCheck={false} name="search-user-not-login" />
+                        <input type="search" inputMode="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="ID hoặc @username" className={`w-full h-[44px] pl-10 pr-3.5 bg-white dark:bg-zinc-800 border-black/10 dark:border-white/10 rounded-[12px] text-[16px] outline-none ${primaryBorder} focus:ring-4 ${primaryRing} transition-all`} autoFocus autoComplete="off" autoCorrect="off" spellCheck={false} name="search-user-not-login" />
                       </div>
                       <button type="submit" disabled={adding ||!search.trim()} className={`w-full h-[44px] ${primaryBg} ${primaryHover} ${primaryActive} disabled:opacity-40 text-white rounded-[12px] text-[16px] font-[550] transition-all active:scale-[0.98] flex items-center justify-center gap-2`}>
                         {adding && <FiLoader className="animate-spin" size={18} />}{adding? "Đang tìm" : "Tiếp tục"}
                       </button>
                     </form>
-
                     <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleScanFromFile} />
                   </div>
                 ) : (
@@ -1503,7 +1321,7 @@ const filteredChats = useMemo(() => {
                     <input type="text" value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="Tên nhóm" className={`w-full h-[44px] px-3.5 bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded-[12px] text-[16px] outline-none ${primaryBorder} focus:ring-4 ${primaryRing} transition-all`} maxLength={30} />
                     <div className="flex-1 bg-white dark:bg-zinc-800 rounded-[12px] border border-black/10 dark:border-white/10 overflow-hidden flex flex-col min-h-0">
                       <div className="px-3 py-2.5 bg-white/80 dark:bg-zinc-800/80 backdrop-blur border-b border-black/5 dark:border-white/5 flex-shrink-0">
-                        <p className="text-[13px] font-medium text-[#8e8e93] dark:text-zinc-500">Đã chọn {selected.length} người</p>
+    <p className="text-[13px] font-medium text-[#8e8e93] dark:text-zinc-500">Đã chọn {selected.length} người</p>
                       </div>
                       <div className="flex-1 overflow-auto">
                         {friendsForGroup.length === 0? (
@@ -1535,24 +1353,23 @@ const filteredChats = useMemo(() => {
           </div>
         )}
 
-{showScanQR && (
-  <div className="fixed inset-0 bg-black z-[60]">
-    <div id="qr-reader" className={scanMode === "camera"? "w-full h-full" : "hidden"} />
-    <div id="qr-reader-file" className="hidden" />
-    <button
-      onClick={() => stopScan()}
-      className="absolute top-6 right-6 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center"
-    >
-      <FiX className="w-5 h-5 text-white" />
-    </button>
-    <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-white text-center">
-      <p className="font-bold">Đưa mã QR vào khung</p>
-      <p className="text-sm opacity-70 mt-1">Tự động quét khi phát hiện</p>
-    </div>
-  </div>
-)}
+        {showScanQR && (
+          <div className="fixed inset-0 bg-black z-[60]">
+            <div id="qr-reader" className={scanMode === "camera"? "w-full h-full" : "hidden"} />
+            <div id="qr-reader-file" className="hidden" />
+            <button
+              onClick={() => stopScan()}
+              className="absolute top-6 right-6 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center"
+            >
+              <FiX className="w-5 h-5 text-white" />
+            </button>
+            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-white text-center">
+              <p className="font-bold">Đưa mã QR vào khung</p>
+              <p className="text-sm opacity-70 mt-1">Tự động quét khi phát hiện</p>
+            </div>
+          </div>
+        )}
       </div>
       <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}body{overscroll-behavior-y:contain}`}</style>
     </>
   );
-}
