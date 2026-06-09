@@ -61,21 +61,51 @@ const short = p.name.replace("Thành phố ", "").replace("Tỉnh ", "");
     return map;
   }, [provinces]);
 };
-const CATEGORY_MAP = {
-  // Task
-  doing: "Việc gấp", skill: "Kỹ năng", shopping: "Mua hộ", help: "Giúp đỡ",
-  moving: "Chuyển đồ", cleaning: "Dọn dẹp", repair: "Sửa chữa", tutoring: "Gia sư",
-  photography: "Chụp ảnh", design: "Thiết kế", cooking: "Nấu ăn", petcare: "Chăm thú cưng",
-  babysit: "Trông trẻ", elderly: "Chăm người già", event: "Sự kiện", marketing: "Marketing",
-  writing: "Viết lách", translate: "Dịch thuật", consulting: "Tư vấn",
-  // Plan  
-  coffee: "Cà phê", meal: "Ăn uống", sport: "Thể thao", party: "Tiệc tùng",
-  movie: "Xem phim", music: "Âm nhạc", travel: "Du lịch", game: "Game",
-  study: "Học nhóm", volunteer: "Tình nguyện", hiking: "Leo núi", camping: "Cắm trại",
-  beach: "Đi biển", karaoke: "Karaoke", boardgame: "Board game", picnic: "Dã ngoại",
-  workshop: "Workshop", networking: "Kết nối", clubbing: "Club",
-  other: "Khác"
-} as const;
+const CATEGORY_TASKS = [
+  { id: "doing", label: "Việc gấp", icon: "⚡️", color: "#0A84FF" },
+  { id: "skill", label: "Kỹ năng", icon: "🎓", color: "#5E5CE6" },
+  { id: "shopping", label: "Mua hộ", icon: "🛍️", color: "#FF9F0A" },
+  { id: "help", label: "Giúp đỡ", icon: "🤝", color: "#30D158" },
+  { id: "moving", label: "Chuyển đồ", icon: "🚚", color: "#FF375F" },
+  { id: "cleaning", label: "Dọn dẹp", icon: "🧹", color: "#64D2FF" },
+  { id: "repair", label: "Sửa chữa", icon: "🔧", color: "#BF5AF2" },
+  { id: "tutoring", label: "Gia sư", icon: "📚", color: "#0A84FF" },
+  { id: "photography", label: "Chụp ảnh", icon: "📸", color: "#FF9F0A" },
+  { id: "design", label: "Thiết kế", icon: "🎨", color: "#BF5AF2" },
+  { id: "cooking", label: "Nấu ăn", icon: "🍳", color: "#FF375F" },
+  { id: "petcare", label: "Chăm thú cưng", icon: "🐕", color: "#30D158" },
+  { id: "babysit", label: "Trông trẻ", icon: "👶", color: "#64D2FF" },
+  { id: "elderly", label: "Chăm người già", icon: "👴", color: "#5E5CE6" },
+  { id: "event", label: "Sự kiện", icon: "🎉", color: "#FF9F0A" },
+  { id: "marketing", label: "Marketing", icon: "📢", color: "#0A84FF" },
+  { id: "writing", label: "Viết lách", icon: "✍️", color: "#BF5AF2" },
+  { id: "translate", label: "Dịch thuật", icon: "🌐", color: "#64D2FF" },
+  { id: "consulting", label: "Tư vấn", icon: "💼", color: "#30D158" },
+  { id: "other", label: "Khác", icon: "📋", color: "#8E8E93" },
+] as const;
+
+const CATEGORY_PLANS = [
+  { id: "coffee", label: "Cà phê", icon: "☕", color: "#8B4513" },
+  { id: "meal", label: "Ăn uống", icon: "🍜", color: "#FF6347" },
+  { id: "sport", label: "Thể thao", icon: "⚽", color: "#30D158" },
+  { id: "party", label: "Tiệc tùng", icon: "🎉", color: "#FF9F0A" },
+  { id: "movie", label: "Xem phim", icon: "🎬", color: "#BF5AF2" },
+  { id: "music", label: "Âm nhạc", icon: "🎵", color: "#FF375F" },
+  { id: "travel", label: "Du lịch", icon: "✈️", color: "#0A84FF" },
+  { id: "game", label: "Game", icon: "🎮", color: "#5E5CE6" },
+  { id: "study", label: "Học nhóm", icon: "📚", color: "#64D2FF" },
+  { id: "volunteer", label: "Tình nguyện", icon: "❤️", color: "#FF375F" },
+  { id: "hiking", label: "Leo núi", icon: "⛰️", color: "#30D158" },
+  { id: "camping", label: "Cắm trại", icon: "🏕️", color: "#FF9F0A" },
+  { id: "beach", label: "Đi biển", icon: "🏖️", color: "#0A84FF" },
+  { id: "karaoke", label: "Karaoke", icon: "🎤", color: "#BF5AF2" },
+  { id: "boardgame", label: "Board game", icon: "🎲", color: "#5E5CE6" },
+  { id: "picnic", label: "Dã ngoại", icon: "🧺", color: "#30D158" },
+  { id: "workshop", label: "Workshop", icon: "🔨", color: "#FF9F0A" },
+  { id: "networking", label: "Kết nối", icon: "🤝", color: "#0A84FF" },
+  { id: "clubbing", label: "Club", icon: "🪩", color: "#BF5AF2" },
+  { id: "other", label: "Khác", icon: "📋", color: "#8E8E93" },
+] as const;
 function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: Props) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
@@ -128,41 +158,46 @@ function TaskCard({ task, theme, onDelete, onShare, onTaskUpdate, className }: P
   }, [showMenu]);
 
   const derived = useMemo(() => {
-    const maxSlots = task.type === "task"? task.totalSlots?? 0 : task.maxParticipants?? task.totalSlots?? 0;
-    const currentCount = task.type === "task"? task.joined?? 0 : task.currentParticipants?? 0;
-    const created = task.createdAt? new Date(task.createdAt) : new Date();
-    const dueRaw = task.type === "task"? task.deadline : task.eventDate;
-    const due = dueRaw
-    ? format(new Date(dueRaw), "EEE dd/MM", { locale: vi })
+  const maxSlots = task.type === "task"? task.totalSlots?? 0 : task.maxParticipants?? task.totalSlots?? 0;
+  const currentCount = task.type === "task"? task.joined?? 0 : task.currentParticipants?? 0;
+  const created = task.createdAt? new Date(task.createdAt) : new Date();
+  const dueRaw = task.type === "task"? task.deadline : task.eventDate;
+  const due = dueRaw
+  ? format(new Date(dueRaw), "EEE dd/MM", { locale: vi })
+    : "Linh hoạt";
+  const price =
+    task.type === "task"
+    ? task.price && task.price > 0
+      ? `${task.price.toLocaleString("vi-VN")} VNĐ${task.budgetType === "hourly"? "/h" : ""}`
+        : "Thỏa thuận"
+      : task.costType === "free"
+    ? "Miễn phí"
+      : task.costType === "share"
+    ? "Chia đều"
+      : task.costAmount
+    ? `${task.costAmount.toLocaleString("vi-VN")} VNĐ`
       : "Linh hoạt";
-    const price =
-      task.type === "task"
-      ? task.price && task.price > 0
-        ? `${task.price.toLocaleString("vi-VN")} VNĐ${task.budgetType === "hourly"? "/h" : ""}`
-          : "Thỏa thuận"
-        : task.costType === "free"
-      ? "Miễn phí"
-        : task.costType === "share"
-      ? "Chia đều"
-        : task.costAmount
-      ? `${task.costAmount.toLocaleString("vi-VN")} VNĐ`
-        : "Linh hoạt";
 
-    const cityKey = task.location?.city || "";
-const rawProvinceName = provinceMap.get(cityKey) || cityKey || "Chưa rõ";
-const provinceName = rawProvinceName.replace(/^(Thành phố|Tỉnh|TP\.|T\.)\s*/i, "").trim();
-const categoryLabel = CATEGORY_MAP[task.category as keyof typeof CATEGORY_MAP] || task.category; 
-    return {
-      maxSlots,
-      currentCount,
-      due,
-      price,
-      timeAgo: formatDistanceToNow(created, { addSuffix: true, locale: vi }),
-      provinceName,
-      categoryLabel, 
-      isFull: maxSlots > 0 && currentCount >= maxSlots,
-    };
-  }, [task, provinceMap]);
+  const cityKey = task.location?.city || "";
+  const rawProvinceName = provinceMap.get(cityKey) || cityKey || "Chưa rõ";
+  const provinceName = rawProvinceName.replace(/^(Thành phố|Tỉnh|TP\.|T\.)\s*/i, "").trim();
+  
+  const categories = task.type === "task" ? CATEGORY_TASKS : CATEGORY_PLANS;
+  const categoryData = categories.find(c => c.id === task.category);
+
+  return {
+    maxSlots,
+    currentCount,
+    due,
+    price,
+    timeAgo: formatDistanceToNow(created, { addSuffix: true, locale: vi }),
+    provinceName,
+    categoryLabel: categoryData?.label || task.category,
+    categoryIcon: categoryData?.icon || "📋",
+    categoryColor: categoryData?.color || "#8E8E93",
+    isFull: maxSlots > 0 && currentCount >= maxSlots,
+  };
+}, [task, provinceMap]);
 
   if (!task?.id ||!task?.title ||!task?.type ||!task?.status) return null;
 
@@ -387,10 +422,13 @@ const categoryLabel = CATEGORY_MAP[task.category as keyof typeof CATEGORY_MAP] |
                 <FiBookmark className={cn("h-4 w-4", isSaved && "fill-current")} style={{ color: isSaved? accent : undefined }} />
               </button>
             </div>
-  <div className="flex items-center gap-2">
+<div className="flex items-center gap-2">
   {derived.categoryLabel && (
-    <div className="flex items-center gap-1 rounded-lg bg-zinc-100 px-2 py-1 text-xs font-bold dark:bg-zinc-900" style={{ color: accent }}>
-      <FiTag className="h-3 w-3 shrink-0" />
+    <div 
+      className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold text-white shadow-sm"
+      style={{ background: `linear-gradient(135deg, ${derived.categoryColor}, ${derived.categoryColor}dd)` }}
+    >
+      <span className="text-sm leading-none">{derived.categoryIcon}</span>
       <span className="truncate max-w-16">{derived.categoryLabel}</span>
     </div>
   )}
