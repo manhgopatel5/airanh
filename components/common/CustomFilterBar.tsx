@@ -134,12 +134,12 @@ export default function CustomFilterBar({
     }
   }, [showSearchModal]);
 
-  const toggleCategory = (id: string) => {
-    haptics.light();
-    setSelectedCategories(prev =>
-      prev.includes(id)? prev.filter(c => c!== id) : [...prev, id]
-    );
-  };
+const toggleCategory = (id: string) => {
+  haptics.light();
+  setSelectedCategories(prev =>
+    prev.includes(id)? [] : [id] // bấm lại thì bỏ chọn, bấm mới thì thay thế
+  );
+};
 
   const resetFilters = () => {
     haptics.light();
@@ -384,41 +384,32 @@ export default function CustomFilterBar({
                   </AnimatePresence>
                 </h3>
 
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    haptics.light();
-                    setShowCategoryList(!showCategoryList);
-                  }}
-                  className="w-full h-14 px-4 rounded-[28px] bg-white dark:bg-zinc-900 flex items-center justify-between transition-all"
-                  style={{
-                    border: `2px solid ${currentTheme.bg}`,
-                  }}
-                >
-                  <div className="text-left">
-                    <div className="text-xs text-zinc-500 dark:text-zinc-500 font-serif">Chọn danh mục</div>
-                    <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-serif mt-0.5">
-                      {selectedCategories.length === 0
-                ? "Tất cả"
-                        : `Đã chọn ${selectedCategories.length} danh mục`}
-                    </div>
-                    {selectedCategories.length > 0 && (
-                      <div className="text-xs text-zinc-500 dark:text-zinc-500 mt-0.5 font-serif">
-                        {CATEGORIES.filter(c => selectedCategories.includes(c.id))
-                  .slice(0, 2)
-                  .map(c => c.label)
-                  .join(', ')}
-                        {selectedCategories.length > 2 && ` +${selectedCategories.length - 2}`}
-                      </div>
-                    )}
-                  </div>
-                  <motion.div
-                    animate={{ rotate: showCategoryList? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <ChevronDown size={20} className="text-zinc-400" strokeWidth={2.5} />
-                  </motion.div>
-                </motion.button>
+          <motion.button
+  whileTap={{ scale: 0.98 }}
+  onClick={() => {
+    haptics.light();
+    setShowCategoryList(!showCategoryList);
+  }}
+  className="w-full h-14 px-4 rounded-[28px] bg-white dark:bg-zinc-900 flex items-center justify-between transition-all"
+  style={{
+    border: `2px solid ${currentTheme.bg}`,
+  }}
+>
+  <div className="text-left">
+    <div className="text-xs text-zinc-500 dark:text-zinc-500 font-serif">Chọn danh mục</div>
+    <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-serif mt-0.5">
+      {selectedCategories.length === 0
+? "Tất cả"
+        : CATEGORIES.find(c => c.id === selectedCategories[0])?.label}
+    </div>
+  </div>
+  <motion.div
+    animate={{ rotate: showCategoryList? 180 : 0 }}
+    transition={{ duration: 0.2 }}
+  >
+    <ChevronDown size={20} className="text-zinc-400" strokeWidth={2.5} />
+  </motion.div>
+</motion.button>
 
                 <AnimatePresence>
                   {showCategoryList && (
