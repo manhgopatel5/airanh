@@ -19,7 +19,6 @@ import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiLoader, FiUpload, FiEye, FiEy
 import { toast } from "sonner";
 
 export default function AdminEventsPage() {
-  // FIX 1: Dùng useMemo để không tạo lại instance
   const db = useMemo(() => getFirebaseDB(), []);
   const storage = useMemo(() => getStorage(), []);
   const auth = useMemo(() => getAuth(), []);
@@ -33,7 +32,6 @@ export default function AdminEventsPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
-  // FIX 2: Điền sẵn email đúng
   const [loginForm, setLoginForm] = useState({ email: "justastormyday@gmail.com", password: "" });
   const [loginLoading, setLoginLoading] = useState(false);
 
@@ -43,15 +41,12 @@ export default function AdminEventsPage() {
     price: "", tips: [], gallery: [], mapUrl: "", lat: 0, lng: 0, rating: 5, reviews: 0, isActive: true,
   });
 
-  // Check đúng email này
   const ADMIN_EMAIL = "justastormyday@gmail.com";
 
-  // FIX 3: Thêm vào dependency
   useEffect(() => {
     console.log("=== BẮT ĐẦU CHECK AUTH ===");
     const unsub = onAuthStateChanged(auth, (user) => {
       console.log("Firebase user:", user?.email, user?.uid);
-
       if (user && user.email === ADMIN_EMAIL) {
         console.log(">>> ĐÚNG ADMIN EMAIL");
         setIsAdmin(true);
@@ -62,7 +57,7 @@ export default function AdminEventsPage() {
       setCheckingAuth(false);
     });
     return () => unsub();
-  }, ); // QUAN TRỌNG: có
+  }, );
 
   const handleAdminLogin = async () => {
     if (!loginForm.email ||!loginForm.password) {
@@ -141,7 +136,7 @@ export default function AdminEventsPage() {
     try {
       const id = editingId || doc(collection(db, "events")).id;
       const data = {
-   ...form, id,
+  ...form, id,
         updatedAt: serverTimestamp(),
         createdAt: editingId? form.createdAt : serverTimestamp(),
       };
@@ -169,7 +164,7 @@ export default function AdminEventsPage() {
   const toggleActive = async (event: EventItem) => {
     try {
       await setDoc(doc(db, "events", event.id), {
-   ...event, isActive:!event.isActive, updatedAt: serverTimestamp(),
+  ...event, isActive:!event.isActive, updatedAt: serverTimestamp(),
       });
       toast.success(event.isActive? "Đã ẩn" : "Đã hiện");
     } catch (error) {
@@ -193,13 +188,12 @@ export default function AdminEventsPage() {
             <div className="w-16 h-16 bg-[#0a84ff] rounded-2xl flex items-center justify-center">
               <FiLock size={32} className="text-white" />
             </div>
+          </div>
           <h1 className="text-2xl font-bold text-center mb-6">Admin Login</h1>
-
           <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500 rounded-lg text-xs">
             <div>Email hiện tại: {auth.currentUser?.email || "chưa login"}</div>
             <div>Email admin: justastormyday@gmail.com</div>
           </div>
-
           <div className="space-y-4">
             <div>
               <label className="text-sm font-semibold mb-1 block">Email</label>
@@ -257,7 +251,6 @@ export default function AdminEventsPage() {
             </button>
           </div>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {events.map((event) => (
             <div key={event.id} className={`bg-white dark:bg-zinc-900 rounded-xl border-2 ${event.isActive? "border-green-500/30" : "border-zinc-200 dark:border-zinc-800"} overflow-hidden`}>
@@ -292,8 +285,6 @@ export default function AdminEventsPage() {
             </div>
           ))}
         </div>
-      </div>
-
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-xl" onClick={() => setShowModal(false)} />
