@@ -12,7 +12,7 @@ import {
   serverTimestamp,
   query,
   orderBy,
-  getDoc,
+  
 } from "firebase/firestore";
 import { EventItem, CATEGORY_INFO } from "@/data/events";
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiLoader, FiUpload, FiEye, FiEyeOff, FiLock, FiLogOut } from "react-icons/fi";
