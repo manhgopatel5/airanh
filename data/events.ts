@@ -1,10 +1,13 @@
 export type EventItem = {
-  id: string; // đổi number -> string vì Firestore docId là string
+  id: string; // Firestore docId là string
   title: string;
+  name?: string; // THÊM: API có thể trả name
   tag: string;
   tagColor: string;
   desc: string;
+  description?: string; // THÊM: API có thể trả description
   image: string;
+  imageUrl?: string; // THÊM: URL từ Firebase Storage
   joined: number;
   distance: string;
   icon: string;
