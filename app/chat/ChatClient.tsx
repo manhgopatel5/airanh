@@ -265,7 +265,7 @@ const [userVip, setUserVip] = useState<{tier: 'free' | 'pro' | 'elite', expiresA
 const [purchasingVip, setPurchasingVip] = useState<boolean>(false);
 const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
 const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-const [showFullExplore, setShowFullExplore] = useState(false);
+
 type VipTier = {
   id: 'pro' | 'elite';
   name: string;
