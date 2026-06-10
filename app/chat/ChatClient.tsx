@@ -238,12 +238,13 @@ const handleFindStranger = async () => {
       router.push(`/stranger/${data.chatId}`);
     } else {
       toast.info("Đang tìm... Sẽ tự vào khi match");
-      const unsub = onSnapshot(doc(db, "stranger_queue", user.uid), (snap) => {
-        if (snap.data()?.matchedChatId) {
-          router.push(`/stranger/${snap.data().matchedChatId}`);
-          unsub();
-        }
-      });
+  const unsub = onSnapshot(doc(db, "stranger_queue", user.uid), (snap) => {
+  const data = snap.data();
+  if (data?.matchedChatId) {
+    router.push(`/stranger/${data.matchedChatId}`);
+    unsub();
+  }
+});
     }
   } catch (e: any) {
     toast.error(e.message);
