@@ -1,3 +1,4 @@
+const admin = require('firebase-admin');
 require('dotenv').config({ path: '.env.local' });
 
 admin.initializeApp({
@@ -7,7 +8,7 @@ admin.initializeApp({
     privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
   })
 });
-admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+
 const db = admin.firestore();
 
 const EVENTS_DATA = [
