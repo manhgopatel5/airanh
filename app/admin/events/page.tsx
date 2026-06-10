@@ -64,7 +64,7 @@ export default function AdminEventsPage() {
     if (savedAdmin === "true") {
       setIsAdmin(true);
     }
-    setLoading(false);
+ 
   }, []);
 
   // Login admin bằng username/password
@@ -104,7 +104,7 @@ export default function AdminEventsPage() {
       const data: EventItem[] = [];
       snapshot.forEach((doc) => data.push({ id: doc.id,...doc.data() } as EventItem));
       setEvents(data);
-      setLoading(false);
+      
     });
     return () => unsub();
   }, [db, isAdmin]);
