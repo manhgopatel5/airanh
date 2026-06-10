@@ -1293,18 +1293,6 @@ const getNotificationIcon = (type: string) => {
                 </div>
               ))}
             </div>
-      ) : filteredChats.length === 0 && activeTab === "friends"? (
-  <div className="flex flex-col items-center justify-center min-h- px-8 text-center">
-    <div className="w- h- bg-[#f2f2f7] dark:bg-zinc-900 rounded- flex items-center justify-center mb-4">
-      <FiUsers className="text-gray-400" size={30} strokeWidth={1.5} />
-    </div>
-    <h3 className="text- font-semibold tracking-tight text-gray-900 dark:text-white mb-1.5">Chưa có bạn</h3>
-    <p className="text- leading- text-[#8e8e93] dark:text-zinc-500 max-w-[280px]">Mời kết bạn để bắt đầu trò chuyện cùng nhau</p>
-    <button onClick={() => setShowAdd(true)} className={`mt-6 px-6 h- ${primaryBg} ${primaryHover} ${primaryActive} text-white rounded-full text- font-[550] shadow-sm active:scale-95 transition-all flex items-center gap-2`}>
-      <FiUserPlus size={18} />
-      Kết bạn ngay
-    </button>
-  </div>
 ) : filteredChats.length === 0? null : (
             <div>
               {pinnedChats.length > 0 && <div className="px-4 pt-3 pb-1"><p className="text-[12px] font-medium text-[#8e8e93] dark:text-zinc-500 uppercase tracking-wider">Đã ghim</p></div>}
