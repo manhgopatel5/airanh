@@ -65,27 +65,22 @@ export default function AdminEventsPage() {
   }, []);
 
   const handleAdminLogin = async () => {
-    if (!loginForm.username ||!loginForm.password) {
-      toast.error("Nhập đủ tên và mật khẩu");
-      return;
-    }
-    setLoginLoading(true);
-    try {
-      const adminDoc = await getDoc(doc(db, "admin_credentials", loginForm.username));
-      if (adminDoc.exists() && adminDoc.data().password === loginForm.password) {
-        setIsAdmin(true);
-        localStorage.setItem("admin_session", "true");
-        toast.success("Đăng nhập admin thành công");
-      } else {
-        toast.error("Sai tên hoặc mật khẩu");
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Lỗi đăng nhập");
-    } finally {
-      setLoginLoading(false);
-    }
-  };
+  if (!loginForm.username ||!loginForm.password) {
+    toast.error("Nhập đủ tên và mật khẩu");
+    return;
+  }
+  setLoginLoading(true);
+  
+  // Bỏ getDoc, check thẳng luôn
+  if (loginForm.username === "admin" && loginForm.password === "Pho1234567890@") {
+    setIsAdmin(true);
+    localStorage.setItem("admin_session", "true");
+    toast.success("Đăng nhập admin thành công");
+  } else {
+    toast.error("Sai tên hoặc mật khẩu");
+  }
+  setLoginLoading(false);
+};
 
   const handleLogout = () => {
     setIsAdmin(false);
