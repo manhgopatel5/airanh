@@ -1,33 +1,17 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { getFirebaseDB } from "@/lib/firebase";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { getAuth, signOut } from "firebase/auth";
-import {
-  collection,
-  onSnapshot,
-  doc,
-  setDoc,
-  deleteDoc,
-  serverTimestamp,
-  query,
-  orderBy,
-} from "firebase/firestore";
+import { useState, useEffect } from "react";
 import { EventItem, CATEGORY_INFO } from "@/data/events";
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiLoader, FiUpload, FiEye, FiEyeOff, FiLogOut } from "react-icons/fi";
 import { toast } from "sonner";
 
 export default function AdminEventsPage() {
-  const db = useMemo(() => getFirebaseDB(), []);
-  const storage = useMemo(() => getStorage(), []);
-  const auth = useMemo(() => getAuth(), []);
-
   const [events, setEvents] = useState<EventItem[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const [form, setForm] = useState<Partial<EventItem>>({
     title: "",
@@ -52,31 +36,28 @@ export default function AdminEventsPage() {
     isActive: true,
   });
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    await fetch('/api/auth/session', { method: 'DELETE' });
-    toast.success("Đã đăng xuất");
-    window.location.href = '/login';
+  const fetchEvents = async () => {
+    setDataLoading(true);
+    try {
+      const res = await fetch('/api/admin/events');
+      if (!res.ok) throw new Error('Failed');
+      const data = await res.json();
+      setEvents(data.events);
+    } catch (error) {
+      toast.error("Lỗi tải events");
+    } finally {
+      setDataLoading(false);
+    }
   };
 
   useEffect(() => {
-    setDataLoading(true);
-    const q = query(collection(db, "events"), orderBy("updatedAt", "desc"));
-    const unsub = onSnapshot(q,
-      (snapshot) => {
-        const data: EventItem[] = [];
-        snapshot.forEach((doc) => data.push({ id: doc.id,...doc.data() } as EventItem));
-        setEvents(data);
-        setDataLoading(false);
-      },
-      (error) => {
-        console.error("Firestore error:", error);
-        toast.error("Lỗi tải events");
-        setDataLoading(false);
-      }
-    );
-    return () => unsub();
-  }, [db]);
+    fetchEvents();
+  }, []);
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/session', { method: 'DELETE' });
+    window.location.href = '/login';
+  };
 
   const resetForm = () => {
     setForm({
@@ -110,21 +91,22 @@ export default function AdminEventsPage() {
     setShowModal(true);
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "image" | "gallery") => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setUploading(true);
     try {
-      const fileRef = ref(storage, `events/${Date.now()}_${file.name}`);
-      await uploadBytes(fileRef, file);
-      const url = await getDownloadURL(fileRef);
-      if (field === "image") {
-        setForm((prev) => ({...prev, image: url }));
-      } else {
-        setForm((prev) => ({...prev, gallery: [...(prev.gallery || []), url] }));
-      }
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: formData });
+      if (!res.ok) throw new Error('Upload failed');
+      const data = await res.json();
+      setForm((prev) => ({...prev, image: data.url }));
       toast.success("Upload thành công");
     } catch (error) {
       toast.error("Lỗi upload ảnh");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -135,17 +117,16 @@ export default function AdminEventsPage() {
     }
     setSaving(true);
     try {
-      const id = editingId || doc(collection(db, "events")).id;
-      const data = {
-       ...form,
-        id,
-        updatedAt: serverTimestamp(),
-        createdAt: editingId? form.createdAt : serverTimestamp(),
-      };
-      await setDoc(doc(db, "events", id), data);
+      const res = await fetch('/api/admin/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({...form, id: editingId })
+      });
+      if (!res.ok) throw new Error('Failed');
       toast.success(editingId? "Đã cập nhật" : "Đã thêm event");
       setShowModal(false);
       resetForm();
+      fetchEvents();
     } catch (error) {
       toast.error("Lỗi lưu dữ liệu");
     } finally {
@@ -156,8 +137,10 @@ export default function AdminEventsPage() {
   const handleDelete = async (id: string) => {
     if (!confirm("Xóa event này?")) return;
     try {
-      await deleteDoc(doc(db, "events", id));
+      const res = await fetch(`/api/admin/events?id=${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed');
       toast.success("Đã xóa");
+      fetchEvents();
     } catch (error) {
       toast.error("Lỗi xóa");
     }
@@ -165,12 +148,14 @@ export default function AdminEventsPage() {
 
   const toggleActive = async (event: EventItem) => {
     try {
-      await setDoc(doc(db, "events", event.id), {
-       ...event,
-        isActive:!event.isActive,
-        updatedAt: serverTimestamp(),
+      const res = await fetch('/api/admin/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({...event, isActive:!event.isActive })
       });
+      if (!res.ok) throw new Error('Failed');
       toast.success(event.isActive? "Đã ẩn" : "Đã hiện");
+      fetchEvents();
     } catch (error) {
       toast.error("Lỗi");
     }
@@ -339,8 +324,8 @@ export default function AdminEventsPage() {
                     className="flex-1 h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
                   />
                   <label className="px-4 h-10 bg-blue-500 text-white rounded-lg flex items-center gap-2 cursor-pointer">
-                    <FiUpload size={16} />
-                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, "image")} />
+                    {uploading? <FiLoader className="animate-spin" size={16} /> : <FiUpload size={16} />}
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
                   </label>
                 </div>
               </div>
@@ -383,55 +368,6 @@ export default function AdminEventsPage() {
                     value={form.distance}
                     onChange={(e) => setForm({...form, distance: e.target.value })}
                     placeholder="Cách bạn 5km"
-                    className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold mb-1 block">Tips (mỗi dòng 1 tip)</label>
-                <textarea
-                  value={form.tips?.join("\n")}
-                  onChange={(e) => setForm({...form, tips: e.target.value.split("\n").filter((t) => t) })}
-                  className="w-full h-20 px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold mb-1 block">Gallery URLs (mỗi dòng 1 URL)</label>
-                <textarea
-                  value={form.gallery?.join("\n")}
-                  onChange={(e) => setForm({...form, gallery: e.target.value.split("\n").filter((t) => t) })}
-                  className="w-full h-20 px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="text-sm font-semibold mb-1 block">Rating</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={form.rating}
-                    onChange={(e) => setForm({...form, rating: parseFloat(e.target.value) })}
-                    className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-semibold mb-1 block">Reviews</label>
-                  <input
-                    type="number"
-                    value={form.reviews}
-                    onChange={(e) => setForm({...form, reviews: parseInt(e.target.value) })}
-                    className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-semibold mb-1 block">Joined</label>
-                  <input
-                    type="number"
-                    value={form.joined}
-                    onChange={(e) => setForm({...form, joined: parseInt(e.target.value) })}
                     className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
                   />
                 </div>
