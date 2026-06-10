@@ -40,7 +40,7 @@ import {
   FiX,
   FiMic,
   FiUpload,
-  
+  FiHome
   
   FiMapPin,
   FiLoader,
@@ -265,6 +265,7 @@ const [userVip, setUserVip] = useState<{tier: 'free' | 'pro' | 'elite', expiresA
 const [purchasingVip, setPurchasingVip] = useState<boolean>(false);
 const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
 const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+const [showFullExplore, setShowFullExplore] = useState(false);
 type VipTier = {
   id: 'pro' | 'elite';
   name: string;
@@ -1150,8 +1151,9 @@ const getNotificationIcon = (type: string) => {
   <div className="space-y-2.5">
 {/* Hàng 1: 4 nút - 1 khung riêng */}
 <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] dark:shadow-black/20 border border-zinc-200/60 dark:border-zinc-800/60 px-4 py-3.5">
-  <div className="grid grid-cols-4 gap-3">
+  <div className="grid grid-cols-5 gap-2">
     {[
+      { label: "Trang chủ", icon: FiHome, color: "bg-gradient-to-br from-[#0a84ff] to-purple-500", onClick: () => setActiveTab("all") },
       { label: "Mời bạn", icon: FiUserPlus, color: "bg-blue-500", onClick: () => setShowAdd(true) },
       { label: "Bạn bè", icon: FiUsers, color: "bg-sky-500", onClick: () => setActiveTab("friends") },
       { label: "Nhóm", icon: FiUsers, color: "bg-purple-500", onClick: () => setActiveTab("group") },
@@ -1160,12 +1162,17 @@ const getNotificationIcon = (type: string) => {
       <button
         key={item.label}
         onClick={item.onClick}
-        className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform duration-150"
+        className="flex flex-col items-center gap-1 active:scale-95 transition-transform duration-150"
       >
-        <div className={`w-14 h-14 ${item.color} rounded-xl flex items-center justify-center relative`}>
-          <item.icon className="text-white" size={22} strokeWidth={2.5} />
+        <div className={`w-12 h-12 ${item.color} rounded-xl flex items-center justify-center relative`}>
+          <item.icon className="text-white" size={20} strokeWidth={2.5} />
+          {item.label === "Thông báo" && unreadNotifications > 0 && (
+            <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-900">
+              <span className="text-[10px] font-[700] text-white">{unreadNotifications > 9? '9+' : unreadNotifications}</span>
+            </div>
+          )}
         </div>
-        <span className="text-xs leading-4 font-[550] text-zinc-700 dark:text-zinc-300 text-center">
+        <span className="text-[10px] leading-3 font-[550] text-zinc-700 dark:text-zinc-300 text-center">
           {item.label}
         </span>
       </button>
@@ -1205,14 +1212,17 @@ const getNotificationIcon = (type: string) => {
     <div className="px-4 pt-4 space-y-3">
       {/* 1. Title Khám phá hôm nay */}
       <div className="flex items-center justify-between mb-3 px-1">
-        <h3 className="text-sm font-[700] flex items-center gap-1.5">
-          <span className="text-lg">🔥</span>
-          Khám phá hôm nay
-        </h3>
-        <span className="text-xs text-[#8e8e93]">
-          {(selectedCategory? EVENTS_DATA.filter(e => e.category === selectedCategory) : EVENTS_DATA).length} địa điểm
-        </span>
-      </div>
+  <h3 className="text-sm font-[700] flex items-center gap-1.5">
+    <span className="text-lg">🔥</span>
+    Khám phá hôm nay
+  </h3>
+  <button
+    onClick={() => router.push('/explore')}
+    className="text-xs font-[600] text-[#0a84ff] active:opacity-60 transition-opacity"
+  >
+    Xem thêm
+  </button>
+</div>
 
       {/* 2. Filter Category */}
       <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
