@@ -16,15 +16,13 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { EventItem, CATEGORY_INFO } from "@/data/events";
-import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiLoader, FiUpload, FiEye, FiEyeOff, FiLock } from "react-icons/fi";
+import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiLoader, FiUpload, FiEye, FiEyeOff, FiLock, FiLogOut } from "react-icons/fi";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 
 export default function AdminEventsPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { loading: authLoading } = useAuth();
   const db = getFirebaseDB();
   const storage = getStorage();
-  const router = useRouter();
 
   const [events, setEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,19 +58,14 @@ export default function AdminEventsPage() {
     isActive: true,
   });
 
-  // Check admin role
+  // Check session từ localStorage
   useEffect(() => {
-    if (!authLoading && user) {
-      getDoc(doc(db, "users", user.uid)).then((snap) => {
-        if (snap.data()?.role === "admin") {
-          setIsAdmin(true);
-        } else {
-          toast.error("Không có quyền truy cập");
-          router.push("/");
-        }
-      });
+    const savedAdmin = localStorage.getItem("admin_session");
+    if (savedAdmin === "true") {
+      setIsAdmin(true);
     }
-  }, [user, authLoading, db, router]);
+    setLoading(false);
+  }, []);
 
   // Login admin bằng username/password
   const handleAdminLogin = async () => {
@@ -82,10 +75,10 @@ export default function AdminEventsPage() {
     }
     setLoginLoading(true);
     try {
-      // Check trong collection admin_credentials
       const adminDoc = await getDoc(doc(db, "admin_credentials", loginForm.username));
       if (adminDoc.exists() && adminDoc.data().password === loginForm.password) {
         setIsAdmin(true);
+        localStorage.setItem("admin_session", "true");
         toast.success("Đăng nhập admin thành công");
       } else {
         toast.error("Sai tên hoặc mật khẩu");
@@ -95,6 +88,12 @@ export default function AdminEventsPage() {
     } finally {
       setLoginLoading(false);
     }
+  };
+
+  const handleLogout = () => {
+    setIsAdmin(false);
+    localStorage.removeItem("admin_session");
+    toast.success("Đã đăng xuất");
   };
 
   // Fetch events
@@ -255,7 +254,7 @@ export default function AdminEventsPage() {
     );
   }
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <FiLoader className="animate-spin text-[#0a84ff]" size={32} />
@@ -268,15 +267,23 @@ export default function AdminEventsPage() {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">Quản lý Events</h1>
-          <button
-            onClick={() => {
-              resetForm();
-              setShowModal(true);
-            }}
-            className="px-4 h-10 bg-[#0a84ff] text-white rounded-xl font-semibold flex items-center gap-2"
-          >
-            <FiPlus size={18} /> Thêm Event
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleLogout}
+              className="px-4 h-10 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl font-semibold flex items-center gap-2"
+            >
+              <FiLogOut size={18} /> Đăng xuất
+            </button>
+            <button
+              onClick={() => {
+                resetForm();
+                setShowModal(true);
+              }}
+              className="px-4 h-10 bg-[#0a84ff] text-white rounded-xl font-semibold flex items-center gap-2"
+            >
+              <FiPlus size={18} /> Thêm Event
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -331,7 +338,6 @@ export default function AdminEventsPage() {
         </div>
       </div>
 
-      {/* Modal Form - giữ nguyên như cũ */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-xl" onClick={() => setShowModal(false)} />
