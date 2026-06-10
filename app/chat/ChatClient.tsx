@@ -38,7 +38,7 @@ import {
   FiX,
   FiUpload,
   FiLoader,
-  FiUserX,
+  
   FiBell,
   FiAtSign,
   FiInbox,
