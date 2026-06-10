@@ -1,5 +1,18 @@
 import { NextResponse } from 'next/server'
 import { getStorage } from 'firebase-admin/storage'
+import { initializeApp, getApps, cert } from 'firebase-admin/app'
+
+// Init Firebase Admin nếu chưa có
+if (!getApps().length) {
+  initializeApp({
+    credential: cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    }),
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET, // ví dụ: airanh-xxx.appspot.com
+  });
+}
 
 export async function POST(request: Request) {
   try {
@@ -27,8 +40,8 @@ export async function POST(request: Request) {
     const url = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
 
     return NextResponse.json({ url });
-  } catch (err) {
-    console.error('Upload error:', err);
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+  } catch (err: any) {
+    console.error('Upload error:', err.message);
+    return NextResponse.json({ error: 'Upload failed', detail: err.message }, { status: 500 });
   }
 }
