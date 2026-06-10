@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { getFirebaseDB } from "@/lib/firebase";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, User } from "firebase/auth";
 import {
   collection,
   onSnapshot,
@@ -12,7 +13,7 @@ import {
   serverTimestamp,
   query,
   orderBy,
-  
+  getDoc,
 } from "firebase/firestore";
 import { EventItem, CATEGORY_INFO } from "@/data/events";
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiLoader, FiUpload, FiEye, FiEyeOff, FiLock, FiLogOut } from "react-icons/fi";
@@ -21,16 +22,18 @@ import { toast } from "sonner";
 export default function AdminEventsPage() {
   const db = getFirebaseDB();
   const storage = getStorage();
+  const auth = getAuth();
 
   const [events, setEvents] = useState<EventItem[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
-  const [loginForm, setLoginForm] = useState({ username: "", password: "" });
+  const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [loginLoading, setLoginLoading] = useState(false);
 
   const [form, setForm] = useState<Partial<EventItem>>({
@@ -56,35 +59,47 @@ export default function AdminEventsPage() {
     isActive: true,
   });
 
+  // Check auth + role admin
   useEffect(() => {
-    const savedAdmin = localStorage.getItem("admin_session");
-    if (savedAdmin === "true") {
-      setIsAdmin(true);
-    }
-    setCheckingAuth(false);
-  }, []);
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists() && userDoc.data().role === "admin") {
+          setIsAdmin(true);
+        } else {
+          setIsAdmin(false);
+          toast.error("Tài khoản không có quyền admin");
+          await signOut(auth);
+        }
+      } else {
+        setIsAdmin(false);
+      }
+      setCheckingAuth(false);
+    });
+    return () => unsub();
+  }, [auth, db]);
 
   const handleAdminLogin = async () => {
-  if (!loginForm.username ||!loginForm.password) {
-    toast.error("Nhập đủ tên và mật khẩu");
-    return;
-  }
-  setLoginLoading(true);
-  
-  // Bỏ getDoc, check thẳng luôn
-  if (loginForm.username === "admin" && loginForm.password === "Pho1234567890@") {
-    setIsAdmin(true);
-    localStorage.setItem("admin_session", "true");
-    toast.success("Đăng nhập admin thành công");
-  } else {
-    toast.error("Sai tên hoặc mật khẩu");
-  }
-  setLoginLoading(false);
-};
+    if (!loginForm.email ||!loginForm.password) {
+      toast.error("Nhập đủ email và mật khẩu");
+      return;
+    }
+    setLoginLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, loginForm.email, loginForm.password);
+      // onAuthStateChanged sẽ tự check role admin
+      toast.success("Đăng nhập thành công");
+    } catch (error: any) {
+      console.error(error);
+      toast.error("Sai email hoặc mật khẩu");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
 
-  const handleLogout = () => {
-    setIsAdmin(false);
-    localStorage.removeItem("admin_session");
+  const handleLogout = async () => {
+    await signOut(auth);
     toast.success("Đã đăng xuất");
   };
 
@@ -163,7 +178,7 @@ export default function AdminEventsPage() {
     try {
       const id = editingId || doc(collection(db, "events")).id;
       const data = {
-      ...form,
+       ...form,
         id,
         updatedAt: serverTimestamp(),
         createdAt: editingId? form.createdAt : serverTimestamp(),
@@ -192,7 +207,7 @@ export default function AdminEventsPage() {
   const toggleActive = async (event: EventItem) => {
     try {
       await setDoc(doc(db, "events", event.id), {
-      ...event,
+       ...event,
         isActive:!event.isActive,
         updatedAt: serverTimestamp(),
       });
@@ -218,16 +233,17 @@ export default function AdminEventsPage() {
             <div className="w-16 h-16 bg-[#0a84ff] rounded-2xl flex items-center justify-center">
               <FiLock size={32} className="text-white" />
             </div>
+          </div>
           <h1 className="text-2xl font-bold text-center mb-6">Admin Login</h1>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-semibold mb-1 block">Tên đăng nhập</label>
+              <label className="text-sm font-semibold mb-1 block">Email</label>
               <input
-                type="text"
-                value={loginForm.username}
-                onChange={(e) => setLoginForm({...loginForm, username: e.target.value })}
+                type="email"
+                value={loginForm.email}
+                onChange={(e) => setLoginForm({...loginForm, email: e.target.value })}
                 className="w-full h-11 px-4 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm"
-                placeholder="admin"
+                placeholder="admin@huha.online"
               />
             </div>
             <div>
@@ -251,7 +267,6 @@ export default function AdminEventsPage() {
             </button>
           </div>
         </div>
-      </div>
       </div>
     );
   }
