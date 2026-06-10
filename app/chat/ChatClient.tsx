@@ -36,6 +36,7 @@ import {
   FiUsers,
   FiCheck,
   FiX,
+  FiMic,
   FiUpload,
   FiLoader,
   FiZap,
