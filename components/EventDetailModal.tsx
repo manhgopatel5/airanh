@@ -48,7 +48,7 @@ export default function EventDetailModal({
                 <div className="absolute bottom-3 right-4 px-2.5 py-1 bg-black/40 backdrop-blur-md rounded-lg flex items-center gap-1">
                   <FiStar className="text-amber-400" size={12} fill="currentColor" />
                   <span className="text-xs font-[700] text-white">{event.rating}</span>
-                  <span className="text- text-white/70">({event.reviews})</span>
+                  <span className="text-xs text-white/70">({event.reviews})</span>
                 </div>
               )}
             </div>
@@ -60,7 +60,7 @@ export default function EventDetailModal({
                   <span className="text-3xl">{event.icon}</span>
                   <div className="flex-1">
                     <h2 className="text-xl font-[700] leading-tight">{event.title}</h2>
-                    <p className="text-sm text-[#8e8e93] mt-1">{event.desc}</p>
+                    <p className="text-sm text-[#8e93] mt-1">{event.desc}</p>
                   </div>
                 </div>
 
@@ -71,7 +71,6 @@ export default function EventDetailModal({
                       <p className="font-[550]">Địa chỉ</p>
                       <p className="text-[#8e8e93] text-xs mt-0.5">{event.address}</p>
                     </div>
-                  </div>
                   <div className="flex items-start gap-3 text-sm">
                     <FiClock className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
                     <div>
@@ -85,6 +84,7 @@ export default function EventDetailModal({
                       <p className="font-[550]">Giá vé</p>
                       <p className="text-[#8e8e93] text-xs mt-0.5">{event.price}</p>
                     </div>
+                  </div>
                   <div className="flex items-start gap-3 text-sm">
                     <FiUsers className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
                     <div>
