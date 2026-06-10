@@ -1055,56 +1055,79 @@ const getNotificationIcon = (type: string) => {
       <div className="min-h-dvh bg-gradient-to-b from-[#F7FAFF] via-white to-[#F5F7FB] text-zinc-950 dark:from-[#05070A] dark:via-zinc-950 dark:to-[#0F172A] dark:text-white">
       
 
-      <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50">
-  <div className="px-4 pt-3 pb-3">
-    {/* Hàng icon chức năng mới */}
-    <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide">
-      {[
-        { label: "Mời bạn bè", icon: FiUserPlus, color: "bg-blue-500", onClick: () => setShowAdd(true) },
-        { label: "Bạn bè", icon: FiUsers, color: "bg-sky-500", onClick: () => setActiveTab("friends") },
-        { label: "Nhóm", icon: FiUsers, color: "bg-purple-500", onClick: () => setActiveTab("group") },
-        { label: "Thông báo", icon: FiBell, color: "bg-red-500", onClick: () => setActiveTab("notifications") },
-        { label: "Bình chọn", icon: Vote, color: "bg-gradient-to-br from-indigo-500 to-purple-500", onClick: () => setShowPoll(true) },
-        { label: "VIP", icon: Crown, color: "bg-amber-500", onClick: () => setShowVip(true) },
-        { label: "Quỹ chung", icon: Wallet, color: "bg-orange-500", onClick: () => toast.info("Sắp ra mắt") },
-      ].map((item) => (
-        <button
-          key={item.label}
-          onClick={item.onClick}
-          className="flex flex-col items-center gap-1 flex-shrink-0 active:scale-95 transition-transform"
-        >
-          <div className={`w-12 h-12 ${item.color} rounded-2xl flex items-center justify-center shadow-lg relative`}>
-            <item.icon className="text-white" size={20} strokeWidth={2.5} />
-            {item.label === "Thông báo" && unreadNotifications > 0 && (
-              <span className="absolute -top-1 -right-1 min-w- h- px-1 bg-red-500 rounded-full flex items-center justify-center text- leading-none font-bold text-white">
-                {unreadNotifications > 99? "99+" : unreadNotifications}
-              </span>
-            )}
-          </div>
-          <span className="text- font-medium text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
-            {item.label}
-          </span>
-        </button>
-      ))}
+<div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50">
+  <div className="px-4 pt-4 pb-4">
+    <div className="space-y-3.5">
+      {/* Hàng 1: 4 nút */}
+      <div className="grid grid-cols-4 gap-3">
+        {[
+          { label: "Mời bạn", icon: FiUserPlus, color: "bg-blue-500", onClick: () => setShowAdd(true) },
+          { label: "Bạn bè", icon: FiUsers, color: "bg-sky-500", onClick: () => setActiveTab("friends") },
+          { label: "Nhóm", icon: FiUsers, color: "bg-purple-500", onClick: () => setActiveTab("group") },
+          { label: "Thông báo", icon: FiBell, color: "bg-red-500", onClick: () => setActiveTab("notifications"), badge: unreadNotifications },
+        ].map((item) => (
+          <button
+            key={item.label}
+            onClick={item.onClick}
+            className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform duration-150"
+          >
+            <div className={`w-14 h-14 ${item.color} rounded-[18px] flex items-center justify-center shadow-lg shadow-black/[0.08] relative`}>
+              <item.icon className="text-white" size={22} strokeWidth={2.5} />
+              {item.badge && item.badge > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-white dark:bg-zinc-900 border-2 border-white dark:border-zinc-950 rounded-full flex items-center justify-center shadow-sm">
+                  <span className="text-[10px] leading-none font-bold text-red-500">
+                    {item.badge > 99? "99+" : item.badge}
+                  </span>
+                </span>
+              )}
+            </div>
+            <span className="text-[12px] leading-4 font-[550] text-zinc-700 dark:text-zinc-300 text-center">
+              {item.label}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Hàng 2: 3 nút căn giữa */}
+      <div className="flex items-center justify-center gap-8">
+        {[
+          { label: "Bình chọn", icon: Vote, color: "bg-gradient-to-br from-indigo-500 to-purple-500", onClick: () => setShowPoll(true) },
+          { label: "VIP", icon: Crown, color: "bg-gradient-to-br from-amber-400 to-orange-500", onClick: () => setShowVip(true) },
+          { label: "Quỹ chung", icon: Wallet, color: "bg-gradient-to-br from-orange-500 to-pink-500", onClick: () => toast.info("Sắp ra mắt") },
+        ].map((item) => (
+          <button
+            key={item.label}
+            onClick={item.onClick}
+            className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform duration-150"
+          >
+            <div className={`w-14 h-14 ${item.color} rounded-[18px] flex items-center justify-center shadow-lg shadow-black/[0.08]`}>
+              <item.icon className="text-white" size={22} strokeWidth={2.5} />
+            </div>
+            <span className="text-[12px] leading-4 font-[550] text-zinc-700 dark:text-zinc-300 text-center">
+              {item.label}
+            </span>
+          </button>
+        ))}
+      </div>
     </div>
   </div>
 </div>
 
-        <div className="pb-24">
-          {activeTab === "notifications"? (
-            notifLoading? (
-              <div className="px-4 pt-4 space-y-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-3 py-3 animate-pulse">
-                    <div className="w-12 h-12 bg-gray-200 dark:bg-zinc-800 rounded-full" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4" />
-                      <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : notifications.length === 0? (
+<div className="pb-24">
+  {activeTab === "notifications"? (
+    notifLoading? (
+      <div className="px-4 pt-4 space-y-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-3 py-3 animate-pulse">
+            <div className="w-12 h-12 bg-gray-200 dark:bg-zinc-800 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4" />
+              <div className="h-3 bg-gray-200 dark:bg-zinc-800 rounded w-1/2" />
+            </div>
+          </div>
+        ))}
+      </div>
+    ) : notifications.length === 0? (
               <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
                 <div className="w-[72px] h-[72px] bg-[#f2f2f7] dark:bg-zinc-900 rounded-[20px] flex items-center justify-center mb-4">
                   <FiBell className="text-gray-400" size={30} strokeWidth={1.5} />
