@@ -1369,10 +1369,12 @@ const getNotificationIcon = (type: string) => {
                       </div>
                       <div className="flex-1 min-w-0 py-1">
                         <div className="flex items-baseline justify-between gap-2 mb-0.5">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <p className="text-[16px] leading-[22px] font-[550] text-black dark:text-white truncate">{chat.name}</p>
-                            {pinned.includes(chat.chatId) && <RiPushpinFill size={12} className="text-[#8e8e93] dark:text-zinc-500 flex-shrink-0" />}
-                          </div>
+                       <div className="flex items-center gap-1.5 min-w-0">
+  <p className="text-[16px] leading-[22px] font-[550] text-black dark:text-white truncate">{chat.name}</p>
+  {userVip?.tier === 'pro' && <span className="text-[14px]">💎</span>}
+  {userVip?.tier === 'elite' && <span className="text-[14px] animate-pulse">👑</span>}
+  {pinned.includes(chat.chatId) && <RiPushpinFill size={12} className="text-[#8e8e93] dark:text-zinc-500 flex-shrink-0" />}
+</div>
                           <div className="flex items-center gap-1.5 flex-shrink-0">
                             {longPressChatId === chat.chatId? (
                               <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
@@ -1609,14 +1611,14 @@ const getNotificationIcon = (type: string) => {
         <p className="text-[14px] text-[#8e8e93] mt-1">Mở khóa tính năng cao cấp</p>
       </div>
 
-      {userVip?.tier!== 'free' && (
-        <div className="mx-5 mb-3 px-4 py-2.5 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-xl">
-          <p className="text-[13px] font-medium text-emerald-600 dark:text-emerald-400">
-            Đang dùng: {VIP_TIERS.find(t => t.id === userVip.tier)?.name}
-            {userVip.expiresAt && ` • Hết hạn ${format(userVip.expiresAt.toDate(), 'dd/MM/yyyy')}`}
-          </p>
-        </div>
-      )}
+{userVip && userVip.tier!== 'free' && (
+  <div className="mx-5 mb-3 px-4 py-2.5 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-xl">
+    <p className="text-[13px] font-medium text-emerald-600 dark:text-emerald-400">
+      Đang dùng: {VIP_TIERS.find(t => t.id === userVip?.tier)?.name}
+      {userVip?.expiresAt && ` • Hết hạn ${format(userVip.expiresAt.toDate(), 'dd/MM/yyyy')}`}
+    </p>
+  </div>
+)}
 
       <div className="flex-1 overflow-auto px-5 pb-4 space-y-3">
         {VIP_TIERS.map((tier) => {
