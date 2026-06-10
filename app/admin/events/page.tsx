@@ -13,7 +13,6 @@ import {
   serverTimestamp,
   query,
   orderBy,
-  getDoc,
 } from "firebase/firestore";
 import { EventItem, CATEGORY_INFO } from "@/data/events";
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiLoader, FiUpload, FiEye, FiEyeOff, FiLock, FiLogOut } from "react-icons/fi";
@@ -59,25 +58,23 @@ export default function AdminEventsPage() {
     isActive: true,
   });
 
-  // Check auth + role admin
+  // HARDCODE UID ADMIN - KHỎI CHECK ROLE
+  const ADMIN_UID = "FU2N0nTKAzOx3njyn4CnzKvolT22";
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists() && userDoc.data().role === "admin") {
-          setIsAdmin(true);
-        } else {
-          setIsAdmin(false);
-          toast.error("Tài khoản không có quyền admin");
-          await signOut(auth);
-        }
+      if (user && user.uid === ADMIN_UID) {
+        console.log("ADMIN UID OK:", user.uid);
+        setIsAdmin(true);
       } else {
+        console.log("UID:", user?.uid, "KHÔNG PHẢI ADMIN");
         setIsAdmin(false);
+        if (user) await signOut(auth);
       }
       setCheckingAuth(false);
     });
     return () => unsub();
-  }, [auth, db]);
+  }, [auth]);
 
   const handleAdminLogin = async () => {
     if (!loginForm.email ||!loginForm.password) {
@@ -87,7 +84,6 @@ export default function AdminEventsPage() {
     setLoginLoading(true);
     try {
       await signInWithEmailAndPassword(auth, loginForm.email, loginForm.password);
-      toast.success("Đăng nhập thành công");
     } catch (error: any) {
       console.error(error);
       toast.error("Sai email hoặc mật khẩu");
@@ -176,7 +172,7 @@ export default function AdminEventsPage() {
     try {
       const id = editingId || doc(collection(db, "events")).id;
       const data = {
-      ...form,
+    ...form,
         id,
         updatedAt: serverTimestamp(),
         createdAt: editingId? form.createdAt : serverTimestamp(),
@@ -205,7 +201,7 @@ export default function AdminEventsPage() {
   const toggleActive = async (event: EventItem) => {
     try {
       await setDoc(doc(db, "events", event.id), {
-      ...event,
+    ...event,
         isActive:!event.isActive,
         updatedAt: serverTimestamp(),
       });
@@ -336,7 +332,6 @@ export default function AdminEventsPage() {
                 <div className={`absolute bottom-2 left-2 px-2 py-1 bg-gradient-to-r ${event.tagColor} rounded-md`}>
                   <span className="text-xs font-bold text-white">{event.tag}</span>
                 </div>
-              </div>
               <div className="p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-2xl">{event.icon}</span>
@@ -356,7 +351,7 @@ export default function AdminEventsPage() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-xl" onClick={() => setShowModal(false)} />
-          <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-h-[90vh] overflow-auto">
+          <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-h- overflow-auto">
             <div className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 px-6 py-4 flex items-center justify-between">
               <h2 className="text-xl font-bold">{editingId? "Sửa Event" : "Thêm Event"}</h2>
               <button onClick={() => setShowModal(false)} className="w-8 h-8 flex items-center justify-center">
