@@ -40,7 +40,7 @@ import {
   FiX,
   FiMic,
   FiUpload,
-  FiNavigation, 
+  
   FiDollarSign, 
   FiMapPin,
   FiLoader,
