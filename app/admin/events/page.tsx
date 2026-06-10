@@ -257,6 +257,7 @@ export default function AdminEventsPage() {
           </div>
         </div>
       </div>
+      </div>
     );
   }
 
