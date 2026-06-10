@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFirebaseDB } from "@/lib/firebase";
 import { getAuth } from "firebase/auth";
 import { getApp } from "firebase/app";
@@ -224,18 +224,18 @@ const handleFindStranger = async () => {
     const functions = getFunctions(getApp(), "asia-southeast1");
     const findFn = httpsCallable(functions, 'findStranger');
 
-const result = await findFn({
-  interests: strangerInterests,
-  ageRange: strangerAgeRange,
-  wantGender: strangerGender, // Đổi đây
-  voiceUrl
-});
+    const result = await findFn({
+      interests: strangerInterests,
+      ageRange: strangerAgeRange,
+      wantGender: strangerGender,
+      voiceUrl
+    });
 
     const data = result.data as { chatId: string, matched: boolean };
     setShowStranger(false);
 
     if (data.matched) {
-      router.push(`/stranger/${data.chatId}`); // Route riêng
+      router.push(`/stranger/${data.chatId}`);
     } else {
       toast.info("Đang tìm... Sẽ tự vào khi match");
       const unsub = onSnapshot(doc(db, "stranger_queue", user.uid), (snap) => {
