@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
 import { getFirebaseDB } from "@/lib/firebase";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import {
@@ -20,18 +19,16 @@ import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiLoader, FiUpload, FiEye, FiEy
 import { toast } from "sonner";
 
 export default function AdminEventsPage() {
-
   const db = getFirebaseDB();
   const storage = getStorage();
 
   const [events, setEvents] = useState<EventItem[]>([]);
-
+  const [dataLoading, setDataLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Form login admin
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [loginLoading, setLoginLoading] = useState(false);
 
@@ -58,16 +55,14 @@ export default function AdminEventsPage() {
     isActive: true,
   });
 
-  // Check session từ localStorage
   useEffect(() => {
     const savedAdmin = localStorage.getItem("admin_session");
     if (savedAdmin === "true") {
       setIsAdmin(true);
     }
- 
+    setDataLoading(false);
   }, []);
 
-  // Login admin bằng username/password
   const handleAdminLogin = async () => {
     if (!loginForm.username ||!loginForm.password) {
       toast.error("Nhập đủ tên và mật khẩu");
@@ -96,15 +91,15 @@ export default function AdminEventsPage() {
     toast.success("Đã đăng xuất");
   };
 
-  // Fetch events
   useEffect(() => {
     if (!isAdmin) return;
+    setDataLoading(true);
     const q = query(collection(db, "events"), orderBy("updatedAt", "desc"));
     const unsub = onSnapshot(q, (snapshot) => {
       const data: EventItem[] = [];
       snapshot.forEach((doc) => data.push({ id: doc.id,...doc.data() } as EventItem));
       setEvents(data);
-      
+      setDataLoading(false);
     });
     return () => unsub();
   }, [db, isAdmin]);
@@ -207,7 +202,6 @@ export default function AdminEventsPage() {
     }
   };
 
-  // Form đăng nhập admin nếu chưa login
   if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950 p-4">
@@ -254,7 +248,7 @@ export default function AdminEventsPage() {
     );
   }
 
-  if (loading) {
+  if (dataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <FiLoader className="animate-spin text-[#0a84ff]" size={32} />
@@ -321,7 +315,6 @@ export default function AdminEventsPage() {
                 <div className={`absolute bottom-2 left-2 px-2 py-1 bg-gradient-to-r ${event.tagColor} rounded-md`}>
                   <span className="text-xs font-bold text-white">{event.tag}</span>
                 </div>
-              </div>
               <div className="p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-2xl">{event.icon}</span>
