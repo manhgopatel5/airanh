@@ -20,7 +20,7 @@ import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiLoader, FiUpload, FiEye, FiEy
 import { toast } from "sonner";
 
 export default function AdminEventsPage() {
-  const { loading: authLoading } = useAuth();
+
   const db = getFirebaseDB();
   const storage = getStorage();
 
