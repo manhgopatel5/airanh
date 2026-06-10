@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/lib/useAuth";
 import { db } from "@/lib/firebase";
 import { doc, onSnapshot, updateDoc, arrayUnion, serverTimestamp, Timestamp } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
