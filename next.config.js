@@ -20,6 +20,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'ui-avatars.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com', // <- THÊM DÒNG NÀY
+      },
     ],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
@@ -53,6 +57,7 @@ const nextConfig = {
         'https://firebasestorage.googleapis.com',
         'https://lh3.googleusercontent.com',
         'https://ui-avatars.com',
+        'https://images.unsplash.com', // <- THÊM DÒNG NÀY
       ].join(' '),
       "font-src 'self' data:",
       [
@@ -121,7 +126,6 @@ const nextConfig = {
       dynamic: 30,
       static: 180,
     },
-    // ĐÃ XÓA: optimizeCss: true, // Thằng này cần 'critters', gây lỗi build
   },
 
   webpack: (config, { isServer }) => {
