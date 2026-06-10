@@ -2,6 +2,7 @@ import { initializeApp, getApps, cert, App, ServiceAccount } from "firebase-admi
 import { getMessaging, Messaging, BatchResponse, Message } from "firebase-admin/messaging";
 import { getFirestore, Firestore, FieldValue, Timestamp, Query } from "firebase-admin/firestore";
 import { getAuth, Auth } from "firebase-admin/auth";
+import { getStorage, Storage } from "firebase-admin/storage"; // THÊM
 import type { FeedTask, TaskListItem } from "@/types/task";
 
 /* ================= CATEGORY MAP ================= */
@@ -42,13 +43,16 @@ let app: App;
 let messaging: Messaging;
 let db: Firestore;
 let auth: Auth;
+let storage: Storage; // THÊM
 
 function getFirebaseAdmin() {
   if (!getApps().length) {
     try {
       app = initializeApp({
         credential: cert(getServiceAccount()),
-    ...(process.env.FIREBASE_DATABASE_URL && {
+        // THÊM DÒNG NÀY - dùng đúng tên bucket của bạn
+        storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'airanh-ba64c.firebasestorage.app',
+      ...(process.env.FIREBASE_DATABASE_URL && {
           databaseURL: process.env.FIREBASE_DATABASE_URL,
         }),
       });
@@ -64,8 +68,9 @@ function getFirebaseAdmin() {
   if (!messaging) messaging = getMessaging(app);
   if (!db) db = getFirestore(app);
   if (!auth) auth = getAuth(app);
+  if (!storage) storage = getStorage(app); // THÊM
 
-  return { app, messaging, db, auth };
+  return { app, messaging, db, auth, storage }; // THÊM storage
 }
 
 /* ================= EXPORTS ================= */
@@ -73,6 +78,7 @@ export const adminApp = () => getFirebaseAdmin().app;
 export const adminMessaging = () => getFirebaseAdmin().messaging;
 export const adminDb = () => getFirebaseAdmin().db;
 export const adminAuth = () => getFirebaseAdmin().auth;
+export const adminStorage = () => getFirebaseAdmin().storage; // THÊM
 
 /* ================= HELPER: Timestamp -> string ================= */
 const tsToString = (ts: any): string | null => {
@@ -120,8 +126,8 @@ export async function getJobsFromFirebaseAdmin(
   ];
 
   let query: Query = db.collection('tasks')
- .where('type', '==', type)
- .where('status', '==', 'open');
+.where('type', '==', type)
+.where('status', '==', 'open');
 
   // FIX: Map "Mua hộ" -> "shopping" trước khi query
   const categorySlug = category? CATEGORY_MAP[category] || category : undefined;
@@ -202,16 +208,16 @@ export async function getJobsFromFirebaseAdmin(
       userId: d.userId || "",
       userName: d.userName || "",
       userAvatar: d.userAvatar || "",
- ...(d.userVerified!== undefined && { userVerified: d.userVerified }),
- ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
- ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
+    ...(d.userVerified!== undefined && { userVerified: d.userVerified }),
+    ...(d.userShortId!== undefined && { userShortId: d.userShortId }),
+    ...(d.userUsername!== undefined && { userUsername: d.userUsername }),
       price: d.price?? 0,
       currency: d.currency || "VND",
       totalSlots: d.totalSlots?? d.maxParticipants?? 0,
       joined: d.joined?? 0,
       budgetType: d.budgetType || "fixed",
- ...(d.paymentMethod!== undefined && { paymentMethod: d.paymentMethod }),
- ...(d.isRemote!== undefined && { isRemote: d.isRemote }),
+    ...(d.paymentMethod!== undefined && { paymentMethod: d.paymentMethod }),
+    ...(d.isRemote!== undefined && { isRemote: d.isRemote }),
       category: d.category || "",
       tags: Array.isArray(d.tags)? d.tags : [],
       images: Array.isArray(d.images)? d.images : [],
@@ -221,37 +227,37 @@ export async function getJobsFromFirebaseAdmin(
       likes: [],
       hotScore: d.hotScore?? 0,
       priceRange: d.priceRange,
- ...(d.location!== undefined && { location: d.location }),
+    ...(d.location!== undefined && { location: d.location }),
       savedBy: [],
       applicants: [],
       banned: d.banned === true,
       hidden: d.hidden === true,
- ...(d.appliedCount!== undefined && { appliedCount: d.appliedCount }),
- ...(d.maxParticipants!== undefined && { maxParticipants: d.maxParticipants }),
- ...(d.currentParticipants!== undefined && { currentParticipants: d.currentParticipants }),
- ...(d.costType!== undefined && { costType: d.costType }),
- ...(d.costAmount!== undefined && { costAmount: d.costAmount }),
- ...(d.costDescription!== undefined && { costDescription: d.costDescription }),
- ...(d.milestones!== undefined && { milestones: d.milestones }),
+    ...(d.appliedCount!== undefined && { appliedCount: d.appliedCount }),
+    ...(d.maxParticipants!== undefined && { maxParticipants: d.maxParticipants }),
+    ...(d.currentParticipants!== undefined && { currentParticipants: d.currentParticipants }),
+    ...(d.costType!== undefined && { costType: d.costType }),
+    ...(d.costAmount!== undefined && { costAmount: d.costAmount }),
+    ...(d.costDescription!== undefined && { costDescription: d.costDescription }),
+    ...(d.milestones!== undefined && { milestones: d.milestones }),
       createdAt: tsToString(d.createdAt),
- ...(d.updatedAt && { updatedAt: tsToString(d.updatedAt) }),
- ...(d.deadline && { deadline: tsToString(d.deadline) }),
- ...(d.startDate && { startDate: tsToString(d.startDate) }),
- ...(d.applicationDeadline && { applicationDeadline: tsToString(d.applicationDeadline) }),
- ...(d.eventDate && { eventDate: tsToString(d.eventDate) }),
- ...(d.endDate && { endDate: tsToString(d.endDate) }),
+    ...(d.updatedAt && { updatedAt: tsToString(d.updatedAt) }),
+    ...(d.deadline && { deadline: tsToString(d.deadline) }),
+    ...(d.startDate && { startDate: tsToString(d.startDate) }),
+    ...(d.applicationDeadline && { applicationDeadline: tsToString(d.applicationDeadline) }),
+    ...(d.eventDate && { eventDate: tsToString(d.eventDate) }),
+    ...(d.endDate && { endDate: tsToString(d.endDate) }),
     };
 
     return taskData as FeedTask;
-  }).filter((task) => 
-    task.visibility!== 'private' && 
-    task.banned!== true && 
+  }).filter((task) =>
+    task.visibility!== 'private' &&
+    task.banned!== true &&
     task.hidden!== true
   );
 
   // FIX: Sort lại ở client nếu có filter giá + sortBy không phải price
   if (hasPriceFilter && sortBy === 'new') {
-    tasks = tasks.sort((a, b) => 
+    tasks = tasks.sort((a, b) =>
       new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
     );
   } else if (hasPriceFilter && sortBy === 'views') {
@@ -322,7 +328,7 @@ export async function sendNotification(
       notification: {
         icon: "ic_notification",
         color: "#3B82F6",
-   ...(priority === "high" && { sound: "default" }),
+      ...(priority === "high" && { sound: "default" }),
       },
     },
     apns: {
@@ -330,7 +336,7 @@ export async function sendNotification(
       payload: {
         aps: {
           badge: 1,
-     ...(priority === "high" && { sound: "default" }),
+        ...(priority === "high" && { sound: "default" }),
           "content-available": 1,
         },
       },
