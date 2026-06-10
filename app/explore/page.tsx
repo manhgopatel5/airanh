@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { CATEGORY_INFO, EventItem } from "@/data/events";
 import EventDetailModal from "@/components/EventDetailModal";
 import { FiArrowLeft, FiUsers, FiMapPin, FiStar, FiFilter, FiX } from "react-icons/fi";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { getFirebaseDB } from "@/lib/firebase";
 import { RiEqualizerLine } from "react-icons/ri";
 
 type SortOption = "rating" | "reviews" | "distance" | "newest";
@@ -19,7 +17,6 @@ type FilterState = {
 
 export default function ExplorePage() {
   const router = useRouter();
-  const db = getFirebaseDB();
   const [eventsData, setEventsData] = useState<EventItem[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,34 +29,33 @@ export default function ExplorePage() {
     sortBy: "rating"
   });
 
-  // Fetch từ Firestore
+  // Fetch từ API thay vì Firestore trực tiếp
   useEffect(() => {
-    const q = query(
-      collection(db, "events"),
-      where("isActive", "==", true)
-    );
+    const fetchEvents = async () => {
+      try {
+        const res = await fetch('/api/events', { cache: 'no-store' });
+        const data = await res.json();
+        setEventsData(data.events || []);
+      } catch (err) {
+        console.error('Fetch events error:', err);
+        setEventsData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    const unsub = onSnapshot(q, (snapshot) => {
-      const events: EventItem[] = [];
-      snapshot.forEach((doc) => {
-        events.push({ id: doc.id,...doc.data() } as EventItem);
-      });
-      setEventsData(events);
-      setLoading(false);
-    });
-
-    return () => unsub();
-  }, [db]);
+    fetchEvents();
+  }, []);
 
   // Parse distance string "Cách bạn 95km" -> 95
   const parseDistance = (distanceStr: string): number => {
-    const match = distanceStr.match(/(\d+)/);
-return match? parseInt(match[1] || "999") : 999;
+    const match = distanceStr?.match(/(\d+)/);
+    return match? parseInt(match[1] || "999") : 999;
   };
 
   // Filter + Sort
   const filteredEvents = useMemo(() => {
-    let filtered = eventsData;
+    let filtered = [...eventsData];
 
     // Filter category
     if (filters.category) {
@@ -86,9 +82,9 @@ return match? parseInt(match[1] || "999") : 999;
         case "distance":
           return parseDistance(a.distance) - parseDistance(b.distance);
         case "newest":
-  const bTime = b.createdAt?.toMillis() || 0;
-  const aTime = a.createdAt?.toMillis() || 0;
-  return bTime - aTime;
+          const bTime = b.updatedAt? new Date(b.updatedAt).getTime() : 0;
+          const aTime = a.updatedAt? new Date(a.updatedAt).getTime() : 0;
+          return bTime - aTime;
         default:
           return 0;
       }
@@ -147,8 +143,8 @@ return match? parseInt(match[1] || "999") : 999;
           <button
             onClick={() => setFilters(prev => ({...prev, category: null}))}
             className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap ${
-           !filters.category
-             ? 'bg-[#0a84ff] text-white'
+             !filters.category
+               ? 'bg-[#0a84ff] text-white'
                 : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
             }`}
           >
@@ -160,7 +156,7 @@ return match? parseInt(match[1] || "999") : 999;
               onClick={() => setFilters(prev => ({...prev, category: key}))}
               className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap flex items-center gap-1 ${
                 filters.category === key
-               ? 'bg-[#0a84ff] text-white'
+                 ? 'bg-[#0a84ff] text-white'
                   : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
               }`}
             >
@@ -183,7 +179,7 @@ return match? parseInt(match[1] || "999") : 999;
               onClick={() => setFilters(prev => ({...prev, sortBy: sort.value as SortOption}))}
               className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap ${
                 filters.sortBy === sort.value
-               ? 'bg-[#0a84ff] text-white'
+                 ? 'bg-[#0a84ff] text-white'
                   : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300'
               }`}
             >
@@ -213,7 +209,7 @@ return match? parseInt(match[1] || "999") : 999;
                 className="w-full bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.98] transition-transform text-left"
               >
                 <div className="relative h-32">
-                  <img src={item.image} className="w-full h-full object-cover" loading="lazy" alt={item.title} />
+                  <img src={item.imageUrl || item.image} className="w-full h-full object-cover" loading="lazy" alt={item.name || item.title} />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0" />
                   <div className={`absolute top-2 left-2 px-2 py-0.5 bg-gradient-to-r ${item.tagColor} rounded-md`}>
                     <span className="text-[10px] font-[800] text-white">{item.tag}</span>
@@ -227,12 +223,12 @@ return match? parseInt(match[1] || "999") : 999;
                   <div className="absolute bottom-2 left-3 right-3">
                     <div className="flex items-center gap-1.5 text-white">
                       <span className="text-lg">{item.icon}</span>
-                      <h4 className="text-base font-[700] drop-shadow-lg">{item.title}</h4>
+                      <h4 className="text-base font-[700] drop-shadow-lg">{item.name || item.title}</h4>
                     </div>
                   </div>
                 </div>
                 <div className="p-3">
-                  <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-2 line-clamp-2">{item.desc}</p>
+                  <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-2 line-clamp-2">{item.desc || item.description}</p>
                   <div className="flex items-center justify-between text-xs text-[#8e8e93]">
                     <span className="flex items-center gap-1">
                       <FiUsers size={12} />
@@ -275,7 +271,7 @@ return match? parseInt(match[1] || "999") : 999;
                       onClick={() => setFilters(prev => ({...prev, minRating: rating}))}
                       className={`flex-1 h-11 rounded-xl text-sm font-[600] ${
                         filters.minRating === rating
-                       ? 'bg-[#0a84ff] text-white'
+                         ? 'bg-[#0a84ff] text-white'
                           : 'bg-zinc-100 dark:bg-zinc-800'
                       }`}
                     >
@@ -295,7 +291,7 @@ return match? parseInt(match[1] || "999") : 999;
                       onClick={() => setFilters(prev => ({...prev, maxDistance: km}))}
                       className={`w-full h-11 rounded-xl text-sm font-[600] text-left px-4 ${
                         filters.maxDistance === km
-                       ? 'bg-[#0a84ff] text-white'
+                         ? 'bg-[#0a84ff] text-white'
                           : 'bg-zinc-100 dark:bg-zinc-800'
                       }`}
                     >
