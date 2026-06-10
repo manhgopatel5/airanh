@@ -60,8 +60,11 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/', request.url))
     }
 
+    // FIX: Cho phép /admin bỏ qua check emailVerified + onboarded
+    const isAdminRoute = pathname.startsWith('/admin')
+
     // Check emailVerified + onboarded từ Firestore
-    if (!isPublicRoute) {
+    if (!isPublicRoute && !isAdminRoute) {
       const db = getFirestore();
       const userDoc = await db.collection('users').doc(decodedToken.uid).get();
       const userData = userDoc.data();
@@ -85,7 +88,7 @@ export async function middleware(request: NextRequest) {
     
     return NextResponse.next()
   } catch (err) {
-    // FIX: Token sai/hết hạn -> xóa cookie + về login. Không có ngoại lệ.
+    // Token sai/hết hạn -> xóa cookie + về login
     const response = NextResponse.redirect(new URL('/login', request.url))
     response.cookies.delete('__session')
     return response
