@@ -29,7 +29,7 @@ export default function EventDetailModal({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: "100%", opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full sm:max-w-[440px] bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl max-h-[90vh] flex flex-col shadow-2xl"
+            className="relative w-full sm:max-w-[440px] bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl max-h- flex-col shadow-2xl"
           >
             {/* Cover */}
             <div className="relative h-48 flex-shrink-0">
@@ -60,7 +60,7 @@ export default function EventDetailModal({
                   <span className="text-3xl">{event.icon}</span>
                   <div className="flex-1">
                     <h2 className="text-xl font-[700] leading-tight">{event.title}</h2>
-                    <p className="text-sm text-[#8e93] mt-1">{event.desc}</p>
+                    <p className="text-sm text-[#8e8e93] mt-1">{event.desc}</p>
                   </div>
                 </div>
 
@@ -71,6 +71,7 @@ export default function EventDetailModal({
                       <p className="font-[550]">Địa chỉ</p>
                       <p className="text-[#8e8e93] text-xs mt-0.5">{event.address}</p>
                     </div>
+                  </div>
                   <div className="flex items-start gap-3 text-sm">
                     <FiClock className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
                     <div>
