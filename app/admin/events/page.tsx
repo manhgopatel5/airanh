@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-
 import { getFirebaseDB } from "@/lib/firebase";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
+import { getAuth, signOut } from "firebase/auth";
 import {
   collection,
   onSnapshot,
@@ -16,7 +15,7 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { EventItem, CATEGORY_INFO } from "@/data/events";
-import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiLoader, FiUpload, FiEye, FiEyeOff, FiLock, FiLogOut } from "react-icons/fi";
+import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiLoader, FiUpload, FiEye, FiEyeOff, FiLogOut } from "react-icons/fi";
 import { toast } from "sonner";
 
 export default function AdminEventsPage() {
@@ -29,12 +28,6 @@ export default function AdminEventsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
-
-  const [loginForm, setLoginForm] = useState({ email: "", password: "" });
-  const [loginLoading, setLoginLoading] = useState(false);
 
   const [form, setForm] = useState<Partial<EventItem>>({
     title: "",
@@ -59,65 +52,31 @@ export default function AdminEventsPage() {
     isActive: true,
   });
 
-  // HARDCODE UID ADMIN - KHỎI CHECK ROLE
-  const ADMIN_EMAIL = "justastormyday@gmail.com";
-
-
-useEffect(() => {
-  console.log("=== BẮT ĐẦU CHECK AUTH ===");
-  const unsub = onAuthStateChanged(auth, (user) => {
-    console.log("Firebase trả về user:", user);
-        console.log("Email của user:", user?.email);
-    
-    if (user && user.email === ADMIN_EMAIL) {
-
-      console.log(">>> SET ADMIN = TRUE");
-      setIsAdmin(true);
-    } else {
-      console.log(">>> SET ADMIN = FALSE");
-      setIsAdmin(false);
-    }
-    setCheckingAuth(false);
-  });
-  return () => unsub();
-}, []);
-
-  const handleAdminLogin = async () => {
-    if (!loginForm.email ||!loginForm.password) {
-      toast.error("Nhập đủ email và mật khẩu");
-      return;
-    }
-    setLoginLoading(true);
-    try {
-      await signInWithEmailAndPassword(auth, loginForm.email, loginForm.password);
-    } catch (error: any) {
-      console.error(error);
-      toast.error("Sai email hoặc mật khẩu");
-    } finally {
-      setLoginLoading(false);
-    }
-  };
-
   const handleLogout = async () => {
     await signOut(auth);
+    await fetch('/api/auth/session', { method: 'DELETE' });
     toast.success("Đã đăng xuất");
+    window.location.href = '/login';
   };
 
   useEffect(() => {
-    if (!isAdmin) {
-      setDataLoading(false);
-      return;
-    }
     setDataLoading(true);
     const q = query(collection(db, "events"), orderBy("updatedAt", "desc"));
-    const unsub = onSnapshot(q, (snapshot) => {
-      const data: EventItem[] = [];
-      snapshot.forEach((doc) => data.push({ id: doc.id,...doc.data() } as EventItem));
-      setEvents(data);
-      setDataLoading(false);
-    });
+    const unsub = onSnapshot(q,
+      (snapshot) => {
+        const data: EventItem[] = [];
+        snapshot.forEach((doc) => data.push({ id: doc.id,...doc.data() } as EventItem));
+        setEvents(data);
+        setDataLoading(false);
+      },
+      (error) => {
+        console.error("Firestore error:", error);
+        toast.error("Lỗi tải events");
+        setDataLoading(false);
+      }
+    );
     return () => unsub();
-  }, [db, isAdmin]);
+  }, [db]);
 
   const resetForm = () => {
     setForm({
@@ -178,7 +137,7 @@ useEffect(() => {
     try {
       const id = editingId || doc(collection(db, "events")).id;
       const data = {
-    ...form,
+       ...form,
         id,
         updatedAt: serverTimestamp(),
         createdAt: editingId? form.createdAt : serverTimestamp(),
@@ -207,7 +166,7 @@ useEffect(() => {
   const toggleActive = async (event: EventItem) => {
     try {
       await setDoc(doc(db, "events", event.id), {
-    ...event,
+       ...event,
         isActive:!event.isActive,
         updatedAt: serverTimestamp(),
       });
@@ -216,68 +175,6 @@ useEffect(() => {
       toast.error("Lỗi");
     }
   };
-
-  if (checkingAuth) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <FiLoader className="animate-spin text-[#0a84ff]" size={32} />
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950 p-4">
-      <div className="w-full max-w-sm bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl p-6">
-        <div className="flex items-center justify-center mb-6">
-          <div className="w-16 h-16 bg-[#0a84ff] rounded-2xl flex items-center justify-center">
-            <FiLock size={32} className="text-white" />
-          </div>
-        </div>
-        <h1 className="text-2xl font-bold text-center mb-6">Admin Login</h1>
-        
-        {/* THÊM DEBUG NÀY VÀO */}
-        <div className="mb-4 p-3 bg-red-500/10 border border-red-500 rounded-lg text-xs">
-          <div>Auth UID: {auth.currentUser?.uid || "null"}</div>
-          <div>Admin UID: FU2N0nTKAzOx3njyn4CnzKvolT22</div>
-          <div>Checking: {checkingAuth ? "true" : "false"}</div>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-semibold mb-1 block">Email</label>
-            <input
-              type="email"
-              value={loginForm.email}
-              onChange={(e) => setLoginForm({...loginForm, email: e.target.value })}
-              className="w-full h-11 px-4 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm"
-              placeholder="admin@huha.online"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-semibold mb-1 block">Mật khẩu</label>
-            <input
-              type="password"
-              value={loginForm.password}
-              onChange={(e) => setLoginForm({...loginForm, password: e.target.value })}
-              onKeyDown={(e) => e.key === "Enter" && handleAdminLogin()}
-              className="w-full h-11 px-4 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm"
-              placeholder="••••••••"
-            />
-          </div>
-          <button
-            onClick={handleAdminLogin}
-            disabled={loginLoading}
-            className="w-full h-11 bg-[#0a84ff] text-white rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-40"
-          >
-            {loginLoading? <FiLoader className="animate-spin" size={18} /> : <FiLock size={18} />}
-            {loginLoading? "Đang đăng nhập..." : "Đăng nhập"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
   if (dataLoading) {
     return (
@@ -346,6 +243,7 @@ useEffect(() => {
                 <div className={`absolute bottom-2 left-2 px-2 py-1 bg-gradient-to-r ${event.tagColor} rounded-md`}>
                   <span className="text-xs font-bold text-white">{event.tag}</span>
                 </div>
+              </div>
               <div className="p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-2xl">{event.icon}</span>
@@ -358,7 +256,6 @@ useEffect(() => {
                 </div>
               </div>
             </div>
-            </div>
           ))}
         </div>
       </div>
@@ -366,7 +263,7 @@ useEffect(() => {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-xl" onClick={() => setShowModal(false)} />
-          <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-h- overflow-auto">
+          <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-h-[90vh] overflow-auto">
             <div className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 px-6 py-4 flex items-center justify-between">
               <h2 className="text-xl font-bold">{editingId? "Sửa Event" : "Thêm Event"}</h2>
               <button onClick={() => setShowModal(false)} className="w-8 h-8 flex items-center justify-center">
@@ -572,4 +469,4 @@ useEffect(() => {
       )}
     </div>
   );
-} 
+}
