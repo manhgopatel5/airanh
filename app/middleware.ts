@@ -99,6 +99,6 @@ export const runtime = 'nodejs'
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|json|ico|txt|xml|woff|woff2|ttf|eot)$).*)',
   ],
 }
