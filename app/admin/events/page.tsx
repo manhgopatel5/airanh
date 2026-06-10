@@ -61,20 +61,24 @@ export default function AdminEventsPage() {
   // HARDCODE UID ADMIN - KHỎI CHECK ROLE
   const ADMIN_UID = "FU2N0nTKAzOx3njyn4CnzKvolT22";
 
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (user && user.uid === ADMIN_UID) {
-        console.log("ADMIN UID OK:", user.uid);
-        setIsAdmin(true);
-      } else {
-        console.log("UID:", user?.uid, "KHÔNG PHẢI ADMIN");
-        setIsAdmin(false);
-        if (user) await signOut(auth);
-      }
-      setCheckingAuth(false);
-    });
-    return () => unsub();
-  }, [auth]);
+useEffect(() => {
+  console.log("=== BẮT ĐẦU CHECK AUTH ===");
+  const unsub = onAuthStateChanged(auth, (user) => {
+    console.log("Firebase trả về user:", user);
+    console.log("UID của user:", user?.uid);
+    console.log("So sánh với ADMIN_UID:", user?.uid === ADMIN_UID);
+    
+    if (user && user.uid === ADMIN_UID) {
+      console.log(">>> SET ADMIN = TRUE");
+      setIsAdmin(true);
+    } else {
+      console.log(">>> SET ADMIN = FALSE");
+      setIsAdmin(false);
+    }
+    setCheckingAuth(false);
+  });
+  return () => unsub();
+}, []);
 
   const handleAdminLogin = async () => {
     if (!loginForm.email ||!loginForm.password) {
