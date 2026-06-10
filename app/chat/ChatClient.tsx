@@ -1055,8 +1055,8 @@ const getNotificationIcon = (type: string) => {
       <div className="min-h-dvh bg-gradient-to-b from-[#F7FAFF] via-white to-[#F5F7FB] text-zinc-950 dark:from-[#05070A] dark:via-zinc-950 dark:to-[#0F172A] dark:text-white">
       
 
-<div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50">
-  <div className="px-4 pt-4 pb-4">
+<div className="sticky top-0 z-40 pt-3 px-4">
+  <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-lg shadow-black/[0.06] dark:shadow-black/30 border border-zinc-200/80 dark:border-zinc-800/80 px-4 py-4">
     <div className="space-y-3.5">
       {/* Hàng 1: 4 nút */}
       <div className="grid grid-cols-4 gap-3">
@@ -1081,7 +1081,7 @@ const getNotificationIcon = (type: string) => {
                 </span>
               )}
             </div>
-            <span className="text-[12px] leading-4 font-[550] text-zinc-700 dark:text-zinc-300 text-center">
+            <span className="text- leading-4 font-[550] text-zinc-700 dark:text-zinc-300 text-center">
               {item.label}
             </span>
           </button>
@@ -1103,7 +1103,7 @@ const getNotificationIcon = (type: string) => {
             <div className={`w-14 h-14 ${item.color} rounded-[18px] flex items-center justify-center shadow-lg shadow-black/[0.08]`}>
               <item.icon className="text-white" size={22} strokeWidth={2.5} />
             </div>
-            <span className="text-[12px] leading-4 font-[550] text-zinc-700 dark:text-zinc-300 text-center">
+            <span className="text- leading-4 font-[550] text-zinc-700 dark:text-zinc-300 text-center">
               {item.label}
             </span>
           </button>
@@ -1113,7 +1113,7 @@ const getNotificationIcon = (type: string) => {
   </div>
 </div>
 
-<div className="pb-24">
+<div className="pt-2 pb-24">
   {activeTab === "notifications"? (
     notifLoading? (
       <div className="px-4 pt-4 space-y-3">
