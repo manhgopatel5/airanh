@@ -62,7 +62,6 @@ export default function AdminEventsPage() {
   // Check auth + role admin
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
       if (user) {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists() && userDoc.data().role === "admin") {
@@ -88,7 +87,6 @@ export default function AdminEventsPage() {
     setLoginLoading(true);
     try {
       await signInWithEmailAndPassword(auth, loginForm.email, loginForm.password);
-      // onAuthStateChanged sẽ tự check role admin
       toast.success("Đăng nhập thành công");
     } catch (error: any) {
       console.error(error);
@@ -178,7 +176,7 @@ export default function AdminEventsPage() {
     try {
       const id = editingId || doc(collection(db, "events")).id;
       const data = {
-       ...form,
+      ...form,
         id,
         updatedAt: serverTimestamp(),
         createdAt: editingId? form.createdAt : serverTimestamp(),
@@ -207,7 +205,7 @@ export default function AdminEventsPage() {
   const toggleActive = async (event: EventItem) => {
     try {
       await setDoc(doc(db, "events", event.id), {
-       ...event,
+      ...event,
         isActive:!event.isActive,
         updatedAt: serverTimestamp(),
       });
