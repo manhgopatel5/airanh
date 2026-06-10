@@ -1238,32 +1238,45 @@ const getNotificationIcon = (type: string) => {
                       <span className="w-2 h-2 bg-[#30d158] rounded-full animate-pulse" />
                       {filteredFriends.filter(f => f.isOnline).length} đang hoạt động
                     </span>
-                    <span className="mx-1.5">•</span>
+        <span className="mx-1.5">•</span>
                     {filteredFriends.length} bạn bè
                   </p>
                 </div>
                 {filteredFriends.map((friend) => (
-                  <div key={friend.uid} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-zinc-900/50 active:bg-gray-100 dark:active:bg-zinc-800 transition-colors">
-                    <div className="relative flex-shrink-0">
-                      <img src={friend.avatar} alt={friend.name} className="w-[52px] h-[52px] rounded-full object-cover" />
-                      {friend.isOnline && <div className="absolute bottom-0 right-0 w-[14px] h-[14px] bg-[#30d158] rounded-full border-[2.5px] border-white dark:border-black" />}
-                    </div>
-                    <div className="flex-1 min-w-0 pr-2">
-                      <div className="flex items-baseline gap-2">
-                        <p className="text-[16px] font-[550] truncate">{friend.name}</p>
-                        {friend.isDeletedByThem && <span className="text-[12px] text-red-500 font-medium flex-shrink-0">• Đã xóa</span>}
-                        {friend.isOnline && <span className="text-[11px] text-[#30d158] font-medium">• Online</span>}
+                  <div key={friend.uid} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-zinc-900/50 active:bg-gray-100 dark:active:bg-zinc-800 transition-colors">
+                    <button
+                      onClick={() => handleStartChatWithFriend(friend.uid)}
+                      className="flex items-center gap-3 flex-1 min-w-0 active:scale-[0.98] transition-transform"
+                    >
+                      <div className="relative flex-shrink-0">
+                        <img
+                          src={friend.avatar}
+                          alt={friend.name}
+                          className="w-12 h-12 rounded-full object-cover bg-gray-100 dark:bg-zinc-800"
+                        />
+                        {friend.isOnline && (
+                          <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[#30d158] rounded-full border-2 border-white dark:border-black" />
+                        )}
                       </div>
-                      <p className="text-[13px] text-[#8e8e93] truncate">@{friend.username || friend.userId} • {friend.isOnline? "Đang hoạt động" : formatLastSeen(friend.lastSeen)}</p>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <button onClick={() => handleStartChatWithFriend(friend.uid)} className={`w-8 h-8 ${primaryBg} ${primaryHover} rounded-full flex items-center justify-center active:scale-90 transition-all`} title="Nhắn tin">
-                        <FiMessageSquare className="text-white" size={14} />
-                      </button>
-                      <button onClick={() => handleRemoveFriend(friend.uid, friend.name)} className="w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center active:scale-90 transition-all" title="Xóa bạn">
-                        <FiUserX className="text-white" size={14} />
-                      </button>
-                    </div>
+                      <div className="flex-1 min-w-0 text-left">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-[16px] leading-5 font-[550] truncate">{friend.name}</p>
+                          {friend.isDeletedByThem && (
+                            <span className="text-[12px] text-red-500 font-medium flex-shrink-0">Đã xóa</span>
+                          )}
+                        </div>
+                        <p className="text-[13px] leading-4 text-[#8e8e93] dark:text-zinc-500 truncate">
+                          {friend.isOnline? "Đang hoạt động" : formatLastSeen(friend.lastSeen)}
+                        </p>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => handleRemoveFriend(friend.uid, friend.name)}
+                      className="w-8 h-8 flex items-center justify-center text-[#8e8e93] hover:text-red-500 active:scale-90 transition-all"
+                      title="Xóa bạn"
+                    >
+                      <FiX size={18} strokeWidth={2.5} />
+                    </button>
                   </div>
                 ))}
               </div>
