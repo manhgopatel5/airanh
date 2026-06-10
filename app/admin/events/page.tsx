@@ -220,50 +220,58 @@ export default function AdminEventsPage() {
   }
 
   if (!isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950 p-4">
-        <div className="w-full max-w-sm bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl p-6">
-          <div className="flex items-center justify-center mb-6">
-            <div className="w-16 h-16 bg-[#0a84ff] rounded-2xl flex items-center justify-center">
-              <FiLock size={32} className="text-white" />
-            </div>
-          </div>
-          <h1 className="text-2xl font-bold text-center mb-6">Admin Login</h1>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-semibold mb-1 block">Email</label>
-              <input
-                type="email"
-                value={loginForm.email}
-                onChange={(e) => setLoginForm({...loginForm, email: e.target.value })}
-                className="w-full h-11 px-4 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm"
-                placeholder="admin@huha.online"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-semibold mb-1 block">Mật khẩu</label>
-              <input
-                type="password"
-                value={loginForm.password}
-                onChange={(e) => setLoginForm({...loginForm, password: e.target.value })}
-                onKeyDown={(e) => e.key === "Enter" && handleAdminLogin()}
-                className="w-full h-11 px-4 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm"
-                placeholder="••••••••"
-              />
-            </div>
-            <button
-              onClick={handleAdminLogin}
-              disabled={loginLoading}
-              className="w-full h-11 bg-[#0a84ff] text-white rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-40"
-            >
-              {loginLoading? <FiLoader className="animate-spin" size={18} /> : <FiLock size={18} />}
-              {loginLoading? "Đang đăng nhập..." : "Đăng nhập"}
-            </button>
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950 p-4">
+      <div className="w-full max-w-sm bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl p-6">
+        <div className="flex items-center justify-center mb-6">
+          <div className="w-16 h-16 bg-[#0a84ff] rounded-2xl flex items-center justify-center">
+            <FiLock size={32} className="text-white" />
           </div>
         </div>
+        <h1 className="text-2xl font-bold text-center mb-6">Admin Login</h1>
+        
+        {/* THÊM DEBUG NÀY VÀO */}
+        <div className="mb-4 p-3 bg-red-500/10 border border-red-500 rounded-lg text-xs">
+          <div>Auth UID: {auth.currentUser?.uid || "null"}</div>
+          <div>Admin UID: FU2N0nTKAzOx3njyn4CnzKvolT22</div>
+          <div>Checking: {checkingAuth ? "true" : "false"}</div>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-semibold mb-1 block">Email</label>
+            <input
+              type="email"
+              value={loginForm.email}
+              onChange={(e) => setLoginForm({...loginForm, email: e.target.value })}
+              className="w-full h-11 px-4 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm"
+              placeholder="admin@huha.online"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-semibold mb-1 block">Mật khẩu</label>
+            <input
+              type="password"
+              value={loginForm.password}
+              onChange={(e) => setLoginForm({...loginForm, password: e.target.value })}
+              onKeyDown={(e) => e.key === "Enter" && handleAdminLogin()}
+              className="w-full h-11 px-4 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm"
+              placeholder="••••••••"
+            />
+          </div>
+          <button
+            onClick={handleAdminLogin}
+            disabled={loginLoading}
+            className="w-full h-11 bg-[#0a84ff] text-white rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-40"
+          >
+            {loginLoading? <FiLoader className="animate-spin" size={18} /> : <FiLock size={18} />}
+            {loginLoading? "Đang đăng nhập..." : "Đăng nhập"}
+          </button>
+        </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   if (dataLoading) {
     return (
