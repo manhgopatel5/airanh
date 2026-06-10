@@ -16,7 +16,7 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { EventItem, CATEGORY_INFO } from "@/data/events";
-import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiLoader, FiUpload, FiEye, FiEyeOff } from "react-icons/fi";
+import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiLoader, FiUpload, FiEye, FiEyeOff, FiLock } from "react-icons/fi";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -31,6 +31,11 @@ export default function AdminEventsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Form login admin
+  const [loginForm, setLoginForm] = useState({ username: "", password: "" });
+  const [loginLoading, setLoginLoading] = useState(false);
 
   const [form, setForm] = useState<Partial<EventItem>>({
     title: "",
@@ -59,7 +64,9 @@ export default function AdminEventsPage() {
   useEffect(() => {
     if (!authLoading && user) {
       getDoc(doc(db, "users", user.uid)).then((snap) => {
-        if (snap.data()?.role!== "admin") {
+        if (snap.data()?.role === "admin") {
+          setIsAdmin(true);
+        } else {
           toast.error("Không có quyền truy cập");
           router.push("/");
         }
@@ -67,8 +74,32 @@ export default function AdminEventsPage() {
     }
   }, [user, authLoading, db, router]);
 
+  // Login admin bằng username/password
+  const handleAdminLogin = async () => {
+    if (!loginForm.username ||!loginForm.password) {
+      toast.error("Nhập đủ tên và mật khẩu");
+      return;
+    }
+    setLoginLoading(true);
+    try {
+      // Check trong collection admin_credentials
+      const adminDoc = await getDoc(doc(db, "admin_credentials", loginForm.username));
+      if (adminDoc.exists() && adminDoc.data().password === loginForm.password) {
+        setIsAdmin(true);
+        toast.success("Đăng nhập admin thành công");
+      } else {
+        toast.error("Sai tên hoặc mật khẩu");
+      }
+    } catch (error) {
+      toast.error("Lỗi đăng nhập");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
   // Fetch events
   useEffect(() => {
+    if (!isAdmin) return;
     const q = query(collection(db, "events"), orderBy("updatedAt", "desc"));
     const unsub = onSnapshot(q, (snapshot) => {
       const data: EventItem[] = [];
@@ -77,7 +108,7 @@ export default function AdminEventsPage() {
       setLoading(false);
     });
     return () => unsub();
-  }, [db]);
+  }, [db, isAdmin]);
 
   const resetForm = () => {
     setForm({
@@ -138,7 +169,7 @@ export default function AdminEventsPage() {
     try {
       const id = editingId || doc(collection(db, "events")).id;
       const data = {
-     ...form,
+       ...form,
         id,
         updatedAt: serverTimestamp(),
         createdAt: editingId? form.createdAt : serverTimestamp(),
@@ -167,7 +198,7 @@ export default function AdminEventsPage() {
   const toggleActive = async (event: EventItem) => {
     try {
       await setDoc(doc(db, "events", event.id), {
-     ...event,
+       ...event,
         isActive:!event.isActive,
         updatedAt: serverTimestamp(),
       });
@@ -176,6 +207,53 @@ export default function AdminEventsPage() {
       toast.error("Lỗi");
     }
   };
+
+  // Form đăng nhập admin nếu chưa login
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950 p-4">
+        <div className="w-full max-w-sm bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl p-6">
+          <div className="flex items-center justify-center mb-6">
+            <div className="w-16 h-16 bg-[#0a84ff] rounded-2xl flex items-center justify-center">
+              <FiLock size={32} className="text-white" />
+            </div>
+          </div>
+          <h1 className="text-2xl font-bold text-center mb-6">Admin Login</h1>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-semibold mb-1 block">Tên đăng nhập</label>
+              <input
+                type="text"
+                value={loginForm.username}
+                onChange={(e) => setLoginForm({...loginForm, username: e.target.value })}
+                className="w-full h-11 px-4 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm"
+                placeholder="admin"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-semibold mb-1 block">Mật khẩu</label>
+              <input
+                type="password"
+                value={loginForm.password}
+                onChange={(e) => setLoginForm({...loginForm, password: e.target.value })}
+                onKeyDown={(e) => e.key === "Enter" && handleAdminLogin()}
+                className="w-full h-11 px-4 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm"
+                placeholder="••••••••"
+              />
+            </div>
+            <button
+              onClick={handleAdminLogin}
+              disabled={loginLoading}
+              className="w-full h-11 bg-[#0a84ff] text-white rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-40"
+            >
+              {loginLoading? <FiLoader className="animate-spin" size={18} /> : <FiLock size={18} />}
+              {loginLoading? "Đang đăng nhập..." : "Đăng nhập"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (authLoading || loading) {
     return (
@@ -253,11 +331,11 @@ export default function AdminEventsPage() {
         </div>
       </div>
 
-      {/* Modal Form */}
+      {/* Modal Form - giữ nguyên như cũ */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-xl" onClick={() => setShowModal(false)} />
-          <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-h- overflow-auto">
+          <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-h-[90vh] overflow-auto">
             <div className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 px-6 py-4 flex items-center justify-between">
               <h2 className="text-xl font-bold">{editingId? "Sửa Event" : "Thêm Event"}</h2>
               <button onClick={() => setShowModal(false)} className="w-8 h-8 flex items-center justify-center">
