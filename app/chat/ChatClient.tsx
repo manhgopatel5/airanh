@@ -7,7 +7,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFirebaseDB } from "@/lib/firebase";
 import { getAuth } from "firebase/auth";
 import { getApp } from "firebase/app";
-import { EVENTS_DATA, EventItem, CATEGORY_INFO } from "@/data/events";
+import { EventItem, CATEGORY_INFO } from "@/data/events";
 import EventDetailModal from "@/components/EventDetailModal";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { useAppStore } from "@/store/app";
@@ -265,7 +265,31 @@ const [userVip, setUserVip] = useState<{tier: 'free' | 'pro' | 'elite', expiresA
 const [purchasingVip, setPurchasingVip] = useState<boolean>(false);
 const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
 const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+const [eventsData, setEventsData] = useState<EventItem[]>([]);
+const [eventsLoading, setEventsLoading] = useState<boolean>(true);
 
+// Fetch events từ Firestore
+useEffect(() => {
+  const q = query(
+    collection(db, "events"),
+    where("isActive", "==", true),
+    orderBy("rating", "desc")
+  );
+
+  const unsub = onSnapshot(q, (snapshot) => {
+    const events: EventItem[] = [];
+    snapshot.forEach((doc) => {
+      events.push({ id: doc.id,...doc.data() } as EventItem);
+    });
+    setEventsData(events);
+    setEventsLoading(false);
+  }, (error) => {
+    console.error("Events fetch error:", error);
+    setEventsLoading(false);
+  });
+
+  return () => unsub();
+}, [db]);
 type VipTier = {
   id: 'pro' | 'elite';
   name: string;
@@ -1254,7 +1278,11 @@ const getNotificationIcon = (type: string) => {
 
       {/* 3. List event */}
       <div className="space-y-3">
-        {(selectedCategory? EVENTS_DATA.filter(e => e.category === selectedCategory) : EVENTS_DATA).map((item) => (
+{eventsLoading? (
+  <div className="flex items-center justify-center py-10">
+    <FiLoader className="animate-spin text-[#0a84ff]" size={24} />
+  </div>
+) : (selectedCategory? eventsData.filter(e => e.category === selectedCategory) : eventsData).map((item) => (
           <button
             key={item.id}
             onClick={() => setSelectedEvent(item)}
