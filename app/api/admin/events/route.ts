@@ -4,23 +4,18 @@ import { getFirestore } from 'firebase-admin/firestore'
 import { cookies } from 'next/headers'
 
 export async function GET() {
-  const token = cookies().get('__session')?.value;
-
-  if (!token) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const token = (await cookies()).get('__session')?.value; // THÊM await
+  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
     const decodedToken = await adminAuth().verifySessionCookie(token);
-
-    // Check email admin
-    if (decodedToken.email!== 'justastormyday@gmail.com') {
+    if (decodedToken.email !== 'justastormyday@gmail.com') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const db = getFirestore();
     const snapshot = await db.collection('events').orderBy('updatedAt', 'desc').get();
-    const events = snapshot.docs.map(doc => ({ id: doc.id,...doc.data() }));
+    const events = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
     return NextResponse.json({ events });
   } catch (err) {
@@ -29,12 +24,12 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const token = cookies().get('__session')?.value;
+  const token = (await cookies()).get('__session')?.value; // THÊM await
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
     const decodedToken = await adminAuth().verifySessionCookie(token);
-    if (decodedToken.email!== 'justastormyday@gmail.com') {
+    if (decodedToken.email !== 'justastormyday@gmail.com') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -43,7 +38,7 @@ export async function POST(request: Request) {
     const id = body.id || db.collection('events').doc().id;
 
     await db.collection('events').doc(id).set({
-     ...body,
+      ...body,
       id,
       updatedAt: new Date(),
       createdAt: body.createdAt || new Date(),
@@ -56,12 +51,12 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const token = cookies().get('__session')?.value;
+  const token = (await cookies()).get('__session')?.value; // THÊM await
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
     const decodedToken = await adminAuth().verifySessionCookie(token);
-    if (decodedToken.email!== 'justastormyday@gmail.com') {
+    if (decodedToken.email !== 'justastormyday@gmail.com') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
