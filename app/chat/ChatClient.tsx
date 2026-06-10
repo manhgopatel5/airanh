@@ -7,6 +7,8 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFirebaseDB } from "@/lib/firebase";
 import { getAuth } from "firebase/auth";
 import { getApp } from "firebase/app";
+import { EVENTS_DATA, EventItem, CATEGORY_INFO } from "@/data/events";
+import EventDetailModal from "@/components/EventDetailModal";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { useAppStore } from "@/store/app";
 import {
@@ -38,6 +40,9 @@ import {
   FiX,
   FiMic,
   FiUpload,
+  FiNavigation, 
+  FiDollarSign, 
+  FiMapPin,
   FiLoader,
   FiZap,
   FiBell,
@@ -258,7 +263,8 @@ const handleFindStranger = async () => {
   const [showVip, setShowVip] = useState<boolean>(false);
 const [userVip, setUserVip] = useState<{tier: 'free' | 'pro' | 'elite', expiresAt?: Timestamp} | null>(null);
 const [purchasingVip, setPurchasingVip] = useState<boolean>(false);
-
+const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
+const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 type VipTier = {
   id: 'pro' | 'elite';
   name: string;
@@ -1195,6 +1201,104 @@ const getNotificationIcon = (type: string) => {
 </div>
 
 <div className="pt-2 pb-24">
+  {activeTab === "all" && (
+    <div className="px-4 pt-4 space-y-3">
+      {/* Filter Category */}
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+        <button
+          onClick={() => setSelectedCategory(null)}
+          className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap ${
+          !selectedCategory
+            ? `${primaryBg} text-white`
+              : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+          }`}
+        >
+          Tất cả
+        </button>
+        {Object.entries(CATEGORY_INFO).map(([key, cat]) => (
+          <button
+            key={key}
+            onClick={() => setSelectedCategory(key)}
+            className={`px-3 py-1.5 rounded-full text-xs font-[600] whitespace-nowrap flex items-center gap-1 ${
+              selectedCategory === key
+              ? `${primaryBg} text-white`
+                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+            }`}
+          >
+            <span>{cat.icon}</span>
+            {cat.label}
+          </button>
+        ))}
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-3 px-1">
+          <h3 className="text-sm font-[700] flex items-center gap-1.5">
+            <span className="text-lg">🔥</span>
+            Khám phá hôm nay
+          </h3>
+          <span className="text-xs text-[#8e8e93]">
+            {(selectedCategory? EVENTS_DATA.filter(e => e.category === selectedCategory) : EVENTS_DATA).length} địa điểm
+          </span>
+        </div>
+
+        <div className="space-y-3">
+          {(selectedCategory? EVENTS_DATA.filter(e => e.category === selectedCategory) : EVENTS_DATA).map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setSelectedEvent(item)}
+              className="w-full bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.98] transition-transform text-left"
+            >
+              <div className="relative h-32">
+                <img src={item.image} className="w-full h-full object-cover" loading="lazy" alt={item.title} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0" />
+                <div className={`absolute top-2 left-2 px-2 py-0.5 bg-gradient-to-r ${item.tagColor} rounded-md`}>
+                  <span className="text-[10px] font-[800] text-white">{item.tag}</span>
+                </div>
+                {item.rating && (
+                  <div className="absolute top-2 right-2 px-2 py-0.5 bg-black/40 backdrop-blur-md rounded-md flex items-center gap-1">
+                    <FiStar className="text-amber-400" size={10} fill="currentColor" />
+                    <span className="text-[10px] font-[700] text-white">{item.rating}</span>
+                  </div>
+                )}
+                <div className="absolute bottom-2 left-3 right-3">
+                  <div className="flex items-center gap-1.5 text-white">
+                    <span className="text-lg">{item.icon}</span>
+                    <h4 className="text-base font-[700] drop-shadow-lg">{item.title}</h4>
+                  </div>
+                </div>
+              </div>
+              <div className="p-3">
+                <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-2 line-clamp-2">{item.desc}</p>
+                <div className="flex items-center justify-between text-xs text-[#8e8e93]">
+                  <span className="flex items-center gap-1">
+                    <FiUsers size={12} />
+                    {item.joined} người
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <FiMapPin size={12} />
+                    {item.distance}
+                  </span>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div className="h-2 bg-zinc-100 dark:bg-zinc-900 my-4 -mx-4" />
+
+      {/* Chat list tiếp tục ở dưới */}
+      <div className="flex items-center justify-between mb-3 px-1">
+        <h3 className="text-sm font-[700] flex items-center gap-1.5">
+          <span className="text-lg">💬</span>
+          Tin nhắn
+        </h3>
+      </div>
+    </div>
+  )}
+
   {activeTab === "notifications"? (
     notifLoading? (
       <div className="px-4 pt-4 space-y-3">
@@ -1815,6 +1919,8 @@ const getNotificationIcon = (type: string) => {
 )}
       </div>
       <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}body{overscroll-behavior-y:contain}`}</style>
+<EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
     </>
   );
 }
+
