@@ -31,7 +31,7 @@ import {
 } from "firebase/firestore";
 import {
   FiSearch,
-  
+  FiStar,
   FiUserPlus,
   FiUsers,
   FiCheck,
