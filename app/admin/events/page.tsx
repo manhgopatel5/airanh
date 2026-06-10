@@ -28,6 +28,7 @@ export default function AdminEventsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [loginLoading, setLoginLoading] = useState(false);
@@ -60,7 +61,7 @@ export default function AdminEventsPage() {
     if (savedAdmin === "true") {
       setIsAdmin(true);
     }
-    setDataLoading(false);
+    setCheckingAuth(false);
   }, []);
 
   const handleAdminLogin = async () => {
@@ -79,6 +80,7 @@ export default function AdminEventsPage() {
         toast.error("Sai tên hoặc mật khẩu");
       }
     } catch (error) {
+      console.error(error);
       toast.error("Lỗi đăng nhập");
     } finally {
       setLoginLoading(false);
@@ -92,7 +94,10 @@ export default function AdminEventsPage() {
   };
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!isAdmin) {
+      setDataLoading(false);
+      return;
+    }
     setDataLoading(true);
     const q = query(collection(db, "events"), orderBy("updatedAt", "desc"));
     const unsub = onSnapshot(q, (snapshot) => {
@@ -163,7 +168,7 @@ export default function AdminEventsPage() {
     try {
       const id = editingId || doc(collection(db, "events")).id;
       const data = {
-       ...form,
+      ...form,
         id,
         updatedAt: serverTimestamp(),
         createdAt: editingId? form.createdAt : serverTimestamp(),
@@ -192,7 +197,7 @@ export default function AdminEventsPage() {
   const toggleActive = async (event: EventItem) => {
     try {
       await setDoc(doc(db, "events", event.id), {
-       ...event,
+      ...event,
         isActive:!event.isActive,
         updatedAt: serverTimestamp(),
       });
@@ -202,6 +207,14 @@ export default function AdminEventsPage() {
     }
   };
 
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <FiLoader className="animate-spin text-[#0a84ff]" size={32} />
+      </div>
+    );
+  }
+
   if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950 p-4">
@@ -210,7 +223,6 @@ export default function AdminEventsPage() {
             <div className="w-16 h-16 bg-[#0a84ff] rounded-2xl flex items-center justify-center">
               <FiLock size={32} className="text-white" />
             </div>
-          </div>
           <h1 className="text-2xl font-bold text-center mb-6">Admin Login</h1>
           <div className="space-y-4">
             <div>
@@ -315,7 +327,7 @@ export default function AdminEventsPage() {
                 <div className={`absolute bottom-2 left-2 px-2 py-1 bg-gradient-to-r ${event.tagColor} rounded-md`}>
                   <span className="text-xs font-bold text-white">{event.tag}</span>
                 </div>
-    </div>
+              </div>
               <div className="p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-2xl">{event.icon}</span>
