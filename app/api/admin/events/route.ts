@@ -1,14 +1,14 @@
-import '@/lib/firebase-admin' // QUAN TRỌNG: phải init trước
+import '@/lib/firebase-admin' // DÒNG NÀY BẮT BUỘC PHẢI CÓ ĐẦU TIÊN
 import { NextResponse } from 'next/server'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 
-export const dynamic = 'force-dynamic' // Bắt buộc để không bị cache
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
     const db = getFirestore();
     const snapshot = await db.collection('events')
-      .where('isActive', '==', true) // Chỉ lấy event đang active
+      .where('isActive', '==', true)
       .orderBy('updatedAt', 'desc')
       .get();
 
@@ -17,7 +17,6 @@ export async function GET() {
       return {
         id: doc.id,
        ...data,
-        // Convert Firestore Timestamp -> ISO string để client đọc được
         createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
         updatedAt: data.updatedAt?.toDate?.()?.toISOString() || null,
         date: data.date?.toDate?.()?.toISOString() || null,
@@ -26,7 +25,7 @@ export async function GET() {
 
     return NextResponse.json({ events });
   } catch (err: any) {
-    console.error('GET /api/events error:', err);
+    console.error('GET /api/admin/events error:', err);
     return NextResponse.json({ error: 'Failed', detail: err.message }, { status: 500 });
   }
 }
@@ -40,14 +39,14 @@ export async function POST(request: Request) {
     await db.collection('events').doc(id).set({
      ...body,
       id,
-      isActive: body.isActive ?? true, // Mặc định active
-      updatedAt: FieldValue.serverTimestamp(), // Dùng timestamp của server
+      isActive: body.isActive ?? true,
+      updatedAt: FieldValue.serverTimestamp(),
       createdAt: body.createdAt ? new Date(body.createdAt) : FieldValue.serverTimestamp(),
-    }, { merge: true }); // merge để update không xóa field cũ
+    }, { merge: true });
 
     return NextResponse.json({ success: true, id });
   } catch (err: any) {
-    console.error('POST /api/events error:', err);
+    console.error('POST /api/admin/events error:', err);
     return NextResponse.json({ error: 'Failed', detail: err.message }, { status: 500 });
   }
 }
@@ -63,7 +62,7 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
-    console.error('DELETE /api/events error:', err);
+    console.error('DELETE /api/admin/events error:', err);
     return NextResponse.json({ error: 'Failed', detail: err.message }, { status: 500 });
   }
 }
