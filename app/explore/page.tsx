@@ -54,7 +54,7 @@ export default function ExplorePage() {
   // Parse distance string "Cách bạn 95km" -> 95
   const parseDistance = (distanceStr: string): number => {
     const match = distanceStr.match(/(\d+)/);
-    return match? parseInt(match[1]) : 999;
+return match? parseInt(match[1] || "999") : 999;
   };
 
   // Filter + Sort
