@@ -181,5 +181,24 @@ service cloud.firestore {
       allow delete: if isOwner(userId);
       allow update: if isOwner(userId);
     }
+
+    // ========== STRANGER CHAT ==========
+    match /stranger_chats/{chatId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.members;
+      allow create: if false; // Chỉ tạo qua Cloud Function
+      allow update: if isSignedIn() 
+        && request.auth.uid in resource.data.members
+        && request.resource.data.diff(resource.data).changedKeys()
+          .hasOnly(['messages', 'extended', 'expiresAt', 'reportedBy']);
+      allow delete: if false; // Tự xóa qua Function
+    }
+
+    // ========== STRANGER QUEUE ==========
+    match /stranger_queue/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
   }
 }
