@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { EVENTS_DATA, CATEGORY_INFO } from "@/data/events";
-import EventDetailModal, { EventItem } from "@/components/EventDetailModal";
+import { EVENTS_DATA, CATEGORY_INFO, EventItem } from "@/data/events";
+import EventDetailModal from "@/components/EventDetailModal";
 import { FiArrowLeft, FiUsers, FiMapPin, FiStar } from "react-icons/fi";
 
 export default function ExplorePage() {
