@@ -4,10 +4,13 @@ service cloud.firestore {
 
     function isSignedIn() { return request.auth != null; }
     function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isAdmin() { 
+      return isSignedIn() && request.auth.token.email == 'justastormyday@gmail.com'; 
+    }
 
-    // ========== ADMIN CREDENTIALS - THÊM MỚI ==========
+    // ========== ADMIN CREDENTIALS ==========
     match /admin_credentials/{docId} {
-      allow read: if true; // Cho phép đọc để login, không cho write
+      allow read: if true;
       allow write: if false;
     }
 
@@ -24,12 +27,17 @@ service cloud.firestore {
       }
     }
 
-    // ========== EVENTS ==========
+    // ========== EVENTS - CHỈ ADMIN MỚI SỬA ĐƯỢC ==========
     match /events/{eventId} {
-      
-      allow read: if true;
-  allow create, update, delete: if true; // TẠM THỜI CHO TEST
-}
+      allow read: if true; // Ai cũng xem được
+      allow create, update, delete: if isAdmin(); // Chỉ justastormyday@gmail.com
+    }
+
+    // ========== PROVINCES - CHO LỖI 401 TRONG ẢNH ==========
+    match /provinces/{provinceId} {
+      allow read: if true; // Public
+      allow write: if isAdmin();
+    }
 
     // ========== SESSIONS ==========
     match /sessions/{sessionId} {
