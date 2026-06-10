@@ -3,10 +3,10 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/useAuth";
 import { db } from "@/lib/firebase";
-import { doc, onSnapshot, updateDoc, arrayUnion, serverTimestamp, Timestamp } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, arrayUnion, Timestamp, getDoc } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getApp } from "firebase/app";
-import { FiSend, FiAlertTriangle, FiHeart, FiClock, FiX, FiUserPlus, FiMic } from "react-icons/fi";
+import { FiSend, FiAlertTriangle, FiHeart, FiClock, FiUserPlus, FiLoader } from "react-icons/fi";
 import toast from "react-hot-toast";
 
 interface StrangerChat {
@@ -69,7 +69,7 @@ export default function StrangerChatPage() {
       return () => clearInterval(timer);
     });
     return unsub;
-  }, [id, user?.uid]);
+  }, [id, user?.uid, showEndModal, router]);
 
   // Auto scroll
   useEffect(() => {
@@ -134,14 +134,14 @@ export default function StrangerChatPage() {
            ?
           </div>
           <div>
-            <p className="text- font-[600]">Người lạ</p>
-            <p className="text- text-[#8e8e93]">{chat.topic.join(", ")}</p>
+            <p className="text-sm font-[600]">Người lạ</p>
+            <p className="text-xs text-[#8e8e93]">{chat.topic.join(", ")}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <div className={`flex items-center gap-1 px-3 h-8 rounded-full ${timeLeft < 60? 'bg-red-500/10 text-red-500' : 'bg-pink-500/10 text-pink-600'}`}>
             <FiClock size={14} />
-            <span className="text- font-[700]">{minutes}:{seconds.toString().padStart(2,'0')}</span>
+            <span className="text-sm font-[700]">{minutes}:{seconds.toString().padStart(2,'0')}</span>
           </div>
           <button onClick={() => setShowReport(true)} className="w-9 h-9 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center">
             <FiAlertTriangle size={18} />
@@ -151,7 +151,7 @@ export default function StrangerChatPage() {
 
       {/* Voice Intro */}
       <div className="px-4 py-2 bg-amber-500/10 border-b border-amber-500/20">
-        <p className="text- text-amber-700 dark:text-amber-400 text-center">Nghe lời chào của nhau trước khi chat 👇</p>
+        <p className="text-sm text-amber-700 dark:text-amber-400 text-center">Nghe lời chào của nhau trước khi chat 👇</p>
         <div className="flex gap-2 mt-2">
           {Object.entries(chat.voiceIntros).map(([uid, url]) => (
             <audio key={uid} src={url} controls className="flex-1 h-8" />
@@ -165,10 +165,10 @@ export default function StrangerChatPage() {
           <div key={i} className={`flex ${msg.uid === user?.uid? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[75%] px-4 py-2 rounded-2xl ${
               msg.uid === user?.uid
-            ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white'
-               : 'bg-white dark:bg-zinc-800'
+               ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white'
+                : 'bg-white dark:bg-zinc-800'
             }`}>
-              <p className="text-">{msg.text}</p>
+              <p className="text-sm">{msg.text}</p>
             </div>
           </div>
         ))}
@@ -183,7 +183,7 @@ export default function StrangerChatPage() {
             onChange={e => setText(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && sendMessage()}
             placeholder="Nhập tin nhắn..."
-            className="flex-1 h-11 px-4 bg-zinc-100 dark:bg-zinc-800 rounded-full text- outline-none"
+            className="flex-1 h-11 px-4 bg-zinc-100 dark:bg-zinc-800 rounded-full text-sm outline-none"
           />
           <button onClick={sendMessage} className="w-11 h-11 bg-gradient-to-br from-pink-500 to-purple-500 text-white rounded-full flex items-center justify-center active:scale-95">
             <FiSend size={18} />
@@ -198,8 +198,8 @@ export default function StrangerChatPage() {
             <div className="w-20 h-20 mx-auto bg-gradient-to-br from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
               <FiClock className="text-white" size={40} />
             </div>
-            <h3 className="text- font-bold">Hết giờ rồi!</h3>
-            <p className="text- text-[#8e8e93]">Bạn có muốn kết bạn với người này không?</p>
+            <h3 className="text-lg font-bold">Hết giờ rồi!</h3>
+            <p className="text-sm text-[#8e8e93]">Bạn có muốn kết bạn với người này không?</p>
             <div className="space-y-2">
               <button onClick={handleAddFriend} className="w-full h-12 bg-gradient-to-br from-pink-500 to-purple-500 text-white rounded-xl font-[600] flex items-center justify-center gap-2">
                 <FiUserPlus size={18} /> Gửi lời mời kết bạn
@@ -219,7 +219,7 @@ export default function StrangerChatPage() {
       {showReport && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-xl">
           <div className="w-full sm:max-w-[360px] bg-white dark:bg-zinc-900 rounded-3xl p-5 space-y-3">
-            <h3 className="text- font-bold text-red-500 flex items-center gap-2"><FiAlertTriangle /> Báo cáo người dùng</h3>
+            <h3 className="text-lg font-bold text-red-500 flex items-center gap-2"><FiAlertTriangle /> Báo cáo người dùng</h3>
             {["Quấy rối", "Nội dung 18+", "Spam", "Khác"].map(reason => (
               <button key={reason} onClick={() => handleReport(reason)}
                 className="w-full h-12 bg-red-500/10 text-red-500 rounded-xl font-[600] text-left px-4">
