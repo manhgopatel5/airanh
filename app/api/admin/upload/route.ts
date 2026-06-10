@@ -9,7 +9,6 @@ if (!getApps().length) {
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
       privateKey: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, '\n'),
     }),
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET!, // THÊM ! ở cuối
   });
 }
 
@@ -17,13 +16,13 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
-
-    if (!file) {
-      return NextResponse.json({ error: 'No file' }, { status: 400 });
-    }
+    if (!file) return NextResponse.json({ error: 'No file' }, { status: 400 });
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const bucket = getStorage().bucket();
+    
+    // DÙNG ĐÚNG TÊN BUCKET NÀY
+    const bucket = getStorage().bucket('airanh-ba64c.firebasestorage.app');
+    
     const fileName = `events/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
     const fileRef = bucket.file(fileName);
 
@@ -35,12 +34,17 @@ export async function POST(request: Request) {
     });
 
     await fileRef.makePublic();
-
+    
+    // URL mới dùng firebasestorage.app
     const url = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
 
     return NextResponse.json({ url });
   } catch (err: any) {
-    console.error('Upload error:', err.message);
-    return NextResponse.json({ error: 'Upload failed', detail: err.message }, { status: 500 });
+    console.error('Upload error:', err);
+    return NextResponse.json({ 
+      error: 'Upload failed', 
+      detail: err.message,
+      code: err.code 
+    }, { status: 500 });
   }
 }
