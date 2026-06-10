@@ -258,10 +258,10 @@ export const cleanupExpiredTasks = onSchedule(
     );
 
     const expiredTasks = await db
-  .collection("tasks")
-  .where("deadline", "<", sevenDaysAgo)
-  .limit(500)
-  .get();
+ .collection("tasks")
+ .where("deadline", "<", sevenDaysAgo)
+ .limit(500)
+ .get();
 
     if (expiredTasks.empty) {
       console.log("No expired tasks to delete");
@@ -304,9 +304,9 @@ export const onUserProfileUpdate = onDocumentUpdated(
     console.log(`User ${userId} đổi profile, bắt đầu sync tasks...`);
 
     const tasksSnap = await db
-  .collection("tasks")
-  .where("userId", "==", userId)
-  .get();
+ .collection("tasks")
+ .where("userId", "==", userId)
+ .get();
 
     if (tasksSnap.empty) {
       console.log(`User ${userId} không có task nào`);
@@ -347,11 +347,11 @@ export const updateHotScore = onSchedule(
   async () => {
     const now = Date.now();
     const snap = await db.collection("tasks")
-    .where("status", "in", ["open", "pending", "full", "doing", "in_progress"])
-    .where("banned", "!=", true)
-    .where("hidden", "!=", true)
-    .limit(5000) // Tránh quá 500 writes/batch
-    .get();
+   .where("status", "in", ["open", "pending", "full", "doing", "in_progress"])
+   .where("banned", "!=", true)
+   .where("hidden", "!=", true)
+   .limit(5000) // Tránh quá 500 writes/batch
+   .get();
 
     if (snap.empty) {
       console.log("No active tasks to update hotScore");
@@ -366,7 +366,7 @@ export const updateHotScore = onSchedule(
       const d = doc.data();
       const createdAt = d.createdAt?.toMillis() || now;
       const ageHours = (now - createdAt) / 3600000;
-      
+
       let score = 0;
       if (d.type === 'task') {
         // Task: view + like + comment, càng mới càng hot
@@ -392,5 +392,188 @@ export const updateHotScore = onSchedule(
 
     if (batchCount > 0) await batch.commit();
     console.log(`Updated hotScore for ${totalUpdated} tasks`);
+  }
+);
+
+// 8. TÌM NGƯỜI LẠ CHAT 1-1
+export const findStranger = onCall(
+  { region: "asia-southeast1" },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError("unauthenticated", "Chưa đăng nhập");
+
+    const { interests, ageRange, wantGender, voiceUrl } = request.data;
+
+    if (!interests || interests.length < 3) {
+      throw new HttpsError("invalid-argument", "Chọn ít nhất 3 sở thích");
+    }
+    if (!voiceUrl) {
+      throw new HttpsError("invalid-argument", "Cần voice intro");
+    }
+
+    const userDoc = await db.doc(`users/${uid}`).get();
+    const userData = userDoc.data();
+
+    if ((userData?.karma || 0) < 50) {
+      throw new HttpsError("permission-denied", "Karma quá thấp, cần >= 50");
+    }
+
+    const userGender = userData?.gender || "other";
+    const queueRef = db.collection("stranger_queue");
+
+    // Tìm match: cùng ageRange, >= 2 sở thích chung
+    const matches = await queueRef.where("ageRange", "==", ageRange).limit(20).get();
+
+    let bestMatch: QueryDocumentSnapshot | null = null;
+    let maxCommon = 0;
+
+    for (const doc of matches.docs) {
+      const d = doc.data();
+      if (d.uid === uid) continue;
+
+      // Check gender filter
+      if (wantGender!== "all" && d.gender!== wantGender) continue;
+      if (d.wantGender!== "all" && d.wantGender!== userGender) continue;
+
+      const common = interests.filter((i: string) => d.interests.includes(i)).length;
+      if (common >= 2 && common > maxCommon) {
+        maxCommon = common;
+        bestMatch = doc;
+      }
+    }
+
+    if (bestMatch) {
+      const other = bestMatch.data();
+      const chatId = `str_${[uid, other.uid].sort().join("_")}_${Date.now()}`;
+
+      // Tạo chat riêng ở collection stranger_chats
+      await db.doc(`stranger_chats/${chatId}`).set({
+        members: [uid, other.uid],
+        topic: interests,
+        ageRange,
+        voiceIntros: { [uid]: voiceUrl, [other.uid]: other.voiceUrl },
+        messages: [],
+        createdAt: FieldValue.serverTimestamp(),
+        expiresAt: Timestamp.fromDate(new Date(Date.now() + 5 * 60 * 1000)),
+        extended: false,
+        reportedBy: [],
+      });
+
+      // Xóa khỏi queue
+      await bestMatch.ref.delete();
+
+      return { matched: true, chatId };
+    } else {
+      // Vào queue chờ
+      await queueRef.doc(uid).set({
+        uid,
+        interests,
+        ageRange,
+        wantGender,
+        voiceUrl,
+        gender: userGender,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+      return { matched: false };
+    }
+  }
+);
+
+// 9. BÁO CÁO NGƯỜI LẠ
+export const reportStranger = onCall(
+  { region: "asia-southeast1" },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError("unauthenticated");
+
+    const { chatId, reason } = request.data;
+    if (!chatId ||!reason) throw new HttpsError("invalid-argument");
+
+    // Trừ 20 karma
+    await db.doc(`users/${uid}`).update({
+      karma: FieldValue.increment(-20),
+    });
+
+    // Log report
+    await db.collection("reports").add({
+      chatId,
+      reporter: uid,
+      reason,
+      type: "stranger_chat",
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    // Nếu 2 người report thì xóa phòng
+    const chatRef = db.doc(`stranger_chats/${chatId}`);
+    const chatDoc = await chatRef.get();
+    if (chatDoc.exists) {
+      const reportedBy = chatDoc.data()?.reportedBy || [];
+      const newReportedBy = [...reportedBy, uid];
+
+      if (newReportedBy.length >= 2) {
+        await chatRef.delete();
+      } else {
+        await chatRef.update({ reportedBy: newReportedBy });
+      }
+    }
+
+    return { success: true };
+  }
+);
+
+// 10. THÊM BẠN TỪ CHAT NGƯỜI LẠ
+export const addStrangerFriend = onCall(
+  { region: "asia-southeast1" },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError("unauthenticated");
+
+    const { chatId, otherUid } = request.data;
+    if (!otherUid) throw new HttpsError("invalid-argument");
+
+    // Check chat tồn tại + đã chat > 2 phút
+    const chatDoc = await db.doc(`stranger_chats/${chatId}`).get();
+    if (!chatDoc.exists) throw new HttpsError("not-found", "Phòng chat không tồn tại");
+
+    const createdAt = chatDoc.data()?.createdAt.toMillis() || 0;
+    if (Date.now() - createdAt < 2 * 60 * 1000) {
+      throw new HttpsError("failed-precondition", "Chat ít nhất 2 phút mới kết bạn được");
+    }
+
+    // Tạo lời mời kết bạn
+    const requestId = `${uid}_${otherUid}`;
+    await db.doc(`friendRequests/${requestId}`).set({
+      from: uid,
+      to: otherUid,
+      fromStrangerChat: chatId,
+      status: "pending",
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    return { success: true };
+  }
+);
+
+// 11. TỰ XÓA CHAT NGƯỜI LẠ HẾT HẠN - chạy 1 phút/lần
+export const cleanupStrangerChats = onSchedule(
+  {
+    schedule: "every 1 minutes",
+    timeZone: "Asia/Ho_Chi_Minh",
+    region: "asia-southeast1",
+  },
+  async () => {
+    const now = Timestamp.now();
+    const expired = await db
+.collection("stranger_chats")
+.where("expiresAt", "<=", now)
+.limit(500)
+.get();
+
+    if (expired.empty) return;
+
+    const batch = db.batch();
+    expired.docs.forEach((doc) => batch.delete(doc.ref));
+    await batch.commit();
+    console.log(`Deleted ${expired.size} expired stranger chats`);
   }
 );
