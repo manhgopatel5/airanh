@@ -29,7 +29,7 @@ export default function EventDetailModal({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: "100%", opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full sm:max-w-[440px] bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl max-h- flex-col shadow-2xl"
+            className="relative w-full sm:max-w-[440px] bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl max-h-[90vh] flex flex-col shadow-2xl"
           >
             {/* Cover */}
             <div className="relative h-48 flex-shrink-0">
@@ -48,7 +48,7 @@ export default function EventDetailModal({
                 <div className="absolute bottom-3 right-4 px-2.5 py-1 bg-black/40 backdrop-blur-md rounded-lg flex items-center gap-1">
                   <FiStar className="text-amber-400" size={12} fill="currentColor" />
                   <span className="text-xs font-[700] text-white">{event.rating}</span>
-                  <span className="text-xs text-white/70">({event.reviews})</span>
+                  {event.reviews && <span className="text-xs text-white/70">({event.reviews})</span>}
                 </div>
               )}
             </div>
@@ -71,7 +71,6 @@ export default function EventDetailModal({
                       <p className="font-[550]">Địa chỉ</p>
                       <p className="text-[#8e8e93] text-xs mt-0.5">{event.address}</p>
                     </div>
-                  </div>
                   <div className="flex items-start gap-3 text-sm">
                     <FiClock className="text-[#0a84ff] mt-0.5 flex-shrink-0" size={18} />
                     <div>
@@ -95,32 +94,36 @@ export default function EventDetailModal({
                   </div>
                 </div>
 
-                <div className="bg-amber-500/10 border border-amber-500/20 dark:border-amber-500/30 rounded-xl p-3 mb-5">
-                  <p className="text-xs font-[700] text-amber-700 dark:text-amber-400 mb-2">💡 Tips từ cộng đồng</p>
-                  <ul className="space-y-1.5">
-                    {event.tips.map((tip, i) => (
-                      <li key={i} className="text-sm text-zinc-700 dark:text-zinc-300 flex items-start gap-2">
-                        <span className="text-amber-500 mt-0.5">•</span>
-                        <span>{tip}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-[600] mb-2">Ảnh từ cộng đồng</h3>
-                  <div className="grid grid-cols-3 gap-2">
-                    {event.gallery.map((img, i) => (
-                      <img
-                        key={i}
-                        src={img}
-                        className="w-full aspect-square rounded-lg object-cover"
-                        loading="lazy"
-                        alt={`Gallery ${i + 1}`}
-                      />
-                    ))}
+                {event.tips?.length > 0 && (
+                  <div className="bg-amber-500/10 border border-amber-500/20 dark:border-amber-500/30 rounded-xl p-3 mb-5">
+                    <p className="text-xs font-[700] text-amber-700 dark:text-amber-400 mb-2">💡 Tips từ cộng đồng</p>
+                    <ul className="space-y-1.5">
+                      {event.tips.map((tip, i) => (
+                        <li key={i} className="text-sm text-zinc-700 dark:text-zinc-300 flex items-start gap-2">
+                          <span className="text-amber-500 mt-0.5">•</span>
+                          <span>{tip}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                </div>
+                )}
+
+                {event.gallery?.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-[600] mb-2">Ảnh từ cộng đồng</h3>
+                    <div className="grid grid-cols-3 gap-2">
+                      {event.gallery.map((img, i) => (
+                        <img
+                          key={i}
+                          src={img}
+                          className="w-full aspect-square rounded-lg object-cover"
+                          loading="lazy"
+                          alt={`Gallery ${i + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
