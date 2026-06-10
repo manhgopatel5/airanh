@@ -26,10 +26,10 @@ service cloud.firestore {
 
     // ========== EVENTS ==========
     match /events/{eventId} {
+      
       allow read: if true;
-      allow create, update, delete: if isSignedIn() 
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
+  allow create, update, delete: if true; // TẠM THỜI CHO TEST
+}
 
     // ========== SESSIONS ==========
     match /sessions/{sessionId} {
