@@ -224,12 +224,12 @@ const handleFindStranger = async () => {
     const functions = getFunctions(getApp(), "asia-southeast1");
     const findFn = httpsCallable(functions, 'findStranger');
 
-    const result = await findFn({
-      interests: strangerInterests,
-      ageRange: strangerAgeRange,
-      wantGender: strangerGender,
-      voiceUrl
-    });
+const result = await findFn({
+  interests: strangerInterests,
+  ageRange: strangerAgeRange,
+  wantGender: strangerGender, // Đổi đây
+  voiceUrl
+});
 
     const data = result.data as { chatId: string, matched: boolean };
     setShowStranger(false);
@@ -1679,7 +1679,28 @@ const getNotificationIcon = (type: string) => {
             ))}
           </div>
         </div>
-
+<div>
+  <label className="text-sm font-[600] mb-2 block">Giới tính muốn chat</label>
+  <div className="grid grid-cols-3 gap-2">
+    {[
+      { value: "all", label: "Tất cả" },
+      { value: "male", label: "Nam" },
+      { value: "female", label: "Nữ" }
+    ].map(opt => (
+      <button
+        key={opt.value}
+        onClick={() => setStrangerGender(opt.value as any)}
+        className={`h-11 rounded-xl text-sm font-[550] ${
+          strangerGender === opt.value
+           ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white'
+            : 'bg-zinc-100 dark:bg-zinc-800'
+        }`}
+      >
+        {opt.label}
+      </button>
+    ))}
+  </div>
+</div>
         <div>
           <label className="text- font-[600] mb-2 block">Lời chào 10s *</label>
           {!voiceIntroBlob? (
