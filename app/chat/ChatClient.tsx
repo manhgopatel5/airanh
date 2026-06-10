@@ -1065,93 +1065,40 @@ const getNotificationIcon = (type: string) => {
       <div className="min-h-dvh bg-gradient-to-b from-[#F7FAFF] via-white to-[#F5F7FB] text-zinc-950 dark:from-[#05070A] dark:via-zinc-950 dark:to-[#0F172A] dark:text-white">
       
 
-        <div className="sticky top-0 z-40 mt-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50">
-          <div className="px-4 pt-3 pb-3">
-            {/* Hàng icon chức năng mới */}
-            <div className="flex items-center gap-3 mb-3 overflow-x-auto scrollbar-hide pb-1">
-              {[
-                { label: "Mời bạn bè", icon: FiUserPlus, color: "bg-blue-500", onClick: () => setShowAdd(true) },
-                { label: "Bạn bè", icon: FiUsers, color: "bg-sky-500", onClick: () => setActiveTab("friends") },
-                { label: "Nhóm", icon: FiUsers, color: "bg-purple-500", onClick: () => setActiveTab("group") },
-                { label: "Thông báo", icon: FiBell, color: "bg-red-500", onClick: () => setActiveTab("notifications") },
-{ label: "Bình chọn", icon: Vote, color: "bg-gradient-to-br from-indigo-500 to-purple-500", onClick: () => setShowPoll(true) },
-                { label: "Ưu đãi", icon: Percent, color: "bg-pink-500", onClick: () => toast.info("Chưa có ưu đãi") },
-                { label: "Quỹ chung", icon: Wallet, color: "bg-orange-500", onClick: () => toast.info("Sắp ra mắt") },
-                { label: "VIP", icon: Crown, color: "bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500", onClick: () => setShowVip(true) },
-              ].map((item) => (
-                <button
-                  key={item.label}
-                  onClick={item.onClick}
-                  className="flex flex-col items-center gap-1 flex-shrink-0 active:scale-95 transition-transform"
-                >
-                  <div className={`w-12 h-12 ${item.color} rounded-2xl flex items-center justify-center shadow-lg`}>
-                    <item.icon className="text-white" size={20} strokeWidth={2.5} />
-                  </div>
-                  <span className="text-[11px] font-medium text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
-                    {item.label}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            {/* Search + Nút + */}
-            <div className="flex items-center gap-2 mb-3">
-              <div className="relative flex-1">
-                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={18} />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder={activeTab === "friends"? "Tìm bạn bè" : activeTab === "notifications"? "Tìm thông báo" : "Tìm kiếm"}
-                  className={`w-full h-9 pl-10 pr-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 outline-none text-sm border-0 transition-all focus:ring-2 ${primaryRing} placeholder:text-zinc-400`}
-                  autoComplete="off"
-                  autoCorrect="off"
-                />
-              </div>
-              <button
-                onClick={() => setShowAdd(true)}
-                className={`w-9 h-9 rounded-xl flex items-center justify-center text-white active:scale-95 transition-all shadow-[0_8px_30px_rgba(10,132,255,0.25)] ${primaryBg} ${primaryHover} ${primaryActive}`}
-                aria-label="Tạo mới"
-              >
-                <RiAddLine size={20} />
-              </button>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide flex-1">
-              {[
-                { key: "all", label: "Tất cả" },
-                { key: "friends", label: "Bạn bè" },
-                { key: "notifications", label: "Thông báo", badge: unreadNotifications },
-                { key: "unread", label: "Chưa đọc" },
-                { key: "group", label: "Nhóm" }
-              ].map((tab) => {
-                const active = activeTab === tab.key;
-                return (
-                  <motion.button
-                    key={tab.key}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setActiveTab(tab.key as any)}
-                    className={`px-4 h-9 rounded-full text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 flex-shrink-0 ${active? mode === "plan"? "bg-[#30D158] text-white" : "bg-[#0A84FF] text-white" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"}`}
-                  >
-                    {tab.label}
-                    {tab.badge? (
-                      <span className={`min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center text-[11px] leading-none font-bold ${active? "bg-white/20 text-white" : "bg-[#ff3b30] text-white"}`}>
-                        {tab.badge > 99? "99+" : tab.badge}
-                      </span>
-                    ) : null}
-                  </motion.button>
-                );
-              })}
-              {!isOnline && (
-                <div className="px-3 h-9 rounded-full bg-orange-100 dark:bg-orange-500/10 flex items-center gap-1.5 flex-shrink-0">
-                  <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
-                  <span className="text-xs font-semibold text-orange-500">Offline</span>
-                </div>
-              )}
-            </div>
+      <div className="sticky top-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50">
+  <div className="px-4 pt-3 pb-3">
+    {/* Hàng icon chức năng mới */}
+    <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide">
+      {[
+        { label: "Mời bạn bè", icon: FiUserPlus, color: "bg-blue-500", onClick: () => setShowAdd(true) },
+        { label: "Bạn bè", icon: FiUsers, color: "bg-sky-500", onClick: () => setActiveTab("friends") },
+        { label: "Nhóm", icon: FiUsers, color: "bg-purple-500", onClick: () => setActiveTab("group") },
+        { label: "Thông báo", icon: FiBell, color: "bg-red-500", onClick: () => setActiveTab("notifications") },
+        { label: "Bình chọn", icon: Vote, color: "bg-gradient-to-br from-indigo-500 to-purple-500", onClick: () => setShowPoll(true) },
+        { label: "VIP", icon: Crown, color: "bg-amber-500", onClick: () => setShowVip(true) },
+        { label: "Quỹ chung", icon: Wallet, color: "bg-orange-500", onClick: () => toast.info("Sắp ra mắt") },
+      ].map((item) => (
+        <button
+          key={item.label}
+          onClick={item.onClick}
+          className="flex flex-col items-center gap-1 flex-shrink-0 active:scale-95 transition-transform"
+        >
+          <div className={`w-12 h-12 ${item.color} rounded-2xl flex items-center justify-center shadow-lg relative`}>
+            <item.icon className="text-white" size={20} strokeWidth={2.5} />
+            {item.label === "Thông báo" && unreadNotifications > 0 && (
+              <span className="absolute -top-1 -right-1 min-w- h- px-1 bg-red-500 rounded-full flex items-center justify-center text- leading-none font-bold text-white">
+                {unreadNotifications > 99? "99+" : unreadNotifications}
+              </span>
+            )}
           </div>
-        </div>
+          <span className="text- font-medium text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
+            {item.label}
+          </span>
+        </button>
+      ))}
+    </div>
+  </div>
+</div>
 
         <div className="pb-24">
           {activeTab === "notifications"? (
