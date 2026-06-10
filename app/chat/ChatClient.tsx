@@ -161,7 +161,7 @@ export default function ChatClient() {
   const [friendsLoading, setFriendsLoading] = useState<boolean>(false);
   const [notifLoading, setNotifLoading] = useState<boolean>(false);
   const [adding, setAdding] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<"all" | "unread" | "group" | "friends" | "notifications">("all");
+const [activeTab, setActiveTab] = useState<"all" | "unread" | "group" | "friends" | "notifications">("all");
   const [pinned, setPinned] = useState<string[]>([]);
   const [showAdd, setShowAdd] = useState<boolean>(false);
   const [addMode, setAddMode] = useState<"friend" | "group">("friend");
@@ -1212,21 +1212,25 @@ const getNotificationIcon = (type: string) => {
                   </div>
                 ))}
               </div>
-            ) : filteredFriends.length === 0? (
-              <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
-                <div className="w-[72px] h-[72px] bg-[#f2f2f7] dark:bg-zinc-900 rounded-[20px] flex items-center justify-center mb-4">
-                  <FiUsers className="text-gray-400" size={30} strokeWidth={1.5} />
-                </div>
-                <h3 className="text-[20px] font-semibold mb-1.5">{search? "Không tìm thấy" : "Chưa có bạn"}</h3>
-                <p className="text-[15px] text-[#8e8e93] dark:text-zinc-500 max-w-[280px] leading-[20px]">{search? "Thử tìm với từ khóa khác" : "Mời kết bạn để bắt đầu trò chuyện cùng nhau"}</p>
-                {!search && (
-                  <button onClick={() => setShowAdd(true)} className={`mt-6 px-6 h-[40px] ${primaryBg} ${primaryHover} ${primaryActive} text-white rounded-full text-[15px] font-medium shadow-sm active:scale-95 transition-all flex items-center gap-2`}>
-                    <FiUserPlus size={18} />
-                    Kết bạn ngay
-                  </button>
-                )}
-              </div>
-            ) : (
+      ) : filteredFriends.length === 0? (
+  <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
+    <div className="w-[72px] h-[72px] bg-[#f2f2f7] dark:bg-zinc-900 rounded-[20px] flex items-center justify-center mb-4">
+      <FiUsers className="text-gray-400" size={30} strokeWidth={1.5} />
+    </div>
+    <h3 className="text-[20px] font-semibold tracking-tight text-gray-900 dark:text-white mb-1.5">
+      {search? "Không tìm thấy" : "Chưa có bạn"}
+    </h3>
+    <p className="text-[15px] leading-[20px] text-[#8e8e93] dark:text-zinc-500 max-w-[280px]">
+      {search? "Thử tìm với từ khóa khác" : "Mời kết bạn để bắt đầu trò chuyện cùng nhau"}
+    </p>
+    {!search && (
+      <button onClick={() => setShowAdd(true)} className={`mt-6 px-6 h-[44px] ${primaryBg} ${primaryHover} ${primaryActive} text-white rounded-full text-[15px] font-[550] shadow-sm active:scale-95 transition-all flex items-center gap-2`}>
+        <FiUserPlus size={18} />
+        Kết bạn ngay
+      </button>
+    )}
+  </div>
+) : (
               <div className="divide-y divide-gray-100 dark:divide-zinc-900">
                 <div className="px-4 py-2.5 bg-gray-50/80 dark:bg-zinc-950/50 backdrop-blur-sm sticky top-[104px] z-10">
                   <p className="text-[12px] text-[#8e8e93] dark:text-zinc-500 font-medium">
