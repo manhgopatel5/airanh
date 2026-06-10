@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { Database } from "lucide-react"; // thêm icon
 import { signOut, updateProfile } from "firebase/auth";
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
@@ -78,7 +79,7 @@ export default function ProfileTabContent() {
   const accentGradient = isPlan
    ? "from-green-500 to-emerald-500"
     : "from-sky-500 to-blue-600";
-
+const ADMIN_EMAIL = "justastormyday@gmail.com";
   // Ẩn nav bar khi modal mở - FIX SSR
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -732,7 +733,20 @@ export default function ProfileTabContent() {
               }
             />
           </div>
+          {/* NÚT ADMIN - CHỈ HIỆN VỚI justastormyday@gmail.com */}
+          {user?.email === ADMIN_EMAIL && (
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden mb-4">
+              <SettingItem
+                label="Quản lý Events"
+                subtitle="Tạo và chỉnh sửa sự kiện"
+                icon={Database}
+                iconColor="text-[#0a84ff]"
+                onClick={() => router.push("/admin/events")}
+              />
+            </div>
+          )}
 
+         
           <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
             <SettingItem
               label="Đăng xuất"
