@@ -86,7 +86,9 @@ return match? parseInt(match[1] || "999") : 999;
         case "distance":
           return parseDistance(a.distance) - parseDistance(b.distance);
         case "newest":
-          return b.id - a.id;
+  const bTime = b.createdAt?.toMillis() || 0;
+  const aTime = a.createdAt?.toMillis() || 0;
+  return bTime - aTime;
         default:
           return 0;
       }
