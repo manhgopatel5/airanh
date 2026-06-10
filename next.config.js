@@ -14,6 +14,10 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'storage.googleapis.com', // THÊM DÒNG NÀY
+      },
+      {
+        protocol: 'https',
         hostname: 'lh3.googleusercontent.com',
       },
       {
@@ -22,7 +26,7 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'images.unsplash.com', // <- THÊM DÒNG NÀY
+        hostname: 'images.unsplash.com',
       },
     ],
     formats: ['image/avif', 'image/webp'],
@@ -55,9 +59,10 @@ const nextConfig = {
         'data:',
         'blob:',
         'https://firebasestorage.googleapis.com',
+        'https://storage.googleapis.com', // THÊM DÒNG NÀY
         'https://lh3.googleusercontent.com',
         'https://ui-avatars.com',
-        'https://images.unsplash.com', // <- THÊM DÒNG NÀY
+        'https://images.unsplash.com',
       ].join(' '),
       "font-src 'self' data:",
       [
