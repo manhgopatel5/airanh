@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { CATEGORY_INFO, EventItem } from "@/data/events";
 import EventDetailModal from "@/components/EventDetailModal";
 import { FiArrowLeft, FiUsers, FiMapPin, FiStar, FiFilter, FiX } from "react-icons/fi";
-import { collection, query, where, onSnapshot, orderBy, limit } from "firebase/firestore";
+import { collection, query, where, onSnapshot, limit } from "firebase/firestore";
 import { getFirebaseDB } from "@/lib/firebase";
 import { RiEqualizerLine } from "react-icons/ri";
 
