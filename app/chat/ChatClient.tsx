@@ -40,7 +40,7 @@ import {
   FiX,
   FiMic,
   FiUpload,
-  FiHome
+  FiHome,
   
   FiMapPin,
   FiLoader,
