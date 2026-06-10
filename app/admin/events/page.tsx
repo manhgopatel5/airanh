@@ -13,6 +13,7 @@ import {
   serverTimestamp,
   query,
   orderBy,
+  getDoc,
 } from "firebase/firestore";
 import { EventItem, CATEGORY_INFO } from "@/data/events";
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiLoader, FiUpload, FiEye, FiEyeOff } from "react-icons/fi";
@@ -30,7 +31,6 @@ export default function AdminEventsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
 
   const [form, setForm] = useState<Partial<EventItem>>({
     title: "",
@@ -114,7 +114,6 @@ export default function AdminEventsPage() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "image" | "gallery") => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploading(true);
     try {
       const fileRef = ref(storage, `events/${Date.now()}_${file.name}`);
       await uploadBytes(fileRef, file);
@@ -127,8 +126,6 @@ export default function AdminEventsPage() {
       toast.success("Upload thành công");
     } catch (error) {
       toast.error("Lỗi upload ảnh");
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -141,7 +138,7 @@ export default function AdminEventsPage() {
     try {
       const id = editingId || doc(collection(db, "events")).id;
       const data = {
-      ...form,
+     ...form,
         id,
         updatedAt: serverTimestamp(),
         createdAt: editingId? form.createdAt : serverTimestamp(),
@@ -170,7 +167,7 @@ export default function AdminEventsPage() {
   const toggleActive = async (event: EventItem) => {
     try {
       await setDoc(doc(db, "events", event.id), {
-      ...event,
+     ...event,
         isActive:!event.isActive,
         updatedAt: serverTimestamp(),
       });
@@ -260,7 +257,7 @@ export default function AdminEventsPage() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-xl" onClick={() => setShowModal(false)} />
-          <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-h-[90vh] overflow-auto">
+          <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-h- overflow-auto">
             <div className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 px-6 py-4 flex items-center justify-between">
               <h2 className="text-xl font-bold">{editingId? "Sửa Event" : "Thêm Event"}</h2>
               <button onClick={() => setShowModal(false)} className="w-8 h-8 flex items-center justify-center">
