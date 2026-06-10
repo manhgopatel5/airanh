@@ -41,7 +41,7 @@ import {
   FiMic,
   FiUpload,
   
-  FiDollarSign, 
+  
   FiMapPin,
   FiLoader,
   FiZap,
