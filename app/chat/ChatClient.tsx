@@ -167,7 +167,7 @@ export default function ChatClient() {
   const [addMode, setAddMode] = useState<"friend" | "group">("friend");
   const [groupName, setGroupName] = useState<string>("");
   const [selected, setSelected] = useState<string[]>([]);
-  const [isOnline, setIsOnline] = useState<boolean>(true);
+
   const [showScanQR, setShowScanQR] = useState<boolean>(false);
   const [showPoll, setShowPoll] = useState<boolean>(false);
   const [showVip, setShowVip] = useState<boolean>(false);
@@ -235,17 +235,7 @@ const [creatingPoll, setCreatingPoll] = useState<boolean>(false);
     return () => clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => {
-    const handleOnline = () => { setIsOnline(true); toast.success("Đã kết nối lại"); };
-    const handleOffline = () => { setIsOnline(false); toast.error("Mất kết nối mạng"); };
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-    setIsOnline(navigator.onLine);
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, []);
+
 
   useEffect(() => {
     try {
