@@ -25,7 +25,7 @@ export default function AdminEventsPage() {
   const storage = getStorage();
 
   const [events, setEvents] = useState<EventItem[]>([]);
-  const [loading, setLoading] = useState(true);
+
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
