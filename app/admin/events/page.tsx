@@ -131,31 +131,33 @@ export default function AdminEventsPage() {
   };
 
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    if (files.length > 3) {
-      toast.error("Chỉ được upload tối đa 3 ảnh");
-      return;
+  const files = e.target.files;
+  if (!files || files.length === 0) return;
+  if (files.length > 3) {
+    toast.error("Chỉ được upload tối đa 3 ảnh");
+    return;
+  }
+  setUploadingGallery(true);
+  try {
+    const uploadedUrls: string[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]; // THÊM DÒNG NÀY
+      if (!file) continue; // THÊM DÒNG NÀY
+      const formData = new FormData();
+      formData.append('file', file); // ĐỔI files[i] THÀNH file
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: formData });
+      if (!res.ok) throw new Error('Upload failed');
+      const data = await res.json();
+      uploadedUrls.push(data.url);
     }
-    setUploadingGallery(true);
-    try {
-      const uploadedUrls: string[] = [];
-      for (let i = 0; i < files.length; i++) {
-        const formData = new FormData();
-        formData.append('file', files[i]);
-        const res = await fetch('/api/admin/upload', { method: 'POST', body: formData });
-        if (!res.ok) throw new Error('Upload failed');
-        const data = await res.json();
-        uploadedUrls.push(data.url);
-      }
-      setForm((prev) => ({...prev, gallery: [...(prev.gallery || []),...uploadedUrls].slice(0, 3) }));
-      toast.success(`Đã upload ${uploadedUrls.length} ảnh`);
-    } catch (error) {
-      toast.error("Lỗi upload ảnh");
-    } finally {
-      setUploadingGallery(false);
-    }
-  };
+    setForm((prev) => ({...prev, gallery: [...(prev.gallery || []),...uploadedUrls].slice(0, 3) }));
+    toast.success(`Đã upload ${uploadedUrls.length} ảnh`);
+  } catch (error) {
+    toast.error("Lỗi upload ảnh");
+  } finally {
+    setUploadingGallery(false);
+  }
+};
 
   const handleSave = async () => {
     if (!form.title ||!form.desc ||!form.image) {
