@@ -466,7 +466,16 @@ export default function AdminEventsPage() {
                   />
                 </div>
               </div>
-
+<div>
+  <label className="text-sm font-semibold mb-1 block">Google Map URL</label>
+  <input
+    type="text"
+    value={form.mapUrl || ''}
+    onChange={(e) => setForm({...form, mapUrl: e.target.value })}
+    placeholder="https://maps.google.com/..."
+    className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
+  />
+</div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-semibold mb-1 block">Giá *</label>
