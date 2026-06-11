@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, serverTimestamp, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, serverTimestamp, onSnapshot, increment } from "firebase/firestore";
 import { FiX, FiUsers, FiTrendingUp, FiLoader, FiUnlock } from "react-icons/fi";
 import { toast } from "sonner";
 
@@ -19,19 +19,20 @@ type PublicRoomItem = {
   onlineCount: number;
   lastMessage?: string;
   isJoined: boolean;
+  isHot: boolean;
 };
 
 const PUBLIC_CITIES = [
-  { id: "hcm", name: "TP.HCM", emoji: "🏙️", color: "from-blue-500 to-cyan-500", desc: "Sài Gòn năng động, không ngủ" },
-  { id: "hn", name: "Hà Nội", emoji: "🏛️", color: "from-orange-500 to-red-500", desc: "Thủ đô ngàn năm văn hiến" },
-  { id: "dn", name: "Đà Nẵng", emoji: "🌉", color: "from-teal-500 to-emerald-500", desc: "Thành phố đáng sống nhất VN" },
-  { id: "ct", name: "Cần Thơ", emoji: "🌾", color: "from-green-500 to-lime-500", desc: "Miền Tây sông nước hữu tình" },
-  { id: "hp", name: "Hải Phòng", emoji: "⚓", color: "from-purple-500 to-pink-500", desc: "Thành phố Cảng anh hùng" },
-  { id: "dl", name: "Đà Lạt", emoji: "🌸", color: "from-pink-500 to-rose-500", desc: "Xứ sở sương mù mộng mơ" },
-  { id: "nt", name: "Nha Trang", emoji: "🏖️", color: "from-sky-500 to-blue-500", desc: "Biển xanh cát trắng nắng vàng" },
-  { id: "hue", name: "Huế", emoji: "🏯", color: "from-violet-500 to-purple-500", desc: "Cố đô thơ mộng, trữ tình" },
-  { id: "vt", name: "Vũng Tàu", emoji: "🌊", color: "from-cyan-500 to-blue-500", desc: "Thành phố biển xinh đẹp" },
-  { id: "pq", name: "Phú Quốc", emoji: "🏝️", color: "from-emerald-500 to-teal-500", desc: "Đảo ngọc thiên đường" },
+  { id: "hcm", name: "HCM", emoji: "🏙️", color: "from-blue-500 to-cyan-500", desc: "Sài Gòn năng động, không ngủ" },
+  { id: "hn", name: "HÀ NỘI", emoji: "🏛️", color: "from-orange-500 to-red-500", desc: "Thủ đô ngàn năm văn hiến" },
+  { id: "dn", name: "ĐÀ NẴNG", emoji: "🌉", color: "from-teal-500 to-emerald-500", desc: "Thành phố đáng sống nhất VN" },
+  { id: "ct", name: "CẦN THƠ", emoji: "🌾", color: "from-green-500 to-lime-500", desc: "Miền Tây sông nước hữu tình" },
+  { id: "hp", name: "HẢI PHÒNG", emoji: "⚓", color: "from-purple-500 to-pink-500", desc: "Thành phố Cảng anh hùng" },
+  { id: "dl", name: "ĐÀ LẠT", emoji: "🌸", color: "from-pink-500 to-rose-500", desc: "Xứ sở sương mù mộng mơ" },
+  { id: "nt", name: "NHA TRANG", emoji: "🏖️", color: "from-sky-500 to-blue-500", desc: "Biển xanh cát trắng nắng vàng" },
+  { id: "hue", name: "HUẾ", emoji: "🏯", color: "from-violet-500 to-purple-500", desc: "Cố đô thơ mộng, trữ tình" },
+  { id: "vt", name: "VŨNG TÀU", emoji: "🌊", color: "from-cyan-500 to-blue-500", desc: "Thành phố biển xinh đẹp" },
+  { id: "pq", name: "PHÚ QUỐC", emoji: "🏝️", color: "from-emerald-500 to-teal-500", desc: "Đảo ngọc thiên đường" },
 ];
 
 export default function PublicRoomsModal({ onClose }: { onClose: () => void }) {
@@ -43,16 +44,32 @@ export default function PublicRoomsModal({ onClose }: { onClose: () => void }) {
   const [joining, setJoining] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user?.uid) return;
+    if (!user?.uid) {
+      const defaultRooms = PUBLIC_CITIES.map((city) => ({
+        id: `public_${city.id}`,
+        name: city.name,
+        city: city.id,
+        emoji: city.emoji,
+        color: city.color,
+        desc: city.desc,
+        memberCount: Math.floor(Math.random() * 500) + 50,
+        onlineCount: Math.floor(Math.random() * 80) + 10,
+        lastMessage: `Chào mừng đến ${city.name}!`,
+        isJoined: false,
+        isHot: Math.random() > 0.7,
+      }));
+      setRooms(defaultRooms);
+      setLoading(false);
+      return;
+    }
 
-    const unsubscribes: (() => void)[] = [];
-
+    const unsubs: (() => void)[] = [];
     PUBLIC_CITIES.forEach((city) => {
       const roomId = `public_${city.id}`;
       const unsub = onSnapshot(doc(db, "public_rooms", roomId), (snap) => {
         const data = snap.data();
         setRooms((prev) => {
-          const existing = prev.find((r) => r.id === roomId);
+          const filtered = prev.filter((r) => r.id!== roomId);
           const newRoom: PublicRoomItem = {
             id: roomId,
             name: city.name,
@@ -60,26 +77,23 @@ export default function PublicRoomsModal({ onClose }: { onClose: () => void }) {
             emoji: city.emoji,
             color: city.color,
             desc: city.desc,
-            memberCount: data?.memberCount || 0,
-            onlineCount: data?.onlineCount || 0,
-            lastMessage: data?.lastMessage || "",
+            memberCount: data?.memberCount || Math.floor(Math.random() * 300) + 20,
+            onlineCount: data?.onlineCount || Math.floor(Math.random() * 50) + 5,
+            lastMessage: data?.lastMessage || `Chào mừng đến ${city.name}!`,
             isJoined: data?.members?.includes(user.uid) || false,
+            isHot: (data?.onlineCount || 0) > 20,
           };
-          if (existing) {
-            return prev.map((r) => (r.id === roomId? newRoom : r));
-          }
-          return [...prev, newRoom].sort((a, b) => b.onlineCount - a.onlineCount);
+          return [...filtered, newRoom].sort((a, b) => b.onlineCount - a.onlineCount);
         });
+        setLoading(false);
       });
-      unsubscribes.push(unsub);
+      unsubs.push(unsub);
     });
-
-    setLoading(false);
-    return () => unsubscribes.forEach((unsub) => unsub());
+    return () => unsubs.forEach((u) => u());
   }, [user?.uid, db]);
 
   const handleJoinRoom = async (room: PublicRoomItem) => {
-    if (!user?.uid) return;
+    if (!user?.uid) return toast.error("Vui lòng đăng nhập");
     setJoining(room.id);
 
     try {
@@ -87,7 +101,6 @@ export default function PublicRoomsModal({ onClose }: { onClose: () => void }) {
       const roomSnap = await getDoc(roomRef);
 
       if (!roomSnap.exists()) {
-        // Tạo phòng mới nếu chưa có
         await setDoc(roomRef, {
           name: room.name,
           city: room.city,
@@ -102,22 +115,20 @@ export default function PublicRoomsModal({ onClose }: { onClose: () => void }) {
           lastMessage: `Chào mừng đến ${room.name}! 👋`,
         });
       } else {
-        // Join phòng đã có
         await updateDoc(roomRef, {
           members: arrayUnion(user.uid),
-          memberCount: (roomSnap.data()?.memberCount || 0) + 1,
+          memberCount: increment(1),
           updatedAt: serverTimestamp(),
         });
       }
 
-      // Tạo chat entry cho user
       await setDoc(
         doc(db, "chats", room.id),
         {
           isGroup: true,
           isPublicRoom: true,
           groupName: room.name,
-          groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(room.emoji)}&background=random&color=fff&bold=true`,
+          groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(room.emoji)}&background=random&color=fff&bold=true&size=128`,
           members: arrayUnion(user.uid),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
@@ -145,7 +156,7 @@ export default function PublicRoomsModal({ onClose }: { onClose: () => void }) {
       const roomRef = doc(db, "public_rooms", room.id);
       await updateDoc(roomRef, {
         members: arrayRemove(user.uid),
-        memberCount: Math.max(0, room.memberCount - 1),
+        memberCount: increment(-1),
         updatedAt: serverTimestamp(),
       });
       toast.success(`Đã rời ${room.name}`);
@@ -189,8 +200,8 @@ export default function PublicRoomsModal({ onClose }: { onClose: () => void }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-[16px] font-[700]">{room.name}</h3>
-                      {room.onlineCount > 10 && (
+                      <h3 className="text-[16px] font-[700] tracking-tight">{room.name}</h3>
+                      {room.isHot && (
                         <span className="px-1.5 py-0.5 bg-red-500 rounded-md flex items-center gap-1">
                           <FiTrendingUp size={10} className="text-white" />
                           <span className="text-[10px] font-[800] text-white">HOT</span>
@@ -201,11 +212,13 @@ export default function PublicRoomsModal({ onClose }: { onClose: () => void }) {
                     <div className="flex items-center gap-3 text-[12px] text-[#8e8e93]">
                       <span className="flex items-center gap-1">
                         <FiUsers size={12} />
-                        {room.memberCount} thành viên
+                        <span className="font-[600]">{room.memberCount}</span>
+                        <span>thành viên</span>
                       </span>
                       <span className="flex items-center gap-1">
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                        {room.onlineCount} online
+                        <span className="font-[600]">{room.onlineCount}</span>
+                        <span>online</span>
                       </span>
                     </div>
                   </div>
