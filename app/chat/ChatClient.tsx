@@ -36,6 +36,7 @@ import {
   FiStar,
   FiUserPlus,
   FiUsers,
+  FiTrendingUp,
   FiCheck,
   FiX,
   FiMic,
