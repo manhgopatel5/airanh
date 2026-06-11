@@ -14,7 +14,6 @@ const ICON_LIST = [
   "✨", "💫", "⭐", "🌟", "💥", "🔥", "💎", "👑", "🎓", "📚"
 ];
 
-// THÊM TAG_LIST
 const TAG_LIST = [
   { value: "NEW", label: "NEW", color: "from-blue-500 to-cyan-500" },
   { value: "HOT", label: "HOT", color: "from-red-500 to-orange-500" },
@@ -31,8 +30,8 @@ export default function AdminEventsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-const [uploading, setUploading] = useState(false);
-const [uploadingGallery, setUploadingGallery] = useState(false); // THÊM DÒNG NÀY
+  const [uploading, setUploading] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
 
   const [form, setForm] = useState<Partial<EventItem>>({
     title: "",
@@ -130,32 +129,33 @@ const [uploadingGallery, setUploadingGallery] = useState(false); // THÊM DÒNG 
       setUploading(false);
     }
   };
-const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const files = e.target.files;
-  if (!files || files.length === 0) return;
-  if (files.length > 3) {
-    toast.error("Chỉ được upload tối đa 3 ảnh");
-    return;
-  }
-  setUploadingGallery(true);
-  try {
-    const uploadedUrls: string[] = [];
-    for (let i = 0; i < files.length; i++) {
-      const formData = new FormData();
-      formData.append('file', files[i]);
-      const res = await fetch('/api/admin/upload', { method: 'POST', body: formData });
-      if (!res.ok) throw new Error('Upload failed');
-      const data = await res.json();
-      uploadedUrls.push(data.url);
+
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    if (files.length > 3) {
+      toast.error("Chỉ được upload tối đa 3 ảnh");
+      return;
     }
-    setForm((prev) => ({...prev, gallery: [...(prev.gallery || []),...uploadedUrls].slice(0, 3) }));
-    toast.success(`Đã upload ${uploadedUrls.length} ảnh`);
-  } catch (error) {
-    toast.error("Lỗi upload ảnh");
-  } finally {
-    setUploadingGallery(false);
-  }
-};
+    setUploadingGallery(true);
+    try {
+      const uploadedUrls: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const formData = new FormData();
+        formData.append('file', files[i]);
+        const res = await fetch('/api/admin/upload', { method: 'POST', body: formData });
+        if (!res.ok) throw new Error('Upload failed');
+        const data = await res.json();
+        uploadedUrls.push(data.url);
+      }
+      setForm((prev) => ({...prev, gallery: [...(prev.gallery || []),...uploadedUrls].slice(0, 3) }));
+      toast.success(`Đã upload ${uploadedUrls.length} ảnh`);
+    } catch (error) {
+      toast.error("Lỗi upload ảnh");
+    } finally {
+      setUploadingGallery(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!form.title ||!form.desc ||!form.image) {
@@ -275,6 +275,7 @@ const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                 <div className={`absolute bottom-2 left-2 px-2 py-1 bg-gradient-to-r ${event.tagColor} rounded-md`}>
                   <span className="text-xs font-bold text-white">{event.tag}</span>
                 </div>
+              </div>
               <div className="p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-2xl">{event.icon}</span>
@@ -353,7 +354,7 @@ const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                       onChange={(e) => {
                         const selectedTag = TAG_LIST.find(t => t.value === e.target.value);
                         setForm({
-                         ...form,
+                        ...form,
                           tag: e.target.value,
                           tagColor: selectedTag?.color || "from-blue-500 to-cyan-500"
                         });
@@ -368,6 +369,7 @@ const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                     </select>
                     <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500" size={16} />
                   </div>
+                </div>
                 <div>
                   <label className="text-sm font-semibold mb-1 block">Category *</label>
                   <select
@@ -400,48 +402,50 @@ const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                   </label>
                 </div>
               </div>
-<div>
-  <label className="text-sm font-semibold mb-1 block">Gallery (tối đa 3 ảnh)</label>
-  <div className="space-y-2">
-    <div className="grid grid-cols-3 gap-2">
-      {[0, 1, 2].map((idx) => (
-        <div key={idx} className="relative aspect-square bg-zinc-100 dark:bg-zinc-800 rounded-lg overflow-hidden">
-          {form.gallery?.[idx]? (
-            <>
-              <img src={form.gallery[idx]} alt="" className="w-full h-full object-cover" />
-              <button
-                onClick={() => {
-                  const newGallery = [...(form.gallery || [])];
-                  newGallery.splice(idx, 1);
-                  setForm({...form, gallery: newGallery });
-                }}
-                className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center"
-              >
-                <FiX size={14} />
-              </button>
-            </>
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-zinc-400">
-              <FiUpload size={20} />
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-    <label className="w-full h-10 bg-zinc-100 dark:bg-zinc-800 rounded-lg flex items-center justify-center gap-2 cursor-pointer text-sm font-semibold">
-      {uploadingGallery? <FiLoader className="animate-spin" size={16} /> : <FiUpload size={16} />}
-      {uploadingGallery? "Đang upload..." : "Upload ảnh gallery"}
-      <input
-        type="file"
-        accept="image/*"
-        multiple
-        className="hidden"
-        onChange={handleGalleryUpload}
-        disabled={uploadingGallery || (form.gallery?.length || 0) >= 3}
-      />
-    </label>
-  </div>
-</div>
+
+              <div>
+                <label className="text-sm font-semibold mb-1 block">Gallery (tối đa 3 ảnh)</label>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-3 gap-2">
+                    {[0, 1, 2].map((idx) => (
+                      <div key={idx} className="relative aspect-square bg-zinc-100 dark:bg-zinc-800 rounded-lg overflow-hidden">
+                        {form.gallery?.[idx]? (
+                          <>
+                            <img src={form.gallery[idx]} alt="" className="w-full h-full object-cover" />
+                            <button
+                              onClick={() => {
+                                const newGallery = [...(form.gallery || [])];
+                                newGallery.splice(idx, 1);
+                                setForm({...form, gallery: newGallery });
+                              }}
+                              className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center"
+                            >
+                              <FiX size={14} />
+                            </button>
+                          </>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-zinc-400">
+                            <FiUpload size={20} />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <label className="w-full h-10 bg-zinc-100 dark:bg-zinc-800 rounded-lg flex items-center justify-center gap-2 cursor-pointer text-sm font-semibold">
+                    {uploadingGallery? <FiLoader className="animate-spin" size={16} /> : <FiUpload size={16} />}
+                    {uploadingGallery? "Đang upload..." : "Upload ảnh gallery"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleGalleryUpload}
+                      disabled={uploadingGallery || (form.gallery?.length || 0) >= 3}
+                    />
+                  </label>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-semibold mb-1 block">Địa chỉ *</label>
