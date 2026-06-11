@@ -32,7 +32,7 @@ export default function AdminEventsPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
-
+  const [ratingInput, setRatingInput] = useState("5");
   const [form, setForm] = useState<Partial<EventItem>>({
     title: "",
     tag: "NEW",
@@ -102,12 +102,14 @@ export default function AdminEventsPage() {
       reviews: 0,
       isActive: true,
     });
+    setRatingInput("5");
     setEditingId(null);
   };
 
   const openEdit = (event: EventItem) => {
     setForm(event);
     setEditingId(event.id);
+    setRatingInput(String(event.rating || 5).replace('.', ',')); 
     setShowModal(true);
   };
 
@@ -500,39 +502,43 @@ export default function AdminEventsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-semibold mb-1 block">Rating *</label>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={String(form.rating || '').replace('.', ',')}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(',', '.');
-                      const num = parseFloat(val);
-                      if (!isNaN(num) && num >= 0 && num <= 5) {
-                        setForm({...form, rating: num });
-                      } else if (val === '') {
-                        setForm({...form, rating: 0 });
-                      }
-                    }}
-                    placeholder="4,9"
-                    className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-semibold mb-1 block">Reviews *</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={form.reviews}
-                    onChange={(e) => setForm({...form, reviews: Number(e.target.value) })}
-                    className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
-                  />
-                </div>
-              </div>
+           <div className="grid grid-cols-2 gap-4">
+  <div>
+    <label className="text-sm font-semibold mb-1 block">Rating *</label>
+    <input
+      type="text"
+      value={ratingInput}
+      onChange={(e) => {
+        const val = e.target.value;
+        // Chỉ cho nhập: rỗng, số 0-5, 0-5, 0-5.0-9
+        if (/^[0-5]?[,.]?[0-9]?$/.test(val) || val === '') {
+          setRatingInput(val);
+          const num = parseFloat(val.replace(',', '.'));
+          if (!isNaN(num) && num >= 0 && num <= 5) {
+            setForm({...form, rating: num });
+          } else if (val === '') {
+            setForm({...form, rating: 0 });
+          }
+        }
+      }}
+      placeholder="4,9"
+      className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
+    />
+  </div>
+  <div>
+    <label className="text-sm font-semibold mb-1 block">Reviews *</label>
+    <input
+      type="number"
+      min="0"
+      value={form.reviews || ''}
+      onChange={(e) => setForm({...form, reviews: Number(e.target.value) || 0 })}
+      placeholder="0"
+      className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
+    />
+  </div>
+</div>
 
-              <div className="flex items-center gap-2">
+<div className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   checked={form.isActive}
