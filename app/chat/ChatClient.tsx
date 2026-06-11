@@ -2107,7 +2107,7 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
   </div>
 )}
   </div>
-    
+</div>
       <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}body{overscroll-behavior-y:contain}`}</style>
 <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
     </>
