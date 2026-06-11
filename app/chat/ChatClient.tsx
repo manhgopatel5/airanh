@@ -1333,6 +1333,7 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
 
 <div className="pt-2 pb-24">
   {activeTab === "all" && (
+<div>
     <div className="px-4 pt-4 space-y-3">
       {/* 1. Title Khám phá hôm nay */}
       <div className="flex items-center justify-between mb-3 px-1">
