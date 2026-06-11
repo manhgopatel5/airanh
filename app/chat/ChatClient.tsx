@@ -1427,7 +1427,7 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
       </div>
     </div>
 
-    {/* 4. Phòng Chat Công Cộng - DÁN VÀO ĐÂY, TRONG activeTab === "all" */}
+
     <div className="px-4 pt-6">
       <div className="flex items-center justify-between mb-3 px-1">
         <h3 className="text-sm font-[700] flex items-center gap-1.5">
@@ -1484,7 +1484,7 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
         ))}
       </div>
     </div>
-  )} {/* <-- Đóng activeTab === "all" ở đây */}
+  )} 
 
   {activeTab === "notifications"? (
     notifLoading? (
