@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { EventItem, CATEGORY_INFO } from "@/data/events";
-import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiLoader, FiUpload, FiEye, FiEyeOff, FiLogOut, FiStar, FiChevronDown } from "react-icons/fi";
+import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiLoader, FiUpload, FiEye, FiEyeOff, FiStar, FiChevronDown } from "react-icons/fi";
 import { toast } from "sonner";
 
 const ICON_LIST = [
