@@ -29,10 +29,10 @@ initial={{ y: "-100%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
 exit={{ y: "-100%", opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-className="relative w-full sm:max-w-[440px] bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl max-h-[calc(100vh-160px)] flex flex-col shadow-2xl"
+className="relative w-full sm:max-w-[440px] bg-white dark:bg-zinc-900 rounded-3xl max-h-[calc(100vh-160px)] flex flex-col shadow-2xl overflow-hidden"
           >
             {/* Cover */}
-            <div className="relative h-48 flex-shrink-0">
+<div className="relative h-48 flex-shrink-0 rounded-t-3xl overflow-hidden">
               <img src={event.image} className="w-full h-full object-cover" alt={event.title} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
               <button
