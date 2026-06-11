@@ -1,4 +1,4 @@
-"use client";
+#"use client";
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -1485,7 +1485,8 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
         ))}
       </div>
     </div>
-   
+     </div> 
+)} 
 
   {activeTab === "notifications"? (
     notifLoading? (
