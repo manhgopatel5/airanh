@@ -1426,7 +1426,7 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
         ))}
       </div>
     </div>
-)}
+
 
 <div className="px-4 pt-6">
   <div className="flex items-center justify-between mb-3 px-1">
