@@ -267,7 +267,35 @@ const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
 const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 const [eventsData, setEventsData] = useState<EventItem[]>([]);
 const [eventsLoading, setEventsLoading] = useState<boolean>(true);
+// THÊM DÒNG NÀY
+const [publicRooms, setPublicRooms] = useState<PublicRoomItem[]>([]);
+const [publicRoomsLoading, setPublicRoomsLoading] = useState(true);
+const [showPublicRooms, setShowPublicRooms] = useState(false);
 
+type PublicRoomItem = {
+  id: string;
+  name: string;
+  emoji: string;
+  color: string;
+  memberCount: number;
+  onlineCount: number;
+  lastMessage?: string;
+  isJoined: boolean;
+  isHot: boolean;
+};
+
+const PUBLIC_CITIES = [
+  { id: "hcm", name: "TP.HCM", emoji: "🏙️", color: "from-blue-500 to-cyan-500" },
+  { id: "hn", name: "Hà Nội", emoji: "🏛️", color: "from-orange-500 to-red-500" },
+  { id: "dn", name: "Đà Nẵng", emoji: "🌉", color: "from-teal-500 to-emerald-500" },
+  { id: "ct", name: "Cần Thơ", emoji: "🌾", color: "from-green-500 to-lime-500" },
+  { id: "hp", name: "Hải Phòng", emoji: "⚓", color: "from-purple-500 to-pink-500" },
+  { id: "dl", name: "Đà Lạt", emoji: "🌸", color: "from-pink-500 to-rose-500" },
+  { id: "nt", name: "Nha Trang", emoji: "🏖️", color: "from-sky-500 to-blue-500" },
+  { id: "hue", name: "Huế", emoji: "🏯", color: "from-violet-500 to-purple-500" },
+  { id: "vt", name: "Vũng Tàu", emoji: "🌊", color: "from-cyan-500 to-blue-500" },
+  { id: "pq", name: "Phú Quốc", emoji: "🏝️", color: "from-emerald-500 to-teal-500" },
+];
 // Fetch events từ API thay vì Firestore trực tiếp
 useEffect(() => {
   const fetchEvents = async () => {
@@ -286,6 +314,38 @@ useEffect(() => {
 
   fetchEvents();
 }, []); // Bỏ dependency [db]
+// THÊM DÒNG NÀY
+useEffect(() => {
+  if (!user?.uid) {
+    setPublicRoomsLoading(false);
+    return;
+  }
+  const unsubs: (() => void)[] = [];
+  PUBLIC_CITIES.forEach((city) => {
+    const roomId = `public_${city.id}`;
+    const unsub = onSnapshot(doc(db, "public_rooms", roomId), (snap) => {
+      const data = snap.data();
+      setPublicRooms((prev) => {
+        const filtered = prev.filter((r) => r.id!== roomId);
+        const newRoom: PublicRoomItem = {
+          id: roomId,
+          name: city.name,
+          emoji: city.emoji,
+          color: city.color,
+          memberCount: data?.memberCount || 0,
+          onlineCount: data?.onlineCount || 0,
+          lastMessage: data?.lastMessage || "",
+          isJoined: data?.members?.includes(user.uid) || false,
+          isHot: (data?.onlineCount || 0) > 20,
+        };
+        return [...filtered, newRoom].sort((a, b) => b.onlineCount - a.onlineCount);
+      });
+      setPublicRoomsLoading(false);
+    });
+    unsubs.push(unsub);
+  });
+  return () => unsubs.forEach((u) => u());
+}, [user?.uid, db]);
 type VipTier = {
   id: 'pro' | 'elite';
   name: string;
@@ -1161,7 +1221,51 @@ const getNotificationIcon = (type: string) => {
       </div>
     );
   }
+// THÊM DÒNG NÀY
+const handleJoinPublicRoom = async (room: PublicRoomItem) => {
+  if (!user?.uid) return toast.error("Vui lòng đăng nhập");
+  if (room.isJoined) return router.push(`/chat/${room.id}`);
 
+  try {
+    const batch = writeBatch(db);
+    const roomRef = doc(db, "public_rooms", room.id);
+    const roomSnap = await getDoc(roomRef);
+
+    if (!roomSnap.exists()) {
+      batch.set(roomRef, {
+        name: room.name,
+        emoji: room.emoji,
+        color: room.color,
+        members: [user.uid],
+        memberCount: 1,
+        onlineCount: 1,
+        createdAt: serverTimestamp(),
+        lastMessage: `Chào mừng đến ${room.name}! 👋`,
+      });
+    } else {
+      batch.update(roomRef, {
+        members: arrayUnion(user.uid),
+        memberCount: (roomSnap.data()?.memberCount || 0) + 1,
+      });
+    }
+
+    batch.set(doc(db, "chats", room.id), {
+      isGroup: true,
+      isPublicRoom: true,
+      groupName: room.name,
+      groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(room.emoji)}&background=random&color=fff&bold=true`,
+      members: arrayUnion(user.uid),
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+
+    await batch.commit();
+    if ("vibrate" in navigator) navigator.vibrate(10);
+    toast.success(`Đã vào ${room.name}`, { icon: room.emoji });
+    router.push(`/chat/${room.id}`);
+  } catch (e: any) {
+    toast.error(e.message);
+  }
+};
   return (
     <>
       <div className="min-h-dvh bg-gradient-to-b from-[#F7FAFF] via-white to-[#F5F7FB] text-zinc-950 dark:from-[#05070A] dark:via-zinc-950 dark:to-[#0F172A] dark:text-white">
@@ -1322,6 +1426,63 @@ const getNotificationIcon = (type: string) => {
         ))}
       </div>
     </div>
+{/* 4. Phòng Chat Thành Phố */}
+<div className="px-4 pt-6">
+  <div className="flex items-center justify-between mb-3 px-1">
+    <h3 className="text-sm font-[700] flex items-center gap-1.5">
+      <span className="text-lg">💬</span>
+      Phòng Chat Thành Phố
+    </h3>
+    <button
+      onClick={() => setShowPublicRooms(true)}
+      className="text-xs font-[600] text-[#0a84ff] active:opacity-60 transition-opacity"
+    >
+      Xem tất cả
+    </button>
+  </div>
+
+  <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4">
+    {publicRoomsLoading? (
+      [1,2,3].map(i => (
+        <div key={i} className="flex-shrink-0 w-40 h-40 bg-zinc-100 dark:bg-zinc-800 rounded-2xl animate-pulse" />
+      ))
+    ) : publicRooms.slice(0, 5).map((room) => (
+      <button
+        key={room.id}
+        onClick={() => handleJoinPublicRoom(room)}
+        className="flex-shrink-0 w-40 bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.98] transition-transform text-left"
+      >
+        <div className={`relative h-24 bg-gradient-to-br ${room.color} flex items-center justify-center`}>
+          <span className="text-4xl drop-shadow-lg">{room.emoji}</span>
+          {room.onlineCount > 20 && (
+            <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-red-500 rounded-md flex items-center gap-1">
+              <FiTrendingUp size={10} className="text-white" />
+              <span className="text-[10px] font-[800] text-white">HOT</span>
+            </div>
+          )}
+          {room.isJoined && (
+            <div className="absolute top-2 left-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
+              <FiCheck className="text-white" size={12} strokeWidth={3} />
+            </div>
+          )}
+        </div>
+        <div className="p-2.5">
+          <h4 className="text-sm font-[700] mb-0.5">{room.name}</h4>
+          <div className="flex items-center gap-2 text-[11px] text-[#8e8e93]">
+            <span className="flex items-center gap-0.5">
+              <FiUsers size={10} />
+              {room.memberCount}
+            </span>
+            <span className="flex items-center gap-0.5">
+              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+              {room.onlineCount}
+            </span>
+          </div>
+        </div>
+      </button>
+    ))}
+  </div>
+</div>
   )}
 
   {activeTab === "notifications"? (
