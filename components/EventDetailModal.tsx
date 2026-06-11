@@ -16,7 +16,7 @@ export default function EventDetailModal({
   return (
     <AnimatePresence>
       {event && (
-        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
+<div className="fixed inset-0 z-[60] flex items-start justify-center p-4 pt-4 overflow-y-auto">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -25,11 +25,11 @@ export default function EventDetailModal({
             onClick={onClose}
           />
           <motion.div
-            initial={{ y: "100%", opacity: 0 }}
+initial={{ y: "-100%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: "100%", opacity: 0 }}
+exit={{ y: "-100%", opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full sm:max-w-[440px] bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl max-h-[90vh] flex flex-col shadow-2xl"
+className="relative w-full sm:max-w-[440px] bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl max-h-[90vh] flex flex-col shadow-2xl mb-4"
           >
             {/* Cover */}
             <div className="relative h-48 flex-shrink-0">
@@ -41,11 +41,11 @@ export default function EventDetailModal({
               >
                 <FiX className="text-white" size={20} />
               </button>
-              <div className={`absolute bottom-3 left-4 px-2.5 py-1 bg-gradient-to-r ${event.tagColor} rounded-lg`}>
+<div className={`absolute top-3 left-4 px-2.5 py-1 bg-gradient-to-r ${event.tagColor} rounded-lg`}>
                 <span className="text-xs font-[800] text-white">{event.tag}</span>
               </div>
               {event.rating && (
-                <div className="absolute bottom-3 right-4 px-2.5 py-1 bg-black/40 backdrop-blur-md rounded-lg flex items-center gap-1">
+<div className="absolute top-3 right-14 px-2.5 py-1 bg-black/40 backdrop-blur-md rounded-lg flex items-center gap-1">
                   <FiStar className="text-amber-400" size={12} fill="currentColor" />
                   <span className="text-xs font-[700] text-white">{event.rating}</span>
                   {event.reviews && <span className="text-xs text-white/70">({event.reviews})</span>}
