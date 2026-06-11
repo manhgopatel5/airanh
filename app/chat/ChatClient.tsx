@@ -1417,7 +1417,7 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
                   {item.joined} người
                 </span>
                 <span className="flex items-center gap-1">
-                  <FiMapPin size={12} />
+                                <FiMapPin size={12} />
                   {item.distance}
                 </span>
               </div>
@@ -1426,65 +1426,65 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
         ))}
       </div>
     </div>
-)}
 
-<div className="px-4 pt-6">
-  <div className="flex items-center justify-between mb-3 px-1">
-    <h3 className="text-sm font-[700] flex items-center gap-1.5">
-      <span className="text-lg">💬</span>
-      Phòng Chat Công Cộng
-    </h3>
-    <button
-      onClick={() => setShowPublicRooms(true)}
-      className="text-xs font-[600] text-[#0a84ff] active:opacity-60 transition-opacity"
-    >
-      Xem tất cả
-    </button>
-  </div>
+    {/* 4. Phòng Chat Công Cộng - DÁN VÀO ĐÂY, TRONG activeTab === "all" */}
+    <div className="px-4 pt-6">
+      <div className="flex items-center justify-between mb-3 px-1">
+        <h3 className="text-sm font-[700] flex items-center gap-1.5">
+          <span className="text-lg">💬</span>
+          Phòng Chat Công Cộng
+        </h3>
+        <button
+          onClick={() => setShowPublicRooms(true)}
+          className="text-xs font-[600] text-[#0a84ff] active:opacity-60 transition-opacity"
+        >
+          Xem tất cả
+        </button>
+      </div>
 
-  <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4">
-    {publicRoomsLoading? (
-      [1,2,3].map(i => (
-        <div key={i} className="flex-shrink-0 w-40 h-40 bg-zinc-100 dark:bg-zinc-800 rounded-2xl animate-pulse" />
-      ))
-    ) : publicRooms.slice(0, 5).map((room) => (
-      <button
-        key={room.id}
-        onClick={() => handleJoinPublicRoom(room)}
-        className="flex-shrink-0 w-40 bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.98] transition-transform text-left"
-      >
-        <div className={`relative h-24 bg-gradient-to-br ${room.color} flex items-center justify-center`}>
-          <span className="text-4xl drop-shadow-lg">{room.emoji}</span>
-          {room.onlineCount > 20 && (
-            <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-red-500 rounded-md flex items-center gap-1">
-              <FiTrendingUp size={10} className="text-white" />
-              <span className="text-[10px] font-[800] text-white">HOT</span>
+      <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4">
+        {publicRoomsLoading? (
+          [1,2,3].map(i => (
+            <div key={i} className="flex-shrink-0 w-40 h-40 bg-zinc-100 dark:bg-zinc-800 rounded-2xl animate-pulse" />
+          ))
+        ) : publicRooms.slice(0, 5).map((room) => (
+          <button
+            key={room.id}
+            onClick={() => handleJoinPublicRoom(room)}
+            className="flex-shrink-0 w-40 bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.98] transition-transform text-left"
+          >
+            <div className={`relative h-24 bg-gradient-to-br ${room.color} flex items-center justify-center`}>
+              <span className="text-4xl drop-shadow-lg">{room.emoji}</span>
+              {room.onlineCount > 20 && (
+                <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-red-500 rounded-md flex items-center gap-1">
+                  <FiTrendingUp size={10} className="text-white" />
+                  <span className="text- font-[800] text-white">HOT</span>
+                </div>
+              )}
+              {room.isJoined && (
+                <div className="absolute top-2 left-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
+                  <FiCheck className="text-white" size={12} strokeWidth={3} />
+                </div>
+              )}
             </div>
-          )}
-          {room.isJoined && (
-            <div className="absolute top-2 left-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
-              <FiCheck className="text-white" size={12} strokeWidth={3} />
+            <div className="p-2.5">
+              <h4 className="text-sm font-[700] mb-0.5">{room.name}</h4>
+              <div className="flex items-center gap-2 text- text-[#8e8e93]">
+                <span className="flex items-center gap-0.5">
+                  <FiUsers size={10} />
+                  {room.memberCount}
+                </span>
+                <span className="flex items-center gap-0.5">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                  {room.onlineCount}
+                </span>
+              </div>
             </div>
-          )}
-        </div>
-        <div className="p-2.5">
-          <h4 className="text-sm font-[700] mb-0.5">{room.name}</h4>
-          <div className="flex items-center gap-2 text-[11px] text-[#8e8e93]">
-            <span className="flex items-center gap-0.5">
-              <FiUsers size={10} />
-              {room.memberCount}
-            </span>
-            <span className="flex items-center gap-0.5">
-              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-              {room.onlineCount}
-            </span>
-          </div>
-        </div>
-      </button>
-    ))}
-  </div>
-</div>
-  )}
+          </button>
+        ))}
+      </div>
+    </div>
+  )} {/* <-- Đóng activeTab === "all" ở đây */}
 
   {activeTab === "notifications"? (
     notifLoading? (
@@ -1501,7 +1501,7 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
       </div>
     ) : notifications.length === 0? (
               <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
-                <div className="w-[72px] h-[72px] bg-[#f2f2f7] dark:bg-zinc-900 rounded-[20px] flex items-center justify-center mb-4">
+                <div className="w-[72px] h-[72px] bg-[#f2f7] dark:bg-zinc-900 rounded-[20px] flex items-center justify-center mb-4">
                   <FiBell className="text-gray-400" size={30} strokeWidth={1.5} />
                 </div>
                 <h3 className="text-[20px] font-semibold mb-1.5">Chưa có thông báo</h3>
@@ -1529,12 +1529,12 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[15px] leading-[20px]"><span className="font-[550]">{notif.fromName}</span> <span className="text-[#3a3a3c] dark:text-zinc-300">{notif.message}</span></p>
+            <p className="text-[15px] leading-[20px]"><span className="font-[550]">{notif.fromName}</span> <span className="text-[#3a3c] dark:text-zinc-300">{notif.message}</span></p>
             <p className="text-[13px] text-[#8e8e93] mt-0.5">{formatNotifTime(notif.createdAt)}</p>
             {notif.type === "friend_request" &&!notif.read && (
               <div className="flex items-center gap-2 mt-2.5">
                 <button onClick={() => handleAcceptFriendRequest(notif)} className={`h-7 px-4 ${primaryBg} ${primaryHover} text-white rounded-full text-[13px] font-medium`}>Chấp nhận</button>
-                <button onClick={() => handleDeclineFriendRequest(notif)} className="h-7 px-4 bg-[#f2f2f7] dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-full text-[13px] font-medium">Từ chối</button>
+                <button onClick={() => handleDeclineFriendRequest(notif)} className="h-7 px-4 bg-[#f2f7] dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-full text-[13px] font-medium">Từ chối</button>
               </div>
             )}
             {(notif.type === "group_invite" || notif.type === "mention") && notif.chatId && (
@@ -1774,7 +1774,7 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
                     </div>
                     <form onSubmit={handleAddFriend} className="space-y-3">
                       <div className="relative">
-                        <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8e8e93] pointer-events-none" size={18} />
+                        <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8e93] pointer-events-none" size={18} />
                         <input type="search" inputMode="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="ID hoặc @username" className={`w-full h-[44px] pl-10 pr-3.5 bg-white dark:bg-zinc-800 border-black/10 dark:border-white/10 rounded-[12px] text-[16px] outline-none ${primaryBorder} focus:ring-4 ${primaryRing} transition-all`} autoFocus autoComplete="off" autoCorrect="off" spellCheck={false} name="search-user-not-login" />
                       </div>
                       <button type="submit" disabled={adding ||!search.trim()} className={`w-full h-[44px] ${primaryBg} ${primaryHover} ${primaryActive} disabled:opacity-40 text-white rounded-[12px] text-[16px] font-[550] transition-all active:scale-[0.98] flex items-center justify-center gap-2`}>
@@ -1785,7 +1785,7 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
                   </div>
                 ) : (
                   <div className="flex-1 flex flex-col min-h-0 space-y-3">
-                    <input type="text" value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="Tên nhóm" className={`w-full h-[44px] px-3.5 bg-white dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded-[12px] text-[16px] outline-none ${primaryBorder} focus:ring-4 ${primaryRing} transition-all`} maxLength={30} />
+                    <input type="text" value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="Tên nhóm" className={`w-full h-[44px] px-3.5 bg-white dark:bg-zinc-800 border-black/10 dark:border-white/10 rounded-[12px] text-[16px] outline-none ${primaryBorder} focus:ring-4 ${primaryRing} transition-all`} maxLength={30} />
                     <div className="flex-1 bg-white dark:bg-zinc-800 rounded-[12px] border border-black/10 dark:border-white/10 overflow-hidden flex flex-col min-h-0">
                       <div className="px-3 py-2.5 bg-white/80 dark:bg-zinc-800/80 backdrop-blur border-b border-black/5 dark:border-white/5 flex-shrink-0">
     <p className="text-[13px] font-medium text-[#8e8e93] dark:text-zinc-500">Đã chọn {selected.length} người</p>
@@ -1847,7 +1847,7 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
           <FiX size={22} />
         </button>
       </div>
-      
+
       <div className="flex-1 overflow-auto p-5 space-y-4">
         <div>
           <label className="text- font-medium text-[#8e8e93] mb-2 block">Câu hỏi</label>
@@ -1875,6 +1875,7 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
                     setPollOptions(newOpts);
                   }}
                   placeholder={`Lựa chọn ${idx + 1}`}
+               
                   className="flex-1 h- px-4 bg-zinc-100 dark:bg-zinc-800 rounded-xl text- outline-none focus:ring-2 focus:ring-[#0a84ff]/20"
                   maxLength={50}
                 />
