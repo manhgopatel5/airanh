@@ -16,7 +16,7 @@ export default function EventDetailModal({
   return (
     <AnimatePresence>
       {event && (
-<div className="fixed inset-0 z-[60] flex items-start justify-center p-4 pt-4 overflow-y-auto">
+<div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -29,7 +29,7 @@ initial={{ y: "-100%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
 exit={{ y: "-100%", opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-className="relative w-full sm:max-w-[440px] bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl max-h-[90vh] flex flex-col shadow-2xl mb-4"
+className="relative w-full sm:max-w-[440px] bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl max-h-[calc(100vh-160px)] flex flex-col shadow-2xl"
           >
             {/* Cover */}
             <div className="relative h-48 flex-shrink-0">
