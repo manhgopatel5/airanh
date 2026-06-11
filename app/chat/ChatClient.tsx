@@ -1212,18 +1212,7 @@ const getNotificationIcon = (type: string) => {
   }
 };
 
-// THÊM TYPE VÀO ĐÂY
-type PublicRoomItem = {
-  id: string;
-  name: string;
-  emoji: string;
-  color: string;
-  memberCount: number;
-  onlineCount: number;
-  lastMessage?: string;
-  isJoined: boolean;
-  isHot: boolean;
-};
+
 
 const handleJoinPublicRoom = async (room: PublicRoomItem) => {
   if (!user?.uid) return toast.error("Vui lòng đăng nhập");
