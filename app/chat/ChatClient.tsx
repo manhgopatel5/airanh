@@ -2110,6 +2110,24 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
   </div>
 </div>
       <style jsx global>{`.scrollbar-hide::-webkit-scrollbar{display:none}.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}body{overscroll-behavior-y:contain}`}</style>
+{showPublicRooms && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="absolute inset-0 bg-black/40" onClick={() => setShowPublicRooms(false)} />
+    <div className="relative bg-white dark:bg-zinc-900 rounded-2xl p-5 max-w-md w-full">
+      <h3 className="text-lg font-bold mb-3">Tất cả phòng công cộng</h3>
+      <div className="space-y-2 max-h-96 overflow-auto">
+        {publicRooms.map(room => (
+          <button key={room.id} onClick={() => handleJoinPublicRoom(room)} 
+            className="w-full p-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-left">
+            {room.emoji} {room.name} - {room.onlineCount} online
+          </button>
+        ))}
+      </div>
+      <button onClick={() => setShowPublicRooms(false)} 
+        className="mt-3 w-full h-10 bg-zinc-200 dark:bg-zinc-700 rounded-xl">Đóng</button>
+    </div>
+  </div>
+)}
 <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
     </>
   );
