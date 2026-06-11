@@ -1272,13 +1272,15 @@ const getNotificationIcon = (type: string) => {
         ))}
       </div>
 
-      {/* 3. List event */}
-      <div className="space-y-3">
+    {/* 3. List event */}
+<div className="space-y-3">
 {eventsLoading? (
   <div className="flex items-center justify-center py-10">
     <FiLoader className="animate-spin text-[#0a84ff]" size={24} />
   </div>
-) : (selectedCategory? eventsData.filter(e => e.category === selectedCategory) : eventsData).map((item) => (
+) : (selectedCategory? eventsData.filter(e => e.category === selectedCategory) : eventsData)
+    .slice(0, 2) // THÊM DÒNG NÀY
+    .map((item) => (
           <button
             key={item.id}
             onClick={() => setSelectedEvent(item)}
