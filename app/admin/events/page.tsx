@@ -299,10 +299,10 @@ export default function AdminEventsPage() {
         </div>
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-xl" onClick={() => setShowModal(false)} />
-          <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-h-[90vh] overflow-auto">
+  {showModal && (
+  <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-8 overflow-y-auto">
+    <div className="absolute inset-0 bg-black/60 backdrop-blur-xl" onClick={() => setShowModal(false)} />
+    <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl mb-8">
             <div className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 px-6 py-4 flex items-center justify-between">
               <h2 className="text-xl font-bold">{editingId? "Sửa Event" : "Thêm Event"}</h2>
               <button onClick={() => setShowModal(false)} className="w-8 h-8 flex items-center justify-center">
