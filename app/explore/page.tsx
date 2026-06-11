@@ -33,7 +33,7 @@ export default function ExplorePage() {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const res = await fetch('/api/events', { cache: 'no-store' });
+        const res = await fetch('/api/admin/events', { cache: 'no-store' });
         const data = await res.json();
         setEventsData(data.events || []);
       } catch (err) {
