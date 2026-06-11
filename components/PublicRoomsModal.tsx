@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDB } from "@/lib/firebase";
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, serverTimestamp, onSnapshot } from "firebase/firestore";
-import { FiX, FiUsers, FiTrendingUp, FiLock, FiUnlock } from "react-icons/fi";
+import { FiX, FiUsers, FiTrendingUp, FiUnlock } from "react-icons/fi";
 import { toast } from "sonner";
 
 type PublicRoomItem = {
