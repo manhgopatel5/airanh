@@ -268,28 +268,24 @@ const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 const [eventsData, setEventsData] = useState<EventItem[]>([]);
 const [eventsLoading, setEventsLoading] = useState<boolean>(true);
 
-// Fetch events từ Firestore
+// Fetch events từ API thay vì Firestore trực tiếp
 useEffect(() => {
-  const q = query(
-    collection(db, "events"),
-    where("isActive", "==", true),
-    orderBy("rating", "desc")
-  );
+  const fetchEvents = async () => {
+    try {
+      const res = await fetch('/api/events', { cache: 'no-store' });
+      const data = await res.json();
+      console.log('Events from API:', data.events); // Debug
+      setEventsData(data.events || []);
+    } catch (error) {
+      console.error("Events fetch error:", error);
+      setEventsData([]);
+    } finally {
+      setEventsLoading(false);
+    }
+  };
 
-  const unsub = onSnapshot(q, (snapshot) => {
-    const events: EventItem[] = [];
-    snapshot.forEach((doc) => {
-      events.push({ id: doc.id,...doc.data() } as EventItem);
-    });
-    setEventsData(events);
-    setEventsLoading(false);
-  }, (error) => {
-    console.error("Events fetch error:", error);
-    setEventsLoading(false);
-  });
-
-  return () => unsub();
-}, [db]);
+  fetchEvents();
+}, []); // Bỏ dependency [db]
 type VipTier = {
   id: 'pro' | 'elite';
   name: string;
