@@ -1739,7 +1739,7 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
               </div>
             </div>
           )}
-        </div>
+
 
         {showAdd && (
           <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 p-4">
