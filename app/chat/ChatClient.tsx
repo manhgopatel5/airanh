@@ -286,16 +286,16 @@ type PublicRoomItem = {
 };
 
 const PUBLIC_CITIES = [
-  { id: "hcm", name: "TP.HCM", emoji: "🏙️", color: "from-blue-500 to-cyan-500" },
-  { id: "hn", name: "Hà Nội", emoji: "🏛️", color: "from-orange-500 to-red-500" },
-  { id: "dn", name: "Đà Nẵng", emoji: "🌉", color: "from-teal-500 to-emerald-500" },
-  { id: "ct", name: "Cần Thơ", emoji: "🌾", color: "from-green-500 to-lime-500" },
-  { id: "hp", name: "Hải Phòng", emoji: "⚓", color: "from-purple-500 to-pink-500" },
-  { id: "dl", name: "Đà Lạt", emoji: "🌸", color: "from-pink-500 to-rose-500" },
-  { id: "nt", name: "Nha Trang", emoji: "🏖️", color: "from-sky-500 to-blue-500" },
-  { id: "hue", name: "Huế", emoji: "🏯", color: "from-violet-500 to-purple-500" },
-  { id: "vt", name: "Vũng Tàu", emoji: "🌊", color: "from-cyan-500 to-blue-500" },
-  { id: "pq", name: "Phú Quốc", emoji: "🏝️", color: "from-emerald-500 to-teal-500" },
+  { id: "hcm", name: "HCM", emoji: "🏙️", color: "from-blue-500 to-cyan-500" },
+  { id: "hn", name: "HÀ NỘI", emoji: "🏛️", color: "from-orange-500 to-red-500" },
+  { id: "dn", name: "ĐÀ NẴNG", emoji: "🌉", color: "from-teal-500 to-emerald-500" },
+  { id: "ct", name: "CẦN THƠ", emoji: "🌾", color: "from-green-500 to-lime-500" },
+  { id: "hp", name: "HẢI PHÒNG", emoji: "⚓", color: "from-purple-500 to-pink-500" },
+  { id: "dl", name: "ĐÀ LẠT", emoji: "🌸", color: "from-pink-500 to-rose-500" },
+  { id: "nt", name: "NHA TRANG", emoji: "🏖️", color: "from-sky-500 to-blue-500" },
+  { id: "hue", name: "HUẾ", emoji: "🏯", color: "from-violet-500 to-purple-500" },
+  { id: "vt", name: "VŨNG TÀU", emoji: "🌊", color: "from-cyan-500 to-blue-500" },
+  { id: "pq", name: "PHÚ QUỐC", emoji: "🏝️", color: "from-emerald-500 to-teal-500" },
 ];
 // Fetch events từ API thay vì Firestore trực tiếp
 useEffect(() => {
