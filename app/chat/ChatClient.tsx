@@ -272,7 +272,7 @@ const [eventsLoading, setEventsLoading] = useState<boolean>(true);
 useEffect(() => {
   const fetchEvents = async () => {
     try {
-      const res = await fetch('/api/events', { cache: 'no-store' });
+      const res = await fetch('/api/admin/events', { cache: 'no-store' });
       const data = await res.json();
       console.log('Events from API:', data.events); // Debug
       setEventsData(data.events || []);
