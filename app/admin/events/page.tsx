@@ -27,6 +27,8 @@ const TAG_LIST = [
 export default function AdminEventsPage() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
+
+const [showInactive, setShowInactive] = useState(false); // THÊM DÒNG NÀY
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -74,10 +76,7 @@ export default function AdminEventsPage() {
     fetchEvents();
   }, []);
 
-  const handleLogout = async () => {
-    await fetch('/api/auth/session', { method: 'DELETE' });
-    window.location.href = '/login';
-  };
+
 
   const resetForm = () => {
     setForm({
@@ -227,10 +226,15 @@ export default function AdminEventsPage() {
           <h1 className="text-2xl font-bold">Quản lý Events</h1>
           <div className="flex gap-2">
             <button
-              onClick={handleLogout}
-              className="px-4 h-10 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl font-semibold flex items-center gap-2"
+              onClick={() => setShowInactive(!showInactive)}
+              className={`px-4 h-10 rounded-xl font-semibold flex items-center gap-2 ${
+                showInactive 
+                  ? 'bg-amber-500 text-white' 
+                  : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white'
+              }`}
             >
-              <FiLogOut size={18} /> Đăng xuất
+              {showInactive ? <FiEye size={18} /> : <FiEyeOff size={18} />}
+              {showInactive ? 'Ẩn đã ẩn' : 'Hiện đã ẩn'}
             </button>
             <button
               onClick={() => {
@@ -245,7 +249,9 @@ export default function AdminEventsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {events.map((event) => (
+          {events
+            .filter(event => showInactive || event.isActive)
+            .map((event) => (
             <div
               key={event.id}
               className={`bg-white dark:bg-zinc-900 rounded-xl border-2 ${
@@ -260,6 +266,7 @@ export default function AdminEventsPage() {
                     className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                       event.isActive? "bg-green-500" : "bg-zinc-500"
                     } text-white`}
+                    title={event.isActive ? "Ẩn event" : "Hiện event"}
                   >
                     {event.isActive? <FiEye size={16} /> : <FiEyeOff size={16} />}
                   </button>
