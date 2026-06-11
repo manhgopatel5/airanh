@@ -17,14 +17,14 @@ const config: Config = {
   safelist: [
     {
       pattern: /^(bg|text|border)-(slate|gray|zinc|neutral|stone|red|green|blue|yellow|purple|violet|emerald|indigo)-(50|100|200|300|400|500|600|700|800|900)$/,
-      variants: ["hover", "dark", "dark:hover", "group-hover"],
+      variants: ["hover", "dark:hover", "group-hover"],
     },
     {
-      pattern: /^(from|to)-(blue|violet|purple|indigo|emerald)-(400|500|600)$/,
+      pattern: /^(from|to)-(blue|violet|purple|indigo|emerald|cyan|orange|red|teal|green|lime|pink|rose|sky)-(400|500|600)$/,
       variants: ["dark", "group-hover"],
     },
     {
-      pattern: /^(w|h)-(0|px|0.5|1|1.5|2|2.5|3|3.5|4|5|6|7|8|9|10|11|12|14|16|20|24|28|32|36|40|44|48|52|56|60|64|72|80|96)$/,
+      pattern: /^(w|h)-(0|px|0.5|1.5|2|2.5|3|3.5|4|5|6|7|8|9|10|11|12|14|16|20|24|28|32|36|40|44|48|52|56|60|64|72|80|96)$/,
     },
     {
       pattern: /^grid-cols-(1|2|3|4|5|6|7|8|9|10|11|12)$/,
@@ -34,6 +34,17 @@ const config: Config = {
       pattern: /^shadow-(blue|violet|purple|indigo|emerald)-(400|500|600)\/(20|30)$/,
       variants: ["hover", "group-hover"],
     },
+    // Thêm mấy màu gradient của public rooms
+    "from-blue-500", "to-cyan-500",
+    "from-orange-500", "to-red-500",
+    "from-teal-500", "to-emerald-500",
+    "from-green-500", "to-lime-500",
+    "from-purple-500", "to-pink-500",
+    "from-pink-500", "to-rose-500",
+    "from-sky-500", "to-blue-500",
+    "from-violet-500", "to-purple-500",
+    "from-cyan-500", "to-blue-500",
+    "from-emerald-500", "to-teal-500",
     "animate-shimmer",
     "bg-blue-900/40",
     "bg-violet-900/40",
