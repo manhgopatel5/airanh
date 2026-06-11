@@ -2,8 +2,28 @@
 
 import { useState, useEffect } from "react";
 import { EventItem, CATEGORY_INFO } from "@/data/events";
-import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiLoader, FiUpload, FiEye, FiEyeOff, FiLogOut, FiStar } from "react-icons/fi";
+import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiLoader, FiUpload, FiEye, FiEyeOff, FiLogOut, FiStar, FiChevronDown } from "react-icons/fi";
 import { toast } from "sonner";
+
+const ICON_LIST = [
+  "🎉", "🎊", "🎈", "🎁", "🎂", "🎯", "🎨", "🎭", "🎪", "🎸",
+  "🎵", "🎶", "🎤", "🎧", "🎬", "🎮", "🏆", "🥇", "🏅", "🎖️",
+  "⛰️", "🏔️", "🏕️", "🏖️", "🏝️", "🏜️", "🌋", "🗻", "🏞️", "🌅",
+  "🍜", "🍕", "🍔", "🍣", "🍻", "☕", "🍷", "🍸", "🥂", "🍹",
+  "💪", "🏃", "🚴", "🏊", "⚽", "🏀", "🎾", "🏐", "🏸", "🥊",
+  "✨", "💫", "⭐", "🌟", "💥", "🔥", "💎", "👑", "🎓", "📚"
+];
+
+// THÊM TAG_LIST
+const TAG_LIST = [
+  { value: "NEW", label: "NEW", color: "from-blue-500 to-cyan-500" },
+  { value: "HOT", label: "HOT", color: "from-red-500 to-orange-500" },
+  { value: "TRENDING", label: "TRENDING", color: "from-purple-500 to-pink-500" },
+  { value: "SALE", label: "SALE", color: "from-green-500 to-emerald-500" },
+  { value: "LIMITED", label: "LIMITED", color: "from-amber-500 to-yellow-500" },
+  { value: "POPULAR", label: "POPULAR", color: "from-rose-500 to-red-500" },
+  { value: "FREE", label: "FREE", color: "from-teal-500 to-cyan-500" },
+];
 
 export default function AdminEventsPage() {
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -31,8 +51,8 @@ export default function AdminEventsPage() {
     mapUrl: "",
     lat: 0,
     lng: 0,
-    rating: 5, // ĐÃ CÓ
-    reviews: 0, // ĐÃ CÓ
+    rating: 5,
+    reviews: 0,
     isActive: true,
   });
 
@@ -228,7 +248,6 @@ export default function AdminEventsPage() {
                 <div className={`absolute bottom-2 left-2 px-2 py-1 bg-gradient-to-r ${event.tagColor} rounded-md`}>
                   <span className="text-xs font-bold text-white">{event.tag}</span>
                 </div>
-              </div>
               <div className="p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-2xl">{event.icon}</span>
@@ -272,12 +291,20 @@ export default function AdminEventsPage() {
                 </div>
                 <div>
                   <label className="text-sm font-semibold mb-1 block">Icon</label>
-                  <input
-                    type="text"
-                    value={form.icon}
-                    onChange={(e) => setForm({...form, icon: e.target.value })}
-                    className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
-                  />
+                  <div className="relative">
+                    <select
+                      value={form.icon}
+                      onChange={(e) => setForm({...form, icon: e.target.value })}
+                      className="w-full h-10 px-3 pr-8 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-xl appearance-none"
+                    >
+                      {ICON_LIST.map((icon) => (
+                        <option key={icon} value={icon}>
+                          {icon}
+                        </option>
+                      ))}
+                    </select>
+                    <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500" size={16} />
+                  </div>
                 </div>
               </div>
 
@@ -293,13 +320,27 @@ export default function AdminEventsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-semibold mb-1 block">Tag</label>
-                  <input
-                    type="text"
-                    value={form.tag}
-                    onChange={(e) => setForm({...form, tag: e.target.value })}
-                    className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
-                  />
-                </div>
+                  <div className="relative">
+                    <select
+                      value={form.tag}
+                      onChange={(e) => {
+                        const selectedTag = TAG_LIST.find(t => t.value === e.target.value);
+                        setForm({
+                         ...form,
+                          tag: e.target.value,
+                          tagColor: selectedTag?.color || "from-blue-500 to-cyan-500"
+                        });
+                      }}
+                      className="w-full h-10 px-3 pr-8 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm appearance-none"
+                    >
+                      {TAG_LIST.map((tag) => (
+                        <option key={tag.value} value={tag.value}>
+                          {tag.label}
+                        </option>
+                      ))}
+                    </select>
+                    <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500" size={16} />
+                  </div>
                 <div>
                   <label className="text-sm font-semibold mb-1 block">Category *</label>
                   <select
@@ -376,17 +417,23 @@ export default function AdminEventsPage() {
                 </div>
               </div>
 
-              {/* THÊM PHẦN NÀY: RATING + REVIEWS */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-semibold mb-1 block">Rating *</label>
                   <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="5"
-                    value={form.rating}
-                    onChange={(e) => setForm({...form, rating: Number(e.target.value) })}
+                    type="text"
+                    inputMode="decimal"
+                    value={String(form.rating || '').replace('.', ',')}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(',', '.');
+                      const num = parseFloat(val);
+                      if (!isNaN(num) && num >= 0 && num <= 5) {
+                        setForm({...form, rating: num });
+                      } else if (val === '') {
+                        setForm({...form, rating: 0 });
+                      }
+                    }}
+                    placeholder="4,9"
                     className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
                   />
                 </div>
