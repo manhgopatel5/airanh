@@ -1426,12 +1426,13 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
         ))}
       </div>
     </div>
-{/* 4. Phòng Chat Thành Phố */}
+)}
+
 <div className="px-4 pt-6">
   <div className="flex items-center justify-between mb-3 px-1">
     <h3 className="text-sm font-[700] flex items-center gap-1.5">
       <span className="text-lg">💬</span>
-      Phòng Chat Thành Phố
+      Phòng Chat Công Cộng
     </h3>
     <button
       onClick={() => setShowPublicRooms(true)}
