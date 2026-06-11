@@ -249,9 +249,9 @@ const [showInactive, setShowInactive] = useState(false); // THÊM DÒNG NÀY
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {events
-            .filter(event => showInactive || event.isActive)
-            .map((event) => (
+      {events
+  .filter(event => showInactive || event.isActive === true)
+  .map((event) => (
             <div
               key={event.id}
               className={`bg-white dark:bg-zinc-900 rounded-xl border-2 ${
@@ -259,7 +259,12 @@ const [showInactive, setShowInactive] = useState(false); // THÊM DÒNG NÀY
               } overflow-hidden`}
             >
               <div className="relative h-40">
-                <img src={event.image} alt={event.title} className="w-full h-full object-cover" />
+              <img src={event.image} alt={event.title} className="w-full h-full object-cover" />
+{!event.isActive && (
+  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+    <span className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">ĐÃ ẨN</span>
+  </div>
+)}
                 <div className="absolute top-2 right-2 flex gap-1">
                   <button
                     onClick={() => toggleActive(event)}
