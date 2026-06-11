@@ -1,23 +1,23 @@
-import '@/lib/firebase-admin' // DÒNG NÀY BẮT BUỘC PHẢI CÓ ĐẦU TIÊN
+import '@/lib/firebase-admin' // BẮT BUỘC ĐẦU TIÊN
 import { NextResponse } from 'next/server'
-import { getFirestore, FieldValue } from 'firebase-admin/firestore'
+import { adminDb } from '@/lib/firebase-admin' // ĐỔI: import adminDb
+import { FieldValue } from 'firebase-admin/firestore'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    const db = getFirestore();
+    const db = adminDb(); // ĐỔI: dùng adminDb() thay vì getFirestore()
     const snapshot = await db.collection('events')
       .where('isActive', '==', true)
-      .orderBy('updatedAt', 'desc')
+      // Bỏ orderBy để tránh lỗi thiếu index
       .get();
 
     const events = snapshot.docs.map(doc => {
       const data = doc.data();
       return {
         id: doc.id,
-       ...data,
-        // Map đầy đủ field để client không bị undefined
+        ...data,
         title: data.title || data.name || '',
         name: data.name || data.title || '',
         desc: data.desc || data.description || '',
@@ -40,11 +40,17 @@ export async function GET() {
         lng: data.lng,
         rating: Number(data.rating) || 4.5,
         reviews: Number(data.reviews) || 0,
-        isActive: data.isActive?? true,
+        isActive: data.isActive ?? true,
         createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
         updatedAt: data.updatedAt?.toDate?.()?.toISOString() || null,
         date: data.date?.toDate?.()?.toISOString() || null,
       }
+    })
+    // Sort ở client thay cho orderBy
+    .sort((a, b) => {
+      const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+      const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+      return dateB - dateA;
     });
 
     return NextResponse.json({ events });
@@ -57,49 +63,37 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const db = getFirestore();
+    const db = adminDb(); // ĐỔI
     const id = body.id || db.collection('events').doc().id;
 
-    // ÉP KIỂU + DEFAULT ĐỂ KHÔNG BỊ RỖNG
     await db.collection('events').doc(id).set({
-     ...body,
+      ...body,
       id,
-      // Core fields
       title: body.title || body.name || '',
       name: body.name || body.title || '',
       desc: body.desc || body.description || '',
       description: body.description || body.desc || '',
       image: body.image || body.imageUrl || '',
       imageUrl: body.imageUrl || body.image || '',
-      
-      // Category & Tag
       category: body.category || 'other',
       tag: body.tag || 'NEW',
       tagColor: body.tagColor || 'from-blue-500 to-cyan-500',
       icon: body.icon || '🎉',
-      
-      // Location & Price
       address: body.address || '',
       openTime: body.openTime || '',
       price: body.price || 'Free',
-      distance: body.distance || 'Cách bạn 1km', // QUAN TRỌNG
+      distance: body.distance || 'Cách bạn 1km',
       mapUrl: body.mapUrl || '',
-      lat: body.lat? Number(body.lat) : null,
-      lng: body.lng? Number(body.lng) : null,
-      
-      // Stats - ÉP KIỂU SỐ
-      rating: Number(body.rating) || 4.5, // QUAN TRỌNG
-      reviews: Number(body.reviews) || 0, // QUAN TRỌNG
+      lat: body.lat ? Number(body.lat) : null,
+      lng: body.lng ? Number(body.lng) : null,
+      rating: Number(body.rating) || 4.5,
+      reviews: Number(body.reviews) || 0,
       joined: Number(body.joined) || 0,
-      
-      // Arrays
-      tips: Array.isArray(body.tips)? body.tips : [],
-      gallery: Array.isArray(body.gallery)? body.gallery : [],
-      
-      // Status
-      isActive: body.isActive?? true,
+      tips: Array.isArray(body.tips) ? body.tips : [],
+      gallery: Array.isArray(body.gallery) ? body.gallery : [],
+      isActive: body.isActive ?? true,
       updatedAt: FieldValue.serverTimestamp(),
-      createdAt: body.createdAt? new Date(body.createdAt) : FieldValue.serverTimestamp(),
+      createdAt: body.createdAt ? new Date(body.createdAt) : FieldValue.serverTimestamp(),
     }, { merge: true });
 
     return NextResponse.json({ success: true, id });
@@ -115,7 +109,7 @@ export async function DELETE(request: Request) {
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
-    const db = getFirestore();
+    const db = adminDb(); // ĐỔI
     await db.collection('events').doc(id).delete();
 
     return NextResponse.json({ success: true });
