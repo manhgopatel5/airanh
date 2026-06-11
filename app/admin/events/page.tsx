@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { EventItem, CATEGORY_INFO } from "@/data/events";
-import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiLoader, FiUpload, FiEye, FiEyeOff, FiLogOut } from "react-icons/fi";
+import { FiPlus, FiEdit2, FiTrash2, FiX, FiSave, FiLoader, FiUpload, FiEye, FiEyeOff, FiLogOut, FiStar } from "react-icons/fi";
 import { toast } from "sonner";
 
 export default function AdminEventsPage() {
@@ -31,8 +31,8 @@ export default function AdminEventsPage() {
     mapUrl: "",
     lat: 0,
     lng: 0,
-    rating: 5,
-    reviews: 0,
+    rating: 5, // ĐÃ CÓ
+    reviews: 0, // ĐÃ CÓ
     isActive: true,
   });
 
@@ -237,7 +237,10 @@ export default function AdminEventsPage() {
                 <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2 mb-2">{event.desc}</p>
                 <div className="flex items-center justify-between text-xs text-zinc-500">
                   <span>{event.category}</span>
-                  <span>⭐ {event.rating} ({event.reviews})</span>
+                  <span className="flex items-center gap-1">
+                    <FiStar className="text-amber-500" size={12} fill="currentColor" />
+                    {event.rating} ({event.reviews})
+                  </span>
                 </div>
               </div>
             </div>
@@ -368,6 +371,32 @@ export default function AdminEventsPage() {
                     value={form.distance}
                     onChange={(e) => setForm({...form, distance: e.target.value })}
                     placeholder="Cách bạn 5km"
+                    className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* THÊM PHẦN NÀY: RATING + REVIEWS */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-semibold mb-1 block">Rating *</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="5"
+                    value={form.rating}
+                    onChange={(e) => setForm({...form, rating: Number(e.target.value) })}
+                    className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold mb-1 block">Reviews *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.reviews}
+                    onChange={(e) => setForm({...form, reviews: Number(e.target.value) })}
                     className="w-full h-10 px-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-sm"
                   />
                 </div>
