@@ -1202,27 +1202,29 @@ const groupedNotifications = useMemo(() => {
   return { today, earlier };
 }, [notifications]);
 const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case "friend_request": return <FiUserPlus className="text-[#0a84ff]" size={18} />;
-      case "friend_accepted": return <FiCheck className="text-[#30d158]" size={18} />;
-      case "group_invite": return <FiUsers className="text-[#ff9500]" size={18} />;
-      case "mention": return <FiAtSign className="text-[#af52de]" size={18} />;
-      case "message_request": return <FiInbox className="text-[#ff3b30]" size={18} />;
-      default: return <FiBell className="text-gray-500" size={18} />;
-    }
-  };
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
-        <div className="flex flex-col items-center gap-3">
-          <FiLoader className={`animate-spin ${primaryText}`} size={32} />
-          <p className="text-[14px] text-gray-500">Đang tải...</p>
-        </div>
-      </div>
-    );
+  switch (type) {
+    case "friend_request": return <FiUserPlus className="text-[#0a84ff]" size={18} />;
+    case "friend_accepted": return <FiCheck className="text-[#30d158]" size={18} />;
+    case "group_invite": return <FiUsers className="text-[#ff9500]" size={18} />;
+    case "mention": return <FiAtSign className="text-[#af52de]" size={18} />;
+    case "message_request": return <FiInbox className="text-[#ff3b30]" size={18} />;
+    default: return <FiBell className="text-gray-500" size={18} />;
   }
-// THÊM DÒNG NÀY
+};
+
+// THÊM TYPE VÀO ĐÂY
+type PublicRoomItem = {
+  id: string;
+  name: string;
+  emoji: string;
+  color: string;
+  memberCount: number;
+  onlineCount: number;
+  lastMessage?: string;
+  isJoined: boolean;
+  isHot: boolean;
+};
+
 const handleJoinPublicRoom = async (room: PublicRoomItem) => {
   if (!user?.uid) return toast.error("Vui lòng đăng nhập");
   if (room.isJoined) return router.push(`/chat/${room.id}`);
@@ -1241,12 +1243,14 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
         memberCount: 1,
         onlineCount: 1,
         createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
         lastMessage: `Chào mừng đến ${room.name}! 👋`,
       });
     } else {
       batch.update(roomRef, {
         members: arrayUnion(user.uid),
-        memberCount: (roomSnap.data()?.memberCount || 0) + 1,
+        memberCount: increment(1),
+        updatedAt: serverTimestamp(),
       });
     }
 
@@ -1254,9 +1258,11 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
       isGroup: true,
       isPublicRoom: true,
       groupName: room.name,
-      groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(room.emoji)}&background=random&color=fff&bold=true`,
+      groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(room.emoji)}&background=random&color=fff&bold=true&size=128`,
       members: arrayUnion(user.uid),
+      createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
+      lastMessage: `Bạn đã tham gia ${room.name}`,
     }, { merge: true });
 
     await batch.commit();
@@ -1264,16 +1270,28 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
     toast.success(`Đã vào ${room.name}`, { icon: room.emoji });
     router.push(`/chat/${room.id}`);
   } catch (e: any) {
-    toast.error(e.message);
+    console.error(e);
+    toast.error("Lỗi vào phòng: " + e.message);
   }
 };
-  return (
-    <>
-      <div className="min-h-dvh bg-gradient-to-b from-[#F7FAFF] via-white to-[#F5F7FB] text-zinc-950 dark:from-[#05070A] dark:via-zinc-950 dark:to-[#0F172A] dark:text-white">
-      
 
-<div className="sticky top-0 z-40 pt-3 px-4">
-  <div className="space-y-2.5">
+if (authLoading) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
+      <div className="flex flex-col items-center gap-3">
+        <FiLoader className={`animate-spin ${primaryText}`} size={32} />
+        <p className="text-[14px] text-gray-500">Đang tải...</p>
+      </div>
+    </div>
+  );
+}
+
+return (
+  <>
+    <div className="min-h-dvh bg-gradient-to-b from-[#F7FAFF] via-white to-[#F5F7FB] text-zinc-950 dark:from-[#05070A] dark:via-zinc-950 dark:to-[#0F172A] dark:text-white">
+      
+      <div className="sticky top-0 z-40 pt-3 px-4">
+        <div className="space-y-2.5">
 {/* Hàng 1: 4 nút - 1 khung riêng */}
 <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] dark:shadow-black/20 border border-zinc-200/60 dark:border-zinc-800/60 px-4 py-3.5">
   <div className="grid grid-cols-5 gap-2">
@@ -1430,62 +1448,62 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
     </div>
 
 
-    <div className="px-4 pt-6">
-      <div className="flex items-center justify-between mb-3 px-1">
-        <h3 className="text-sm font-[700] flex items-center gap-1.5">
-          <span className="text-lg">💬</span>
-          Phòng Chat Công Cộng
-        </h3>
-        <button
-          onClick={() => setShowPublicRooms(true)}
-          className="text-xs font-[600] text-[#0a84ff] active:opacity-60 transition-opacity"
-        >
-          Xem tất cả
-        </button>
-      </div>
+<div className="px-4 pt-6">
+  <div className="flex items-center justify-between mb-3 px-1">
+    <h3 className="text-sm font-[700] flex items-center gap-1.5">
+      <span className="text-lg">💬</span>
+      Phòng Chat Công Cộng
+    </h3>
+    <button
+      onClick={() => setShowPublicRooms(true)}
+      className="text-xs font-[600] text-[#0a84ff] active:opacity-60 transition-opacity"
+    >
+      Xem tất cả
+    </button>
+  </div>
 
-      <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4">
-        {publicRoomsLoading? (
-          [1,2,3].map(i => (
-            <div key={i} className="flex-shrink-0 w-40 h-40 bg-zinc-100 dark:bg-zinc-800 rounded-2xl animate-pulse" />
-          ))
-        ) : publicRooms.slice(0, 5).map((room) => (
-          <button
-            key={room.id}
-            onClick={() => handleJoinPublicRoom(room)}
-            className="flex-shrink-0 w-40 bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.98] transition-transform text-left"
-          >
-            <div className={`relative h-24 bg-gradient-to-br ${room.color} flex items-center justify-center`}>
-              <span className="text-4xl drop-shadow-lg">{room.emoji}</span>
-              {room.onlineCount > 20 && (
-                <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-red-500 rounded-md flex items-center gap-1">
-                  <FiTrendingUp size={10} className="text-white" />
-                  <span className="text- font-[800] text-white">HOT</span>
-                </div>
-              )}
-              {room.isJoined && (
-                <div className="absolute top-2 left-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
-                  <FiCheck className="text-white" size={12} strokeWidth={3} />
-                </div>
-              )}
+  <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4">
+    {publicRoomsLoading? (
+      [1,2,3,4].map(i => (
+        <div key={i} className="flex-shrink-0 w-36 h-36 bg-zinc-100 dark:bg-zinc-800 rounded-2xl animate-pulse" />
+      ))
+    ) : publicRooms.slice(0, 6).map((room) => (
+      <button
+        key={room.id}
+        onClick={() => handleJoinPublicRoom(room)}
+        className="flex-shrink-0 w-36 bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.98] transition-transform text-left"
+      >
+        <div className={`relative h-20 bg-gradient-to-br ${room.color} flex items-center justify-center`}>
+          <span className="text-4xl drop-shadow-lg">{room.emoji}</span>
+          {room.isHot && (
+            <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 bg-red-500 rounded-md flex items-center gap-0.5">
+              <FiTrendingUp size={10} className="text-white" />
+              <span className="text- font-[800] text-white">HOT</span>
             </div>
-            <div className="p-2.5">
-              <h4 className="text-sm font-[700] mb-0.5">{room.name}</h4>
-              <div className="flex items-center gap-2 text- text-[#8e8e93]">
-                <span className="flex items-center gap-0.5">
-                  <FiUsers size={10} />
-                  {room.memberCount}
-                </span>
-                <span className="flex items-center gap-0.5">
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                  {room.onlineCount}
-                </span>
-              </div>
+          )}
+          {room.isJoined && (
+            <div className="absolute top-1.5 left-1.5 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
+              <FiCheck className="text-white" size={12} strokeWidth={3} />
             </div>
-          </button>
-        ))}
-      </div>
-    </div>
+          )}
+        </div>
+        <div className="p-2.5">
+          <h4 className="text- font-[700] mb-1 tracking-tight">{room.name}</h4>
+          <div className="flex items-center justify-between text- text-[#8e8e93]">
+            <span className="flex items-center gap-1">
+              <FiUsers size={11} />
+              <span className="font-[600]">{room.memberCount}</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+              <span className="font-[600]">{room.onlineCount}</span>
+            </span>
+          </div>
+        </div>
+      </button>
+    ))}
+  </div>
+</div>
      </div> 
 )} 
 
