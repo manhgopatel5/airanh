@@ -1485,7 +1485,7 @@ const handleJoinPublicRoom = async (room: PublicRoomItem) => {
         ))}
       </div>
     </div>
-  )} 
+   
 
   {activeTab === "notifications"? (
     notifLoading? (
