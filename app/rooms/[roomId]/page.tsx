@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
@@ -31,7 +30,7 @@ type Message = {
 };
 
 export default function ChatRoom() {
-  const { roomId } = useParams(); // ← Đổi từ chatId thành roomId
+  const { roomId } = useParams();
   const { user } = useAuth();
   const db = getFirebaseDB();
   const router = useRouter();
@@ -42,21 +41,22 @@ export default function ChatRoom() {
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const isPublicRoom = typeof roomId === 'string' && roomId.startsWith('public_'); // ← Sửa hết chatId thành roomId
+  const isPublicRoom = typeof roomId === 'string' && roomId.startsWith('public_');
 
   useEffect(() => {
-    if (!roomId ||!user?.uid) return; // ← Sửa chatId thành roomId
+    if (!roomId ||!user?.uid) return;
 
-    const unsubs: (() => void)[] = [];
+    let unsubRoom: () => void = () => {};
+    let unsubMessages: () => void = () => {};
 
-    // 1. Load room data
-    const roomRef = doc(db, isPublicRoom? "public_rooms" : "chats", roomId as string); // ← Sửa
-    unsubs.push(onSnapshot(roomRef, (snap) => {
+    // 1. Load room data từ public_rooms hoặc chats
+    const roomRef = doc(db, isPublicRoom? "public_rooms" : "chats", roomId as string);
+    unsubRoom = onSnapshot(roomRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         setRoomData({
           id: snap.id,
-          name: data.name || data.groupName,
+          name: data.name || data.groupName || "Phòng chat",
           emoji: data.emoji || "💬",
           color: data.color || "from-blue-500 to-cyan-500",
           members: data.members || [],
@@ -66,78 +66,98 @@ export default function ChatRoom() {
         setLoading(false);
       } else {
         toast.error("Phòng không tồn tại");
-        router.push("/chat"); // Về lại list chat
+        router.push("/chat");
       }
-    }));
-
-    // 2. Load messages
-    const messagesRef = collection(db, "chats", roomId as string, "messages"); // ← Sửa
-    const q = query(messagesRef, orderBy("createdAt", "asc"), limit(100));
-    unsubs.push(onSnapshot(q, (snap) => {
-      const msgs: Message[] = [];
-      snap.forEach((doc) => {
-        msgs.push({ id: doc.id,...doc.data() } as Message);
-      });
-      setMessages(msgs);
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-    }));
-
-    return () => unsubs.forEach((u) => u());
-  }, [roomId, user?.uid, db, isPublicRoom, router]); // ← Sửa chatId thành roomId
-
-  const handleSendMessage = async () => {
-  if (!message.trim() ||!user?.uid ||!roomId || sending) return;
-  const text = message.trim();
-  setMessage("");
-  setSending(true);
-
-  try {
-    const chatRef = doc(db, "chats", roomId as string);
-    const chatSnap = await getDoc(chatRef);
-
-    // Tạo chats doc nếu chưa có - PHẢI CÓ members
-    if (!chatSnap.exists()) {
-      await setDoc(chatRef, {
-        isGroup: true,
-        isPublicRoom: true, // ← Thêm field này để phân biệt
-        groupName: roomData?.name,
-        groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(roomData?.emoji || "💬")}&background=random&color=fff&bold=true&size=128`,
-        members: [user.uid], // ← QUAN TRỌNG: Phải add mình vào
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        lastMessage: text,
-        lastSenderId: user.uid,
-        lastSenderName: user.displayName || "User",
-      });
-    } else {
-      // Nếu đã có thì update + add mình vào members nếu chưa có
-      await updateDoc(chatRef, {
-        members: arrayUnion(user.uid),
-        lastMessage: text,
-        lastSenderId: user.uid,
-        lastSenderName: user.displayName || "User",
-        updatedAt: serverTimestamp(),
-      });
-    }
-
-    // Thêm message vào subcollection
-    await addDoc(collection(db, "chats", roomId as string, "messages"), {
-      text,
-      senderId: user.uid,
-      senderName: user.displayName || "User",
-      senderAvatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || "U")}&background=random`,
-      createdAt: serverTimestamp(),
+    }, (error) => {
+      console.error("Room listener error:", error);
+      toast.error("Lỗi tải phòng");
+      setLoading(false);
     });
 
-    if ("vibrate" in navigator) navigator.vibrate(10);
-  } catch (e: any) {
-    console.error(e);
-    toast.error("Lỗi gửi tin: " + e.message);
-    setMessage(text); // restore nếu lỗi
-  } finally {
-    setSending(false);
-  }
-};
+    // 2. Load messages - CHỈ LISTEN KHI CHAT DOC ĐÃ TỒN TẠI
+    const chatRef = doc(db, "chats", roomId as string);
+    const unsubChatCheck = onSnapshot(chatRef, (chatSnap) => {
+      if (chatSnap.exists()) {
+        // Doc có rồi mới listen messages
+        const messagesRef = collection(db, "chats", roomId as string, "messages");
+        const q = query(messagesRef, orderBy("createdAt", "asc"), limit(100));
+        unsubMessages = onSnapshot(q, (snap) => {
+          const msgs: Message[] = [];
+          snap.forEach((doc) => {
+            msgs.push({ id: doc.id,...doc.data() } as Message);
+          });
+          setMessages(msgs);
+          setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+        }, (error) => {
+          console.error("Messages listener error:", error);
+        });
+      } else {
+        setMessages([]); // Chưa có tin nhắn
+      }
+    }, (error) => {
+      console.error("Chat check error:", error);
+    });
+
+    return () => {
+      unsubRoom();
+      unsubChatCheck();
+      unsubMessages();
+    };
+  }, [roomId, user?.uid, db, isPublicRoom, router]);
+
+  const handleSendMessage = async () => {
+    if (!message.trim() ||!user?.uid ||!roomId || sending) return;
+    const text = message.trim();
+    setMessage("");
+    setSending(true);
+
+    try {
+      const chatRef = doc(db, "chats", roomId as string);
+      const chatSnap = await getDoc(chatRef);
+
+      // Tạo chats doc nếu chưa có
+      if (!chatSnap.exists()) {
+        await setDoc(chatRef, {
+          isGroup: true,
+          isPublicRoom: isPublicRoom,
+          groupName: roomData?.name || "Phòng chat",
+          groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(roomData?.emoji || "💬")}&background=random&color=fff&bold=true&size=128`,
+          members: [user.uid],
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          lastMessage: text,
+          lastSenderId: user.uid,
+          lastSenderName: user.displayName || "User",
+        });
+      } else {
+        // Update + add mình vào members nếu chưa có
+        await updateDoc(chatRef, {
+          members: arrayUnion(user.uid),
+          lastMessage: text,
+          lastSenderId: user.uid,
+          lastSenderName: user.displayName || "User",
+          updatedAt: serverTimestamp(),
+        });
+      }
+
+      // Thêm message
+      await addDoc(collection(db, "chats", roomId as string, "messages"), {
+        text,
+        senderId: user.uid,
+        senderName: user.displayName || "User",
+        senderAvatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || "U")}&background=random`,
+        createdAt: serverTimestamp(),
+      });
+
+      if ("vibrate" in navigator) navigator.vibrate(10);
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Lỗi gửi tin: " + e.message);
+      setMessage(text);
+    } finally {
+      setSending(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -164,7 +184,7 @@ export default function ChatRoom() {
             <h1 className="text- font-semibold truncate">{roomData.name}</h1>
             <p className="text- text-[#8e8e93] flex items-center gap-1">
               <FiUsers size={12} />
-              {roomData.memberCount} thành viên
+              {roomData.memberCount || 0} thành viên
               {roomData.onlineCount > 0 && (
                 <>
                   <span className="mx-1">•</span>
