@@ -430,7 +430,7 @@ const joinedDays =
       label: "Dân chơi Sài Gòn",
       desc: "Check-in Ho Chi Minh City",
       unlocked: targetUser?.location?.includes("Hồ Chí Minh") || false,
-      condition: "Location ở HCM",
+      condition: "Location ở Sài gòn",
       color: "from-emerald-400 to-green-500",
       borderColor: "border-emerald-400",
       category: "profile",
