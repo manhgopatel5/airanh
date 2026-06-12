@@ -23,7 +23,7 @@ type PublicRoomItem = {
 };
 
 const PUBLIC_CITIES = [
-  { id: "hcm", name: "HCM", emoji: "🏙️", color: "from-blue-500 to-cyan-500", desc: "Sài Gòn năng động, không ngủ" },
+  { id: "hcm", name: "SÀI GÒN", emoji: "🏙️", color: "from-blue-500 to-cyan-500", desc: "Sài Gòn năng động, không ngủ" },
   { id: "hn", name: "HÀ NỘI", emoji: "🏛️", color: "from-orange-500 to-red-500", desc: "Thủ đô ngàn năm văn hiến" },
   { id: "dn", name: "ĐÀ NẴNG", emoji: "🌉", color: "from-teal-500 to-emerald-500", desc: "Thành phố đáng sống nhất VN" },
   { id: "ct", name: "CẦN THƠ", emoji: "🌾", color: "from-green-500 to-lime-500", desc: "Miền Tây sông nước hữu tình" },
