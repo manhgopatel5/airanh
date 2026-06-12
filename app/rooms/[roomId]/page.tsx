@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { getFirebaseDB } from "@/lib/firebase";
+import { getFirebaseDB, getFirebaseRtdb } from "@/lib/firebase";
 import { doc, getDoc, onSnapshot, arrayUnion, serverTimestamp, collection, query, orderBy, limit, writeBatch } from "firebase/firestore";
+import { ref, onValue, set, onDisconnect } from "firebase/database";
 import { FiArrowLeft, FiUsers, FiSend, FiLoader } from "react-icons/fi";
 import { toast } from "sonner";
 import { format, isToday, isYesterday } from "date-fns";
@@ -33,6 +34,7 @@ export default function ChatRoom() {
   const { roomId } = useParams();
   const { user } = useAuth();
   const db = getFirebaseDB();
+  const rtdb = getFirebaseRtdb();
   const router = useRouter();
   const [roomData, setRoomData] = useState<RoomData | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -63,6 +65,33 @@ export default function ChatRoom() {
     }
   }, [messages, isAtBottom]);
 
+  // Presence - Online count real-time
+  useEffect(() => {
+    if (!user?.uid ||!roomId) return;
+
+    const myConnectionsRef = ref(rtdb, `rooms/${roomId}/online/${user.uid}`);
+    const connectedRef = ref(rtdb, '.info/connected');
+
+    const unsubConnected = onValue(connectedRef, (snap) => {
+      if (snap.val() === true) {
+        set(myConnectionsRef, true);
+        onDisconnect(myConnectionsRef).remove();
+      }
+    });
+
+    const onlineRef = ref(rtdb, `rooms/${roomId}/online`);
+    const unsubOnline = onValue(onlineRef, (snap) => {
+      const count = snap.exists()? Object.keys(snap.val()).length : 0;
+      setRoomData(prev => prev? {...prev, onlineCount: count} : null);
+    });
+
+    return () => {
+      unsubConnected();
+      unsubOnline();
+      set(myConnectionsRef, null);
+    };
+  }, [user?.uid, roomId, rtdb]);
+
   useEffect(() => {
     if (!roomId ||!user?.uid) return;
 
@@ -73,15 +102,15 @@ export default function ChatRoom() {
     unsubRoom = onSnapshot(roomRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
-        setRoomData({
+        setRoomData(prev => ({
           id: snap.id,
           name: data.name || data.groupName || "Phòng chat",
           emoji: data.emoji || "💬",
           color: data.color || "from-blue-500 to-cyan-500",
           members: data.members || [],
-          memberCount: data.memberCount || data.members?.length || 0,
-          onlineCount: data.onlineCount || 0,
-        });
+          memberCount: data.members?.length || 0,
+          onlineCount: prev?.onlineCount || 0,
+        }));
         setLoading(false);
       } else {
         toast.error("Phòng không tồn tại");
@@ -98,7 +127,6 @@ export default function ChatRoom() {
           const msgs: Message[] = [];
           snap.forEach((doc) => {
             const data = doc.data();
-            // Fallback avatar + tên chuẩn
             const senderName = data.senderName || "User";
             const senderAvatar = data.senderAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(senderName)}&background=random`;
             msgs.push({
@@ -125,65 +153,66 @@ export default function ChatRoom() {
   }, [roomId, user?.uid, db, isPublicRoom, router]);
 
   const handleSendMessage = async () => {
-  if (!message.trim() ||!user?.uid ||!roomId || sending) return;
-  const text = message.trim();
-  setMessage("");
-  setSending(true);
-  setIsAtBottom(true);
+    if (!message.trim() ||!user?.uid ||!roomId || sending) return;
+    const text = message.trim();
+    setMessage("");
+    setSending(true);
+    setIsAtBottom(true);
 
-  try {
-    const userName = user.displayName || user.email?.split('@')[0] || "User";
-    const userAvatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=random`;
+    try {
+      const userName = user.displayName || user.email?.split('@')[0] || "User";
+      const userAvatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=random`;
 
-    // Dùng batch để join room + gửi tin cùng lúc, tránh lỗi permission
-    const batch = writeBatch(db);
-    const chatRef = doc(db, "chats", roomId as string);
-    const chatSnap = await getDoc(chatRef);
+      const batch = writeBatch(db);
+      const chatRef = doc(db, "chats", roomId as string);
+      const chatSnap = await getDoc(chatRef);
 
-    if (!chatSnap.exists()) {
-      batch.set(chatRef, {
-        isGroup: true,
-        isPublicRoom: isPublicRoom,
-        groupName: roomData?.name || "Phòng chat",
-        groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(roomData?.emoji || "💬")}&background=random&color=fff&bold=true&size=128`,
-        members: [user.uid],
+      if (!chatSnap.exists()) {
+        batch.set(chatRef, {
+          isGroup: true,
+          isPublicRoom: isPublicRoom,
+          groupName: roomData?.name || "Phòng chat",
+          groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(roomData?.emoji || "💬")}&background=random&color=fff&bold=true&size=128`,
+          members: [user.uid],
+          memberCount: 1,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          lastMessage: text,
+          lastSenderId: user.uid,
+          lastSenderName: userName,
+        });
+      } else {
+        const currentMembers = chatSnap.data().members || [];
+        const isNewMember =!currentMembers.includes(user.uid);
+        batch.update(chatRef, {
+          members: arrayUnion(user.uid),
+          memberCount: isNewMember? currentMembers.length + 1 : currentMembers.length,
+          lastMessage: text,
+          lastSenderId: user.uid,
+          lastSenderName: userName,
+          updatedAt: serverTimestamp(),
+        });
+      }
+
+      const msgRef = doc(collection(db, "chats", roomId as string, "messages"));
+      batch.set(msgRef, {
+        text,
+        senderId: user.uid,
+        senderName: userName,
+        senderAvatar: userAvatar,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        lastMessage: text,
-        lastSenderId: user.uid,
-        lastSenderName: userName,
       });
-    } else {
-      batch.update(chatRef, {
-        members: arrayUnion(user.uid), // Auto join khi nhắn
-        lastMessage: text,
-        lastSenderId: user.uid,
-        lastSenderName: userName,
-        updatedAt: serverTimestamp(),
-      });
+
+      await batch.commit();
+      if ("vibrate" in navigator) navigator.vibrate(10);
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Lỗi gửi tin: " + e.message);
+      setMessage(text);
+    } finally {
+      setSending(false);
     }
-
-    // Thêm message vào batch
-    const msgRef = doc(collection(db, "chats", roomId as string, "messages"));
-    batch.set(msgRef, {
-      text,
-      senderId: user.uid,
-      senderName: userName,
-      senderAvatar: userAvatar,
-      createdAt: serverTimestamp(),
-    });
-
-    await batch.commit();
-
-    if ("vibrate" in navigator) navigator.vibrate(10);
-  } catch (e: any) {
-    console.error(e);
-    toast.error("Lỗi gửi tin: " + e.message);
-    setMessage(text);
-  } finally {
-    setSending(false);
-  }
-};
+  };
 
   const formatMessageTime = (timestamp: any) => {
     if (!timestamp?.toDate) return "";
@@ -205,7 +234,6 @@ export default function ChatRoom() {
 
   return (
     <div className="fixed inset-0 bg-white dark:bg-black flex flex-col">
-      {/* Header - Fixed + né tai thỏ */}
       <div className="flex-shrink-0 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-b border-black/5 dark:border-white/5 pt-[env(safe-area-inset-top)]">
         <div className="flex items-center gap-3 px-4 py-3">
           <button onClick={() => router.back()} className="w-9 h-9 flex items-center justify-center -ml-2 active:opacity-60">
@@ -218,7 +246,7 @@ export default function ChatRoom() {
             <h1 className="text-[17px] font-semibold truncate leading-5">{roomData.name}</h1>
             <p className="text-[13px] text-[#8e8e93] flex items-center gap-1 mt-0.5">
               <FiUsers size={12} />
-              {roomData.memberCount || 0} thành viên
+              {roomData.memberCount} thành viên
               {roomData.onlineCount > 0 && (
                 <>
                   <span className="mx-1">•</span>
@@ -231,7 +259,6 @@ export default function ChatRoom() {
         </div>
       </div>
 
-      {/* Messages */}
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
@@ -245,51 +272,48 @@ export default function ChatRoom() {
           </div>
         ) : (
           messages.map((msg, idx) => {
-  const isMe = msg.senderId === user?.uid;
-  const prevMsg = messages[idx - 1];
-  const nextMsg = messages[idx + 1];
-  const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
-  const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
+            const isMe = msg.senderId === user?.uid;
+            const prevMsg = messages[idx - 1];
+            const nextMsg = messages[idx + 1];
+            const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
+            const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
 
-  return (
-    <div key={msg.id} className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
-      {/* Avatar - Chỉ show ở tin đầu chuỗi */}
-      <div className="w-8 flex-shrink-0 self-end">
-        {isFirstInGroup? (
-          <img
-            src={msg.senderAvatar}
-            alt={msg.senderName}
-            className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700"
-            referrerPolicy="no-referrer"
-            onError={(e) => {
-              e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}&background=random`;
-            }}
-          />
-        ) : <div className="w-8" />}
-      </div>
+            return (
+              <div key={msg.id} className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
+                <div className="w-8 flex-shrink-0 self-end">
+                  {isFirstInGroup? (
+                    <img
+                      src={msg.senderAvatar}
+                      alt={msg.senderName}
+                      className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}&background=random`;
+                      }}
+                    />
+                  ) : <div className="w-8" />}
+                </div>
 
-      {/* Message bubble */}
-      <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
-        <div className={`px-4 py-2.5 rounded-[18px] ${
-          isMe
-        ? 'bg-[#0a84ff] text-white'
-          : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
-        } ${isLastInGroup? (isMe? 'rounded-tr-[4px]' : 'rounded-tl-[4px]') : ''}`}>
-          <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
-        </div>
-        {isLastInGroup && (
-          <p className="text-[11px] text-[#8e8e93] mt-1 px-3">
-            {formatMessageTime(msg.createdAt)}
-          </p>
+                <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
+                  <div className={`px-4 py-2.5 rounded-[18px] ${
+                    isMe
+                 ? 'bg-[#0a84ff] text-white'
+                    : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
+                  } ${isLastInGroup? (isMe? 'rounded-tr-[4px]' : 'rounded-tl-[4px]') : ''}`}>
+                    <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
+                  </div>
+                  {isLastInGroup && (
+                    <p className="text-[11px] text-[#8e8e93] mt-1 px-3">
+                      {formatMessageTime(msg.createdAt)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
-    </div>
-  );
-})
-        )}
-      </div>
 
-      {/* Input - Fixed dưới + né home bar */}
       <div className="flex-shrink-0 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-t border-black/5 dark:border-white/5 pb-[env(safe-area-inset-bottom)]">
         <div className="px-3 py-2">
           <div className="flex items-end gap-2">
