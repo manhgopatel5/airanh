@@ -44,7 +44,6 @@ export default function ChatRoom() {
 
   const isPublicRoom = typeof roomId === 'string' && roomId.startsWith('public_');
 
-  // Check scroll để không auto scroll khi user đang đọc tin cũ
   const handleScroll = useCallback(() => {
     if (!messagesContainerRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
@@ -52,7 +51,6 @@ export default function ChatRoom() {
     setIsAtBottom(atBottom);
   }, []);
 
-  // Auto scroll - dùng scrollTo thay scrollIntoView để không bị bay
   useEffect(() => {
     if (isAtBottom && messagesContainerRef.current) {
       const container = messagesContainerRef.current;
@@ -100,12 +98,15 @@ export default function ChatRoom() {
           const msgs: Message[] = [];
           snap.forEach((doc) => {
             const data = doc.data();
+            // Fallback avatar + tên chuẩn
+            const senderName = data.senderName || "User";
+            const senderAvatar = data.senderAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(senderName)}&background=random`;
             msgs.push({
               id: doc.id,
               text: data.text || "",
               senderId: data.senderId || "",
-              senderName: data.senderName || "User",
-              senderAvatar: data.senderAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.senderName || "U")}&background=random`,
+              senderName,
+              senderAvatar,
               createdAt: data.createdAt,
             } as Message);
           });
@@ -198,8 +199,8 @@ export default function ChatRoom() {
 
   return (
     <div className="fixed inset-0 bg-white dark:bg-black flex flex-col">
-      {/* Header - Fixed trên */}
-      <div className="flex-shrink-0 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-b border-black/5 dark:border-white/5">
+      {/* Header - Fixed + né tai thỏ */}
+      <div className="flex-shrink-0 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-b border-black/5 dark:border-white/5 pt-[env(safe-area-inset-top)]">
         <div className="flex items-center gap-3 px-4 py-3">
           <button onClick={() => router.back()} className="w-9 h-9 flex items-center justify-center -ml-2 active:opacity-60">
             <FiArrowLeft size={22} />
@@ -224,7 +225,7 @@ export default function ChatRoom() {
         </div>
       </div>
 
-      {/* Messages - Scrollable giữa */}
+      {/* Messages */}
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
@@ -241,36 +242,34 @@ export default function ChatRoom() {
             const isMe = msg.senderId === user?.uid;
             const prevMsg = messages[idx - 1];
             const nextMsg = messages[idx + 1];
-            const showAvatar =!isMe && (!prevMsg || prevMsg.senderId!== msg.senderId);
-            const showName =!isMe && showAvatar;
+            const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
             const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
 
             return (
-              <div key={msg.id} className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
-                {/* Avatar */}
-                <div className="w-8 flex-shrink-0">
-                  {showAvatar? (
-                    <img
-                      src={msg.senderAvatar}
-                      alt={msg.senderName}
-                      className="w-8 h-8 rounded-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}&background=random`;
-                      }}
-                    />
-                  ) :!isMe? <div className="w-8" /> : null}
-                </div>
+           <div key={msg.id} className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
+  {/* Avatar - Show cho tất cả */}
+  <div className="w-8 flex-shrink-0">
+    <img
+      src={msg.senderAvatar}
+      alt={msg.senderName}
+      className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700"
+      referrerPolicy="no-referrer"
+      onError={(e) => {
+        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}&background=random`;
+      }}
+    />
+  </div>
 
-                {/* Message bubble */}
-                <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
-                  {showName && (
-                    <p className="text-[13px] text-[#8e8e93] mb-1 px-3 font-medium">
-                      {msg.senderName}
-                    </p>
-                  )}
+  {/* Message bubble */}
+  <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
+    {isFirstInGroup && (
+      <p className={`text-[13px] text-[#8e8e93] mb-1 px-3 font-medium ${isMe? 'text-right' : ''}`}>
+        {msg.senderName}{isMe? ' (Bạn)' : ''}
+      </p>
+    )}
                   <div className={`px-4 py-2.5 rounded-[18px] ${
                     isMe
-                    ? 'bg-[#0a84ff] text-white'
+                   ? 'bg-[#0a84ff] text-white'
                       : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
                   } ${isLastInGroup? (isMe? 'rounded-tr-[4px]' : 'rounded-tl-[4px]') : ''}`}>
                     <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
@@ -287,7 +286,7 @@ export default function ChatRoom() {
         )}
       </div>
 
-      {/* Input - Fixed dưới */}
+      {/* Input - Fixed dưới + né home bar */}
       <div className="flex-shrink-0 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-t border-black/5 dark:border-white/5 pb-[env(safe-area-inset-bottom)]">
         <div className="px-3 py-2">
           <div className="flex items-end gap-2">
