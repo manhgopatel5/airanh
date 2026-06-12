@@ -287,7 +287,7 @@ type PublicRoomItem = {
 };
 
 const PUBLIC_CITIES = [
-  { id: "hcm", name: "HCM", emoji: "🏙️", color: "from-blue-500 to-cyan-500" },
+  { id: "hcm", name: "SÀI GÒN", emoji: "🏙️", color: "from-blue-500 to-cyan-500" },
   { id: "hn", name: "HÀ NỘI", emoji: "🏛️", color: "from-orange-500 to-red-500" },
   { id: "dn", name: "ĐÀ NẴNG", emoji: "🌉", color: "from-teal-500 to-emerald-500" },
   { id: "ct", name: "CẦN THƠ", emoji: "🌾", color: "from-green-500 to-lime-500" },
@@ -1399,19 +1399,16 @@ return (
         ))}
       </div>
 
-    {/* 3. List event */}
-<div className="space-y-3">
+ {/* 3. List event */}
+<div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 -mx-4 px-4">
 {eventsLoading? (
-  <div className="flex items-center justify-center py-10">
-    <FiLoader className="animate-spin text-[#0a84ff]" size={24} />
-  </div>
+  <div className="flex-shrink-0 w-full snap-center h-64 bg-zinc-100 dark:bg-zinc-800 rounded-2xl animate-pulse" />
 ) : (selectedCategory? eventsData.filter(e => e.category === selectedCategory) : eventsData)
-    .slice(0, 2) // THÊM DÒNG NÀY
-    .map((item) => (
+   .map((item) => (
           <button
             key={item.id}
             onClick={() => setSelectedEvent(item)}
-            className="w-full bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.98] transition-transform text-left"
+            className="flex-shrink-0 w-full snap-center bg-white dark:bg-zinc-900 rounded-2xl shadow-md shadow-black/[0.04] border border-zinc-200/60 dark:border-zinc-800/60 overflow-hidden active:scale-[0.98] transition-transform text-left"
           >
             <div className="relative h-32">
               <img src={item.image} className="w-full h-full object-cover" loading="lazy" alt={item.title} />
@@ -1440,14 +1437,14 @@ return (
                   {item.joined} người
                 </span>
                 <span className="flex items-center gap-1">
-                                <FiMapPin size={12} />
+                  <FiMapPin size={12} />
                   {item.distance}
                 </span>
               </div>
             </div>
           </button>
         ))}
-      </div>
+</div>
     </div>
 
 
