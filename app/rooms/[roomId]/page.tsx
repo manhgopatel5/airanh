@@ -86,56 +86,58 @@ export default function ChatRoom() {
   }, [roomId, user?.uid, db, isPublicRoom, router]); // ← Sửa chatId thành roomId
 
   const handleSendMessage = async () => {
-    if (!message.trim() ||!user?.uid ||!roomId || sending) return; // ← Sửa
-    const text = message.trim();
-    setMessage("");
-    setSending(true);
+  if (!message.trim() ||!user?.uid ||!roomId || sending) return;
+  const text = message.trim();
+  setMessage("");
+  setSending(true);
 
-    try {
-      const chatRef = doc(db, "chats", roomId as string); // ← Sửa
-      const chatSnap = await getDoc(chatRef);
+  try {
+    const chatRef = doc(db, "chats", roomId as string);
+    const chatSnap = await getDoc(chatRef);
 
-      // Tạo chats doc nếu chưa có - chỉ khi gửi tin nhắn đầu tiên
-      if (!chatSnap.exists()) {
-        await setDoc(chatRef, {
-          isGroup: true,
-          isPublicRoom: isPublicRoom,
-          groupName: roomData?.name,
-          groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(roomData?.emoji || "💬")}&background=random&color=fff&bold=true&size=128`,
-          members: [user.uid],
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          lastMessage: text,
-          lastSenderId: user.uid,
-          lastSenderName: user.displayName || "User",
-        });
-      } else {
-        await updateDoc(chatRef, {
-          members: arrayUnion(user.uid),
-          lastMessage: text,
-          lastSenderId: user.uid,
-          lastSenderName: user.displayName || "User",
-          updatedAt: serverTimestamp(),
-        });
-      }
-
-      // Thêm message vào subcollection
-      await addDoc(collection(db, "chats", roomId as string, "messages"), { // ← Sửa
-        text,
-        senderId: user.uid,
-        senderName: user.displayName || "User",
-        senderAvatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || "U")}&background=random`,
+    // Tạo chats doc nếu chưa có - PHẢI CÓ members
+    if (!chatSnap.exists()) {
+      await setDoc(chatRef, {
+        isGroup: true,
+        isPublicRoom: true, // ← Thêm field này để phân biệt
+        groupName: roomData?.name,
+        groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(roomData?.emoji || "💬")}&background=random&color=fff&bold=true&size=128`,
+        members: [user.uid], // ← QUAN TRỌNG: Phải add mình vào
         createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        lastMessage: text,
+        lastSenderId: user.uid,
+        lastSenderName: user.displayName || "User",
       });
-
-      if ("vibrate" in navigator) navigator.vibrate(10);
-    } catch (e: any) {
-      toast.error("Lỗi gửi tin: " + e.message);
-      setMessage(text); // restore nếu lỗi
-    } finally {
-      setSending(false);
+    } else {
+      // Nếu đã có thì update + add mình vào members nếu chưa có
+      await updateDoc(chatRef, {
+        members: arrayUnion(user.uid),
+        lastMessage: text,
+        lastSenderId: user.uid,
+        lastSenderName: user.displayName || "User",
+        updatedAt: serverTimestamp(),
+      });
     }
-  };
+
+    // Thêm message vào subcollection
+    await addDoc(collection(db, "chats", roomId as string, "messages"), {
+      text,
+      senderId: user.uid,
+      senderName: user.displayName || "User",
+      senderAvatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || "U")}&background=random`,
+      createdAt: serverTimestamp(),
+    });
+
+    if ("vibrate" in navigator) navigator.vibrate(10);
+  } catch (e: any) {
+    console.error(e);
+    toast.error("Lỗi gửi tin: " + e.message);
+    setMessage(text); // restore nếu lỗi
+  } finally {
+    setSending(false);
+  }
+};
 
   if (loading) {
     return (
