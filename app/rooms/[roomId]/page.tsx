@@ -59,9 +59,7 @@ export default function ChatRoom() {
   const [sending, setSending] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
-  const [showUserPopup, setShowUserPopup] = useState(false);
-const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-const [popupPos, setPopupPos] = useState({ x: 0, y: 0 });
+
   // Menu + Modal states
   const [showMenu, setShowMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -529,7 +527,7 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
               const totalVotes = msg.pollData.options.reduce((sum, opt) => sum + opt.votes.length, 0);
               return (
                 <div key={msg.id} id={`msg-${msg.id}`} className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
-             <div className="w-8 flex-shrink-0 self-end relative">
+         <div className="w-8 flex-shrink-0 self-end relative">
   {isFirstInGroup? (
     <>
       <img
@@ -552,7 +550,7 @@ const handleAvatarClick = (e: React.MouseEvent, msgId: string) => {
             className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
           >
             <User className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-            <span className="text- font-medium text-zinc-900 dark:text-white">
+            <span className="text-[15px] font-medium text-zinc-900 dark:text-white">
               Thông tin cá nhân
             </span>
           </button>
@@ -629,8 +627,8 @@ return (
                 }}
                 className="flex items-center gap-2.5 px-4 py-2.5 active:bg-zinc-100 dark:active:bg-zinc-800 whitespace-nowrap"
               >
-                <User className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-                <span className="text- font-medium text-zinc-900 dark:text-white">
+                <FiUser className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                <span className="text-[15px] font-medium text-zinc-900 dark:text-white">
                   Thông tin cá nhân
                 </span>
               </button>
@@ -643,7 +641,7 @@ return (
     <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
       <div className={`px-4 py-2.5 rounded-[18px] ${
         isMe
-  ? 'bg-[#0a84ff] text-white'
+ ? 'bg-[#0a84ff] text-white'
         : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
       } ${isLastInGroup? (isMe? 'rounded-tr-[4px]' : 'rounded-tl-[4px]') : ''}`}>
         <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
