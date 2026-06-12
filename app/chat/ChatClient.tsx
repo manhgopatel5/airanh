@@ -318,50 +318,53 @@ useEffect(() => {
 }, []); // Bỏ dependency [db]
 // THÊM DÒNG NÀY
 useEffect(() => {
-  const unsubs: (() => void)[] = [];
-
   // 1. Set data ảo ngay lập tức để có card hiển thị
   const defaultRooms = PUBLIC_CITIES.map((city) => ({
     id: `public_${city.id}`,
     name: city.name,
     emoji: city.emoji,
     color: city.color,
-    memberCount: Math.floor(Math.random() * 500) + 50,
-    onlineCount: Math.floor(Math.random() * 80) + 10,
+    memberCount: 0, // ← Mặc định 0
+    onlineCount: 0, // ← Mặc định 0
     lastMessage: `Chào mừng đến ${city.name}!`,
     isJoined: false,
-    isHot: Math.random() > 0.7,
+    isHot: false,
   }));
   setPublicRooms(defaultRooms);
   setPublicRoomsLoading(false);
 
   // 2. Nếu có user thì listen Firestore để update số thật
-  if (user?.uid) {
-    PUBLIC_CITIES.forEach((city) => {
-      const roomId = `public_${city.id}`;
-      const unsub = onSnapshot(doc(db, "public_rooms", roomId), (snap) => {
+  if (!user?.uid) return;
+
+  const unsubs: (() => void)[] = [];
+  PUBLIC_CITIES.forEach((city) => {
+    const roomId = `public_${city.id}`;
+    const unsub = onSnapshot(doc(db, "public_rooms", roomId), (snap) => {
+      if (snap.exists()) {
         const data = snap.data();
-        if (data) {
-          setPublicRooms((prev) => {
-            const filtered = prev.filter((r) => r.id!== roomId);
-            const newRoom: PublicRoomItem = {
-              id: roomId,
-              name: city.name,
-              emoji: city.emoji,
-              color: city.color,
-              memberCount: data.memberCount || 0,
-              onlineCount: data.onlineCount || 0,
-              lastMessage: data.lastMessage || `Chào mừng đến ${city.name}!`,
-              isJoined: data.members?.includes(user.uid) || false,
-              isHot: (data.onlineCount || 0) > 20,
-            };
-            return [...filtered, newRoom].sort((a, b) => b.onlineCount - a.onlineCount);
-          });
-        }
-      });
-      unsubs.push(unsub);
+        setPublicRooms((prev) => {
+          const filtered = prev.filter((r) => r.id!== roomId);
+          const newRoom: PublicRoomItem = {
+            id: roomId,
+            name: city.name,
+            emoji: city.emoji,
+            color: city.color,
+            memberCount: data.memberCount || 0, // ← Fallback 0 nếu null
+            onlineCount: data.onlineCount || 0, // ← Fallback 0 nếu null
+            lastMessage: data.lastMessage || `Chào mừng đến ${city.name}!`,
+            isJoined: data.members?.includes(user.uid) || false,
+            isHot: (data.onlineCount || 0) > 20,
+          };
+          return [...filtered, newRoom].sort((a, b) => b.onlineCount - a.onlineCount);
+        });
+      }
+      // Nếu snap không tồn tại thì giữ nguyên default 0 ở trên
+    }, (error) => {
+      console.error("Public room error:", error);
     });
-  }
+    unsubs.push(unsub);
+  });
+
   return () => unsubs.forEach((u) => u());
 }, [user?.uid, db]);
 type VipTier = {
@@ -1483,16 +1486,16 @@ return (
         </div>
         <div className="p-2.5">
           <h4 className="text- font-[700] mb-1 tracking-tight">{room.name}</h4>
-          <div className="flex items-center justify-between text- text-[#8e8e93]">
-            <span className="flex items-center gap-1">
-              <FiUsers size={11} />
-              <span className="font-[600]">{room.memberCount}</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-              <span className="font-[600]">{room.onlineCount}</span>
-            </span>
-          </div>
+        <div className="flex items-center justify-between text- text-[#8e8e93]">
+  <span className="flex items-center gap-1">
+    <FiUsers size={11} />
+    <span className="font-[600]">{room.memberCount || 0}</span>
+  </span>
+  <span className="flex items-center gap-1">
+    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+    <span className="font-[600]">{room.onlineCount || 0}</span>
+  </span>
+</div>
         </div>
       </button>
     ))}
