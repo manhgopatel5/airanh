@@ -239,52 +239,52 @@ export default function ChatRoom() {
           </div>
         ) : (
           messages.map((msg, idx) => {
-            const isMe = msg.senderId === user?.uid;
-            const prevMsg = messages[idx - 1];
-            const nextMsg = messages[idx + 1];
-            const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
-            const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
+  const isMe = msg.senderId === user?.uid;
+  const prevMsg = messages[idx - 1];
+  const nextMsg = messages[idx + 1];
+  const isFirstInGroup =!prevMsg || prevMsg.senderId!== msg.senderId;
+  const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
 
-            return (
-           <div key={msg.id} className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
-{/* Avatar - Chỉ show ở tin đầu chuỗi */}
-<div className="w-8 flex-shrink-0">
-  {isFirstInGroup? (
-    <img
-      src={msg.senderAvatar}
-      alt={msg.senderName}
-      className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700"
-      referrerPolicy="no-referrer"
-      onError={(e) => {
-        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}&background=random`;
-      }}
-    />
-  ) : <div className="w-8" />}
-</div>
+  return (
+    <div key={msg.id} className={`flex items-end gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
+      {/* Avatar + Tên - Chỉ show ở tin đầu chuỗi */}
+      <div className="flex-shrink-0 mb-5">
+        {isFirstInGroup? (
+          <div className={`flex items-center gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
+            <img
+              src={msg.senderAvatar}
+              alt={msg.senderName}
+              className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}&background=random`;
+              }}
+            />
+            <p className="text-[15px] font-[600] text-[#1c1c1e] dark:text-white">
+              {msg.senderName}
+            </p>
+          </div>
+        ) : <div className="w-8" />}
+      </div>
 
-  {/* Message bubble */}
-  <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
-{isFirstInGroup && (
-  <p className="text-sm text-[#8e8e93] mb-1 px-3 font-medium">
-    {msg.senderName}
-  </p>
-)}
-                  <div className={`px-4 py-2.5 rounded-[18px] ${
-                    isMe
-                   ? 'bg-[#0a84ff] text-white'
-                      : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
-                  } ${isLastInGroup? (isMe? 'rounded-tr-[4px]' : 'rounded-tl-[4px]') : ''}`}>
-                    <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
-                  </div>
-                  {isLastInGroup && (
-                    <p className="text-[11px] text-[#8e8e93] mt-1 px-3">
-                      {formatMessageTime(msg.createdAt)}
-                    </p>
-                  )}
-                </div>
-              </div>
-            );
-          })
+      {/* Message bubble */}
+      <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'} ${!isFirstInGroup? 'ml-10' : ''}`}>
+        <div className={`px-4 py-2.5 rounded-[18px] ${
+          isMe
+         ? 'bg-[#0a84ff] text-white'
+          : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
+        } ${isLastInGroup? (isMe? 'rounded-tr-[4px]' : 'rounded-tl-[4px]') : ''}`}>
+          <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
+        </div>
+        {isLastInGroup && (
+          <p className="text-[11px] text-[#8e8e93] mt-1 px-3">
+            {formatMessageTime(msg.createdAt)}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+})
         )}
       </div>
 
