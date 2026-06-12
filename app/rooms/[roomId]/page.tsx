@@ -125,59 +125,65 @@ export default function ChatRoom() {
   }, [roomId, user?.uid, db, isPublicRoom, router]);
 
   const handleSendMessage = async () => {
-    if (!message.trim() ||!user?.uid ||!roomId || sending) return;
-    const text = message.trim();
-    setMessage("");
-    setSending(true);
-    setIsAtBottom(true);
+  if (!message.trim() ||!user?.uid ||!roomId || sending) return;
+  const text = message.trim();
+  setMessage("");
+  setSending(true);
+  setIsAtBottom(true);
 
-    try {
-      const chatRef = doc(db, "chats", roomId as string);
-      const chatSnap = await getDoc(chatRef);
+  try {
+    const userName = user.displayName || user.email?.split('@')[0] || "User";
+    const userAvatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=random`;
 
-      const userName = user.displayName || user.email?.split('@')[0] || "User";
-      const userAvatar = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=random`;
+    // Dùng batch để join room + gửi tin cùng lúc, tránh lỗi permission
+    const batch = writeBatch(db);
+    const chatRef = doc(db, "chats", roomId as string);
+    const chatSnap = await getDoc(chatRef);
 
-      if (!chatSnap.exists()) {
-        await setDoc(chatRef, {
-          isGroup: true,
-          isPublicRoom: isPublicRoom,
-          groupName: roomData?.name || "Phòng chat",
-          groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(roomData?.emoji || "💬")}&background=random&color=fff&bold=true&size=128`,
-          members: [user.uid],
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          lastMessage: text,
-          lastSenderId: user.uid,
-          lastSenderName: userName,
-        });
-      } else {
-        await updateDoc(chatRef, {
-          members: arrayUnion(user.uid),
-          lastMessage: text,
-          lastSenderId: user.uid,
-          lastSenderName: userName,
-          updatedAt: serverTimestamp(),
-        });
-      }
-
-      await addDoc(collection(db, "chats", roomId as string, "messages"), {
-        text,
-        senderId: user.uid,
-        senderName: userName,
-        senderAvatar: userAvatar,
+    if (!chatSnap.exists()) {
+      batch.set(chatRef, {
+        isGroup: true,
+        isPublicRoom: isPublicRoom,
+        groupName: roomData?.name || "Phòng chat",
+        groupAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(roomData?.emoji || "💬")}&background=random&color=fff&bold=true&size=128`,
+        members: [user.uid],
         createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        lastMessage: text,
+        lastSenderId: user.uid,
+        lastSenderName: userName,
       });
-
-      if ("vibrate" in navigator) navigator.vibrate(10);
-    } catch (e: any) {
-      console.error(e);
-      toast.error("Lỗi gửi tin: " + e.message);
-      setMessage(text);
-    } finally {
-      setSending(false);
+    } else {
+      batch.update(chatRef, {
+        members: arrayUnion(user.uid), // Auto join khi nhắn
+        lastMessage: text,
+        lastSenderId: user.uid,
+        lastSenderName: userName,
+        updatedAt: serverTimestamp(),
+      });
     }
-  };
+
+    // Thêm message vào batch
+    const msgRef = doc(collection(db, "chats", roomId as string, "messages"));
+    batch.set(msgRef, {
+      text,
+      senderId: user.uid,
+      senderName: userName,
+      senderAvatar: userAvatar,
+      createdAt: serverTimestamp(),
+    });
+
+    await batch.commit();
+
+    if ("vibrate" in navigator) navigator.vibrate(10);
+  } catch (e: any) {
+    console.error(e);
+    toast.error("Lỗi gửi tin: " + e.message);
+    setMessage(text);
+  } finally {
+    setSending(false);
+  }
+};
 
   const formatMessageTime = (timestamp: any) => {
     if (!timestamp?.toDate) return "";
@@ -246,32 +252,27 @@ export default function ChatRoom() {
   const isLastInGroup =!nextMsg || nextMsg.senderId!== msg.senderId;
 
   return (
-    <div key={msg.id} className={`flex items-end gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
-      {/* Avatar + Tên - Chỉ show ở tin đầu chuỗi */}
-      <div className="flex-shrink-0 mb-5">
+    <div key={msg.id} className={`flex gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
+      {/* Avatar - Chỉ show ở tin đầu chuỗi */}
+      <div className="w-8 flex-shrink-0 self-end">
         {isFirstInGroup? (
-          <div className={`flex items-center gap-2 ${isMe? 'flex-row-reverse' : ''}`}>
-            <img
-              src={msg.senderAvatar}
-              alt={msg.senderName}
-              className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700"
-              referrerPolicy="no-referrer"
-              onError={(e) => {
-                e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}&background=random`;
-              }}
-            />
-            <p className="text-[15px] font-[600] text-[#1c1c1e] dark:text-white">
-              {msg.senderName}
-            </p>
-          </div>
+          <img
+            src={msg.senderAvatar}
+            alt={msg.senderName}
+            className="w-8 h-8 rounded-full object-cover bg-zinc-200 dark:bg-zinc-700"
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(msg.senderName)}&background=random`;
+            }}
+          />
         ) : <div className="w-8" />}
       </div>
 
       {/* Message bubble */}
-      <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'} ${!isFirstInGroup? 'ml-10' : ''}`}>
+      <div className={`max-w-[75%] flex flex-col ${isMe? 'items-end' : 'items-start'}`}>
         <div className={`px-4 py-2.5 rounded-[18px] ${
           isMe
-         ? 'bg-[#0a84ff] text-white'
+        ? 'bg-[#0a84ff] text-white'
           : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
         } ${isLastInGroup? (isMe? 'rounded-tr-[4px]' : 'rounded-tl-[4px]') : ''}`}>
           <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">{msg.text}</p>
